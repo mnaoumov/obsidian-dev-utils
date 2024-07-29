@@ -1,0 +1,25 @@
+{
+  "name": "obsidian-dev-utils",
+  "version": "0.0.0",
+  "description": "This is the collection of useful functions that you can use for your Obsidian plugin development",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mnaoumov/obsidian-dev-utils.git"
+  },
+  "keywords": [
+    "obsidian"
+  ],
+  "author": "Michael Naumov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mnaoumov/obsidian-dev-utils/issues"
+  },
+  "homepage": "https://github.com/mnaoumov/obsidian-dev-utils#readme",
+  "devDependencies": {
+  },
+  "type": "module"
+}
