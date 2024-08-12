@@ -4,7 +4,8 @@
   "description": "This is the collection of useful functions that you can use for your Obsidian plugin development",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:clean": "tsx scripts/build-clean.ts",
+    "build:cli": "tsx scripts/build-cli.ts",
     "spellcheck": "cspell . --no-progress"
   },
   "repository": {
@@ -21,7 +22,15 @@
   },
   "homepage": "https://github.com/mnaoumov/obsidian-dev-utils#readme",
   "devDependencies": {
+    "@tsconfig/strictest": "^2.0.5",
+    "@types/node": "^22.2.0",
+    "builtin-modules": "^4.0.0",
     "cspell": "^8.13.2",
+    "esbuild": "^0.23.0",
+    "tsx": "^4.17.0"
   },
-  "type": "module"
+  "type": "module",
+  "bin": {
+    "obsidian-dev-utils": "./dist/bin/cli.cjs"
+  }
 }
