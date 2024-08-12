@@ -17,6 +17,7 @@ const context = await esbuild.context({
   format: "cjs",
   logLevel: "info",
   outfile: "dist/bin/cli.cjs",
+  platform: "node",
   sourcemap: "inline",
   target: "ESNext",
   treeShaking: true
