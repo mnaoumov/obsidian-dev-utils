@@ -12,14 +12,14 @@ const context = await esbuild.context({
   banner: {
     js: banner
   },
-  entryPoints: ["src/bin/cli.ts"],
   bundle: true,
+  entryPoints: ["src/bin/cli.ts"],
   format: "cjs",
-  target: "ESNext",
   logLevel: "info",
+  outfile: "dist/bin/cli.cjs",
   sourcemap: "inline",
-  treeShaking: true,
-  outfile: "dist/bin/cli.cjs"
+  target: "ESNext",
+  treeShaking: true
 });
 
 await context.rebuild();
