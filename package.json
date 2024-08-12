@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+    "spellcheck": "cspell . --no-progress"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,7 @@
   },
   "homepage": "https://github.com/mnaoumov/obsidian-dev-utils#readme",
   "devDependencies": {
+    "cspell": "^8.13.2",
   },
   "type": "module"
 }
