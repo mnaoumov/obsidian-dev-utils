@@ -1,4 +1,8 @@
 import { Command } from "commander";
+import {
+  BuildMode,
+  buildPlugin
+} from "../PluginBuilder.ts";
 
 const VERSION = "TODO";
 const program = new Command();
@@ -11,13 +15,13 @@ program
 program.command("build")
   .description("Build the plugin")
   .action(() => {
-    console.log("build");
+    buildPlugin({ mode: BuildMode.Production });
   });
 
 program.command("dev")
   .description("Build the plugin in development mode")
   .action(() => {
-    console.log("dev");
+    buildPlugin({ mode: BuildMode.Development });
   });
 
 program.command("lint")

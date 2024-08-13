@@ -1,4 +1,5 @@
 import esbuild from "esbuild";
+import { readFile } from "node:fs/promises";
 import process from "node:process";
 
 const banner = `#!/usr/bin/env node
@@ -14,13 +15,31 @@ const context = await esbuild.context({
   },
   bundle: true,
   entryPoints: ["src/bin/cli.ts"],
+  external: ["esbuild"],
   format: "cjs",
   logLevel: "info",
   outfile: "dist/bin/cli.cjs",
   platform: "node",
   sourcemap: "inline",
   target: "ESNext",
-  treeShaking: true
+  treeShaking: true,
+
+  plugins: [
+    {
+      name: "preprocess",
+      setup(build): void {
+        build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
+          let contents = await readFile(args.path, "utf8");
+          contents = contents.replace(/import\.meta\.url/g, "__filename");
+
+          return {
+            contents,
+            loader: "ts"
+          };
+        });
+      },
+    }
+  ]
 });
 
 await context.rebuild();
