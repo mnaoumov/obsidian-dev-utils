@@ -9,7 +9,10 @@ import {
   rm,
   writeFile
 } from "node:fs/promises";
-import { execFromRoot } from "./Root.ts";
+import {
+  execFromRoot,
+  resolvePathFromRoot
+} from "./Root.ts";
 
 interface NpmPackage {
   name: string;
@@ -27,8 +30,7 @@ type SourceMap = {
 export async function buildPlugin({
   mode,
   obsidianConfigDir = process.env["OBSIDIAN_CONFIG_DIR"]
-}:
-{
+}: {
   mode: BuildMode
   obsidianConfigDir?: string
 }): Promise<void> {
@@ -40,7 +42,7 @@ if you want to view the source, please visit the github repository of this plugi
 
   const isProductionBuild = mode === BuildMode.Production;
 
-  const distDir = isProductionBuild ? "dist/build" : "dist/dev";
+  const distDir = await resolvePathFromRoot(isProductionBuild ? "dist/build" : "dist/dev");
   if (existsSync(distDir)) {
     await rm(distDir, { recursive: true });
   }
@@ -55,7 +57,7 @@ if you want to view the source, please visit the github repository of this plugi
   }
 
   for (const fileName of distFileNames) {
-    const localFile = `./${fileName}`;
+    const localFile = await resolvePathFromRoot(fileName);
     const distFile = `${distDir}/${fileName}`;
 
     if (existsSync(localFile)) {
@@ -65,14 +67,14 @@ if you want to view the source, please visit the github repository of this plugi
 
   const distPath = `${distDir}/main.js`;
 
-  const npmPackage = JSON.parse(await readFile("./package.json", "utf8")) as NpmPackage;
+  const npmPackage = JSON.parse(await readFile(await resolvePathFromRoot("package.json"), "utf8")) as NpmPackage;
   const pluginName = npmPackage.name;
 
   const context = await esbuild.context({
     banner: {
       js: banner,
     },
-    entryPoints: ["src/main.ts"],
+    entryPoints: [await resolvePathFromRoot("src/main.ts")],
     bundle: true,
     external: [
       "obsidian",

@@ -97,7 +97,7 @@ export async function resolvePathFromRoot(path: string): Promise<string> {
   return resolve(await getRootDir(), path);
 }
 
-async function getRootDir(): Promise<string> {
+export async function getRootDir(): Promise<string> {
   const rootDir = await packageDirectory();
   if (!rootDir) {
     throw new Error("Could not find root directory");
