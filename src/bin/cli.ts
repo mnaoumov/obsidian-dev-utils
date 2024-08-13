@@ -4,13 +4,13 @@ import {
   buildPlugin
 } from "../PluginBuilder.ts";
 
-const VERSION = "TODO";
+const NODE_PACKAGE_VERSION = "${NODE_PACKAGE_VERSION}";
 const program = new Command();
 
 program
   .name("obsidian-dev-utils")
   .description('CLI to some obsidian-dev-utils commands')
-  .version(VERSION);
+  .version(NODE_PACKAGE_VERSION);
 
 program.command("build")
   .description("Build the plugin")

@@ -1,6 +1,13 @@
 import esbuild from "esbuild";
 import { readFile } from "node:fs/promises";
 import process from "node:process";
+import { resolvePathFromRoot } from "../src/Root.ts";
+
+interface NpmPackage {
+  version: string;
+}
+
+const npmPackage = JSON.parse(await readFile(await resolvePathFromRoot("package.json"), "utf8")) as NpmPackage;
 
 const banner = `#!/usr/bin/env node
 
@@ -31,6 +38,7 @@ const context = await esbuild.context({
         build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
           let contents = await readFile(args.path, "utf8");
           contents = contents.replace(/import\.meta\.url/g, "__filename");
+          contents = contents.replace("${NODE_PACKAGE_VERSION}", npmPackage.version);
 
           return {
             contents,
