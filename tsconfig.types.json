@@ -5,6 +5,7 @@
         "emitDeclarationOnly": true,
         "noEmit": false,
         "outDir": "./dist/lib",
+        "resolveJsonModule": true
     },
     "include": [
         "./src/**/*.ts"
