@@ -4,7 +4,6 @@ import {
   writeFile
 } from "node:fs/promises";
 import process from "node:process";
-import { extname } from "node:path/posix";
 
 interface NpmPackage {
   version: string;
