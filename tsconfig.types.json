@@ -1,0 +1,28 @@
+{
+    "extends": "@tsconfig/strictest/tsconfig.json",
+    "compilerOptions": {
+        "allowImportingTsExtensions": true,
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "forceConsistentCasingInFileNames": true,
+        "importHelpers": true,
+        "inlineSourceMap": true,
+        "inlineSources": true,
+        "lib": [
+            "DOM",
+            "ESNext"
+        ],
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "outDir": "./dist/lib",
+        "noEmit": false,
+        "target": "ESNext",
+        "skipLibCheck": false,
+        "verbatimModuleSyntax": true
+    },
+    "include": [
+        "./src/**/*.ts"
+    ]
+}
