@@ -13,17 +13,17 @@ import { fileURLToPath } from "node:url";
 __filename ??= fileURLToPath(import.meta.url);
 __dirname ??= dirname(__filename);
 
-export async function lintAndFix(config?: Linter.Config | Linter.Config[]): Promise<void> {
+export async function lintAndFix(overrideConfig?: Linter.Config | Linter.Config[]): Promise<void> {
   const packageDir = await packageDirectory({ cwd: __dirname });
   if (!packageDir) {
     throw new Error("Could not find package directory.");
   }
-  config ??= configs;
+  overrideConfig ??= configs;
   const FlatESLint = await loadESLint({ useFlatConfig: true });
   const eslint = new FlatESLint({
     fix: true,
     overrideConfigFile: join(packageDir, "dist/eslint.config.empty.cjs"),
-    overrideConfig: config
+    overrideConfig: overrideConfig
   });
   const results = await eslint.lintFiles(["."]);
   await FlatESLint.outputFixes(results);
