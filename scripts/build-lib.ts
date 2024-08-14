@@ -54,7 +54,7 @@ const buildOptions: BuildOptions = {
       setup(build): void {
         build.onEnd(async (result) => {
           for (const file of result.outputFiles ?? []) {
-            if (extname(file.path) !== ".js") {
+            if (!file.path.endsWith(".js") || file.path.endsWith(".d.js")) {
               continue;
             }
             const newPath = file.path.replace(/\.js$/, ".cjs");
