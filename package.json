@@ -5,8 +5,9 @@
   "main": "./dist/lib/index.cjs",
   "types": "./dist/lib/index.d.ts",
   "scripts": {
-    "build": "npm-run-all build:clean build:generate-index build:types build:lib build:generate-exports build:static",
+    "build": "npm-run-all build:clean build:validate build:generate-index build:types build:lib build:generate-exports build:static",
     "build:clean": "tsx scripts/build-clean.ts",
+    "build:validate": "tsc --build --force",
     "build:generate-index": "tsx scripts/build-generate-index.ts",
     "build:types": "tsc --project ./tsconfig.types.json",
     "build:lib": "tsx scripts/build-lib.ts",
