@@ -3,13 +3,19 @@ import {
   loadESLint
 } from "eslint";
 import { configs } from "./eslint.config.ts";
+import { join } from "node:path/posix";
+import { packageDirectory } from "pkg-dir";
 
 export async function lintAndFix(config?: Linter.Config | Linter.Config[]): Promise<void> {
+  const packageDir = await packageDirectory({ cwd: __dirname });
+  if (!packageDir) {
+    throw new Error("Could not find package directory.");
+  }
   config ??= configs;
   const FlatESLint = await loadESLint({ useFlatConfig: true });
   const eslint = new FlatESLint({
     fix: true,
-    overrideConfigFile: "./eslint.config.empty.mjs",
+    overrideConfigFile: join(packageDir, "dist/eslint.config.empty.cjs"),
     overrideConfig: config
   });
   const results = await eslint.lintFiles(["."]);
