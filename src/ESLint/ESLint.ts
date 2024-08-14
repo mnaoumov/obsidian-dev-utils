@@ -3,8 +3,15 @@ import {
   loadESLint
 } from "eslint";
 import { configs } from "./eslint.config.ts";
-import { join } from "node:path/posix";
+import {
+  dirname,
+  join
+} from "node:path/posix";
 import { packageDirectory } from "pkg-dir";
+import { fileURLToPath } from "node:url";
+
+__filename ??= fileURLToPath(import.meta.url);
+__dirname ??= dirname(__filename);
 
 export async function lintAndFix(config?: Linter.Config | Linter.Config[]): Promise<void> {
   const packageDir = await packageDirectory({ cwd: __dirname });
