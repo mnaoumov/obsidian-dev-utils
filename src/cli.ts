@@ -3,8 +3,9 @@ import {
   BuildMode,
   buildPlugin
 } from "./PluginBuilder.ts";
+import process from "node:process";
 
-export function cli() {
+export function cli(argv: string[] = process.argv.slice(2)): void {
   const NODE_PACKAGE_VERSION = "${NODE_PACKAGE_VERSION}";
   const program = new Command();
 
@@ -44,5 +45,5 @@ export function cli() {
       console.log
     });
 
-  program.parse();
+  program.parse(argv, { from: "user" });
 }
