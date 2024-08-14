@@ -40,6 +40,7 @@ const buildOptions: BuildOptions = {
           let contents = await readFile(args.path, "utf8");
           contents = contents.replace(/import\.meta\.url/g, "__filename");
           contents = contents.replace("${NODE_PACKAGE_VERSION}", npmPackage.version);
+          contents = contents.replace(/(from\s+["'].*)\.ts(["'];?)/g, "$1.cjs$2");
 
           return {
             contents,
