@@ -54,19 +54,19 @@
   "bin": "./dist/bin/cli.cjs",
   "exports": {
     ".": {
-      "import": "./dist/lib/index.cjs",
+      "default": "./dist/lib/index.cjs",
       "types": "./dist/lib/index.d.ts"
     },
     "./*": {
-      "import": "./dist/lib/*.cjs",
+      "default": "./dist/lib/*.cjs",
       "types": "./dist/lib/*.d.ts"
     },
     "./ESLint": {
-      "import": "./dist/lib/ESLint/index.cjs",
+      "default": "./dist/lib/ESLint/index.cjs",
       "types": "./dist/lib/ESLint/index.d.ts"
     },
     "./ESLint/*": {
-      "import": "./dist/lib/ESLint/*.cjs",
+      "default": "./dist/lib/ESLint/*.cjs",
       "types": "./dist/lib/ESLint/*.d.ts"
     }
   }

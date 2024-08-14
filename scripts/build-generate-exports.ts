@@ -10,7 +10,7 @@ interface NpmPackage {
 }
 
 interface Export {
-  import: string;
+  default: string;
   types: string;
 }
 
@@ -31,11 +31,11 @@ npmPackage.exports = {};
 for (const libDir of libDirs) {
   const dir = libDir === "." ? "./dist/lib" : `./dist/lib/${libDir.slice(2)}`;
   npmPackage.exports[libDir] = {
-    import: `${dir}/index.cjs`,
+    default: `${dir}/index.cjs`,
     types: `${dir}/index.d.ts`
   };
   npmPackage.exports[`${libDir}/*`] = {
-    import: `${dir}/*.cjs`,
+    default: `${dir}/*.cjs`,
     types: `${dir}/*.d.ts`
   };
 }
