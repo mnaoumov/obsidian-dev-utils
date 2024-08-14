@@ -11,8 +11,8 @@ import { packageDirectory } from "pkg-dir";
 import { fileURLToPath } from "node:url";
 
 if (typeof __filename === "undefined") {
-  __filename = fileURLToPath(import.meta.url);
-  __dirname = dirname(__filename);
+  globalThis.__filename = fileURLToPath(import.meta.url);
+  globalThis.__dirname = dirname(__filename);
 }
 
 export async function lintAndFix(overrideConfig?: Linter.Config | Linter.Config[]): Promise<void> {
