@@ -4,6 +4,7 @@ import {
   buildPlugin
 } from "./PluginBuilder.ts";
 import process from "node:process";
+import { lintAndFix } from "./ESLint/ESLint.ts";
 
 export function cli(argv: string[] = process.argv.slice(2)): void {
   const NODE_PACKAGE_VERSION = "${NODE_PACKAGE_VERSION}";
@@ -28,8 +29,8 @@ export function cli(argv: string[] = process.argv.slice(2)): void {
 
   program.command("lint")
     .description("Lints the source code")
-    .action(() => {
-      console.log("build");
+    .action(async () => {
+      await lintAndFix();
     });
 
   program.command("version")

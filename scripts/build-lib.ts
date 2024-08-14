@@ -23,7 +23,11 @@ const buildOptions: BuildOptions = {
   },
   bundle: true,
   entryPoints: ["src/**/*.ts"],
-  external: ["esbuild"],
+  external: [
+    "@typescript-eslint/parser",
+    "esbuild",
+    "eslint"
+  ],
   format: "cjs",
   logLevel: "info",
   outdir: "dist/lib",
