@@ -4,7 +4,7 @@ import {
   buildPlugin
 } from "./PluginBuilder.ts";
 
-export default function cli() {
+export function cli() {
   const NODE_PACKAGE_VERSION = "${NODE_PACKAGE_VERSION}";
   const program = new Command();
 
