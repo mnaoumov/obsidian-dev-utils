@@ -225,7 +225,8 @@ export async function updateChangelog(newVersion: string): Promise<void> {
 }
 
 export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
-  await execFromRoot(toCommandLine(["git", "add", MANIFEST_JSON, PACKAGE_JSON, VERSIONS_JSON, CHANGELOG_MD]), { quiet: true });
+  const files = [MANIFEST_JSON, PACKAGE_JSON, VERSIONS_JSON, CHANGELOG_MD].filter(file => existsSync(resolvePathFromRoot(file)));
+  await execFromRoot(toCommandLine(["git", "add", ...files]), { quiet: true });
   await execFromRoot(`git commit -m ${newVersion}`, { quiet: true });
 }
 
