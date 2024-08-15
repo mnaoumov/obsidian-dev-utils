@@ -1,4 +1,7 @@
-import { wrapTask } from "../src/cli.ts";
+import {
+  toCommandLine,
+  wrapTask
+} from "../src/cli.ts";
 import { lint } from "../src/ESLint/ESLint.ts";
 import { spellcheck } from "../src/spellcheck.ts";
 import { TaskResult } from "../src/TaskResult.ts";
@@ -10,15 +13,17 @@ import {
   checkGitInstalled,
   checkGitRepoClean,
   getNewVersion,
+  getReleaseNotes,
   gitPush,
   updateChangelog,
   validate
 } from "../src/version.ts";
-import { execFromRoot, resolvePathFromRoot } from "../src/Root.ts";
+import {
+  execFromRoot,
+  resolvePathFromRoot
+} from "../src/Root.ts";
 import { editNpmPackage } from "../src/Npm.ts";
 import AdmZip from "adm-zip";
-import { readdirPosix } from "../src/Fs.ts";
-import { join } from "../src/Path.ts";
 
 await (wrapTask(async (): Promise<TaskResult | void> => {
   const versionUpdateType = process.argv[2];
@@ -65,7 +70,7 @@ async function updateVersionInFiles(newVersion: string): Promise<void> {
 async function publishGitHubRelease(newVersion: string): Promise<void> {
   const zip = new AdmZip();
   zip.addLocalFolder(resolvePathFromRoot("dist"));
-  zip.writeZip(`dist/dist.zip`);
+  zip.writeZip("dist/dist.zip");
 
   await execFromRoot(toCommandLine(["gh", "release", "create", newVersion, CHANGELOG_MD, "LICENSE", "README.md", "package.config", "dist/dist.zip", "--title", `v${newVersion}`, "--notes-file", "-"]), {
     quiet: true,
