@@ -45,14 +45,14 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
     .description("Lints the source code and applies automatic fixes if possible")
     .action(wrapTask(() => lint(true)));
 
-  program.command("version")
-    .description("Release new version")
-    .argument("<major|minor|patch>", "Version to release")
-    .action(wrapTask(async (version: string) => updateVersion(version)));
-
   program.command("spellcheck")
     .description("Spellcheck the source code")
     .action(wrapTask(() => spellcheck()));
+
+  program.command("version")
+    .description("Release new version")
+    .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]")
+    .action(wrapTask(async (version: string) => updateVersion(version)));
 
   program.parse(argv, { from: "user" });
 }
