@@ -1,9 +1,10 @@
 import { lint } from "cspell";
 import { toRelativeFromRoot } from "./Root.ts";
 import { fileURLToPath } from "node:url";
+import { TaskResult } from "./TaskResult.ts";
 
-export async function spellcheck(): Promise<void> {
-  let hasErrors = false;
+export async function spellcheck(): Promise<TaskResult> {
+  let isSuccess = true;
 
   await lint(["."], {}, {
     issue: (issue) => {
@@ -14,9 +15,9 @@ export async function spellcheck(): Promise<void> {
       const path = fileURLToPath(issue.uri);
       const relativePath = toRelativeFromRoot(path);
       console.error(`${relativePath}:${issue.row}:${issue.col} - ${issue.text}`);
-      hasErrors = true;
+      isSuccess = false;
     }
   });
 
-  process.exit(hasErrors ? 1 : 0);
+  return TaskResult.CreateSuccessResult(isSuccess);
 }

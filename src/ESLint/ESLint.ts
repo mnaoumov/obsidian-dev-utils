@@ -6,8 +6,9 @@ import { join } from "node:path/posix";
 import { packageDirectory } from "pkg-dir";
 import { toRelativeFromRoot } from "../Root.ts";
 import { getDirname } from "../Path.ts";
+import { TaskResult } from "../TaskResult.ts";
 
-export async function lint(fix?: boolean): Promise<void> {
+export async function lint(fix?: boolean): Promise<TaskResult> {
   fix ??= false;
   const packageDir = await packageDirectory({ cwd: getDirname(import.meta.url) });
   if (!packageDir) {
@@ -28,16 +29,16 @@ export async function lint(fix?: boolean): Promise<void> {
     await FlatESLint.outputFixes(lintResults);
   }
 
-  let hasErrors = false;
+  let isSuccess = true;
 
   for (const lintResult of lintResults) {
     if (lintResult.errorCount > 0 || lintResult.fatalErrorCount > 0 || lintResult.fixableErrorCount > 0) {
-      hasErrors = true;
+      isSuccess = false;
     }
 
     if (lintResult.output) {
       console.log(`${toRelativeFromRoot(lintResult.filePath)} - had some issues that were fixed automatically.`);
-      hasErrors = true;
+      isSuccess = false;
     }
 
     for (const message of lintResult.messages) {
@@ -46,5 +47,5 @@ export async function lint(fix?: boolean): Promise<void> {
     }
   }
 
-  process.exit(hasErrors ? 1 : 0);
+  return TaskResult.CreateSuccessResult(isSuccess);
 }

@@ -6,6 +6,9 @@ import {
 import process from "node:process";
 import { lint } from "./ESLint/ESLint.ts";
 import { spellcheck } from "./spellcheck.ts";
+import { updateVersion } from "./version.ts";
+import type { MaybePromise } from "./Async.ts";
+import { getTaskResult, TaskResult } from "./TaskResult.ts";
 
 /**
  * The number of leading arguments to skip when parsing command-line arguments.
@@ -25,40 +28,35 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
 
   program.command("build")
     .description("Build the plugin")
-    .action(async () => {
-      await buildPlugin({ mode: BuildMode.Production });
-    });
+    .action(wrapTask(() => buildPlugin({ mode: BuildMode.Production })));
 
   program.command("dev")
     .description("Build the plugin in development mode")
-    .action(async () => {
-      await buildPlugin({ mode: BuildMode.Development });
-    });
+    .action(wrapTask(() => buildPlugin({ mode: BuildMode.Development })));
 
   program.command("lint")
     .description("Lints the source code")
-    .action(async () => {
-      await lint();
-    });
+    .action(wrapTask(() => lint()));
 
   program.command("lint-fix")
     .description("Lints the source code and applies automatic fixes if possible")
-    .action(async () => {
-      await lint(true);
-    });
+    .action(wrapTask(() => lint(true)));
 
   program.command("version")
     .description("Release new version")
     .argument("<major|minor|patch>", "Version to release")
-    .action((version) => {
-      console.log(`version ${version}`);
-    });
+    .action(wrapTask(async (version: string) => updateVersion(version)));
 
   program.command("spellcheck")
     .description("Spellcheck the source code")
-    .action(async () => {
-      await spellcheck();
-    });
+    .action(wrapTask(() => spellcheck()));
 
   program.parse(argv, { from: "user" });
+}
+
+export function wrapTask<TaskArgs extends unknown[]>(taskFn: (...taskArgs: TaskArgs) => MaybePromise<TaskResult | void>): (...taskArgs: TaskArgs) => Promise<void> {
+  return async (...taskArgs: TaskArgs) => {
+    const result = await getTaskResult(taskFn, taskArgs);
+    result.exit();
+  };
 }
