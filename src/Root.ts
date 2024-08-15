@@ -26,7 +26,7 @@ export async function execFromRoot(command: string, {
   return stdout;
 }
 
-export async function execFromRootWithStderr(command: string, {
+export function execFromRootWithStderr(command: string, {
   quiet = false,
   ignoreExitCode = false,
   stdin = ""
@@ -35,62 +35,61 @@ export async function execFromRootWithStderr(command: string, {
   ignoreExitCode?: boolean
   stdin?: string
 } = {}): Promise<{ stdout: string, stderr: string }> {
-  const { promise, resolve, reject } = Promise.withResolvers<{ stdout: string, stderr: string }>();
 
-  console.log(`Executing command: ${command}`);
-  const [cmd = "", ...args] = command.split(" ");
+  return new Promise((resolve, reject) => {
+    console.log(`Executing command: ${command}`);
+    const [cmd = "", ...args] = command.split(" ");
 
-  const child = spawn(cmd, args, {
-    cwd: getRootDir(),
-    stdio: "pipe",
-    shell: true
+    const child = spawn(cmd, args, {
+      cwd: getRootDir(),
+      stdio: "pipe",
+      shell: true
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdin.write(stdin);
+    child.stdin.end();
+
+    child.stdout.on("data", (data: Buffer) => {
+      if (!quiet) {
+        process.stdout.write(data);
+      }
+      stdout += data.toString("utf8");
+    });
+
+    child.stdout.on("end", () => {
+      stdout = trimEnd(stdout, "\n");
+    });
+
+    child.stderr.on("data", (data: Buffer) => {
+      if (!quiet) {
+        process.stderr.write(data);
+      }
+      stderr += data.toString("utf8");
+    });
+
+    child.stderr.on("end", () => {
+      stderr = trimEnd(stderr, "\n");
+    });
+
+    child.on("close", (code) => {
+      if (code !== 0 && !ignoreExitCode) {
+        reject(new Error(`Command failed with exit code ${code}\n${stderr}`));
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
+
+    child.on("error", (err) => {
+      if (!ignoreExitCode) {
+        reject(err);
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
   });
-
-  let stdout = "";
-  let stderr = "";
-
-  child.stdin.write(stdin);
-  child.stdin.end();
-
-  child.stdout.on("data", (data: Buffer) => {
-    if (!quiet) {
-      process.stdout.write(data);
-    }
-    stdout += data.toString("utf8");
-  });
-
-  child.stdout.on("end", () => {
-    stdout = trimEnd(stdout, "\n");
-  });
-
-  child.stderr.on("data", (data: Buffer) => {
-    if (!quiet) {
-      process.stderr.write(data);
-    }
-    stderr += data.toString("utf8");
-  });
-
-  child.stderr.on("end", () => {
-    stderr = trimEnd(stderr, "\n");
-  });
-
-  child.on("close", (code) => {
-    if (code !== 0 && !ignoreExitCode) {
-      reject(new Error(`Command failed with exit code ${code}\n${stderr}`));
-    } else {
-      resolve({ stdout, stderr });
-    }
-  });
-
-  child.on("error", (err) => {
-    if (!ignoreExitCode) {
-      reject(err);
-    } else {
-      resolve({ stdout, stderr });
-    }
-  });
-
-  return await promise;
 }
 
 export async function tsImportFromRoot<T>(specifier: string): Promise<T> {
