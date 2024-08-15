@@ -17,14 +17,8 @@ const buildOptions: BuildOptions = {
   banner: {
     js: banner
   },
-  bundle: true,
+  bundle: false,
   entryPoints: ["src/**/*.ts"],
-  external: [
-    "@typescript-eslint/parser",
-    "esbuild",
-    "eslint",
-    "obsidian"
-  ],
   format: "cjs",
   logLevel: "info",
   outdir: "dist/lib",
@@ -40,9 +34,13 @@ const buildOptions: BuildOptions = {
       setup(build): void {
         build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
           let contents = await readFile(args.path, "utf8");
-          contents = "const import_meta_url = require(\"node:url\").pathToFileURL(__filename);\n" + contents;
-          contents = contents.replace(/import\.meta\.url/g, "import_meta_url");
-          contents = contents.replace("${NODE_PACKAGE_VERSION}", npmPackage.version);
+
+          if (contents.includes("import.meta.url")) {
+            contents = "const import_meta_url = require(\"node:url\").pathToFileURL(__filename);\n"
+              + contents.replaceAll("import.meta.url", "import_meta_url");
+          }
+
+          contents = contents.replaceAll("${NODE_PACKAGE_VERSION}", npmPackage.version);
 
           return {
             contents,
@@ -60,7 +58,8 @@ const buildOptions: BuildOptions = {
               continue;
             }
             const newPath = file.path.replace(/\.js$/, ".cjs");
-            await writeFile(newPath, file.text);
+            const newText = file.text.replaceAll(/require\("([^"]+)\.ts"\)/g, "require(\"$1.cjs\")");
+            await writeFile(newPath, newText);
           }
         });
       }
