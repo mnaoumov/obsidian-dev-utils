@@ -9,11 +9,11 @@ import {
   rm,
   writeFile
 } from "node:fs/promises";
-import { resolvePathFromRoot } from "./Root.ts";
-import { TaskResult } from "./TaskResult.ts";
-import { readNpmPackage } from "./Npm.ts";
-import { lint } from "./ESLint/ESLint.ts";
-import { toPosixPath } from "./Path.ts";
+import { resolvePathFromRoot } from "../Root.ts";
+import { TaskResult } from "../TaskResult.ts";
+import { readNpmPackage } from "../Npm.ts";
+import { lint } from "../ESLint/ESLint.ts";
+import { toPosixPath } from "../Path.ts";
 
 export enum BuildMode {
   Development,

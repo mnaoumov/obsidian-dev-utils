@@ -2,7 +2,7 @@ import { Command } from "commander";
 import {
   BuildMode,
   buildPlugin
-} from "./PluginBuilder.ts";
+} from "./esbuild/PluginBuilder.ts";
 import process from "node:process";
 import { lint } from "./ESLint/ESLint.ts";
 import { spellcheck } from "./spellcheck.ts";

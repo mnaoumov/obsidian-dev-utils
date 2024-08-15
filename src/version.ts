@@ -8,7 +8,7 @@ import { lint } from "./ESLint/ESLint.ts";
 import {
   BuildMode,
   buildPlugin
-} from "./PluginBuilder.ts";
+} from "./esbuild/PluginBuilder.ts";
 import {
   editNpmPackage,
   PACKAGE_JSON,
