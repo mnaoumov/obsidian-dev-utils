@@ -72,13 +72,13 @@ export async function updateVersion(versionUpdateType: string): Promise<TaskResu
   ]);
 }
 
-function validate(versionUpdateType: string): void {
+export function validate(versionUpdateType: string): void {
   if (getVersionUpdateType(versionUpdateType) === VersionUpdateType.Invalid) {
     throw new Error("Invalid version update type. Please use 'major', 'minor', 'patch', or 'x.y.z[-suffix]' format.");
   }
 }
 
-async function checkGitInstalled(): Promise<void> {
+export async function checkGitInstalled(): Promise<void> {
   try {
     await execFromRoot("git --version", { quiet: true });
   } catch {
@@ -86,7 +86,7 @@ async function checkGitInstalled(): Promise<void> {
   }
 }
 
-async function checkGitHubCliInstalled(): Promise<void> {
+export async function checkGitHubCliInstalled(): Promise<void> {
   try {
     await execFromRoot("gh --version", { quiet: true });
   } catch {
@@ -94,7 +94,7 @@ async function checkGitHubCliInstalled(): Promise<void> {
   }
 }
 
-async function checkGitRepoClean(): Promise<void> {
+export async function checkGitRepoClean(): Promise<void> {
   try {
     await execFromRoot("git status --porcelain --untracked-files=all", { quiet: true });
   } catch {
@@ -102,7 +102,7 @@ async function checkGitRepoClean(): Promise<void> {
   }
 }
 
-function getVersionUpdateType(versionUpdateType: string): VersionUpdateType {
+export function getVersionUpdateType(versionUpdateType: string): VersionUpdateType {
   const versionUpdateTypeEnum = versionUpdateType as VersionUpdateType;
   switch (versionUpdateTypeEnum) {
     case VersionUpdateType.Major:
@@ -120,7 +120,7 @@ function getVersionUpdateType(versionUpdateType: string): VersionUpdateType {
   }
 }
 
-async function updateVersionInFiles(newVersion: string): Promise<void> {
+export async function updateVersionInFiles(newVersion: string): Promise<void> {
   await editNpmPackage((npmPackage) => {
     npmPackage.version = newVersion;
   });
@@ -137,7 +137,7 @@ async function updateVersionInFiles(newVersion: string): Promise<void> {
   });
 }
 
-async function getNewVersion(versionUpdateType: string): Promise<string> {
+export async function getNewVersion(versionUpdateType: string): Promise<string> {
   const versionType = getVersionUpdateType(versionUpdateType);
   if (versionType === VersionUpdateType.Manual) {
     return versionUpdateType;
@@ -186,7 +186,7 @@ async function getLatestObsidianVersion(): Promise<string> {
   return obsidianReleasesJson.name;
 }
 
-async function updateChangelog(newVersion: string): Promise<void> {
+export async function updateChangelog(newVersion: string): Promise<void> {
   const changelogPath = resolvePathFromRoot(CHANGELOG_MD);
   let previousChangelogLines: string[];
   if (!existsSync(changelogPath)) {
@@ -221,24 +221,24 @@ async function updateChangelog(newVersion: string): Promise<void> {
   await createInterface(process.stdin, process.stdout).question(`Please update the ${CHANGELOG_MD} file. Press Enter when you are done...`);
 }
 
-async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
+export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
   await execFromRoot(toCommandLine(["git", "add", MANIFEST_JSON, PACKAGE_JSON, VERSIONS_JSON, CHANGELOG_MD]), { quiet: true });
   await execFromRoot(`git commit -m ${newVersion}`, { quiet: true });
 }
 
-async function addGitTag(newVersion: string): Promise<void> {
+export async function addGitTag(newVersion: string): Promise<void> {
   await execFromRoot(`git tag -a ${newVersion} -m ${newVersion}`, { quiet: true });
 }
 
-async function gitPush(): Promise<void> {
+export async function gitPush(): Promise<void> {
   await execFromRoot("git push --follow-tags", { quiet: true });
 }
 
-async function copyUpdatedManifest(): Promise<void> {
+export async function copyUpdatedManifest(): Promise<void> {
   await cp(resolvePathFromRoot(MANIFEST_JSON), resolvePathFromRoot(join("dist/build", MANIFEST_JSON)), { force: true });
 }
 
-async function getReleaseNotes(newVersion: string): Promise<string> {
+export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRoot(CHANGELOG_MD);
   const content = await readFile(changelogPath, "utf8");
   const newVersionEscaped = newVersion.replaceAll(".", "\\.");
@@ -261,7 +261,7 @@ async function getReleaseNotes(newVersion: string): Promise<string> {
   return releaseNotes;
 }
 
-async function publishGitHubRelease(newVersion: string): Promise<void> {
+export async function publishGitHubRelease(newVersion: string): Promise<void> {
   const buildDir = resolvePathFromRoot("dist/build");
   const fileNames = await readdirPosix(buildDir);
   const filePaths = fileNames.map(fileName => join(buildDir, fileName));

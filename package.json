@@ -15,7 +15,8 @@
     "build:generate-exports": "tsx scripts/build-generate-exports.ts",
     "lint": "tsx scripts/cli.ts lint",
     "lint-fix": "tsx scripts/cli.ts lint-fix",
-    "spellcheck": "tsx scripts/cli.ts spellcheck"
+    "spellcheck": "tsx scripts/cli.ts spellcheck",
+    "version": "tsx scripts/version.ts"
   },
   "repository": {
     "type": "git",
