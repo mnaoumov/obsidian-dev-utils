@@ -1,4 +1,4 @@
-import esbuild from "esbuild";
+import esbuild, { type BuildOptions } from "esbuild";
 import process from "node:process";
 import builtins from "builtin-modules";
 import { existsSync } from "node:fs";
@@ -67,7 +67,7 @@ if you want to view the source, please visit the github repository of this plugi
   const npmPackage = await readNpmPackage();
   const pluginName = npmPackage.name;
 
-  const context = await esbuild.context({
+  const buildOptions: BuildOptions = {
     banner: {
       js: banner,
     },
@@ -108,9 +108,9 @@ if you want to view the source, please visit the github repository of this plugi
 
             if (/\bprocess\./.test(contents)) {
               contents = `globalThis.process ??= {
-  platform: "mobile",
-  cwd: () => "/",
-  env: {}
+platform: "mobile",
+cwd: () => "/",
+env: {}
 };
 ` + contents;
             }
@@ -172,7 +172,9 @@ if you want to view the source, please visit the github repository of this plugi
         }
       }
     ]
-  });
+  };
+
+  const context = await esbuild.context(buildOptions);
 
   if (isProductionBuild) {
     const result = await context.rebuild();
