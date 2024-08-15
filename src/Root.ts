@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import {
   relative,
   resolve
-} from "node:path/posix";
+} from "../src/Path.ts";
 import { tsImport } from "tsx/esm/api";
 import process from "node:process";
 import { packageDirectorySync } from "pkg-dir";

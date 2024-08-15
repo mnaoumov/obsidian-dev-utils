@@ -7,14 +7,21 @@
   "dictionaryDefinitions": [],
   "dictionaries": [],
   "words": [
+    "Backlinks",
     "collab",
     "creatordate",
     "dirents",
     "hotreload",
+    "jinder",
     "lezer",
+    "Linkpath",
+    "Linktext",
+    "localforage",
+    "nameof",
     "Naumov",
     "outdir",
-    "outfile"
+    "outfile",
+    "Wikilink"
   ],
   "ignoreWords": [],
   "import": [],

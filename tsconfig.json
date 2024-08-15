@@ -1,25 +1,38 @@
 {
-    "extends": "@tsconfig/strictest/tsconfig.json",
-    "compilerOptions": {
-        "allowImportingTsExtensions": true,
-        "allowJs": true,
-        "allowSyntheticDefaultImports": true,
-        "forceConsistentCasingInFileNames": true,
-        "importHelpers": true,
-        "inlineSourceMap": true,
-        "inlineSources": true,
-        "lib": [
-            "DOM",
-            "ESNext"
-        ],
-        "module": "NodeNext",
-        "moduleResolution": "NodeNext",
-        "noEmit": true,
-        "target": "ESNext",
-        "skipLibCheck": false,
-        "verbatimModuleSyntax": true
+  "extends": "@tsconfig/strictest/tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "lib": [
+      "DOM",
+      "ESNext"
+    ],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "paths": {
+      /* HACK: https://github.com/blacksmithgu/obsidian-dataview/issues/2080#issuecomment-1837106359 */
+      "*": [
+        "./node_modules/obsidian-dataview/lib/*"
+      ],
+      "@jinder/path": [
+        "./node_modules/path/path.js"
+      ]
     },
-    "include": [
-        "**/*.ts"
-    ]
+    "target": "ESNext",
+    "types": [
+      "node",
+      "obsidian-typings"
+    ],
+    "skipLibCheck": false,
+    "verbatimModuleSyntax": true
+  },
+  "include": [
+    "**/*.ts"
+  ]
 }

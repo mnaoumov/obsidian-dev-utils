@@ -1,4 +1,4 @@
-import { join } from "node:path/posix";
+import { join } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { trimStart } from "../src/String.ts";
 import { editNpmPackage } from "../src/Npm.ts";

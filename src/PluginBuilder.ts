@@ -9,10 +9,7 @@ import {
   rm,
   writeFile
 } from "node:fs/promises";
-import {
-  execFromRoot,
-  resolvePathFromRoot
-} from "./Root.ts";
+import { resolvePathFromRoot } from "./Root.ts";
 import { TaskResult } from "./TaskResult.ts";
 import { readNpmPackage } from "./Npm.ts";
 import { lint } from "./ESLint/ESLint.ts";

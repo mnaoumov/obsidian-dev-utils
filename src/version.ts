@@ -24,7 +24,7 @@ import {
 import { createInterface } from "node:readline/promises";
 import { readdirPosix } from "./Fs.ts";
 import { toCommandLine } from "./cli.ts";
-import { join } from "node:path/posix";
+import { join } from "../src/Path.ts";
 
 enum VersionUpdateType {
   Major = "major",

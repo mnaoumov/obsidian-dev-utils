@@ -2,7 +2,7 @@ import {
   loadESLint
 } from "eslint";
 import { configs } from "./eslint.config.ts";
-import { join } from "node:path/posix";
+import { join } from "../Path.ts";
 import { packageDirectory } from "pkg-dir";
 import { toRelativeFromRoot } from "../Root.ts";
 import { getDirname } from "../Path.ts";

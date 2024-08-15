@@ -5,7 +5,7 @@ import {
   basename,
   extname,
   join
-} from "node:path/posix";
+} from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 
 async function main(): Promise<void> {

@@ -1,5 +1,5 @@
 import { cp } from "node:fs/promises";
-import { join } from "node:path/posix";
+import { join } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { trimStart } from "../src/String.ts";
 

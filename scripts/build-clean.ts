@@ -4,7 +4,7 @@ import {
 import {
   basename,
   join
-} from "node:path";
+} from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 
 await rm("dist", { recursive: true, force: true });

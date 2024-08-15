@@ -1,5 +1,23 @@
-import { dirname } from "node:path/posix";
+import { posix } from "@jinder/path";
 import { fileURLToPath } from "node:url";
+
+const {
+  basename,
+  dirname,
+  extname,
+  join,
+  relative,
+  resolve
+} = posix;
+
+export {
+  basename,
+  dirname,
+  extname,
+  join,
+  relative,
+  resolve
+};
 
 export function toPosixPath(path: string): string {
   return path.replace(/\\/g, "/");
