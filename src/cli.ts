@@ -7,7 +7,14 @@ import process from "node:process";
 import { lint } from "./ESLint/ESLint.ts";
 import { spellcheck } from "./spellcheck.ts";
 
-export function cli(argv: string[] = process.argv.slice(2)): void {
+/**
+ * The number of leading arguments to skip when parsing command-line arguments.
+ * The first two elements typically represent the Node.js executable and the script path:
+ * ["node", "path/to/cli.cjs", ...actualArgs]
+ */
+const NODE_SCRIPT_ARGV_SKIP_COUNT = 2;
+
+export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_COUNT)): void {
   const NODE_PACKAGE_VERSION = "${NODE_PACKAGE_VERSION}";
   const program = new Command();
 
