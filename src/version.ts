@@ -44,9 +44,9 @@ type ObsidianReleasesJson = {
   name: string;
 };
 
-const MANIFEST_JSON = "manifest.json";
-const VERSIONS_JSON = "versions.json";
-const CHANGELOG_MD = "CHANGELOG.md";
+export const MANIFEST_JSON = "manifest.json";
+export const VERSIONS_JSON = "versions.json";
+export const CHANGELOG_MD = "CHANGELOG.md";
 
 export async function updateVersion(versionUpdateType: string): Promise<TaskResult | void> {
   return await TaskResult.chain([
