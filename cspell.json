@@ -17,10 +17,12 @@
     "Linkpath",
     "Linktext",
     "localforage",
+    "luxon",
     "nameof",
     "Naumov",
     "outdir",
     "outfile",
+    "parsimmon",
     "Wikilink"
   ],
   "ignoreWords": [],
