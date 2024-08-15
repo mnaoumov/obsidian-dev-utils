@@ -12,8 +12,9 @@ import {
   trimEnd,
   trimStart
 } from "./String.ts";
+import { toCommandLine } from "./cli.ts";
 
-export async function execFromRoot(command: string, {
+export async function execFromRoot(command: string | string[], {
   quiet = false,
   ignoreExitCode = false,
   stdin = ""
@@ -26,7 +27,7 @@ export async function execFromRoot(command: string, {
   return stdout;
 }
 
-export function execFromRootWithStderr(command: string, {
+export function execFromRootWithStderr(command: string | string[], {
   quiet = false,
   ignoreExitCode = false,
   stdin = ""
@@ -35,6 +36,9 @@ export function execFromRootWithStderr(command: string, {
   ignoreExitCode?: boolean
   stdin?: string
 } = {}): Promise<{ stdout: string, stderr: string }> {
+  if (Array.isArray(command)) {
+    command = toCommandLine(command)
+  }
 
   return new Promise((resolve, reject) => {
     console.log(`Executing command: ${command}`);

@@ -222,7 +222,7 @@ export async function updateChangelog(newVersion: string): Promise<void> {
 
 export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
   const files = [PluginPaths.ManifestJson, PluginPaths.PackageJson, PluginPaths.VersionsJson, PluginPaths.ChangelogMd].filter(file => existsSync(resolvePathFromRoot(file)));
-  await execFromRoot(toCommandLine(["git", "add", ...files]), { quiet: true });
+  await execFromRoot(["git", "add", ...files], { quiet: true });
   await execFromRoot(`git commit -m ${newVersion}`, { quiet: true });
 }
 
@@ -266,7 +266,7 @@ export async function publishGitHubRelease(newVersion: string): Promise<void> {
   const fileNames = await readdirPosix(buildDir);
   const filePaths = fileNames.map(fileName => join(buildDir, fileName));
 
-  await execFromRoot(toCommandLine(["gh", "release", "create", newVersion, ...filePaths, "--title", `v${newVersion}`, "--notes-file", "-"]), {
+  await execFromRoot(["gh", "release", "create", newVersion, ...filePaths, "--title", `v${newVersion}`, "--notes-file", "-"], {
     quiet: true,
     stdin: await getReleaseNotes(newVersion)
   });

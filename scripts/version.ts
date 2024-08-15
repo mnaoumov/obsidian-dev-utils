@@ -1,7 +1,4 @@
-import {
-  toCommandLine,
-  wrapTask
-} from "../src/cli.ts";
+import { wrapTask } from "../src/cli.ts";
 import { lint } from "../src/ESLint/ESLint.ts";
 import { spellcheck } from "../src/spellcheck.ts";
 import { TaskResult } from "../src/TaskResult.ts";
@@ -74,7 +71,7 @@ async function publishGitHubRelease(newVersion: string): Promise<void> {
   zip.addLocalFolder(resolvePathFromRoot("dist"));
   zip.writeZip(DIST_ZIP);
 
-  await execFromRoot(toCommandLine(["gh", "release", "create", newVersion, PluginPaths.ChangelogMd, PluginPaths.License, PluginPaths.ReadmeMd, PluginPaths.PackageJson, DIST_ZIP, "--title", `v${newVersion}`, "--notes-file", "-"]), {
+  await execFromRoot(["gh", "release", "create", newVersion, PluginPaths.ChangelogMd, PluginPaths.License, PluginPaths.ReadmeMd, PluginPaths.PackageJson, DIST_ZIP, "--title", `v${newVersion}`, "--notes-file", "-"], {
     quiet: true,
     stdin: await getReleaseNotes(newVersion)
   });
