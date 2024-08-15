@@ -10,7 +10,7 @@ export function toPosixBuffer(buffer: Buffer): Buffer {
 }
 
 export function getFilename(importMetaUrl: string): string {
-  return fileURLToPath(importMetaUrl);
+  return toPosixPath(fileURLToPath(importMetaUrl));
 }
 
 export function getDirname(importMetaUrl: string): string {
