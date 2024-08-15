@@ -3,14 +3,16 @@ import {
 } from "eslint";
 import { configs } from "./eslint.config.ts";
 import { join } from "../Path.ts";
-import { packageDirectory } from "pkg-dir";
-import { toRelativeFromRoot } from "../Root.ts";
+import {
+  getRootDir,
+  toRelativeFromRoot
+} from "../Root.ts";
 import { getDirname } from "../Path.ts";
 import { TaskResult } from "../TaskResult.ts";
 
 export async function lint(fix?: boolean): Promise<TaskResult> {
   fix ??= false;
-  const packageDir = await packageDirectory({ cwd: getDirname(import.meta.url) });
+  const packageDir = getRootDir(getDirname(import.meta.url));
   if (!packageDir) {
     throw new Error("Could not find package directory.");
   }

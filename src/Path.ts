@@ -1,4 +1,4 @@
-import { posix } from "@jinder/path";
+import { posix } from "path";
 import { fileURLToPath } from "node:url";
 
 const {

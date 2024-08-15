@@ -1,4 +1,4 @@
-declare module "@jinder/path" {
+declare module "path2" {
   export const posix: {
     basename(this: void, path: string, ext?: string): string;
     dirname(this: void, path: string): string;

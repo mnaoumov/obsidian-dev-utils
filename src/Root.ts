@@ -5,13 +5,20 @@ import {
 } from "./Path.ts";
 import { tsImport } from "tsx/esm/api";
 import process from "node:process";
-import { packageDirectorySync } from "pkg-dir";
 import { pathToFileURL } from "node:url";
 import { toPosixPath } from "./Path.ts";
 import {
   trimEnd,
   trimStart
 } from "./String.ts";
+import { requireEsm } from "./esm.ts";
+import type { packageDirectorySync as _packageDirectorySync } from "pkg-dir";
+
+type PkgDirModule = {
+  packageDirectorySync: typeof _packageDirectorySync
+};
+
+const packageDirectorySync = requireEsm<PkgDirModule>("pkg-dir").packageDirectorySync;
 
 export async function execFromRoot(command: string, {
   quiet = false,
@@ -110,8 +117,8 @@ export function resolvePathFromRoot(path: string): string {
   return trimStart(resolvedPath, fsRoot);
 }
 
-export function getRootDir(): string {
-  const rootDir = packageDirectorySync();
+export function getRootDir(dir?: string): string {
+  const rootDir = packageDirectorySync({ cwd: dir ?? process.cwd() });
   if (!rootDir) {
     throw new Error("Could not find root directory");
   }

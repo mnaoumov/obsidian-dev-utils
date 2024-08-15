@@ -1,4 +1,4 @@
-import { lint } from "cspell";
+import { lint } from "cspell-lib";
 import { toRelativeFromRoot } from "./Root.ts";
 import { fileURLToPath } from "node:url";
 import { TaskResult } from "./TaskResult.ts";

@@ -20,7 +20,7 @@
       "*": [
         "./node_modules/obsidian-dataview/lib/*"
       ],
-      "@jinder/path": [
+      "path": [
         "./node_modules/path/path.js"
       ]
     },
