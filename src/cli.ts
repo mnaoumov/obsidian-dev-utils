@@ -12,19 +12,19 @@ export function cli(argv: string[] = process.argv.slice(2)): void {
 
   program
     .name("obsidian-dev-utils")
-    .description('CLI to some obsidian-dev-utils commands')
+    .description("CLI to some obsidian-dev-utils commands")
     .version(NODE_PACKAGE_VERSION);
 
   program.command("build")
     .description("Build the plugin")
-    .action(() => {
-      buildPlugin({ mode: BuildMode.Production });
+    .action(async () => {
+      await buildPlugin({ mode: BuildMode.Production });
     });
 
   program.command("dev")
     .description("Build the plugin in development mode")
-    .action(() => {
-      buildPlugin({ mode: BuildMode.Development });
+    .action(async () => {
+      await buildPlugin({ mode: BuildMode.Development });
     });
 
   program.command("lint")
@@ -43,7 +43,7 @@ export function cli(argv: string[] = process.argv.slice(2)): void {
   program.command("spellcheck")
     .description("Spellcheck the source code")
     .action(() => {
-      console.log
+      console.log;
     });
 
   program.parse(argv, { from: "user" });
