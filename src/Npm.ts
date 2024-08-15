@@ -1,4 +1,7 @@
-import { readFile, writeFile } from "node:fs/promises";
+import {
+  readFile,
+  writeFile
+} from "node:fs/promises";
 import { resolvePathFromRoot } from "./Root.ts";
 
 export interface NpmPackage {

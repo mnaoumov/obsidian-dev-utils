@@ -31,7 +31,7 @@ export abstract class TaskResult {
 }
 
 class SuccessTaskResult extends TaskResult {
-  constructor(private readonly _isSuccessful: boolean) {
+  public constructor(private readonly _isSuccessful: boolean) {
     super();
   }
 
@@ -45,7 +45,7 @@ class SuccessTaskResult extends TaskResult {
 }
 
 class ExitCodeTaskResult extends TaskResult {
-  constructor(private readonly exitCode: number) {
+  public constructor(private readonly exitCode: number) {
     super();
   }
 
@@ -59,7 +59,7 @@ class ExitCodeTaskResult extends TaskResult {
 }
 
 class DoNotExitTaskResult extends TaskResult {
-  constructor() {
+  public constructor() {
     super();
   }
 
@@ -73,9 +73,8 @@ class DoNotExitTaskResult extends TaskResult {
 
 export async function getTaskResult<TaskArgs extends unknown[]>(taskFn: (...taskArgs: TaskArgs) => MaybePromise<TaskResult | void>, taskArgs: TaskArgs): Promise<TaskResult> {
   try {
-    return await taskFn(...taskArgs) ?? TaskResult.CreateSuccessResult(true)
-  }
-  catch (error) {
+    return await taskFn(...taskArgs) ?? TaskResult.CreateSuccessResult(true);
+  } catch (error) {
     console.error(error);
     return TaskResult.CreateSuccessResult(false);
   }

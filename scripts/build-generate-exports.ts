@@ -1,7 +1,10 @@
 import { join } from "node:path/posix";
 import { readdirPosix } from "../src/Fs.ts";
 import { trimStart } from "../src/String.ts";
-import { readNpmPackage, writeNpmPackage } from "../src/Npm.ts";
+import {
+  readNpmPackage,
+  writeNpmPackage
+} from "../src/Npm.ts";
 
 const libDirs = ["."];
 

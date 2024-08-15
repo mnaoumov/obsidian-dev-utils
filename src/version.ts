@@ -2,7 +2,10 @@ import { TaskResult } from "./TaskResult.ts";
 import { execFromRoot } from "./Root.ts";
 import { spellcheck } from "./spellcheck.ts";
 import { lint } from "./ESLint/ESLint.ts";
-import { BuildMode, buildPlugin } from "./PluginBuilder.ts";
+import {
+  BuildMode,
+  buildPlugin
+} from "./PluginBuilder.ts";
 
 enum VersionType {
   Major = "major",
@@ -14,12 +17,12 @@ enum VersionType {
 export async function updateVersion(version: string): Promise<TaskResult | void> {
   const versionType = getVersionType(version);
   return await TaskResult.chain([
-    () => checkGitInstalled(),
-    () => checkGitRepoClean(),
-    () => checkGitHubCliInstalled(),
-    () => spellcheck(),
-    () => lint(),
-    () => buildPlugin({ mode: BuildMode.Production })
+    (): Promise<void> => checkGitInstalled(),
+    (): Promise<void> => checkGitRepoClean(),
+    (): Promise<void> => checkGitHubCliInstalled(),
+    (): Promise<TaskResult> => spellcheck(),
+    (): Promise<TaskResult> => lint(),
+    (): Promise<TaskResult> => buildPlugin({ mode: BuildMode.Production })
   ]);
 }
 
@@ -48,11 +51,12 @@ async function checkGitRepoClean(): Promise<void> {
 }
 
 function getVersionType(version: string): VersionType {
-  switch (version) {
+  const versionType = version as VersionType;
+  switch (versionType) {
     case VersionType.Major:
     case VersionType.Minor:
     case VersionType.Patch:
-      return version as VersionType;
+      return versionType;
 
     default:
       if (/^\d+\.\d+\.\d+(-[\w\d.-]+)?$/.test(version)) {
