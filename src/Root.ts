@@ -8,6 +8,7 @@ import process from "node:process";
 import { packageDirectorySync } from "pkg-dir";
 import { pathToFileURL } from "node:url";
 import { toPosixPath } from "./Path.ts";
+import { trimEnd } from "./String.ts";
 
 export async function execFromRoot(command: string, {
   quiet = false,
@@ -56,9 +57,7 @@ export async function execFromRootWithStderr(command: string, {
   });
 
   child.stdout.on("end", () => {
-    if (stdout.endsWith("\n")) {
-      stdout = stdout.slice(0, -1);
-    }
+    stdout = trimEnd(stdout, "\n");
   });
 
   child.stderr.on("data", (data: Buffer) => {
@@ -69,9 +68,7 @@ export async function execFromRootWithStderr(command: string, {
   });
 
   child.stderr.on("end", () => {
-    if (stderr.endsWith("\n")) {
-      stderr = stderr.slice(0, -1);
-    }
+    stderr = trimEnd(stderr, "\n");
   });
 
   child.on("close", (code) => {

@@ -4,6 +4,7 @@ import {
 } from "node:fs/promises";
 import { join } from "node:path/posix";
 import { readdirPosix } from "../src/Fs.ts";
+import { trimStart } from "../src/String.ts";
 
 interface NpmPackage {
   exports: Record<string, Export>;
@@ -29,7 +30,7 @@ for (const dirent of await readdirPosix("./dist/lib", { withFileTypes: true, rec
 
 npmPackage.exports = {};
 for (const libDir of libDirs) {
-  const dir = libDir === "." ? "./dist/lib" : `./dist/lib/${libDir.slice(2)}`;
+  const dir = libDir === "." ? "./dist/lib" : `./dist/lib/${trimStart(libDir, "./", true)}`;
   npmPackage.exports[libDir] = {
     default: `${dir}/index.cjs`,
     types: `${dir}/index.d.ts`
