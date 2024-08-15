@@ -63,3 +63,15 @@ export function wrapTask<TaskArgs extends unknown[]>(taskFn: (...taskArgs: TaskA
     result.exit();
   };
 }
+
+export function toCommandLine(args: string[]): string {
+  return args
+    .map(arg => {
+      if (/[\s"\n]/.test(arg)) {
+        const escapedArg = arg.replace(/"/g, "\\\"").replace(/\n/g, "\\n");
+        return `"${escapedArg}"`;
+      }
+      return arg;
+    })
+    .join(" ");
+}
