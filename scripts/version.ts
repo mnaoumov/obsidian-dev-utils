@@ -5,17 +5,20 @@ import { TaskResult } from "../src/TaskResult.ts";
 import {
   addGitTag,
   addUpdatedFilesToGit,
+  CHANGELOG_MD,
   checkGitHubCliInstalled,
   checkGitInstalled,
   checkGitRepoClean,
   getNewVersion,
   gitPush,
-  publishGitHubRelease,
   updateChangelog,
   validate
 } from "../src/version.ts";
-import { execFromRoot } from "../src/Root.ts";
+import { execFromRoot, resolvePathFromRoot } from "../src/Root.ts";
 import { editNpmPackage } from "../src/Npm.ts";
+import AdmZip from "adm-zip";
+import { readdirPosix } from "../src/Fs.ts";
+import { join } from "../src/Path.ts";
 
 await (wrapTask(async (): Promise<TaskResult | void> => {
   const versionUpdateType = process.argv[2];
@@ -56,5 +59,16 @@ async function publishNpmPackage(): Promise<void> {
 async function updateVersionInFiles(newVersion: string): Promise<void> {
   await editNpmPackage((npmPackage) => {
     npmPackage.version = newVersion;
+  });
+}
+
+async function publishGitHubRelease(newVersion: string): Promise<void> {
+  const zip = new AdmZip();
+  zip.addLocalFolder(resolvePathFromRoot("dist"));
+  zip.writeZip(`dist/dist.zip`);
+
+  await execFromRoot(toCommandLine(["gh", "release", "create", newVersion, CHANGELOG_MD, "LICENSE", "README.md", "package.config", "dist/dist.zip", "--title", `v${newVersion}`, "--notes-file", "-"]), {
+    quiet: true,
+    stdin: await getReleaseNotes(newVersion)
   });
 }

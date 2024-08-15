@@ -34,6 +34,7 @@
   "devDependencies": {
     "@stylistic/eslint-plugin": "^2.6.2",
     "@tsconfig/strictest": "^2.0.5",
+    "@types/adm-zip": "^0.5.5",
     "@types/compare-versions": "^3.0.0",
     "@types/eslint": "^9.6.0",
     "@types/js-yaml": "^4.0.9",
@@ -41,6 +42,7 @@
     "@types/node": "^22.2.0",
     "@types/parsimmon": "^1.10.9",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
+    "adm-zip": "^0.5.15",
     "builtin-modules": "^4.0.0",
     "commander": "^12.1.0",
     "cspell": "^8.13.2",
