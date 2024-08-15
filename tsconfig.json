@@ -20,6 +20,6 @@
         "verbatimModuleSyntax": true
     },
     "include": [
-        "./src/**/*.ts"
+        "**/*.ts"
     ]
 }
