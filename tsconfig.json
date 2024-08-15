@@ -19,9 +19,6 @@
       /* HACK: https://github.com/blacksmithgu/obsidian-dataview/issues/2080#issuecomment-1837106359 */
       "*": [
         "./node_modules/obsidian-dataview/lib/*"
-      ],
-      "@jinder/path": [
-        "./node_modules/path/path.js"
       ]
     },
     "target": "ESNext",
