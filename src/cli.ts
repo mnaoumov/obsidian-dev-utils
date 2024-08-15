@@ -5,6 +5,7 @@ import {
 } from "./PluginBuilder.ts";
 import process from "node:process";
 import { lintAndFix } from "./ESLint/ESLint.ts";
+import { spellcheck } from "./spellcheck.ts";
 
 export function cli(argv: string[] = process.argv.slice(2)): void {
   const NODE_PACKAGE_VERSION = "${NODE_PACKAGE_VERSION}";
@@ -42,8 +43,8 @@ export function cli(argv: string[] = process.argv.slice(2)): void {
 
   program.command("spellcheck")
     .description("Spellcheck the source code")
-    .action(() => {
-      console.log;
+    .action(async () => {
+      await spellcheck();
     });
 
   program.parse(argv, { from: "user" });

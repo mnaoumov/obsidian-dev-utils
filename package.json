@@ -14,7 +14,7 @@
     "build:static": "tsx scripts/build-static.ts",
     "build:generate-exports": "tsx scripts/build-generate-exports.ts",
     "lint": "tsx scripts/lint.ts",
-    "spellcheck": "cspell . --no-progress"
+    "spellcheck": "tsx scripts/spellcheck.ts"
   },
   "repository": {
     "type": "git",
