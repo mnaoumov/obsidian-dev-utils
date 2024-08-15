@@ -13,8 +13,9 @@
     "build:lib": "tsx scripts/build-lib.ts",
     "build:static": "tsx scripts/build-static.ts",
     "build:generate-exports": "tsx scripts/build-generate-exports.ts",
-    "lint": "tsx scripts/lint.ts",
-    "spellcheck": "tsx scripts/spellcheck.ts"
+    "lint": "tsx scripts/cli.ts lint",
+    "lint-fix": "tsx scripts/cli.ts lint-fix",
+    "spellcheck": "tsx scripts/cli.ts spellcheck"
   },
   "repository": {
     "type": "git",

@@ -4,7 +4,7 @@ import {
   buildPlugin
 } from "./PluginBuilder.ts";
 import process from "node:process";
-import { lintAndFix } from "./ESLint/ESLint.ts";
+import { lint } from "./ESLint/ESLint.ts";
 import { spellcheck } from "./spellcheck.ts";
 
 export function cli(argv: string[] = process.argv.slice(2)): void {
@@ -31,7 +31,13 @@ export function cli(argv: string[] = process.argv.slice(2)): void {
   program.command("lint")
     .description("Lints the source code")
     .action(async () => {
-      await lintAndFix();
+      await lint();
+    });
+
+  program.command("lint-fix")
+    .description("Lints the source code and applies automatic fixes if possible")
+    .action(async () => {
+      await lint(true);
     });
 
   program.command("version")
