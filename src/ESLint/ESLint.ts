@@ -2,22 +2,14 @@ import {
   loadESLint
 } from "eslint";
 import { configs } from "./eslint.config.ts";
-import {
-  dirname,
-  join
-} from "node:path/posix";
+import { join } from "node:path/posix";
 import { packageDirectory } from "pkg-dir";
-import { fileURLToPath } from "node:url";
 import { toRelativeFromRoot } from "../Root.ts";
-
-if (typeof __filename === "undefined") {
-  globalThis.__filename = fileURLToPath(import.meta.url);
-  globalThis.__dirname = dirname(__filename);
-}
+import { getDirname } from "../Path.ts";
 
 export async function lint(fix?: boolean): Promise<void> {
   fix ??= false;
-  const packageDir = await packageDirectory({ cwd: __dirname });
+  const packageDir = await packageDirectory({ cwd: getDirname(import.meta.url) });
   if (!packageDir) {
     throw new Error("Could not find package directory.");
   }
