@@ -33,6 +33,7 @@
     "verbatimModuleSyntax": true
   },
   "include": [
-    "**/*.ts"
+    "**/*.ts",
+    "./node_modules/obsidian-typings/dist/style-mod.d.cts"
   ]
 }

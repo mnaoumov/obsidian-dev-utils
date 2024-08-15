@@ -33,9 +33,12 @@
   "devDependencies": {
     "@stylistic/eslint-plugin": "^2.6.2",
     "@tsconfig/strictest": "^2.0.5",
+    "@types/compare-versions": "^3.0.0",
     "@types/eslint": "^9.6.0",
     "@types/js-yaml": "^4.0.9",
+    "@types/luxon": "^3.4.2",
     "@types/node": "^22.2.0",
+    "@types/parsimmon": "^1.10.9",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "builtin-modules": "^4.0.0",
     "commander": "^12.1.0",
@@ -78,6 +81,22 @@
     "./ESLint/*": {
       "default": "./dist/lib/ESLint/*.cjs",
       "types": "./dist/lib/ESLint/*.d.ts"
+    },
+    "./obsidian": {
+      "default": "./dist/lib/obsidian/index.cjs",
+      "types": "./dist/lib/obsidian/index.d.ts"
+    },
+    "./obsidian/*": {
+      "default": "./dist/lib/obsidian/*.cjs",
+      "types": "./dist/lib/obsidian/*.d.ts"
+    },
+    "./obsidian/Modal": {
+      "default": "./dist/lib/obsidian/Modal/index.cjs",
+      "types": "./dist/lib/obsidian/Modal/index.d.ts"
+    },
+    "./obsidian/Modal/*": {
+      "default": "./dist/lib/obsidian/Modal/*.cjs",
+      "types": "./dist/lib/obsidian/Modal/*.d.ts"
     }
   }
 }

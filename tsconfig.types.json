@@ -1,13 +1,14 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-        "declaration": true,
-        "emitDeclarationOnly": true,
-        "noEmit": false,
-        "outDir": "./dist/lib",
-        "resolveJsonModule": true
-    },
-    "include": [
-        "./src/**/*.ts"
-    ]
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "outDir": "./dist/lib",
+    "resolveJsonModule": true
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./node_modules/obsidian-typings/dist/style-mod.d.cts"
+  ]
 }

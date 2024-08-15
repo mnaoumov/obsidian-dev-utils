@@ -13,6 +13,7 @@ import { resolvePathFromRoot } from "./Root.ts";
 import { TaskResult } from "./TaskResult.ts";
 import { readNpmPackage } from "./Npm.ts";
 import { lint } from "./ESLint/ESLint.ts";
+import { toPosixPath } from "./Path.ts";
 
 export enum BuildMode {
   Development,
@@ -191,6 +192,6 @@ function fixSourceMap(sourceMapBase64: string, pluginName: string): string {
 }
 
 function convertPathToObsidianUrl(path: string, pluginName: string): string {
-  const convertedPath = path.replaceAll("\\", "/").replace(/^(\.\.\/)+/, "");
+  const convertedPath = toPosixPath(path).replace(/^(\.\.\/)+/, "");
   return `app://obsidian.md/plugin:${pluginName}/${convertedPath}`;
 }

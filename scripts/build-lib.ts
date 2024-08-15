@@ -22,7 +22,8 @@ const buildOptions: BuildOptions = {
   external: [
     "@typescript-eslint/parser",
     "esbuild",
-    "eslint"
+    "eslint",
+    "obsidian"
   ],
   format: "cjs",
   logLevel: "info",
