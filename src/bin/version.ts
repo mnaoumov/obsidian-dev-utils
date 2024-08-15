@@ -1,8 +1,8 @@
-import { TaskResult } from "./TaskResult.ts";
+import { TaskResult } from "../TaskResult.ts";
 import {
   execFromRoot,
   resolvePathFromRoot
-} from "./Root.ts";
+} from "../Root.ts";
 import { spellcheck } from "./spellcheck.ts";
 import { lint } from "./ESLint/ESLint.ts";
 import {
@@ -12,8 +12,8 @@ import {
 import {
   editNpmPackage,
   readNpmPackage
-} from "./Npm.ts";
-import { editJson } from "./JSON.ts";
+} from "../Npm.ts";
+import { editJson } from "../JSON.ts";
 import { existsSync } from "node:fs";
 import {
   cp,
@@ -21,10 +21,9 @@ import {
   writeFile
 } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
-import { readdirPosix } from "./Fs.ts";
-import { toCommandLine } from "./cli.ts";
-import { join } from "./Path.ts";
-import PluginPaths from "./obsidian/Plugin/PluginPaths.ts";
+import { readdirPosix } from "../Fs.ts";
+import { join } from "../Path.ts";
+import PluginPaths from "../obsidian/Plugin/PluginPaths.ts";
 
 enum VersionUpdateType {
   Major = "major",

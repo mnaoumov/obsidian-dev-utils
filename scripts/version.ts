@@ -1,6 +1,6 @@
-import { wrapTask } from "../src/cli.ts";
-import { lint } from "../src/ESLint/ESLint.ts";
-import { spellcheck } from "../src/spellcheck.ts";
+import { wrapTask } from "../src/bin/cli.ts";
+import { lint } from "../src/bin/ESLint/ESLint.ts";
+import { spellcheck } from "../src/bin/spellcheck.ts";
 import { TaskResult } from "../src/TaskResult.ts";
 import {
   addGitTag,
@@ -13,7 +13,7 @@ import {
   gitPush,
   updateChangelog,
   validate
-} from "../src/version.ts";
+} from "../src/bin/version.ts";
 import {
   execFromRoot,
   resolvePathFromRoot

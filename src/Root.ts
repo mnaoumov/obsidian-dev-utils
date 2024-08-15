@@ -12,7 +12,7 @@ import {
   trimEnd,
   trimStart
 } from "./String.ts";
-import { toCommandLine } from "./cli.ts";
+import { toCommandLine } from "./bin/cli.ts";
 
 export async function execFromRoot(command: string | string[], {
   quiet = false,
@@ -37,7 +37,7 @@ export function execFromRootWithStderr(command: string | string[], {
   stdin?: string
 } = {}): Promise<{ stdout: string, stderr: string }> {
   if (Array.isArray(command)) {
-    command = toCommandLine(command)
+    command = toCommandLine(command);
   }
 
   return new Promise((resolve, reject) => {

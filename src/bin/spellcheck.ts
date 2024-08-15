@@ -1,7 +1,7 @@
 import { lint } from "cspell";
-import { toRelativeFromRoot } from "./Root.ts";
+import { toRelativeFromRoot } from "../Root.ts";
 import { fileURLToPath } from "node:url";
-import { TaskResult } from "./TaskResult.ts";
+import { TaskResult } from "../TaskResult.ts";
 
 export async function spellcheck(): Promise<TaskResult> {
   let isSuccess = true;

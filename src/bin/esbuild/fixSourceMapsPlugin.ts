@@ -3,7 +3,7 @@ import {
   readFile,
   writeFile
 } from "node:fs/promises";
-import { toPosixPath } from "../Path.ts";
+import { toPosixPath } from "../../Path.ts";
 
 type SourceMap = {
   sources: string[];

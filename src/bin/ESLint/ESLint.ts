@@ -2,11 +2,11 @@ import {
   loadESLint
 } from "eslint";
 import { configs } from "./eslint.config.ts";
-import { join } from "../Path.ts";
+import { join } from "../../Path.ts";
 import { packageDirectory } from "pkg-dir";
-import { toRelativeFromRoot } from "../Root.ts";
-import { getDirname } from "../Path.ts";
-import { TaskResult } from "../TaskResult.ts";
+import { toRelativeFromRoot } from "../../Root.ts";
+import { getDirname } from "../../Path.ts";
+import { TaskResult } from "../../TaskResult.ts";
 
 export async function lint(fix?: boolean): Promise<TaskResult> {
   fix ??= false;

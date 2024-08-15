@@ -2,10 +2,10 @@ import esbuild, { type BuildOptions } from "esbuild";
 import {
   banner,
   invoke
-} from "../src/esbuild/PluginBuilder.ts";
-import preprocessPlugin from "../src/esbuild/preprocessPlugin.ts";
-import renameToCjsPlugin from "../src/esbuild/renameToCjsPlugin.ts";
-import { wrapTask } from "../src/cli.ts";
+} from "../src/bin/esbuild/PluginBuilder.ts";
+import preprocessPlugin from "../src/bin/esbuild/preprocessPlugin.ts";
+import renameToCjsPlugin from "../src/bin/esbuild/renameToCjsPlugin.ts";
+import { wrapTask } from "../src/bin/cli.ts";
 
 await (wrapTask(async () => {
   const buildOptions: BuildOptions = {

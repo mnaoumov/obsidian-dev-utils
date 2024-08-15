@@ -7,11 +7,11 @@ import process from "node:process";
 import { lint } from "./ESLint/ESLint.ts";
 import { spellcheck } from "./spellcheck.ts";
 import { updateVersion } from "./version.ts";
-import type { MaybePromise } from "./Async.ts";
+import type { MaybePromise } from "../Async.ts";
 import {
   getTaskResult,
   TaskResult
-} from "./TaskResult.ts";
+} from "../TaskResult.ts";
 
 /**
  * The number of leading arguments to skip when parsing command-line arguments.
