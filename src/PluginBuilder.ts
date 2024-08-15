@@ -15,6 +15,7 @@ import {
 } from "./Root.ts";
 import { TaskResult } from "./TaskResult.ts";
 import { readNpmPackage } from "./Npm.ts";
+import { lint } from "./ESLint/ESLint.ts";
 
 export enum BuildMode {
   Development,
@@ -131,7 +132,7 @@ if you want to view the source, please visit the github repository of this plugi
               return;
             }
             console.log("[watch] lint started");
-            await execFromRoot("npx eslint . --fix", { ignoreExitCode: true });
+            await lint();
             console.log("[watch] lint finished");
           });
         },
