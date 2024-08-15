@@ -1,9 +1,13 @@
 import { spawn } from "node:child_process";
-import { resolve } from "node:path";
+import {
+  relative,
+  resolve
+} from "node:path/posix";
 import { tsImport } from "tsx/esm/api";
 import process from "node:process";
-import { packageDirectory } from "pkg-dir";
+import { packageDirectorySync } from "pkg-dir";
 import { pathToFileURL } from "node:url";
+import { toPosixPath } from "./Path.ts";
 
 export async function execFromRoot(command: string, {
   quiet = false,
@@ -33,7 +37,7 @@ export async function execFromRootWithStderr(command: string, {
   const [cmd = "", ...args] = command.split(" ");
 
   const child = spawn(cmd, args, {
-    cwd: await getRootDir(),
+    cwd: getRootDir(),
     stdio: "pipe",
     shell: true
   });
@@ -90,20 +94,26 @@ export async function execFromRootWithStderr(command: string, {
 }
 
 export async function tsImportFromRoot<T>(specifier: string): Promise<T> {
-  const rootDir = await getRootDir();
-  const rootUrl = pathToFileURL(rootDir).toString();
+  const rootDir = getRootDir();
+  const rootUrl = pathToFileURL(rootDir).href;
   return await tsImport(specifier, rootUrl) as T;
 }
 
-export async function resolvePathFromRoot(path: string): Promise<string> {
-  return resolve(await getRootDir(), path);
+export function resolvePathFromRoot(path: string): string {
+  return resolve(getRootDir(), path);
 }
 
-export async function getRootDir(): Promise<string> {
-  const rootDir = await packageDirectory();
+export function getRootDir(): string {
+  const rootDir = packageDirectorySync();
   if (!rootDir) {
     throw new Error("Could not find root directory");
   }
 
-  return rootDir;
+  return toPosixPath(rootDir);
+}
+
+export function toRelativeFromRoot(path: string): string {
+  const rootDir = getRootDir();
+  path = toPosixPath(path);
+  return relative(rootDir, path);
 }

@@ -42,7 +42,7 @@ if you want to view the source, please visit the github repository of this plugi
 
   const isProductionBuild = mode === BuildMode.Production;
 
-  const distDir = await resolvePathFromRoot(isProductionBuild ? "dist/build" : "dist/dev");
+  const distDir = resolvePathFromRoot(isProductionBuild ? "dist/build" : "dist/dev");
   if (existsSync(distDir)) {
     await rm(distDir, { recursive: true });
   }
@@ -57,7 +57,7 @@ if you want to view the source, please visit the github repository of this plugi
   }
 
   for (const fileName of distFileNames) {
-    const localFile = await resolvePathFromRoot(fileName);
+    const localFile = resolvePathFromRoot(fileName);
     const distFile = `${distDir}/${fileName}`;
 
     if (existsSync(localFile)) {
@@ -67,14 +67,14 @@ if you want to view the source, please visit the github repository of this plugi
 
   const distPath = `${distDir}/main.js`;
 
-  const npmPackage = JSON.parse(await readFile(await resolvePathFromRoot("package.json"), "utf8")) as NpmPackage;
+  const npmPackage = JSON.parse(await readFile(resolvePathFromRoot("package.json"), "utf8")) as NpmPackage;
   const pluginName = npmPackage.name;
 
   const context = await esbuild.context({
     banner: {
       js: banner,
     },
-    entryPoints: [await resolvePathFromRoot("src/main.ts")],
+    entryPoints: [resolvePathFromRoot("src/main.ts")],
     bundle: true,
     external: [
       "obsidian",

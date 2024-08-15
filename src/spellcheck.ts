@@ -1,11 +1,8 @@
 import { lint } from "cspell";
-import { getRootDir } from "./Root.ts";
+import { toRelativeFromRoot } from "./Root.ts";
 import { fileURLToPath } from "node:url";
-import { relative } from "node:path/posix";
 
 export async function spellcheck(): Promise<void> {
-  const rootDir = toPosixPath(await getRootDir());
-
   let hasErrors = false;
 
   await lint(["."], {}, {
@@ -14,16 +11,12 @@ export async function spellcheck(): Promise<void> {
         return;
       }
 
-      const path = toPosixPath(fileURLToPath(issue.uri));
-      const relativePath = relative(rootDir, path);
+      const path = fileURLToPath(issue.uri);
+      const relativePath = toRelativeFromRoot(path);
       console.error(`${relativePath}:${issue.row}:${issue.col} - ${issue.text}`);
       hasErrors = true;
     }
   });
 
   process.exit(hasErrors ? 1 : 0);
-}
-
-function toPosixPath(path: string): string {
-  return path.replace(/\\/g, "/");
 }
