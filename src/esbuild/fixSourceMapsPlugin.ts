@@ -1,5 +1,8 @@
 import type { Plugin } from "esbuild";
-import { readFile, writeFile } from "node:fs/promises";
+import {
+  readFile,
+  writeFile
+} from "node:fs/promises";
 import { toPosixPath } from "../Path.ts";
 
 type SourceMap = {
