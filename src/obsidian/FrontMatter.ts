@@ -38,7 +38,7 @@ export async function processFrontMatter<FrontMatter>(app: App, pathOrFile: stri
     let mainContent: string;
     if (match) {
       frontMatterStr = match[1]!;
-      mainContent = match[2];
+      mainContent = match[2]!;
     } else {
       frontMatterStr = "";
       mainContent = content;
