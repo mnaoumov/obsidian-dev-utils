@@ -96,7 +96,10 @@ export async function checkGitHubCliInstalled(): Promise<void> {
 
 export async function checkGitRepoClean(): Promise<void> {
   try {
-    await execFromRoot("git status --porcelain --untracked-files=all", { quiet: true });
+    const stdout = await execFromRoot("git status --porcelain --untracked-files=all", { quiet: true });
+    if (stdout) {
+      throw new Error();
+    }
   } catch {
     throw new Error("Git repository is not clean. Please commit or stash your changes before releasing a new version.");
   }
