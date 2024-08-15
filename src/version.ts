@@ -11,7 +11,6 @@ import {
 } from "./esbuild/PluginBuilder.ts";
 import {
   editNpmPackage,
-  PACKAGE_JSON,
   readNpmPackage
 } from "./Npm.ts";
 import { editJson } from "./JSON.ts";
@@ -25,6 +24,7 @@ import { createInterface } from "node:readline/promises";
 import { readdirPosix } from "./Fs.ts";
 import { toCommandLine } from "./cli.ts";
 import { join } from "./Path.ts";
+import PluginPaths from "./obsidian/Plugin/PluginPaths.ts";
 
 enum VersionUpdateType {
   Major = "major",
@@ -43,10 +43,6 @@ type Manifest = {
 type ObsidianReleasesJson = {
   name: string;
 };
-
-export const MANIFEST_JSON = "manifest.json";
-export const VERSIONS_JSON = "versions.json";
-export const CHANGELOG_MD = "CHANGELOG.md";
 
 export async function updateVersion(versionUpdateType: string): Promise<TaskResult | void> {
   return await TaskResult.chain([
@@ -130,12 +126,12 @@ export async function updateVersionInFiles(newVersion: string): Promise<void> {
 
   const latestObsidianVersion = await getLatestObsidianVersion();
 
-  await editJson<Manifest>(MANIFEST_JSON, (manifest) => {
+  await editJson<Manifest>(PluginPaths.ManifestJson, (manifest) => {
     manifest.minAppVersion = latestObsidianVersion;
     manifest.version = newVersion;
   });
 
-  await editJson<Record<string, string>>(VERSIONS_JSON, (versions) => {
+  await editJson<Record<string, string>>(PluginPaths.VersionsJson, (versions) => {
     versions[newVersion] = latestObsidianVersion;
   });
 }
@@ -190,7 +186,7 @@ async function getLatestObsidianVersion(): Promise<string> {
 }
 
 export async function updateChangelog(newVersion: string): Promise<void> {
-  const changelogPath = resolvePathFromRoot(CHANGELOG_MD);
+  const changelogPath = resolvePathFromRoot(PluginPaths.ChangelogMd);
   let previousChangelogLines: string[];
   if (!existsSync(changelogPath)) {
     previousChangelogLines = [];
@@ -221,11 +217,11 @@ export async function updateChangelog(newVersion: string): Promise<void> {
 
   await writeFile(changelogPath, newChangeLog, "utf8");
 
-  await createInterface(process.stdin, process.stdout).question(`Please update the ${CHANGELOG_MD} file. Press Enter when you are done...`);
+  await createInterface(process.stdin, process.stdout).question(`Please update the ${PluginPaths.ChangelogMd} file. Press Enter when you are done...`);
 }
 
 export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
-  const files = [MANIFEST_JSON, PACKAGE_JSON, VERSIONS_JSON, CHANGELOG_MD].filter(file => existsSync(resolvePathFromRoot(file)));
+  const files = [PluginPaths.ManifestJson, PluginPaths.PackageJson, PluginPaths.VersionsJson, PluginPaths.ChangelogMd].filter(file => existsSync(resolvePathFromRoot(file)));
   await execFromRoot(toCommandLine(["git", "add", ...files]), { quiet: true });
   await execFromRoot(`git commit -m ${newVersion}`, { quiet: true });
 }
@@ -239,11 +235,11 @@ export async function gitPush(): Promise<void> {
 }
 
 export async function copyUpdatedManifest(): Promise<void> {
-  await cp(resolvePathFromRoot(MANIFEST_JSON), resolvePathFromRoot(join("dist/build", MANIFEST_JSON)), { force: true });
+  await cp(resolvePathFromRoot(PluginPaths.ManifestJson), resolvePathFromRoot(join("dist/build", PluginPaths.ManifestJson)), { force: true });
 }
 
 export async function getReleaseNotes(newVersion: string): Promise<string> {
-  const changelogPath = resolvePathFromRoot(CHANGELOG_MD);
+  const changelogPath = resolvePathFromRoot(PluginPaths.ChangelogMd);
   const content = await readFile(changelogPath, "utf8");
   const newVersionEscaped = newVersion.replaceAll(".", "\\.");
   const match = content.match(new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`));
