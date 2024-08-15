@@ -16,16 +16,16 @@ interface Export {
   types: string;
 }
 
-const PACKAGE_JSON_FILE_PATH = "./package.json";
+export const PACKAGE_JSON = "package.json";
 
 export async function readNpmPackage(): Promise<NpmPackage> {
-  return await readJson<NpmPackage>(PACKAGE_JSON_FILE_PATH);
+  return await readJson<NpmPackage>(PACKAGE_JSON);
 }
 
 export async function writeNpmPackage(npmPackage: NpmPackage): Promise<void> {
-  await writeJson(PACKAGE_JSON_FILE_PATH, npmPackage);
+  await writeJson(PACKAGE_JSON, npmPackage);
 }
 
 export async function editNpmPackage(editFn: (npmPackage: NpmPackage) => MaybePromise<void>): Promise<void> {
-  await editJson<NpmPackage>(PACKAGE_JSON_FILE_PATH, editFn);
+  await editJson<NpmPackage>(PACKAGE_JSON, editFn);
 }

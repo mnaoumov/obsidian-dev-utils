@@ -11,6 +11,7 @@ import {
 } from "./PluginBuilder.ts";
 import {
   editNpmPackage,
+  PACKAGE_JSON,
   readNpmPackage
 } from "./Npm.ts";
 import { editJson } from "./JSON.ts";
@@ -42,6 +43,10 @@ type Manifest = {
 type ObsidianReleasesJson = {
   name: string;
 };
+
+const MANIFEST_JSON = "manifest.json";
+const VERSIONS_JSON = "versions.json";
+const CHANGELOG_MD = "CHANGELOG.md";
 
 export async function updateVersion(versionUpdateType: string): Promise<TaskResult | void> {
   return await TaskResult.chain([
@@ -122,12 +127,12 @@ async function updateVersionInFiles(newVersion: string): Promise<void> {
 
   const latestObsidianVersion = await getLatestObsidianVersion();
 
-  await editJson<Manifest>("manifest.json", (manifest) => {
+  await editJson<Manifest>(MANIFEST_JSON, (manifest) => {
     manifest.minAppVersion = latestObsidianVersion;
     manifest.version = newVersion;
   });
 
-  await editJson<Record<string, string>>("versions.json", (versions) => {
+  await editJson<Record<string, string>>(VERSIONS_JSON, (versions) => {
     versions[newVersion] = latestObsidianVersion;
   });
 }
@@ -182,7 +187,7 @@ async function getLatestObsidianVersion(): Promise<string> {
 }
 
 async function updateChangelog(newVersion: string): Promise<void> {
-  const changelogPath = resolvePathFromRoot("CHANGELOG.md");
+  const changelogPath = resolvePathFromRoot(CHANGELOG_MD);
   let previousChangelogLines: string[];
   if (!existsSync(changelogPath)) {
     previousChangelogLines = [];
@@ -213,11 +218,11 @@ async function updateChangelog(newVersion: string): Promise<void> {
 
   await writeFile(changelogPath, newChangeLog, "utf8");
 
-  await createInterface(process.stdin, process.stdout).question("Please update the CHANGELOG.md file. Press Enter when you are done...");
+  await createInterface(process.stdin, process.stdout).question(`Please update the ${CHANGELOG_MD} file. Press Enter when you are done...`);
 }
 
 async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
-  await execFromRoot("git add manifest.json package.json versions.json CHANGELOG.md", { quiet: true });
+  await execFromRoot(toCommandLine(["git", "add", MANIFEST_JSON, PACKAGE_JSON, VERSIONS_JSON, CHANGELOG_MD]), { quiet: true });
   await execFromRoot(`git commit -m ${newVersion}`, { quiet: true });
 }
 
@@ -230,11 +235,11 @@ async function gitPush(): Promise<void> {
 }
 
 async function copyUpdatedManifest(): Promise<void> {
-  await cp(resolvePathFromRoot("manifest.json"), resolvePathFromRoot("dist/build/manifest.json"), { force: true });
+  await cp(resolvePathFromRoot(MANIFEST_JSON), resolvePathFromRoot(join("dist/build", MANIFEST_JSON)), { force: true });
 }
 
 async function getReleaseNotes(newVersion: string): Promise<string> {
-  const changelogPath = resolvePathFromRoot("CHANGELOG.md");
+  const changelogPath = resolvePathFromRoot(CHANGELOG_MD);
   const content = await readFile(changelogPath, "utf8");
   const newVersionEscaped = newVersion.replaceAll(".", "\\.");
   const match = content.match(new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`));
