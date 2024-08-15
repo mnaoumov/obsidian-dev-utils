@@ -5,14 +5,13 @@
   "main": "./dist/lib/index.cjs",
   "types": "./dist/lib/index.d.ts",
   "scripts": {
-    "build": "npm-run-all build:clean build:validate build:generate-index build:types build:lib build:generate-exports build:static",
+    "build": "npm-run-all build:clean build:validate build:generate-index build:types build:lib build:static",
     "build:clean": "tsx scripts/build-clean.ts",
     "build:validate": "tsc --build --force",
     "build:generate-index": "tsx scripts/build-generate-index.ts",
     "build:types": "tsc --project ./tsconfig.types.json",
     "build:lib": "tsx scripts/build-lib.ts",
     "build:static": "tsx scripts/build-static.ts",
-    "build:generate-exports": "tsx scripts/build-generate-exports.ts",
     "lint": "tsx scripts/cli.ts lint",
     "lint-fix": "tsx scripts/cli.ts lint-fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
@@ -76,30 +75,6 @@
     "./*": {
       "default": "./dist/lib/*.cjs",
       "types": "./dist/lib/*.d.ts"
-    },
-    "./ESLint": {
-      "default": "./dist/lib/ESLint/index.cjs",
-      "types": "./dist/lib/ESLint/index.d.ts"
-    },
-    "./ESLint/*": {
-      "default": "./dist/lib/ESLint/*.cjs",
-      "types": "./dist/lib/ESLint/*.d.ts"
-    },
-    "./obsidian": {
-      "default": "./dist/lib/obsidian/index.cjs",
-      "types": "./dist/lib/obsidian/index.d.ts"
-    },
-    "./obsidian/*": {
-      "default": "./dist/lib/obsidian/*.cjs",
-      "types": "./dist/lib/obsidian/*.d.ts"
-    },
-    "./obsidian/Modal": {
-      "default": "./dist/lib/obsidian/Modal/index.cjs",
-      "types": "./dist/lib/obsidian/Modal/index.d.ts"
-    },
-    "./obsidian/Modal/*": {
-      "default": "./dist/lib/obsidian/Modal/*.cjs",
-      "types": "./dist/lib/obsidian/Modal/*.d.ts"
     }
   },
   "files": [
