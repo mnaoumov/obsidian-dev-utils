@@ -1,5 +1,5 @@
 declare module "compare-versions" {
-  export type CompareOperator = '>' | '>=' | '=' | '<' | '<=';
+  export type CompareOperator = ">" | ">=" | "=" | "<" | "<=";
 
   // Assuming that the module also has a default export
   const compareVersions: {

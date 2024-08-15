@@ -2,7 +2,10 @@ import {
   App,
   TFile
 } from "obsidian";
-import { resolveValue, type ValueProvider } from "../ValueProvider.ts";
+import {
+  resolveValue,
+  type ValueProvider
+} from "../ValueProvider.ts";
 import { processWithRetry } from "./Vault.ts";
 import {
   DEFAULT_SCHEMA,
