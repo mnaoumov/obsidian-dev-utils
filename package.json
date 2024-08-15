@@ -98,5 +98,11 @@
       "default": "./dist/lib/obsidian/Modal/*.cjs",
       "types": "./dist/lib/obsidian/Modal/*.d.ts"
     }
-  }
+  },
+  "files": [
+    "dist/",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ]
 }
