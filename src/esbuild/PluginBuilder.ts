@@ -68,8 +68,8 @@ if you want to view the source, please visit the github repository of this plugi
     banner: {
       js: banner,
     },
-    entryPoints: [resolvePathFromRoot("src/main.ts")],
     bundle: true,
+    entryPoints: [resolvePathFromRoot("src/main.ts")],
     external: [
       "obsidian",
       "electron",
@@ -86,10 +86,7 @@ if you want to view the source, please visit the github repository of this plugi
       "@lezer/lr",
       ...builtins],
     format: "cjs",
-    target: "esnext",
     logLevel: "info",
-    sourcemap: isProductionBuild ? false : "inline",
-    treeShaking: true,
     outfile: distPath,
     platform: "node",
     plugins: [
@@ -97,7 +94,10 @@ if you want to view the source, please visit the github repository of this plugi
       lintPlugin(isProductionBuild),
       fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
-    ]
+    ],
+    sourcemap: isProductionBuild ? false : "inline",
+    target: "esnext",
+    treeShaking: true
   };
 
   const context = await esbuild.context(buildOptions);
