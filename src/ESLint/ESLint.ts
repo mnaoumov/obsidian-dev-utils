@@ -21,11 +21,16 @@ export async function lintAndFix(overrideConfig?: Linter.Config | Linter.Config[
     throw new Error("Could not find package directory.");
   }
   overrideConfig ??= configs;
+
+  const arr = overrideConfig instanceof Array ? overrideConfig : [overrideConfig];
+  const ignorePatterns = arr.flatMap((config) => config.ignores ?? []);
+
   const FlatESLint = await loadESLint({ useFlatConfig: true });
   const eslint = new FlatESLint({
     fix: true,
     overrideConfigFile: join(packageDir, "dist/eslint.config.empty.cjs"),
-    overrideConfig: overrideConfig
+    overrideConfig: overrideConfig,
+    ignorePatterns
   });
   const results = await eslint.lintFiles(["."]);
   await FlatESLint.outputFixes(results);
