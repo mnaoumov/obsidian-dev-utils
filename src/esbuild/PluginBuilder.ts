@@ -5,24 +5,21 @@ import { existsSync } from "node:fs";
 import {
   cp,
   mkdir,
-  readFile,
   rm,
   writeFile
 } from "node:fs/promises";
 import { resolvePathFromRoot } from "../Root.ts";
 import { TaskResult } from "../TaskResult.ts";
 import { readNpmPackage } from "../Npm.ts";
-import { lint } from "../ESLint/ESLint.ts";
-import { toPosixPath } from "../Path.ts";
+import preprocessPlugin from "./preprocessPlugin.ts";
+import lintPlugin from "./lintPlugin.ts";
+import fixSourceMapsPlugin from "./fixSourceMapsPlugin.ts";
+import copyToObsidianPluginsFolderPlugin from "./copyToObsidianPluginsFolderPlugin.ts";
 
 export enum BuildMode {
   Development,
   Production
 }
-
-type SourceMap = {
-  sources: string[];
-};
 
 export async function buildPlugin({
   mode,
@@ -96,81 +93,10 @@ if you want to view the source, please visit the github repository of this plugi
     outfile: distPath,
     platform: "node",
     plugins: [
-      {
-        name: "preprocess",
-        setup(build): void {
-          build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
-            let contents = await readFile(args.path, "utf8");
-            contents = "const import_meta_url = require(\"node:url\").pathToFileURL(__filename);\n" + contents;
-            contents = contents.replace(/import\.meta\.url/g, "import_meta_url");
-            // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly otherwise it stops loading it after the first line of the sourceMappingURL comment.
-            contents = contents.replace(/\`\r?\n\/\/# sourceMappingURL/g, "`\n//#${\"\"} sourceMappingURL");
-
-            if (/\bprocess\./.test(contents)) {
-              contents = `globalThis.process ??= {
-platform: "mobile",
-cwd: () => "/",
-env: {}
-};
-` + contents;
-            }
-
-            return {
-              contents,
-              loader: "ts"
-            };
-          });
-        },
-      },
-      {
-        name: "lint",
-        setup(build): void {
-          build.onEnd(async () => {
-            if (isProductionBuild) {
-              return;
-            }
-            console.log("[watch] lint started");
-            await lint();
-            console.log("[watch] lint finished");
-          });
-        },
-      },
-      {
-        name: "fix-source-maps",
-        setup(build): void {
-          build.onEnd(async () => {
-            if (isProductionBuild) {
-              return;
-            }
-
-            const content = await readFile(distPath, "utf8");
-            const newContent = content.replaceAll(/\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g, (_: string, sourceMapBase64: string): string => {
-              return `\n//# sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64, pluginName)}`;
-            });
-
-            if (content !== newContent) {
-              await writeFile(distPath, newContent);
-            }
-          });
-        }
-      },
-      {
-        name: "copy-to-obsidian-plugins-folder",
-        setup(build): void {
-          build.onEnd(async () => {
-            if (isProductionBuild || !obsidianConfigDir) {
-              return;
-            }
-
-            const pluginDir = `${obsidianConfigDir}/plugins/${pluginName}`;
-            if (!existsSync(pluginDir)) {
-              await mkdir(pluginDir);
-            }
-
-            await cp(distDir, pluginDir, { recursive: true });
-          });
-        }
-      }
+      preprocessPlugin(),
+      lintPlugin(isProductionBuild),
+      fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
+      copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
     ]
   };
 
@@ -184,16 +110,4 @@ env: {}
     await context.watch();
     return TaskResult.DoNotExit();
   }
-}
-
-function fixSourceMap(sourceMapBase64: string, pluginName: string): string {
-  const sourceMapJson = Buffer.from(sourceMapBase64, "base64").toString("utf8");
-  const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
-  sourceMap.sources = sourceMap.sources.map(path => convertPathToObsidianUrl(path, pluginName));
-  return Buffer.from(JSON.stringify(sourceMap)).toString("base64");
-}
-
-function convertPathToObsidianUrl(path: string, pluginName: string): string {
-  const convertedPath = toPosixPath(path).replace(/^(\.\.\/)+/, "");
-  return `app://obsidian.md/plugin:${pluginName}/${convertedPath}`;
 }
