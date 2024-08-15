@@ -1,10 +1,7 @@
 import { join } from "node:path/posix";
 import { readdirPosix } from "../src/Fs.ts";
 import { trimStart } from "../src/String.ts";
-import {
-  readNpmPackage,
-  writeNpmPackage
-} from "../src/Npm.ts";
+import { editNpmPackage } from "../src/Npm.ts";
 
 const libDirs = ["."];
 
@@ -17,18 +14,17 @@ for (const dirent of await readdirPosix("./dist/lib", { withFileTypes: true, rec
   libDirs.push(path);
 }
 
-const npmPackage = await readNpmPackage();
-npmPackage.exports = {};
-for (const libDir of libDirs) {
-  const dir = libDir === "." ? "./dist/lib" : `./dist/lib/${trimStart(libDir, "./", true)}`;
-  npmPackage.exports[libDir] = {
-    default: `${dir}/index.cjs`,
-    types: `${dir}/index.d.ts`
-  };
-  npmPackage.exports[`${libDir}/*`] = {
-    default: `${dir}/*.cjs`,
-    types: `${dir}/*.d.ts`
-  };
-}
-
-await writeNpmPackage(npmPackage);
+await editNpmPackage((npmPackage) => {
+  npmPackage.exports = {};
+  for (const libDir of libDirs) {
+    const dir = libDir === "." ? "./dist/lib" : `./dist/lib/${trimStart(libDir, "./", true)}`;
+    npmPackage.exports[libDir] = {
+      default: `${dir}/index.cjs`,
+      types: `${dir}/index.d.ts`
+    };
+    npmPackage.exports[`${libDir}/*`] = {
+      default: `${dir}/*.cjs`,
+      types: `${dir}/*.d.ts`
+    };
+  }
+});

@@ -1,8 +1,9 @@
+import type { MaybePromise } from "./Async.ts";
 import {
-  readFile,
-  writeFile
-} from "node:fs/promises";
-import { resolvePathFromRoot } from "./Root.ts";
+  editJson,
+  readJson,
+  writeJson
+} from "./JSON.ts";
 
 export interface NpmPackage {
   exports?: Record<string, Export>;
@@ -18,12 +19,13 @@ interface Export {
 const PACKAGE_JSON_FILE_PATH = "./package.json";
 
 export async function readNpmPackage(): Promise<NpmPackage> {
-  const packageJsonPath = resolvePathFromRoot(PACKAGE_JSON_FILE_PATH);
-  const npmPackage = JSON.parse(await readFile(packageJsonPath, "utf8")) as NpmPackage;
-  return npmPackage;
+  return await readJson<NpmPackage>(PACKAGE_JSON_FILE_PATH);
 }
 
 export async function writeNpmPackage(npmPackage: NpmPackage): Promise<void> {
-  const packageJsonPath = resolvePathFromRoot(PACKAGE_JSON_FILE_PATH);
-  await writeFile(packageJsonPath, JSON.stringify(npmPackage, null, 2) + "\n", "utf8");
+  await writeJson(PACKAGE_JSON_FILE_PATH, npmPackage);
+}
+
+export async function editNpmPackage(editFn: (npmPackage: NpmPackage) => MaybePromise<void>): Promise<void> {
+  await editJson<NpmPackage>(PACKAGE_JSON_FILE_PATH, editFn);
 }
