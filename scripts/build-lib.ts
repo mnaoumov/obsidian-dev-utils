@@ -1,4 +1,4 @@
-import esbuild, { BuildOptions } from "esbuild";
+import esbuild, { type BuildOptions } from "esbuild";
 import {
   readFile,
   writeFile
