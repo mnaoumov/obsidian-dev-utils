@@ -1,9 +1,9 @@
 import {
-  readdir,
   readFile,
   writeFile
 } from "node:fs/promises";
 import { join } from "node:path/posix";
+import { readdirPosix } from "../src/Fs.ts";
 
 interface NpmPackage {
   exports: Record<string, Export>;
@@ -18,12 +18,12 @@ const npmPackage = JSON.parse(await readFile("./package.json", "utf8")) as NpmPa
 
 const libDirs = ["."];
 
-for (const dirent of await readdir("./dist/lib", { withFileTypes: true, recursive: true })) {
+for (const dirent of await readdirPosix("./dist/lib", { withFileTypes: true, recursive: true })) {
   if (!dirent.isDirectory()) {
     continue;
   }
 
-  const path = join(dirent.parentPath.replace(/\\/g, "/"), dirent.name).replace("dist/lib/", "./");
+  const path = join(dirent.parentPath, dirent.name).replace("dist/lib/", "./");
   libDirs.push(path);
 }
 
