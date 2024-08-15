@@ -4,7 +4,10 @@ import type {
   PathLike
 } from "node:fs";
 import { readdir } from "node:fs/promises";
-import { toPosixBuffer, toPosixPath } from "./Path.ts";
+import {
+  toPosixBuffer,
+  toPosixPath
+} from "./Path.ts";
 
 type StringResultOptions = undefined | ObjectEncodingOptions & {
   withFileTypes?: false;
@@ -35,7 +38,7 @@ export async function readdirPosix(
   options: StringResultOptions | BufferResultOptions | DirentResultOptions = {}
 ): Promise<string[] | Buffer[] | Dirent[]> {
   if (isStringResultOptions(options)) {
-    const paths = await readdir(path, options)
+    const paths = await readdir(path, options);
     return paths.map(toPosixPath);
   }
 

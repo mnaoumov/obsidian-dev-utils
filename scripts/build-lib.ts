@@ -42,7 +42,7 @@ const buildOptions: BuildOptions = {
       setup(build): void {
         build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
           let contents = await readFile(args.path, "utf8");
-          contents = `const import_meta_url = require("node:url").pathToFileURL(__filename);\n` + contents;
+          contents = "const import_meta_url = require(\"node:url\").pathToFileURL(__filename);\n" + contents;
           contents = contents.replace(/import\.meta\.url/g, "import_meta_url");
           contents = contents.replace("${NODE_PACKAGE_VERSION}", npmPackage.version);
 

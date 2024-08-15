@@ -24,6 +24,10 @@ export async function lint(fix?: boolean): Promise<void> {
   });
   const lintResults = await eslint.lintFiles(["."]);
 
+  if (fix) {
+    await FlatESLint.outputFixes(lintResults);
+  }
+
   let hasErrors = false;
 
   for (const lintResult of lintResults) {
@@ -42,5 +46,5 @@ export async function lint(fix?: boolean): Promise<void> {
     }
   }
 
-  process.exit(hasErrors ? 1 : 0)
+  process.exit(hasErrors ? 1 : 0);
 }
