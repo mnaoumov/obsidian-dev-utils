@@ -7,7 +7,7 @@ import {
   invoke
 } from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
-import { wrapTask } from "../src/bin/cli.ts";
+import { wrapCliTask } from "../src/bin/cli.ts";
 import { renameToCjsPlugin } from "../src/bin/esbuild/renameToCjsPlugin.ts";
 import {
   getDependenciesToSkip,
@@ -16,7 +16,7 @@ import {
 import { readdirPosix } from "../src/Fs.ts";
 import { join } from "../src/Path.ts";
 
-await (wrapTask(async () => {
+await (wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();
 
   const buildOptions: BuildOptions = {

@@ -1,5 +1,5 @@
 import { context, type BuildOptions } from "esbuild";
-import { wrapTask } from "../src/bin/cli.ts";
+import { wrapCliTask } from "../src/bin/cli.ts";
 import {
   COMPILED_DEPENDENCIES_PATH,
   getDependenciesToSkip,
@@ -11,7 +11,7 @@ import {
 } from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 
-await (wrapTask(async () => {
+await (wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();
 
   const buildOptions: BuildOptions = {

@@ -1,4 +1,4 @@
-import { wrapTask } from "../src/bin/cli.ts";
+import { wrapCliTask } from "../src/bin/cli.ts";
 import { lint } from "../src/bin/ESLint/ESLint.ts";
 import { spellcheck } from "../src/bin/spellcheck.ts";
 import { TaskResult } from "../src/TaskResult.ts";
@@ -24,7 +24,7 @@ import { PluginPaths } from "../src/obsidian/Plugin/PluginPaths.ts";
 
 const DIST_ZIP = "dist/dist.zip";
 
-await (wrapTask(async (): Promise<TaskResult | void> => {
+await (wrapCliTask(async (): Promise<TaskResult | void> => {
   const versionUpdateType = process.argv[2];
 
   if (!versionUpdateType) {

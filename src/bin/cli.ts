@@ -31,33 +31,33 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
 
   program.command("build")
     .description("Build the plugin")
-    .action(wrapTask(() => buildObsidianPlugin({ mode: BuildMode.Production })));
+    .action(wrapCliTask(() => buildObsidianPlugin({ mode: BuildMode.Production })));
 
   program.command("dev")
     .description("Build the plugin in development mode")
-    .action(wrapTask(() => buildObsidianPlugin({ mode: BuildMode.Development })));
+    .action(wrapCliTask(() => buildObsidianPlugin({ mode: BuildMode.Development })));
 
   program.command("lint")
     .description("Lints the source code")
-    .action(wrapTask(() => lint()));
+    .action(wrapCliTask(() => lint()));
 
   program.command("lint-fix")
     .description("Lints the source code and applies automatic fixes if possible")
-    .action(wrapTask(() => lint(true)));
+    .action(wrapCliTask(() => lint(true)));
 
   program.command("spellcheck")
     .description("Spellcheck the source code")
-    .action(wrapTask(() => spellcheck()));
+    .action(wrapCliTask(() => spellcheck()));
 
   program.command("version")
     .description("Release new version")
     .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]")
-    .action(wrapTask(async (version: string) => updateVersion(version)));
+    .action(wrapCliTask(async (version: string) => updateVersion(version)));
 
   program.parse(argv, { from: "user" });
 }
 
-export function wrapTask<TaskArgs extends unknown[]>(taskFn: (...taskArgs: TaskArgs) => MaybePromise<TaskResult | void>): (...taskArgs: TaskArgs) => Promise<void> {
+export function wrapCliTask<TaskArgs extends unknown[]>(taskFn: (...taskArgs: TaskArgs) => MaybePromise<TaskResult | void>): (...taskArgs: TaskArgs) => Promise<void> {
   return async (...taskArgs: TaskArgs) => {
     const result = await getTaskResult(taskFn, taskArgs);
     result.exit();
