@@ -1,7 +1,7 @@
 import type { Plugin } from "esbuild";
 import { lint } from "../ESLint/ESLint.ts";
 
-export default function lintPlugin(isProductionBuild: boolean): Plugin {
+export function lintPlugin(isProductionBuild: boolean): Plugin {
   return {
     name: "lint",
     setup(build): void {

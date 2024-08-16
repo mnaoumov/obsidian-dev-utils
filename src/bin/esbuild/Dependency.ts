@@ -6,7 +6,7 @@ import {
 import { readNpmPackage } from "../../Npm.ts";
 import builtins from "builtin-modules";
 import { banner, invoke } from "./PluginBuilder.ts";
-import preprocessPlugin from "./preprocessPlugin.ts";
+import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { trimStart } from "../../String.ts";
 
 export async function getDependenciesToSkip(): Promise<Set<string>> {

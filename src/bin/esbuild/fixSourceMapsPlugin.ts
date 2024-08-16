@@ -9,7 +9,7 @@ type SourceMap = {
   sources: string[];
 };
 
-export default function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string, pluginName: string): Plugin {
+export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string, pluginName: string): Plugin {
   return {
     name: "fix-source-maps",
     setup(build): void {

@@ -1,7 +1,7 @@
 import type { Plugin } from "esbuild";
 import { readFile } from "node:fs/promises";
 
-export default function preprocessPlugin(): Plugin {
+export function preprocessPlugin(): Plugin {
   return {
     name: "preprocess",
     setup(build): void {

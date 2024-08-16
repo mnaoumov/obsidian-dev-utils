@@ -15,11 +15,11 @@ import {
 import { resolvePathFromRoot } from "../../Root.ts";
 import { TaskResult } from "../../TaskResult.ts";
 import { readNpmPackage } from "../../Npm.ts";
-import preprocessPlugin from "./preprocessPlugin.ts";
-import lintPlugin from "./lintPlugin.ts";
-import fixSourceMapsPlugin from "./fixSourceMapsPlugin.ts";
-import copyToObsidianPluginsFolderPlugin from "./copyToObsidianPluginsFolderPlugin.ts";
-import PluginPaths from "../../obsidian/Plugin/PluginPaths.ts";
+import { preprocessPlugin } from "./preprocessPlugin.ts";
+import { lintPlugin } from "./lintPlugin.ts";
+import { fixSourceMapsPlugin } from "./fixSourceMapsPlugin.ts";
+import { copyToObsidianPluginsFolderPlugin } from "./copyToObsidianPluginsFolderPlugin.ts";
+import { PluginPaths } from "../../obsidian/Plugin/PluginPaths.ts";
 import { join } from "../../Path.ts";
 
 export enum BuildMode {

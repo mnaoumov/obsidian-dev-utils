@@ -5,7 +5,7 @@ import {
   mkdir
 } from "node:fs/promises";
 
-export default function copyToObsidianPluginsFolderPlugin(isProductionBuild: boolean, distDir: string, obsidianConfigDir: string | undefined, pluginName: string): Plugin {
+export function copyToObsidianPluginsFolderPlugin(isProductionBuild: boolean, distDir: string, obsidianConfigDir: string | undefined, pluginName: string): Plugin {
   return {
     name: "copy-to-obsidian-plugins-folder",
     setup(build): void {

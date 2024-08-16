@@ -5,7 +5,7 @@ import {
   TextComponent
 } from "obsidian";
 
-export default async function prompt({
+export async function prompt({
   app,
   title,
   defaultValue,

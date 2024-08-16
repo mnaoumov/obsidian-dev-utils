@@ -6,9 +6,9 @@ import {
   banner,
   invoke
 } from "../src/bin/esbuild/PluginBuilder.ts";
-import preprocessPlugin from "../src/bin/esbuild/preprocessPlugin.ts";
+import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 import { wrapTask } from "../src/bin/cli.ts";
-import renameToCjsPlugin from "../src/bin/esbuild/renameToCjsPlugin.ts";
+import { renameToCjsPlugin } from "../src/bin/esbuild/renameToCjsPlugin.ts";
 import { rm } from "node:fs/promises";
 import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
 

@@ -23,7 +23,7 @@ import {
 import { createInterface } from "node:readline/promises";
 import { readdirPosix } from "../Fs.ts";
 import { join } from "../Path.ts";
-import PluginPaths from "../obsidian/Plugin/PluginPaths.ts";
+import { PluginPaths } from "../obsidian/Plugin/PluginPaths.ts";
 
 enum VersionUpdateType {
   Major = "major",

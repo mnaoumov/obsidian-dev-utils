@@ -1,4 +1,4 @@
-enum PluginPaths {
+export enum PluginPaths {
   ChangelogMd = "CHANGELOG.md",
   DistBuild = "dist/build",
   DistDev = "dist/dev",
@@ -13,5 +13,3 @@ enum PluginPaths {
   StylesCss = "styles.css",
   VersionsJson = "versions.json"
 }
-
-export default PluginPaths;

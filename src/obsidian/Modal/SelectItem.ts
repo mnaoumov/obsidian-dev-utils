@@ -4,7 +4,7 @@ import {
   type FuzzyMatch
 } from "obsidian";
 
-export default async function selectItem<T>({
+export async function selectItem<T>({
   app,
   items,
   itemTextFunc,

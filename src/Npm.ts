@@ -4,7 +4,7 @@ import {
   readJson,
   writeJson
 } from "./JSON.ts";
-import PluginPaths from "./obsidian/Plugin/PluginPaths.ts";
+import { PluginPaths } from "./obsidian/Plugin/PluginPaths.ts";
 
 export interface NpmPackage {
   dependencies?: Record<string, string>;

@@ -20,7 +20,7 @@ import {
 } from "../src/Root.ts";
 import { editNpmPackage } from "../src/Npm.ts";
 import AdmZip from "adm-zip";
-import PluginPaths from "../src/obsidian/Plugin/PluginPaths.ts";
+import { PluginPaths } from "../src/obsidian/Plugin/PluginPaths.ts";
 
 const DIST_ZIP = "dist/dist.zip";
 
