@@ -14,24 +14,28 @@ import { toCommandLine } from "./bin/cli.ts";
 export async function execFromRoot(command: string | string[], {
   quiet = false,
   ignoreExitCode = false,
-  stdin = ""
+  stdin = "",
+  cwd
 }: {
   quiet?: boolean,
   ignoreExitCode?: boolean
-  stdin?: string
+  stdin?: string,
+  cwd?: string | undefined
 } = {}): Promise<string> {
-  const { stdout } = await execFromRootWithStderr(command, { quiet, ignoreExitCode, stdin });
+  const { stdout } = await execFromRootWithStderr(command, { quiet, ignoreExitCode, stdin, cwd });
   return stdout;
 }
 
 export function execFromRootWithStderr(command: string | string[], {
   quiet = false,
   ignoreExitCode = false,
-  stdin = ""
+  stdin = "",
+  cwd
 }: {
   quiet?: boolean,
   ignoreExitCode?: boolean
-  stdin?: string
+  stdin?: string,
+  cwd?: string | undefined
 } = {}): Promise<{ stdout: string, stderr: string }> {
   if (Array.isArray(command)) {
     command = toCommandLine(command);
@@ -42,7 +46,7 @@ export function execFromRootWithStderr(command: string | string[], {
     const [cmd = "", ...args] = command.split(" ");
 
     const child = spawn(cmd, args, {
-      cwd: getRootDir(),
+      cwd: getRootDir(cwd),
       stdio: "pipe",
       shell: true
     });
@@ -93,18 +97,18 @@ export function execFromRootWithStderr(command: string | string[], {
   });
 }
 
-export async function tsImportFromRoot<T>(specifier: string): Promise<T> {
-  const rootDir = getRootDir();
+export async function tsImportFromRoot<T>(specifier: string, cwd?: string): Promise<T> {
+  const rootDir = getRootDir(cwd);
   const rootUrl = pathToFileURL(rootDir).href;
   return await tsImport(specifier, rootUrl) as T;
 }
 
-export function resolvePathFromRoot(path: string): string {
-  return resolve(getRootDir(), path);
+export function resolvePathFromRoot(path: string, cwd?: string): string {
+  return resolve(getRootDir(cwd), path);
 }
 
-export function getRootDir(): string {
-  const rootDir = packageDirectorySync();
+export function getRootDir(cwd?: string): string {
+  const rootDir = packageDirectorySync({ cwd: cwd ?? process.cwd() });
   if (!rootDir) {
     throw new Error("Could not find root directory");
   }
@@ -112,8 +116,8 @@ export function getRootDir(): string {
   return toPosixPath(rootDir);
 }
 
-export function toRelativeFromRoot(path: string): string {
-  const rootDir = getRootDir();
+export function toRelativeFromRoot(path: string, cwd?: string): string {
+  const rootDir = getRootDir(cwd);
   path = toPosixPath(path);
   return relative(rootDir, path);
 }
