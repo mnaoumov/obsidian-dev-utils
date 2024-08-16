@@ -51,3 +51,11 @@ export async function replaceAllAsync<Args extends unknown[]>(
 export function makeValidVariableName(str: string): string {
   return str.replace(/[^a-zA-Z0-9_]/g, "_");
 }
+
+export function ensureStartsWith(str: string, prefix: string): string {
+  return str.startsWith(prefix) ? str : prefix + str;
+}
+
+export function ensureEndsWith(str: string, suffix: string): string {
+  return str.endsWith(suffix) ? str : str + suffix;
+}

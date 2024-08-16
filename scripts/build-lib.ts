@@ -15,6 +15,7 @@ import {
 } from "../src/bin/esbuild/Dependency.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { join } from "../src/Path.ts";
+import { ensureStartsWith } from "../src/String.ts";
 
 await wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();
@@ -45,7 +46,7 @@ await wrapCliTask(async () => {
 
 async function getLibFiles(): Promise<string[]> {
   let files = await readdirPosix("src", { recursive: true });
-  files = files.map((file) => join("./src", file));
+  files = files.map((file) => ensureStartsWith(join("src", file), "./"));
   files = files.filter((file) => file.endsWith(".ts") && !file.endsWith(".d.ts"));
   files = files.filter((file) => file !== SOURCE_DEPENDENCIES_PATH);
   return files;
