@@ -4,7 +4,7 @@ import { makeValidVariableName } from "../../String.ts";
 import { dirname, relative, toPosixPath } from "../../Path.ts";
 import { resolvePathFromRoot } from "../../Root.ts";
 
-export default function renameToCjsPlugin(): Plugin {
+export default function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
   const bundlePath = resolvePathFromRoot("dist/lib/_bundle.cjs");
   return {
     name: "rename-to-cjs",
@@ -16,14 +16,14 @@ export default function renameToCjsPlugin(): Plugin {
           }
           const newPath = file.path.replaceAll(/\.js$/g, ".cjs");
           const newText = file.text.replaceAll(/require\("(.+?)"\)/g, (_, importPath) => {
-            if (importPath[0] !== ".") {
+            let fixedImportPath = importPath;
+            if (importPath[0] !== "." && !dependenciesToSkip.has(importPath)) {
               let relativeBundlePath = relative(dirname(toPosixPath(file.path)), bundlePath);
               if (relativeBundlePath[0] !== ".") {
                 relativeBundlePath = `./${relativeBundlePath}`;
               }
               return `require("${relativeBundlePath}").${makeValidVariableName(importPath)}`;
             }
-            let fixedImportPath = importPath;
             if (importPath.endsWith(".ts")) {
               fixedImportPath = importPath.replaceAll(/\.ts$/g, ".cjs");
             }

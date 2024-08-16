@@ -1,4 +1,5 @@
-import esbuild, {
+import {
+  context,
   type BuildContext,
   type BuildOptions
 } from "esbuild";
@@ -105,17 +106,17 @@ export async function buildPlugin({
     treeShaking: true
   };
 
-  const context = await esbuild.context(buildOptions);
-  return await invoke(context, isProductionBuild);
+  const buildContext = await context(buildOptions);
+  return await invoke(buildContext, isProductionBuild);
 }
 
-export async function invoke(context: BuildContext<BuildOptions>, isProductionBuild: boolean): Promise<TaskResult> {
+export async function invoke(buildContext: BuildContext<BuildOptions>, isProductionBuild: boolean): Promise<TaskResult> {
   if (isProductionBuild) {
-    const result = await context.rebuild();
+    const result = await buildContext.rebuild();
     const isSuccess = result.errors.length == 0 && result.warnings.length == 0;
     return TaskResult.CreateSuccessResult(isSuccess);
   } else {
-    await context.watch();
+    await buildContext.watch();
     return TaskResult.DoNotExit();
   }
 }
