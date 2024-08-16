@@ -18,7 +18,7 @@ await wrapCliTask(async () => {
 async function generateIndex(dir: string): Promise<void> {
   const dirents = await readdirPosix(dir, { withFileTypes: true });
   const lines = (await asyncMap(dirents, async (dirent) => {
-    if (dirent.name === ObsidianDevUtilsRepoPaths.IndexTs || dirent.name === ObsidianDevUtilsRepoPaths.Types || dirent.name.endsWith(ObsidianDevUtilsRepoPaths.AnyDts)) {
+    if (dirent.name === ObsidianDevUtilsRepoPaths.IndexTs || dirent.name === ObsidianDevUtilsRepoPaths.Types || dirent.name.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
       return;
     }
     let sourceFile: string;
