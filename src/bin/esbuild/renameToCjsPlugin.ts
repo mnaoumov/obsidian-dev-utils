@@ -1,10 +1,17 @@
 import type { Plugin } from "esbuild";
 import { writeFile } from "node:fs/promises";
-import { makeValidVariableName } from "../../String.ts";
-import { dirname, relative, toPosixPath } from "../../Path.ts";
+import {
+  makeValidVariableName,
+  trimStart
+} from "../../String.ts";
+import {
+  dirname,
+  relative,
+  toPosixPath
+} from "../../Path.ts";
 import { resolvePathFromRoot } from "../../Root.ts";
 
-export default function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
+export function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
   const bundlePath = resolvePathFromRoot("dist/lib/_bundle.cjs");
   return {
     name: "rename-to-cjs",
@@ -17,7 +24,9 @@ export default function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plug
           const newPath = file.path.replaceAll(/\.js$/g, ".cjs");
           const newText = file.text.replaceAll(/require\("(.+?)"\)/g, (_, importPath) => {
             let fixedImportPath = importPath;
-            if (importPath[0] !== "." && !dependenciesToSkip.has(importPath)) {
+            const importPath1 = trimStart(importPath, "node:");
+            const importPath2 = importPath1.split("/")[0]!;
+            if (importPath[0] !== "." && !dependenciesToSkip.has(importPath1) && !dependenciesToSkip.has(importPath2)) {
               let relativeBundlePath = relative(dirname(toPosixPath(file.path)), bundlePath);
               if (relativeBundlePath[0] !== ".") {
                 relativeBundlePath = `./${relativeBundlePath}`;
