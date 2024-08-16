@@ -6,20 +6,19 @@ import {
 import preprocessPlugin from "../src/bin/esbuild/preprocessPlugin.ts";
 import renameToCjsPlugin from "../src/bin/esbuild/renameToCjsPlugin.ts";
 import { wrapTask } from "../src/bin/cli.ts";
+import { readNpmPackage } from "../src/Npm.ts";
 
 await (wrapTask(async () => {
+  const npmPackage = await readNpmPackage();
+  const dependencyNames = Object.keys(npmPackage.dependencies ?? {})
+
   const buildOptions: BuildOptions = {
     banner: {
       js: banner
     },
     bundle: true,
     entryPoints: ["src/**/*.ts"],
-    external: [
-      "@typescript-eslint/parser",
-      "esbuild",
-      "eslint",
-      "obsidian"
-    ],
+    external: dependencyNames,
     format: "cjs",
     logLevel: "info",
     outdir: "dist/lib",

@@ -7,6 +7,8 @@ import {
 import PluginPaths from "./obsidian/Plugin/PluginPaths.ts";
 
 export interface NpmPackage {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
   exports?: Record<string, Export>;
   name: string;
   version: string;
