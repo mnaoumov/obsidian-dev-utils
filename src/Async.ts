@@ -67,3 +67,7 @@ export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: numb
   const predicateResults = await asyncMap(arr, predicate);
   return arr.filter((_, index) => predicateResults[index]);
 }
+
+export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => MaybePromise<U[]>): Promise<U[]> {
+  return (await asyncMap(arr, callback)).flat();
+}
