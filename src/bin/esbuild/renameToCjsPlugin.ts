@@ -10,9 +10,10 @@ import {
   toPosixPath
 } from "../../Path.ts";
 import { resolvePathFromRoot } from "../../Root.ts";
+import { COMPILED_DEPENDENCIES_PATH } from "./Dependency.ts";
 
 export function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
-  const dependenciesPath = resolvePathFromRoot("dist/lib/_dependencies.cjs");
+  const dependenciesPath = resolvePathFromRoot(COMPILED_DEPENDENCIES_PATH);
   return {
     name: "rename-to-cjs",
     setup(build): void {

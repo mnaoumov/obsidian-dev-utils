@@ -1,12 +1,15 @@
 import { makeValidVariableName } from "../src/String.ts";
 import { generate } from "../src/CodeGenerator.ts";
 import { wrapTask } from "../src/bin/cli.ts";
-import { getDependenciesToBundle } from "../src/bin/esbuild/Dependency.ts";
+import {
+  getDependenciesToBundle,
+  SOURCE_DEPENDENCIES_PATH
+} from "../src/bin/esbuild/Dependency.ts";
 
 async function main(): Promise<void> {
   await wrapTask(async () => {
     const dependenciesToBundle = await getDependenciesToBundle();
-    await generate("src/_dependencies.ts", dependenciesToBundle.map(makeExport));
+    await generate(SOURCE_DEPENDENCIES_PATH, dependenciesToBundle.map(makeExport));
   })();
 }
 

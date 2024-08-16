@@ -6,6 +6,7 @@ import {
   join
 } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
+import { SOURCE_DEPENDENCIES_PATH } from "../src/bin/esbuild/Dependency.ts";
 
 await rm("dist", { recursive: true, force: true });
 
@@ -17,4 +18,4 @@ for (const file of await readdirPosix("src", { recursive: true })) {
   await rm(join("src", file));
 }
 
-await rm("src/_dependencies.ts", { force: true });
+await rm(SOURCE_DEPENDENCIES_PATH, { force: true });

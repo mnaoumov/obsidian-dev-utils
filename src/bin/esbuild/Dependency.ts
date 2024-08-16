@@ -12,6 +12,9 @@ import {
 import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { trimStart } from "../../String.ts";
 
+export const SOURCE_DEPENDENCIES_PATH = "./src/_dependencies.ts";
+export const COMPILED_DEPENDENCIES_PATH = "./dist/lib/_dependencies.cjs";
+
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const npmPackage = await readNpmPackage();
   const dependenciesToSkip = new Set<string>([...Object.keys(npmPackage.dependencies ?? {}), ...builtins]);

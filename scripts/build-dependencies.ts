@@ -1,10 +1,14 @@
 import { context, type BuildOptions } from "esbuild";
 import { wrapTask } from "../src/bin/cli.ts";
-import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
+import {
+  COMPILED_DEPENDENCIES_PATH,
+  getDependenciesToSkip,
+  SOURCE_DEPENDENCIES_PATH
+} from "../src/bin/esbuild/Dependency.ts";
 import { banner, invoke } from "../src/bin/esbuild/PluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 
-await(wrapTask(async () => {
+await (wrapTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();
 
   const buildOptions: BuildOptions = {
@@ -12,11 +16,11 @@ await(wrapTask(async () => {
       js: banner
     },
     bundle: true,
-    entryPoints: ["src/_dependencies.ts"],
+    entryPoints: [SOURCE_DEPENDENCIES_PATH],
     external: Array.from(dependenciesToSkip),
     format: "cjs",
     logLevel: "info",
-    outfile: "dist/lib/_dependencies.cjs",
+    outfile: COMPILED_DEPENDENCIES_PATH,
     platform: "node",
     plugins: [
       preprocessPlugin()

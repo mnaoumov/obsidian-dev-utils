@@ -9,7 +9,10 @@ import {
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 import { wrapTask } from "../src/bin/cli.ts";
 import { renameToCjsPlugin } from "../src/bin/esbuild/renameToCjsPlugin.ts";
-import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
+import {
+  getDependenciesToSkip,
+  SOURCE_DEPENDENCIES_PATH
+} from "../src/bin/esbuild/Dependency.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { join } from "../src/Path.ts";
 
@@ -44,6 +47,6 @@ async function getLibFiles(): Promise<string[]> {
   let files = await readdirPosix("src", { recursive: true });
   files = files.map((file) => join("./src", file));
   files = files.filter((file) => file.endsWith(".ts") && !file.endsWith(".d.ts"));
-  files = files.filter((file) => file !== "./src/_dependencies.ts");
+  files = files.filter((file) => file !== SOURCE_DEPENDENCIES_PATH);
   return files;
 }
