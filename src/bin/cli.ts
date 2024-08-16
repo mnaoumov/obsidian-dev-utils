@@ -31,37 +31,35 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
 
   program.command("build")
     .description("Build the plugin")
-    .action(wrapCliTask(() => buildObsidianPlugin({ mode: BuildMode.Production })));
+    .action(() => wrapCliTask(() => buildObsidianPlugin({ mode: BuildMode.Production })));
 
   program.command("dev")
     .description("Build the plugin in development mode")
-    .action(wrapCliTask(() => buildObsidianPlugin({ mode: BuildMode.Development })));
+    .action(() => wrapCliTask(() => buildObsidianPlugin({ mode: BuildMode.Development })));
 
   program.command("lint")
     .description("Lints the source code")
-    .action(wrapCliTask(() => lint()));
+    .action(() => wrapCliTask(() => lint()));
 
   program.command("lint-fix")
     .description("Lints the source code and applies automatic fixes if possible")
-    .action(wrapCliTask(() => lint(true)));
+    .action(() => wrapCliTask(() => lint(true)));
 
   program.command("spellcheck")
     .description("Spellcheck the source code")
-    .action(wrapCliTask(() => spellcheck()));
+    .action(() => wrapCliTask(() => spellcheck()));
 
   program.command("version")
     .description("Release new version")
     .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]")
-    .action(wrapCliTask(async (version: string) => updateVersion(version)));
+    .action((version) => wrapCliTask(() => updateVersion(version)));
 
   program.parse(argv, { from: "user" });
 }
 
-export function wrapCliTask<TaskArgs extends unknown[]>(taskFn: (...taskArgs: TaskArgs) => MaybePromise<TaskResult | void>): (...taskArgs: TaskArgs) => Promise<void> {
-  return async (...taskArgs: TaskArgs) => {
-    const result = await getTaskResult(taskFn, taskArgs);
-    result.exit();
-  };
+export async function wrapCliTask(taskFn: () => MaybePromise<TaskResult | void>): Promise<void> {
+  const result = await getTaskResult(taskFn);
+  result.exit();
 }
 
 export function toCommandLine(args: string[]): string {

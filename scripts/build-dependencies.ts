@@ -11,7 +11,7 @@ import {
 } from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 
-await (wrapCliTask(async () => {
+await wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();
 
   const buildOptions: BuildOptions = {
@@ -35,4 +35,4 @@ await (wrapCliTask(async () => {
 
   const buildContext = await context(buildOptions);
   await invoke(buildContext, true);
-}))();
+});

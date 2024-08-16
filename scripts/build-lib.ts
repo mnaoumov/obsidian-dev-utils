@@ -16,7 +16,7 @@ import {
 import { readdirPosix } from "../src/Fs.ts";
 import { join } from "../src/Path.ts";
 
-await (wrapCliTask(async () => {
+await wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();
 
   const buildOptions: BuildOptions = {
@@ -41,7 +41,7 @@ await (wrapCliTask(async () => {
 
   const buildContext = await context(buildOptions);
   await invoke(buildContext, true);
-}))();
+});
 
 async function getLibFiles(): Promise<string[]> {
   let files = await readdirPosix("src", { recursive: true });

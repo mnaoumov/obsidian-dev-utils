@@ -24,7 +24,7 @@ import { PluginPaths } from "../src/obsidian/Plugin/PluginPaths.ts";
 
 const DIST_ZIP = "dist/dist.zip";
 
-await (wrapCliTask(async (): Promise<TaskResult | void> => {
+await wrapCliTask(async (): Promise<TaskResult | void> => {
   const versionUpdateType = process.argv[2];
 
   if (!versionUpdateType) {
@@ -54,7 +54,7 @@ await (wrapCliTask(async (): Promise<TaskResult | void> => {
       await publishNpmPackage();
     }
   ]);
-}))();
+});
 
 async function publishNpmPackage(): Promise<void> {
   await execFromRoot("npm publish");

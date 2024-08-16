@@ -6,7 +6,7 @@ export abstract class TaskResult {
 
   public static async chain(tasks: (() => MaybePromise<TaskResult | void>)[]): Promise<TaskResult> {
     for (const task of tasks) {
-      const result = await getTaskResult(task, []);
+      const result = await getTaskResult(task);
       if (!result.isSuccessful()) {
         return result;
       }
@@ -71,9 +71,9 @@ class DoNotExitTaskResult extends TaskResult {
   }
 }
 
-export async function getTaskResult<TaskArgs extends unknown[]>(taskFn: (...taskArgs: TaskArgs) => MaybePromise<TaskResult | void>, taskArgs: TaskArgs): Promise<TaskResult> {
+export async function getTaskResult(taskFn: () => MaybePromise<TaskResult | void>): Promise<TaskResult> {
   try {
-    return await taskFn(...taskArgs) ?? TaskResult.CreateSuccessResult(true);
+    return await taskFn() ?? TaskResult.CreateSuccessResult(true);
   } catch (error) {
     console.error(error);
     return TaskResult.CreateSuccessResult(false);
