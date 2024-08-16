@@ -29,32 +29,20 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
     .description("CLI to some obsidian-dev-utils commands")
     .version(NODE_PACKAGE_VERSION);
 
-  program.command("build")
-    .description("Build the plugin")
-    .action(() => wrapCliTask(() => buildObsidianPlugin({ mode: BuildMode.Production })));
-
-  program.command("dev")
-    .description("Build the plugin in development mode")
-    .action(() => wrapCliTask(() => buildObsidianPlugin({ mode: BuildMode.Development })));
-
-  program.command("lint")
-    .description("Lints the source code")
-    .action(() => wrapCliTask(() => lint()));
-
-  program.command("lint-fix")
-    .description("Lints the source code and applies automatic fixes if possible")
-    .action(() => wrapCliTask(() => lint(true)));
-
-  program.command("spellcheck")
-    .description("Spellcheck the source code")
-    .action(() => wrapCliTask(() => spellcheck()));
-
-  program.command("version")
-    .description("Release new version")
-    .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]")
-    .action((version) => wrapCliTask(() => updateVersion(version)));
-
+  addCommand(program, CommandNames.Build, "Build the plugin", () => buildObsidianPlugin({ mode: BuildMode.Production }));
+  addCommand(program, CommandNames.Dev, "Build the plugin in development mode", () => buildObsidianPlugin({ mode: BuildMode.Development }));
+  addCommand(program, CommandNames.Lint, "Lints the source code", () => lint());
+  addCommand(program, CommandNames.LintFix, "Lints the source code and applies automatic fixes if possible", () => lint(true));
+  addCommand(program, CommandNames.Spellcheck, "Spellcheck the source code", () => spellcheck());
+  addCommand(program, CommandNames.Version, "Release new version", (versionUpdateType: string) => updateVersion(versionUpdateType))
+    .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]");
   program.parse(argv, { from: "user" });
+}
+
+function addCommand<Args extends unknown[]>(program: Command, name: string, description: string, taskFn: (...args: Args) => MaybePromise<TaskResult | void>): Command {
+  return program.command(name)
+    .description(description)
+    .action((...args: Args) => wrapCliTask(() => taskFn(...args)));
 }
 
 export async function wrapCliTask(taskFn: () => MaybePromise<TaskResult | void>): Promise<void> {
@@ -72,4 +60,13 @@ export function toCommandLine(args: string[]): string {
       return arg;
     })
     .join(" ");
+}
+
+enum CommandNames {
+  Build = "build",
+  Dev = "dev",
+  Lint = "lint",
+  LintFix = "lint-fix",
+  Spellcheck = "spellcheck",
+  Version = "version"
 }
