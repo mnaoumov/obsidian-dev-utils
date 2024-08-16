@@ -1,6 +1,6 @@
 import type { MarkdownPostProcessorContext } from "obsidian";
 
-export function getCodeblockArgument(ctx: MarkdownPostProcessorContext, el: HTMLElement): string | null {
+export function getCodeBlockArgument(ctx: MarkdownPostProcessorContext, el: HTMLElement): string | null {
   const sectionInfo = ctx.getSectionInfo(el);
   if (!sectionInfo) {
     return null;
