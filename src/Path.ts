@@ -1,5 +1,6 @@
 import { posix } from "@jinder/path";
 import { fileURLToPath } from "node:url";
+import { ensureStartsWith } from "./String.ts";
 
 const {
   basename,
@@ -38,4 +39,12 @@ export function getFilename(importMetaUrl: string): string {
 
 export function getDirname(importMetaUrl: string): string {
   return dirname(getFilename(importMetaUrl));
+}
+
+export function normalizeIfRelative (path: string): string {
+  if (path[0] === "/" || path.includes(":")) {
+    return path;
+  }
+
+  return ensureStartsWith(path, "./");
 }

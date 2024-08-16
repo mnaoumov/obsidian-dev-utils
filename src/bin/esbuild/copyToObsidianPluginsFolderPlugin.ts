@@ -4,6 +4,7 @@ import {
   cp,
   mkdir
 } from "node:fs/promises";
+import { join } from "../../Path.ts";
 
 export function copyToObsidianPluginsFolderPlugin(isProductionBuild: boolean, distDir: string, obsidianConfigDir: string | undefined, pluginName: string): Plugin {
   return {
@@ -14,7 +15,7 @@ export function copyToObsidianPluginsFolderPlugin(isProductionBuild: boolean, di
           return;
         }
 
-        const pluginDir = `${obsidianConfigDir}/plugins/${pluginName}`;
+        const pluginDir = join(obsidianConfigDir, "plugins", pluginName);
         if (!existsSync(pluginDir)) {
           await mkdir(pluginDir);
         }

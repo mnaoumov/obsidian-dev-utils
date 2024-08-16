@@ -6,6 +6,7 @@ import {
 } from "../../String.ts";
 import {
   dirname,
+  normalizeIfRelative,
   relative,
   toPosixPath
 } from "../../Path.ts";
@@ -27,10 +28,7 @@ export function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
             const importPath1 = trimStart(importPath, "node:");
             const importPath2 = importPath1.split("/")[0]!;
             if (importPath[0] !== "." && !dependenciesToSkip.has(importPath1) && !dependenciesToSkip.has(importPath2)) {
-              let relativeDependenciesPath = relative(dirname(toPosixPath(file.path)), dependenciesPath);
-              if (relativeDependenciesPath[0] !== ".") {
-                relativeDependenciesPath = `./${relativeDependenciesPath}`;
-              }
+              const relativeDependenciesPath = normalizeIfRelative(relative(dirname(toPosixPath(file.path)), dependenciesPath));
               const importPathVariable = makeValidVariableName(importPath);
               return `require("${relativeDependenciesPath}").${importPathVariable}.default ?? require("${relativeDependenciesPath}").${importPathVariable}`;
             }
