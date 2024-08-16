@@ -12,7 +12,7 @@ import {
 import { resolvePathFromRoot } from "../../Root.ts";
 
 export function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
-  const bundlePath = resolvePathFromRoot("dist/lib/_bundle.cjs");
+  const dependenciesPath = resolvePathFromRoot("dist/lib/_dependencies.cjs");
   return {
     name: "rename-to-cjs",
     setup(build): void {
@@ -23,20 +23,18 @@ export function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
           }
           const newPath = file.path.replaceAll(/\.js$/g, ".cjs");
           const newText = file.text.replaceAll(/require\("(.+?)"\)/g, (_, importPath: string) => {
-            let fixedImportPath = importPath;
             const importPath1 = trimStart(importPath, "node:");
             const importPath2 = importPath1.split("/")[0]!;
             if (importPath[0] !== "." && !dependenciesToSkip.has(importPath1) && !dependenciesToSkip.has(importPath2)) {
-              let relativeBundlePath = relative(dirname(toPosixPath(file.path)), bundlePath);
-              if (relativeBundlePath[0] !== ".") {
-                relativeBundlePath = `./${relativeBundlePath}`;
+              let relativeDependenciesPath = relative(dirname(toPosixPath(file.path)), dependenciesPath);
+              if (relativeDependenciesPath[0] !== ".") {
+                relativeDependenciesPath = `./${relativeDependenciesPath}`;
               }
-              return `require("${relativeBundlePath}").${makeValidVariableName(importPath)}.default ?? require("${relativeBundlePath}").${makeValidVariableName(importPath)}`;
+              const importPathVariable = makeValidVariableName(importPath);
+              return `require("${relativeDependenciesPath}").${importPathVariable}.default ?? require("${relativeDependenciesPath}").${importPathVariable}`;
             }
-            if (importPath.endsWith(".ts")) {
-              fixedImportPath = importPath.replaceAll(/\.ts$/g, ".cjs");
-            }
-            return `require("${fixedImportPath}")`;
+            const cjsImportPath = importPath.replaceAll(/\.ts$/g, ".cjs");
+            return `require("${cjsImportPath}")`;
           });
           await writeFile(newPath, newText);
         }

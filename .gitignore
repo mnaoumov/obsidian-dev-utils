@@ -24,4 +24,4 @@ data.json
 dist
 
 index.ts
-_bundle.ts
+_dependencies.ts
