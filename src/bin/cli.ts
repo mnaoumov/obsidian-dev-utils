@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import {
   BuildMode,
-  buildPlugin
-} from "./esbuild/PluginBuilder.ts";
+  buildObsidianPlugin
+} from "./esbuild/ObsidianPluginBuilder.ts";
 import process from "node:process";
 import { lint } from "./ESLint/ESLint.ts";
 import { spellcheck } from "./spellcheck.ts";
@@ -31,11 +31,11 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
 
   program.command("build")
     .description("Build the plugin")
-    .action(wrapTask(() => buildPlugin({ mode: BuildMode.Production })));
+    .action(wrapTask(() => buildObsidianPlugin({ mode: BuildMode.Production })));
 
   program.command("dev")
     .description("Build the plugin in development mode")
-    .action(wrapTask(() => buildPlugin({ mode: BuildMode.Development })));
+    .action(wrapTask(() => buildObsidianPlugin({ mode: BuildMode.Development })));
 
   program.command("lint")
     .description("Lints the source code")

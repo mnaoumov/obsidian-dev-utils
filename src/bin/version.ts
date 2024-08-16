@@ -7,8 +7,8 @@ import { spellcheck } from "./spellcheck.ts";
 import { lint } from "./ESLint/ESLint.ts";
 import {
   BuildMode,
-  buildPlugin
-} from "./esbuild/PluginBuilder.ts";
+  buildObsidianPlugin
+} from "./esbuild/ObsidianPluginBuilder.ts";
 import {
   editNpmPackage,
   readNpmPackage
@@ -53,7 +53,7 @@ export async function updateVersion(versionUpdateType: string): Promise<TaskResu
     },
     (): Promise<TaskResult> => spellcheck(),
     (): Promise<TaskResult> => lint(),
-    (): Promise<TaskResult> => buildPlugin({ mode: BuildMode.Production }),
+    (): Promise<TaskResult> => buildObsidianPlugin({ mode: BuildMode.Production }),
     async (): Promise<void> => {
       const newVersion = await getNewVersion(versionUpdateType);
       await updateVersionInFiles(newVersion);

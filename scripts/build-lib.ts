@@ -5,7 +5,7 @@ import {
 import {
   banner,
   invoke
-} from "../src/bin/esbuild/PluginBuilder.ts";
+} from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 import { wrapTask } from "../src/bin/cli.ts";
 import { renameToCjsPlugin } from "../src/bin/esbuild/renameToCjsPlugin.ts";

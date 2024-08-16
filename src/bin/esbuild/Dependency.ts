@@ -8,7 +8,7 @@ import builtins from "builtin-modules";
 import {
   banner,
   invoke
-} from "./PluginBuilder.ts";
+} from "./ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { trimStart } from "../../String.ts";
 

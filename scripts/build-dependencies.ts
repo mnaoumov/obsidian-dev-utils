@@ -5,7 +5,10 @@ import {
   getDependenciesToSkip,
   SOURCE_DEPENDENCIES_PATH
 } from "../src/bin/esbuild/Dependency.ts";
-import { banner, invoke } from "../src/bin/esbuild/PluginBuilder.ts";
+import {
+  banner,
+  invoke
+} from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 
 await (wrapTask(async () => {

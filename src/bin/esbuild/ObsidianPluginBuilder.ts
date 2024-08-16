@@ -33,7 +33,7 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
-export async function buildPlugin({
+export async function buildObsidianPlugin({
   mode,
   obsidianConfigDir = process.env["OBSIDIAN_CONFIG_DIR"]
 }: {
