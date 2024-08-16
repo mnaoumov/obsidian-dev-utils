@@ -8,10 +8,11 @@ import {
 } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { makeValidVariableName } from "../src/String.ts";
+import { wrapCliTask } from "../src/bin/cli.ts";
 
-async function main(): Promise<void> {
+await wrapCliTask(async () => {
   await generateIndex("src");
-}
+});
 
 async function generateIndex(dir: string): Promise<void> {
   const dirents = await readdirPosix(dir, { withFileTypes: true });
@@ -41,5 +42,3 @@ async function generateIndex(dir: string): Promise<void> {
 
   await writeFile(join(dir, "index.ts"), lines.join("\n"), "utf-8");
 }
-
-await main();
