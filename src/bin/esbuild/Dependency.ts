@@ -33,6 +33,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
     entryPoints: [join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)],
     format: "cjs",
     logLevel: "info",
+    outdir: "nothing-will-be-written-on-disk-so-this-does-not-matter",
     platform: "node",
     plugins: [
       preprocessPlugin(),
