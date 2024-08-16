@@ -4,7 +4,6 @@ import {
   type BuildOptions
 } from "esbuild";
 import process from "node:process";
-import builtins from "builtin-modules";
 import { existsSync } from "node:fs";
 import {
   cp,
@@ -21,6 +20,7 @@ import { fixSourceMapsPlugin } from "./fixSourceMapsPlugin.ts";
 import { copyToObsidianPluginsFolderPlugin } from "./copyToObsidianPluginsFolderPlugin.ts";
 import { PluginPaths } from "../../obsidian/Plugin/PluginPaths.ts";
 import { join } from "../../Path.ts";
+import { getDependenciesToSkip } from "./Dependency.ts";
 
 export enum BuildMode {
   Development,
@@ -90,7 +90,8 @@ export async function buildObsidianPlugin({
       "@lezer/common",
       "@lezer/highlight",
       "@lezer/lr",
-      ...builtins],
+      ...await getDependenciesToSkip()
+    ],
     format: "cjs",
     logLevel: "info",
     outfile: distPath,
