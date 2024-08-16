@@ -1,4 +1,3 @@
-import "obsidian";
 import { showError } from "./Error.ts";
 
 export type MaybePromise<T> = T | Promise<T>;
@@ -30,6 +29,10 @@ export async function retryWithTimeout(asyncFn: () => Promise<boolean>, retryOpt
       await sleep(overriddenOptions.retryDelayInMilliseconds);
     }
   });
+}
+
+export async function sleep(milliseconds: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 export async function runWithTimeout<R>(timeoutInMilliseconds: number, asyncFn: () => Promise<R>): Promise<R> {
