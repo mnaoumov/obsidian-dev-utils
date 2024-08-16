@@ -1,4 +1,4 @@
-import { showError } from "./Error.ts";
+import { emitAsyncErrorEvent } from "./Error.ts";
 
 export type MaybePromise<T> = T | Promise<T>;
 
@@ -45,7 +45,7 @@ export async function timeout(timeoutInMilliseconds: number): Promise<never> {
 }
 
 export function invokeAsyncSafely(promise: Promise<unknown>): void {
-  promise.catch(showError);
+  promise.catch(emitAsyncErrorEvent);
 }
 
 export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: Args) => Promise<unknown>): (...args: Args) => void {

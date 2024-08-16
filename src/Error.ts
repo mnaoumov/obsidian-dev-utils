@@ -1,8 +1,21 @@
-import { Notice } from "obsidian";
+import { EventEmitter } from "node:events";
 
-export function showError(error: unknown): void {
-  printError(error);
-  new Notice("An unhandled error occurred. Please check the console for more information.");
+const ASYNC_ERROR_EVENT = "asyncError";
+
+const asyncErrorEventEmitter = new EventEmitter();
+asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
+
+function handleAsyncError(asyncError: unknown): void {
+  printError(new Error("An unhandled error occurred executing async operation", { cause: asyncError }));
+}
+
+export function emitAsyncErrorEvent(asyncError: unknown): void {
+  asyncErrorEventEmitter.emit(ASYNC_ERROR_EVENT, asyncError);
+}
+
+export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): () => void {
+  asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handler);
+  return () => asyncErrorEventEmitter.off(ASYNC_ERROR_EVENT, handler);
 }
 
 type ErrorEntry = {
