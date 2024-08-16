@@ -7,6 +7,7 @@ import { packageDirectory } from "pkg-dir";
 import { toRelativeFromRoot } from "../../Root.ts";
 import { getDirname } from "../../Path.ts";
 import { TaskResult } from "../../TaskResult.ts";
+import { ObsidianDevUtilsRepoPaths } from "../esbuild/ObsidianDevUtilsPaths.ts";
 
 export async function lint(fix?: boolean): Promise<TaskResult> {
   fix ??= false;
@@ -19,7 +20,7 @@ export async function lint(fix?: boolean): Promise<TaskResult> {
   const FlatESLint = await loadESLint({ useFlatConfig: true });
   const eslint = new FlatESLint({
     fix,
-    overrideConfigFile: join(packageDir, "dist/eslint.config.empty.cjs"),
+    overrideConfigFile: join(packageDir, ObsidianDevUtilsRepoPaths.DistEslintConfigEmptyCjs),
     overrideConfig: configs,
     ignorePatterns
   });

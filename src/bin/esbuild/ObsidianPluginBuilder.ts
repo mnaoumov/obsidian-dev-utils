@@ -18,7 +18,7 @@ import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { lintPlugin } from "./lintPlugin.ts";
 import { fixSourceMapsPlugin } from "./fixSourceMapsPlugin.ts";
 import { copyToObsidianPluginsFolderPlugin } from "./copyToObsidianPluginsFolderPlugin.ts";
-import { PluginPaths } from "../../obsidian/Plugin/PluginPaths.ts";
+import { ObsidianPluginRepoPaths } from "../../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
 import { join } from "../../Path.ts";
 import { getDependenciesToSkip } from "./Dependency.ts";
 
@@ -42,18 +42,18 @@ export async function buildObsidianPlugin({
 }): Promise<TaskResult> {
   const isProductionBuild = mode === BuildMode.Production;
 
-  const distDir = resolvePathFromRoot(isProductionBuild ? PluginPaths.DistBuild : PluginPaths.DistDev);
+  const distDir = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);
   if (existsSync(distDir)) {
     await rm(distDir, { recursive: true });
   }
   await mkdir(distDir, { recursive: true });
 
   const distFileNames = [
-    PluginPaths.ManifestJson,
-    PluginPaths.StylesCss
+    ObsidianPluginRepoPaths.ManifestJson,
+    ObsidianPluginRepoPaths.StylesCss
   ];
   if (!isProductionBuild) {
-    await writeFile(join(distDir, PluginPaths.HotReload), "", "utf8");
+    await writeFile(join(distDir, ObsidianPluginRepoPaths.HotReload), "", "utf8");
   }
 
   for (const fileName of distFileNames) {
@@ -65,7 +65,7 @@ export async function buildObsidianPlugin({
     }
   }
 
-  const distPath = join(distDir, PluginPaths.MainJs);
+  const distPath = join(distDir, ObsidianPluginRepoPaths.MainJs);
 
   const npmPackage = await readNpmPackage();
   const pluginName = npmPackage.name;
@@ -75,7 +75,7 @@ export async function buildObsidianPlugin({
       js: banner,
     },
     bundle: true,
-    entryPoints: [resolvePathFromRoot(join(PluginPaths.Src, PluginPaths.MainTs))],
+    entryPoints: [resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs))],
     external: [
       "obsidian",
       "electron",

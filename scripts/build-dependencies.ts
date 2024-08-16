@@ -1,15 +1,12 @@
 import { context, type BuildOptions } from "esbuild";
 import { wrapCliTask } from "../src/bin/cli.ts";
-import {
-  COMPILED_DEPENDENCIES_PATH,
-  getDependenciesToSkip,
-  SOURCE_DEPENDENCIES_PATH
-} from "../src/bin/esbuild/Dependency.ts";
+import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
 import {
   banner,
   invoke
 } from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsPaths.ts";
 
 await wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();
@@ -19,11 +16,11 @@ await wrapCliTask(async () => {
       js: banner
     },
     bundle: true,
-    entryPoints: [SOURCE_DEPENDENCIES_PATH],
+    entryPoints: [ObsidianDevUtilsRepoPaths.SrcDependenciesTs],
     external: Array.from(dependenciesToSkip),
     format: "cjs",
     logLevel: "info",
-    outfile: COMPILED_DEPENDENCIES_PATH,
+    outfile: ObsidianDevUtilsRepoPaths.DistLibDependenciesCjs,
     platform: "node",
     plugins: [
       preprocessPlugin()

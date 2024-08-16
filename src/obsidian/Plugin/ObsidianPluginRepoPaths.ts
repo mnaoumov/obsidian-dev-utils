@@ -1,15 +1,17 @@
-export enum PluginPaths {
+export enum ObsidianPluginRepoPaths {
+  AnyPath = "**",
+  AnyTs = "*.ts",
   ChangelogMd = "CHANGELOG.md",
+  Dist = "dist",
   DistBuild = "dist/build",
   DistDev = "dist/dev",
   HotReload = ".hotreload",
-  License = "LICENSE",
   MainJs = "main.js",
   MainTs = "main.ts",
   ManifestJson = "manifest.json",
   PackageJson = "package.json",
-  ReadmeMd = "README.md",
   Src = "src",
   StylesCss = "styles.css",
+  TsConfigJson = "tsconfig.json",
   VersionsJson = "versions.json"
 }

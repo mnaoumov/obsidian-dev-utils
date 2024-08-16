@@ -1,14 +1,12 @@
 import { makeValidVariableName } from "../src/String.ts";
 import { generate } from "../src/CodeGenerator.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
-import {
-  getDependenciesToBundle,
-  SOURCE_DEPENDENCIES_PATH
-} from "../src/bin/esbuild/Dependency.ts";
+import { getDependenciesToBundle } from "../src/bin/esbuild/Dependency.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsPaths.ts";
 
 await wrapCliTask(async () => {
   const dependenciesToBundle = await getDependenciesToBundle();
-  await generate(SOURCE_DEPENDENCIES_PATH, dependenciesToBundle.map(makeExport));
+  await generate(ObsidianDevUtilsRepoPaths.SrcDependenciesTs, dependenciesToBundle.map(makeExport));
 });
 
 function makeExport(dependency: string): string {

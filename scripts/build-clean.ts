@@ -6,19 +6,19 @@ import {
   join
 } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
-import { SOURCE_DEPENDENCIES_PATH } from "../src/bin/esbuild/Dependency.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsPaths.ts";
 
 await wrapCliTask(async () => {
-  await rm("dist", { recursive: true, force: true });
+  await rm(ObsidianDevUtilsRepoPaths.Dist, { recursive: true, force: true });
 
-  for (const file of await readdirPosix("src", { recursive: true })) {
-    if (basename(file) !== "index.ts") {
+  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
+    if (basename(file) !== ObsidianDevUtilsRepoPaths.IndexTs) {
       continue;
     }
 
-    await rm(join("src", file));
+    await rm(join(ObsidianDevUtilsRepoPaths.Src, file));
   }
 
-  await rm(SOURCE_DEPENDENCIES_PATH, { force: true });
+  await rm(ObsidianDevUtilsRepoPaths.SrcDependenciesTs, { force: true });
 });

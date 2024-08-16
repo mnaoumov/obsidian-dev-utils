@@ -9,22 +9,23 @@ import { makeValidVariableName } from "../src/String.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
 import { asyncMap } from "../src/Async.ts";
 import { generate } from "../src/CodeGenerator.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsPaths.ts";
 
 await wrapCliTask(async () => {
-  await generateIndex("src");
+  await generateIndex(ObsidianDevUtilsRepoPaths.Src);
 });
 
 async function generateIndex(dir: string): Promise<void> {
   const dirents = await readdirPosix(dir, { withFileTypes: true });
   const lines = (await asyncMap(dirents, async (dirent) => {
-    if (dirent.name === "index.ts" || dirent.name === "@types" || dirent.name.endsWith(".d.ts")) {
+    if (dirent.name === ObsidianDevUtilsRepoPaths.IndexTs || dirent.name === ObsidianDevUtilsRepoPaths.Types || dirent.name.endsWith(ObsidianDevUtilsRepoPaths.AnyDts)) {
       return;
     }
     let sourceFile: string;
     let name: string;
     if (dirent.isDirectory()) {
       await generateIndex(join(dir, dirent.name));
-      sourceFile = normalizeIfRelative(join(dirent.name, "index.ts"));
+      sourceFile = normalizeIfRelative(join(dirent.name, ObsidianDevUtilsRepoPaths.IndexTs));
       name = dirent.name;
     } else {
       const extension = extname(dirent.name);
@@ -35,5 +36,5 @@ async function generateIndex(dir: string): Promise<void> {
     return `export * as ${makeValidVariableName(name)} from "${sourceFile}";`;
   })).filter((line) => line !== undefined);
 
-  await generate(join(dir, "index.ts"), lines);
+  await generate(join(dir, ObsidianDevUtilsRepoPaths.IndexTs), lines);
 }

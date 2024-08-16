@@ -9,15 +9,13 @@ import {
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
 import { renameToCjsPlugin } from "../src/bin/esbuild/renameToCjsPlugin.ts";
-import {
-  getDependenciesToSkip,
-  SOURCE_DEPENDENCIES_PATH
-} from "../src/bin/esbuild/Dependency.ts";
+import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import {
   join,
   normalizeIfRelative
 } from "../src/Path.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsPaths.ts";
 
 await wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();
@@ -30,7 +28,7 @@ await wrapCliTask(async () => {
     entryPoints: await getLibFiles(),
     format: "cjs",
     logLevel: "info",
-    outdir: "dist/lib",
+    outdir: ObsidianDevUtilsRepoPaths.DistLib,
     platform: "node",
     plugins: [
       preprocessPlugin(),
@@ -47,9 +45,9 @@ await wrapCliTask(async () => {
 });
 
 async function getLibFiles(): Promise<string[]> {
-  let files = await readdirPosix("src", { recursive: true });
-  files = files.map((file) => normalizeIfRelative(join("src", file)));
+  let files = await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true });
+  files = files.map((file) => normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.Src, file)));
   files = files.filter((file) => file.endsWith(".ts") && !file.endsWith(".d.ts"));
-  files = files.filter((file) => file !== SOURCE_DEPENDENCIES_PATH);
+  files = files.filter((file) => file !== ObsidianDevUtilsRepoPaths.SrcDependenciesTs);
   return files;
 }

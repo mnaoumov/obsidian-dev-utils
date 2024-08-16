@@ -4,7 +4,7 @@ import {
   readJson,
   writeJson
 } from "./JSON.ts";
-import { PluginPaths } from "./obsidian/Plugin/PluginPaths.ts";
+import { ObsidianPluginRepoPaths } from "./obsidian/Plugin/ObsidianPluginRepoPaths.ts";
 import { resolvePathFromRoot } from "./Root.ts";
 
 export interface NpmPackage {
@@ -33,5 +33,5 @@ export async function editNpmPackage(editFn: (npmPackage: NpmPackage) => MaybePr
 }
 
 export async function getPackageJsonPath(cwd?: string): Promise<string> {
-  return resolvePathFromRoot(PluginPaths.PackageJson, cwd);
+  return resolvePathFromRoot(ObsidianPluginRepoPaths.PackageJson, cwd);
 }

@@ -12,9 +12,8 @@ import {
 import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { trimStart } from "../../String.ts";
 import { getDirname } from "../../Path.ts";
-
-export const SOURCE_DEPENDENCIES_PATH = "./src/_dependencies.ts";
-export const COMPILED_DEPENDENCIES_PATH = "./dist/lib/_dependencies.cjs";
+import { join } from "node:path";
+import { ObsidianDevUtilsRepoPaths } from "./ObsidianDevUtilsPaths.ts";
 
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const npmPackage = await readNpmPackage(getDirname(import.meta.url));
@@ -31,10 +30,9 @@ export async function getDependenciesToBundle(): Promise<string[]> {
       js: banner
     },
     bundle: true,
-    entryPoints: ["src/**/*.ts"],
+    entryPoints: [join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)],
     format: "cjs",
     logLevel: "info",
-    outdir: "dist/lib",
     platform: "node",
     plugins: [
       preprocessPlugin(),
