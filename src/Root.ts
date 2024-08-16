@@ -8,10 +8,7 @@ import process from "node:process";
 import { packageDirectorySync } from "pkg-dir";
 import { pathToFileURL } from "node:url";
 import { toPosixPath } from "./Path.ts";
-import {
-  trimEnd,
-  trimStart
-} from "./String.ts";
+import { trimEnd } from "./String.ts";
 import { toCommandLine } from "./bin/cli.ts";
 
 export async function execFromRoot(command: string | string[], {
@@ -103,15 +100,7 @@ export async function tsImportFromRoot<T>(specifier: string): Promise<T> {
 }
 
 export function resolvePathFromRoot(path: string): string {
-  const resolvedPath = resolve(getRootDir(), path);
-  const isWindows = process.platform === "win32";
-
-  if (!isWindows) {
-    return resolvedPath;
-  }
-
-  const fsRoot = resolve("") + "/";
-  return trimStart(resolvedPath, fsRoot);
+  return resolve(getRootDir(), path);
 }
 
 export function getRootDir(): string {

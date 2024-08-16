@@ -7,7 +7,6 @@ const {
   extname,
   join,
   relative,
-  resolve
 } = posix;
 
 export {
@@ -16,8 +15,14 @@ export {
   extname,
   join,
   relative,
-  resolve
 };
+
+export function resolve(...paths: string[]): string {
+  let path = posix.resolve(...paths);
+  path = toPosixPath(path);
+  const match = path.match(/.:[^:]*$/);
+  return match?.[0] ?? path;
+}
 
 export function toPosixPath(path: string): string {
   return path.replace(/\\/g, "/");
