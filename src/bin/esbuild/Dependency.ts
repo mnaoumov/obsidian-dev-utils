@@ -5,7 +5,10 @@ import {
 } from "esbuild";
 import { readNpmPackage } from "../../Npm.ts";
 import builtins from "builtin-modules";
-import { banner, invoke } from "./PluginBuilder.ts";
+import {
+  banner,
+  invoke
+} from "./PluginBuilder.ts";
 import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { trimStart } from "../../String.ts";
 
@@ -47,7 +50,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
 function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, dependenciesToBundle: Set<string>): Plugin {
   return {
     name: "test",
-    setup(build) {
+    setup(build): void {
       build.onResolve({ filter: /^[^\.\/]/ }, (args) => {
         if (!args.importer.endsWith(".d.ts")) {
           const moduleName = trimStart(args.path.split("/")[0]!, "node:");
@@ -58,5 +61,5 @@ function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, depe
         return { path: args.path, external: true };
       });
     }
-  }
+  };
 }
