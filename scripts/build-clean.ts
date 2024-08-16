@@ -16,3 +16,5 @@ for (const file of await readdirPosix("src", { recursive: true })) {
 
   await rm(join("src", file));
 }
+
+await rm("src/_bundle.ts", { force: true });

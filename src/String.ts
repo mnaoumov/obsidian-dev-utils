@@ -47,3 +47,7 @@ export async function replaceAllAsync<Args extends unknown[]>(
   const replacements = await Promise.all(replacementPromises);
   return str.replaceAll(searchValue, (): string => replacements.shift()!);
 }
+
+export function makeValidVariableName(str: string): string {
+  return str.replace(/[^a-zA-Z0-9_]/g, "_");
+}

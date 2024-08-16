@@ -7,8 +7,6 @@ import type {
   SMarkdownPage
 } from "obsidian-dataview";
 
-import "localforage";
-
 import {
   convertAsyncToSync,
   type MaybePromise

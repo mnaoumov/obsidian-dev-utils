@@ -4,21 +4,19 @@ import {
   invoke
 } from "../src/bin/esbuild/PluginBuilder.ts";
 import preprocessPlugin from "../src/bin/esbuild/preprocessPlugin.ts";
-import renameToCjsPlugin from "../src/bin/esbuild/renameToCjsPlugin.ts";
 import { wrapTask } from "../src/bin/cli.ts";
-import { readNpmPackage } from "../src/Npm.ts";
+import renameToCjsPlugin from "../src/bin/esbuild/renameToCjsPlugin.ts";
+import { rm } from "node:fs/promises";
 
 await (wrapTask(async () => {
-  const npmPackage = await readNpmPackage();
-  const dependencyNames = Object.keys(npmPackage.dependencies ?? {})
+  await rm("src/_bundle.ts", { force: true });
 
   const buildOptions: BuildOptions = {
     banner: {
       js: banner
     },
-    bundle: true,
+    bundle: false,
     entryPoints: ["src/**/*.ts"],
-    external: dependencyNames,
     format: "cjs",
     logLevel: "info",
     outdir: "dist/lib",

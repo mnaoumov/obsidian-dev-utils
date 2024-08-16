@@ -7,6 +7,7 @@ import {
   join
 } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
+import { makeValidVariableName } from "../src/String.ts";
 
 async function main(): Promise<void> {
   await generateIndex("src");
@@ -31,9 +32,7 @@ async function generateIndex(dir: string): Promise<void> {
       sourceFile = `./${dirent.name}`;
     }
 
-    const escapedName = name.replace(/[^a-zA-Z0-9_]/g, "_");
-
-    lines.push(`export * as ${escapedName} from "${sourceFile}";`);
+    lines.push(`export * as ${makeValidVariableName(name)} from "${sourceFile}";`);
   }
 
   if (lines.at(-1)) {
