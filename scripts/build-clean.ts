@@ -13,7 +13,7 @@ await wrapCliTask(async () => {
   await rm(ObsidianDevUtilsRepoPaths.Dist, { recursive: true, force: true });
 
   for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
-    if (basename(file) !== ObsidianDevUtilsRepoPaths.IndexTs) {
+    if (basename(file) !== ObsidianDevUtilsRepoPaths.IndexTs as string) {
       continue;
     }
 

@@ -8,7 +8,10 @@ import "eslint-import-resolver-typescript";
 import type { Linter } from "eslint";
 import eslintPluginDeprecation from "eslint-plugin-deprecation";
 import { ObsidianPluginRepoPaths } from "../../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
-import { join, normalizeIfRelative } from "../../Path.ts";
+import {
+  join,
+  normalizeIfRelative
+} from "../../Path.ts";
 
 export const configs: Linter.Config[] = [
   {

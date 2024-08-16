@@ -48,6 +48,6 @@ async function getLibFiles(): Promise<string[]> {
   let files = await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true });
   files = files.map((file) => normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.Src, file)));
   files = files.filter((file) => file.endsWith(".ts") && !file.endsWith(".d.ts"));
-  files = files.filter((file) => file !== ObsidianDevUtilsRepoPaths.SrcDependenciesTs);
+  files = files.filter((file) => file !== ObsidianDevUtilsRepoPaths.SrcDependenciesTs as string);
   return files;
 }

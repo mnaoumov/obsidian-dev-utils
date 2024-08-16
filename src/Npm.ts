@@ -21,17 +21,17 @@ interface Export {
 }
 
 export async function readNpmPackage(cwd?: string): Promise<NpmPackage> {
-  return await readJson<NpmPackage>(await getPackageJsonPath(cwd));
+  return await readJson<NpmPackage>(getPackageJsonPath(cwd));
 }
 
 export async function writeNpmPackage(npmPackage: NpmPackage, cwd?: string): Promise<void> {
-  await writeJson(await getPackageJsonPath(cwd), npmPackage);
+  await writeJson(getPackageJsonPath(cwd), npmPackage);
 }
 
 export async function editNpmPackage(editFn: (npmPackage: NpmPackage) => MaybePromise<void>, cwd?: string): Promise<void> {
-  await editJson<NpmPackage>(await getPackageJsonPath(cwd), editFn);
+  await editJson<NpmPackage>(getPackageJsonPath(cwd), editFn);
 }
 
-export async function getPackageJsonPath(cwd?: string): Promise<string> {
+export function getPackageJsonPath(cwd?: string): string {
   return resolvePathFromRoot(ObsidianPluginRepoPaths.PackageJson, cwd);
 }

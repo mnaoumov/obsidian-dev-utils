@@ -1,4 +1,7 @@
-import { context, type BuildOptions } from "esbuild";
+import {
+  context,
+  type BuildOptions
+} from "esbuild";
 import { wrapCliTask } from "../src/bin/cli.ts";
 import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
 import {
