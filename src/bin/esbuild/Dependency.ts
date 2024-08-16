@@ -11,8 +11,10 @@ import {
 } from "./ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { trimStart } from "../../String.ts";
-import { getDirname } from "../../Path.ts";
-import { join } from "node:path";
+import {
+  getDirname,
+  join
+} from "../../Path.ts";
 import { ObsidianDevUtilsRepoPaths } from "./ObsidianDevUtilsPaths.ts";
 
 export async function getDependenciesToSkip(): Promise<Set<string>> {
