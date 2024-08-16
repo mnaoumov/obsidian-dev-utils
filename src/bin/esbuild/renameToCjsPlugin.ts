@@ -31,7 +31,7 @@ export function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
               if (relativeBundlePath[0] !== ".") {
                 relativeBundlePath = `./${relativeBundlePath}`;
               }
-              return `require("${relativeBundlePath}").${makeValidVariableName(importPath)}`;
+              return `require("${relativeBundlePath}").${makeValidVariableName(importPath)}.default ?? require("${relativeBundlePath}").${makeValidVariableName(importPath)}`;
             }
             if (importPath.endsWith(".ts")) {
               fixedImportPath = importPath.replaceAll(/\.ts$/g, ".cjs");
