@@ -1,4 +1,4 @@
-import type { DataviewInlineApi as DataviewInlineApiOriginal } from "../../node_modules/obsidian-dataview/lib/api/inline-api.d.ts";
+import type { DataviewInlineApi as DataviewInlineApiOriginal } from "obsidian-dataview/inline-api";
 import type {
   DataArray,
   DataviewApi,
