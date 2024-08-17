@@ -21,6 +21,7 @@ import {
 import { editNpmPackage } from "../src/Npm.ts";
 import AdmZip from "adm-zip";
 import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsPaths.ts";
+import { rm } from "node:fs/promises";
 
 await wrapCliTask(async (): Promise<TaskResult | void> => {
   const versionUpdateType = process.argv[2];
@@ -65,8 +66,22 @@ async function updateVersionInFiles(newVersion: string): Promise<void> {
 }
 
 async function publishGitHubRelease(newVersion: string): Promise<void> {
+  await rm(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.DistZip), { force: true });
+
   const zip = new AdmZip();
-  zip.addLocalFolder(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.Dist));
+  zip.addLocalFolder(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist);
+
+  const files = [
+    ObsidianDevUtilsRepoPaths.ChangelogMd,
+    ObsidianDevUtilsRepoPaths.License,
+    ObsidianDevUtilsRepoPaths.ReadmeMd,
+    ObsidianDevUtilsRepoPaths.PackageJson
+  ];
+
+  for (const file of files) {
+    zip.addLocalFile(resolvePathFromRoot(file));
+  }
+
   zip.writeZip(ObsidianDevUtilsRepoPaths.DistZip);
 
   await execFromRoot([
@@ -74,10 +89,6 @@ async function publishGitHubRelease(newVersion: string): Promise<void> {
     "release",
     "create",
     newVersion,
-    ObsidianDevUtilsRepoPaths.ChangelogMd,
-    ObsidianDevUtilsRepoPaths.License,
-    ObsidianDevUtilsRepoPaths.ReadmeMd,
-    ObsidianDevUtilsRepoPaths.PackageJson,
     ObsidianDevUtilsRepoPaths.DistZip,
     "--title",
     `v${newVersion}`,
