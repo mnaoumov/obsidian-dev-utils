@@ -20,6 +20,10 @@ import { ObsidianDevUtilsRepoPaths } from "./ObsidianDevUtilsPaths.ts";
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const npmPackage = await readNpmPackage(getDirname(import.meta.url));
   const dependenciesToSkip = new Set<string>([...Object.keys(npmPackage.dependencies ?? {}), ...builtins]);
+  for (const dependency of Object.keys(npmPackage.devDependencies ?? {})) {
+    dependenciesToSkip.delete(dependency);
+  }
+
   return dependenciesToSkip;
 }
 
