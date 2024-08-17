@@ -5,7 +5,7 @@
   "main": "./dist/lib/index.cjs",
   "types": "./dist/lib/index.d.ts",
   "scripts": {
-    "build": "npm-run-all build:clean build:validate build:generate-index build:generate-dependencies build:types build:dependencies build:lib build:static",
+    "build": "npm-run-all build:clean build:validate build:generate-index build:generate-dependencies build:types build:dependencies build:lib build:generate-exports build:static",
     "build:clean": "tsx scripts/build-clean.ts",
     "build:validate": "tsc --build --force",
     "build:generate-index": "tsx scripts/build-generate-index.ts",
@@ -13,6 +13,7 @@
     "build:types": "tsc --project ./tsconfig.types.json",
     "build:dependencies": "tsx scripts/build-dependencies.ts",
     "build:lib": "tsx scripts/build-lib.ts",
+    "build:generate-exports": "tsx scripts/build-generate-exports.ts",
     "build:static": "tsx scripts/build-static.ts",
     "lint": "tsx scripts/cli.ts lint",
     "lint-fix": "tsx scripts/cli.ts lint-fix",
@@ -78,6 +79,54 @@
     "./*": {
       "default": "./dist/lib/*.cjs",
       "types": "./dist/lib/*.d.ts"
+    },
+    "./bin": {
+      "default": "./dist/lib/bin/index.cjs",
+      "types": "./dist/lib/bin/index.d.ts"
+    },
+    "./bin/*": {
+      "default": "./dist/lib/bin/*.cjs",
+      "types": "./dist/lib/bin/*.d.ts"
+    },
+    "./bin/ESLint": {
+      "default": "./dist/lib/bin/ESLint/index.cjs",
+      "types": "./dist/lib/bin/ESLint/index.d.ts"
+    },
+    "./bin/ESLint/*": {
+      "default": "./dist/lib/bin/ESLint/*.cjs",
+      "types": "./dist/lib/bin/ESLint/*.d.ts"
+    },
+    "./bin/esbuild": {
+      "default": "./dist/lib/bin/esbuild/index.cjs",
+      "types": "./dist/lib/bin/esbuild/index.d.ts"
+    },
+    "./bin/esbuild/*": {
+      "default": "./dist/lib/bin/esbuild/*.cjs",
+      "types": "./dist/lib/bin/esbuild/*.d.ts"
+    },
+    "./obsidian": {
+      "default": "./dist/lib/obsidian/index.cjs",
+      "types": "./dist/lib/obsidian/index.d.ts"
+    },
+    "./obsidian/*": {
+      "default": "./dist/lib/obsidian/*.cjs",
+      "types": "./dist/lib/obsidian/*.d.ts"
+    },
+    "./obsidian/Modal": {
+      "default": "./dist/lib/obsidian/Modal/index.cjs",
+      "types": "./dist/lib/obsidian/Modal/index.d.ts"
+    },
+    "./obsidian/Modal/*": {
+      "default": "./dist/lib/obsidian/Modal/*.cjs",
+      "types": "./dist/lib/obsidian/Modal/*.d.ts"
+    },
+    "./obsidian/Plugin": {
+      "default": "./dist/lib/obsidian/Plugin/index.cjs",
+      "types": "./dist/lib/obsidian/Plugin/index.d.ts"
+    },
+    "./obsidian/Plugin/*": {
+      "default": "./dist/lib/obsidian/Plugin/*.cjs",
+      "types": "./dist/lib/obsidian/Plugin/*.d.ts"
     }
   },
   "files": [

@@ -1,4 +1,5 @@
 export enum ObsidianDevUtilsRepoPaths {
+  Any = "*",
   AnyPath = "**",
   AnyCjs = "*.cjs",
   AnyDts = "*.d.ts",
