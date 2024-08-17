@@ -5,7 +5,7 @@ import {
 import { join } from "../Path.ts";
 import { readdirPosix } from "../Fs.ts";
 import { trimStart } from "../String.ts";
-import { ObsidianDevUtilsRepoPaths } from "./esbuild/ObsidianDevUtilsRepoPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "./ObsidianDevUtilsRepoPaths.ts";
 
 export async function buildStatic(): Promise<void> {
   for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.Static, { withFileTypes: true, recursive: true })) {

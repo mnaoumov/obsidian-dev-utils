@@ -4,7 +4,7 @@ import {
 } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { editNpmPackage } from "../src/Npm.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsRepoPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
 
 await wrapCliTask(async () => {

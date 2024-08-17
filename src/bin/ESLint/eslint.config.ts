@@ -11,7 +11,7 @@ import {
   join,
   normalizeIfRelative
 } from "../../Path.ts";
-import { ObsidianDevUtilsRepoPaths } from "../esbuild/ObsidianDevUtilsRepoPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
 
 export const configs: Linter.Config[] = [
   {

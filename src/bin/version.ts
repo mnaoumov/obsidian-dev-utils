@@ -20,7 +20,7 @@ import { createInterface } from "node:readline/promises";
 import { readdirPosix } from "../Fs.ts";
 import { join } from "../Path.ts";
 import { ObsidianPluginRepoPaths } from "../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
-import { ObsidianDevUtilsRepoPaths } from "./esbuild/ObsidianDevUtilsRepoPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "./ObsidianDevUtilsRepoPaths.ts";
 import AdmZip from "adm-zip";
 
 enum VersionUpdateType {

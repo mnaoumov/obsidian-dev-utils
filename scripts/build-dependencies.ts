@@ -9,7 +9,7 @@ import {
   invoke
 } from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsRepoPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
 
 await wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();
