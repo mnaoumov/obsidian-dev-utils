@@ -61,7 +61,9 @@ export async function updateVersion(versionUpdateType: string): Promise<TaskResu
       await addUpdatedFilesToGit(newVersion);
       await addGitTag(newVersion);
       await gitPush();
-      await copyUpdatedManifest();
+      if (isObsidianPlugin) {
+        await copyUpdatedManifest();
+      }
       await publishGitHubRelease(newVersion, isObsidianPlugin);
     }
   ]);
