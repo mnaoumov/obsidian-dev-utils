@@ -14,7 +14,6 @@ import { existsSync } from "node:fs";
 import {
   cp,
   readFile,
-  rm,
   writeFile
 } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
@@ -271,10 +270,9 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     const fileNames = await readdirPosix(buildDir);
     filePaths = fileNames.map(fileName => join(buildDir, fileName));
   } else {
-    await rm(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.DistZip), { force: true });
 
     const zip = new AdmZip();
-    zip.addLocalFolder(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist);
+    zip.addLocalFolder(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist, (filename) => !filename.endsWith(".zip"));
 
     const files = [
       ObsidianDevUtilsRepoPaths.ChangelogMd,
