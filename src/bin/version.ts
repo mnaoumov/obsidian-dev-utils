@@ -6,10 +6,6 @@ import {
 import { spellcheck } from "./spellcheck.ts";
 import { lint } from "./ESLint/ESLint.ts";
 import {
-  BuildMode,
-  buildObsidianPlugin
-} from "./esbuild/ObsidianPluginBuilder.ts";
-import {
   editNpmPackage,
   readNpmPackage
 } from "../Npm.ts";
@@ -18,12 +14,15 @@ import { existsSync } from "node:fs";
 import {
   cp,
   readFile,
+  rm,
   writeFile
 } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
 import { readdirPosix } from "../Fs.ts";
 import { join } from "../Path.ts";
 import { ObsidianPluginRepoPaths } from "../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "./esbuild/ObsidianDevUtilsPaths.ts";
+import AdmZip from "adm-zip";
 
 enum VersionUpdateType {
   Major = "major",
@@ -44,6 +43,7 @@ type ObsidianReleasesJson = {
 };
 
 export async function updateVersion(versionUpdateType: string): Promise<TaskResult | void> {
+  const isObsidianPlugin = existsSync(resolvePathFromRoot(ObsidianPluginRepoPaths.ManifestJson));
   return await TaskResult.chain([
     async (): Promise<void> => {
       validate(versionUpdateType);
@@ -53,16 +53,17 @@ export async function updateVersion(versionUpdateType: string): Promise<TaskResu
     },
     (): Promise<TaskResult> => spellcheck(),
     (): Promise<TaskResult> => lint(),
-    (): Promise<TaskResult> => buildObsidianPlugin({ mode: BuildMode.Production }),
     async (): Promise<void> => {
+      await execFromRoot("npm run build");
+
       const newVersion = await getNewVersion(versionUpdateType);
-      await updateVersionInFiles(newVersion);
+      await updateVersionInFiles(newVersion, isObsidianPlugin);
       await updateChangelog(newVersion);
       await addUpdatedFilesToGit(newVersion);
       await addGitTag(newVersion);
       await gitPush();
       await copyUpdatedManifest();
-      await publishGitHubRelease(newVersion);
+      await publishGitHubRelease(newVersion, isObsidianPlugin);
     }
   ]);
 }
@@ -118,21 +119,23 @@ export function getVersionUpdateType(versionUpdateType: string): VersionUpdateTy
   }
 }
 
-export async function updateVersionInFiles(newVersion: string): Promise<void> {
+export async function updateVersionInFiles(newVersion: string, isObsidianPlugin: boolean): Promise<void> {
   await editNpmPackage((npmPackage) => {
     npmPackage.version = newVersion;
   });
 
-  const latestObsidianVersion = await getLatestObsidianVersion();
+  if (isObsidianPlugin) {
+    const latestObsidianVersion = await getLatestObsidianVersion();
 
-  await editJson<Manifest>(ObsidianPluginRepoPaths.ManifestJson, (manifest) => {
-    manifest.minAppVersion = latestObsidianVersion;
-    manifest.version = newVersion;
-  });
+    await editJson<Manifest>(ObsidianPluginRepoPaths.ManifestJson, (manifest) => {
+      manifest.minAppVersion = latestObsidianVersion;
+      manifest.version = newVersion;
+    });
 
-  await editJson<Record<string, string>>(ObsidianPluginRepoPaths.VersionsJson, (versions) => {
-    versions[newVersion] = latestObsidianVersion;
-  });
+    await editJson<Record<string, string>>(ObsidianPluginRepoPaths.VersionsJson, (versions) => {
+      versions[newVersion] = latestObsidianVersion;
+    });
+  }
 }
 
 export async function getNewVersion(versionUpdateType: string): Promise<string> {
@@ -260,10 +263,33 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
   return releaseNotes;
 }
 
-export async function publishGitHubRelease(newVersion: string): Promise<void> {
-  const buildDir = resolvePathFromRoot(ObsidianPluginRepoPaths.DistBuild);
-  const fileNames = await readdirPosix(buildDir);
-  const filePaths = fileNames.map(fileName => join(buildDir, fileName));
+export async function publishGitHubRelease(newVersion: string, isObsidianPlugin: boolean): Promise<void> {
+  let filePaths: string[];
+
+  if (isObsidianPlugin) {
+    const buildDir = resolvePathFromRoot(ObsidianPluginRepoPaths.DistBuild);
+    const fileNames = await readdirPosix(buildDir);
+    filePaths = fileNames.map(fileName => join(buildDir, fileName));
+  } else {
+    await rm(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.DistZip), { force: true });
+
+    const zip = new AdmZip();
+    zip.addLocalFolder(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist);
+
+    const files = [
+      ObsidianDevUtilsRepoPaths.ChangelogMd,
+      ObsidianDevUtilsRepoPaths.License,
+      ObsidianDevUtilsRepoPaths.ReadmeMd,
+      ObsidianDevUtilsRepoPaths.PackageJson
+    ];
+
+    for (const file of files) {
+      zip.addLocalFile(resolvePathFromRoot(file));
+    }
+
+    zip.writeZip(ObsidianDevUtilsRepoPaths.DistZip);
+    filePaths = [ObsidianDevUtilsRepoPaths.DistZip];
+  }
 
   await execFromRoot(["gh", "release", "create", newVersion, ...filePaths, "--title", `v${newVersion}`, "--notes-file", "-"], {
     quiet: true,
