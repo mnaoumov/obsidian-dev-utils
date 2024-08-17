@@ -7,11 +7,16 @@ import process from "node:process";
 import { lint } from "./ESLint/ESLint.ts";
 import { spellcheck } from "./spellcheck.ts";
 import { updateVersion } from "./version.ts";
-import type { MaybePromise } from "../Async.ts";
+import {
+  invokeAsyncSafely,
+  type MaybePromise
+} from "../Async.ts";
 import {
   getTaskResult,
   TaskResult
 } from "../TaskResult.ts";
+import { readNpmPackage } from "../Npm.ts";
+import { getDirname } from "../Path.ts";
 
 /**
  * The number of leading arguments to skip when parsing command-line arguments.
@@ -21,22 +26,24 @@ import {
 const NODE_SCRIPT_ARGV_SKIP_COUNT = 2;
 
 export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_COUNT)): void {
-  const NODE_PACKAGE_VERSION = "${NODE_PACKAGE_VERSION}";
-  const program = new Command();
+  invokeAsyncSafely(wrapCliTask(async () => {
+    const npmPackage = await readNpmPackage(getDirname(import.meta.url));
+    const program = new Command();
 
-  program
-    .name("obsidian-dev-utils")
-    .description("CLI to some obsidian-dev-utils commands")
-    .version(NODE_PACKAGE_VERSION);
+    program
+      .name(npmPackage.name)
+      .description("CLI to some obsidian-dev-utils commands")
+      .version(npmPackage.version);
 
-  addCommand(program, CommandNames.Build, "Build the plugin", () => buildObsidianPlugin({ mode: BuildMode.Production }));
-  addCommand(program, CommandNames.Dev, "Build the plugin in development mode", () => buildObsidianPlugin({ mode: BuildMode.Development }));
-  addCommand(program, CommandNames.Lint, "Lints the source code", () => lint());
-  addCommand(program, CommandNames.LintFix, "Lints the source code and applies automatic fixes if possible", () => lint(true));
-  addCommand(program, CommandNames.Spellcheck, "Spellcheck the source code", () => spellcheck());
-  addCommand(program, CommandNames.Version, "Release new version", (versionUpdateType: string) => updateVersion(versionUpdateType))
-    .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]");
-  program.parse(argv, { from: "user" });
+    addCommand(program, CommandNames.Build, "Build the plugin", () => buildObsidianPlugin({ mode: BuildMode.Production }));
+    addCommand(program, CommandNames.Dev, "Build the plugin in development mode", () => buildObsidianPlugin({ mode: BuildMode.Development }));
+    addCommand(program, CommandNames.Lint, "Lints the source code", () => lint());
+    addCommand(program, CommandNames.LintFix, "Lints the source code and applies automatic fixes if possible", () => lint(true));
+    addCommand(program, CommandNames.Spellcheck, "Spellcheck the source code", () => spellcheck());
+    addCommand(program, CommandNames.Version, "Release new version", (versionUpdateType: string) => updateVersion(versionUpdateType))
+      .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]");
+    program.parse(argv, { from: "user" });
+  }));
 }
 
 function addCommand<Args extends unknown[]>(program: Command, name: string, description: string, taskFn: (...args: Args) => MaybePromise<TaskResult | void>): Command {
