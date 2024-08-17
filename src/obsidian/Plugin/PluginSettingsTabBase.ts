@@ -1,6 +1,5 @@
 import { PluginSettingTab } from "obsidian";
 import { PluginBase } from "./PluginBase.ts";
-import type { PluginSettingsBase } from "./PluginSettingsBase.ts";
 import type { KeysMatching } from "../../Type.ts";
 
 interface ValueComponent<T> {
@@ -8,7 +7,7 @@ interface ValueComponent<T> {
   onChange(callback: (newValue: T) => Promise<void>): this;
 }
 
-export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<PluginSettings>, PluginSettings extends PluginSettingsBase> extends PluginSettingTab {
+export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<PluginSettings>, PluginSettings extends object> extends PluginSettingTab {
   public constructor(public override plugin: TPlugin) {
     super(plugin.app, plugin);
   }

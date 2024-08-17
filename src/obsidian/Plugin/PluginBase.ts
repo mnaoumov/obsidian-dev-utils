@@ -4,10 +4,12 @@ import {
   PluginSettingTab
 } from "obsidian";
 import { registerAsyncErrorEventHandler } from "../../Error.ts";
-import { PluginSettingsBase } from "./PluginSettingsBase.ts";
-import { type Constructor } from "../../Type.ts";
+import {
+  loadPluginSettings,
+  clonePluginSettings
+} from "./PluginSettings.ts";
 
-export abstract class PluginBase<PluginSettings extends PluginSettingsBase> extends Plugin {
+export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   private _settings!: PluginSettings;
   private notice?: Notice;
   private _abortSignal!: AbortSignal;
@@ -17,10 +19,10 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase> exte
   }
 
   public get settings(): PluginSettings {
-    return PluginSettingsBase.clone(this._settings);
+    return clonePluginSettings(this.createDefaultPluginSettings, this._settings);
   }
 
-  protected abstract get PluginSettingsConstructor(): Constructor<PluginSettings>;
+  protected abstract createDefaultPluginSettings(): PluginSettings;
   protected abstract createPluginSettingsTab(): PluginSettingTab | null;
 
   public override async onload(): Promise<void> {
@@ -50,11 +52,11 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase> exte
   }
 
   protected async parseSettings(data: unknown): Promise<PluginSettings> {
-    return await Promise.resolve(PluginSettingsBase.load(this.PluginSettingsConstructor, data));
+    return await Promise.resolve(loadPluginSettings(this.createDefaultPluginSettings, data));
   }
 
   public async saveSettings(newSettings: PluginSettings): Promise<void> {
-    this._settings = PluginSettingsBase.clone(newSettings);
+    this._settings = clonePluginSettings(this.createDefaultPluginSettings, newSettings);
     await this.saveData(this._settings);
   }
 
