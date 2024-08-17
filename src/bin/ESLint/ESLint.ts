@@ -2,7 +2,10 @@ import {
   loadESLint
 } from "eslint";
 import { configs } from "./eslint.config.ts";
-import { join } from "../../Path.ts";
+import {
+  join,
+  normalizeIfRelative
+} from "../../Path.ts";
 import { packageDirectory } from "pkg-dir";
 import { toRelativeFromRoot } from "../../Root.ts";
 import { getDirname } from "../../Path.ts";
@@ -24,7 +27,11 @@ export async function lint(fix?: boolean): Promise<TaskResult> {
     overrideConfig: configs,
     ignorePatterns
   });
-  const lintResults = await eslint.lintFiles(["."]);
+  const includePatterns = configs
+    .flatMap((config) => config.files ?? [])
+    .flatMap((file) => file instanceof Array ? file : [file])
+    .map((file) => normalizeIfRelative(file));
+  const lintResults = await eslint.lintFiles(includePatterns);
 
   if (fix) {
     await FlatESLint.outputFixes(lintResults);

@@ -15,7 +15,10 @@ import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
 
 export const configs: Linter.Config[] = [
   {
-    files: [join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyTs), join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyTs)],
+    files: [
+      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
+      join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
+    ],
     ignores: [],
     languageOptions: {
       parser: typescriptEslintParser,

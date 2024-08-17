@@ -51,7 +51,9 @@ export async function updateVersion(versionUpdateType: string): Promise<TaskResu
       await checkGitHubCliInstalled();
     },
     (): Promise<TaskResult> => spellcheck(),
-    async (): Promise<void> => { await execFromRoot("npm run build") },
+    async (): Promise<void> => {
+      await execFromRoot("npm run build");
+    },
     (): Promise<TaskResult> => lint(),
     async (): Promise<void> => {
       const newVersion = await getNewVersion(versionUpdateType);
