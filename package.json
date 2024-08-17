@@ -134,6 +134,7 @@
     "!dist/dist.zip",
     "CHANGELOG.md",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "package.json"
   ]
 }
