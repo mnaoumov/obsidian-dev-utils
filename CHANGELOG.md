@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.0
+
+- Simplify generics
+- Make version scripts for plugin and not
+
 ## 1.0.2
 
 - Fix eslint/cspell commands
