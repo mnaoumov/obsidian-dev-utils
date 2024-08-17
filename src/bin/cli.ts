@@ -17,6 +17,10 @@ import {
 } from "../TaskResult.ts";
 import { readNpmPackage } from "../Npm.ts";
 import { getDirname } from "../Path.ts";
+import {
+  buildClean,
+  buildStatic
+} from "./build.ts";
 
 /**
  * The number of leading arguments to skip when parsing command-line arguments.
@@ -36,6 +40,8 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
       .version(npmPackage.version);
 
     addCommand(program, CommandNames.Build, "Build the plugin", () => buildObsidianPlugin({ mode: BuildMode.Production }));
+    addCommand(program, CommandNames.BuildClean, "Cleans dist folder", () => buildClean());
+    addCommand(program, CommandNames.BuildStatic, "Copies static content to dist", () => buildStatic());
     addCommand(program, CommandNames.Dev, "Build the plugin in development mode", () => buildObsidianPlugin({ mode: BuildMode.Development }));
     addCommand(program, CommandNames.Lint, "Lints the source code", () => lint());
     addCommand(program, CommandNames.LintFix, "Lints the source code and applies automatic fixes if possible", () => lint(true));
@@ -71,6 +77,8 @@ export function toCommandLine(args: string[]): string {
 
 enum CommandNames {
   Build = "build",
+  BuildClean = "build:clean",
+  BuildStatic = "build:static",
   Dev = "dev",
   Lint = "lint",
   LintFix = "lint-fix",

@@ -32,6 +32,22 @@ npx obsidian-dev-utils build
 
 Compiles the production version of your plugin into the `dist/build` folder.
 
+#### Clean build folder
+
+```bash
+npx obsidian-dev-utils build:clean
+```
+
+Cleans `dist` folder.
+
+#### Build static assets
+
+```bash
+npx obsidian-dev-utils build:static
+```
+
+Copies `static` folder to `dist` folder.
+
 #### Build Development Version
 
 ```bash
@@ -80,6 +96,8 @@ To simplify the usage of these commands, you can add them to your `package.json`
 {
   "scripts": {
     "build": "obsidian-dev-utils build",
+    "build:clean": "obsidian-dev-utils build:clean",
+    "build:static": "obsidian-dev-utils build:static",
     "dev": "obsidian-dev-utils dev",
     "lint": "obsidian-dev-utils lint",
     "lint-fix": "obsidian-dev-utils lint-fix",
