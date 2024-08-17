@@ -2,7 +2,7 @@ import {
   cp,
   rm
 } from "node:fs/promises";
-import { join } from "path";
+import { join } from "../Path.ts";
 import { readdirPosix } from "../Fs.ts";
 import { trimStart } from "../String.ts";
 import { ObsidianDevUtilsRepoPaths } from "./esbuild/ObsidianDevUtilsRepoPaths.ts";
