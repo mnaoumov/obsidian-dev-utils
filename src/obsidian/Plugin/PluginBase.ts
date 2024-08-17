@@ -22,7 +22,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
     return clonePluginSettings(this.createDefaultPluginSettings, this._settings);
   }
 
-  protected abstract createDefaultPluginSettings(): PluginSettings;
+  protected abstract createDefaultPluginSettings(this: void): PluginSettings;
   protected abstract createPluginSettingsTab(): PluginSettingTab | null;
 
   public override async onload(): Promise<void> {

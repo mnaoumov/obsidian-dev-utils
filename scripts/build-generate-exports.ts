@@ -1,4 +1,7 @@
-import { join, normalizeIfRelative } from "../src/Path.ts";
+import {
+  join,
+  normalizeIfRelative
+} from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { editNpmPackage } from "../src/Npm.ts";
 import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsRepoPaths.ts";
@@ -20,7 +23,7 @@ await wrapCliTask(async () => {
 
   await editNpmPackage((npmPackage) => {
     npmPackage.exports = {};
-    for (let libDir of libDirs) {
+    for (const libDir of libDirs) {
       const importPath = libDir.replace(ObsidianDevUtilsRepoPaths.DistLib, ".");
       npmPackage.exports[importPath] = {
         default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs)),
