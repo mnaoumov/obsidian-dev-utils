@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.2.0
+
+- Lint only src and scripts
+- Add build:clean, build:static commands
+
 ## 1.1.1
 
 - copyUpdatedManifest only for plugin
