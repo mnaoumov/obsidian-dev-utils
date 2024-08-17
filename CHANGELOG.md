@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.1.1
+
+- copyUpdatedManifest only for plugin
+
 ## 1.1.0
 
 - Simplify generics
