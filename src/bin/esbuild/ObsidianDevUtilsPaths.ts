@@ -6,7 +6,6 @@ export enum ObsidianDevUtilsRepoPaths {
   DistEslintConfigEmptyCjs = "dist/eslint.config.empty.cjs",
   DistLib = "dist/lib",
   DistLibDependenciesCjs = "./dist/lib/_dependencies.cjs",
-  DistZip = "dist/dist.zip",
   DtsExtension = ".d.ts",
   IndexTs = "index.ts",
   License = "LICENSE",

@@ -287,8 +287,10 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
       zip.addLocalFile(resolvePathFromRoot(file));
     }
 
-    zip.writeZip(ObsidianDevUtilsRepoPaths.DistZip);
-    filePaths = [ObsidianDevUtilsRepoPaths.DistZip];
+    const npmPackage = await readNpmPackage();
+    const distZipPath = resolvePathFromRoot(join(ObsidianDevUtilsRepoPaths.Dist, `${npmPackage.name}-${newVersion}.zip`));
+    zip.writeZip(distZipPath);
+    filePaths = [distZipPath];
   }
 
   await execFromRoot(["gh", "release", "create", newVersion, ...filePaths, "--title", `v${newVersion}`, "--notes-file", "-"], {
