@@ -42,7 +42,7 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
     addCommand(program, CommandNames.Spellcheck, "Spellcheck the source code", () => spellcheck());
     addCommand(program, CommandNames.Version, "Release new version", (versionUpdateType: string) => updateVersion(versionUpdateType))
       .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]");
-    program.parse(argv, { from: "user" });
+    await program.parseAsync(argv, { from: "user" });
   }));
 }
 
