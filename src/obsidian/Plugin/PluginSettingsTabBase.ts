@@ -9,7 +9,7 @@ interface ValueComponent<T> {
 }
 
 export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<PluginSettings>, PluginSettings extends PluginSettingsBase> extends PluginSettingTab {
-  constructor(public override plugin: TPlugin) {
+  public constructor(public override plugin: TPlugin) {
     super(plugin.app, plugin);
   }
 

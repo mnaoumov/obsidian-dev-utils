@@ -45,12 +45,12 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase> exte
   protected onLayoutReady(): void { }
 
   private async loadSettings(): Promise<void> {
-    const data = await this.loadData();
+    const data = await this.loadData() as unknown;
     this._settings = await this.parseSettings(data);
   }
 
   protected async parseSettings(data: unknown): Promise<PluginSettings> {
-    return PluginSettingsBase.load(this.PluginSettingsConstructor, data);
+    return await Promise.resolve(PluginSettingsBase.load(this.PluginSettingsConstructor, data));
   }
 
   public async saveSettings(newSettings: PluginSettings): Promise<void> {
