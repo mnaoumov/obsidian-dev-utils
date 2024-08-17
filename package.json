@@ -82,6 +82,7 @@
   },
   "files": [
     "dist/",
+    "!dist/dist.zip",
     "CHANGELOG.md",
     "LICENSE",
     "README.md"
