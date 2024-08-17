@@ -7,16 +7,16 @@ import globals from "globals";
 import "eslint-import-resolver-typescript";
 import type { Linter } from "eslint";
 import eslintPluginDeprecation from "eslint-plugin-deprecation";
-import { ObsidianPluginRepoPaths } from "../../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
 import {
   join,
   normalizeIfRelative
 } from "../../Path.ts";
+import { ObsidianDevUtilsRepoPaths } from "../esbuild/ObsidianDevUtilsRepoPaths.ts";
 
 export const configs: Linter.Config[] = [
   {
-    files: [join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs)],
-    ignores: [join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.AnyPath)],
+    files: [join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyTs), join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyTs)],
+    ignores: [],
     languageOptions: {
       parser: typescriptEslintParser,
       sourceType: "module",
@@ -25,7 +25,7 @@ export const configs: Linter.Config[] = [
         ...globals.node
       },
       parserOptions: {
-        project: normalizeIfRelative(ObsidianPluginRepoPaths.TsConfigJson)
+        project: normalizeIfRelative(ObsidianDevUtilsRepoPaths.TsConfigJson)
       }
     },
     plugins: {

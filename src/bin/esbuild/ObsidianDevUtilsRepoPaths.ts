@@ -16,8 +16,10 @@ export enum ObsidianDevUtilsRepoPaths {
   License = "LICENSE",
   PackageJson = "package.json",
   ReadmeMd = "README.md",
+  Scripts = "scripts",
   Src = "src",
   SrcDependenciesTs = "./src/_dependencies.ts",
   Static = "static",
+  TsConfigJson = "tsconfig.json",
   Types = "@types",
 }
