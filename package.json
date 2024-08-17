@@ -1,6 +1,6 @@
 {
   "name": "obsidian-dev-utils",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "This is the collection of useful functions that you can use for your Obsidian plugin development",
   "main": "./dist/lib/index.cjs",
   "types": "./dist/lib/index.d.ts",
@@ -17,7 +17,7 @@
     "lint": "tsx scripts/cli.ts lint",
     "lint-fix": "tsx scripts/cli.ts lint-fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
-    "version": "tsx scripts/cli.ts version"
+    "version": "tsx scripts/version.ts"
   },
   "repository": {
     "type": "git",
