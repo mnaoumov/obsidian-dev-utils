@@ -7,7 +7,7 @@ import {
 } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsRepoPaths.ts";
 
 await wrapCliTask(async () => {
   await rm(ObsidianDevUtilsRepoPaths.Dist, { recursive: true, force: true });

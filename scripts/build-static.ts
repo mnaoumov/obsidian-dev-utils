@@ -3,7 +3,7 @@ import { join } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { trimStart } from "../src/String.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsRepoPaths.ts";
 
 await wrapCliTask(async () => {
   for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.Static, { withFileTypes: true, recursive: true })) {

@@ -11,7 +11,7 @@ import {
   toPosixPath
 } from "../../Path.ts";
 import { resolvePathFromRoot } from "../../Root.ts";
-import { ObsidianDevUtilsRepoPaths } from "./ObsidianDevUtilsPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "./ObsidianDevUtilsRepoPaths.ts";
 
 export function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
   const dependenciesPath = resolvePathFromRoot(ObsidianDevUtilsRepoPaths.DistLibDependenciesCjs);

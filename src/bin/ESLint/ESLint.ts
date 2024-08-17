@@ -7,7 +7,7 @@ import { packageDirectory } from "pkg-dir";
 import { toRelativeFromRoot } from "../../Root.ts";
 import { getDirname } from "../../Path.ts";
 import { TaskResult } from "../../TaskResult.ts";
-import { ObsidianDevUtilsRepoPaths } from "../esbuild/ObsidianDevUtilsPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "../esbuild/ObsidianDevUtilsRepoPaths.ts";
 
 export async function lint(fix?: boolean): Promise<TaskResult> {
   fix ??= false;

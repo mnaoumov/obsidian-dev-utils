@@ -9,7 +9,7 @@ import { makeValidVariableName } from "../src/String.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
 import { asyncMap } from "../src/Async.ts";
 import { generate } from "../src/CodeGenerator.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/bin/esbuild/ObsidianDevUtilsRepoPaths.ts";
 
 await wrapCliTask(async () => {
   await generateIndex(ObsidianDevUtilsRepoPaths.Src);

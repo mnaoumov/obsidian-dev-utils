@@ -1,5 +1,7 @@
 export enum ObsidianDevUtilsRepoPaths {
   AnyPath = "**",
+  AnyCjs = "*.cjs",
+  AnyDts = "*.d.ts",
   AnyTs = "*.ts",
   ChangelogMd = "CHANGELOG.md",
   Dist = "dist",
@@ -7,6 +9,8 @@ export enum ObsidianDevUtilsRepoPaths {
   DistLib = "dist/lib",
   DistLibDependenciesCjs = "./dist/lib/_dependencies.cjs",
   DtsExtension = ".d.ts",
+  IndexCjs = "index.cjs",
+  IndexDts = "index.d.ts",
   IndexTs = "index.ts",
   License = "LICENSE",
   PackageJson = "package.json",
