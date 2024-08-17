@@ -96,24 +96,23 @@ This setup allows you to run the commands using `npm run`, like `npm run build`.
 
 `Obsidian Dev Utils` also provides a range of general-purpose and Obsidian-specific helper functions.
 
-You can use these functions as follows:
+The functions are grouped by files and folders and you have multiple ways to import them:
 
 ```typescript
-// Import the entire module and use it with the module prefix
-import { Async } from "obsidian-dev-utils";
-await Async.timeout(1000);
+import { loadPluginSettings } from "obsidian-dev-utils/obsidian/Plugin/PluginSettings";
+loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
 
-// Import an individual function, and use it without the module prefix
-import { timeout } from "obsidian-dev-utils/Async";
-await timeout(1000);
+import { PluginSettings } from "obsidian-dev-utils/obsidian/Plugin";
+PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
 
-// Import the entire module and use it with the module prefix, from a subfolder
-import { MetadataCache } from "obsidian-dev-utils/obsidian";
-await MetadataCache.getCacheSafe(app, file);
+import { Plugin } from "obsidian-dev-utils/obsidian";
+Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
 
-// Import the entire module and use it without the module prefix, from a subfolder
-import { getCacheSafe } from "obsidian-dev-utils/obsidian/MetadataCache";
-await getCacheSafe(app, file);
+import { obsidian } from "obsidian-dev-utils";
+obsidian.Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
+
+import * as obsidianDevUtils from "obsidian-dev-utils";
+obsidianDevUtils.obsidian.Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
 ```
 
 ## License
