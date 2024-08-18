@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.5.0
+
+- Add tsdoc
+- Edit package-lock.json
+- Fix lint for missing folder
+
 ## 1.4.0
 
 - Switch to lint:fix
