@@ -20,8 +20,7 @@ import { toRelativeFromRoot } from "../../Root.ts";
 import { getDirname } from "../../Path.ts";
 import { TaskResult } from "../../TaskResult.ts";
 import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
-import { glob } from "node:fs/promises";
-import { toArray } from "../../Async.ts";
+import { glob } from "glob";
 
 /**
  * Lints files according to the ESLint configurations and applies automatic fixes if specified.
@@ -53,7 +52,7 @@ export async function lint(fix?: boolean): Promise<TaskResult> {
     .flatMap((file) => file instanceof Array ? file : [file])
     .map((file) => normalizeIfRelative(file));
 
-  const files = await toArray(glob(includePatterns));
+  const files = await glob(includePatterns);
   const lintResults = await eslint.lintFiles(files);
 
   if (fix) {
