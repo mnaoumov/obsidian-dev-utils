@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.5.1
+
+- Auto commit package-lock.json
+
 ## 1.5.0
 
 - Add tsdoc
