@@ -34,7 +34,7 @@ declare module "@jinder/path" {
      * @param pathSegments - A sequence of paths or path segments.
      * @returns The resolved absolute path.
      */
-    resolve(...pathSegments: string[]): string;
+    resolve(this: void, ...pathSegments: string[]): string;
 
     /**
      * Normalizes the given path, resolving `..` and `.` segments.
@@ -42,7 +42,7 @@ declare module "@jinder/path" {
      * @param path - The path to normalize.
      * @returns The normalized path.
      */
-    normalize(path: string): string;
+    normalize(this: void, path: string): string;
 
     /**
      * Determines whether the given path is an absolute path.
@@ -50,7 +50,7 @@ declare module "@jinder/path" {
      * @param path - The path to test.
      * @returns `true` if the path is absolute, otherwise `false`.
      */
-    isAbsolute(path: string): boolean;
+    isAbsolute(this: void, path: string): boolean;
 
     /**
      * Joins all given path segments together using the platform-specific separator.
@@ -58,7 +58,7 @@ declare module "@jinder/path" {
      * @param paths - The path segments to join.
      * @returns The joined path.
      */
-    join(...paths: string[]): string;
+    join(this: void, ...paths: string[]): string;
 
     /**
      * Computes the relative path from `from` to `to` based on the current working directory.
@@ -67,7 +67,7 @@ declare module "@jinder/path" {
      * @param to - The target path.
      * @returns The relative path from `from` to `to`.
      */
-    relative(from: string, to: string): string;
+    relative(this: void, from: string, to: string): string;
 
     /**
      * Converts a path into its long form, if necessary.
@@ -75,7 +75,7 @@ declare module "@jinder/path" {
      * @param path - The path to convert.
      * @returns The long form of the path.
      */
-    _makeLong(path: string): string;
+    _makeLong(this: void, path: string): string;
 
     /**
      * Returns the directory name of a path.
@@ -83,7 +83,7 @@ declare module "@jinder/path" {
      * @param path - The path to evaluate.
      * @returns The directory name.
      */
-    dirname(path: string): string;
+    dirname(this: void, path: string): string;
 
     /**
      * Returns the last portion of a path, such as the file name.
@@ -92,7 +92,7 @@ declare module "@jinder/path" {
      * @param ext - Optional extension to remove from the end of the path.
      * @returns The last portion of the path.
      */
-    basename(path: string, ext?: string): string;
+    basename(this: void, path: string, ext?: string): string;
 
     /**
      * Returns the extension of the path.
@@ -100,7 +100,7 @@ declare module "@jinder/path" {
      * @param path - The path to evaluate.
      * @returns The extension of the path.
      */
-    extname(path: string): string;
+    extname(this: void, path: string): string;
 
     /**
      * Formats a path object into a path string.
@@ -108,7 +108,7 @@ declare module "@jinder/path" {
      * @param pathObject - An object containing properties such as `root`, `dir`, `base`, `name`, and `ext`.
      * @returns The formatted path string.
      */
-    format(pathObject: Partial<ParsedPath>): string;
+    format(this: void, pathObject: Partial<ParsedPath>): string;
 
     /**
      * Parses a path string into an object with `root`, `dir`, `base`, `ext`, and `name` properties.
@@ -116,7 +116,7 @@ declare module "@jinder/path" {
      * @param pathString - The path string to parse.
      * @returns An object with the parsed path components.
      */
-    parse(pathString: string): ParsedPath;
+    parse(this: void, pathString: string): ParsedPath;
 
     /** The platform-specific path segment separator (`'/'` on POSIX and `'\\'` on Windows). */
     readonly sep: string;
