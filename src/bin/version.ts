@@ -7,6 +7,7 @@ import { spellcheck } from "./spellcheck.ts";
 import { lint } from "./ESLint/ESLint.ts";
 import {
   editNpmPackage,
+  editNpmPackageLock,
   readNpmPackage
 } from "../Npm.ts";
 import { editJson } from "../JSON.ts";
@@ -125,6 +126,10 @@ export async function updateVersionInFiles(newVersion: string, isObsidianPlugin:
   await editNpmPackage((npmPackage) => {
     npmPackage.version = newVersion;
   });
+
+  await editNpmPackageLock((npmPackageLock) => {
+    npmPackageLock.version = newVersion
+  }, { skipIfMissing: true });
 
   if (isObsidianPlugin) {
     const latestObsidianVersion = await getLatestObsidianVersion();

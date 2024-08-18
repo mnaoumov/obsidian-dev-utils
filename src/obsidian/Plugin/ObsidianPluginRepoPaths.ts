@@ -10,6 +10,7 @@ export enum ObsidianPluginRepoPaths {
   MainTs = "main.ts",
   ManifestJson = "manifest.json",
   PackageJson = "package.json",
+  PackageLockJson = "package-lock.json",
   Src = "src",
   StylesCss = "styles.css",
   TsConfigJson = "tsconfig.json",
