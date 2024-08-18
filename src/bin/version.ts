@@ -249,10 +249,30 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
   let major = Number(match[1]);
   let minor = Number(match[2]);
   let patch = Number(match[3]);
+  let beta = match[5] ? Number(match[5]) : 0;
 
-  // Further logic to compute new version based on `versionUpdateType` would go here...
+  switch (versionType) {
+    case VersionUpdateType.Major:
+      major++;
+      minor = 0;
+      patch = 0;
+      beta = 0;
+      break;
+    case VersionUpdateType.Minor:
+      minor++;
+      patch = 0;
+      beta = 0;
+      break;
+    case VersionUpdateType.Patch:
+      patch++;
+      beta = 0;
+      break;
+    case VersionUpdateType.Beta:
+      beta++;
+      break;
+  }
 
-  return `${major}.${minor}.${patch}`; // Example return statement
+  return `${major}.${minor}.${patch}${beta > 0 ? `-beta.${beta}` : ""}`;
 }
 
 /**
