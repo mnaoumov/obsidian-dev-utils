@@ -6,6 +6,8 @@ import { readdirPosix } from "../src/Fs.ts";
 import { editNpmPackage } from "../src/Npm.ts";
 import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
+import { deepEqual } from "../src/Object.ts";
+import { TaskResult } from "../src/TaskResult.ts";
 
 await wrapCliTask(async () => {
   const libDirs: string[] = [ObsidianDevUtilsRepoPaths.DistLib];
@@ -21,7 +23,10 @@ await wrapCliTask(async () => {
 
   libDirs.sort();
 
+  let isChanged = false;
+
   await editNpmPackage((npmPackage) => {
+    const oldExports = npmPackage.exports;
     npmPackage.exports = {};
     for (const libDir of libDirs) {
       const importPath = libDir.replace(ObsidianDevUtilsRepoPaths.DistLib, ".");
@@ -34,5 +39,9 @@ await wrapCliTask(async () => {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
       };
     }
+
+    isChanged = !deepEqual(oldExports, npmPackage.exports);
   });
+
+  return TaskResult.CreateSuccessResult(!isChanged);
 });
