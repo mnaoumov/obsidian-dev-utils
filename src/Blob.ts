@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Contains utility functions for Blob objects.
+ */
+
+/**
+ * Converts a Blob object to an ArrayBuffer.
+ *
+ * @param blob - The Blob object to convert.
+ * @returns A promise that resolves to an ArrayBuffer.
+ */
 export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   return await new Promise((resolve) => {
     const reader = new FileReader();
@@ -6,19 +16,13 @@ export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   });
 }
 
-function base64ToArrayBuffer(code: string): ArrayBuffer {
-  const parts = code.split(";base64,");
-  const raw = window.atob(parts[1]!);
-  const rawLength = raw.length;
-
-  const uInt8Array = new Uint8Array(rawLength);
-
-  for (let i = 0; i < rawLength; ++i) {
-    uInt8Array[i] = raw.charCodeAt(i);
-  }
-  return uInt8Array.buffer;
-}
-
+/**
+ * Converts a Blob object to a JPEG ArrayBuffer with the specified quality.
+ *
+ * @param blob - The Blob object to convert.
+ * @param jpegQuality - The quality of the JPEG image (0 to 1).
+ * @returns A promise that resolves to an ArrayBuffer.
+ */
 export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Promise<ArrayBuffer> {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -54,6 +58,31 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
   });
 }
 
+/**
+ * Converts a base64 encoded string to an ArrayBuffer.
+ *
+ * @param code - The base64 encoded string.
+ * @returns The decoded ArrayBuffer.
+ */
+export function base64ToArrayBuffer(code: string): ArrayBuffer {
+  const parts = code.split(";base64,");
+  const raw = window.atob(parts[1]!);
+  const rawLength = raw.length;
+
+  const uInt8Array = new Uint8Array(rawLength);
+
+  for (let i = 0; i < rawLength; ++i) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+  return uInt8Array.buffer;
+}
+
+/**
+ * Checks if a given file is an image.
+ *
+ * @param file - The file to check.
+ * @returns True if the file is an image, false otherwise.
+ */
 export function isImageFile(file: File): boolean {
   return file.type.startsWith("image/");
 }

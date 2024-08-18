@@ -12,6 +12,7 @@
     "creatordate",
     "Dataview",
     "dirents",
+    "fileoverview",
     "hotreload",
     "jinder",
     "lezer",
@@ -24,6 +25,7 @@
     "outdir",
     "outfile",
     "parsimmon",
+    "preprocesses",
     "Wikilink"
   ],
   "ignoreWords": [],

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Contains utility functions for executing commands from the root directory of a project,
+ * resolving paths relative to the root, and importing TypeScript modules from the root.
+ */
+
 import { spawn } from "node:child_process";
 import {
   relative,
@@ -11,6 +16,17 @@ import { toPosixPath } from "./Path.ts";
 import { trimEnd } from "./String.ts";
 import { toCommandLine } from "./bin/cli.ts";
 
+/**
+ * Executes a command from the root directory of the project and returns the standard output.
+ *
+ * @param command - The command to execute, either as a string or an array of strings.
+ * @param options - Configuration options for the execution.
+ * @param options.quiet - If true, suppresses output to the console.
+ * @param options.ignoreExitCode - If true, does not throw an error if the command exits with a non-zero code.
+ * @param options.stdin - Input to pass to the command via stdin.
+ * @param options.cwd - The current working directory to resolve from.
+ * @returns A promise that resolves with the standard output of the command.
+ */
 export async function execFromRoot(command: string | string[], {
   quiet = false,
   ignoreExitCode = false,
@@ -18,7 +34,7 @@ export async function execFromRoot(command: string | string[], {
   cwd
 }: {
   quiet?: boolean,
-  ignoreExitCode?: boolean
+  ignoreExitCode?: boolean,
   stdin?: string,
   cwd?: string | undefined
 } = {}): Promise<string> {
@@ -26,6 +42,17 @@ export async function execFromRoot(command: string | string[], {
   return stdout;
 }
 
+/**
+ * Executes a command from the root directory of the project and returns both the standard output and standard error.
+ *
+ * @param command - The command to execute, either as a string or an array of strings.
+ * @param options - Configuration options for the execution.
+ * @param options.quiet - If true, suppresses output to the console.
+ * @param options.ignoreExitCode - If true, does not throw an error if the command exits with a non-zero code.
+ * @param options.stdin - Input to pass to the command via stdin.
+ * @param options.cwd - The current working directory to resolve from.
+ * @returns A promise that resolves with an object containing the standard output and standard error of the command.
+ */
 export function execFromRootWithStderr(command: string | string[], {
   quiet = false,
   ignoreExitCode = false,
@@ -33,7 +60,7 @@ export function execFromRootWithStderr(command: string | string[], {
   cwd
 }: {
   quiet?: boolean,
-  ignoreExitCode?: boolean
+  ignoreExitCode?: boolean,
   stdin?: string,
   cwd?: string | undefined
 } = {}): Promise<{ stdout: string, stderr: string }> {
@@ -97,16 +124,38 @@ export function execFromRootWithStderr(command: string | string[], {
   });
 }
 
+/**
+ * Dynamically imports a TypeScript module from the root directory of the project.
+ *
+ * @template T - The expected type of the imported module.
+ * @param specifier - The module specifier to import.
+ * @param cwd - The current working directory to resolve from.
+ * @returns A promise that resolves with the imported module.
+ */
 export async function tsImportFromRoot<T>(specifier: string, cwd?: string): Promise<T> {
   const rootDir = getRootDir(cwd);
   const rootUrl = pathToFileURL(rootDir).href;
   return await tsImport(specifier, rootUrl) as T;
 }
 
+/**
+ * Resolves a path relative to the root directory of the project.
+ *
+ * @param path - The path to resolve.
+ * @param cwd - The current working directory to resolve from.
+ * @returns The resolved absolute path.
+ */
 export function resolvePathFromRoot(path: string, cwd?: string): string {
   return resolve(getRootDir(cwd), path);
 }
 
+/**
+ * Retrieves the root directory of the project.
+ *
+ * @param cwd - The current working directory to resolve from.
+ * @returns The path to the root directory.
+ * @throws If the root directory cannot be found.
+ */
 export function getRootDir(cwd?: string): string {
   const rootDir = packageDirectorySync({ cwd: cwd ?? process.cwd() });
   if (!rootDir) {
@@ -116,6 +165,13 @@ export function getRootDir(cwd?: string): string {
   return toPosixPath(rootDir);
 }
 
+/**
+ * Converts an absolute path to a relative path from the root directory of the project.
+ *
+ * @param path - The absolute path to convert.
+ * @param cwd - The current working directory to resolve from.
+ * @returns The relative path from the root directory.
+ */
 export function toRelativeFromRoot(path: string, cwd?: string): string {
   const rootDir = getRootDir(cwd);
   path = toPosixPath(path);

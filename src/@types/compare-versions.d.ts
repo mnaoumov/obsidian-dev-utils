@@ -1,9 +1,35 @@
+/**
+ * @fileoverview
+ * This module provides functionality for comparing software version strings using semantic versioning rules.
+ * It includes a function to compare two version strings with an optional comparison operator.
+ */
+
 declare module "compare-versions" {
+  /**
+   * Defines the set of comparison operators that can be used to compare version strings.
+   *
+   * - `>`: Checks if the first version is greater than the second.
+   * - `>=`: Checks if the first version is greater than or equal to the second.
+   * - `=`: Checks if the first version is equal to the second.
+   * - `<`: Checks if the first version is less than the second.
+   * - `<=`: Checks if the first version is less than or equal to the second.
+   */
   export type CompareOperator = ">" | ">=" | "=" | "<" | "<=";
 
-  // Assuming that the module also has a default export
+  /**
+   * Compares two version strings using semantic versioning rules.
+   *
+   * @param v1 - The first version string to compare.
+   * @param v2 - The second version string to compare.
+   * @param operator - The comparison operator to use. If not provided, defaults to `"="`.
+   * @returns `true` if the comparison between `v1` and `v2` is true based on the provided operator, otherwise `false`.
+   */
   const compareVersions: {
     (v1: string, v2: string, operator?: CompareOperator): boolean;
+
+    /**
+     * The set of valid comparison operators that can be used with the `compareVersions` function.
+     */
     CompareOperator: CompareOperator;
   };
 

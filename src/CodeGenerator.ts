@@ -1,5 +1,16 @@
+/**
+ * @fileoverview Contains utility functions for code generation.
+ */
+
 import { writeFile } from "node:fs/promises";
 
+/**
+ * Generates a file at the specified path with the provided lines of code.
+ *
+ * @param path - The path where the file will be generated.
+ * @param lines - An array of strings representing the lines of code to be written in the file.
+ * @returns A promise that resolves when the file generation is complete.
+ */
 export async function generate(path: string, lines: string[]): Promise<void> {
   if (lines.at(-1)) {
     lines.push("");

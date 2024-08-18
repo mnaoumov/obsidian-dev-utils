@@ -1,3 +1,14 @@
+/**
+ * @fileoverview ESLint configuration for TypeScript projects with various plugins.
+ *
+ * This module exports ESLint configurations for TypeScript projects, integrating multiple ESLint plugins
+ * such as `@typescript-eslint/parser`, `eslint-plugin-import`, `@typescript-eslint/eslint-plugin`,
+ * `eslint-plugin-modules-newlines`, `@stylistic/eslint-plugin`, and `eslint-plugin-deprecation`.
+ * It sets up parsers, plugins, and rules for maintaining code quality and consistency.
+ *
+ * @module eslint-config
+ */
+
 import typescriptEslintParser from "@typescript-eslint/parser";
 import eslintPluginImport from "eslint-plugin-import";
 import typescriptEslintPlugin from "@typescript-eslint/eslint-plugin";
@@ -13,6 +24,14 @@ import {
 } from "../../Path.ts";
 import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
 
+/**
+ * ESLint configurations for TypeScript files.
+ *
+ * This configuration applies to TypeScript files in the source and script directories. It sets up the TypeScript
+ * parser and plugins, defines a set of rules for code style and error checking, and includes settings for import resolution.
+ *
+ * @type {Linter.Config[]}
+ */
 export const configs: Linter.Config[] = [
   {
     files: [

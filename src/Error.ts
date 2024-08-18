@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contains utility functions for error handling.
+ */
+
 import { EventEmitter } from "node:events";
 
 const ASYNC_ERROR_EVENT = "asyncError";
@@ -5,14 +9,30 @@ const ASYNC_ERROR_EVENT = "asyncError";
 const asyncErrorEventEmitter = new EventEmitter();
 asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
 
+/**
+ * Handles asynchronous errors by printing them.
+ *
+ * @param asyncError - The asynchronous error to handle.
+ */
 function handleAsyncError(asyncError: unknown): void {
   printError(new Error("An unhandled error occurred executing async operation", { cause: asyncError }));
 }
 
+/**
+ * Emits an asynchronous error event.
+ *
+ * @param asyncError - The error to emit as an asynchronous error event.
+ */
 export function emitAsyncErrorEvent(asyncError: unknown): void {
   asyncErrorEventEmitter.emit(ASYNC_ERROR_EVENT, asyncError);
 }
 
+/**
+ * Registers an event handler for asynchronous errors.
+ *
+ * @param handler - The handler function to be called when an asynchronous error event occurs.
+ * @returns A function to unregister the handler.
+ */
 export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): () => void {
   asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handler);
   return () => asyncErrorEventEmitter.off(ASYNC_ERROR_EVENT, handler);
@@ -24,6 +44,11 @@ type ErrorEntry = {
   shouldClearAnsiSequence?: boolean;
 }
 
+/**
+ * Prints an error to the console, including nested causes and optional ANSI sequence clearing.
+ *
+ * @param error - The error to print.
+ */
 export function printError(error: unknown): void {
   const entries = parseErrorEntries(error);
 
@@ -36,10 +61,24 @@ export function printError(error: unknown): void {
   }
 }
 
+/**
+ * Converts an error to a string representation, including nested causes with indentation.
+ *
+ * @param error - The error to convert to a string.
+ * @returns The string representation of the error.
+ */
 export function errorToString(error: unknown): string {
   return parseErrorEntries(error).map(entry => "  ".repeat(entry.level) + entry.message).join("\n");
 }
 
+/**
+ * Parses an error into an array of ErrorEntry objects, including nested causes.
+ *
+ * @param error - The error to parse.
+ * @param level - The current indentation level for nested causes.
+ * @param entries - The array of ErrorEntry objects to populate.
+ * @returns An array of ErrorEntry objects representing the error and its causes.
+ */
 function parseErrorEntries(error: unknown, level: number = 0, entries: ErrorEntry[] = []): ErrorEntry[] {
   if (error === undefined) {
     return entries;

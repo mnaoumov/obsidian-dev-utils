@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Base class for Obsidian plugins providing utility methods for settings management, error handling, and notifications.
+ *
+ * This class simplifies the process of managing plugin settings, displaying notifications, and handling errors.
+ * Subclasses should implement methods to create default settings and settings tabs, and complete plugin-specific
+ * loading tasks.
+ */
+
 import {
   Notice,
   Plugin,
@@ -9,22 +17,54 @@ import {
   clonePluginSettings
 } from "./PluginSettings.ts";
 
+/**
+ * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
+ *
+ * @template PluginSettings - The type representing the plugin settings object.
+ */
 export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   private _settings!: PluginSettings;
   private notice?: Notice;
   private _abortSignal!: AbortSignal;
 
+  /**
+   * Gets the AbortSignal used for aborting asynchronous operations.
+   *
+   * @returns {AbortSignal} The abort signal.
+   */
   protected get abortSignal(): AbortSignal {
     return this._abortSignal;
   }
 
+  /**
+   * Gets a clone of the current plugin settings.
+   *
+   * @returns {PluginSettings} A clone of the plugin settings.
+   */
   public get settings(): PluginSettings {
     return clonePluginSettings(this.createDefaultPluginSettings, this._settings);
   }
 
+  /**
+   * Creates the default plugin settings. This method must be implemented by subclasses.
+   *
+   * @returns {PluginSettings} The default plugin settings.
+   */
   protected abstract createDefaultPluginSettings(this: void): PluginSettings;
+
+  /**
+   * Creates a plugin settings tab. This method must be implemented by subclasses.
+   *
+   * @returns {PluginSettingTab | null} The settings tab or null if not applicable.
+   */
   protected abstract createPluginSettingsTab(): PluginSettingTab | null;
 
+  /**
+   * Called when the plugin is loaded. Handles loading settings, adding a settings tab, registering error handlers,
+   * and initializing the plugin.
+   *
+   * @returns {Promise<void>} A promise that resolves when the plugin is fully loaded.
+   */
   public override async onload(): Promise<void> {
     await this.loadSettings();
     const pluginSettingsTab = this.createPluginSettingsTab();
@@ -42,24 +82,56 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
     this.app.workspace.onLayoutReady(() => this.onLayoutReady());
   }
 
+  /**
+   * Called when the plugin loading is complete. This method must be implemented by subclasses to perform
+   * any additional setup required after loading is complete.
+   *
+   * @returns {Promise<void>} A promise that resolves when loading is complete.
+   */
   protected abstract onloadComplete(): Promise<void>;
 
+  /**
+   * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
+   * the layout is ready.
+   */
   protected onLayoutReady(): void { }
 
+  /**
+   * Loads the plugin settings from the saved data.
+   *
+   * @returns {Promise<void>} A promise that resolves when the settings are loaded.
+   */
   private async loadSettings(): Promise<void> {
     const data = await this.loadData() as unknown;
     this._settings = await this.parseSettings(data);
   }
 
+  /**
+   * Parses the settings data and returns a PluginSettings object.
+   *
+   * @param {unknown} data - The raw settings data.
+   * @returns {Promise<PluginSettings>} A promise that resolves with the parsed settings.
+   */
   protected async parseSettings(data: unknown): Promise<PluginSettings> {
     return await Promise.resolve(loadPluginSettings(this.createDefaultPluginSettings, data));
   }
 
+  /**
+   * Saves the new plugin settings.
+   *
+   * @param {PluginSettings} newSettings - The new settings to save.
+   * @returns {Promise<void>} A promise that resolves when the settings are saved.
+   */
   public async saveSettings(newSettings: PluginSettings): Promise<void> {
     this._settings = clonePluginSettings(this.createDefaultPluginSettings, newSettings);
     await this.saveData(this._settings);
   }
 
+  /**
+   * Displays a notice message to the user.
+   *
+   * @param {string} message - The message to display.
+   */
   protected showNotice(message: string): void {
     if (this.notice) {
       this.notice.hide();

@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Contains utility functions for file system operations.
+ */
+
 import type {
   Dirent,
   ObjectEncodingOptions,
@@ -30,9 +34,40 @@ type CommonOptions = {
   withFileTypes?: boolean;
 }
 
+/**
+ * Reads the contents of a directory and returns an array of strings with POSIX paths.
+ *
+ * @param path - The path to the directory.
+ * @param options - Options to control the format of the result. If not provided, returns strings.
+ * @returns A promise that resolves with an array of POSIX-formatted file paths.
+ */
 export async function readdirPosix(path: PathLike, options?: StringResultOptions): Promise<string[]>;
+
+/**
+ * Reads the contents of a directory and returns an array of buffers with POSIX paths.
+ *
+ * @param path - The path to the directory.
+ * @param options - Options to control the format of the result. Specify "buffer" to return buffers.
+ * @returns A promise that resolves with an array of POSIX-formatted buffers.
+ */
 export async function readdirPosix(path: PathLike, options: BufferResultOptions): Promise<Buffer[]>;
+
+/**
+ * Reads the contents of a directory and returns an array of Dirent objects with POSIX paths.
+ *
+ * @param path - The path to the directory.
+ * @param options - Options to control the format of the result. Specify `withFileTypes: true` to return Dirent objects.
+ * @returns A promise that resolves with an array of POSIX-formatted Dirent objects.
+ */
 export async function readdirPosix(path: PathLike, options: DirentResultOptions): Promise<Dirent[]>;
+
+/**
+ * Reads the contents of a directory and converts file paths or buffer results to POSIX format.
+ *
+ * @param path - The path to the directory.
+ * @param options - Options to control the format of the result.
+ * @returns A promise that resolves with an array of POSIX-formatted file paths, buffers, or Dirent objects.
+ */
 export async function readdirPosix(
   path: PathLike,
   options: StringResultOptions | BufferResultOptions | DirentResultOptions = {}
@@ -56,6 +91,12 @@ export async function readdirPosix(
   return dirents;
 }
 
+/**
+ * Type guard to check if the options are for returning strings.
+ *
+ * @param options - The options to check.
+ * @returns `true` if the options are for returning strings, otherwise `false`.
+ */
 function isStringResultOptions(options: StringResultOptions | BufferResultOptions | DirentResultOptions): options is StringResultOptions {
   if (options === undefined) {
     return true;
@@ -78,6 +119,12 @@ function isStringResultOptions(options: StringResultOptions | BufferResultOption
   return true;
 }
 
+/**
+ * Type guard to check if the options are for returning buffers.
+ *
+ * @param options - The options to check.
+ * @returns `true` if the options are for returning buffers, otherwise `false`.
+ */
 function isBufferResultOptions(options: StringResultOptions | BufferResultOptions | DirentResultOptions): options is BufferResultOptions {
   if (options === undefined) {
     return false;

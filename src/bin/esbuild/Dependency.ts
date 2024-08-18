@@ -1,3 +1,10 @@
+/**
+ * @fileoverview
+ * This module provides utilities for managing dependencies during the esbuild process.
+ * It includes functions to determine which dependencies should be skipped and which
+ * should be bundled, as well as an esbuild plugin for extracting dependencies to bundle.
+ */
+
 import {
   type BuildOptions,
   context,
@@ -17,6 +24,11 @@ import {
 } from "../../Path.ts";
 import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
 
+/**
+ * Retrieves the list of dependencies that should be skipped during the bundling process.
+ *
+ * @returns A `Promise` that resolves to a `Set` of dependency names to skip.
+ */
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const npmPackage = await readNpmPackage(getDirname(import.meta.url));
   const dependenciesToSkip = new Set<string>([...Object.keys(npmPackage.dependencies ?? {}), ...builtins]);
@@ -27,6 +39,11 @@ export async function getDependenciesToSkip(): Promise<Set<string>> {
   return dependenciesToSkip;
 }
 
+/**
+ * Determines which dependencies should be bundled by esbuild.
+ *
+ * @returns A `Promise` that resolves to an array of dependency names to bundle.
+ */
 export async function getDependenciesToBundle(): Promise<string[]> {
   const dependenciesToSkip = await getDependenciesToSkip();
   const dependenciesToBundle = new Set<string>();
@@ -56,6 +73,13 @@ export async function getDependenciesToBundle(): Promise<string[]> {
   return Array.from(dependenciesToBundle).sort();
 }
 
+/**
+ * Creates an esbuild plugin that identifies which dependencies should be bundled.
+ *
+ * @param dependenciesToSkip - A set of dependency names that should be skipped during bundling.
+ * @param dependenciesToBundle - A set where the names of dependencies to be bundled will be added.
+ * @returns An esbuild `Plugin` object that extracts dependencies to bundle.
+ */
 function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, dependenciesToBundle: Set<string>): Plugin {
   return {
     name: "test",

@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Linting utility for ESLint configuration with support for automatic fixing.
+ *
+ * This module provides a function to lint files based on the ESLint configuration defined in `eslint.config.ts`.
+ * It can automatically fix linting issues if specified, and logs results to the console.
+ *
+ * @module lint
+ */
+
 import {
   loadESLint
 } from "eslint";
@@ -14,12 +23,21 @@ import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
 import { glob } from "node:fs/promises";
 import { toArray } from "../../Async.ts";
 
+/**
+ * Lints files according to the ESLint configurations and applies automatic fixes if specified.
+ *
+ * @param {boolean} [fix=false] - Whether to automatically fix linting issues. Defaults to false.
+ * @returns {Promise<TaskResult>} - A promise that resolves to a TaskResult indicating success or failure.
+ *
+ * @throws {Error} If the package directory cannot be found.
+ */
 export async function lint(fix?: boolean): Promise<TaskResult> {
   fix ??= false;
   const packageDir = await packageDirectory({ cwd: getDirname(import.meta.url) });
   if (!packageDir) {
     throw new Error("Could not find package directory.");
   }
+
   const ignorePatterns = configs.flatMap((config) => config.ignores ?? []);
 
   const FlatESLint = await loadESLint({ useFlatConfig: true });
@@ -29,6 +47,7 @@ export async function lint(fix?: boolean): Promise<TaskResult> {
     overrideConfig: configs,
     ignorePatterns
   });
+
   const includePatterns = configs
     .flatMap((config) => config.files ?? [])
     .flatMap((file) => file instanceof Array ? file : [file])

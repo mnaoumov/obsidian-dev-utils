@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Utility for displaying a prompt modal in Obsidian.
+ *
+ * This module exports a function to display a modal that prompts the user for input. The modal includes "OK" and "Cancel" buttons.
+ *
+ * @module prompt
+ */
+
 import {
   App,
   ButtonComponent,
@@ -5,6 +13,16 @@ import {
   TextComponent
 } from "obsidian";
 
+/**
+ * Displays a prompt modal in Obsidian to get user input.
+ *
+ * @param {Object} params - The parameters for the prompt.
+ * @param {App} params.app - The Obsidian app instance.
+ * @param {string} [params.title] - The title of the modal.
+ * @param {string} [params.defaultValue] - The default value to pre-fill the input field.
+ * @param {(value: string) => string | null} [params.valueValidator] - A function to validate the input value. Returns an error message or null.
+ * @returns {Promise<string | null>} - A promise that resolves with the user input or null if the prompt was cancelled.
+ */
 export async function prompt({
   app,
   title,
@@ -77,4 +95,3 @@ export async function prompt({
     modal.open();
   });
 }
-
