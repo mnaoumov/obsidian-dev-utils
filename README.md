@@ -67,7 +67,7 @@ Lints your code, enforcing a code convention to minimize common errors.
 #### Lint and Fix Code
 
 ```bash
-npx obsidian-dev-utils lint-fix
+npx obsidian-dev-utils lint:fix
 ```
 
 Lints your code and automatically applies fixes where possible.
@@ -100,7 +100,7 @@ To simplify the usage of these commands, you can add them to your `package.json`
     "build:static": "obsidian-dev-utils build:static",
     "dev": "obsidian-dev-utils dev",
     "lint": "obsidian-dev-utils lint",
-    "lint-fix": "obsidian-dev-utils lint-fix",
+    "lint:fix": "obsidian-dev-utils lint:fix",
     "spellcheck": "obsidian-dev-utils spellcheck",
     "version": "obsidian-dev-utils version"
   },

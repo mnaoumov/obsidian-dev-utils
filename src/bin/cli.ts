@@ -81,7 +81,7 @@ enum CommandNames {
   BuildStatic = "build:static",
   Dev = "dev",
   Lint = "lint",
-  LintFix = "lint-fix",
+  LintFix = "lint:fix",
   Spellcheck = "spellcheck",
   Version = "version"
 }
