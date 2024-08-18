@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.3.0
+
+- Fix Dataview typings
+
 ## 1.2.0
 
 - Lint only src and scripts
