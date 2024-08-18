@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.4.0
+
+- Switch to lint:fix
+
 ## 1.3.2
 
 - Stop build if exports changed
