@@ -8,7 +8,10 @@
 
 import type { Plugin } from "esbuild";
 import { existsSync } from "node:fs";
-import { cp, mkdir } from "node:fs/promises";
+import {
+  cp,
+  mkdir
+} from "node:fs/promises";
 import { join } from "../../Path.ts";
 
 /**

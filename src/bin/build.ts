@@ -5,7 +5,10 @@
  * and to remove the existing build output.
  */
 
-import { cp, rm } from "node:fs/promises";
+import {
+  cp,
+  rm
+} from "node:fs/promises";
 import { join } from "../Path.ts";
 import { readdirPosix } from "../Fs.ts";
 import { trimStart } from "../String.ts";

@@ -12,7 +12,12 @@ import {
 } from "esbuild";
 import process from "node:process";
 import { existsSync } from "node:fs";
-import { cp, mkdir, rm, writeFile } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  rm,
+  writeFile
+} from "node:fs/promises";
 import { resolvePathFromRoot } from "../../Root.ts";
 import { TaskResult } from "../../TaskResult.ts";
 import { readNpmPackage } from "../../Npm.ts";

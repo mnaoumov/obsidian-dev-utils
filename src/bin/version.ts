@@ -208,7 +208,7 @@ export async function updateVersionInFiles(newVersion: string, isObsidianPlugin:
   });
 
   await editNpmPackageLock((npmPackageLock) => {
-    npmPackageLock.version = newVersion
+    npmPackageLock.version = newVersion;
   }, { skipIfMissing: true });
 
   if (isObsidianPlugin) {
