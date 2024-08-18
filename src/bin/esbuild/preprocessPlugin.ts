@@ -7,8 +7,12 @@ export function preprocessPlugin(): Plugin {
     setup(build): void {
       build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, "utf-8");
-        if (contents.match(/import\.meta\.url/)) {
-          contents = "const import_meta_url = require(\"node:url\").pathToFileURL(__filename);\n" + contents.replaceAll(/import\.meta\.url/g, "import_meta_url");
+
+        const importMetaUrlReplacementStr = "import_meta_url";
+        // HACK: We cannot use "import(dot)meta(dot)url" string in this file, because we don't want this file to be transformed when the same replacement applied to it.
+        const importMetaUrlOriginalStr = importMetaUrlReplacementStr.replaceAll("_", ".");
+        if (contents.includes(importMetaUrlOriginalStr)) {
+          contents = `const ${importMetaUrlReplacementStr} = require("node:url").pathToFileURL(__filename);\n` + contents.replaceAll(importMetaUrlOriginalStr, importMetaUrlReplacementStr);
         }
         // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly otherwise it stops loading it after the first line of the sourceMappingURL comment.
         contents = contents.replace(/\`\r?\n\/\/# sourceMappingURL/g, "`\n//#${\"\"} sourceMappingURL");
