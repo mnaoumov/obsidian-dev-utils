@@ -74,3 +74,11 @@ export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: numb
 export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => MaybePromise<U[]>): Promise<U[]> {
   return (await asyncMap(arr, callback)).flat();
 }
+
+export async function toArray<T>(iter: AsyncIterableIterator<T>): Promise<T[]> {
+  const arr: T[] = [];
+  for await (const item of iter) {
+    arr.push(item);
+  }
+  return arr;
+}
