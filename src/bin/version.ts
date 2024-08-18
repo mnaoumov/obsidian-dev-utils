@@ -337,7 +337,13 @@ export async function updateChangelog(newVersion: string): Promise<void> {
  * @returns A promise that resolves when the files have been added and committed.
  */
 export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
-  const files = [ObsidianPluginRepoPaths.ManifestJson, ObsidianPluginRepoPaths.PackageJson, ObsidianPluginRepoPaths.VersionsJson, ObsidianPluginRepoPaths.ChangelogMd].filter(file => existsSync(resolvePathFromRoot(file)));
+  const files = [
+    ObsidianPluginRepoPaths.ManifestJson,
+    ObsidianPluginRepoPaths.PackageJson,
+    ObsidianPluginRepoPaths.PackageLockJson,
+    ObsidianPluginRepoPaths.VersionsJson,
+    ObsidianPluginRepoPaths.ChangelogMd
+  ].filter(file => existsSync(resolvePathFromRoot(file)));
   await execFromRoot(["git", "add", ...files], { quiet: true });
   await execFromRoot(`git commit -m ${newVersion}`, { quiet: true });
 }
