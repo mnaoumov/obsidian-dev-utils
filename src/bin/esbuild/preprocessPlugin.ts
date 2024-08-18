@@ -6,7 +6,7 @@ export function preprocessPlugin(): Plugin {
     name: "preprocess",
     setup(build): void {
       build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
-        let contents = await readFile(args.path, "utf8");
+        let contents = await readFile(args.path, "utf-8");
         if (contents.match(/import\.meta\.url/)) {
           contents = "const import_meta_url = require(\"node:url\").pathToFileURL(__filename);\n" + contents.replaceAll(/import\.meta\.url/g, "import_meta_url");
         }

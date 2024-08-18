@@ -53,7 +53,7 @@ export async function buildObsidianPlugin({
     ObsidianPluginRepoPaths.StylesCss
   ];
   if (!isProductionBuild) {
-    await writeFile(join(distDir, ObsidianPluginRepoPaths.HotReload), "", "utf8");
+    await writeFile(join(distDir, ObsidianPluginRepoPaths.HotReload), "", "utf-8");
   }
 
   for (const fileName of distFileNames) {

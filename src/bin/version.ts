@@ -195,7 +195,7 @@ export async function updateChangelog(newVersion: string): Promise<void> {
   if (!existsSync(changelogPath)) {
     previousChangelogLines = [];
   } else {
-    const content = await readFile(changelogPath, "utf8");
+    const content = await readFile(changelogPath, "utf-8");
     previousChangelogLines = content.split("\n").slice(2);
     if (previousChangelogLines.at(-1) === "") {
       previousChangelogLines.pop();
@@ -219,7 +219,7 @@ export async function updateChangelog(newVersion: string): Promise<void> {
     }
   }
 
-  await writeFile(changelogPath, newChangeLog, "utf8");
+  await writeFile(changelogPath, newChangeLog, "utf-8");
 
   await createInterface(process.stdin, process.stdout).question(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Press Enter when you are done...`);
 }
@@ -244,7 +244,7 @@ export async function copyUpdatedManifest(): Promise<void> {
 
 export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRoot(ObsidianPluginRepoPaths.ChangelogMd);
-  const content = await readFile(changelogPath, "utf8");
+  const content = await readFile(changelogPath, "utf-8");
   const newVersionEscaped = newVersion.replaceAll(".", "\\.");
   const match = content.match(new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`));
   let releaseNotes = match ? match[1] + "\n\n" : "";

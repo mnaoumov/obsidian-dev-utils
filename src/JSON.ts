@@ -8,7 +8,7 @@ import { toJson } from "./Object.ts";
 
 export async function readJson<T>(path: string): Promise<T> {
   path = resolvePathFromRoot(path);
-  return JSON.parse(await readFile(path, "utf8")) as T;
+  return JSON.parse(await readFile(path, "utf-8")) as T;
 }
 
 export async function writeJson(path: string, data: unknown): Promise<void> {

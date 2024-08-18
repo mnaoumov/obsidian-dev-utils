@@ -61,7 +61,7 @@ export function execFromRootWithStderr(command: string | string[], {
       if (!quiet) {
         process.stdout.write(data);
       }
-      stdout += data.toString("utf8");
+      stdout += data.toString("utf-8");
     });
 
     child.stdout.on("end", () => {
@@ -72,7 +72,7 @@ export function execFromRootWithStderr(command: string | string[], {
       if (!quiet) {
         process.stderr.write(data);
       }
-      stderr += data.toString("utf8");
+      stderr += data.toString("utf-8");
     });
 
     child.stderr.on("end", () => {
