@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.3.2
+
+- Stop build if exports changed
+
 ## 1.3.1
 
 - Spellcheck
