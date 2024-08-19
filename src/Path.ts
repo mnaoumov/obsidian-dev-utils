@@ -2,7 +2,7 @@
  * @file Contains utility functions for handling paths.
  */
 
-import { posix } from "path-browserify";
+import path from "path-browserify";
 import { fileURLToPath } from "node:url";
 import { ensureStartsWith } from "./String.ts";
 
@@ -16,10 +16,11 @@ const {
   join,
   normalize,
   parse,
+  posix,
   relative,
   sep,
   win32
-} = posix;
+} = path.posix;
 
 export {
   basename,
