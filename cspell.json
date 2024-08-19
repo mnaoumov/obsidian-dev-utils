@@ -27,6 +27,7 @@
     "parsimmon",
     "preprocesses",
     "tsdoc",
+    "Unescapes",
     "Wikilink"
   ],
   "ignoreWords": [],
