@@ -5,6 +5,7 @@
 
 import process from "node:process";
 import type { MaybePromise } from "./Async.ts";
+import { printError } from "./Error.ts";
 
 /**
  * Abstract class representing the result of a task. Includes methods for handling success,
@@ -140,7 +141,7 @@ export async function getTaskResult(taskFn: () => MaybePromise<TaskResult | void
   try {
     return await taskFn() ?? TaskResult.CreateSuccessResult(true);
   } catch (error) {
-    console.error(error);
+    printError(new Error(`An error occurred during task execution`, { cause: error }));
     return TaskResult.CreateSuccessResult(false);
   }
 }

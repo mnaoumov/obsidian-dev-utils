@@ -7,6 +7,7 @@ import {
   Notice,
   Plugin
 } from "obsidian";
+import { printError } from "../../Error.ts";
 
 /**
  * Displays an error message as a notice, logs it to the console, and disables the specified plugin.
@@ -17,7 +18,7 @@ import {
  */
 export async function showErrorAndDisablePlugin(plugin: Plugin, message: string): Promise<void> {
   new Notice(message);
-  console.error(message);
+  printError(new Error(message));
   await plugin.app.plugins.disablePlugin(plugin.manifest.id);
 }
 

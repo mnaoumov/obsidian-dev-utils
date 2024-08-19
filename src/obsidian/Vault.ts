@@ -15,6 +15,7 @@ import {
   type RetryOptions
 } from "../Async.ts";
 import { getBacklinksForFileSafe } from "./MetadataCache.ts";
+import { printError } from "../Error.ts";
 
 export type FileChange = {
   startIndex: number;
@@ -121,7 +122,7 @@ export async function removeFolderSafe(app: App, folderPath: string, removedNote
           await app.vault.delete(child);
         } catch (e) {
           if (await app.vault.adapter.exists(child.path)) {
-            console.error(`Failed to delete ${child.path}`, e);
+            printError(new Error(`Failed to delete ${child.path}`, { cause: e }));
             canRemove = false;
           }
         }
@@ -136,7 +137,7 @@ export async function removeFolderSafe(app: App, folderPath: string, removedNote
       await app.vault.delete(folder, true);
     } catch (e) {
       if (await app.vault.adapter.exists(folder.path)) {
-        console.error(`Failed to delete ${folder.path}`, e);
+        printError(new Error(`Failed to delete ${folder.path}`, { cause: e }));
         canRemove = false;
       }
     }
