@@ -25,11 +25,11 @@ export {
 /**
  * Resolves a sequence of paths or path segments into an absolute path, converting it to a POSIX-style path.
  *
- * @param paths - The sequence of paths or path segments to resolve.
+ * @param pathSegments - The sequence of paths or path segments to resolve.
  * @returns The resolved absolute POSIX-style path.
  */
-export function resolve(...paths: string[]): string {
-  let path = posix.resolve(...paths);
+export function resolve(...pathSegments: string[]): string {
+  let path = posix.resolve(...pathSegments);
   path = toPosixPath(path);
   const match = path.match(/.:[^:]*$/);
   return match?.[0] ?? path;
