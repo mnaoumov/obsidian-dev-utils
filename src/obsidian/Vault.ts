@@ -5,10 +5,7 @@ import {
   TFolder,
   type ListedFiles
 } from "obsidian";
-import {
-  deepEqual,
-  toJson
-} from "../Object.ts";
+import { deepEqual } from "../Object.ts";
 import {
   retryWithTimeout,
   type MaybePromise,
@@ -16,6 +13,7 @@ import {
 } from "../Async.ts";
 import { getBacklinksForFileSafe } from "./MetadataCache.ts";
 import { printError } from "../Error.ts";
+import { toJson } from "../JSON.ts";
 
 export type FileChange = {
   startIndex: number;

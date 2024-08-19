@@ -38,16 +38,6 @@ export function deepEqual(a: unknown, b: unknown): boolean {
 }
 
 /**
- * Converts a value to a JSON string with pretty formatting.
- *
- * @param value - The value to convert to JSON.
- * @returns A JSON string representing the value.
- */
-export function toJson(value: unknown): string {
-  return JSON.stringify(value, null, 2);
-}
-
-/**
  * Retrieves the name of a property of a given type `T`.
  *
  * @template T - The type of the object containing the property.
