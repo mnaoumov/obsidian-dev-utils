@@ -8,7 +8,6 @@ import {
 } from "node:fs/promises";
 import { resolvePathFromRoot } from "./Root.ts";
 import type { MaybePromise } from "./Async.ts";
-import { toJson } from "./Object.ts";
 import { existsSync } from "node:fs";
 
 /**
@@ -59,4 +58,45 @@ export async function editJson<T>(
   const data = await readJson<T>(path);
   await editFn(data);
   await writeJson(path, data);
+}
+
+/**
+ * Converts a given value to a JSON string.
+ *
+ * @param value - The value to be converted to JSON. This can be of any type.
+ * @param options - Options for customizing the JSON conversion process.
+ * @param options.shouldHandleFunctions - If `true`, functions within the value will be handled and included in the JSON string. Defaults to `false`.
+ * @param options.space - Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
+ *
+ * @returns The JSON string representation of the input value.
+ */
+export function toJson(
+  value: unknown,
+  {
+    shouldHandleFunctions = false,
+    space = 2
+  }: {
+    shouldHandleFunctions?: boolean
+    space?: string | number | undefined
+  } = {}): string {
+
+  if (!shouldHandleFunctions) {
+    return JSON.stringify(value, null, space);
+  }
+
+  const functionTexts: string[] = [];
+
+  const replacer = (_: string, value: unknown) => {
+    if (typeof value === "function") {
+      const index = functionTexts.length;
+      functionTexts.push(value.toString());
+      return `__FUNCTION_${index}`;
+    }
+
+    return value;
+  }
+
+  let json = JSON.stringify(value, replacer, space);
+  json = json.replaceAll(/"__FUNCTION_(\d+)"/g, (_, indexStr: string) => functionTexts[parseInt(indexStr)] as string);
+  return json;
 }
