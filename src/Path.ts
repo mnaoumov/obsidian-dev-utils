@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 import { ensureStartsWith } from "./String.ts";
 
 export const posix = path.posix;
-export const win32 = path.win32;
 export const delimiter = posix.delimiter;
 export const sep = path.posix.sep;
 
