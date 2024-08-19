@@ -9,35 +9,45 @@
 
 declare module "@jinder/path" {
   /**
-   * Represents the parsed components of a path.
+   * Represents a file path as an object with components.
    */
-  interface ParsedPath {
-    /** The root of the path, such as `'/'` or `'C:\'` */
+  interface PathObject {
+    /**
+     * The root portion of the path.
+     */
     root: string;
-    /** The directory of the path, including the root */
+    /**
+     * The directory portion of the path.
+     */
     dir: string;
-    /** The last portion of the path, typically the file name */
+    /**
+     * The base name of the file, including the extension.
+     */
     base: string;
-    /** The file extension of the path */
+    /**
+     * The file extension including the dot.
+     */
     ext: string;
-    /** The file name without the extension */
+    /**
+     * The file name without the extension.
+     */
     name: string;
   }
 
   /**
-   * A module for handling and transforming file paths.
+   * Provides methods and properties for handling and transforming file paths.
    */
-  interface PathModule {
+  interface Path {
     /**
      * Resolves a sequence of paths or path segments into an absolute path.
      *
-     * @param pathSegments - A sequence of paths or path segments.
+     * @param pathSegments - The sequence of path segments to resolve.
      * @returns The resolved absolute path.
      */
     resolve(this: void, ...pathSegments: string[]): string;
 
     /**
-     * Normalizes the given path, resolving `..` and `.` segments.
+     * Normalizes a path, resolving '..' and '.' segments.
      *
      * @param path - The path to normalize.
      * @returns The normalized path.
@@ -45,15 +55,15 @@ declare module "@jinder/path" {
     normalize(this: void, path: string): string;
 
     /**
-     * Determines whether the given path is an absolute path.
+     * Determines if a path is absolute.
      *
-     * @param path - The path to test.
-     * @returns `true` if the path is absolute, otherwise `false`.
+     * @param path - The path to check.
+     * @returns `true` if the path is absolute, `false` otherwise.
      */
     isAbsolute(this: void, path: string): boolean;
 
     /**
-     * Joins all given path segments together using the platform-specific separator.
+     * Joins multiple path segments into a single path.
      *
      * @param paths - The path segments to join.
      * @returns The joined path.
@@ -61,145 +71,181 @@ declare module "@jinder/path" {
     join(this: void, ...paths: string[]): string;
 
     /**
-     * Computes the relative path from `from` to `to` based on the current working directory.
+     * Returns the relative path from one path to another.
      *
      * @param from - The starting path.
-     * @param to - The target path.
+     * @param to - The destination path.
      * @returns The relative path from `from` to `to`.
      */
     relative(this: void, from: string, to: string): string;
 
     /**
-     * Converts a path into its long form, if necessary.
-     *
-     * @param path - The path to convert.
-     * @returns The long form of the path.
-     */
-    _makeLong(this: void, path: string): string;
-
-    /**
      * Returns the directory name of a path.
      *
-     * @param path - The path to evaluate.
-     * @returns The directory name.
+     * @param path - The path to get the directory name from.
+     * @returns The directory name of the path.
      */
     dirname(this: void, path: string): string;
 
     /**
-     * Returns the last portion of a path, such as the file name.
+     * Returns the base name of a file, optionally removing the file extension.
      *
-     * @param path - The path to evaluate.
-     * @param ext - Optional extension to remove from the end of the path.
-     * @returns The last portion of the path.
+     * @param path - The path to get the base name from.
+     * @param ext - An optional extension to remove from the base name.
+     * @returns The base name of the file.
      */
     basename(this: void, path: string, ext?: string): string;
 
     /**
-     * Returns the extension of the path.
+     * Returns the file extension of a path.
      *
-     * @param path - The path to evaluate.
-     * @returns The extension of the path.
+     * @param path - The path to get the extension from.
+     * @returns The file extension of the path.
      */
     extname(this: void, path: string): string;
 
     /**
      * Formats a path object into a path string.
      *
-     * @param pathObject - An object containing properties such as `root`, `dir`, `base`, `name`, and `ext`.
+     * @param pathObject - The path object to format.
      * @returns The formatted path string.
      */
-    format(this: void, pathObject: Partial<ParsedPath>): string;
+    format(this: void, pathObject: Partial<PathObject>): string;
 
     /**
-     * Parses a path string into an object with `root`, `dir`, `base`, `ext`, and `name` properties.
+     * Parses a path string into a path object.
      *
-     * @param pathString - The path string to parse.
-     * @returns An object with the parsed path components.
+     * @param path - The path string to parse.
+     * @returns The parsed path object.
      */
-    parse(this: void, pathString: string): ParsedPath;
+    parse(this: void, path: string): PathObject;
 
-    /** The platform-specific path segment separator (`'/'` on POSIX and `'\\'` on Windows). */
+    /**
+     * The platform-specific path segment separator.
+     */
     readonly sep: string;
 
-    /** The platform-specific path delimiter (`':'` on POSIX and `';'` on Windows). */
+    /**
+     * The platform-specific path delimiter.
+     */
     readonly delimiter: string;
+
+    /**
+     * Provides methods for handling Windows paths.
+     */
+    readonly win32: Path;
+
+    /**
+     * Provides methods for handling POSIX paths.
+     */
+    readonly posix: Path;
   }
 
   /**
-   * The `PathModule` implementation for Windows-style paths.
+   * Provides path-related utilities for handling and transforming file paths.
    */
-  export const win32: PathModule;
+  const path: Path;
+  export default path;
 
   /**
-   * The `PathModule` implementation for POSIX-style paths.
-   */
-  export const posix: PathModule;
+     * Resolves a sequence of paths or path segments into an absolute path.
+     *
+     * @param pathSegments - The sequence of path segments to resolve.
+     * @returns The resolved absolute path.
+     */
+  export function resolve(this: void, ...pathSegments: string[]): string;
 
   /**
-   * Resolves a sequence of paths or path segments into an absolute path using the platform-specific implementation.
+   * Normalizes a path, resolving '..' and '.' segments.
+   *
+   * @param path - The path to normalize.
+   * @returns The normalized path.
    */
-  export const resolve: PathModule["resolve"];
+  export function normalize(this: void, path: string): string;
 
   /**
-   * Normalizes the given path using the platform-specific implementation.
+   * Determines if a path is absolute.
+   *
+   * @param path - The path to check.
+   * @returns `true` if the path is absolute, `false` otherwise.
    */
-  export const normalize: PathModule["normalize"];
+  export function isAbsolute(this: void, path: string): boolean;
 
   /**
-   * Determines whether the given path is an absolute path using the platform-specific implementation.
+   * Joins multiple path segments into a single path.
+   *
+   * @param paths - The path segments to join.
+   * @returns The joined path.
    */
-  export const isAbsolute: PathModule["isAbsolute"];
+  export function join(this: void, ...paths: string[]): string;
 
   /**
-   * Joins all given path segments together using the platform-specific separator.
+   * Returns the relative path from one path to another.
+   *
+   * @param from - The starting path.
+   * @param to - The destination path.
+   * @returns The relative path from `from` to `to`.
    */
-  export const join: PathModule["join"];
+  export function relative(this: void, from: string, to: string): string;
 
   /**
-   * Computes the relative path from `from` to `to` based on the current working directory.
+   * Returns the directory name of a path.
+   *
+   * @param path - The path to get the directory name from.
+   * @returns The directory name of the path.
    */
-  export const relative: PathModule["relative"];
+  export function dirname(this: void, path: string): string;
 
   /**
-   * Converts a path into its long form using the platform-specific implementation.
+   * Returns the base name of a file, optionally removing the file extension.
+   *
+   * @param path - The path to get the base name from.
+   * @param ext - An optional extension to remove from the base name.
+   * @returns The base name of the file.
    */
-  export const _makeLong: PathModule["_makeLong"];
+  export function basename(this: void, path: string, ext?: string): string;
 
   /**
-   * Returns the directory name of a path using the platform-specific implementation.
+   * Returns the file extension of a path.
+   *
+   * @param path - The path to get the extension from.
+   * @returns The file extension of the path.
    */
-  export const dirname: PathModule["dirname"];
+  export function extname(this: void, path: string): string;
 
   /**
-   * Returns the last portion of a path, such as the file name, using the platform-specific implementation.
+   * Formats a path object into a path string.
+   *
+   * @param pathObject - The path object to format.
+   * @returns The formatted path string.
    */
-  export const basename: PathModule["basename"];
+  export function format(this: void, pathObject: Partial<PathObject>): string;
 
   /**
-   * Returns the extension of the path using the platform-specific implementation.
+   * Parses a path string into a path object.
+   *
+   * @param path - The path string to parse.
+   * @returns The parsed path object.
    */
-  export const extname: PathModule["extname"];
+  export function parse(this: void, path: string): PathObject;
 
   /**
-   * Formats a path object into a path string using the platform-specific implementation.
+   * The platform-specific path segment separator.
    */
-  export const format: PathModule["format"];
+  export const sep: string;
 
   /**
-   * Parses a path string into an object with `root`, `dir`, `base`, `ext`, and `name` properties using the platform-specific implementation.
+   * The platform-specific path delimiter.
    */
-  export const parse: PathModule["parse"];
-
-  /** The platform-specific path segment separator (`'/'` on POSIX and `'\\'` on Windows). */
-  export const sep: PathModule["sep"];
-
-  /** The platform-specific path delimiter (`':'` on POSIX and `';'` on Windows). */
-  export const delimiter: PathModule["delimiter"];
+  export const delimiter: string;
 
   /**
-   * The `PathModule` implementation for the current platform.
+   * Provides methods for handling Windows paths.
    */
-  const defaultModule: PathModule;
+  export const win32: Path;
 
-  export default defaultModule;
+  /**
+   * Provides methods for handling POSIX paths.
+   */
+  export const posix: Path;
 }
