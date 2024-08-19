@@ -8,25 +8,40 @@ import { ensureStartsWith } from "./String.ts";
 
 const {
   basename,
+  delimiter,
   dirname,
   extname,
+  format,
+  isAbsolute,
   join,
+  normalize,
+  parse,
   relative,
+  sep,
+  win32
 } = posix;
 
 export {
   basename,
+  delimiter,
   dirname,
   extname,
+  format,
+  isAbsolute,
   join,
+  normalize,
+  parse,
+  posix,
   relative,
+  sep,
+  win32
 };
 
 /**
- * Resolves a sequence of paths or path segments into an absolute path, converting it to a POSIX-style path.
+ * Resolves a sequence of paths or path segments into an absolute path.
  *
- * @param pathSegments - The sequence of paths or path segments to resolve.
- * @returns The resolved absolute POSIX-style path.
+ * @param pathSegments - The sequence of path segments to resolve.
+ * @returns The resolved absolute path.
  */
 export function resolve(...pathSegments: string[]): string {
   let path = posix.resolve(...pathSegments);
