@@ -6,9 +6,22 @@ import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.
 
 await wrapCliTask(async () => {
   const dependenciesToBundle = await getDependenciesToBundle();
-  await generate(ObsidianDevUtilsRepoPaths.SrcDependenciesTs, dependenciesToBundle.map(makeExport));
+  const code = `import { getModule } from "./Module.ts";
+import { invokeAsyncSafely } from "./Async.ts";
+
+const dependencies: Record<string, unknown> = {};
+
+async function initDependencies(): Promise<void> {
+${dependenciesToBundle.map(initDependency).join("\n")}
+}
+
+invokeAsyncSafely(initDependencies());
+
+module.exports = dependencies;
+`;
+  await generate(ObsidianDevUtilsRepoPaths.SrcDependenciesCts, [code]);
 });
 
-function makeExport(dependency: string): string {
-  return `export * as ${makeValidVariableName(dependency)} from "${dependency}";`;
+function initDependency(dependency: string): string {
+  return `  dependencies["${makeValidVariableName(dependency)}"] = await getModule("${dependency}");`;
 }

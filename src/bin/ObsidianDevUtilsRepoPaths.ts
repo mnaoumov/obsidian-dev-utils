@@ -64,7 +64,7 @@ export enum ObsidianDevUtilsRepoPaths {
   Src = "src",
 
   /** The path to the `_dependencies.ts` file within the `src` directory. */
-  SrcDependenciesTs = "./src/_dependencies.ts",
+  SrcDependenciesCts = "./src/_dependencies.cts",
 
   /** The path to the `static` directory. */
   Static = "static",

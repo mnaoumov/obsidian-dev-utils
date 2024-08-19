@@ -19,7 +19,7 @@ await wrapCliTask(async () => {
       js: banner
     },
     bundle: true,
-    entryPoints: [ObsidianDevUtilsRepoPaths.SrcDependenciesTs],
+    entryPoints: [ObsidianDevUtilsRepoPaths.SrcDependenciesCts],
     external: Array.from(dependenciesToSkip),
     format: "cjs",
     logLevel: "info",

@@ -24,4 +24,4 @@ data.json
 dist
 
 index.ts
-_dependencies.ts
+_dependencies.cts

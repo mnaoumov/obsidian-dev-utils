@@ -18,7 +18,8 @@
     "lint": "tsx scripts/cli.ts lint",
     "lint:fix": "tsx scripts/cli.ts lint:fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
-    "version": "tsx scripts/version.ts"
+    "version": "tsx scripts/version.ts",
+    "z": "tsx scripts/z.ts"
   },
   "repository": {
     "type": "git",

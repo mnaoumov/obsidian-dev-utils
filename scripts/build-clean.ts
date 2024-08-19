@@ -20,5 +20,5 @@ await wrapCliTask(async () => {
     await rm(join(ObsidianDevUtilsRepoPaths.Src, file));
   }
 
-  await rm(ObsidianDevUtilsRepoPaths.SrcDependenciesTs, { force: true });
+  await rm(ObsidianDevUtilsRepoPaths.SrcDependenciesCts, { force: true });
 });
