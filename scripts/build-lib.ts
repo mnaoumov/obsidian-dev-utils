@@ -4,7 +4,7 @@ import {
 } from "esbuild";
 import {
   banner,
-  invoke
+  invokeEsbuild
 } from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
@@ -41,7 +41,7 @@ await wrapCliTask(async () => {
   };
 
   const buildContext = await context(buildOptions);
-  await invoke(buildContext, true);
+  await invokeEsbuild(buildContext, true);
 });
 
 async function getLibFiles(): Promise<string[]> {

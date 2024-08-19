@@ -14,7 +14,7 @@ import { readNpmPackage } from "../../Npm.ts";
 import builtins from "builtin-modules";
 import {
   banner,
-  invoke
+  invokeEsbuild
 } from "./ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { trimStart } from "../../String.ts";
@@ -69,7 +69,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
   };
 
   const buildContext = await context(buildOptions);
-  await invoke(buildContext, true);
+  await invokeEsbuild(buildContext, true);
   return Array.from(dependenciesToBundle).sort();
 }
 

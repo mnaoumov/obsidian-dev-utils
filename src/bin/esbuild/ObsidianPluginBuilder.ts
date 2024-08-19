@@ -131,7 +131,7 @@ export async function buildObsidianPlugin({
   };
 
   const buildContext = await context(buildOptions);
-  return await invoke(buildContext, isProductionBuild);
+  return await invokeEsbuild(buildContext, isProductionBuild);
 }
 
 /**
@@ -141,7 +141,7 @@ export async function buildObsidianPlugin({
  * @param isProductionBuild - A boolean indicating whether the build is a production build.
  * @returns A promise that resolves to a `TaskResult` indicating the success or failure of the build.
  */
-export async function invoke(buildContext: BuildContext<BuildOptions>, isProductionBuild: boolean): Promise<TaskResult> {
+export async function invokeEsbuild(buildContext: BuildContext<BuildOptions>, isProductionBuild: boolean): Promise<TaskResult> {
   if (isProductionBuild) {
     const result = await buildContext.rebuild();
     const isSuccess = result.errors.length == 0 && result.warnings.length == 0;
