@@ -37,12 +37,21 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   }
 
   /**
-   * Gets a clone of the current plugin settings.
+   * Gets a copy of the current plugin settings.
    *
-   * @returns {PluginSettings} A clone of the plugin settings.
+   * @returns {PluginSettings} A copy of the plugin settings.
    */
-  public get settings(): PluginSettings {
-    return clonePluginSettings(this.createDefaultPluginSettings, this._settings);
+  public get settingsCopy(): PluginSettings {
+    return clonePluginSettings(this.createDefaultPluginSettings, this.settings);
+  }
+
+  /**
+   * Gets the plugin settings.
+   *
+   * @returns The plugin settings.
+   */
+  protected get settings(): PluginSettings {
+    return this._settings;
   }
 
   /**
@@ -124,7 +133,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    */
   public async saveSettings(newSettings: PluginSettings): Promise<void> {
     this._settings = clonePluginSettings(this.createDefaultPluginSettings, newSettings);
-    await this.saveData(this._settings);
+    await this.saveData(this.settings);
   }
 
   /**
