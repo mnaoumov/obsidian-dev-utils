@@ -2,7 +2,7 @@
  * @file Contains utility functions for handling paths.
  */
 
-import { posix } from "@jinder/path";
+import { posix } from "path-browserify";
 import { fileURLToPath } from "node:url";
 import { ensureStartsWith } from "./String.ts";
 
