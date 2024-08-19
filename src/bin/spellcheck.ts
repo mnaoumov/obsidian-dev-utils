@@ -1,5 +1,5 @@
 /**
- * @fileoverview
+ * @file
  * This module provides a function for running a spellcheck on the codebase using the `cspell` library.
  * It reports any spelling issues found in the code and returns a `TaskResult` indicating whether the spellcheck was successful.
  */

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for file system operations.
+ * @file Contains utility functions for file system operations.
  */
 
 import type {

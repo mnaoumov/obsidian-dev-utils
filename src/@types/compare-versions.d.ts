@@ -1,5 +1,5 @@
 /**
- * @fileoverview
+ * @file
  * This module provides functionality for comparing software version strings using semantic versioning rules.
  * It includes a function to compare two version strings with an optional comparison operator.
  */

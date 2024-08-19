@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains a utility function for validating URLs.
+ * @file Contains a utility function for validating URLs.
  */
 
 /**

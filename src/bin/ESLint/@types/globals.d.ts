@@ -1,5 +1,5 @@
 /**
- * @fileoverview Module declaration for the `globals` package.
+ * @file Module declaration for the `globals` package.
  *
  * This module declaration defines the types for the `globals` package, which provides a set of global variable definitions
  * for different environments such as `browser` and `node`. It helps in specifying which global variables are available

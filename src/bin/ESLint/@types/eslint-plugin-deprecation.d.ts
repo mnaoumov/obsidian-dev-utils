@@ -1,5 +1,5 @@
 /**
- * @fileoverview Module declaration for the `eslint-plugin-deprecation` package.
+ * @file Module declaration for the `eslint-plugin-deprecation` package.
  *
  * This module declaration defines the types for the plugin exported by
  * `eslint-plugin-deprecation`. The plugin provides rules for detecting and

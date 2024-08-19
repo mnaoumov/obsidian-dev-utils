@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility classes and functions for managing task results, including
+ * @file Contains utility classes and functions for managing task results, including
  * success, exit codes, and chaining multiple tasks.
  */
 

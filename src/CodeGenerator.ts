@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for code generation.
+ * @file Contains utility functions for code generation.
  */
 
 import { writeFile } from "node:fs/promises";

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Module declaration for the `@typescript-eslint/parser` package.
+ * @file Module declaration for the `@typescript-eslint/parser` package.
  *
  * This module declaration defines the types for the parser exported by
  * `@typescript-eslint/parser`. The parser is used to parse TypeScript code

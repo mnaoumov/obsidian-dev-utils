@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for asynchronous operations.
+ * @file Contains utility functions for asynchronous operations.
  */
 
 import { emitAsyncErrorEvent } from "./Error.ts";

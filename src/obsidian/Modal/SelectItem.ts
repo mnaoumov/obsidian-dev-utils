@@ -1,5 +1,5 @@
 /**
- * @fileoverview Utility for displaying a selection modal in Obsidian.
+ * @file Utility for displaying a selection modal in Obsidian.
  *
  * This module exports a function to display a modal that allows the user to select an item from a list. The modal uses fuzzy search to help the user find the item.
  *

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Module declaration for the `@stylistic/eslint-plugin` package.
+ * @file Module declaration for the `@stylistic/eslint-plugin` package.
  *
  * This module declaration defines the types for the ESLint plugin exported by
  * `@stylistic/eslint-plugin`. The plugin is used to enforce stylistic rules

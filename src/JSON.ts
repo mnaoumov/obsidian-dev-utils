@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for JSON.
+ * @file Contains utility functions for JSON.
  */
 
 import {

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility types for working with TypeScript classes and type properties.
+ * @file Contains utility types for working with TypeScript classes and type properties.
  */
 
 /**

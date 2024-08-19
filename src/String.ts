@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for string operations.
+ * @file Contains utility functions for string operations.
  */
 
 import {

@@ -1,5 +1,5 @@
 /**
- * @fileoverview
+ * @file
  * This module provides path-related utilities for handling and transforming file paths
  * in both POSIX and Windows environments. It includes functions to resolve, normalize,
  * and join paths, as well as parse and format path strings. The module supports both

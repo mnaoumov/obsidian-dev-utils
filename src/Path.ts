@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for handling paths.
+ * @file Contains utility functions for handling paths.
  */
 
 import { posix } from "@jinder/path";

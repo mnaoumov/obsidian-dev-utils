@@ -1,5 +1,5 @@
 /**
- * @fileoverview Base class for Obsidian plugins providing utility methods for settings management, error handling, and notifications.
+ * @file Base class for Obsidian plugins providing utility methods for settings management, error handling, and notifications.
  *
  * This class simplifies the process of managing plugin settings, displaying notifications, and handling errors.
  * Subclasses should implement methods to create default settings and settings tabs, and complete plugin-specific

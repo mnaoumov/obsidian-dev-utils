@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for regular expressions.
+ * @file Contains utility functions for regular expressions.
  */
 
 /**

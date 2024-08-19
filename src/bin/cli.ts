@@ -1,5 +1,5 @@
 /**
- * @fileoverview
+ * @file
  * This module defines a CLI for managing various tasks related to Obsidian plugin development.
  * It leverages the `commander` library to define commands for building, linting, spellchecking,
  * and updating the version of the plugin. The CLI is designed to be flexible and can handle both

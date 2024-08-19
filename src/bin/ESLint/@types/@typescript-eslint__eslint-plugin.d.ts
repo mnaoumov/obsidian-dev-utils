@@ -1,5 +1,5 @@
 /**
- * @fileoverview Module declaration for the `@typescript-eslint/eslint-plugin` package.
+ * @file Module declaration for the `@typescript-eslint/eslint-plugin` package.
  *
  * This module declaration defines the types for the ESLint plugin exported by
  * `@typescript-eslint/eslint-plugin`. The plugin provides rules and configurations

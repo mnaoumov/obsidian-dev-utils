@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for executing commands from the root directory of a project,
+ * @file Contains utility functions for executing commands from the root directory of a project,
  * resolving paths relative to the root, and importing TypeScript modules from the root.
  */
 

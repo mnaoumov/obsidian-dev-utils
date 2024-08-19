@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for Objects.
+ * @file Contains utility functions for Objects.
  */
 
 /**

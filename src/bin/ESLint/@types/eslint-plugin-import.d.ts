@@ -1,5 +1,5 @@
 /**
- * @fileoverview Module declaration for the `eslint-plugin-import` package.
+ * @file Module declaration for the `eslint-plugin-import` package.
  *
  * This module declaration defines the types for the plugin exported by
  * `eslint-plugin-import`. The plugin provides rules for managing ES6+ import/export syntax and import resolution.

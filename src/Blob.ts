@@ -1,5 +1,5 @@
 /**
- * @fileoverview Contains utility functions for Blob objects.
+ * @file Contains utility functions for Blob objects.
  */
 
 /**
