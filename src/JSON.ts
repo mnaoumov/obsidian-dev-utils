@@ -86,7 +86,7 @@ export function toJson(
 
   const functionTexts: string[] = [];
 
-  const replacer = (_: string, value: unknown) => {
+  const replacer = (_: string, value: unknown): unknown => {
     if (typeof value === "function") {
       const index = functionTexts.length;
       functionTexts.push(value.toString());
@@ -94,7 +94,7 @@ export function toJson(
     }
 
     return value;
-  }
+  };
 
   let json = JSON.stringify(value, replacer, space);
   json = json.replaceAll(/"__FUNCTION_(\d+)"/g, (_, indexStr: string) => functionTexts[parseInt(indexStr)] as string);

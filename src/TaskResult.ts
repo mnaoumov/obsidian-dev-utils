@@ -141,7 +141,7 @@ export async function getTaskResult(taskFn: () => MaybePromise<TaskResult | void
   try {
     return await taskFn() ?? TaskResult.CreateSuccessResult(true);
   } catch (error) {
-    printError(new Error(`An error occurred during task execution`, { cause: error }));
+    printError(new Error("An error occurred during task execution", { cause: error }));
     return TaskResult.CreateSuccessResult(false);
   }
 }

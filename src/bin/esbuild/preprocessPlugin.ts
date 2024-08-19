@@ -32,7 +32,8 @@ export function preprocessPlugin(): Plugin {
       env: {},
       platform: "android"
     } as typeof process,
-    "import.meta.url": () => require("node:url").pathToFileURL(__filename)
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    "import.meta.url": (): URL => (require("node:url") as typeof import("node:url")).pathToFileURL(__filename)
   };
 
   return {

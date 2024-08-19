@@ -6,6 +6,7 @@ import path from "path-browserify";
 import { fileURLToPath } from "node:url";
 import { ensureStartsWith } from "./String.ts";
 
+// eslint-disable @typescript-eslint/unbound-method
 const {
   basename,
   delimiter,
@@ -21,6 +22,7 @@ const {
   sep,
   win32
 } = path.posix;
+// eslint-enable @typescript-eslint/unbound-method
 
 export {
   basename,

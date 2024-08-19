@@ -27,13 +27,10 @@ const ESCAPE_MAP: Record<string, string> = {
 /**
  * Mapping of escaped special characters to their unescaped counterparts.
  */
-const UNESCAPE_MAP: Record<string, string> = (() => {
-  const map: Record<string, string> = {};
-  for (const [key, value] of Object.entries(ESCAPE_MAP)) {
-    map[value] = key;
-  }
-  return map;
-})();
+const UNESCAPE_MAP: Record<string, string> = {};
+for (const [key, value] of Object.entries(ESCAPE_MAP)) {
+  UNESCAPE_MAP[value] = key;
+}
 
 /**
  * Trims the specified prefix from the start of a string.
@@ -172,5 +169,5 @@ export function unescape(str: string): string {
  */
 export function replace(str: string, replacementsMap: Record<string, string>): string {
   const regExp = new RegExp(Object.keys(replacementsMap).map(source => escapeRegExp(source)).join("|"), "g");
-  return str.replaceAll(regExp, (source: string) => replacementsMap[source] as string)
+  return str.replaceAll(regExp, (source: string) => replacementsMap[source] as string);
 }
