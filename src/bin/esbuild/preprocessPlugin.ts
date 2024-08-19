@@ -11,6 +11,9 @@
 
 import type { Plugin } from "esbuild";
 import { readFile } from "node:fs/promises";
+import { toJson } from "../../JSON.ts";
+import { makeValidVariableName } from "../../String.ts";
+import process from "node:process";
 
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
@@ -23,34 +26,35 @@ import { readFile } from "node:fs/promises";
  * @returns An esbuild `Plugin` object that handles the preprocessing.
  */
 export function preprocessPlugin(): Plugin {
+  const replacements = {
+    "process": {
+      cwd: () => "/",
+      env: {},
+      platform: "mobile"
+    } as typeof process,
+    "import.meta.url": () => require("node:url").pathToFileURL(__filename)
+  };
+
   return {
     name: "preprocess",
     setup(build): void {
+      build.initialOptions.define ??= {};
+
+      for (const key of Object.keys(replacements)) {
+        build.initialOptions.define[key] = "__" + makeValidVariableName(key);
+      }
+
       build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, "utf-8");
 
-        const importMetaUrlReplacementStr = "import_meta_url";
-        // HACK: We cannot use "import.meta.url" string in this file directly,
-        // because we don't want this file to be transformed when the same replacement is applied to it.
-        const importMetaUrlOriginalStr = importMetaUrlReplacementStr.replaceAll("_", ".");
-        if (contents.includes(importMetaUrlOriginalStr)) {
-          contents = `const ${importMetaUrlReplacementStr} = require("node:url").pathToFileURL(__filename);\n`
-            + contents.replaceAll(importMetaUrlOriginalStr, importMetaUrlReplacementStr);
+        for (const [key, value] of Object.entries(replacements)) {
+          const valueStr = typeof value === "function" ? `(${value.toString()})()` : toJson(value, { shouldHandleFunctions: true });
+          contents = `const __${makeValidVariableName(key)} = globalThis["${key}"] ?? ${valueStr};\n` + contents;
         }
 
         // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly,
         // otherwise, it stops loading after the first line of the sourceMappingURL comment.
         contents = contents.replace(/\`\r?\n\/\/# sourceMappingURL/g, "`\n//#${\"\"} sourceMappingURL");
-
-        // Adds a basic `process` object if `process` is referenced but not defined in the global scope.
-        if (/\bprocess\./.test(contents)) {
-          contents = `globalThis.process ??= {
-  platform: "mobile",
-  cwd: () => "/",
-  env: {}
-};
-` + contents;
-        }
 
         return {
           contents,
