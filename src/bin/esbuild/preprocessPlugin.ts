@@ -30,7 +30,7 @@ export function preprocessPlugin(): Plugin {
     "process": {
       cwd: () => "/",
       env: {},
-      platform: "mobile"
+      platform: "android"
     } as typeof process,
     "import.meta.url": () => require("node:url").pathToFileURL(__filename)
   };
