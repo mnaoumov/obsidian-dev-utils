@@ -2,12 +2,38 @@
  * @file Contains utility functions for string operations.
  */
 
+import { escapeRegExp } from "./RegExp.ts";
 import {
   resolveValue,
   type ValueProvider
 } from "./ValueProvider.ts";
 
 type AsyncReplacer<Args extends unknown[]> = ValueProvider<string, [string, ...Args]>;
+
+/**
+ * Mapping of special characters to their escaped counterparts.
+ */
+const ESCAPE_MAP: Record<string, string> = {
+  "\\": "\\\\",
+  "\"": "\\\"",
+  "\'": "\\\'",
+  "\n": "\\n",
+  "\r": "\\r",
+  "\t": "\\t",
+  "\b": "\\b",
+  "\f": "\\f"
+} as const;
+
+/**
+ * Mapping of escaped special characters to their unescaped counterparts.
+ */
+const UNESCAPE_MAP: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  for (const [key, value] of Object.entries(ESCAPE_MAP)) {
+    map[value] = key;
+  }
+  return map;
+})();
 
 /**
  * Trims the specified prefix from the start of a string.
@@ -115,4 +141,36 @@ export function ensureStartsWith(str: string, prefix: string): string {
  */
 export function ensureEndsWith(str: string, suffix: string): string {
   return str.endsWith(suffix) ? str : str + suffix;
+}
+
+/**
+ * Escapes special characters in a string.
+ *
+ * @param str - The string to escape.
+ * @returns The escaped string.
+ */
+export function escape(str: string): string {
+  return replace(str, ESCAPE_MAP);
+}
+
+/**
+ * Unescapes a string by replacing escape sequences with their corresponding characters.
+ *
+ * @param str - The string to unescape.
+ * @returns The unescaped string.
+ */
+export function unescape(str: string): string {
+  return replace(str, UNESCAPE_MAP);
+}
+
+/**
+ * Replaces occurrences of strings in a given string based on a replacements map.
+ *
+ * @param str - The string to perform replacements on.
+ * @param replacementsMap - An object mapping strings to their replacement values.
+ * @returns The modified string with replacements applied.
+ */
+export function replace(str: string, replacementsMap: Record<string, string>): string {
+  const regExp = new RegExp(Object.keys(replacementsMap).map(source => escapeRegExp(source)).join("|"), "g");
+  return str.replaceAll(regExp, (source: string) => replacementsMap[source] as string)
 }
