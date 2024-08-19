@@ -6,39 +6,20 @@ import path from "path-browserify";
 import { fileURLToPath } from "node:url";
 import { ensureStartsWith } from "./String.ts";
 
-// eslint-disable @typescript-eslint/unbound-method
-const {
-  basename,
-  delimiter,
-  dirname,
-  extname,
-  format,
-  isAbsolute,
-  join,
-  normalize,
-  parse,
-  posix,
-  relative,
-  sep,
-  win32
-} = path.posix;
-// eslint-enable @typescript-eslint/unbound-method
+export const posix = path.posix;
+export const win32 = path.win32;
+export const delimiter = posix.delimiter;
+export const sep = path.posix.sep;
 
-export {
-  basename,
-  delimiter,
-  dirname,
-  extname,
-  format,
-  isAbsolute,
-  join,
-  normalize,
-  parse,
-  posix,
-  relative,
-  sep,
-  win32
-};
+export const basename = posix.basename.bind(posix);
+export const dirname = posix.dirname.bind(posix);
+export const extname = posix.extname.bind(posix);
+export const format = posix.format.bind(posix);
+export const isAbsolute = posix.isAbsolute.bind(posix);
+export const join = posix.join.bind(posix);
+export const normalize = posix.normalize.bind(posix);
+export const parse = posix.parse.bind(posix);
+export const relative = posix.relative.bind(posix);
 
 /**
  * Resolves a sequence of paths or path segments into an absolute path.
