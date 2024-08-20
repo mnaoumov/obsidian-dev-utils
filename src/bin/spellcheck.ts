@@ -8,7 +8,6 @@ import { lint } from "cspell";
 import { toRelativeFromRoot } from "../Root.ts";
 import { fileURLToPath } from "node:url";
 import { TaskResult } from "../TaskResult.ts";
-import { printError } from "../Error.ts";
 
 /**
  * Runs a spellcheck on the entire codebase using `cspell`.
@@ -29,7 +28,7 @@ export async function spellcheck(): Promise<TaskResult> {
 
       const path = fileURLToPath(issue.uri);
       const relativePath = toRelativeFromRoot(path);
-      printError(new Error(`${relativePath}:${issue.row}:${issue.col} - ${issue.text}`));
+      console.log(`${relativePath}:${issue.row}:${issue.col} - ${issue.text}`);
       isSuccess = false;
     }
   });
