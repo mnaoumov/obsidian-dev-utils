@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.7.0
+
+- Allow convert plugin setting values
+
 ## 1.6.0
 
 - Serialize JSON with functions
