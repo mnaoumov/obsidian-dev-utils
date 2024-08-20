@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.7.5
+
+- Don't use getDependenciesToSkip in plugin build
+- Remove old path dep
+
 ## 1.7.4
 
 - Don't exit on `npm run dev`
