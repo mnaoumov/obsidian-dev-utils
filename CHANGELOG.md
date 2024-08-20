@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.7.3
+
+- Switch to var as it what esbuild converts const to
+
 ## 1.7.2
 
 - Avoid second definition of the const
