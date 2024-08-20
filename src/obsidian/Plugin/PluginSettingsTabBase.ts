@@ -40,8 +40,7 @@ export abstract class PluginSettingsTabBase<
    * @template PropertyType - The type of the plugin setting property value.
    *
    * @param valueComponent - The value component to bind.
-   * @param pluginSettings - The plugin settings object.
-   * @param property - The property to bind the value component to.
+   * @param property - The plugin setting property to bind the value component to.
    * @param options - Additional options for binding.
    * @param options.autoSave - Whether to automatically save the settings when the value changes. Default is true.
    * @param options.settingToUIValueConverter - A function to convert the setting value to the UI value. Default is identity function.
@@ -55,7 +54,6 @@ export abstract class PluginSettingsTabBase<
     PropertyType = TValueComponent extends ValueComponent<infer P> ? P : never,
   >(
     valueComponent: TValueComponent,
-    pluginSettings: PluginSettings,
     property: Property,
     {
       autoSave = true,
@@ -67,6 +65,7 @@ export abstract class PluginSettingsTabBase<
       uiToSettingValueConverter?: (value: PluginSettings[Property]) => PluginSettings[Property]
     } = {}
   ): TValueComponent {
+    const pluginSettings = this.plugin.settingsCopy;
     valueComponent
       .setValue(settingToUIValueConverter(pluginSettings[property]))
       .onChange(async (newValue) => {
