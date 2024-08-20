@@ -27,7 +27,7 @@ import { fixSourceMapsPlugin } from "./fixSourceMapsPlugin.ts";
 import { copyToObsidianPluginsFolderPlugin } from "./copyToObsidianPluginsFolderPlugin.ts";
 import { ObsidianPluginRepoPaths } from "../../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
 import { join } from "../../Path.ts";
-import { getDependenciesToSkip } from "./Dependency.ts";
+import builtins from "builtin-modules";
 
 /**
  * Enumeration representing the build modes.
@@ -113,7 +113,7 @@ export async function buildObsidianPlugin({
       "@lezer/common",
       "@lezer/highlight",
       "@lezer/lr",
-      ...await getDependenciesToSkip()
+      ...builtins
     ],
     format: "cjs",
     logLevel: "info",
