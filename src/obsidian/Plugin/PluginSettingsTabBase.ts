@@ -33,43 +33,99 @@ export abstract class PluginSettingsTabBase<
   }
 
   /**
-   * Binds a value component to a plugin setting property.
+   * Binds a value component to a property in the plugin settings with optional automatic saving and value conversion.
    *
-   * @template TValueComponent - The type of the value component.
-   * @template Property - The type of the plugin setting property.
-   * @template PropertyType - The type of the plugin setting property value.
+   * @typeParam TValueComponent - The type of the value component extending `ValueComponent`.
+   * @typeParam Property - The key of the plugin setting that the component is bound to.
+   * @typeParam PropertyType - The inferred type of the property based on the value component's type.
    *
-   * @param valueComponent - The value component to bind.
-   * @param property - The plugin setting property to bind the value component to.
-   * @param options - Additional options for binding.
-   * @param options.autoSave - Whether to automatically save the settings when the value changes. Default is true.
-   * @param options.settingToUIValueConverter - A function to convert the setting value to the UI value. Default is identity function.
-   * @param options.uiToSettingValueConverter - A function to convert the UI value to the setting value. Default is identity function.
+   * @param valueComponent - The component that will display and interact with the setting value.
+   * @param property - The property key in `PluginSettings` to bind to the component.
+   * @param options - Configuration options.
+   * @param options.autoSave - If true, saves the plugin settings automatically after the component value changes.
    *
-   * @returns The bound value component.
+   * @returns The `TValueComponent` instance that was bound to the property.
    */
   protected bindValueComponent<
     TValueComponent extends ValueComponent<unknown>,
-    Property extends KeysMatching<PluginSettings, PropertyType>,
-    PropertyType = TValueComponent extends ValueComponent<infer P> ? P : never,
+    Property extends KeysMatching<PluginSettings, UIValueType>,
+    UIValueType = TValueComponent extends ValueComponent<infer P> ? P : never,
+  >(
+    valueComponent: TValueComponent,
+    property: Property,
+    options?: {
+      autoSave?: boolean
+    }
+  ): TValueComponent;
+
+  /**
+   * Binds a value component to a property in the plugin settings with automatic saving and custom value conversion.
+   *
+   * @typeParam TValueComponent - The type of the value component extending `ValueComponent`.
+   * @typeParam Property - The key of the plugin setting that the component is bound to.
+   * @typeParam UIValueType - The inferred type of the UI value based on the value component's type.
+   *
+   * @param valueComponent - The component that will display and interact with the setting value.
+   * @param property - The property key in `PluginSettings` to bind to the component.
+   * @param options - Configuration options.
+   * @param options.autoSave - If true, saves the plugin settings automatically after the component value changes.
+   * @param options.settingToUIValueConverter - A function that converts the setting value to the value used by the UI component.
+   * @param options.uiToSettingValueConverter - A function that converts the UI component's value back to the setting value.
+   *
+   * @returns The `TValueComponent` instance that was bound to the property.
+   */
+  protected bindValueComponent<
+    TValueComponent extends ValueComponent<unknown>,
+    Property extends keyof PluginSettings,
+    UIValueType = TValueComponent extends ValueComponent<infer P> ? P : never,
+  >(
+    valueComponent: TValueComponent,
+    property: Property,
+    options: {
+      autoSave?: boolean,
+      settingToUIValueConverter: (propertyValue: PluginSettings[Property]) => UIValueType,
+      uiToSettingValueConverter: (uiValue: UIValueType) => PluginSettings[Property]
+    }
+  ): TValueComponent;
+
+  /**
+   * Internal implementation of `bindValueComponent` that handles both overloads.
+   *
+   * @typeParam TValueComponent - The type of the value component extending `ValueComponent`.
+   * @typeParam Property - The key of the plugin setting that the component is bound to.
+   * @typeParam UIValueType - The inferred type of the UI value based on the value component's type.
+   *
+   * @param valueComponent - The component that will display and interact with the setting value.
+   * @param property - The property key in `PluginSettings` to bind to the component.
+   * @param options - Configuration options.
+   * @param options.autoSave - If true, saves the plugin settings automatically after the component value changes.
+   * @param options.settingToUIValueConverter - A function that converts the setting value to the value used by the UI component.
+   * @param options.uiToSettingValueConverter - A function that converts the UI component's value back to the setting value.
+   *
+   * @returns The `TValueComponent` instance that was bound to the property.
+   */
+  protected bindValueComponent<
+    TValueComponent extends ValueComponent<unknown>,
+    Property extends keyof PluginSettings,
+    UIValueType = TValueComponent extends ValueComponent<infer P> ? P : never,
   >(
     valueComponent: TValueComponent,
     property: Property,
     {
-      autoSave = true,
-      settingToUIValueConverter = (value): PluginSettings[Property] => value,
-      uiToSettingValueConverter = (value): PluginSettings[Property] => value
+      autoSave,
+      settingToUIValueConverter,
+      uiToSettingValueConverter
     }: {
-      autoSave?: boolean
-      settingToUIValueConverter?: (value: PluginSettings[Property]) => PluginSettings[Property],
-      uiToSettingValueConverter?: (value: PluginSettings[Property]) => PluginSettings[Property]
-    } = {}
+      autoSave?: boolean,
+      settingToUIValueConverter: (propertyValue: PluginSettings[Property]) => UIValueType,
+      uiToSettingValueConverter: (uiValue: UIValueType) => PluginSettings[Property]
+    }
   ): TValueComponent {
     const pluginSettings = this.plugin.settingsCopy;
-    valueComponent
+    (valueComponent as ValueComponent<UIValueType>)
       .setValue(settingToUIValueConverter(pluginSettings[property]))
       .onChange(async (newValue) => {
-        pluginSettings[property] = uiToSettingValueConverter(newValue as PluginSettings[Property]);
+        pluginSettings[property] = uiToSettingValueConverter(newValue);
         if (autoSave) {
           await this.plugin.saveSettings(pluginSettings);
         }
