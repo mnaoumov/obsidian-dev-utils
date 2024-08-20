@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.7.7
+
+- Replace .ts to .cjs
+- Remove generation dependencies
+- Switch all to dependencies
+
 ## 1.7.6
 
 - Mark esbuild/eslint as externals
