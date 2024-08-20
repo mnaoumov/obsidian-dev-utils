@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.6.0
+
+- Serialize JSON with functions
+- Add more String functions
+- Rename invokeEsbuild
+- Switch to path-browserify
+- Improve tsdoc
+
 ## 1.5.1
 
 - Auto commit package-lock.json
