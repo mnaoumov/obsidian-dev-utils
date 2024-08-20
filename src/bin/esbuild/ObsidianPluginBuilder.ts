@@ -113,6 +113,8 @@ export async function buildObsidianPlugin({
       "@lezer/common",
       "@lezer/highlight",
       "@lezer/lr",
+      "esbuild",
+      "eslint",
       ...builtins
     ],
     format: "cjs",
