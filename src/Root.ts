@@ -8,10 +8,8 @@ import {
   relative,
   resolve
 } from "./Path.ts";
-import { tsImport } from "tsx/esm/api";
 import process from "node:process";
 import { packageDirectorySync } from "pkg-dir";
-import { pathToFileURL } from "node:url";
 import { toPosixPath } from "./Path.ts";
 import { trimEnd } from "./String.ts";
 import { toCommandLine } from "./bin/cli.ts";
@@ -122,20 +120,6 @@ export function execFromRootWithStderr(command: string | string[], {
       }
     });
   });
-}
-
-/**
- * Dynamically imports a TypeScript module from the root directory of the project.
- *
- * @template T - The expected type of the imported module.
- * @param specifier - The module specifier to import.
- * @param cwd - The current working directory to resolve from.
- * @returns A promise that resolves with the imported module.
- */
-export async function tsImportFromRoot<T>(specifier: string, cwd?: string): Promise<T> {
-  const rootDir = getRootDir(cwd);
-  const rootUrl = pathToFileURL(rootDir).href;
-  return await tsImport(specifier, rootUrl) as T;
 }
 
 /**
