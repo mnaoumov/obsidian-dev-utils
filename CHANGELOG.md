@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.7.4
+
+- Don't exit on `npm run dev`
+
 ## 1.7.3
 
 - Switch to var as it what esbuild converts const to
