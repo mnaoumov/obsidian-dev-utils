@@ -63,6 +63,7 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
     addCommand(program, CommandNames.Version, "Release a new version", (versionUpdateType: string) => updateVersion(versionUpdateType))
       .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]");
     await program.parseAsync(argv, { from: "user" });
+    return TaskResult.DoNotExit();
   }));
 }
 
