@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.7.2
+
+- Avoid second definition of the const
+- Allow MaybePromise for overrides
+- Move typings to deps
+
 ## 1.7.1
 
 - Make proper `bindValueComponent` overloads
