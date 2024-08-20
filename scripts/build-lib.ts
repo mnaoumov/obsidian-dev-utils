@@ -9,6 +9,7 @@ import {
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
 import { wrapCliTask } from "../src/bin/cli.ts";
 import { renameToCjsPlugin } from "../src/bin/esbuild/renameToCjsPlugin.ts";
+import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import {
   join,
@@ -17,6 +18,8 @@ import {
 import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
 
 await wrapCliTask(async () => {
+  const dependenciesToSkip = await getDependenciesToSkip();
+
   const buildOptions: BuildOptions = {
     banner: {
       js: banner
@@ -29,7 +32,7 @@ await wrapCliTask(async () => {
     platform: "node",
     plugins: [
       preprocessPlugin(),
-      renameToCjsPlugin()
+      renameToCjsPlugin(dependenciesToSkip)
     ],
     sourcemap: "inline",
     target: "ESNext",
