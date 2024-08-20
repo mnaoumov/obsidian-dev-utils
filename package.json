@@ -43,7 +43,6 @@
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.2.0",
     "@types/parsimmon": "^1.10.9",
-    "@types/path-browserify": "^1.0.2",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "builtin-modules": "^4.0.0",
     "commander": "^12.1.0",
@@ -62,6 +61,7 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
+    "@types/path-browserify": "^1.0.2",
     "@typescript-eslint/parser": "^7.16.1",
     "adm-zip": "^0.5.15",
     "cspell": "^8.13.2",
