@@ -57,8 +57,8 @@ export abstract class PluginSettingsTabBase<
     property: Property,
     {
       autoSave = true,
-      settingToUIValueConverter = (value) => value,
-      uiToSettingValueConverter = (value) => value
+      settingToUIValueConverter = (value): PluginSettings[Property] => value,
+      uiToSettingValueConverter = (value): PluginSettings[Property] => value
     }: {
       autoSave?: boolean
       settingToUIValueConverter?: (value: PluginSettings[Property]) => PluginSettings[Property],
