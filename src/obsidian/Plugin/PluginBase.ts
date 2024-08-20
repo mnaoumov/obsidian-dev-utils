@@ -16,6 +16,7 @@ import {
   loadPluginSettings,
   clonePluginSettings
 } from "./PluginSettings.ts";
+import type { MaybePromise } from "../../Async.ts";
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
@@ -95,9 +96,9 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * Called when the plugin loading is complete. This method must be implemented by subclasses to perform
    * any additional setup required after loading is complete.
    *
-   * @returns {Promise<void>} A promise that resolves when loading is complete.
+   * @returns {MaybePromise<void>} A promise or void indicating the completion of the load process.
    */
-  protected abstract onloadComplete(): Promise<void>;
+  protected abstract onloadComplete(): MaybePromise<void>;
 
   /**
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
@@ -116,13 +117,14 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   }
 
   /**
-   * Parses the settings data and returns a PluginSettings object.
+   * Parses the provided settings data and returns the parsed `PluginSettings`.
    *
-   * @param {unknown} data - The raw settings data.
-   * @returns {Promise<PluginSettings>} A promise that resolves with the parsed settings.
+   * @protected
+   * @param {unknown} data - The raw data to be parsed into `PluginSettings`.
+   * @returns {MaybePromise<PluginSettings>} A promise that resolves to `PluginSettings` or the settings directly.
    */
-  protected async parseSettings(data: unknown): Promise<PluginSettings> {
-    return await Promise.resolve(loadPluginSettings(this.createDefaultPluginSettings, data));
+  protected parseSettings(data: unknown): MaybePromise<PluginSettings> {
+    return loadPluginSettings(this.createDefaultPluginSettings, data);
   }
 
   /**
