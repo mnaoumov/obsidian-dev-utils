@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.7.6
+
+- Mark esbuild/eslint as externals
+
 ## 1.7.5
 
 - Don't use getDependenciesToSkip in plugin build
