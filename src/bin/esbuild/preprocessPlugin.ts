@@ -50,10 +50,10 @@ export function preprocessPlugin(): Plugin {
 
         for (const [key, value] of Object.entries(replacements)) {
           const valueStr = typeof value === "function" ? `(${value.toString()})()` : toJson(value, { shouldHandleFunctions: true });
-          if (contents.includes(`const __${makeValidVariableName(key)}`)) {
+          if (contents.includes(`var __${makeValidVariableName(key)}`)) {
             continue;
           }
-          contents = `const __${makeValidVariableName(key)} = globalThis["${key}"] ?? ${valueStr};\n` + contents;
+          contents = `var __${makeValidVariableName(key)} = globalThis["${key}"] ?? ${valueStr};\n` + contents;
         }
 
         // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly,
