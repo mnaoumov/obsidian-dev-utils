@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.7.1
+
+- Make proper `bindValueComponent` overloads
+
 ## 1.7.0
 
 - Allow convert plugin setting values
