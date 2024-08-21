@@ -23,6 +23,12 @@ import {
   join
 } from "../../Path.ts";
 import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+
+type ModuleWithDefaultExport = {
+  default: unknown;
+};
 
 /**
  * Retrieves the list of dependencies that should be skipped during the bundling process.
@@ -31,11 +37,7 @@ import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
  */
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const npmPackage = await readNpmPackage(getDirname(import.meta.url));
-  const dependenciesToSkip = new Set<string>([...Object.keys(npmPackage.dependencies ?? {}), ...builtins]);
-  for (const dependency of Object.keys(npmPackage.devDependencies ?? {})) {
-    dependenciesToSkip.delete(dependency);
-  }
-
+  const dependenciesToSkip = new Set<string>([...Object.keys(npmPackage.dependencies ?? {}).filter(canSkipFromBundling), ...builtins]);
   return dependenciesToSkip;
 }
 
@@ -95,4 +97,31 @@ function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, depe
       });
     }
   };
+}
+
+/**
+ * Determines whether a module can be skipped from bundling.
+ *
+ * @param moduleName - The name of the module.
+ * @returns A boolean indicating whether the module can be skipped from bundling.
+ */
+function canSkipFromBundling(moduleName: string): boolean {
+  if (moduleName.startsWith("@types/")) {
+    return true;
+  }
+
+  if (moduleName.startsWith("obsidian")) {
+    return true;
+  }
+
+  if (moduleName === "esbuild") {
+    return true;
+  }
+
+  try {
+    const module = require(moduleName) as ModuleWithDefaultExport;
+    return !module.default;
+  } catch(e) {
+    return false;
+  }
 }
