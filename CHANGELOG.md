@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.0.0
+
+- Proper update in `package-lock.json`
+- Inline `obsidian-dataview` types
+
 ## 1.8.0
 
 - Don't skip ESM modules from bundling
