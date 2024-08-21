@@ -38,7 +38,9 @@ export const configs: Linter.Config[] = [
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
       join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
     ],
-    ignores: [],
+    ignores: [
+      join(ObsidianDevUtilsRepoPaths.SrcObsidianTypesDataview),
+    ],
     languageOptions: {
       parser: typescriptEslintParser,
       sourceType: "module",

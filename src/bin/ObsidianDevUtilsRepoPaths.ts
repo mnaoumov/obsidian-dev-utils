@@ -63,6 +63,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `src` directory. */
   Src = "src",
 
+  /** The path to the `src` directory. */
+  SrcObsidianTypesDataview = "src/obsidian/@types/Dataview",
+
   /** The path to the `_dependencies.ts` file within the `src` directory. */
   SrcDependenciesTs = "./src/_dependencies.ts",
 
