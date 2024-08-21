@@ -38,6 +38,8 @@ export interface NpmPackage {
    */
   name: string;
 
+  packages?: Record<string, NpmPackage>;
+
   /**
    * The version of the package.
    */
