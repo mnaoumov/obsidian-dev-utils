@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.8.0
+
+- Don't skip ESM modules from bundling
+- Report spellcheck error without stack
+
 ## 1.7.7
 
 - Replace .ts to .cjs
