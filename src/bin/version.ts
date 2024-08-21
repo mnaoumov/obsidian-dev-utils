@@ -81,6 +81,16 @@ type ObsidianReleasesJson = {
  * @returns A `Promise` that resolves to a `TaskResult` indicating the success or failure of the version update.
  */
 export async function updateVersion(versionUpdateType: string): Promise<TaskResult | void> {
+  if (versionUpdateType === "") {
+    const npmOldVersion = process.env["npm_old_version"];
+    const npmNewVersion = process.env["npm_new_version"];
+
+    if (npmOldVersion && npmNewVersion) {
+      await updateVersionInFiles(npmOldVersion, false);
+      return updateVersion(npmNewVersion);
+    }
+  }
+
   const isObsidianPlugin = existsSync(resolvePathFromRoot(ObsidianPluginRepoPaths.ManifestJson));
   return await TaskResult.chain([
     async (): Promise<void> => {
