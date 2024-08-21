@@ -1,4 +1,5 @@
-import type { App, Component } from "obsidian";
+import type { App,
+  Component } from "obsidian";
 import type { QuerySettings } from "../settings.d.ts";
 import type { Literal } from "../data-model/value.d.ts";
 /** Render simple fields compactly, removing wrapping content like paragraph and span. */
