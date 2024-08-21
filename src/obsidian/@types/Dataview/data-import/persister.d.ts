@@ -1,3 +1,5 @@
+type LocalForage = typeof import("localforage");
+
 import { PageMetadata } from "../data-model/markdown.js";
 /** A piece of data that has been cached for a specific version and time. */
 export interface Cached<T> {

@@ -5,7 +5,7 @@ import type {
   DateTime,
   Link,
   SMarkdownPage
-} from "obsidian-dataview";
+} from "./@types/Dataview/index.d.ts";
 
 import {
   convertAsyncToSync,
