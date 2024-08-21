@@ -37,14 +37,11 @@ export async function lint(fix?: boolean): Promise<TaskResult> {
     throw new Error("Could not find package directory.");
   }
 
-  const ignorePatterns = configs.flatMap((config) => config.ignores ?? []);
-
   const FlatESLint = await loadESLint({ useFlatConfig: true });
   const eslint = new FlatESLint({
     fix,
     overrideConfigFile: join(packageDir, ObsidianDevUtilsRepoPaths.DistEslintConfigEmptyCjs),
-    overrideConfig: configs,
-    ignorePatterns
+    overrideConfig: configs
   });
 
   const includePatterns = configs
@@ -52,7 +49,8 @@ export async function lint(fix?: boolean): Promise<TaskResult> {
     .flatMap((file) => file instanceof Array ? file : [file])
     .map((file) => normalizeIfRelative(file));
 
-  const files = await glob(includePatterns);
+  const ignorePatterns = configs.flatMap((config) => config.ignores ?? []).flatMap((pattern) => [pattern, join(pattern, ObsidianDevUtilsRepoPaths.AnyPath)]);
+  const files = await glob(includePatterns, { ignore: ignorePatterns });
   const lintResults = await eslint.lintFiles(files);
 
   if (fix) {
