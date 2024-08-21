@@ -15,15 +15,6 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
-    "paths": {
-      /* HACK: https://github.com/blacksmithgu/obsidian-dataview/issues/2080#issuecomment-1837106359 */
-      "*": [
-        "./node_modules/obsidian-dataview/lib/*"
-      ],
-      "obsidian-dataview/inline-api": [
-        "./node_modules/obsidian-dataview/lib/api/inline-api.d.ts"
-      ]
-    },
     "target": "ESNext",
     "types": [
       "node",
