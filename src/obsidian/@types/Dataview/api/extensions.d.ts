@@ -6,10 +6,10 @@ export type TaskStatusSelector = (task: STask) => Promise<string>;
  * advanced dataview behavior.
  **/
 export declare class Extension {
-    plugin: string;
-    /** All registered task status selectors for this extension. */
-    taskStatusSelectors: Record<string, TaskStatusSelector>;
-    constructor(plugin: string);
-    /** Register a task status selector under the given name. */
-    taskStatusSelector(name: string, selector: TaskStatusSelector): Extension;
+  public plugin: string;
+  /** All registered task status selectors for this extension. */
+  public taskStatusSelectors: Record<string, TaskStatusSelector>;
+  public constructor(plugin: string);
+  /** Register a task status selector under the given name. */
+  public taskStatusSelector(name: string, selector: TaskStatusSelector): Extension;
 }

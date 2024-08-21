@@ -1,4 +1,5 @@
-import type { DateTime, Duration } from "luxon";
+import type { DateTime,
+  Duration } from "luxon";
 import type { Result } from "../api/result.d.ts";
 import type { QuerySettings } from "../settings.d.ts";
 /** Normalize a duration to all of the proper units. */
