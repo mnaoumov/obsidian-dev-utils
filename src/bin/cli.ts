@@ -61,7 +61,7 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
     addCommand(program, CommandNames.LintFix, "Lint the source code and apply automatic fixes", () => lint(true));
     addCommand(program, CommandNames.Spellcheck, "Spellcheck the source code", () => spellcheck());
     addCommand(program, CommandNames.Version, "Release a new version", (versionUpdateType: string) => updateVersion(versionUpdateType))
-      .argument("<versionUpdateType>", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]");
+      .argument("[versionUpdateType]", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]");
     await program.parseAsync(argv, { from: "user" });
     return TaskResult.DoNotExit();
   }));
