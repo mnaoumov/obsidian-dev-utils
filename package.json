@@ -10,7 +10,7 @@
     "build:validate": "tsc --build --force",
     "build:generate-index": "tsx scripts/build-generate-index.ts",
     "build:generate-dependencies": "tsx scripts/build-generate-dependencies.ts",
-    "build:types": "tsc --project ./tsconfig.types.json",
+    "build:types": "tsx scripts/build-types.ts",
     "build:dependencies": "tsx scripts/build-dependencies.ts",
     "build:lib": "tsx scripts/build-lib.ts",
     "build:generate-exports": "tsx scripts/build-generate-exports.ts",
@@ -83,6 +83,14 @@
       "default": "./dist/lib/*.cjs",
       "types": "./dist/lib/*.d.ts"
     },
+    "./@types": {
+      "default": "./dist/lib/@types/index.cjs",
+      "types": "./dist/lib/@types/index.d.ts"
+    },
+    "./@types/*": {
+      "default": "./dist/lib/@types/*.cjs",
+      "types": "./dist/lib/@types/*.d.ts"
+    },
     "./bin": {
       "default": "./dist/lib/bin/index.cjs",
       "types": "./dist/lib/bin/index.d.ts"
@@ -99,6 +107,14 @@
       "default": "./dist/lib/bin/ESLint/*.cjs",
       "types": "./dist/lib/bin/ESLint/*.d.ts"
     },
+    "./bin/ESLint/@types": {
+      "default": "./dist/lib/bin/ESLint/@types/index.cjs",
+      "types": "./dist/lib/bin/ESLint/@types/index.d.ts"
+    },
+    "./bin/ESLint/@types/*": {
+      "default": "./dist/lib/bin/ESLint/@types/*.cjs",
+      "types": "./dist/lib/bin/ESLint/@types/*.d.ts"
+    },
     "./bin/esbuild": {
       "default": "./dist/lib/bin/esbuild/index.cjs",
       "types": "./dist/lib/bin/esbuild/index.d.ts"
@@ -114,6 +130,126 @@
     "./obsidian/*": {
       "default": "./dist/lib/obsidian/*.cjs",
       "types": "./dist/lib/obsidian/*.d.ts"
+    },
+    "./obsidian/@types": {
+      "default": "./dist/lib/obsidian/@types/index.cjs",
+      "types": "./dist/lib/obsidian/@types/index.d.ts"
+    },
+    "./obsidian/@types/*": {
+      "default": "./dist/lib/obsidian/@types/*.cjs",
+      "types": "./dist/lib/obsidian/@types/*.d.ts"
+    },
+    "./obsidian/@types/Dataview": {
+      "default": "./dist/lib/obsidian/@types/Dataview/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/api": {
+      "default": "./dist/lib/obsidian/@types/Dataview/api/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/api/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/api/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/api/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/api/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-import": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-import/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-import/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-import/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-import/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-import/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-import/web-worker": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-import/web-worker/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-import/web-worker/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-import/web-worker/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-import/web-worker/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-import/web-worker/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-index": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-index/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-index/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-index/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-index/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-index/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-model": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-model/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-model/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-model/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-model/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-model/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-model/serialized": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-model/serialized/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-model/serialized/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/data-model/serialized/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/data-model/serialized/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/data-model/serialized/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/expression": {
+      "default": "./dist/lib/obsidian/@types/Dataview/expression/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/expression/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/expression/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/expression/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/expression/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/query": {
+      "default": "./dist/lib/obsidian/@types/Dataview/query/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/query/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/query/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/query/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/query/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/typings": {
+      "default": "./dist/lib/obsidian/@types/Dataview/typings/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/typings/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/typings/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/typings/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/typings/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/ui": {
+      "default": "./dist/lib/obsidian/@types/Dataview/ui/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/ui/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/ui/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/ui/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/ui/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/ui/export": {
+      "default": "./dist/lib/obsidian/@types/Dataview/ui/export/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/ui/export/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/ui/export/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/ui/export/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/ui/export/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/ui/views": {
+      "default": "./dist/lib/obsidian/@types/Dataview/ui/views/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/ui/views/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/ui/views/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/ui/views/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/ui/views/*.d.ts"
+    },
+    "./obsidian/@types/Dataview/util": {
+      "default": "./dist/lib/obsidian/@types/Dataview/util/index.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/util/index.d.ts"
+    },
+    "./obsidian/@types/Dataview/util/*": {
+      "default": "./dist/lib/obsidian/@types/Dataview/util/*.cjs",
+      "types": "./dist/lib/obsidian/@types/Dataview/util/*.d.ts"
     },
     "./obsidian/Modal": {
       "default": "./dist/lib/obsidian/Modal/index.cjs",
