@@ -1,8 +1,8 @@
 /** Collect data matching a source query. */
-import { FullIndex } from "../data-index/index.js";
-import { Result } from "../api/result.js";
-import { Source } from "./source.js";
-import { DataObject, Literal } from "../data-model/value.js";
+import type { FullIndex } from "../data-index/index.d.ts";
+import type { Result } from "../api/result.d.ts";
+import type { Source } from "./source.d.ts";
+import type { DataObject, Literal } from "../data-model/value.d.ts";
 /** A data row which has an ID and associated data (like page link / page data). */
 export type Datarow<T> = {
     id: Literal;

@@ -1,4 +1,4 @@
-import { QuerySettings } from "../settings.js";
+import type { QuerySettings } from "../settings.d.ts";
 /** A function which maps an array element to some value. */
 export type ArrayFunc<T, O> = (elem: T, index: number, arr: T[]) => O;
 /** A function which compares two types. */

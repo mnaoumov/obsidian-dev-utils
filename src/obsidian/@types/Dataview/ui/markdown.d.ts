@@ -1,10 +1,10 @@
 /** Provides core preact / rendering utilities for all view types. */
-import { App, MarkdownRenderChild } from "obsidian";
-import { h, ComponentChildren } from "preact";
-import { Component } from "obsidian";
-import { DataviewSettings } from "../settings.js";
-import { FullIndex } from "../data-index/index.js";
-import { Literal } from "../data-model/value.js";
+import type { App, MarkdownRenderChild } from "obsidian";
+import type { h, ComponentChildren } from "preact";
+import type { Component } from "obsidian";
+import type { DataviewSettings } from "../settings.d.ts";
+import type { FullIndex } from "../data-index/index.d.ts";
+import type { Literal } from "../data-model/value.d.ts";
 import React from "preact/compat";
 export type MarkdownProps = {
     contents: string;

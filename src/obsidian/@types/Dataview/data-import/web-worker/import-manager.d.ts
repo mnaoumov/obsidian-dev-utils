@@ -1,5 +1,5 @@
 /** Controls and creates Dataview file importers, allowing for asynchronous loading and parsing of files. */
-import { Component, MetadataCache, TFile, Vault } from "obsidian";
+import type { Component, MetadataCache, TFile, Vault } from "obsidian";
 /** Callback when a file is resolved. */
 type FileCallback = (p: any) => void;
 /** Multi-threaded file parser which debounces rapid file requests automatically. */

@@ -1,10 +1,10 @@
 /** Core implementation of the query language evaluation engine. */
-import { Literal } from "../data-model/value.js";
-import { Result } from "../api/result.js";
-import { BinaryOpHandler } from "./binaryop.js";
-import { Field } from "./field.js";
-import { FunctionImpl } from "./functions.js";
-import { QuerySettings } from "../settings.js";
+import type { Literal } from "../data-model/value.d.ts";
+import type { Result } from "../api/result.d.ts";
+import type { BinaryOpHandler } from "./binaryop.d.ts";
+import type { Field } from "./field.d.ts";
+import type { FunctionImpl } from "./functions.d.ts";
+import type { QuerySettings } from "../settings.d.ts";
 /** Handles link resolution and normalization inside of a context. */
 export interface LinkHandler {
     /** Resolve a link to the metadata it contains. */

@@ -1,4 +1,4 @@
-import type { DataviewApi } from "../api/plugin-api.js";
+import type { DataviewApi } from "../api/plugin-api.d.ts";
 import type { Plugin } from "obsidian";
 
 declare module "obsidian" {

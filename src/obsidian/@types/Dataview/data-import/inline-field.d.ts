@@ -1,5 +1,5 @@
 /** Parse inline fields and other embedded metadata in a line. */
-import { Literal } from "../data-model/value.js";
+import type { Literal } from "../data-model/value.d.ts";
 /** A parsed inline field. */
 export interface InlineField {
     /** The raw parsed key. */

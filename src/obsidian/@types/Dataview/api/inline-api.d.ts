@@ -1,16 +1,16 @@
 /** Fancy wrappers for the JavaScript API, used both by external plugins AND by the dataview javascript view. */
-import { App, Component } from "obsidian";
-import { FullIndex } from "../data-index/index.js";
-import type { DataviewApi, DataviewIOApi, QueryApiSettings, QueryResult } from "../api/plugin-api.js";
-import { DataviewSettings, ExportSettings } from "../settings.js";
-import { DataObject, Grouping, Link, Literal, Values, Widgets } from "../data-model/value.js";
-import { BoundFunctionImpl } from "../expression/functions.js";
-import { Context } from "../expression/context.js";
-import { DateTime, Duration } from "luxon";
+import type { App, Component } from "obsidian";
+import type { FullIndex } from "../data-index/index.d.ts";
+import type { DataviewApi, DataviewIOApi, QueryApiSettings, QueryResult } from "../api/plugin-api.d.ts";
+import type { DataviewSettings, ExportSettings } from "../settings.d.ts";
+import type { DataObject, Grouping, Link, Literal, Values, Widgets } from "../data-model/value.d.ts";
+import type { BoundFunctionImpl } from "../expression/functions.d.ts";
+import type { Context } from "../expression/context.d.ts";
+import type { DateTime, Duration } from "luxon";
 import * as Luxon from "luxon";
-import { DataArray } from "./data-array.js";
-import { SListItem } from "../data-model/serialized/markdown.js";
-import { Result } from "../api/result.js";
+import type { DataArray } from "./data-array.d.ts";
+import type { SListItem } from "../data-model/serialized/markdown.d.ts";
+import type { Result } from "../api/result.d.ts";
 /** Asynchronous API calls related to file / system IO. */
 export declare class DataviewInlineIOApi {
     api: DataviewIOApi;

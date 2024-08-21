@@ -1,9 +1,9 @@
-import { DateTime, Duration } from "luxon";
-import { Literal, Link } from "../data-model/value.js";
+import type { DateTime, Duration } from "luxon";
+import type { Literal, Link } from "../data-model/value.d.ts";
 import * as P from "parsimmon";
-import { BinaryOp, Field, LambdaField, ListField, LiteralField, ObjectField, VariableField } from "./field.js";
-import { FolderSource, NegatedSource, Source, TagSource, CsvSource } from "../data-index/source.js";
-import { Result } from "../api/result.js";
+import type { BinaryOp, Field, LambdaField, ListField, LiteralField, ObjectField, VariableField } from "./field.d.ts";
+import type { FolderSource, NegatedSource, Source, TagSource, CsvSource } from "../data-index/source.d.ts";
+import type { Result } from "../api/result.d.ts";
 /** Provides a lookup table for unit durations of the given type. */
 export declare const DURATION_TYPES: {
     year: Duration;

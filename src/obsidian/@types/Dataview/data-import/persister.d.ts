@@ -1,6 +1,6 @@
 type LocalForage = typeof import("localforage");
 
-import { PageMetadata } from "../data-model/markdown.js";
+import type { PageMetadata } from "../data-model/markdown.d.ts";
 /** A piece of data that has been cached for a specific version and time. */
 export interface Cached<T> {
     /** The version of Dataview that the data was written to cache with. */

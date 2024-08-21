@@ -1,6 +1,6 @@
-import { App, Component } from "obsidian";
-import { QuerySettings } from "../settings.js";
-import { Literal } from "../data-model/value.js";
+import type { App, Component } from "obsidian";
+import type { QuerySettings } from "../settings.d.ts";
+import type { Literal } from "../data-model/value.d.ts";
 /** Render simple fields compactly, removing wrapping content like paragraph and span. */
 export declare function renderCompactMarkdown(app: App, markdown: string, container: HTMLElement, sourcePath: string, component: Component, isInlineFieldLivePreview?: boolean): Promise<void>;
 /** Render a pre block with an error in it; returns the element to allow for dynamic updating. */

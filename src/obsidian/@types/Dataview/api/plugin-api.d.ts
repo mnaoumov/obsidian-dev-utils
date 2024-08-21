@@ -1,18 +1,18 @@
 /** The general, externally accessible plugin API (available at `app.plugins.plugins.dataview.api` or as global `DataviewAPI`). */
-import { App, Component, MarkdownPostProcessorContext } from "obsidian";
-import { FullIndex } from "../data-index/index.js";
-import { DataObject, Grouping, Link, Literal, Values, Widgets } from "../data-model/value.js";
-import { DataArray } from "./data-array.js";
-import { BoundFunctionImpl } from "../expression/functions.js";
-import { Context } from "../expression/context.js";
-import { IdentifierMeaning } from "../query/engine.js";
-import { DateTime, Duration } from "luxon";
+import type { App, Component, MarkdownPostProcessorContext } from "obsidian";
+import type { FullIndex } from "../data-index/index.d.ts";
+import type { DataObject, Grouping, Link, Literal, Values, Widgets } from "../data-model/value.d.ts";
+import type { DataArray } from "./data-array.d.ts";
+import type { BoundFunctionImpl } from "../expression/functions.d.ts";
+import type { Context } from "../expression/context.d.ts";
+import type { IdentifierMeaning } from "../query/engine.d.ts";
+import type { DateTime, Duration } from "luxon";
 import * as Luxon from "luxon";
-import { CompareOperator } from "compare-versions";
-import { DataviewSettings, ExportSettings } from "../settings.js";
-import { SListItem } from "../data-model/serialized/markdown.js";
-import { Result } from "../api/result.js";
-import { Query } from "../query/query.js";
+import type { CompareOperator } from "compare-versions";
+import type { DataviewSettings, ExportSettings } from "../settings.d.ts";
+import type { SListItem } from "../data-model/serialized/markdown.d.ts";
+import type { Result } from "../api/result.d.ts";
+import type { Query } from "../query/query.d.ts";
 /** Asynchronous API calls related to file / system IO. */
 export declare class DataviewIOApi {
     api: DataviewApi;

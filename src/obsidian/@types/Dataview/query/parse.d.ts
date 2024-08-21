@@ -1,7 +1,7 @@
 import * as P from "parsimmon";
-import { FlattenStep, GroupStep, LimitStep, NamedField, Query, QueryHeader, QueryOperation, QuerySortBy, QueryType, SortByStep, WhereStep, Comment } from "./query.js";
-import { Source } from "../data-index/source.js";
-import { Result } from "../api/result.js";
+import type { FlattenStep, GroupStep, LimitStep, NamedField, Query, QueryHeader, QueryOperation, QuerySortBy, QueryType, SortByStep, WhereStep, Comment } from "./query.d.ts";
+import type { Source } from "../data-index/source.d.ts";
+import type { Result } from "../api/result.d.ts";
 /** Typings for the outputs of all of the parser combinators. */
 interface QueryLanguageTypes {
     queryType: QueryType;

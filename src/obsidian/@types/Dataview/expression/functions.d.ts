@@ -1,7 +1,7 @@
 /** Default function implementations for the expression evaluator. */
-import { Literal } from "../data-model/value.js";
-import { LiteralReprAll, LiteralTypeOrAll } from "./binaryop.js";
-import { Context } from "./context.js";
+import type { Literal } from "../data-model/value.d.ts";
+import type { LiteralReprAll, LiteralTypeOrAll } from "./binaryop.d.ts";
+import type { Context } from "./context.d.ts";
 /**
  * A function implementation which takes in a function context and a variable number of arguments. Throws an error if an
  * invalid number/type of arguments are passed.

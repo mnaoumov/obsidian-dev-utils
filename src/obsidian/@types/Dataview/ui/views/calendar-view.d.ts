@@ -1,8 +1,8 @@
-import { FullIndex } from "../../data-index/index.js";
-import { App } from "obsidian";
-import { Query } from "../../query/query.js";
-import { DataviewSettings } from "../../settings.js";
-import { DataviewRefreshableRenderer } from "../../ui/refreshable-view.js";
+import type { FullIndex } from "../../data-index/index.d.ts";
+import type { App } from "obsidian";
+import type { Query } from "../../query/query.d.ts";
+import type { DataviewSettings } from "../../settings.d.ts";
+import type { DataviewRefreshableRenderer } from "../../ui/refreshable-view.d.ts";
 export declare class DataviewCalendarRenderer extends DataviewRefreshableRenderer {
     query: Query;
     container: HTMLElement;

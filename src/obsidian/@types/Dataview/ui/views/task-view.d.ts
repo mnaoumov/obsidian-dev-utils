@@ -1,9 +1,9 @@
-import { SListItem, STask } from "../../data-model/serialized/markdown.js";
-import { Grouping } from "../../data-model/value.js";
-import { MarkdownRenderChild, Vault } from "obsidian";
-import { h } from "preact";
-import { Query } from "../../query/query.js";
-import { DataviewInit } from "../../ui/markdown.js";
+import type { SListItem, STask } from "../../data-model/serialized/markdown.d.ts";
+import type { Grouping } from "../../data-model/value.d.ts";
+import type { MarkdownRenderChild, Vault } from "obsidian";
+import type { h } from "preact";
+import type { Query } from "../../query/query.d.ts";
+import type { DataviewInit } from "../../ui/markdown.d.ts";
 export type TaskViewState = {
     state: "loading";
 } | {

@@ -1,10 +1,10 @@
-import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import { EditorSelection, Range } from "@codemirror/state";
-import { DataviewSettings } from "../settings.js";
-import { FullIndex } from "../data-index/index.js";
-import { App, Component, TFile } from "obsidian";
-import { DataviewApi } from "../api/plugin-api.js";
-import { SyntaxNode } from "@lezer/common";
+import type { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
+import type { EditorSelection, Range } from "@codemirror/state";
+import type { DataviewSettings } from "../settings.d.ts";
+import type { FullIndex } from "../data-index/index.d.ts";
+import type { App, Component, TFile } from "obsidian";
+import type { DataviewApi } from "../api/plugin-api.d.ts";
+import type { SyntaxNode } from "@lezer/common";
 export declare function selectionAndRangeOverlap(selection: EditorSelection, rangeFrom: number, rangeTo: number): boolean;
 export declare function inlinePlugin(app: App, index: FullIndex, settings: DataviewSettings, api: DataviewApi): ViewPlugin<{
     decorations: DecorationSet;

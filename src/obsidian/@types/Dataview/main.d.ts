@@ -1,8 +1,8 @@
-import { Component, MarkdownPostProcessorContext, Plugin } from "obsidian";
-import { FullIndex } from "./data-index/index.js";
-import { DataviewApi } from "./api/plugin-api.js";
-import { DataviewSettings } from "./settings.js";
-import { DataviewInlineApi } from "./api/inline-api.js";
+import type { Component, MarkdownPostProcessorContext, Plugin } from "obsidian";
+import type { FullIndex } from "./data-index/index.d.ts";
+import type { DataviewApi } from "./api/plugin-api.d.ts";
+import type { DataviewSettings } from "./settings.d.ts";
+import type { DataviewInlineApi } from "./api/inline-api.d.ts";
 export default class DataviewPlugin extends Plugin {
     /** Plugin-wide default settings. */
     settings: DataviewSettings;

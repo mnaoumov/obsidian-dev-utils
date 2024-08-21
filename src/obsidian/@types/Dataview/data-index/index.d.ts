@@ -1,11 +1,11 @@
 /** Stores various indices on all files in the vault to make dataview generation fast. */
-import { Result } from "../api/result.js";
-import { LocalStorageCache } from "../data-import/persister.js";
-import { FileImporter } from "../data-import/web-worker/import-manager.js";
-import { PageMetadata } from "../data-model/markdown.js";
-import { DataObject } from "../data-model/value.js";
-import { DateTime } from "luxon";
-import { App, Component, MetadataCache, TAbstractFile, TFile, Vault } from "obsidian";
+import type { Result } from "../api/result.d.ts";
+import type { LocalStorageCache } from "../data-import/persister.d.ts";
+import type { FileImporter } from "../data-import/web-worker/import-manager.d.ts";
+import type { PageMetadata } from "../data-model/markdown.d.ts";
+import type { DataObject } from "../data-model/value.d.ts";
+import type { DateTime } from "luxon";
+import type { App, Component, MetadataCache, TAbstractFile, TFile, Vault } from "obsidian";
 /** Aggregate index which has several sub-indices and will initialize all of them. */
 export declare class FullIndex extends Component {
     app: App;

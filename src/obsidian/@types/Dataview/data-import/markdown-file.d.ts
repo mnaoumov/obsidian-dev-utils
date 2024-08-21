@@ -1,8 +1,8 @@
 /** Importer for markdown documents. */
-import { InlineField } from "../data-import/inline-field.js";
-import { ListItem, PageMetadata } from "../data-model/markdown.js";
-import { Literal, Link } from "../data-model/value.js";
-import { CachedMetadata, FileStats, FrontMatterCache, HeadingCache } from "obsidian";
+import type { InlineField } from "../data-import/inline-field.d.ts";
+import type { ListItem, PageMetadata } from "../data-model/markdown.d.ts";
+import type { Literal, Link } from "../data-model/value.d.ts";
+import type { CachedMetadata, FileStats, FrontMatterCache, HeadingCache } from "obsidian";
 /** Extract markdown metadata from the given Obsidian markdown file. */
 export declare function parsePage(path: string, contents: string, stat: FileStats, metadata: CachedMetadata): PageMetadata;
 /** Extract tags intelligently from frontmatter. Handles arrays, numbers, and strings. */

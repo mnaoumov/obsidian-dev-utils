@@ -1,8 +1,8 @@
 /** Provides a global dispatch table for evaluating binary operators, including comparison. */
-import { LiteralRepr, LiteralType, Literal } from "../data-model/value.js";
-import { Result } from "../api/result.js";
-import { BinaryOp } from "../expression/field.js";
-import type { Context } from "../expression/context.js";
+import type { LiteralRepr, LiteralType, Literal } from "../data-model/value.d.ts";
+import type { Result } from "../api/result.d.ts";
+import type { BinaryOp } from "../expression/field.d.ts";
+import type { Context } from "../expression/context.d.ts";
 /** A literal type or a catch-all '*'. */
 export type LiteralTypeOrAll = LiteralType | "*";
 /** Maps a literal type or the catch-all '*'. */

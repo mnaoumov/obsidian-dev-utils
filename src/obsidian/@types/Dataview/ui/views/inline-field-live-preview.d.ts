@@ -1,8 +1,8 @@
-import { App, Component, TFile } from "obsidian";
-import { RangeSet, RangeValue, StateField } from "@codemirror/state";
-import { DecorationSet, EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import { InlineField } from "../../data-import/inline-field.js";
-import { DataviewSettings } from "../../settings.js";
+import type { App, Component, TFile } from "obsidian";
+import type { RangeSet, RangeValue, StateField } from "@codemirror/state";
+import type { DecorationSet, EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
+import type { InlineField } from "../../data-import/inline-field.d.ts";
+import type { DataviewSettings } from "../../settings.d.ts";
 declare class InlineFieldValue extends RangeValue {
     field: InlineField;
     constructor(field: InlineField);

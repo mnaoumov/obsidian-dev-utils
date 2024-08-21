@@ -1,16 +1,16 @@
 /**
  * Takes a full query and a set of indices, and (hopefully quickly) returns all relevant files.
  */
-import { FullIndex } from "../data-index/index.js";
-import { Context, LinkHandler } from "../expression/context.js";
-import { Datarow } from "../data-index/resolver.js";
-import { DataObject, Link, Literal, Grouping } from "../data-model/value.js";
-import { Query, QueryOperation } from "../query/query.js";
-import { Result } from "../api/result.js";
-import { Field } from "../expression/field.js";
-import { QuerySettings } from "../settings.js";
-import { DateTime } from "luxon";
-import { SListItem } from "../data-model/serialized/markdown.js";
+import type { FullIndex } from "../data-index/index.d.ts";
+import type { Context, LinkHandler } from "../expression/context.d.ts";
+import type { Datarow } from "../data-index/resolver.d.ts";
+import type { DataObject, Link, Literal, Grouping } from "../data-model/value.d.ts";
+import type { Query, QueryOperation } from "../query/query.d.ts";
+import type { Result } from "../api/result.d.ts";
+import type { Field } from "../expression/field.d.ts";
+import type { QuerySettings } from "../settings.d.ts";
+import type { DateTime } from "luxon";
+import type { SListItem } from "../data-model/serialized/markdown.d.ts";
 /** Operation diagnostics collected during the execution of each query step. */
 export interface OperationDiagnostics {
     timeMs: number;

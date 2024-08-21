@@ -1,5 +1,5 @@
-import { DateTime, Duration } from "luxon";
-import { QuerySettings } from "../settings.js";
+import type { DateTime, Duration } from "luxon";
+import type { QuerySettings } from "../settings.d.ts";
 /** Shorthand for a mapping from keys to values. */
 export type DataObject = {
     [key: string]: Literal;

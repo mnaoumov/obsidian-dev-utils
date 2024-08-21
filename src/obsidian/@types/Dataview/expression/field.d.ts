@@ -1,5 +1,5 @@
 /** Defines the AST for a field which can be evaluated. */
-import { Literal } from "../data-model/value.js";
+import type { Literal } from "../data-model/value.d.ts";
 /** Comparison operators which yield true/false. */
 export type CompareOp = ">" | ">=" | "<=" | "<" | "=" | "!=";
 /** Arithmetic operators which yield numbers and other values. */

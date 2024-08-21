@@ -1,7 +1,7 @@
 /** Serialized / API facing data types for Dataview objects. */
-import { Link, Literal } from "../../data-model/value.js";
-import { DateTime } from "luxon";
-import { Pos } from "obsidian";
+import type { Link, Literal } from "../../data-model/value.d.ts";
+import type { DateTime } from "luxon";
+import type { Pos } from "obsidian";
 export interface SMarkdownPage {
     file: {
         path: string;

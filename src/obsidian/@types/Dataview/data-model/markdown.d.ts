@@ -1,9 +1,9 @@
-import { DateTime } from "luxon";
-import type { FullIndex } from "../data-index/index.js";
-import { Literal, Link } from "../data-model/value.js";
-import { DataObject } from "../index.js";
-import { SListItem, SMarkdownPage } from "../data-model/serialized/markdown.js";
-import { Pos } from "obsidian";
+import type { DateTime } from "luxon";
+import type { FullIndex } from "../data-index/index.d.ts";
+import type { Literal, Link } from "../data-model/value.d.ts";
+import type { DataObject } from "../index.d.ts";
+import type { SListItem, SMarkdownPage } from "../data-model/serialized/markdown.d.ts";
+import type { Pos } from "obsidian";
 /** All extracted markdown file metadata obtained from a file. */
 export declare class PageMetadata {
     /** The path this file exists at. */
