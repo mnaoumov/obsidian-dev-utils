@@ -128,8 +128,8 @@ export async function buildObsidianPlugin({
       preprocessPlugin(),
       lintPlugin(isProductionBuild),
       fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
+      ...customEsbuildPlugins,
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName),
-      ...customEsbuildPlugins
     ],
     sourcemap: isProductionBuild ? false : "inline",
     target: "esnext",
