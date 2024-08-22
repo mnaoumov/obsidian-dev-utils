@@ -54,7 +54,8 @@ export abstract class PluginSettingsTabBase<
     valueComponent: TValueComponent,
     property: Property,
     options?: {
-      autoSave?: boolean
+      autoSave?: boolean,
+      pluginSettings?: PluginSettings
     }
   ): TValueComponent;
 
@@ -83,6 +84,7 @@ export abstract class PluginSettingsTabBase<
     property: Property,
     options: {
       autoSave?: boolean,
+      pluginSettings?: PluginSettings
       settingToUIValueConverter: (propertyValue: PluginSettings[Property]) => UIValueType,
       uiToSettingValueConverter: (uiValue: UIValueType) => PluginSettings[Property]
     }
@@ -113,15 +115,17 @@ export abstract class PluginSettingsTabBase<
     property: Property,
     {
       autoSave,
+      pluginSettings,
       settingToUIValueConverter,
       uiToSettingValueConverter
     }: {
       autoSave?: boolean,
+      pluginSettings?: PluginSettings,
       settingToUIValueConverter: (propertyValue: PluginSettings[Property]) => UIValueType,
       uiToSettingValueConverter: (uiValue: UIValueType) => PluginSettings[Property]
     }
   ): TValueComponent {
-    const pluginSettings = this.plugin.settingsCopy;
+    pluginSettings ??= this.plugin.settingsCopy;
     (valueComponent as ValueComponent<UIValueType>)
       .setValue(settingToUIValueConverter(pluginSettings[property]))
       .onChange(async (newValue) => {
