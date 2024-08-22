@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.4.0
+
+- Move Dataview generics to methods
+
 ## 2.3.0
 
 - Add proper dependency to fix import resolution
