@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.5.0
+
+- Add getApp
+
 ## 2.4.0
 
 - Move Dataview generics to methods
