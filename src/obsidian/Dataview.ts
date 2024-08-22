@@ -1,3 +1,5 @@
+import "../@types/compare-versions.d.ts";
+
 import type { DataviewInlineApi as DataviewInlineApiOriginal } from "./@types/Dataview/api/inline-api.d.ts";
 import type {
   DataArray,
