@@ -71,6 +71,7 @@ export const configs: Linter.Config[] = [
       "@stylistic/indent": ["error", 2],
       "@stylistic/quotes": ["error", "double"],
       "@stylistic/brace-style": "error",
+      "@stylistic/arrow-parens": "error",
       semi: "error",
       "no-extra-semi": "error",
       "@typescript-eslint/explicit-member-accessibility": "error",
