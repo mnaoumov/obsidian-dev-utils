@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.1
+
+- Add missing package
+
 ## 2.6.0
 
 - Dataview - update deps
