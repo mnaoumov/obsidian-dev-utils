@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.7.0
+
+- Ensure copyToObsidianPluginFolder is the last step
+- insertCodeBlock
+
 ## 2.6.1
 
 - Add missing package
