@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.1.0
+
+- Pass customEsbuildPlugins to ObsidianPlugin
+
 ## 2.0.0
 
 - Proper update in `package-lock.json`
