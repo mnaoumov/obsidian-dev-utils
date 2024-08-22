@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.3.0
+
+- Add proper dependency to fix import resolution
+
 ## 2.2.0
 
 - Force brackets in lambdas
