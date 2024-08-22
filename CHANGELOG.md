@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.2.0
+
+- Force brackets in lambdas
+- Add DocumentFragment
+- Allow passing custom pluginSettings
+
 ## 2.1.0
 
 - Pass customEsbuildPlugins to ObsidianPlugin
