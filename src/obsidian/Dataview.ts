@@ -24,10 +24,10 @@ export type {
   Link
 };
 
-export interface DataviewInlineApi<CustomPage = SMarkdownPage> extends DataviewInlineApiOriginal {
-  current: () => Page<CustomPage>;
+export interface DataviewInlineApi extends DataviewInlineApiOriginal {
+  current<CustomPage = SMarkdownPage>(): Page<CustomPage>;
   array<T>(arr: T[]): DataArray<T>;
-  pages(query?: string): DataArray<Page<CustomPage>>;
+  pages<CustomPage = SMarkdownPage>(query?: string): DataArray<Page<CustomPage>>;
   paragraph(text: unknown, options?: DomElementInfo & { container?: HTMLElement }): HTMLParagraphElement;
 }
 
