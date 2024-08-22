@@ -103,7 +103,7 @@ export async function removeAlias(app: App, pathOrFile: string | TFile, alias?: 
       return;
     }
 
-    frontMatter.aliases = frontMatter.aliases.filter(a => a != alias);
+    frontMatter.aliases = frontMatter.aliases.filter((a) => a != alias);
 
     if (frontMatter.aliases.length === 0) {
       delete frontMatter.aliases;

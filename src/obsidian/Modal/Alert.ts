@@ -26,7 +26,7 @@ export async function alert(app: App, message: string): Promise<void> {
       }
 
       public override onOpen(): void {
-        this.setContent(createFragment(fragment => {
+        this.setContent(createFragment((fragment) => {
           const modalContent = fragment.createDiv({ cls: "mod-cta" });
           modalContent.createEl("p", { text: message });
           modalContent.createEl("button", {

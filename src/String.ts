@@ -168,6 +168,6 @@ export function unescape(str: string): string {
  * @returns The modified string with replacements applied.
  */
 export function replace(str: string, replacementsMap: Record<string, string>): string {
-  const regExp = new RegExp(Object.keys(replacementsMap).map(source => escapeRegExp(source)).join("|"), "g");
+  const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join("|"), "g");
   return str.replaceAll(regExp, (source: string) => replacementsMap[source] as string);
 }

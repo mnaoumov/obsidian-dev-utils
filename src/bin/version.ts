@@ -357,7 +357,7 @@ export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
     ObsidianPluginRepoPaths.PackageLockJson,
     ObsidianPluginRepoPaths.VersionsJson,
     ObsidianPluginRepoPaths.ChangelogMd
-  ].filter(file => existsSync(resolvePathFromRoot(file)));
+  ].filter((file) => existsSync(resolvePathFromRoot(file)));
   await execFromRoot(["git", "add", ...files], { quiet: true });
   await execFromRoot(`git commit -m ${newVersion}`, { quiet: true });
 }
@@ -434,7 +434,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
   if (isObsidianPlugin) {
     const buildDir = resolvePathFromRoot(ObsidianPluginRepoPaths.DistBuild);
     const fileNames = await readdirPosix(buildDir);
-    filePaths = fileNames.map(fileName => join(buildDir, fileName));
+    filePaths = fileNames.map((fileName) => join(buildDir, fileName));
   } else {
 
     const zip = new AdmZip();

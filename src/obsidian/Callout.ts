@@ -75,6 +75,6 @@ export function renderCallout({
 
 export function wrapForCallout(content: string): string {
   const lines = content.split("\n");
-  const prefixedLines = lines.map(line => `> ${line}`);
+  const prefixedLines = lines.map((line) => `> ${line}`);
   return prefixedLines.join("\n");
 }

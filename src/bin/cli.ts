@@ -102,7 +102,7 @@ export async function wrapCliTask(taskFn: () => MaybePromise<TaskResult | void>)
  */
 export function toCommandLine(args: string[]): string {
   return args
-    .map(arg => {
+    .map((arg) => {
       if (/[\s"\n]/.test(arg)) {
         const escapedArg = arg.replace(/"/g, "\\\"").replace(/\n/g, "\\n");
         return `"${escapedArg}"`;

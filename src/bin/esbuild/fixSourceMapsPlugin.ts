@@ -60,7 +60,7 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string
 function fixSourceMap(sourceMapBase64: string, pluginName: string): string {
   const sourceMapJson = Buffer.from(sourceMapBase64, "base64").toString("utf-8");
   const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
-  sourceMap.sources = sourceMap.sources.map(path => convertPathToObsidianUrl(path, pluginName));
+  sourceMap.sources = sourceMap.sources.map((path) => convertPathToObsidianUrl(path, pluginName));
   return Buffer.from(JSON.stringify(sourceMap)).toString("base64");
 }
 

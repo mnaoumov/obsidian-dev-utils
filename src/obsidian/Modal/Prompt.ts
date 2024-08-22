@@ -50,7 +50,7 @@ export async function prompt({
         textComponent.setValue(this.value);
         textComponent.setPlaceholder(this.value);
         textComponent.inputEl.style.width = "100%";
-        textComponent.onChange(value => this.value = value);
+        textComponent.onChange((value) => this.value = value);
         textComponent.inputEl.addEventListener("keydown", (event: KeyboardEvent) => {
           if (event.key === "Enter") {
             this.handleOk(event, textComponent);
@@ -68,7 +68,7 @@ export async function prompt({
         const okButton = new ButtonComponent(this.contentEl);
         okButton.setButtonText("OK");
         okButton.setClass("mod-cta");
-        okButton.onClick(event => this.handleOk(event, textComponent));
+        okButton.onClick((event) => this.handleOk(event, textComponent));
         okButton.buttonEl.style.marginTop = "20px";
         okButton.buttonEl.style.marginRight = "10px";
         const cancelButton = new ButtonComponent(this.contentEl);

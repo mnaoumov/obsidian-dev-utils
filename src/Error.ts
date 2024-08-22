@@ -68,7 +68,7 @@ export function printError(error: unknown): void {
  * @returns The string representation of the error.
  */
 export function errorToString(error: unknown): string {
-  return parseErrorEntries(error).map(entry => "  ".repeat(entry.level) + entry.message).join("\n");
+  return parseErrorEntries(error).map((entry) => "  ".repeat(entry.level) + entry.message).join("\n");
 }
 
 /**
