@@ -259,3 +259,23 @@ export function renderIframe({
     }
   });
 }
+
+/**
+ * Inserts a code block into the specified Dataview using the provided language and code.
+ *
+ * @param dv - The DataviewInlineApi instance to insert the code block into.
+ * @param language - The language of the code block.
+ * @param code - The code to be inserted into the code block.
+ * @returns void
+ */
+export function insertCodeBlock(dv: DataviewInlineApi, language: string, code: string): void {
+  const fenceMatches = code.matchAll(/^`{3,}/gm);
+  const fenceLengths = Array.from(fenceMatches).map((fenceMatch) => fenceMatch[0].length);
+  const maxFenceLength = Math.max(0, ...fenceLengths);
+  const resultFenceLength = Math.max(3, maxFenceLength + 1);
+  const resultFence = "`".repeat(resultFenceLength);
+
+  dv.paragraph(`${resultFence}${language}
+${code}
+${resultFence}`);
+}
