@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.6.0
+
+- Dataview - update deps
+
 ## 2.5.0
 
 - Add getApp
