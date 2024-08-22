@@ -8,7 +8,8 @@
 import {
   context,
   type BuildContext,
-  type BuildOptions
+  type BuildOptions,
+  type Plugin
 } from "esbuild";
 import process from "node:process";
 import { existsSync } from "node:fs";
@@ -58,10 +59,12 @@ if you want to view the source, please visit the github repository of this plugi
  */
 export async function buildObsidianPlugin({
   mode,
-  obsidianConfigDir = process.env["OBSIDIAN_CONFIG_DIR"]
+  obsidianConfigDir = process.env["OBSIDIAN_CONFIG_DIR"],
+  customEsbuildPlugins = []
 }: {
   mode: BuildMode
-  obsidianConfigDir?: string
+  obsidianConfigDir?: string,
+  customEsbuildPlugins?: Plugin[]
 }): Promise<TaskResult> {
   const isProductionBuild = mode === BuildMode.Production;
 
@@ -125,7 +128,8 @@ export async function buildObsidianPlugin({
       preprocessPlugin(),
       lintPlugin(isProductionBuild),
       fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
-      copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
+      copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName),
+      ...customEsbuildPlugins
     ],
     sourcemap: isProductionBuild ? false : "inline",
     target: "esnext",
