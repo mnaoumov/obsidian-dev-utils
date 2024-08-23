@@ -7,7 +7,7 @@ import {
   invokeEsbuild
 } from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
 import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
-import { wrapCliTask } from "../src/bin/cli.ts";
+import { wrapCliTask } from "../src/cli.ts";
 import { renameToCjsPlugin } from "../src/bin/esbuild/renameToCjsPlugin.ts";
 import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
 import { readdirPosix } from "../src/Fs.ts";

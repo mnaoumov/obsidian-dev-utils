@@ -11,7 +11,7 @@ import { printError } from "./Error.ts";
  * Abstract class representing the result of a task. Includes methods for handling success,
  * exit codes, and chaining tasks.
  */
-export abstract class TaskResult {
+export abstract class CliTaskResult {
   /**
    * Exits the process based on the task result.
    */
@@ -23,15 +23,15 @@ export abstract class TaskResult {
    * @param tasks - An array of task functions that return a `TaskResult` or `void`.
    * @returns A promise that resolves with the first failed `TaskResult` or a success result.
    */
-  public static async chain(tasks: (() => MaybePromise<TaskResult | void>)[]): Promise<TaskResult> {
+  public static async chain(tasks: (() => MaybePromise<CliTaskResult | void>)[]): Promise<CliTaskResult> {
     for (const task of tasks) {
-      const result = await getTaskResult(task);
+      const result = await wrapResult(task);
       if (!result.isSuccessful()) {
         return result;
       }
     }
 
-    return TaskResult.CreateSuccessResult(true);
+    return CliTaskResult.Success();
   }
 
   /**
@@ -47,8 +47,23 @@ export abstract class TaskResult {
    * @param isSuccess - Indicates whether the task was successful.
    * @returns A `TaskResult` representing the success or failure.
    */
-  public static CreateSuccessResult(isSuccess: boolean): TaskResult {
+  /**
+   * Creates a CliTaskResult representing a successful task result.
+   *
+   * @param isSuccess - A boolean indicating whether the task was successful. Default is true.
+   * @returns A CliTaskResult object representing a successful task result.
+   */
+  public static Success(isSuccess: boolean = true): CliTaskResult {
     return new SuccessTaskResult(isSuccess);
+  }
+
+  /**
+   * Represents a failure result of a CLI task.
+   *
+   * @returns {CliTaskResult} The failure result.
+   */
+  public static Failure(): CliTaskResult {
+    return this.Success(false);
   }
 
   /**
@@ -57,7 +72,7 @@ export abstract class TaskResult {
    * @param exitCode - The exit code to represent.
    * @returns A `TaskResult` representing the exit code.
    */
-  public static CreateExitCodeResult(exitCode: number): TaskResult {
+  public static FromExitCode(exitCode: number): CliTaskResult {
     return new ExitCodeTaskResult(exitCode);
   }
 
@@ -66,7 +81,7 @@ export abstract class TaskResult {
    *
    * @returns A `TaskResult` that does not exit the process.
    */
-  public static DoNotExit(): TaskResult {
+  public static DoNotExit(): CliTaskResult {
     return new DoNotExitTaskResult();
   }
 }
@@ -74,7 +89,7 @@ export abstract class TaskResult {
 /**
  * Represents a task result based on success or failure.
  */
-class SuccessTaskResult extends TaskResult {
+class SuccessTaskResult extends CliTaskResult {
   public constructor(private readonly _isSuccessful: boolean) {
     super();
   }
@@ -94,7 +109,7 @@ class SuccessTaskResult extends TaskResult {
 /**
  * Represents a task result based on an exit code.
  */
-class ExitCodeTaskResult extends TaskResult {
+class ExitCodeTaskResult extends CliTaskResult {
   public constructor(private readonly exitCode: number) {
     super();
   }
@@ -114,7 +129,7 @@ class ExitCodeTaskResult extends TaskResult {
 /**
  * Represents a task result that does not exit the process.
  */
-class DoNotExitTaskResult extends TaskResult {
+class DoNotExitTaskResult extends CliTaskResult {
   public constructor() {
     super();
   }
@@ -137,11 +152,22 @@ class DoNotExitTaskResult extends TaskResult {
  * @param taskFn - The task function to execute.
  * @returns A promise that resolves with a `TaskResult` representing the outcome of the task.
  */
-export async function getTaskResult(taskFn: () => MaybePromise<TaskResult | void>): Promise<TaskResult> {
+async function wrapResult(taskFn: () => MaybePromise<CliTaskResult | void>): Promise<CliTaskResult> {
   try {
-    return await taskFn() ?? TaskResult.CreateSuccessResult(true);
+    return await taskFn() ?? CliTaskResult.Success();
   } catch (error) {
     printError(new Error("An error occurred during task execution", { cause: error }));
-    return TaskResult.CreateSuccessResult(false);
+    return CliTaskResult.Failure();
   }
+}
+
+/**
+ * Wraps a CLI task function to ensure it runs safely and handles its `TaskResult`.
+ *
+ * @param taskFn - The task function to execute, which may return a `TaskResult` or void.
+ * @returns A promise that resolves when the task is completed and exits with the appropriate status.
+ */
+export async function wrapCliTask(taskFn: () => MaybePromise<CliTaskResult | void>): Promise<void> {
+  const result = await wrapResult(taskFn);
+  result.exit();
 }

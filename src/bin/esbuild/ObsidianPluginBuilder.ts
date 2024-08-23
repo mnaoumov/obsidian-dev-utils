@@ -20,7 +20,7 @@ import {
   writeFile
 } from "node:fs/promises";
 import { resolvePathFromRoot } from "../../Root.ts";
-import { TaskResult } from "../../TaskResult.ts";
+import { CliTaskResult } from "../../cli.ts";
 import { readNpmPackage } from "../../Npm.ts";
 import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { lintPlugin } from "./lintPlugin.ts";
@@ -65,7 +65,7 @@ export async function buildObsidianPlugin({
   mode: BuildMode
   obsidianConfigDir?: string,
   customEsbuildPlugins?: Plugin[]
-}): Promise<TaskResult> {
+}): Promise<CliTaskResult> {
   const isProductionBuild = mode === BuildMode.Production;
 
   const distDir = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);
@@ -147,13 +147,13 @@ export async function buildObsidianPlugin({
  * @param isProductionBuild - A boolean indicating whether the build is a production build.
  * @returns A promise that resolves to a `TaskResult` indicating the success or failure of the build.
  */
-export async function invokeEsbuild(buildContext: BuildContext<BuildOptions>, isProductionBuild: boolean): Promise<TaskResult> {
+export async function invokeEsbuild(buildContext: BuildContext<BuildOptions>, isProductionBuild: boolean): Promise<CliTaskResult> {
   if (isProductionBuild) {
     const result = await buildContext.rebuild();
     const isSuccess = result.errors.length == 0 && result.warnings.length == 0;
-    return TaskResult.CreateSuccessResult(isSuccess);
+    return CliTaskResult.Success(isSuccess);
   } else {
     await buildContext.watch();
-    return TaskResult.DoNotExit();
+    return CliTaskResult.DoNotExit();
   }
 }

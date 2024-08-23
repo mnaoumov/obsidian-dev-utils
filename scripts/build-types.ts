@@ -1,5 +1,5 @@
 import { cp } from "node:fs/promises";
-import { wrapCliTask } from "../src/bin/cli.ts";
+import { wrapCliTask } from "../src/cli.ts";
 import { execFromRoot } from "../src/Root.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";

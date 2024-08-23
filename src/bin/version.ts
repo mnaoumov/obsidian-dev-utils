@@ -11,7 +11,7 @@
  * new versions on GitHub.
  */
 
-import { TaskResult } from "../TaskResult.ts";
+import { CliTaskResult } from "../cli.ts";
 import {
   execFromRoot,
   resolvePathFromRoot
@@ -80,7 +80,7 @@ type ObsidianReleasesJson = {
  * @param versionUpdateType - The type of version update to perform (major, minor, patch, beta, or manual).
  * @returns A `Promise` that resolves to a `TaskResult` indicating the success or failure of the version update.
  */
-export async function updateVersion(versionUpdateType: string): Promise<TaskResult | void> {
+export async function updateVersion(versionUpdateType: string): Promise<CliTaskResult | void> {
   if (!versionUpdateType) {
     const npmOldVersion = process.env["npm_old_version"];
     const npmNewVersion = process.env["npm_new_version"];
@@ -92,18 +92,18 @@ export async function updateVersion(versionUpdateType: string): Promise<TaskResu
   }
 
   const isObsidianPlugin = existsSync(resolvePathFromRoot(ObsidianPluginRepoPaths.ManifestJson));
-  return await TaskResult.chain([
+  return await CliTaskResult.chain([
     async (): Promise<void> => {
       validate(versionUpdateType);
       await checkGitInstalled();
       await checkGitRepoClean();
       await checkGitHubCliInstalled();
     },
-    (): Promise<TaskResult> => spellcheck(),
+    (): Promise<CliTaskResult> => spellcheck(),
     async (): Promise<void> => {
       await execFromRoot("npm run build");
     },
-    (): Promise<TaskResult> => lint(),
+    (): Promise<CliTaskResult> => lint(),
     async (): Promise<void> => {
       const newVersion = await getNewVersion(versionUpdateType);
       await updateVersionInFiles(newVersion, isObsidianPlugin);

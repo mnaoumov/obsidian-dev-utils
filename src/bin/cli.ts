@@ -20,9 +20,9 @@ import {
   type MaybePromise
 } from "../Async.ts";
 import {
-  getTaskResult,
-  TaskResult
-} from "../TaskResult.ts";
+  CliTaskResult,
+  wrapCliTask
+} from "../cli.ts";
 import { readNpmPackage } from "../Npm.ts";
 import { getDirname } from "../Path.ts";
 import {
@@ -63,7 +63,7 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
     addCommand(program, CommandNames.Version, "Release a new version", (versionUpdateType: string) => updateVersion(versionUpdateType))
       .argument("[versionUpdateType]", "Version update type: major, minor, patch, beta, or x.y.z[-suffix]");
     await program.parseAsync(argv, { from: "user" });
-    return TaskResult.DoNotExit();
+    return CliTaskResult.DoNotExit();
   }));
 }
 
@@ -76,21 +76,10 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
  * @param taskFn - The function to execute when the command is invoked. Can return a `TaskResult` or void.
  * @returns The `commander` command instance for further chaining.
  */
-function addCommand<Args extends unknown[]>(program: Command, name: string, description: string, taskFn: (...args: Args) => MaybePromise<TaskResult | void>): Command {
+function addCommand<Args extends unknown[]>(program: Command, name: string, description: string, taskFn: (...args: Args) => MaybePromise<CliTaskResult | void>): Command {
   return program.command(name)
     .description(description)
     .action((...args: Args) => wrapCliTask(() => taskFn(...args)));
-}
-
-/**
- * Wraps a CLI task function to ensure it runs safely and handles its `TaskResult`.
- *
- * @param taskFn - The task function to execute, which may return a `TaskResult` or void.
- * @returns A promise that resolves when the task is completed and exits with the appropriate status.
- */
-export async function wrapCliTask(taskFn: () => MaybePromise<TaskResult | void>): Promise<void> {
-  const result = await getTaskResult(taskFn);
-  result.exit();
 }
 
 /**

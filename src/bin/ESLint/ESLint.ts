@@ -18,7 +18,7 @@ import {
 import { packageDirectory } from "pkg-dir";
 import { toRelativeFromRoot } from "../../Root.ts";
 import { getDirname } from "../../Path.ts";
-import { TaskResult } from "../../TaskResult.ts";
+import { CliTaskResult } from "../../cli.ts";
 import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
 import { glob } from "glob";
 
@@ -26,11 +26,11 @@ import { glob } from "glob";
  * Lints files according to the ESLint configurations and applies automatic fixes if specified.
  *
  * @param {boolean} [fix=false] - Whether to automatically fix linting issues. Defaults to false.
- * @returns {Promise<TaskResult>} - A promise that resolves to a TaskResult indicating success or failure.
+ * @returns {Promise<CliTaskResult>} - A promise that resolves to a TaskResult indicating success or failure.
  *
  * @throws {Error} If the package directory cannot be found.
  */
-export async function lint(fix?: boolean): Promise<TaskResult> {
+export async function lint(fix?: boolean): Promise<CliTaskResult> {
   fix ??= false;
   const packageDir = await packageDirectory({ cwd: getDirname(import.meta.url) });
   if (!packageDir) {
@@ -75,5 +75,5 @@ export async function lint(fix?: boolean): Promise<TaskResult> {
     }
   }
 
-  return TaskResult.CreateSuccessResult(isSuccess);
+  return CliTaskResult.Success(isSuccess);
 }

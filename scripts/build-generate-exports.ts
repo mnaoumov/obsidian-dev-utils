@@ -5,9 +5,9 @@ import {
 import { readdirPosix } from "../src/Fs.ts";
 import { editNpmPackage } from "../src/Npm.ts";
 import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
-import { wrapCliTask } from "../src/bin/cli.ts";
+import { wrapCliTask } from "../src/cli.ts";
 import { deepEqual } from "../src/Object.ts";
-import { TaskResult } from "../src/TaskResult.ts";
+import { CliTaskResult } from "../src/cli.ts";
 
 await wrapCliTask(async () => {
   const libDirs: string[] = [ObsidianDevUtilsRepoPaths.DistLib];
@@ -43,5 +43,5 @@ await wrapCliTask(async () => {
     isChanged = !deepEqual(oldExports, npmPackage.exports);
   });
 
-  return TaskResult.CreateSuccessResult(!isChanged);
+  return CliTaskResult.Success(!isChanged);
 });

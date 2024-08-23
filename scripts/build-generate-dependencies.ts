@@ -1,6 +1,6 @@
 import { makeValidVariableName } from "../src/String.ts";
 import { generate } from "../src/CodeGenerator.ts";
-import { wrapCliTask } from "../src/bin/cli.ts";
+import { wrapCliTask } from "../src/cli.ts";
 import { getDependenciesToBundle } from "../src/bin/esbuild/Dependency.ts";
 import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
 

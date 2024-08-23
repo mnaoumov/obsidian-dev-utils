@@ -7,7 +7,7 @@
 import { lint } from "cspell";
 import { toRelativeFromRoot } from "../Root.ts";
 import { fileURLToPath } from "node:url";
-import { TaskResult } from "../TaskResult.ts";
+import { CliTaskResult } from "../cli.ts";
 
 /**
  * Runs a spellcheck on the entire codebase using `cspell`.
@@ -17,7 +17,7 @@ import { TaskResult } from "../TaskResult.ts";
  *
  * @returns A `Promise` that resolves to a `TaskResult`, indicating the success or failure of the spellcheck.
  */
-export async function spellcheck(): Promise<TaskResult> {
+export async function spellcheck(): Promise<CliTaskResult> {
   let isSuccess = true;
 
   await lint(["."], {}, {
@@ -33,5 +33,5 @@ export async function spellcheck(): Promise<TaskResult> {
     }
   });
 
-  return TaskResult.CreateSuccessResult(isSuccess);
+  return CliTaskResult.Success(isSuccess);
 }
