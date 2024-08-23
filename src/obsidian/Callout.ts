@@ -11,7 +11,6 @@ import {
   type DataviewInlineApi,
 } from "./Dataview.ts";
 
-import type { MaybePromise } from "../Async.ts";
 import {
   resolveValue,
   type ValueProvider
@@ -63,15 +62,13 @@ export function renderCallout({
   type = "NOTE",
   mode = CalloutMode.FoldableCollapsed,
   header = "",
-  contentProvider = "",
-  contentRenderer
+  contentProvider = ""
 }: {
   dv: DataviewInlineApi,
   type?: string,
   mode?: CalloutMode,
   header?: string,
-  contentProvider?: ValueProvider<string | Node>,
-  contentRenderer?: () => MaybePromise<void>
+  contentProvider?: ValueProvider<string | Node | void>
 }): void {
   const modifier = getModifier(mode);
   const callout = dv.paragraph(`> [!${type}]${modifier} ${header}\n>\n> <div class="content"></div>`);
@@ -90,13 +87,13 @@ export function renderCallout({
 
   async function loadContent(): Promise<void> {
     await sleep(50);
-    let content;
+    let content: string | Node | void;
 
-    if (contentRenderer) {
-      content = await getRenderedContainer(dv, contentRenderer);
-    } else {
-      content = await resolveValue(contentProvider) || "(no data)";
-    }
+    const paragraph = await getRenderedContainer(dv, async() => {
+      content = await resolveValue(contentProvider);
+    });
+
+    content ??= paragraph;
 
     contentDiv.empty();
     dv.paragraph(content, { container: contentDiv });

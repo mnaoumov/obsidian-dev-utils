@@ -9,7 +9,7 @@ import {
   renderPaginatedTable,
 } from "./Dataview.ts";
 
-import { CalloutMode, renderCallout } from "./Callout.ts";
+import { renderCallout } from "./Callout.ts";
 import { fixTitle } from "./DataviewLink.ts";
 import {
   TFolder,
@@ -40,9 +40,8 @@ export function renderDelayedBacklinks({
 }): void {
   renderCallout({
     dv,
-    mode: CalloutMode.FoldableCollapsed,
     header: title,
-    async contentRenderer() {
+    async contentProvider() {
       await renderBacklinksTable(dv, files);
     }
   });
