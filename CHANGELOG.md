@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.12.0
+
+- Sort lint results by path
+- Switch to PathOrFile
+- Missing export
+
 ## 2.11.0
 
 - More Dataview functions
