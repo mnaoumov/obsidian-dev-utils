@@ -138,7 +138,7 @@ export function execFromRoot(command: string | string[],
       if (exitCode !== 0 && !ignoreExitCode) {
         reject(new Error(`Command failed with exit code ${exitCode}\n${stderr}`));
       } else {
-        resolve(withDetails ? stdout : {
+        resolve(!withDetails ? stdout : {
           exitCode,
           exitSignal,
           stderr,
@@ -151,7 +151,7 @@ export function execFromRoot(command: string | string[],
       if (!ignoreExitCode) {
         reject(err);
       } else {
-        resolve(withDetails ? stdout : {
+        resolve(!withDetails ? stdout : {
           exitCode: null,
           exitSignal: null,
           stderr,
