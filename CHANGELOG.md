@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.13.0
+
+- Refactor Vault
+- Refactor FrontMatter
+
 ## 2.12.0
 
 - Sort lint results by path
