@@ -11,12 +11,26 @@ import {
   type ValueProvider
 } from "../ValueProvider.ts";
 
+/**
+ * Enum representing the mode of a callout.
+ */
 export enum CalloutMode {
+  /** Default mode, with no special behavior. */
   Default,
+
+  /** Foldable mode with the callout collapsed. */
   FoldableCollapsed,
+
+  /** Foldable mode with the callout expanded. */
   FoldableExpanded
 }
 
+/**
+ * Returns the modifier string based on the callout mode.
+ *
+ * @param mode - The mode of the callout.
+ * @returns The corresponding modifier string.
+ */
 function getModifier(mode: CalloutMode): string {
   switch (mode) {
     case CalloutMode.FoldableCollapsed:
@@ -28,6 +42,16 @@ function getModifier(mode: CalloutMode): string {
   }
 }
 
+/**
+ * Renders a callout block in Dataview.
+ *
+ * @param dv - The DataviewInlineApi instance.
+ * @param type - The type of the callout, default is `"NOTE"`.
+ * @param mode - The callout mode, default is `CalloutMode.FoldableCollapsed`.
+ * @param header - The header text of the callout, default is an empty string.
+ * @param contentProvider - An optional provider for the content, which can be either a string or a Node.
+ * @param contentRenderer - An optional function to render the content asynchronously.
+ */
 export function renderCallout({
   dv,
   type = "NOTE",
@@ -40,7 +64,7 @@ export function renderCallout({
   type?: string,
   mode?: CalloutMode,
   header?: string,
-  contentProvider?: ValueProvider<string | Node>
+  contentProvider?: ValueProvider<string | Node>,
   contentRenderer?: () => MaybePromise<void>
 }): void {
   const modifier = getModifier(mode);
@@ -73,6 +97,12 @@ export function renderCallout({
   }
 }
 
+/**
+ * Wraps the provided content in blockquote syntax for a callout.
+ *
+ * @param content - The content to wrap.
+ * @returns The content wrapped in blockquote syntax.
+ */
 export function wrapForCallout(content: string): string {
   const lines = content.split("\n");
   const prefixedLines = lines.map((line) => `> ${line}`);

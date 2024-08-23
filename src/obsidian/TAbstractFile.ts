@@ -1,7 +1,8 @@
 import {
   App,
   TAbstractFile,
-  TFile
+  TFile,
+  TFolder,
 } from "obsidian";
 import { trimEnd } from "../String.ts";
 
@@ -41,4 +42,12 @@ export function trimMarkdownExtension(file: TAbstractFile): string {
   }
 
   return trimEnd(file.path, "." + MARKDOWN_FILE_EXTENSION);
+}
+
+export function isFile(file: TAbstractFile | null): file is TFile {
+  return file instanceof TFile;
+}
+
+export function isFolder(file: TAbstractFile | null): file is TFolder {
+  return file instanceof TFolder;
 }
