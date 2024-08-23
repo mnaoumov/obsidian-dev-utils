@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.11.0
+
+- More Dataview functions
+
 ## 2.10.0
 
 - Refactor cli
