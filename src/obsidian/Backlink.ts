@@ -82,7 +82,7 @@ export function renderDelayedBacklinksForFolder({
  * @param abstractFilesOrPaths - An optional array of abstractFilesOrPaths.
  * @returns A Promise that resolves when the backlinks table has been rendered.
  */
-async function renderBacklinksTable(dv: DataviewInlineApi, abstractFilesOrPaths?: (TFile | TFolder | string)[]): Promise<void> {
+export async function renderBacklinksTable(dv: DataviewInlineApi, abstractFilesOrPaths?: (TFile | TFolder | string)[]): Promise<void> {
   if (!abstractFilesOrPaths) {
     abstractFilesOrPaths = [];
   }
