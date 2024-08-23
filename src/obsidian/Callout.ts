@@ -1,3 +1,9 @@
+/**
+ * @module Callout
+ * This module provides utility functions for rendering callouts in Dataview.
+ */
+
+
 import { invokeAsyncSafely } from "../Async.ts";
 
 import {

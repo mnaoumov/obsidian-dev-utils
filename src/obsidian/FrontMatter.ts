@@ -1,3 +1,8 @@
+/**
+ * @module FrontMatter
+ * This module provides utility functions for processing and managing YAML front matter in Obsidian notes.
+ */
+
 import {
   App,
   TFile
@@ -15,6 +20,9 @@ import {
 } from "js-yaml";
 import { getFile } from "./TFile.ts";
 
+/**
+ * Represents the front matter with aliases.
+ */
 type FrontMatterWithAliases = {
   aliases?: string[];
 };
@@ -32,6 +40,16 @@ const NO_TIMESTAMPS_YAML_SCHEMA = DEFAULT_SCHEMA.extend({
 
 const FRONT_MATTER_REG_EXP = /^---\r?\n((?:.|\r?\n)*?)\r?\n?---(?:\r?\n|$)((?:.|\r?\n)*)/;
 
+/**
+ * Processes the front matter of a given file, allowing modifications via a provided function.
+ *
+ * @function processFrontMatter
+ * @template FrontMatter
+ * @param {App} app - The Obsidian app instance.
+ * @param {string | TFile} pathOrFile - The path or TFile object representing the note.
+ * @param {ValueProvider<void, [FrontMatter]>} frontMatterFn - A function that modifies the front matter.
+ * @returns {Promise<void>} A promise that resolves when the front matter has been processed and saved.
+ */
 export async function processFrontMatter<FrontMatter>(app: App, pathOrFile: string | TFile, frontMatterFn: ValueProvider<void, [FrontMatter]>): Promise<void> {
   const file = getFile(app, pathOrFile);
 
@@ -72,6 +90,15 @@ ${mainContent}`;
   });
 }
 
+/**
+ * Adds an alias to the front matter of a given file if it does not already exist.
+ *
+ * @function addAlias
+ * @param {App} app - The Obsidian app instance.
+ * @param {string | TFile} pathOrFile - The path or TFile object representing the note.
+ * @param {string} [alias] - The alias to add.
+ * @returns {Promise<void>} A promise that resolves when the alias has been added.
+ */
 export async function addAlias(app: App, pathOrFile: string | TFile, alias?: string): Promise<void> {
   if (!alias) {
     return;
@@ -93,6 +120,15 @@ export async function addAlias(app: App, pathOrFile: string | TFile, alias?: str
   });
 }
 
+/**
+ * Removes an alias from the front matter of a given file if it exists.
+ *
+ * @function removeAlias
+ * @param {App} app - The Obsidian app instance.
+ * @param {string | TFile} pathOrFile - The path or TFile object representing the note.
+ * @param {string} [alias] - The alias to remove.
+ * @returns {Promise<void>} A promise that resolves when the alias has been removed.
+ */
 export async function removeAlias(app: App, pathOrFile: string | TFile, alias?: string): Promise<void> {
   if (!alias) {
     return;
@@ -110,4 +146,3 @@ export async function removeAlias(app: App, pathOrFile: string | TFile, alias?: 
     }
   });
 }
-

@@ -1,3 +1,8 @@
+/**
+ * @module Vault
+ * This module provides utility functions for working with the Obsidian Vault.
+ */
+
 import {
   App,
   Notice,
@@ -15,6 +20,9 @@ import { getBacklinksForFileSafe } from "./MetadataCache.ts";
 import { printError } from "../Error.ts";
 import { toJson } from "../JSON.ts";
 
+/**
+ * Represents a file change in the Vault.
+ */
 export type FileChange = {
   startIndex: number;
   endIndex: number;
@@ -22,10 +30,25 @@ export type FileChange = {
   newContent: string;
 };
 
+/**
+ * Retrieves an array of Markdown files from the app's vault and sorts them alphabetically by their file path.
+ *
+ * @param app - The Obsidian app instance.
+ * @returns An array of Markdown files sorted by file path.
+ */
 export function getMarkdownFilesSorted(app: App): TFile[] {
   return app.vault.getMarkdownFiles().sort((a, b) => a.path.localeCompare(b.path));
 }
 
+/**
+ * Processes a file with retry logic.
+ *
+ * @param app - The application instance.
+ * @param file - The file to process.
+ * @param processFn - The function to process the file's content.
+ * @param retryOptions - Optional retry options.
+ * @returns A promise that resolves when the processing is complete.
+ */
 export async function processWithRetry(app: App, file: TFile, processFn: (content: string) => MaybePromise<string | null>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
@@ -50,6 +73,15 @@ export async function processWithRetry(app: App, file: TFile, processFn: (conten
   }, overriddenOptions);
 }
 
+/**
+ * Applies file changes to the specified file in the Obsidian vault.
+ *
+ * @param app - The Obsidian app instance.
+ * @param file - The file to apply changes to.
+ * @param changesFn - A function that returns the changes to be applied.
+ * @param retryOptions - Optional retry options for the process.
+ * @returns A promise that resolves when the changes have been applied successfully.
+ */
 export async function applyFileChanges(app: App, file: TFile, changesFn: () => MaybePromise<FileChange[]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
@@ -97,6 +129,14 @@ export async function applyFileChanges(app: App, file: TFile, changesFn: () => M
   }, overriddenOptions);
 }
 
+/**
+ * Removes a folder and its contents safely from the vault.
+ *
+ * @param app - The Obsidian application instance.
+ * @param folderPath - The path of the folder to be removed.
+ * @param removedNotePath - Optional. The path of the note that triggered the removal.
+ * @returns A promise that resolves to a boolean indicating whether the removal was successful.
+ */
 export async function removeFolderSafe(app: App, folderPath: string, removedNotePath?: string): Promise<boolean> {
   const folder = app.vault.getFolderByPath(folderPath);
 
@@ -144,6 +184,14 @@ export async function removeFolderSafe(app: App, folderPath: string, removedNote
   return canRemove;
 }
 
+/**
+ * Creates a folder safely in the specified path.
+ *
+ * @param app - The application instance.
+ * @param path - The path of the folder to create.
+ * @returns A promise that resolves when the folder is created successfully.
+ * @throws If an error occurs while creating the folder and it still doesn't exist.
+ */
 export async function createFolderSafe(app: App, path: string): Promise<void> {
   if (await app.vault.adapter.exists(path)) {
     return;
@@ -158,6 +206,13 @@ export async function createFolderSafe(app: App, path: string): Promise<void> {
   }
 }
 
+/**
+ * Safely lists the files and folders at the specified path in the vault.
+ *
+ * @param app - The Obsidian application instance.
+ * @param path - The path to list files and folders from.
+ * @returns A promise that resolves to a `ListedFiles` object containing the listed files and folders.
+ */
 export async function safeList(app: App, path: string): Promise<ListedFiles> {
   const EMPTY = { files: [], folders: [] };
   if (!(await app.vault.exists(path))) {
@@ -174,6 +229,13 @@ export async function safeList(app: App, path: string): Promise<ListedFiles> {
   }
 }
 
+/**
+ * Removes empty folder hierarchy starting from the given folder.
+ *
+ * @param app - The application instance.
+ * @param folder - The folder to start removing empty hierarchy from.
+ * @returns A promise that resolves when the empty hierarchy is removed.
+ */
 export async function removeEmptyFolderHierarchy(app: App, folder: TFolder | null): Promise<void> {
   while (folder) {
     if (folder.children.length > 0) {

@@ -1,3 +1,8 @@
+/**
+ * @module Dataview
+ * This module provides utility functions for working with Dataview in Obsidian.
+ */
+
 import "../@types/compare-versions.d.ts";
 
 import type { DataviewInlineApi as DataviewInlineApiOriginal } from "./@types/Dataview/api/inline-api.d.ts";
@@ -17,6 +22,11 @@ import { relativePathToResourceUrl } from "../obsidian/ResourceUrl.ts";
 import { errorToString } from "../Error.ts";
 
 declare global {
+  /**
+   * The DataviewAPI object represents the API for interacting with Dataview in Obsidian.
+   *
+   * @var {DataviewApi | undefined}
+   */
   // eslint-disable-next-line no-var
   var DataviewAPI: DataviewApi | undefined;
 }
@@ -26,6 +36,29 @@ export type {
   Link
 };
 
+/**
+ * Extends the `DataviewInlineApiOriginal` interface to provide additional methods for interacting with Dataview.
+ *
+ * @interface DataviewInlineApi
+ * @extends {DataviewInlineApiOriginal}
+ *
+ * @method current
+ * @param {SMarkdownPage} [CustomPage] - A custom page type that extends the default SMarkdownPage.
+ * @returns {Page<CustomPage>} The current page.
+ *
+ * @method array
+ * @param {T[]} arr - An array of items.
+ * @returns {DataArray<T>} A DataArray containing the provided items.
+ *
+ * @method pages
+ * @param {string} [query] - A query string to filter the pages.
+ * @returns {DataArray<Page<CustomPage>>} A DataArray containing the pages.
+ *
+ * @method paragraph
+ * @param {unknown} text - The text content of the paragraph.
+ * @param {DomElementInfo & { container?: HTMLElement }} [options] - Additional options for the paragraph.
+ * @returns {HTMLParagraphElement} The created paragraph element.
+ */
 export interface DataviewInlineApi extends DataviewInlineApiOriginal {
   current<CustomPage = SMarkdownPage>(): Page<CustomPage>;
   array<T>(arr: T[]): DataArray<T>;
@@ -33,6 +66,14 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
   paragraph(text: unknown, options?: DomElementInfo & { container?: HTMLElement }): HTMLParagraphElement;
 }
 
+/**
+ * Reloads the current file cache using the Dataview API.
+ *
+ * @async
+ * @function reloadCurrentFileCache
+ * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
+ * @returns {Promise<void>} A promise that resolves when the cache is reloaded.
+ */
 export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<void> {
   await DataviewAPI?.index.reload(dv.app.vault.getFileByPath(dv.current().file.path)!);
 }
@@ -71,6 +112,17 @@ const paginationCss = `
 
 type ArrayOrDataArray<T> = T[] | DataArray<T>;
 
+/**
+ * Renders a paginated list using the provided DataviewInlineApi instance.
+ *
+ * @async
+ * @function renderPaginatedList
+ * @template T
+ * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
+ * @param {ArrayOrDataArray<T>} rows - The list of items to paginate.
+ * @param {number[]} [itemsPerPageOptions=[10, 20, 50, 100]] - Options for items per page.
+ * @returns {Promise<void>} A promise that resolves when the list is rendered.
+ */
 export async function renderPaginatedList<T>({
   dv,
   rows,
@@ -90,6 +142,18 @@ export async function renderPaginatedList<T>({
   });
 }
 
+/**
+ * Renders a paginated table using the provided DataviewInlineApi instance.
+ *
+ * @async
+ * @function renderPaginatedTable
+ * @template T
+ * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
+ * @param {string[]} headers - The headers of the table.
+ * @param {ArrayOrDataArray<T>} rows - The rows of the table to paginate.
+ * @param {number[]} [itemsPerPageOptions=[10, 20, 50, 100]] - Options for items per page.
+ * @returns {Promise<void>} A promise that resolves when the table is rendered.
+ */
 export async function renderPaginatedTable<T extends unknown[]>({
   dv,
   headers,
@@ -111,6 +175,18 @@ export async function renderPaginatedTable<T extends unknown[]>({
   });
 }
 
+/**
+ * Helper function to render paginated content using the specified renderer.
+ *
+ * @async
+ * @template T
+ * @function renderPaginated
+ * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
+ * @param {ArrayOrDataArray<T>} rows - The rows to paginate.
+ * @param {number[]} itemsPerPageOptions - Options for items per page.
+ * @param {function(ArrayOrDataArray<T>): MaybePromise<void>} renderer - The renderer function to display the paginated content.
+ * @returns {Promise<void>} A promise that resolves when the content is rendered.
+ */
 async function renderPaginated<T>({
   dv,
   rows,
@@ -223,6 +299,17 @@ async function renderPaginated<T>({
   }
 }
 
+/**
+ * Renders the content using the provided renderer function in a temporary container,
+ * and then returns the container.
+ *
+ * @async
+ * @function getRenderedContainer
+ * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
+ * @param {() => MaybePromise<void>} renderer - The function responsible for rendering the content.
+ * @returns {Promise<HTMLParagraphElement>} A promise that resolves to the HTML paragraph element
+ * that was used as the temporary container.
+ */
 export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () => MaybePromise<void>): Promise<HTMLParagraphElement> {
   const tempContainer = dv.paragraph("");
   dv.container = tempContainer;
@@ -240,6 +327,16 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
   return tempContainer;
 }
 
+/**
+ * Renders an iframe in the Dataview container with the specified relative path, width, and height.
+ *
+ * @function renderIframe
+ * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
+ * @param {string} relativePath - The relative path to the resource to be displayed in the iframe.
+ * @param {string} [width="100%"] - The width of the iframe. Defaults to "100%".
+ * @param {string} [height="600px"] - The height of the iframe. Defaults to "600px".
+ * @returns {void} This function does not return a value.
+ */
 export function renderIframe({
   dv,
   relativePath,
@@ -261,12 +358,13 @@ export function renderIframe({
 }
 
 /**
- * Inserts a code block into the specified Dataview using the provided language and code.
+ * Inserts a code block into the specified Dataview instance using the provided language and code.
  *
- * @param dv - The DataviewInlineApi instance to insert the code block into.
- * @param language - The language of the code block.
- * @param code - The code to be inserted into the code block.
- * @returns void
+ * @function insertCodeBlock
+ * @param {DataviewInlineApi} dv - The DataviewInlineApi instance to insert the code block into.
+ * @param {string} language - The language identifier for the code block.
+ * @param {string} code - The code content to be inserted into the code block.
+ * @returns {void} This function does not return a value.
  */
 export function insertCodeBlock(dv: DataviewInlineApi, language: string, code: string): void {
   const fenceMatches = code.matchAll(/^`{3,}/gm);

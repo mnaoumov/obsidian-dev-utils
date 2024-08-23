@@ -1,3 +1,8 @@
+/**
+ * @module MetadataCache
+ * This module provides utility functions for working with the metadata cache in Obsidian.
+ */
+
 import type {
   App,
   CachedMetadata,
@@ -18,6 +23,14 @@ import {
   type PathOrFile
 } from "./TFile.ts";
 
+/**
+ * Retrieves the cached metadata for a given file or path.
+ *
+ * @param {App} app - The Obsidian app instance.
+ * @param {PathOrFile} fileOrPath - The file or path to retrieve the metadata for.
+ * @param {Partial<RetryOptions>} [retryOptions] - Optional retry options for the retrieval process.
+ * @returns {Promise<CachedMetadata | null>} The cached metadata for the file, or null if it doesn't exist.
+ */
 export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CachedMetadata | null> {
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
@@ -59,6 +72,12 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
   return cache;
 }
 
+/**
+ * Retrieves all links from the provided cache.
+ *
+ * @param cache - The cached metadata.
+ * @returns An array of reference caches representing the links.
+ */
 export function getAllLinks(cache: CachedMetadata): ReferenceCache[] {
   let links: ReferenceCache[] = [];
 
@@ -83,6 +102,14 @@ export function getAllLinks(cache: CachedMetadata): ReferenceCache[] {
   return links;
 }
 
+/**
+ * Retrieves the backlinks for a file safely.
+ *
+ * @param app - The Obsidian application instance.
+ * @param pathOrFile - The path or file object.
+ * @param retryOptions - Optional retry options.
+ * @returns A promise that resolves to an array dictionary of backlinks.
+ */
 export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CustomArrayDict<LinkCache>> {
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
@@ -114,6 +141,13 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
   return backlinks!;
 }
 
+/**
+ * Saves the specified note in the Obsidian app.
+ *
+ * @param app - The Obsidian app instance.
+ * @param note - The note to be saved.
+ * @returns A promise that resolves when the note is saved.
+ */
 async function saveNote(app: App, note: TFile): Promise<void> {
   if (!isMarkdownFile(note)) {
     return;
@@ -127,6 +161,15 @@ async function saveNote(app: App, note: TFile): Promise<void> {
   }
 }
 
+/**
+ * Retrieves the value of a specific front matter key from the metadata cache.
+ *
+ * @template T - The type of the value to retrieve.
+ * @param {App} app - The Obsidian app instance.
+ * @param {PathOrFile} pathOrFile - The path or file to retrieve the metadata cache for.
+ * @param {string} key - The key of the front matter value to retrieve.
+ * @returns {Promise<T | null>} - A promise that resolves to the value of the front matter key, or null if it does not exist.
+ */
 export async function getFrontMatterValue<T>(app: App, pathOrFile: PathOrFile, key: string): Promise<T | null> {
   const cache = await getCacheSafe(app, pathOrFile);
   if (!cache?.frontmatter) {

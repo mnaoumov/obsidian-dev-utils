@@ -1,3 +1,8 @@
+/**
+ * @module TFolder
+ * This module provides utility functions for working with TFolder instances in Obsidian.
+ */
+
 import {
   type App,
   TFile,
