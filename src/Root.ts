@@ -32,12 +32,12 @@ type ExecResult = {
  * @param options.withDetails - If false, only returns the output of the command. Default is false.
  * @returns A promise that resolves with the output of the command.
  */
-export async function execFromRoot(command: string | string[], options: {
+export async function execFromRoot(command: string | string[], options?: {
   quiet?: boolean,
   ignoreExitCode?: boolean,
   stdin?: string,
   cwd?: string | undefined,
-  withDetails: false
+  withDetails?: false
 }): Promise<string>;
 
 /**
@@ -51,7 +51,7 @@ export async function execFromRoot(command: string | string[], options: {
  * @param options.withDetails - If set to true, returns detailed information about the execution. Default is true.
  * @returns A promise that resolves to the execution result.
  */
-export function execFromRoot(command: string | string[], options: {
+export function execFromRoot(command: string | string[], options?: {
   quiet?: boolean,
   ignoreExitCode?: boolean,
   stdin?: string,
@@ -83,15 +83,15 @@ export function execFromRoot(command: string | string[],
     quiet = false,
     ignoreExitCode = false,
     stdin = "",
-    cwd,
+    cwd = undefined,
     withDetails = false
   }: {
     quiet?: boolean,
     ignoreExitCode?: boolean,
     stdin?: string,
     cwd?: string | undefined,
-    withDetails: boolean
-  }): Promise<string | ExecResult> {
+    withDetails?: boolean
+  } = {}): Promise<string | ExecResult> {
   if (Array.isArray(command)) {
     command = toCommandLine(command);
   }
