@@ -56,6 +56,8 @@ export async function lint(fix?: boolean): Promise<CliTaskResult> {
     await FlatESLint.outputFixes(lintResults);
   }
 
+  lintResults.sort((a, b) => a.filePath.localeCompare(b.filePath));
+
   let isSuccess = true;
 
   for (const lintResult of lintResults) {
