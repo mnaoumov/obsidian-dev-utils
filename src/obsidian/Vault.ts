@@ -13,7 +13,6 @@ import {
 import { deepEqual } from "../Object.ts";
 import {
   retryWithTimeout,
-  type MaybePromise,
   type RetryOptions
 } from "../Async.ts";
 import { getBacklinksForFileSafe } from "./MetadataCache.ts";
@@ -28,6 +27,10 @@ import {
   getFolderOrNull,
   type PathOrFolder
 } from "./TFolder.ts";
+import {
+  resolveValue,
+  type ValueProvider
+} from "../ValueProvider.ts";
 
 /**
  * Represents a file change in the Vault.
@@ -50,21 +53,26 @@ export function getMarkdownFilesSorted(app: App): TFile[] {
 }
 
 /**
- * Processes a file with retry logic.
+ * Processes a file with retry logic, updating its content based on a provided value or function.
  *
- * @param app - The application instance.
- * @param pathOrFile - The file to process.
- * @param processFn - The function to process the file's content.
- * @param retryOptions - Optional retry options.
- * @returns A promise that resolves when the processing is complete.
+ * @param app - The application instance, typically used for accessing the vault.
+ * @param pathOrFile - The path or file to be processed. It can be a string representing the path or a file object.
+ * @param newContentProvider - A value provider that returns the new content based on the old content of the file.
+ * It can be a string or a function that takes the old content as an argument and returns the new content.
+ * If function is provided, it should return `null` if the process should be retried.
+ * @param retryOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
+ *
+ * @returns A promise that resolves once the process is complete.
+ *
+ * @throws Will throw an error if the process fails after the specified number of retries or timeout.
  */
-export async function processWithRetry(app: App, pathOrFile: PathOrFile, processFn: (content: string) => MaybePromise<string | null>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function processWithRetry(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<string | null, [string]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const file = getFile(app, pathOrFile);
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await retryWithTimeout(async () => {
     const oldContent = await app.vault.adapter.read(file.path);
-    const newContent = await processFn(oldContent);
+    const newContent = await resolveValue(newContentProvider, oldContent);
     if (newContent === null) {
       return false;
     }
@@ -84,19 +92,20 @@ export async function processWithRetry(app: App, pathOrFile: PathOrFile, process
 }
 
 /**
- * Applies file changes to the specified file in the Obsidian vault.
+ * Applies a series of file changes to the specified file or path within the application.
  *
- * @param app - The Obsidian app instance.
- * @param pathOrFile - The file to apply changes to.
- * @param changesFn - A function that returns the changes to be applied.
- * @param retryOptions - Optional retry options for the process.
- * @returns A promise that resolves when the changes have been applied successfully.
+ * @param app - The application instance where the file changes will be applied.
+ * @param pathOrFile - The path or file to which the changes should be applied.
+ * @param changesProvider - A provider that returns an array of file changes to apply.
+ * @param retryOptions - Optional settings that determine how the operation should retry on failure.
+ *
+ * @returns A promise that resolves when the file changes have been successfully applied.
  */
-export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changesFn: () => MaybePromise<FileChange[]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changesProvider: ValueProvider<FileChange[]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await processWithRetry(app, pathOrFile, async (content) => {
-    let changes = await changesFn();
+    let changes = await resolveValue(changesProvider);
 
     for (const change of changes) {
       const actualContent = content.slice(change.startIndex, change.endIndex);
