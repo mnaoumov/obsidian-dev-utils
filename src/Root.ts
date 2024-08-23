@@ -12,7 +12,7 @@ import process from "node:process";
 import { packageDirectorySync } from "pkg-dir";
 import { toPosixPath } from "./Path.ts";
 import { trimEnd } from "./String.ts";
-import { toCommandLine } from "./bin/cli.ts";
+import { toCommandLine } from "./cli.ts";
 
 type ExecResult = {
   exitCode: number | null;

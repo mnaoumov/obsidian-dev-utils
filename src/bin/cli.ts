@@ -83,25 +83,6 @@ function addCommand<Args extends unknown[]>(program: Command, name: string, desc
 }
 
 /**
- * Converts an array of command-line arguments into a single command-line string.
- * Handles escaping of special characters such as spaces, quotes, and newlines.
- *
- * @param args - The array of command-line arguments to convert.
- * @returns A string representing the command-line invocation.
- */
-export function toCommandLine(args: string[]): string {
-  return args
-    .map((arg) => {
-      if (/[\s"\n]/.test(arg)) {
-        const escapedArg = arg.replace(/"/g, "\\\"").replace(/\n/g, "\\n");
-        return `"${escapedArg}"`;
-      }
-      return arg;
-    })
-    .join(" ");
-}
-
-/**
  * Enum representing the names of the commands available in the CLI.
  */
 enum CommandNames {
