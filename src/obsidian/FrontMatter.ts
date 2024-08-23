@@ -6,10 +6,6 @@
 import {
   App,
 } from "obsidian";
-import {
-  resolveValue,
-  type ValueProvider
-} from "../ValueProvider.ts";
 import { processWithRetry } from "./Vault.ts";
 import {
   DEFAULT_SCHEMA,
@@ -21,6 +17,7 @@ import {
   getFile,
   type PathOrFile
 } from "./TFile.ts";
+import type { MaybePromise } from "../Async.ts";
 
 /**
  * Represents the front matter with aliases.
@@ -52,7 +49,7 @@ const FRONT_MATTER_REG_EXP = /^---\r?\n((?:.|\r?\n)*?)\r?\n?---(?:\r?\n|$)((?:.|
  * @param {ValueProvider<void, [FrontMatter]>} frontMatterFn - A function that modifies the front matter.
  * @returns {Promise<void>} A promise that resolves when the front matter has been processed and saved.
  */
-export async function processFrontMatter<FrontMatter>(app: App, pathOrFile: PathOrFile, frontMatterFn: ValueProvider<void, [FrontMatter]>): Promise<void> {
+export async function processFrontMatter<FrontMatter extends Record<string, unknown>>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: FrontMatter) => MaybePromise<void>): Promise<void> {
   const file = getFile(app, pathOrFile);
 
   await processWithRetry(app, file, async (content) => {
@@ -74,7 +71,7 @@ export async function processFrontMatter<FrontMatter>(app: App, pathOrFile: Path
     }
 
     const frontMatter = (load(frontMatterStr, { schema: NO_TIMESTAMPS_YAML_SCHEMA }) ?? {}) as FrontMatter;
-    await resolveValue(frontMatterFn, frontMatter);
+    await frontMatterFn(frontMatter);
     let newFrontMatterStr = dump(frontMatter, {
       lineWidth: -1,
       quotingType: "\"",
