@@ -4,7 +4,10 @@
  */
 
 import { dirname } from "path";
-import { basename, extname } from "../Path.ts";
+import {
+  basename,
+  extname
+} from "../Path.ts";
 import type {
   DataviewInlineApi,
   Link

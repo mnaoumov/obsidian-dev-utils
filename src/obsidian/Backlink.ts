@@ -16,7 +16,10 @@ import {
   type TFile
 } from "obsidian";
 import { generateMarkdownLink } from "./Link.ts";
-import { getAbstractFileOrNull, isFile } from "./TAbstractFile.ts";
+import {
+  getAbstractFileOrNull,
+  isFile
+} from "./TAbstractFile.ts";
 import { getBacklinksForFileSafe } from "./MetadataCache.ts";
 import { getMarkdownFiles } from "./TFolder.ts";
 
