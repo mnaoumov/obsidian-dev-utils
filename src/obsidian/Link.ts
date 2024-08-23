@@ -274,17 +274,16 @@ export function generateMarkdownLink({
   isEmbed,
   isWikilink,
   isRelative
-}:
-  {
-    app: App,
-    pathOrFile: PathOrFile,
-    sourcePathOrFile: PathOrFile,
-    subpath?: string | undefined,
-    alias?: string | undefined,
-    isEmbed?: boolean | undefined,
-    isWikilink?: boolean | undefined,
-    isRelative?: boolean | undefined
-  }): string {
+}: {
+  app: App,
+  pathOrFile: PathOrFile,
+  sourcePathOrFile: PathOrFile,
+  subpath?: string | undefined,
+  alias?: string | undefined,
+  isEmbed?: boolean | undefined,
+  isWikilink?: boolean | undefined,
+  isRelative?: boolean | undefined
+}): string {
   const file = getFile(app, pathOrFile);
   const useMarkdownLinks = app.vault.getConfig("useMarkdownLinks");
   const newLinkFormat = app.vault.getConfig("newLinkFormat");
