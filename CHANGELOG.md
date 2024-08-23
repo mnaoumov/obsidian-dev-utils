@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.10.0
+
+- Refactor cli
+
 ## 2.9.0
 
 - Insert empty token to ensure it doesn't break sourceMappingURL in other plugins
