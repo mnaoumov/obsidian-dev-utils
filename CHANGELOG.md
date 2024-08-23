@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.8.0
+
+- If .d.ts required, skip it
+
 ## 2.7.0
 
 - Ensure copyToObsidianPluginFolder is the last step
