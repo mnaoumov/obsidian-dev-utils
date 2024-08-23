@@ -19,6 +19,15 @@ import {
 import { getBacklinksForFileSafe } from "./MetadataCache.ts";
 import { printError } from "../Error.ts";
 import { toJson } from "../JSON.ts";
+import {
+  getFile,
+  type PathOrFile
+} from "./TFile.ts";
+import { getPath } from "./TAbstractFile.ts";
+import {
+  getFolderOrNull,
+  type PathOrFolder
+} from "./TFolder.ts";
 
 /**
  * Represents a file change in the Vault.
@@ -44,12 +53,13 @@ export function getMarkdownFilesSorted(app: App): TFile[] {
  * Processes a file with retry logic.
  *
  * @param app - The application instance.
- * @param file - The file to process.
+ * @param pathOrFile - The file to process.
  * @param processFn - The function to process the file's content.
  * @param retryOptions - Optional retry options.
  * @returns A promise that resolves when the processing is complete.
  */
-export async function processWithRetry(app: App, file: TFile, processFn: (content: string) => MaybePromise<string | null>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function processWithRetry(app: App, pathOrFile: PathOrFile, processFn: (content: string) => MaybePromise<string | null>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+  const file = getFile(app, pathOrFile);
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await retryWithTimeout(async () => {
@@ -77,21 +87,21 @@ export async function processWithRetry(app: App, file: TFile, processFn: (conten
  * Applies file changes to the specified file in the Obsidian vault.
  *
  * @param app - The Obsidian app instance.
- * @param file - The file to apply changes to.
+ * @param pathOrFile - The file to apply changes to.
  * @param changesFn - A function that returns the changes to be applied.
  * @param retryOptions - Optional retry options for the process.
  * @returns A promise that resolves when the changes have been applied successfully.
  */
-export async function applyFileChanges(app: App, file: TFile, changesFn: () => MaybePromise<FileChange[]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changesFn: () => MaybePromise<FileChange[]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  await processWithRetry(app, file, async (content) => {
+  await processWithRetry(app, pathOrFile, async (content) => {
     let changes = await changesFn();
 
     for (const change of changes) {
       const actualContent = content.slice(change.startIndex, change.endIndex);
       if (actualContent !== change.oldContent) {
-        console.warn(`Content mismatch at ${change.startIndex}-${change.endIndex} in ${file.path}:\nExpected: ${change.oldContent}\nActual: ${actualContent}`);
+        console.warn(`Content mismatch at ${change.startIndex}-${change.endIndex} in ${getPath(pathOrFile)}:\nExpected: ${change.oldContent}\nActual: ${actualContent}`);
         return null;
       }
     }
@@ -233,10 +243,12 @@ export async function safeList(app: App, path: string): Promise<ListedFiles> {
  * Removes empty folder hierarchy starting from the given folder.
  *
  * @param app - The application instance.
- * @param folder - The folder to start removing empty hierarchy from.
+ * @param pathOrFolder - The folder to start removing empty hierarchy from.
  * @returns A promise that resolves when the empty hierarchy is removed.
  */
-export async function removeEmptyFolderHierarchy(app: App, folder: TFolder | null): Promise<void> {
+export async function removeEmptyFolderHierarchy(app: App, pathOrFolder: PathOrFolder | null): Promise<void> {
+  let folder = getFolderOrNull(app, pathOrFolder);
+
   while (folder) {
     if (folder.children.length > 0) {
       return;

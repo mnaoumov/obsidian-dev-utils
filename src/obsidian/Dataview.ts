@@ -20,6 +20,8 @@ import {
 } from "../Async.ts";
 import { relativePathToResourceUrl } from "../obsidian/ResourceUrl.ts";
 import { errorToString } from "../Error.ts";
+import type { PathOrFile } from "./TFile.ts";
+import { getPath } from "./TAbstractFile.ts";
 
 declare global {
   /**
@@ -332,25 +334,25 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
  *
  * @function renderIframe
  * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
- * @param {string} relativePath - The relative path to the resource to be displayed in the iframe.
+ * @param {PathOrFile} relativePath - The relative path to the resource to be displayed in the iframe.
  * @param {string} [width="100%"] - The width of the iframe. Defaults to "100%".
  * @param {string} [height="600px"] - The height of the iframe. Defaults to "600px".
  * @returns {void} This function does not return a value.
  */
 export function renderIframe({
   dv,
-  relativePath,
+  relativePathOrFile,
   width = "100%",
   height = "600px"
 }: {
   dv: DataviewInlineApi,
-  relativePath: string,
+  relativePathOrFile: PathOrFile,
   width: string,
   height: string
 }): void {
   dv.el("iframe", "", {
     attr: {
-      src: relativePathToResourceUrl(dv.app, relativePath, dv.current().file.path),
+      src: relativePathToResourceUrl(dv.app, getPath(relativePathOrFile), dv.current().file.path),
       width,
       height
     }

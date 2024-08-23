@@ -14,27 +14,31 @@ import {
 } from "../Path.ts";
 import { createTFileInstance } from "obsidian-typings/implementations";
 import { nameof } from "../Object.ts";
+import type { PathOrFile } from "./TFile.ts";
+import { getPath } from "./TAbstractFile.ts";
 
 /**
  * Retrieves the attachment folder path for a given note.
  *
  * @param app - The Obsidian application instance.
- * @param notePath - The path of the note.
+ * @param notePathOrFile - The path of the note.
  * @returns A promise that resolves to the attachment folder path.
  */
-export async function getAttachmentFolderPath(app: App, notePath: string): Promise<string> {
-  return dirname(await getAttachmentFilePath(app, "DUMMY_FILE.pdf", notePath));
+export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
+  return dirname(await getAttachmentFilePath(app, "DUMMY_FILE.pdf", notePathOrFile));
 }
 
 /**
  * Retrieves the file path for an attachment within a note.
  *
  * @param app - The Obsidian application instance.
- * @param attachmentPath - The path of the attachment.
- * @param notePath - The path of the note.
+ * @param attachmentPathOrFile - The path of the attachment.
+ * @param notePathOrFile - The path of the note.
  * @returns A promise that resolves to the file path of the attachment.
  */
-export async function getAttachmentFilePath(app: App, attachmentPath: string, notePath: string): Promise<string> {
+export async function getAttachmentFilePath(app: App, attachmentPathOrFile: PathOrFile, notePathOrFile: PathOrFile): Promise<string> {
+  const attachmentPath = getPath(attachmentPathOrFile);
+  const notePath = getPath(notePathOrFile);
   const note = createTFileInstance(app.vault, notePath);
   const ext = extname(attachmentPath);
   const fileName = basename(attachmentPath, ext);

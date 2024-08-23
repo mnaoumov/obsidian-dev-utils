@@ -9,14 +9,16 @@ import type {
   LinkCache,
   MarkdownView,
   ReferenceCache,
-  TFile
 } from "obsidian";
 import {
   retryWithTimeout,
   type RetryOptions
 } from "../Async.ts";
 import type { CustomArrayDict } from "obsidian-typings";
-import { isMarkdownFile } from "./TAbstractFile.ts";
+import {
+  getPath,
+  isMarkdownFile
+} from "./TAbstractFile.ts";
 import {
   getFile,
   getFileOrNull,
@@ -145,17 +147,19 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
  * Saves the specified note in the Obsidian app.
  *
  * @param app - The Obsidian app instance.
- * @param note - The note to be saved.
+ * @param pathOrFile - The note to be saved.
  * @returns A promise that resolves when the note is saved.
  */
-async function saveNote(app: App, note: TFile): Promise<void> {
-  if (!isMarkdownFile(note)) {
+async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
+  if (!isMarkdownFile(pathOrFile)) {
     return;
   }
 
+  const path = getPath(pathOrFile);
+
   for (const leaf of app.workspace.getLeavesOfType("markdown")) {
     const view = leaf.view as MarkdownView;
-    if (view.file?.path === note.path) {
+    if (view.file?.path === path) {
       await view.save();
     }
   }

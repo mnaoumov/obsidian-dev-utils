@@ -12,18 +12,21 @@ import type {
   DataviewInlineApi,
   Link
 } from "./Dataview.ts";
+import type { PathOrFile } from "./TFile.ts";
+import { getPath } from "./TAbstractFile.ts";
 
 /**
  * Fixes the title of a file or folder note by generating a `Link` object with a proper title.
  *
  * @function fixTitle
  * @param {DataviewInlineApi} dv - The DataviewInlineApi instance used to create the file link.
- * @param {string} path - The file path for which the title is to be fixed.
+ * @param {PathOrFile} pathOrFile - The file path for which the title is to be fixed.
  * @param {boolean} [isFolderNote=false] - A boolean indicating whether the file is a folder note.
  * If true, the title is derived from the folder name. Defaults to `false`.
  * @returns {Link} A Link object with the corrected title.
  */
-export function fixTitle(dv: DataviewInlineApi, path: string, isFolderNote?: boolean): Link {
+export function fixTitle(dv: DataviewInlineApi, pathOrFile: PathOrFile, isFolderNote?: boolean): Link {
+  const path = getPath(pathOrFile);
   const ext = extname(path);
   const title = isFolderNote ? basename(dirname(path)) : basename(path, ext);
   return dv.fileLink(path, false, title);

@@ -37,7 +37,10 @@ export function getFolder(app: App, pathOrFolder: PathOrFolder): TFolder {
  * @param {PathOrFolder} pathOrFolder - The path or folder to retrieve the TFolder from.
  * @returns {TFolder | null} - The TFolder object if found, otherwise null.
  */
-export function getFolderOrNull(app: App, pathOrFolder: PathOrFolder): TFolder | null {
+export function getFolderOrNull(app: App, pathOrFolder: PathOrFolder | null): TFolder | null {
+  if (pathOrFolder === null) {
+    return null;
+  }
   return pathOrFolder instanceof TFolder ? pathOrFolder : app.vault.getFolderByPath(pathOrFolder);
 }
 
@@ -55,11 +58,11 @@ export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursi
   let markdownFiles: TFile[] = [];
 
   if (!isRecursive) {
-    markdownFiles = folder.children.filter(isMarkdownFile);
+    markdownFiles = folder.children.filter((file) => isMarkdownFile(file)) as TFile[];
   } else {
     Vault.recurseChildren(folder, (abstractFile) => {
       if (isMarkdownFile(abstractFile)) {
-        markdownFiles.push(abstractFile);
+        markdownFiles.push(abstractFile as TFile);
       }
     });
   }

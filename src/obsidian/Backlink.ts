@@ -18,17 +18,19 @@ import {
 import { generateMarkdownLink } from "./Link.ts";
 import {
   getAbstractFileOrNull,
-  isFile
+  isFile,
+  type PathOrAbstractFile
 } from "./TAbstractFile.ts";
 import { getBacklinksForFileSafe } from "./MetadataCache.ts";
 import { getMarkdownFiles } from "./TFolder.ts";
+import type { PathOrFile } from "./TFile.ts";
 
 /**
  * Renders delayed backlinks.
  *
  * @param {Object} options - The options for rendering delayed backlinks.
  * @param {DataviewInlineApi} options.dv - The Dataview inline API.
- * @param {TFile[]} options.files - The array of files.
+ * @param {PathOrFile[]} options.files - The array of files.
  * @param {string} [options.title="Backlinks"] - The title for the backlinks.
  * @returns {void}
  */
@@ -38,7 +40,7 @@ export function renderDelayedBacklinks({
   title = "Backlinks"
 }: {
   dv: DataviewInlineApi,
-  files: TFile[],
+  files: PathOrFile[],
   title?: string
 }): void {
   renderCallout({
@@ -76,17 +78,17 @@ export function renderDelayedBacklinksForFolder({
 }
 
 /**
- * Renders a backlinks table using the provided DataviewInlineApi and optional array of abstractFilesOrPaths.
+ * Renders a backlinks table using the provided DataviewInlineApi and optional array of PathOrAbstractFile.
  *
  * @param dv - The DataviewInlineApi instance.
- * @param abstractFilesOrPaths - An optional array of abstractFilesOrPaths.
+ * @param pathOrFiles - An optional array of PathOrAbstractFile.
  * @returns A Promise that resolves when the backlinks table has been rendered.
  */
-export async function renderBacklinksTable(dv: DataviewInlineApi, abstractFilesOrPaths?: (TFile | TFolder | string)[]): Promise<void> {
-  if (!abstractFilesOrPaths) {
-    abstractFilesOrPaths = [];
+export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: PathOrAbstractFile[]): Promise<void> {
+  if (!pathOrFiles) {
+    pathOrFiles = [];
   }
-  const files: TFile[] = abstractFilesOrPaths.flatMap((abstractFileOrPath) => {
+  const files: TFile[] = pathOrFiles.flatMap((abstractFileOrPath) => {
     const abstractFile = getAbstractFileOrNull(dv.app, abstractFileOrPath);
     if (!abstractFile) {
       return [];
@@ -107,8 +109,8 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, abstractFilesO
     const backlinkLinks = backlinks.keys().map((backLinkPath) => {
       const markdownLink = generateMarkdownLink({
         app: dv.app,
-        file: dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path)!,
-        sourcePath: dv.current().file.path,
+        pathOrFile: dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path)!,
+        sourcePathOrFile: dv.current().file.path,
       });
 
       return `${markdownLink} (${backLinkPath})`;

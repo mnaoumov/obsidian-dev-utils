@@ -10,6 +10,7 @@ import {
   TFolder,
 } from "obsidian";
 import { trimEnd } from "../String.ts";
+import { extname } from "../Path.ts";
 
 /**
  * The file extension for Markdown files.
@@ -66,11 +67,11 @@ export function isNote(file: TAbstractFile | null): file is TFile {
 /**
  * Checks if the given file is a Markdown file.
  *
- * @param file - The file to check.
+ * @param pathOrFile - The file to check.
  * @returns A boolean indicating whether the file is a Markdown file.
  */
-export function isMarkdownFile(file: TAbstractFile | null): file is TFile {
-  return file instanceof TFile && file.extension.toLowerCase() === MARKDOWN_FILE_EXTENSION;
+export function isMarkdownFile(pathOrFile: PathOrAbstractFile | null): boolean {
+  return checkExtension(pathOrFile, MARKDOWN_FILE_EXTENSION);
 }
 
 /**
@@ -79,8 +80,22 @@ export function isMarkdownFile(file: TAbstractFile | null): file is TFile {
  * @param file - The file to check.
  * @returns A boolean indicating whether the file is a canvas file or not.
  */
-export function isCanvasFile(file: TAbstractFile | null): file is TFile {
-  return file instanceof TFile && file.extension.toLowerCase() === CANVAS_FILE_EXTENSION;
+export function isCanvasFile(pathOrFile: PathOrAbstractFile | null): boolean {
+  return checkExtension(pathOrFile, CANVAS_FILE_EXTENSION);
+}
+
+/**
+ * Checks if the given path or file has the specified extension.
+ *
+ * @param pathOrFile - The path or abstract file to check.
+ * @param extension - The extension to compare against.
+ * @returns Returns `true` if the path or file has the specified extension, `false` otherwise.
+ */
+export function checkExtension(pathOrFile: PathOrAbstractFile | null, extension: string): boolean {
+  if (pathOrFile === null) {
+    return false;
+  }
+  return extname(getPath(pathOrFile)).toLowerCase().slice(1) === extension.toLowerCase();
 }
 
 /**
@@ -116,4 +131,14 @@ export function isFile(file: TAbstractFile | null): file is TFile {
  */
 export function isFolder(file: TAbstractFile | null): file is TFolder {
   return file instanceof TFolder;
+}
+
+/**
+ * Returns the path of the given `pathOrFile`.
+ *
+ * @param {PathOrAbstractFile} pathOrFile - The path or abstract file.
+ * @returns {string} The path of the `pathOrFile`.
+ */
+export function getPath(pathOrFile: PathOrAbstractFile): string {
+  return pathOrFile instanceof TAbstractFile ? pathOrFile.path : pathOrFile;
 }

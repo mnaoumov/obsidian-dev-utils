@@ -22,6 +22,11 @@ import {
   extname
 } from "../Path.ts";
 import { normalize } from "../String.ts";
+import {
+  getFile,
+  type PathOrFile
+} from "./TFile.ts";
+import { getPath } from "./TAbstractFile.ts";
 
 type SplitSubpathResult = {
   linkPath: string;
@@ -57,21 +62,21 @@ export function splitSubpath(link: string): SplitSubpathResult {
  */
 export async function updateLinksInFile({
   app,
-  file,
-  oldPath,
+  pathOrFile,
+  oldPathOrFile,
   renameMap,
   forceMarkdownLinks,
   embedOnlyLinks
 }: {
   app: App,
-  file: TFile,
-  oldPath: string,
+  pathOrFile: PathOrFile,
+  oldPathOrFile: PathOrFile,
   renameMap: Map<string, string>,
   forceMarkdownLinks?: boolean | undefined
   embedOnlyLinks?: boolean | undefined
 }): Promise<void> {
-  await applyFileChanges(app, file, async () => {
-    const cache = await getCacheSafe(app, file);
+  await applyFileChanges(app, pathOrFile, async () => {
+    const cache = await getCacheSafe(app, pathOrFile);
     if (!cache) {
       return [];
     }
@@ -94,7 +99,7 @@ export async function updateLinksInFile({
       startIndex: link.position.start.offset,
       endIndex: link.position.end.offset,
       oldContent: link.original,
-      newContent: convertLink(app, link, file, oldPath, renameMap, forceMarkdownLinks),
+      newContent: convertLink(app, link, pathOrFile, oldPathOrFile, renameMap, forceMarkdownLinks),
     }));
   });
 }
@@ -105,19 +110,19 @@ export async function updateLinksInFile({
  * @param app - The Obsidian application instance.
  * @param link - The reference cache for the link.
  * @param source - The source file.
- * @param oldPath - The old path of the link.
+ * @param oldPathOrFile - The old path of the link.
  * @param renameMap - A map of old paths to new paths for renaming.
  * @param forceMarkdownLinks - Optional flag to force markdown links.
  * @returns The converted link.
  */
-function convertLink(app: App, link: ReferenceCache, source: TFile, oldPath: string, renameMap: Map<string, string>, forceMarkdownLinks?: boolean): string {
-  oldPath ??= source.path;
+function convertLink(app: App, link: ReferenceCache, source: PathOrFile, oldPathOrFile: PathOrFile, renameMap: Map<string, string>, forceMarkdownLinks?: boolean): string {
+  oldPathOrFile ??= getPath(source);
   return updateLink({
     app,
     link,
-    file: extractLinkFile(app, link, oldPath),
-    oldPath,
-    source,
+    pathOrFile: extractLinkFile(app, link, oldPathOrFile),
+    oldPathOrFile,
+    sourcePathOrFile: source,
     renameMap,
     forceMarkdownLinks
   });
@@ -128,12 +133,12 @@ function convertLink(app: App, link: ReferenceCache, source: TFile, oldPath: str
  *
  * @param app - The Obsidian application instance.
  * @param link - The reference cache for the link.
- * @param oldPath - The old path of the file.
+ * @param oldPathOrFile - The old path of the file.
  * @returns The file associated with the link, or null if not found.
  */
-export function extractLinkFile(app: App, link: ReferenceCache, oldPath: string): TFile | null {
+export function extractLinkFile(app: App, link: ReferenceCache, oldPathOrFile: PathOrFile): TFile | null {
   const { linkPath } = splitSubpath(link.link);
-  return app.metadataCache.getFirstLinkpathDest(linkPath, oldPath);
+  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(oldPathOrFile));
 }
 
 /**
@@ -152,23 +157,26 @@ export function extractLinkFile(app: App, link: ReferenceCache, oldPath: string)
 export function updateLink({
   app,
   link,
-  file,
-  oldPath,
-  source,
+  pathOrFile,
+  oldPathOrFile,
+  sourcePathOrFile: source,
   renameMap,
   forceMarkdownLinks
 }: {
   app: App,
   link: ReferenceCache,
-  file: TFile | null,
-  oldPath: string,
-  source: TFile,
+  pathOrFile: PathOrFile | null,
+  oldPathOrFile: PathOrFile,
+  sourcePathOrFile: PathOrFile,
   renameMap: Map<string, string>,
   forceMarkdownLinks?: boolean | undefined
 }): string {
-  if (!file) {
+  if (!pathOrFile) {
     return link.original;
   }
+  const file = getFile(app, pathOrFile);
+  const sourcePath = getPath(source);
+  const oldPath = getPath(oldPathOrFile);
   const isEmbed = link.original.startsWith("!");
   const isWikilink =
     link.original.includes("[[") && forceMarkdownLinks !== true;
@@ -178,19 +186,19 @@ export function updateLink({
   const alias = getAlias({
     app,
     displayText: link.displayText,
-    file: file,
+    file: pathOrFile,
     otherPaths: [oldPath, newPath],
-    sourcePath: source.path
+    sourcePath
   });
 
   if (newPath) {
-    file = createTFileInstance(app.vault, newPath);
+    pathOrFile = createTFileInstance(app.vault, newPath);
   }
 
   const newLink = generateMarkdownLink({
     app,
-    file,
-    sourcePath: source.path,
+    pathOrFile: file,
+    sourcePathOrFile: sourcePath,
     subpath,
     alias,
     isEmbed,
@@ -202,16 +210,19 @@ export function updateLink({
 function getAlias({
   app,
   displayText,
-  file,
+  file: pathOrFile,
   otherPaths,
   sourcePath
 }: {
   app: App,
   displayText: string | undefined,
-  file: TFile,
+  file: PathOrFile,
   otherPaths: (string | undefined)[]
   sourcePath: string
 }): string | undefined {
+
+  const file = getFile(app, pathOrFile);
+
   if (!displayText) {
     return undefined;
   }
@@ -256,24 +267,25 @@ function getAlias({
  */
 export function generateMarkdownLink({
   app,
-  file,
-  sourcePath,
+  pathOrFile,
+  sourcePathOrFile,
   subpath,
   alias,
   isEmbed,
   isWikilink,
   isRelative
 }:
-{
-  app: App,
-  file: TFile,
-  sourcePath: string,
-  subpath?: string | undefined,
-  alias?: string | undefined,
-  isEmbed?: boolean | undefined,
-  isWikilink?: boolean | undefined,
-  isRelative?: boolean | undefined
-}): string {
+  {
+    app: App,
+    pathOrFile: PathOrFile,
+    sourcePathOrFile: PathOrFile,
+    subpath?: string | undefined,
+    alias?: string | undefined,
+    isEmbed?: boolean | undefined,
+    isWikilink?: boolean | undefined,
+    isRelative?: boolean | undefined
+  }): string {
+  const file = getFile(app, pathOrFile);
   const useMarkdownLinks = app.vault.getConfig("useMarkdownLinks");
   const newLinkFormat = app.vault.getConfig("newLinkFormat");
   if (isWikilink !== undefined) {
@@ -284,7 +296,7 @@ export function generateMarkdownLink({
     app.vault.setConfig("newLinkFormat", "relative");
   }
 
-  let link = app.fileManager.generateMarkdownLink(file, sourcePath, subpath, alias);
+  let link = app.fileManager.generateMarkdownLink(file, getPath(sourcePathOrFile), subpath, alias);
 
   app.vault.setConfig("useMarkdownLinks", useMarkdownLinks);
   app.vault.setConfig("newLinkFormat", newLinkFormat);
