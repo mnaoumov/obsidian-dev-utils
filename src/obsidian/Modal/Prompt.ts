@@ -1,9 +1,8 @@
 /**
- * @file Utility for displaying a prompt modal in Obsidian.
+ * @module Prompt
+ * Utility for displaying a prompt modal in Obsidian.
  *
  * This module exports a function to display a modal that prompts the user for input. The modal includes "OK" and "Cancel" buttons.
- *
- * @module prompt
  */
 
 import {

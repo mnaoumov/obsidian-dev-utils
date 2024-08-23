@@ -1,5 +1,6 @@
 /**
- * @file This module provides utility functions for managing Obsidian plugins,
+ * @module Plugin
+ * This module provides utility functions for managing Obsidian plugins,
  * including displaying error messages, disabling plugins, and reloading them.
  */
 

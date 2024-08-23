@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for file system operations.
+ * @module Fs
+ * Contains utility functions for file system operations.
  */
 
 import type {

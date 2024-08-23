@@ -1,5 +1,6 @@
 /**
- * @file Contains utility types and functions for handling value providers, which can be either direct values or functions that return values.
+ * @module ValueProvider
+ * Contains utility types and functions for handling value providers, which can be either direct values or functions that return values.
  */
 
 import type { MaybePromise } from "./Async.ts";

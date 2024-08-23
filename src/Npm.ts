@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for NPM package.json.
+ * @module Npm
+ * Contains utility functions for NPM package.json.
  */
 
 import type { MaybePromise } from "./Async.ts";

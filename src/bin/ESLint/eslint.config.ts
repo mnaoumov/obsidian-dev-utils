@@ -1,5 +1,6 @@
 /**
- * @file ESLint configuration for TypeScript projects with various plugins.
+ * @module eslint.config
+ * ESLint configuration for TypeScript projects with various plugins.
  *
  * This module exports ESLint configurations for TypeScript projects, integrating multiple ESLint plugins
  * such as `@typescript-eslint/parser`, `eslint-plugin-import`, `@typescript-eslint/eslint-plugin`,

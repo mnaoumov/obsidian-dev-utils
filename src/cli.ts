@@ -1,5 +1,6 @@
 /**
- * @file Contains utility classes and functions for managing task results, including
+ * @module cli
+ * Contains utility classes and functions for managing task results, including
  * success, exit codes, and chaining multiple tasks.
  */
 

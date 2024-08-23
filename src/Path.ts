@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for handling paths.
+ * @module Path
+ * Contains utility functions for handling paths.
  */
 
 import path from "path-browserify";

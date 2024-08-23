@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for regular expressions.
+ * @module RegExp
+ * Contains utility functions for regular expressions.
  */
 
 /**

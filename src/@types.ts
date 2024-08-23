@@ -1,5 +1,6 @@
 /**
- * @file Contains utility types for working with TypeScript classes and type properties.
+ * @module @types
+ * Contains utility types for working with TypeScript classes and type properties.
  */
 
 /**

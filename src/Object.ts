@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for Objects.
+ * @module Object
+ * Contains utility functions for Objects.
  */
 
 /**

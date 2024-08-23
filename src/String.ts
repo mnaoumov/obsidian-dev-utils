@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for string operations.
+ * @module String
+ * Contains utility functions for string operations.
  */
 
 import { escapeRegExp } from "./RegExp.ts";

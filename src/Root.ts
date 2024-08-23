@@ -1,6 +1,7 @@
 /**
- * @file Contains utility functions for executing commands from the root directory of a project,
- * resolving paths relative to the root, and importing TypeScript modules from the root.
+ * @module Root
+ * Contains utility functions for executing commands from the root directory of a project,
+ * resolving paths relative to the root.
  */
 
 import { spawn } from "node:child_process";

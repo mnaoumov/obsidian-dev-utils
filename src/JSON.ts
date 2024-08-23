@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for JSON.
+ * @module JSON
+ * Contains utility functions for JSON.
  */
 
 import {

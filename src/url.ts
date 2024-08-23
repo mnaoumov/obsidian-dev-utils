@@ -1,5 +1,6 @@
 /**
- * @file Contains a utility function for validating URLs.
+ * @module url
+ * Contains a utility function for validating URLs.
  */
 
 /**

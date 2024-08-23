@@ -1,5 +1,6 @@
 /**
- * @file Provides utility functions for working with attachment paths.
+ * @module AttachmentPath
+ * Provides utility functions for working with attachment paths.
  */
 
 import type {

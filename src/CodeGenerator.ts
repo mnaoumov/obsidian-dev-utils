@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for code generation.
+ * @module CodeGenerator
+ * Contains utility functions for code generation.
  */
 
 import { writeFile } from "node:fs/promises";

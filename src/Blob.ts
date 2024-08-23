@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for Blob objects.
+ * @module Async
+ * Contains utility functions for Blob objects.
  */
 
 /**

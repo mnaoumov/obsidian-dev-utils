@@ -1,5 +1,6 @@
 /**
- * @file This file defines an enumeration for common file and directory paths used in Obsidian plugin development.
+ * @module ObsidianPluginRepoPaths
+ * This file defines an enumeration for common file and directory paths used in Obsidian plugin development.
  */
 
 /**

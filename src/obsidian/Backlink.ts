@@ -1,5 +1,6 @@
 /**
- * @file Provides utility functions for working with backlinks.
+ * @module Backlink
+ * Provides utility functions for working with backlinks.
  */
 
 import {

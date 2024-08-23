@@ -1,5 +1,5 @@
 /**
- * @file
+ * @module fixSourceMapsPlugin
  * This module defines an esbuild plugin that fixes source maps generated during development.
  * It adjusts the paths in the source maps to be compatible with Obsidian's internal URL scheme.
  * The plugin is only active during development builds.

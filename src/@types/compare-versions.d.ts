@@ -1,7 +1,6 @@
 /**
- * @file
- * This module provides functionality for comparing software version strings using semantic versioning rules.
- * It includes a function to compare two version strings with an optional comparison operator.
+ * @module compare-versions
+ * Fixed typings for the `compare-versions` package.
  */
 
 declare module "compare-versions" {

@@ -1,5 +1,5 @@
 /**
- * @file
+ * @module renameToCjsPlugin
  * This module defines an esbuild plugin that renames JavaScript files to CommonJS (`.cjs`) files after the build process.
  * It also adjusts the `require` statements to ensure compatibility with the CommonJS format, particularly when dealing
  * with dependencies that are not to be skipped.

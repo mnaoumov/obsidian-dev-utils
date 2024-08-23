@@ -1,5 +1,6 @@
 /**
- * @file Provides a utility to retrieve the Obsidian `App` instance.
+ * @module App
+ * Provides a utility to retrieve the Obsidian `App` instance.
  */
 
 import type { App } from "obsidian";

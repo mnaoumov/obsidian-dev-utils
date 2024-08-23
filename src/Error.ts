@@ -1,5 +1,6 @@
 /**
- * @file Contains utility functions for error handling.
+ * @module Error
+ * Contains utility functions for error handling.
  */
 
 import { EventEmitter } from "node:events";
