@@ -15,7 +15,10 @@ import {
   getAllLinks,
   getCacheSafe
 } from "./MetadataCache.ts";
-import { applyFileChanges } from "./Vault.ts";
+import {
+  applyFileChanges,
+  type FileChange
+} from "./Vault.ts";
 import { createTFileInstance } from "obsidian-typings/implementations";
 import {
   basename,
@@ -28,7 +31,6 @@ import {
 } from "./TFile.ts";
 import { getPath } from "./TAbstractFile.ts";
 import {
-  asyncMap,
   type MaybePromise,
   type RetryOptions
 } from "../Async.ts";
@@ -83,7 +85,7 @@ export async function updateLinksInFile({
   await editLinks(app, pathOrFile, (link) => {
     const isEmbedLink = link.original.startsWith("!");
     if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
-      return link.original;
+      return;
     }
     return convertLink(app, link, pathOrFile, oldPathOrFile, renameMap, forceMarkdownLinks);
   });
@@ -310,7 +312,7 @@ export function generateMarkdownLink({
 export async function editLinks(
   app: App,
   pathOrFile: PathOrFile,
-  linkConverter: (link: ReferenceCache) => MaybePromise<string>,
+  linkConverter: (link: ReferenceCache) => MaybePromise<string | void>,
   retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   return await applyFileChanges(app, pathOrFile, async () => {
     const cache = await getCacheSafe(app, pathOrFile);
@@ -318,11 +320,22 @@ export async function editLinks(
       return [];
     }
 
-    return await asyncMap(getAllLinks(cache), async (link) => ({
-      startIndex: link.position.start.offset,
-      endIndex: link.position.end.offset,
-      oldContent: link.original,
-      newContent: await linkConverter(link),
-    }));
+    const changes: FileChange[] = [];
+
+    for (const link of getAllLinks(cache)) {
+      const newContent = await linkConverter(link);
+      if (newContent === undefined) {
+        continue;
+      }
+
+      changes.push({
+        startIndex: link.position.start.offset,
+        endIndex: link.position.end.offset,
+        oldContent: link.original,
+        newContent
+      });
+    }
+
+    return changes;
   }, retryOptions);
 }
