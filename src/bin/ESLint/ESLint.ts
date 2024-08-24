@@ -25,10 +25,11 @@ import { glob } from "glob";
 /**
  * Lints files according to the ESLint configurations and applies automatic fixes if specified.
  *
- * @param {boolean} [fix=false] - Whether to automatically fix linting issues. Defaults to false.
- * @returns {Promise<CliTaskResult>} - A promise that resolves to a TaskResult indicating success or failure.
+ * @param fix - Whether to automatically fix linting issues. Defaults to false.
+ * @param customConfigs - Custom ESLint configurations to merge with the default configurations.
+ * @returns A promise that resolves to a CliTaskResult indicating success or failure.
  *
- * @throws {Error} If the package directory cannot be found.
+ * @throws If the package directory cannot be found.
  */
 export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Promise<CliTaskResult> {
   fix ??= false;
@@ -60,23 +61,21 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
 
   lintResults.sort((a, b) => a.filePath.localeCompare(b.filePath));
 
-  let isSuccess = true;
+  let errorsCount = 0;
 
   for (const lintResult of lintResults) {
-    if (lintResult.errorCount > 0 || lintResult.fatalErrorCount > 0 || lintResult.fixableErrorCount > 0) {
-      isSuccess = false;
-    }
-
     if (lintResult.output) {
       console.log(`${toRelativeFromRoot(lintResult.filePath)} - had some issues that were fixed automatically.`);
-      isSuccess = false;
+      errorsCount++;
     }
 
     for (const message of lintResult.messages) {
       const canAutoFix = message.fix !== undefined;
       console.log(`${toRelativeFromRoot(lintResult.filePath)}:${message.line}:${message.column} - ${message.message} [rule ${message.ruleId}]${canAutoFix ? " (auto-fixable)" : ""}`);
+      errorsCount++;
     }
   }
 
-  return CliTaskResult.Success(isSuccess);
+  console.log(`Linted ${lintResults.length} files with ${errorsCount} issues.`);
+  return CliTaskResult.Success(errorsCount === 0);
 }
