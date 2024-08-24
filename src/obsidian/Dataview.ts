@@ -22,7 +22,7 @@ import { relativePathToResourceUrl } from "../obsidian/ResourceUrl.ts";
 import { errorToString } from "../Error.ts";
 import type { PathOrFile } from "./TFile.ts";
 import { getPath } from "./TAbstractFile.ts";
-import type { ObsidianFrontMatter } from "./FrontMatter.ts";
+import type { CombinedFrontMatter } from "./FrontMatter.ts";
 
 declare global {
   /**
@@ -49,7 +49,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * @typeParam CustomPage - The type of the custom page. Defaults to `SMarkdownPage`.
    * @returns The current page.
    */
-  current<CustomPage = SMarkdownPage>(): Page<CustomPage>;
+  current<CustomFrontMatter = unknown>(): CombinedPage<CustomFrontMatter>;
 
   /**
    * Wraps an array of items into a `DataArray` object.
@@ -67,7 +67,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * @param [query] - An optional string query to filter the pages.
    * @returns A `DataArray` of pages matching the query.
    */
-  pages<CustomPage = SMarkdownPage>(query?: string): DataArray<Page<CustomPage>>;
+  pages<CustomFrontMatter = unknown>(query?: string): DataArray<CombinedPage<CustomFrontMatter>>;
 
   /**
    * Creates a paragraph HTML element with the provided text and optional DOM element options.
@@ -94,10 +94,10 @@ export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<voi
   await DataviewAPI?.index.reload(dv.app.vault.getFileByPath(dv.current().file.path)!);
 }
 
-export type Page<T = SMarkdownPage> = SMarkdownPage & T;
+export type CombinedPage<CustomFrontMatter = unknown> = SMarkdownPage & CombinedFrontMatter<CustomFrontMatter>;
 
-type PageFile = Page["file"];
-export type PageFiles = DataArray<PageFile> | PageFile[];
+type PageFile = SMarkdownPage["file"];
+export type PageFiles = ArrayOrDataArray<PageFile>;
 
 const paginationCss = `
 .pagination .page-link.disabled {
