@@ -41,7 +41,12 @@ export type ObsidianPublishFrontMatter = {
   publish?: boolean;
 };
 
-type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & ObsidianFrontMatter & Record<string, unknown>;
+/**
+ * Represents the combined front matter of a document.
+ * It is a union of custom front matter, Obsidian front matter, and additional properties.
+ * @template CustomFrontMatter - The type of custom front matter.
+ */
+export type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & ObsidianFrontMatter & Record<string, unknown>;
 
 const TIMESTAMP_TYPE = new Type("tag:yaml.org,2002:timestamp", {
   kind: "scalar",
