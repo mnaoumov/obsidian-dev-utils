@@ -166,25 +166,14 @@ async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
 }
 
 /**
- * Retrieves the value of a specific front matter key from the metadata cache.
+ * Retrieves the front matter from the metadata cache safely.
  *
- * @template T - The type of the value to retrieve.
+ * @template FrontMatter - The type of the front matter object.
  * @param {App} app - The Obsidian app instance.
- * @param {PathOrFile} pathOrFile - The path or file to retrieve the metadata cache for.
- * @param {string} key - The key of the front matter value to retrieve.
- * @returns {Promise<T | null>} - A promise that resolves to the value of the front matter key, or null if it does not exist.
+ * @param {PathOrFile} pathOrFile - The path or file to retrieve the front matter from.
+ * @returns {Promise<FrontMatter>} - A promise that resolves to the front matter object.
  */
-export async function getFrontMatterValue<T>(app: App, pathOrFile: PathOrFile, key: string): Promise<T | null> {
+export async function getFrontMatterSafe<FrontMatter = Record<string, unknown>>(app: App, pathOrFile: PathOrFile): Promise<FrontMatter> {
   const cache = await getCacheSafe(app, pathOrFile);
-  if (!cache?.frontmatter) {
-    return null;
-  }
-
-  const value = cache.frontmatter[key] as T;
-
-  if (value === undefined) {
-    return null;
-  }
-
-  return value;
+  return (cache?.frontmatter ?? {}) as FrontMatter;
 }
