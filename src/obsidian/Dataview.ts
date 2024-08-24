@@ -119,7 +119,7 @@ type ArrayOrDataArray<T> = T[] | DataArray<T>;
  *
  * @async
  * @function renderPaginatedList
- * @typeParam T
+ * @typeParam T - The type of items in the list.
  * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
  * @param {ArrayOrDataArray<T>} rows - The list of items to paginate.
  * @param {number[]} [itemsPerPageOptions=[10, 20, 50, 100]] - Options for items per page.
@@ -149,7 +149,7 @@ export async function renderPaginatedList<T>({
  *
  * @async
  * @function renderPaginatedTable
- * @typeParam T
+ * @typeParam T - The type of items in the table rows.
  * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
  * @param {string[]} headers - The headers of the table.
  * @param {ArrayOrDataArray<T>} rows - The rows of the table to paginate.
@@ -181,7 +181,7 @@ export async function renderPaginatedTable<T extends unknown[]>({
  * Helper function to render paginated content using the specified renderer.
  *
  * @async
- * @typeParam T
+ * @typeParam T - The type of items to paginate.
  * @function renderPaginated
  * @param {DataviewInlineApi} dv - The DataviewInlineApi instance.
  * @param {ArrayOrDataArray<T>} rows - The rows to paginate.

@@ -65,7 +65,7 @@ const FRONT_MATTER_REG_EXP = /^---\r?\n((?:.|\r?\n)*?)\r?\n?---(?:\r?\n|$)((?:.|
  * Processes the front matter of a given file, allowing modifications via a provided function.
  *
  * @function processFrontMatter
- * @typeParam CustomFrontMatter
+ * @typeParam CustomFrontMatter - The type of custom front matter.
  * @param {App} app - The Obsidian app instance.
  * @param {PathOrFile} pathOrFile - The path or TFile object representing the note.
  * @param {ValueProvider<void, [CustomFrontMatter]>} frontMatterFn - A function that modifies the front matter.
