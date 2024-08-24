@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.15.0
+
+- getFrontMatterSafe
+- Allow unchanged links
+
 ## 2.14.0
 
 - editLinks
