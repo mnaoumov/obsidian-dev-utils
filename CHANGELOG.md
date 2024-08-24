@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.14.0
+
+- editLinks
+
 ## 2.13.0
 
 - Refactor Vault
