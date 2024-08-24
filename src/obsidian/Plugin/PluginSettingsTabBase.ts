@@ -17,8 +17,8 @@ interface ValueComponent<T> {
  * Base class for creating plugin settings tabs in Obsidian.
  * Provides a method for binding value components to plugin settings and handling changes.
  *
- * @template TPlugin - The type of the plugin that extends PluginBase.
- * @template PluginSettings - The type of the plugin settings object.
+ * @typeParam TPlugin - The type of the plugin that extends PluginBase.
+ * @typeParam PluginSettings - The type of the plugin settings object.
  */
 export abstract class PluginSettingsTabBase<
   TPlugin extends PluginBase<PluginSettings>,

@@ -168,7 +168,7 @@ async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
 /**
  * Retrieves the front matter from the metadata cache safely.
  *
- * @template FrontMatter - The type of the front matter object.
+ * @typeParam FrontMatter - The type of the front matter object.
  * @param {App} app - The Obsidian app instance.
  * @param {PathOrFile} pathOrFile - The path or file to retrieve the front matter from.
  * @returns {Promise<FrontMatter>} - A promise that resolves to the front matter object.

@@ -41,7 +41,7 @@ export function deepEqual(a: unknown, b: unknown): boolean {
 /**
  * Retrieves the name of a property of a given type `T`.
  *
- * @template T - The type of the object containing the property.
+ * @typeParam T - The type of the object containing the property.
  * @param name - The name of the property as a string.
  * @returns The name of the property.
  */
@@ -52,7 +52,7 @@ export function nameof<T>(name: Extract<keyof T, string>): string {
 /**
  * Gets the prototype of the specified object.
  *
- * @template T - The type of the object.
+ * @typeParam T - The type of the object.
  * @param instance - The object instance to retrieve the prototype of.
  * @returns The prototype of the object.
  */

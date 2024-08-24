@@ -22,7 +22,7 @@ import type { MaybePromise } from "../../Async.ts";
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
  *
- * @template PluginSettings - The type representing the plugin settings object.
+ * @typeParam PluginSettings - The type representing the plugin settings object.
  */
 export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   private _settings!: PluginSettings;

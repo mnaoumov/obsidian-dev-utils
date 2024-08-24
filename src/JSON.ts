@@ -13,7 +13,7 @@ import { existsSync } from "node:fs";
 /**
  * Reads a JSON file and parses its contents into a JavaScript object of type `T`.
  *
- * @template T - The type to which the JSON content will be parsed.
+ * @typeParam T - The type to which the JSON content will be parsed.
  * @param path - The path to the JSON file.
  * @returns A promise that resolves with the parsed JSON object of type `T`.
  */
@@ -35,7 +35,7 @@ export async function writeJson(path: string, data: unknown): Promise<void> {
 /**
  * Reads, edits, and writes back a JSON file using a provided edit function.
  *
- * @template T - The type of the data to be edited.
+ * @typeParam T - The type of the data to be edited.
  * @param path - The path to the JSON file.
  * @param editFn - The function to edit the parsed JSON data.
  * @param options - Additional options for editing.

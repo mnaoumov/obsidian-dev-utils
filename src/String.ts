@@ -88,7 +88,7 @@ export function normalize(str: string): string {
 /**
  * Asynchronously replaces all occurrences of a search string or pattern with the results of an asynchronous replacer function.
  *
- * @template Args - The type of additional arguments passed to the replacer function.
+ * @typeParam Args - The type of additional arguments passed to the replacer function.
  * @param str - The string in which to perform replacements.
  * @param searchValue - The string or regular expression to search for.
  * @param replacer - An asynchronous function that generates replacement strings.

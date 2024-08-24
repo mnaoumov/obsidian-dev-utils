@@ -7,7 +7,7 @@ import { emitAsyncErrorEvent } from "./Error.ts";
 
 /**
  * A type representing a value that can either be a direct value or a Promise resolving to that value.
- * @template T The type of the value.
+ * @typeParam T The type of the value.
  */
 export type MaybePromise<T> = T | Promise<T>;
 
@@ -70,7 +70,7 @@ export async function sleep(milliseconds: number): Promise<void> {
 /**
  * Executes an asynchronous function with a timeout. If the function does not complete within the specified time, it is considered to have timed out.
  *
- * @template R The type of the result from the asynchronous function.
+ * @typeParam R The type of the result from the asynchronous function.
  * @param timeoutInMilliseconds - The maximum time to wait in milliseconds.
  * @param asyncFn - The asynchronous function to execute.
  * @returns A Promise that resolves with the result of the asynchronous function or rejects if it times out.
@@ -102,7 +102,7 @@ export function invokeAsyncSafely(promise: Promise<unknown>): void {
 /**
  * Converts an asynchronous function to a synchronous one by automatically handling the Promise rejection.
  *
- * @template Args The types of the arguments the function accepts.
+ * @typeParam Args The types of the arguments the function accepts.
  * @param asyncFunc - The asynchronous function to convert.
  * @returns A function that wraps the asynchronous function in a synchronous interface.
  */
@@ -113,8 +113,8 @@ export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: 
 /**
  * Converts a synchronous function to an asynchronous one by wrapping it in a Promise.
  *
- * @template Args The types of the arguments the function accepts.
- * @template Result The type of the function's return value.
+ * @typeParam Args The types of the arguments the function accepts.
+ * @typeParam Result The type of the function's return value.
  * @param syncFn - The synchronous function to convert.
  * @returns A function that wraps the synchronous function in an asynchronous interface.
  */
@@ -131,8 +131,8 @@ export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: (...a
 /**
  * Maps over an array asynchronously, applying the provided callback function to each element.
  *
- * @template T The type of elements in the input array.
- * @template U The type of elements in the output array.
+ * @typeParam T The type of elements in the input array.
+ * @typeParam U The type of elements in the output array.
  * @param arr - The array to map over.
  * @param callback - The callback function to apply to each element.
  * @returns A Promise that resolves with an array of the results of the callback function.
@@ -144,7 +144,7 @@ export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: numbe
 /**
  * Filters an array asynchronously, keeping only the elements that satisfy the provided predicate function.
  *
- * @template T The type of elements in the input array.
+ * @typeParam T The type of elements in the input array.
  * @param arr - The array to filter.
  * @param predicate - The predicate function to test each element.
  * @returns A Promise that resolves with an array of elements that satisfy the predicate function.
@@ -157,8 +157,8 @@ export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: numb
 /**
  * Maps over an array asynchronously, applying the provided callback function to each element, and then flattens the results into a single array.
  *
- * @template T The type of elements in the input array.
- * @template U The type of elements in the output array.
+ * @typeParam T The type of elements in the input array.
+ * @typeParam U The type of elements in the output array.
  * @param arr - The array to map over and flatten.
  * @param callback - The callback function to apply to each element.
  * @returns A Promise that resolves with a flattened array of the results of the callback function.
@@ -170,7 +170,7 @@ export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: n
 /**
  * Converts an AsyncIterableIterator to an array by consuming all its elements.
  *
- * @template T The type of elements produced by the AsyncIterableIterator.
+ * @typeParam T The type of elements produced by the AsyncIterableIterator.
  * @param iter - The AsyncIterableIterator to convert.
  * @returns A Promise that resolves with an array of all the elements in the AsyncIterableIterator.
  */

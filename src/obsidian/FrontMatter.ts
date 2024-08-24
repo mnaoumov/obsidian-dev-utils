@@ -44,7 +44,7 @@ export type ObsidianPublishFrontMatter = {
 /**
  * Represents the combined front matter of a document.
  * It is a union of custom front matter, Obsidian front matter, and additional properties.
- * @template CustomFrontMatter - The type of custom front matter.
+ * @typeParam CustomFrontMatter - The type of custom front matter.
  */
 export type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & ObsidianFrontMatter & Record<string, unknown>;
 
@@ -65,7 +65,7 @@ const FRONT_MATTER_REG_EXP = /^---\r?\n((?:.|\r?\n)*?)\r?\n?---(?:\r?\n|$)((?:.|
  * Processes the front matter of a given file, allowing modifications via a provided function.
  *
  * @function processFrontMatter
- * @template CustomFrontMatter
+ * @typeParam CustomFrontMatter
  * @param {App} app - The Obsidian app instance.
  * @param {PathOrFile} pathOrFile - The path or TFile object representing the note.
  * @param {ValueProvider<void, [CustomFrontMatter]>} frontMatterFn - A function that modifies the front matter.
