@@ -15,8 +15,8 @@
     "build:lib": "tsx scripts/build-lib.ts",
     "build:generate-exports": "tsx scripts/build-generate-exports.ts",
     "build:static": "tsx scripts/cli.ts build:static",
-    "lint": "tsx scripts/cli.ts lint",
-    "lint:fix": "tsx scripts/cli.ts lint:fix",
+    "lint": "tsx scripts/lint.ts",
+    "lint:fix": "tsx scripts/lint.ts fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
     "version": "tsx scripts/cli.ts version"
   },
@@ -40,6 +40,7 @@
     "@types/eslint": "^9.6.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.2.0",
+    "eslint-plugin-tsdoc": "^0.3.0",
     "npm-run-all": "^4.1.5",
     "pkg-dir": "^8.0.0",
     "preact": "^10.23.2",
