@@ -29,9 +29,9 @@ import type { CombinedFrontMatter } from "./FrontMatter.ts";
 /**
  * Retrieves the cached metadata for a given file or path.
  *
- * @param {App} app - The Obsidian app instance.
- * @param {PathOrFile} fileOrPath - The file or path to retrieve the metadata for.
- * @param {Partial<RetryOptions>} [retryOptions] - Optional retry options for the retrieval process.
+ * @param app - The Obsidian app instance.
+ * @param fileOrPath - The file or path to retrieve the metadata for.
+ * @param [retryOptions] - Optional retry options for the retrieval process.
  * @returns {Promise<CachedMetadata | null>} The cached metadata for the file, or null if it doesn't exist.
  */
 export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CachedMetadata | null> {
@@ -170,8 +170,8 @@ async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
  * Retrieves the front matter from the metadata cache safely.
  *
  * @typeParam CustomFrontMatter - The type of custom front matter.
- * @param {App} app - The Obsidian app instance.
- * @param {PathOrFile} pathOrFile - The path or file to retrieve the front matter from.
+ * @param app - The Obsidian app instance.
+ * @param pathOrFile - The path or file to retrieve the front matter from.
  * @returns {Promise<CombinedFrontMatter<CustomFrontMatter>>} The combined front matter.
  */
 export async function getFrontMatterSafe<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile): Promise<CombinedFrontMatter<CustomFrontMatter>> {

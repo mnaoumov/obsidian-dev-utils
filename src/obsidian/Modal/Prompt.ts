@@ -15,11 +15,11 @@ import {
 /**
  * Displays a prompt modal in Obsidian to get user input.
  *
- * @param {Object} params - The parameters for the prompt.
- * @param {App} params.app - The Obsidian app instance.
- * @param {string} [params.title] - The title of the modal.
- * @param {string} [params.defaultValue] - The default value to pre-fill the input field.
- * @param {(value: string) => string | null} [params.valueValidator] - A function to validate the input value. Returns an error message or null.
+ * @param params - The parameters for the prompt.
+ * @param params.app - The Obsidian app instance.
+ * @param [params.title] - The title of the modal.
+ * @param [params.defaultValue] - The default value to pre-fill the input field.
+ * @param [params.valueValidator] - A function to validate the input value. Returns an error message or null.
  * @returns {Promise<string | null>} - A promise that resolves with the user input or null if the prompt was cancelled.
  */
 export async function prompt({

@@ -15,84 +15,108 @@ import { toPosixPath } from "./Path.ts";
 import { trimEnd } from "./String.ts";
 import { toCommandLine } from "./cli.ts";
 
-type ExecResult = {
+/**
+ * Represents the result of executing a command from the root directory.
+ */
+type ExecFromRootResult = {
+  /**
+   * The exit code of the command. A value of `null` indicates that the process did not exit normally.
+   */
   exitCode: number | null;
+
+  /**
+   * The signal that caused the process to be terminated. A value of `null` indicates that no signal was received.
+   */
   exitSignal: NodeJS.Signals | null;
+
+  /**
+   * The standard error output from the command.
+   */
   stderr: string;
+
+  /**
+   * The standard output from the command.
+   */
   stdout: string;
 };
 
 /**
- * Executes a command from the root directory.
- * @param command - The command to execute. Can be a string or an array of strings.
- * @param options - The options for the execution.
- * @param options.quiet - If true, suppresses the output of the command. Default is false.
- * @param options.ignoreExitCode - If true, ignores the exit code of the command. Default is false.
- * @param options.stdin - The input to be passed to the command. Default is undefined.
- * @param options.cwd - The current working directory for the command execution. Default is undefined.
- * @param options.withDetails - If false, only returns the output of the command. Default is false.
- * @returns A promise that resolves with the output of the command.
+ * Options for executing a command from the root directory.
  */
-export async function execFromRoot(command: string | string[], options?: {
-  quiet?: boolean,
-  ignoreExitCode?: boolean,
-  stdin?: string,
-  cwd?: string | undefined,
-  withDetails?: false
-}): Promise<string>;
+type ExecFromRootOption = {
+  /**
+   * If true, suppresses the output of the command.
+   */
+  quiet?: boolean;
 
-/**
- * Executes a command from the root directory of the project.
- * @param command - The command to execute. It can be a string or an array of strings.
- * @param options - The options for the execution.
- * @param options.quiet - If set to true, suppresses the output of the command. Default is false.
- * @param options.ignoreExitCode - If set to true, ignores the exit code of the command. Default is false.
- * @param options.stdin - The input to be passed to the command. Default is undefined.
- * @param options.cwd - The current working directory for the command execution. Default is undefined.
- * @param options.withDetails - If set to true, returns detailed information about the execution. Default is true.
- * @returns A promise that resolves to the execution result.
- */
-export function execFromRoot(command: string | string[], options?: {
-  quiet?: boolean,
-  ignoreExitCode?: boolean,
-  stdin?: string,
-  cwd?: string | undefined,
-  withDetails: true
-}): Promise<ExecResult>;
+  /**
+   * If true, ignores the exit code of the command.
+   */
+  ignoreExitCode?: boolean;
+
+  /**
+   * The input to be passed to the command.
+   */
+  stdin?: string;
+
+  /**
+   * The current working directory for the command execution.
+   */
+  cwd?: string | undefined;
+
+  /**
+   * If false, only returns the output of the command.
+   */
+  withDetails?: boolean;
+};
 
 /**
  * Executes a command from the root directory of the project.
  *
  * @param command - The command to execute. It can be a string or an array of strings.
  * @param options - The options for the execution.
- * @param options.quiet - If set to true, suppresses the output of the command. Default is false.
- * @param options.ignoreExitCode - If set to true, ignores the exit code of the command. Default is false.
- * @param options.stdin - The input to be passed to the command. Default is undefined.
- * @param options.cwd - The current working directory for the command execution. Default is undefined.
- * @param options.withDetails - Whether to include detailed information in the output. Default is false.
- *
- * @returns A Promise that resolves with the output of the command or an ExecResult object.
- *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
- *
+ * @returns A Promise that resolves with the output of the command.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is false.
  *         The error message includes the exit code and stderr.
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: string | string[],
-  {
+export async function execFromRoot(command: string | string[], options?: ExecFromRootOption & { withDetails: false }): Promise<string>;
+
+/**
+ * Executes a command from the root directory of the project.
+ *
+ * @param command - The command to execute. It can be a string or an array of strings.
+ * @param options - The options for the execution.
+ * @returns A Promise that resolves with ExecResult object.
+ *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
+ * @throws If the command fails with a non-zero exit code and ignoreExitCode is false.
+ *         The error message includes the exit code and stderr.
+ *         If an error occurs during the execution and ignoreExitCode is true,
+ *         the error is resolved with the stdout and stderr.
+ */
+export function execFromRoot(command: string | string[], options: ExecFromRootOption & { withDetails: true }): Promise<ExecFromRootResult>;
+
+/**
+ * Executes a command from the root directory of the project.
+ *
+ * @param command - The command to execute. It can be a string or an array of strings.
+ * @param options - The options for the execution.
+ * @returns A Promise that resolves with the output of the command or an ExecResult object.
+ *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
+ * @throws If the command fails with a non-zero exit code and ignoreExitCode is false.
+ *         The error message includes the exit code and stderr.
+ *         If an error occurs during the execution and ignoreExitCode is true,
+ *         the error is resolved with the stdout and stderr.
+ */
+export function execFromRoot(command: string | string[], options: ExecFromRootOption = {}): Promise<string | ExecFromRootResult> {
+  const {
     quiet = false,
     ignoreExitCode = false,
     stdin = "",
     cwd = undefined,
     withDetails = false
-  }: {
-    quiet?: boolean,
-    ignoreExitCode?: boolean,
-    stdin?: string,
-    cwd?: string | undefined,
-    withDetails?: boolean
-  } = {}): Promise<string | ExecResult> {
+  } = options;
   if (Array.isArray(command)) {
     command = toCommandLine(command);
   }

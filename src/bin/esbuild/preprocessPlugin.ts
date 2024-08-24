@@ -5,7 +5,7 @@
  * ensuring compatibility with Obsidian's plugin system, and adding a basic `process` object for environments
  * where `process` is not available (like mobile or web environments).
  *
- * @note
+ * @remarks
  * We cannot use `.` instead of `(dot)` in the above description because the file itself is preprocessed with the same rule.
  */
 

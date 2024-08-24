@@ -136,8 +136,8 @@ export function isFolder(file: TAbstractFile | null): file is TFolder {
 /**
  * Returns the path of the given `pathOrFile`.
  *
- * @param {PathOrAbstractFile} pathOrFile - The path or abstract file.
- * @returns {string} The path of the `pathOrFile`.
+ * @param pathOrFile - The path or abstract file.
+ * @returns The path of the `pathOrFile`.
  */
 export function getPath(pathOrFile: PathOrAbstractFile): string {
   return pathOrFile instanceof TAbstractFile ? pathOrFile.path : pathOrFile;

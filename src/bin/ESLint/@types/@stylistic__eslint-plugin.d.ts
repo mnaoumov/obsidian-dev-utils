@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation @stylistic/eslint-plugin
+ * @packageDocumentation \@stylistic/eslint-plugin
  * @see {@link https://www.npmjs.com/package/@stylistic/eslint-plugin} for more information.
  */
 

@@ -25,24 +25,38 @@ import { getBacklinksForFileSafe } from "./MetadataCache.ts";
 import { getMarkdownFiles } from "./TFolder.ts";
 import type { PathOrFile } from "./TFile.ts";
 
+
+/**
+ * Options for rendering delayed backlinks.
+ */
+type RenderDelayedBacklinksOptions = {
+  /**
+   * The DataviewInlineApi instance.
+   */
+  dv: DataviewInlineApi;
+
+  /**
+   * An array of PathOrFile.
+   */
+  files: PathOrFile[];
+
+  /**
+   * The title for the rendered backlinks. Defaults to "Backlinks".
+   */
+  title?: string;
+};
+
 /**
  * Renders delayed backlinks.
  *
- * @param {Object} options - The options for rendering delayed backlinks.
- * @param {DataviewInlineApi} options.dv - The Dataview inline API.
- * @param {PathOrFile[]} options.files - The array of files.
- * @param {string} [options.title="Backlinks"] - The title for the backlinks.
- * @returns {void}
+ * @param options - The options for rendering delayed backlinks.
  */
-export function renderDelayedBacklinks({
-  dv,
-  files,
-  title = "Backlinks"
-}: {
-  dv: DataviewInlineApi,
-  files: PathOrFile[],
-  title?: string
-}): void {
+export function renderDelayedBacklinks(options: RenderDelayedBacklinksOptions): void {
+  const {
+    dv,
+    files,
+    title = "Backlinks"
+  } = options;
   renderCallout({
     dv,
     header: title,
@@ -53,26 +67,40 @@ export function renderDelayedBacklinks({
 }
 
 /**
+ * Options for rendering delayed backlinks for a folder.
+ */
+type RenderDelayedBacklinksForFolderOptions = {
+  /**
+   * The DataviewInlineApi instance.
+   */
+  dv: DataviewInlineApi;
+
+  /**
+   * The folder path. If not provided, the current file's folder will be used.
+   */
+  folder?: string;
+
+  /**
+   * The title for the rendered backlinks. Defaults to "Folder Backlinks".
+   */
+  title?: string;
+};
+
+/**
  * Renders delayed backlinks for a specific folder.
  *
  * @param options - The options for rendering delayed backlinks.
- * @param options.dv - The DataviewInlineApi instance.
- * @param options.folder - The folder path. If not provided, the current file's folder will be used.
- * @param options.title - The title for the rendered backlinks. Defaults to "Folder Backlinks".
  */
-export function renderDelayedBacklinksForFolder({
-  dv,
-  folder,
-  title = "Folder Backlinks"
-}: {
-  dv: DataviewInlineApi,
-  folder?: string,
-  title?: string
-}): void {
-  folder ??= dv.current().file.folder;
+export function renderDelayedBacklinksForFolder(options: RenderDelayedBacklinksForFolderOptions): void {
+  const {
+    dv,
+    folder,
+    title = "Folder Backlinks"
+  } = options;
+  const folder2 = folder ?? dv.current().file.folder;
   renderDelayedBacklinks({
     dv,
-    files: getMarkdownFiles(dv.app, folder, true),
+    files: getMarkdownFiles(dv.app, folder2, true),
     title
   });
 }

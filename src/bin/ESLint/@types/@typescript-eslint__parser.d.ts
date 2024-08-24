@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation @typescript-eslint/parser
+ * @packageDocumentation \@typescript-eslint/parser
  * @see {@link https://www.npmjs.com/package/@typescript-eslint/parser} for more information.
  */
 

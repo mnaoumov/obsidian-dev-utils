@@ -58,13 +58,13 @@ export function splitSubpath(link: string): SplitSubpathResult {
 /**
  * Updates the links in a file based on the provided parameters.
  *
- * @param {Object} options - The options for updating the links.
- * @param {App} options.app - The Obsidian app instance.
- * @param {TFile} options.file - The file to update the links in.
- * @param {string} options.oldPath - The old path of the file.
- * @param {Map<string, string>} options.renameMap - A map of old and new paths for renaming links.
- * @param {boolean} [options.forceMarkdownLinks] - Whether to force the links to be in Markdown format.
- * @param {boolean} [options.embedOnlyLinks] - Whether to update only embedded links.
+ * @param options - The options for updating the links.
+ * @param options.app - The Obsidian app instance.
+ * @param options.file - The file to update the links in.
+ * @param options.oldPath - The old path of the file.
+ * @param options.renameMap - A map of old and new paths for renaming links.
+ * @param [options.forceMarkdownLinks] - Whether to force the links to be in Markdown format.
+ * @param [options.embedOnlyLinks] - Whether to update only embedded links.
  * @returns {Promise<void>} - A promise that resolves when the links are updated.
  */
 export async function updateLinksInFile({
@@ -131,14 +131,14 @@ export function extractLinkFile(app: App, link: ReferenceCache, oldPathOrFile: P
 /**
  * Updates a link based on the provided parameters.
  *
- * @param {Object} options - The options for updating the link.
- * @param {App} options.app - The Obsidian app instance.
- * @param {ReferenceCache} options.link - The reference cache for the link.
- * @param {TFile | null} options.file - The file associated with the link.
- * @param {string} options.oldPath - The old path of the file.
- * @param {TFile} options.source - The source file containing the link.
- * @param {Map<string, string>} options.renameMap - The map of old and new file paths.
- * @param {boolean | undefined} [options.forceMarkdownLinks] - Whether to force markdown links.
+ * @param options - The options for updating the link.
+ * @param options.app - The Obsidian app instance.
+ * @param options.link - The reference cache for the link.
+ * @param options.file - The file associated with the link.
+ * @param options.oldPath - The old path of the file.
+ * @param options.source - The source file containing the link.
+ * @param options.renameMap - The map of old and new file paths.
+ * @param [options.forceMarkdownLinks] - Whether to force markdown links.
  * @returns {string} The updated link.
  */
 export function updateLink({
@@ -241,15 +241,15 @@ function getAlias({
 /**
  * Generates a markdown link based on the provided parameters.
  *
- * @param {Object} options - The options for generating the markdown link.
- * @param {App} options.app - The Obsidian app instance.
- * @param {TFile} options.file - The file to link to.
- * @param {string} options.sourcePath - The source path of the link.
- * @param {string} [options.subpath] - The subpath of the link.
- * @param {string} [options.alias] - The alias for the link.
- * @param {boolean} [options.isEmbed] - Indicates if the link should be embedded.
- * @param {boolean} [options.isWikilink] - Indicates if the link should be a wikilink.
- * @param {boolean} [options.isRelative] - Indicates if the link should be relative.
+ * @param options - The options for generating the markdown link.
+ * @param options.app - The Obsidian app instance.
+ * @param options.file - The file to link to.
+ * @param options.sourcePath - The source path of the link.
+ * @param [options.subpath] - The subpath of the link.
+ * @param [options.alias] - The alias for the link.
+ * @param [options.isEmbed] - Indicates if the link should be embedded.
+ * @param [options.isWikilink] - Indicates if the link should be a wikilink.
+ * @param [options.isRelative] - Indicates if the link should be relative.
  * @returns {string} The generated markdown link.
  */
 export function generateMarkdownLink({

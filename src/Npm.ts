@@ -84,23 +84,33 @@ export async function writeNpmPackage(npmPackage: NpmPackage, cwd?: string): Pro
 }
 
 /**
+ * Options for editing an NPM package.
+ */
+type EditNpmPackageOptions = {
+  /**
+   * The current working directory where `package.json` is located.
+   */
+  cwd?: string | undefined;
+
+  /**
+   * If true, skips editing if the file does not exist.
+   */
+  skipIfMissing?: boolean | undefined;
+};
+
+/**
  * Reads, edits, and writes back the `package.json` file using the provided edit function.
  *
  * @param editFn - The function to edit the parsed `NpmPackage` object.
  * @param options - Additional options for editing.
- * @param options.cwd - The current working directory where `package.json` is located.
- * @param options.skipIfMissing - If true, skips editing if the file does not exist.
  * @returns A promise that resolves when the file has been edited and written.
  */
 export async function editNpmPackage(
-  editFn: (npmPackage: NpmPackage) => MaybePromise<void>,
-  {
+  editFn: (npmPackage: NpmPackage) => MaybePromise<void>, options: EditNpmPackageOptions = {}): Promise<void> {
+  const {
     cwd,
     skipIfMissing
-  }: {
-    cwd?: string | undefined,
-    skipIfMissing?: boolean | undefined
-  } = {}): Promise<void> {
+  } = options;
   await editJson<NpmPackage>(getPackageJsonPath(cwd), editFn, { skipIfMissing });
 }
 
@@ -130,19 +140,15 @@ export async function writeNpmPackageLock(npmPackage: NpmPackage, cwd?: string):
  *
  * @param editFn - The function to edit the parsed `NpmPackage` object.
  * @param options - Additional options for editing.
- * @param options.cwd - The current working directory where `package-lock.json` is located.
- * @param options.skipIfMissing - If true, skips editing if the file does not exist.
  * @returns A promise that resolves when the file has been edited and written.
  */
 export async function editNpmPackageLock(
   editFn: (npmPackage: NpmPackage) => MaybePromise<void>,
-  {
+  options: EditNpmPackageOptions = {}): Promise<void> {
+  const {
     cwd,
     skipIfMissing
-  }: {
-    cwd?: string | undefined,
-    skipIfMissing?: boolean | undefined
-  } = {}): Promise<void> {
+  } = options;
   await editJson<NpmPackage>(getPackageLockJsonPath(cwd), editFn, { skipIfMissing });
 }
 

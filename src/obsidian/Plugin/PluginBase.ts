@@ -121,7 +121,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * Parses the provided settings data and returns the parsed `PluginSettings`.
    *
    * @protected
-   * @param {unknown} data - The raw data to be parsed into `PluginSettings`.
+   * @param data - The raw data to be parsed into `PluginSettings`.
    * @returns {MaybePromise<PluginSettings>} A promise that resolves to `PluginSettings` or the settings directly.
    */
   protected parseSettings(data: unknown): MaybePromise<PluginSettings> {
@@ -131,7 +131,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
    * Saves the new plugin settings.
    *
-   * @param {PluginSettings} newSettings - The new settings to save.
+   * @param newSettings - The new settings to save.
    * @returns {Promise<void>} A promise that resolves when the settings are saved.
    */
   public async saveSettings(newSettings: PluginSettings): Promise<void> {
@@ -142,7 +142,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
    * Displays a notice message to the user.
    *
-   * @param {string} message - The message to display.
+   * @param message - The message to display.
    */
   protected showNotice(message: string): void {
     if (this.notice) {

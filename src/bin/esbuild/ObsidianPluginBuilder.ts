@@ -49,23 +49,39 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
+
+/**
+ * Options for building an Obsidian plugin.
+ */
+type BuildObsidianPluginOptions = {
+  /**
+   * The build mode, either Development or Production
+   */
+  mode: BuildMode;
+
+  /**
+   * The directory for Obsidian configuration. Defaults to the OBSIDIAN_CONFIG_DIR environment variable.
+   */
+  obsidianConfigDir?: string;
+
+  /**
+   * Custom esbuild plugins to be used during the build process.
+   */
+  customEsbuildPlugins?: Plugin[]
+};
+
 /**
  * Builds the Obsidian plugin based on the specified mode and configuration directory.
  *
- * @param params - The parameters for building the plugin.
- * @param params.mode - The build mode, either Development or Production.
- * @param params.obsidianConfigDir - The directory for Obsidian configuration. Defaults to the OBSIDIAN_CONFIG_DIR environment variable.
+ * @param options - The parameters for building the plugin.
  * @returns A promise that resolves to a `TaskResult` indicating the success or failure of the build.
  */
-export async function buildObsidianPlugin({
-  mode,
-  obsidianConfigDir = process.env["OBSIDIAN_CONFIG_DIR"],
-  customEsbuildPlugins = []
-}: {
-  mode: BuildMode
-  obsidianConfigDir?: string,
-  customEsbuildPlugins?: Plugin[]
-}): Promise<CliTaskResult> {
+export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): Promise<CliTaskResult> {
+  const {
+    mode,
+    obsidianConfigDir = process.env["OBSIDIAN_CONFIG_DIR"],
+    customEsbuildPlugins = []
+  } = options;
   const isProductionBuild = mode === BuildMode.Production;
 
   const distDir = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);

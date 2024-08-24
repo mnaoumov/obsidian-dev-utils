@@ -30,8 +30,6 @@ import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
  *
  * This configuration applies to TypeScript files in the source and script directories. It sets up the TypeScript
  * parser and plugins, defines a set of rules for code style and error checking, and includes settings for import resolution.
- *
- * @type {Linter.Config[]}
  */
 export const configs: Linter.Config[] = [
   {

@@ -14,11 +14,11 @@ import {
 /**
  * Displays a selection modal in Obsidian for choosing an item from a list.
  *
- * @param {Object} params - The parameters for the selection modal.
- * @param {App} params.app - The Obsidian app instance.
- * @param {T[]} params.items - The list of items to choose from.
- * @param {(item: T) => string} params.itemTextFunc - A function to get the display text for each item.
- * @param {string} [params.placeholder] - The placeholder text for the input field.
+ * @param params - The parameters for the selection modal.
+ * @param params.app - The Obsidian app instance.
+ * @param params.items - The list of items to choose from.
+ * @param params.itemTextFunc - A function to get the display text for each item.
+ * @param [params.placeholder] - The placeholder text for the input field.
  * @returns {Promise<T | null>} - A promise that resolves with the selected item or null if no item was selected.
  */
 export async function selectItem<T>({

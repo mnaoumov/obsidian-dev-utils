@@ -13,8 +13,8 @@ import { printError } from "../../Error.ts";
 /**
  * Displays an error message as a notice, logs it to the console, and disables the specified plugin.
  *
- * @param {Plugin} plugin - The plugin to disable.
- * @param {string} message - The error message to display and log.
+ * @param plugin - The plugin to disable.
+ * @param message - The error message to display and log.
  * @returns {Promise<void>} A promise that resolves when the plugin is disabled.
  */
 export async function showErrorAndDisablePlugin(plugin: Plugin, message: string): Promise<void> {
@@ -26,7 +26,7 @@ export async function showErrorAndDisablePlugin(plugin: Plugin, message: string)
 /**
  * Reloads the specified plugin by disabling and then re-enabling it.
  *
- * @param {Plugin} plugin - The plugin to reload.
+ * @param plugin - The plugin to reload.
  * @returns {Promise<void>} A promise that resolves when the plugin is reloaded.
  */
 export async function reloadPlugin(plugin: Plugin): Promise<void> {

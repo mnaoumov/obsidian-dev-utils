@@ -27,7 +27,7 @@ export abstract class PluginSettingsTabBase<
   /**
    * Creates an instance of PluginSettingsTabBase.
    *
-   * @param {TPlugin} plugin - The plugin instance to which this settings tab belongs.
+   * @param plugin - The plugin instance to which this settings tab belongs.
    */
   public constructor(public override plugin: TPlugin) {
     super(plugin.app, plugin);

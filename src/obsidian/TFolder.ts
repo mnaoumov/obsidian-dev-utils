@@ -16,10 +16,10 @@ export type PathOrFolder = string | TFolder
 /**
  * Retrieves a TFolder object based on the provided app and pathOrFolder.
  *
- * @param {App} app - The Obsidian app instance.
- * @param {PathOrFolder} pathOrFolder - The path or folder identifier.
- * @returns {TFolder} - The retrieved TFolder object.
- * @throws {Error} - If the folder is not found.
+ * @param app - The Obsidian app instance.
+ * @param pathOrFolder - The path or folder identifier.
+ * @returns The retrieved TFolder object.
+ * @throws If the folder is not found.
  */
 export function getFolder(app: App, pathOrFolder: PathOrFolder): TFolder {
   const folder = getFolderOrNull(app, pathOrFolder);
@@ -33,9 +33,9 @@ export function getFolder(app: App, pathOrFolder: PathOrFolder): TFolder {
 /**
  * Retrieves a TFolder object or null based on the provided path or folder.
  *
- * @param {App} app - The Obsidian application instance.
- * @param {PathOrFolder} pathOrFolder - The path or folder to retrieve the TFolder from.
- * @returns {TFolder | null} - The TFolder object if found, otherwise null.
+ * @param app - The Obsidian application instance.
+ * @param pathOrFolder - The path or folder to retrieve the TFolder from.
+ * @returns The TFolder object if found, otherwise null.
  */
 export function getFolderOrNull(app: App, pathOrFolder: PathOrFolder | null): TFolder | null {
   if (pathOrFolder === null) {

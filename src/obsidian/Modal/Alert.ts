@@ -13,8 +13,8 @@ import {
 /**
  * Displays an alert modal in Obsidian with a specified message.
  *
- * @param {App} app - The Obsidian app instance.
- * @param {string} message - The message to display in the modal.
+ * @param app - The Obsidian app instance.
+ * @param message - The message to display in the modal.
  * @returns {Promise<void>} - A promise that resolves when the modal is closed.
  */
 export async function alert(app: App, message: string): Promise<void> {

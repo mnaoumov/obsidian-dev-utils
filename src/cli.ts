@@ -61,7 +61,7 @@ export abstract class CliTaskResult {
   /**
    * Represents a failure result of a CLI task.
    *
-   * @returns {CliTaskResult} The failure result.
+   * @returns The failure result.
    */
   public static Failure(): CliTaskResult {
     return this.Success(false);

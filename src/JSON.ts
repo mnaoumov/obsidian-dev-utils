@@ -33,23 +33,31 @@ export async function writeJson(path: string, data: unknown): Promise<void> {
 }
 
 /**
+ * Options for editing JSON.
+ */
+type EditJsonOptions = {
+  /**
+   * If true, skips editing if the file does not exist.
+   */
+  skipIfMissing?: boolean | undefined;
+};
+
+/**
  * Reads, edits, and writes back a JSON file using a provided edit function.
  *
  * @typeParam T - The type of the data to be edited.
  * @param path - The path to the JSON file.
  * @param editFn - The function to edit the parsed JSON data.
  * @param options - Additional options for editing.
- * @param options.skipIfMissing - If true, skips editing if the file does not exist.
  * @returns A promise that resolves when the file has been edited and written.
  */
 export async function editJson<T>(
   path: string,
   editFn: (data: T) => MaybePromise<void>,
-  {
+  options: EditJsonOptions = {}): Promise<void> {
+  const {
     skipIfMissing
-  }: {
-    skipIfMissing?: boolean | undefined
-  } = {}): Promise<void> {
+  } = options;
   if (skipIfMissing && !existsSync(path)) {
     return;
   }
@@ -59,25 +67,31 @@ export async function editJson<T>(
 }
 
 /**
+ * Options for converting an object to JSON.
+ */
+type ToJsonOptions = {
+  /**
+   * If `true`, functions within the value will be handled and included in the JSON string. Defaults to `false`.
+   */
+  shouldHandleFunctions?: boolean;
+  /**
+   * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
+   */
+  space?: string | number | undefined;
+};
+
+/**
  * Converts a given value to a JSON string.
  *
  * @param value - The value to be converted to JSON. This can be of any type.
  * @param options - Options for customizing the JSON conversion process.
- * @param options.shouldHandleFunctions - If `true`, functions within the value will be handled and included in the JSON string. Defaults to `false`.
- * @param options.space - Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
- *
  * @returns The JSON string representation of the input value.
  */
-export function toJson(
-  value: unknown,
-  {
+export function toJson(value: unknown, options: ToJsonOptions = {}): string {
+  const {
     shouldHandleFunctions = false,
     space = 2
-  }: {
-    shouldHandleFunctions?: boolean
-    space?: string | number | undefined
-  } = {}): string {
-
+  } = options;
   if (!shouldHandleFunctions) {
     return JSON.stringify(value, null, space);
   }
