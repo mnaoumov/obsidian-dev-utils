@@ -77,7 +77,7 @@ export function isMarkdownFile(pathOrFile: PathOrAbstractFile | null): boolean {
 /**
  * Checks if the given file is a canvas file.
  *
- * @param file - The file to check.
+ * @param pathOrFile - The file to check.
  * @returns A boolean indicating whether the file is a canvas file or not.
  */
 export function isCanvasFile(pathOrFile: PathOrAbstractFile | null): boolean {

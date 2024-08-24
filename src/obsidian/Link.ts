@@ -382,6 +382,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
  * @param app - The Obsidian application instance.
  * @param pathOrFile - The path or file to edit the links in.
  * @param linkConverter - The function that converts each link.
+ * @param retryOptions - Optional options for retrying the operation.
  * @returns A promise that resolves when the links have been edited.
  */
 export async function editLinks(

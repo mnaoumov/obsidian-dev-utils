@@ -14,7 +14,7 @@ import {
 
 
 /**
- * The parameters for the prompt modal.
+ * The options for the prompt modal.
  */
 type PromptOptions = {
   /**
@@ -43,7 +43,7 @@ type PromptOptions = {
 /**
  * Displays a prompt modal in Obsidian to get user input.
  *
- * @param params - The parameters for the prompt.
+ * @param options - The options for the prompt modal.
  * @returns - A promise that resolves with the user input or null if the prompt was cancelled.
  */
 export async function prompt(options: PromptOptions): Promise<string | null> {

@@ -48,28 +48,48 @@ function getModifier(mode: CalloutMode): string {
 }
 
 /**
+ * Options for rendering a callout block in Dataview.
+ */
+type RenderCalloutOptions = {
+  /**
+   * The DataviewInlineApi instance.
+   */
+  dv: DataviewInlineApi;
+
+  /**
+   * The type of the callout, default is `"NOTE"`.
+   */
+  type?: string;
+
+  /**
+   * The callout mode, default is `CalloutMode.FoldableCollapsed`.
+   */
+  mode?: CalloutMode;
+
+  /**
+   * The header text of the callout, default is an empty string.
+   */
+  header?: string;
+
+  /**
+   * An optional provider for the content, which can be either a string or a Node.
+   */
+  contentProvider?: ValueProvider<string | Node | void>;
+};
+
+/**
  * Renders a callout block in Dataview.
  *
- * @param dv - The DataviewInlineApi instance.
- * @param type - The type of the callout, default is `"NOTE"`.
- * @param mode - The callout mode, default is `CalloutMode.FoldableCollapsed`.
- * @param header - The header text of the callout, default is an empty string.
- * @param contentProvider - An optional provider for the content, which can be either a string or a Node.
- * @param contentRenderer - An optional function to render the content asynchronously.
+ * @param options - The options for rendering the callout.
  */
-export function renderCallout({
-  dv,
-  type = "NOTE",
-  mode = CalloutMode.FoldableCollapsed,
-  header = "",
-  contentProvider = ""
-}: {
-  dv: DataviewInlineApi,
-  type?: string,
-  mode?: CalloutMode,
-  header?: string,
-  contentProvider?: ValueProvider<string | Node | void>
-}): void {
+export function renderCallout(options: RenderCalloutOptions): void {
+  const {
+    dv,
+    type = "NOTE",
+    mode = CalloutMode.FoldableCollapsed,
+    header = "",
+    contentProvider = ""
+  } = options;
   const modifier = getModifier(mode);
   const callout = dv.paragraph(`> [!${type}]${modifier} ${header}\n>\n> <div class="content"></div>`);
   const contentDiv = callout.querySelector<HTMLDivElement>(".content")!;

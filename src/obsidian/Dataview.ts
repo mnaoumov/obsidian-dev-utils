@@ -127,23 +127,40 @@ const paginationCss = `
 type ArrayOrDataArray<T> = T[] | DataArray<T>;
 
 /**
+ * Options for rendering a paginated list using the Dataview API.
+ */
+type RenderPaginatedListOptions<T> = {
+  /**
+   * The DataviewInlineApi instance.
+   */
+  dv: DataviewInlineApi;
+
+  /**
+   * The list of items to paginate.
+   */
+  rows: ArrayOrDataArray<T>;
+
+  /**
+   * Options for items per page. Defaults to `[10, 20, 50, 100]`.
+   */
+  itemsPerPageOptions?: number[];
+};
+
+/**
  * Renders a paginated list using the provided DataviewInlineApi instance.
  *
  * @typeParam T - The type of items in the list.
- * @param dv - The DataviewInlineApi instance.
- * @param rows - The list of items to paginate.
- * @param itemsPerPageOptions - Options for items per page. Defaults to `[10, 20, 50, 100]`.
+ *
+ * @param options - The options for rendering the paginated list.
+ *
  * @returns A promise that resolves when the list is rendered.
  */
-export async function renderPaginatedList<T>({
-  dv,
-  rows,
-  itemsPerPageOptions = [10, 20, 50, 100]
-}: {
-  dv: DataviewInlineApi,
-  rows: ArrayOrDataArray<T>,
-  itemsPerPageOptions?: number[]
-}): Promise<void> {
+export async function renderPaginatedList<T>(options: RenderPaginatedListOptions<T>): Promise<void> {
+  const {
+    dv,
+    rows,
+    itemsPerPageOptions = [10, 20, 50, 100]
+  } = options;
   await renderPaginated({
     dv,
     rows,
@@ -155,26 +172,46 @@ export async function renderPaginatedList<T>({
 }
 
 /**
+ * Options for rendering a paginated table using the Dataview API.
+ */
+type RenderPaginatedTableOptions<T> = {
+  /**
+   * The DataviewInlineApi instance.
+   */
+  dv: DataviewInlineApi;
+
+  /**
+   * The headers of the table.
+   */
+  headers: string[];
+
+  /**
+   * The rows of the table to paginate.
+   */
+  rows: ArrayOrDataArray<T>;
+
+  /**
+   * Options for items per page. Defaults to `[10, 20, 50, 100]`.
+   */
+  itemsPerPageOptions?: number[];
+};
+
+/**
  * Renders a paginated table using the provided DataviewInlineApi instance.
  *
  * @typeParam T - The type of items in the table rows.
- * @param dv - The DataviewInlineApi instance.
- * @param headers - The headers of the table.
- * @param rows - The rows of the table to paginate.
- * @param itemsPerPageOptions - Options for items per page. Defaults to `[10, 20, 50, 100]`.
+ *
+ * @param options - The options for rendering the paginated table.
+ *
  * @returns A promise that resolves when the table is rendered.
  */
-export async function renderPaginatedTable<T extends unknown[]>({
-  dv,
-  headers,
-  rows,
-  itemsPerPageOptions = [10, 20, 50, 100]
-}: {
-  dv: DataviewInlineApi,
-  headers: string[],
-  rows: ArrayOrDataArray<T>,
-  itemsPerPageOptions?: number[]
-}): Promise<void> {
+export async function renderPaginatedTable<T extends unknown[]>(options: RenderPaginatedTableOptions<T>): Promise<void> {
+  const {
+    dv,
+    headers,
+    rows,
+    itemsPerPageOptions = [10, 20, 50, 100]
+  } = options;
   await renderPaginated({
     dv,
     rows,
@@ -186,26 +223,48 @@ export async function renderPaginatedTable<T extends unknown[]>({
 }
 
 /**
+ * Options for rendering a paginated element using the Dataview API.
+ */
+type RenderPaginatedOptions<T> = {
+  /**
+   * The DataviewInlineApi instance.
+   */
+  dv: DataviewInlineApi;
+
+  /**
+   * The rows to paginate.
+   */
+  rows: ArrayOrDataArray<T>;
+
+  /**
+   * Options for items per page.
+   */
+  itemsPerPageOptions: number[];
+
+  /**
+   * The renderer function to display the paginated content.
+   * @param rows - The rows to render.
+   * @returns A promise that resolves when the content is rendered.
+   */
+  renderer: (rows: ArrayOrDataArray<T>) => MaybePromise<void>;
+};
+
+/**
  * Helper function to render paginated content using the specified renderer.
  *
  * @typeParam T - The type of items to paginate.
- * @param dv - The DataviewInlineApi instance.
- * @param rows - The rows to paginate.
- * @param itemsPerPageOptions - Options for items per page.
- * @param renderer - The renderer function to display the paginated content.
+ *
+ * @param options - The options for rendering the paginated content.
+ *
  * @returns A promise that resolves when the content is rendered.
  */
-async function renderPaginated<T>({
-  dv,
-  rows,
-  itemsPerPageOptions = [10, 20, 50, 100],
-  renderer
-}: {
-  dv: DataviewInlineApi,
-  rows: ArrayOrDataArray<T>,
-  itemsPerPageOptions: number[],
-  renderer: (rows: ArrayOrDataArray<T>) => MaybePromise<void>
-}): Promise<void> {
+async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<void> {
+  const {
+    dv,
+    rows,
+    itemsPerPageOptions = [10, 20, 50, 100],
+    renderer
+  } = options;
   if (rows.length === 0) {
     dv.paragraph("No items found");
     return;
@@ -334,25 +393,44 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
 }
 
 /**
+ * Options for rendering an iframe in the Dataview container.
+ */
+type RenderIframeOptions = {
+  /**
+   * The DataviewInlineApi instance.
+   */
+  dv: DataviewInlineApi;
+
+  /**
+   * The relative path to the resource to be displayed in the iframe.
+   */
+  relativePathOrFile: PathOrFile;
+
+  /**
+   * The width of the iframe.
+   */
+  width: string;
+
+  /**
+   * The height of the iframe.
+   */
+  height: string;
+};
+
+/**
  * Renders an iframe in the Dataview container with the specified relative path, width, and height.
  *
- * @param dv - The DataviewInlineApi instance.
- * @param relativePath - The relative path to the resource to be displayed in the iframe.
- * @param width - The width of the iframe. Defaults to "100%".
- * @param height - The height of the iframe. Defaults to "600px".
+ * @param options - The options for rendering the iframe.
+ *
  * @returns This function does not return a value.
  */
-export function renderIframe({
-  dv,
-  relativePathOrFile,
-  width = "100%",
-  height = "600px"
-}: {
-  dv: DataviewInlineApi,
-  relativePathOrFile: PathOrFile,
-  width: string,
-  height: string
-}): void {
+export function renderIframe(options: RenderIframeOptions): void {
+  const {
+    dv,
+    relativePathOrFile,
+    width = "100%",
+    height = "600px"
+  } = options;
   dv.el("iframe", "", {
     attr: {
       src: relativePathToResourceUrl(dv.app, getPath(relativePathOrFile), dv.current().file.path),
