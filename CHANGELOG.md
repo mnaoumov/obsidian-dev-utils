@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.16.0
+
+- Add FrontMatter types
+
 ## 2.15.0
 
 - getFrontMatterSafe
