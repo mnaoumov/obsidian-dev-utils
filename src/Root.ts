@@ -81,7 +81,7 @@ type ExecFromRootOption = {
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export async function execFromRoot(command: string | string[], options?: ExecFromRootOption & { withDetails: false }): Promise<string>;
+export async function execFromRoot(command: string | string[], options?: ExecFromRootOption & { withDetails?: false }): Promise<string>;
 
 /**
  * Executes a command from the root directory of the project.
