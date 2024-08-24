@@ -39,6 +39,9 @@ export interface NpmPackage {
    */
   name: string;
 
+  /**
+   * An optional object that contains the package's peer dependencies, where the key is the package name
+   */
   packages?: Record<string, NpmPackage>;
 
   /**

@@ -9,9 +9,15 @@ import type { DataviewInlineApi as DataviewInlineApiOriginal } from "./@types/Da
 import type {
   DataArray,
   DataviewApi,
-  DateTime,
-  Link,
   SMarkdownPage
+} from "./@types/Dataview/index.d.ts";
+
+/**
+ * Export DateTime and Link types from the Dataview API.
+ */
+export type {
+  DateTime,
+  Link
 } from "./@types/Dataview/index.d.ts";
 
 import {
@@ -32,10 +38,10 @@ declare global {
   var DataviewAPI: DataviewApi | undefined;
 }
 
-export type {
-  DateTime,
-  Link
-};
+/**
+ * DomElementInfo with an optional container.
+ */
+type DomElementInfoWithContainer = DomElementInfo & { container?: HTMLElement };
 
 /**
  * Extended interface for the Dataview Inline API, providing additional methods for custom page types and array handling.
@@ -78,7 +84,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    */
   paragraph(
     text: unknown,
-    options?: DomElementInfo & { container?: HTMLElement }
+    options?: DomElementInfoWithContainer
   ): HTMLParagraphElement;
 }
 
@@ -92,9 +98,17 @@ export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<voi
   await DataviewAPI?.index.reload(dv.app.vault.getFileByPath(dv.current().file.path)!);
 }
 
+/**
+ * The combined page type, which includes the front matter and the SMarkdownPage.
+ */
 export type CombinedPage<CustomFrontMatter = unknown> = SMarkdownPage & CombinedFrontMatter<CustomFrontMatter>;
 
 type PageFile = SMarkdownPage["file"];
+
+
+/**
+ * List of page files.
+ */
 export type PageFiles = ArrayOrDataArray<PageFile>;
 
 const paginationCss = `

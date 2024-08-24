@@ -11,6 +11,9 @@ import {
 } from "obsidian";
 import { isMarkdownFile } from "./TAbstractFile.ts";
 
+/**
+ * Represents a path or an instance of TFolder.
+ */
 export type PathOrFolder = string | TFolder
 
 /**

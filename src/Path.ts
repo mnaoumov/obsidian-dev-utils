@@ -7,19 +7,97 @@ import path from "path-browserify";
 import { fileURLToPath } from "node:url";
 import { ensureStartsWith } from "./String.ts";
 
+/**
+ * Provides methods for handling POSIX paths.
+ */
 export const posix = path.posix;
+
+/**
+ * The POSIX path delimiter.
+ */
 export const delimiter = posix.delimiter;
+
+/**
+ * The POSIX segment separator.
+ */
 export const sep = path.posix.sep;
 
-export const basename = posix.basename.bind(posix);
-export const dirname = posix.dirname.bind(posix);
-export const extname = posix.extname.bind(posix);
-export const format = posix.format.bind(posix);
-export const isAbsolute = posix.isAbsolute.bind(posix);
-export const join = posix.join.bind(posix);
-export const normalize = posix.normalize.bind(posix);
-export const parse = posix.parse.bind(posix);
-export const relative = posix.relative.bind(posix);
+/**
+ * Returns the base name of a file, optionally removing the file extension.
+ *
+ * @param path - The path to get the base name from.
+ * @param ext - An optional extension to remove from the base name.
+ * @returns The base name of the file.
+ */
+export const basename = posix.basename;
+
+
+/**
+ * Returns the directory name of a path.
+ *
+ * @param path - The path to get the directory name from.
+ * @returns The directory name of the path.
+ */
+export const dirname = posix.dirname;
+
+/**
+ * Returns the file extension of a path.
+ *
+ * @param path - The path to get the extension from.
+ * @returns The file extension of the path.
+ */
+export const extname = posix.extname;
+
+/**
+ * Formats a path object into a path string.
+ *
+ * @param pathObject - The path object to format.
+ * @returns The formatted path string.
+ */
+export const format = posix.format;
+
+/**
+ * Determines if a path is absolute.
+ *
+ * @param path - The path to check.
+ * @returns `true` if the path is absolute, `false` otherwise.
+ */
+export const isAbsolute = posix.isAbsolute;
+
+/**
+ * Joins multiple path segments into a single path.
+ *
+ * @param paths - The path segments to join.
+ * @returns The joined path.
+ */
+export const join = posix.join;
+
+/**
+  * Normalizes a path, resolving '..' and '.' segments.
+  *
+  * @param path - The path to normalize.
+  * @returns The normalized path.
+  */
+export const normalize = posix.normalize;
+
+
+/**
+ * Parses a path string into a path object.
+ *
+ * @param path - The path string to parse.
+ * @returns The parsed path object.
+ */
+export const parse = posix.parse;
+
+
+/**
+ * Returns the relative path from one path to another.
+ *
+ * @param from - The starting path.
+ * @param to - The destination path.
+ * @returns The relative path from `from` to `to`.
+ */
+export const relative = posix.relative;
 
 /**
  * Resolves a sequence of paths or path segments into an absolute path.
