@@ -7,9 +7,10 @@
  */
 
 import {
+  Linter,
   loadESLint
 } from "eslint";
-import { configs } from "./eslint.config.ts";
+import { configs as defaultConfigs } from "./eslint.config.ts";
 import {
   join,
   normalizeIfRelative
@@ -29,13 +30,14 @@ import { glob } from "glob";
  *
  * @throws {Error} If the package directory cannot be found.
  */
-export async function lint(fix?: boolean): Promise<CliTaskResult> {
+export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Promise<CliTaskResult> {
   fix ??= false;
   const packageDir = await packageDirectory({ cwd: getDirname(import.meta.url) });
   if (!packageDir) {
     throw new Error("Could not find package directory.");
   }
 
+  const configs = [...defaultConfigs, ...customConfigs ?? []];
   const FlatESLint = await loadESLint({ useFlatConfig: true });
   const eslint = new FlatESLint({
     fix,
