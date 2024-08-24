@@ -27,6 +27,11 @@ import {
   type PathOrFile
 } from "./TFile.ts";
 import { getPath } from "./TAbstractFile.ts";
+import {
+  asyncMap,
+  type MaybePromise,
+  type RetryOptions
+} from "../Async.ts";
 
 type SplitSubpathResult = {
   linkPath: string;
@@ -75,32 +80,12 @@ export async function updateLinksInFile({
   forceMarkdownLinks?: boolean | undefined
   embedOnlyLinks?: boolean | undefined
 }): Promise<void> {
-  await applyFileChanges(app, pathOrFile, async () => {
-    const cache = await getCacheSafe(app, pathOrFile);
-    if (!cache) {
-      return [];
+  await editLinks(app, pathOrFile, (link) => {
+    const isEmbedLink = link.original.startsWith("!");
+    if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
+      return link.original;
     }
-
-    let links: ReferenceCache[] = [];
-
-    switch (embedOnlyLinks) {
-      case true:
-        links = cache.embeds ?? [];
-        break;
-      case false:
-        links = cache.links ?? [];
-        break;
-      case undefined:
-        links = getAllLinks(cache);
-        break;
-    }
-
-    return links.map((link) => ({
-      startIndex: link.position.start.offset,
-      endIndex: link.position.end.offset,
-      oldContent: link.original,
-      newContent: convertLink(app, link, pathOrFile, oldPathOrFile, renameMap, forceMarkdownLinks),
-    }));
+    return convertLink(app, link, pathOrFile, oldPathOrFile, renameMap, forceMarkdownLinks);
   });
 }
 
@@ -312,4 +297,32 @@ export function generateMarkdownLink({
   }
 
   return link;
+}
+
+/**
+ * Edits the links in the specified file or path using the provided link converter function.
+ *
+ * @param app - The Obsidian application instance.
+ * @param pathOrFile - The path or file to edit the links in.
+ * @param linkConverter - The function that converts each link.
+ * @returns A promise that resolves when the links have been edited.
+ */
+export async function editLinks(
+  app: App,
+  pathOrFile: PathOrFile,
+  linkConverter: (link: ReferenceCache) => MaybePromise<string>,
+  retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+  return await applyFileChanges(app, pathOrFile, async () => {
+    const cache = await getCacheSafe(app, pathOrFile);
+    if (!cache) {
+      return [];
+    }
+
+    return await asyncMap(getAllLinks(cache), async (link) => ({
+      startIndex: link.position.start.offset,
+      endIndex: link.position.end.offset,
+      oldContent: link.original,
+      newContent: await linkConverter(link),
+    }));
+  }, retryOptions);
 }
