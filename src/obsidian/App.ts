@@ -1,5 +1,5 @@
 /**
- * @module App
+ * @packageDocumentation App
  * Provides a utility to retrieve the Obsidian `App` instance.
  */
 

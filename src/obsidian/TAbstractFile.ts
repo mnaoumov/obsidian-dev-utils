@@ -1,5 +1,5 @@
 /**
- * @module TAbstractFile
+ * @packageDocumentation TAbstractFile
  * This module provides utility functions for working with abstract files in Obsidian.
  */
 

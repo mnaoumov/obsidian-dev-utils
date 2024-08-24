@@ -1,5 +1,5 @@
 /**
- * @module preprocessPlugin
+ * @packageDocumentation preprocessPlugin
  * This module defines a custom esbuild plugin that preprocesses JavaScript and TypeScript files.
  * The preprocessing includes replacing `import(dot)meta(dot)url` with a Node.js-compatible alternative,
  * ensuring compatibility with Obsidian's plugin system, and adding a basic `process` object for environments

@@ -1,5 +1,5 @@
 /**
- * @module globals
+ * @packageDocumentation globals
  * @see {@link https://www.npmjs.com/package/globals} for more information.
  */
 

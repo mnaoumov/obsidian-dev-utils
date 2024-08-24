@@ -1,5 +1,5 @@
 /**
- * @module PluginBase
+ * @packageDocumentation PluginBase
  * Base class for Obsidian plugins providing utility methods for settings management, error handling, and notifications.
  *
  * This class simplifies the process of managing plugin settings, displaying notifications, and handling errors.

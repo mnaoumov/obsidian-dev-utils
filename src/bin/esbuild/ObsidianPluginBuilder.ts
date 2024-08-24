@@ -1,5 +1,5 @@
 /**
- * @module ObsidianPluginBuilder
+ * @packageDocumentation ObsidianPluginBuilder
  * This module provides functionality to build and bundle an Obsidian plugin using esbuild.
  * It includes functions to handle the build process based on different build modes (development or production),
  * and it sets up various esbuild plugins to preprocess, lint, fix source maps, and copy files to the Obsidian plugins folder.

@@ -1,5 +1,5 @@
 /**
- * @module Dataview
+ * @packageDocumentation Dataview
  * This module provides utility functions for working with Dataview in Obsidian.
  */
 

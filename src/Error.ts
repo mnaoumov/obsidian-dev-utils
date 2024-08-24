@@ -1,5 +1,5 @@
 /**
- * @module Error
+ * @packageDocumentation Error
  * Contains utility functions for error handling.
  */
 

@@ -1,5 +1,5 @@
 /**
- * @module JSON
+ * @packageDocumentation JSON
  * Contains utility functions for JSON.
  */
 

@@ -1,5 +1,5 @@
 /**
- * @module TFile
+ * @packageDocumentation TFile
  * This module provides utility functions for working with TFile instances in Obsidian.
  */
 

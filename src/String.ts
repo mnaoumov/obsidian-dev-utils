@@ -1,5 +1,5 @@
 /**
- * @module String
+ * @packageDocumentation String
  * Contains utility functions for string operations.
  */
 

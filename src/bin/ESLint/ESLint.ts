@@ -1,5 +1,5 @@
 /**
- * @module ESLint
+ * @packageDocumentation ESLint
  * Linting utility for ESLint configuration with support for automatic fixing.
  *
  * This module provides a function to lint files based on the ESLint configuration defined in `eslint.config.ts`.

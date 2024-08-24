@@ -1,5 +1,5 @@
 /**
- * @module Fs
+ * @packageDocumentation Fs
  * Contains utility functions for file system operations.
  */
 

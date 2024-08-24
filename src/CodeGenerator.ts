@@ -1,5 +1,5 @@
 /**
- * @module CodeGenerator
+ * @packageDocumentation CodeGenerator
  * Contains utility functions for code generation.
  */
 

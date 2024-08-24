@@ -1,5 +1,5 @@
 /**
- * @module eslint-plugin-import
+ * @packageDocumentation eslint-plugin-import
  * @see {@link https://www.npmjs.com/package/eslint-plugin-import} for more information.
  */
 

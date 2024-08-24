@@ -1,5 +1,5 @@
 /**
- * @module lintPlugin
+ * @packageDocumentation lintPlugin
  * This module defines an esbuild plugin that runs ESLint on the codebase after each build.
  * The plugin is particularly useful during development to ensure code quality is maintained
  * by automatically linting the code whenever a build is completed.

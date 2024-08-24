@@ -1,5 +1,5 @@
 /**
- * @module MetadataCache
+ * @packageDocumentation MetadataCache
  * This module provides utility functions for working with the metadata cache in Obsidian.
  */
 

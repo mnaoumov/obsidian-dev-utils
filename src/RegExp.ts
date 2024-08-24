@@ -1,5 +1,5 @@
 /**
- * @module RegExp
+ * @packageDocumentation RegExp
  * Contains utility functions for regular expressions.
  */
 

@@ -1,5 +1,5 @@
 /**
- * @module ObsidianPluginRepoPaths
+ * @packageDocumentation ObsidianPluginRepoPaths
  * This file defines an enumeration for common file and directory paths used in Obsidian plugin development.
  */
 

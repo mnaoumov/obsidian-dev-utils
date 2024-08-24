@@ -1,5 +1,5 @@
 /**
- * @module Async
+ * @packageDocumentation Async
  * Contains utility functions for asynchronous operations.
  */
 

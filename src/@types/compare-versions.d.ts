@@ -1,5 +1,5 @@
 /**
- * @module compare-versions
+ * @packageDocumentation compare-versions
  * Fixed typings for the `compare-versions` package.
  */
 

@@ -1,5 +1,5 @@
 /**
- * @module AttachmentPath
+ * @packageDocumentation AttachmentPath
  * Provides utility functions for working with attachment paths.
  */
 

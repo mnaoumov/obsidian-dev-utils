@@ -1,5 +1,5 @@
 /**
- * @module DataviewLink
+ * @packageDocumentation DataviewLink
  * This module provides utility functions for working with Dataview links in Obsidian
  */
 

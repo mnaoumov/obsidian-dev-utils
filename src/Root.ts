@@ -1,5 +1,5 @@
 /**
- * @module Root
+ * @packageDocumentation Root
  * Contains utility functions for executing commands from the root directory of a project,
  * resolving paths relative to the root.
  */

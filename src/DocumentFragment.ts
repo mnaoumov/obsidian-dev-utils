@@ -1,5 +1,5 @@
 /**
- * @module DocumentFragment
+ * @packageDocumentation DocumentFragment
  * This module provides utility functions for working with DocumentFragments.
  */
 

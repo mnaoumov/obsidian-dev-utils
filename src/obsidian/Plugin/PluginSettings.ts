@@ -1,5 +1,5 @@
 /**
- * @module PluginSettings
+ * @packageDocumentation PluginSettings
  * This module provides functions for loading and cloning plugin settings.
  * It includes utilities for merging user settings with default settings and creating copies of settings.
  */

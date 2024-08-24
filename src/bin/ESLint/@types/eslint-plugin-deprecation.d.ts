@@ -1,5 +1,5 @@
 /**
- * @module eslint-plugin-deprecation
+ * @packageDocumentation eslint-plugin-deprecation
  * @see {@link https://www.npmjs.com/package/eslint-plugin-deprecation} for more information.
  */
 

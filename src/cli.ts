@@ -1,5 +1,5 @@
 /**
- * @module cli
+ * @packageDocumentation cli
  * Contains utility classes and functions for managing task results, including
  * success, exit codes, and chaining multiple tasks.
  */
