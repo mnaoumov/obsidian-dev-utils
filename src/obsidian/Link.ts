@@ -56,32 +56,55 @@ export function splitSubpath(link: string): SplitSubpathResult {
 }
 
 /**
+ * Options for updating links in a file.
+ */
+type UpdateLinksInFileOptions = {
+  /**
+   * The obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * The file to update the links in.
+   */
+  pathOrFile: PathOrFile;
+
+  /**
+   * The old path of the file.
+   */
+  oldPathOrFile: PathOrFile;
+
+  /**
+   * A map of old and new paths for renaming links.
+   */
+  renameMap: Map<string, string>;
+
+  /**
+   * Whether to force the links to be in Markdown format.
+   */
+  forceMarkdownLinks?: boolean | undefined;
+
+  /**
+   * Whether to update only embedded links.
+   */
+  embedOnlyLinks?: boolean | undefined;
+};
+
+/**
  * Updates the links in a file based on the provided parameters.
  *
  * @param options - The options for updating the links.
- * @param options.app - The Obsidian app instance.
- * @param options.file - The file to update the links in.
- * @param options.oldPath - The old path of the file.
- * @param options.renameMap - A map of old and new paths for renaming links.
- * @param [options.forceMarkdownLinks] - Whether to force the links to be in Markdown format.
- * @param [options.embedOnlyLinks] - Whether to update only embedded links.
- * @returns {Promise<void>} - A promise that resolves when the links are updated.
+ * @returns - A promise that resolves when the links are updated.
  */
-export async function updateLinksInFile({
-  app,
-  pathOrFile,
-  oldPathOrFile,
-  renameMap,
-  forceMarkdownLinks,
-  embedOnlyLinks
-}: {
-  app: App,
-  pathOrFile: PathOrFile,
-  oldPathOrFile: PathOrFile,
-  renameMap: Map<string, string>,
-  forceMarkdownLinks?: boolean | undefined
-  embedOnlyLinks?: boolean | undefined
-}): Promise<void> {
+export async function updateLinksInFile(options: UpdateLinksInFileOptions): Promise<void> {
+  const {
+    app,
+    pathOrFile,
+    oldPathOrFile,
+    renameMap,
+    forceMarkdownLinks,
+    embedOnlyLinks
+  } = options;
   await editLinks(app, pathOrFile, (link) => {
     const isEmbedLink = link.original.startsWith("!");
     if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
@@ -128,40 +151,63 @@ export function extractLinkFile(app: App, link: ReferenceCache, oldPathOrFile: P
   return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(oldPathOrFile));
 }
 
+type UpdateLinkOptions = {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App,
+
+  /**
+   * The reference cache for the link.
+   */
+  link: ReferenceCache,
+
+  /**
+   * The file associated with the link.
+   */
+  pathOrFile: PathOrFile | null,
+
+  /**
+   * The old path of the file.
+   */
+  oldPathOrFile: PathOrFile,
+
+  /**
+   * The source file containing the link.
+   */
+  sourcePathOrFile: PathOrFile,
+
+  /**
+   * A map of old and new file paths.
+   */
+  renameMap: Map<string, string>,
+
+  /**
+   * Whether to force markdown links.
+   */
+  forceMarkdownLinks?: boolean | undefined
+};
+
 /**
  * Updates a link based on the provided parameters.
  *
  * @param options - The options for updating the link.
- * @param options.app - The Obsidian app instance.
- * @param options.link - The reference cache for the link.
- * @param options.file - The file associated with the link.
- * @param options.oldPath - The old path of the file.
- * @param options.source - The source file containing the link.
- * @param options.renameMap - The map of old and new file paths.
- * @param [options.forceMarkdownLinks] - Whether to force markdown links.
- * @returns {string} The updated link.
+ * @returns The updated link.
  */
-export function updateLink({
-  app,
-  link,
-  pathOrFile,
-  oldPathOrFile,
-  sourcePathOrFile: source,
-  renameMap,
-  forceMarkdownLinks
-}: {
-  app: App,
-  link: ReferenceCache,
-  pathOrFile: PathOrFile | null,
-  oldPathOrFile: PathOrFile,
-  sourcePathOrFile: PathOrFile,
-  renameMap: Map<string, string>,
-  forceMarkdownLinks?: boolean | undefined
-}): string {
+export function updateLink(options: UpdateLinkOptions): string {
+  const {
+    app,
+    link,
+    pathOrFile,
+    oldPathOrFile,
+    sourcePathOrFile: source,
+    renameMap,
+    forceMarkdownLinks
+  } = options;
   if (!pathOrFile) {
     return link.original;
   }
-  const file = getFile(app, pathOrFile);
+  let file = getFile(app, pathOrFile);
   const sourcePath = getPath(source);
   const oldPath = getPath(oldPathOrFile);
   const isEmbed = link.original.startsWith("!");
@@ -179,7 +225,7 @@ export function updateLink({
   });
 
   if (newPath) {
-    pathOrFile = createTFileInstance(app.vault, newPath);
+    file = createTFileInstance(app.vault, newPath);
   }
 
   const newLink = generateMarkdownLink({
@@ -239,38 +285,67 @@ function getAlias({
 }
 
 /**
+ * Options for generating a markdown link.
+ */
+type GenerateMarkdownLinkOptions = {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App,
+
+  /**
+   * The file to link to.
+   */
+  pathOrFile: PathOrFile,
+
+  /**
+   * The source path of the link.
+   */
+  sourcePathOrFile: PathOrFile,
+
+  /**
+   * The subpath of the link.
+   */
+  subpath?: string | undefined,
+
+  /**
+   * The alias for the link.
+   */
+  alias?: string | undefined,
+
+  /**
+   * Indicates if the link should be embedded.
+   */
+  isEmbed?: boolean | undefined,
+
+  /**
+   * Indicates if the link should be a wikilink.
+   */
+  isWikilink?: boolean | undefined,
+
+  /**
+   * Indicates if the link should be relative.
+   */
+  isRelative?: boolean | undefined
+};
+
+/**
  * Generates a markdown link based on the provided parameters.
  *
  * @param options - The options for generating the markdown link.
- * @param options.app - The Obsidian app instance.
- * @param options.file - The file to link to.
- * @param options.sourcePath - The source path of the link.
- * @param [options.subpath] - The subpath of the link.
- * @param [options.alias] - The alias for the link.
- * @param [options.isEmbed] - Indicates if the link should be embedded.
- * @param [options.isWikilink] - Indicates if the link should be a wikilink.
- * @param [options.isRelative] - Indicates if the link should be relative.
- * @returns {string} The generated markdown link.
+ * @returns The generated markdown link.
  */
-export function generateMarkdownLink({
-  app,
-  pathOrFile,
-  sourcePathOrFile,
-  subpath,
-  alias,
-  isEmbed,
-  isWikilink,
-  isRelative
-}: {
-  app: App,
-  pathOrFile: PathOrFile,
-  sourcePathOrFile: PathOrFile,
-  subpath?: string | undefined,
-  alias?: string | undefined,
-  isEmbed?: boolean | undefined,
-  isWikilink?: boolean | undefined,
-  isRelative?: boolean | undefined
-}): string {
+export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): string {
+  const {
+    app,
+    pathOrFile,
+    sourcePathOrFile,
+    subpath,
+    alias,
+    isEmbed,
+    isWikilink,
+    isRelative
+  } = options;
   const file = getFile(app, pathOrFile);
   const useMarkdownLinks = app.vault.getConfig("useMarkdownLinks");
   const newLinkFormat = app.vault.getConfig("newLinkFormat");

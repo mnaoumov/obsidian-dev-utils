@@ -12,26 +12,44 @@ import {
 } from "obsidian";
 
 /**
+ * The parameters for the selection modal.
+ */
+type SelectItemOptions<T> = {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * The list of items to choose from.
+   */
+  items: T[];
+
+  /**
+   * A function to get the display text for each item
+   * @param item - The item to get the display text for.
+   * @returns The display text for the item.
+   */
+  itemTextFunc(item: T): string;
+
+  /**
+   * The placeholder text for the input field.
+   */
+  placeholder?: string;
+};
+
+/**
  * Displays a selection modal in Obsidian for choosing an item from a list.
  *
  * @param params - The parameters for the selection modal.
- * @param params.app - The Obsidian app instance.
- * @param params.items - The list of items to choose from.
- * @param params.itemTextFunc - A function to get the display text for each item.
- * @param [params.placeholder] - The placeholder text for the input field.
- * @returns {Promise<T | null>} - A promise that resolves with the selected item or null if no item was selected.
+ * @returns - A promise that resolves with the selected item or null if no item was selected.
  */
 export async function selectItem<T>({
   app,
   items,
   itemTextFunc,
   placeholder = ""
-}: {
-  app: App;
-  items: T[];
-  itemTextFunc(item: T): string;
-  placeholder?: string;
-}): Promise<T | null> {
+}: SelectItemOptions<T>): Promise<T | null> {
   return await new Promise<T | null>((resolve) => {
     class ItemSelectModal extends FuzzySuggestModal<T> {
       private isSelected = false;

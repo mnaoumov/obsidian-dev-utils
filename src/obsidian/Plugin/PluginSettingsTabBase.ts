@@ -14,6 +14,33 @@ interface ValueComponent<T> {
 }
 
 /**
+ * Options for binding a value component to a plugin setting.
+ */
+type BindValueComponentOptions<PluginSettings, Property extends keyof PluginSettings, UIValueType> = {
+  // If true, saves the plugin settings automatically after the component value changes. Default is `true`.
+  autoSave?: boolean;
+
+  /**
+   * The plugin settings object to bind the component to. Default is the plugin's current settings.
+   */
+  pluginSettings?: PluginSettings;
+
+  /**
+   * Converts the setting value to the value used by the UI component.
+   * @param propertyValue - The value of the property in the plugin settings.
+   * @returns The value to set on the UI component.
+   */
+  settingToUIValueConverter: (propertyValue: PluginSettings[Property]) => UIValueType;
+
+  /**
+   * Converts the UI component's value back to the setting value.
+   * @param uiValue - The value of the UI component.
+   * @returns The value to set on the plugin settings.
+   */
+  uiToSettingValueConverter: (uiValue: UIValueType) => PluginSettings[Property];
+};
+
+/**
  * Base class for creating plugin settings tabs in Obsidian.
  * Provides a method for binding value components to plugin settings and handling changes.
  *
@@ -43,7 +70,6 @@ export abstract class PluginSettingsTabBase<
    * @param valueComponent - The component that will display and interact with the setting value.
    * @param property - The property key in `PluginSettings` to bind to the component.
    * @param options - Configuration options.
-   * @param options.autoSave - If true, saves the plugin settings automatically after the component value changes.
    *
    * @returns The `TValueComponent` instance that was bound to the property.
    */
@@ -54,10 +80,7 @@ export abstract class PluginSettingsTabBase<
   >(
     valueComponent: TValueComponent,
     property: Property,
-    options?: {
-      autoSave?: boolean,
-      pluginSettings?: PluginSettings
-    }
+    options?: BindValueComponentOptions<PluginSettings, Property, UIValueType>
   ): TValueComponent;
 
   /**
@@ -70,9 +93,6 @@ export abstract class PluginSettingsTabBase<
    * @param valueComponent - The component that will display and interact with the setting value.
    * @param property - The property key in `PluginSettings` to bind to the component.
    * @param options - Configuration options.
-   * @param options.autoSave - If true, saves the plugin settings automatically after the component value changes.
-   * @param options.settingToUIValueConverter - A function that converts the setting value to the value used by the UI component.
-   * @param options.uiToSettingValueConverter - A function that converts the UI component's value back to the setting value.
    *
    * @returns The `TValueComponent` instance that was bound to the property.
    */
@@ -83,12 +103,7 @@ export abstract class PluginSettingsTabBase<
   >(
     valueComponent: TValueComponent,
     property: Property,
-    options: {
-      autoSave?: boolean,
-      pluginSettings?: PluginSettings
-      settingToUIValueConverter: (propertyValue: PluginSettings[Property]) => UIValueType,
-      uiToSettingValueConverter: (uiValue: UIValueType) => PluginSettings[Property]
-    }
+    options: BindValueComponentOptions<PluginSettings, Property, UIValueType>
   ): TValueComponent;
 
   /**
@@ -101,9 +116,6 @@ export abstract class PluginSettingsTabBase<
    * @param valueComponent - The component that will display and interact with the setting value.
    * @param property - The property key in `PluginSettings` to bind to the component.
    * @param options - Configuration options.
-   * @param options.autoSave - If true, saves the plugin settings automatically after the component value changes.
-   * @param options.settingToUIValueConverter - A function that converts the setting value to the value used by the UI component.
-   * @param options.uiToSettingValueConverter - A function that converts the UI component's value back to the setting value.
    *
    * @returns The `TValueComponent` instance that was bound to the property.
    */
@@ -114,25 +126,21 @@ export abstract class PluginSettingsTabBase<
   >(
     valueComponent: TValueComponent,
     property: Property,
-    {
+    options: BindValueComponentOptions<PluginSettings, Property, UIValueType>
+  ): TValueComponent {
+    const {
       autoSave,
       pluginSettings,
       settingToUIValueConverter,
       uiToSettingValueConverter
-    }: {
-      autoSave?: boolean,
-      pluginSettings?: PluginSettings,
-      settingToUIValueConverter: (propertyValue: PluginSettings[Property]) => UIValueType,
-      uiToSettingValueConverter: (uiValue: UIValueType) => PluginSettings[Property]
-    }
-  ): TValueComponent {
-    pluginSettings ??= this.plugin.settingsCopy;
+    } = options;
+    const pluginSettings2 = pluginSettings ?? this.plugin.settingsCopy;
     (valueComponent as ValueComponent<UIValueType>)
-      .setValue(settingToUIValueConverter(pluginSettings[property]))
+      .setValue(settingToUIValueConverter(pluginSettings2[property]))
       .onChange(async (newValue) => {
-        pluginSettings[property] = uiToSettingValueConverter(newValue);
+        pluginSettings2[property] = uiToSettingValueConverter(newValue);
         if (autoSave) {
-          await this.plugin.saveSettings(pluginSettings);
+          await this.plugin.saveSettings(pluginSettings2);
         }
       });
     return valueComponent;

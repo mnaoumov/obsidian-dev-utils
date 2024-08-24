@@ -64,7 +64,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * Retrieves pages based on an optional query, with an optional custom page type.
    *
    * @typeParam CustomPage - The type of the custom page. Defaults to `SMarkdownPage`.
-   * @param [query] - An optional string query to filter the pages.
+   * @param query - An optional string query to filter the pages.
    * @returns A `DataArray` of pages matching the query.
    */
   pages<CustomFrontMatter = unknown>(query?: string): DataArray<CombinedPage<CustomFrontMatter>>;
@@ -73,7 +73,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * Creates a paragraph HTML element with the provided text and optional DOM element options.
    *
    * @param text - The content of the paragraph.
-   * @param [options] - Optional DOM element options, including an optional container.
+   * @param options - Optional DOM element options, including an optional container.
    * @returns The created HTML paragraph element.
    */
   paragraph(
@@ -85,10 +85,8 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
 /**
  * Reloads the current file cache using the Dataview API.
  *
- * @async
- * @function reloadCurrentFileCache
  * @param dv - The DataviewInlineApi instance.
- * @returns {Promise<void>} A promise that resolves when the cache is reloaded.
+ * @returns A promise that resolves when the cache is reloaded.
  */
 export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<void> {
   await DataviewAPI?.index.reload(dv.app.vault.getFileByPath(dv.current().file.path)!);
@@ -131,13 +129,11 @@ type ArrayOrDataArray<T> = T[] | DataArray<T>;
 /**
  * Renders a paginated list using the provided DataviewInlineApi instance.
  *
- * @async
- * @function renderPaginatedList
  * @typeParam T - The type of items in the list.
  * @param dv - The DataviewInlineApi instance.
  * @param rows - The list of items to paginate.
- * @param [itemsPerPageOptions=[10, 20, 50, 100]] - Options for items per page.
- * @returns {Promise<void>} A promise that resolves when the list is rendered.
+ * @param itemsPerPageOptions - Options for items per page. Defaults to `[10, 20, 50, 100]`.
+ * @returns A promise that resolves when the list is rendered.
  */
 export async function renderPaginatedList<T>({
   dv,
@@ -161,14 +157,12 @@ export async function renderPaginatedList<T>({
 /**
  * Renders a paginated table using the provided DataviewInlineApi instance.
  *
- * @async
- * @function renderPaginatedTable
  * @typeParam T - The type of items in the table rows.
  * @param dv - The DataviewInlineApi instance.
  * @param headers - The headers of the table.
  * @param rows - The rows of the table to paginate.
- * @param [itemsPerPageOptions=[10, 20, 50, 100]] - Options for items per page.
- * @returns {Promise<void>} A promise that resolves when the table is rendered.
+ * @param itemsPerPageOptions - Options for items per page. Defaults to `[10, 20, 50, 100]`.
+ * @returns A promise that resolves when the table is rendered.
  */
 export async function renderPaginatedTable<T extends unknown[]>({
   dv,
@@ -194,14 +188,12 @@ export async function renderPaginatedTable<T extends unknown[]>({
 /**
  * Helper function to render paginated content using the specified renderer.
  *
- * @async
  * @typeParam T - The type of items to paginate.
- * @function renderPaginated
  * @param dv - The DataviewInlineApi instance.
  * @param rows - The rows to paginate.
  * @param itemsPerPageOptions - Options for items per page.
  * @param renderer - The renderer function to display the paginated content.
- * @returns {Promise<void>} A promise that resolves when the content is rendered.
+ * @returns A promise that resolves when the content is rendered.
  */
 async function renderPaginated<T>({
   dv,
@@ -319,11 +311,9 @@ async function renderPaginated<T>({
  * Renders the content using the provided renderer function in a temporary container,
  * and then returns the container.
  *
- * @async
- * @function getRenderedContainer
  * @param dv - The DataviewInlineApi instance.
  * @param renderer - The function responsible for rendering the content.
- * @returns {Promise<HTMLParagraphElement>} A promise that resolves to the HTML paragraph element
+ * @returns A promise that resolves to the HTML paragraph element
  * that was used as the temporary container.
  */
 export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () => MaybePromise<void>): Promise<HTMLParagraphElement> {
@@ -346,12 +336,11 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
 /**
  * Renders an iframe in the Dataview container with the specified relative path, width, and height.
  *
- * @function renderIframe
  * @param dv - The DataviewInlineApi instance.
  * @param relativePath - The relative path to the resource to be displayed in the iframe.
- * @param [width="100%"] - The width of the iframe. Defaults to "100%".
- * @param [height="600px"] - The height of the iframe. Defaults to "600px".
- * @returns {void} This function does not return a value.
+ * @param width - The width of the iframe. Defaults to "100%".
+ * @param height - The height of the iframe. Defaults to "600px".
+ * @returns This function does not return a value.
  */
 export function renderIframe({
   dv,
@@ -376,11 +365,10 @@ export function renderIframe({
 /**
  * Inserts a code block into the specified Dataview instance using the provided language and code.
  *
- * @function insertCodeBlock
  * @param dv - The DataviewInlineApi instance to insert the code block into.
  * @param language - The language identifier for the code block.
  * @param code - The code content to be inserted into the code block.
- * @returns {void} This function does not return a value.
+ * @returns This function does not return a value.
  */
 export function insertCodeBlock(dv: DataviewInlineApi, language: string, code: string): void {
   const fenceMatches = code.matchAll(/^`{3,}/gm);

@@ -10,7 +10,7 @@
  * @typeParam PluginSettings - The type of plugin settings object.
  * @param defaultPluginSettingsFactory - A factory function that returns the default settings.
  * @param data - The data to merge with the default settings.
- * @returns {PluginSettings} The merged settings object.
+ * @returns The merged settings object.
  */
 export function loadPluginSettings<PluginSettings extends object>(
   defaultPluginSettingsFactory: () => PluginSettings,
@@ -39,7 +39,7 @@ export function loadPluginSettings<PluginSettings extends object>(
  * @typeParam PluginSettings - The type of plugin settings object.
  * @param defaultPluginSettingsFactory - A factory function that returns the default settings.
  * @param settings - The settings to clone.
- * @returns {PluginSettings} A new settings object that is a clone of the provided settings.
+ * @returns A new settings object that is a clone of the provided settings.
  */
 export function clonePluginSettings<PluginSettings extends object>(
   defaultPluginSettingsFactory: () => PluginSettings,

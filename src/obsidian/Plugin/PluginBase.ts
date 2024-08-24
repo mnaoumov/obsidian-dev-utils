@@ -32,7 +32,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
    * Gets the AbortSignal used for aborting asynchronous operations.
    *
-   * @returns {AbortSignal} The abort signal.
+   * @returns The abort signal.
    */
   protected get abortSignal(): AbortSignal {
     return this._abortSignal;
@@ -41,7 +41,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
    * Gets a copy of the current plugin settings.
    *
-   * @returns {PluginSettings} A copy of the plugin settings.
+   * @returns A copy of the plugin settings.
    */
   public get settingsCopy(): PluginSettings {
     return clonePluginSettings(this.createDefaultPluginSettings, this.settings);
@@ -59,14 +59,14 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
    * Creates the default plugin settings. This method must be implemented by subclasses.
    *
-   * @returns {PluginSettings} The default plugin settings.
+   * @returns The default plugin settings.
    */
   protected abstract createDefaultPluginSettings(this: void): PluginSettings;
 
   /**
    * Creates a plugin settings tab. This method must be implemented by subclasses.
    *
-   * @returns {PluginSettingTab | null} The settings tab or null if not applicable.
+   * @returns The settings tab or null if not applicable.
    */
   protected abstract createPluginSettingsTab(): PluginSettingTab | null;
 
@@ -74,7 +74,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * Called when the plugin is loaded. Handles loading settings, adding a settings tab, registering error handlers,
    * and initializing the plugin.
    *
-   * @returns {Promise<void>} A promise that resolves when the plugin is fully loaded.
+   * @returns A promise that resolves when the plugin is fully loaded.
    */
   public override async onload(): Promise<void> {
     await this.loadSettings();
@@ -97,7 +97,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * Called when the plugin loading is complete. This method must be implemented by subclasses to perform
    * any additional setup required after loading is complete.
    *
-   * @returns {MaybePromise<void>} A promise or void indicating the completion of the load process.
+   * @returns A promise or void indicating the completion of the load process.
    */
   protected abstract onloadComplete(): MaybePromise<void>;
 
@@ -110,7 +110,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
    * Loads the plugin settings from the saved data.
    *
-   * @returns {Promise<void>} A promise that resolves when the settings are loaded.
+   * @returns A promise that resolves when the settings are loaded.
    */
   private async loadSettings(): Promise<void> {
     const data = await this.loadData() as unknown;
@@ -120,9 +120,8 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
    * Parses the provided settings data and returns the parsed `PluginSettings`.
    *
-   * @protected
    * @param data - The raw data to be parsed into `PluginSettings`.
-   * @returns {MaybePromise<PluginSettings>} A promise that resolves to `PluginSettings` or the settings directly.
+   * @returns A promise that resolves to `PluginSettings` or the settings directly.
    */
   protected parseSettings(data: unknown): MaybePromise<PluginSettings> {
     return loadPluginSettings(this.createDefaultPluginSettings, data);
@@ -132,7 +131,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * Saves the new plugin settings.
    *
    * @param newSettings - The new settings to save.
-   * @returns {Promise<void>} A promise that resolves when the settings are saved.
+   * @returns A promise that resolves when the settings are saved.
    */
   public async saveSettings(newSettings: PluginSettings): Promise<void> {
     this._settings = clonePluginSettings(this.createDefaultPluginSettings, newSettings);

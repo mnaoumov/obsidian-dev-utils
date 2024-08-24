@@ -12,27 +12,47 @@ import {
   TextComponent
 } from "obsidian";
 
+
+/**
+ * The parameters for the prompt modal.
+ */
+type PromptOptions = {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * The title of the modal.
+   */
+  title?: string;
+
+  /**
+   * The default value to pre-fill the input field.
+   */
+  defaultValue?: string;
+
+  /**
+   * A function to validate the input value.
+   * @param value - The input value to validate.
+   * @returns an error message if the value is invalid, or null if the value is valid.
+   */
+  valueValidator?: (value: string) => string | null;
+};
+
 /**
  * Displays a prompt modal in Obsidian to get user input.
  *
  * @param params - The parameters for the prompt.
- * @param params.app - The Obsidian app instance.
- * @param [params.title] - The title of the modal.
- * @param [params.defaultValue] - The default value to pre-fill the input field.
- * @param [params.valueValidator] - A function to validate the input value. Returns an error message or null.
- * @returns {Promise<string | null>} - A promise that resolves with the user input or null if the prompt was cancelled.
+ * @returns - A promise that resolves with the user input or null if the prompt was cancelled.
  */
-export async function prompt({
-  app,
-  title,
-  defaultValue,
-  valueValidator
-}: {
-  app: App,
-  title?: string,
-  defaultValue?: string,
-  valueValidator?: (value: string) => string | null
-}): Promise<string | null> {
+export async function prompt(options: PromptOptions): Promise<string | null> {
+  const {
+    app,
+    title,
+    defaultValue,
+    valueValidator
+  } = options;
   return new Promise<string | null>((resolve): void => {
     class PromptModal extends Modal {
       private value = "";
