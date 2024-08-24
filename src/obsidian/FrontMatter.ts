@@ -20,10 +20,25 @@ import {
 import type { MaybePromise } from "../Async.ts";
 
 /**
- * Represents the front matter with aliases.
+ * Represents the front matter of an Obsidian file.
+ * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Default+properties}
  */
-type FrontMatterWithAliases = {
+export type ObsidianFrontMatter = {
   aliases?: string[];
+  cssclasses?: string[];
+  tags?: string[];
+};
+
+/**
+ * Represents the front matter for publishing in Obsidian.
+ * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Properties+for+Obsidian+Publish}
+ */
+export type ObsidianPublishFrontMatter = {
+  cover?: string;
+  description?: string;
+  image?: string;
+  permalink?: string;
+  publish?: boolean;
 };
 
 const TIMESTAMP_TYPE = new Type("tag:yaml.org,2002:timestamp", {
@@ -49,7 +64,7 @@ const FRONT_MATTER_REG_EXP = /^---\r?\n((?:.|\r?\n)*?)\r?\n?---(?:\r?\n|$)((?:.|
  * @param {ValueProvider<void, [FrontMatter]>} frontMatterFn - A function that modifies the front matter.
  * @returns {Promise<void>} A promise that resolves when the front matter has been processed and saved.
  */
-export async function processFrontMatter<FrontMatter extends Record<string, unknown>>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: FrontMatter) => MaybePromise<void>): Promise<void> {
+export async function processFrontMatter<FrontMatter = ObsidianFrontMatter>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: ObsidianFrontMatter & FrontMatter) => MaybePromise<void>): Promise<void> {
   const file = getFile(app, pathOrFile);
 
   await processWithRetry(app, file, async (content) => {
@@ -70,7 +85,7 @@ export async function processFrontMatter<FrontMatter extends Record<string, unkn
       mainContent = "\n" + mainContent.trim() + "\n";
     }
 
-    const frontMatter = (load(frontMatterStr, { schema: NO_TIMESTAMPS_YAML_SCHEMA }) ?? {}) as FrontMatter;
+    const frontMatter = (load(frontMatterStr, { schema: NO_TIMESTAMPS_YAML_SCHEMA }) ?? {}) as ObsidianFrontMatter & FrontMatter;
     await frontMatterFn(frontMatter);
     let newFrontMatterStr = dump(frontMatter, {
       lineWidth: -1,
@@ -108,7 +123,7 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
     return;
   }
 
-  await processFrontMatter(app, pathOrFile, (frontMatter: FrontMatterWithAliases) => {
+  await processFrontMatter(app, pathOrFile, (frontMatter) => {
     if (!frontMatter.aliases) {
       frontMatter.aliases = [];
     }
@@ -133,7 +148,7 @@ export async function removeAlias(app: App, pathOrFile: PathOrFile, alias?: stri
     return;
   }
 
-  await processFrontMatter(app, pathOrFile, (frontMatter: FrontMatterWithAliases) => {
+  await processFrontMatter(app, pathOrFile, (frontMatter) => {
     if (!frontMatter.aliases) {
       return;
     }
