@@ -31,6 +31,7 @@ import {
   resolveValue,
   type ValueProvider
 } from "../ValueProvider.ts";
+import { dirname } from "../Path.ts";
 
 /**
  * Represents a file change in the Vault.
@@ -268,4 +269,68 @@ export async function removeEmptyFolderHierarchy(app: App, pathOrFolder: PathOrF
     await removeFolderSafe(app, folder.path);
     folder = folder.parent;
   }
+}
+
+/**
+ * Creates a temporary file in the vault with parent folders if needed.
+ * @param app - The application instance.
+ * @param path - The path of the file to create.
+ * @returns A promise that resolves to a function that can be called to delete the temporary file and all its created parents.
+ */
+export async function createTempFile(app: App, path: string): Promise<() => Promise<void>> {
+  let file = app.vault.getFileByPath(path);
+  if (file) {
+    return async () => {
+    };
+  }
+
+  const folderCleanup = await createTempFolder(app, dirname(path));
+
+  try {
+    await app.vault.create(path, "");
+  } catch (e) {
+    file = app.vault.getFileByPath(path);
+    if (!file) {
+      throw e;
+    }
+  }
+
+  file = file!;
+
+  return async () => {
+    if (!file.deleted) {
+      await app.vault.delete(file, true);
+    }
+    await folderCleanup();
+  };
+}
+
+/**
+ * Creates a temporary folder in the vault with parent folders if needed.
+ * @param app - The application instance.
+ * @param path - The path of the folder to create.
+ * @returns - A promise that resolves to a function that can be called to delete the temporary folder and all its created parents.
+ */
+export async function createTempFolder(app: App, path: string): Promise<() => Promise<void>> {
+  let folder = app.vault.getFolderByPath(path);
+  if (folder) {
+    return async () => {
+    };
+  }
+
+  const dirPath = dirname(path);
+  await createTempFolder(app, dirPath);
+
+  const folderCleanup = await createTempFolder(app, dirname(path));
+
+  await createFolderSafe(app, path);
+
+  folder = app.vault.getFolderByPath(path)!;
+
+  return async () => {
+    if (!folder.deleted) {
+      await app.vault.delete(folder, true);
+    }
+    await folderCleanup();
+  };
 }
