@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.21.0
+
+- Handle default setting
+
 ## 2.20.0
 
 - Pass plugin instead of tab
