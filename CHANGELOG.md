@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2.17.0
+
+- Update tsdocs
+- Allow custom configs to Linter
+
 ## 2.16.0
 
 - Add FrontMatter types
