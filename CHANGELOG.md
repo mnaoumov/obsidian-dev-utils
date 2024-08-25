@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.17.1
+
+- Make dependency for build purpose
+
 ## 2.17.0
 
 - Update tsdocs
