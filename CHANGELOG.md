@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.19.0
+
+- Refactor UIComponent
+
 ## 2.18.0
 
 - Export getAlias
