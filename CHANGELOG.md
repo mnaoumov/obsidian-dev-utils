@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.22.0
+
+- Create temp file and folders
+
 ## 2.21.2
 
 - Make createFolderSafe boolean
