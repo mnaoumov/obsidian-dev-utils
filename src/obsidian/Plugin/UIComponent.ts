@@ -1,5 +1,4 @@
 import type { KeysMatching } from "../../@types.ts";
-import type { PluginSettingsTabBase } from "./PluginSettingsTabBase.ts";
 import type { PluginBase } from "./PluginBase.ts";
 import {
   DropdownComponent,
@@ -78,14 +77,13 @@ type BindUIComponentOptions<PluginSettings, Property extends keyof PluginSetting
 /**
  * Binds a value component to a property in the plugin settings with optional automatic saving and value conversion.
  *
- * @typeParam PluginSettingsTab - The type of the plugin settings tab that extends `PluginSettingsTabBase`.
+ * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
  * @typeParam TUIComponent - The type of the value component extending `UIComponent`.
  * @typeParam Property - The key of the plugin setting that the component is bound to.
  * @typeParam UIValueType - The inferred type based on the UI component's type.
- * @typeParam TPlugin - The inferred type of the plugin that extends `PluginBase`.
  * @typeParam PluginSettings - The inferred type of the plugin settings object.
  *
- * @param pluginSettingsTab - The plugin settings tab that contains the UI component.
+ * @param plugin - The plugin.
  * @param uiComponent - The component that will display and interact with the setting value.
  * @param property - The property key in `PluginSettings` to bind to the UI component.
  * @param options - Configuration options.
@@ -93,14 +91,13 @@ type BindUIComponentOptions<PluginSettings, Property extends keyof PluginSetting
  * @returns The `UIComponent` instance that was bound to the property.
  */
 export function bindUiComponent<
-  PluginSettingsTab extends PluginSettingsTabBase<TPlugin, PluginSettings>,
+  Plugin extends PluginBase<object>,
   TUIComponent extends UIComponent<unknown>,
   Property extends KeysMatching<PluginSettings, UIValueType>,
   UIValueType = TUIComponent extends UIComponent<infer P> ? P : never,
-  TPlugin extends PluginBase<PluginSettings> = PluginSettingsTab extends PluginSettingsTabBase<infer P> ? P : never,
-  PluginSettings extends object = TPlugin extends PluginBase<infer P> ? P : never,
+  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never,
 >(
-  pluginSettingsTab: PluginSettingsTab,
+  plugin: Plugin,
   uiComponent: TUIComponent,
   property: Property,
   options?: BindUIComponentOptions<PluginSettings, Property, UIValueType>
@@ -109,14 +106,13 @@ export function bindUiComponent<
 /**
  * Binds a value component to a property in the plugin settings with optional automatic saving and value conversion.
  *
- * @typeParam PluginSettingsTab - The type of the plugin settings tab that extends `PluginSettingsTabBase`.
+ * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
  * @typeParam TUIComponent - The type of the value component extending `UIComponent`.
  * @typeParam Property - The key of the plugin setting that the component is bound to.
  * @typeParam UIValueType - The inferred type based on the UI component's type.
- * @typeParam TPlugin - The inferred type of the plugin that extends `PluginBase`.
  * @typeParam PluginSettings - The inferred type of the plugin settings object.
  *
- * @param pluginSettingsTab - The plugin settings tab that contains the UI component.
+ * @param plugin - The plugin.
  * @param uiComponent - The component that will display and interact with the setting value.
  * @param property - The property key in `PluginSettings` to bind to the UI component.
  * @param options - Configuration options.
@@ -124,14 +120,13 @@ export function bindUiComponent<
  * @returns The `UIComponent` instance that was bound to the property.
  */
 export function bindUiComponent<
-  PluginSettingsTab extends PluginSettingsTabBase<TPlugin, PluginSettings>,
+  Plugin extends PluginBase<object>,
   TUIComponent extends UIComponent<unknown>,
   Property extends keyof PluginSettings,
   UIValueType = TUIComponent extends UIComponent<infer P> ? P : never,
-  TPlugin extends PluginBase<PluginSettings> = PluginSettingsTab extends PluginSettingsTabBase<infer P> ? P : never,
-  PluginSettings extends object = TPlugin extends PluginBase<infer P> ? P : never,
+  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never,
 >(
-  pluginSettingsTab: PluginSettingsTab,
+  plugin: Plugin,
   uiComponent: TUIComponent,
   property: Property,
   options: BindUIComponentOptions<PluginSettings, Property, UIValueType>
@@ -140,14 +135,13 @@ export function bindUiComponent<
 /**
  * Binds a value component to a property in the plugin settings with optional automatic saving and value conversion.
  *
- * @typeParam PluginSettingsTab - The type of the plugin settings tab that extends `PluginSettingsTabBase`.
+ * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
  * @typeParam TUIComponent - The type of the value component extending `UIComponent`.
  * @typeParam Property - The key of the plugin setting that the component is bound to.
  * @typeParam UIValueType - The inferred type based on the UI component's type.
- * @typeParam TPlugin - The inferred type of the plugin that extends `PluginBase`.
  * @typeParam PluginSettings - The inferred type of the plugin settings object.
  *
- * @param pluginSettingsTab - The plugin settings tab that contains the UI component.
+ * @param plugin - The plugin.
  * @param uiComponent - The component that will display and interact with the setting value.
  * @param property - The property key in `PluginSettings` to bind to the UI component.
  * @param options - Configuration options.
@@ -155,14 +149,13 @@ export function bindUiComponent<
  * @returns The `UIComponent` instance that was bound to the property.
  */
 export function bindUiComponent<
-  PluginSettingsTab extends PluginSettingsTabBase<TPlugin, PluginSettings>,
+  Plugin extends PluginBase<object>,
   TUIComponent extends UIComponent<unknown>,
   Property extends keyof PluginSettings,
   UIValueType = TUIComponent extends UIComponent<infer P> ? P : never,
-  TPlugin extends PluginBase<PluginSettings> = PluginSettingsTab extends PluginSettingsTabBase<infer P> ? P : never,
-  PluginSettings extends object = TPlugin extends PluginBase<infer P> ? P : never,
+  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never,
 >(
-  pluginSettingsTab: PluginSettingsTab,
+  plugin: Plugin,
   uiComponent: TUIComponent,
   property: Property,
   options?: BindUIComponentOptions<PluginSettings, Property, UIValueType>
@@ -171,7 +164,7 @@ export function bindUiComponent<
     settingToUIValueConverter: (value): UIValueType => value as UIValueType,
     uiToSettingValueConverter: (value): PluginSettings[Property] => value as PluginSettings[Property],
   };
-  const pluginSettings = options.pluginSettings ?? pluginSettingsTab.plugin.settingsCopy;
+  const pluginSettings = options.pluginSettings ?? plugin.settingsCopy as PluginSettings;
   (uiComponent as UIComponent<UIValueType>)
     .setValue(options.settingToUIValueConverter(pluginSettings[property]))
     .onChange(async (uiValue) => {
@@ -188,7 +181,7 @@ export function bindUiComponent<
       }
       pluginSettings[property] = options.uiToSettingValueConverter(uiValue);
       if (options.autoSave ?? true) {
-        await pluginSettingsTab.plugin.saveSettings(pluginSettings);
+        await plugin.saveSettings(pluginSettings);
       }
     });
   return uiComponent;

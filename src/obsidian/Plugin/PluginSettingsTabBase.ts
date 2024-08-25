@@ -22,4 +22,3 @@ export abstract class PluginSettingsTabBase<
     super(plugin.app, plugin);
   }
 }
-
