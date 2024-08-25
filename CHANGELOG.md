@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.20.0
+
+- Pass plugin instead of tab
+
 ## 2.19.0
 
 - Refactor UIComponent
