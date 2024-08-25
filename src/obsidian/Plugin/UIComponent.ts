@@ -163,7 +163,7 @@ export function bindUiComponent<
   plugin: Plugin,
   uiComponent: TUIComponent,
   property: Property,
-  options?: BindUIComponentOptions<PluginSettings, UIValueType>
+  options?: BindUIComponentOptions<PluginSettings, UIValueType> | BindUIComponentOptionsExtended<PluginSettings, UIValueType, Property>
 ): TUIComponent {
   type PropertyType = PluginSettings[Property];
   const DEFAULT_OPTIONS: BindUIComponentOptionsExtended<PluginSettings, UIValueType, Property> = {
