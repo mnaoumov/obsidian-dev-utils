@@ -240,20 +240,51 @@ export function updateLink(options: UpdateLinkOptions): string {
   return newLink;
 }
 
-function getAlias({
-  app,
-  displayText,
-  file: pathOrFile,
-  otherPaths,
-  sourcePath
-}: {
-  app: App,
-  displayText: string | undefined,
-  file: PathOrFile,
-  otherPaths: (string | undefined)[]
-  sourcePath: string
-}): string | undefined {
+/**
+ * Options for getting the alias of a link.
+ */
+type GetAliasOptions = {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App;
 
+  /**
+   * The display text of the link.
+   */
+  displayText: string | undefined;
+
+  /**
+   * The path or file of the link.
+   */
+  file: PathOrFile;
+
+  /**
+   * Other paths associated with the link.
+   */
+  otherPaths: (string | undefined)[];
+
+  /**
+   * The source path of the link.
+   */
+  sourcePath: string;
+};
+
+
+/**
+ * Retrieves the alias for a given link.
+ *
+ * @param options - The options for retrieving the alias.
+ * @returns The alias of the link, or undefined if should be default.
+ */
+export function getAlias(options: GetAliasOptions): string | undefined {
+  const {
+    app,
+    displayText,
+    file: pathOrFile,
+    otherPaths,
+    sourcePath
+  } = options;
   const file = getFile(app, pathOrFile);
 
   if (!displayText) {
