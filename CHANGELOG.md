@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.21.2
+
+- Make createFolderSafe boolean
+
 ## 2.21.1
 
 - Fix parameter type
