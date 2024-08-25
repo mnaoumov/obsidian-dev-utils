@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.21.1
+
+- Fix parameter type
+
 ## 2.21.0
 
 - Handle default setting
