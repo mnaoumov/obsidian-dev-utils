@@ -43,7 +43,7 @@ interface ValidatorElement {
 /**
  * Options for binding a value component to a plugin setting.
  */
-type BindUIComponentOptions<PluginSettings, Property extends keyof PluginSettings, UIValueType> = {
+interface BindUIComponentOptions<PluginSettings, UIValueType> {
   // If true, saves the plugin settings automatically after the component value changes. Default is `true`.
   autoSave?: boolean;
 
@@ -53,10 +53,22 @@ type BindUIComponentOptions<PluginSettings, Property extends keyof PluginSetting
   pluginSettings?: PluginSettings;
 
   /**
-   * Converts the setting value to the value used by the UI component.
-   * @param propertyValue - The value of the property in the plugin settings.
-   * @returns The value to set on the UI component.
+   * Validates the UI value before setting it on the plugin settings.
+   * @param uiValue - The value of the UI component.
+   * @returns An error message if the value is invalid, or `null` if it is valid.
    */
+  uiValueValidator?: (uiValue: UIValueType) => string | null;
+}
+
+/**
+ * Extended options for binding a value component to a plugin setting.
+ */
+interface BindUIComponentOptionsExtended<PluginSettings, UIValueType, Property extends keyof PluginSettings> extends BindUIComponentOptions<PluginSettings, UIValueType> {
+  /**
+ * Converts the setting value to the value used by the UI component.
+ * @param propertyValue - The value of the property in the plugin settings.
+ * @returns The value to set on the UI component.
+ */
   settingToUIValueConverter: (propertyValue: PluginSettings[Property]) => UIValueType;
 
   /**
@@ -65,14 +77,7 @@ type BindUIComponentOptions<PluginSettings, Property extends keyof PluginSetting
    * @returns The value to set on the plugin settings.
    */
   uiToSettingValueConverter: (uiValue: UIValueType) => PluginSettings[Property];
-
-  /**
-   * Validates the UI value before setting it on the plugin settings.
-   * @param uiValue - The value of the UI component.
-   * @returns An error message if the value is invalid, or `null` if it is valid.
-   */
-  uiValueValidator?: (uiValue: UIValueType) => string | null;
-};
+}
 
 /**
  * Binds a value component to a property in the plugin settings with optional automatic saving and value conversion.
@@ -100,7 +105,7 @@ export function bindUiComponent<
   plugin: Plugin,
   uiComponent: TUIComponent,
   property: Property,
-  options?: BindUIComponentOptions<PluginSettings, Property, UIValueType>
+  options?: BindUIComponentOptions<PluginSettings, UIValueType>
 ): TUIComponent;
 
 /**
@@ -129,7 +134,7 @@ export function bindUiComponent<
   plugin: Plugin,
   uiComponent: TUIComponent,
   property: Property,
-  options: BindUIComponentOptions<PluginSettings, Property, UIValueType>
+  options: BindUIComponentOptionsExtended<PluginSettings, UIValueType, Property>
 ): TUIComponent;
 
 /**
@@ -158,18 +163,24 @@ export function bindUiComponent<
   plugin: Plugin,
   uiComponent: TUIComponent,
   property: Property,
-  options?: BindUIComponentOptions<PluginSettings, Property, UIValueType>
+  options?: BindUIComponentOptions<PluginSettings, UIValueType>
 ): TUIComponent {
-  options ??= {
+  type PropertyType = PluginSettings[Property];
+  const DEFAULT_OPTIONS: BindUIComponentOptionsExtended<PluginSettings, UIValueType, Property> = {
+    autoSave: true,
     settingToUIValueConverter: (value): UIValueType => value as UIValueType,
-    uiToSettingValueConverter: (value): PluginSettings[Property] => value as PluginSettings[Property],
+    uiToSettingValueConverter: (value): PropertyType => value as PropertyType
   };
-  const pluginSettings = options.pluginSettings ?? plugin.settingsCopy as PluginSettings;
-  (uiComponent as UIComponent<UIValueType>)
-    .setValue(options.settingToUIValueConverter(pluginSettings[property]))
+
+  const optionsExt = Object.assign(options as BindUIComponentOptionsExtended<PluginSettings, UIValueType, Property>, DEFAULT_OPTIONS);
+  const pluginExt = plugin as unknown as PluginBase<PluginSettings>;
+  const uiComponentExt = uiComponent as UIComponent<UIValueType>;
+  const pluginSettings = optionsExt.pluginSettings ?? pluginExt.settingsCopy;
+  uiComponentExt
+    .setValue(optionsExt.settingToUIValueConverter(pluginSettings[property]))
     .onChange(async (uiValue) => {
-      if (options.uiValueValidator) {
-        const errorMessage = options.uiValueValidator(uiValue);
+      if (optionsExt.uiValueValidator) {
+        const errorMessage = optionsExt.uiValueValidator(uiValue);
         const validatorElement = getValidatorElement(uiComponent);
         if (validatorElement) {
           validatorElement.setCustomValidity(errorMessage ?? "");
@@ -179,9 +190,9 @@ export function bindUiComponent<
           return;
         }
       }
-      pluginSettings[property] = options.uiToSettingValueConverter(uiValue);
-      if (options.autoSave ?? true) {
-        await plugin.saveSettings(pluginSettings);
+      pluginSettings[property] = optionsExt.uiToSettingValueConverter(uiValue);
+      if (optionsExt.autoSave) {
+        await pluginExt.saveSettings(pluginSettings);
       }
     });
   return uiComponent;
