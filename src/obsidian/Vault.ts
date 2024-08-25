@@ -208,20 +208,23 @@ export async function removeFolderSafe(app: App, folderPath: string, removedNote
  *
  * @param app - The application instance.
  * @param path - The path of the folder to create.
- * @returns A promise that resolves when the folder is created successfully.
+ * @returns A promise that resolves to a boolean indicating whether the folder was created.
  * @throws If an error occurs while creating the folder and it still doesn't exist.
  */
-export async function createFolderSafe(app: App, path: string): Promise<void> {
+export async function createFolderSafe(app: App, path: string): Promise<boolean> {
   if (await app.vault.adapter.exists(path)) {
-    return;
+    return false;
   }
 
   try {
     await app.vault.adapter.mkdir(path);
+    return true;
   } catch (e) {
     if (!await app.vault.adapter.exists(path)) {
       throw e;
     }
+
+    return true;
   }
 }
 
