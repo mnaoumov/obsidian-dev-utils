@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.18.0
+
+- Export getAlias
+
 ## 2.17.1
 
 - Make dependency for build purpose
