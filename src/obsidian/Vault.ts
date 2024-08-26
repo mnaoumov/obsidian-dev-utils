@@ -157,7 +157,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
  * @param removedNotePath - Optional. The path of the note that triggered the removal.
  * @returns A promise that resolves to a boolean indicating whether the removal was successful.
  */
-export async function removeFolderSafe(app: App, folderPath: string, removedNotePath?: string): Promise<boolean> {
+export async function removeFolderSafe(app: App, folderPath: string, removedNotePath?: string, shouldReportUsedAttachments?: boolean): Promise<boolean> {
   const folder = app.vault.getFolderByPath(folderPath);
 
   if (!folder) {
@@ -173,7 +173,9 @@ export async function removeFolderSafe(app: App, folderPath: string, removedNote
         backlinks.removeKey(removedNotePath);
       }
       if (backlinks.count() !== 0) {
-        new Notice(`Attachment ${child.path} is still used by other notes. It will not be deleted.`);
+        if (shouldReportUsedAttachments) {
+          new Notice(`Attachment ${child.path} is still used by other notes. It will not be deleted.`);
+        }
         canRemove = false;
       } else {
         try {
@@ -186,7 +188,7 @@ export async function removeFolderSafe(app: App, folderPath: string, removedNote
         }
       }
     } else if (child instanceof TFolder) {
-      canRemove &&= await removeFolderSafe(app, child.path, removedNotePath);
+      canRemove &&= await removeFolderSafe(app, child.path, removedNotePath, shouldReportUsedAttachments);
     }
   }
 
