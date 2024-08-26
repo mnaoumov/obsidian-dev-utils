@@ -22,18 +22,33 @@ import {
 import { createTFileInstance } from "obsidian-typings/implementations";
 import {
   basename,
-  extname
+  dirname,
+  extname,
+  relative
 } from "../Path.ts";
 import { normalize } from "../String.ts";
 import {
   getFile,
   type PathOrFile
 } from "./TFile.ts";
-import { getPath } from "./TAbstractFile.ts";
+import {
+  getPath,
+  isMarkdownFile,
+  trimMarkdownExtension
+} from "./TAbstractFile.ts";
 import {
   type MaybePromise,
   type RetryOptions
 } from "../Async.ts";
+import {
+  shouldUseRelativeLinks,
+  shouldUseWikilinks
+} from "./ObsidianSettings.ts";
+
+/**
+ * Regular expression for special link symbols.
+ */
+const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 
 type SplitSubpathResult = {
   linkPath: string;
@@ -322,42 +337,52 @@ type GenerateMarkdownLinkOptions = {
   /**
    * The Obsidian app instance.
    */
-  app: App,
+  app: App;
 
   /**
    * The file to link to.
    */
-  pathOrFile: PathOrFile,
+  pathOrFile: PathOrFile;
 
   /**
    * The source path of the link.
    */
-  sourcePathOrFile: PathOrFile,
+  sourcePathOrFile: PathOrFile;
 
   /**
    * The subpath of the link.
    */
-  subpath?: string | undefined,
+  subpath?: string | undefined;
 
   /**
    * The alias for the link.
    */
-  alias?: string | undefined,
+  alias?: string | undefined;
 
   /**
-   * Indicates if the link should be embedded.
+   * Indicates if the link should be embedded. If not provided, it will be inferred based on the file type.
    */
-  isEmbed?: boolean | undefined,
+  isEmbed?: boolean | undefined;
 
   /**
-   * Indicates if the link should be a wikilink.
+   * Indicates if the link should be a wikilink. If not provided, it will be inferred based on the Obsidian settings.
    */
-  isWikilink?: boolean | undefined,
+  isWikilink?: boolean | undefined;
 
   /**
-   * Indicates if the link should be relative.
+   * Indicates if the link should be relative. If not provided, it will be inferred based on the Obsidian settings.
    */
-  isRelative?: boolean | undefined
+  isRelative?: boolean | undefined;
+
+  /**
+   * Indicates if the link should use a leading dot. Defaults to `false`. Has no effect if `isWikilink` is `true` or `isRelative` is `false`.
+   */
+  useLeadingDot?: boolean | undefined;
+
+  /**
+   * Indicates if the link should use angle brackets. Defaults to `false`. Has no effect if `isWikilink` is `true`
+   */
+  useAngleBrackets?: boolean | undefined;
 };
 
 /**
@@ -367,44 +392,47 @@ type GenerateMarkdownLinkOptions = {
  * @returns The generated markdown link.
  */
 export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): string {
-  const {
-    app,
-    pathOrFile,
-    sourcePathOrFile,
-    subpath,
-    alias,
-    isEmbed,
-    isWikilink,
-    isRelative
-  } = options;
-  const file = getFile(app, pathOrFile);
-  const useMarkdownLinks = app.vault.getConfig("useMarkdownLinks");
-  const newLinkFormat = app.vault.getConfig("newLinkFormat");
-  if (isWikilink !== undefined) {
-    app.vault.setConfig("useMarkdownLinks", !isWikilink);
+  const { app } = options;
+  const file = getFile(app, options.pathOrFile);
+  const sourcePath = getPath(options.sourcePathOrFile);
+  const subpath = options.subpath ?? "";
+  let alias = options.alias ?? "";
+  const isEmbed = options.isEmbed ?? !isMarkdownFile(file);
+  const isWikilink = options.isWikilink ?? shouldUseWikilinks(app);
+  const useRelativePath = options.isRelative ?? shouldUseRelativeLinks(app);
+
+  let linkText = file.path === sourcePath && subpath
+    ? subpath
+    : useRelativePath
+      ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(file) : file.path) + subpath
+      : app.metadataCache.fileToLinktext(file, sourcePath, isWikilink) + subpath;
+
+  if (useRelativePath && options.useLeadingDot && !linkText.startsWith(".") && !linkText.startsWith("#")) {
+    linkText = "./" + linkText;
   }
 
-  if (isRelative === true) {
-    app.vault.setConfig("newLinkFormat", "relative");
-  }
-
-  let link = app.fileManager.generateMarkdownLink(file, getPath(sourcePathOrFile), subpath, alias);
-
-  app.vault.setConfig("useMarkdownLinks", useMarkdownLinks);
-  app.vault.setConfig("newLinkFormat", newLinkFormat);
-
-  const isLinkEmbed = link.startsWith("!");
-
-  if (isEmbed !== undefined && isEmbed !== isLinkEmbed) {
-    if (isEmbed) {
-      link = "!" + link;
+  if (!isWikilink) {
+    if (options.useAngleBrackets) {
+      linkText = `<${linkText}>`;
     } else {
-      link = link.slice(1);
-      link = link.replace("[]", `[${alias || file.basename}]`);
+      linkText = linkText.replace(SPECIAL_LINK_SYMBOLS_REGEXP, function (specialLinkSymbol) {
+        return encodeURIComponent(specialLinkSymbol);
+      });
     }
-  }
 
-  return link;
+    if (!isEmbed) {
+      return `[${alias || file.basename}](${linkText})`;
+    } else {
+      return `![${alias}](${linkText})`;
+    }
+  } else {
+    if (alias && alias.toLowerCase() === linkText.toLowerCase()) {
+      linkText = alias;
+      alias = "";
+    }
+
+    return (isEmbed ? "!" : "") + (alias ? `[[${linkText}|${alias}]]` : `[[${linkText}]]`);
+  }
 }
 
 /**
