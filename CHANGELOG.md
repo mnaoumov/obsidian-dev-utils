@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.23.2
+
+- Disable removeFolderSafe notice by default
+
 ## 2.23.1
 
 - Fix removeEmptyFolderHierarchy
