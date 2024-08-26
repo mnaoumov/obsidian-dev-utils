@@ -9,7 +9,7 @@ import {
   type ValueProvider
 } from "./ValueProvider.ts";
 
-type AsyncReplacer<Args extends unknown[]> = ValueProvider<string, [string, ...Args]>;
+export type AsyncReplacer<Args extends unknown[]> = ValueProvider<string, [string, ...Args]>;
 
 /**
  * Mapping of special characters to their escaped counterparts.

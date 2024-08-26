@@ -16,7 +16,7 @@ import {
 /**
  * The options for the prompt modal.
  */
-type PromptOptions = {
+export type PromptOptions = {
   /**
    * The Obsidian app instance.
    */

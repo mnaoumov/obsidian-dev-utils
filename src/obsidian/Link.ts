@@ -50,7 +50,7 @@ import {
  */
 const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 
-type SplitSubpathResult = {
+export type SplitSubpathResult = {
   linkPath: string;
   subpath: string | undefined;
 };
@@ -73,7 +73,7 @@ export function splitSubpath(link: string): SplitSubpathResult {
 /**
  * Options for updating links in a file.
  */
-type UpdateLinksInFileOptions = {
+export type UpdateLinksInFileOptions = {
   /**
    * The obsidian app instance.
    */
@@ -166,7 +166,7 @@ export function extractLinkFile(app: App, link: ReferenceCache, oldPathOrFile: P
   return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(oldPathOrFile));
 }
 
-type UpdateLinkOptions = {
+export type UpdateLinkOptions = {
   /**
    * The Obsidian app instance.
    */
@@ -258,7 +258,7 @@ export function updateLink(options: UpdateLinkOptions): string {
 /**
  * Options for getting the alias of a link.
  */
-type GetAliasOptions = {
+export type GetAliasOptions = {
   /**
    * The Obsidian app instance.
    */
@@ -333,7 +333,7 @@ export function getAlias(options: GetAliasOptions): string | undefined {
 /**
  * Options for generating a markdown link.
  */
-type GenerateMarkdownLinkOptions = {
+export type GenerateMarkdownLinkOptions = {
   /**
    * The Obsidian app instance.
    */

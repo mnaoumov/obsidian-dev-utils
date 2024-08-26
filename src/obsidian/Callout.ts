@@ -50,7 +50,7 @@ function getModifier(mode: CalloutMode): string {
 /**
  * Options for rendering a callout block in Dataview.
  */
-type RenderCalloutOptions = {
+export type RenderCalloutOptions = {
   /**
    * The DataviewInlineApi instance.
    */

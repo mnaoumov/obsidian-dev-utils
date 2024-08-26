@@ -18,7 +18,7 @@ import { toCommandLine } from "./cli.ts";
 /**
  * Represents the result of executing a command from the root directory.
  */
-type ExecFromRootResult = {
+export type ExecFromRootResult = {
   /**
    * The exit code of the command. A value of `null` indicates that the process did not exit normally.
    */
@@ -43,7 +43,7 @@ type ExecFromRootResult = {
 /**
  * Options for executing a command from the root directory.
  */
-type ExecFromRootOption = {
+export type ExecFromRootOption = {
   /**
    * If true, suppresses the output of the command.
    */

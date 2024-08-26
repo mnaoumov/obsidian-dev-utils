@@ -41,7 +41,7 @@ declare global {
 /**
  * DomElementInfo with an optional container.
  */
-type DomElementInfoWithContainer = DomElementInfo & { container?: HTMLElement };
+export type DomElementInfoWithContainer = DomElementInfo & { container?: HTMLElement };
 
 /**
  * Extended interface for the Dataview Inline API, providing additional methods for custom page types and array handling.
@@ -103,7 +103,7 @@ export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<voi
  */
 export type CombinedPage<CustomFrontMatter = unknown> = SMarkdownPage & CombinedFrontMatter<CustomFrontMatter>;
 
-type PageFile = SMarkdownPage["file"];
+export type PageFile = SMarkdownPage["file"];
 
 
 /**
@@ -138,12 +138,12 @@ const paginationCss = `
 }
 `;
 
-type ArrayOrDataArray<T> = T[] | DataArray<T>;
+export type ArrayOrDataArray<T> = T[] | DataArray<T>;
 
 /**
  * Options for rendering a paginated list using the Dataview API.
  */
-type RenderPaginatedListOptions<T> = {
+export type RenderPaginatedListOptions<T> = {
   /**
    * The DataviewInlineApi instance.
    */
@@ -188,7 +188,7 @@ export async function renderPaginatedList<T>(options: RenderPaginatedListOptions
 /**
  * Options for rendering a paginated table using the Dataview API.
  */
-type RenderPaginatedTableOptions<T> = {
+export type RenderPaginatedTableOptions<T> = {
   /**
    * The DataviewInlineApi instance.
    */
@@ -239,7 +239,7 @@ export async function renderPaginatedTable<T extends unknown[]>(options: RenderP
 /**
  * Options for rendering a paginated element using the Dataview API.
  */
-type RenderPaginatedOptions<T> = {
+export type RenderPaginatedOptions<T> = {
   /**
    * The DataviewInlineApi instance.
    */
@@ -409,7 +409,7 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
 /**
  * Options for rendering an iframe in the Dataview container.
  */
-type RenderIframeOptions = {
+export type RenderIframeOptions = {
   /**
    * The DataviewInlineApi instance.
    */

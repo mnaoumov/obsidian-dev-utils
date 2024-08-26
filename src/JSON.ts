@@ -35,7 +35,7 @@ export async function writeJson(path: string, data: unknown): Promise<void> {
 /**
  * Options for editing JSON.
  */
-type EditJsonOptions = {
+export type EditJsonOptions = {
   /**
    * If true, skips editing if the file does not exist.
    */
@@ -69,7 +69,7 @@ export async function editJson<T>(
 /**
  * Options for converting an object to JSON.
  */
-type ToJsonOptions = {
+export type ToJsonOptions = {
   /**
    * If `true`, functions within the value will be handled and included in the JSON string. Defaults to `false`.
    */

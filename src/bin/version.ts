@@ -40,7 +40,7 @@ import AdmZip from "adm-zip";
 /**
  * Enum representing different types of version updates.
  */
-enum VersionUpdateType {
+export enum VersionUpdateType {
   Major = "major",
   Minor = "minor",
   Patch = "patch",
@@ -52,15 +52,25 @@ enum VersionUpdateType {
 /**
  * Type representing the manifest file format for Obsidian plugins.
  */
-type Manifest = {
+export type Manifest = {
+  /**
+   * The minimum Obsidian version required for the plugin.
+   */
   minAppVersion: string;
+
+  /**
+   * The version of the plugin.
+   */
   version: string;
 };
 
 /**
  * Type representing the structure of Obsidian releases JSON.
  */
-type ObsidianReleasesJson = {
+export type ObsidianReleasesJson = {
+  /**
+   * The name of the Obsidian release.
+   */
   name: string;
 };
 

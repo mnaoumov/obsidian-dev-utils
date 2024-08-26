@@ -29,7 +29,7 @@ import type { PathOrFile } from "./TFile.ts";
 /**
  * Options for rendering delayed backlinks.
  */
-type RenderDelayedBacklinksOptions = {
+export type RenderDelayedBacklinksOptions = {
   /**
    * The DataviewInlineApi instance.
    */
@@ -69,7 +69,7 @@ export function renderDelayedBacklinks(options: RenderDelayedBacklinksOptions): 
 /**
  * Options for rendering delayed backlinks for a folder.
  */
-type RenderDelayedBacklinksForFolderOptions = {
+export type RenderDelayedBacklinksForFolderOptions = {
   /**
    * The DataviewInlineApi instance.
    */

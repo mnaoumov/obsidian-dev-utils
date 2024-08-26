@@ -14,7 +14,7 @@ import {
 /**
  * The parameters for the selection modal.
  */
-type SelectItemOptions<T> = {
+export type SelectItemOptions<T> = {
   /**
    * The Obsidian app instance.
    */

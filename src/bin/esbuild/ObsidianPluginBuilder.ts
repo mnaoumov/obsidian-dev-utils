@@ -53,7 +53,7 @@ if you want to view the source, please visit the github repository of this plugi
 /**
  * Options for building an Obsidian plugin.
  */
-type BuildObsidianPluginOptions = {
+export type BuildObsidianPluginOptions = {
   /**
    * The build mode, either Development or Production
    */

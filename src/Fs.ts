@@ -14,24 +14,69 @@ import {
   toPosixPath
 } from "./Path.ts";
 
-type StringResultOptions = undefined | ObjectEncodingOptions & {
+
+/**
+ * Options for controlling the format of the result when returning strings.
+ */
+export type StringResultOptions = undefined | ObjectEncodingOptions & {
+  /**
+   * Should be set to `false` to return strings.
+   */
   withFileTypes?: false;
+
+  /**
+   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+   */
   recursive?: boolean;
 };
 
-type BufferResultOptions = "buffer" | {
+/**
+ * Options for controlling the format of the result when returning buffers.
+ */
+export type BufferResultOptions = "buffer" | {
+  /**
+   * Should be set to "buffer" to return buffers.
+   */
   encoding: "buffer";
+
+  /**
+   * Should be set to `false` to return buffers.
+   */
   withFileTypes?: false;
+
+  /**
+   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+   */
   recursive?: boolean;
 };
 
-type DirentResultOptions = ObjectEncodingOptions & {
+/**
+ * Options for controlling the format of the result when returning Dirent objects.
+ */
+export type DirentResultOptions = ObjectEncodingOptions & {
+  /**
+   * Should be set to `true` to return Dirent objects.
+   */
   withFileTypes: true;
+
+  /**
+   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+   */
   recursive?: boolean;
 };
 
+/**
+ * Common options for controlling the format of the result.
+ */
 type CommonOptions = {
+  /**
+   * Encoding to use when returning strings.
+   */
   encoding?: BufferEncoding | "buffer";
+
+  /**
+   * Set `true` to return Dirent objects or `false` to return strings or buffers.
+   */
   withFileTypes?: boolean;
 }
 
