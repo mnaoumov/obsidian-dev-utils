@@ -266,8 +266,9 @@ export async function removeEmptyFolderHierarchy(app: App, pathOrFolder: PathOrF
     if (folder.children.length > 0) {
       return;
     }
+    const parent = folder.parent;
     await removeFolderSafe(app, folder.path);
-    folder = folder.parent;
+    folder = parent;
   }
 }
 
