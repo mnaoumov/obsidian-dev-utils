@@ -289,13 +289,12 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
   try {
     await app.vault.create(path, "");
   } catch (e) {
-    file = app.vault.getFileByPath(path);
-    if (!file) {
+    if (!await app.vault.exists(path)) {
       throw e;
     }
   }
 
-  file = file!;
+  file = app.vault.getFileByPath(path)!;
 
   return async () => {
     if (!file.deleted) {
