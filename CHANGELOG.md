@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.22.1
+
+- Add missing init
+
 ## 2.22.0
 
 - Create temp file and folders
