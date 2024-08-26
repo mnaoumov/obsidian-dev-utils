@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.23.0
+
+- registerFileInVault
+
 ## 2.22.1
 
 - Add missing init
