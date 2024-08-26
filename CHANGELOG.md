@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.23.1
+
+- Fix removeEmptyFolderHierarchy
+
 ## 2.23.0
 
 - registerFileInVault
