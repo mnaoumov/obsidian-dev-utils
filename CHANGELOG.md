@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.25.0
+
+- Export all internal types
+
 ## 2.24.0
 
 - Extend generateMarkdownLink
