@@ -9,6 +9,8 @@ import type {
   LinkCache,
   MarkdownView,
   ReferenceCache,
+  TAbstractFile,
+  Vault,
 } from "obsidian";
 import {
   retryWithTimeout,
@@ -119,7 +121,12 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
   let backlinks: CustomArrayDict<LinkCache> | null = null;
   await retryWithTimeout(async () => {
     const file = getFile(app, pathOrFile);
-    backlinks = app.metadataCache.getBacklinksForFile(file);
+    const unregister = registerFileInVault(app.vault, file);
+    try {
+      backlinks = app.metadataCache.getBacklinksForFile(file);
+    } finally {
+      unregister();
+    }
     for (const notePath of backlinks.keys()) {
       const note = app.vault.getFileByPath(notePath);
       if (!note) {
@@ -177,4 +184,33 @@ async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
 export async function getFrontMatterSafe<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile): Promise<CombinedFrontMatter<CustomFrontMatter>> {
   const cache = await getCacheSafe(app, pathOrFile);
   return (cache?.frontmatter ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
+}
+
+/**
+ * Registers the specified file in the vault.
+ *
+ * @param vault - The vault instance.
+ * @param file - The file to register.
+ * @returns A function that unregisters the file.
+ */
+export function registerFileInVault(vault: Vault, file: TAbstractFile): () => void {
+  if (!file.deleted) {
+    return () => { };
+  }
+
+  const deletedPaths: string[] = [];
+
+  let deletedFile: TAbstractFile = file;
+
+  while (deletedFile.deleted) {
+    deletedPaths.push(deletedFile.path);
+    vault.fileMap[deletedFile.path] = deletedFile;
+    deletedFile = deletedFile.parent!;
+  }
+
+  return () => {
+    for (const path of deletedPaths) {
+      delete vault.fileMap[path];
+    }
+  };
 }
