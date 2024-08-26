@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.24.0
+
+- Extend generateMarkdownLink
+
 ## 2.23.3
 
 - Fix options merging
