@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.23.3
+
+- Fix options merging
+
 ## 2.23.2
 
 - Disable removeFolderSafe notice by default
