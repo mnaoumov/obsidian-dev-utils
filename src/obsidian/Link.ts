@@ -370,9 +370,9 @@ export type GenerateMarkdownLinkOptions = {
   isWikilink?: boolean | undefined;
 
   /**
-   * Indicates if the link should be relative. If not provided, it will be inferred based on the Obsidian settings.
+   * Indicates if the link should be relative. If not provided or `false`, it will be inferred based on the Obsidian settings.
    */
-  isRelative?: boolean | undefined;
+  forceRelativePath?: boolean | undefined;
 
   /**
    * Indicates if the link should use a leading dot. Defaults to `false`. Has no effect if `isWikilink` is `true` or `isRelative` is `false`.
@@ -399,15 +399,15 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
   let alias = options.alias ?? "";
   const isEmbed = options.isEmbed ?? !isMarkdownFile(file);
   const isWikilink = options.isWikilink ?? shouldUseWikilinks(app);
-  const useRelativePath = options.isRelative ?? shouldUseRelativeLinks(app);
+  const forceRelativePath = options.forceRelativePath ?? shouldUseRelativeLinks(app);
 
   let linkText = file.path === sourcePath && subpath
     ? subpath
-    : useRelativePath
+    : forceRelativePath
       ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(file) : file.path) + subpath
       : app.metadataCache.fileToLinktext(file, sourcePath, isWikilink) + subpath;
 
-  if (useRelativePath && options.useLeadingDot && !linkText.startsWith(".") && !linkText.startsWith("#")) {
+  if (forceRelativePath && options.useLeadingDot && !linkText.startsWith(".") && !linkText.startsWith("#")) {
     linkText = "./" + linkText;
   }
 
