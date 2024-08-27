@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.25.1
+
+- Clarify forceRelativePath
+
 ## 2.25.0
 
 - Export all internal types
