@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.25.2
+
+- Register file in uniqueFileLookup
+
 ## 2.25.1
 
 - Clarify forceRelativePath
