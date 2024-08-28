@@ -3,14 +3,14 @@
  * This module provides utility functions for working with the metadata cache in Obsidian.
  */
 
-import type {
-  App,
-  CachedMetadata,
-  LinkCache,
-  MarkdownView,
-  ReferenceCache,
-  TAbstractFile,
-  Vault,
+import {
+  TFile,
+  type App,
+  type CachedMetadata,
+  type LinkCache,
+  type MarkdownView,
+  type ReferenceCache,
+  type TAbstractFile
 } from "obsidian";
 import {
   retryWithTimeout,
@@ -121,12 +121,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
   let backlinks: CustomArrayDict<LinkCache> | null = null;
   await retryWithTimeout(async () => {
     const file = getFile(app, pathOrFile);
-    const unregister = registerFileInVault(app.vault, file);
-    try {
-      backlinks = app.metadataCache.getBacklinksForFile(file);
-    } finally {
-      unregister();
-    }
+    backlinks = tempRegisterFileAndRun(app, file, () => app.metadataCache.getBacklinksForFile(file));
     for (const notePath of backlinks.keys()) {
       const note = app.vault.getFileByPath(notePath);
       if (!note) {
@@ -187,15 +182,16 @@ export async function getFrontMatterSafe<CustomFrontMatter = unknown>(app: App, 
 }
 
 /**
- * Registers the specified file in the vault.
+ * Temporarily registers a file and runs a function.
  *
- * @param vault - The vault instance.
- * @param file - The file to register.
- * @returns A function that unregisters the file.
+ * @param app - The Obsidian app instance.
+ * @param file - The file to temporarily register.
+ * @param fn - The function to run.
+ * @returns The result of the function.
  */
-export function registerFileInVault(vault: Vault, file: TAbstractFile): () => void {
+export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () => T): T {
   if (!file.deleted) {
-    return () => { };
+    return fn();
   }
 
   const deletedPaths: string[] = [];
@@ -204,13 +200,23 @@ export function registerFileInVault(vault: Vault, file: TAbstractFile): () => vo
 
   while (deletedFile.deleted) {
     deletedPaths.push(deletedFile.path);
-    vault.fileMap[deletedFile.path] = deletedFile;
+    app.vault.fileMap[deletedFile.path] = deletedFile;
     deletedFile = deletedFile.parent!;
   }
 
-  return () => {
+  if (file instanceof TFile) {
+    app.metadataCache.uniqueFileLookup.add(file.name.toLowerCase(), file);
+  }
+
+  try {
+    return fn();
+  } finally {
     for (const path of deletedPaths) {
-      delete vault.fileMap[path];
+      delete app.vault.fileMap[path];
     }
-  };
+
+    if (file instanceof TFile) {
+      app.metadataCache.uniqueFileLookup.remove(file.name.toLowerCase(), file);
+    }
+  }
 }
