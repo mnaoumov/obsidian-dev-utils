@@ -3,19 +3,19 @@
  * Provides utility functions for working with attachment paths.
  */
 
-import type {
-  App,
-  Vault
-} from "obsidian";
+import type { App } from "obsidian";
 import {
   basename,
   dirname,
   extname
 } from "../Path.ts";
-import { createTFileInstance } from "obsidian-typings/implementations";
-import { nameof } from "../Object.ts";
+import {
+  createTFileInstance,
+  createTFolderInstance
+} from "obsidian-typings/implementations";
 import type { PathOrFile } from "./TFile.ts";
 import { getPath } from "./TAbstractFile.ts";
+import { registerFile } from "./MetadataCache.ts";
 
 /**
  * Retrieves the attachment folder path for a given note.
@@ -43,13 +43,14 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
   const ext = extname(attachmentPath);
   const fileName = basename(attachmentPath, ext);
 
+  const unregisters: (() => void)[] = [];
+
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalMkdir = app.vault.adapter.mkdir;
   app.vault.adapter.mkdir = async (path: string): Promise<void> => {
-    if (new Error().stack?.includes(nameof<Vault>("getAvailablePathForAttachments"))) {
-      return;
-    }
-    return originalMkdir.call(app.vault.adapter, path);
+    const fakeFolder = createTFolderInstance(app.vault, path);
+    const unregister = registerFile(app, fakeFolder);
+    unregisters.push(unregister);
   };
 
   try {
@@ -57,5 +58,8 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
     return path;
   } finally {
     app.vault.adapter.mkdir = originalMkdir;
+    for (const unregister of unregisters) {
+      unregister();
+    }
   }
 }

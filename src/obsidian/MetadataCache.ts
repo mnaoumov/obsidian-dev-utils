@@ -190,8 +190,25 @@ export async function getFrontMatterSafe<CustomFrontMatter = unknown>(app: App, 
  * @returns The result of the function.
  */
 export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () => T): T {
-  if (!file.deleted) {
+  const unregister = registerFile(app, file);
+
+  try {
     return fn();
+  } finally {
+    unregister();
+  }
+}
+
+/***
+ * Registers a file in the Obsidian app.
+ *
+ * @param app - The Obsidian app instance.
+ * @param file - The file to register.
+ * @returns A function that unregisters the file.
+ */
+export function registerFile(app: App, file: TAbstractFile): () => void {
+  if (!file.deleted) {
+    return () => { };
   }
 
   const deletedPaths: string[] = [];
@@ -208,9 +225,7 @@ export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () 
     app.metadataCache.uniqueFileLookup.add(file.name.toLowerCase(), file);
   }
 
-  try {
-    return fn();
-  } finally {
+  return () => {
     for (const path of deletedPaths) {
       delete app.vault.fileMap[path];
     }
@@ -218,5 +233,5 @@ export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () 
     if (file instanceof TFile) {
       app.metadataCache.uniqueFileLookup.remove(file.name.toLowerCase(), file);
     }
-  }
+  };
 }
