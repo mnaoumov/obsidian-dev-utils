@@ -51,6 +51,7 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
     const fakeFolder = createTFolderInstance(app.vault, path);
     const unregister = registerFile(app, fakeFolder);
     unregisters.push(unregister);
+    await Promise.resolve();
   };
 
   try {
