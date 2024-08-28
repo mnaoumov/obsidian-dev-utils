@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.26.0
+
+- Handle fake attachment folder
+
 ## 2.25.2
 
 - Register file in uniqueFileLookup
