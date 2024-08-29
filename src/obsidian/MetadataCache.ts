@@ -27,6 +27,10 @@ import {
   type PathOrFile
 } from "./TFile.ts";
 import type { CombinedFrontMatter } from "./FrontMatter.ts";
+import {
+  createTFolderInstance,
+  parentFolderPath
+} from "obsidian-typings/implementations";
 
 /**
  * Retrieves the cached metadata for a given file or path.
@@ -218,7 +222,7 @@ export function registerFile(app: App, file: TAbstractFile): () => void {
   while (deletedFile.deleted) {
     deletedPaths.push(deletedFile.path);
     app.vault.fileMap[deletedFile.path] = deletedFile;
-    deletedFile = deletedFile.parent!;
+    deletedFile = deletedFile.parent ?? createTFolderInstance(app.vault, parentFolderPath(deletedFile.path));
   }
 
   if (file instanceof TFile) {
