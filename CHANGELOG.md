@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.26.2
+
+- Handle removed parent folder case
+
 ## 2.26.1
 
 - Prevent double patching
