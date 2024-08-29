@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.26.3
+
+- Fix return type for isNote
+
 ## 2.26.2
 
 - Handle removed parent folder case
