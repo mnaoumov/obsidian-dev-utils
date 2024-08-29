@@ -60,7 +60,7 @@ export function getAbstractFileOrNull(app: App, pathOrFile: PathOrAbstractFile):
  * @param file - The file to check.
  * @returns A boolean indicating whether the file is a note.
  */
-export function isNote(file: TAbstractFile | null): file is TFile {
+export function isNote(file: TAbstractFile | null): boolean {
   return isMarkdownFile(file) || isCanvasFile(file);
 }
 
