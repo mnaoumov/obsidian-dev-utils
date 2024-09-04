@@ -3,7 +3,7 @@
  * Contains utility functions for error handling.
  */
 
-import { EventEmitter } from "node:events";
+import { EventEmitter } from "eventemitter3";
 
 const ASYNC_ERROR_EVENT = "asyncError";
 
