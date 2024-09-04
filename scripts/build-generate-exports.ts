@@ -2,7 +2,7 @@ import {
   join,
   normalizeIfRelative
 } from "../src/Path.ts";
-import { readdirPosix } from "../src/Fs.ts";
+import { readdirPosix } from "../src/scripts/Fs.ts";
 import { editNpmPackage } from "../src/scripts/Npm.ts";
 import { ObsidianDevUtilsRepoPaths } from "../src/scripts/ObsidianDevUtilsRepoPaths.ts";
 import { wrapCliTask } from "../src/scripts/CliUtils.ts";

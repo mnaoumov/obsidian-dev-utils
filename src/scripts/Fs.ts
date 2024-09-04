@@ -12,7 +12,7 @@ import { readdir } from "node:fs/promises";
 import {
   toPosixBuffer,
   toPosixPath
-} from "./Path.ts";
+} from "../Path.ts";
 
 
 /**

@@ -4,7 +4,7 @@ import {
   join,
   normalizeIfRelative
 } from "../src/Path.ts";
-import { readdirPosix } from "../src/Fs.ts";
+import { readdirPosix } from "../src/scripts/Fs.ts";
 import { makeValidVariableName } from "../src/String.ts";
 import { wrapCliTask } from "../src/scripts/CliUtils.ts";
 import { asyncMap } from "../src/Async.ts";

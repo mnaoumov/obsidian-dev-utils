@@ -31,7 +31,7 @@ import {
   writeFile
 } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
-import { readdirPosix } from "../Fs.ts";
+import { readdirPosix } from "./Fs.ts";
 import { join } from "../Path.ts";
 import { ObsidianPluginRepoPaths } from "../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
 import { ObsidianDevUtilsRepoPaths } from "./ObsidianDevUtilsRepoPaths.ts";

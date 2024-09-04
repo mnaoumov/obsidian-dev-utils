@@ -10,7 +10,7 @@ import { preprocessPlugin } from "../src/scripts/esbuild/preprocessPlugin.ts";
 import { wrapCliTask } from "../src/scripts/CliUtils.ts";
 import { renameToCjsPlugin } from "../src/scripts/esbuild/renameToCjsPlugin.ts";
 import { getDependenciesToSkip } from "../src/scripts/esbuild/Dependency.ts";
-import { readdirPosix } from "../src/Fs.ts";
+import { readdirPosix } from "../src/scripts/Fs.ts";
 import {
   join,
   normalizeIfRelative
