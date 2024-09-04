@@ -52,7 +52,7 @@ export enum VersionUpdateType {
 /**
  * Type representing the manifest file format for Obsidian plugins.
  */
-export type Manifest = {
+export interface Manifest {
   /**
    * The minimum Obsidian version required for the plugin.
    */
@@ -62,17 +62,17 @@ export type Manifest = {
    * The version of the plugin.
    */
   version: string;
-};
+}
 
 /**
  * Type representing the structure of Obsidian releases JSON.
  */
-export type ObsidianReleasesJson = {
+export interface ObsidianReleasesJson {
   /**
    * The name of the Obsidian release.
    */
   name: string;
-};
+}
 
 /**
  * Updates the version of the project based on the specified update type.
@@ -90,6 +90,7 @@ export type ObsidianReleasesJson = {
  * @param versionUpdateType - The type of version update to perform (major, minor, patch, beta, or manual).
  * @returns A `Promise` that resolves to a `TaskResult` indicating the success or failure of the version update.
  */
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 export async function updateVersion(versionUpdateType: string): Promise<CliTaskResult | void> {
   if (!versionUpdateType) {
     const npmOldVersion = process.env['npm_old_version'];
@@ -265,7 +266,7 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
   const npmPackage = await readNpmPackage();
   const currentVersion = npmPackage.version;
 
-  const match = currentVersion.match(/^(\d+)\.(\d+)\.(\d+)(-beta.(\d+))?/);
+  const match = /^(\d+)\.(\d+)\.(\d+)(-beta.(\d+))?/.exec(currentVersion);
   if (!match) {
     throw new Error(`Invalid current version format: ${currentVersion}`);
   }
@@ -296,7 +297,7 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
       break;
   }
 
-  return `${major}.${minor}.${patch}${beta > 0 ? `-beta.${beta}` : ''}`;
+  return `${major.toString()}.${minor.toString()}.${patch.toString()}${beta > 0 ? `-beta.${beta.toString()}` : ''}`;
 }
 
 /**
@@ -410,8 +411,8 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRoot(ObsidianPluginRepoPaths.ChangelogMd);
   const content = await readFile(changelogPath, 'utf-8');
   const newVersionEscaped = newVersion.replaceAll('.', '\\.');
-  const match = content.match(new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`));
-  let releaseNotes = match ? match[1] + '\n\n' : '';
+  const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
+  let releaseNotes = match?.[1] ? match[1] + '\n\n' : '';
 
   const tags = (await execFromRoot('git tag --sort=-creatordate', { quiet: true })).split(/\r?\n/);
   const previousVersion = tags[1];

@@ -14,7 +14,7 @@ export type MaybePromise<T> = T | Promise<T>;
 /**
  * Options for configuring the retry behavior.
  */
-export type RetryOptions = {
+export interface RetryOptions {
   /**
    * The maximum time in milliseconds to wait before giving up on retrying.
    */
@@ -24,7 +24,7 @@ export type RetryOptions = {
    * The delay in milliseconds between retry attempts.
    */
   retryDelayInMilliseconds: number;
-};
+}
 
 /**
  * Retries the provided asynchronous function until it succeeds or the timeout is reached.
@@ -41,16 +41,16 @@ export async function retryWithTimeout(asyncFn: () => Promise<boolean>, retryOpt
   const overriddenOptions: RetryOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await runWithTimeout(overriddenOptions.timeoutInMilliseconds, async () => {
     let attempt = 0;
-    while (true) {
+    for (; ;) {
       attempt++;
       if (await asyncFn()) {
         if (attempt > 1) {
-          console.debug(`Retry completed successfully after ${attempt} attempts`);
+          console.debug(`Retry completed successfully after ${attempt.toString()} attempts`);
         }
         return;
       }
 
-      console.debug(`Retry attempt ${attempt} completed unsuccessfully. Trying again in ${overriddenOptions.retryDelayInMilliseconds} milliseconds`);
+      console.debug(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${overriddenOptions.retryDelayInMilliseconds.toString()} milliseconds`);
       console.debug(asyncFn);
       await sleep(overriddenOptions.retryDelayInMilliseconds);
     }
@@ -87,7 +87,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, asyncFn: 
  */
 export async function timeout(timeoutInMilliseconds: number): Promise<never> {
   await sleep(timeoutInMilliseconds);
-  throw new Error(`Timed out in ${timeoutInMilliseconds} milliseconds`);
+  throw new Error(`Timed out in ${timeoutInMilliseconds.toString()} milliseconds`);
 }
 
 /**
@@ -107,7 +107,9 @@ export function invokeAsyncSafely(promise: Promise<unknown>): void {
  * @returns A function that wraps the asynchronous function in a synchronous interface.
  */
 export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: Args) => Promise<unknown>): (...args: Args) => void {
-  return (...args: Args): void => invokeAsyncSafely(asyncFunc(...args));
+  return (...args: Args): void => {
+    invokeAsyncSafely(asyncFunc(...args));
+  };
 }
 
 /**
@@ -123,7 +125,7 @@ export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: (...a
     try {
       return syncFn(...args);
     } catch (error) {
-      return await Promise.reject(error);
+      return await Promise.reject(error as Error);
     }
   };
 }

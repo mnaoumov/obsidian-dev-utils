@@ -89,7 +89,7 @@ export async function writeNpmPackage(npmPackage: NpmPackage, cwd?: string): Pro
 /**
  * Options for editing an NPM package.
  */
-export type EditNpmPackageOptions = {
+export interface EditNpmPackageOptions {
   /**
    * The current working directory where `package.json` is located.
    */
@@ -99,7 +99,7 @@ export type EditNpmPackageOptions = {
    * If true, skips editing if the file does not exist.
    */
   skipIfMissing?: boolean | undefined;
-};
+}
 
 /**
  * Reads, edits, and writes back the `package.json` file using the provided edit function.

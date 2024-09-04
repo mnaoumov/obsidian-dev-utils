@@ -31,6 +31,7 @@ import {
   createTFolderInstance,
   parentFolderPath
 } from 'obsidian-typings/implementations';
+import { throwExpression } from '../Error.ts';
 
 /**
  * Retrieves the cached metadata for a given file or path.
@@ -105,7 +106,8 @@ export function getAllLinks(cache: CachedMetadata): ReferenceCache[] {
     if (index === 0) {
       return true;
     }
-    return link.position.start.offset !== links[index - 1]!.position.start.offset;
+    const previousLink = links[index - 1] ?? throwExpression(new Error('Previous link not found'));
+    return link.position.start.offset !== previousLink.position.start.offset;
   });
 
   return links;
@@ -122,7 +124,7 @@ export function getAllLinks(cache: CachedMetadata): ReferenceCache[] {
 export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CustomArrayDict<LinkCache>> {
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  let backlinks: CustomArrayDict<LinkCache> | null = null;
+  let backlinks: CustomArrayDict<LinkCache> = null as unknown as CustomArrayDict<LinkCache>;
   await retryWithTimeout(async () => {
     const file = getFile(app, pathOrFile);
     await ensureMetadataCacheReady(app);
@@ -136,7 +138,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
       await saveNote(app, note);
 
       const content = await app.vault.read(note);
-      const links = backlinks.get(notePath)!;
+      const links = backlinks.get(notePath) ?? throwExpression(new Error('Backlinks not found'));
       for (const link of links) {
         const actualLink = content.slice(link.position.start.offset, link.position.end.offset);
         if (actualLink !== link.original) {
@@ -148,7 +150,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
     return true;
   }, overriddenOptions);
 
-  return backlinks!;
+  return backlinks;
 }
 
 /**
@@ -213,7 +215,9 @@ export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () 
  */
 export function registerFile(app: App, file: TAbstractFile): () => void {
   if (!file.deleted) {
-    return () => { };
+    return () => {
+      // Do nothing
+    };
   }
 
   const deletedPaths: string[] = [];
@@ -232,6 +236,7 @@ export function registerFile(app: App, file: TAbstractFile): () => void {
 
   return () => {
     for (const path of deletedPaths) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete app.vault.fileMap[path];
     }
 

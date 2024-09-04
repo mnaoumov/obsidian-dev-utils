@@ -4,9 +4,7 @@
  */
 
 declare module 'globals' {
-  type Globals = {
-    [name: string]: boolean | 'writable' | 'readonly' | 'off';
-  };
+  type Globals = Record<string, boolean | 'writable' | 'readonly' | 'off'>;
 
   const globals: {
     browser: Globals;

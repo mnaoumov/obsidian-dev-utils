@@ -21,6 +21,9 @@ import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import { getRootDir } from '../Root.ts';
 
+/**
+ * The ESLint configurations for TypeScript projects.
+ */
 export const configs: Linter.Config[] = tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,

@@ -44,16 +44,28 @@ import {
   shouldUseRelativeLinks,
   shouldUseWikilinks
 } from './ObsidianSettings.ts';
+import { throwExpression } from '../Error.ts';
 
 /**
  * Regular expression for special link symbols.
  */
+// eslint-disable-next-line no-control-regex
 const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 
-export type SplitSubpathResult = {
+/**
+ * Splits a link into its link path and subpath.
+ */
+export interface SplitSubpathResult {
+  /**
+   * The link path.
+   */
   linkPath: string;
+
+  /**
+   * The subpath.
+   */
   subpath: string | undefined;
-};
+}
 
 /**
  * Splits a link into its link path and subpath.
@@ -73,7 +85,7 @@ export function splitSubpath(link: string): SplitSubpathResult {
 /**
  * Options for updating links in a file.
  */
-export type UpdateLinksInFileOptions = {
+export interface UpdateLinksInFileOptions {
   /**
    * The obsidian app instance.
    */
@@ -103,7 +115,7 @@ export type UpdateLinksInFileOptions = {
    * Whether to update only embedded links.
    */
   embedOnlyLinks?: boolean | undefined;
-};
+}
 
 /**
  * Updates the links in a file based on the provided parameters.
@@ -141,7 +153,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
  * @returns The converted link.
  */
 function convertLink(app: App, link: ReferenceCache, source: PathOrFile, oldPathOrFile: PathOrFile, renameMap: Map<string, string>, forceMarkdownLinks?: boolean): string {
-  oldPathOrFile ??= getPath(source);
+  oldPathOrFile ||= getPath(source);
   return updateLink({
     app,
     link,
@@ -166,7 +178,10 @@ export function extractLinkFile(app: App, link: ReferenceCache, oldPathOrFile: P
   return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(oldPathOrFile));
 }
 
-export type UpdateLinkOptions = {
+/**
+ * Options for updating a link.
+ */
+export interface UpdateLinkOptions {
   /**
    * The Obsidian app instance.
    */
@@ -201,7 +216,7 @@ export type UpdateLinkOptions = {
    * Whether to force markdown links.
    */
   forceMarkdownLinks?: boolean | undefined
-};
+}
 
 /**
  * Updates a link based on the provided parameters.
@@ -258,7 +273,7 @@ export function updateLink(options: UpdateLinkOptions): string {
 /**
  * Options for getting the alias of a link.
  */
-export type GetAliasOptions = {
+export interface GetAliasOptions {
   /**
    * The Obsidian app instance.
    */
@@ -283,7 +298,7 @@ export type GetAliasOptions = {
    * The source path of the link.
    */
   sourcePath: string;
-};
+}
 
 
 /**
@@ -306,7 +321,7 @@ export function getAlias(options: GetAliasOptions): string | undefined {
     return undefined;
   }
 
-  const cleanDisplayText = normalizePath(displayText.split(' > ')[0]!).replace(/\.\//g, '');
+  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? throwExpression(new Error('Invalid display text'))).replace(/\.\//g, '');
 
   for (const path of [file.path, ...otherPaths]) {
     if (!path) {
@@ -333,7 +348,7 @@ export function getAlias(options: GetAliasOptions): string | undefined {
 /**
  * Options for generating a markdown link.
  */
-export type GenerateMarkdownLinkOptions = {
+export interface GenerateMarkdownLinkOptions {
   /**
    * The Obsidian app instance.
    */
@@ -383,7 +398,7 @@ export type GenerateMarkdownLinkOptions = {
    * Indicates if the link should use angle brackets. Defaults to `false`. Has no effect if `isWikilink` is `true`
    */
   useAngleBrackets?: boolean | undefined;
-};
+}
 
 /**
  * Generates a markdown link based on the provided parameters.
@@ -447,9 +462,10 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
 export async function editLinks(
   app: App,
   pathOrFile: PathOrFile,
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   linkConverter: (link: ReferenceCache) => MaybePromise<string | void>,
   retryOptions: Partial<RetryOptions> = {}): Promise<void> {
-  return await applyFileChanges(app, pathOrFile, async () => {
+  await applyFileChanges(app, pathOrFile, async () => {
     const cache = await getCacheSafe(app, pathOrFile);
     if (!cache) {
       return [];

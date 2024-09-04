@@ -8,12 +8,12 @@ import type { App } from 'obsidian';
 /**
  * Wrapper type for accessing the `App` instance globally.
  */
-type AppWrapper = {
+interface AppWrapper {
   /**
    * An optional reference to the Obsidian `App` instance.
    */
   app?: App;
-};
+}
 
 /**
  * Retrieves the Obsidian `App` instance.
@@ -24,11 +24,12 @@ type AppWrapper = {
  * @see {@link https://github.com/mnaoumov/obsidian-fix-require-modules/?tab=readme-ov-file#obsidianapp-module}
  */
 export function getApp(): App {
-  let canRequire = false;
+  let canRequire: boolean;
   try {
     globalThis.require.resolve('obsidian/app');
     canRequire = true;
   } catch {
+    canRequire = false;
   }
 
   if (canRequire) {

@@ -36,12 +36,12 @@ export async function writeJson(path: string, data: unknown): Promise<void> {
 /**
  * Options for editing JSON.
  */
-export type EditJsonOptions = {
+export interface EditJsonOptions {
   /**
    * If true, skips editing if the file does not exist.
    */
   skipIfMissing?: boolean | undefined;
-};
+}
 
 /**
  * Reads, edits, and writes back a JSON file using a provided edit function.
@@ -52,6 +52,7 @@ export type EditJsonOptions = {
  * @param options - Additional options for editing.
  * @returns A promise that resolves when the file has been edited and written.
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export async function editJson<T>(
   path: string,
   editFn: (data: T) => MaybePromise<void>,

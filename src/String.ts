@@ -3,12 +3,16 @@
  * Contains utility functions for string operations.
  */
 
+import { throwExpression } from './Error.ts';
 import { escapeRegExp } from './RegExp.ts';
 import {
   resolveValue,
   type ValueProvider
 } from './ValueProvider.ts';
 
+/**
+ * An asynchronous function that generates replacement strings.
+ */
 export type AsyncReplacer<Args extends unknown[]> = ValueProvider<string, [string, ...Args]>;
 
 /**
@@ -106,7 +110,7 @@ export async function replaceAllAsync<Args extends unknown[]>(
     return substring;
   });
   const replacements = await Promise.all(replacementPromises);
-  return str.replaceAll(searchValue, (): string => replacements.shift()!);
+  return str.replaceAll(searchValue, (): string => replacements.shift() ?? throwExpression(new Error('Unexpected empty replacement')));
 }
 
 /**
@@ -170,5 +174,5 @@ export function unescape(str: string): string {
  */
 export function replace(str: string, replacementsMap: Record<string, string>): string {
   const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join('|'), 'g');
-  return str.replaceAll(regExp, (source: string) => replacementsMap[source] as string);
+  return str.replaceAll(regExp, (source: string) => replacementsMap[source] ?? throwExpression(new Error(`Unexpected replacement source: ${source}`)));
 }

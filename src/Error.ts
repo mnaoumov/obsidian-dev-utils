@@ -39,7 +39,7 @@ export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) =>
   return () => asyncErrorEventEmitter.off(ASYNC_ERROR_EVENT, handler);
 }
 
-type ErrorEntry = {
+interface ErrorEntry {
   level: number;
   message: string;
   shouldClearAnsiSequence?: boolean;
@@ -80,7 +80,7 @@ export function errorToString(error: unknown): string {
  * @param entries - The array of ErrorEntry objects to populate.
  * @returns An array of ErrorEntry objects representing the error and its causes.
  */
-function parseErrorEntries(error: unknown, level: number = 0, entries: ErrorEntry[] = []): ErrorEntry[] {
+function parseErrorEntries(error: unknown, level = 0, entries: ErrorEntry[] = []): ErrorEntry[] {
   if (error === undefined) {
     return entries;
   }
@@ -114,4 +114,14 @@ function parseErrorEntries(error: unknown, level: number = 0, entries: ErrorEntr
   }
 
   return entries;
+}
+
+/**
+ * Throws an error with the specified message.
+ *
+ * @param error - The error to throw.
+ * @returns A never-returning function.
+ */
+export function throwExpression(error: unknown): never {
+  throw error;
 }

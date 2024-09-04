@@ -18,28 +18,59 @@ import {
   type PathOrFile
 } from './TFile.ts';
 import type { MaybePromise } from '../Async.ts';
+import { throwExpression } from '../Error.ts';
 
 /**
  * Represents the front matter of an Obsidian file.
  * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Default+properties}
  */
-export type ObsidianFrontMatter = {
+export interface ObsidianFrontMatter {
+  /**
+   * An array of aliases for the note.
+   */
   aliases?: string[];
+
+  /**
+   * An array of CSS classes to apply to the note.
+   */
   cssclasses?: string[];
+
+  /**
+   * An array of tags for the note.
+   */
   tags?: string[];
-};
+}
 
 /**
  * Represents the front matter for publishing in Obsidian.
  * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Properties+for+Obsidian+Publish}
  */
-export type ObsidianPublishFrontMatter = {
+export interface ObsidianPublishFrontMatter {
+  /**
+   * The cover image for the note.
+   */
   cover?: string;
+
+  /**
+   * The description for the note.
+   */
   description?: string;
+
+  /**
+   * The image for the note.
+   */
   image?: string;
+
+  /**
+   * The permanent link for the note.
+   */
   permalink?: string;
+
+  /**
+   * Whether the note is published.
+   */
   publish?: boolean;
-};
+}
 
 /**
  * Represents the combined front matter of a document.
@@ -74,12 +105,12 @@ export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, 
   const file = getFile(app, pathOrFile);
 
   await processWithRetry(app, file, async (content) => {
-    const match = content.match(FRONT_MATTER_REG_EXP);
+    const match = FRONT_MATTER_REG_EXP.exec(content);
     let frontMatterStr: string;
     let mainContent: string;
     if (match) {
-      frontMatterStr = match[1]!;
-      mainContent = match[2]!;
+      frontMatterStr = match[1] ?? throwExpression(new Error('Front matter match is null'));
+      mainContent = match[2] ?? throwExpression(new Error('Front matter match is null'));
     } else {
       frontMatterStr = '';
       mainContent = content;

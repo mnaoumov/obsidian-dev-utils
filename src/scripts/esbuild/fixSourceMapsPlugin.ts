@@ -12,9 +12,9 @@ import {
 } from 'node:fs/promises';
 import { toPosixPath } from '../../Path.ts';
 
-type SourceMap = {
+interface SourceMap {
   sources: string[];
-};
+}
 
 /**
  * Creates an esbuild plugin that fixes source maps by adjusting the paths to be compatible
@@ -38,7 +38,7 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string
         const newContent = content.replaceAll(
           /\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g,
           (_: string, sourceMapBase64: string): string => {
-            return `\n//${''}# sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64, pluginName)}`;
+            return `\n//# sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64, pluginName)}`;
           }
         );
 

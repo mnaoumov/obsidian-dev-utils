@@ -35,9 +35,10 @@ export function preprocessPlugin(): Plugin {
     'import.meta.url': (): URL => {
       const normalizedPath = __filename.replace(/\\/g, '/');
 
-      const windowsDriveLetterMatch = normalizedPath.match(/^([a-zA-Z]):/);
+      const windowsDriveLetterMatch = /^([a-zA-Z]):/.exec(normalizedPath);
       let path = normalizedPath;
       if (windowsDriveLetterMatch) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         path = `/${windowsDriveLetterMatch[1]!.toUpperCase()}:${normalizedPath.slice(2)}`;
       }
 
@@ -68,7 +69,7 @@ export function preprocessPlugin(): Plugin {
 
         // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly,
         // otherwise, it stops loading after the first line of the sourceMappingURL comment.
-        contents = contents.replace(/\`\r?\n\/\/# sourceMappingURL/g, '`\n//#${""} sourceMappingURL');
+        contents = contents.replace(/`\r?\n\/\/# sourceMappingURL/g, '`\n//#${""} sourceMappingURL');
 
         return {
           contents,

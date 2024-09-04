@@ -14,7 +14,7 @@ import {
 /**
  * The parameters for the selection modal.
  */
-export type SelectItemOptions<T> = {
+export interface SelectItemOptions<T> {
   /**
    * The Obsidian app instance.
    */
@@ -30,13 +30,13 @@ export type SelectItemOptions<T> = {
    * @param item - The item to get the display text for.
    * @returns The display text for the item.
    */
-  itemTextFunc(item: T): string;
+  itemTextFunc: (item: T) => string;
 
   /**
    * The placeholder text for the input field.
    */
   placeholder?: string;
-};
+}
 
 /**
  * Displays a selection modal in Obsidian for choosing an item from a list.

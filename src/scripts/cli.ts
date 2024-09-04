@@ -76,6 +76,7 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
  * @param taskFn - The function to execute when the command is invoked. Can return a `TaskResult` or void.
  * @returns The `commander` command instance for further chaining.
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters, @typescript-eslint/no-invalid-void-type
 function addCommand<Args extends unknown[]>(program: Command, name: string, description: string, taskFn: (...args: Args) => MaybePromise<CliTaskResult | void>): Command {
   return program.command(name)
     .description(description)

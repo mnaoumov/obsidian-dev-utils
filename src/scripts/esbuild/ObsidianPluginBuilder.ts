@@ -53,7 +53,7 @@ if you want to view the source, please visit the github repository of this plugi
 /**
  * Options for building an Obsidian plugin.
  */
-export type BuildObsidianPluginOptions = {
+export interface BuildObsidianPluginOptions {
   /**
    * The build mode, either Development or Production
    */
@@ -68,7 +68,7 @@ export type BuildObsidianPluginOptions = {
    * Custom esbuild plugins to be used during the build process.
    */
   customEsbuildPlugins?: Plugin[]
-};
+}
 
 /**
  * Builds the Obsidian plugin based on the specified mode and configuration directory.
@@ -163,7 +163,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
  * @param isProductionBuild - A boolean indicating whether the build is a production build.
  * @returns A promise that resolves to a `TaskResult` indicating the success or failure of the build.
  */
-export async function invokeEsbuild(buildContext: BuildContext<BuildOptions>, isProductionBuild: boolean): Promise<CliTaskResult> {
+export async function invokeEsbuild(buildContext: BuildContext, isProductionBuild: boolean): Promise<CliTaskResult> {
   if (isProductionBuild) {
     const result = await buildContext.rebuild();
     const isSuccess = result.errors.length == 0 && result.warnings.length == 0;

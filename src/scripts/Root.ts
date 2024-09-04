@@ -18,7 +18,7 @@ import { toCommandLine } from './CliUtils.ts';
 /**
  * Represents the result of executing a command from the root directory.
  */
-export type ExecFromRootResult = {
+export interface ExecFromRootResult {
   /**
    * The exit code of the command. A value of `null` indicates that the process did not exit normally.
    */
@@ -38,12 +38,12 @@ export type ExecFromRootResult = {
    * The standard output from the command.
    */
   stdout: string;
-};
+}
 
 /**
  * Options for executing a command from the root directory.
  */
-export type ExecFromRootOption = {
+export interface ExecFromRootOption {
   /**
    * If true, suppresses the output of the command.
    */
@@ -68,7 +68,7 @@ export type ExecFromRootOption = {
    * If false, only returns the output of the command.
    */
   withDetails?: boolean;
-};
+}
 
 /**
  * Executes a command from the root directory of the project.
@@ -161,7 +161,7 @@ export function execFromRoot(command: string | string[], options: ExecFromRootOp
 
     child.on('close', (exitCode, exitSignal) => {
       if (exitCode !== 0 && !ignoreExitCode) {
-        reject(new Error(`Command failed with exit code ${exitCode}\n${stderr}`));
+        reject(new Error(`Command failed with exit code ${exitCode?.toString() ?? '(null)'}\n${stderr}`));
       } else {
         resolve(!withDetails ? stdout : {
           exitCode,

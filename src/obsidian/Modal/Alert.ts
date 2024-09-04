@@ -31,7 +31,9 @@ export async function alert(app: App, message: string): Promise<void> {
           modalContent.createEl('button', {
             cls: 'mod-cta',
             text: 'OK',
-            onclick: () => this.close()
+            onclick: () => {
+              this.close(); 
+            }
           } as DomElementInfo);
         }));
       }

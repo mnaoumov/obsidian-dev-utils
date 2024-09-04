@@ -4,6 +4,7 @@
  */
 
 import type { MarkdownPostProcessorContext } from 'obsidian';
+import { throwExpression } from '../Error.ts';
 
 /**
  * Retrieves the argument of a code block from the given MarkdownPostProcessorContext and HTMLElement.
@@ -18,8 +19,8 @@ export function getCodeBlockArgument(ctx: MarkdownPostProcessorContext, el: HTML
     return null;
   }
   const lines = sectionInfo.text.split('\n');
-  const codeBlockHeader = lines[sectionInfo.lineStart]!;
-  const match = codeBlockHeader.match(/^\`{3,}\S+\s+(.*)$/);
+  const codeBlockHeader = lines[sectionInfo.lineStart] ?? throwExpression(new Error('Code block header not found'));
+  const match = /^`{3,}\S+\s+(.*)$/.exec(codeBlockHeader);
   if (!match) {
     return null;
   }

@@ -15,6 +15,7 @@ import {
   resolveValue,
   type ValueProvider
 } from '../ValueProvider.ts';
+import { throwExpression } from '../Error.ts';
 
 /**
  * Enum representing the mode of a callout.
@@ -50,7 +51,7 @@ function getModifier(mode: CalloutMode): string {
 /**
  * Options for rendering a callout block in Dataview.
  */
-export type RenderCalloutOptions = {
+export interface RenderCalloutOptions {
   /**
    * The DataviewInlineApi instance.
    */
@@ -74,8 +75,9 @@ export type RenderCalloutOptions = {
   /**
    * An optional provider for the content, which can be either a string or a Node.
    */
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   contentProvider?: ValueProvider<string | Node | void>;
-};
+}
 
 /**
  * Renders a callout block in Dataview.
@@ -92,7 +94,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
   } = options;
   const modifier = getModifier(mode);
   const callout = dv.paragraph(`> [!${type}]${modifier} ${header}\n>\n> <div class="content"></div>`);
-  const contentDiv = callout.querySelector<HTMLDivElement>('.content')!;
+  const contentDiv = callout.querySelector<HTMLDivElement>('.content') ?? throwExpression(new Error('Content div not found'));
   dv.paragraph('Loading... ⏳', { container: contentDiv });
 
   const observer = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {
@@ -107,7 +109,8 @@ export function renderCallout(options: RenderCalloutOptions): void {
 
   async function loadContent(): Promise<void> {
     await sleep(50);
-    let content: string | Node | void;
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+    let content: string | Node | void | undefined;
 
     const paragraph = await getRenderedContainer(dv, async() => {
       content = await resolveValue(contentProvider);

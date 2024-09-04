@@ -24,12 +24,13 @@ import {
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
 import { getMarkdownFiles } from './TFolder.ts';
 import type { PathOrFile } from './TFile.ts';
+import { throwExpression } from '../Error.ts';
 
 
 /**
  * Options for rendering delayed backlinks.
  */
-export type RenderDelayedBacklinksOptions = {
+export interface RenderDelayedBacklinksOptions {
   /**
    * The DataviewInlineApi instance.
    */
@@ -44,7 +45,7 @@ export type RenderDelayedBacklinksOptions = {
    * The title for the rendered backlinks. Defaults to "Backlinks".
    */
   title?: string;
-};
+}
 
 /**
  * Renders delayed backlinks.
@@ -69,7 +70,7 @@ export function renderDelayedBacklinks(options: RenderDelayedBacklinksOptions): 
 /**
  * Options for rendering delayed backlinks for a folder.
  */
-export type RenderDelayedBacklinksForFolderOptions = {
+export interface RenderDelayedBacklinksForFolderOptions {
   /**
    * The DataviewInlineApi instance.
    */
@@ -84,7 +85,7 @@ export type RenderDelayedBacklinksForFolderOptions = {
    * The title for the rendered backlinks. Defaults to "Folder Backlinks".
    */
   title?: string;
-};
+}
 
 /**
  * Renders delayed backlinks for a specific folder.
@@ -137,7 +138,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
     const backlinkLinks = backlinks.keys().map((backLinkPath) => {
       const markdownLink = generateMarkdownLink({
         app: dv.app,
-        pathOrFile: dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path)!,
+        pathOrFile: dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path) ?? throwExpression(new Error('Link not found')),
         sourcePathOrFile: dv.current().file.path,
       });
 

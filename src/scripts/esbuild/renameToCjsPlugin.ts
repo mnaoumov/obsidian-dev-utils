@@ -19,6 +19,7 @@ import {
 } from '../../Path.ts';
 import { resolvePathFromRoot } from '../Root.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
+import { throwExpression } from '../../Error.ts';
 
 /**
  * Creates an esbuild plugin that renames JavaScript files to CommonJS (`.cjs`) files
@@ -46,9 +47,9 @@ export function renameToCjsPlugin(dependenciesToSkip: Set<string>): Plugin {
             }
 
             const importPath1 = trimStart(importPath, 'node:');
-            const importPath2 = importPath1.split('/')[0]!;
+            const importPath2 = importPath1.split('/')[0] ?? throwExpression(new Error('Wrong path'));
 
-            if (importPath[0] !== '.' && !dependenciesToSkip.has(importPath1) && !dependenciesToSkip.has(importPath2)) {
+            if (!importPath.startsWith('.') && !dependenciesToSkip.has(importPath1) && !dependenciesToSkip.has(importPath2)) {
               const relativeDependenciesPath = normalizeIfRelative(relative(dirname(toPosixPath(file.path)), dependenciesPath));
               const importPathVariable = makeValidVariableName(importPath);
               return `require("${relativeDependenciesPath}").${importPathVariable}.default ?? require("${relativeDependenciesPath}").${importPathVariable}`;

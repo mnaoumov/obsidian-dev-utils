@@ -28,7 +28,7 @@ export async function spellcheck(): Promise<CliTaskResult> {
 
       const path = fileURLToPath(issue.uri);
       const relativePath = toRelativeFromRoot(path);
-      console.log(`${relativePath}:${issue.row}:${issue.col} - ${issue.text}`);
+      console.log(`${relativePath}:${issue.row.toString()}:${issue.col.toString()} - ${issue.text}`);
       isSuccess = false;
     }
   });

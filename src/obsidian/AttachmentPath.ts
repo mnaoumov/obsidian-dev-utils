@@ -43,9 +43,9 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
   const ext = extname(attachmentPath);
   const fileName = basename(attachmentPath, ext);
 
-  type Patched = {
+  interface Patched {
     __patched?: true;
-  };
+  }
 
   const unregisters: (() => void)[] = [];
 

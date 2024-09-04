@@ -3,6 +3,8 @@
  * Contains utility functions for Objects.
  */
 
+import { throwExpression } from './Error.ts';
+
 /**
  * Compares two values to determine if they are deeply equal.
  *
@@ -15,7 +17,7 @@ export function deepEqual(a: unknown, b: unknown): boolean {
     return true;
   }
 
-  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null || a === undefined || b === undefined) {
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
     return false;
   }
 
@@ -63,7 +65,7 @@ export function getPrototypeOf<T>(instance: T): T {
 /**
  * Options for converting an object to JSON.
  */
-export type ToJsonOptions = {
+export interface ToJsonOptions {
   /**
    * If `true`, functions within the value will be handled and included in the JSON string. Defaults to `false`.
    */
@@ -72,7 +74,7 @@ export type ToJsonOptions = {
    * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
    */
   space?: string | number | undefined;
-};
+}
 
 /**
  * Converts a given value to a JSON string.
@@ -96,13 +98,13 @@ export function toJson(value: unknown, options: ToJsonOptions = {}): string {
     if (typeof value === 'function') {
       const index = functionTexts.length;
       functionTexts.push(value.toString());
-      return `__FUNCTION_${index}`;
+      return `__FUNCTION_${index.toString()}`;
     }
 
     return value;
   };
 
   let json = JSON.stringify(value, replacer, space);
-  json = json.replaceAll(/"__FUNCTION_(\d+)"/g, (_, indexStr: string) => functionTexts[parseInt(indexStr)] as string);
+  json = json.replaceAll(/"__FUNCTION_(\d+)"/g, (_, indexStr: string) => functionTexts[parseInt(indexStr)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
   return json;
 }

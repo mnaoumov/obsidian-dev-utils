@@ -24,11 +24,12 @@ import {
 } from '../../Path.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import { createRequire } from 'node:module';
+import { throwExpression } from '../../Error.ts';
 const require = createRequire(import.meta.url);
 
-type ModuleWithDefaultExport = {
+interface ModuleWithDefaultExport {
   default: unknown;
-};
+}
 
 /**
  * Retrieves the list of dependencies that should be skipped during the bundling process.
@@ -86,9 +87,9 @@ function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, depe
   return {
     name: 'test',
     setup(build): void {
-      build.onResolve({ filter: /^[^\.\/]/ }, (args) => {
+      build.onResolve({ filter: /^[^./]/ }, (args) => {
         if (!args.importer.endsWith('.d.ts')) {
-          const moduleName = trimStart(args.path.split('/')[0]!, 'node:');
+          const moduleName = trimStart(args.path.split('/')[0] ?? throwExpression(new Error('Wrong path')), 'node:');
           if (!dependenciesToSkip.has(moduleName)) {
             dependenciesToBundle.add(args.path);
           }
@@ -121,7 +122,7 @@ function canSkipFromBundling(moduleName: string): boolean {
   try {
     const module = require(moduleName) as ModuleWithDefaultExport;
     return !module.default;
-  } catch(e) {
+  } catch {
     return false;
   }
 }

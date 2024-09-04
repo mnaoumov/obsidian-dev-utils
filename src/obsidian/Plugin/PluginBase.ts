@@ -88,9 +88,13 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
 
     const abortController = new AbortController();
     this._abortSignal = abortController.signal;
-    this.register(() => abortController.abort());
+    this.register(() => {
+      abortController.abort(); 
+    });
     await this.onloadComplete();
-    this.app.workspace.onLayoutReady(() => this.onLayoutReady());
+    this.app.workspace.onLayoutReady(() => {
+      this.onLayoutReady(); 
+    });
   }
 
   /**

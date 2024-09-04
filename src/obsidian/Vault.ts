@@ -16,7 +16,10 @@ import {
   type RetryOptions
 } from '../Async.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
-import { printError } from '../Error.ts';
+import {
+  printError,
+  throwExpression
+} from '../Error.ts';
 import { toJson } from '../Object.ts';
 import {
   getFile,
@@ -36,12 +39,27 @@ import { dirname } from '../Path.ts';
 /**
  * Represents a file change in the Vault.
  */
-export type FileChange = {
+export interface FileChange {
+  /**
+   * The start index of the change in the file content.
+   */
   startIndex: number;
+
+  /**
+   * The end index of the change in the file content.
+   */
   endIndex: number;
+
+  /**
+   * The old content that will be replaced.
+   */
   oldContent: string;
+
+  /**
+   * The new content to replace the old content.
+   */
   newContent: string;
-};
+}
 
 /**
  * Retrieves an array of Markdown files from the app's vault and sorts them alphabetically by their file path.
@@ -111,7 +129,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
     for (const change of changes) {
       const actualContent = content.slice(change.startIndex, change.endIndex);
       if (actualContent !== change.oldContent) {
-        console.warn(`Content mismatch at ${change.startIndex}-${change.endIndex} in ${getPath(pathOrFile)}:\nExpected: ${change.oldContent}\nActual: ${actualContent}`);
+        console.warn(`Content mismatch at ${change.startIndex.toString()}-${change.endIndex.toString()} in ${getPath(pathOrFile)}:\nExpected: ${change.oldContent}\nActual: ${actualContent}`);
         return null;
       }
     }
@@ -127,8 +145,8 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
     });
 
     for (let i = 1; i < changes.length; i++) {
-      const change = changes[i]!;
-      const previousChange = changes[i - 1]!;
+      const change = changes[i] ?? throwExpression(new Error('Change not found'));
+      const previousChange = changes[i - 1] ?? throwExpression(new Error('Previous change not found'));
       if (previousChange.endIndex > change.startIndex) {
         console.warn(`Overlapping changes:\n${toJson(previousChange)}\n${toJson(change)}`);
         return null;
@@ -155,6 +173,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
  * @param app - The Obsidian application instance.
  * @param folderPath - The path of the folder to be removed.
  * @param removedNotePath - Optional. The path of the note that triggered the removal.
+ * @param shouldReportUsedAttachments - Optional. If `true`, a notice will be shown for each attachment that is still used by other notes.
  * @returns A promise that resolves to a boolean indicating whether the removal was successful.
  */
 export async function removeFolderSafe(app: App, folderPath: string, removedNotePath?: string, shouldReportUsedAttachments?: boolean): Promise<boolean> {
@@ -284,6 +303,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
   let file = app.vault.getFileByPath(path);
   if (file) {
     return async () => {
+      // Do nothing
     };
   }
 
@@ -297,7 +317,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
     }
   }
 
-  file = app.vault.getFileByPath(path)!;
+  file = app.vault.getFileByPath(path) ?? throwExpression(new Error('File not found'));
 
   return async () => {
     if (!file.deleted) {
@@ -317,6 +337,7 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
   let folder = app.vault.getFolderByPath(path);
   if (folder) {
     return async () => {
+      // Do nothing
     };
   }
 
@@ -327,7 +348,7 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
 
   await createFolderSafe(app, path);
 
-  folder = app.vault.getFolderByPath(path)!;
+  folder = app.vault.getFolderByPath(path) ?? throwExpression(new Error('Folder not found'));
 
   return async () => {
     if (!folder.deleted) {

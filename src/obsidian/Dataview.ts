@@ -25,7 +25,10 @@ import {
   type MaybePromise
 } from '../Async.ts';
 import { relativePathToResourceUrl } from '../obsidian/ResourceUrl.ts';
-import { errorToString } from '../Error.ts';
+import {
+  errorToString,
+  throwExpression
+} from '../Error.ts';
 import type { PathOrFile } from './TFile.ts';
 import { getPath } from './TAbstractFile.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
@@ -95,7 +98,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
  * @returns A promise that resolves when the cache is reloaded.
  */
 export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<void> {
-  await DataviewAPI?.index.reload(dv.app.vault.getFileByPath(dv.current().file.path)!);
+  await DataviewAPI?.index.reload(dv.app.vault.getFileByPath(dv.current().file.path) ?? throwExpression(new Error('File not found')));
 }
 
 /**
@@ -103,8 +106,10 @@ export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<voi
  */
 export type CombinedPage<CustomFrontMatter = unknown> = SMarkdownPage & CombinedFrontMatter<CustomFrontMatter>;
 
+/**
+ * The combined file type, which includes the front matter and the SMarkdownFile.
+ */
 export type PageFile = SMarkdownPage['file'];
-
 
 /**
  * List of page files.
@@ -138,12 +143,15 @@ const paginationCss = `
 }
 `;
 
+/**
+ * Array or DataArray type.
+ */
 export type ArrayOrDataArray<T> = T[] | DataArray<T>;
 
 /**
  * Options for rendering a paginated list using the Dataview API.
  */
-export type RenderPaginatedListOptions<T> = {
+export interface RenderPaginatedListOptions<T> {
   /**
    * The DataviewInlineApi instance.
    */
@@ -158,7 +166,7 @@ export type RenderPaginatedListOptions<T> = {
    * Options for items per page. Defaults to `[10, 20, 50, 100]`.
    */
   itemsPerPageOptions?: number[];
-};
+}
 
 /**
  * Renders a paginated list using the provided DataviewInlineApi instance.
@@ -188,7 +196,7 @@ export async function renderPaginatedList<T>(options: RenderPaginatedListOptions
 /**
  * Options for rendering a paginated table using the Dataview API.
  */
-export type RenderPaginatedTableOptions<T> = {
+export interface RenderPaginatedTableOptions<T> {
   /**
    * The DataviewInlineApi instance.
    */
@@ -208,7 +216,7 @@ export type RenderPaginatedTableOptions<T> = {
    * Options for items per page. Defaults to `[10, 20, 50, 100]`.
    */
   itemsPerPageOptions?: number[];
-};
+}
 
 /**
  * Renders a paginated table using the provided DataviewInlineApi instance.
@@ -239,7 +247,7 @@ export async function renderPaginatedTable<T extends unknown[]>(options: RenderP
 /**
  * Options for rendering a paginated element using the Dataview API.
  */
-export type RenderPaginatedOptions<T> = {
+export interface RenderPaginatedOptions<T> {
   /**
    * The DataviewInlineApi instance.
    */
@@ -261,7 +269,7 @@ export type RenderPaginatedOptions<T> = {
    * @returns A promise that resolves when the content is rendered.
    */
   renderer: (rows: ArrayOrDataArray<T>) => MaybePromise<void>;
-};
+}
 
 /**
  * Helper function to render paginated content using the specified renderer.
@@ -284,7 +292,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     return;
   }
   const container = dv.container;
-  let itemsPerPage = itemsPerPageOptions[0]!;
+  let itemsPerPage = itemsPerPageOptions[0] ?? throwExpression(new Error('Items per page options are empty'));
   let totalPages = Math.ceil(rows.length / itemsPerPage);
   await renderPage(1);
 
@@ -340,13 +348,15 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
       }
     }));
 
-    paginationRow2Div.createEl('span', { text: `  Page ${pageNumber} of ${totalPages}, Total items: ${rows.length}` });
+    paginationRow2Div.createEl('span', { text: `  Page ${pageNumber.toString()} of ${totalPages.toString()}, Total items: ${rows.length.toString()}` });
 
     function createPageLink(text: string, pageNumber: number, disabled = false): HTMLAnchorElement {
-      const link = paginationRow1Div.createEl('a', { cls: 'page-link', text: text, href: `#${pageNumber}` });
+      const link = paginationRow1Div.createEl('a', { cls: 'page-link', text: text, href: `#${pageNumber.toString()}` });
       if (disabled) {
         link.addClass('disabled');
-        link.onclick = (event: MouseEvent): void => event.preventDefault();
+        link.onclick = (event: MouseEvent): void => {
+          event.preventDefault();
+        };
       } else {
         link.addEventListener('click', convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
           event.preventDefault();
@@ -399,7 +409,7 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
   } catch (e) {
     dv.paragraph('❌' + errorToString(e));
   } finally {
-    dv.container = tempContainer.parentElement!;
+    dv.container = tempContainer.parentElement ?? throwExpression(new Error('Container parent not found'));
     tempContainer.remove();
   }
 
@@ -409,7 +419,7 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
 /**
  * Options for rendering an iframe in the Dataview container.
  */
-export type RenderIframeOptions = {
+export interface RenderIframeOptions {
   /**
    * The DataviewInlineApi instance.
    */
@@ -429,7 +439,7 @@ export type RenderIframeOptions = {
    * The height of the iframe.
    */
   height: string;
-};
+}
 
 /**
  * Renders an iframe in the Dataview container with the specified relative path, width, and height.

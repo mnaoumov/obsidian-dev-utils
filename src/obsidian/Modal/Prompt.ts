@@ -16,7 +16,7 @@ import {
 /**
  * The options for the prompt modal.
  */
-export type PromptOptions = {
+export interface PromptOptions {
   /**
    * The Obsidian app instance.
    */
@@ -38,7 +38,7 @@ export type PromptOptions = {
    * @returns an error message if the value is invalid, or null if the value is valid.
    */
   valueValidator?: (value: string) => string | null;
-};
+}
 
 /**
  * Displays a prompt modal in Obsidian to get user input.
@@ -87,7 +87,9 @@ export async function prompt(options: PromptOptions): Promise<string | null> {
         const okButton = new ButtonComponent(this.contentEl);
         okButton.setButtonText('OK');
         okButton.setClass('mod-cta');
-        okButton.onClick((event) => this.handleOk(event, textComponent));
+        okButton.onClick((event) => {
+          this.handleOk(event, textComponent); 
+        });
         okButton.buttonEl.style.marginTop = '20px';
         okButton.buttonEl.style.marginRight = '10px';
         const cancelButton = new ButtonComponent(this.contentEl);

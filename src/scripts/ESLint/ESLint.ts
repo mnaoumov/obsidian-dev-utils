@@ -71,11 +71,11 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
 
     for (const message of lintResult.messages) {
       const canAutoFix = message.fix !== undefined;
-      console.log(`${toRelativeFromRoot(lintResult.filePath)}:${message.line}:${message.column} - ${message.message} [rule ${message.ruleId}]${canAutoFix ? ' (auto-fixable)' : ''}`);
+      console.log(`${toRelativeFromRoot(lintResult.filePath)}:${message.line.toString()}:${message.column.toString()} - ${message.message} [rule ${message.ruleId ?? '(null)'}]${canAutoFix ? ' (auto-fixable)' : ''}`);
       errorsCount++;
     }
   }
 
-  console.log(`Linted ${lintResults.length} files with ${errorsCount} issues.`);
+  console.log(`Linted ${lintResults.length.toString()} files with ${errorsCount.toString()} issues.`);
   return CliTaskResult.Success(errorsCount === 0);
 }

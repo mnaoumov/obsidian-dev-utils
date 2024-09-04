@@ -24,6 +24,7 @@ export abstract class CliTaskResult {
    * @param tasks - An array of task functions that return a `TaskResult` or `void`.
    * @returns A promise that resolves with the first failed `TaskResult` or a success result.
    */
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   public static async chain(tasks: (() => MaybePromise<CliTaskResult | void>)[]): Promise<CliTaskResult> {
     for (const task of tasks) {
       const result = await wrapResult(task);
@@ -48,7 +49,7 @@ export abstract class CliTaskResult {
    * @param isSuccess - A boolean indicating whether the task was successful. Default is true.
    * @returns A CliTaskResult object representing a successful task result.
    */
-  public static Success(isSuccess: boolean = true): CliTaskResult {
+  public static Success(isSuccess = true): CliTaskResult {
     return new SuccessTaskResult(isSuccess);
   }
 
@@ -133,6 +134,7 @@ class DoNotExitTaskResult extends CliTaskResult {
    * Does not exit the process.
    */
   public override exit(): void {
+    // Do nothing
   }
 
   protected override isSuccessful(): boolean {
@@ -147,9 +149,10 @@ class DoNotExitTaskResult extends CliTaskResult {
  * @param taskFn - The task function to execute.
  * @returns A promise that resolves with a `TaskResult` representing the outcome of the task.
  */
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 async function wrapResult(taskFn: () => MaybePromise<CliTaskResult | void>): Promise<CliTaskResult> {
   try {
-    return await taskFn() ?? CliTaskResult.Success();
+    return await taskFn() as CliTaskResult | undefined ?? CliTaskResult.Success();
   } catch (error) {
     printError(new Error('An error occurred during task execution', { cause: error }));
     return CliTaskResult.Failure();
@@ -162,6 +165,7 @@ async function wrapResult(taskFn: () => MaybePromise<CliTaskResult | void>): Pro
  * @param taskFn - The task function to execute, which may return a `TaskResult` or void.
  * @returns A promise that resolves when the task is completed and exits with the appropriate status.
  */
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 export async function wrapCliTask(taskFn: () => MaybePromise<CliTaskResult | void>): Promise<void> {
   const result = await wrapResult(taskFn);
   result.exit();

@@ -68,7 +68,7 @@ export type DirentResultOptions = ObjectEncodingOptions & {
 /**
  * Common options for controlling the format of the result.
  */
-type CommonOptions = {
+interface CommonOptions {
   /**
    * Encoding to use when returning strings.
    */

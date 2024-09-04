@@ -107,7 +107,7 @@ export const relative = posix.relative;
 export function resolve(...pathSegments: string[]): string {
   let path = posix.resolve(...pathSegments);
   path = toPosixPath(path);
-  const match = path.match(/.:[^:]*$/);
+  const match = /.:[^:]*$/.exec(path);
   return match?.[0] ?? path;
 }
 
@@ -158,7 +158,7 @@ export function getDirname(importMetaUrl: string): string {
  * @returns The normalized path, starting with "./" if it was relative.
  */
 export function normalizeIfRelative(path: string): string {
-  if (path[0] === '/' || path.includes(':')) {
+  if (path.startsWith('/') || path.includes(':')) {
     return path;
   }
 
