@@ -7,23 +7,23 @@ import {
   type Link,
   type DataviewInlineApi,
   renderPaginatedTable,
-} from "./Dataview.ts";
+} from './Dataview.ts';
 
-import { renderCallout } from "./Callout.ts";
-import { fixTitle } from "./DataviewLink.ts";
+import { renderCallout } from './Callout.ts';
+import { fixTitle } from './DataviewLink.ts';
 import {
   TFolder,
   type TFile
-} from "obsidian";
-import { generateMarkdownLink } from "./Link.ts";
+} from 'obsidian';
+import { generateMarkdownLink } from './Link.ts';
 import {
   getAbstractFileOrNull,
   isFile,
   type PathOrAbstractFile
-} from "./TAbstractFile.ts";
-import { getBacklinksForFileSafe } from "./MetadataCache.ts";
-import { getMarkdownFiles } from "./TFolder.ts";
-import type { PathOrFile } from "./TFile.ts";
+} from './TAbstractFile.ts';
+import { getBacklinksForFileSafe } from './MetadataCache.ts';
+import { getMarkdownFiles } from './TFolder.ts';
+import type { PathOrFile } from './TFile.ts';
 
 
 /**
@@ -55,7 +55,7 @@ export function renderDelayedBacklinks(options: RenderDelayedBacklinksOptions): 
   const {
     dv,
     files,
-    title = "Backlinks"
+    title = 'Backlinks'
   } = options;
   renderCallout({
     dv,
@@ -95,7 +95,7 @@ export function renderDelayedBacklinksForFolder(options: RenderDelayedBacklinksF
   const {
     dv,
     folder,
-    title = "Folder Backlinks"
+    title = 'Folder Backlinks'
   } = options;
   const folder2 = folder ?? dv.current().file.folder;
   renderDelayedBacklinks({
@@ -150,7 +150,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
 
   await renderPaginatedTable({
     dv,
-    headers: ["Note", "Backlinks"],
+    headers: ['Note', 'Backlinks'],
     rows: backlinkRows,
   });
 }

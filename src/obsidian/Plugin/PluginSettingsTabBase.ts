@@ -4,8 +4,8 @@
  * It provides a utility method to bind value components to plugin settings and handle changes.
  */
 
-import { PluginSettingTab } from "obsidian";
-import { PluginBase } from "./PluginBase.ts";
+import { PluginSettingTab } from 'obsidian';
+import { PluginBase } from './PluginBase.ts';
 
 /**
  * Base class for creating plugin settings tabs in Obsidian.

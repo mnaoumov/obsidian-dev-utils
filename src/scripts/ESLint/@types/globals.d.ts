@@ -3,9 +3,9 @@
  * @see {@link https://www.npmjs.com/package/globals} for more information.
  */
 
-declare module "globals" {
+declare module 'globals' {
   type Globals = {
-    [name: string]: boolean | "writable" | "readonly" | "off";
+    [name: string]: boolean | 'writable' | 'readonly' | 'off';
   };
 
   const globals: {

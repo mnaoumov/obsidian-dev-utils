@@ -3,7 +3,7 @@
  * Provides a utility to retrieve the Obsidian `App` instance.
  */
 
-import type { App } from "obsidian";
+import type { App } from 'obsidian';
 
 /**
  * Wrapper type for accessing the `App` instance globally.
@@ -26,13 +26,13 @@ type AppWrapper = {
 export function getApp(): App {
   let canRequire = false;
   try {
-    globalThis.require.resolve("obsidian/app");
+    globalThis.require.resolve('obsidian/app');
     canRequire = true;
   } catch {
   }
 
   if (canRequire) {
-    return globalThis.require("obsidian/app") as App;
+    return globalThis.require('obsidian/app') as App;
   }
 
   const app = (globalThis as AppWrapper).app;
@@ -40,5 +40,5 @@ export function getApp(): App {
     return app;
   }
 
-  throw new Error("Obsidian app not found");
+  throw new Error('Obsidian app not found');
 }

@@ -9,29 +9,29 @@ import {
   TFile,
   TFolder,
   type ListedFiles
-} from "obsidian";
-import { deepEqual } from "../Object.ts";
+} from 'obsidian';
+import { deepEqual } from '../Object.ts';
 import {
   retryWithTimeout,
   type RetryOptions
-} from "../Async.ts";
-import { getBacklinksForFileSafe } from "./MetadataCache.ts";
-import { printError } from "../Error.ts";
-import { toJson } from "../Object.ts";
+} from '../Async.ts';
+import { getBacklinksForFileSafe } from './MetadataCache.ts';
+import { printError } from '../Error.ts';
+import { toJson } from '../Object.ts';
 import {
   getFile,
   type PathOrFile
-} from "./TFile.ts";
-import { getPath } from "./TAbstractFile.ts";
+} from './TFile.ts';
+import { getPath } from './TAbstractFile.ts';
 import {
   getFolderOrNull,
   type PathOrFolder
-} from "./TFolder.ts";
+} from './TFolder.ts';
 import {
   resolveValue,
   type ValueProvider
-} from "../ValueProvider.ts";
-import { dirname } from "../Path.ts";
+} from '../ValueProvider.ts';
+import { dirname } from '../Path.ts';
 
 /**
  * Represents a file change in the Vault.
@@ -135,7 +135,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
       }
     }
 
-    let newContent = "";
+    let newContent = '';
     let lastIndex = 0;
 
     for (const change of changes) {
@@ -290,7 +290,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
   const folderCleanup = await createTempFolder(app, dirname(path));
 
   try {
-    await app.vault.create(path, "");
+    await app.vault.create(path, '');
   } catch (e) {
     if (!await app.vault.exists(path)) {
       throw e;

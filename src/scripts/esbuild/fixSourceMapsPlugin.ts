@@ -5,12 +5,12 @@
  * The plugin is only active during development builds.
  */
 
-import type { Plugin } from "esbuild";
+import type { Plugin } from 'esbuild';
 import {
   readFile,
   writeFile
-} from "node:fs/promises";
-import { toPosixPath } from "../../Path.ts";
+} from 'node:fs/promises';
+import { toPosixPath } from '../../Path.ts';
 
 type SourceMap = {
   sources: string[];
@@ -27,18 +27,18 @@ type SourceMap = {
  */
 export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string, pluginName: string): Plugin {
   return {
-    name: "fix-source-maps",
+    name: 'fix-source-maps',
     setup(build): void {
       build.onEnd(async () => {
         if (isProductionBuild) {
           return;
         }
 
-        const content = await readFile(distPath, "utf-8");
+        const content = await readFile(distPath, 'utf-8');
         const newContent = content.replaceAll(
           /\n\/\/# sourceMappingURL=data:application\/json;base64,(.+)/g,
           (_: string, sourceMapBase64: string): string => {
-            return `\n//${""}# sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64, pluginName)}`;
+            return `\n//${''}# sourceMappingURL=data:application/json;base64,${fixSourceMap(sourceMapBase64, pluginName)}`;
           }
         );
 
@@ -58,10 +58,10 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string
  * @returns A base64-encoded string with the adjusted source map.
  */
 function fixSourceMap(sourceMapBase64: string, pluginName: string): string {
-  const sourceMapJson = Buffer.from(sourceMapBase64, "base64").toString("utf-8");
+  const sourceMapJson = Buffer.from(sourceMapBase64, 'base64').toString('utf-8');
   const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
   sourceMap.sources = sourceMap.sources.map((path) => convertPathToObsidianUrl(path, pluginName));
-  return Buffer.from(JSON.stringify(sourceMap)).toString("base64");
+  return Buffer.from(JSON.stringify(sourceMap)).toString('base64');
 }
 
 /**
@@ -72,6 +72,6 @@ function fixSourceMap(sourceMapBase64: string, pluginName: string): string {
  * @returns The converted path as an Obsidian-specific URL.
  */
 function convertPathToObsidianUrl(path: string, pluginName: string): string {
-  const convertedPath = toPosixPath(path).replace(/^(\.\.\/)+/, "");
+  const convertedPath = toPosixPath(path).replace(/^(\.\.\/)+/, '');
   return `app://obsidian.md/plugin:${pluginName}/${convertedPath}`;
 }

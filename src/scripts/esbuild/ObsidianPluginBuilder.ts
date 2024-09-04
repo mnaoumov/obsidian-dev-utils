@@ -10,25 +10,25 @@ import {
   type BuildContext,
   type BuildOptions,
   type Plugin
-} from "esbuild";
-import process from "node:process";
-import { existsSync } from "node:fs";
+} from 'esbuild';
+import process from 'node:process';
+import { existsSync } from 'node:fs';
 import {
   cp,
   mkdir,
   rm,
   writeFile
-} from "node:fs/promises";
-import { resolvePathFromRoot } from "../Root.ts";
-import { CliTaskResult } from "../CliUtils.ts";
-import { readNpmPackage } from "../Npm.ts";
-import { preprocessPlugin } from "./preprocessPlugin.ts";
-import { lintPlugin } from "./lintPlugin.ts";
-import { fixSourceMapsPlugin } from "./fixSourceMapsPlugin.ts";
-import { copyToObsidianPluginsFolderPlugin } from "./copyToObsidianPluginsFolderPlugin.ts";
-import { ObsidianPluginRepoPaths } from "../../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
-import { join } from "../../Path.ts";
-import builtins from "builtin-modules";
+} from 'node:fs/promises';
+import { resolvePathFromRoot } from '../Root.ts';
+import { CliTaskResult } from '../CliUtils.ts';
+import { readNpmPackage } from '../Npm.ts';
+import { preprocessPlugin } from './preprocessPlugin.ts';
+import { lintPlugin } from './lintPlugin.ts';
+import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
+import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
+import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
+import { join } from '../../Path.ts';
+import builtins from 'builtin-modules';
 
 /**
  * Enumeration representing the build modes.
@@ -79,7 +79,7 @@ export type BuildObsidianPluginOptions = {
 export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): Promise<CliTaskResult> {
   const {
     mode,
-    obsidianConfigDir = process.env["OBSIDIAN_CONFIG_DIR"],
+    obsidianConfigDir = process.env['OBSIDIAN_CONFIG_DIR'],
     customEsbuildPlugins = []
   } = options;
   const isProductionBuild = mode === BuildMode.Production;
@@ -95,7 +95,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     ObsidianPluginRepoPaths.StylesCss
   ];
   if (!isProductionBuild) {
-    await writeFile(join(distDir, ObsidianPluginRepoPaths.HotReload), "", "utf-8");
+    await writeFile(join(distDir, ObsidianPluginRepoPaths.HotReload), '', 'utf-8');
   }
 
   for (const fileName of distFileNames) {
@@ -119,27 +119,27 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     bundle: true,
     entryPoints: [resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs))],
     external: [
-      "obsidian",
-      "electron",
-      "@codemirror/autocomplete",
-      "@codemirror/collab",
-      "@codemirror/commands",
-      "@codemirror/language",
-      "@codemirror/lint",
-      "@codemirror/search",
-      "@codemirror/state",
-      "@codemirror/view",
-      "@lezer/common",
-      "@lezer/highlight",
-      "@lezer/lr",
-      "esbuild",
-      "eslint",
+      'obsidian',
+      'electron',
+      '@codemirror/autocomplete',
+      '@codemirror/collab',
+      '@codemirror/commands',
+      '@codemirror/language',
+      '@codemirror/lint',
+      '@codemirror/search',
+      '@codemirror/state',
+      '@codemirror/view',
+      '@lezer/common',
+      '@lezer/highlight',
+      '@lezer/lr',
+      'esbuild',
+      'eslint',
       ...builtins
     ],
-    format: "cjs",
-    logLevel: "info",
+    format: 'cjs',
+    logLevel: 'info',
     outfile: distPath,
-    platform: "node",
+    platform: 'node',
     plugins: [
       preprocessPlugin(),
       lintPlugin(isProductionBuild),
@@ -147,8 +147,8 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       ...customEsbuildPlugins,
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName),
     ],
-    sourcemap: isProductionBuild ? false : "inline",
-    target: "esnext",
+    sourcemap: isProductionBuild ? false : 'inline',
+    target: 'esnext',
     treeShaking: true
   };
 

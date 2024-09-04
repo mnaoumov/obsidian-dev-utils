@@ -8,50 +8,50 @@
  */
 export enum ObsidianPluginRepoPaths {
   /** Represents any path recursively. */
-  AnyPath = "**",
+  AnyPath = '**',
 
   /** Represents any TypeScript file. */
-  AnyTs = "*.ts",
+  AnyTs = '*.ts',
 
   /** Represents the changelog file. */
-  ChangelogMd = "CHANGELOG.md",
+  ChangelogMd = 'CHANGELOG.md',
 
   /** Represents the distribution directory. */
-  Dist = "dist",
+  Dist = 'dist',
 
   /** Represents the build directory within the distribution directory. */
-  DistBuild = "dist/build",
+  DistBuild = 'dist/build',
 
   /** Represents the development directory within the distribution directory. */
-  DistDev = "dist/dev",
+  DistDev = 'dist/dev',
 
   /** Represents the hot reload file. */
-  HotReload = ".hotreload",
+  HotReload = '.hotreload',
 
   /** Represents the main JavaScript file. */
-  MainJs = "main.js",
+  MainJs = 'main.js',
 
   /** Represents the main TypeScript file. */
-  MainTs = "main.ts",
+  MainTs = 'main.ts',
 
   /** Represents the manifest file. */
-  ManifestJson = "manifest.json",
+  ManifestJson = 'manifest.json',
 
   /** Represents the package.json file. */
-  PackageJson = "package.json",
+  PackageJson = 'package.json',
 
   /** Represents the package-lock.json file. */
-  PackageLockJson = "package-lock.json",
+  PackageLockJson = 'package-lock.json',
 
   /** Represents the source directory. */
-  Src = "src",
+  Src = 'src',
 
   /** Represents the styles.css file. */
-  StylesCss = "styles.css",
+  StylesCss = 'styles.css',
 
   /** Represents the TypeScript configuration file. */
-  TsConfigJson = "tsconfig.json",
+  TsConfigJson = 'tsconfig.json',
 
   /** Represents the versions.json file. */
-  VersionsJson = "versions.json"
+  VersionsJson = 'versions.json'
 }

@@ -3,11 +3,11 @@
  * Contains utility functions for string operations.
  */
 
-import { escapeRegExp } from "./RegExp.ts";
+import { escapeRegExp } from './RegExp.ts';
 import {
   resolveValue,
   type ValueProvider
-} from "./ValueProvider.ts";
+} from './ValueProvider.ts';
 
 export type AsyncReplacer<Args extends unknown[]> = ValueProvider<string, [string, ...Args]>;
 
@@ -15,14 +15,14 @@ export type AsyncReplacer<Args extends unknown[]> = ValueProvider<string, [strin
  * Mapping of special characters to their escaped counterparts.
  */
 const ESCAPE_MAP: Record<string, string> = {
-  "\\": "\\\\",
-  "\"": "\\\"",
-  "\'": "\\\'",
-  "\n": "\\n",
-  "\r": "\\r",
-  "\t": "\\t",
-  "\b": "\\b",
-  "\f": "\\f"
+  '\\': '\\\\',
+  '"': '\\"',
+  '\'': '\\\'',
+  '\n': '\\n',
+  '\r': '\\r',
+  '\t': '\\t',
+  '\b': '\\b',
+  '\f': '\\f'
 } as const;
 
 /**
@@ -82,7 +82,7 @@ export function trimEnd(str: string, suffix: string, validate?: boolean): string
  * @returns The normalized string.
  */
 export function normalize(str: string): string {
-  return str.replace(/\u00A0/g, " ").normalize("NFC");
+  return str.replace(/\u00A0/g, ' ').normalize('NFC');
 }
 
 /**
@@ -116,7 +116,7 @@ export async function replaceAllAsync<Args extends unknown[]>(
  * @returns The valid variable name.
  */
 export function makeValidVariableName(str: string): string {
-  return str.replace(/[^a-zA-Z0-9_]/g, "_");
+  return str.replace(/[^a-zA-Z0-9_]/g, '_');
 }
 
 /**
@@ -169,6 +169,6 @@ export function unescape(str: string): string {
  * @returns The modified string with replacements applied.
  */
 export function replace(str: string, replacementsMap: Record<string, string>): string {
-  const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join("|"), "g");
+  const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join('|'), 'g');
   return str.replaceAll(regExp, (source: string) => replacementsMap[source] as string);
 }

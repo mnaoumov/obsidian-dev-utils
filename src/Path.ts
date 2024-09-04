@@ -3,8 +3,8 @@
  * Contains utility functions for handling paths.
  */
 
-import path from "path-browserify";
-import { ensureStartsWith } from "./String.ts";
+import path from 'path-browserify';
+import { ensureStartsWith } from './String.ts';
 
 /**
  * Provides methods for handling POSIX paths.
@@ -118,7 +118,7 @@ export function resolve(...pathSegments: string[]): string {
  * @returns The POSIX-style path.
  */
 export function toPosixPath(path: string): string {
-  return path.replace(/\\/g, "/");
+  return path.replace(/\\/g, '/');
 }
 
 /**
@@ -158,9 +158,9 @@ export function getDirname(importMetaUrl: string): string {
  * @returns The normalized path, starting with "./" if it was relative.
  */
 export function normalizeIfRelative(path: string): string {
-  if (path[0] === "/" || path.includes(":")) {
+  if (path[0] === '/' || path.includes(':')) {
     return path;
   }
 
-  return ensureStartsWith(path, "./");
+  return ensureStartsWith(path, './');
 }

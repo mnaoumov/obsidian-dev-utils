@@ -11,26 +11,26 @@ import {
   type MarkdownView,
   type ReferenceCache,
   type TAbstractFile
-} from "obsidian";
+} from 'obsidian';
 import {
   retryWithTimeout,
   type RetryOptions
-} from "../Async.ts";
-import type { CustomArrayDict } from "obsidian-typings";
+} from '../Async.ts';
+import type { CustomArrayDict } from 'obsidian-typings';
 import {
   getPath,
   isMarkdownFile
-} from "./TAbstractFile.ts";
+} from './TAbstractFile.ts';
 import {
   getFile,
   getFileOrNull,
   type PathOrFile
-} from "./TFile.ts";
-import type { CombinedFrontMatter } from "./FrontMatter.ts";
+} from './TFile.ts';
+import type { CombinedFrontMatter } from './FrontMatter.ts';
 import {
   createTFolderInstance,
   parentFolderPath
-} from "obsidian-typings/implementations";
+} from 'obsidian-typings/implementations';
 
 /**
  * Retrieves the cached metadata for a given file or path.
@@ -165,7 +165,7 @@ async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
 
   const path = getPath(pathOrFile);
 
-  for (const leaf of app.workspace.getLeavesOfType("markdown")) {
+  for (const leaf of app.workspace.getLeavesOfType('markdown')) {
     const view = leaf.view as MarkdownView;
     if (view.file?.path === path) {
       await view.save();

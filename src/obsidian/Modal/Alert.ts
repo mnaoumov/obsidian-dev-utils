@@ -8,7 +8,7 @@
 import {
   type App,
   Modal
-} from "obsidian";
+} from 'obsidian';
 
 /**
  * Displays an alert modal in Obsidian with a specified message.
@@ -26,11 +26,11 @@ export async function alert(app: App, message: string): Promise<void> {
 
       public override onOpen(): void {
         this.setContent(createFragment((fragment) => {
-          const modalContent = fragment.createDiv({ cls: "mod-cta" });
-          modalContent.createEl("p", { text: message });
-          modalContent.createEl("button", {
-            cls: "mod-cta",
-            text: "OK",
+          const modalContent = fragment.createDiv({ cls: 'mod-cta' });
+          modalContent.createEl('p', { text: message });
+          modalContent.createEl('button', {
+            cls: 'mod-cta',
+            text: 'OK',
             onclick: () => this.close()
           } as DomElementInfo);
         }));

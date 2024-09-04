@@ -3,7 +3,7 @@
  * This module provides utility functions for working with Obsidian settings.
  */
 
-import type { App } from "obsidian";
+import type { App } from 'obsidian';
 
 /**
  * Retrieves whether to use wikilinks based on the Obsidian settings.
@@ -11,7 +11,7 @@ import type { App } from "obsidian";
  * @returns Whether to use wikilinks.
  */
 export function shouldUseWikilinks(app: App): boolean {
-  return !app.vault.getConfig("useMarkdownLinks");
+  return !app.vault.getConfig('useMarkdownLinks');
 }
 
 /**
@@ -20,5 +20,5 @@ export function shouldUseWikilinks(app: App): boolean {
  * @returns Whether to use relative links.
  */
 export function shouldUseRelativeLinks(app: App): boolean {
-  return app.vault.getConfig("newLinkFormat") === "relative";
+  return app.vault.getConfig('newLinkFormat') === 'relative';
 }

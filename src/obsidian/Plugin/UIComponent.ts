@@ -1,11 +1,11 @@
-import type { KeysMatching } from "../../@types.ts";
-import type { PluginBase } from "./PluginBase.ts";
+import type { KeysMatching } from '../../@types.ts';
+import type { PluginBase } from './PluginBase.ts';
 import {
   DropdownComponent,
   SliderComponent,
   TextAreaComponent,
   TextComponent
-} from "obsidian";
+} from 'obsidian';
 
 /**
  * A UI component that can be bound to a plugin setting.
@@ -183,7 +183,7 @@ export function bindUiComponent<
         const errorMessage = optionsExt.uiValueValidator(uiValue);
         const validatorElement = getValidatorElement(uiComponent);
         if (validatorElement) {
-          validatorElement.setCustomValidity(errorMessage ?? "");
+          validatorElement.setCustomValidity(errorMessage ?? '');
           validatorElement.reportValidity();
         }
         if (errorMessage) {

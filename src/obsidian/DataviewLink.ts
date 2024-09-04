@@ -3,17 +3,17 @@
  * This module provides utility functions for working with Dataview links in Obsidian
  */
 
-import { dirname } from "../Path.ts";
+import { dirname } from '../Path.ts';
 import {
   basename,
   extname
-} from "../Path.ts";
+} from '../Path.ts';
 import type {
   DataviewInlineApi,
   Link
-} from "./Dataview.ts";
-import type { PathOrFile } from "./TFile.ts";
-import { getPath } from "./TAbstractFile.ts";
+} from './Dataview.ts';
+import type { PathOrFile } from './TFile.ts';
+import { getPath } from './TAbstractFile.ts';
 
 /**
  * Fixes the title of a file or folder note by generating a `Link` object with a proper title.

@@ -6,7 +6,7 @@
 import {
   App,
   TFile
-} from "obsidian";
+} from 'obsidian';
 
 /**
  * Represents a path or a file.

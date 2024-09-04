@@ -3,9 +3,9 @@
  * Contains utility functions for error handling.
  */
 
-import { EventEmitter } from "eventemitter3";
+import { EventEmitter } from 'eventemitter3';
 
-const ASYNC_ERROR_EVENT = "asyncError";
+const ASYNC_ERROR_EVENT = 'asyncError';
 
 const asyncErrorEventEmitter = new EventEmitter();
 asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
@@ -16,7 +16,7 @@ asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
  * @param asyncError - The asynchronous error to handle.
  */
 function handleAsyncError(asyncError: unknown): void {
-  printError(new Error("An unhandled error occurred executing async operation", { cause: asyncError }));
+  printError(new Error('An unhandled error occurred executing async operation', { cause: asyncError }));
 }
 
 /**
@@ -69,7 +69,7 @@ export function printError(error: unknown): void {
  * @returns The string representation of the error.
  */
 export function errorToString(error: unknown): string {
-  return parseErrorEntries(error).map((entry) => "  ".repeat(entry.level) + entry.message).join("\n");
+  return parseErrorEntries(error).map((entry) => '  '.repeat(entry.level) + entry.message).join('\n');
 }
 
 /**
@@ -86,11 +86,11 @@ function parseErrorEntries(error: unknown, level: number = 0, entries: ErrorEntr
   }
 
   if (!(error instanceof Error)) {
-    let str = "";
+    let str = '';
 
     if (error === null) {
-      str = "(null)";
-    } else if (typeof error === "string") {
+      str = '(null)';
+    } else if (typeof error === 'string') {
       str = error;
     } else {
       str = JSON.stringify(error);
@@ -109,7 +109,7 @@ function parseErrorEntries(error: unknown, level: number = 0, entries: ErrorEntr
   }
 
   if (error.cause !== undefined) {
-    entries.push({ level, message: "Caused by:" });
+    entries.push({ level, message: 'Caused by:' });
     parseErrorEntries(error.cause, level + 1, entries);
   }
 

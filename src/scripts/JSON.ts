@@ -6,10 +6,10 @@
 import {
   readFile,
   writeFile
-} from "node:fs/promises";
-import type { MaybePromise } from "../Async.ts";
-import { existsSync } from "node:fs";
-import { toJson } from "../Object.ts";
+} from 'node:fs/promises';
+import type { MaybePromise } from '../Async.ts';
+import { existsSync } from 'node:fs';
+import { toJson } from '../Object.ts';
 
 /**
  * Reads a JSON file and parses its contents into a JavaScript object of type `T`.
@@ -19,7 +19,7 @@ import { toJson } from "../Object.ts";
  * @returns A promise that resolves with the parsed JSON object of type `T`.
  */
 export async function readJson<T>(path: string): Promise<T> {
-  return JSON.parse(await readFile(path, "utf-8")) as T;
+  return JSON.parse(await readFile(path, 'utf-8')) as T;
 }
 
 /**
@@ -30,7 +30,7 @@ export async function readJson<T>(path: string): Promise<T> {
  * @returns A promise that resolves when the file has been written.
  */
 export async function writeJson(path: string, data: unknown): Promise<void> {
-  await writeFile(path, toJson(data) + "\n");
+  await writeFile(path, toJson(data) + '\n');
 }
 
 /**

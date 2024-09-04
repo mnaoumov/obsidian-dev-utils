@@ -3,14 +3,14 @@
  * Contains utility functions for NPM package.json.
  */
 
-import type { MaybePromise } from "../Async.ts";
+import type { MaybePromise } from '../Async.ts';
 import {
   editJson,
   readJson,
   writeJson
-} from "./JSON.ts";
-import { ObsidianPluginRepoPaths } from "../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
-import { resolvePathFromRoot } from "./Root.ts";
+} from './JSON.ts';
+import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
+import { resolvePathFromRoot } from './Root.ts';
 
 /**
  * Represents the structure of an `NpmPackage` as defined in a `package.json` file.

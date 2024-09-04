@@ -4,16 +4,16 @@
  * resolving paths relative to the root.
  */
 
-import { spawn } from "node:child_process";
+import { spawn } from 'node:child_process';
 import {
   relative,
   resolve
-} from "../Path.ts";
-import process from "node:process";
-import { packageDirectorySync } from "pkg-dir";
-import { toPosixPath } from "../Path.ts";
-import { trimEnd } from "../String.ts";
-import { toCommandLine } from "./CliUtils.ts";
+} from '../Path.ts';
+import process from 'node:process';
+import { packageDirectorySync } from 'pkg-dir';
+import { toPosixPath } from '../Path.ts';
+import { trimEnd } from '../String.ts';
+import { toCommandLine } from './CliUtils.ts';
 
 /**
  * Represents the result of executing a command from the root directory.
@@ -113,7 +113,7 @@ export function execFromRoot(command: string | string[], options: ExecFromRootOp
   const {
     quiet = false,
     ignoreExitCode = false,
-    stdin = "",
+    stdin = '',
     cwd = undefined,
     withDetails = false
   } = options;
@@ -123,43 +123,43 @@ export function execFromRoot(command: string | string[], options: ExecFromRootOp
 
   return new Promise((resolve, reject) => {
     console.log(`Executing command: ${command}`);
-    const [cmd = "", ...args] = command.split(" ");
+    const [cmd = '', ...args] = command.split(' ');
 
     const child = spawn(cmd, args, {
       cwd: getRootDir(cwd),
-      stdio: "pipe",
+      stdio: 'pipe',
       shell: true
     });
 
-    let stdout = "";
-    let stderr = "";
+    let stdout = '';
+    let stderr = '';
 
     child.stdin.write(stdin);
     child.stdin.end();
 
-    child.stdout.on("data", (data: Buffer) => {
+    child.stdout.on('data', (data: Buffer) => {
       if (!quiet) {
         process.stdout.write(data);
       }
-      stdout += data.toString("utf-8");
+      stdout += data.toString('utf-8');
     });
 
-    child.stdout.on("end", () => {
-      stdout = trimEnd(stdout, "\n");
+    child.stdout.on('end', () => {
+      stdout = trimEnd(stdout, '\n');
     });
 
-    child.stderr.on("data", (data: Buffer) => {
+    child.stderr.on('data', (data: Buffer) => {
       if (!quiet) {
         process.stderr.write(data);
       }
-      stderr += data.toString("utf-8");
+      stderr += data.toString('utf-8');
     });
 
-    child.stderr.on("end", () => {
-      stderr = trimEnd(stderr, "\n");
+    child.stderr.on('end', () => {
+      stderr = trimEnd(stderr, '\n');
     });
 
-    child.on("close", (exitCode, exitSignal) => {
+    child.on('close', (exitCode, exitSignal) => {
       if (exitCode !== 0 && !ignoreExitCode) {
         reject(new Error(`Command failed with exit code ${exitCode}\n${stderr}`));
       } else {
@@ -172,7 +172,7 @@ export function execFromRoot(command: string | string[], options: ExecFromRootOp
       }
     });
 
-    child.on("error", (err) => {
+    child.on('error', (err) => {
       if (!ignoreExitCode) {
         reject(err);
       } else {
@@ -208,7 +208,7 @@ export function resolvePathFromRoot(path: string, cwd?: string): string {
 export function getRootDir(cwd?: string): string {
   const rootDir = packageDirectorySync({ cwd: cwd ?? process.cwd() });
   if (!rootDir) {
-    throw new Error("Could not find root directory");
+    throw new Error('Could not find root directory');
   }
 
   return toPosixPath(rootDir);

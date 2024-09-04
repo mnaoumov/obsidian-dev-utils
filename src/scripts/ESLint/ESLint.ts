@@ -9,18 +9,18 @@
 import {
   Linter,
   loadESLint
-} from "eslint";
-import { configs as defaultConfigs } from "./eslint.config.ts";
+} from 'eslint';
+import { configs as defaultConfigs } from './eslint.config.ts';
 import {
   join,
   normalizeIfRelative
-} from "../../Path.ts";
-import { packageDirectory } from "pkg-dir";
-import { toRelativeFromRoot } from "../Root.ts";
-import { getDirname } from "../../Path.ts";
-import { CliTaskResult } from "../CliUtils.ts";
-import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
-import { glob } from "glob";
+} from '../../Path.ts';
+import { packageDirectory } from 'pkg-dir';
+import { toRelativeFromRoot } from '../Root.ts';
+import { getDirname } from '../../Path.ts';
+import { CliTaskResult } from '../CliUtils.ts';
+import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
+import { glob } from 'glob';
 
 /**
  * Lints files according to the ESLint configurations and applies automatic fixes if specified.
@@ -35,7 +35,7 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
   fix ??= false;
   const packageDir = await packageDirectory({ cwd: getDirname(import.meta.url) });
   if (!packageDir) {
-    throw new Error("Could not find package directory.");
+    throw new Error('Could not find package directory.');
   }
 
   const configs = [...defaultConfigs, ...customConfigs ?? []];
@@ -71,7 +71,7 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
 
     for (const message of lintResult.messages) {
       const canAutoFix = message.fix !== undefined;
-      console.log(`${toRelativeFromRoot(lintResult.filePath)}:${message.line}:${message.column} - ${message.message} [rule ${message.ruleId}]${canAutoFix ? " (auto-fixable)" : ""}`);
+      console.log(`${toRelativeFromRoot(lintResult.filePath)}:${message.line}:${message.column} - ${message.message} [rule ${message.ruleId}]${canAutoFix ? ' (auto-fixable)' : ''}`);
       errorsCount++;
     }
   }

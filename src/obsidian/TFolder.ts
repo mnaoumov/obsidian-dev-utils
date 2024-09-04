@@ -8,8 +8,8 @@ import {
   TFile,
   TFolder,
   Vault
-} from "obsidian";
-import { isMarkdownFile } from "./TAbstractFile.ts";
+} from 'obsidian';
+import { isMarkdownFile } from './TAbstractFile.ts';
 
 /**
  * Represents a path or an instance of TFolder.

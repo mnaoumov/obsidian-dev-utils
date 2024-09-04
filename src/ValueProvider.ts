@@ -3,7 +3,7 @@
  * Contains utility types and functions for handling value providers, which can be either direct values or functions that return values.
  */
 
-import type { MaybePromise } from "./Async.ts";
+import type { MaybePromise } from './Async.ts';
 
 /**
  * Represents a value provider that can either be a direct value of type `Value` or a function that returns a value of type `Value`.
@@ -22,7 +22,7 @@ export type ValueProvider<Value, Args extends unknown[] = []> = Value | ((...arg
  * @returns `true` if the value provider is a function, otherwise `false`.
  */
 function isFunction<Value, Args extends unknown[]>(value: ValueProvider<Value, Args>): value is (...args: Args) => MaybePromise<Value> {
-  return typeof value === "function";
+  return typeof value === 'function';
 }
 
 /**

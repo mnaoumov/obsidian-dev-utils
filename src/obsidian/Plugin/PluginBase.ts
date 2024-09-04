@@ -11,13 +11,13 @@ import {
   Notice,
   Plugin,
   PluginSettingTab
-} from "obsidian";
-import { registerAsyncErrorEventHandler } from "../../Error.ts";
+} from 'obsidian';
+import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import {
   loadPluginSettings,
   clonePluginSettings
-} from "./PluginSettings.ts";
-import type { MaybePromise } from "../../Async.ts";
+} from './PluginSettings.ts';
+import type { MaybePromise } from '../../Async.ts';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
@@ -83,7 +83,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
       this.addSettingTab(pluginSettingsTab);
     }
     this.register(registerAsyncErrorEventHandler(() => {
-      this.showNotice("An unhandled error occurred. Please check the console for more information.");
+      this.showNotice('An unhandled error occurred. Please check the console for more information.');
     }));
 
     const abortController = new AbortController();

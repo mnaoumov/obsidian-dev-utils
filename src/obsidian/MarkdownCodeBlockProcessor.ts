@@ -3,7 +3,7 @@
  * This module provides utility functions for processing code blocks in Obsidian.
  */
 
-import type { MarkdownPostProcessorContext } from "obsidian";
+import type { MarkdownPostProcessorContext } from 'obsidian';
 
 /**
  * Retrieves the argument of a code block from the given MarkdownPostProcessorContext and HTMLElement.
@@ -17,7 +17,7 @@ export function getCodeBlockArgument(ctx: MarkdownPostProcessorContext, el: HTML
   if (!sectionInfo) {
     return null;
   }
-  const lines = sectionInfo.text.split("\n");
+  const lines = sectionInfo.text.split('\n');
   const codeBlockHeader = lines[sectionInfo.lineStart]!;
   const match = codeBlockHeader.match(/^\`{3,}\S+\s+(.*)$/);
   if (!match) {

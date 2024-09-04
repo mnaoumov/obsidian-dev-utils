@@ -7,12 +7,12 @@ import type {
   Dirent,
   ObjectEncodingOptions,
   PathLike
-} from "node:fs";
-import { readdir } from "node:fs/promises";
+} from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import {
   toPosixBuffer,
   toPosixPath
-} from "../Path.ts";
+} from '../Path.ts';
 
 
 /**
@@ -33,11 +33,11 @@ export type StringResultOptions = undefined | ObjectEncodingOptions & {
 /**
  * Options for controlling the format of the result when returning buffers.
  */
-export type BufferResultOptions = "buffer" | {
+export type BufferResultOptions = 'buffer' | {
   /**
    * Should be set to "buffer" to return buffers.
    */
-  encoding: "buffer";
+  encoding: 'buffer';
 
   /**
    * Should be set to `false` to return buffers.
@@ -72,7 +72,7 @@ type CommonOptions = {
   /**
    * Encoding to use when returning strings.
    */
-  encoding?: BufferEncoding | "buffer";
+  encoding?: BufferEncoding | 'buffer';
 
   /**
    * Set `true` to return Dirent objects or `false` to return strings or buffers.
@@ -148,13 +148,13 @@ function isStringResultOptions(options: StringResultOptions | BufferResultOption
     return true;
   }
 
-  if (options === "buffer") {
+  if (options === 'buffer') {
     return false;
   }
 
   const commonOptions = options as CommonOptions;
 
-  if (commonOptions.encoding === "buffer") {
+  if (commonOptions.encoding === 'buffer') {
     return false;
   }
 
@@ -176,7 +176,7 @@ function isBufferResultOptions(options: StringResultOptions | BufferResultOption
     return false;
   }
 
-  if (options === "buffer") {
+  if (options === 'buffer') {
     return true;
   }
 
@@ -186,7 +186,7 @@ function isBufferResultOptions(options: StringResultOptions | BufferResultOption
     return false;
   }
 
-  if (commonOptions.encoding !== "buffer") {
+  if (commonOptions.encoding !== 'buffer') {
     return false;
   }
 

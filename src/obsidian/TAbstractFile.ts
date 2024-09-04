@@ -8,19 +8,19 @@ import {
   TAbstractFile,
   TFile,
   TFolder,
-} from "obsidian";
-import { trimEnd } from "../String.ts";
-import { extname } from "../Path.ts";
+} from 'obsidian';
+import { trimEnd } from '../String.ts';
+import { extname } from '../Path.ts';
 
 /**
  * The file extension for Markdown files.
  */
-export const MARKDOWN_FILE_EXTENSION = "md";
+export const MARKDOWN_FILE_EXTENSION = 'md';
 
 /**
  * Represents the file extension for canvas files.
  */
-export const CANVAS_FILE_EXTENSION = "canvas";
+export const CANVAS_FILE_EXTENSION = 'canvas';
 
 /**
  * Represents a path or an instance of TAbstractFile.
@@ -110,7 +110,7 @@ export function trimMarkdownExtension(file: TAbstractFile): string {
     return file.path;
   }
 
-  return trimEnd(file.path, "." + MARKDOWN_FILE_EXTENSION);
+  return trimEnd(file.path, '.' + MARKDOWN_FILE_EXTENSION);
 }
 
 /**

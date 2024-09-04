@@ -10,40 +10,40 @@ import {
   type App,
   type ReferenceCache,
   type TFile
-} from "obsidian";
+} from 'obsidian';
 import {
   getAllLinks,
   getCacheSafe
-} from "./MetadataCache.ts";
+} from './MetadataCache.ts';
 import {
   applyFileChanges,
   type FileChange
-} from "./Vault.ts";
-import { createTFileInstance } from "obsidian-typings/implementations";
+} from './Vault.ts';
+import { createTFileInstance } from 'obsidian-typings/implementations';
 import {
   basename,
   dirname,
   extname,
   relative
-} from "../Path.ts";
-import { normalize } from "../String.ts";
+} from '../Path.ts';
+import { normalize } from '../String.ts';
 import {
   getFile,
   type PathOrFile
-} from "./TFile.ts";
+} from './TFile.ts';
 import {
   getPath,
   isMarkdownFile,
   trimMarkdownExtension
-} from "./TAbstractFile.ts";
+} from './TAbstractFile.ts';
 import {
   type MaybePromise,
   type RetryOptions
-} from "../Async.ts";
+} from '../Async.ts';
 import {
   shouldUseRelativeLinks,
   shouldUseWikilinks
-} from "./ObsidianSettings.ts";
+} from './ObsidianSettings.ts';
 
 /**
  * Regular expression for special link symbols.
@@ -62,8 +62,8 @@ export type SplitSubpathResult = {
  * @returns An object containing the link path and subpath.
  */
 export function splitSubpath(link: string): SplitSubpathResult {
-  const SUBPATH_SEPARATOR = "#";
-  const [linkPath = "", subpath] = normalize(link).split(SUBPATH_SEPARATOR);
+  const SUBPATH_SEPARATOR = '#';
+  const [linkPath = '', subpath] = normalize(link).split(SUBPATH_SEPARATOR);
   return {
     linkPath,
     subpath: subpath ? SUBPATH_SEPARATOR + subpath : undefined
@@ -121,7 +121,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     embedOnlyLinks
   } = options;
   await editLinks(app, pathOrFile, (link) => {
-    const isEmbedLink = link.original.startsWith("!");
+    const isEmbedLink = link.original.startsWith('!');
     if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
       return;
     }
@@ -225,9 +225,9 @@ export function updateLink(options: UpdateLinkOptions): string {
   let file = getFile(app, pathOrFile);
   const sourcePath = getPath(source);
   const oldPath = getPath(oldPathOrFile);
-  const isEmbed = link.original.startsWith("!");
+  const isEmbed = link.original.startsWith('!');
   const isWikilink =
-    link.original.includes("[[") && forceMarkdownLinks !== true;
+    link.original.includes('[[') && forceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
 
   const newPath = renameMap.get(file.path);
@@ -306,7 +306,7 @@ export function getAlias(options: GetAliasOptions): string | undefined {
     return undefined;
   }
 
-  const cleanDisplayText = normalizePath(displayText.split(" > ")[0]!).replace(/\.\//g, "");
+  const cleanDisplayText = normalizePath(displayText.split(' > ')[0]!).replace(/\.\//g, '');
 
   for (const path of [file.path, ...otherPaths]) {
     if (!path) {
@@ -395,8 +395,8 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
   const { app } = options;
   const file = getFile(app, options.pathOrFile);
   const sourcePath = getPath(options.sourcePathOrFile);
-  const subpath = options.subpath ?? "";
-  let alias = options.alias ?? "";
+  const subpath = options.subpath ?? '';
+  let alias = options.alias ?? '';
   const isEmbed = options.isEmbed ?? !isMarkdownFile(file);
   const isWikilink = options.isWikilink ?? shouldUseWikilinks(app);
   const forceRelativePath = options.forceRelativePath ?? shouldUseRelativeLinks(app);
@@ -407,8 +407,8 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
       ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(file) : file.path) + subpath
       : app.metadataCache.fileToLinktext(file, sourcePath, isWikilink) + subpath;
 
-  if (forceRelativePath && options.useLeadingDot && !linkText.startsWith(".") && !linkText.startsWith("#")) {
-    linkText = "./" + linkText;
+  if (forceRelativePath && options.useLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
+    linkText = './' + linkText;
   }
 
   if (!isWikilink) {
@@ -428,10 +428,10 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
   } else {
     if (alias && alias.toLowerCase() === linkText.toLowerCase()) {
       linkText = alias;
-      alias = "";
+      alias = '';
     }
 
-    return (isEmbed ? "!" : "") + (alias ? `[[${linkText}|${alias}]]` : `[[${linkText}]]`);
+    return (isEmbed ? '!' : '') + (alias ? `[[${linkText}|${alias}]]` : `[[${linkText}]]`);
   }
 }
 

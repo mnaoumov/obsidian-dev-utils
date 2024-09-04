@@ -5,19 +5,19 @@
 
 import {
   App,
-} from "obsidian";
-import { processWithRetry } from "./Vault.ts";
+} from 'obsidian';
+import { processWithRetry } from './Vault.ts';
 import {
   DEFAULT_SCHEMA,
   Type,
   load,
   dump
-} from "js-yaml";
+} from 'js-yaml';
 import {
   getFile,
   type PathOrFile
-} from "./TFile.ts";
-import type { MaybePromise } from "../Async.ts";
+} from './TFile.ts';
+import type { MaybePromise } from '../Async.ts';
 
 /**
  * Represents the front matter of an Obsidian file.
@@ -48,8 +48,8 @@ export type ObsidianPublishFrontMatter = {
  */
 export type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & ObsidianFrontMatter & Record<string, unknown>;
 
-const TIMESTAMP_TYPE = new Type("tag:yaml.org,2002:timestamp", {
-  kind: "scalar",
+const TIMESTAMP_TYPE = new Type('tag:yaml.org,2002:timestamp', {
+  kind: 'scalar',
   resolve: (data: unknown): boolean => data != null,
   construct: (data: unknown): string => String(data),
   represent: (data: object): unknown => data
@@ -81,25 +81,25 @@ export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, 
       frontMatterStr = match[1]!;
       mainContent = match[2]!;
     } else {
-      frontMatterStr = "";
+      frontMatterStr = '';
       mainContent = content;
     }
 
     if (!mainContent) {
-      mainContent = "\n";
+      mainContent = '\n';
     } else {
-      mainContent = "\n" + mainContent.trim() + "\n";
+      mainContent = '\n' + mainContent.trim() + '\n';
     }
 
     const frontMatter = (load(frontMatterStr, { schema: NO_TIMESTAMPS_YAML_SCHEMA }) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
     await frontMatterFn(frontMatter);
     let newFrontMatterStr = dump(frontMatter, {
       lineWidth: -1,
-      quotingType: "\"",
+      quotingType: '"',
       schema: NO_TIMESTAMPS_YAML_SCHEMA
     });
-    if (newFrontMatterStr === "{}\n") {
-      newFrontMatterStr = "";
+    if (newFrontMatterStr === '{}\n') {
+      newFrontMatterStr = '';
     }
 
     const newContent = `---

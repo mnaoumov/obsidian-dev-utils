@@ -11,42 +11,42 @@
  * new versions on GitHub.
  */
 
-import { CliTaskResult } from "./CliUtils.ts";
+import { CliTaskResult } from './CliUtils.ts';
 import {
   execFromRoot,
   resolvePathFromRoot
-} from "./Root.ts";
-import { spellcheck } from "./spellcheck.ts";
-import { lint } from "./ESLint/ESLint.ts";
+} from './Root.ts';
+import { spellcheck } from './spellcheck.ts';
+import { lint } from './ESLint/ESLint.ts';
 import {
   editNpmPackage,
   editNpmPackageLock,
   readNpmPackage
-} from "./Npm.ts";
-import { editJson } from "./JSON.ts";
-import { existsSync } from "node:fs";
+} from './Npm.ts';
+import { editJson } from './JSON.ts';
+import { existsSync } from 'node:fs';
 import {
   cp,
   readFile,
   writeFile
-} from "node:fs/promises";
-import { createInterface } from "node:readline/promises";
-import { readdirPosix } from "./Fs.ts";
-import { join } from "../Path.ts";
-import { ObsidianPluginRepoPaths } from "../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
-import { ObsidianDevUtilsRepoPaths } from "./ObsidianDevUtilsRepoPaths.ts";
-import AdmZip from "adm-zip";
+} from 'node:fs/promises';
+import { createInterface } from 'node:readline/promises';
+import { readdirPosix } from './Fs.ts';
+import { join } from '../Path.ts';
+import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
+import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
+import AdmZip from 'adm-zip';
 
 /**
  * Enum representing different types of version updates.
  */
 export enum VersionUpdateType {
-  Major = "major",
-  Minor = "minor",
-  Patch = "patch",
-  Beta = "beta",
-  Manual = "manual",
-  Invalid = "invalid"
+  Major = 'major',
+  Minor = 'minor',
+  Patch = 'patch',
+  Beta = 'beta',
+  Manual = 'manual',
+  Invalid = 'invalid'
 }
 
 /**
@@ -92,8 +92,8 @@ export type ObsidianReleasesJson = {
  */
 export async function updateVersion(versionUpdateType: string): Promise<CliTaskResult | void> {
   if (!versionUpdateType) {
-    const npmOldVersion = process.env["npm_old_version"];
-    const npmNewVersion = process.env["npm_new_version"];
+    const npmOldVersion = process.env['npm_old_version'];
+    const npmNewVersion = process.env['npm_new_version'];
 
     if (npmOldVersion && npmNewVersion) {
       await updateVersionInFiles(npmOldVersion, false);
@@ -111,7 +111,7 @@ export async function updateVersion(versionUpdateType: string): Promise<CliTaskR
     },
     (): Promise<CliTaskResult> => spellcheck(),
     async (): Promise<void> => {
-      await execFromRoot("npm run build");
+      await execFromRoot('npm run build');
     },
     (): Promise<CliTaskResult> => lint(),
     async (): Promise<void> => {
@@ -138,7 +138,7 @@ export async function updateVersion(versionUpdateType: string): Promise<CliTaskR
  */
 export function validate(versionUpdateType: string): void {
   if (getVersionUpdateType(versionUpdateType) === VersionUpdateType.Invalid) {
-    throw new Error("Invalid version update type. Please use 'major', 'minor', 'patch', or 'x.y.z[-suffix]' format.");
+    throw new Error('Invalid version update type. Please use \'major\', \'minor\', \'patch\', or \'x.y.z[-suffix]\' format.');
   }
 }
 
@@ -151,9 +151,9 @@ export function validate(versionUpdateType: string): void {
  */
 export async function checkGitInstalled(): Promise<void> {
   try {
-    await execFromRoot("git --version", { quiet: true });
+    await execFromRoot('git --version', { quiet: true });
   } catch {
-    throw new Error("Git is not installed. Please install it from https://git-scm.com/");
+    throw new Error('Git is not installed. Please install it from https://git-scm.com/');
   }
 }
 
@@ -166,9 +166,9 @@ export async function checkGitInstalled(): Promise<void> {
  */
 export async function checkGitHubCliInstalled(): Promise<void> {
   try {
-    await execFromRoot("gh --version", { quiet: true });
+    await execFromRoot('gh --version', { quiet: true });
   } catch {
-    throw new Error("GitHub CLI is not installed. Please install it from https://cli.github.com/");
+    throw new Error('GitHub CLI is not installed. Please install it from https://cli.github.com/');
   }
 }
 
@@ -181,12 +181,12 @@ export async function checkGitHubCliInstalled(): Promise<void> {
  */
 export async function checkGitRepoClean(): Promise<void> {
   try {
-    const stdout = await execFromRoot("git status --porcelain --untracked-files=all", { quiet: true });
+    const stdout = await execFromRoot('git status --porcelain --untracked-files=all', { quiet: true });
     if (stdout) {
       throw new Error();
     }
   } catch {
-    throw new Error("Git repository is not clean. Please commit or stash your changes before releasing a new version.");
+    throw new Error('Git repository is not clean. Please commit or stash your changes before releasing a new version.');
   }
 }
 
@@ -229,7 +229,7 @@ export async function updateVersionInFiles(newVersion: string, isObsidianPlugin:
 
   await editNpmPackageLock((npmPackageLock) => {
     npmPackageLock.version = newVersion;
-    const defaultPackage = npmPackageLock.packages?.[""];
+    const defaultPackage = npmPackageLock.packages?.[''];
     if (defaultPackage) {
       defaultPackage.version = newVersion;
     }
@@ -296,7 +296,7 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
       break;
   }
 
-  return `${major}.${minor}.${patch}${beta > 0 ? `-beta.${beta}` : ""}`;
+  return `${major}.${minor}.${patch}${beta > 0 ? `-beta.${beta}` : ''}`;
 }
 
 /**
@@ -305,7 +305,7 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
  * @returns A promise that resolves to the latest version of Obsidian.
  */
 async function getLatestObsidianVersion(): Promise<string> {
-  const response = await fetch("https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest");
+  const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');
   const obsidianReleasesJson = await response.json() as ObsidianReleasesJson;
   return obsidianReleasesJson.name;
 }
@@ -325,15 +325,15 @@ export async function updateChangelog(newVersion: string): Promise<void> {
   if (!existsSync(changelogPath)) {
     previousChangelogLines = [];
   } else {
-    const content = await readFile(changelogPath, "utf-8");
-    previousChangelogLines = content.split("\n").slice(2);
-    if (previousChangelogLines.at(-1) === "") {
+    const content = await readFile(changelogPath, 'utf-8');
+    previousChangelogLines = content.split('\n').slice(2);
+    if (previousChangelogLines.at(-1) === '') {
       previousChangelogLines.pop();
     }
   }
 
-  const lastTag = previousChangelogLines[0]?.replace("## ", "");
-  const commitRange = lastTag ? `${lastTag}..HEAD` : "HEAD";
+  const lastTag = previousChangelogLines[0]?.replace('## ', '');
+  const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
   const commitMessages = (await execFromRoot(`git log ${commitRange} --format=%s --first-parent`, { quiet: true })).split(/\r?\n/);
 
   let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
@@ -343,13 +343,13 @@ export async function updateChangelog(newVersion: string): Promise<void> {
   }
 
   if (previousChangelogLines.length > 0) {
-    newChangeLog += "\n";
+    newChangeLog += '\n';
     for (const line of previousChangelogLines) {
       newChangeLog += `${line}\n`;
     }
   }
 
-  await writeFile(changelogPath, newChangeLog, "utf-8");
+  await writeFile(changelogPath, newChangeLog, 'utf-8');
 
   await createInterface(process.stdin, process.stdout).question(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Press Enter when you are done...`);
 }
@@ -368,7 +368,7 @@ export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
     ObsidianPluginRepoPaths.VersionsJson,
     ObsidianPluginRepoPaths.ChangelogMd
   ].filter((file) => existsSync(resolvePathFromRoot(file)));
-  await execFromRoot(["git", "add", ...files], { quiet: true });
+  await execFromRoot(['git', 'add', ...files], { quiet: true });
   await execFromRoot(`git commit -m ${newVersion}`, { quiet: true });
 }
 
@@ -388,7 +388,7 @@ export async function addGitTag(newVersion: string): Promise<void> {
  * @returns A promise that resolves when the push operation is complete.
  */
 export async function gitPush(): Promise<void> {
-  await execFromRoot("git push --follow-tags", { quiet: true });
+  await execFromRoot('git push --follow-tags', { quiet: true });
 }
 
 /**
@@ -408,16 +408,16 @@ export async function copyUpdatedManifest(): Promise<void> {
  */
 export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRoot(ObsidianPluginRepoPaths.ChangelogMd);
-  const content = await readFile(changelogPath, "utf-8");
-  const newVersionEscaped = newVersion.replaceAll(".", "\\.");
+  const content = await readFile(changelogPath, 'utf-8');
+  const newVersionEscaped = newVersion.replaceAll('.', '\\.');
   const match = content.match(new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`));
-  let releaseNotes = match ? match[1] + "\n\n" : "";
+  let releaseNotes = match ? match[1] + '\n\n' : '';
 
-  const tags = (await execFromRoot("git tag --sort=-creatordate", { quiet: true })).split(/\r?\n/);
+  const tags = (await execFromRoot('git tag --sort=-creatordate', { quiet: true })).split(/\r?\n/);
   const previousVersion = tags[1];
-  let changesUrl = "";
+  let changesUrl = '';
 
-  const repoUrl = await execFromRoot("gh repo view --json url -q .url", { quiet: true });
+  const repoUrl = await execFromRoot('gh repo view --json url -q .url', { quiet: true });
 
   if (previousVersion) {
     changesUrl = `${repoUrl}/compare/${previousVersion}...${newVersion}`;
@@ -448,7 +448,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
   } else {
 
     const zip = new AdmZip();
-    zip.addLocalFolder(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist, (filename) => !filename.endsWith(".zip"));
+    zip.addLocalFolder(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist, (filename) => !filename.endsWith('.zip'));
 
     const files = [
       ObsidianDevUtilsRepoPaths.ChangelogMd,
@@ -467,7 +467,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     filePaths = [distZipPath];
   }
 
-  await execFromRoot(["gh", "release", "create", newVersion, ...filePaths, "--title", `v${newVersion}`, "--notes-file", "-"], {
+  await execFromRoot(['gh', 'release', 'create', newVersion, ...filePaths, '--title', `v${newVersion}`, '--notes-file', '-'], {
     quiet: true,
     stdin: await getReleaseNotes(newVersion)
   });

@@ -9,7 +9,7 @@ import {
   App,
   FuzzySuggestModal,
   type FuzzyMatch
-} from "obsidian";
+} from 'obsidian';
 
 /**
  * The parameters for the selection modal.
@@ -48,7 +48,7 @@ export async function selectItem<T>({
   app,
   items,
   itemTextFunc,
-  placeholder = ""
+  placeholder = ''
 }: SelectItemOptions<T>): Promise<T | null> {
   return await new Promise<T | null>((resolve) => {
     class ItemSelectModal extends FuzzySuggestModal<T> {

@@ -4,10 +4,10 @@
  * It reports any spelling issues found in the code and returns a `TaskResult` indicating whether the spellcheck was successful.
  */
 
-import { lint } from "cspell";
-import { toRelativeFromRoot } from "./Root.ts";
-import { fileURLToPath } from "node:url";
-import { CliTaskResult } from "./CliUtils.ts";
+import { lint } from 'cspell';
+import { toRelativeFromRoot } from './Root.ts';
+import { fileURLToPath } from 'node:url';
+import { CliTaskResult } from './CliUtils.ts';
 
 /**
  * Runs a spellcheck on the entire codebase using `cspell`.
@@ -20,7 +20,7 @@ import { CliTaskResult } from "./CliUtils.ts";
 export async function spellcheck(): Promise<CliTaskResult> {
   let isSuccess = true;
 
-  await lint(["."], {}, {
+  await lint(['.'], {}, {
     issue: (issue) => {
       if (!issue.uri) {
         return;

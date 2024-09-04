@@ -6,8 +6,8 @@
 import {
   type App,
   Platform
-} from "obsidian";
-import { toPosixPath } from "../Path.ts";
+} from 'obsidian';
+import { toPosixPath } from '../Path.ts';
 
 /**
  * Converts a relative path to a resource URL.

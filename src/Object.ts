@@ -15,7 +15,7 @@ export function deepEqual(a: unknown, b: unknown): boolean {
     return true;
   }
 
-  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null || a === undefined || b === undefined) {
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null || a === undefined || b === undefined) {
     return false;
   }
 
@@ -93,7 +93,7 @@ export function toJson(value: unknown, options: ToJsonOptions = {}): string {
   const functionTexts: string[] = [];
 
   const replacer = (_: string, value: unknown): unknown => {
-    if (typeof value === "function") {
+    if (typeof value === 'function') {
       const index = functionTexts.length;
       functionTexts.push(value.toString());
       return `__FUNCTION_${index}`;

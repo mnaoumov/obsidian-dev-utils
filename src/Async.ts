@@ -3,7 +3,7 @@
  * Contains utility functions for asynchronous operations.
  */
 
-import { emitAsyncErrorEvent } from "./Error.ts";
+import { emitAsyncErrorEvent } from './Error.ts';
 
 /**
  * A type representing a value that can either be a direct value or a Promise resolving to that value.

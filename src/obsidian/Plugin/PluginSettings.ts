@@ -21,7 +21,7 @@ export function loadPluginSettings<PluginSettings extends object>(
   type PluginSettingsKeys = keyof PluginSettings;
   type PluginSettingsValues = PluginSettings[PluginSettingsKeys];
 
-  if (data && typeof data === "object") {
+  if (data && typeof data === 'object') {
     const record = data as Record<string, unknown>;
     for (const [key, value] of Object.entries(record)) {
       if (key in defaultPluginSettings) {

@@ -1,13 +1,13 @@
 import {
   join,
   normalizeIfRelative
-} from "../src/Path.ts";
-import { readdirPosix } from "../src/scripts/Fs.ts";
-import { editNpmPackage } from "../src/scripts/Npm.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/scripts/ObsidianDevUtilsRepoPaths.ts";
-import { wrapCliTask } from "../src/scripts/CliUtils.ts";
-import { deepEqual } from "../src/Object.ts";
-import { CliTaskResult } from "../src/scripts/CliUtils.ts";
+} from '../src/Path.ts';
+import { readdirPosix } from '../src/scripts/Fs.ts';
+import { editNpmPackage } from '../src/scripts/Npm.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
+import { wrapCliTask } from '../src/scripts/CliUtils.ts';
+import { deepEqual } from '../src/Object.ts';
+import { CliTaskResult } from '../src/scripts/CliUtils.ts';
 
 await wrapCliTask(async () => {
   const libDirs: string[] = [ObsidianDevUtilsRepoPaths.DistLib];
@@ -29,7 +29,7 @@ await wrapCliTask(async () => {
     const oldExports = npmPackage.exports;
     npmPackage.exports = {};
     for (const libDir of libDirs) {
-      const importPath = libDir.replace(ObsidianDevUtilsRepoPaths.DistLib, ".");
+      const importPath = libDir.replace(ObsidianDevUtilsRepoPaths.DistLib, '.');
       npmPackage.exports[importPath] = {
         default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs)),
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts))

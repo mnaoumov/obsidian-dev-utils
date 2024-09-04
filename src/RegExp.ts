@@ -10,5 +10,5 @@
  * @returns The escaped string with special characters prefixed with a backslash.
  */
 export function escapeRegExp(str: string): string {
-  return str.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return str.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

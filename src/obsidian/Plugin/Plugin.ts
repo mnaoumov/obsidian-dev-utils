@@ -7,8 +7,8 @@
 import {
   Notice,
   Plugin
-} from "obsidian";
-import { printError } from "../../Error.ts";
+} from 'obsidian';
+import { printError } from '../../Error.ts';
 
 /**
  * Displays an error message as a notice, logs it to the console, and disables the specified plugin.

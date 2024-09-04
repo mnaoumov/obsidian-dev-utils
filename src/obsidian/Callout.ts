@@ -4,17 +4,17 @@
  */
 
 
-import { invokeAsyncSafely } from "../Async.ts";
+import { invokeAsyncSafely } from '../Async.ts';
 
 import {
   getRenderedContainer,
   type DataviewInlineApi,
-} from "./Dataview.ts";
+} from './Dataview.ts';
 
 import {
   resolveValue,
   type ValueProvider
-} from "../ValueProvider.ts";
+} from '../ValueProvider.ts';
 
 /**
  * Enum representing the mode of a callout.
@@ -39,11 +39,11 @@ export enum CalloutMode {
 function getModifier(mode: CalloutMode): string {
   switch (mode) {
     case CalloutMode.FoldableCollapsed:
-      return "-";
+      return '-';
     case CalloutMode.FoldableExpanded:
-      return "+";
+      return '+';
     default:
-      return "";
+      return '';
   }
 }
 
@@ -85,15 +85,15 @@ export type RenderCalloutOptions = {
 export function renderCallout(options: RenderCalloutOptions): void {
   const {
     dv,
-    type = "NOTE",
+    type = 'NOTE',
     mode = CalloutMode.FoldableCollapsed,
-    header = "",
-    contentProvider = ""
+    header = '',
+    contentProvider = ''
   } = options;
   const modifier = getModifier(mode);
   const callout = dv.paragraph(`> [!${type}]${modifier} ${header}\n>\n> <div class="content"></div>`);
-  const contentDiv = callout.querySelector<HTMLDivElement>(".content")!;
-  dv.paragraph("Loading... ⏳", { container: contentDiv });
+  const contentDiv = callout.querySelector<HTMLDivElement>('.content')!;
+  dv.paragraph('Loading... ⏳', { container: contentDiv });
 
   const observer = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {
     for (const entry of entries) {
@@ -127,7 +127,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
  * @returns The content wrapped in blockquote syntax.
  */
 export function wrapForCallout(content: string): string {
-  const lines = content.split("\n");
+  const lines = content.split('\n');
   const prefixedLines = lines.map((line) => `> ${line}`);
-  return prefixedLines.join("\n");
+  return prefixedLines.join('\n');
 }

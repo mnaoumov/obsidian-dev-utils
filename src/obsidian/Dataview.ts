@@ -3,14 +3,14 @@
  * This module provides utility functions for working with Dataview in Obsidian.
  */
 
-import "../@types/compare-versions.d.ts";
+import '../@types/compare-versions.d.ts';
 
-import type { DataviewInlineApi as DataviewInlineApiOriginal } from "./@types/Dataview/api/inline-api.d.ts";
+import type { DataviewInlineApi as DataviewInlineApiOriginal } from './@types/Dataview/api/inline-api.d.ts';
 import type {
   DataArray,
   DataviewApi,
   SMarkdownPage
-} from "./@types/Dataview/index.d.ts";
+} from './@types/Dataview/index.d.ts';
 
 /**
  * Export DateTime and Link types from the Dataview API.
@@ -18,17 +18,17 @@ import type {
 export type {
   DateTime,
   Link
-} from "./@types/Dataview/index.d.ts";
+} from './@types/Dataview/index.d.ts';
 
 import {
   convertAsyncToSync,
   type MaybePromise
-} from "../Async.ts";
-import { relativePathToResourceUrl } from "../obsidian/ResourceUrl.ts";
-import { errorToString } from "../Error.ts";
-import type { PathOrFile } from "./TFile.ts";
-import { getPath } from "./TAbstractFile.ts";
-import type { CombinedFrontMatter } from "./FrontMatter.ts";
+} from '../Async.ts';
+import { relativePathToResourceUrl } from '../obsidian/ResourceUrl.ts';
+import { errorToString } from '../Error.ts';
+import type { PathOrFile } from './TFile.ts';
+import { getPath } from './TAbstractFile.ts';
+import type { CombinedFrontMatter } from './FrontMatter.ts';
 
 declare global {
   /**
@@ -103,7 +103,7 @@ export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<voi
  */
 export type CombinedPage<CustomFrontMatter = unknown> = SMarkdownPage & CombinedFrontMatter<CustomFrontMatter>;
 
-export type PageFile = SMarkdownPage["file"];
+export type PageFile = SMarkdownPage['file'];
 
 
 /**
@@ -280,7 +280,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     renderer
   } = options;
   if (rows.length === 0) {
-    dv.paragraph("No items found");
+    dv.paragraph('No items found');
     return;
   }
   const container = dv.container;
@@ -289,50 +289,50 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
   await renderPage(1);
 
   function createPaginationControls(pageNumber: number): void {
-    const paginationDiv = container.createEl("div", { cls: "pagination" });
+    const paginationDiv = container.createEl('div', { cls: 'pagination' });
     const paginationRow1Div = paginationDiv.createDiv();
 
-    createPageLink("First", 1, pageNumber === 1);
-    createPageLink("Prev", pageNumber - 1, pageNumber === 1);
+    createPageLink('First', 1, pageNumber === 1);
+    createPageLink('Prev', pageNumber - 1, pageNumber === 1);
 
     if (pageNumber > 3) {
-      paginationRow1Div.createEl("span", { text: "..." });
+      paginationRow1Div.createEl('span', { text: '...' });
     }
 
     for (let i = Math.max(1, pageNumber - 2); i <= Math.min(totalPages, pageNumber + 2); i++) {
       const pageLink = createPageLink(i.toString(), i, i === pageNumber);
       if (i === pageNumber) {
-        pageLink.addClass("current");
+        pageLink.addClass('current');
       }
     }
 
     if (pageNumber < totalPages - 2) {
-      paginationRow1Div.createEl("span", { text: "..." });
+      paginationRow1Div.createEl('span', { text: '...' });
     }
 
-    createPageLink("Next", pageNumber + 1, pageNumber === totalPages);
-    createPageLink("Last", totalPages, pageNumber === totalPages);
+    createPageLink('Next', pageNumber + 1, pageNumber === totalPages);
+    createPageLink('Last', totalPages, pageNumber === totalPages);
 
     const paginationRow2Div = paginationDiv.createDiv();
 
-    paginationRow2Div.createEl("span", { text: " Items per page: " });
+    paginationRow2Div.createEl('span', { text: ' Items per page: ' });
 
-    const itemsPerPageSelect = paginationRow2Div.createEl("select");
+    const itemsPerPageSelect = paginationRow2Div.createEl('select');
     itemsPerPageOptions.forEach((option: number): void => {
-      itemsPerPageSelect.createEl("option", { text: option.toString(), value: option.toString() });
+      itemsPerPageSelect.createEl('option', { text: option.toString(), value: option.toString() });
     });
     itemsPerPageSelect.value = itemsPerPage.toString();
-    itemsPerPageSelect.addEventListener("change", convertAsyncToSync(async (): Promise<void> => {
+    itemsPerPageSelect.addEventListener('change', convertAsyncToSync(async (): Promise<void> => {
       itemsPerPage = parseInt(itemsPerPageSelect.value);
       totalPages = Math.ceil(rows.length / itemsPerPage);
       await renderPage(1);
     }));
 
-    paginationRow2Div.createEl("span", { text: "  Jump to page: " });
+    paginationRow2Div.createEl('span', { text: '  Jump to page: ' });
 
-    const jumpToPageInput = paginationRow2Div.createEl("input", { type: "number", attr: { min: 1, max: totalPages } });
-    jumpToPageInput.addEventListener("keydown", convertAsyncToSync(async (event: KeyboardEvent): Promise<void> => {
-      if (event.key === "Enter") {
+    const jumpToPageInput = paginationRow2Div.createEl('input', { type: 'number', attr: { min: 1, max: totalPages } });
+    jumpToPageInput.addEventListener('keydown', convertAsyncToSync(async (event: KeyboardEvent): Promise<void> => {
+      if (event.key === 'Enter') {
         const page = parseInt(jumpToPageInput.value);
         if (page >= 1 && page <= totalPages) {
           await renderPage(page);
@@ -340,15 +340,15 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
       }
     }));
 
-    paginationRow2Div.createEl("span", { text: `  Page ${pageNumber} of ${totalPages}, Total items: ${rows.length}` });
+    paginationRow2Div.createEl('span', { text: `  Page ${pageNumber} of ${totalPages}, Total items: ${rows.length}` });
 
     function createPageLink(text: string, pageNumber: number, disabled = false): HTMLAnchorElement {
-      const link = paginationRow1Div.createEl("a", { cls: "page-link", text: text, href: `#${pageNumber}` });
+      const link = paginationRow1Div.createEl('a', { cls: 'page-link', text: text, href: `#${pageNumber}` });
       if (disabled) {
-        link.addClass("disabled");
+        link.addClass('disabled');
         link.onclick = (event: MouseEvent): void => event.preventDefault();
       } else {
-        link.addEventListener("click", convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
+        link.addEventListener('click', convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
           event.preventDefault();
           await renderPage(pageNumber);
         }));
@@ -359,7 +359,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
 
   async function renderPage(pageNumber: number): Promise<void> {
     container.empty();
-    container.createEl("style", { text: paginationCss });
+    container.createEl('style', { text: paginationCss });
 
     const startIndex = (pageNumber - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -371,7 +371,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     try {
       await renderer(rowsForCurrentPage);
     } catch (e) {
-      dv.paragraph("❌" + errorToString(e));
+      dv.paragraph('❌' + errorToString(e));
     } finally {
       dv.container = oldContainer;
     }
@@ -390,14 +390,14 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
  * that was used as the temporary container.
  */
 export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () => MaybePromise<void>): Promise<HTMLParagraphElement> {
-  const tempContainer = dv.paragraph("");
+  const tempContainer = dv.paragraph('');
   dv.container = tempContainer;
   dv.container.empty();
 
   try {
     await renderer();
   } catch (e) {
-    dv.paragraph("❌" + errorToString(e));
+    dv.paragraph('❌' + errorToString(e));
   } finally {
     dv.container = tempContainer.parentElement!;
     tempContainer.remove();
@@ -442,10 +442,10 @@ export function renderIframe(options: RenderIframeOptions): void {
   const {
     dv,
     relativePathOrFile,
-    width = "100%",
-    height = "600px"
+    width = '100%',
+    height = '600px'
   } = options;
-  dv.el("iframe", "", {
+  dv.el('iframe', '', {
     attr: {
       src: relativePathToResourceUrl(dv.app, getPath(relativePathOrFile), dv.current().file.path),
       width,
@@ -467,7 +467,7 @@ export function insertCodeBlock(dv: DataviewInlineApi, language: string, code: s
   const fenceLengths = Array.from(fenceMatches).map((fenceMatch) => fenceMatch[0].length);
   const maxFenceLength = Math.max(0, ...fenceLengths);
   const resultFenceLength = Math.max(3, maxFenceLength + 1);
-  const resultFence = "`".repeat(resultFenceLength);
+  const resultFence = '`'.repeat(resultFenceLength);
 
   dv.paragraph(`${resultFence}${language}
 ${code}

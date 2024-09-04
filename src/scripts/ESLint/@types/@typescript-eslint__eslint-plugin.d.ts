@@ -3,11 +3,11 @@
  * @see {@link https://www.npmjs.com/package/@typescript-eslint/eslint-plugin} for more information.
  */
 
-declare module "@typescript-eslint/eslint-plugin" {
+declare module '@typescript-eslint/eslint-plugin' {
   import type {
     ESLint,
     Linter
-  } from "eslint";
+  } from 'eslint';
 
   type Config = {
     overrides: Config[];

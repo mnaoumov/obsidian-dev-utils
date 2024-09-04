@@ -4,9 +4,9 @@
  * success, exit codes, and chaining multiple tasks.
  */
 
-import process from "node:process";
-import type { MaybePromise } from "../Async.ts";
-import { printError } from "../Error.ts";
+import process from 'node:process';
+import type { MaybePromise } from '../Async.ts';
+import { printError } from '../Error.ts';
 
 /**
  * Abstract class representing the result of a task. Includes methods for handling success,
@@ -151,7 +151,7 @@ async function wrapResult(taskFn: () => MaybePromise<CliTaskResult | void>): Pro
   try {
     return await taskFn() ?? CliTaskResult.Success();
   } catch (error) {
-    printError(new Error("An error occurred during task execution", { cause: error }));
+    printError(new Error('An error occurred during task execution', { cause: error }));
     return CliTaskResult.Failure();
   }
 }
@@ -178,10 +178,10 @@ export function toCommandLine(args: string[]): string {
   return args
     .map((arg) => {
       if (/[\s"\n]/.test(arg)) {
-        const escapedArg = arg.replace(/"/g, "\\\"").replace(/\n/g, "\\n");
+        const escapedArg = arg.replace(/"/g, '\\"').replace(/\n/g, '\\n');
         return `"${escapedArg}"`;
       }
       return arg;
     })
-    .join(" ");
+    .join(' ');
 }

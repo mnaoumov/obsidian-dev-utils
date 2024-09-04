@@ -9,21 +9,21 @@ import {
   type BuildOptions,
   context,
   type Plugin
-} from "esbuild";
-import { readNpmPackage } from "../Npm.ts";
-import builtins from "builtin-modules";
+} from 'esbuild';
+import { readNpmPackage } from '../Npm.ts';
+import builtins from 'builtin-modules';
 import {
   banner,
   invokeEsbuild
-} from "./ObsidianPluginBuilder.ts";
-import { preprocessPlugin } from "./preprocessPlugin.ts";
-import { trimStart } from "../../String.ts";
+} from './ObsidianPluginBuilder.ts';
+import { preprocessPlugin } from './preprocessPlugin.ts';
+import { trimStart } from '../../String.ts';
 import {
   getDirname,
   join
-} from "../../Path.ts";
-import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
-import { createRequire } from "node:module";
+} from '../../Path.ts';
+import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
+import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 
 type ModuleWithDefaultExport = {
@@ -56,16 +56,16 @@ export async function getDependenciesToBundle(): Promise<string[]> {
     },
     bundle: true,
     entryPoints: [join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)],
-    format: "cjs",
-    logLevel: "info",
-    outdir: "nothing-will-be-written-on-disk-so-this-does-not-matter",
-    platform: "node",
+    format: 'cjs',
+    logLevel: 'info',
+    outdir: 'nothing-will-be-written-on-disk-so-this-does-not-matter',
+    platform: 'node',
     plugins: [
       preprocessPlugin(),
       extractDependenciesToBundlePlugin(dependenciesToSkip, dependenciesToBundle)
     ],
-    sourcemap: "inline",
-    target: "ESNext",
+    sourcemap: 'inline',
+    target: 'ESNext',
     treeShaking: true,
     write: false
   };
@@ -84,11 +84,11 @@ export async function getDependenciesToBundle(): Promise<string[]> {
  */
 function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, dependenciesToBundle: Set<string>): Plugin {
   return {
-    name: "test",
+    name: 'test',
     setup(build): void {
       build.onResolve({ filter: /^[^\.\/]/ }, (args) => {
-        if (!args.importer.endsWith(".d.ts")) {
-          const moduleName = trimStart(args.path.split("/")[0]!, "node:");
+        if (!args.importer.endsWith('.d.ts')) {
+          const moduleName = trimStart(args.path.split('/')[0]!, 'node:');
           if (!dependenciesToSkip.has(moduleName)) {
             dependenciesToBundle.add(args.path);
           }
@@ -106,15 +106,15 @@ function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, depe
  * @returns A boolean indicating whether the module can be skipped from bundling.
  */
 function canSkipFromBundling(moduleName: string): boolean {
-  if (moduleName.startsWith("@types/")) {
+  if (moduleName.startsWith('@types/')) {
     return true;
   }
 
-  if (moduleName.startsWith("obsidian")) {
+  if (moduleName.startsWith('obsidian')) {
     return true;
   }
 
-  if (moduleName === "esbuild") {
+  if (moduleName === 'esbuild') {
     return true;
   }
 

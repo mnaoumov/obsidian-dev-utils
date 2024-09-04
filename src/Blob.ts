@@ -30,16 +30,16 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
     reader.onloadend = (e): void => {
       const image = new Image();
       image.onload = (): void => {
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
         const imageWidth = image.width;
         const imageHeight = image.height;
-        let data = "";
+        let data = '';
 
         canvas.width = imageWidth;
         canvas.height = imageHeight;
 
-        context!.fillStyle = "#fff";
+        context!.fillStyle = '#fff';
         context!.fillRect(0, 0, imageWidth, imageHeight);
         context!.save();
 
@@ -47,7 +47,7 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
         context!.drawImage(image, 0, 0, imageWidth, imageHeight, -imageWidth / 2, -imageHeight / 2, imageWidth, imageHeight);
         context!.restore();
 
-        data = canvas.toDataURL("image/jpeg", jpegQuality);
+        data = canvas.toDataURL('image/jpeg', jpegQuality);
 
         const arrayBuffer = base64ToArrayBuffer(data);
         resolve(arrayBuffer);
@@ -66,7 +66,7 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
  * @returns The decoded ArrayBuffer.
  */
 export function base64ToArrayBuffer(code: string): ArrayBuffer {
-  const parts = code.split(";base64,");
+  const parts = code.split(';base64,');
   const raw = window.atob(parts[1]!);
   const rawLength = raw.length;
 
@@ -85,5 +85,5 @@ export function base64ToArrayBuffer(code: string): ArrayBuffer {
  * @returns True if the file is an image, false otherwise.
  */
 export function isImageFile(file: File): boolean {
-  return file.type.startsWith("image/");
+  return file.type.startsWith('image/');
 }

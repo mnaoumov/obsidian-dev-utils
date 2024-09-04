@@ -6,13 +6,13 @@
  * in the correct Obsidian directory for testing and use.
  */
 
-import type { Plugin } from "esbuild";
-import { existsSync } from "node:fs";
+import type { Plugin } from 'esbuild';
+import { existsSync } from 'node:fs';
 import {
   cp,
   mkdir
-} from "node:fs/promises";
-import { join } from "../../Path.ts";
+} from 'node:fs/promises';
+import { join } from '../../Path.ts';
 
 /**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
@@ -30,7 +30,7 @@ export function copyToObsidianPluginsFolderPlugin(
   pluginName: string
 ): Plugin {
   return {
-    name: "copy-to-obsidian-plugins-folder",
+    name: 'copy-to-obsidian-plugins-folder',
     setup(build): void {
       build.onEnd(async () => {
         // Skip copying during production build or if the Obsidian config directory is not provided
@@ -38,7 +38,7 @@ export function copyToObsidianPluginsFolderPlugin(
           return;
         }
 
-        const pluginDir = join(obsidianConfigDir, "plugins", pluginName);
+        const pluginDir = join(obsidianConfigDir, 'plugins', pluginName);
 
         // Create the plugin directory if it doesn't exist
         if (!existsSync(pluginDir)) {

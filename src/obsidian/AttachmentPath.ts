@@ -3,19 +3,19 @@
  * Provides utility functions for working with attachment paths.
  */
 
-import type { App } from "obsidian";
+import type { App } from 'obsidian';
 import {
   basename,
   dirname,
   extname
-} from "../Path.ts";
+} from '../Path.ts';
 import {
   createTFileInstance,
   createTFolderInstance
-} from "obsidian-typings/implementations";
-import type { PathOrFile } from "./TFile.ts";
-import { getPath } from "./TAbstractFile.ts";
-import { registerFile } from "./MetadataCache.ts";
+} from 'obsidian-typings/implementations';
+import type { PathOrFile } from './TFile.ts';
+import { getPath } from './TAbstractFile.ts';
+import { registerFile } from './MetadataCache.ts';
 
 /**
  * Retrieves the attachment folder path for a given note.
@@ -25,7 +25,7 @@ import { registerFile } from "./MetadataCache.ts";
  * @returns A promise that resolves to the attachment folder path.
  */
 export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
-  return dirname(await getAttachmentFilePath(app, "DUMMY_FILE.pdf", notePathOrFile));
+  return dirname(await getAttachmentFilePath(app, 'DUMMY_FILE.pdf', notePathOrFile));
 }
 
 /**
