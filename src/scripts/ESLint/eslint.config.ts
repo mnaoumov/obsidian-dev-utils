@@ -39,6 +39,7 @@ export const configs: Linter.Config[] = tseslint.config(
       join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
     ],
     ignores: [
+      join(ObsidianDevUtilsRepoPaths.NodeModules),
       join(ObsidianDevUtilsRepoPaths.SrcObsidianTypesDataview),
     ],
     plugins: {

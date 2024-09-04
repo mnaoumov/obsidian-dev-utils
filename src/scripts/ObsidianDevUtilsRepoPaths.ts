@@ -51,6 +51,11 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `LICENSE` file. */
   License = 'LICENSE',
 
+  /**
+   * The path to the `node_modules` directory.
+   */
+  NodeModules = 'node_modules',
+
   /** The path to the `package.json` file. */
   PackageJson = 'package.json',
 
