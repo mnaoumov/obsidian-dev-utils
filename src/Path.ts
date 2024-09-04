@@ -138,7 +138,7 @@ export function toPosixBuffer(buffer: Buffer): Buffer {
  * @returns The POSIX-style filename.
  */
 export function getFilename(importMetaUrl: string): string {
-  return toPosixPath(new URL(importMetaUrl).pathname);
+  return resolve(new URL(importMetaUrl).pathname);
 }
 
 /**
