@@ -5,8 +5,8 @@
  */
 
 import process from "node:process";
-import type { MaybePromise } from "./Async.ts";
-import { printError } from "./Error.ts";
+import type { MaybePromise } from "../Async.ts";
+import { printError } from "../Error.ts";
 
 /**
  * Abstract class representing the result of a task. Includes methods for handling success,

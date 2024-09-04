@@ -1,5 +1,5 @@
-import { lint } from "../src/bin/ESLint/ESLint.ts";
-import { wrapCliTask } from "../src/cli.ts";
+import { lint } from "../src/scripts/ESLint/ESLint.ts";
+import { wrapCliTask } from "../src/scripts/CliUtils.ts";
 import process from "node:process";
 import eslintPluginTsdoc from "eslint-plugin-tsdoc";
 import eslintPluginVerifyTsdoc from "eslint-plugin-verify-tsdoc";

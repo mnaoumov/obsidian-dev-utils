@@ -2,14 +2,14 @@ import {
   context,
   type BuildOptions
 } from "esbuild";
-import { wrapCliTask } from "../src/cli.ts";
-import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
+import { wrapCliTask } from "../src/scripts/CliUtils.ts";
+import { getDependenciesToSkip } from "../src/scripts/esbuild/Dependency.ts";
 import {
   banner,
   invokeEsbuild
-} from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
-import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
+} from "../src/scripts/esbuild/ObsidianPluginBuilder.ts";
+import { preprocessPlugin } from "../src/scripts/esbuild/preprocessPlugin.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/scripts/ObsidianDevUtilsRepoPaths.ts";
 
 await wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();

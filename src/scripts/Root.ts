@@ -8,12 +8,12 @@ import { spawn } from "node:child_process";
 import {
   relative,
   resolve
-} from "./Path.ts";
+} from "../Path.ts";
 import process from "node:process";
 import { packageDirectorySync } from "pkg-dir";
-import { toPosixPath } from "./Path.ts";
-import { trimEnd } from "./String.ts";
-import { toCommandLine } from "./cli.ts";
+import { toPosixPath } from "../Path.ts";
+import { trimEnd } from "../String.ts";
+import { toCommandLine } from "./CliUtils.ts";
 
 /**
  * Represents the result of executing a command from the root directory.

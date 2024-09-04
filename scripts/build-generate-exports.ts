@@ -3,11 +3,11 @@ import {
   normalizeIfRelative
 } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
-import { editNpmPackage } from "../src/Npm.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
-import { wrapCliTask } from "../src/cli.ts";
+import { editNpmPackage } from "../src/scripts/Npm.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/scripts/ObsidianDevUtilsRepoPaths.ts";
+import { wrapCliTask } from "../src/scripts/CliUtils.ts";
 import { deepEqual } from "../src/Object.ts";
-import { CliTaskResult } from "../src/cli.ts";
+import { CliTaskResult } from "../src/scripts/CliUtils.ts";
 
 await wrapCliTask(async () => {
   const libDirs: string[] = [ObsidianDevUtilsRepoPaths.DistLib];

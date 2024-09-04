@@ -17,7 +17,7 @@ import {
   relative,
   toPosixPath
 } from "../../Path.ts";
-import { resolvePathFromRoot } from "../../Root.ts";
+import { resolvePathFromRoot } from "../Root.ts";
 import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
 
 /**

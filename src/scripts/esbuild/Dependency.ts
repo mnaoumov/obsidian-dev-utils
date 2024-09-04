@@ -10,7 +10,7 @@ import {
   context,
   type Plugin
 } from "esbuild";
-import { readNpmPackage } from "../../Npm.ts";
+import { readNpmPackage } from "../Npm.ts";
 import builtins from "builtin-modules";
 import {
   banner,

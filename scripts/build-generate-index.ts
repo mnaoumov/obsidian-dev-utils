@@ -6,10 +6,10 @@ import {
 } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import { makeValidVariableName } from "../src/String.ts";
-import { wrapCliTask } from "../src/cli.ts";
+import { wrapCliTask } from "../src/scripts/CliUtils.ts";
 import { asyncMap } from "../src/Async.ts";
-import { generate } from "../src/CodeGenerator.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
+import { generate } from "../src/scripts/CodeGenerator.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/scripts/ObsidianDevUtilsRepoPaths.ts";
 
 await wrapCliTask(async () => {
   await generateIndex(ObsidianDevUtilsRepoPaths.Src);

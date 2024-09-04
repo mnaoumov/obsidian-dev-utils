@@ -6,9 +6,9 @@ import {
   join
 } from "../src/Path.ts";
 import { readdirPosix } from "../src/Fs.ts";
-import { wrapCliTask } from "../src/cli.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
-import { buildClean } from "../src/bin/build.ts";
+import { wrapCliTask } from "../src/scripts/CliUtils.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/scripts/ObsidianDevUtilsRepoPaths.ts";
+import { buildClean } from "../src/scripts/build.ts";
 
 await wrapCliTask(async () => {
   await buildClean();

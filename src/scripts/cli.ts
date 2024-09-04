@@ -22,8 +22,8 @@ import {
 import {
   CliTaskResult,
   wrapCliTask
-} from "../cli.ts";
-import { readNpmPackage } from "../Npm.ts";
+} from "./CliUtils.ts";
+import { readNpmPackage } from "./Npm.ts";
 import { getDirname } from "../Path.ts";
 import {
   buildClean,

@@ -5,17 +5,17 @@ import {
 import {
   banner,
   invokeEsbuild
-} from "../src/bin/esbuild/ObsidianPluginBuilder.ts";
-import { preprocessPlugin } from "../src/bin/esbuild/preprocessPlugin.ts";
-import { wrapCliTask } from "../src/cli.ts";
-import { renameToCjsPlugin } from "../src/bin/esbuild/renameToCjsPlugin.ts";
-import { getDependenciesToSkip } from "../src/bin/esbuild/Dependency.ts";
+} from "../src/scripts/esbuild/ObsidianPluginBuilder.ts";
+import { preprocessPlugin } from "../src/scripts/esbuild/preprocessPlugin.ts";
+import { wrapCliTask } from "../src/scripts/CliUtils.ts";
+import { renameToCjsPlugin } from "../src/scripts/esbuild/renameToCjsPlugin.ts";
+import { getDependenciesToSkip } from "../src/scripts/esbuild/Dependency.ts";
 import { readdirPosix } from "../src/Fs.ts";
 import {
   join,
   normalizeIfRelative
 } from "../src/Path.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/scripts/ObsidianDevUtilsRepoPaths.ts";
 
 await wrapCliTask(async () => {
   const dependenciesToSkip = await getDependenciesToSkip();

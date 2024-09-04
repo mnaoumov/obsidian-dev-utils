@@ -19,9 +19,9 @@ import {
   rm,
   writeFile
 } from "node:fs/promises";
-import { resolvePathFromRoot } from "../../Root.ts";
-import { CliTaskResult } from "../../cli.ts";
-import { readNpmPackage } from "../../Npm.ts";
+import { resolvePathFromRoot } from "../Root.ts";
+import { CliTaskResult } from "../CliUtils.ts";
+import { readNpmPackage } from "../Npm.ts";
 import { preprocessPlugin } from "./preprocessPlugin.ts";
 import { lintPlugin } from "./lintPlugin.ts";
 import { fixSourceMapsPlugin } from "./fixSourceMapsPlugin.ts";

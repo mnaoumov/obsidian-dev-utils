@@ -1,2 +1,2 @@
-import { cli } from "../src/bin/cli.ts";
+import { cli } from "../src/scripts/cli.ts";
 cli();

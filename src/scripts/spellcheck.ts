@@ -5,9 +5,9 @@
  */
 
 import { lint } from "cspell";
-import { toRelativeFromRoot } from "../Root.ts";
+import { toRelativeFromRoot } from "./Root.ts";
 import { fileURLToPath } from "node:url";
-import { CliTaskResult } from "../cli.ts";
+import { CliTaskResult } from "./CliUtils.ts";
 
 /**
  * Runs a spellcheck on the entire codebase using `cspell`.

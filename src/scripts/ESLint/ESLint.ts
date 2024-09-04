@@ -16,9 +16,9 @@ import {
   normalizeIfRelative
 } from "../../Path.ts";
 import { packageDirectory } from "pkg-dir";
-import { toRelativeFromRoot } from "../../Root.ts";
+import { toRelativeFromRoot } from "../Root.ts";
 import { getDirname } from "../../Path.ts";
-import { CliTaskResult } from "../../cli.ts";
+import { CliTaskResult } from "../CliUtils.ts";
 import { ObsidianDevUtilsRepoPaths } from "../ObsidianDevUtilsRepoPaths.ts";
 import { glob } from "glob";
 

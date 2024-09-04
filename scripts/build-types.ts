@@ -1,8 +1,8 @@
 import { cp } from "node:fs/promises";
-import { wrapCliTask } from "../src/cli.ts";
-import { execFromRoot } from "../src/Root.ts";
+import { wrapCliTask } from "../src/scripts/CliUtils.ts";
+import { execFromRoot } from "../src/scripts/Root.ts";
 import { readdirPosix } from "../src/Fs.ts";
-import { ObsidianDevUtilsRepoPaths } from "../src/bin/ObsidianDevUtilsRepoPaths.ts";
+import { ObsidianDevUtilsRepoPaths } from "../src/scripts/ObsidianDevUtilsRepoPaths.ts";
 import { join } from "../src/Path.ts";
 
 await wrapCliTask(async () => {

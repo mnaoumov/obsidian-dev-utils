@@ -11,18 +11,18 @@
  * new versions on GitHub.
  */
 
-import { CliTaskResult } from "../cli.ts";
+import { CliTaskResult } from "./CliUtils.ts";
 import {
   execFromRoot,
   resolvePathFromRoot
-} from "../Root.ts";
+} from "./Root.ts";
 import { spellcheck } from "./spellcheck.ts";
 import { lint } from "./ESLint/ESLint.ts";
 import {
   editNpmPackage,
   editNpmPackageLock,
   readNpmPackage
-} from "../Npm.ts";
+} from "./Npm.ts";
 import { editJson } from "../JSON.ts";
 import { existsSync } from "node:fs";
 import {
