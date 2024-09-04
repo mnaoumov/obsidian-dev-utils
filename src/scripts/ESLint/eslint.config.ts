@@ -41,6 +41,7 @@ export const configs: Linter.Config[] = tseslint.config(
     ignores: [
       join(ObsidianDevUtilsRepoPaths.NodeModules),
       join(ObsidianDevUtilsRepoPaths.SrcObsidianTypesDataview),
+      join(ObsidianDevUtilsRepoPaths.Dist)
     ],
     plugins: {
       'modules-newlines': eslintPluginModulesNewlines,
