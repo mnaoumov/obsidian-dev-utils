@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.27.0
+
+- ensureMetadataCacheReady in getBacklinksForFileSafe
+
 ## 2.26.3
 
 - Fix return type for isNote
