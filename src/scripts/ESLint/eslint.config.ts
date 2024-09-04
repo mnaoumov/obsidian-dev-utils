@@ -10,27 +10,29 @@
  * @packageDocumentation eslint-config
  */
 
-import typescriptEslintParser from '@typescript-eslint/parser';
-import typescriptEslintPlugin from '@typescript-eslint/eslint-plugin';
 import stylisticEslintPlugin from '@stylistic/eslint-plugin';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
-import globals from 'globals';
 import 'eslint-import-resolver-typescript';
 import type { Linter } from 'eslint';
 import eslintPluginDeprecation from 'eslint-plugin-deprecation';
-import {
-  join,
-  normalizeIfRelative
-} from '../../Path.ts';
+import { join } from '../../Path.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import { getRootDir } from '../Root.ts';
 
-/**
- * ESLint configurations for TypeScript files.
- *
- * This configuration applies to TypeScript files in the source and script directories. It sets up the TypeScript
- * parser and plugins, defines a set of rules for code style and error checking, and includes settings for import resolution.
- */
-export const configs: Linter.Config[] = [
+export const configs: Linter.Config[] = tseslint.config(
+  eslint.configs.recommended,
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: getRootDir()
+      }
+    }
+  },
   {
     files: [
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
@@ -39,27 +41,12 @@ export const configs: Linter.Config[] = [
     ignores: [
       join(ObsidianDevUtilsRepoPaths.SrcObsidianTypesDataview),
     ],
-    languageOptions: {
-      parser: typescriptEslintParser,
-      sourceType: 'module',
-      globals: {
-        ...globals.browser,
-        ...globals.node
-      },
-      parserOptions: {
-        project: normalizeIfRelative(ObsidianDevUtilsRepoPaths.TsConfigJson)
-      }
-    },
     plugins: {
-      '@typescript-eslint': typescriptEslintPlugin,
       'modules-newlines': eslintPluginModulesNewlines,
       '@stylistic': stylisticEslintPlugin,
       deprecation: eslintPluginDeprecation
     },
     rules: {
-      ...typescriptEslintPlugin.configs['eslint-recommended']!.overrides[0]!.rules,
-      ...typescriptEslintPlugin.configs['recommended']!.rules,
-      ...typescriptEslintPlugin.configs['recommended-type-checked']!.rules,
       'modules-newlines/import-declaration-newline': 'error',
       'modules-newlines/export-declaration-newline': 'error',
       '@typescript-eslint/explicit-function-return-type': 'error',
@@ -81,4 +68,4 @@ export const configs: Linter.Config[] = [
       }
     }
   }
-];
+) as Linter.Config[];
