@@ -33,7 +33,7 @@ export function preprocessPlugin(): Plugin {
       platform: "android"
     } as typeof process,
     "import.meta.url": (): URL => {
-      const normalizedPath = __filename.replace(/\\/g, '/');
+      const normalizedPath = __filename.replace(/\\/g, "/");
 
       const windowsDriveLetterMatch = normalizedPath.match(/^([a-zA-Z]):/);
       let path = normalizedPath;
@@ -41,7 +41,7 @@ export function preprocessPlugin(): Plugin {
         path = `/${windowsDriveLetterMatch[1]!.toUpperCase()}:${normalizedPath.slice(2)}`;
       }
 
-      const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/').replace(/%3A/g, ':');
+      const encodedPath = encodeURIComponent(path).replace(/%2F/g, "/").replace(/%3A/g, ":");
       return new URL(`file://${encodedPath}`);
     }
   };
