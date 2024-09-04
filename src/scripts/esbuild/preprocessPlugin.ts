@@ -32,8 +32,18 @@ export function preprocessPlugin(): Plugin {
       env: {},
       platform: "android"
     } as typeof process,
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    "import.meta.url": (): URL => (require("node:url") as typeof import("node:url")).pathToFileURL(__filename)
+    "import.meta.url": (): URL => {
+      const normalizedPath = __filename.replace(/\\/g, '/');
+
+      const windowsDriveLetterMatch = normalizedPath.match(/^([a-zA-Z]):/);
+      let path = normalizedPath;
+      if (windowsDriveLetterMatch) {
+        path = `/${windowsDriveLetterMatch[1]!.toUpperCase()}:${normalizedPath.slice(2)}`;
+      }
+
+      const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/').replace(/%3A/g, ':');
+      return new URL(`file://${encodedPath}`);
+    }
   };
 
   return {
