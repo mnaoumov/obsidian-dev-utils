@@ -125,6 +125,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
   let backlinks: CustomArrayDict<LinkCache> | null = null;
   await retryWithTimeout(async () => {
     const file = getFile(app, pathOrFile);
+    await ensureMetadataCacheReady(app);
     backlinks = tempRegisterFileAndRun(app, file, () => app.metadataCache.getBacklinksForFile(file));
     for (const notePath of backlinks.keys()) {
       const note = app.vault.getFileByPath(notePath);
@@ -238,4 +239,23 @@ export function registerFile(app: App, file: TAbstractFile): () => void {
       app.metadataCache.uniqueFileLookup.remove(file.name.toLowerCase(), file);
     }
   };
+}
+
+/**
+ * Ensures that the metadata cache is ready for all files.
+ * @param app - The Obsidian app instance.
+ * @returns A promise that resolves when the metadata cache is ready.
+ */
+export async function ensureMetadataCacheReady(app: App): Promise<void> {
+  for (const [path, cache] of Object.entries(app.metadataCache.fileCache)) {
+    if (!cache.hash) {
+      continue;
+    }
+
+    if (app.metadataCache.metadataCache[cache.hash]) {
+      continue;
+    }
+
+    await getCacheSafe(app, path);
+  }
 }
