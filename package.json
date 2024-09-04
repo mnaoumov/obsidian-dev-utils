@@ -95,38 +95,6 @@
       "default": "./dist/lib/@types/*.cjs",
       "types": "./dist/lib/@types/*.d.ts"
     },
-    "./bin": {
-      "default": "./dist/lib/bin/index.cjs",
-      "types": "./dist/lib/bin/index.d.ts"
-    },
-    "./bin/*": {
-      "default": "./dist/lib/bin/*.cjs",
-      "types": "./dist/lib/bin/*.d.ts"
-    },
-    "./bin/ESLint": {
-      "default": "./dist/lib/bin/ESLint/index.cjs",
-      "types": "./dist/lib/bin/ESLint/index.d.ts"
-    },
-    "./bin/ESLint/*": {
-      "default": "./dist/lib/bin/ESLint/*.cjs",
-      "types": "./dist/lib/bin/ESLint/*.d.ts"
-    },
-    "./bin/ESLint/@types": {
-      "default": "./dist/lib/bin/ESLint/@types/index.cjs",
-      "types": "./dist/lib/bin/ESLint/@types/index.d.ts"
-    },
-    "./bin/ESLint/@types/*": {
-      "default": "./dist/lib/bin/ESLint/@types/*.cjs",
-      "types": "./dist/lib/bin/ESLint/@types/*.d.ts"
-    },
-    "./bin/esbuild": {
-      "default": "./dist/lib/bin/esbuild/index.cjs",
-      "types": "./dist/lib/bin/esbuild/index.d.ts"
-    },
-    "./bin/esbuild/*": {
-      "default": "./dist/lib/bin/esbuild/*.cjs",
-      "types": "./dist/lib/bin/esbuild/*.d.ts"
-    },
     "./obsidian": {
       "default": "./dist/lib/obsidian/index.cjs",
       "types": "./dist/lib/obsidian/index.d.ts"
@@ -270,6 +238,38 @@
     "./obsidian/Plugin/*": {
       "default": "./dist/lib/obsidian/Plugin/*.cjs",
       "types": "./dist/lib/obsidian/Plugin/*.d.ts"
+    },
+    "./scripts": {
+      "default": "./dist/lib/scripts/index.cjs",
+      "types": "./dist/lib/scripts/index.d.ts"
+    },
+    "./scripts/*": {
+      "default": "./dist/lib/scripts/*.cjs",
+      "types": "./dist/lib/scripts/*.d.ts"
+    },
+    "./scripts/ESLint": {
+      "default": "./dist/lib/scripts/ESLint/index.cjs",
+      "types": "./dist/lib/scripts/ESLint/index.d.ts"
+    },
+    "./scripts/ESLint/*": {
+      "default": "./dist/lib/scripts/ESLint/*.cjs",
+      "types": "./dist/lib/scripts/ESLint/*.d.ts"
+    },
+    "./scripts/ESLint/@types": {
+      "default": "./dist/lib/scripts/ESLint/@types/index.cjs",
+      "types": "./dist/lib/scripts/ESLint/@types/index.d.ts"
+    },
+    "./scripts/ESLint/@types/*": {
+      "default": "./dist/lib/scripts/ESLint/@types/*.cjs",
+      "types": "./dist/lib/scripts/ESLint/@types/*.d.ts"
+    },
+    "./scripts/esbuild": {
+      "default": "./dist/lib/scripts/esbuild/index.cjs",
+      "types": "./dist/lib/scripts/esbuild/index.d.ts"
+    },
+    "./scripts/esbuild/*": {
+      "default": "./dist/lib/scripts/esbuild/*.cjs",
+      "types": "./dist/lib/scripts/esbuild/*.d.ts"
     }
   },
   "files": [
