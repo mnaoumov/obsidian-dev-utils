@@ -68,7 +68,7 @@ export const configs: Linter.Config[] = [
       "modules-newlines/export-declaration-newline": "error",
       "@typescript-eslint/explicit-function-return-type": "error",
       "@stylistic/indent": ["error", 2],
-      "@stylistic/quotes": ["error", "double"],
+      "@stylistic/quotes": ["error", "single"],
       "@stylistic/brace-style": "error",
       "@stylistic/arrow-parens": "error",
       semi: "error",
