@@ -23,7 +23,7 @@ import {
   editNpmPackageLock,
   readNpmPackage
 } from "./Npm.ts";
-import { editJson } from "../JSON.ts";
+import { editJson } from "./JSON.ts";
 import { existsSync } from "node:fs";
 import {
   cp,

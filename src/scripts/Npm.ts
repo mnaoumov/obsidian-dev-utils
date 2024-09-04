@@ -8,7 +8,7 @@ import {
   editJson,
   readJson,
   writeJson
-} from "../JSON.ts";
+} from "./JSON.ts";
 import { ObsidianPluginRepoPaths } from "../obsidian/Plugin/ObsidianPluginRepoPaths.ts";
 import { resolvePathFromRoot } from "./Root.ts";
 

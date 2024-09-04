@@ -17,7 +17,7 @@ import {
 } from "../Async.ts";
 import { getBacklinksForFileSafe } from "./MetadataCache.ts";
 import { printError } from "../Error.ts";
-import { toJson } from "../JSON.ts";
+import { toJson } from "../Object.ts";
 import {
   getFile,
   type PathOrFile

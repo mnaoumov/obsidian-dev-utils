@@ -11,7 +11,7 @@
 
 import type { Plugin } from "esbuild";
 import { readFile } from "node:fs/promises";
-import { toJson } from "../../JSON.ts";
+import { toJson } from "../../Object.ts";
 import { makeValidVariableName } from "../../String.ts";
 import process from "node:process";
 
