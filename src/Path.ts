@@ -4,7 +4,6 @@
  */
 
 import path from "path-browserify";
-import { fileURLToPath } from "node:url";
 import { ensureStartsWith } from "./String.ts";
 
 /**
@@ -139,7 +138,7 @@ export function toPosixBuffer(buffer: Buffer): Buffer {
  * @returns The POSIX-style filename.
  */
 export function getFilename(importMetaUrl: string): string {
-  return toPosixPath(fileURLToPath(importMetaUrl));
+  return toPosixPath(new URL(importMetaUrl).pathname);
 }
 
 /**
