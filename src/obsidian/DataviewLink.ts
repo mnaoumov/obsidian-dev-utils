@@ -3,7 +3,7 @@
  * This module provides utility functions for working with Dataview links in Obsidian
  */
 
-import { dirname } from "path";
+import { dirname } from "../Path.ts";
 import {
   basename,
   extname
