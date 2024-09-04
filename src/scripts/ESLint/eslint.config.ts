@@ -3,7 +3,7 @@
  * ESLint configuration for TypeScript projects with various plugins.
  *
  * This module exports ESLint configurations for TypeScript projects, integrating multiple ESLint plugins
- * such as `@typescript-eslint/parser`, `eslint-plugin-import`, `@typescript-eslint/eslint-plugin`,
+ * such as `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`,
  * `eslint-plugin-modules-newlines`, `@stylistic/eslint-plugin`, and `eslint-plugin-deprecation`.
  * It sets up parsers, plugins, and rules for maintaining code quality and consistency.
  *
@@ -11,7 +11,6 @@
  */
 
 import typescriptEslintParser from '@typescript-eslint/parser';
-import eslintPluginImport from 'eslint-plugin-import';
 import typescriptEslintPlugin from '@typescript-eslint/eslint-plugin';
 import stylisticEslintPlugin from '@stylistic/eslint-plugin';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
@@ -53,7 +52,6 @@ export const configs: Linter.Config[] = [
     },
     plugins: {
       '@typescript-eslint': typescriptEslintPlugin,
-      'import': eslintPluginImport,
       'modules-newlines': eslintPluginModulesNewlines,
       '@stylistic': stylisticEslintPlugin,
       deprecation: eslintPluginDeprecation
@@ -62,8 +60,6 @@ export const configs: Linter.Config[] = [
       ...typescriptEslintPlugin.configs['eslint-recommended']!.overrides[0]!.rules,
       ...typescriptEslintPlugin.configs['recommended']!.rules,
       ...typescriptEslintPlugin.configs['recommended-type-checked']!.rules,
-      'import/no-unresolved': 'error',
-      'import/no-namespace': 'error',
       'modules-newlines/import-declaration-newline': 'error',
       'modules-newlines/export-declaration-newline': 'error',
       '@typescript-eslint/explicit-function-return-type': 'error',
