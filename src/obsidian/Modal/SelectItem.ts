@@ -44,49 +44,44 @@ export interface SelectItemOptions<T> {
  * @param params - The parameters for the selection modal.
  * @returns - A promise that resolves with the selected item or null if no item was selected.
  */
-export async function selectItem<T>({
-  app,
-  items,
-  itemTextFunc,
-  placeholder = ''
-}: SelectItemOptions<T>): Promise<T | null> {
+export async function selectItem<T>(options: SelectItemOptions<T>): Promise<T | null> {
   return await new Promise<T | null>((resolve) => {
-    class ItemSelectModal extends FuzzySuggestModal<T> {
-      private isSelected = false;
-
-      public constructor() {
-        super(app);
-      }
-
-      public override getItems(): T[] {
-        return items;
-      }
-
-      public override getItemText(item: T): string {
-        return itemTextFunc(item);
-      }
-
-      public override selectSuggestion(
-        value: FuzzyMatch<T>,
-        evt: MouseEvent | KeyboardEvent
-      ): void {
-        this.isSelected = true;
-        super.selectSuggestion(value, evt);
-      }
-
-      public override onChooseItem(item: T): void {
-        resolve(item);
-      }
-
-      public override onClose(): void {
-        if (!this.isSelected) {
-          resolve(null);
-        }
-      }
-    }
-
-    const modal = new ItemSelectModal();
-    modal.setPlaceholder(placeholder);
+    const modal = new ItemSelectModal<T>(options, resolve);
     modal.open();
   });
+}
+
+class ItemSelectModal<T> extends FuzzySuggestModal<T> {
+  private isSelected = false;
+
+  public constructor(private options: SelectItemOptions<T>, private resolve: (item: T | null) => void) {
+    super(options.app);
+    this.setPlaceholder(options.placeholder ?? '');
+  }
+
+  public override getItems(): T[] {
+    return this.options.items;
+  }
+
+  public override getItemText(item: T): string {
+    return this.options.itemTextFunc(item);
+  }
+
+  public override selectSuggestion(
+    value: FuzzyMatch<T>,
+    evt: MouseEvent | KeyboardEvent
+  ): void {
+    this.isSelected = true;
+    super.selectSuggestion(value, evt);
+  }
+
+  public override onChooseItem(item: T): void {
+    this.resolve(item);
+  }
+
+  public override onClose(): void {
+    if (!this.isSelected) {
+      this.resolve(null);
+    }
+  }
 }
