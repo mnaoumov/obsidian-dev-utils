@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.0.1
+
+- Fix cli path
+
 ## 3.0.0
 
 - Refactor ESLint rules
