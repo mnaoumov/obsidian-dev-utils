@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.0.4
+
+- Proper exclude files prop
+
 ## 3.0.3
 
 - Don't fail on failed linting
