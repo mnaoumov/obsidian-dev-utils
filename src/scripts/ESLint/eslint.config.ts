@@ -4,7 +4,7 @@
  *
  * This module exports ESLint configurations for TypeScript projects, integrating multiple ESLint plugins
  * such as `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`,
- * `eslint-plugin-modules-newlines`, `@stylistic/eslint-plugin`, and `eslint-plugin-deprecation`.
+ * `eslint-plugin-modules-newlines`, `@stylistic/eslint-plugin`.
  * It sets up parsers, plugins, and rules for maintaining code quality and consistency.
  *
  * @packageDocumentation eslint-config
@@ -17,7 +17,6 @@ import eslint from '@eslint/js';
 // eslint-disable-next-line import-x/no-rename-default
 import stylistic from '@stylistic/eslint-plugin';
 import type { Linter } from 'eslint';
-import eslintPluginDeprecation from 'eslint-plugin-deprecation';
 import eslintPluginImportX from 'eslint-plugin-import-x';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
@@ -70,7 +69,6 @@ export const configs: Linter.Config[] = tseslint.config(
       join(ObsidianDevUtilsRepoPaths.Dist)
     ],
     plugins: {
-      'deprecation': eslintPluginDeprecation,
       'modules-newlines': eslintPluginModulesNewlines,
       'simple-import-sort': simpleImportSort
     },
@@ -92,7 +90,6 @@ export const configs: Linter.Config[] = tseslint.config(
       '@typescript-eslint/explicit-function-return-type': 'error',
       '@typescript-eslint/explicit-member-accessibility': 'error',
       'curly': ['error'],
-      'deprecation/deprecation': 'error',
       'import-x/consistent-type-specifier-style': 'error',
       'import-x/extensions': ['error', 'ignorePackages'],
       'import-x/first': 'error',
