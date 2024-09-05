@@ -54,7 +54,7 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
 
   const ignorePatterns = configs.flatMap((config) => config.ignores ?? []).flatMap((pattern) => [pattern, join(pattern, ObsidianDevUtilsRepoPaths.AnyPath)]);
   const files = await glob(includePatterns, { ignore: ignorePatterns });
-  const lintResults = await eslint.lintFiles(files);
+  const lintResults = files.length > 0 ? await eslint.lintFiles(files) : [];
 
   if (fix) {
     await FlatESLint.outputFixes(lintResults);
