@@ -10,17 +10,18 @@ import {
   Linter,
   loadESLint
 } from 'eslint';
-import { configs as defaultConfigs } from './eslint.config.ts';
+import { glob } from 'glob';
+import { packageDirectory } from 'pkg-dir';
+
 import {
   join,
   normalizeIfRelative
 } from '../../Path.ts';
-import { packageDirectory } from 'pkg-dir';
-import { toRelativeFromRoot } from '../Root.ts';
 import { getDirname } from '../../Path.ts';
 import { CliTaskResult } from '../CliUtils.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
-import { glob } from 'glob';
+import { toRelativeFromRoot } from '../Root.ts';
+import { configs as defaultConfigs } from './eslint.config.ts';
 
 /**
  * Lints files according to the ESLint configurations and applies automatic fixes if specified.

@@ -5,36 +5,35 @@
 
 import {
   App,
+  type ListedFiles,
   Notice,
   TFile,
-  TFolder,
-  type ListedFiles
-} from 'obsidian';
-import { deepEqual } from '../Object.ts';
+  TFolder } from 'obsidian';
+
 import {
-  retryWithTimeout,
-  type RetryOptions
-} from '../Async.ts';
-import { getBacklinksForFileSafe } from './MetadataCache.ts';
+  type RetryOptions,
+  retryWithTimeout } from '../Async.ts';
 import {
   printError,
   throwExpression
 } from '../Error.ts';
+import { deepEqual } from '../Object.ts';
 import { toJson } from '../Object.ts';
-import {
-  getFile,
-  type PathOrFile
-} from './TFile.ts';
-import { getPath } from './TAbstractFile.ts';
-import {
-  getFolderOrNull,
-  type PathOrFolder
-} from './TFolder.ts';
+import { dirname } from '../Path.ts';
 import {
   resolveValue,
   type ValueProvider
 } from '../ValueProvider.ts';
-import { dirname } from '../Path.ts';
+import { getBacklinksForFileSafe } from './MetadataCache.ts';
+import { getPath } from './TAbstractFile.ts';
+import {
+  getFile,
+  type PathOrFile
+} from './TFile.ts';
+import {
+  getFolderOrNull,
+  type PathOrFolder
+} from './TFolder.ts';
 
 /**
  * Represents a file change in the Vault.

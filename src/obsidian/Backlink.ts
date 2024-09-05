@@ -4,27 +4,26 @@
  */
 
 import {
-  type Link,
+  type TFile,
+  TFolder } from 'obsidian';
+
+import { throwExpression } from '../Error.ts';
+import { renderCallout } from './Callout.ts';
+import {
   type DataviewInlineApi,
+  type Link,
   renderPaginatedTable
 } from './Dataview.ts';
-
-import { renderCallout } from './Callout.ts';
 import { fixTitle } from './DataviewLink.ts';
-import {
-  TFolder,
-  type TFile
-} from 'obsidian';
 import { generateMarkdownLink } from './Link.ts';
+import { getBacklinksForFileSafe } from './MetadataCache.ts';
 import {
   getAbstractFileOrNull,
   isFile,
   type PathOrAbstractFile
 } from './TAbstractFile.ts';
-import { getBacklinksForFileSafe } from './MetadataCache.ts';
-import { getMarkdownFiles } from './TFolder.ts';
 import type { PathOrFile } from './TFile.ts';
-import { throwExpression } from '../Error.ts';
+import { getMarkdownFiles } from './TFolder.ts';
 
 /**
  * Options for rendering delayed backlinks.

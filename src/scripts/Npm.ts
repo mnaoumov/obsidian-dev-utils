@@ -4,12 +4,12 @@
  */
 
 import type { MaybePromise } from '../Async.ts';
+import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   editJson,
   readJson,
   writeJson
 } from './JSON.ts';
-import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { resolvePathFromRoot } from './Root.ts';
 
 /**

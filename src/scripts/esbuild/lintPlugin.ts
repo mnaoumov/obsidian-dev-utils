@@ -6,6 +6,7 @@
  */
 
 import type { Plugin } from 'esbuild';
+
 import { lint } from '../ESLint/ESLint.ts';
 
 /**

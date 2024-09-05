@@ -5,11 +5,13 @@
  * The plugin is only active during development builds.
  */
 
-import type { Plugin } from 'esbuild';
 import {
   readFile,
   writeFile
 } from 'node:fs/promises';
+
+import type { Plugin } from 'esbuild';
+
 import { toPosixPath } from '../../Path.ts';
 
 interface SourceMap {

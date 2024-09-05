@@ -6,20 +6,18 @@
  **/
 
 import {
-  normalizePath,
   type App,
+  normalizePath,
   type ReferenceCache,
   type TFile
 } from 'obsidian';
-import {
-  getAllLinks,
-  getCacheSafe
-} from './MetadataCache.ts';
-import {
-  applyFileChanges,
-  type FileChange
-} from './Vault.ts';
 import { createTFileInstance } from 'obsidian-typings/implementations';
+
+import {
+  type MaybePromise,
+  type RetryOptions
+} from '../Async.ts';
+import { throwExpression } from '../Error.ts';
 import {
   basename,
   dirname,
@@ -28,23 +26,26 @@ import {
 } from '../Path.ts';
 import { normalize } from '../String.ts';
 import {
-  getFile,
-  type PathOrFile
-} from './TFile.ts';
+  getAllLinks,
+  getCacheSafe
+} from './MetadataCache.ts';
+import {
+  shouldUseRelativeLinks,
+  shouldUseWikilinks
+} from './ObsidianSettings.ts';
 import {
   getPath,
   isMarkdownFile,
   trimMarkdownExtension
 } from './TAbstractFile.ts';
 import {
-  type MaybePromise,
-  type RetryOptions
-} from '../Async.ts';
+  getFile,
+  type PathOrFile
+} from './TFile.ts';
 import {
-  shouldUseRelativeLinks,
-  shouldUseWikilinks
-} from './ObsidianSettings.ts';
-import { throwExpression } from '../Error.ts';
+  applyFileChanges,
+  type FileChange
+} from './Vault.ts';
 
 /**
  * Regular expression for special link symbols.

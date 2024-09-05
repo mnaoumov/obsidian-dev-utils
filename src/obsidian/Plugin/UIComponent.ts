@@ -1,11 +1,12 @@
-import type { KeysMatching } from '../../@types.ts';
-import type { PluginBase } from './PluginBase.ts';
 import {
   DropdownComponent,
   SliderComponent,
   TextAreaComponent,
   TextComponent
 } from 'obsidian';
+
+import type { KeysMatching } from '../../@types.ts';
+import type { PluginBase } from './PluginBase.ts';
 
 /**
  * A UI component that can be bound to a plugin setting.

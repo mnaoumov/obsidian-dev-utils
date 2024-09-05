@@ -12,8 +12,8 @@ import type {
   DataviewInlineApi,
   Link
 } from './Dataview.ts';
-import type { PathOrFile } from './TFile.ts';
 import { getPath } from './TAbstractFile.ts';
+import type { PathOrFile } from './TFile.ts';
 
 /**
  * Fixes the title of a file or folder note by generating a `Link` object with a proper title.

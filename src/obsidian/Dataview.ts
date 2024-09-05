@@ -24,14 +24,14 @@ import {
   convertAsyncToSync,
   type MaybePromise
 } from '../Async.ts';
-import { relativePathToResourceUrl } from '../obsidian/ResourceUrl.ts';
 import {
   errorToString,
   throwExpression
 } from '../Error.ts';
-import type { PathOrFile } from './TFile.ts';
-import { getPath } from './TAbstractFile.ts';
+import { relativePathToResourceUrl } from '../obsidian/ResourceUrl.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
+import { getPath } from './TAbstractFile.ts';
+import type { PathOrFile } from './TFile.ts';
 
 declare global {
   /**

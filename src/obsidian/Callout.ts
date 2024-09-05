@@ -4,17 +4,14 @@
  */
 
 import { invokeAsyncSafely } from '../Async.ts';
-
-import {
-  getRenderedContainer,
-  type DataviewInlineApi
-} from './Dataview.ts';
-
+import { throwExpression } from '../Error.ts';
 import {
   resolveValue,
   type ValueProvider
 } from '../ValueProvider.ts';
-import { throwExpression } from '../Error.ts';
+import {
+  type DataviewInlineApi,
+  getRenderedContainer } from './Dataview.ts';
 
 /**
  * Enum representing the mode of a callout.

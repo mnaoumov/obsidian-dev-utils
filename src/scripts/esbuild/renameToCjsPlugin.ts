@@ -5,21 +5,23 @@
  * with dependencies that are not to be skipped.
  */
 
-import type { Plugin } from 'esbuild';
 import { writeFile } from 'node:fs/promises';
-import {
-  makeValidVariableName,
-  trimStart
-} from '../../String.ts';
+
+import type { Plugin } from 'esbuild';
+
+import { throwExpression } from '../../Error.ts';
 import {
   dirname,
   normalizeIfRelative,
   relative,
   toPosixPath
 } from '../../Path.ts';
-import { resolvePathFromRoot } from '../Root.ts';
+import {
+  makeValidVariableName,
+  trimStart
+} from '../../String.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
-import { throwExpression } from '../../Error.ts';
+import { resolvePathFromRoot } from '../Root.ts';
 
 /**
  * Creates an esbuild plugin that renames JavaScript files to CommonJS (`.cjs`) files

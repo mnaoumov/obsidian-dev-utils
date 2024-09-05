@@ -5,26 +5,28 @@
  * should be bundled, as well as an esbuild plugin for extracting dependencies to bundle.
  */
 
+import { createRequire } from 'node:module';
+
+import builtins from 'builtin-modules';
 import {
   type BuildOptions,
   context,
   type Plugin
 } from 'esbuild';
+
+import { throwExpression } from '../../Error.ts';
+import {
+  getDirname,
+  join
+} from '../../Path.ts';
+import { trimStart } from '../../String.ts';
 import { readNpmPackage } from '../Npm.ts';
-import builtins from 'builtin-modules';
+import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import {
   banner,
   invokeEsbuild
 } from './ObsidianPluginBuilder.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
-import { trimStart } from '../../String.ts';
-import {
-  getDirname,
-  join
-} from '../../Path.ts';
-import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
-import { createRequire } from 'node:module';
-import { throwExpression } from '../../Error.ts';
 const require = createRequire(import.meta.url);
 
 interface ModuleWithDefaultExport {

@@ -6,29 +6,31 @@
  * synchronous and asynchronous tasks.
  */
 
-import { Command } from 'commander';
-import {
-  BuildMode,
-  buildObsidianPlugin
-} from './esbuild/ObsidianPluginBuilder.ts';
 import process from 'node:process';
-import { lint } from './ESLint/ESLint.ts';
-import { spellcheck } from './spellcheck.ts';
-import { updateVersion } from './version.ts';
+
+import { Command } from 'commander';
+
 import {
   invokeAsyncSafely,
   type MaybePromise
 } from '../Async.ts';
-import {
-  CliTaskResult,
-  wrapCliTask
-} from './CliUtils.ts';
-import { readNpmPackage } from './Npm.ts';
 import { getDirname } from '../Path.ts';
 import {
   buildClean,
   buildStatic
 } from './build.ts';
+import {
+  CliTaskResult,
+  wrapCliTask
+} from './CliUtils.ts';
+import {
+  BuildMode,
+  buildObsidianPlugin
+} from './esbuild/ObsidianPluginBuilder.ts';
+import { lint } from './ESLint/ESLint.ts';
+import { readNpmPackage } from './Npm.ts';
+import { spellcheck } from './spellcheck.ts';
+import { updateVersion } from './version.ts';
 
 /**
  * The number of leading arguments to skip when parsing command-line arguments.

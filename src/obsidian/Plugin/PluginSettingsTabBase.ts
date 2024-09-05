@@ -5,6 +5,7 @@
  */
 
 import { PluginSettingTab } from 'obsidian';
+
 import { PluginBase } from './PluginBase.ts';
 
 /**

@@ -9,6 +9,7 @@ import {
   TFolder,
   Vault
 } from 'obsidian';
+
 import { isMarkdownFile } from './TAbstractFile.ts';
 
 /**

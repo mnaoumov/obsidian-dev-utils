@@ -5,13 +5,6 @@
  * and it sets up various esbuild plugins to preprocess, lint, fix source maps, and copy files to the Obsidian plugins folder.
  */
 
-import {
-  context,
-  type BuildContext,
-  type BuildOptions,
-  type Plugin
-} from 'esbuild';
-import process from 'node:process';
 import { existsSync } from 'node:fs';
 import {
   cp,
@@ -19,16 +12,25 @@ import {
   rm,
   writeFile
 } from 'node:fs/promises';
-import { resolvePathFromRoot } from '../Root.ts';
-import { CliTaskResult } from '../CliUtils.ts';
-import { readNpmPackage } from '../Npm.ts';
-import { preprocessPlugin } from './preprocessPlugin.ts';
-import { lintPlugin } from './lintPlugin.ts';
-import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
-import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
+import process from 'node:process';
+
+import builtins from 'builtin-modules';
+import {
+  type BuildContext,
+  type BuildOptions,
+  context,
+  type Plugin
+} from 'esbuild';
+
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
-import builtins from 'builtin-modules';
+import { CliTaskResult } from '../CliUtils.ts';
+import { readNpmPackage } from '../Npm.ts';
+import { resolvePathFromRoot } from '../Root.ts';
+import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
+import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
+import { lintPlugin } from './lintPlugin.ts';
+import { preprocessPlugin } from './preprocessPlugin.ts';
 
 /**
  * Enumeration representing the build modes.

@@ -6,12 +6,14 @@
  * in the correct Obsidian directory for testing and use.
  */
 
-import type { Plugin } from 'esbuild';
 import { existsSync } from 'node:fs';
 import {
   cp,
   mkdir
 } from 'node:fs/promises';
+
+import type { Plugin } from 'esbuild';
+
 import { join } from '../../Path.ts';
 
 /**

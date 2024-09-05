@@ -5,17 +5,18 @@
 
 import type { App } from 'obsidian';
 import {
+  createTFileInstance,
+  createTFolderInstance
+} from 'obsidian-typings/implementations';
+
+import {
   basename,
   dirname,
   extname
 } from '../Path.ts';
-import {
-  createTFileInstance,
-  createTFolderInstance
-} from 'obsidian-typings/implementations';
-import type { PathOrFile } from './TFile.ts';
-import { getPath } from './TAbstractFile.ts';
 import { registerFile } from './MetadataCache.ts';
+import { getPath } from './TAbstractFile.ts';
+import type { PathOrFile } from './TFile.ts';
 
 /**
  * Retrieves the attachment folder path for a given note.

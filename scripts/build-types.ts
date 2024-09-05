@@ -1,9 +1,10 @@
 import { cp } from 'node:fs/promises';
+
+import { join } from '../src/Path.ts';
 import { wrapCliTask } from '../src/scripts/CliUtils.ts';
-import { execFromRoot } from '../src/scripts/Root.ts';
 import { readdirPosix } from '../src/scripts/Fs.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
-import { join } from '../src/Path.ts';
+import { execFromRoot } from '../src/scripts/Root.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');

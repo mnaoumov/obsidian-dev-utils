@@ -9,6 +9,7 @@ import type {
   PathLike
 } from 'node:fs';
 import { readdir } from 'node:fs/promises';
+
 import {
   toPosixBuffer,
   toPosixPath

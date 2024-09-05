@@ -12,15 +12,15 @@ import {
   Plugin,
   PluginSettingTab
 } from 'obsidian';
-import { registerAsyncErrorEventHandler } from '../../Error.ts';
-import {
-  loadPluginSettings,
-  clonePluginSettings
-} from './PluginSettings.ts';
+
 import {
   invokeAsyncSafely,
   type MaybePromise
 } from '../../Async.ts';
+import { registerAsyncErrorEventHandler } from '../../Error.ts';
+import {
+  clonePluginSettings,
+  loadPluginSettings } from './PluginSettings.ts';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.

@@ -4,6 +4,7 @@
  */
 
 import type { MarkdownPostProcessorContext } from 'obsidian';
+
 import { throwExpression } from '../Error.ts';
 
 /**

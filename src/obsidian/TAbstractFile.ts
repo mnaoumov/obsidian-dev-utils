@@ -9,8 +9,9 @@ import {
   TFile,
   TFolder
 } from 'obsidian';
-import { trimEnd } from '../String.ts';
+
 import { extname } from '../Path.ts';
+import { trimEnd } from '../String.ts';
 
 /**
  * The file extension for Markdown files.

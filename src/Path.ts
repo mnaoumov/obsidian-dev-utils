@@ -4,6 +4,7 @@
  */
 
 import path from 'path-browserify';
+
 import { ensureStartsWith } from './String.ts';
 
 /**

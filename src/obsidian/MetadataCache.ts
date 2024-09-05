@@ -4,19 +4,24 @@
  */
 
 import {
-  TFile,
   type App,
   type CachedMetadata,
   type LinkCache,
   type MarkdownView,
   type ReferenceCache,
-  type TAbstractFile
-} from 'obsidian';
-import {
-  retryWithTimeout,
-  type RetryOptions
-} from '../Async.ts';
+  type TAbstractFile,
+  TFile } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
+import {
+  createTFolderInstance,
+  parentFolderPath
+} from 'obsidian-typings/implementations';
+
+import {
+  type RetryOptions,
+  retryWithTimeout } from '../Async.ts';
+import { throwExpression } from '../Error.ts';
+import type { CombinedFrontMatter } from './FrontMatter.ts';
 import {
   getPath,
   isMarkdownFile
@@ -26,12 +31,6 @@ import {
   getFileOrNull,
   type PathOrFile
 } from './TFile.ts';
-import type { CombinedFrontMatter } from './FrontMatter.ts';
-import {
-  createTFolderInstance,
-  parentFolderPath
-} from 'obsidian-typings/implementations';
-import { throwExpression } from '../Error.ts';
 
 /**
  * Retrieves the cached metadata for a given file or path.

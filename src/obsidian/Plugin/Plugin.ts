@@ -8,6 +8,7 @@ import {
   Notice,
   Plugin
 } from 'obsidian';
+
 import { printError } from '../../Error.ts';
 
 /**

@@ -11,19 +11,6 @@
  * new versions on GitHub.
  */
 
-import { CliTaskResult } from './CliUtils.ts';
-import {
-  execFromRoot,
-  resolvePathFromRoot
-} from './Root.ts';
-import { spellcheck } from './spellcheck.ts';
-import { lint } from './ESLint/ESLint.ts';
-import {
-  editNpmPackage,
-  editNpmPackageLock,
-  readNpmPackage
-} from './Npm.ts';
-import { editJson } from './JSON.ts';
 import { existsSync } from 'node:fs';
 import {
   cp,
@@ -31,11 +18,26 @@ import {
   writeFile
 } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
-import { readdirPosix } from './Fs.ts';
-import { join } from '../Path.ts';
-import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
-import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
+
 import AdmZip from 'adm-zip';
+
+import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
+import { join } from '../Path.ts';
+import { CliTaskResult } from './CliUtils.ts';
+import { lint } from './ESLint/ESLint.ts';
+import { readdirPosix } from './Fs.ts';
+import { editJson } from './JSON.ts';
+import {
+  editNpmPackage,
+  editNpmPackageLock,
+  readNpmPackage
+} from './Npm.ts';
+import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
+import {
+  execFromRoot,
+  resolvePathFromRoot
+} from './Root.ts';
+import { spellcheck } from './spellcheck.ts';
 
 /**
  * Enum representing different types of version updates.

@@ -5,6 +5,7 @@
  */
 
 import process from 'node:process';
+
 import type { MaybePromise } from '../Async.ts';
 import { printError } from '../Error.ts';
 

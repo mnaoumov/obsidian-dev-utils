@@ -3,12 +3,13 @@
  * Contains utility functions for JSON.
  */
 
+import { existsSync } from 'node:fs';
 import {
   readFile,
   writeFile
 } from 'node:fs/promises';
+
 import type { MaybePromise } from '../Async.ts';
-import { existsSync } from 'node:fs';
 import { toJson } from '../Object.ts';
 
 /**

@@ -4,21 +4,21 @@
  */
 
 import {
+  DEFAULT_SCHEMA,
+  dump,
+  load,
+  Type } from 'js-yaml';
+import {
   App
 } from 'obsidian';
-import { processWithRetry } from './Vault.ts';
-import {
-  DEFAULT_SCHEMA,
-  Type,
-  load,
-  dump
-} from 'js-yaml';
+
+import type { MaybePromise } from '../Async.ts';
+import { throwExpression } from '../Error.ts';
 import {
   getFile,
   type PathOrFile
 } from './TFile.ts';
-import type { MaybePromise } from '../Async.ts';
-import { throwExpression } from '../Error.ts';
+import { processWithRetry } from './Vault.ts';
 
 /**
  * Represents the front matter of an Obsidian file.

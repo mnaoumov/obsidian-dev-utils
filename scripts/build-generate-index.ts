@@ -1,15 +1,15 @@
+import { asyncMap } from '../src/Async.ts';
 import {
   basename,
   extname,
   join,
   normalizeIfRelative
 } from '../src/Path.ts';
-import { readdirPosix } from '../src/scripts/Fs.ts';
-import { makeValidVariableName } from '../src/String.ts';
 import { wrapCliTask } from '../src/scripts/CliUtils.ts';
-import { asyncMap } from '../src/Async.ts';
 import { generate } from '../src/scripts/CodeGenerator.ts';
+import { readdirPosix } from '../src/scripts/Fs.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
+import { makeValidVariableName } from '../src/String.ts';
 
 await wrapCliTask(async () => {
   await generateIndex(ObsidianDevUtilsRepoPaths.Src);
