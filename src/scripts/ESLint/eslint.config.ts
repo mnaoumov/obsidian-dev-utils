@@ -13,12 +13,14 @@
 import 'eslint-import-resolver-typescript';
 
 import eslint from '@eslint/js';
+// eslint-disable-next-line import-x/no-rename-default
 import stylistic from '@stylistic/eslint-plugin';
 import type { Linter } from 'eslint';
 import eslintPluginDeprecation from 'eslint-plugin-deprecation';
 import eslintPluginImportX from 'eslint-plugin-import-x';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
+// eslint-disable-next-line import-x/no-rename-default
 import tseslint from 'typescript-eslint';
 
 import { join } from '../../Path.ts';

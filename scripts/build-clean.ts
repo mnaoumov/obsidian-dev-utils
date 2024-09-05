@@ -1,14 +1,11 @@
 import {
-  rm
-} from 'node:fs/promises';
-
-import {
   basename,
   join
 } from '../src/Path.ts';
 import { buildClean } from '../src/scripts/build.ts';
 import { wrapCliTask } from '../src/scripts/CliUtils.ts';
 import { readdirPosix } from '../src/scripts/Fs.ts';
+import { rm } from '../src/scripts/NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
 
 await wrapCliTask(async () => {

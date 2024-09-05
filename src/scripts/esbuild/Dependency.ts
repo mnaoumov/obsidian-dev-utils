@@ -121,6 +121,7 @@ function canSkipFromBundling(moduleName: string): boolean {
   }
 
   try {
+    // eslint-disable-next-line import-x/no-dynamic-require
     const module = require(moduleName) as ModuleWithDefaultExport;
     return !module.default;
   } catch {
