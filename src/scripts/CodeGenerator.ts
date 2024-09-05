@@ -3,7 +3,7 @@
  * Contains utility functions for code generation.
  */
 
-import { writeFile } from 'node:fs/promises';
+import { writeFile } from './NodeModules.ts';
 
 /**
  * Generates a file at the specified path with the provided lines of code.

@@ -11,14 +11,6 @@
  * new versions on GitHub.
  */
 
-import { existsSync } from 'node:fs';
-import {
-  cp,
-  readFile,
-  writeFile
-} from 'node:fs/promises';
-import { createInterface } from 'node:readline/promises';
-
 import AdmZip from 'adm-zip';
 
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
@@ -27,6 +19,12 @@ import { CliTaskResult } from './CliUtils.ts';
 import { lint } from './ESLint/ESLint.ts';
 import { readdirPosix } from './Fs.ts';
 import { editJson } from './JSON.ts';
+import { cp,
+  createInterface,
+  existsSync,
+  readFile,
+  writeFile
+} from './NodeModules.ts';
 import {
   editNpmPackage,
   editNpmPackageLock,

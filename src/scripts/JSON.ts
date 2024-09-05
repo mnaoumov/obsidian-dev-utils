@@ -3,14 +3,12 @@
  * Contains utility functions for JSON.
  */
 
-import { existsSync } from 'node:fs';
-import {
-  readFile,
-  writeFile
-} from 'node:fs/promises';
-
 import type { MaybePromise } from '../Async.ts';
 import { toJson } from '../Object.ts';
+import { existsSync,
+  readFile,
+  writeFile
+} from './NodeModules.ts';
 
 /**
  * Reads a JSON file and parses its contents into a JavaScript object of type `T`.

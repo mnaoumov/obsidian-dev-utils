@@ -5,14 +5,13 @@
  * and to remove the existing build output.
  */
 
-import {
-  cp,
-  rm
-} from 'node:fs/promises';
-
 import { join } from '../Path.ts';
 import { trimStart } from '../String.ts';
 import { readdirPosix } from './Fs.ts';
+import {
+  cp,
+  rm
+} from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 
 /**

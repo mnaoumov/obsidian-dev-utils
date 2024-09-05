@@ -9,13 +9,12 @@
  * We cannot use `.` instead of `(dot)` in the above description because the file itself is preprocessed with the same rule.
  */
 
-import { readFile } from 'node:fs/promises';
-import process from 'node:process';
-
 import type { Plugin } from 'esbuild';
 
 import { toJson } from '../../Object.ts';
 import { makeValidVariableName } from '../../String.ts';
+import { process,
+  readFile } from '../NodeModules.ts';
 
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.

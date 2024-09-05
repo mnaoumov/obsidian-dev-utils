@@ -3,17 +3,16 @@
  * Contains utility functions for file system operations.
  */
 
-import type {
-  Dirent,
-  ObjectEncodingOptions,
-  PathLike
-} from 'node:fs';
-import { readdir } from 'node:fs/promises';
-
 import {
   toPosixBuffer,
   toPosixPath
 } from '../Path.ts';
+import type {
+  Dirent,
+  ObjectEncodingOptions,
+  PathLike
+} from './NodeModules.ts';
+import { readdir } from './NodeModules.ts';
 
 /**
  * Options for controlling the format of the result when returning strings.

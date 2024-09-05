@@ -5,8 +5,6 @@
  * with dependencies that are not to be skipped.
  */
 
-import { writeFile } from 'node:fs/promises';
-
 import type { Plugin } from 'esbuild';
 
 import { throwExpression } from '../../Error.ts';
@@ -20,6 +18,7 @@ import {
   makeValidVariableName,
   trimStart
 } from '../../String.ts';
+import { writeFile } from '../NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import { resolvePathFromRoot } from '../Root.ts';
 

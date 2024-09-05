@@ -4,9 +4,6 @@
  * resolving paths relative to the root.
  */
 
-import { spawn } from 'node:child_process';
-import process from 'node:process';
-
 import { packageDirectorySync } from 'pkg-dir';
 
 import {
@@ -15,6 +12,8 @@ import {
   , toPosixPath } from '../Path.ts';
 import { trimEnd } from '../String.ts';
 import { toCommandLine } from './CliUtils.ts';
+import { process,
+  spawn } from './NodeModules.ts';
 
 /**
  * Represents the result of executing a command from the root directory.

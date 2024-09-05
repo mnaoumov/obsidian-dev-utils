@@ -4,11 +4,10 @@
  * It reports any spelling issues found in the code and returns a `TaskResult` indicating whether the spellcheck was successful.
  */
 
-import { fileURLToPath } from 'node:url';
-
 import { lint } from 'cspell';
 
 import { CliTaskResult } from './CliUtils.ts';
+import { fileURLToPath } from './NodeModules.ts';
 import { toRelativeFromRoot } from './Root.ts';
 
 /**

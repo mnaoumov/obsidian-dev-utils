@@ -6,15 +6,13 @@
  * in the correct Obsidian directory for testing and use.
  */
 
-import { existsSync } from 'node:fs';
-import {
-  cp,
-  mkdir
-} from 'node:fs/promises';
-
 import type { Plugin } from 'esbuild';
 
 import { join } from '../../Path.ts';
+import { cp,
+  existsSync,
+  mkdir
+} from '../NodeModules.ts';
 
 /**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.

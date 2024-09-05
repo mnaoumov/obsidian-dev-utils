@@ -6,8 +6,6 @@
  * synchronous and asynchronous tasks.
  */
 
-import process from 'node:process';
-
 import { Command } from 'commander';
 
 import {
@@ -28,6 +26,7 @@ import {
   buildObsidianPlugin
 } from './esbuild/ObsidianPluginBuilder.ts';
 import { lint } from './ESLint/ESLint.ts';
+import { process } from './NodeModules.ts';
 import { readNpmPackage } from './Npm.ts';
 import { spellcheck } from './spellcheck.ts';
 import { updateVersion } from './version.ts';

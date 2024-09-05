@@ -5,15 +5,6 @@
  * and it sets up various esbuild plugins to preprocess, lint, fix source maps, and copy files to the Obsidian plugins folder.
  */
 
-import { existsSync } from 'node:fs';
-import {
-  cp,
-  mkdir,
-  rm,
-  writeFile
-} from 'node:fs/promises';
-import process from 'node:process';
-
 import builtins from 'builtin-modules';
 import {
   type BuildContext,
@@ -25,6 +16,13 @@ import {
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
 import { CliTaskResult } from '../CliUtils.ts';
+import { cp,
+  existsSync,
+  mkdir,
+  process,
+  rm,
+  writeFile
+} from '../NodeModules.ts';
 import { readNpmPackage } from '../Npm.ts';
 import { resolvePathFromRoot } from '../Root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';

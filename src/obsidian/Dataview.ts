@@ -28,8 +28,8 @@ import {
   errorToString,
   throwExpression
 } from '../Error.ts';
-import { relativePathToResourceUrl } from './ResourceUrl.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
+import { relativePathToResourceUrl } from './ResourceUrl.ts';
 import { getPath } from './TAbstractFile.ts';
 import type { PathOrFile } from './TFile.ts';
 
