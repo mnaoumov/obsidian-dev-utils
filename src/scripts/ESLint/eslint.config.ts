@@ -134,6 +134,7 @@ export const configs: Linter.Config[] = tseslint.config(
 ) as Linter.Config[];
 
 function excludeFilesProperty<Config extends { files?: unknown }>(config: Config): Omit<Config, 'files'> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { files, ...configWithoutFiles } = config;
   return configWithoutFiles;
 }
