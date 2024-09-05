@@ -178,9 +178,9 @@ export function bindUiComponent<
   const optionsExt = Object.assign({}, options, DEFAULT_OPTIONS);
   const pluginExt = plugin as unknown as PluginBase<PluginSettings>;
   const uiComponentExt = uiComponent as UIComponent<UIValueType>;
-  const pluginSettings = optionsExt.pluginSettings ?? pluginExt.settingsCopy;
+  const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? pluginExt.settingsCopy;
   uiComponentExt
-    .setValue(optionsExt.settingToUIValueConverter(pluginSettings[property]))
+    .setValue(optionsExt.settingToUIValueConverter(pluginSettingsFn()[property]))
     .onChange(async (uiValue) => {
       if (optionsExt.uiValueValidator) {
         const errorMessage = optionsExt.uiValueValidator(uiValue);
@@ -193,6 +193,7 @@ export function bindUiComponent<
           return;
         }
       }
+      const pluginSettings = pluginSettingsFn();
       pluginSettings[property] = optionsExt.uiToSettingValueConverter(uiValue);
       if (optionsExt.autoSave) {
         await pluginExt.saveSettings(pluginSettings);
