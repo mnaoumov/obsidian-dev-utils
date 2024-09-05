@@ -41,8 +41,8 @@ export interface SelectItemOptions<T> {
 /**
  * Displays a selection modal in Obsidian for choosing an item from a list.
  *
- * @param params - The parameters for the selection modal.
- * @returns - A promise that resolves with the selected item or null if no item was selected.
+ * @param options - The options for the selection modal.
+ * @returns A promise that resolves with the selected item or null if no item was selected.
  */
 export async function selectItem<T>(options: SelectItemOptions<T>): Promise<T | null> {
   return await new Promise<T | null>((resolve) => {
