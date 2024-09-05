@@ -6,37 +6,78 @@
  */
 
 import type { App } from 'obsidian';
-import { Modal } from 'obsidian';
+import {
+  ButtonComponent,
+  Modal
+} from 'obsidian';
+
+/**
+ * The options for the alert modal.
+ */
+export interface AlertOptions {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * The title of the modal.
+   */
+  title?: string | DocumentFragment;
+
+  /**
+   * The message to display in the modal.
+   */
+  message: string | DocumentFragment;
+
+  /**
+   * The text for the "OK" button.
+   */
+  okButtonText?: string;
+
+  /**
+   * The styles to apply to the "OK" button.
+   */
+  okButtonStyles?: Partial<CSSStyleDeclaration>;
+}
 
 /**
  * Displays an alert modal in Obsidian with a specified message.
  *
- * @param app - The Obsidian app instance.
- * @param message - The message to display in the modal.
+ * @param options - The options for the alert modal.
  * @returns A promise that resolves when the modal is closed.
  */
-export async function alert(app: App, message: string): Promise<void> {
+export async function alert(options: AlertOptions): Promise<void> {
   return new Promise<void>((resolve) => {
-    const modal = new AlertModal(app, message, resolve);
+    const modal = new AlertModal(options, resolve);
     modal.open();
   });
 }
 
 class AlertModal extends Modal {
-  public constructor(app: App, private message: string, private resolve: () => void) {
-    super(app);
+  private options: Required<AlertOptions>;
+
+  public constructor(options: AlertOptions, private resolve: () => void) {
+    super(options.app);
+    const DEFAULT_OPTIONS: Required<AlertOptions> = {
+      app: options.app,
+      title: '',
+      message: '',
+      okButtonText: 'OK',
+      okButtonStyles: {}
+    };
+    this.options = { ...DEFAULT_OPTIONS, ...options };
   }
 
   public override onOpen(): void {
-    this.setContent(createFragment((fragment) => {
-      const modalContent = fragment.createDiv({ cls: 'mod-cta' });
-      modalContent.createEl('p', { text: this.message });
-      modalContent.createEl('button', {
-        cls: 'mod-cta',
-        text: 'OK',
-        onclick: this.close.bind(this)
-      } as DomElementInfo);
-    }));
+    this.titleEl.setText(this.options.title);
+    const paragraph = this.contentEl.createEl('p');
+    paragraph.setText(this.options.message);
+    const okButton = new ButtonComponent(this.contentEl);
+    okButton.setButtonText(this.options.okButtonText);
+    okButton.setCta();
+    okButton.onClick(this.close.bind(this));
+    Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
   }
 
   public override onClose(): void {

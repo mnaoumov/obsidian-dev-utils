@@ -24,7 +24,7 @@ export interface PromptOptions {
   /**
    * The title of the modal.
    */
-  title?: string;
+  title?: string | DocumentFragment;
 
   /**
    * The default value to pre-fill the input field.

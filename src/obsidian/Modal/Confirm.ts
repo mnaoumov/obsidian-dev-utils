@@ -6,46 +6,102 @@
  */
 
 import type { App } from 'obsidian';
-import { Modal } from 'obsidian';
+import {
+  ButtonComponent,
+  Modal
+} from 'obsidian';
+
+/**
+ * The options for the confirm modal.
+ */
+export interface ConfirmOptions {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * The title of the modal.
+   */
+  title?: string | DocumentFragment;
+
+  /**
+   * The message to display in the modal.
+   */
+  message: string | DocumentFragment;
+
+  /**
+   * The text for the "OK" button.
+   */
+  okButtonText?: string;
+
+  /**
+   * The text for the "Cancel" button.
+   */
+  cancelButtonText?: string;
+
+  /**
+   * The styles to apply to the "OK" button.
+   */
+  okButtonStyles?: Partial<CSSStyleDeclaration>;
+
+  /**
+   * The styles to apply to the "Cancel" button.
+   */
+  cancelButtonStyles?: Partial<CSSStyleDeclaration>;
+}
 
 /**
  * Displays an confirm modal in Obsidian with a specified message.
  *
- * @param app - The Obsidian app instance.
- * @param message - The message to display in the modal.
+ * @param options - The options for the confirm modal.
  * @returns A promise that resolves with a boolean indicating whether the "OK" button was clicked.
  */
-export async function confirm(app: App, message: string): Promise<boolean> {
+export async function confirm(options: ConfirmOptions): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
-    const modal = new ConfirmModal(app, message, resolve);
+    const modal = new ConfirmModal(options, resolve);
     modal.open();
   });
 }
 
 class ConfirmModal extends Modal {
+  private options: Required<ConfirmOptions>;
   private isConfirmed = false;
 
-  public constructor(app: App, private message: string, private resolve: (value: boolean) => void) {
-    super(app);
+  public constructor(options: ConfirmOptions, private resolve: (value: boolean) => void) {
+    super(options.app);
+    const DEFAULT_OPTIONS: Required<ConfirmOptions> = {
+      app: options.app,
+      title: '',
+      message: '',
+      okButtonText: 'OK',
+      cancelButtonText: 'Cancel',
+      okButtonStyles: {
+        marginTop: '20px',
+        marginRight: '10px'
+      },
+      cancelButtonStyles: {}
+    };
+    this.options = { ...DEFAULT_OPTIONS, ...options };
   }
 
   public override onOpen(): void {
-    this.setContent(createFragment((fragment) => {
-      const modalContent = fragment.createDiv({ cls: 'mod-cta' });
-      modalContent.createEl('p', { text: this.message });
-      modalContent.createEl('button', {
-        cls: 'mod-cta',
-        text: 'OK',
-        onclick: () => {
-          this.isConfirmed = true;
-          this.close();
-        }
-      } as DomElementInfo);
-      modalContent.createEl('button', {
-        text: 'Cancel',
-        onclick: this.close.bind(this)
-      } as DomElementInfo);
-    }));
+    this.titleEl.setText(this.options.title);
+    const paragraph = this.contentEl.createEl('p');
+    paragraph.setText(this.options.message);
+    const okButton = new ButtonComponent(this.contentEl);
+    okButton.setButtonText(this.options.okButtonText);
+    okButton.setCta();
+    okButton.onClick(() => {
+      this.isConfirmed = true;
+      this.close();
+    });
+    Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
+
+    const cancelButton = new ButtonComponent(this.contentEl);
+    cancelButton.setButtonText(this.options.okButtonText);
+    cancelButton.onClick(this.close.bind(this));
+    Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
   }
 
   public override onClose(): void {
