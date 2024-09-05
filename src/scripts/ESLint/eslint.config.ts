@@ -10,7 +10,7 @@
  * @packageDocumentation eslint-config
  */
 
-import stylisticEslintPlugin from '@stylistic/eslint-plugin';
+import stylistic from '@stylistic/eslint-plugin';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 import 'eslint-import-resolver-typescript';
 import type { Linter } from 'eslint';
@@ -36,6 +36,14 @@ export const configs: Linter.Config[] = tseslint.config(
       }
     }
   },
+  stylistic.configs["recommended-flat"],
+  stylistic.configs.customize({
+    arrowParens: true,
+    braceStyle: '1tbs',
+    commaDangle: 'never',
+    flat: true,
+    semi: true
+  }),
   {
     files: [
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
@@ -48,18 +56,12 @@ export const configs: Linter.Config[] = tseslint.config(
     ],
     plugins: {
       'modules-newlines': eslintPluginModulesNewlines,
-      '@stylistic': stylisticEslintPlugin,
       deprecation: eslintPluginDeprecation
     },
     rules: {
       'modules-newlines/import-declaration-newline': 'error',
       'modules-newlines/export-declaration-newline': 'error',
       '@typescript-eslint/explicit-function-return-type': 'error',
-      '@stylistic/indent': ['error', 2],
-      '@stylistic/quotes': ['error', 'single'],
-      '@stylistic/brace-style': 'error',
-      '@stylistic/arrow-parens': 'error',
-      semi: 'error',
       'no-extra-semi': 'error',
       '@typescript-eslint/explicit-member-accessibility': 'error',
       curly: ['error'],
