@@ -10,9 +10,6 @@
  * @packageDocumentation eslint-config
  */
 
-// eslint-disable-next-line import-x/no-unassigned-import
-import 'eslint-import-resolver-typescript';
-
 import eslint from '@eslint/js';
 // eslint-disable-next-line import-x/no-rename-default
 import stylistic from '@stylistic/eslint-plugin';
