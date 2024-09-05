@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.1.0
+
+- Proper check to handle mobile
+
 ## 3.0.4
 
 - Proper exclude files prop
