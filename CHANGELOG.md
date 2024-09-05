@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.4.1
+
+- Use cancelButtonText
+
 ## 3.4.0
 
 - Refactor all modals
