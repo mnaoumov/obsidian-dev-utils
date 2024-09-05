@@ -23,6 +23,7 @@ import tseslint from 'typescript-eslint';
 import { join } from '../../Path.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import { getRootDir } from '../Root.ts';
+import eslintPluginImportX from 'eslint-plugin-import-x'
 
 /**
  * The ESLint configurations for TypeScript projects.
@@ -47,6 +48,8 @@ export const configs: Linter.Config[] = tseslint.config(
     flat: true,
     semi: true
   }),
+  eslintPluginImportX.flatConfigs.recommended,
+  eslintPluginImportX.flatConfigs.typescript,
   {
     files: [
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
