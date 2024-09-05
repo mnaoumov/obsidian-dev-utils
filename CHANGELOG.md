@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.2.0
+
+- Reload plugin settings before updating
+
 ## 3.1.0
 
 - Proper check to handle mobile
