@@ -326,7 +326,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
  * Creates a temporary folder in the vault with parent folders if needed.
  * @param app - The application instance.
  * @param path - The path of the folder to create.
- * @returns - A promise that resolves to a function that can be called to delete the temporary folder and all its created parents.
+ * @returns A promise that resolves to a function that can be called to delete the temporary folder and all its created parents.
  */
 export async function createTempFolder(app: App, path: string): Promise<() => Promise<void>> {
   let folder = app.vault.getFolderByPath(path);

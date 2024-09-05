@@ -43,7 +43,7 @@ export interface PromptOptions {
  * Displays a prompt modal in Obsidian to get user input.
  *
  * @param options - The options for the prompt modal.
- * @returns - A promise that resolves with the user input or null if the prompt was cancelled.
+ * @returns A promise that resolves with the user input or null if the prompt was cancelled.
  */
 export async function prompt(options: PromptOptions): Promise<string | null> {
   return new Promise<string | null>((resolve) => {

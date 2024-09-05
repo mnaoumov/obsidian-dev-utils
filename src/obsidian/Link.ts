@@ -118,7 +118,7 @@ export interface UpdateLinksInFileOptions {
  * Updates the links in a file based on the provided parameters.
  *
  * @param options - The options for updating the links.
- * @returns - A promise that resolves when the links are updated.
+ * @returns A promise that resolves when the links are updated.
  */
 export async function updateLinksInFile(options: UpdateLinksInFileOptions): Promise<void> {
   const {

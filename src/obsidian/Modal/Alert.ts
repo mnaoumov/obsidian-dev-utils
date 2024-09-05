@@ -13,7 +13,7 @@ import { Modal } from 'obsidian';
  *
  * @param app - The Obsidian app instance.
  * @param message - The message to display in the modal.
- * @returns - A promise that resolves when the modal is closed.
+ * @returns A promise that resolves when the modal is closed.
  */
 export async function alert(app: App, message: string): Promise<void> {
   return new Promise<void>((resolve) => {
