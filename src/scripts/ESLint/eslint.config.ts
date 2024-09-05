@@ -10,15 +10,18 @@
  * @packageDocumentation eslint-config
  */
 
-import stylistic from '@stylistic/eslint-plugin';
-import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 import 'eslint-import-resolver-typescript';
+
+import eslint from '@eslint/js';
+import stylistic from '@stylistic/eslint-plugin';
 import type { Linter } from 'eslint';
 import eslintPluginDeprecation from 'eslint-plugin-deprecation';
+import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import tseslint from 'typescript-eslint';
+
 import { join } from '../../Path.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
-import eslint from '@eslint/js';
-import tseslint from 'typescript-eslint';
 import { getRootDir } from '../Root.ts';
 
 /**
@@ -55,8 +58,9 @@ export const configs: Linter.Config[] = tseslint.config(
       join(ObsidianDevUtilsRepoPaths.Dist)
     ],
     plugins: {
+      'deprecation': eslintPluginDeprecation,
       'modules-newlines': eslintPluginModulesNewlines,
-      'deprecation': eslintPluginDeprecation
+      'simple-import-sort': simpleImportSort
     },
     rules: {
       '@stylistic/no-extra-semi': 'error',
@@ -65,7 +69,9 @@ export const configs: Linter.Config[] = tseslint.config(
       'curly': ['error'],
       'deprecation/deprecation': 'error',
       'modules-newlines/import-declaration-newline': 'error',
-      'modules-newlines/export-declaration-newline': 'error'
+      'modules-newlines/export-declaration-newline': 'error',
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error'
     },
     settings: {
       'import/resolver': {
