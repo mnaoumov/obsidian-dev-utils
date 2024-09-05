@@ -1,5 +1,5 @@
+import type { BuildOptions } from 'esbuild';
 import {
-  type BuildOptions,
   context } from 'esbuild';
 
 import { wrapCliTask } from '../src/scripts/CliUtils.ts';

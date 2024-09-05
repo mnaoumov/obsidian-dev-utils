@@ -3,13 +3,13 @@
  * This module provides utility functions for working with the metadata cache in Obsidian.
  */
 
+import type { App,
+  CachedMetadata,
+  LinkCache,
+  MarkdownView,
+  ReferenceCache,
+  TAbstractFile } from 'obsidian';
 import {
-  type App,
-  type CachedMetadata,
-  type LinkCache,
-  type MarkdownView,
-  type ReferenceCache,
-  type TAbstractFile,
   TFile } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
 import {
@@ -17,8 +17,8 @@ import {
   parentFolderPath
 } from 'obsidian-typings/implementations';
 
+import type { RetryOptions } from '../Async.ts';
 import {
-  type RetryOptions,
   retryWithTimeout } from '../Async.ts';
 import { throwExpression } from '../Error.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
@@ -26,10 +26,10 @@ import {
   getPath,
   isMarkdownFile
 } from './TAbstractFile.ts';
+import type { PathOrFile } from './TFile.ts';
 import {
   getFile,
-  getFileOrNull,
-  type PathOrFile
+  getFileOrNull
 } from './TFile.ts';
 
 /**

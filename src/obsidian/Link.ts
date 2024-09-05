@@ -5,18 +5,16 @@
  * The functions integrate with Obsidian's API to ensure that links are managed correctly within the vault.
  **/
 
+import type { App,
+  ReferenceCache,
+  TFile } from 'obsidian';
 import {
-  type App,
-  normalizePath,
-  type ReferenceCache,
-  type TFile
+  normalizePath
 } from 'obsidian';
 import { createTFileInstance } from 'obsidian-typings/implementations';
 
-import {
-  type MaybePromise,
-  type RetryOptions
-} from '../Async.ts';
+import type { MaybePromise,
+  RetryOptions } from '../Async.ts';
 import { throwExpression } from '../Error.ts';
 import {
   basename,
@@ -38,13 +36,13 @@ import {
   isMarkdownFile,
   trimMarkdownExtension
 } from './TAbstractFile.ts';
+import type { PathOrFile } from './TFile.ts';
 import {
-  getFile,
-  type PathOrFile
+  getFile
 } from './TFile.ts';
+import type { FileChange } from './Vault.ts';
 import {
-  applyFileChanges,
-  type FileChange
+  applyFileChanges
 } from './Vault.ts';
 
 /**

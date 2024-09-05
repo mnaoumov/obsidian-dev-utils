@@ -1,4 +1,7 @@
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
+// eslint-disable-next-line import-x/no-nodejs-modules
+import process from 'node:process';
+
 export { spawn } from 'node:child_process';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
@@ -23,9 +26,6 @@ export {
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
 export { createRequire } from 'node:module';
-
-// eslint-disable-next-line import-x/no-nodejs-modules
-import process from 'node:process';
 
 // eslint-disable-next-line eslint-plugin-tsdoc-required/tsdoc-required
 export { process };

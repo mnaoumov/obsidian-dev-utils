@@ -6,10 +6,10 @@
  */
 
 import builtinModules from 'builtin-modules';
+import type { BuildOptions,
+  Plugin } from 'esbuild';
 import {
-  type BuildOptions,
-  context,
-  type Plugin
+  context
 } from 'esbuild';
 
 import { throwExpression } from '../../Error.ts';
@@ -26,6 +26,7 @@ import {
   invokeEsbuild
 } from './ObsidianPluginBuilder.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
+
 const require = createRequire(import.meta.url);
 
 interface ModuleWithDefaultExport {

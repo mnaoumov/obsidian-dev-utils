@@ -5,9 +5,9 @@
 
 import { throwExpression } from './Error.ts';
 import { escapeRegExp } from './RegExp.ts';
+import type { ValueProvider } from './ValueProvider.ts';
 import {
-  resolveValue,
-  type ValueProvider
+  resolveValue
 } from './ValueProvider.ts';
 
 /**

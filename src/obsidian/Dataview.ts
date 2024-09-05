@@ -5,12 +5,24 @@
 
 import '../@types/compare-versions.d.ts';
 
+import type { MaybePromise } from '../Async.ts';
+import {
+  convertAsyncToSync
+} from '../Async.ts';
+import {
+  errorToString,
+  throwExpression
+} from '../Error.ts';
 import type { DataviewInlineApi as DataviewInlineApiOriginal } from './@types/Dataview/api/inline-api.d.ts';
 import type {
   DataArray,
   DataviewApi,
   SMarkdownPage
 } from './@types/Dataview/index.d.ts';
+import type { CombinedFrontMatter } from './FrontMatter.ts';
+import { relativePathToResourceUrl } from './ResourceUrl.ts';
+import { getPath } from './TAbstractFile.ts';
+import type { PathOrFile } from './TFile.ts';
 
 /**
  * Export DateTime and Link types from the Dataview API.
@@ -19,19 +31,6 @@ export type {
   DateTime,
   Link
 } from './@types/Dataview/index.d.ts';
-
-import {
-  convertAsyncToSync,
-  type MaybePromise
-} from '../Async.ts';
-import {
-  errorToString,
-  throwExpression
-} from '../Error.ts';
-import type { CombinedFrontMatter } from './FrontMatter.ts';
-import { relativePathToResourceUrl } from './ResourceUrl.ts';
-import { getPath } from './TAbstractFile.ts';
-import type { PathOrFile } from './TFile.ts';
 
 declare global {
   /**

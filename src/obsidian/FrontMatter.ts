@@ -14,9 +14,9 @@ import {
 
 import type { MaybePromise } from '../Async.ts';
 import { throwExpression } from '../Error.ts';
+import type { PathOrFile } from './TFile.ts';
 import {
-  getFile,
-  type PathOrFile
+  getFile
 } from './TFile.ts';
 import { processWithRetry } from './Vault.ts';
 

@@ -5,12 +5,12 @@
 
 import { invokeAsyncSafely } from '../Async.ts';
 import { throwExpression } from '../Error.ts';
+import type { ValueProvider } from '../ValueProvider.ts';
 import {
-  resolveValue,
-  type ValueProvider
+  resolveValue
 } from '../ValueProvider.ts';
+import type { DataviewInlineApi } from './Dataview.ts';
 import {
-  type DataviewInlineApi,
   getRenderedContainer } from './Dataview.ts';
 
 /**

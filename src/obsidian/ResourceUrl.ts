@@ -3,8 +3,8 @@
  * This module provides utility functions for working with resource URLs in Obsidian.
  */
 
+import type { App } from 'obsidian';
 import {
-  type App,
   Platform
 } from 'obsidian';
 

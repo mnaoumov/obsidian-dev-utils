@@ -3,8 +3,8 @@
  * This module provides utility functions for working with TFolder instances in Obsidian.
  */
 
+import type { App } from 'obsidian';
 import {
-  type App,
   TFile,
   TFolder,
   Vault

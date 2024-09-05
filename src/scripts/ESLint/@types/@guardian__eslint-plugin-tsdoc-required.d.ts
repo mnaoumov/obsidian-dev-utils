@@ -5,6 +5,7 @@
 
 declare module '@guardian/eslint-plugin-tsdoc-required' {
   import type { ESLint } from 'eslint';
+
   const plugin: ESLint.Plugin;
   export default plugin;
 }

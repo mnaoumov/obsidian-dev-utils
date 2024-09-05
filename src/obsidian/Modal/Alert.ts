@@ -5,8 +5,8 @@
  * This module exports a function to display a modal with a message in Obsidian. The modal includes an "OK" button to close it.
  */
 
+import type { App } from 'obsidian';
 import {
-  type App,
   Modal
 } from 'obsidian';
 

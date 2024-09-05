@@ -3,15 +3,15 @@
  * This module provides utility functions for working with the Obsidian Vault.
  */
 
+import type { ListedFiles } from 'obsidian';
 import {
   App,
-  type ListedFiles,
   Notice,
   TFile,
   TFolder } from 'obsidian';
 
+import type { RetryOptions } from '../Async.ts';
 import {
-  type RetryOptions,
   retryWithTimeout } from '../Async.ts';
 import {
   printError,
@@ -20,19 +20,19 @@ import {
 import { deepEqual,
   toJson } from '../Object.ts';
 import { dirname } from '../Path.ts';
+import type { ValueProvider } from '../ValueProvider.ts';
 import {
-  resolveValue,
-  type ValueProvider
+  resolveValue
 } from '../ValueProvider.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
 import { getPath } from './TAbstractFile.ts';
+import type { PathOrFile } from './TFile.ts';
 import {
-  getFile,
-  type PathOrFile
+  getFile
 } from './TFile.ts';
+import type { PathOrFolder } from './TFolder.ts';
 import {
-  getFolderOrNull,
-  type PathOrFolder
+  getFolderOrNull
 } from './TFolder.ts';
 
 /**

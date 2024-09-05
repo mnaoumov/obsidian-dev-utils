@@ -6,11 +6,11 @@
  */
 
 import builtinModules from 'builtin-modules';
+import type { BuildContext,
+  BuildOptions,
+  Plugin } from 'esbuild';
 import {
-  type BuildContext,
-  type BuildOptions,
-  context,
-  type Plugin
+  context
 } from 'esbuild';
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';

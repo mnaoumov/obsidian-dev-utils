@@ -13,9 +13,9 @@ import {
   PluginSettingTab
 } from 'obsidian';
 
+import type { MaybePromise } from '../../Async.ts';
 import {
-  invokeAsyncSafely,
-  type MaybePromise
+  invokeAsyncSafely
 } from '../../Async.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import {

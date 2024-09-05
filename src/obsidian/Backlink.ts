@@ -3,24 +3,24 @@
  * Provides utility functions for working with backlinks.
  */
 
+import type { TFile } from 'obsidian';
 import {
-  type TFile,
   TFolder } from 'obsidian';
 
 import { throwExpression } from '../Error.ts';
 import { renderCallout } from './Callout.ts';
+import type { DataviewInlineApi,
+  Link } from './Dataview.ts';
 import {
-  type DataviewInlineApi,
-  type Link,
   renderPaginatedTable
 } from './Dataview.ts';
 import { fixTitle } from './DataviewLink.ts';
 import { generateMarkdownLink } from './Link.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
+import type { PathOrAbstractFile } from './TAbstractFile.ts';
 import {
   getAbstractFileOrNull,
-  isFile,
-  type PathOrAbstractFile
+  isFile
 } from './TAbstractFile.ts';
 import type { PathOrFile } from './TFile.ts';
 import { getMarkdownFiles } from './TFolder.ts';
