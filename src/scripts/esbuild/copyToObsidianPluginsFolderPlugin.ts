@@ -9,7 +9,8 @@
 import type { Plugin } from 'esbuild';
 
 import { join } from '../../Path.ts';
-import { cp,
+import {
+  cp,
   existsSync,
   mkdir
 } from '../NodeModules.ts';

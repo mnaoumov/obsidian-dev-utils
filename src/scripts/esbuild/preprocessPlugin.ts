@@ -13,8 +13,10 @@ import type { Plugin } from 'esbuild';
 
 import { toJson } from '../../Object.ts';
 import { makeValidVariableName } from '../../String.ts';
-import { process,
-  readFile } from '../NodeModules.ts';
+import {
+  process,
+  readFile
+} from '../NodeModules.ts';
 
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.

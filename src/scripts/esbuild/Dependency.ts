@@ -6,11 +6,11 @@
  */
 
 import builtinModules from 'builtin-modules';
-import type { BuildOptions,
-  Plugin } from 'esbuild';
-import {
-  context
+import type {
+  BuildOptions,
+  Plugin
 } from 'esbuild';
+import { context } from 'esbuild';
 
 import { throwExpression } from '../../Error.ts';
 import {

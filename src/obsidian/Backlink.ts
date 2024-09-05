@@ -4,16 +4,15 @@
  */
 
 import type { TFile } from 'obsidian';
-import {
-  TFolder } from 'obsidian';
+import { TFolder } from 'obsidian';
 
 import { throwExpression } from '../Error.ts';
 import { renderCallout } from './Callout.ts';
-import type { DataviewInlineApi,
-  Link } from './Dataview.ts';
-import {
-  renderPaginatedTable
+import type {
+  DataviewInlineApi,
+  Link
 } from './Dataview.ts';
+import { renderPaginatedTable } from './Dataview.ts';
 import { fixTitle } from './DataviewLink.ts';
 import { generateMarkdownLink } from './Link.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';

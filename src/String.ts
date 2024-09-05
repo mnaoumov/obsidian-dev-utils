@@ -6,9 +6,7 @@
 import { throwExpression } from './Error.ts';
 import { escapeRegExp } from './RegExp.ts';
 import type { ValueProvider } from './ValueProvider.ts';
-import {
-  resolveValue
-} from './ValueProvider.ts';
+import { resolveValue } from './ValueProvider.ts';
 
 /**
  * An asynchronous function that generates replacement strings.

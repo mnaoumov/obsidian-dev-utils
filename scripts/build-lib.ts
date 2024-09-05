@@ -1,7 +1,5 @@
 import type { BuildOptions } from 'esbuild';
-import {
-  context
-} from 'esbuild';
+import { context } from 'esbuild';
 
 import {
   join,

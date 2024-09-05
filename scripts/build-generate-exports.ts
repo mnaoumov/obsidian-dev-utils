@@ -3,8 +3,10 @@ import {
   join,
   normalizeIfRelative
 } from '../src/Path.ts';
-import { CliTaskResult,
-  wrapCliTask } from '../src/scripts/CliUtils.ts';
+import {
+  CliTaskResult,
+  wrapCliTask
+} from '../src/scripts/CliUtils.ts';
 import { readdirPosix } from '../src/scripts/Fs.ts';
 import { editNpmPackage } from '../src/scripts/Npm.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';

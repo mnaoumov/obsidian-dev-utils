@@ -7,17 +7,14 @@ import {
   DEFAULT_SCHEMA,
   dump,
   load,
-  Type } from 'js-yaml';
-import {
-  App
-} from 'obsidian';
+  Type
+} from 'js-yaml';
+import { App } from 'obsidian';
 
 import type { MaybePromise } from '../Async.ts';
 import { throwExpression } from '../Error.ts';
 import type { PathOrFile } from './TFile.ts';
-import {
-  getFile
-} from './TFile.ts';
+import { getFile } from './TFile.ts';
 import { processWithRetry } from './Vault.ts';
 
 /**

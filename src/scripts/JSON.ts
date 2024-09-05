@@ -5,7 +5,8 @@
 
 import type { MaybePromise } from '../Async.ts';
 import { toJson } from '../Object.ts';
-import { existsSync,
+import {
+  existsSync,
   readFile,
   writeFile
 } from './NodeModules.ts';

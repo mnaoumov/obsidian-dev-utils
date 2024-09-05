@@ -14,13 +14,12 @@ import {
 } from 'obsidian';
 
 import type { MaybePromise } from '../../Async.ts';
-import {
-  invokeAsyncSafely
-} from '../../Async.ts';
+import { invokeAsyncSafely } from '../../Async.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import {
   clonePluginSettings,
-  loadPluginSettings } from './PluginSettings.ts';
+  loadPluginSettings
+} from './PluginSettings.ts';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.

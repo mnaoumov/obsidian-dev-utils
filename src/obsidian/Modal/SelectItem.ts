@@ -8,7 +8,8 @@
 import type { FuzzyMatch } from 'obsidian';
 import {
   App,
-  FuzzySuggestModal } from 'obsidian';
+  FuzzySuggestModal
+} from 'obsidian';
 
 /**
  * The parameters for the selection modal.

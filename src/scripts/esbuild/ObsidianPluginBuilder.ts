@@ -6,17 +6,18 @@
  */
 
 import builtinModules from 'builtin-modules';
-import type { BuildContext,
+import type {
+  BuildContext,
   BuildOptions,
-  Plugin } from 'esbuild';
-import {
-  context
+  Plugin
 } from 'esbuild';
+import { context } from 'esbuild';
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
 import { CliTaskResult } from '../CliUtils.ts';
-import { cp,
+import {
+  cp,
   existsSync,
   mkdir,
   process,

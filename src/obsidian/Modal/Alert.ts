@@ -6,9 +6,7 @@
  */
 
 import type { App } from 'obsidian';
-import {
-  Modal
-} from 'obsidian';
+import { Modal } from 'obsidian';
 
 /**
  * Displays an alert modal in Obsidian with a specified message.

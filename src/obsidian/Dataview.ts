@@ -7,9 +7,7 @@
 import '../@types/compare-versions.d.ts';
 
 import type { MaybePromise } from '../Async.ts';
-import {
-  convertAsyncToSync
-} from '../Async.ts';
+import { convertAsyncToSync } from '../Async.ts';
 import {
   errorToString,
   throwExpression

@@ -9,11 +9,14 @@ import { packageDirectorySync } from 'pkg-dir';
 import {
   relative,
   resolve
-  , toPosixPath } from '../Path.ts';
+  , toPosixPath
+} from '../Path.ts';
 import { trimEnd } from '../String.ts';
 import { toCommandLine } from './CliUtils.ts';
-import { process,
-  spawn } from './NodeModules.ts';
+import {
+  process,
+  spawn
+} from './NodeModules.ts';
 
 /**
  * Represents the result of executing a command from the root directory.

@@ -19,7 +19,8 @@ import { CliTaskResult } from './CliUtils.ts';
 import { lint } from './ESLint/ESLint.ts';
 import { readdirPosix } from './Fs.ts';
 import { editJson } from './JSON.ts';
-import { cp,
+import {
+  cp,
   createInterface,
   existsSync,
   readFile,
