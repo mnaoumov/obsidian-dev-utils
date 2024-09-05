@@ -166,7 +166,7 @@ export function bindUiComponent<
   plugin: Plugin,
   uiComponent: TUIComponent,
   property: Property,
-  options?: BindUIComponentOptions<PluginSettings, UIValueType> | BindUIComponentOptionsExtended<PluginSettings, UIValueType, Property>
+  options?: BindUIComponentOptions<PluginSettings, UIValueType>
 ): TUIComponent {
   type PropertyType = PluginSettings[Property];
   const DEFAULT_OPTIONS: BindUIComponentOptionsExtended<PluginSettings, UIValueType, Property> = {
@@ -175,7 +175,7 @@ export function bindUiComponent<
     uiToSettingValueConverter: (value): PropertyType => value as PropertyType
   };
 
-  const optionsExt = Object.assign({}, options, DEFAULT_OPTIONS);
+  const optionsExt: BindUIComponentOptionsExtended<PluginSettings, UIValueType, Property> = { ...DEFAULT_OPTIONS, ...options };
   const pluginExt = plugin as unknown as PluginBase<PluginSettings>;
   const uiComponentExt = uiComponent as UIComponent<UIValueType>;
   const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? pluginExt.settingsCopy;
