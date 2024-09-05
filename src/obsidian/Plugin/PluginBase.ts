@@ -17,7 +17,10 @@ import {
   loadPluginSettings,
   clonePluginSettings
 } from './PluginSettings.ts';
-import type { MaybePromise } from '../../Async.ts';
+import {
+  invokeAsyncSafely,
+  type MaybePromise
+} from '../../Async.ts';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
@@ -44,7 +47,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * @returns A copy of the plugin settings.
    */
   public get settingsCopy(): PluginSettings {
-    return clonePluginSettings(this.createDefaultPluginSettings, this.settings);
+    return clonePluginSettings(this.createDefaultPluginSettings.bind(this), this.settings);
   }
 
   /**
@@ -61,7 +64,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    *
    * @returns The default plugin settings.
    */
-  protected abstract createDefaultPluginSettings(this: void): PluginSettings;
+  protected abstract createDefaultPluginSettings(): PluginSettings;
 
   /**
    * Creates a plugin settings tab. This method must be implemented by subclasses.
@@ -71,30 +74,27 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   protected abstract createPluginSettingsTab(): PluginSettingTab | null;
 
   /**
-   * Called when the plugin is loaded. Handles loading settings, adding a settings tab, registering error handlers,
-   * and initializing the plugin.
-   *
-   * @returns A promise that resolves when the plugin is fully loaded.
+   * Called when the plugin is loaded
    */
-  public override async onload(): Promise<void> {
-    await this.loadSettings();
-    const pluginSettingsTab = this.createPluginSettingsTab();
-    if (pluginSettingsTab) {
-      this.addSettingTab(pluginSettingsTab);
-    }
-    this.register(registerAsyncErrorEventHandler(() => {
-      this.showNotice('An unhandled error occurred. Please check the console for more information.');
-    }));
+  public override onload(): void {
+    invokeAsyncSafely((async (): Promise<void> => {
+      await this.loadSettings();
+      const pluginSettingsTab = this.createPluginSettingsTab();
+      if (pluginSettingsTab) {
+        this.addSettingTab(pluginSettingsTab);
+      }
+      this.register(registerAsyncErrorEventHandler(() => {
+        this.showNotice('An unhandled error occurred. Please check the console for more information.');
+      }));
 
-    const abortController = new AbortController();
-    this._abortSignal = abortController.signal;
-    this.register(() => {
-      abortController.abort(); 
-    });
-    await this.onloadComplete();
-    this.app.workspace.onLayoutReady(() => {
-      this.onLayoutReady(); 
-    });
+      const abortController = new AbortController();
+      this._abortSignal = abortController.signal;
+      this.register(() => {
+        abortController.abort();
+      });
+      await this.onloadComplete();
+      this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+    })());
   }
 
   /**
@@ -108,8 +108,11 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
    * the layout is ready.
+   *
+   * @returns A promise or void indicating the completion of the layout setup.
    */
-  protected onLayoutReady(): void { }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  protected onLayoutReady(): MaybePromise<void> { }
 
   /**
    * Loads the plugin settings from the saved data.
@@ -128,7 +131,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * @returns A promise that resolves to `PluginSettings` or the settings directly.
    */
   protected parseSettings(data: unknown): MaybePromise<PluginSettings> {
-    return loadPluginSettings(this.createDefaultPluginSettings, data);
+    return loadPluginSettings(this.createDefaultPluginSettings.bind(this), data);
   }
 
   /**
@@ -138,7 +141,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * @returns A promise that resolves when the settings are saved.
    */
   public async saveSettings(newSettings: PluginSettings): Promise<void> {
-    this._settings = clonePluginSettings(this.createDefaultPluginSettings, newSettings);
+    this._settings = clonePluginSettings(this.createDefaultPluginSettings.bind(this), newSettings);
     await this.saveData(this.settings);
   }
 
