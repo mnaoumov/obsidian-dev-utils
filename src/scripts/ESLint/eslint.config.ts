@@ -30,7 +30,7 @@ import { getRootDir } from '../Root.ts';
 export const configs: Linter.Config[] = tseslint.config(
   eslint.configs.recommended,
   // eslint-disable-next-line import-x/no-named-as-default-member
-  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.strictTypeChecked.map(excludeFilesProperty),
   // eslint-disable-next-line import-x/no-named-as-default-member
   ...tseslint.configs.stylisticTypeChecked,
   {
@@ -42,7 +42,7 @@ export const configs: Linter.Config[] = tseslint.config(
     }
   },
   // eslint-disable-next-line import-x/no-named-as-default-member
-  stylistic.configs['recommended-flat'],
+  excludeFilesProperty(stylistic.configs['recommended-flat']),
   // eslint-disable-next-line import-x/no-named-as-default-member
   stylistic.configs.customize({
     arrowParens: true,
@@ -132,3 +132,8 @@ export const configs: Linter.Config[] = tseslint.config(
     }
   }
 ) as Linter.Config[];
+
+function excludeFilesProperty<Config extends { files?: unknown }>(config: Config): Omit<Config, 'files'> {
+  const { files, ...configWithoutFiles } = config;
+  return configWithoutFiles;
+}
