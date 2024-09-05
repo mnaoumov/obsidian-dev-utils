@@ -68,7 +68,7 @@ export async function selectItem<T>({
 
       public override selectSuggestion(
         value: FuzzyMatch<T>,
-        evt: MouseEvent | KeyboardEvent,
+        evt: MouseEvent | KeyboardEvent
       ): void {
         this.isSelected = true;
         super.selectSuggestion(value, evt);

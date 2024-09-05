@@ -81,5 +81,5 @@ export enum ObsidianDevUtilsRepoPaths {
   TsConfigJson = 'tsconfig.json',
 
   /** The path to the `@types` directory, typically used for TypeScript type declarations. */
-  Types = '@types',
+  Types = '@types'
 }

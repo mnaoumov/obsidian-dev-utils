@@ -185,37 +185,37 @@ export interface UpdateLinkOptions {
   /**
    * The Obsidian app instance.
    */
-  app: App,
+  app: App;
 
   /**
    * The reference cache for the link.
    */
-  link: ReferenceCache,
+  link: ReferenceCache;
 
   /**
    * The file associated with the link.
    */
-  pathOrFile: PathOrFile | null,
+  pathOrFile: PathOrFile | null;
 
   /**
    * The old path of the file.
    */
-  oldPathOrFile: PathOrFile,
+  oldPathOrFile: PathOrFile;
 
   /**
    * The source file containing the link.
    */
-  sourcePathOrFile: PathOrFile,
+  sourcePathOrFile: PathOrFile;
 
   /**
    * A map of old and new file paths.
    */
-  renameMap: Map<string, string>,
+  renameMap: Map<string, string>;
 
   /**
    * Whether to force markdown links.
    */
-  forceMarkdownLinks?: boolean | undefined
+  forceMarkdownLinks?: boolean | undefined;
 }
 
 /**
@@ -241,8 +241,8 @@ export function updateLink(options: UpdateLinkOptions): string {
   const sourcePath = getPath(source);
   const oldPath = getPath(oldPathOrFile);
   const isEmbed = link.original.startsWith('!');
-  const isWikilink =
-    link.original.includes('[[') && forceMarkdownLinks !== true;
+  const isWikilink
+    = link.original.includes('[[') && forceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
 
   const newPath = renameMap.get(file.path);
@@ -299,7 +299,6 @@ export interface GetAliasOptions {
    */
   sourcePath: string;
 }
-
 
 /**
  * Retrieves the alias for a given link.

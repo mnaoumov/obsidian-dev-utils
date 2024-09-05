@@ -36,7 +36,7 @@ await wrapCliTask(async () => {
       };
       npmPackage.exports[normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any))] = {
         default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs)),
-        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
+        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts))
       };
     }
 

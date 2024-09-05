@@ -101,7 +101,7 @@ export function bindUiComponent<
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   Property extends KeysMatching<PluginSettings, UIValueType>,
   UIValueType = TUIComponent extends UIComponent<infer P> ? P : never,
-  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never,
+  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
 >(
   plugin: Plugin,
   uiComponent: TUIComponent,
@@ -131,7 +131,7 @@ export function bindUiComponent<
   TUIComponent extends UIComponent<unknown>,
   Property extends keyof PluginSettings,
   UIValueType = TUIComponent extends UIComponent<infer P> ? P : never,
-  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never,
+  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
 >(
   plugin: Plugin,
   uiComponent: TUIComponent,
@@ -160,7 +160,7 @@ export function bindUiComponent<
   TUIComponent extends UIComponent<unknown>,
   Property extends keyof PluginSettings,
   UIValueType = TUIComponent extends UIComponent<infer P> ? P : never,
-  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never,
+  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
 >(
   plugin: Plugin,
   uiComponent: TUIComponent,

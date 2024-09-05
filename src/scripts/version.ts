@@ -447,7 +447,6 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     const fileNames = await readdirPosix(buildDir);
     filePaths = fileNames.map((fileName) => join(buildDir, fileName));
   } else {
-
     const zip = new AdmZip();
     zip.addLocalFolder(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist, (filename) => !filename.endsWith('.zip'));
 

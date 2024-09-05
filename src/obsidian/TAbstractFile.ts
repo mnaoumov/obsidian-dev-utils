@@ -7,7 +7,7 @@ import {
   App,
   TAbstractFile,
   TFile,
-  TFolder,
+  TFolder
 } from 'obsidian';
 import { trimEnd } from '../String.ts';
 import { extname } from '../Path.ts';

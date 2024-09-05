@@ -3,12 +3,11 @@
  * This module provides utility functions for rendering callouts in Dataview.
  */
 
-
 import { invokeAsyncSafely } from '../Async.ts';
 
 import {
   getRenderedContainer,
-  type DataviewInlineApi,
+  type DataviewInlineApi
 } from './Dataview.ts';
 
 import {
@@ -112,7 +111,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     let content: string | Node | void | undefined;
 
-    const paragraph = await getRenderedContainer(dv, async() => {
+    const paragraph = await getRenderedContainer(dv, async () => {
       content = await resolveValue(contentProvider);
     });
 

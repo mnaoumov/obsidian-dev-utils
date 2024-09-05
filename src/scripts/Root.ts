@@ -163,12 +163,14 @@ export function execFromRoot(command: string | string[], options: ExecFromRootOp
       if (exitCode !== 0 && !ignoreExitCode) {
         reject(new Error(`Command failed with exit code ${exitCode?.toString() ?? '(null)'}\n${stderr}`));
       } else {
-        resolve(!withDetails ? stdout : {
-          exitCode,
-          exitSignal,
-          stderr,
-          stdout
-        });
+        resolve(!withDetails
+          ? stdout
+          : {
+              exitCode,
+              exitSignal,
+              stderr,
+              stdout
+            });
       }
     });
 
@@ -176,12 +178,14 @@ export function execFromRoot(command: string | string[], options: ExecFromRootOp
       if (!ignoreExitCode) {
         reject(err);
       } else {
-        resolve(!withDetails ? stdout : {
-          exitCode: null,
-          exitSignal: null,
-          stderr,
-          stdout
-        });
+        resolve(!withDetails
+          ? stdout
+          : {
+              exitCode: null,
+              exitSignal: null,
+              stderr,
+              stdout
+            });
       }
     });
   });

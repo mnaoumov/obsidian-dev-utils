@@ -16,7 +16,7 @@ import { PluginBase } from './PluginBase.ts';
  */
 export abstract class PluginSettingsTabBase<
   TPlugin extends PluginBase<PluginSettings>,
-  PluginSettings extends object = TPlugin extends PluginBase<infer P> ? P : never,
+  PluginSettings extends object = TPlugin extends PluginBase<infer P> ? P : never
 > extends PluginSettingTab {
   public constructor(public override plugin: TPlugin) {
     super(plugin.app, plugin);

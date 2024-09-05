@@ -6,7 +6,7 @@
 import {
   type Link,
   type DataviewInlineApi,
-  renderPaginatedTable,
+  renderPaginatedTable
 } from './Dataview.ts';
 
 import { renderCallout } from './Callout.ts';
@@ -25,7 +25,6 @@ import { getBacklinksForFileSafe } from './MetadataCache.ts';
 import { getMarkdownFiles } from './TFolder.ts';
 import type { PathOrFile } from './TFile.ts';
 import { throwExpression } from '../Error.ts';
-
 
 /**
  * Options for rendering delayed backlinks.
@@ -139,7 +138,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
       const markdownLink = generateMarkdownLink({
         app: dv.app,
         pathOrFile: dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path) ?? throwExpression(new Error('Link not found')),
-        sourcePathOrFile: dv.current().file.path,
+        sourcePathOrFile: dv.current().file.path
       });
 
       return `${markdownLink} (${backLinkPath})`;
@@ -152,6 +151,6 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
   await renderPaginatedTable({
     dv,
     headers: ['Note', 'Backlinks'],
-    rows: backlinkRows,
+    rows: backlinkRows
   });
 }

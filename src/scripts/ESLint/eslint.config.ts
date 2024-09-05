@@ -36,7 +36,7 @@ export const configs: Linter.Config[] = tseslint.config(
       }
     }
   },
-  stylistic.configs["recommended-flat"],
+  stylistic.configs['recommended-flat'],
   stylistic.configs.customize({
     arrowParens: true,
     braceStyle: '1tbs',
@@ -56,7 +56,7 @@ export const configs: Linter.Config[] = tseslint.config(
     ],
     plugins: {
       'modules-newlines': eslintPluginModulesNewlines,
-      deprecation: eslintPluginDeprecation
+      'deprecation': eslintPluginDeprecation
     },
     rules: {
       'modules-newlines/import-declaration-newline': 'error',
@@ -64,7 +64,7 @@ export const configs: Linter.Config[] = tseslint.config(
       '@typescript-eslint/explicit-function-return-type': 'error',
       'no-extra-semi': 'error',
       '@typescript-eslint/explicit-member-accessibility': 'error',
-      curly: ['error'],
+      'curly': ['error'],
       'deprecation/deprecation': 'error'
     },
     settings: {

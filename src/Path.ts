@@ -30,7 +30,6 @@ export const sep = path.posix.sep;
  */
 export const basename = posix.basename;
 
-
 /**
  * Returns the directory name of a path.
  *
@@ -79,7 +78,6 @@ export const join = posix.join;
   */
 export const normalize = posix.normalize;
 
-
 /**
  * Parses a path string into a path object.
  *
@@ -87,7 +85,6 @@ export const normalize = posix.normalize;
  * @returns The parsed path object.
  */
 export const parse = posix.parse;
-
 
 /**
  * Returns the relative path from one path to another.

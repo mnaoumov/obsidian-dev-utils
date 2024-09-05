@@ -4,7 +4,7 @@
  */
 
 import {
-  App,
+  App
 } from 'obsidian';
 import { processWithRetry } from './Vault.ts';
 import {

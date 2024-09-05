@@ -12,7 +12,6 @@ import {
   TextComponent
 } from 'obsidian';
 
-
 /**
  * The options for the prompt modal.
  */
@@ -88,7 +87,7 @@ export async function prompt(options: PromptOptions): Promise<string | null> {
         okButton.setButtonText('OK');
         okButton.setClass('mod-cta');
         okButton.onClick((event) => {
-          this.handleOk(event, textComponent); 
+          this.handleOk(event, textComponent);
         });
         okButton.buttonEl.style.marginTop = '20px';
         okButton.buttonEl.style.marginRight = '10px';

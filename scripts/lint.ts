@@ -16,7 +16,7 @@ await wrapCliTask(async () => {
     rules: {
       'tsdoc/syntax': 'error',
       'verify-tsdoc/verify-tsdoc-params': 'error',
-      'eslint-plugin-tsdoc-required/tsdoc-required': 'error',
+      'eslint-plugin-tsdoc-required/tsdoc-required': 'error'
     }
   }]);
 });

@@ -49,7 +49,6 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
-
 /**
  * Options for building an Obsidian plugin.
  */
@@ -67,7 +66,7 @@ export interface BuildObsidianPluginOptions {
   /**
    * Custom esbuild plugins to be used during the build process.
    */
-  customEsbuildPlugins?: Plugin[]
+  customEsbuildPlugins?: Plugin[];
 }
 
 /**
@@ -114,7 +113,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
 
   const buildOptions: BuildOptions = {
     banner: {
-      js: banner,
+      js: banner
     },
     bundle: true,
     entryPoints: [resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs))],
@@ -145,7 +144,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       lintPlugin(isProductionBuild),
       fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
       ...customEsbuildPlugins,
-      copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName),
+      copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
     ],
     sourcemap: isProductionBuild ? false : 'inline',
     target: 'esnext',

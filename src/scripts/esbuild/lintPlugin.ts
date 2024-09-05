@@ -26,6 +26,6 @@ export function lintPlugin(isProductionBuild: boolean): Plugin {
         await lint();
         console.log('[watch] lint finished');
       });
-    },
+    }
   };
 }

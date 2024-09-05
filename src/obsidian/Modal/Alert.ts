@@ -32,7 +32,7 @@ export async function alert(app: App, message: string): Promise<void> {
             cls: 'mod-cta',
             text: 'OK',
             onclick: () => {
-              this.close(); 
+              this.close();
             }
           } as DomElementInfo);
         }));

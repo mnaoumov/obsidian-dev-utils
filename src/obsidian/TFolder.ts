@@ -14,7 +14,7 @@ import { isMarkdownFile } from './TAbstractFile.ts';
 /**
  * Represents a path or an instance of TFolder.
  */
-export type PathOrFolder = string | TFolder
+export type PathOrFolder = string | TFolder;
 
 /**
  * Retrieves a TFolder object based on the provided app and pathOrFolder.

@@ -14,7 +14,6 @@ import {
   toPosixPath
 } from '../Path.ts';
 
-
 /**
  * Options for controlling the format of the result when returning strings.
  */
