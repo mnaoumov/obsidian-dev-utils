@@ -15,8 +15,6 @@ import AdmZip from 'adm-zip';
 
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../Path.ts';
-import { CliTaskResult } from './CliUtils.ts';
-import { lint } from './ESLint/ESLint.ts';
 import { readdirPosix } from './Fs.ts';
 import { editJson } from './JSON.ts';
 import {
@@ -36,7 +34,6 @@ import {
   execFromRoot,
   resolvePathFromRoot
 } from './Root.ts';
-import { spellcheck } from './spellcheck.ts';
 
 /**
  * Enum representing different types of version updates.
@@ -88,47 +85,40 @@ export interface ObsidianReleasesJson {
  * 7. Adds updated files to Git, tags the commit, and pushes to the repository.
  * 8. If an Obsidian plugin, copies the updated manifest and publishes a GitHub release.
  *
- * @param versionUpdateType - The type of version update to perform (major, minor, patch, beta, or manual).
- * @returns A `Promise` that resolves to a `TaskResult` indicating the success or failure of the version update.
+ * @param versionUpdateType - The type of version update to perform (major, minor, patch, beta, or x.y.z[-beta:u]).
+ * @returns A promise that resolves when the version update is complete.
  */
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function updateVersion(versionUpdateType: string): Promise<CliTaskResult | void> {
+export async function updateVersion(versionUpdateType: string): Promise<void> {
   if (!versionUpdateType) {
     const npmOldVersion = process.env['npm_old_version'];
     const npmNewVersion = process.env['npm_new_version'];
 
     if (npmOldVersion && npmNewVersion) {
       await updateVersionInFiles(npmOldVersion, false);
-      return updateVersion(npmNewVersion);
+      await updateVersion(npmNewVersion);
+      return;
     }
   }
 
   const isObsidianPlugin = existsSync(resolvePathFromRoot(ObsidianPluginRepoPaths.ManifestJson));
-  return await CliTaskResult.chain([
-    async (): Promise<void> => {
-      validate(versionUpdateType);
-      await checkGitInstalled();
-      await checkGitRepoClean();
-      await checkGitHubCliInstalled();
-    },
-    (): Promise<CliTaskResult> => spellcheck(),
-    async (): Promise<void> => {
-      await execFromRoot('npm run build');
-    },
-    (): Promise<CliTaskResult> => lint(),
-    async (): Promise<void> => {
-      const newVersion = await getNewVersion(versionUpdateType);
-      await updateVersionInFiles(newVersion, isObsidianPlugin);
-      await updateChangelog(newVersion);
-      await addUpdatedFilesToGit(newVersion);
-      await addGitTag(newVersion);
-      await gitPush();
-      if (isObsidianPlugin) {
-        await copyUpdatedManifest();
-      }
-      await publishGitHubRelease(newVersion, isObsidianPlugin);
-    }
-  ]);
+  validate(versionUpdateType);
+  await checkGitInstalled();
+  await checkGitRepoClean();
+  await checkGitHubCliInstalled();
+  await execFromRoot('npm run spellcheck');
+  await execFromRoot('npm run build');
+  await execFromRoot('npm run lint');
+
+  const newVersion = await getNewVersion(versionUpdateType);
+  await updateVersionInFiles(newVersion, isObsidianPlugin);
+  await updateChangelog(newVersion);
+  await addUpdatedFilesToGit(newVersion);
+  await addGitTag(newVersion);
+  await gitPush();
+  if (isObsidianPlugin) {
+    await copyUpdatedManifest();
+  }
+  await publishGitHubRelease(newVersion, isObsidianPlugin);
 }
 
 /**
