@@ -99,7 +99,7 @@ class ConfirmModal extends Modal {
     Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
 
     const cancelButton = new ButtonComponent(this.contentEl);
-    cancelButton.setButtonText(this.options.okButtonText);
+    cancelButton.setButtonText(this.options.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
     Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
   }
