@@ -67,12 +67,12 @@ export function preprocessPlugin(): Plugin {
           if (contents.includes(`var __${makeValidVariableName(key)}`)) {
             continue;
           }
-          contents = `var __${makeValidVariableName(key)} = globalThis["${key}"] ?? ${valueStr};\n` + contents;
+          contents = `var __${makeValidVariableName(key)} = globalThis['${key}'] ?? ${valueStr};\n` + contents;
         }
 
-        // HACK: The ${""} part is used to ensure Obsidian loads the plugin properly,
+        // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
         // otherwise, it stops loading after the first line of the sourceMappingURL comment.
-        contents = contents.replace(/`\r?\n\/\/# sourceMappingURL/g, '`\n//#${""} sourceMappingURL');
+        contents = contents.replace(/`\r?\n\/\/# sourceMappingURL/g, '`\n//#${\'\'} sourceMappingURL');
 
         return {
           contents,
