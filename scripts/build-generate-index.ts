@@ -33,7 +33,7 @@ async function generateIndex(dir: string): Promise<void> {
       sourceFile = normalizeIfRelative(dirent.name);
     }
 
-    return `export * as ${makeValidVariableName(name)} from "${sourceFile}";`;
+    return `export * as ${makeValidVariableName(name)} from '${sourceFile}';`;
   })).filter((line) => line !== undefined);
 
   await generate(join(dir, ObsidianDevUtilsRepoPaths.IndexTs), lines);

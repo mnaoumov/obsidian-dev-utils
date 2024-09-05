@@ -10,5 +10,5 @@ await wrapCliTask(async () => {
 });
 
 function makeExport(dependency: string): string {
-  return `export * as ${makeValidVariableName(dependency)} from "${dependency}";`;
+  return `export * as ${makeValidVariableName(dependency)} from '${dependency}';`;
 }
