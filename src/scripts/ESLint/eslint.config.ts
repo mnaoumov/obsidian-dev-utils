@@ -32,7 +32,7 @@ export const configs: Linter.Config[] = tseslint.config(
   // eslint-disable-next-line import-x/no-named-as-default-member
   ...tseslint.configs.strictTypeChecked.map(excludeFilesProperty),
   // eslint-disable-next-line import-x/no-named-as-default-member
-  ...tseslint.configs.stylisticTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked.map(excludeFilesProperty),
   {
     languageOptions: {
       parserOptions: {
@@ -42,7 +42,7 @@ export const configs: Linter.Config[] = tseslint.config(
     }
   },
   // eslint-disable-next-line import-x/no-named-as-default-member
-  excludeFilesProperty(stylistic.configs['recommended-flat']),
+  stylistic.configs['recommended-flat'],
   // eslint-disable-next-line import-x/no-named-as-default-member
   stylistic.configs.customize({
     arrowParens: true,
