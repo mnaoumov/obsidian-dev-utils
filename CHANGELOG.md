@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.4.0
+
+- Refactor all modals
+
 ## 3.3.0
 
 - Add Confirm modal
