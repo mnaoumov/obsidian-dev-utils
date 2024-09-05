@@ -1,5 +1,6 @@
 import process from 'node:process';
 
+// eslint-disable-next-line import-x/default
 import eslintPluginTsdocRequired from '@guardian/eslint-plugin-tsdoc-required';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
 import eslintPluginVerifyTsdoc from 'eslint-plugin-verify-tsdoc';

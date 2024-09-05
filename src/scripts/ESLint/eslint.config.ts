@@ -16,6 +16,7 @@ import eslint from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import type { Linter } from 'eslint';
 import eslintPluginDeprecation from 'eslint-plugin-deprecation';
+import eslintPluginImportX from 'eslint-plugin-import-x';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
@@ -23,14 +24,15 @@ import tseslint from 'typescript-eslint';
 import { join } from '../../Path.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import { getRootDir } from '../Root.ts';
-import eslintPluginImportX from 'eslint-plugin-import-x'
 
 /**
  * The ESLint configurations for TypeScript projects.
  */
 export const configs: Linter.Config[] = tseslint.config(
   eslint.configs.recommended,
+  // eslint-disable-next-line import-x/no-named-as-default-member
   ...tseslint.configs.strictTypeChecked,
+  // eslint-disable-next-line import-x/no-named-as-default-member
   ...tseslint.configs.stylisticTypeChecked,
   {
     languageOptions: {
@@ -40,7 +42,9 @@ export const configs: Linter.Config[] = tseslint.config(
       }
     }
   },
+  // eslint-disable-next-line import-x/no-named-as-default-member
   stylistic.configs['recommended-flat'],
+  // eslint-disable-next-line import-x/no-named-as-default-member
   stylistic.configs.customize({
     arrowParens: true,
     braceStyle: '1tbs',

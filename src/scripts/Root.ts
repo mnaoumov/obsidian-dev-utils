@@ -12,8 +12,7 @@ import { packageDirectorySync } from 'pkg-dir';
 import {
   relative,
   resolve
-} from '../Path.ts';
-import { toPosixPath } from '../Path.ts';
+  , toPosixPath } from '../Path.ts';
 import { trimEnd } from '../String.ts';
 import { toCommandLine } from './CliUtils.ts';
 

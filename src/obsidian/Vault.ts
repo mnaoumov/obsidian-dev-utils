@@ -17,8 +17,8 @@ import {
   printError,
   throwExpression
 } from '../Error.ts';
-import { deepEqual } from '../Object.ts';
-import { toJson } from '../Object.ts';
+import { deepEqual,
+  toJson } from '../Object.ts';
 import { dirname } from '../Path.ts';
 import {
   resolveValue,

@@ -14,10 +14,10 @@ import { glob } from 'glob';
 import { packageDirectory } from 'pkg-dir';
 
 import {
+  getDirname,
   join,
   normalizeIfRelative
 } from '../../Path.ts';
-import { getDirname } from '../../Path.ts';
 import { CliTaskResult } from '../CliUtils.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import { toRelativeFromRoot } from '../Root.ts';
