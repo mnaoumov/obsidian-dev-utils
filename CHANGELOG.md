@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.3.0
+
+- Add Confirm modal
+
 ## 3.2.0
 
 - Reload plugin settings before updating
