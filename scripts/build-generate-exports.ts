@@ -33,12 +33,12 @@ await wrapCliTask(async () => {
     for (const libDir of libDirs) {
       const importPath = libDir.replace(ObsidianDevUtilsRepoPaths.DistLib, '.');
       npmPackage.exports[importPath] = {
-        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs)),
-        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts))
+        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts)),
+        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
       };
       npmPackage.exports[normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any))] = {
-        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs)),
-        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts))
+        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
+        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
       };
     }
 
