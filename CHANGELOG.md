@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.0.3
+
+- Don't fail on failed linting
+- Skip linting if no files
+- Lint only explicit patterns
+
 ## 3.0.2
 
 - Update package-lock
