@@ -59,13 +59,13 @@ export const configs: Linter.Config[] = tseslint.config(
       'deprecation': eslintPluginDeprecation
     },
     rules: {
-      'modules-newlines/import-declaration-newline': 'error',
-      'modules-newlines/export-declaration-newline': 'error',
+      '@stylistic/no-extra-semi': 'error',
       '@typescript-eslint/explicit-function-return-type': 'error',
-      'no-extra-semi': 'error',
       '@typescript-eslint/explicit-member-accessibility': 'error',
       'curly': ['error'],
-      'deprecation/deprecation': 'error'
+      'deprecation/deprecation': 'error',
+      'modules-newlines/import-declaration-newline': 'error',
+      'modules-newlines/export-declaration-newline': 'error'
     },
     settings: {
       'import/resolver': {
