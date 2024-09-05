@@ -100,7 +100,7 @@ class PromptModal extends Modal {
       },
       cancelButtonStyles: {}
     };
-    this.options = Object.assign({}, options, DEFAULT_OPTIONS);
+    this.options = { ...DEFAULT_OPTIONS, ...options };
     this.value = options.defaultValue ?? '';
   }
 
