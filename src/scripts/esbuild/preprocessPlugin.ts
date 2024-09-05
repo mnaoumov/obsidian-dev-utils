@@ -36,17 +36,11 @@ export function preprocessPlugin(): Plugin {
       platform: 'android'
     } as typeof process,
     'import.meta.url': (): URL => {
-      const normalizedPath = __filename.replace(/\\/g, '/');
-
-      const windowsDriveLetterMatch = /^([a-zA-Z]):/.exec(normalizedPath);
-      let path = normalizedPath;
-      if (windowsDriveLetterMatch) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        path = `/${windowsDriveLetterMatch[1]!.toUpperCase()}:${normalizedPath.slice(2)}`;
+      if (typeof __filename !== 'string') {
+        return new URL(window.location.href);
       }
-
-      const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/').replace(/%3A/g, ':');
-      return new URL(`file://${encodedPath}`);
+      // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
+      return (require('node:url') as typeof import('node:url')).pathToFileURL(__filename);
     }
   };
 
