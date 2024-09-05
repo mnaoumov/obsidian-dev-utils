@@ -92,7 +92,7 @@ function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, depe
       build.onResolve({ filter: /^[^./]/ }, (args) => {
         if (!args.importer.endsWith('.d.ts')) {
           const moduleName = trimStart(args.path.split('/')[0] ?? throwExpression(new Error('Wrong path')), 'node:');
-          if (!dependenciesToSkip.has(moduleName)) {
+          if (!dependenciesToSkip.has(args.path) && !dependenciesToSkip.has(moduleName)) {
             dependenciesToBundle.add(args.path);
           }
         }
