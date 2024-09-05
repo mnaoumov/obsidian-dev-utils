@@ -37,6 +37,31 @@ export interface PromptOptions {
    * @returns an error message if the value is invalid, or null if the value is valid.
    */
   valueValidator?: (value: string) => string | null;
+
+  /**
+   * The text for the "OK" button.
+   */
+  okButtonText?: string;
+
+  /**
+   * The text for the "Cancel" button.
+   */
+  cancelButtonText?: string;
+
+  /**
+   * The styles to apply to the input field.
+   */
+  textBoxStyles?: Partial<CSSStyleDeclaration>;
+
+  /**
+   * The styles to apply to the "OK" button.
+   */
+  okButtonStyles?: Partial<CSSStyleDeclaration>;
+
+  /**
+   * The styles to apply to the "Cancel" button.
+   */
+  cancelButtonStyles?: Partial<CSSStyleDeclaration>;
 }
 
 /**
@@ -55,18 +80,36 @@ export async function prompt(options: PromptOptions): Promise<string | null> {
 class PromptModal extends Modal {
   private value: string;
   private isOkClicked = false;
+  private options: Required<PromptOptions>;
 
-  public constructor(private options: PromptOptions, private resolve: (value: string | null) => void) {
+  public constructor(options: PromptOptions, private resolve: (value: string | null) => void) {
     super(options.app);
+    const DEFAULT_OPTIONS: Required<PromptOptions> = {
+      app: options.app,
+      title: '',
+      defaultValue: '',
+      valueValidator: () => null,
+      okButtonText: 'OK',
+      cancelButtonText: 'Cancel',
+      textBoxStyles: {
+        width: '100%'
+      },
+      okButtonStyles: {
+        marginTop: '20px',
+        marginRight: '10px'
+      },
+      cancelButtonStyles: {}
+    };
+    this.options = Object.assign({}, options, DEFAULT_OPTIONS);
     this.value = options.defaultValue ?? '';
   }
 
   public override onOpen(): void {
-    this.titleEl.setText(this.options.title ?? '');
+    this.titleEl.setText(this.options.title);
     const textComponent = new TextComponent(this.contentEl);
     textComponent.setValue(this.value);
     textComponent.setPlaceholder(this.value);
-    textComponent.inputEl.style.width = '100%';
+    Object.assign(textComponent.inputEl.style, this.options.textBoxStyles);
     textComponent.onChange((newValue) => this.value = newValue);
     textComponent.inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
@@ -75,25 +118,22 @@ class PromptModal extends Modal {
         this.close();
       }
     });
-    const valueValidator = this.options.valueValidator;
-    if (valueValidator) {
-      textComponent.inputEl.addEventListener('input', () => {
-        const errorMessage = valueValidator(textComponent.inputEl.value);
-        textComponent.inputEl.setCustomValidity(errorMessage ?? '');
-        textComponent.inputEl.reportValidity();
-      });
-    }
+    textComponent.inputEl.addEventListener('input', () => {
+      const errorMessage = this.options.valueValidator(textComponent.inputEl.value);
+      textComponent.inputEl.setCustomValidity(errorMessage ?? '');
+      textComponent.inputEl.reportValidity();
+    });
     const okButton = new ButtonComponent(this.contentEl);
-    okButton.setButtonText('OK');
-    okButton.setClass('mod-cta');
+    okButton.setButtonText(this.options.okButtonText);
+    okButton.setCta();
     okButton.onClick((event) => {
       this.handleOk(event, textComponent);
     });
-    okButton.buttonEl.style.marginTop = '20px';
-    okButton.buttonEl.style.marginRight = '10px';
+    Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
     const cancelButton = new ButtonComponent(this.contentEl);
-    cancelButton.setButtonText('Cancel');
+    cancelButton.setButtonText(this.options.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
+    Object.assign(cancelButton.buttonEl.style, this.options.cancelButtonStyles);
   }
 
   public override onClose(): void {
