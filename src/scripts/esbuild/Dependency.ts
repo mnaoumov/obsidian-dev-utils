@@ -7,7 +7,7 @@
 
 import { createRequire } from 'node:module';
 
-import builtins from 'builtin-modules';
+import builtinModules from 'builtin-modules';
 import {
   type BuildOptions,
   context,
@@ -40,7 +40,7 @@ interface ModuleWithDefaultExport {
  */
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const npmPackage = await readNpmPackage(getDirname(import.meta.url));
-  const dependenciesToSkip = new Set<string>([...Object.keys(npmPackage.dependencies ?? {}).filter(canSkipFromBundling), ...builtins]);
+  const dependenciesToSkip = new Set<string>([...Object.keys(npmPackage.dependencies ?? {}).filter(canSkipFromBundling), ...builtinModules]);
   return dependenciesToSkip;
 }
 
