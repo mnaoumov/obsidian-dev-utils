@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.0.0
+
+- Refactor ESLint rules
+- Avoid using node: modules
+
 ## 2.27.0
 
 - ensureMetadataCacheReady in getBacklinksForFileSafe
