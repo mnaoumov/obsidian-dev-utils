@@ -249,7 +249,8 @@ export function updateLink(options: UpdateLinkOptions): string {
     displayText: link.displayText,
     file: pathOrFile,
     otherPaths: [oldPath, newPath],
-    sourcePath
+    sourcePath,
+    isWikilink
   });
 
   if (newPath) {
@@ -296,6 +297,11 @@ export interface GetAliasOptions {
    * The source path of the link.
    */
   sourcePath: string;
+
+  /**
+   * Indicates if the link is a wikilink.
+   */
+  isWikilink?: boolean;
 }
 
 /**
@@ -310,8 +316,13 @@ export function getAlias(options: GetAliasOptions): string | undefined {
     displayText,
     file: pathOrFile,
     otherPaths,
-    sourcePath
+    sourcePath,
+    isWikilink
   } = options;
+  if (isWikilink === false) {
+    return displayText;
+  }
+
   const file = getFile(app, pathOrFile);
 
   if (!displayText) {
