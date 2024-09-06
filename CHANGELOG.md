@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.5.0
+
+- Don't change aliases for markdown links
+- Make generateMarkdownLink work for deleted TFile
+
 ## 3.4.1
 
 - Use cancelButtonText
