@@ -27,7 +27,8 @@ import {
 import { normalize } from '../String.ts';
 import {
   getAllLinks,
-  getCacheSafe
+  getCacheSafe,
+  tempRegisterFileAndRun
 } from './MetadataCache.ts';
 import {
   shouldUseRelativeLinks,
@@ -405,45 +406,48 @@ export interface GenerateMarkdownLinkOptions {
 export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): string {
   const { app } = options;
   const file = getFile(app, options.pathOrFile);
-  const sourcePath = getPath(options.sourcePathOrFile);
-  const subpath = options.subpath ?? '';
-  let alias = options.alias ?? '';
-  const isEmbed = options.isEmbed ?? !isMarkdownFile(file);
-  const isWikilink = options.isWikilink ?? shouldUseWikilinks(app);
-  const forceRelativePath = options.forceRelativePath ?? shouldUseRelativeLinks(app);
 
-  let linkText = file.path === sourcePath && subpath
-    ? subpath
-    : forceRelativePath
-      ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(file) : file.path) + subpath
-      : app.metadataCache.fileToLinktext(file, sourcePath, isWikilink) + subpath;
+  return tempRegisterFileAndRun(app, file, () => {
+    const sourcePath = getPath(options.sourcePathOrFile);
+    const subpath = options.subpath ?? '';
+    let alias = options.alias ?? '';
+    const isEmbed = options.isEmbed ?? !isMarkdownFile(file);
+    const isWikilink = options.isWikilink ?? shouldUseWikilinks(app);
+    const forceRelativePath = options.forceRelativePath ?? shouldUseRelativeLinks(app);
 
-  if (forceRelativePath && options.useLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
-    linkText = './' + linkText;
-  }
+    let linkText = file.path === sourcePath && subpath
+      ? subpath
+      : forceRelativePath
+        ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(file) : file.path) + subpath
+        : app.metadataCache.fileToLinktext(file, sourcePath, isWikilink) + subpath;
 
-  if (!isWikilink) {
-    if (options.useAngleBrackets) {
-      linkText = `<${linkText}>`;
+    if (forceRelativePath && options.useLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
+      linkText = './' + linkText;
+    }
+
+    if (!isWikilink) {
+      if (options.useAngleBrackets) {
+        linkText = `<${linkText}>`;
+      } else {
+        linkText = linkText.replace(SPECIAL_LINK_SYMBOLS_REGEXP, function (specialLinkSymbol) {
+          return encodeURIComponent(specialLinkSymbol);
+        });
+      }
+
+      if (!isEmbed) {
+        return `[${alias || file.basename}](${linkText})`;
+      } else {
+        return `![${alias}](${linkText})`;
+      }
     } else {
-      linkText = linkText.replace(SPECIAL_LINK_SYMBOLS_REGEXP, function (specialLinkSymbol) {
-        return encodeURIComponent(specialLinkSymbol);
-      });
-    }
+      if (alias && alias.toLowerCase() === linkText.toLowerCase()) {
+        linkText = alias;
+        alias = '';
+      }
 
-    if (!isEmbed) {
-      return `[${alias || file.basename}](${linkText})`;
-    } else {
-      return `![${alias}](${linkText})`;
+      return (isEmbed ? '!' : '') + (alias ? `[[${linkText}|${alias}]]` : `[[${linkText}]]`);
     }
-  } else {
-    if (alias && alias.toLowerCase() === linkText.toLowerCase()) {
-      linkText = alias;
-      alias = '';
-    }
-
-    return (isEmbed ? '!' : '') + (alias ? `[[${linkText}|${alias}]]` : `[[${linkText}]]`);
-  }
+  });
 }
 
 /**
