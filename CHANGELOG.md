@@ -2,6 +2,7 @@
 
 ## 3.6.0
 
+- Allow empty commit
 - Add placeholder to prompt
 
 ## 3.5.0
