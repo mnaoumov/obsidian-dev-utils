@@ -371,7 +371,7 @@ export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
  * @returns A promise that resolves when the tag has been created.
  */
 export async function addGitTag(newVersion: string): Promise<void> {
-  await execFromRoot(`git tag -a ${newVersion} -m ${newVersion}`, { quiet: true });
+  await execFromRoot(`git tag -a ${newVersion} -m ${newVersion} --force`, { quiet: true });
 }
 
 /**
@@ -380,7 +380,7 @@ export async function addGitTag(newVersion: string): Promise<void> {
  * @returns A promise that resolves when the push operation is complete.
  */
 export async function gitPush(): Promise<void> {
-  await execFromRoot('git push --follow-tags', { quiet: true });
+  await execFromRoot('git push --follow-tags --force', { quiet: true });
 }
 
 /**
