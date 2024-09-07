@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.0
+
+- Add placeholder to prompt
+
 ## 3.5.0
 
 - Don't change aliases for markdown links
