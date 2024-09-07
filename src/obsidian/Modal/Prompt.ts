@@ -62,6 +62,11 @@ export interface PromptOptions {
    * The styles to apply to the "Cancel" button.
    */
   cancelButtonStyles?: Partial<CSSStyleDeclaration>;
+
+  /**
+   * The placeholder text for the input field.
+   */
+  placeholder?: string;
 }
 
 /**
@@ -98,7 +103,8 @@ class PromptModal extends Modal {
         marginTop: '20px',
         marginRight: '10px'
       },
-      cancelButtonStyles: {}
+      cancelButtonStyles: {},
+      placeholder: ''
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.value = options.defaultValue ?? '';
@@ -108,7 +114,7 @@ class PromptModal extends Modal {
     this.titleEl.setText(this.options.title);
     const textComponent = new TextComponent(this.contentEl);
     textComponent.setValue(this.value);
-    textComponent.setPlaceholder(this.value);
+    textComponent.setPlaceholder(this.options.placeholder);
     Object.assign(textComponent.inputEl.style, this.options.textBoxStyles);
     textComponent.onChange((newValue) => this.value = newValue);
     textComponent.inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
