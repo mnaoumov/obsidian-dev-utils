@@ -2,6 +2,7 @@
 
 ## 3.6.0
 
+- Force tags
 - Allow empty commit
 - Add placeholder to prompt
 
