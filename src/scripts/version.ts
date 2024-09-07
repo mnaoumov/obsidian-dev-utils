@@ -361,7 +361,7 @@ export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
     ObsidianPluginRepoPaths.ChangelogMd
   ].filter((file) => existsSync(resolvePathFromRoot(file)));
   await execFromRoot(['git', 'add', ...files], { quiet: true });
-  await execFromRoot(`git commit -m ${newVersion}`, { quiet: true });
+  await execFromRoot(`git commit -m ${newVersion} --allow-empty`, { quiet: true });
 }
 
 /**
