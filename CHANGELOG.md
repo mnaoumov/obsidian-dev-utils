@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.9.0
+
+- Extract RenameDeleteHandler
+
 ## 3.8.0
 
 - Implement getAvailablePathForAttachments without patching mkdir
