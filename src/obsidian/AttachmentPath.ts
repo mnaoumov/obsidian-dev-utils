@@ -49,6 +49,7 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
   }
 
   const unregisters: (() => void)[] = [];
+  const paths = new Set<string>();
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalMkdir = app.vault.adapter.mkdir;
@@ -58,19 +59,31 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
       const fakeFolder = createTFolderInstance(app.vault, path);
       const unregister = registerFile(app, fakeFolder);
       unregisters.push(unregister);
+      paths.add(path);
       await Promise.resolve();
     };
     (app.vault.adapter.mkdir as Patched).__patched = true;
   }
 
+  let attachmentFolderPath = '';
+
   try {
-    const path = await app.vault.getAvailablePathForAttachments(fileName, ext.slice(1), note);
-    return path;
+    attachmentFolderPath = await app.vault.getAvailablePathForAttachments(fileName, ext.slice(1), note);
+    return attachmentFolderPath;
   } finally {
     if (!alreadyPatched) {
       app.vault.adapter.mkdir = originalMkdir;
       for (const unregister of unregisters) {
         unregister();
+      }
+      for (const path of paths) {
+        if (path !== attachmentFolderPath) {
+          try {
+            await app.vault.adapter.mkdir(path);
+          } catch {
+            // Ignore errors
+          }
+        }
       }
     }
   }
