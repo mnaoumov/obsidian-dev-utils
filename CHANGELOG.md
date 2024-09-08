@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.8.0
+
+- Implement getAvailablePathForAttachments without patching mkdir
+
 ## 3.7.1
 
 - Ensure folders are created
