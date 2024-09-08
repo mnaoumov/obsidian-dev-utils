@@ -50,8 +50,9 @@ export async function retryWithTimeout(asyncFn: () => Promise<boolean>, retryOpt
         return;
       }
 
-      console.debug(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${overriddenOptions.retryDelayInMilliseconds.toString()} milliseconds`);
-      console.debug(asyncFn);
+      console.debug(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${overriddenOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
+        asyncFn
+      });
       await sleep(overriddenOptions.retryDelayInMilliseconds);
     }
   });

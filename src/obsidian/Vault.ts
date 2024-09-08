@@ -17,10 +17,7 @@ import {
   printError,
   throwExpression
 } from '../Error.ts';
-import {
-  deepEqual,
-  toJson
-} from '../Object.ts';
+import { deepEqual } from '../Object.ts';
 import { dirname } from '../Path.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import { resolveValue } from '../ValueProvider.ts';
@@ -93,7 +90,11 @@ export async function processWithRetry(app: App, pathOrFile: PathOrFile, newCont
     let success = true;
     await app.vault.process(file, (content) => {
       if (content !== oldContent) {
-        console.warn(`Content of ${file.path} has changed since it was read. Retrying...`);
+        console.warn('Content has changed since it was read. Retrying...', {
+          path: file.path,
+          expectedContent: oldContent,
+          actualContent: content
+        });
         success = false;
         return content;
       }
@@ -124,7 +125,14 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
     for (const change of changes) {
       const actualContent = content.slice(change.startIndex, change.endIndex);
       if (actualContent !== change.oldContent) {
-        console.warn(`Content mismatch at ${change.startIndex.toString()}-${change.endIndex.toString()} in ${getPath(pathOrFile)}:\nExpected: ${change.oldContent}\nActual: ${actualContent}`);
+        console.warn(`Content mismatch`, {
+          startIndex: change.startIndex,
+          endIndex: change.endIndex,
+          path: getPath(pathOrFile),
+          expectedContent: change.oldContent,
+          actualContent
+        });
+
         return null;
       }
     }
@@ -143,7 +151,10 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
       const change = changes[i] ?? throwExpression(new Error('Change not found'));
       const previousChange = changes[i - 1] ?? throwExpression(new Error('Previous change not found'));
       if (previousChange.endIndex > change.startIndex) {
-        console.warn(`Overlapping changes:\n${toJson(previousChange)}\n${toJson(change)}`);
+        console.warn(`Overlapping changes`, {
+          previousChange,
+          change
+        });
         return null;
       }
     }
