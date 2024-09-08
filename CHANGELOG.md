@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.0
+
+- Handle defaultOptionsFn
+
 ## 3.6.0
 
 - Force tags
