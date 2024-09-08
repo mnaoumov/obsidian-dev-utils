@@ -354,6 +354,16 @@ export function getAlias(options: GetAliasOptions): string | undefined {
 }
 
 /**
+ * Wrapper for default options for generating markdown links.
+ */
+export interface GenerateMarkdownLinkDefaultOptionsWrapper {
+  /**
+   * The default options for generating markdown links.
+   */
+  defaultOptionsFn?: () => Partial<GenerateMarkdownLinkOptions>;
+}
+
+/**
  * Options for generating a markdown link.
  */
 export interface GenerateMarkdownLinkOptions {
@@ -416,6 +426,12 @@ export interface GenerateMarkdownLinkOptions {
  */
 export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): string {
   const { app } = options;
+
+  const defaultOptionsFn = (app.fileManager.generateMarkdownLink as GenerateMarkdownLinkDefaultOptionsWrapper).defaultOptionsFn ?? ((): Partial<GenerateMarkdownLinkOptions> => ({}));
+  const defaultOptions = defaultOptionsFn();
+
+  options = { ...defaultOptions, ...options };
+
   const file = getFile(app, options.pathOrFile);
 
   return tempRegisterFileAndRun(app, file, () => {
