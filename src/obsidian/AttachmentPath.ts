@@ -3,18 +3,22 @@
  * Provides utility functions for working with attachment paths.
  */
 
-import type { App } from 'obsidian';
-import {
-  createTFileInstance,
-  createTFolderInstance
-} from 'obsidian-typings/implementations';
+import type {
+  App,
+  TAbstractFile
+} from 'obsidian';
+import { TFolder } from 'obsidian';
+import { createTFileInstance } from 'obsidian-typings/implementations';
 
 import {
   basename,
   dirname,
   extname
 } from '../Path.ts';
-import { registerFile } from './MetadataCache.ts';
+import {
+  normalize,
+  trimStart
+} from '../String.ts';
 import { getPath } from './TAbstractFile.ts';
 import type { PathOrFile } from './TFile.ts';
 
@@ -28,6 +32,21 @@ import type { PathOrFile } from './TFile.ts';
 export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
   return dirname(await getAttachmentFilePath(app, 'DUMMY_FILE.pdf', notePathOrFile));
 }
+
+/**
+ * Is overridden wrapper.
+ */
+export interface ExtendedWrapper {
+  /**
+   * Is extended.
+   */
+  isExtended: true;
+}
+
+/**
+ * Get available path for attachments function.
+ */
+export type GetAvailablePathForAttachmentsExtendedFn = (filename: string, extension: string, file: TAbstractFile | null, skipFolderCreation?: boolean) => Promise<string>;
 
 /**
  * Retrieves the file path for an attachment within a note.
@@ -44,47 +63,61 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
   const ext = extname(attachmentPath);
   const fileName = basename(attachmentPath, ext);
 
-  interface Patched {
-    __patched?: true;
+  const internalFn = app.vault.getAvailablePathForAttachments.bind(app.vault);
+  if ((internalFn as Partial<ExtendedWrapper>).isExtended) {
+    return (internalFn as GetAvailablePathForAttachmentsExtendedFn)(fileName, ext.slice(1), note, true);
   }
 
-  const unregisters: (() => void)[] = [];
-  const paths = new Set<string>();
+  return await getAvailablePathForAttachments(app, fileName, ext.slice(1), note, true);
+}
 
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const originalMkdir = app.vault.adapter.mkdir;
-  const alreadyPatched = (originalMkdir as Patched).__patched ?? false;
-  if (!alreadyPatched) {
-    app.vault.adapter.mkdir = async (path: string): Promise<void> => {
-      const fakeFolder = createTFolderInstance(app.vault, path);
-      const unregister = registerFile(app, fakeFolder);
-      unregisters.push(unregister);
-      paths.add(path);
-      await Promise.resolve();
-    };
-    (app.vault.adapter.mkdir as Patched).__patched = true;
+/**
+ * Retrieves the available path for attachments.
+ * @param app - The Obsidian application instance.
+ * @param filename - Name of the file.
+ * @param extension - Extension of the file.
+ * @param file - The file to attach to.
+ * @param skipFolderCreation - Should folder creation be skipped?
+ * @returns A promise that resolves to the available path for attachments.
+ */
+export async function getAvailablePathForAttachments(app: App, filename: string, extension: string, file: TAbstractFile | null, skipFolderCreation: boolean): Promise<string> {
+  let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
+  const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
+  let relativePath = null;
+
+  if (attachmentFolderPath.startsWith('./')) {
+    relativePath = trimStart(attachmentFolderPath, './');
   }
 
-  let attachmentFolderPath = '';
-
-  try {
-    attachmentFolderPath = await app.vault.getAvailablePathForAttachments(fileName, ext.slice(1), note);
-    return attachmentFolderPath;
-  } finally {
-    if (!alreadyPatched) {
-      app.vault.adapter.mkdir = originalMkdir;
-      for (const unregister of unregisters) {
-        unregister();
-      }
-      for (const path of paths) {
-        if (path !== attachmentFolderPath) {
-          try {
-            await app.vault.adapter.mkdir(path);
-          } catch {
-            // Ignore errors
-          }
-        }
-      }
-    }
+  if (isCurrentFolder) {
+    attachmentFolderPath = file ? file.parent?.path ?? '' : '';
+  } else if (relativePath) {
+    attachmentFolderPath = (file ? file.parent?.getParentPrefix() ?? '' : '') + relativePath;
   }
+
+  attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
+  filename = normalize(normalizeSlashes(filename));
+
+  let folder = app.vault.getAbstractFileByPathInsensitive(attachmentFolderPath);
+
+  if (!folder && relativePath && !skipFolderCreation) {
+    folder = await app.vault.createFolder(attachmentFolderPath);
+  }
+
+  if (folder instanceof TFolder) {
+    return app.vault.getAvailablePath(folder.getParentPrefix() + filename, extension);
+  } else {
+    return app.vault.getAvailablePath(filename, extension);
+  }
+}
+
+/**
+ * Normalizes a path by combining multiple slashes into a single slash and removing leading and trailing slashes.
+ * @param path - Path to normalize.
+ * @returns The normalized path.
+ */
+function normalizeSlashes(path: string): string {
+  path = path.replace(/([\\/])+/g, '/');
+  path = path.replace(/(^\/+|\/+$)/g, '');
+  return path || '/';
 }

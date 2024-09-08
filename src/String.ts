@@ -84,7 +84,7 @@ export function trimEnd(str: string, suffix: string, validate?: boolean): string
  * @returns The normalized string.
  */
 export function normalize(str: string): string {
-  return str.replace(/\u00A0/g, ' ').normalize('NFC');
+  return str.replace(/\u00A0|\u202F/g, ' ').normalize('NFC');
 }
 
 /**
