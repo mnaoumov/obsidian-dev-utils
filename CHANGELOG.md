@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.1
+
+- Ensure folders are created
+
 ## 3.7.0
 
 - Handle defaultOptionsFn
