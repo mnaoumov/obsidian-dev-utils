@@ -1,4 +1,5 @@
 import type {
+  Plugin,
   ReferenceCache,
   TAbstractFile
 } from 'obsidian';
@@ -10,6 +11,7 @@ import {
 import type { CanvasData } from 'obsidian/canvas.js';
 import { createTFileInstance } from 'obsidian-typings/implementations';
 
+import { invokeAsyncSafely } from '../Async.ts';
 import { toJson } from '../Object.ts';
 import {
   dirname,
@@ -51,9 +53,28 @@ interface RenameDeleteHandlerSettings {
 }
 
 /**
- * Handles renaming and deleting files.
+ * Registers the rename/delete handlers.
+ * @param plugin - The plugin instance.
+ * @param settingsBuilder - A function that returns the settings for the rename delete handler.
+ * @returns void
  */
-export class RenameDeleteHandler {
+export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: () => RenameDeleteHandlerSettings): void {
+  const app = plugin.app;
+  const renameDeleteHandler = new RenameDeleteHandler(app, settingsBuilder);
+  plugin.registerEvent(
+    app.vault.on('delete', (file) => {
+      invokeAsyncSafely(renameDeleteHandler.handleDelete(file));
+    })
+  );
+
+  plugin.registerEvent(
+    app.vault.on('rename', (file, oldPath) => {
+      invokeAsyncSafely(renameDeleteHandler.handleRename(file, oldPath));
+    })
+  );
+}
+
+class RenameDeleteHandler {
   public constructor(private app: App, private settingsBuilder: () => RenameDeleteHandlerSettings) { }
 
   private renamingPaths = new Set<string>();
