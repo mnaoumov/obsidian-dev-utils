@@ -82,6 +82,9 @@ export const configs: Linter.Config[] = tseslint.config(
           }
         }
       ],
+      '@stylistic/quotes': ['error', 'single', {
+        allowTemplateLiterals: false
+      }],
       '@typescript-eslint/explicit-function-return-type': 'error',
       '@typescript-eslint/explicit-member-accessibility': 'error',
       'curly': ['error'],

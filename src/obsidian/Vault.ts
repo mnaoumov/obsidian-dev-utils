@@ -125,7 +125,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
     for (const change of changes) {
       const actualContent = content.slice(change.startIndex, change.endIndex);
       if (actualContent !== change.oldContent) {
-        console.warn(`Content mismatch`, {
+        console.warn('Content mismatch', {
           startIndex: change.startIndex,
           endIndex: change.endIndex,
           path: getPath(pathOrFile),
@@ -151,7 +151,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
       const change = changes[i] ?? throwExpression(new Error('Change not found'));
       const previousChange = changes[i - 1] ?? throwExpression(new Error('Previous change not found'));
       if (previousChange.endIndex > change.startIndex) {
-        console.warn(`Overlapping changes`, {
+        console.warn('Overlapping changes', {
           previousChange,
           change
         });
