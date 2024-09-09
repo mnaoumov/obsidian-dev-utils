@@ -6,7 +6,6 @@ import {
   normalizeIfRelative
 } from '../src/Path.ts';
 import { wrapCliTask } from '../src/scripts/CliUtils.ts';
-import { getDependenciesToSkip } from '../src/scripts/esbuild/Dependency.ts';
 import {
   banner,
   invokeEsbuild
@@ -17,8 +16,6 @@ import { readdirPosix } from '../src/scripts/Fs.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
 
 await wrapCliTask(async () => {
-  const dependenciesToSkip = await getDependenciesToSkip();
-
   const buildOptions: BuildOptions = {
     banner: {
       js: banner
@@ -31,7 +28,7 @@ await wrapCliTask(async () => {
     platform: 'node',
     plugins: [
       preprocessPlugin(),
-      renameToCjsPlugin(dependenciesToSkip)
+      renameToCjsPlugin()
     ],
     sourcemap: 'inline',
     target: 'ESNext',
