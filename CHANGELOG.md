@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.10.0
+
+- Add quotes rule
+- Extract registerRenameDeleteHandlers
+- Improve console logging details
+
 ## 3.9.0
 
 - Extract RenameDeleteHandler
