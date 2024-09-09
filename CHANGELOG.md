@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.1
+
+- Move typescript-eslint dependency
+
 ## 3.10.0
 
 - Add quotes rule

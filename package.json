@@ -1,6 +1,6 @@
 {
   "name": "obsidian-dev-utils",
-  "version": "3.10.0",
+  "version": "3.10.1",
   "description": "This is the collection of useful functions that you can use for your Obsidian plugin development",
   "main": "./dist/lib/index.cjs",
   "types": "./dist/lib/index.d.ts",
