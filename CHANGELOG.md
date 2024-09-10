@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.11.1
+
+- Handle different quotes
+- Fix replacing extension
+
 ## 3.11.0
 
 - Remove bundling dependencies
