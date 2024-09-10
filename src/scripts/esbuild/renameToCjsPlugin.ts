@@ -26,7 +26,17 @@ export function renameToCjsPlugin(): Plugin {
           }
 
           const newPath = file.path.replaceAll(/\.js$/g, '.cjs');
-          await writeFile(newPath, file.text);
+
+          const newText = file.text.replaceAll(/require\("(.+?)"\)/g, (_, importPath: string) => {
+            if (importPath.endsWith('.d.ts')) {
+              return 'undefined';
+            }
+
+            const cjsImportPath = importPath.replaceAll(/\.ts$/g, '.cjs');
+            return `require("${cjsImportPath}")`;
+          });
+
+          await writeFile(newPath, newText);
         }
       });
     }
