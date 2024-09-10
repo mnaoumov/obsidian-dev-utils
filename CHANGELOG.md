@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.4
+
+- Use `__require()` only for node modules
+
 ## 3.11.3
 
 - Use proper `require()` function
