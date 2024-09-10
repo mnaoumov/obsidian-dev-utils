@@ -228,7 +228,7 @@ class RenameDeleteHandler {
         try {
           if (newFile) {
             try {
-              await this.app.vault.delete(newFile);
+              await this.app.fileManager.trashFile(newFile);
             } catch (e) {
               if (this.app.vault.getAbstractFileByPath(newPath)) {
                 throw e;

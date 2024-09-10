@@ -204,7 +204,7 @@ export async function removeFolderSafe(app: App, folderPath: string, removedNote
         canRemove = false;
       } else {
         try {
-          await app.vault.delete(child);
+          await app.fileManager.trashFile(child);
         } catch (e) {
           if (await app.vault.adapter.exists(child.path)) {
             printError(new Error(`Failed to delete ${child.path}`, { cause: e }));
@@ -219,7 +219,7 @@ export async function removeFolderSafe(app: App, folderPath: string, removedNote
 
   if (canRemove) {
     try {
-      await app.vault.delete(folder, true);
+      await app.fileManager.trashFile(folder);
     } catch (e) {
       if (await app.vault.adapter.exists(folder.path)) {
         printError(new Error(`Failed to delete ${folder.path}`, { cause: e }));
@@ -327,7 +327,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
 
   return async () => {
     if (!file.deleted) {
-      await app.vault.delete(file, true);
+      await app.fileManager.trashFile(file);
     }
     await folderCleanup();
   };
@@ -358,7 +358,7 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
 
   return async () => {
     if (!folder.deleted) {
-      await app.vault.delete(folder, true);
+      await app.fileManager.trashFile(folder);
     }
     await folderCleanup();
   };
