@@ -235,10 +235,8 @@ class RenameDeleteHandler {
   }
 
   private async processRename(oldPath: string, newPath: string, renameMap: Map<string, string>): Promise<void> {
-    let oldFile: TFile | null = null;
-
     try {
-      oldFile = this.app.vault.getFileByPath(oldPath);
+      let oldFile = this.app.vault.getFileByPath(oldPath);
       let newFile = this.app.vault.getFileByPath(newPath);
 
       if (oldFile) {
@@ -289,9 +287,6 @@ class RenameDeleteHandler {
         }
 
         await applyFileChanges(this.app, parentNote, async () => {
-          if (!oldFile) {
-            return [];
-          }
           const links
             = (await this.getBacklinks(oldFile, newFile)).get(parentNotePath) ?? [];
           const changes = [];
