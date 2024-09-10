@@ -4,11 +4,7 @@
  * It reports any spelling issues found in the code and returns a `TaskResult` indicating whether the spellcheck was successful.
  */
 
-import { lint } from 'cspell';
-
-import { CliTaskResult } from './CliUtils.ts';
-import { fileURLToPath } from './NodeModules.ts';
-import { toRelativeFromRoot } from './Root.ts';
+import { execFromRoot } from './Root.ts';
 
 /**
  * Runs a spellcheck on the entire codebase using `cspell`.
@@ -18,21 +14,6 @@ import { toRelativeFromRoot } from './Root.ts';
  *
  * @returns A `Promise` that resolves to a `TaskResult`, indicating the success or failure of the spellcheck.
  */
-export async function spellcheck(): Promise<CliTaskResult> {
-  let isSuccess = true;
-
-  await lint(['.'], {}, {
-    issue: (issue) => {
-      if (!issue.uri) {
-        return;
-      }
-
-      const path = fileURLToPath(issue.uri);
-      const relativePath = toRelativeFromRoot(path);
-      console.log(`${relativePath}:${issue.row.toString()}:${issue.col.toString()} - ${issue.text}`);
-      isSuccess = false;
-    }
-  });
-
-  return CliTaskResult.Success(isSuccess);
+export async function spellcheck(): Promise<void> {
+  await execFromRoot('npx cspell . --no-progress');
 }
