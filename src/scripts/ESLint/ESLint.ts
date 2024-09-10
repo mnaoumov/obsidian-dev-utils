@@ -11,7 +11,6 @@ import {
   loadESLint
 } from 'eslint';
 import { glob } from 'glob';
-import { packageDirectory } from 'pkg-dir';
 
 import {
   getDirname,
@@ -20,7 +19,10 @@ import {
 } from '../../Path.ts';
 import { CliTaskResult } from '../CliUtils.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
-import { toRelativeFromRoot } from '../Root.ts';
+import {
+  getRootDir,
+  toRelativeFromRoot
+} from '../Root.ts';
 import { configs as defaultConfigs } from './eslint.config.ts';
 
 /**
@@ -34,7 +36,7 @@ import { configs as defaultConfigs } from './eslint.config.ts';
  */
 export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Promise<CliTaskResult> {
   fix ??= false;
-  const packageDir = await packageDirectory({ cwd: getDirname(import.meta.url) });
+  const packageDir = getRootDir(getDirname(import.meta.url));
   if (!packageDir) {
     throw new Error('Could not find package directory.');
   }

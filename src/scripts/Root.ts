@@ -4,9 +4,10 @@
  * resolving paths relative to the root.
  */
 
-import { packageDirectorySync } from 'pkg-dir';
-
 import {
+  dirname,
+  join
+  ,
   relative,
   resolve
   , toPosixPath
@@ -14,9 +15,11 @@ import {
 import { trimEnd } from '../String.ts';
 import { toCommandLine } from './CliUtils.ts';
 import {
+  existsSync,
   process,
   spawn
 } from './NodeModules.ts';
+import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 
 /**
  * Represents the result of executing a command from the root directory.
@@ -213,12 +216,15 @@ export function resolvePathFromRoot(path: string, cwd?: string): string {
  * @throws If the root directory cannot be found.
  */
 export function getRootDir(cwd?: string): string {
-  const rootDir = packageDirectorySync({ cwd: cwd ?? process.cwd() });
-  if (!rootDir) {
-    throw new Error('Could not find root directory');
+  let currentDir = toPosixPath(cwd ?? process.cwd());
+  while (currentDir !== '.' && currentDir !== '/') {
+    if (existsSync(join(currentDir, ObsidianDevUtilsRepoPaths.PackageJson))) {
+      return toPosixPath(currentDir);
+    }
+    currentDir = dirname(currentDir);
   }
 
-  return toPosixPath(rootDir);
+  throw new Error('Could not find root directory');
 }
 
 /**
