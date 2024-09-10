@@ -13,6 +13,7 @@ import {
   rm
 } from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
+import { execFromRoot } from './Root.ts';
 
 /**
  * Copies all static files from the static assets directory to the distribution directory.
@@ -42,4 +43,13 @@ export async function buildStatic(): Promise<void> {
  */
 export async function buildClean(): Promise<void> {
   await rm(ObsidianDevUtilsRepoPaths.Dist, { recursive: true, force: true });
+}
+
+/**
+ * Validates if the TypeScript code compiles successfully.
+ *
+ * @returns A promise that resolves when the code compiles successfully.
+ */
+export async function buildValidate(): Promise<void> {
+  await execFromRoot(['tsc', '--build', '--force']);
 }

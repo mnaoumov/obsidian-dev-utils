@@ -14,6 +14,7 @@ import { context } from 'esbuild';
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
+import { buildValidate } from '../build.ts';
 import { CliTaskResult } from '../CliUtils.ts';
 import {
   builtinModules,
@@ -25,10 +26,7 @@ import {
   writeFile
 } from '../NodeModules.ts';
 import { readNpmPackage } from '../Npm.ts';
-import {
-  execFromRoot,
-  resolvePathFromRoot
-} from '../Root.ts';
+import { resolvePathFromRoot } from '../Root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
@@ -79,7 +77,7 @@ export interface BuildObsidianPluginOptions {
  * @returns A promise that resolves to a `TaskResult` indicating the success or failure of the build.
  */
 export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): Promise<CliTaskResult> {
-  await execFromRoot(['tsc', '--build', '--force']);
+  await buildValidate();
 
   const {
     mode,
