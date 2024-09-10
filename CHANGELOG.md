@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.12.0
+
+- Add build:validate command
+- Ensure code compiles before running esbuild
+- Don't lint during esbuild
+- Make updateLink to preserve angle brackets and leading dot
+
 ## 3.11.8
 
 - Switch to cspell binary as the library is not cjs
