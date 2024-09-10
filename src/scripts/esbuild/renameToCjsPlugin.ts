@@ -9,6 +9,11 @@ import type { Plugin } from 'esbuild';
 
 import { writeFile } from '../NodeModules.ts';
 
+interface EsmModule {
+  __esModule: boolean;
+  default: unknown;
+}
+
 /**
  * Creates an esbuild plugin that renames JavaScript files to CommonJS (`.cjs`) files
  * and modifies `require` statements to ensure proper module resolution.
@@ -19,6 +24,10 @@ export function renameToCjsPlugin(): Plugin {
   return {
     name: 'rename-to-cjs',
     setup(build): void {
+      build.initialOptions.banner ??= {};
+      build.initialOptions.banner['js'] ??= '';
+      build.initialOptions.banner['js'] += '\n' + __require.toString();
+
       build.onEnd(async (result) => {
         for (const file of result.outputFiles ?? []) {
           if (!file.path.endsWith('.js') || file.path.endsWith('.d.js')) {
@@ -33,7 +42,7 @@ export function renameToCjsPlugin(): Plugin {
             }
 
             const cjsImportPath = importPath.replaceAll(/\.ts$/g, '.cjs');
-            return `require('${cjsImportPath}')`;
+            return `__require('${cjsImportPath}')`;
           });
 
           await writeFile(newPath, newText);
@@ -41,4 +50,9 @@ export function renameToCjsPlugin(): Plugin {
       });
     }
   };
+}
+
+function __require(id: string): unknown {
+  const module = globalThis.require(id) as Partial<EsmModule>;
+  return module.__esModule && module.default ? module.default : module;
 }
