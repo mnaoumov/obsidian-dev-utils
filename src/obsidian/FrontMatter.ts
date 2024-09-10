@@ -168,14 +168,14 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
 }
 
 /**
- * Removes an alias from the front matter of a given file if it exists.
+ * Deletes an alias from the front matter of a given file if it exists.
  *
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or TFile object representing the note.
- * @param alias - The alias to remove.
- * @returns A promise that resolves when the alias has been removed.
+ * @param alias - The alias to delete.
+ * @returns A promise that resolves when the alias has been deleted.
  */
-export async function removeAlias(app: App, pathOrFile: PathOrFile, alias?: string): Promise<void> {
+export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: string): Promise<void> {
   if (!alias) {
     return;
   }

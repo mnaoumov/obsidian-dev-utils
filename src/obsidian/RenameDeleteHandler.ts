@@ -37,9 +37,9 @@ import {
 import {
   applyFileChanges,
   createFolderSafe,
-  processWithRetry,
-  removeEmptyFolderHierarchy,
-  removeFolderSafe
+  deleteEmptyFolderHierarchy,
+  deleteFolderSafe,
+  processWithRetry
 } from './Vault.ts';
 
 interface SpecialRename {
@@ -167,7 +167,7 @@ class RenameDeleteHandler {
     }
 
     if (this.settingsBuilder().shouldDeleteOrphanAttachments || attachmentFolder.children.length === 0) {
-      await removeFolderSafe(this.app, attachmentFolderPath, file.path);
+      await deleteFolderSafe(this.app, attachmentFolderPath, file.path);
     }
   }
 
@@ -261,7 +261,7 @@ class RenameDeleteHandler {
           }
         }
         if (this.settingsBuilder().shouldDeleteEmptyFolders) {
-          await removeEmptyFolderHierarchy(this.app, oldFolder);
+          await deleteEmptyFolderHierarchy(this.app, oldFolder);
         }
       }
 

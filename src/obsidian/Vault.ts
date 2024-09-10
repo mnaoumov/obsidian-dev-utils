@@ -174,61 +174,61 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
 }
 
 /**
- * Removes a folder and its contents safely from the vault.
+ * Deletes a folder and its contents safely from the vault.
  *
  * @param app - The Obsidian application instance.
- * @param folderPath - The path of the folder to be removed.
- * @param removedNotePath - Optional. The path of the note that triggered the removal.
+ * @param folderPath - The path of the folder to be deleted.
+ * @param deletedNotePath - Optional. The path of the note that triggered the removal.
  * @param shouldReportUsedAttachments - Optional. If `true`, a notice will be shown for each attachment that is still used by other notes.
  * @returns A promise that resolves to a boolean indicating whether the removal was successful.
  */
-export async function removeFolderSafe(app: App, folderPath: string, removedNotePath?: string, shouldReportUsedAttachments?: boolean): Promise<boolean> {
+export async function deleteFolderSafe(app: App, folderPath: string, deletedNotePath?: string, shouldReportUsedAttachments?: boolean): Promise<boolean> {
   const folder = app.vault.getFolderByPath(folderPath);
 
   if (!folder) {
     return false;
   }
 
-  let canRemove = true;
+  let canDelete = true;
 
   for (const child of folder.children) {
     if (child instanceof TFile) {
       const backlinks = await getBacklinksForFileSafe(app, child);
-      if (removedNotePath) {
-        backlinks.removeKey(removedNotePath);
+      if (deletedNotePath) {
+        backlinks.removeKey(deletedNotePath);
       }
       if (backlinks.count() !== 0) {
         if (shouldReportUsedAttachments) {
           new Notice(`Attachment ${child.path} is still used by other notes. It will not be deleted.`);
         }
-        canRemove = false;
+        canDelete = false;
       } else {
         try {
           await app.fileManager.trashFile(child);
         } catch (e) {
           if (await app.vault.adapter.exists(child.path)) {
             printError(new Error(`Failed to delete ${child.path}`, { cause: e }));
-            canRemove = false;
+            canDelete = false;
           }
         }
       }
     } else if (child instanceof TFolder) {
-      canRemove &&= await removeFolderSafe(app, child.path, removedNotePath, shouldReportUsedAttachments);
+      canDelete &&= await deleteFolderSafe(app, child.path, deletedNotePath, shouldReportUsedAttachments);
     }
   }
 
-  if (canRemove) {
+  if (canDelete) {
     try {
       await app.fileManager.trashFile(folder);
     } catch (e) {
       if (await app.vault.adapter.exists(folder.path)) {
         printError(new Error(`Failed to delete ${folder.path}`, { cause: e }));
-        canRemove = false;
+        canDelete = false;
       }
     }
   }
 
-  return canRemove;
+  return canDelete;
 }
 
 /**
@@ -284,9 +284,9 @@ export async function safeList(app: App, path: string): Promise<ListedFiles> {
  *
  * @param app - The application instance.
  * @param pathOrFolder - The folder to start removing empty hierarchy from.
- * @returns A promise that resolves when the empty hierarchy is removed.
+ * @returns A promise that resolves when the empty hierarchy is deleted.
  */
-export async function removeEmptyFolderHierarchy(app: App, pathOrFolder: PathOrFolder | null): Promise<void> {
+export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: PathOrFolder | null): Promise<void> {
   let folder = getFolderOrNull(app, pathOrFolder);
 
   while (folder) {
@@ -294,7 +294,7 @@ export async function removeEmptyFolderHierarchy(app: App, pathOrFolder: PathOrF
       return;
     }
     const parent = folder.parent;
-    await removeFolderSafe(app, folder.path);
+    await deleteFolderSafe(app, folder.path);
     folder = parent;
   }
 }
