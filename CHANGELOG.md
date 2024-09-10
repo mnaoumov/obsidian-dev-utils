@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.15.0
+
+- Prefer to use vault functions over adapter's
+- Improve check for Windows POSIX-like paths
+
 ## 3.14.1
 
 - Refactor
