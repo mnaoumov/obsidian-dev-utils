@@ -22,7 +22,11 @@ import { dirname } from '../Path.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
-import { getPath } from './TAbstractFile.ts';
+import type { PathOrAbstractFile } from './TAbstractFile.ts';
+import {
+  getAbstractFileOrNull,
+  getPath
+} from './TAbstractFile.ts';
 import type { PathOrFile } from './TFile.ts';
 import { getFile } from './TFile.ts';
 import type { PathOrFolder } from './TFolder.ts';
@@ -174,55 +178,47 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
 }
 
 /**
- * Deletes a folder and its contents safely from the vault.
+ * Deletes abstract file safely from the vault.
  *
  * @param app - The Obsidian application instance.
- * @param folderPath - The path of the folder to be deleted.
+ * @param pathOrFile - The path or abstract file to delete.
  * @param deletedNotePath - Optional. The path of the note that triggered the removal.
  * @param shouldReportUsedAttachments - Optional. If `true`, a notice will be shown for each attachment that is still used by other notes.
+ * @param shouldDeleteEmptyFolders - Optional. If `true`, empty folders will be deleted.
  * @returns A promise that resolves to a boolean indicating whether the removal was successful.
  */
-export async function deleteFolderSafe(app: App, folderPath: string, deletedNotePath?: string, shouldReportUsedAttachments?: boolean): Promise<boolean> {
-  const folder = app.vault.getFolderByPath(folderPath);
+export async function deleteSafe(app: App, pathOrFile: PathOrAbstractFile, deletedNotePath?: string, shouldReportUsedAttachments?: boolean, shouldDeleteEmptyFolders?: boolean): Promise<boolean> {
+  const file = getAbstractFileOrNull(app, pathOrFile);
 
-  if (!folder) {
+  if (!file) {
     return false;
   }
 
-  let canDelete = true;
+  let canDelete = file instanceof TFile || (shouldDeleteEmptyFolders ?? true);
 
-  for (const child of folder.children) {
-    if (child instanceof TFile) {
-      const backlinks = await getBacklinksForFileSafe(app, child);
-      if (deletedNotePath) {
-        backlinks.removeKey(deletedNotePath);
+  if (file instanceof TFile) {
+    const backlinks = await getBacklinksForFileSafe(app, file);
+    if (deletedNotePath) {
+      backlinks.removeKey(deletedNotePath);
+    }
+    if (backlinks.count() !== 0) {
+      if (shouldReportUsedAttachments) {
+        new Notice(`Attachment ${file.path} is still used by other notes. It will not be deleted.`);
       }
-      if (backlinks.count() !== 0) {
-        if (shouldReportUsedAttachments) {
-          new Notice(`Attachment ${child.path} is still used by other notes. It will not be deleted.`);
-        }
-        canDelete = false;
-      } else {
-        try {
-          await app.fileManager.trashFile(child);
-        } catch (e) {
-          if (await app.vault.adapter.exists(child.path)) {
-            printError(new Error(`Failed to delete ${child.path}`, { cause: e }));
-            canDelete = false;
-          }
-        }
-      }
-    } else if (child instanceof TFolder) {
-      canDelete &&= await deleteFolderSafe(app, child.path, deletedNotePath, shouldReportUsedAttachments);
+      canDelete = false;
+    }
+  } else if (file instanceof TFolder) {
+    for (const child of file.children) {
+      canDelete &&= await deleteSafe(app, child.path, deletedNotePath, shouldReportUsedAttachments);
     }
   }
 
   if (canDelete) {
     try {
-      await app.fileManager.trashFile(folder);
+      await app.fileManager.trashFile(file);
     } catch (e) {
-      if (await app.vault.adapter.exists(folder.path)) {
-        printError(new Error(`Failed to delete ${folder.path}`, { cause: e }));
+      if (await app.vault.adapter.exists(file.path)) {
+        printError(new Error(`Failed to delete ${file.path}`, { cause: e }));
         canDelete = false;
       }
     }
@@ -294,7 +290,7 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: PathOrF
       return;
     }
     const parent = folder.parent;
-    await deleteFolderSafe(app, folder.path);
+    await deleteSafe(app, folder.path);
     folder = parent;
   }
 }

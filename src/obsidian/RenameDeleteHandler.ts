@@ -38,7 +38,7 @@ import {
   applyFileChanges,
   createFolderSafe,
   deleteEmptyFolderHierarchy,
-  deleteFolderSafe,
+  deleteSafe,
   processWithRetry
 } from './Vault.ts';
 
@@ -166,8 +166,8 @@ class RenameDeleteHandler {
       return;
     }
 
-    if (this.settingsBuilder().shouldDeleteOrphanAttachments || attachmentFolder.children.length === 0) {
-      await deleteFolderSafe(this.app, attachmentFolderPath, file.path);
+    if (this.settingsBuilder().shouldDeleteOrphanAttachments) {
+      await deleteSafe(this.app, attachmentFolder, file.path, false, this.settingsBuilder().shouldDeleteEmptyFolders);
     }
   }
 
