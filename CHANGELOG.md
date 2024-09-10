@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.7
+
+- Reimplement pkg-dir as it is not cjs module
+
 ## 3.11.6
 
 - Replace builtin-modules with node.js version
