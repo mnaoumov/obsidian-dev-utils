@@ -53,6 +53,7 @@ export function renameToCjsPlugin(): Plugin {
 }
 
 function __require(id: string): unknown {
-  const module = globalThis.require(id) as Partial<EsmModule>;
+  // eslint-disable-next-line import-x/no-dynamic-require, @typescript-eslint/no-require-imports
+  const module = require(id) as Partial<EsmModule>;
   return module.__esModule && module.default ? module.default : module;
 }
