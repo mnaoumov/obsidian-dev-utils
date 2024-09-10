@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.0
+
+- Remove bundling dependencies
+
 ## 3.10.1
 
 - Move typescript-eslint dependency
