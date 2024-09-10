@@ -25,7 +25,10 @@ import {
   writeFile
 } from '../NodeModules.ts';
 import { readNpmPackage } from '../Npm.ts';
-import { resolvePathFromRoot } from '../Root.ts';
+import {
+  execFromRoot,
+  resolvePathFromRoot
+} from '../Root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
@@ -76,6 +79,8 @@ export interface BuildObsidianPluginOptions {
  * @returns A promise that resolves to a `TaskResult` indicating the success or failure of the build.
  */
 export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): Promise<CliTaskResult> {
+  await execFromRoot(['tsc', '--build', '--force']);
+
   const {
     mode,
     obsidianConfigDir = process.env['OBSIDIAN_CONFIG_DIR'],
