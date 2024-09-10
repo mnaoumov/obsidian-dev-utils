@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.6
+
+- Replace builtin-modules with node.js version
+
 ## 3.11.5
 
 - Switch to function approach
