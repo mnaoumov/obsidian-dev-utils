@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.11.5
+
+- Switch to function approach
+- Preserve __require() name to keep esbuild transforms
+
 ## 3.11.4
 
 - Use `__require()` only for node modules
