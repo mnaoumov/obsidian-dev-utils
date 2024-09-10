@@ -5,7 +5,6 @@
  * and it sets up various esbuild plugins to preprocess, lint, fix source maps, and copy files to the Obsidian plugins folder.
  */
 
-import builtinModules from 'builtin-modules';
 import type {
   BuildContext,
   BuildOptions,
@@ -17,6 +16,7 @@ import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRep
 import { join } from '../../Path.ts';
 import { CliTaskResult } from '../CliUtils.ts';
 import {
+  builtinModules,
   cp,
   existsSync,
   mkdir,

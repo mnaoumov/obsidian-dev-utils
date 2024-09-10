@@ -25,7 +25,10 @@ export {
 } from 'node:fs/promises';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
-export { createRequire } from 'node:module';
+export {
+  builtinModules,
+  createRequire
+} from 'node:module';
 
 // eslint-disable-next-line eslint-plugin-tsdoc-required/tsdoc-required
 export { process };

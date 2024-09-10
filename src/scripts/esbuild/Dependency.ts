@@ -5,7 +5,6 @@
  * should be bundled, as well as an esbuild plugin for extracting dependencies to bundle.
  */
 
-import builtinModules from 'builtin-modules';
 import type {
   BuildOptions,
   Plugin
@@ -18,7 +17,10 @@ import {
   join
 } from '../../Path.ts';
 import { trimStart } from '../../String.ts';
-import { createRequire } from '../NodeModules.ts';
+import {
+  builtinModules,
+  createRequire
+} from '../NodeModules.ts';
 import { readNpmPackage } from '../Npm.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import {
