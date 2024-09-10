@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.0
+
+- Remove to trash
+
 ## 3.12.0
 
 - Add build:validate command
