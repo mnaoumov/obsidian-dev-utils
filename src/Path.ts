@@ -7,6 +7,8 @@ import path from 'path-browserify';
 
 import { ensureStartsWith } from './String.ts';
 
+const WINDOWS_POSIX_LIKE_PATH_REG_EXP = /[a-zA-Z]:\/[^:]*$/;
+
 /**
  * Provides methods for handling POSIX paths.
  */
@@ -61,7 +63,9 @@ export const format = posix.format;
  * @param path - The path to check.
  * @returns `true` if the path is absolute, `false` otherwise.
  */
-export const isAbsolute = posix.isAbsolute;
+export function isAbsolute(path: string): boolean {
+  return posix.isAbsolute(path) || WINDOWS_POSIX_LIKE_PATH_REG_EXP.exec(path)?.[0] === path;
+}
 
 /**
  * Joins multiple path segments into a single path.
@@ -105,7 +109,7 @@ export const relative = posix.relative;
 export function resolve(...pathSegments: string[]): string {
   let path = posix.resolve(...pathSegments);
   path = toPosixPath(path);
-  const match = /.:[^:]*$/.exec(path);
+  const match = WINDOWS_POSIX_LIKE_PATH_REG_EXP.exec(path);
   return match?.[0] ?? path;
 }
 
