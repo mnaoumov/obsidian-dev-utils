@@ -6,11 +6,10 @@
 
 import {
   dirname,
-  join
-  ,
+  join,
   relative,
-  resolve
-  , toPosixPath
+  resolve,
+  toPosixPath
 } from '../Path.ts';
 import { trimEnd } from '../String.ts';
 import { toCommandLine } from './CliUtils.ts';
@@ -169,14 +168,18 @@ export function execFromRoot(command: string | string[], options: ExecFromRootOp
       if (exitCode !== 0 && !ignoreExitCode) {
         reject(new Error(`Command failed with exit code ${exitCode?.toString() ?? '(null)'}\n${stderr}`));
       } else {
-        resolve(!withDetails
-          ? stdout
-          : {
-              exitCode,
-              exitSignal,
-              stderr,
-              stdout
-            });
+        let result: string | ExecFromRootResult;
+        if (!withDetails) {
+          result = stdout;
+        } else {
+          result = {
+            exitCode,
+            exitSignal,
+            stderr,
+            stdout
+          };
+        }
+        resolve(result);
       }
     });
 
@@ -184,14 +187,18 @@ export function execFromRoot(command: string | string[], options: ExecFromRootOp
       if (!ignoreExitCode) {
         reject(err);
       } else {
-        resolve(!withDetails
-          ? stdout
-          : {
-              exitCode: null,
-              exitSignal: null,
-              stderr,
-              stdout
-            });
+        let result: string | ExecFromRootResult;
+        if (!withDetails) {
+          result = stdout;
+        } else {
+          result = {
+            exitCode: null,
+            exitSignal: null,
+            stderr,
+            stdout
+          };
+        }
+        resolve(result);
       }
     });
   });
