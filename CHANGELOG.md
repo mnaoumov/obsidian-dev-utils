@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.14.1
+
+- Refactor
+
 ## 3.14.0
 
 - Rename 'remove' to 'delete'
