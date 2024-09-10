@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.3
+
+- Use proper `require()` function
+
 ## 3.11.2
 
 - Handle default requires
