@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.8
+
+- Switch to cspell binary as the library is not cjs
+
 ## 3.11.7
 
 - Reimplement pkg-dir as it is not cjs module
