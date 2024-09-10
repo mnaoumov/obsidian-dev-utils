@@ -48,8 +48,19 @@ interface SpecialRename {
   tempPath: string;
 }
 
-interface RenameDeleteHandlerSettings {
+/**
+ * Settings for the rename/delete handler.
+ */
+export interface RenameDeleteHandlerSettings {
+  /**
+   * Whether to delete empty folders.
+   */
   shouldDeleteEmptyFolders: boolean;
+
+  /**
+   * Whether to delete orphan attachments after a delete.
+   */
+  shouldDeleteOrphanAttachments: boolean;
 }
 
 /**
@@ -148,8 +159,16 @@ class RenameDeleteHandler {
       return;
     }
 
-    const attachmentFolder = await getAttachmentFolderPath(this.app, file.path);
-    await removeFolderSafe(this.app, attachmentFolder, file.path);
+    const attachmentFolderPath = await getAttachmentFolderPath(this.app, file.path);
+    const attachmentFolder = this.app.vault.getFolderByPath(attachmentFolderPath);
+
+    if (!attachmentFolder) {
+      return;
+    }
+
+    if (this.settingsBuilder().shouldDeleteOrphanAttachments || attachmentFolder.children.length === 0) {
+      await removeFolderSafe(this.app, attachmentFolderPath, file.path);
+    }
   }
 
   private async fillRenameMap(file: TFile, oldPath: string, renameMap: Map<string, string>): Promise<void> {
