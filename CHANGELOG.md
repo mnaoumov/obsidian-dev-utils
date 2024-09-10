@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.2
+
+- Handle default requires
+
 ## 3.11.1
 
 - Handle different quotes
