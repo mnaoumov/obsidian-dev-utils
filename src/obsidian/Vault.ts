@@ -86,7 +86,7 @@ export async function processWithRetry(app: App, pathOrFile: PathOrFile, newCont
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await retryWithTimeout(async () => {
-    const oldContent = await app.vault.adapter.read(file.path);
+    const oldContent = await app.vault.read(file);
     const newContent = await resolveValue(newContentProvider, oldContent);
     if (newContent === null) {
       return false;
@@ -217,7 +217,7 @@ export async function deleteSafe(app: App, pathOrFile: PathOrAbstractFile, delet
     try {
       await app.fileManager.trashFile(file);
     } catch (e) {
-      if (await app.vault.adapter.exists(file.path)) {
+      if (await app.vault.exists(file.path)) {
         printError(new Error(`Failed to delete ${file.path}`, { cause: e }));
         canDelete = false;
       }
@@ -241,10 +241,10 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
   }
 
   try {
-    await app.vault.adapter.mkdir(path);
+    await app.vault.createFolder(path);
     return true;
   } catch (e) {
-    if (!await app.vault.adapter.exists(path)) {
+    if (!await app.vault.exists(path)) {
       throw e;
     }
 
@@ -268,7 +268,7 @@ export async function safeList(app: App, path: string): Promise<ListedFiles> {
   try {
     return await app.vault.adapter.list(path);
   } catch (e) {
-    if (await app.vault.adapter.exists(path)) {
+    if (await app.vault.exists(path)) {
       throw e;
     }
     return EMPTY;
