@@ -28,7 +28,6 @@ import { readNpmPackage } from '../Npm.ts';
 import { resolvePathFromRoot } from '../Root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
-import { lintPlugin } from './lintPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
 
 /**
@@ -142,7 +141,6 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     platform: 'node',
     plugins: [
       preprocessPlugin(),
-      lintPlugin(isProductionBuild),
       fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
       ...customEsbuildPlugins,
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
