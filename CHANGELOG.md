@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.14.0
+
+- Rename 'remove' to 'delete'
+- Add check for shouldDeleteOrphanAttachments
+
 ## 3.13.0
 
 - Remove to trash
