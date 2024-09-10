@@ -238,7 +238,6 @@ export function updateLink(options: UpdateLinkOptions): string {
   let file = getFile(app, pathOrFile);
   const sourcePath = getPath(source);
   const oldPath = getPath(oldPathOrFile);
-  const isEmbed = link.original.startsWith('!');
   const isWikilink
     = link.original.includes('[[') && forceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
@@ -263,8 +262,10 @@ export function updateLink(options: UpdateLinkOptions): string {
     sourcePathOrFile: sourcePath,
     subpath,
     alias,
-    isEmbed,
-    isWikilink
+    isEmbed: link.original.startsWith('!'),
+    isWikilink,
+    useAngleBrackets: link.original.includes('](<') ? true : undefined,
+    useLeadingDot: link.original.includes('](<./') || link.original.includes('](./') ? true : undefined
   });
   return newLink;
 }
