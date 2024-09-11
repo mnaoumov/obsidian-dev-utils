@@ -211,6 +211,8 @@ export async function deleteSafe(app: App, pathOrFile: PathOrAbstractFile, delet
     for (const child of file.children) {
       canDelete &&= await deleteSafe(app, child.path, deletedNotePath, shouldReportUsedAttachments);
     }
+
+    canDelete &&= await isEmptyFolder(app, file);
   }
 
   if (canDelete) {
@@ -286,7 +288,7 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: PathOrF
   let folder = getFolderOrNull(app, pathOrFolder);
 
   while (folder) {
-    if (folder.children.length > 0) {
+    if (!await isEmptyFolder(app, folder)) {
       return;
     }
     const parent = folder.parent;
@@ -358,4 +360,15 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
     }
     await folderCleanup();
   };
+}
+
+/**
+ * Checks if a folder is empty.
+ * @param app - The application instance.
+ * @param pathOrFolder - The path or folder to check.
+ * @returns A promise that resolves to a boolean indicating whether the folder is empty.
+ */
+export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promise<boolean> {
+  const listedFiles = await safeList(app, getPath(pathOrFolder));
+  return listedFiles.files.length === 0 && listedFiles.folders.length === 0;
 }
