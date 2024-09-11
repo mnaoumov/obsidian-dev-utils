@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.16.0
+
+- Rename and refactor `listSafe`
+- Check for empty folder including hidden items
+
 ## 3.15.0
 
 - Prefer to use vault functions over adapter's
