@@ -258,12 +258,14 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
  * Safely lists the files and folders at the specified path in the vault.
  *
  * @param app - The Obsidian application instance.
- * @param path - The path to list files and folders from.
+ * @param pathOrFolder - The path or folder to list.
  * @returns A promise that resolves to a `ListedFiles` object containing the listed files and folders.
  */
-export async function safeList(app: App, path: string): Promise<ListedFiles> {
+export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<ListedFiles> {
+  const path = getPath(pathOrFolder);
   const EMPTY = { files: [], folders: [] };
-  if (!(await app.vault.exists(path))) {
+
+  if ((await app.vault.adapter.stat(path))?.type !== 'folder') {
     return EMPTY;
   }
 
@@ -369,6 +371,6 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
  * @returns A promise that resolves to a boolean indicating whether the folder is empty.
  */
 export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promise<boolean> {
-  const listedFiles = await safeList(app, getPath(pathOrFolder));
+  const listedFiles = await listSafe(app, getPath(pathOrFolder));
   return listedFiles.files.length === 0 && listedFiles.folders.length === 0;
 }
