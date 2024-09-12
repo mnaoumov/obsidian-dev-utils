@@ -463,6 +463,8 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
       linkText = './' + linkText;
     }
 
+    const embedPrefix = isEmbed ? '!' : '';
+
     if (!isWikilink) {
       if (useAngleBrackets) {
         linkText = `<${linkText}>`;
@@ -483,7 +485,8 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
         alias = '';
       }
 
-      return (isEmbed ? '!' : '') + (alias ? `[[${linkText}|${alias}]]` : `[[${linkText}]]`);
+      const aliasPart = alias ? `|${alias}` : '';
+      return `${embedPrefix}[[${linkText}${aliasPart}]]`;
     }
   });
 }
