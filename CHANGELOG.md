@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.17.0
+
+- allowEmptyEmbedAlias
+- allowNonExistingFile
+- Infer settings from the originalLink
+
 ## 3.16.0
 
 - Rename and refactor `listSafe`
