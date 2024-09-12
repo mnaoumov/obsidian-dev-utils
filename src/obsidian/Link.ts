@@ -484,7 +484,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
       }
 
       if (!alias && (!isEmbed || !options.allowEmptyEmbedAlias)) {
-        alias = file.basename
+        alias = file.basename;
       }
 
       return `${embedPrefix}[${alias}](${linkText})`;
