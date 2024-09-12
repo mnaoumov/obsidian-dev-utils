@@ -131,7 +131,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     embedOnlyLinks
   } = options;
   await editLinks(app, pathOrFile, (link) => {
-    const isEmbedLink = link.original.startsWith('!');
+    const isEmbedLink = testEmbed(link.original);
     if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
       return;
     }
@@ -238,8 +238,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   let file = getFile(app, pathOrFile);
   const sourcePath = getPath(source);
   const oldPath = getPath(oldPathOrFile);
-  const isWikilink
-    = link.original.includes('[[') && forceMarkdownLinks !== true;
+  const isWikilink = testWikilink(link.original) && forceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
 
   const newPath = renameMap.get(file.path);
@@ -262,10 +261,8 @@ export function updateLink(options: UpdateLinkOptions): string {
     sourcePathOrFile: sourcePath,
     subpath,
     alias,
-    isEmbed: link.original.startsWith('!'),
-    isWikilink,
-    useAngleBrackets: link.original.includes('](<') ? true : undefined,
-    useLeadingDot: link.original.includes('](<./') || link.original.includes('](./') ? true : undefined
+    isWikilink: forceMarkdownLinks ? false : undefined,
+    originalLink: link.original
   });
   return newLink;
 }
@@ -417,6 +414,12 @@ export interface GenerateMarkdownLinkOptions {
    * Indicates if the link should use angle brackets. Defaults to `false`. Has no effect if `isWikilink` is `true`
    */
   useAngleBrackets?: boolean | undefined;
+
+  /**
+    * The original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
+    * These inferred values will be overridden by corresponding settings if specified.
+    */
+  originalLink?: string | undefined;
 }
 
 /**
@@ -439,9 +442,11 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
     const sourcePath = getPath(options.sourcePathOrFile);
     const subpath = options.subpath ?? '';
     let alias = options.alias ?? '';
-    const isEmbed = options.isEmbed ?? !isMarkdownFile(file);
-    const isWikilink = options.isWikilink ?? shouldUseWikilinks(app);
+    const isEmbed = options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(file);
+    const isWikilink = options.isWikilink ?? (options.originalLink ? testWikilink(options.originalLink) : undefined) ?? shouldUseWikilinks(app);
     const forceRelativePath = options.forceRelativePath ?? shouldUseRelativeLinks(app);
+    const useLeadingDot = options.useLeadingDot ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false;
+    const useAngleBrackets = options.useAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false;
 
     let linkText = file.path === sourcePath && subpath
       ? subpath
@@ -449,12 +454,12 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
         ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(file) : file.path) + subpath
         : app.metadataCache.fileToLinktext(file, sourcePath, isWikilink) + subpath;
 
-    if (forceRelativePath && options.useLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
+    if (forceRelativePath && useLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
       linkText = './' + linkText;
     }
 
     if (!isWikilink) {
-      if (options.useAngleBrackets) {
+      if (useAngleBrackets) {
         linkText = `<${linkText}>`;
       } else {
         linkText = linkText.replace(SPECIAL_LINK_SYMBOLS_REGEXP, function (specialLinkSymbol) {
@@ -517,4 +522,49 @@ export async function editLinks(
 
     return changes;
   }, retryOptions);
+}
+
+/**
+ * Tests whether a link is an embed link:
+ * `![[link]]`, `![title](link)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link is an embed link
+ */
+export function testEmbed(link: string): boolean {
+  return link.startsWith('![');
+}
+
+/**
+ * Tests whether a link is a wikilink, possibly embed:
+ * `[[link]]`, `![[link]]`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link is a wikilink
+ */
+export function testWikilink(link: string): boolean {
+  return link.includes('[[');
+}
+
+/**
+ * Tests whether a link has a leading dot, possibly embed:
+ * `[[./link]]`, `[title](./link)`, `[title](<./link>)`,
+ * `![[./link]]`, `![title](./link)`, `![title](<./link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link has a leading dot
+ */
+export function testLeadingDot(link: string): boolean {
+  return link.includes('[[./') || link.includes('](./') || link.includes('](<./');
+}
+
+/**
+ * Tests whether a link uses angle brackets, possibly embed:
+ * `[title](<link>)`, `![title](<link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link uses angle brackets
+ */
+export function testAngleBrackets(link: string): boolean {
+  return link.includes('](<');
 }
