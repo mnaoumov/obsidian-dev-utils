@@ -425,6 +425,11 @@ export interface GenerateMarkdownLinkOptions {
    * Whether to allow non-existing files. If `false` and `pathOrFile` is a non-existing file, an error will be thrown. Defaults to `false`.
    */
   allowNonExistingFile?: boolean | undefined;
+
+  /**
+   * Whether to allow an empty alias for embeds. Defaults to `true`.
+   */
+  allowEmptyEmbedAlias?: boolean | undefined;
 }
 
 /**
@@ -436,10 +441,14 @@ export interface GenerateMarkdownLinkOptions {
 export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): string {
   const { app } = options;
 
-  const defaultOptionsFn = (app.fileManager.generateMarkdownLink as GenerateMarkdownLinkDefaultOptionsWrapper).defaultOptionsFn ?? ((): Partial<GenerateMarkdownLinkOptions> => ({}));
-  const defaultOptions = defaultOptionsFn();
+  const configurableDefaultOptionsFn = (app.fileManager.generateMarkdownLink as GenerateMarkdownLinkDefaultOptionsWrapper).defaultOptionsFn ?? ((): Partial<GenerateMarkdownLinkOptions> => ({}));
+  const configurableDefaultOptions = configurableDefaultOptionsFn();
 
-  options = { ...defaultOptions, ...options };
+  const DEFAULT_OPTIONS: Partial<GenerateMarkdownLinkOptions> = {
+    allowEmptyEmbedAlias: true
+  };
+
+  options = { ...DEFAULT_OPTIONS, ...configurableDefaultOptions, ...options };
 
   const file = getFile(app, options.pathOrFile, options.allowNonExistingFile);
 
@@ -474,11 +483,11 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
         });
       }
 
-      if (!isEmbed) {
-        return `[${alias || file.basename}](${linkText})`;
-      } else {
-        return `![${alias}](${linkText})`;
+      if (!alias && (!isEmbed || !options.allowEmptyEmbedAlias)) {
+        alias = file.basename
       }
+
+      return `${embedPrefix}[${alias}](${linkText})`;
     } else {
       if (alias && alias.toLowerCase() === linkText.toLowerCase()) {
         linkText = alias;
