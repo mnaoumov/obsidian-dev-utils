@@ -12,7 +12,7 @@ interface AppWrapper {
   /**
    * An optional reference to the Obsidian `App` instance.
    */
-  app?: App;
+  app: App;
 }
 
 /**
@@ -36,7 +36,7 @@ export function getApp(): App {
     return globalThis.require('obsidian/app') as App;
   }
 
-  const app = (globalThis as AppWrapper).app;
+  const app = (globalThis as Partial<AppWrapper>).app;
   if (app) {
     return app;
   }

@@ -358,7 +358,7 @@ export interface GenerateMarkdownLinkDefaultOptionsWrapper {
   /**
    * The default options for generating markdown links.
    */
-  defaultOptionsFn?: () => Partial<GenerateMarkdownLinkOptions>;
+  defaultOptionsFn: () => Partial<GenerateMarkdownLinkOptions>;
 }
 
 /**
@@ -441,7 +441,7 @@ export interface GenerateMarkdownLinkOptions {
 export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): string {
   const { app } = options;
 
-  const configurableDefaultOptionsFn = (app.fileManager.generateMarkdownLink as GenerateMarkdownLinkDefaultOptionsWrapper).defaultOptionsFn ?? ((): Partial<GenerateMarkdownLinkOptions> => ({}));
+  const configurableDefaultOptionsFn = (app.fileManager.generateMarkdownLink as Partial<GenerateMarkdownLinkDefaultOptionsWrapper>).defaultOptionsFn ?? ((): Partial<GenerateMarkdownLinkOptions> => ({}));
   const configurableDefaultOptions = configurableDefaultOptionsFn();
 
   const DEFAULT_OPTIONS: Partial<GenerateMarkdownLinkOptions> = {
