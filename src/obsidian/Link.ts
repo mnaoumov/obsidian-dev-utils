@@ -420,6 +420,11 @@ export interface GenerateMarkdownLinkOptions {
     * These inferred values will be overridden by corresponding settings if specified.
     */
   originalLink?: string | undefined;
+
+  /**
+   * Whether to allow non-existing files. If `false` and `pathOrFile` is a non-existing file, an error will be thrown. Defaults to `false`.
+   */
+  allowNonExistingFile?: boolean | undefined;
 }
 
 /**
@@ -436,7 +441,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
 
   options = { ...defaultOptions, ...options };
 
-  const file = getFile(app, options.pathOrFile);
+  const file = getFile(app, options.pathOrFile, options.allowNonExistingFile);
 
   return tempRegisterFileAndRun(app, file, () => {
     const sourcePath = getPath(options.sourcePathOrFile);

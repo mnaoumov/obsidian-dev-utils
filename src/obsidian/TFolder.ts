@@ -9,6 +9,7 @@ import {
   TFolder,
   Vault
 } from 'obsidian';
+import { createTFolderInstance } from 'obsidian-typings/implementations';
 
 import { isMarkdownFile } from './TAbstractFile.ts';
 
@@ -22,13 +23,20 @@ export type PathOrFolder = string | TFolder;
  *
  * @param app - The Obsidian app instance.
  * @param pathOrFolder - The path or folder identifier.
+ * @param allowNonExisting - Whether to allow the folder to not exist.
+ *  If `true`, a new TFolder object is created for the provided path.
+ *  If `false`, an error is thrown if the folder is not found.
  * @returns The retrieved TFolder object.
  * @throws If the folder is not found.
  */
-export function getFolder(app: App, pathOrFolder: PathOrFolder): TFolder {
-  const folder = getFolderOrNull(app, pathOrFolder);
+export function getFolder(app: App, pathOrFolder: PathOrFolder, allowNonExisting?: boolean): TFolder {
+  let folder = getFolderOrNull(app, pathOrFolder);
   if (!folder) {
-    throw new Error(`Folder not found: ${pathOrFolder as string}`);
+    if (allowNonExisting) {
+      folder = createTFolderInstance(app.vault, pathOrFolder as string);
+    } else {
+      throw new Error(`Folder not found: ${pathOrFolder as string}`);
+    }
   }
 
   return folder;

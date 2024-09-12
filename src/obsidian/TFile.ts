@@ -7,6 +7,7 @@ import {
   App,
   TFile
 } from 'obsidian';
+import { createTFileInstance } from 'obsidian-typings/implementations';
 
 /**
  * Represents a path or a file.
@@ -18,13 +19,20 @@ export type PathOrFile = string | TFile;
  *
  * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or file to retrieve the TFile object for.
+ * @param allowNonExisting - Whether to allow the file to not exist.
+ *  If `true`, a new TFile object is created for the provided path.
+ *  If `false`, an error is thrown if the file is not found.
  * @returns The TFile object corresponding to the provided path or file.
  * @throws Error if the file is not found.
  */
-export function getFile(app: App, pathOrFile: PathOrFile): TFile {
-  const file = getFileOrNull(app, pathOrFile);
+export function getFile(app: App, pathOrFile: PathOrFile, allowNonExisting?: boolean): TFile {
+  let file = getFileOrNull(app, pathOrFile);
   if (!file) {
-    throw new Error(`File not found: ${pathOrFile as string}`);
+    if (allowNonExisting) {
+      file = createTFileInstance(app.vault, pathOrFile as string);
+    } else {
+      throw new Error(`File not found: ${pathOrFile as string}`);
+    }
   }
 
   return file;
