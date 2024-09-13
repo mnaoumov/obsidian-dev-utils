@@ -80,6 +80,11 @@ export interface RenameDeleteHandlerSettings {
  * Whether to rename attachment folder when a note is renamed.
  */
   shouldRenameAttachmentFolder?: true | undefined;
+
+  /**
+   * Whether to update links when a note or attachment is renamed.
+   */
+  shouldUpdateLinks?: true | undefined;
 }
 
 /**
@@ -296,6 +301,7 @@ class RenameDeleteHandler {
 
   private async processRename(oldPath: string, newPath: string, renameMap: Map<string, string>): Promise<void> {
     try {
+      const settings = this.getSettings();
       let oldFile = this.app.vault.getFileByPath(oldPath);
       let newFile = this.app.vault.getFileByPath(newPath);
 
@@ -318,7 +324,7 @@ class RenameDeleteHandler {
             throw e;
           }
         }
-        if (this.getSettings().shouldDeleteEmptyFolders) {
+        if (settings.shouldDeleteEmptyFolders) {
           await deleteEmptyFolderHierarchy(this.app, oldFolder);
         }
       }
@@ -328,6 +334,10 @@ class RenameDeleteHandler {
 
       if (!oldFile.deleted || !newFile) {
         throw new Error(`Could not rename ${oldPath} to ${newPath}`);
+      }
+
+      if (!settings.shouldUpdateLinks) {
+        return;
       }
 
       const backlinks = await this.getBacklinks(oldFile, newFile);
