@@ -206,8 +206,9 @@ class RenameDeleteHandler {
       return;
     }
 
-    if (this.getSettings().shouldDeleteOrphanAttachments) {
-      await deleteSafe(this.app, attachmentFolder, file.path, false, this.getSettings().shouldDeleteEmptyFolders);
+    const settings = this.getSettings();
+    if (settings.shouldDeleteOrphanAttachments) {
+      await deleteSafe(this.app, attachmentFolder, file.path, false, settings.shouldDeleteEmptyFolders);
     }
   }
 
@@ -216,8 +217,10 @@ class RenameDeleteHandler {
       return;
     }
 
+    const settings = this.getSettings();
+
     const oldAttachmentFolderPath = await getAttachmentFolderPath(this.app, oldPath);
-    const newAttachmentFolderPath = this.getSettings().shouldRenameAttachmentFolder
+    const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
       ? await getAttachmentFolderPath(this.app, file.path)
       : oldAttachmentFolderPath;
     const dummyOldAttachmentFolderPath = await getAttachmentFolderPath(this.app, join(dirname(oldPath), 'DUMMY_FILE.md'));
@@ -228,9 +231,7 @@ class RenameDeleteHandler {
       return;
     }
 
-    const shouldRenameAttachmentFiles = this.getSettings().shouldRenameAttachmentFiles;
-
-    if (oldAttachmentFolderPath === newAttachmentFolderPath && !shouldRenameAttachmentFiles) {
+    if (oldAttachmentFolderPath === newAttachmentFolderPath && !settings.shouldRenameAttachmentFiles) {
       return;
     }
 
@@ -270,7 +271,7 @@ class RenameDeleteHandler {
       }
       const relativePath = relative(oldAttachmentFolderPath, child.path);
       const newDir = join(newAttachmentFolderPath, dirname(relativePath));
-      const newChildBasename = shouldRenameAttachmentFiles
+      const newChildBasename = settings.shouldRenameAttachmentFiles
         ? child.basename.replaceAll(oldNoteBaseName, file.basename)
         : child.basename;
       let newChildPath = join(newDir, makeFileName(newChildBasename, child.extension));
