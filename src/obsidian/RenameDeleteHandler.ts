@@ -57,6 +57,11 @@ interface SpecialRename {
  */
 export interface RenameDeleteHandlerSettings {
   /**
+   * Whether to delete conflicting attachments.
+   */
+  shouldDeleteConflictingAttachments?: true | undefined;
+
+  /**
    * Whether to delete empty folders.
    */
   shouldDeleteEmptyFolders?: true | undefined;
@@ -276,7 +281,14 @@ class RenameDeleteHandler {
         : child.basename;
       let newChildPath = join(newDir, makeFileName(newChildBasename, child.extension));
       if (child.path !== newChildPath) {
-        newChildPath = this.app.vault.getAvailablePath(join(newDir, newChildBasename), child.extension);
+        if (settings.shouldDeleteConflictingAttachments) {
+          const newChildFile = this.app.vault.getFileByPath(newChildPath);
+          if (newChildFile) {
+            await this.app.fileManager.trashFile(newChildFile);
+          }
+        } else {
+          newChildPath = this.app.vault.getAvailablePath(join(newDir, newChildBasename), child.extension);
+        }
         renameMap.set(child.path, newChildPath);
       }
     }
