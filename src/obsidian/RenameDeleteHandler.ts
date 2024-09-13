@@ -69,7 +69,7 @@ export interface RenameDeleteHandlerSettings {
   /**
    * Whether to rename attachment part names to match the note name.
    */
-  shouldRenameAttachmentPartNameToMatchNoteName?: true | undefined
+  shouldRenameAttachmentPartNameToMatchNoteName?: true | undefined;
 }
 
 /**
@@ -408,7 +408,7 @@ class RenameDeleteHandler {
       const newSettings = settingsBuilder();
       for (const [key, value] of Object.entries(newSettings)) {
         if (value !== undefined) {
-          settings = { ...settings, [key]: value };
+          settings = { ...settings, [key]: value as unknown };
         }
       }
     }
