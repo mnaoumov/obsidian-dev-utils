@@ -121,7 +121,7 @@ function shouldInvokeHandler(app: App, pluginId: string, handlerType: string): b
   const renameDeleteHandlerPluginIds = getRenameDeleteHandlersMap(app);
   const mainPluginId = Array.from(renameDeleteHandlerPluginIds.keys())[0];
   if (mainPluginId !== pluginId) {
-    console.warn(`${handlerType} handler for plugin ${pluginId} is skipped, because it is handled by plugin ${mainPluginId ?? '(none)'}`);
+    console.debug(`${handlerType} handler for plugin ${pluginId} is skipped, because it is handled by plugin ${mainPluginId ?? '(none)'}`);
     return false;
   }
   return true;
