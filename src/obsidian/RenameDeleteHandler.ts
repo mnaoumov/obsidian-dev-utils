@@ -14,8 +14,11 @@ import { createTFileInstance } from 'obsidian-typings/implementations';
 import { invokeAsyncSafely } from '../Async.ts';
 import { toJson } from '../Object.ts';
 import {
+  basename,
   dirname,
+  extname,
   join,
+  makeFileName,
   relative
 } from '../Path.ts';
 import { getObsidianDevUtilsState } from './App.ts';
@@ -62,11 +65,17 @@ export interface RenameDeleteHandlerSettings {
    * Whether to delete orphan attachments after a delete.
    */
   shouldDeleteOrphanAttachments: boolean;
+
+  /**
+   * Whether to rename attachment part names to match the note name.
+   */
+  shouldRenameAttachmentPartNameToMatchNoteName: boolean
 }
 
 const DEFAULT_SETTINGS: RenameDeleteHandlerSettings = {
   shouldDeleteEmptyFolders: false,
   shouldDeleteOrphanAttachments: false,
+  shouldRenameAttachmentPartNameToMatchNoteName: false
 };
 
 /**
@@ -250,15 +259,21 @@ class RenameDeleteHandler {
       });
     }
 
+    const shouldRenameAttachmentPartNameToMatchNoteName = this.getSettings().shouldRenameAttachmentPartNameToMatchNoteName;
+    const oldNoteBaseName = basename(oldPath, extname(oldPath));
+
     for (const child of children) {
       if (isNote(child)) {
         continue;
       }
       const relativePath = relative(oldAttachmentFolderPath, child.path);
       const newDir = join(newAttachmentFolderPath, dirname(relativePath));
-      let newChildPath = join(newDir, child.name);
+      const newChildBasename = shouldRenameAttachmentPartNameToMatchNoteName
+        ? child.basename.replaceAll(oldNoteBaseName, file.basename)
+        : child.basename;
+      let newChildPath = join(newDir, makeFileName(newChildBasename, child.extension));
       if (child.path !== newChildPath) {
-        newChildPath = this.app.vault.getAvailablePath(join(newDir, child.basename), child.extension);
+        newChildPath = this.app.vault.getAvailablePath(join(newDir, newChildBasename), child.extension);
         renameMap.set(child.path, newChildPath);
       }
     }

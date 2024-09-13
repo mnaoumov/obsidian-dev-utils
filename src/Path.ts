@@ -166,3 +166,15 @@ export function normalizeIfRelative(path: string): string {
 
   return ensureStartsWith(path, './');
 }
+
+/**
+ * Makes a filename by appending an extension to a given filename.
+ * If the extension is empty, the filename is returned as is.
+ *
+ * @param fileName - The filename to append the extension to.
+ * @param extension - The extension to append to the filename.
+ * @returns The filename with the extension appended.
+ */
+export function makeFileName(fileName: string, extension: string): string {
+  return extension ? `${fileName}.${extension}` : fileName;
+}
