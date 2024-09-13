@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.18.0
+
+- Ensure `RenameDeleteHandler` is executed only once
+
 ## 3.17.0
 
 - allowEmptyEmbedAlias
