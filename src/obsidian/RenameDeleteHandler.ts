@@ -64,6 +64,11 @@ export interface RenameDeleteHandlerSettings {
   shouldDeleteOrphanAttachments: boolean;
 }
 
+const DEFAULT_SETTINGS: RenameDeleteHandlerSettings = {
+  shouldDeleteEmptyFolders: false,
+  shouldDeleteOrphanAttachments: false,
+};
+
 /**
  * Registers the rename/delete handlers.
  * @param plugin - The plugin instance.
@@ -393,11 +398,6 @@ class RenameDeleteHandler {
     for (const settingsBuilder of settingsBuilders) {
       settings = { ...settings, ...settingsBuilder() };
     }
-
-    const DEFAULT_SETTINGS: RenameDeleteHandlerSettings = {
-      shouldDeleteEmptyFolders: false,
-      shouldDeleteOrphanAttachments: false
-    };
 
     return { ...DEFAULT_SETTINGS, ...settings };
   }
