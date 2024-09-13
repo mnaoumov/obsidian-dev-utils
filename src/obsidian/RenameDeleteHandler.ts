@@ -156,6 +156,7 @@ class RenameDeleteHandler {
 
       const renameMap = new Map<string, string>();
       await this.fillRenameMap(file, oldPath, renameMap);
+      renameMap.set(oldPath, file.path);
       for (const oldPath of renameMap.keys()) {
         this.renamingPaths.add(oldPath);
       }
@@ -163,8 +164,6 @@ class RenameDeleteHandler {
       for (const [oldPath2, newPath2] of renameMap.entries()) {
         await this.processRename(oldPath2, newPath2, renameMap);
       }
-
-      await this.processRename(oldPath, file.path, renameMap);
     } finally {
       this.renamingPaths.delete(oldPath);
       this.app.fileManager.updateAllLinks = updateAllLinks;
@@ -200,8 +199,6 @@ class RenameDeleteHandler {
   }
 
   private async fillRenameMap(file: TFile, oldPath: string, renameMap: Map<string, string>): Promise<void> {
-    renameMap.set(oldPath, file.path);
-
     if (!isNote(file)) {
       return;
     }
