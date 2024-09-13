@@ -67,9 +67,14 @@ export interface RenameDeleteHandlerSettings {
   shouldDeleteOrphanAttachments?: true | undefined;
 
   /**
-   * Whether to rename attachment part names to match the note name.
+   * Whether to rename attachment files when a note is renamed.
    */
-  shouldRenameAttachmentPartNameToMatchNoteName?: true | undefined;
+  shouldRenameAttachmentFiles?: true | undefined;
+
+  /**
+ * Whether to rename attachment folder when a note is renamed.
+ */
+  shouldRenameAttachmentFolder?: true | undefined;
 }
 
 /**
@@ -212,7 +217,9 @@ class RenameDeleteHandler {
     }
 
     const oldAttachmentFolderPath = await getAttachmentFolderPath(this.app, oldPath);
-    const newAttachmentFolderPath = await getAttachmentFolderPath(this.app, file.path);
+    const newAttachmentFolderPath = this.getSettings().shouldRenameAttachmentFolder
+      ? await getAttachmentFolderPath(this.app, file.path)
+      : oldAttachmentFolderPath;
     const dummyOldAttachmentFolderPath = await getAttachmentFolderPath(this.app, join(dirname(oldPath), 'DUMMY_FILE.md'));
 
     const oldAttachmentFolder = this.app.vault.getFolderByPath(oldAttachmentFolderPath);
@@ -253,7 +260,7 @@ class RenameDeleteHandler {
       });
     }
 
-    const shouldRenameAttachmentPartNameToMatchNoteName = this.getSettings().shouldRenameAttachmentPartNameToMatchNoteName;
+    const shouldRenameAttachmentFiles = this.getSettings().shouldRenameAttachmentFiles;
     const oldNoteBaseName = basename(oldPath, extname(oldPath));
 
     for (const child of children) {
@@ -262,7 +269,7 @@ class RenameDeleteHandler {
       }
       const relativePath = relative(oldAttachmentFolderPath, child.path);
       const newDir = join(newAttachmentFolderPath, dirname(relativePath));
-      const newChildBasename = shouldRenameAttachmentPartNameToMatchNoteName
+      const newChildBasename = shouldRenameAttachmentFiles
         ? child.basename.replaceAll(oldNoteBaseName, file.basename)
         : child.basename;
       let newChildPath = join(newDir, makeFileName(newChildBasename, child.extension));
