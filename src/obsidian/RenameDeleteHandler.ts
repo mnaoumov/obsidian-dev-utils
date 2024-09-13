@@ -70,21 +70,20 @@ export interface RenameDeleteHandlerSettings {
  * @param settingsBuilder - A function that returns the settings for the rename delete handler.
  * @returns void
  */
-export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: () => RenameDeleteHandlerSettings): void {
-  const renameDeleteHandlerPluginIds = getRenameDeleteHandlerPluginIds(plugin.app);
+export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: () => Partial<RenameDeleteHandlerSettings>): void {
+  const renameDeleteHandlersMap = getRenameDeleteHandlersMap(plugin.app);
   const pluginId = plugin.manifest.id;
 
-  if (renameDeleteHandlerPluginIds.length > 0) {
-    console.warn(`Plugin ${pluginId} is registering a rename/delete handler, but it is already registered by plugins: ${renameDeleteHandlerPluginIds.join(', ')}. The handler for ${pluginId} will be skipped until all previous plugins are disabled.`);
-  }
+  renameDeleteHandlersMap.set(pluginId, settingsBuilder);
+  logPluginSettingsOrder(plugin.app);
 
-  renameDeleteHandlerPluginIds.push(pluginId);
   plugin.register(() => {
-    renameDeleteHandlerPluginIds.remove(pluginId);
+    renameDeleteHandlersMap.delete(pluginId);
+    logPluginSettingsOrder(plugin.app);
   });
 
   const app = plugin.app;
-  const renameDeleteHandler = new RenameDeleteHandler(app, settingsBuilder);
+  const renameDeleteHandler = new RenameDeleteHandler(app);
   plugin.registerEvent(
     app.vault.on('delete', (file) => {
       if (!shouldInvokeHandler(app, pluginId, 'Delete')) {
@@ -105,8 +104,8 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
 }
 
 function shouldInvokeHandler(app: App, pluginId: string, handlerType: string): boolean {
-  const renameDeleteHandlerPluginIds = getRenameDeleteHandlerPluginIds(app);
-  const mainPluginId = renameDeleteHandlerPluginIds[0];
+  const renameDeleteHandlerPluginIds = getRenameDeleteHandlersMap(app);
+  const mainPluginId = Array.from(renameDeleteHandlerPluginIds.keys())[0];
   if (mainPluginId !== pluginId) {
     console.warn(`${handlerType} handler for plugin ${pluginId} is skipped, because it is handled by plugin ${mainPluginId ?? '(none)'}`);
     return false;
@@ -115,7 +114,7 @@ function shouldInvokeHandler(app: App, pluginId: string, handlerType: string): b
 }
 
 class RenameDeleteHandler {
-  public constructor(private app: App, private settingsBuilder: () => RenameDeleteHandlerSettings) { }
+  public constructor(private app: App) { }
 
   private renamingPaths = new Set<string>();
   private specialRenames: SpecialRename[] = [];
@@ -195,8 +194,8 @@ class RenameDeleteHandler {
       return;
     }
 
-    if (this.settingsBuilder().shouldDeleteOrphanAttachments) {
-      await deleteSafe(this.app, attachmentFolder, file.path, false, this.settingsBuilder().shouldDeleteEmptyFolders);
+    if (this.getSettings().shouldDeleteOrphanAttachments) {
+      await deleteSafe(this.app, attachmentFolder, file.path, false, this.getSettings().shouldDeleteEmptyFolders);
     }
   }
 
@@ -287,7 +286,7 @@ class RenameDeleteHandler {
             throw e;
           }
         }
-        if (this.settingsBuilder().shouldDeleteEmptyFolders) {
+        if (this.getSettings().shouldDeleteEmptyFolders) {
           await deleteEmptyFolderHierarchy(this.app, oldFolder);
         }
       }
@@ -389,8 +388,29 @@ class RenameDeleteHandler {
 
     return backlinks;
   }
+
+  private getSettings(): RenameDeleteHandlerSettings {
+    let settings: Partial<RenameDeleteHandlerSettings> = {};
+    const renameDeleteHandlersMap = getRenameDeleteHandlersMap(this.app);
+    const settingsBuilders = Array.from(renameDeleteHandlersMap.values()).reverse();
+    for (const settingsBuilder of settingsBuilders) {
+      settings = { ...settings, ...settingsBuilder() };
+    }
+
+    const DEFAULT_SETTINGS: RenameDeleteHandlerSettings = {
+      shouldDeleteEmptyFolders: false,
+      shouldDeleteOrphanAttachments: false
+    };
+
+    return { ...DEFAULT_SETTINGS, ...settings };
+  }
 }
 
-function getRenameDeleteHandlerPluginIds(app: App): string[] {
-  return getObsidianDevUtilsState<string[]>(app, 'renameDeleteHandlerPluginIds', []).value;
+function getRenameDeleteHandlersMap(app: App): Map<string, () => Partial<RenameDeleteHandlerSettings>> {
+  return getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
+}
+
+function logPluginSettingsOrder(app: App): void {
+  const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
+  console.debug(`Rename/delete handlers will use plugin settings in the following order: ${Array.from(renameDeleteHandlersMap.keys()).join(', ')}`);
 }
