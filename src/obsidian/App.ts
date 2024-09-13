@@ -43,3 +43,28 @@ export function getApp(): App {
 
   throw new Error('Obsidian app not found');
 }
+
+interface ObsidianDevUtilsStateWrapper {
+  obsidianDevUtilsState: Record<string, unknown>;
+}
+
+/**
+ * Wrapper type for storing shared state in the Obsidian app.
+ */
+export class ValueWrapper<T> {
+  public constructor(public value: T) { }
+}
+
+/**
+ * Retrieves or creates a shared state wrapper object for a given key in the Obsidian app.
+ *
+ * @param app - The Obsidian app instance.
+ * @param key - The key to store or retrieve the shared state.
+ * @param defaultValue - The default value to use if the shared state does not exist.
+ * @returns The ValueWrapper object that stores the shared state.
+ */
+export function getObsidianDevUtilsState<T>(app: App, key: string, defaultValue: T): ValueWrapper<T> {
+  const sharedStateWrapper = app as Partial<ObsidianDevUtilsStateWrapper>;
+  const sharedState = sharedStateWrapper.obsidianDevUtilsState ??= {};
+  return (sharedState[key] ??= new ValueWrapper<T>(defaultValue)) as ValueWrapper<T>;
+}

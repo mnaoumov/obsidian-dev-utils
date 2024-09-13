@@ -18,6 +18,7 @@ import {
   join,
   relative
 } from '../Path.ts';
+import { getObsidianDevUtilsState } from './App.ts';
 import { getAttachmentFolderPath } from './AttachmentPath.ts';
 import {
   extractLinkFile,
@@ -70,19 +71,47 @@ export interface RenameDeleteHandlerSettings {
  * @returns void
  */
 export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: () => RenameDeleteHandlerSettings): void {
+  const renameDeleteHandlerPluginIds = getRenameDeleteHandlerPluginIds(plugin.app);
+  const pluginId = plugin.manifest.id;
+
+  if (renameDeleteHandlerPluginIds.length > 0) {
+    console.warn(`Plugin ${pluginId} is registering a rename/delete handler, but it is already registered by plugins: ${renameDeleteHandlerPluginIds.join(', ')}. The handler for ${pluginId} will be skipped until all previous plugins are disabled.`);
+  }
+
+  renameDeleteHandlerPluginIds.push(pluginId);
+  plugin.register(() => {
+    renameDeleteHandlerPluginIds.remove(pluginId);
+  });
+
   const app = plugin.app;
   const renameDeleteHandler = new RenameDeleteHandler(app, settingsBuilder);
   plugin.registerEvent(
     app.vault.on('delete', (file) => {
+      if (!shouldInvokeHandler(app, pluginId, 'Delete')) {
+        return;
+      }
       invokeAsyncSafely(renameDeleteHandler.handleDelete(file));
     })
   );
 
   plugin.registerEvent(
     app.vault.on('rename', (file, oldPath) => {
+      if (!shouldInvokeHandler(app, pluginId, 'Rename')) {
+        return;
+      }
       invokeAsyncSafely(renameDeleteHandler.handleRename(file, oldPath));
     })
   );
+}
+
+function shouldInvokeHandler(app: App, pluginId: string, handlerType: string): boolean {
+  const renameDeleteHandlerPluginIds = getRenameDeleteHandlerPluginIds(app);
+  const mainPluginId = renameDeleteHandlerPluginIds[0];
+  if (mainPluginId !== pluginId) {
+    console.warn(`${handlerType} handler for plugin ${pluginId} is skipped, because it is handled by plugin ${mainPluginId ?? '(none)'}`);
+    return false;
+  }
+  return true;
 }
 
 class RenameDeleteHandler {
@@ -360,4 +389,8 @@ class RenameDeleteHandler {
 
     return backlinks;
   }
+}
+
+function getRenameDeleteHandlerPluginIds(app: App): string[] {
+  return getObsidianDevUtilsState<string[]>(app, 'renameDeleteHandlerPluginIds', []).value;
 }
