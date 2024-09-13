@@ -401,9 +401,10 @@ class RenameDeleteHandler {
   }
 
   private getSettings(): RenameDeleteHandlerSettings {
-    let settings: RenameDeleteHandlerSettings = {};
     const renameDeleteHandlersMap = getRenameDeleteHandlersMap(this.app);
     const settingsBuilders = Array.from(renameDeleteHandlersMap.values()).reverse();
+
+    let settings: RenameDeleteHandlerSettings = {};
     for (const settingsBuilder of settingsBuilders) {
       const newSettings = settingsBuilder();
       for (const [key, value] of Object.entries(newSettings)) {
