@@ -228,7 +228,9 @@ class RenameDeleteHandler {
       return;
     }
 
-    if (oldAttachmentFolderPath === newAttachmentFolderPath) {
+    const shouldRenameAttachmentFiles = this.getSettings().shouldRenameAttachmentFiles;
+
+    if (oldAttachmentFolderPath === newAttachmentFolderPath && !shouldRenameAttachmentFiles) {
       return;
     }
 
@@ -260,7 +262,6 @@ class RenameDeleteHandler {
       });
     }
 
-    const shouldRenameAttachmentFiles = this.getSettings().shouldRenameAttachmentFiles;
     const oldNoteBaseName = basename(oldPath, extname(oldPath));
 
     for (const child of children) {
