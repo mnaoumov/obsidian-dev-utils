@@ -76,15 +76,16 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * Called when the plugin is loaded
    */
   public override onload(): void {
+    this.register(registerAsyncErrorEventHandler(() => {
+      this.showNotice('An unhandled error occurred. Please check the console for more information.');
+    }));
+
     chainAsyncFn(this.app, async (): Promise<void> => {
       await this.loadSettings();
       const pluginSettingsTab = this.createPluginSettingsTab();
       if (pluginSettingsTab) {
         this.addSettingTab(pluginSettingsTab);
       }
-      this.register(registerAsyncErrorEventHandler(() => {
-        this.showNotice('An unhandled error occurred. Please check the console for more information.');
-      }));
 
       const abortController = new AbortController();
       this._abortSignal = abortController.signal;
