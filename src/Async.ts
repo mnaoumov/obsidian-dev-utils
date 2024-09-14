@@ -135,13 +135,7 @@ export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: 
  * @returns A function that wraps the synchronous function in an asynchronous interface.
  */
 export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: (...args: Args) => Result): (...args: Args) => Promise<Result> {
-  return async (...args: Args): Promise<Result> => {
-    try {
-      return syncFn(...args);
-    } catch (error) {
-      return await Promise.reject(error as Error);
-    }
-  };
+  return (...args: Args): Promise<Result> => Promise.resolve().then(() => syncFn(...args));
 }
 
 /**
