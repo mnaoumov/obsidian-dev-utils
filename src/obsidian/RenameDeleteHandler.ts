@@ -59,32 +59,32 @@ export interface RenameDeleteHandlerSettings {
   /**
    * Whether to delete conflicting attachments.
    */
-  shouldDeleteConflictingAttachments?: true | undefined;
+  shouldDeleteConflictingAttachments: boolean;
 
   /**
    * Whether to delete empty folders.
    */
-  shouldDeleteEmptyFolders?: true | undefined;
+  shouldDeleteEmptyFolders: boolean;
 
   /**
    * Whether to delete orphan attachments after a delete.
    */
-  shouldDeleteOrphanAttachments?: true | undefined;
+  shouldDeleteOrphanAttachments: boolean;
 
   /**
    * Whether to rename attachment files when a note is renamed.
    */
-  shouldRenameAttachmentFiles?: true | undefined;
+  shouldRenameAttachmentFiles: boolean;
 
   /**
  * Whether to rename attachment folder when a note is renamed.
  */
-  shouldRenameAttachmentFolder?: true | undefined;
+  shouldRenameAttachmentFolder: boolean;
 
   /**
    * Whether to update links when a note or attachment is renamed.
    */
-  shouldUpdateLinks?: true | undefined;
+  shouldUpdateLinks: boolean;
 }
 
 /**
@@ -93,7 +93,7 @@ export interface RenameDeleteHandlerSettings {
  * @param settingsBuilder - A function that returns the settings for the rename delete handler.
  * @returns void
  */
-export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: () => RenameDeleteHandlerSettings): void {
+export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: () => Partial<RenameDeleteHandlerSettings>): void {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(plugin.app);
   const pluginId = plugin.manifest.id;
 
@@ -431,17 +431,15 @@ class RenameDeleteHandler {
     return backlinks;
   }
 
-  private getSettings(): RenameDeleteHandlerSettings {
+  private getSettings(): Partial<RenameDeleteHandlerSettings> {
     const renameDeleteHandlersMap = getRenameDeleteHandlersMap(this.app);
     const settingsBuilders = Array.from(renameDeleteHandlersMap.values()).reverse();
 
-    let settings: RenameDeleteHandlerSettings = {};
+    const settings: Partial<RenameDeleteHandlerSettings> = {};
     for (const settingsBuilder of settingsBuilders) {
       const newSettings = settingsBuilder();
-      for (const [key, value] of Object.entries(newSettings)) {
-        if (value !== undefined) {
-          settings = { ...settings, [key]: value as unknown };
-        }
+      for (const [key, value] of Object.entries(newSettings) as [keyof RenameDeleteHandlerSettings, boolean][]) {
+        settings[key] ||= value;
       }
     }
 
@@ -449,8 +447,8 @@ class RenameDeleteHandler {
   }
 }
 
-function getRenameDeleteHandlersMap(app: App): Map<string, () => RenameDeleteHandlerSettings> {
-  return getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => RenameDeleteHandlerSettings>()).value;
+function getRenameDeleteHandlersMap(app: App): Map<string, () => Partial<RenameDeleteHandlerSettings>> {
+  return getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
 }
 
 function logPluginSettingsOrder(app: App): void {
