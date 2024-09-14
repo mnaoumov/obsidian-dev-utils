@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.23.0
+
+- Add `omitReturnType`
+
 ## 3.22.0
 
 - Refactor `RenameDeleteHandler`
