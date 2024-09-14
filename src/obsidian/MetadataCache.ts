@@ -6,7 +6,6 @@
 import type {
   App,
   CachedMetadata,
-  LinkCache,
   MarkdownView,
   ReferenceCache,
   TAbstractFile
@@ -120,10 +119,10 @@ export function getAllLinks(cache: CachedMetadata): ReferenceCache[] {
  * @param retryOptions - Optional retry options.
  * @returns A promise that resolves to an array dictionary of backlinks.
  */
-export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CustomArrayDict<LinkCache>> {
+export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CustomArrayDict<ReferenceCache>> {
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  let backlinks: CustomArrayDict<LinkCache> = null as unknown as CustomArrayDict<LinkCache>;
+  let backlinks: CustomArrayDict<ReferenceCache> = null as unknown as CustomArrayDict<ReferenceCache>;
   await retryWithTimeout(async () => {
     const file = getFile(app, pathOrFile);
     await ensureMetadataCacheReady(app);
