@@ -135,31 +135,67 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
       return;
     }
-    return convertLink(app, link, pathOrFile, oldPathOrFile, renameMap, forceMarkdownLinks);
+    return convertLink({
+      app,
+      link,
+      sourcePathOrFile: pathOrFile,
+      oldPathOrFile,
+      renameMap,
+      forceMarkdownLinks
+    });
   });
+}
+
+/**
+ * Options for converting a link.
+ */
+export interface ConvertLinkOptions {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * The reference cache for the link.
+   */
+  link: ReferenceCache;
+
+  /**
+   * The source file containing the link.
+   */
+  sourcePathOrFile: PathOrFile;
+
+  /**
+   * The old path of the link.
+   */
+  oldPathOrFile: PathOrFile;
+
+  /**
+   * A map of old and new file paths.
+   */
+  renameMap: Map<string, string>;
+
+  /**
+   * Whether to force markdown links.
+   */
+  forceMarkdownLinks?: boolean | undefined;
 }
 
 /**
  * Converts a link to a new path.
  *
- * @param app - The Obsidian application instance.
- * @param link - The reference cache for the link.
- * @param source - The source file.
- * @param oldPathOrFile - The old path of the link.
- * @param renameMap - A map of old paths to new paths for renaming.
- * @param forceMarkdownLinks - Optional flag to force markdown links.
+ * @param options - The options for converting the link.
  * @returns The converted link.
  */
-function convertLink(app: App, link: ReferenceCache, source: PathOrFile, oldPathOrFile: PathOrFile, renameMap: Map<string, string>, forceMarkdownLinks?: boolean): string {
-  oldPathOrFile ||= getPath(source);
+export function convertLink(options: ConvertLinkOptions): string {
   return updateLink({
-    app,
-    link,
-    pathOrFile: extractLinkFile(app, link, oldPathOrFile),
-    oldPathOrFile,
-    sourcePathOrFile: source,
-    renameMap,
-    forceMarkdownLinks
+    app: options.app,
+    link: options.link,
+    pathOrFile: extractLinkFile(options.app, options.link, options.oldPathOrFile),
+    oldPathOrFile: options.oldPathOrFile,
+    sourcePathOrFile: options.sourcePathOrFile,
+    renameMap: options.renameMap,
+    forceMarkdownLinks: options.forceMarkdownLinks
   });
 }
 
