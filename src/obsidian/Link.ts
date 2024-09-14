@@ -495,6 +495,11 @@ export interface GenerateMarkdownLinkOptions {
    * Whether to allow an empty alias for embeds. Defaults to `true`.
    */
   allowEmptyEmbedAlias?: boolean | undefined;
+
+  /**
+   * Whether to include the attachment extension in the embed alias. Has no effect if `allowEmptyEmbedAlias` is `true`. Defaults to `false`.
+   */
+  includeAttachmentExtensionToEmbedAlias?: boolean | undefined;
 }
 
 /**
@@ -549,7 +554,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
       }
 
       if (!alias && (!isEmbed || !options.allowEmptyEmbedAlias)) {
-        alias = file.basename;
+        alias = !options.includeAttachmentExtensionToEmbedAlias || isMarkdownFile(file) ? file.basename : file.name;
       }
 
       return `${embedPrefix}[${alias}](${linkText})`;
