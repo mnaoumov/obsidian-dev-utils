@@ -277,14 +277,14 @@ export function updateLink(options: UpdateLinkOptions): string {
   const { subpath } = splitSubpath(link.link);
 
   const newPath = renameMap?.get(file.path);
-  const alias = getAlias({
+  const alias = shouldResetAlias({
     app,
     displayText: link.displayText,
     pathOrFile,
     otherPathOrFiles: [oldPath, newPath],
     sourcePathOrFile,
     isWikilink
-  });
+  }) ? undefined : link.displayText;
 
   if (newPath) {
     file = createTFileInstance(app.vault, newPath);
@@ -303,9 +303,9 @@ export function updateLink(options: UpdateLinkOptions): string {
 }
 
 /**
- * Options for getting the alias of a link.
+ * Options for determining if the alias of a link should be reset.
  */
-export interface GetAliasOptions {
+export interface ShouldResetAliasOptions {
   /**
    * The Obsidian app instance.
    */
@@ -338,12 +338,12 @@ export interface GetAliasOptions {
 }
 
 /**
- * Retrieves the alias for a given link.
+ * Determines if the alias of a link should be reset.
  *
- * @param options - The options for retrieving the alias.
- * @returns The alias of the link, or undefined if should be default.
+ * @param options - The options for determining if the alias should be reset.
+ * @returns Whether the alias should be reset.
  */
-export function getAlias(options: GetAliasOptions): string | undefined {
+export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
   const {
     app,
     displayText,
@@ -353,13 +353,13 @@ export function getAlias(options: GetAliasOptions): string | undefined {
     isWikilink
   } = options;
   if (isWikilink === false) {
-    return displayText;
+    return false;
   }
 
   const file = getFile(app, pathOrFile);
 
   if (!displayText) {
-    return undefined;
+    return true;
   }
 
   const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/\.\//g, '').toLowerCase();
@@ -373,18 +373,18 @@ export function getAlias(options: GetAliasOptions): string | undefined {
     const fileNameWithExtension = basename(path).toLowerCase();
     const fileNameWithoutExtension = basename(path, extension).toLowerCase();
     if (cleanDisplayText === pathOrFile || cleanDisplayText === fileNameWithExtension || cleanDisplayText === fileNameWithoutExtension) {
-      return undefined;
+      return true;
     }
   }
 
   for (const omitMdExtension of [true, false]) {
     const linkText = app.metadataCache.fileToLinktext(file, getPath(sourcePathOrFile), omitMdExtension).toLowerCase();
     if (cleanDisplayText === linkText) {
-      return undefined;
+      return true;
     }
   }
 
-  return displayText;
+  return false;
 }
 
 /**
