@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.22.0
+
+- Refactor `RenameDeleteHandler`
+- Add `chainAsyncFn`
+
 ## 3.21.0
 
 - Add `includeAttachmentExtensionToEmbedAlias`
