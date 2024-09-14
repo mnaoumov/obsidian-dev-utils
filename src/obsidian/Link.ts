@@ -96,12 +96,12 @@ export interface UpdateLinksInFileOptions {
   /**
    * The old path of the file.
    */
-  oldPathOrFile: PathOrFile;
+  oldPathOrFile?: PathOrFile | undefined;
 
   /**
    * A map of old and new paths for renaming links.
    */
-  renameMap: Map<string, string>;
+  renameMap?: Map<string, string> | undefined;
 
   /**
    * Whether to force the links to be in Markdown format.
@@ -167,12 +167,12 @@ export interface ConvertLinkOptions {
   /**
    * The old path of the link.
    */
-  oldPathOrFile?: PathOrFile;
+  oldPathOrFile?: PathOrFile | undefined;
 
   /**
    * A map of old and new file paths.
    */
-  renameMap?: Map<string, string>;
+  renameMap?: Map<string, string> | undefined;
 
   /**
    * Whether to force markdown links.
@@ -336,7 +336,7 @@ export interface ShouldResetAliasOptions {
   /**
    * Indicates if the link is a wikilink.
    */
-  isWikilink?: boolean;
+  isWikilink?: boolean | undefined;
 }
 
 /**
