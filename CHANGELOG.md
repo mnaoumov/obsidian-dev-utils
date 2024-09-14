@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.19.0
+
+- Refactor Link functions
+
 ## 3.18.0
 
 - Ensure `RenameDeleteHandler` is executed only once
