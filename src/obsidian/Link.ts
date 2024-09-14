@@ -112,6 +112,11 @@ export interface UpdateLinksInFileOptions {
    * Whether to update only embedded links.
    */
   embedOnlyLinks?: boolean | undefined;
+
+  /**
+   * Whether to update filename alias. Defaults to `true`.
+   */
+  shouldUpdateFilenameAlias?: boolean | undefined;
 }
 
 /**
@@ -127,7 +132,8 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     oldPathOrFile,
     renameMap,
     forceMarkdownLinks,
-    embedOnlyLinks
+    embedOnlyLinks,
+    shouldUpdateFilenameAlias
   } = options;
   await editLinks(app, pathOrFile, (link) => {
     const isEmbedLink = testEmbed(link.original);
@@ -140,7 +146,8 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
       sourcePathOrFile: pathOrFile,
       oldPathOrFile,
       renameMap,
-      forceMarkdownLinks
+      forceMarkdownLinks,
+      shouldUpdateFilenameAlias
     });
   });
 }
@@ -178,6 +185,11 @@ export interface ConvertLinkOptions {
    * Whether to force markdown links.
    */
   forceMarkdownLinks?: boolean | undefined;
+
+  /**
+   * Whether to update filename alias. Defaults to `true`.
+   */
+  shouldUpdateFilenameAlias?: boolean | undefined;
 }
 
 /**
@@ -195,7 +207,8 @@ export function convertLink(options: ConvertLinkOptions): string {
     oldPathOrFile,
     sourcePathOrFile: options.sourcePathOrFile,
     renameMap: options.renameMap,
-    forceMarkdownLinks: options.forceMarkdownLinks
+    forceMarkdownLinks: options.forceMarkdownLinks,
+    shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias
   });
 }
 
@@ -250,6 +263,11 @@ export interface UpdateLinkOptions {
    * Whether to force markdown links.
    */
   forceMarkdownLinks?: boolean | undefined;
+
+  /**
+   * Whether to update filename alias. Defaults to `true`.
+   */
+  shouldUpdateFilenameAlias?: boolean | undefined;
 }
 
 /**
@@ -266,7 +284,8 @@ export function updateLink(options: UpdateLinkOptions): string {
     oldPathOrFile,
     sourcePathOrFile,
     renameMap,
-    forceMarkdownLinks
+    forceMarkdownLinks,
+    shouldUpdateFilenameAlias
   } = options;
   if (!pathOrFile) {
     return link.original;
@@ -277,7 +296,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   const { subpath } = splitSubpath(link.link);
 
   const newPath = renameMap?.get(file.path);
-  const alias = shouldResetAlias({
+  let alias = shouldResetAlias({
     app,
     displayText: link.displayText,
     pathOrFile,
@@ -287,6 +306,14 @@ export function updateLink(options: UpdateLinkOptions): string {
   })
     ? undefined
     : link.displayText;
+
+  if (shouldUpdateFilenameAlias ?? true) {
+    if (alias?.toLowerCase() === basename(oldPath, extname(oldPath)).toLowerCase()) {
+      alias = file.basename;
+    } else if (alias?.toLowerCase() === basename(oldPath).toLowerCase()) {
+      alias = file.name;
+    }
+  }
 
   if (newPath) {
     file = createTFileInstance(app.vault, newPath);

@@ -82,6 +82,11 @@ export interface RenameDeleteHandlerSettings {
   shouldRenameAttachmentFolder: boolean;
 
   /**
+   * Whether to update filename aliases when a note is renamed.
+   */
+  shouldUpdateFilenameAliases: boolean;
+
+  /**
    * Whether to update links when a note or attachment is renamed.
    */
   shouldUpdateLinks: boolean;
@@ -372,7 +377,8 @@ class RenameDeleteHandler {
                 pathOrFile: newFile,
                 oldPathOrFile: oldPath,
                 sourcePathOrFile: parentNote,
-                renameMap
+                renameMap,
+                shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
               })
             });
           }
@@ -401,7 +407,8 @@ class RenameDeleteHandler {
           app: this.app,
           pathOrFile: newFile,
           oldPathOrFile: oldPath,
-          renameMap
+          renameMap,
+          shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
         });
       }
     } finally {
