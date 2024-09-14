@@ -127,7 +127,6 @@ export function bindUiComponent<
  * @returns The `UIComponent` instance that was bound to the property.
  */
 export function bindUiComponent<
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   Plugin extends PluginBase<object>,
   TUIComponent extends UIComponent<unknown>,
   Property extends keyof PluginSettings,
