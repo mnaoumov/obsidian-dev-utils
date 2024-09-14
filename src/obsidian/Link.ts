@@ -168,12 +168,12 @@ export interface ConvertLinkOptions {
   /**
    * The old path of the link.
    */
-  oldPathOrFile: PathOrFile;
+  oldPathOrFile?: PathOrFile;
 
   /**
    * A map of old and new file paths.
    */
-  renameMap: Map<string, string>;
+  renameMap?: Map<string, string>;
 
   /**
    * Whether to force markdown links.
@@ -188,11 +188,12 @@ export interface ConvertLinkOptions {
  * @returns The converted link.
  */
 export function convertLink(options: ConvertLinkOptions): string {
+  const oldPathOrFile = options.oldPathOrFile ?? options.sourcePathOrFile;
   return updateLink({
     app: options.app,
     link: options.link,
-    pathOrFile: extractLinkFile(options.app, options.link, options.oldPathOrFile),
-    oldPathOrFile: options.oldPathOrFile,
+    pathOrFile: extractLinkFile(options.app, options.link, oldPathOrFile),
+    oldPathOrFile,
     sourcePathOrFile: options.sourcePathOrFile,
     renameMap: options.renameMap,
     forceMarkdownLinks: options.forceMarkdownLinks
@@ -234,7 +235,7 @@ export interface UpdateLinkOptions {
   /**
    * The old path of the file.
    */
-  oldPathOrFile: PathOrFile;
+  oldPathOrFile?: PathOrFile | undefined;
 
   /**
    * The source file containing the link.
@@ -244,7 +245,7 @@ export interface UpdateLinkOptions {
   /**
    * A map of old and new file paths.
    */
-  renameMap: Map<string, string>;
+  renameMap?: Map<string, string> | undefined;
 
   /**
    * Whether to force markdown links.
@@ -264,7 +265,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     link,
     pathOrFile,
     oldPathOrFile,
-    sourcePathOrFile: source,
+    sourcePathOrFile,
     renameMap,
     forceMarkdownLinks
   } = options;
@@ -272,18 +273,17 @@ export function updateLink(options: UpdateLinkOptions): string {
     return link.original;
   }
   let file = getFile(app, pathOrFile);
-  const sourcePath = getPath(source);
-  const oldPath = getPath(oldPathOrFile);
+  const oldPath = getPath(oldPathOrFile ?? sourcePathOrFile);
   const isWikilink = testWikilink(link.original) && forceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
 
-  const newPath = renameMap.get(file.path);
+  const newPath = renameMap?.get(file.path);
   const alias = getAlias({
     app,
     displayText: link.displayText,
-    file: pathOrFile,
-    otherPaths: [oldPath, newPath],
-    sourcePath,
+    pathOrFile,
+    otherPathOrFiles: [oldPath, newPath],
+    sourcePathOrFile,
     isWikilink
   });
 
@@ -294,7 +294,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   const newLink = generateMarkdownLink({
     app,
     pathOrFile: file,
-    sourcePathOrFile: sourcePath,
+    sourcePathOrFile,
     subpath,
     alias,
     isWikilink: forceMarkdownLinks ? false : undefined,
@@ -320,17 +320,17 @@ export interface GetAliasOptions {
   /**
    * The path or file of the link.
    */
-  file: PathOrFile;
+  pathOrFile: PathOrFile;
 
   /**
    * Other paths associated with the link.
    */
-  otherPaths: (string | undefined)[];
+  otherPathOrFiles: (PathOrFile | undefined)[];
 
   /**
    * The source path of the link.
    */
-  sourcePath: string;
+  sourcePathOrFile: PathOrFile;
 
   /**
    * Indicates if the link is a wikilink.
@@ -348,9 +348,9 @@ export function getAlias(options: GetAliasOptions): string | undefined {
   const {
     app,
     displayText,
-    file: pathOrFile,
-    otherPaths,
-    sourcePath,
+    pathOrFile,
+    otherPathOrFiles,
+    sourcePathOrFile,
     isWikilink
   } = options;
   if (isWikilink === false) {
@@ -365,20 +365,21 @@ export function getAlias(options: GetAliasOptions): string | undefined {
 
   const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? throwExpression(new Error('Invalid display text'))).replace(/\.\//g, '');
 
-  for (const path of [file.path, ...otherPaths]) {
-    if (!path) {
+  for (const pathOrFile of [file.path, ...otherPathOrFiles]) {
+    if (!pathOrFile) {
       continue;
     }
+    const path = getPath(pathOrFile);
     const extension = extname(path);
     const fileNameWithExtension = basename(path);
     const fileNameWithoutExtension = basename(path, extension);
-    if (cleanDisplayText === path || cleanDisplayText === fileNameWithExtension || cleanDisplayText === fileNameWithoutExtension) {
+    if (cleanDisplayText === pathOrFile || cleanDisplayText === fileNameWithExtension || cleanDisplayText === fileNameWithoutExtension) {
       return undefined;
     }
   }
 
   for (const omitMdExtension of [true, false]) {
-    const linkText = app.metadataCache.fileToLinktext(file, sourcePath, omitMdExtension);
+    const linkText = app.metadataCache.fileToLinktext(file, getPath(sourcePathOrFile), omitMdExtension);
     if (cleanDisplayText === linkText) {
       return undefined;
     }
