@@ -284,7 +284,9 @@ export function updateLink(options: UpdateLinkOptions): string {
     otherPathOrFiles: [oldPath, newPath],
     sourcePathOrFile,
     isWikilink
-  }) ? undefined : link.displayText;
+  })
+    ? undefined
+    : link.displayText;
 
   if (newPath) {
     file = createTFileInstance(app.vault, newPath);
