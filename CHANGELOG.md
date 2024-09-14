@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.20.0
+
+- Add `shouldUpdateFilenameAlias`
+
 ## 3.19.0
 
 - Refactor Link functions
