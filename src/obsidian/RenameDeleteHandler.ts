@@ -11,7 +11,6 @@ import {
 import type { CanvasData } from 'obsidian/canvas.js';
 import { createTFileInstance } from 'obsidian-typings/implementations';
 
-import { invokeAsyncSafely } from '../Async.ts';
 import { toJson } from '../Object.ts';
 import {
   basename,
@@ -23,6 +22,7 @@ import {
 } from '../Path.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import { getAttachmentFolderPath } from './AttachmentPath.ts';
+import { chainAsyncFn } from './ChainedPromise.ts';
 import {
   extractLinkFile,
   updateLink,
@@ -117,7 +117,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
       if (!shouldInvokeHandler(app, pluginId, 'Delete')) {
         return;
       }
-      invokeAsyncSafely(renameDeleteHandler.handleDelete(file));
+      chainAsyncFn(app, () => renameDeleteHandler.handleDelete(file));
     })
   );
 
@@ -126,7 +126,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
       if (!shouldInvokeHandler(app, pluginId, 'Rename')) {
         return;
       }
-      invokeAsyncSafely(renameDeleteHandler.handleRename(file, oldPath));
+      chainAsyncFn(app, () => renameDeleteHandler.handleRename(file, oldPath));
     })
   );
 }

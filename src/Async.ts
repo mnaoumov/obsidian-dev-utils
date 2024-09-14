@@ -97,7 +97,20 @@ export async function timeout(timeoutInMilliseconds: number): Promise<never> {
  * @param promise - The Promise to invoke.
  */
 export function invokeAsyncSafely(promise: Promise<unknown>): void {
-  promise.catch(emitAsyncErrorEvent);
+  void addErrorHandler(promise);
+}
+
+/**
+ * Adds an error handler to a Promise that catches any errors and emits an async error event.
+ *
+ * @param promise - The Promise to add an error handler to.
+ */
+export async function addErrorHandler(promise: Promise<unknown>): Promise<void> {
+  try {
+    await promise;
+  } catch (asyncError) {
+    emitAsyncErrorEvent(asyncError);
+  }
 }
 
 /**

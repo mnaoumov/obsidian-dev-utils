@@ -3,10 +3,10 @@
  * This module provides utility functions for rendering callouts in Dataview.
  */
 
-import { invokeAsyncSafely } from '../Async.ts';
 import { throwExpression } from '../Error.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import { resolveValue } from '../ValueProvider.ts';
+import { chainAsyncFn } from './ChainedPromise.ts';
 import type { DataviewInlineApi } from './Dataview.ts';
 import { getRenderedContainer } from './Dataview.ts';
 
@@ -94,7 +94,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
     for (const entry of entries) {
       if (entry.isIntersecting) {
         observer.unobserve(entry.target);
-        invokeAsyncSafely(loadContent());
+        chainAsyncFn(dv.app, loadContent);
       }
     }
   });

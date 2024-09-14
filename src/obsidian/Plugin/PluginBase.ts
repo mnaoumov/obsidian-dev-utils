@@ -14,8 +14,8 @@ import {
 } from 'obsidian';
 
 import type { MaybePromise } from '../../Async.ts';
-import { invokeAsyncSafely } from '../../Async.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
+import { chainAsyncFn } from '../ChainedPromise.ts';
 import {
   clonePluginSettings,
   loadPluginSettings
@@ -76,7 +76,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * Called when the plugin is loaded
    */
   public override onload(): void {
-    invokeAsyncSafely((async (): Promise<void> => {
+    chainAsyncFn(this.app, async (): Promise<void> => {
       await this.loadSettings();
       const pluginSettingsTab = this.createPluginSettingsTab();
       if (pluginSettingsTab) {
@@ -93,7 +93,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
       });
       await this.onloadComplete();
       this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
-    })());
+    });
   }
 
   /**
