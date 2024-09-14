@@ -1,6 +1,5 @@
 import type {
   Plugin,
-  ReferenceCache,
   TAbstractFile
 } from 'obsidian';
 import {
