@@ -77,8 +77,8 @@ export interface RenameDeleteHandlerSettings {
   shouldRenameAttachmentFiles: boolean;
 
   /**
- * Whether to rename attachment folder when a note is renamed.
- */
+    * Whether to rename attachment folder when a note is renamed.
+    */
   shouldRenameAttachmentFolder: boolean;
 
   /**
