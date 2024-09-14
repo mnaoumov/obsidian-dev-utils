@@ -116,7 +116,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
       if (!shouldInvokeHandler(app, pluginId, 'Delete')) {
         return;
       }
-      chainAsyncFn(app, () => handleDelete(file));
+      chainAsyncFn(app, () => handleDelete(app, file));
     })
   );
 
@@ -125,7 +125,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
       if (!shouldInvokeHandler(app, pluginId, 'Rename')) {
         return;
       }
-      chainAsyncFn(app, () => handleRename(file, oldPath));
+      chainAsyncFn(app, () => handleRename(app, file, oldPath));
     })
   );
 }
@@ -152,7 +152,7 @@ function logPluginSettingsOrder(app: App): void {
 const renamingPaths = new Set<string>();
 const specialRenames: SpecialRename[] = [];
 
-async function handleRename(file: TAbstractFile, oldPath: string): Promise<void> {
+async function handleRename(app: App, file: TAbstractFile, oldPath: string): Promise<void> {
   console.debug(`Handle Rename ${oldPath} -> ${file.path}`);
 
   if (renamingPaths.has(oldPath)) {
@@ -188,14 +188,14 @@ async function handleRename(file: TAbstractFile, oldPath: string): Promise<void>
     };
 
     const renameMap = new Map<string, string>();
-    await fillRenameMap(file, oldPath, renameMap);
+    await fillRenameMap(app, file, oldPath, renameMap);
     renameMap.set(oldPath, file.path);
     for (const oldPath of renameMap.keys()) {
       renamingPaths.add(oldPath);
     }
 
     for (const [oldPath2, newPath2] of renameMap.entries()) {
-      await processRename(oldPath2, newPath2, renameMap);
+      await processRename(app, oldPath2, newPath2, renameMap);
     }
   } finally {
     renamingPaths.delete(oldPath);
@@ -209,7 +209,7 @@ async function handleRename(file: TAbstractFile, oldPath: string): Promise<void>
   }
 }
 
-async function handleDelete(file: TAbstractFile): Promise<void> {
+async function handleDelete(app: App, file: TAbstractFile): Promise<void> {
   console.debug(`Handle Delete ${file.path}`);
   if (!isNote(file)) {
     return;
@@ -226,18 +226,18 @@ async function handleDelete(file: TAbstractFile): Promise<void> {
     return;
   }
 
-  const settings = getSettings();
+  const settings = getSettings(app);
   if (settings.shouldDeleteOrphanAttachments) {
     await deleteSafe(app, attachmentFolder, file.path, false, settings.shouldDeleteEmptyFolders);
   }
 }
 
-async function fillRenameMap(file: TFile, oldPath: string, renameMap: Map<string, string>): Promise<void> {
+async function fillRenameMap(app: App, file: TFile, oldPath: string, renameMap: Map<string, string>): Promise<void> {
   if (!isNote(file)) {
     return;
   }
 
-  const settings = getSettings();
+  const settings = getSettings(app);
 
   const oldAttachmentFolderPath = await getAttachmentFolderPath(app, oldPath);
   const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
@@ -309,9 +309,9 @@ async function fillRenameMap(file: TFile, oldPath: string, renameMap: Map<string
   }
 }
 
-async function processRename(oldPath: string, newPath: string, renameMap: Map<string, string>): Promise<void> {
+async function processRename(app: App, oldPath: string, newPath: string, renameMap: Map<string, string>): Promise<void> {
   try {
-    const settings = getSettings();
+    const settings = getSettings(app);
     let oldFile = app.vault.getFileByPath(oldPath);
     let newFile = app.vault.getFileByPath(newPath);
 
@@ -350,7 +350,7 @@ async function processRename(oldPath: string, newPath: string, renameMap: Map<st
       return;
     }
 
-    const backlinks = await getBacklinks(oldFile, newFile);
+    const backlinks = await getBacklinks(app, oldFile, newFile);
 
     for (const parentNotePath of backlinks.keys()) {
       let parentNote = app.vault.getFileByPath(parentNotePath);
@@ -368,7 +368,7 @@ async function processRename(oldPath: string, newPath: string, renameMap: Map<st
 
       await applyFileChanges(app, parentNote, async () => {
         const links
-          = (await getBacklinks(oldFile, newFile)).get(parentNotePath) ?? [];
+          = (await getBacklinks(app, oldFile, newFile)).get(parentNotePath) ?? [];
         const changes = [];
 
         for (const link of links) {
@@ -421,7 +421,7 @@ async function processRename(oldPath: string, newPath: string, renameMap: Map<st
   }
 }
 
-async function getBacklinks(oldFile: TFile, newFile: TFile | null): Promise<Map<string, ReferenceCache[]>> {
+async function getBacklinks(app: App, oldFile: TFile, newFile: TFile | null): Promise<Map<string, ReferenceCache[]>> {
   const backlinks = new Map<string, ReferenceCache[]>();
   const oldLinks = await getBacklinksForFileSafe(app, oldFile);
   for (const path of oldLinks.keys()) {
@@ -443,7 +443,7 @@ async function getBacklinks(oldFile: TFile, newFile: TFile | null): Promise<Map<
   return backlinks;
 }
 
-function getSettings(): Partial<RenameDeleteHandlerSettings> {
+function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
   const settingsBuilders = Array.from(renameDeleteHandlersMap.values()).reverse();
 
