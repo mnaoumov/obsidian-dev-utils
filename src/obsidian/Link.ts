@@ -362,7 +362,7 @@ export function getAlias(options: GetAliasOptions): string | undefined {
     return undefined;
   }
 
-  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/\.\//g, '');
+  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/\.\//g, '').toLowerCase();
 
   for (const pathOrFile of [file.path, ...otherPathOrFiles]) {
     if (!pathOrFile) {
@@ -370,15 +370,15 @@ export function getAlias(options: GetAliasOptions): string | undefined {
     }
     const path = getPath(pathOrFile);
     const extension = extname(path);
-    const fileNameWithExtension = basename(path);
-    const fileNameWithoutExtension = basename(path, extension);
+    const fileNameWithExtension = basename(path).toLowerCase();
+    const fileNameWithoutExtension = basename(path, extension).toLowerCase();
     if (cleanDisplayText === pathOrFile || cleanDisplayText === fileNameWithExtension || cleanDisplayText === fileNameWithoutExtension) {
       return undefined;
     }
   }
 
   for (const omitMdExtension of [true, false]) {
-    const linkText = app.metadataCache.fileToLinktext(file, getPath(sourcePathOrFile), omitMdExtension);
+    const linkText = app.metadataCache.fileToLinktext(file, getPath(sourcePathOrFile), omitMdExtension).toLowerCase();
     if (cleanDisplayText === linkText) {
       return undefined;
     }
