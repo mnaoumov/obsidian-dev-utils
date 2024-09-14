@@ -32,7 +32,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   private _abortSignal!: AbortSignal;
 
   /**
-   * Gets the AbortSignal used for aborting asynchronous operations.
+   * Gets the AbortSignal used for aborting long-running operations.
    *
    * @returns The abort signal.
    */
@@ -111,8 +111,9 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    *
    * @returns A promise or void indicating the completion of the layout setup.
    */
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  protected onLayoutReady(): MaybePromise<void> { }
+  protected onLayoutReady(): MaybePromise<void> {
+    // Does nothing by default.
+  }
 
   /**
    * Loads the plugin settings from the saved data.
