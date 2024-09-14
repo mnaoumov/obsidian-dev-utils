@@ -17,7 +17,6 @@ import type {
   MaybePromise,
   RetryOptions
 } from '../Async.ts';
-import { throwExpression } from '../Error.ts';
 import {
   basename,
   dirname,
@@ -363,7 +362,7 @@ export function getAlias(options: GetAliasOptions): string | undefined {
     return undefined;
   }
 
-  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? throwExpression(new Error('Invalid display text'))).replace(/\.\//g, '');
+  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/\.\//g, '');
 
   for (const pathOrFile of [file.path, ...otherPathOrFiles]) {
     if (!pathOrFile) {
