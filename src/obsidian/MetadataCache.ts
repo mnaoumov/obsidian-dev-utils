@@ -153,6 +153,28 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
 }
 
 /**
+ * Gets the backlinks map for the specified files.
+ *
+ * @param app - The Obsidian app instance.
+ * @param pathOrFiles - The paths or files to get the backlinks for.
+ * @param retryOptions - Optional retry options.
+ * @returns A promise that resolves to a map of backlinks.
+ */
+export async function getBacklinksMap(app: App, pathOrFiles: PathOrFile[], retryOptions: Partial<RetryOptions> = {}): Promise<Map<string, ReferenceCache[]>> {
+  const map = new Map<string, ReferenceCache[]>();
+  for (const pathOrFile of pathOrFiles) {
+    const customArrayDict = await getBacklinksForFileSafe(app, pathOrFile, retryOptions);
+    for (const path of customArrayDict.keys()) {
+      const mapLinks = map.get(path) ?? [];
+      const pathLinks = customArrayDict.get(path) ?? [];
+      mapLinks.push(...pathLinks);
+      map.set(path, mapLinks);
+    }
+  }
+  return map;
+}
+
+/**
  * Saves the specified note in the Obsidian app.
  *
  * @param app - The Obsidian app instance.

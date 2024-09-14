@@ -31,6 +31,7 @@ import {
 import {
   getAllLinks,
   getBacklinksForFileSafe,
+  getBacklinksMap,
   getCacheSafe
 } from './MetadataCache.ts';
 import {
@@ -350,7 +351,7 @@ async function processRename(app: App, oldPath: string, newPath: string, renameM
       return;
     }
 
-    const backlinks = await getBacklinks(app, oldFile, newFile);
+    const backlinks = await getBacklinksMap(app, [oldFile, newFile]);
 
     for (const parentNotePath of backlinks.keys()) {
       let parentNote = app.vault.getFileByPath(parentNotePath);
@@ -367,8 +368,8 @@ async function processRename(app: App, oldPath: string, newPath: string, renameM
       }
 
       await applyFileChanges(app, parentNote, async () => {
-        const links
-          = (await getBacklinks(app, oldFile, newFile)).get(parentNotePath) ?? [];
+        const backlinks = await getBacklinksMap(app, [oldFile, newFile]);
+        const links = backlinks.get(parentNotePath) ?? [];
         const changes = [];
 
         for (const link of links) {
@@ -419,28 +420,6 @@ async function processRename(app: App, oldPath: string, newPath: string, renameM
   } finally {
     renamingPaths.delete(oldPath);
   }
-}
-
-async function getBacklinks(app: App, oldFile: TFile, newFile: TFile | null): Promise<Map<string, ReferenceCache[]>> {
-  const backlinks = new Map<string, ReferenceCache[]>();
-  const oldLinks = await getBacklinksForFileSafe(app, oldFile);
-  for (const path of oldLinks.keys()) {
-    backlinks.set(path, oldLinks.get(path) ?? []);
-  }
-
-  if (!newFile) {
-    return backlinks;
-  }
-
-  const newLinks = await getBacklinksForFileSafe(app, newFile);
-
-  for (const path of newLinks.keys()) {
-    const links = backlinks.get(path) ?? [];
-    links.push(...newLinks.get(path) ?? []);
-    backlinks.set(path, links);
-  }
-
-  return backlinks;
 }
 
 function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
