@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.21.0
+
+- Add `includeAttachmentExtensionToEmbedAlias`
+
 ## 3.20.0
 
 - Add `shouldUpdateFilenameAlias`
