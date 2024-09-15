@@ -3,7 +3,10 @@
  * Contains utility functions for asynchronous operations.
  */
 
-import { emitAsyncErrorEvent } from './Error.ts';
+import {
+  emitAsyncErrorEvent,
+  getStackTrace
+} from './Error.ts';
 
 /**
  * A type representing a value that can either be a direct value or a Promise resolving to that value.
@@ -34,6 +37,7 @@ export interface RetryOptions {
  * @returns A Promise that resolves when the function succeeds or rejects when the timeout is reached.
  */
 export async function retryWithTimeout(asyncFn: () => Promise<boolean>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+  const stackTrace = getStackTrace();
   const DEFAULT_RETRY_OPTIONS: RetryOptions = {
     timeoutInMilliseconds: 5000,
     retryDelayInMilliseconds: 100
@@ -51,7 +55,8 @@ export async function retryWithTimeout(asyncFn: () => Promise<boolean>, retryOpt
       }
 
       console.debug(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${overriddenOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
-        asyncFn
+        asyncFn,
+        stackTrace
       });
       await sleep(overriddenOptions.retryDelayInMilliseconds);
     }
@@ -94,20 +99,21 @@ export async function timeout(timeoutInMilliseconds: number): Promise<never> {
 /**
  * Invokes a Promise and safely handles any errors by catching them and emitting an async error event.
  *
- * @param promise - The Promise to invoke.
+ * @param asyncFn - The asynchronous function to invoke safely.
  */
-export function invokeAsyncSafely(promise: Promise<unknown>): void {
-  void addErrorHandler(promise);
+export function invokeAsyncSafely(asyncFn: () => Promise<unknown>): void {
+  void addErrorHandler(asyncFn);
 }
 
 /**
  * Adds an error handler to a Promise that catches any errors and emits an async error event.
  *
- * @param promise - The Promise to add an error handler to.
+ * @param asyncFn - The asynchronous function to add an error handler to.
+ * @returns A Promise that resolves when the asynchronous function completes or emits async error event.
  */
-export async function addErrorHandler(promise: Promise<unknown>): Promise<void> {
+export async function addErrorHandler(asyncFn: () => Promise<unknown>): Promise<void> {
   try {
-    await promise;
+    await asyncFn();
   } catch (asyncError) {
     emitAsyncErrorEvent(asyncError);
   }
@@ -122,7 +128,7 @@ export async function addErrorHandler(promise: Promise<unknown>): Promise<void> 
  */
 export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: Args) => Promise<unknown>): (...args: Args) => void {
   return (...args: Args): void => {
-    invokeAsyncSafely(asyncFunc(...args));
+    invokeAsyncSafely(() => asyncFunc(...args));
   };
 }
 

@@ -125,3 +125,14 @@ function parseErrorEntries(error: unknown, level = 0, entries: ErrorEntry[] = []
 export function throwExpression(error: unknown): never {
   throw error;
 }
+
+/**
+ * Gets the current stack trace as a string, excluding the current function call.
+ *
+ * @returns A string representation of the current stack trace, excluding the current function call.
+ */
+export function getStackTrace(): string {
+  const stack = new Error().stack ?? '';
+  const lines = stack.split('\n');
+  return lines.slice(2).join('\n');
+}
