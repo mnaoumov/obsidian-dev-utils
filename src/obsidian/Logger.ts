@@ -8,7 +8,10 @@ import { getStackTrace } from '../Error.ts';
  * @param stackTrace - Optional stack trace.
  */
 export function invokeAndLog(title: string, fn: () => void, stackTrace?: string): void {
-  void invokeAsyncAndLog(title, async () => { fn(); }, stackTrace);
+  void invokeAsyncAndLog(title, async () => {
+    fn();
+    await Promise.resolve();
+  }, stackTrace);
 }
 
 /**
