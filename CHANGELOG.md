@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.24.0
+
+- Add `dotenv`
+- Refactor and add more logging
+- Simplify `convertSyncToAsync`
+
 ## 3.23.0
 
 - Add `omitReturnType`
