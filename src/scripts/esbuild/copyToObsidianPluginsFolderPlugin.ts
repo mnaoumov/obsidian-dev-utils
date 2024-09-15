@@ -35,19 +35,16 @@ export function copyToObsidianPluginsFolderPlugin(
     name: 'copy-to-obsidian-plugins-folder',
     setup(build): void {
       build.onEnd(async () => {
-        // Skip copying during production build or if the Obsidian config directory is not provided
         if (isProductionBuild || !obsidianConfigDir) {
           return;
         }
 
         const pluginDir = join(obsidianConfigDir, 'plugins', pluginName);
 
-        // Create the plugin directory if it doesn't exist
         if (!existsSync(pluginDir)) {
           await mkdir(pluginDir);
         }
 
-        // Copy the built files to the plugin directory
         await cp(distDir, pluginDir, { recursive: true });
 
         const hotReloadDir = join(obsidianConfigDir, 'plugins/hot-reload');

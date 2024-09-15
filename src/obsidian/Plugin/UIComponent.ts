@@ -45,7 +45,9 @@ interface ValidatorElement {
  * Options for binding a value component to a plugin setting.
  */
 interface BindUIComponentOptions<PluginSettings, UIValueType> {
-  // If true, saves the plugin settings automatically after the component value changes. Default is `true`.
+  /**
+   * If true, saves the plugin settings automatically after the component value changes. Default is `true`.
+   */
   autoSave?: boolean;
 
   /**
