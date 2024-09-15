@@ -12,7 +12,8 @@ import { join } from '../../Path.ts';
 import {
   cp,
   existsSync,
-  mkdir
+  mkdir,
+  writeFile
 } from '../NodeModules.ts';
 
 /**
@@ -48,6 +49,18 @@ export function copyToObsidianPluginsFolderPlugin(
 
         // Copy the built files to the plugin directory
         await cp(distDir, pluginDir, { recursive: true });
+
+        const hotReloadDir = join(obsidianConfigDir, 'plugins/hot-reload');
+        if (!existsSync(hotReloadDir)) {
+          await mkdir(hotReloadDir);
+          const hotReloadRepoUrl = 'https://raw.githubusercontent.com/pjeby/hot-reload/master/';
+          for (const fileName of ['main.js', 'manifest.json']) {
+            const fileUrl = hotReloadRepoUrl + fileName;
+            const response = await fetch(fileUrl);
+            const text = await response.text();
+            await writeFile(join(hotReloadDir, fileName), text);
+          }
+        }
       });
     }
   };
