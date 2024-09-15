@@ -8,7 +8,10 @@ import type {
   TAbstractFile
 } from 'obsidian';
 import { TFolder } from 'obsidian';
-import { createTFileInstance } from 'obsidian-typings/implementations';
+import {
+  createTFileInstance,
+  createTFolderInstance
+} from 'obsidian-typings/implementations';
 
 import {
   basename,
@@ -63,7 +66,8 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
   const ext = extname(attachmentPath);
   const fileName = basename(attachmentPath, ext);
 
-  const internalFn = app.vault.getAvailablePathForAttachments.bind(app.vault);
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+  const internalFn = app.vault.getAvailablePathForAttachments;
   if ((internalFn as Partial<ExtendedWrapper>).isExtended) {
     return (internalFn as GetAvailablePathForAttachmentsExtendedFn)(fileName, ext.slice(1), note, true);
   }
@@ -100,8 +104,12 @@ export async function getAvailablePathForAttachments(app: App, filename: string,
 
   let folder = app.vault.getAbstractFileByPathInsensitive(attachmentFolderPath);
 
-  if (!folder && relativePath && !skipFolderCreation) {
-    folder = await app.vault.createFolder(attachmentFolderPath);
+  if (!folder && relativePath) {
+    if (!skipFolderCreation) {
+      folder = await app.vault.createFolder(attachmentFolderPath);
+    } else {
+      folder = createTFolderInstance(app.vault, attachmentFolderPath);
+    }
   }
 
   if (folder instanceof TFolder) {
