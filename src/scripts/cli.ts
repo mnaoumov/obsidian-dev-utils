@@ -44,7 +44,7 @@ const NODE_SCRIPT_ARGV_SKIP_COUNT = 2;
  * @param argv - The command-line arguments to parse. Defaults to `process.argv` minus the first two elements.
  */
 export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_COUNT)): void {
-  invokeAsyncSafely(wrapCliTask(async () => {
+  invokeAsyncSafely(() => wrapCliTask(async () => {
     const npmPackage = await readNpmPackage(getDirname(import.meta.url));
     const program = new Command();
 
