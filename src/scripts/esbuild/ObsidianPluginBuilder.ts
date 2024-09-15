@@ -89,7 +89,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     customEsbuildPlugins = []
   } = options;
 
-  const obsidianConfigDir = _obsidianConfigDir ?? dotenvConfigOutput.parsed?.[OBSIDIAN_CONFIG_DIR_KEY] ?? process.env[OBSIDIAN_CONFIG_DIR_KEY];
+  const obsidianConfigDir = (_obsidianConfigDir ?? '') || (dotenvConfigOutput.parsed?.[OBSIDIAN_CONFIG_DIR_KEY] ?? '') || (process.env[OBSIDIAN_CONFIG_DIR_KEY] ?? '');
   const isProductionBuild = mode === BuildMode.Production;
 
   const distDir = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);
