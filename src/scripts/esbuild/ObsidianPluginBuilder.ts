@@ -5,6 +5,7 @@
  * and it sets up various esbuild plugins to preprocess, lint, fix source maps, and copy files to the Obsidian plugins folder.
  */
 
+import { config } from 'dotenv';
 import type {
   BuildContext,
   BuildOptions,
@@ -78,6 +79,7 @@ export interface BuildObsidianPluginOptions {
  */
 export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): Promise<CliTaskResult> {
   await buildValidate();
+  config();
 
   const {
     mode,
