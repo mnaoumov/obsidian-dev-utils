@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.25.0
+
+- Download hot-reload
+- Don't accept empty folder
+
 ## 3.24.1
 
 - Ensure `OBSIDIAN_CONFIG` from `.env` has higher precedence
