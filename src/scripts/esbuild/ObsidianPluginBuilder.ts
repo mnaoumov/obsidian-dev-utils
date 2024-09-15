@@ -32,6 +32,8 @@ import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolder
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
 
+const OBSIDIAN_CONFIG_DIR_KEY = 'OBSIDIAN_CONFIG_DIR';
+
 /**
  * Enumeration representing the build modes.
  */
@@ -61,7 +63,7 @@ export interface BuildObsidianPluginOptions {
   mode: BuildMode;
 
   /**
-   * The directory for Obsidian configuration. Defaults to the OBSIDIAN_CONFIG_DIR environment variable.
+   * The directory for Obsidian configuration. Defaults to the `OBSIDIAN_CONFIG_DIR` environment variable.
    */
   obsidianConfigDir?: string;
 
@@ -79,13 +81,15 @@ export interface BuildObsidianPluginOptions {
  */
 export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): Promise<CliTaskResult> {
   await buildValidate();
-  config();
+  const dotenvConfigOutput = config();
 
   const {
     mode,
-    obsidianConfigDir = process.env['OBSIDIAN_CONFIG_DIR'],
+    obsidianConfigDir: _obsidianConfigDir,
     customEsbuildPlugins = []
   } = options;
+
+  const obsidianConfigDir = _obsidianConfigDir ?? dotenvConfigOutput.parsed?.[OBSIDIAN_CONFIG_DIR_KEY] ?? process.env[OBSIDIAN_CONFIG_DIR_KEY];
   const isProductionBuild = mode === BuildMode.Production;
 
   const distDir = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);
