@@ -1,4 +1,5 @@
 import type {
+  CachedMetadata,
   Plugin,
   TAbstractFile
 } from 'obsidian';
@@ -45,6 +46,9 @@ import {
   deleteSafe,
   processWithRetry
 } from './Vault.ts';
+
+const specialRenames: SpecialRename[] = [];
+const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
 
 interface SpecialRename {
   oldPath: string;
@@ -128,6 +132,12 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
       chainAsyncFn(app, () => handleRename(app, file, oldPath));
     })
   );
+
+  plugin.registerEvent(
+    app.metadataCache.on('deleted', (file, prevCache) => {
+      handleMetadataDeleted(file, prevCache);
+    })
+  );
 }
 
 function shouldInvokeHandler(app: App, pluginId: string, handlerType: string): boolean {
@@ -148,8 +158,6 @@ function logPluginSettingsOrder(app: App): void {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
   console.debug(`Rename/delete handlers will use plugin settings in the following order: ${Array.from(renameDeleteHandlersMap.keys()).join(', ')}`);
 }
-
-const specialRenames: SpecialRename[] = [];
 
 async function handleRename(app: App, file: TAbstractFile, oldPath: string): Promise<void> {
   console.debug(`Handle Rename ${oldPath} -> ${file.path}`);
@@ -206,6 +214,30 @@ async function handleDelete(app: App, file: TAbstractFile): Promise<void> {
     return;
   }
 
+  const settings = getSettings(app);
+  if (!settings.shouldDeleteOrphanAttachments) {
+    return;
+  }
+
+  const cache = deletedMetadataCacheMap.get(file.path);
+  deletedMetadataCacheMap.delete(file.path);
+  if (cache) {
+    const links = getAllLinks(cache);
+
+    for (const link of links) {
+      const attachmentFile = extractLinkFile(app, link, file.path);
+      if (!attachmentFile) {
+        continue;
+      }
+
+      if (isNote(attachmentFile)) {
+        continue;
+      }
+
+      await deleteSafe(app, attachmentFile, file.path, settings.shouldDeleteEmptyFolders);
+    }
+  }
+
   const attachmentFolderPath = await getAttachmentFolderPath(app, file.path);
   const attachmentFolder = app.vault.getFolderByPath(attachmentFolderPath);
 
@@ -213,10 +245,7 @@ async function handleDelete(app: App, file: TAbstractFile): Promise<void> {
     return;
   }
 
-  const settings = getSettings(app);
-  if (settings.shouldDeleteOrphanAttachments) {
-    await deleteSafe(app, attachmentFolder, file.path, false, settings.shouldDeleteEmptyFolders);
-  }
+  await deleteSafe(app, attachmentFolder, file.path, false, settings.shouldDeleteEmptyFolders);
 }
 
 async function fillRenameMap(app: App, file: TFile, oldPath: string, renameMap: Map<string, string>): Promise<void> {
@@ -417,4 +446,10 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
   }
 
   return settings;
+}
+
+function handleMetadataDeleted(file: TAbstractFile, prevCache: CachedMetadata | null): void {
+  if (prevCache) {
+    deletedMetadataCacheMap.set(file.path, prevCache);
+  }
 }
