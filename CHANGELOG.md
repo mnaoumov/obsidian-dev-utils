@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.24.1
+
+- Ensure `OBSIDIAN_CONFIG` from `.env` has higher precedence
+
 ## 3.24.0
 
 - Add `dotenv`
