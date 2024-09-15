@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.25.1
+
+- Init fake missing attachments folder
+
 ## 3.25.0
 
 - Download hot-reload
