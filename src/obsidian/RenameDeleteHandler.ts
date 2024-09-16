@@ -449,7 +449,7 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
 }
 
 function handleMetadataDeleted(file: TAbstractFile, prevCache: CachedMetadata | null): void {
-  if (prevCache) {
+  if (isMarkdownFile(file) && prevCache) {
     deletedMetadataCacheMap.set(file.path, prevCache);
   }
 }
