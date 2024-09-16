@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.26.1
+
+- Cache only markdown
+
 ## 3.26.0
 
 - Delete attachments after deleting note
