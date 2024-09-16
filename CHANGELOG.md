@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.26.0
+
+- Delete attachments after deleting note
+
 ## 3.25.1
 
 - Init fake missing attachments folder
