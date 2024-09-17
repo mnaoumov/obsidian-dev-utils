@@ -18,7 +18,12 @@ import {
   throwExpression
 } from '../Error.ts';
 import { deepEqual } from '../Object.ts';
-import { dirname } from '../Path.ts';
+import {
+  basename,
+  dirname,
+  extname,
+  join
+} from '../Path.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
@@ -373,4 +378,37 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
 export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promise<boolean> {
   const listedFiles = await listSafe(app, getPath(pathOrFolder));
   return listedFiles.files.length === 0 && listedFiles.folders.length === 0;
+}
+
+/**
+ * Renames a file safely in the vault.
+ * If the new path already exists, the file will be renamed to an available path.
+ *
+ * @param app - The application instance.
+ * @param oldPathOrFile - The old path or file to rename.
+ * @param newPath - The new path to rename the file to.
+ * @returns A promise that resolves to the new path of the file.
+ */
+export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
+  const file = getFile(app, oldPathOrFile);
+
+  if (file.path === newPath) {
+    return newPath;
+  }
+
+  const newDir = dirname(newPath);
+  await createFolderSafe(app, newDir);
+
+  const ext = extname(newPath);
+  const newAvailablePath = app.vault.getAvailablePath(join(newDir, basename(newPath, ext)), ext);
+
+  try {
+    await app.vault.rename(file, newAvailablePath);
+  } catch (e) {
+    if (!await app.vault.exists(newAvailablePath) || await app.vault.exists(file.path)) {
+      throw e;
+    }
+  }
+
+  return newAvailablePath;
 }

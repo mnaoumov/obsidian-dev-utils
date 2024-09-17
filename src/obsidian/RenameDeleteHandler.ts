@@ -41,10 +41,10 @@ import {
 } from './TAbstractFile.ts';
 import {
   applyFileChanges,
-  createFolderSafe,
   deleteEmptyFolderHierarchy,
   deleteSafe,
-  processWithRetry
+  processWithRetry,
+  renameSafe
 } from './Vault.ts';
 
 const specialRenames: SpecialRename[] = [];
@@ -168,7 +168,8 @@ async function handleRename(app: App, file: TAbstractFile, oldPath: string): Pro
 
   const specialRename = specialRenames.find((x) => x.oldPath === file.path);
   if (specialRename) {
-    await app.vault.rename(file, specialRename.tempPath);
+    const newTempPath = await renameSafe(app, file, specialRename.tempPath);
+    specialRename.tempPath = newTempPath;
     return;
   }
 
@@ -179,7 +180,7 @@ async function handleRename(app: App, file: TAbstractFile, oldPath: string): Pro
       tempPath: join(file.parent?.path ?? '', '__temp__' + file.name)
     });
 
-    await app.vault.rename(file, oldPath);
+    await renameSafe(app, file, oldPath);
     return;
   }
 
@@ -202,7 +203,7 @@ async function handleRename(app: App, file: TAbstractFile, oldPath: string): Pro
 
     const specialRename = specialRenames.find((x) => x.tempPath === file.path);
     if (specialRename) {
-      await app.vault.rename(file, specialRename.newPath);
+      await renameSafe(app, file, specialRename.newPath);
       specialRenames.remove(specialRename);
     }
   }
@@ -331,24 +332,10 @@ async function processRename(app: App, oldPath: string, newPath: string, renameM
   let newFile = app.vault.getFileByPath(newPath);
 
   if (oldFile) {
-    await createFolderSafe(app, dirname(newPath));
     const oldFolder = oldFile.parent;
-    try {
-      if (newFile) {
-        try {
-          await app.fileManager.trashFile(newFile);
-        } catch (e) {
-          if (app.vault.getAbstractFileByPath(newPath)) {
-            throw e;
-          }
-        }
-      }
-      await app.vault.rename(oldFile, newPath);
-    } catch (e) {
-      if (!app.vault.getAbstractFileByPath(newPath) || app.vault.getAbstractFileByPath(oldPath)) {
-        throw e;
-      }
-    }
+    newPath = await renameSafe(app, oldFile, newPath);
+    renameMap.set(oldPath, newPath);
+
     if (settings.shouldDeleteEmptyFolders) {
       await deleteEmptyFolderHierarchy(app, oldFolder);
     }
