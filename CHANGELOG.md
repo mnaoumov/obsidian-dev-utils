@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.28.0
+
+- Refactor all filesystem methods
+- Add copySafe
+
 ## 3.27.0
 
 - Implement `renameSafe`
