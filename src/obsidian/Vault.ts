@@ -36,6 +36,7 @@ import type { PathOrFile } from './TFile.ts';
 import { getFile } from './TFile.ts';
 import type { PathOrFolder } from './TFolder.ts';
 import { getFolderOrNull } from './TFolder.ts';
+import { parentFolderPath } from 'obsidian-typings/implementations';
 
 /**
  * Represents a file change in the Vault.
@@ -396,11 +397,10 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
     return newPath;
   }
 
-  const newDir = dirname(newPath);
-  await createFolderSafe(app, newDir);
+  const newFolderPath = parentFolderPath(newPath);
+  await createFolderSafe(app, newFolderPath);
 
-  const ext = extname(newPath);
-  const newAvailablePath = app.vault.getAvailablePath(join(newDir, basename(newPath, ext)), ext);
+  const newAvailablePath = getAvailablePath(app, newPath);
 
   try {
     await app.vault.rename(file, newAvailablePath);
@@ -411,4 +411,35 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
   }
 
   return newAvailablePath;
+}
+
+export async function copySafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
+  const file = getFile(app, oldPathOrFile);
+
+  const newFolderPath = parentFolderPath(newPath);
+  await createFolderSafe(app, newFolderPath);
+
+  const newAvailablePath = getAvailablePath(app, newPath);
+
+  try {
+    await app.vault.copy(file, newAvailablePath);
+  } catch (e) {
+    if (!await app.vault.exists(newAvailablePath)) {
+      throw e;
+    }
+  }
+
+  return newAvailablePath;
+}
+
+/**
+ * Gets an available path for a file in the vault.
+ *
+ * @param app - The application instance.
+ * @param path - The path of the file to get an available path for.
+ * @returns The available path for the file.
+ */
+export function getAvailablePath(app: App, path: string): string {
+  const ext = extname(path);
+  return app.vault.getAvailablePath(join(dirname(path), basename(path, ext)), ext);
 }
