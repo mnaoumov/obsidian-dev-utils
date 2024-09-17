@@ -11,7 +11,7 @@ import {
 } from 'obsidian';
 import { createTFolderInstance } from 'obsidian-typings/implementations';
 
-import { isMarkdownFile } from './TAbstractFile.ts';
+import { getAbstractFileOrNull, isMarkdownFile } from './TAbstractFile.ts';
 
 /**
  * Represents a path or an instance of TFolder.
@@ -26,11 +26,12 @@ export type PathOrFolder = string | TFolder;
  * @param allowNonExisting - Whether to allow the folder to not exist.
  *  If `true`, a new TFolder object is created for the provided path.
  *  If `false`, an error is thrown if the folder is not found.
+ * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The retrieved TFolder object.
  * @throws If the folder is not found.
  */
-export function getFolder(app: App, pathOrFolder: PathOrFolder, allowNonExisting?: boolean): TFolder {
-  let folder = getFolderOrNull(app, pathOrFolder);
+export function getFolder(app: App, pathOrFolder: PathOrFolder, allowNonExisting?: boolean, insensitive?: boolean): TFolder {
+  let folder = getFolderOrNull(app, pathOrFolder, insensitive);
   if (!folder) {
     if (allowNonExisting) {
       folder = createTFolderInstance(app.vault, pathOrFolder as string);
@@ -47,13 +48,15 @@ export function getFolder(app: App, pathOrFolder: PathOrFolder, allowNonExisting
  *
  * @param app - The Obsidian application instance.
  * @param pathOrFolder - The path or folder to retrieve the TFolder from.
+ * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The TFolder object if found, otherwise null.
  */
-export function getFolderOrNull(app: App, pathOrFolder: PathOrFolder | null): TFolder | null {
-  if (pathOrFolder === null) {
-    return null;
+export function getFolderOrNull(app: App, pathOrFolder: PathOrFolder | null, insensitive?: boolean): TFolder | null {
+  const folder = getAbstractFileOrNull(app, pathOrFolder, insensitive);
+  if (folder instanceof TFolder) {
+    return folder;
   }
-  return pathOrFolder instanceof TFolder ? pathOrFolder : app.vault.getFolderByPath(pathOrFolder);
+  return null;
 }
 
 /**

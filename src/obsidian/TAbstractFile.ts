@@ -33,7 +33,7 @@ export type PathOrAbstractFile = string | TAbstractFile;
  *
  * @param app - The App instance.
  * @param pathOrFile - The path or abstract file to retrieve the TAbstractFile for.
- * @param insensitive - Whether to perform a case-insensitive search.
+ * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The TAbstractFile object.
  * @throws Error if the abstract file is not found.
  */
@@ -51,10 +51,14 @@ export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, insens
  *
  * @param app - The application instance.
  * @param pathOrFile - The path or abstract file to retrieve.
- * @param insensitive - Whether to perform a case-insensitive search.
+ * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The instance of TAbstractFile if found, otherwise null.
  */
-export function getAbstractFileOrNull(app: App, pathOrFile: PathOrAbstractFile, insensitive?: boolean): TAbstractFile | null {
+export function getAbstractFileOrNull(app: App, pathOrFile: PathOrAbstractFile | null, insensitive?: boolean): TAbstractFile | null {
+  if (pathOrFile === null) {
+    return null;
+  }
+
   if (pathOrFile === '.' || pathOrFile === '') {
     return app.vault.getRoot();
   }
