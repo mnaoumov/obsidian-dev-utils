@@ -319,7 +319,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
     };
   }
 
-  const folderCleanup = await createTempFolder(app, dirname(path));
+  const folderCleanup = await createTempFolder(app, parentFolderPath(path));
 
   try {
     await app.vault.create(path, '');
@@ -353,10 +353,10 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
     };
   }
 
-  const dirPath = dirname(path);
+  const dirPath = parentFolderPath(path);
   await createTempFolder(app, dirPath);
 
-  const folderCleanup = await createTempFolder(app, dirname(path));
+  const folderCleanup = await createTempFolder(app, parentFolderPath(path));
 
   await createFolderSafe(app, path);
 

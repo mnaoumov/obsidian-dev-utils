@@ -10,7 +10,8 @@ import type {
 import { TFolder } from 'obsidian';
 import {
   createTFileInstance,
-  createTFolderInstance
+  createTFolderInstance,
+  parentFolderPath
 } from 'obsidian-typings/implementations';
 
 import {
@@ -33,7 +34,7 @@ import type { PathOrFile } from './TFile.ts';
  * @returns A promise that resolves to the attachment folder path.
  */
 export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
-  return dirname(await getAttachmentFilePath(app, 'DUMMY_FILE.pdf', notePathOrFile));
+  return parentFolderPath(await getAttachmentFilePath(app, 'DUMMY_FILE.pdf', notePathOrFile));
 }
 
 /**
