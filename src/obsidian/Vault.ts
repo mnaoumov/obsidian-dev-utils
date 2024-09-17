@@ -10,6 +10,7 @@ import {
   TFile,
   TFolder
 } from 'obsidian';
+import { parentFolderPath } from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';
 import { retryWithTimeout } from '../Async.ts';
@@ -26,17 +27,20 @@ import {
 } from '../Path.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import { resolveValue } from '../ValueProvider.ts';
-import { getBacklinksForFileSafe } from './MetadataCache.ts';
-import type { PathOrAbstractFile } from './TAbstractFile.ts';
+import type {
+  PathOrAbstractFile,
+  PathOrFile,
+  PathOrFolder
+} from './FileSystem.ts';
 import {
   getAbstractFileOrNull,
+  getFile,
+  getFileOrNull,
+  getFolder,
+  getFolderOrNull,
   getPath
-} from './TAbstractFile.ts';
-import type { PathOrFile } from './TFile.ts';
-import { getFile, getFileOrNull } from './TFile.ts';
-import type { PathOrFolder } from './TFolder.ts';
-import { getFolder, getFolderOrNull } from './TFolder.ts';
-import { parentFolderPath } from 'obsidian-typings/implementations';
+} from './FileSystem.ts';
+import { getBacklinksForFileSafe } from './MetadataCache.ts';
 
 /**
  * Represents a file change in the Vault.
@@ -413,6 +417,14 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
   return newAvailablePath;
 }
 
+/**
+ * Copies a file safely in the vault.
+ *
+ * @param app - The application instance.
+ * @param oldPathOrFile - The old path or file to copy.
+ * @param newPath - The new path to copy the file to.
+ * @returns A promise that resolves to the new path of the copied file.
+ */
 export async function copySafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
   const file = getFile(app, oldPathOrFile);
 

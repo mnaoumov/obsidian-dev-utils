@@ -24,6 +24,13 @@ import { getObsidianDevUtilsState } from './App.ts';
 import { getAttachmentFolderPath } from './AttachmentPath.ts';
 import { chainAsyncFn } from './ChainedPromise.ts';
 import {
+  getFileOrNull,
+  getFolderOrNull,
+  isCanvasFile,
+  isMarkdownFile,
+  isNote
+} from './FileSystem.ts';
+import {
   extractLinkFile,
   updateLink,
   updateLinksInFile
@@ -35,19 +42,12 @@ import {
   getCacheSafe
 } from './MetadataCache.ts';
 import {
-  isCanvasFile,
-  isMarkdownFile,
-  isNote
-} from './TAbstractFile.ts';
-import {
   applyFileChanges,
   deleteEmptyFolderHierarchy,
   deleteSafe,
   processWithRetry,
   renameSafe
 } from './Vault.ts';
-import { getFile, getFileOrNull } from './TFile.ts';
-import { getFolder, getFolderOrNull } from './TFolder.ts';
 
 const specialRenames: SpecialRename[] = [];
 const deletedMetadataCacheMap = new Map<string, CachedMetadata>();

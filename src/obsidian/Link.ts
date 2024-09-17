@@ -24,6 +24,13 @@ import {
   relative
 } from '../Path.ts';
 import { normalize } from '../String.ts';
+import type { PathOrFile } from './FileSystem.ts';
+import {
+  getFile,
+  getPath,
+  isMarkdownFile,
+  trimMarkdownExtension
+} from './FileSystem.ts';
 import {
   getAllLinks,
   getCacheSafe,
@@ -33,13 +40,6 @@ import {
   shouldUseRelativeLinks,
   shouldUseWikilinks
 } from './ObsidianSettings.ts';
-import {
-  getPath,
-  isMarkdownFile,
-  trimMarkdownExtension
-} from './TAbstractFile.ts';
-import type { PathOrFile } from './TFile.ts';
-import { getFile } from './TFile.ts';
 import type { FileChange } from './Vault.ts';
 import { applyFileChanges } from './Vault.ts';
 

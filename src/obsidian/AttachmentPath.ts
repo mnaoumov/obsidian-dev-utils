@@ -16,15 +16,17 @@ import {
 
 import {
   basename,
-  dirname,
   extname
 } from '../Path.ts';
 import {
   normalize,
   trimStart
 } from '../String.ts';
-import { getAbstractFileOrNull, getPath } from './TAbstractFile.ts';
-import type { PathOrFile } from './TFile.ts';
+import type { PathOrFile } from './FileSystem.ts';
+import {
+  getAbstractFileOrNull,
+  getPath
+} from './FileSystem.ts';
 
 /**
  * Retrieves the attachment folder path for a given note.

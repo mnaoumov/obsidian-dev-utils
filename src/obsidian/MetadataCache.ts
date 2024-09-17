@@ -20,16 +20,14 @@ import {
 import type { RetryOptions } from '../Async.ts';
 import { retryWithTimeout } from '../Async.ts';
 import { throwExpression } from '../Error.ts';
-import type { CombinedFrontMatter } from './FrontMatter.ts';
-import {
-  getPath,
-  isMarkdownFile
-} from './TAbstractFile.ts';
-import type { PathOrFile } from './TFile.ts';
+import type { PathOrFile } from './FileSystem.ts';
 import {
   getFile,
-  getFileOrNull
-} from './TFile.ts';
+  getFileOrNull,
+  getPath,
+  isMarkdownFile
+} from './FileSystem.ts';
+import type { CombinedFrontMatter } from './FrontMatter.ts';
 
 /**
  * Retrieves the cached metadata for a given file or path.

@@ -18,10 +18,13 @@ import type {
   DataviewApi,
   SMarkdownPage
 } from './@types/Dataview/index.d.ts';
+import type { PathOrFile } from './FileSystem.ts';
+import {
+  getFile,
+  getPath
+} from './FileSystem.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
 import { relativePathToResourceUrl } from './ResourceUrl.ts';
-import { getPath } from './TAbstractFile.ts';
-import { getFile, type PathOrFile } from './TFile.ts';
 
 /**
  * Export DateTime and Link types from the Dataview API.

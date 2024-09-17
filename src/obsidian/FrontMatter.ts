@@ -13,8 +13,8 @@ import { App } from 'obsidian';
 
 import type { MaybePromise } from '../Async.ts';
 import { throwExpression } from '../Error.ts';
-import type { PathOrFile } from './TFile.ts';
-import { getFile } from './TFile.ts';
+import type { PathOrFile } from './FileSystem.ts';
+import { getFile } from './FileSystem.ts';
 import { processWithRetry } from './Vault.ts';
 
 /**

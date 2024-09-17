@@ -14,15 +14,17 @@ import type {
 } from './Dataview.ts';
 import { renderPaginatedTable } from './Dataview.ts';
 import { fixTitle } from './DataviewLink.ts';
-import { generateMarkdownLink } from './Link.ts';
-import { getBacklinksForFileSafe } from './MetadataCache.ts';
-import type { PathOrAbstractFile } from './TAbstractFile.ts';
+import type {
+  PathOrAbstractFile,
+  PathOrFile
+} from './FileSystem.ts';
 import {
   getAbstractFileOrNull,
+  getMarkdownFiles,
   isFile
-} from './TAbstractFile.ts';
-import type { PathOrFile } from './TFile.ts';
-import { getMarkdownFiles } from './TFolder.ts';
+} from './FileSystem.ts';
+import { generateMarkdownLink } from './Link.ts';
+import { getBacklinksForFileSafe } from './MetadataCache.ts';
 
 /**
  * Options for rendering delayed backlinks.
