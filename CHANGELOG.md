@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.27.0
+
+- Implement `renameSafe`
+
 ## 3.26.1
 
 - Cache only markdown
