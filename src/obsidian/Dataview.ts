@@ -21,7 +21,7 @@ import type {
 import type { CombinedFrontMatter } from './FrontMatter.ts';
 import { relativePathToResourceUrl } from './ResourceUrl.ts';
 import { getPath } from './TAbstractFile.ts';
-import type { PathOrFile } from './TFile.ts';
+import { getFile, type PathOrFile } from './TFile.ts';
 
 /**
  * Export DateTime and Link types from the Dataview API.
@@ -96,7 +96,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
  * @returns A promise that resolves when the cache is reloaded.
  */
 export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<void> {
-  await DataviewAPI?.index.reload(dv.app.vault.getFileByPath(dv.current().file.path) ?? throwExpression(new Error('File not found')));
+  await DataviewAPI?.index.reload(getFile(dv.app, dv.current().file.path));
 }
 
 /**

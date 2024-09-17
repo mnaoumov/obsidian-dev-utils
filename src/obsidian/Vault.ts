@@ -33,9 +33,9 @@ import {
   getPath
 } from './TAbstractFile.ts';
 import type { PathOrFile } from './TFile.ts';
-import { getFile } from './TFile.ts';
+import { getFile, getFileOrNull } from './TFile.ts';
 import type { PathOrFolder } from './TFolder.ts';
-import { getFolderOrNull } from './TFolder.ts';
+import { getFolder, getFolderOrNull } from './TFolder.ts';
 import { parentFolderPath } from 'obsidian-typings/implementations';
 
 /**
@@ -312,7 +312,7 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: PathOrF
  * @returns A promise that resolves to a function that can be called to delete the temporary file and all its created parents.
  */
 export async function createTempFile(app: App, path: string): Promise<() => Promise<void>> {
-  let file = app.vault.getFileByPath(path);
+  let file = getFileOrNull(app, path);
   if (file) {
     return async () => {
       // Do nothing
@@ -329,7 +329,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
     }
   }
 
-  file = app.vault.getFileByPath(path) ?? throwExpression(new Error('File not found'));
+  file = getFile(app, path);
 
   return async () => {
     if (!file.deleted) {
@@ -346,7 +346,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
  * @returns A promise that resolves to a function that can be called to delete the temporary folder and all its created parents.
  */
 export async function createTempFolder(app: App, path: string): Promise<() => Promise<void>> {
-  let folder = app.vault.getFolderByPath(path);
+  let folder = getFolderOrNull(app, path);
   if (folder) {
     return async () => {
       // Do nothing
@@ -360,7 +360,7 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
 
   await createFolderSafe(app, path);
 
-  folder = app.vault.getFolderByPath(path) ?? throwExpression(new Error('Folder not found'));
+  folder = getFolder(app, path);
 
   return async () => {
     if (!folder.deleted) {

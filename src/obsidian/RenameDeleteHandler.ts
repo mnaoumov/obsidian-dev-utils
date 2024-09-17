@@ -46,6 +46,8 @@ import {
   processWithRetry,
   renameSafe
 } from './Vault.ts';
+import { getFile, getFileOrNull } from './TFile.ts';
+import { getFolder, getFolderOrNull } from './TFolder.ts';
 
 const specialRenames: SpecialRename[] = [];
 const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
@@ -240,7 +242,7 @@ async function handleDelete(app: App, file: TAbstractFile): Promise<void> {
   }
 
   const attachmentFolderPath = await getAttachmentFolderPath(app, file.path);
-  const attachmentFolder = app.vault.getFolderByPath(attachmentFolderPath);
+  const attachmentFolder = getFolderOrNull(app, attachmentFolderPath);
 
   if (!attachmentFolder) {
     return;
@@ -262,7 +264,7 @@ async function fillRenameMap(app: App, file: TFile, oldPath: string, renameMap: 
     : oldAttachmentFolderPath;
   const dummyOldAttachmentFolderPath = await getAttachmentFolderPath(app, join(dirname(oldPath), 'DUMMY_FILE.md'));
 
-  const oldAttachmentFolder = app.vault.getFolderByPath(oldAttachmentFolderPath);
+  const oldAttachmentFolder = getFolderOrNull(app, oldAttachmentFolderPath);
 
   if (!oldAttachmentFolder) {
     return;
@@ -314,7 +316,7 @@ async function fillRenameMap(app: App, file: TFile, oldPath: string, renameMap: 
     let newChildPath = join(newDir, makeFileName(newChildBasename, child.extension));
     if (child.path !== newChildPath) {
       if (settings.shouldDeleteConflictingAttachments) {
-        const newChildFile = app.vault.getFileByPath(newChildPath);
+        const newChildFile = getFileOrNull(app, newChildPath);
         if (newChildFile) {
           await app.fileManager.trashFile(newChildFile);
         }
@@ -328,8 +330,7 @@ async function fillRenameMap(app: App, file: TFile, oldPath: string, renameMap: 
 
 async function processRename(app: App, oldPath: string, newPath: string, renameMap: Map<string, string>): Promise<void> {
   const settings = getSettings(app);
-  let oldFile = app.vault.getFileByPath(oldPath);
-  let newFile = app.vault.getFileByPath(newPath);
+  let oldFile = getFileOrNull(app, oldPath);
 
   if (oldFile) {
     const oldFolder = oldFile.parent;
@@ -342,7 +343,7 @@ async function processRename(app: App, oldPath: string, newPath: string, renameM
   }
 
   oldFile = createTFileInstance(app.vault, oldPath);
-  newFile = app.vault.getFileByPath(newPath);
+  const newFile = getFileOrNull(app, newPath);
 
   if (!oldFile.deleted || !newFile) {
     throw new Error(`Could not rename ${oldPath} to ${newPath}`);
@@ -355,11 +356,11 @@ async function processRename(app: App, oldPath: string, newPath: string, renameM
   const backlinks = await getBacklinksMap(app, [oldFile, newFile]);
 
   for (const parentNotePath of backlinks.keys()) {
-    let parentNote = app.vault.getFileByPath(parentNotePath);
+    let parentNote = getFileOrNull(app, parentNotePath);
     if (!parentNote) {
       const newParentNotePath = renameMap.get(parentNotePath);
       if (newParentNotePath) {
-        parentNote = app.vault.getFileByPath(newParentNotePath);
+        parentNote = getFileOrNull(app, newParentNotePath);
       }
     }
 

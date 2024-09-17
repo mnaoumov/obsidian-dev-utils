@@ -23,7 +23,7 @@ import {
   normalize,
   trimStart
 } from '../String.ts';
-import { getPath } from './TAbstractFile.ts';
+import { getAbstractFileOrNull, getPath } from './TAbstractFile.ts';
 import type { PathOrFile } from './TFile.ts';
 
 /**
@@ -103,7 +103,7 @@ export async function getAvailablePathForAttachments(app: App, filename: string,
   attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
   filename = normalize(normalizeSlashes(filename));
 
-  let folder = app.vault.getAbstractFileByPathInsensitive(attachmentFolderPath);
+  let folder = getAbstractFileOrNull(app, attachmentFolderPath, true);
 
   if (!folder && relativePath) {
     if (!skipFolderCreation) {

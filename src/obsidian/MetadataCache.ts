@@ -128,7 +128,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
     await ensureMetadataCacheReady(app);
     backlinks = tempRegisterFileAndRun(app, file, () => app.metadataCache.getBacklinksForFile(file));
     for (const notePath of backlinks.keys()) {
-      const note = app.vault.getFileByPath(notePath);
+      const note = getFileOrNull(app, notePath);
       if (!note) {
         return false;
       }
