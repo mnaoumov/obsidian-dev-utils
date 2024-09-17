@@ -55,6 +55,10 @@ export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, insens
  * @returns The instance of TAbstractFile if found, otherwise null.
  */
 export function getAbstractFileOrNull(app: App, pathOrFile: PathOrAbstractFile, insensitive?: boolean): TAbstractFile | null {
+  if (pathOrFile === '.' || pathOrFile === '') {
+    return app.vault.getRoot();
+  }
+
   if (pathOrFile instanceof TAbstractFile) {
     return pathOrFile;
   }
