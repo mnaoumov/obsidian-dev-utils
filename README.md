@@ -112,7 +112,7 @@ To simplify the usage of these commands, you can add them to your `package.json`
     "spellcheck": "obsidian-dev-utils spellcheck",
     "version": "obsidian-dev-utils version"
   },
-  ...
+  "...": "..."
 }
 ```
 
@@ -126,19 +126,19 @@ The functions are grouped by files and folders and you have multiple ways to imp
 
 ```typescript
 import { loadPluginSettings } from "obsidian-dev-utils/obsidian/Plugin/PluginSettings";
-loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
+loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
 
 import { PluginSettings } from "obsidian-dev-utils/obsidian/Plugin";
-PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
+PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
 
 import { Plugin } from "obsidian-dev-utils/obsidian";
-Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
+Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
 
 import { obsidian } from "obsidian-dev-utils";
-obsidian.Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
+obsidian.Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
 
 import * as obsidianDevUtils from "obsidian-dev-utils";
-obsidianDevUtils.obsidian.Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue"});
+obsidianDevUtils.obsidian.Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
 ```
 
 ## License
