@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.29.0
+
+- Ensure file's folder created
+- Add `getOrCreateFile`/`getOrCreateFolder`
+
 ## 3.28.2
 
 - Refactor
