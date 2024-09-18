@@ -12,7 +12,8 @@ import {
 } from 'obsidian';
 import {
   createTFileInstance,
-  createTFolderInstance
+  createTFolderInstance,
+  parentFolderPath
 } from 'obsidian-typings/implementations';
 
 import { extname } from '../Path.ts';
@@ -299,6 +300,9 @@ export async function getOrCreateFile(app: App, path: string): Promise<TFile> {
   if (file) {
     return file;
   }
+
+  const folderPath = parentFolderPath(path);
+  await getOrCreateFolder(app, folderPath);
 
   return await app.vault.create(path, '');
 }
