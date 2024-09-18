@@ -286,3 +286,35 @@ export function trimMarkdownExtension(file: TAbstractFile): string {
 export function getPath(pathOrFile: PathOrAbstractFile): string {
   return pathOrFile instanceof TAbstractFile ? pathOrFile.path : pathOrFile;
 }
+
+/**
+ * Retrieves the TFile object for the given path or creates a new one if it does not exist.
+ *
+ * @param app - The Obsidian App instance.
+ * @param path - The path of the file to retrieve or create.
+ * @returns The TFile object representing the file
+ */
+export async function getOrCreateFile(app: App, path: string): Promise<TFile> {
+  const file = getFileOrNull(app, path);
+  if (file) {
+    return file;
+  }
+
+  return await app.vault.create(path, '');
+}
+
+/**
+ * Retrieves the TFolder object for the given path or creates a new one if it does not exist.
+ *
+ * @param app - The Obsidian App instance.
+ * @param path - The path of the folder to retrieve or create.
+ * @returns The TFolder object representing the folder.
+ */
+export async function getOrCreateFolder(app: App, path: string): Promise<TFolder> {
+  const folder = getFolderOrNull(app, path);
+  if (folder) {
+    return folder;
+  }
+
+  return await app.vault.createFolder(path);
+}
