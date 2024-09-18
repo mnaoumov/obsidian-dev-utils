@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.28.1
+
+- Avoid extra dot
+
 ## 3.28.0
 
 - Refactor all filesystem methods
