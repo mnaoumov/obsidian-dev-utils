@@ -5,9 +5,8 @@
 
 import type {
   App,
-  TAbstractFile
+  TFile
 } from 'obsidian';
-import { TFolder } from 'obsidian';
 import {
   createTFileInstance,
   createTFolderInstance,
@@ -24,7 +23,7 @@ import {
 } from '../String.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import {
-  getAbstractFileOrNull,
+  getFolderOrNull,
   getPath
 } from './FileSystem.ts';
 
@@ -52,7 +51,7 @@ export interface ExtendedWrapper {
 /**
  * Get available path for attachments function.
  */
-export type GetAvailablePathForAttachmentsExtendedFn = (filename: string, extension: string, file: TAbstractFile | null, skipFolderCreation?: boolean) => Promise<string>;
+export type GetAvailablePathForAttachmentsExtendedFn = (filename: string, extension: string, file: TFile | null, skipFolderCreation?: boolean) => Promise<string>;
 
 /**
  * Retrieves the file path for an attachment within a note.
@@ -87,7 +86,7 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
  * @param skipFolderCreation - Should folder creation be skipped?
  * @returns A promise that resolves to the available path for attachments.
  */
-export async function getAvailablePathForAttachments(app: App, filename: string, extension: string, file: TAbstractFile | null, skipFolderCreation: boolean): Promise<string> {
+export async function getAvailablePathForAttachments(app: App, filename: string, extension: string, file: TFile | null, skipFolderCreation: boolean): Promise<string> {
   let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
   const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
   let relativePath = null;
@@ -105,7 +104,7 @@ export async function getAvailablePathForAttachments(app: App, filename: string,
   attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
   filename = normalize(normalizeSlashes(filename));
 
-  let folder = getAbstractFileOrNull(app, attachmentFolderPath, true);
+  let folder = getFolderOrNull(app, attachmentFolderPath, true);
 
   if (!folder && relativePath) {
     if (!skipFolderCreation) {
@@ -115,11 +114,8 @@ export async function getAvailablePathForAttachments(app: App, filename: string,
     }
   }
 
-  if (folder instanceof TFolder) {
-    return app.vault.getAvailablePath(folder.getParentPrefix() + filename, extension);
-  } else {
-    return app.vault.getAvailablePath(filename, extension);
-  }
+  const prefix = folder?.getParentPrefix() ?? '';
+  return app.vault.getAvailablePath(prefix + filename, extension);
 }
 
 /**
