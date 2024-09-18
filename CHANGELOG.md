@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.28.2
+
+- Refactor
+
 ## 3.28.1
 
 - Avoid extra dot
