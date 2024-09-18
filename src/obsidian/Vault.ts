@@ -453,5 +453,5 @@ export async function copySafe(app: App, oldPathOrFile: PathOrFile, newPath: str
  */
 export function getAvailablePath(app: App, path: string): string {
   const ext = extname(path);
-  return app.vault.getAvailablePath(join(dirname(path), basename(path, ext)), ext);
+  return app.vault.getAvailablePath(join(dirname(path), basename(path, ext)), ext.slice(1));
 }
