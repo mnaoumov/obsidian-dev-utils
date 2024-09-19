@@ -47,14 +47,14 @@ export function copyToObsidianPluginsFolderPlugin(
         const pluginDir = join(obsidianConfigDir, 'plugins', pluginName);
 
         if (!existsSync(pluginDir)) {
-          await mkdir(pluginDir);
+          await mkdir(pluginDir, { recursive: true });
         }
 
         await cp(distDir, pluginDir, { recursive: true });
 
         const hotReloadDir = join(obsidianConfigDir, 'plugins/hot-reload');
         if (!existsSync(hotReloadDir)) {
-          await mkdir(hotReloadDir);
+          await mkdir(hotReloadDir, { recursive: true });
           const hotReloadRepoUrl = 'https://raw.githubusercontent.com/pjeby/hot-reload/master/';
           for (const fileName of ['main.js', 'manifest.json']) {
             const fileUrl = hotReloadRepoUrl + fileName;
