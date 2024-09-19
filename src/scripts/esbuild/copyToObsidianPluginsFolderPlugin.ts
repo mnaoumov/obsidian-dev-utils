@@ -8,7 +8,10 @@
 
 import type { Plugin } from 'esbuild';
 
-import { join } from '../../Path.ts';
+import {
+  join,
+  toPosixPath
+} from '../../Path.ts';
 import {
   cp,
   existsSync,
@@ -38,6 +41,8 @@ export function copyToObsidianPluginsFolderPlugin(
         if (isProductionBuild || !obsidianConfigDir) {
           return;
         }
+
+        obsidianConfigDir = toPosixPath(obsidianConfigDir);
 
         const pluginDir = join(obsidianConfigDir, 'plugins', pluginName);
 
