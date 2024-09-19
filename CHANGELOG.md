@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.29.1
+
+- Ensure `obsidianConfigDir` POSIX path
+
 ## 3.29.0
 
 - Ensure file's folder created
