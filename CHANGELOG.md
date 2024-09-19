@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.29.2
+
+- Create dir recursively
+
 ## 3.29.1
 
 - Ensure `obsidianConfigDir` POSIX path
