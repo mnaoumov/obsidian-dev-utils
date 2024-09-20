@@ -284,6 +284,9 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
       beta = 0;
       break;
     case VersionUpdateType.Beta:
+      if (beta === 0) {
+        patch++;
+      }
       beta++;
       break;
   }
