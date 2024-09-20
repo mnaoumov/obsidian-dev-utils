@@ -12,10 +12,7 @@ import type {
 } from 'obsidian';
 import { TFile } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
-import {
-  createTFolderInstance,
-  parentFolderPath
-} from 'obsidian-typings/implementations';
+import { parentFolderPath } from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';
 import { retryWithTimeout } from '../Async.ts';
@@ -24,6 +21,7 @@ import type { PathOrFile } from './FileSystem.ts';
 import {
   getFile,
   getFileOrNull,
+  getFolder,
   getPath,
   isMarkdownFile
 } from './FileSystem.ts';
@@ -245,7 +243,7 @@ export function registerFile(app: App, file: TAbstractFile): () => void {
   while (deletedFile.deleted) {
     deletedPaths.push(deletedFile.path);
     app.vault.fileMap[deletedFile.path] = deletedFile;
-    deletedFile = deletedFile.parent ?? createTFolderInstance(app.vault, parentFolderPath(deletedFile.path));
+    deletedFile = deletedFile.parent ?? getFolder(app, parentFolderPath(deletedFile.path), true);
   }
 
   if (file instanceof TFile) {

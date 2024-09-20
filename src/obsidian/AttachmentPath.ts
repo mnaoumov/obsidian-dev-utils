@@ -7,11 +7,7 @@ import type {
   App,
   TFile
 } from 'obsidian';
-import {
-  createTFileInstance,
-  createTFolderInstance,
-  parentFolderPath
-} from 'obsidian-typings/implementations';
+import { parentFolderPath } from 'obsidian-typings/implementations';
 
 import {
   basename,
@@ -23,6 +19,8 @@ import {
 } from '../String.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import {
+  getFile,
+  getFolder,
   getFolderOrNull,
   getPath
 } from './FileSystem.ts';
@@ -64,7 +62,7 @@ export type GetAvailablePathForAttachmentsExtendedFn = (filename: string, extens
 export async function getAttachmentFilePath(app: App, attachmentPathOrFile: PathOrFile, notePathOrFile: PathOrFile): Promise<string> {
   const attachmentPath = getPath(attachmentPathOrFile);
   const notePath = getPath(notePathOrFile);
-  const note = createTFileInstance(app.vault, notePath);
+  const note = getFile(app, notePath, true);
   const ext = extname(attachmentPath);
   const fileName = basename(attachmentPath, ext);
 
@@ -110,7 +108,7 @@ export async function getAvailablePathForAttachments(app: App, filename: string,
     if (!skipFolderCreation) {
       folder = await app.vault.createFolder(attachmentFolderPath);
     } else {
-      folder = createTFolderInstance(app.vault, attachmentFolderPath);
+      folder = getFolder(app, attachmentFolderPath, true);
     }
   }
 
