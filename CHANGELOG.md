@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.30.0
+
+- Increase patch version if `beta` is 0
+- Avoid wrong initialization
+- Refactor `shouldResetAlias`
+- Refactor to `getFile`/`getFolder`
+
 ## 3.29.2
 
 - Create dir recursively
