@@ -199,12 +199,11 @@ export interface ConvertLinkOptions {
  * @returns The converted link.
  */
 export function convertLink(options: ConvertLinkOptions): string {
-  const oldPathOrFile = options.oldPathOrFile ?? options.sourcePathOrFile;
   return updateLink({
     app: options.app,
     link: options.link,
-    pathOrFile: extractLinkFile(options.app, options.link, oldPathOrFile),
-    oldPathOrFile,
+    pathOrFile: extractLinkFile(options.app, options.link, options.sourcePathOrFile),
+    oldPathOrFile: options.oldPathOrFile,
     sourcePathOrFile: options.sourcePathOrFile,
     renameMap: options.renameMap,
     forceMarkdownLinks: options.forceMarkdownLinks,
