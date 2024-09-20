@@ -20,6 +20,7 @@ import {
   basename,
   dirname,
   extname,
+  join,
   relative
 } from '../Path.ts';
 import { normalize } from '../String.ts';
@@ -390,24 +391,34 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     return true;
   }
 
-  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/\.\//g, '').toLowerCase();
+  const sourcePath = getPath(sourcePathOrFile);
+  const sourceDir = dirname(sourcePath);
+
+  const aliasesToReset = new Set<string>();
 
   for (const pathOrFile of [file.path, ...otherPathOrFiles]) {
     if (!pathOrFile) {
       continue;
     }
+
     const path = getPath(pathOrFile);
-    const extension = extname(path);
-    const fileNameWithExtension = basename(path).toLowerCase();
-    const fileNameWithoutExtension = basename(path, extension).toLowerCase();
-    if (cleanDisplayText === pathOrFile || cleanDisplayText === fileNameWithExtension || cleanDisplayText === fileNameWithoutExtension) {
-      return true;
-    }
+    aliasesToReset.add(path);
+    aliasesToReset.add(basename(path));
+    aliasesToReset.add(relative(sourceDir, path));
   }
 
-  for (const omitMdExtension of [true, false]) {
-    const linkText = app.metadataCache.fileToLinktext(file, getPath(sourcePathOrFile), omitMdExtension).toLowerCase();
-    if (cleanDisplayText === linkText) {
+  aliasesToReset.add(app.metadataCache.fileToLinktext(file, sourcePath, false));
+
+  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/^\.\//, '').toLowerCase();
+
+  for (const alias of aliasesToReset) {
+    if (alias.toLowerCase() === cleanDisplayText) {
+      return true;
+    }
+
+    const dir = dirname(alias);
+    const base = basename(alias, extname(alias));
+    if (join(dir, base).toLowerCase() === cleanDisplayText) {
       return true;
     }
   }
