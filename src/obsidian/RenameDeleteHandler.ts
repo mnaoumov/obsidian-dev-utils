@@ -9,7 +9,6 @@ import {
   Vault
 } from 'obsidian';
 import type { CanvasData } from 'obsidian/canvas.js';
-import { createTFileInstance } from 'obsidian-typings/implementations';
 
 import { toJson } from '../Object.ts';
 import {
@@ -24,6 +23,7 @@ import { getObsidianDevUtilsState } from './App.ts';
 import { getAttachmentFolderPath } from './AttachmentPath.ts';
 import { chainAsyncFn } from './ChainedPromise.ts';
 import {
+  getFile,
   getFileOrNull,
   getFolderOrNull,
   isCanvasFile,
@@ -342,7 +342,7 @@ async function processRename(app: App, oldPath: string, newPath: string, renameM
     }
   }
 
-  oldFile = createTFileInstance(app.vault, oldPath);
+  oldFile = getFile(app, oldPath, true);
   const newFile = getFileOrNull(app, newPath);
 
   if (!oldFile.deleted || !newFile) {

@@ -11,7 +11,6 @@ import type {
   TFile
 } from 'obsidian';
 import { normalizePath } from 'obsidian';
-import { createTFileInstance } from 'obsidian-typings/implementations';
 
 import type {
   MaybePromise,
@@ -316,7 +315,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   }
 
   if (newPath) {
-    file = createTFileInstance(app.vault, newPath);
+    file = getFile(app, newPath, true);
   }
 
   const newLink = generateMarkdownLink({
