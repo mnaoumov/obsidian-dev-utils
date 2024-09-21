@@ -222,17 +222,18 @@ export function isFolder(file: TAbstractFile | null): file is TFolder {
 
 /**
  * Checks if the given file is a note.
- * @param file - The file to check.
+ *
+ * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a note.
  */
-export function isNote(file: TAbstractFile | null): boolean {
-  return isMarkdownFile(file) || isCanvasFile(file);
+export function isNote(pathOrFile: PathOrAbstractFile | null): boolean {
+  return isMarkdownFile(pathOrFile) || isCanvasFile(pathOrFile);
 }
 
 /**
  * Checks if the given file is a Markdown file.
  *
- * @param pathOrFile - The file to check.
+ * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a Markdown file.
  */
 export function isMarkdownFile(pathOrFile: PathOrAbstractFile | null): boolean {
@@ -242,7 +243,7 @@ export function isMarkdownFile(pathOrFile: PathOrAbstractFile | null): boolean {
 /**
  * Checks if the given file is a canvas file.
  *
- * @param pathOrFile - The file to check.
+ * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a canvas file or not.
  */
 export function isCanvasFile(pathOrFile: PathOrAbstractFile | null): boolean {
