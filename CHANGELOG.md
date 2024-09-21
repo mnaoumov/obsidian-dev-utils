@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 3.31.0
+
+- Use safe overload of `getBacklinksForFile`
+- Refactor `chain` to support sync
+- Refactor `RenameHandler`
+- Escape markdown alias symbols
+- Handle `renameSafe` with change case
+
 ## 3.30.0
 
 - Increase patch version if `beta` is 0
