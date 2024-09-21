@@ -7,8 +7,7 @@ import type { ListedFiles } from 'obsidian';
 import {
   App,
   Notice,
-  TFile,
-  TFolder
+  TFile
 } from 'obsidian';
 import { parentFolderPath } from 'obsidian-typings/implementations';
 
@@ -38,7 +37,9 @@ import {
   getFileOrNull,
   getFolder,
   getFolderOrNull,
-  getPath
+  getPath,
+  isFile,
+  isFolder
 } from './FileSystem.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
 
@@ -204,9 +205,9 @@ export async function deleteSafe(app: App, pathOrFile: PathOrAbstractFile, delet
     return false;
   }
 
-  let canDelete = file instanceof TFile || (shouldDeleteEmptyFolders ?? true);
+  let canDelete = isFile(file) || (shouldDeleteEmptyFolders ?? true);
 
-  if (file instanceof TFile) {
+  if (isFile(file)) {
     const backlinks = await getBacklinksForFileSafe(app, file);
     if (deletedNotePath) {
       backlinks.removeKey(deletedNotePath);
@@ -217,7 +218,7 @@ export async function deleteSafe(app: App, pathOrFile: PathOrAbstractFile, delet
       }
       canDelete = false;
     }
-  } else if (file instanceof TFolder) {
+  } else if (isFolder(file)) {
     for (const child of file.children) {
       canDelete &&= await deleteSafe(app, child.path, deletedNotePath, shouldReportUsedAttachments);
     }
