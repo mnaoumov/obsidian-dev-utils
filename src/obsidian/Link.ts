@@ -50,6 +50,11 @@ import { applyFileChanges } from './Vault.ts';
 const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 
 /**
+ * Regular expression for special markdown link symbols.
+ */
+const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\\[\]<>_*~=`$]/g;
+
+/**
  * Splits a link into its link path and subpath.
  */
 export interface SplitSubpathResult {
@@ -565,6 +570,8 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
       if (!alias && (!isEmbed || !options.allowEmptyEmbedAlias)) {
         alias = !options.includeAttachmentExtensionToEmbedAlias || isMarkdownFile(file) ? file.basename : file.name;
       }
+
+      alias = alias.replace(SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
 
       return `${embedPrefix}[${alias}](${linkText})`;
     } else {
