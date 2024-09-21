@@ -15,7 +15,7 @@ function getChainedPromiseWrapper(app: App): ValueWrapper<Promise<void>> {
  * Chains an asynchronous function to be executed after the previous asynchronous function completes.
  *
  * @param app - The Obsidian application instance.
- * @param fn - The asynchronous function to chain.
+ * @param fn - The function to chain.
  */
 export function chain(app: App, fn: () => MaybePromise<void>): void {
   const stackTrace = getStackTrace();
