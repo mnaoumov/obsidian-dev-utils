@@ -216,12 +216,12 @@ export function convertLink(options: ConvertLinkOptions): string {
  *
  * @param app - The Obsidian application instance.
  * @param link - The reference cache for the link.
- * @param oldPathOrFile - The old path of the file.
+ * @param notePathOrFile - The path or file of the note containing the link.
  * @returns The file associated with the link, or null if not found.
  */
-export function extractLinkFile(app: App, link: ReferenceCache, oldPathOrFile: PathOrFile): TFile | null {
+export function extractLinkFile(app: App, link: ReferenceCache, notePathOrFile: PathOrFile): TFile | null {
   const { linkPath } = splitSubpath(link.link);
-  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(oldPathOrFile));
+  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(notePathOrFile));
 }
 
 /**
