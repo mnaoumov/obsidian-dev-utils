@@ -52,7 +52,7 @@ const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 /**
  * Regular expression for special markdown link symbols.
  */
-const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\\[\]<>_*~=`$]/g;
+const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\[\]<>_*~=`$]/g;
 
 /**
  * Splits a link into its link path and subpath.
