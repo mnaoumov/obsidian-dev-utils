@@ -397,7 +397,10 @@ export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promi
 export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
   const file = getFile(app, oldPathOrFile);
 
-  if (file.path === newPath) {
+  if (file.path.toLowerCase() === newPath.toLowerCase()) {
+    if (file.path !== newPath) {
+      await app.vault.rename(file, newPath);
+    }
     return newPath;
   }
 
