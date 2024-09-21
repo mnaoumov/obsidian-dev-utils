@@ -10,7 +10,6 @@ import type {
   ReferenceCache,
   TAbstractFile
 } from 'obsidian';
-import { TFile } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
 import { parentFolderPath } from 'obsidian-typings/implementations';
 
@@ -23,6 +22,7 @@ import {
   getFileOrNull,
   getFolder,
   getPath,
+  isFile,
   isMarkdownFile
 } from './FileSystem.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
@@ -263,7 +263,7 @@ export function registerFile(app: App, file: TAbstractFile): () => void {
     deletedFile = deletedFile.parent ?? getFolder(app, parentFolderPath(deletedFile.path), true);
   }
 
-  if (file instanceof TFile) {
+  if (isFile(file)) {
     app.metadataCache.uniqueFileLookup.add(file.name.toLowerCase(), file);
   }
 
@@ -273,7 +273,7 @@ export function registerFile(app: App, file: TAbstractFile): () => void {
       delete app.vault.fileMap[path];
     }
 
-    if (file instanceof TFile) {
+    if (isFile(file)) {
       app.metadataCache.uniqueFileLookup.remove(file.name.toLowerCase(), file);
     }
   };

@@ -51,7 +51,7 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
 
   const includePatterns = configs
     .flatMap((config) => config.files ?? [])
-    .flatMap((file) => file instanceof Array ? file : [file])
+    .flatMap((file) => Array.isArray(file) ? file : [file])
     .map((file) => normalizeIfRelative(file));
 
   const ignorePatterns = configs.flatMap((config) => config.ignores ?? []).flatMap((pattern) => [pattern, join(pattern, ObsidianDevUtilsRepoPaths.AnyPath)]);

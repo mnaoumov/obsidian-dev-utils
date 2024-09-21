@@ -27,6 +27,7 @@ import {
   getFileOrNull,
   getFolderOrNull,
   isCanvasFile,
+  isFile,
   isMarkdownFile,
   isNote
 } from './FileSystem.ts';
@@ -369,7 +370,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
     }
   } else {
     Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
-      if (oldAttachmentFile instanceof TFile) {
+      if (isFile(oldAttachmentFile)) {
         oldAttachmentFiles.push(oldAttachmentFile);
       }
     });

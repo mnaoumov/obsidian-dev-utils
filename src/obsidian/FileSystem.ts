@@ -79,7 +79,7 @@ export function getAbstractFileOrNull(app: App, pathOrFile: PathOrAbstractFile |
     return app.vault.getRoot();
   }
 
-  if (pathOrFile instanceof TAbstractFile) {
+  if (isAbstractFile(pathOrFile)) {
     return pathOrFile;
   }
 
@@ -126,7 +126,7 @@ export function getFile(app: App, pathOrFile: PathOrFile, allowNonExisting?: boo
  */
 export function getFileOrNull(app: App, pathOrFile: PathOrFile | null, insensitive?: boolean): TFile | null {
   const file = getAbstractFileOrNull(app, pathOrFile, insensitive);
-  if (file instanceof TFile) {
+  if (isFile(file)) {
     return file;
   }
   return null;
@@ -167,7 +167,7 @@ export function getFolder(app: App, pathOrFolder: PathOrFolder, allowNonExisting
  */
 export function getFolderOrNull(app: App, pathOrFolder: PathOrFolder | null, insensitive?: boolean): TFolder | null {
   const folder = getAbstractFileOrNull(app, pathOrFolder, insensitive);
-  if (folder instanceof TFolder) {
+  if (isFolder(folder)) {
     return folder;
   }
   return null;
@@ -201,12 +201,22 @@ export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursi
 }
 
 /**
+ * Checks if the given file is an instance of TAbstractFile.
+ *
+ * @param file - The file to check.
+ * @returns A boolean indicating whether the file is an instance of TAbstractFile.
+ */
+export function isAbstractFile(file: unknown): file is TAbstractFile {
+  return file instanceof TAbstractFile;
+}
+
+/**
  * Checks if the given file is an instance of TFile.
  *
  * @param file - The file to check.
  * @returns A boolean indicating whether the file is an instance of TFile.
  */
-export function isFile(file: TAbstractFile | null): file is TFile {
+export function isFile(file: unknown): file is TFile {
   return file instanceof TFile;
 }
 
@@ -216,7 +226,7 @@ export function isFile(file: TAbstractFile | null): file is TFile {
  * @param file - The file to check.
  * @returns `true` if the file is a folder, `false` otherwise.
  */
-export function isFolder(file: TAbstractFile | null): file is TFolder {
+export function isFolder(file: unknown): file is TFolder {
   return file instanceof TFolder;
 }
 
@@ -286,7 +296,7 @@ export function trimMarkdownExtension(file: TAbstractFile): string {
  * @returns The path of the `pathOrFile`.
  */
 export function getPath(pathOrFile: PathOrAbstractFile): string {
-  return pathOrFile instanceof TAbstractFile ? pathOrFile.path : pathOrFile;
+  return isAbstractFile(pathOrFile) ? pathOrFile.path : pathOrFile;
 }
 
 /**
