@@ -15,7 +15,7 @@ import {
 
 import type { MaybePromise } from '../../Async.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
-import { chainAsyncFn } from '../ChainedPromise.ts';
+import { chain } from '../ChainedPromise.ts';
 import {
   clonePluginSettings,
   loadPluginSettings
@@ -80,7 +80,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
       this.showNotice('An unhandled error occurred. Please check the console for more information.');
     }));
 
-    chainAsyncFn(this.app, async (): Promise<void> => {
+    chain(this.app, async (): Promise<void> => {
       await this.loadSettings();
       const pluginSettingsTab = this.createPluginSettingsTab();
       if (pluginSettingsTab) {
