@@ -181,6 +181,12 @@ async function handleRename(app: App, oldPath: string, newPath: string): Promise
     await processAndRename(app, oldPath, newPath);
   } finally {
     app.fileManager.updateAllLinks = updateAllLinks;
+    const orphanKeys = Array.from(handledRenames);
+    chain(app, () => {
+      for (const key of orphanKeys) {
+        handledRenames.delete(key);
+      }
+    });
   }
 }
 
