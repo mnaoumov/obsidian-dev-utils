@@ -108,6 +108,19 @@ export function getAllLinks(cache: CachedMetadata): ReferenceCache[] {
 }
 
 /**
+ * Wrapper for the getBacklinksForFile method that provides a safe overload.
+ */
+export interface GetBacklinksForFileSafeWrapper {
+  /**
+   * Retrieves the backlinks for a file safely.
+   *
+   * @param pathOrFile - The path or file object.
+   * @returns A promise that resolves to an array dictionary of backlinks.
+   */
+  safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<ReferenceCache>>;
+}
+
+/**
  * Retrieves the backlinks for a file safely.
  *
  * @param app - The Obsidian application instance.
@@ -116,6 +129,10 @@ export function getAllLinks(cache: CachedMetadata): ReferenceCache[] {
  * @returns A promise that resolves to an array dictionary of backlinks.
  */
 export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CustomArrayDict<ReferenceCache>> {
+  const safeOverload = (app.metadataCache.getBacklinksForFile as Partial<GetBacklinksForFileSafeWrapper>).safe;
+  if (safeOverload) {
+    return safeOverload(pathOrFile);
+  }
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   let backlinks: CustomArrayDict<ReferenceCache> = null as unknown as CustomArrayDict<ReferenceCache>;
