@@ -15,10 +15,10 @@ function getChainedPromiseWrapper(app: App): ValueWrapper<Promise<void>> {
  * Chains an asynchronous function to be executed after the previous asynchronous function completes.
  *
  * @param app - The Obsidian application instance.
- * @param asyncFn - The asynchronous function to chain.
+ * @param fn - The asynchronous function to chain.
  */
-export function chainAsyncFn(app: App, asyncFn: () => MaybePromise<void>): void {
+export function chain(app: App, fn: () => MaybePromise<void>): void {
   const stackTrace = getStackTrace();
   const chainedPromiseWrapper = getChainedPromiseWrapper(app);
-  chainedPromiseWrapper.value = chainedPromiseWrapper.value.then(() => addErrorHandler(() => invokeAsyncAndLog('chainAsyncFn', asyncFn, stackTrace)));
+  chainedPromiseWrapper.value = chainedPromiseWrapper.value.then(() => addErrorHandler(() => invokeAsyncAndLog('chain', fn, stackTrace)));
 }

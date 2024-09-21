@@ -21,7 +21,7 @@ import {
 } from '../Path.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import { getAttachmentFolderPath } from './AttachmentPath.ts';
-import { chainAsyncFn } from './ChainedPromise.ts';
+import { chain } from './ChainedPromise.ts';
 import {
   getFile,
   getFileOrNull,
@@ -117,7 +117,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
         return;
       }
       const path = file.path;
-      chainAsyncFn(app, () => handleDelete(app, path));
+      chain(app, () => handleDelete(app, path));
     })
   );
 
@@ -127,7 +127,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
         return;
       }
       const newPath = file.path;
-      chainAsyncFn(app, () => handleRename(app, oldPath, newPath));
+      chain(app, () => handleRename(app, oldPath, newPath));
     })
   );
 

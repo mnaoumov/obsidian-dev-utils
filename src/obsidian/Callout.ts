@@ -6,7 +6,7 @@
 import { throwExpression } from '../Error.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import { resolveValue } from '../ValueProvider.ts';
-import { chainAsyncFn } from './ChainedPromise.ts';
+import { chain } from './ChainedPromise.ts';
 import type { DataviewInlineApi } from './Dataview.ts';
 import { getRenderedContainer } from './Dataview.ts';
 
@@ -94,7 +94,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
     for (const entry of entries) {
       if (entry.isIntersecting) {
         observer.unobserve(entry.target);
-        chainAsyncFn(dv.app, loadContent);
+        chain(dv.app, loadContent);
       }
     }
   });
