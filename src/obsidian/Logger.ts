@@ -1,18 +1,5 @@
+import type { MaybePromise } from '../Async.ts';
 import { getStackTrace } from '../Error.ts';
-
-/**
- * Invokes a function and logs the start, end, and duration of the invocation.
- *
- * @param title - The title of the log.
- * @param fn - The function to invoke.
- * @param stackTrace - Optional stack trace.
- */
-export function invokeAndLog(title: string, fn: () => void, stackTrace?: string): void {
-  void invokeAsyncAndLog(title, async () => {
-    fn();
-    await Promise.resolve();
-  }, stackTrace);
-}
 
 /**
  * Invokes an asynchronous function and logs the start, end, and duration of the invocation.
@@ -21,7 +8,7 @@ export function invokeAndLog(title: string, fn: () => void, stackTrace?: string)
  * @param fn - The asynchronous function to invoke.
  * @param stackTrace - Optional stack trace.
  */
-export async function invokeAsyncAndLog(title: string, fn: () => Promise<void>, stackTrace?: string): Promise<void> {
+export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<void>, stackTrace?: string): Promise<void> {
   const timestampStart = Date.now();
   if (stackTrace === undefined) {
     stackTrace = getStackTrace().split('\n').slice(1).join('\n');
