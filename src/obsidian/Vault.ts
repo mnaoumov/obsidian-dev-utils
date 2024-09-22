@@ -39,7 +39,8 @@ import {
   getFolderOrNull,
   getPath,
   isFile,
-  isFolder
+  isFolder,
+  isNote
 } from './FileSystem.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
 
@@ -76,6 +77,15 @@ export interface FileChange {
  */
 export function getMarkdownFilesSorted(app: App): TFile[] {
   return app.vault.getMarkdownFiles().sort((a, b) => a.path.localeCompare(b.path));
+}
+
+/**
+ * Retrieves an array of all note files from the app's vault and sorts them alphabetically by their file path.
+ * @param app - The Obsidian app instance.
+ * @returns An array of all note files in the vault sorted by file path.
+ */
+export function getNoteFilesSorted(app: App): TFile[] {
+  return app.vault.getAllLoadedFiles().filter((file) => isFile(file) && isNote(file)).sort((a, b) => a.path.localeCompare(b.path)) as TFile[];
 }
 
 /**
