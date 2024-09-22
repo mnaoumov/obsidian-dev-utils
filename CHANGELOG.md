@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.32.0
+
+- `getNoteFilesSorted`
+- Refactor `instanceof` calls
+
 ## 3.31.0
 
 - Use safe overload of `getBacklinksForFile`
