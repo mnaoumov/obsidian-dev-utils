@@ -4,15 +4,13 @@
  */
 
 import {
-  DEFAULT_SCHEMA,
-  dump,
-  load,
-  Type
-} from 'js-yaml';
-import { App } from 'obsidian';
+  App,
+  parseYaml,
+  stringifyYaml
+} from 'obsidian';
 
 import type { MaybePromise } from '../Async.ts';
-import { throwExpression } from '../Error.ts';
+import { deepEqual } from '../Object.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import { getFile } from './FileSystem.ts';
 import { processWithRetry } from './Vault.ts';
@@ -76,17 +74,6 @@ export interface ObsidianPublishFrontMatter {
  */
 export type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & ObsidianFrontMatter & Record<string, unknown>;
 
-const TIMESTAMP_TYPE = new Type('tag:yaml.org,2002:timestamp', {
-  kind: 'scalar',
-  resolve: (data: unknown): boolean => data != null,
-  construct: (data: unknown): string => String(data),
-  represent: (data: object): unknown => data
-});
-
-const NO_TIMESTAMPS_YAML_SCHEMA = DEFAULT_SCHEMA.extend({
-  explicit: [TIMESTAMP_TYPE]
-});
-
 const FRONT_MATTER_REG_EXP = /^---\r?\n((?:.|\r?\n)*?)\r?\n?---(?:\r?\n|$)((?:.|\r?\n)*)/;
 
 /**
@@ -106,34 +93,33 @@ export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, 
     let frontMatterStr: string;
     let mainContent: string;
     if (match) {
-      frontMatterStr = match[1] ?? throwExpression(new Error('Front matter match is null'));
-      mainContent = match[2] ?? throwExpression(new Error('Front matter match is null'));
+      frontMatterStr = match[1]?.trim() ?? '';
+      mainContent = match[2]?.trim() ?? '';
     } else {
       frontMatterStr = '';
-      mainContent = content;
+      mainContent = content.trim();
     }
 
     if (!mainContent) {
       mainContent = '\n';
     } else {
-      mainContent = '\n' + mainContent.trim() + '\n';
+      mainContent = `\n${mainContent}\n`;
     }
 
-    const frontMatter = (load(frontMatterStr, { schema: NO_TIMESTAMPS_YAML_SCHEMA }) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
-    await frontMatterFn(frontMatter);
-    let newFrontMatterStr = dump(frontMatter, {
-      lineWidth: -1,
-      quotingType: '"',
-      schema: NO_TIMESTAMPS_YAML_SCHEMA
-    });
+    const oldFrontMatter = (parseYaml(frontMatterStr) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
+    const newFrontMatter = (parseYaml(frontMatterStr) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
+    await frontMatterFn(newFrontMatter);
+
+    if (deepEqual(oldFrontMatter, newFrontMatter)) {
+      return content;
+    }
+
+    let newFrontMatterStr = stringifyYaml(newFrontMatter);
     if (newFrontMatterStr === '{}\n') {
       newFrontMatterStr = '';
     }
 
-    const newContent = `---
-${newFrontMatterStr}---
-${mainContent}`;
-
+    const newContent = `---\n${newFrontMatterStr}---\n${mainContent}`;
     return newContent;
   });
 }
