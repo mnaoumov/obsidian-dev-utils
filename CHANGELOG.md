@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.33.0
+
+- Refactor yaml parsing
+
 ## 3.32.0
 
 - `getNoteFilesSorted`
