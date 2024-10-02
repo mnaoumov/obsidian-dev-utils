@@ -49,6 +49,7 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
     }
 
     await saveNote(app, file);
+    app.metadataCache.onCreateOrModify(file);
 
     const fileInfo = app.metadataCache.getFileInfo(file.path);
     const stat = await app.vault.adapter.stat(file.path);
