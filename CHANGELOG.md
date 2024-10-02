@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.34.0
+
+- Ensure MetadataCache update triggered
+
 ## 3.33.0
 
 - Refactor yaml parsing
