@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.35.0
+
+- Remove unnecessary logging
+- Ensure timestamps are up to date
+
 ## 3.34.0
 
 - Ensure MetadataCache update triggered
