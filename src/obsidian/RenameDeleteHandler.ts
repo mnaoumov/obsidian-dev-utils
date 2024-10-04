@@ -104,17 +104,17 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
   const pluginId = plugin.manifest.id;
 
   renameDeleteHandlersMap.set(pluginId, settingsBuilder);
-  logPluginSettingsOrder(plugin.app);
+  logRegisteredHandlers(plugin.app);
 
   plugin.register(() => {
     renameDeleteHandlersMap.delete(pluginId);
-    logPluginSettingsOrder(plugin.app);
+    logRegisteredHandlers(plugin.app);
   });
 
   const app = plugin.app;
   plugin.registerEvent(
     app.vault.on('delete', (file) => {
-      if (!shouldInvokeHandler(app, pluginId, 'Delete')) {
+      if (!shouldInvokeHandler(app, pluginId)) {
         return;
       }
       const path = file.path;
@@ -124,7 +124,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
 
   plugin.registerEvent(
     app.vault.on('rename', (file, oldPath) => {
-      if (!shouldInvokeHandler(app, pluginId, 'Rename')) {
+      if (!shouldInvokeHandler(app, pluginId)) {
         return;
       }
       const newPath = file.path;
@@ -139,11 +139,10 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
   );
 }
 
-function shouldInvokeHandler(app: App, pluginId: string, handlerType: string): boolean {
+function shouldInvokeHandler(app: App, pluginId: string): boolean {
   const renameDeleteHandlerPluginIds = getRenameDeleteHandlersMap(app);
   const mainPluginId = Array.from(renameDeleteHandlerPluginIds.keys())[0];
   if (mainPluginId !== pluginId) {
-    console.debug(`${handlerType} handler for plugin ${pluginId} is skipped, because it is handled by plugin ${mainPluginId ?? '(none)'}`);
     return false;
   }
   return true;
@@ -153,9 +152,9 @@ function getRenameDeleteHandlersMap(app: App): Map<string, () => Partial<RenameD
   return getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
 }
 
-function logPluginSettingsOrder(app: App): void {
+function logRegisteredHandlers(app: App): void {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
-  console.debug(`Rename/delete handlers will use plugin settings in the following order: ${Array.from(renameDeleteHandlersMap.keys()).join(', ')}`);
+  console.debug(`Plugins with registered rename/delete handlers: ${Array.from(renameDeleteHandlersMap.keys()).join(', ')}`);
 }
 
 async function handleRename(app: App, oldPath: string, newPath: string): Promise<void> {
