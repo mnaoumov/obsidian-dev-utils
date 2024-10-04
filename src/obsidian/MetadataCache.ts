@@ -49,7 +49,6 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
     }
 
     await saveNote(app, file);
-    app.metadataCache.onCreateOrModify(file);
 
     const fileInfo = app.metadataCache.getFileInfo(file.path);
     const stat = await app.vault.adapter.stat(file.path);
@@ -59,6 +58,10 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
       return false;
     } else if (!stat) {
       console.debug(`File stat for ${file.path} is missing`);
+      return false;
+    } else if (file.stat.mtime < stat.mtime) {
+      app.vault.onChange('modified', file.path, undefined, stat);
+      console.debug(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
       return false;
     } else if (fileInfo.mtime < stat.mtime) {
       console.debug(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
