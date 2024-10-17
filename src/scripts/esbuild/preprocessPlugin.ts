@@ -30,13 +30,13 @@ import {
  */
 export function preprocessPlugin(): Plugin {
   const replacements = {
-    'process': {
+    process: {
       cwd: () => '/',
       env: {},
       platform: 'android'
     } as typeof process,
     ['import(dot)meta(dot)url'.replaceAll('(dot)', '.')]: (): string => {
-      if (typeof module?.exports !== 'undefined') {
+      if (typeof (module as unknown as Record<string, unknown>)['exports'] !== 'undefined') {
         // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
         const url = require('node:url') as typeof import('node:url');
         return url.pathToFileURL(__filename).href;
