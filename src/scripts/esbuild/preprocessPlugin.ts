@@ -22,7 +22,7 @@ import {
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
  *
  * This plugin performs the following tasks:
- * - Replaces instances of `import.meta.url` with a Node.js-compatible `__filename` alternative.
+ * - Replaces instances of `import(dot)meta(dot)url` with a Node.js-compatible `__filename` alternative.
  * - Modifies the `sourceMappingURL` comment to ensure compatibility with Obsidian's plugin system.
  * - Adds a basic `process` object to the global scope if `process` is referenced but not defined.
  *
