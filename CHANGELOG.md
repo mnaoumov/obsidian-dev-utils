@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.36.2
+
+- Avoid useless replacements
+
 ## 3.36.1
 
 - Prevent replacement
