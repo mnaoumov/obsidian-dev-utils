@@ -47,7 +47,8 @@ export function preprocessPlugin(): Plugin {
       }
 
       // HACK: to prevent unnecessary replacement of import(dot)meta(dot)url
-      return (import.meta).url;
+      const meta = import.meta;
+      return meta.url;
     }
   };
 
