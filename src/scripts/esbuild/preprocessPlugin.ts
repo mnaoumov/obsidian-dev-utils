@@ -46,9 +46,8 @@ export function preprocessPlugin(): Plugin {
         return window.location.href;
       }
 
-      // HACK: to prevent unnecessary replacement of import(dot)meta(dot)url
-      const meta = import.meta;
-      return meta.url;
+      // Fallback to an empty string if the environment is unknown
+      return '';
     }
   };
 
@@ -58,18 +57,22 @@ export function preprocessPlugin(): Plugin {
       build.initialOptions.define ??= {};
 
       for (const key of Object.keys(replacements)) {
-        build.initialOptions.define[key] = '__' + makeValidVariableName(key);
+        build.initialOptions.define[key] = `__${makeValidVariableName(key)}`;
       }
 
       build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, 'utf-8');
 
         for (const [key, value] of Object.entries(replacements)) {
-          const valueStr = typeof value === 'function' ? `(${value.toString()})()` : toJson(value, { shouldHandleFunctions: true });
-          if (contents.includes(`var __${makeValidVariableName(key)}`)) {
+          const variable = `__${makeValidVariableName(key)}`;
+          if (!contents.includes(variable)) {
             continue;
           }
-          contents = `var __${makeValidVariableName(key)} = globalThis['${key}'] ?? ${valueStr};\n` + contents;
+          const valueStr = typeof value === 'function' ? `(${value.toString()})()` : toJson(value, { shouldHandleFunctions: true });
+          if (contents.includes(`var ${variable}`)) {
+            continue;
+          }
+          contents = `var ${variable} = globalThis['${key}'] ?? ${valueStr};\n` + contents;
         }
 
         // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
