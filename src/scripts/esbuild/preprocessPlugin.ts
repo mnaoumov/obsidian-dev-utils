@@ -65,7 +65,7 @@ export function preprocessPlugin(): Plugin {
 
         for (const [key, value] of Object.entries(replacements)) {
           const variable = `__${makeValidVariableName(key)}`;
-          if (!contents.includes(variable)) {
+          if (!contents.includes(key)) {
             continue;
           }
           const valueStr = typeof value === 'function' ? `(${value.toString()})()` : toJson(value, { shouldHandleFunctions: true });
