@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.36.3
+
+- Check for replacement, not its variable
+
 ## 3.36.2
 
 - Avoid useless replacements
