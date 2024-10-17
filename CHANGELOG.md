@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.36.4
+
+- Improve check for CJS
+
 ## 3.36.3
 
 - Check for replacement, not its variable
