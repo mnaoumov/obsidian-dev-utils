@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.36.1
+
+- Prevent replacement
+
 ## 3.36.0
 
 - Make `import.meta.url` more universal
