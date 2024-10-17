@@ -35,7 +35,7 @@ export function preprocessPlugin(): Plugin {
       env: {},
       platform: 'android'
     } as typeof process,
-    'import.meta.url': (): string => {
+    ['import(dot)meta(dot)url'.replaceAll('(dot)', '.')]: (): string => {
       if (typeof require !== 'undefined' && typeof module !== 'undefined') {
         // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
         const url = require('node:url') as typeof import('node:url');

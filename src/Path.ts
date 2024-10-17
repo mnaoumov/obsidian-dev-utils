@@ -134,9 +134,9 @@ export function toPosixBuffer(buffer: Buffer): Buffer {
 }
 
 /**
- * Gets the filename from the `import.meta.url`, converting it to a POSIX-style path.
+ * Gets the filename from the `import(dot)meta(dot)url`, converting it to a POSIX-style path.
  *
- * @param importMetaUrl - The `import.meta.url` from which to extract the filename.
+ * @param importMetaUrl - The `import(dot)meta(dot)url` from which to extract the filename.
  * @returns The POSIX-style filename.
  */
 export function getFilename(importMetaUrl: string): string {
@@ -144,9 +144,9 @@ export function getFilename(importMetaUrl: string): string {
 }
 
 /**
- * Gets the directory name from the `import.meta.url`, converting it to a POSIX-style path.
+ * Gets the directory name from the `import(dot)meta(dot)url`, converting it to a POSIX-style path.
  *
- * @param importMetaUrl - The `import.meta.url` from which to extract the directory name.
+ * @param importMetaUrl - The `import(dot)meta(dot)url` from which to extract the directory name.
  * @returns The POSIX-style directory name.
  */
 export function getDirname(importMetaUrl: string): string {
