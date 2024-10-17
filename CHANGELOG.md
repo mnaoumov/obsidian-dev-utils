@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.36.0
+
+- Make `import.meta.url` more universal
+
 ## 3.35.0
 
 - Remove unnecessary logging
