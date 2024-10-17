@@ -35,12 +35,18 @@ export function preprocessPlugin(): Plugin {
       env: {},
       platform: 'android'
     } as typeof process,
-    'import.meta.url': (): URL => {
-      if (typeof __filename !== 'string') {
-        return new URL(window.location.href);
+    'import.meta.url': (): string => {
+      if (typeof require !== 'undefined' && typeof module !== 'undefined') {
+        // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
+        const url = require('node:url') as typeof import('node:url');
+        return url.pathToFileURL(__filename).href;
       }
-      // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
-      return (require('node:url') as typeof import('node:url')).pathToFileURL(__filename);
+
+      if (typeof window !== 'undefined') {
+        return window.location.href;
+      }
+
+      return import.meta.url;
     }
   };
 
