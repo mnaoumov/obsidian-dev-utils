@@ -30,13 +30,13 @@ export interface RetryOptions {
 }
 
 /**
- * Retries the provided asynchronous function until it succeeds or the timeout is reached.
+ * Retries the provided function until it returns true or the timeout is reached.
  *
- * @param asyncFn - The asynchronous function to retry.
+ * @param fn - The function to retry.
  * @param retryOptions - Optional parameters to configure the retry behavior.
- * @returns A Promise that resolves when the function succeeds or rejects when the timeout is reached.
+ * @returns A Promise that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeout(asyncFn: () => Promise<boolean>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const stackTrace = getStackTrace();
   const DEFAULT_RETRY_OPTIONS: RetryOptions = {
     timeoutInMilliseconds: 5000,
@@ -47,7 +47,7 @@ export async function retryWithTimeout(asyncFn: () => Promise<boolean>, retryOpt
     let attempt = 0;
     for (; ;) {
       attempt++;
-      if (await asyncFn()) {
+      if (await fn()) {
         if (attempt > 1) {
           console.debug(`Retry completed successfully after ${attempt.toString()} attempts`);
         }
@@ -55,7 +55,7 @@ export async function retryWithTimeout(asyncFn: () => Promise<boolean>, retryOpt
       }
 
       console.debug(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${overriddenOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
-        asyncFn,
+        fn,
         stackTrace
       });
       await sleep(overriddenOptions.retryDelayInMilliseconds);
@@ -74,15 +74,15 @@ export async function sleep(milliseconds: number): Promise<void> {
 }
 
 /**
- * Executes an asynchronous function with a timeout. If the function does not complete within the specified time, it is considered to have timed out.
+ * Executes a function with a timeout. If the function does not complete within the specified time, it is considered to have timed out.
  *
  * @typeParam R - The type of the result from the asynchronous function.
  * @param timeoutInMilliseconds - The maximum time to wait in milliseconds.
- * @param asyncFn - The asynchronous function to execute.
+ * @param fn - The function to execute.
  * @returns A Promise that resolves with the result of the asynchronous function or rejects if it times out.
  */
-export async function runWithTimeout<R>(timeoutInMilliseconds: number, asyncFn: () => Promise<R>): Promise<R> {
-  return await Promise.race([asyncFn(), timeout(timeoutInMilliseconds)]);
+export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => MaybePromise<R>): Promise<R> {
+  return await Promise.race([fn(), timeout(timeoutInMilliseconds)]);
 }
 
 /**
