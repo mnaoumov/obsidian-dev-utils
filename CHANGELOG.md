@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.37.0
+
+- Replace Promise with MaybePromise
+
 ## 3.36.4
 
 - Improve check for CJS
