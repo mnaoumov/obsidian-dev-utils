@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.38.0
+
+- Refactor
+
 ## 3.37.0
 
 - Replace Promise with MaybePromise
