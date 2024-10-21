@@ -10,6 +10,7 @@ import {
 } from 'obsidian';
 import type { CanvasData } from 'obsidian/canvas.js';
 
+import { noopAsync } from '../Function.ts';
 import { toJson } from '../Object.ts';
 import {
   basename,
@@ -49,7 +50,6 @@ import {
   process,
   renameSafe
 } from './Vault.ts';
-import { noopAsync } from '../Function.ts';
 
 const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
 const handledRenames = new Set<string>();

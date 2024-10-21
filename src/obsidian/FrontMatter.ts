@@ -85,8 +85,10 @@ export type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & Obsidia
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or TFile object representing the note.
  * @param frontMatterFn - A function that modifies the front matter.
+ * @param retryOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
  * @returns A promise that resolves when the front matter has been processed and saved.
  */
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: CombinedFrontMatter<CustomFrontMatter>) => MaybePromise<void | null>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const file = getFile(app, pathOrFile);
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
@@ -110,7 +112,7 @@ export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, 
       return content.slice(frontMatterInfo.contentStart);
     }
 
-    let newFrontMatterStr = stringifyYaml(newFrontMatter);
+    const newFrontMatterStr = stringifyYaml(newFrontMatter);
 
     return frontMatterInfo.exists
       ? content.slice(0, frontMatterInfo.from) + newFrontMatterStr + content.slice(frontMatterInfo.to)

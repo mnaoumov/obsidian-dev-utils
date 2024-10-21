@@ -17,6 +17,7 @@ import {
   printError,
   throwExpression
 } from '../Error.ts';
+import { noopAsync } from '../Function.ts';
 import { deepEqual } from '../Object.ts';
 import {
   basename,
@@ -43,7 +44,6 @@ import {
   isNote
 } from './FileSystem.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
-import { noopAsync } from '../Function.ts';
 
 /**
  * Represents a file change in the Vault.
