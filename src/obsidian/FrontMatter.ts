@@ -5,11 +5,15 @@
 
 import {
   App,
+  getFrontMatterInfo,
   parseYaml,
   stringifyYaml
 } from 'obsidian';
 
-import type { MaybePromise } from '../Async.ts';
+import type {
+  MaybePromise,
+  RetryOptions
+} from '../Async.ts';
 import { deepEqual } from '../Object.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import { getFile } from './FileSystem.ts';
@@ -74,8 +78,6 @@ export interface ObsidianPublishFrontMatter {
  */
 export type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & ObsidianFrontMatter & Record<string, unknown>;
 
-const FRONT_MATTER_REG_EXP = /^---\r?\n((?:.|\r?\n)*?)\r?\n?---(?:\r?\n|$)((?:.|\r?\n)*)/;
-
 /**
  * Processes the front matter of a given file, allowing modifications via a provided function.
  *
@@ -85,43 +87,35 @@ const FRONT_MATTER_REG_EXP = /^---\r?\n((?:.|\r?\n)*?)\r?\n?---(?:\r?\n|$)((?:.|
  * @param frontMatterFn - A function that modifies the front matter.
  * @returns A promise that resolves when the front matter has been processed and saved.
  */
-export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: CombinedFrontMatter<CustomFrontMatter>) => MaybePromise<void>): Promise<void> {
+export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: CombinedFrontMatter<CustomFrontMatter>) => MaybePromise<void | null>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const file = getFile(app, pathOrFile);
+  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
+  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
 
   await processWithRetry(app, file, async (content) => {
-    const match = FRONT_MATTER_REG_EXP.exec(content);
-    let frontMatterStr: string;
-    let mainContent: string;
-    if (match) {
-      frontMatterStr = match[1]?.trim() ?? '';
-      mainContent = match[2]?.trim() ?? '';
-    } else {
-      frontMatterStr = '';
-      mainContent = content.trim();
-    }
+    const frontMatterInfo = getFrontMatterInfo(content);
 
-    if (!mainContent) {
-      mainContent = '\n';
-    } else {
-      mainContent = `\n${mainContent}\n`;
+    const oldFrontMatter = (parseYaml(frontMatterInfo.frontmatter) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
+    const newFrontMatter = (parseYaml(frontMatterInfo.frontmatter) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
+    const result = await frontMatterFn(newFrontMatter);
+    if (result === null) {
+      return null;
     }
-
-    const oldFrontMatter = (parseYaml(frontMatterStr) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
-    const newFrontMatter = (parseYaml(frontMatterStr) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
-    await frontMatterFn(newFrontMatter);
 
     if (deepEqual(oldFrontMatter, newFrontMatter)) {
       return content;
     }
 
-    let newFrontMatterStr = stringifyYaml(newFrontMatter);
-    if (newFrontMatterStr === '{}\n') {
-      newFrontMatterStr = '';
+    if (Object.keys(newFrontMatter).length === 0) {
+      return content.slice(frontMatterInfo.contentStart);
     }
 
-    const newContent = `---\n${newFrontMatterStr}---\n${mainContent}`;
-    return newContent;
-  });
+    let newFrontMatterStr = stringifyYaml(newFrontMatter);
+
+    return frontMatterInfo.exists
+      ? content.slice(0, frontMatterInfo.from) + newFrontMatterStr + content.slice(frontMatterInfo.to)
+      : '---\n' + newFrontMatterStr + '---\n' + content;
+  }, overriddenOptions);
 }
 
 /**
