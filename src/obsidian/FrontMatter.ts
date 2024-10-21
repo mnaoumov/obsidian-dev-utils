@@ -17,7 +17,7 @@ import type {
 import { deepEqual } from '../Object.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import { getFile } from './FileSystem.ts';
-import { processWithRetry } from './Vault.ts';
+import { process } from './Vault.ts';
 
 /**
  * Represents the front matter of an Obsidian file.
@@ -92,7 +92,7 @@ export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, 
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
 
-  await processWithRetry(app, file, async (content) => {
+  await process(app, file, async (content) => {
     const frontMatterInfo = getFrontMatterInfo(content);
 
     const oldFrontMatter = (parseYaml(frontMatterInfo.frontmatter) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
