@@ -10,7 +10,10 @@ import type {
   ReferenceCache,
   TFile
 } from 'obsidian';
-import { normalizePath } from 'obsidian';
+import {
+  normalizePath,
+  parseLinktext
+} from 'obsidian';
 
 import type {
   MaybePromise,
@@ -66,7 +69,7 @@ export interface SplitSubpathResult {
   /**
    * The subpath.
    */
-  subpath: string | undefined;
+  subpath: string;
 }
 
 /**
@@ -76,12 +79,11 @@ export interface SplitSubpathResult {
  * @returns An object containing the link path and subpath.
  */
 export function splitSubpath(link: string): SplitSubpathResult {
-  const SUBPATH_SEPARATOR = '#';
-  const [linkPath = '', subpath] = normalize(link).split(SUBPATH_SEPARATOR);
+  const parsed = parseLinktext(normalize(link));
   return {
-    linkPath,
-    subpath: subpath ? SUBPATH_SEPARATOR + subpath : undefined
-  };
+    linkPath: parsed.path,
+    subpath: parsed.subpath
+  }
 }
 
 /**
