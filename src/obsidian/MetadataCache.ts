@@ -26,6 +26,7 @@ import {
   isMarkdownFile
 } from './FileSystem.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
+import { noop } from '../Function.ts';
 
 /**
  * Retrieves the cached metadata for a given file or path.
@@ -252,9 +253,7 @@ export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () 
  */
 export function registerFile(app: App, file: TAbstractFile): () => void {
   if (!file.deleted) {
-    return () => {
-      // Do nothing
-    };
+    return noop;
   }
 
   const deletedPaths: string[] = [];

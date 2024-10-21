@@ -6,6 +6,7 @@
 
 import type { MaybePromise } from '../Async.ts';
 import { printError } from '../Error.ts';
+import { noop } from '../Function.ts';
 import { process } from './NodeModules.ts';
 
 /**
@@ -134,7 +135,7 @@ class DoNotExitTaskResult extends CliTaskResult {
    * Does not exit the process.
    */
   public override exit(): void {
-    // Do nothing
+    noop();
   }
 
   protected override isSuccessful(): boolean {
