@@ -43,6 +43,7 @@ import {
   isNote
 } from './FileSystem.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
+import { noopAsync } from '../Function.ts';
 
 /**
  * Represents a file change in the Vault.
@@ -329,9 +330,7 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: PathOrF
 export async function createTempFile(app: App, path: string): Promise<() => Promise<void>> {
   let file = getFileOrNull(app, path);
   if (file) {
-    return async () => {
-      // Do nothing
-    };
+    return noopAsync;
   }
 
   const folderCleanup = await createTempFolder(app, parentFolderPath(path));
@@ -363,9 +362,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
 export async function createTempFolder(app: App, path: string): Promise<() => Promise<void>> {
   let folder = getFolderOrNull(app, path);
   if (folder) {
-    return async () => {
-      // Do nothing
-    };
+    return noopAsync;
   }
 
   const dirPath = parentFolderPath(path);

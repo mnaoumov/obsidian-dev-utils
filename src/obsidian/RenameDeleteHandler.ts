@@ -49,6 +49,7 @@ import {
   processWithRetry,
   renameSafe
 } from './Vault.ts';
+import { noopAsync } from '../Function.ts';
 
 const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
 const handledRenames = new Set<string>();
@@ -173,9 +174,7 @@ async function handleRename(app: App, oldPath: string, newPath: string): Promise
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const updateAllLinks = app.fileManager.updateAllLinks;
-  app.fileManager.updateAllLinks = async (): Promise<void> => {
-    // do nothing
-  };
+  app.fileManager.updateAllLinks = noopAsync;
   try {
     await renameHandled(app, newPath, oldPath);
     await processAndRename(app, oldPath, newPath);

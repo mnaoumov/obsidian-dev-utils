@@ -23,3 +23,17 @@ export function omitAsyncReturnType<Args extends unknown[]>(fn: (...args: Args) 
     await fn(...args);
   };
 }
+
+/**
+ * A function that does nothing.
+ */
+export function noop(): void {
+  // Does nothing.
+}
+
+/**
+ * A function that does nothing.
+ */
+export async function noopAsync(): Promise<void> {
+  // Does nothing.
+}

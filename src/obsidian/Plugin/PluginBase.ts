@@ -20,6 +20,7 @@ import {
   clonePluginSettings,
   loadPluginSettings
 } from './PluginSettings.ts';
+import { noop } from '../../Function.ts';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
@@ -103,7 +104,9 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    *
    * @returns A promise or void indicating the completion of the load process.
    */
-  protected abstract onloadComplete(): MaybePromise<void>;
+  protected onloadComplete(): MaybePromise<void> {
+    noop();
+  }
 
   /**
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
@@ -112,7 +115,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * @returns A promise or void indicating the completion of the layout setup.
    */
   protected onLayoutReady(): MaybePromise<void> {
-    // Does nothing by default.
+    noop();
   }
 
   /**
