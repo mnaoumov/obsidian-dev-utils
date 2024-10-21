@@ -46,7 +46,7 @@ import {
 import {
   deleteEmptyFolderHierarchy,
   deleteSafe,
-  processWithRetry,
+  process,
   renameSafe
 } from './Vault.ts';
 import { noopAsync } from '../Function.ts';
@@ -256,7 +256,7 @@ async function processAndRename(app: App, oldPath: string, newPath: string): Pro
   }
 
   if (isCanvasFile(newPath)) {
-    await processWithRetry(app, newPath, (content) => {
+    await process(app, newPath, (content) => {
       const canvasData = JSON.parse(content) as CanvasData;
       for (const node of canvasData.nodes) {
         if (node.type !== 'file') {

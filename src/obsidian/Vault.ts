@@ -103,7 +103,7 @@ export function getNoteFilesSorted(app: App): TFile[] {
  *
  * @throws Will throw an error if the process fails after the specified number of retries or timeout.
  */
-export async function processWithRetry(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<string | null, [string]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<string | null, [string]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const file = getFile(app, pathOrFile);
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
@@ -145,7 +145,7 @@ export async function processWithRetry(app: App, pathOrFile: PathOrFile, newCont
 export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changesProvider: ValueProvider<FileChange[]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  await processWithRetry(app, pathOrFile, async (content) => {
+  await process(app, pathOrFile, async (content) => {
     let changes = await resolveValue(changesProvider);
 
     for (const change of changes) {
