@@ -15,7 +15,6 @@ import {
 
 import type { MaybePromise } from '../../Async.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
-import { chain } from '../ChainedPromise.ts';
 import {
   clonePluginSettings,
   loadPluginSettings
@@ -76,26 +75,24 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
    * Called when the plugin is loaded
    */
-  public override onload(): void {
+  public override async onload(): Promise<void> {
     this.register(registerAsyncErrorEventHandler(() => {
       this.showNotice('An unhandled error occurred. Please check the console for more information.');
     }));
 
-    chain(this.app, async (): Promise<void> => {
-      await this.loadSettings();
-      const pluginSettingsTab = this.createPluginSettingsTab();
-      if (pluginSettingsTab) {
-        this.addSettingTab(pluginSettingsTab);
-      }
+    await this.loadSettings();
+    const pluginSettingsTab = this.createPluginSettingsTab();
+    if (pluginSettingsTab) {
+      this.addSettingTab(pluginSettingsTab);
+    }
 
-      const abortController = new AbortController();
-      this._abortSignal = abortController.signal;
-      this.register(() => {
-        abortController.abort();
-      });
-      await this.onloadComplete();
-      this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+    const abortController = new AbortController();
+    this._abortSignal = abortController.signal;
+    this.register(() => {
+      abortController.abort();
     });
+    await this.onloadComplete();
+    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
   }
 
   /**
