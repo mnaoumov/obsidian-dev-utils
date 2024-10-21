@@ -16,6 +16,7 @@ import { parentFolderPath } from 'obsidian-typings/implementations';
 import type { RetryOptions } from '../Async.ts';
 import { retryWithTimeout } from '../Async.ts';
 import { throwExpression } from '../Error.ts';
+import { noop } from '../Function.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import {
   getFile,
@@ -26,7 +27,6 @@ import {
   isMarkdownFile
 } from './FileSystem.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
-import { noop } from '../Function.ts';
 
 /**
  * Retrieves the cached metadata for a given file or path.

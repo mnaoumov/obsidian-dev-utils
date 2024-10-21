@@ -83,7 +83,7 @@ export function splitSubpath(link: string): SplitSubpathResult {
   return {
     linkPath: parsed.path,
     subpath: parsed.subpath
-  }
+  };
 }
 
 /**

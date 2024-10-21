@@ -15,11 +15,11 @@ import {
 
 import type { MaybePromise } from '../../Async.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
+import { noop } from '../../Function.ts';
 import {
   clonePluginSettings,
   loadPluginSettings
 } from './PluginSettings.ts';
-import { noop } from '../../Function.ts';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
