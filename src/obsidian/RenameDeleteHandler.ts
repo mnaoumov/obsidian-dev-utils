@@ -135,7 +135,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
 
   plugin.registerEvent(
     app.metadataCache.on('deleted', (file, prevCache) => {
-      handleMetadataDeleted(file, prevCache);
+      handleMetadataDeleted(app, file, prevCache);
     })
   );
 }
@@ -419,7 +419,11 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
   return settings;
 }
 
-function handleMetadataDeleted(file: TAbstractFile, prevCache: CachedMetadata | null): void {
+function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
+  const settings = getSettings(app);
+  if (!settings.shouldDeleteOrphanAttachments) {
+    return;
+  }
   if (isMarkdownFile(file) && prevCache) {
     deletedMetadataCacheMap.set(file.path, prevCache);
   }
