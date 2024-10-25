@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.39.0
+
+- Avoid unnecessary renames
+- Don't store metadata if not set `shouldDeleteOrphanAttachments`
+
 ## 3.38.0
 
 - Refactor
