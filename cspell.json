@@ -2,7 +2,8 @@
   "version": "0.2",
   "ignorePaths": [
     "dist",
-    "node_modules"
+    "node_modules",
+    "tsconfig.tsbuildinfo"
   ],
   "dictionaryDefinitions": [],
   "dictionaries": [],
@@ -77,6 +78,7 @@
     "subsources",
     "subtags",
     "succ",
+    "tsbuildinfo",
     "tsdoc",
     "tsdocs",
     "tseslint",
