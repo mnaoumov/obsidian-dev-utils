@@ -1,6 +1,8 @@
+import { around } from 'monkey-around';
 import type {
   CachedMetadata,
   Plugin,
+  ReferenceCache,
   TAbstractFile
 } from 'obsidian';
 import {
@@ -9,6 +11,7 @@ import {
   Vault
 } from 'obsidian';
 import type { CanvasData } from 'obsidian/canvas.js';
+import type { CustomArrayDict } from 'obsidian-typings';
 
 import { noopAsync } from '../Function.ts';
 import { toJson } from '../Object.ts';
@@ -40,6 +43,7 @@ import {
 } from './Link.ts';
 import {
   getAllLinks,
+  getBacklinksForFileOrPath,
   getBacklinksForFileSafe,
   getBacklinksMap,
   getCacheSafe
@@ -47,6 +51,7 @@ import {
 import {
   deleteEmptyFolderHierarchy,
   deleteSafe,
+  getSafeRenamePath,
   process,
   renameSafe
 } from './Vault.ts';
@@ -129,7 +134,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
         return;
       }
       const newPath = file.path;
-      chain(app, () => handleRename(app, oldPath, newPath));
+      handleRename(app, oldPath, newPath);
     })
   );
 
@@ -158,28 +163,113 @@ function logRegisteredHandlers(app: App): void {
   console.debug(`Plugins with registered rename/delete handlers: ${Array.from(renameDeleteHandlersMap.keys()).join(', ')}`);
 }
 
-async function handleRename(app: App, oldPath: string, newPath: string): Promise<void> {
-  console.debug(`Handle Rename ${oldPath} -> ${newPath}`);
-
-  const newFile = getFileOrNull(app, newPath);
-  if (!newFile) {
-    return;
-  }
-
+function handleRename(app: App, oldPath: string, newPath: string): void {
   const key = makeKey(oldPath, newPath);
+  console.debug(`Handle Rename ${key}`);
   if (handledRenames.has(key)) {
     handledRenames.delete(key);
     return;
   }
 
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const updateAllLinks = app.fileManager.updateAllLinks;
-  app.fileManager.updateAllLinks = noopAsync;
+  const backlinks = getBacklinksForFileOrPath(app, oldPath);
+  chain(app, () => handleRenameAsync(app, oldPath, newPath, backlinks));
+}
+
+async function handleRenameAsync(app: App, oldPath: string, newPath: string, backlinks: CustomArrayDict<ReferenceCache>): Promise<void> {
+  if (app.vault.adapter.insensitive && oldPath.toLowerCase() === newPath.toLowerCase()) {
+    const tempPath = join(dirname(newPath), '__temp__' + basename(newPath));
+    await renameHandled(app, newPath, tempPath);
+    await handleRenameAsync(app, oldPath, tempPath, backlinks);
+    await app.vault.rename(getFile(app, tempPath), newPath);
+    return;
+  }
+
+  const restoreUpdateAllLinks = around(app.fileManager, {
+    updateAllLinks: () => noopAsync
+  });
   try {
-    await renameHandled(app, newPath, oldPath);
-    await processAndRename(app, oldPath, newPath);
+    const renameMap = new Map<string, string>();
+    await fillRenameMap(app, oldPath, newPath, renameMap);
+
+    const backlinksMap = new Map<string, Map<string, string>>();
+    initBacklinksMap(backlinks.data, renameMap, backlinksMap, oldPath);
+
+    for (const attachmentOldPath of renameMap.keys()) {
+      if (attachmentOldPath === oldPath) {
+        continue;
+      }
+      const currentBacklinksMap = await getBacklinksMap(app, [attachmentOldPath]);
+      initBacklinksMap(currentBacklinksMap, renameMap, backlinksMap, attachmentOldPath);
+    }
+
+    const parentFolders = new Set<string>();
+
+    for (const [oldRelatedPath, newRelatedPath] of renameMap.entries()) {
+      if (oldRelatedPath === oldPath) {
+        continue;
+      }
+      const fixedNewRelatedPath = await renameHandled(app, oldRelatedPath, newRelatedPath);
+      renameMap.set(oldRelatedPath, fixedNewRelatedPath);
+      parentFolders.add(dirname(oldRelatedPath));
+    }
+
+    const settings = getSettings(app);
+    if (settings.shouldDeleteEmptyFolders) {
+      for (const parentFolder of parentFolders) {
+        await deleteEmptyFolderHierarchy(app, parentFolder);
+      }
+    }
+
+    for (const [newBacklinkPath, linkJsonToPathMap] of backlinksMap.entries()) {
+      await editLinks(app, newBacklinkPath, (link) => {
+        const oldRelatedPath = linkJsonToPathMap.get(toJson(link));
+        if (!oldRelatedPath) {
+          return;
+        }
+
+        const newRelatedPath = renameMap.get(oldRelatedPath);
+        if (!newRelatedPath) {
+          return;
+        }
+
+        return updateLink({
+          app: app,
+          link,
+          pathOrFile: newRelatedPath,
+          oldPathOrFile: oldRelatedPath,
+          sourcePathOrFile: newBacklinkPath,
+          renameMap,
+          shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
+        });
+      });
+    }
+
+    if (isCanvasFile(newPath)) {
+      await process(app, newPath, (content) => {
+        const canvasData = JSON.parse(content) as CanvasData;
+        for (const node of canvasData.nodes) {
+          if (node.type !== 'file') {
+            continue;
+          }
+          const newPath = renameMap.get(node.file);
+          if (!newPath) {
+            continue;
+          }
+          node.file = newPath;
+        }
+        return toJson(canvasData);
+      });
+    } else if (isMarkdownFile(newPath)) {
+      await updateLinksInFile({
+        app: app,
+        pathOrFile: newPath,
+        oldPathOrFile: oldPath,
+        renameMap,
+        shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
+      });
+    }
   } finally {
-    app.fileManager.updateAllLinks = updateAllLinks;
+    restoreUpdateAllLinks();
     const orphanKeys = Array.from(handledRenames);
     chain(app, () => {
       for (const key of orphanKeys) {
@@ -189,95 +279,14 @@ async function handleRename(app: App, oldPath: string, newPath: string): Promise
   }
 }
 
-async function processAndRename(app: App, oldPath: string, newPath: string): Promise<void> {
-  if (app.vault.adapter.insensitive && newPath.toLowerCase() === oldPath.toLowerCase() && dirname(newPath) === dirname(oldPath)) {
-    const tempPath = join(dirname(oldPath), '__temp__' + basename(newPath));
-    await processAndRename(app, oldPath, tempPath);
-    await processAndRename(app, tempPath, newPath);
-    return;
-  }
-
-  const settings = getSettings(app);
-  const renameMap = new Map<string, string>();
-  await fillRenameMap(app, oldPath, newPath, renameMap);
-
-  const backlinksMap = new Map<string, Map<string, string>>();
-
-  for (const oldPath2 of renameMap.keys()) {
-    const currentBacklinksMap = await getBacklinksMap(app, [oldPath2]);
-    for (const [backlinkPath, links] of currentBacklinksMap.entries()) {
-      const newBacklinkPath = renameMap.get(backlinkPath) ?? backlinkPath;
-      const linkJsonToPathMap = backlinksMap.get(newBacklinkPath) ?? new Map<string, string>();
-      backlinksMap.set(newBacklinkPath, linkJsonToPathMap);
-      for (const link of links) {
-        linkJsonToPathMap.set(toJson(link), oldPath2);
-      }
+function initBacklinksMap(currentBacklinksMap: Map<string, ReferenceCache[]>, renameMap: Map<string, string>, backlinksMap: Map<string, Map<string, string>>, path: string): void {
+  for (const [backlinkPath, links] of currentBacklinksMap.entries()) {
+    const newBacklinkPath = renameMap.get(backlinkPath) ?? backlinkPath;
+    const linkJsonToPathMap = backlinksMap.get(newBacklinkPath) ?? new Map<string, string>();
+    backlinksMap.set(newBacklinkPath, linkJsonToPathMap);
+    for (const link of links) {
+      linkJsonToPathMap.set(toJson(link), path);
     }
-  }
-
-  const parentFolders = new Set<string>();
-
-  for (const entry of renameMap.entries()) {
-    const oldRelatedPath = entry[0];
-    let newRelatedPath = entry[1];
-    newRelatedPath = await renameHandled(app, oldRelatedPath, newRelatedPath);
-    renameMap.set(oldRelatedPath, newRelatedPath);
-    parentFolders.add(dirname(oldRelatedPath));
-  }
-
-  if (settings.shouldDeleteEmptyFolders) {
-    for (const parentFolder of parentFolders) {
-      await deleteEmptyFolderHierarchy(app, parentFolder);
-    }
-  }
-
-  for (const [newBacklinkPath, linkJsonToPathMap] of backlinksMap.entries()) {
-    await editLinks(app, newBacklinkPath, (link) => {
-      const oldRelatedPath = linkJsonToPathMap.get(toJson(link));
-      if (!oldRelatedPath) {
-        return;
-      }
-
-      const newRelatedPath = renameMap.get(oldRelatedPath);
-      if (!newRelatedPath) {
-        return;
-      }
-
-      return updateLink({
-        app: app,
-        link,
-        pathOrFile: newRelatedPath,
-        oldPathOrFile: oldRelatedPath,
-        sourcePathOrFile: newBacklinkPath,
-        renameMap,
-        shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
-      });
-    });
-  }
-
-  if (isCanvasFile(newPath)) {
-    await process(app, newPath, (content) => {
-      const canvasData = JSON.parse(content) as CanvasData;
-      for (const node of canvasData.nodes) {
-        if (node.type !== 'file') {
-          continue;
-        }
-        const newPath = renameMap.get(node.file);
-        if (!newPath) {
-          continue;
-        }
-        node.file = newPath;
-      }
-      return toJson(canvasData);
-    });
-  } else if (isMarkdownFile(newPath)) {
-    await updateLinksInFile({
-      app: app,
-      pathOrFile: newPath,
-      oldPathOrFile: oldPath,
-      renameMap,
-      shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
-    });
   }
 }
 
@@ -434,8 +443,12 @@ function makeKey(oldPath: string, newPath: string): string {
 }
 
 async function renameHandled(app: App, oldPath: string, newPath: string): Promise<string> {
-  newPath = await renameSafe(app, getFile(app, oldPath), newPath);
+  newPath = getSafeRenamePath(app, oldPath, newPath);
+  if (oldPath === newPath) {
+    return newPath;
+  }
   const key = makeKey(oldPath, newPath);
   handledRenames.add(key);
+  newPath = await renameSafe(app, oldPath, newPath);
   return newPath;
 }

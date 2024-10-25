@@ -25,3 +25,5 @@ dist
 
 index.ts
 _dependencies.ts
+
+/tsconfig.tsbuildinfo

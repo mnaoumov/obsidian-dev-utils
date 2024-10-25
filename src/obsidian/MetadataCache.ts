@@ -126,6 +126,19 @@ export interface GetBacklinksForFileSafeWrapper {
 }
 
 /**
+ * Retrieves the backlinks for a file or path.
+ * NOTE: The file may be non-existent.
+ *
+ * @param app - The Obsidian application instance.
+ * @param pathOrFile - The path or file object.
+ * @returns The backlinks for the file.
+ */
+export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<ReferenceCache> {
+  const file = getFile(app, pathOrFile, true);
+  return tempRegisterFileAndRun(app, file, () => app.metadataCache.getBacklinksForFile(file));
+}
+
+/**
  * Retrieves the backlinks for a file safely.
  *
  * @param app - The Obsidian application instance.
@@ -144,7 +157,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
   await retryWithTimeout(async () => {
     const file = getFile(app, pathOrFile);
     await ensureMetadataCacheReady(app);
-    backlinks = tempRegisterFileAndRun(app, file, () => app.metadataCache.getBacklinksForFile(file));
+    backlinks = getBacklinksForFileOrPath(app, file);
     for (const notePath of backlinks.keys()) {
       const note = getFileOrNull(app, notePath);
       if (!note) {

@@ -3,7 +3,10 @@
  * This module provides utility functions for working with the Obsidian Vault.
  */
 
-import type { ListedFiles } from 'obsidian';
+import type {
+  ListedFiles,
+  TFolder
+} from 'obsidian';
 import {
   App,
   Notice,
@@ -230,8 +233,9 @@ export async function deleteSafe(app: App, pathOrFile: PathOrAbstractFile, delet
       canDelete = false;
     }
   } else if (isFolder(file)) {
-    for (const child of file.children) {
-      canDelete &&= await deleteSafe(app, child.path, deletedNotePath, shouldReportUsedAttachments);
+    const listedFiles = await listSafe(app, file);
+    for (const child of [...listedFiles.files, ...listedFiles.folders]) {
+      canDelete &&= await deleteSafe(app, child, deletedNotePath, shouldReportUsedAttachments);
     }
 
     canDelete &&= await isEmptyFolder(app, file);
@@ -394,6 +398,39 @@ export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promi
 }
 
 /**
+ * Gets a safe rename path for a file.
+ *
+ * @param app - The application instance.
+ * @param oldPathOrFile - The old path or file to rename.
+ * @param newPath - The new path to rename the file to.
+ * @returns The safe rename path for the file.
+ */
+export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: string): string {
+  const oldPath = getPath(oldPathOrFile);
+
+  if (app.vault.adapter.insensitive) {
+    let folderPath = dirname(newPath);
+    let nonExistingPath = basename(newPath);
+    let folder: TFolder | null = null;
+    for (; ;) {
+      folder = getFolderOrNull(app, folderPath, true);
+      if (folder) {
+        break;
+      }
+      nonExistingPath = join(basename(folderPath), nonExistingPath);
+      folderPath = dirname(folderPath);
+    }
+    newPath = join(folder.getParentPrefix(), nonExistingPath);
+  }
+
+  if (oldPath.toLowerCase() === newPath.toLowerCase()) {
+    return newPath;
+  }
+
+  return getAvailablePath(app, newPath);
+}
+
+/**
  * Renames a file safely in the vault.
  * If the new path already exists, the file will be renamed to an available path.
  *
@@ -403,24 +440,24 @@ export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promi
  * @returns A promise that resolves to the new path of the file.
  */
 export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
-  const file = getFile(app, oldPathOrFile);
+  const oldFile = getFile(app, oldPathOrFile, false, true);
 
-  if (file.path.toLowerCase() === newPath.toLowerCase()) {
-    if (file.path !== newPath) {
-      await app.vault.rename(file, newPath);
+  const newAvailablePath = getSafeRenamePath(app, oldPathOrFile, newPath);
+
+  if (oldFile.path.toLowerCase() === newAvailablePath.toLowerCase()) {
+    if (oldFile.path !== newPath) {
+      await app.vault.rename(oldFile, newAvailablePath);
     }
-    return newPath;
+    return newAvailablePath;
   }
 
-  const newFolderPath = parentFolderPath(newPath);
+  const newFolderPath = parentFolderPath(newAvailablePath);
   await createFolderSafe(app, newFolderPath);
 
-  const newAvailablePath = getAvailablePath(app, newPath);
-
   try {
-    await app.vault.rename(file, newAvailablePath);
+    await app.vault.rename(oldFile, newAvailablePath);
   } catch (e) {
-    if (!await app.vault.exists(newAvailablePath) || await app.vault.exists(file.path)) {
+    if (!await app.vault.exists(newAvailablePath) || await app.vault.exists(oldFile.path)) {
       throw e;
     }
   }
