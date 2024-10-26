@@ -7,16 +7,20 @@ import type {
   App,
   CachedMetadata,
   MarkdownView,
-  ReferenceCache,
+  Reference,
   TAbstractFile
 } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
-import { parentFolderPath } from 'obsidian-typings/implementations';
+import {
+  isFrontmatterLinkCache,
+  isReferenceCache,
+  parentFolderPath
+} from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';
 import { retryWithTimeout } from '../Async.ts';
-import { throwExpression } from '../Error.ts';
 import { noop } from '../Function.ts';
+import { getNestedPropertyValue } from '../Object.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import {
   getFile,
@@ -27,6 +31,7 @@ import {
   isMarkdownFile
 } from './FileSystem.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
+import { parseFrontMatter } from './FrontMatter.ts';
 
 /**
  * Retrieves the cached metadata for a given file or path.
@@ -87,8 +92,8 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
  * @param cache - The cached metadata.
  * @returns An array of reference caches representing the links.
  */
-export function getAllLinks(cache: CachedMetadata): ReferenceCache[] {
-  let links: ReferenceCache[] = [];
+export function getAllLinks(cache: CachedMetadata): Reference[] {
+  let links: Reference[] = [];
 
   if (cache.links) {
     links.push(...cache.links);
@@ -98,15 +103,42 @@ export function getAllLinks(cache: CachedMetadata): ReferenceCache[] {
     links.push(...cache.embeds);
   }
 
-  links.sort((a, b) => a.position.start.offset - b.position.start.offset);
+  if (cache.frontmatterLinks) {
+    links.push(...cache.frontmatterLinks);
+  }
+
+  links.sort((a, b) => {
+    if (isFrontmatterLinkCache(a) && isFrontmatterLinkCache(b)) {
+      return a.key.localeCompare(b.key);
+    }
+
+    if (isReferenceCache(a) && isReferenceCache(b)) {
+      return a.position.start.offset - b.position.start.offset;
+    }
+
+    return isFrontmatterLinkCache(a) ? 1 : -1;
+  });
 
   // BUG: https://forum.obsidian.md/t/bug-duplicated-links-in-metadatacache-inside-footnotes/85551
   links = links.filter((link, index) => {
     if (index === 0) {
       return true;
     }
-    const previousLink = links[index - 1] ?? throwExpression(new Error('Previous link not found'));
-    return link.position.start.offset !== previousLink.position.start.offset;
+
+    const previousLink = links[index - 1];
+    if (!previousLink) {
+      return true;
+    }
+
+    if (isReferenceCache(link) && isReferenceCache(previousLink)) {
+      return link.position.start.offset !== previousLink.position.start.offset;
+    }
+
+    if (isFrontmatterLinkCache(link) && isFrontmatterLinkCache(previousLink)) {
+      return link.key !== previousLink.key;
+    }
+
+    return true;
   });
 
   return links;
@@ -122,7 +154,7 @@ export interface GetBacklinksForFileSafeWrapper {
    * @param pathOrFile - The path or file object.
    * @returns A promise that resolves to an array dictionary of backlinks.
    */
-  safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<ReferenceCache>>;
+  safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<Reference>>;
 }
 
 /**
@@ -133,7 +165,7 @@ export interface GetBacklinksForFileSafeWrapper {
  * @param pathOrFile - The path or file object.
  * @returns The backlinks for the file.
  */
-export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<ReferenceCache> {
+export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<Reference> {
   const file = getFile(app, pathOrFile, true);
   return tempRegisterFileAndRun(app, file, () => app.metadataCache.getBacklinksForFile(file));
 }
@@ -146,14 +178,14 @@ export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): Cus
  * @param retryOptions - Optional retry options.
  * @returns A promise that resolves to an array dictionary of backlinks.
  */
-export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CustomArrayDict<ReferenceCache>> {
+export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CustomArrayDict<Reference>> {
   const safeOverload = (app.metadataCache.getBacklinksForFile as Partial<GetBacklinksForFileSafeWrapper>).safe;
   if (safeOverload) {
     return safeOverload(pathOrFile);
   }
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  let backlinks: CustomArrayDict<ReferenceCache> = null as unknown as CustomArrayDict<ReferenceCache>;
+  let backlinks: CustomArrayDict<Reference> = null as unknown as CustomArrayDict<Reference>;
   await retryWithTimeout(async () => {
     const file = getFile(app, pathOrFile);
     await ensureMetadataCacheReady(app);
@@ -167,9 +199,25 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
       await saveNote(app, note);
 
       const content = await app.vault.read(note);
-      const links = backlinks.get(notePath) ?? throwExpression(new Error('Backlinks not found'));
+      const frontMatter = parseFrontMatter(content);
+      const links = backlinks.get(notePath);
+      if (!links) {
+        return false;
+      }
+
       for (const link of links) {
-        const actualLink = content.slice(link.position.start.offset, link.position.end.offset);
+        let actualLink: string;
+        if (isReferenceCache(link)) {
+          actualLink = content.slice(link.position.start.offset, link.position.end.offset);
+        } else if (isFrontmatterLinkCache(link)) {
+          const linkValue = getNestedPropertyValue(frontMatter, link.key);
+          if (typeof linkValue !== 'string') {
+            return false;
+          }
+          actualLink = linkValue;
+        } else {
+          return true;
+        }
         if (actualLink !== link.original) {
           return false;
         }
@@ -190,8 +238,8 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
  * @param retryOptions - Optional retry options.
  * @returns A promise that resolves to a map of backlinks.
  */
-export async function getBacklinksMap(app: App, pathOrFiles: PathOrFile[], retryOptions: Partial<RetryOptions> = {}): Promise<Map<string, ReferenceCache[]>> {
-  const map = new Map<string, ReferenceCache[]>();
+export async function getBacklinksMap(app: App, pathOrFiles: PathOrFile[], retryOptions: Partial<RetryOptions> = {}): Promise<Map<string, Reference[]>> {
+  const map = new Map<string, Reference[]>();
   for (const pathOrFile of pathOrFiles) {
     const customArrayDict = await getBacklinksForFileSafe(app, pathOrFile, retryOptions);
     for (const path of customArrayDict.keys()) {

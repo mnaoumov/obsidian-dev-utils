@@ -2,7 +2,7 @@ import { around } from 'monkey-around';
 import type {
   CachedMetadata,
   Plugin,
-  ReferenceCache,
+  Reference,
   TAbstractFile
 } from 'obsidian';
 import {
@@ -175,7 +175,7 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
   chain(app, () => handleRenameAsync(app, oldPath, newPath, backlinks));
 }
 
-async function handleRenameAsync(app: App, oldPath: string, newPath: string, backlinks: CustomArrayDict<ReferenceCache>): Promise<void> {
+async function handleRenameAsync(app: App, oldPath: string, newPath: string, backlinks: CustomArrayDict<Reference>): Promise<void> {
   if (app.vault.adapter.insensitive && oldPath.toLowerCase() === newPath.toLowerCase()) {
     const tempPath = join(dirname(newPath), '__temp__' + basename(newPath));
     await renameHandled(app, newPath, tempPath);
@@ -279,7 +279,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
   }
 }
 
-function initBacklinksMap(currentBacklinksMap: Map<string, ReferenceCache[]>, renameMap: Map<string, string>, backlinksMap: Map<string, Map<string, string>>, path: string): void {
+function initBacklinksMap(currentBacklinksMap: Map<string, Reference[]>, renameMap: Map<string, string>, backlinksMap: Map<string, Map<string, string>>, path: string): void {
   for (const [backlinkPath, links] of currentBacklinksMap.entries()) {
     const newBacklinkPath = renameMap.get(backlinkPath) ?? backlinkPath;
     const linkJsonToPathMap = backlinksMap.get(newBacklinkPath) ?? new Map<string, string>();

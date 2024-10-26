@@ -7,13 +7,17 @@
 
 import type {
   App,
-  ReferenceCache,
+  Reference,
   TFile
 } from 'obsidian';
 import {
   normalizePath,
   parseLinktext
 } from 'obsidian';
+import {
+  isFrontmatterLinkCache,
+  isReferenceCache
+} from 'obsidian-typings/implementations';
 
 import type {
   MaybePromise,
@@ -27,6 +31,12 @@ import {
   relative
 } from '../Path.ts';
 import { normalize } from '../String.ts';
+import type {
+  ContentChange,
+  FileChange,
+  FrontmatterChange
+} from './FileChange.ts';
+import { applyFileChanges } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import {
   getFile,
@@ -43,8 +53,6 @@ import {
   shouldUseRelativeLinks,
   shouldUseWikilinks
 } from './ObsidianSettings.ts';
-import type { FileChange } from './Vault.ts';
-import { applyFileChanges } from './Vault.ts';
 
 /**
  * Regular expression for special link symbols.
@@ -169,9 +177,9 @@ export interface ConvertLinkOptions {
   app: App;
 
   /**
-   * The reference cache for the link.
+   * The reference for the link.
    */
-  link: ReferenceCache;
+  link: Reference;
 
   /**
    * The source file containing the link.
@@ -226,7 +234,7 @@ export function convertLink(options: ConvertLinkOptions): string {
  * @param notePathOrFile - The path or file of the note containing the link.
  * @returns The file associated with the link, or null if not found.
  */
-export function extractLinkFile(app: App, link: ReferenceCache, notePathOrFile: PathOrFile): TFile | null {
+export function extractLinkFile(app: App, link: Reference, notePathOrFile: PathOrFile): TFile | null {
   const { linkPath } = splitSubpath(link.link);
   return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(notePathOrFile));
 }
@@ -241,9 +249,9 @@ export interface UpdateLinkOptions {
   app: App;
 
   /**
-   * The reference cache for the link.
+   * The reference for the link.
    */
-  link: ReferenceCache;
+  link: Reference;
 
   /**
    * The file associated with the link.
@@ -601,7 +609,7 @@ export async function editLinks(
   app: App,
   pathOrFile: PathOrFile,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: ReferenceCache) => MaybePromise<string | void>,
+  linkConverter: (link: Reference) => MaybePromise<string | void>,
   retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   await applyFileChanges(app, pathOrFile, async () => {
     const cache = await getCacheSafe(app, pathOrFile);
@@ -617,12 +625,20 @@ export async function editLinks(
         continue;
       }
 
-      changes.push({
-        startIndex: link.position.start.offset,
-        endIndex: link.position.end.offset,
-        oldContent: link.original,
-        newContent
-      });
+      if (isReferenceCache(link)) {
+        changes.push({
+          startIndex: link.position.start.offset,
+          endIndex: link.position.end.offset,
+          oldContent: link.original,
+          newContent
+        } as ContentChange);
+      } else if (isFrontmatterLinkCache(link)) {
+        changes.push({
+          oldContent: link.original,
+          newContent,
+          frontMatterKey: link.key
+        } as FrontmatterChange);
+      }
     }
 
     return changes;
