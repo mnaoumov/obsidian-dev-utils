@@ -108,3 +108,49 @@ export function toJson(value: unknown, options: ToJsonOptions = {}): string {
   json = json.replaceAll(/"__FUNCTION_(\d+)"/g, (_, indexStr: string) => functionTexts[parseInt(indexStr)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
   return json;
 }
+
+/**
+ * Gets the value of a nested property from an object.
+ *
+ * @param obj - The object to get the nested property value from.
+ * @param path - The path to the nested property.
+ * @returns The value of the nested property.
+ */
+export function getNestedPropertyValue(obj: Record<string, unknown>, path: string): unknown {
+  let node: Record<string, unknown> | undefined = obj;
+  const keys = path.split('.');
+  for (const key of keys) {
+    if (node === undefined) {
+      return undefined;
+    }
+    node = node[key] as Record<string, unknown> | undefined;
+  }
+
+  return node;
+}
+
+/**
+ * Sets the value of a nested property in an object.
+ *
+ * @param obj - The object to set the nested property value in.
+ * @param path - The path to the nested property.
+ * @param value - The value to set.
+ */
+export function setNestedPropertyValue(obj: Record<string, unknown>, path: string, value: unknown): void {
+  const error = new Error(`Property path ${path} not found`);
+  let node: Record<string, unknown> | undefined = obj;
+  const keys = path.split('.');
+  for (const key of keys.slice(0, -1)) {
+    if (node === undefined) {
+      throw error;
+    }
+    node = node[key] as Record<string, unknown> | undefined;
+  }
+
+  const lastKey = keys.at(-1);
+  if (node === undefined || lastKey === undefined) {
+    throw error;
+  }
+
+  node[lastKey] = value;
+}

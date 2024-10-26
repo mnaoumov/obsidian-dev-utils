@@ -16,12 +16,8 @@ import { parentFolderPath } from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';
 import { retryWithTimeout } from '../Async.ts';
-import {
-  printError,
-  throwExpression
-} from '../Error.ts';
+import { printError } from '../Error.ts';
 import { noopAsync } from '../Function.ts';
-import { deepEqual } from '../Object.ts';
 import {
   basename,
   dirname,
@@ -47,31 +43,6 @@ import {
   isNote
 } from './FileSystem.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
-
-/**
- * Represents a file change in the Vault.
- */
-export interface FileChange {
-  /**
-   * The start index of the change in the file content.
-   */
-  startIndex: number;
-
-  /**
-   * The end index of the change in the file content.
-   */
-  endIndex: number;
-
-  /**
-   * The old content that will be replaced.
-   */
-  oldContent: string;
-
-  /**
-   * The new content to replace the old content.
-   */
-  newContent: string;
-}
 
 /**
  * Retrieves an array of Markdown files from the app's vault and sorts them alphabetically by their file path.
@@ -132,73 +103,6 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
     });
 
     return success;
-  }, overriddenOptions);
-}
-
-/**
- * Applies a series of file changes to the specified file or path within the application.
- *
- * @param app - The application instance where the file changes will be applied.
- * @param pathOrFile - The path or file to which the changes should be applied.
- * @param changesProvider - A provider that returns an array of file changes to apply.
- * @param retryOptions - Optional settings that determine how the operation should retry on failure.
- *
- * @returns A promise that resolves when the file changes have been successfully applied.
- */
-export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changesProvider: ValueProvider<FileChange[]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
-  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
-  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  await process(app, pathOrFile, async (content) => {
-    let changes = await resolveValue(changesProvider);
-
-    for (const change of changes) {
-      const actualContent = content.slice(change.startIndex, change.endIndex);
-      if (actualContent !== change.oldContent) {
-        console.warn('Content mismatch', {
-          startIndex: change.startIndex,
-          endIndex: change.endIndex,
-          path: getPath(pathOrFile),
-          expectedContent: change.oldContent,
-          actualContent
-        });
-
-        return null;
-      }
-    }
-
-    changes.sort((a, b) => a.startIndex - b.startIndex);
-
-    // BUG: https://forum.obsidian.md/t/bug-duplicated-links-in-metadatacache-inside-footnotes/85551
-    changes = changes.filter((change, index) => {
-      if (index === 0) {
-        return true;
-      }
-      return !deepEqual(change, changes[index - 1]);
-    });
-
-    for (let i = 1; i < changes.length; i++) {
-      const change = changes[i] ?? throwExpression(new Error('Change not found'));
-      const previousChange = changes[i - 1] ?? throwExpression(new Error('Previous change not found'));
-      if (previousChange.endIndex > change.startIndex) {
-        console.warn('Overlapping changes', {
-          previousChange,
-          change
-        });
-        return null;
-      }
-    }
-
-    let newContent = '';
-    let lastIndex = 0;
-
-    for (const change of changes) {
-      newContent += content.slice(lastIndex, change.startIndex);
-      newContent += change.newContent;
-      lastIndex = change.endIndex;
-    }
-
-    newContent += content.slice(lastIndex);
-    return newContent;
   }, overriddenOptions);
 }
 
