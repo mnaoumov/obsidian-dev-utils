@@ -13,6 +13,7 @@ import {
 import type { CanvasData } from 'obsidian/canvas.js';
 import type { CustomArrayDict } from 'obsidian-typings';
 
+import { printError } from '../Error.ts';
 import { noopAsync } from '../Function.ts';
 import { toJson } from '../Object.ts';
 import {
@@ -246,7 +247,13 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
 
     if (isCanvasFile(newPath)) {
       await process(app, newPath, (content) => {
-        const canvasData = JSON.parse(content) as CanvasData;
+        let canvasData: CanvasData;
+        try {
+          canvasData = JSON.parse(content) as CanvasData;
+        } catch (e) {
+          printError(new Error(`Failed to parse canvas data for ${newPath}`, { cause: e }));
+          return content;
+        }
         for (const node of canvasData.nodes) {
           if (node.type !== 'file') {
             continue;
