@@ -54,6 +54,7 @@
     "nameof",
     "Naumov",
     "nonnull",
+    "nosourcemap",
     "outdir",
     "outfile",
     "outlinks",
