@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.40.0
+
+- Add fix for unhandled `sourcemaps`
+- Add support for `FrontmatterLinkCache`
+
 ## 3.39.0
 
 - Avoid unnecessary renames
