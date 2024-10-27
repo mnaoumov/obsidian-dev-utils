@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.41.0
+
+- Handle broken canvas
+
 ## 3.40.0
 
 - Add fix for unhandled `sourcemaps`
