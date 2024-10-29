@@ -625,24 +625,57 @@ export async function editLinks(
         continue;
       }
 
-      if (isReferenceCache(link)) {
-        changes.push({
-          startIndex: link.position.start.offset,
-          endIndex: link.position.end.offset,
-          oldContent: link.original,
-          newContent
-        } as ContentChange);
-      } else if (isFrontmatterLinkCache(link)) {
-        changes.push({
-          oldContent: link.original,
-          newContent,
-          frontMatterKey: link.key
-        } as FrontmatterChange);
-      }
+      changes.push(linkToFileChange(link, newContent));
     }
 
     return changes;
   }, retryOptions);
+}
+
+/**
+ * Converts a link to a file change.
+ *
+ * @param link - The link to convert.
+ * @param newContent - The new content for the link.
+ * @returns The file change.
+ */
+export function linkToFileChange(link: Reference, newContent: string): FileChange {
+  if (isReferenceCache(link)) {
+    return {
+      startIndex: link.position.start.offset,
+      endIndex: link.position.end.offset,
+      oldContent: link.original,
+      newContent
+    } as ContentChange;
+  } else if (isFrontmatterLinkCache(link)) {
+    return {
+      oldContent: link.original,
+      newContent,
+      frontMatterKey: link.key
+    } as FrontmatterChange;
+  }
+
+  throw new Error('Unknown link type');
+}
+
+/**
+ * Sorts links by their type and position.
+ *
+ * @param links - The links to sort.
+ * @returns The sorted links.
+ */
+export function sortLinks(links: Reference[]): Reference[] {
+  return links.sort((a, b) => {
+    if (isFrontmatterLinkCache(a) && isFrontmatterLinkCache(b)) {
+      return a.key.localeCompare(b.key);
+    }
+
+    if (isReferenceCache(a) && isReferenceCache(b)) {
+      return a.position.start.offset - b.position.start.offset;
+    }
+
+    return isFrontmatterLinkCache(a) ? 1 : -1;
+  });
 }
 
 /**
