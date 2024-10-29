@@ -32,7 +32,7 @@ import {
 } from './FileSystem.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
 import { parseFrontMatter } from './FrontMatter.ts';
-import { sortLinks } from './Link.ts';
+import { sortReferences } from './Reference.ts';
 
 /**
  * Retrieves the cached metadata for a given file or path.
@@ -108,7 +108,7 @@ export function getAllLinks(cache: CachedMetadata): Reference[] {
     links.push(...cache.frontmatterLinks);
   }
 
-  sortLinks(links);
+  sortReferences(links);
 
   // BUG: https://forum.obsidian.md/t/bug-duplicated-links-in-metadatacache-inside-footnotes/85551
   links = links.filter((link, index) => {

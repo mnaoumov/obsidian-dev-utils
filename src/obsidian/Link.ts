@@ -14,10 +14,6 @@ import {
   normalizePath,
   parseLinktext
 } from 'obsidian';
-import {
-  isFrontmatterLinkCache,
-  isReferenceCache
-} from 'obsidian-typings/implementations';
 
 import type {
   MaybePromise,
@@ -31,11 +27,7 @@ import {
   relative
 } from '../Path.ts';
 import { normalize } from '../String.ts';
-import type {
-  ContentChange,
-  FileChange,
-  FrontmatterChange
-} from './FileChange.ts';
+import type { FileChange } from './FileChange.ts';
 import { applyFileChanges } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import {
@@ -53,6 +45,7 @@ import {
   shouldUseRelativeLinks,
   shouldUseWikilinks
 } from './ObsidianSettings.ts';
+import { referenceToFileChange } from './Reference.ts';
 
 /**
  * Regular expression for special link symbols.
@@ -625,57 +618,11 @@ export async function editLinks(
         continue;
       }
 
-      changes.push(linkToFileChange(link, newContent));
+      changes.push(referenceToFileChange(link, newContent));
     }
 
     return changes;
   }, retryOptions);
-}
-
-/**
- * Converts a link to a file change.
- *
- * @param link - The link to convert.
- * @param newContent - The new content for the link.
- * @returns The file change.
- */
-export function linkToFileChange(link: Reference, newContent: string): FileChange {
-  if (isReferenceCache(link)) {
-    return {
-      startIndex: link.position.start.offset,
-      endIndex: link.position.end.offset,
-      oldContent: link.original,
-      newContent
-    } as ContentChange;
-  } else if (isFrontmatterLinkCache(link)) {
-    return {
-      oldContent: link.original,
-      newContent,
-      frontMatterKey: link.key
-    } as FrontmatterChange;
-  }
-
-  throw new Error('Unknown link type');
-}
-
-/**
- * Sorts links by their type and position.
- *
- * @param links - The links to sort.
- * @returns The sorted links.
- */
-export function sortLinks(links: Reference[]): Reference[] {
-  return links.sort((a, b) => {
-    if (isFrontmatterLinkCache(a) && isFrontmatterLinkCache(b)) {
-      return a.key.localeCompare(b.key);
-    }
-
-    if (isReferenceCache(a) && isReferenceCache(b)) {
-      return a.position.start.offset - b.position.start.offset;
-    }
-
-    return isFrontmatterLinkCache(a) ? 1 : -1;
-  });
 }
 
 /**
