@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.42.0
+
+- Extract link helpers
+
 ## 3.41.0
 
 - Handle broken canvas
