@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.42.1
+
+- Handle rename only for files
+
 ## 3.42.0
 
 - Extract link helpers
