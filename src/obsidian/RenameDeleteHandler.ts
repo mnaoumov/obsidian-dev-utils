@@ -134,6 +134,9 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
       if (!shouldInvokeHandler(app, pluginId)) {
         return;
       }
+      if (!isFile(file)) {
+        return;
+      }
       const newPath = file.path;
       handleRename(app, oldPath, newPath);
     })
