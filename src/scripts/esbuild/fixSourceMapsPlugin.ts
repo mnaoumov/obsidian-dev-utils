@@ -37,7 +37,7 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string
 
         const content = await readFile(distPath, 'utf-8');
         const newContent = content.replaceAll(
-          /(\n\/\/# sourceMappingURL=data:application\/json;base64,)(.+)\n/g,
+          /(\n\/\/# sourceMappingURL=data:application\/json;base64,)(.+)\n(.|\n)*/g,
           (_: string, prefix: string, sourceMapBase64: string): string => prefix + fixSourceMap(sourceMapBase64, pluginName) + '\n/* nosourcemap */'
         );
 
