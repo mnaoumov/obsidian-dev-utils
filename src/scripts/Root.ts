@@ -11,69 +11,13 @@ import {
   resolve,
   toPosixPath
 } from '../Path.ts';
-import { trimEnd } from '../String.ts';
-import { toCommandLine } from './CliUtils.ts';
-import {
-  existsSync,
-  process,
-  spawn
-} from './NodeModules.ts';
+import type {
+  ExecOption,
+  ExecResult
+} from './Exec.ts';
+import { exec } from './Exec.ts';
+import { existsSync } from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
-
-/**
- * Represents the result of executing a command from the root directory.
- */
-export interface ExecFromRootResult {
-  /**
-   * The exit code of the command. A value of `null` indicates that the process did not exit normally.
-   */
-  exitCode: number | null;
-
-  /**
-   * The signal that caused the process to be terminated. A value of `null` indicates that no signal was received.
-   */
-  exitSignal: NodeJS.Signals | null;
-
-  /**
-   * The standard error output from the command.
-   */
-  stderr: string;
-
-  /**
-   * The standard output from the command.
-   */
-  stdout: string;
-}
-
-/**
- * Options for executing a command from the root directory.
- */
-export interface ExecFromRootOption {
-  /**
-   * If true, suppresses the output of the command.
-   */
-  quiet?: boolean;
-
-  /**
-   * If true, ignores the exit code of the command.
-   */
-  ignoreExitCode?: boolean;
-
-  /**
-   * The input to be passed to the command.
-   */
-  stdin?: string;
-
-  /**
-   * The current working directory for the command execution.
-   */
-  cwd?: string | undefined;
-
-  /**
-   * If false, only returns the output of the command.
-   */
-  withDetails?: boolean;
-}
 
 /**
  * Executes a command from the root directory of the project.
@@ -86,7 +30,7 @@ export interface ExecFromRootOption {
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export async function execFromRoot(command: string | string[], options?: ExecFromRootOption & { withDetails?: false }): Promise<string>;
+export async function execFromRoot(command: string | string[], options?: ExecOption & { withDetails?: false }): Promise<string>;
 
 /**
  * Executes a command from the root directory of the project.
@@ -100,7 +44,7 @@ export async function execFromRoot(command: string | string[], options?: ExecFro
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: string | string[], options: ExecFromRootOption & { withDetails: true }): Promise<ExecFromRootResult>;
+export function execFromRoot(command: string | string[], options: ExecOption & { withDetails: true }): Promise<ExecResult>;
 
 /**
  * Executes a command from the root directory of the project.
@@ -114,94 +58,13 @@ export function execFromRoot(command: string | string[], options: ExecFromRootOp
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: string | string[], options: ExecFromRootOption = {}): Promise<string | ExecFromRootResult> {
-  const {
-    quiet = false,
-    ignoreExitCode = false,
-    stdin = '',
-    cwd = undefined,
-    withDetails = false
-  } = options;
-  if (Array.isArray(command)) {
-    command = toCommandLine(command);
+export function execFromRoot(command: string | string[], options: ExecOption = {}): Promise<string | ExecResult> {
+  const root = getRootDir(options.cwd);
+  if (options.withDetails) {
+    return exec(command, { ...options, cwd: root, withDetails: true });
   }
 
-  return new Promise((resolve, reject) => {
-    console.log(`Executing command: ${command}`);
-    const [cmd = '', ...args] = command.split(' ');
-
-    const child = spawn(cmd, args, {
-      cwd: getRootDir(cwd),
-      stdio: 'pipe',
-      shell: true
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    child.stdin.write(stdin);
-    child.stdin.end();
-
-    child.stdout.on('data', (data: Buffer) => {
-      if (!quiet) {
-        process.stdout.write(data);
-      }
-      stdout += data.toString('utf-8');
-    });
-
-    child.stdout.on('end', () => {
-      stdout = trimEnd(stdout, '\n');
-    });
-
-    child.stderr.on('data', (data: Buffer) => {
-      if (!quiet) {
-        process.stderr.write(data);
-      }
-      stderr += data.toString('utf-8');
-    });
-
-    child.stderr.on('end', () => {
-      stderr = trimEnd(stderr, '\n');
-    });
-
-    child.on('close', (exitCode, exitSignal) => {
-      if (exitCode !== 0 && !ignoreExitCode) {
-        reject(new Error(`Command failed with exit code ${exitCode?.toString() ?? '(null)'}\n${stderr}`));
-      } else {
-        let result: string | ExecFromRootResult;
-        if (!withDetails) {
-          result = stdout;
-        } else {
-          result = {
-            exitCode,
-            exitSignal,
-            stderr,
-            stdout
-          };
-        }
-        resolve(result);
-      }
-    });
-
-    child.on('error', (err) => {
-      if (!ignoreExitCode) {
-        reject(err);
-      } else {
-        let result: string | ExecFromRootResult;
-        if (!withDetails) {
-          result = stdout;
-        } else {
-          result = {
-            exitCode: null,
-            exitSignal: null,
-            stderr,
-            stdout
-          };
-        }
-        resolve(result);
-      }
-    });
-  });
+  return exec(command, { ...options, cwd: root, withDetails: false });
 }
 
 /**
