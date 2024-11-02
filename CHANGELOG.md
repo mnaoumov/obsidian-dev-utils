@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.42.4
+
+- Remove code after source maps
+
 ## 3.42.3
 
 - Avoid line break
