@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.42.2
+
+- Refactor newContent
+
 ## 3.42.1
 
 - Handle rename only for files
