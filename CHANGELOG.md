@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.42.3
+
+- Avoid line break
+
 ## 3.42.2
 
 - Refactor newContent
