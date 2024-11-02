@@ -6,10 +6,10 @@
 import type {
   App,
   CachedMetadata,
-  MarkdownView,
   Reference,
   TAbstractFile
 } from 'obsidian';
+import { MarkdownView } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
 import {
   isFrontmatterLinkCache,
@@ -258,9 +258,8 @@ async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
   const path = getPath(pathOrFile);
 
   for (const leaf of app.workspace.getLeavesOfType('markdown')) {
-    const view = leaf.view as MarkdownView;
-    if (view.file?.path === path) {
-      await view.save();
+    if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
+      await leaf.view.save();
     }
   }
 }
