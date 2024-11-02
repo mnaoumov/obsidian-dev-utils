@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.43.1
+
+- Save only non-deferred views
+
 ## 3.43.0
 
 - Extract Exec
