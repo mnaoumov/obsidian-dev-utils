@@ -5,7 +5,8 @@
 
 import {
   emitAsyncErrorEvent,
-  getStackTrace
+  getStackTrace,
+  printError
 } from './Error.ts';
 
 /**
@@ -47,7 +48,14 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
     let attempt = 0;
     for (; ;) {
       attempt++;
-      if (await fn()) {
+      let isSuccess: boolean;
+      try {
+        isSuccess = await fn();
+      } catch (error) {
+        printError(error);
+        isSuccess = false;
+      }
+      if (isSuccess) {
         if (attempt > 1) {
           console.debug(`Retry completed successfully after ${attempt.toString()} attempts`);
         }
