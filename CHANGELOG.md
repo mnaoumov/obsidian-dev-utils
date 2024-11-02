@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.43.0
+
+- Extract Exec
+- Don't fail on error in retryWithTimeout
+
 ## 3.42.4
 
 - Remove code after source maps
