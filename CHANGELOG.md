@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.43.2
+
+- Fix backlinks API
+
 ## 3.43.1
 
 - Save only non-deferred views
