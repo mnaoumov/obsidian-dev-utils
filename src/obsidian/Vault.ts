@@ -128,7 +128,7 @@ export async function deleteSafe(app: App, pathOrFile: PathOrAbstractFile, delet
   if (isFile(file)) {
     const backlinks = await getBacklinksForFileSafe(app, file);
     if (deletedNotePath) {
-      backlinks.removeKey(deletedNotePath);
+      backlinks.clear(deletedNotePath);
     }
     if (backlinks.count() !== 0) {
       if (shouldReportUsedAttachments) {
