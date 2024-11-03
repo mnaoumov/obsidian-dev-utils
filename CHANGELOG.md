@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.44.0
+
+- Delete only if has own attachment folder
+
 ## 3.43.2
 
 - Fix backlinks API
