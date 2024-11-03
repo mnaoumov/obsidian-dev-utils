@@ -11,7 +11,9 @@ import { parentFolderPath } from 'obsidian-typings/implementations';
 
 import {
   basename,
-  extname
+  dirname,
+  extname,
+  join
 } from '../Path.ts';
 import {
   normalize,
@@ -125,4 +127,17 @@ function normalizeSlashes(path: string): string {
   path = path.replace(/([\\/])+/g, '/');
   path = path.replace(/(^\/+|\/+$)/g, '');
   return path || '/';
+}
+
+/**
+ * Checks if a note has its own attachment folder.
+ *
+ * @param app - The Obsidian application instance.
+ * @param path - The path of the note.
+ * @returns A promise that resolves to a boolean indicating whether the note has its own attachment folder.
+ */
+export async function hasOwnAttachmentFolder(app: App, path: string): Promise<boolean> {
+  const attachmentFolderPath = await getAttachmentFolderPath(app, path);
+  const dummyAttachmentFolderPath = await getAttachmentFolderPath(app, join(dirname(path), 'DUMMY_FILE.md'));
+  return attachmentFolderPath !== dummyAttachmentFolderPath;
 }
