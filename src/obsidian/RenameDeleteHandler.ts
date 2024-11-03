@@ -25,7 +25,10 @@ import {
   relative
 } from '../Path.ts';
 import { getObsidianDevUtilsState } from './App.ts';
-import { getAttachmentFolderPath } from './AttachmentPath.ts';
+import {
+  getAttachmentFolderPath,
+  hasOwnAttachmentFolder
+} from './AttachmentPath.ts';
 import { chain } from './ChainedPromise.ts';
 import {
   getFile,
@@ -337,6 +340,10 @@ async function handleDelete(app: App, path: string): Promise<void> {
     return;
   }
 
+  if (!(await hasOwnAttachmentFolder(app, path))) {
+    return;
+  }
+
   await deleteSafe(app, attachmentFolder, path, false, settings.shouldDeleteEmptyFolders);
 }
 
@@ -353,7 +360,6 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
   const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
     ? await getAttachmentFolderPath(app, newPath)
     : oldAttachmentFolderPath;
-  const dummyOldAttachmentFolderPath = await getAttachmentFolderPath(app, join(dirname(oldPath), 'DUMMY_FILE.md'));
 
   const oldAttachmentFolder = getFolderOrNull(app, oldAttachmentFolderPath);
 
@@ -367,7 +373,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
 
   const oldAttachmentFiles: TFile[] = [];
 
-  if (oldAttachmentFolderPath === dummyOldAttachmentFolderPath) {
+  if (!(await hasOwnAttachmentFolder(app, oldPath))) {
     const oldCache = await getCacheSafe(app, oldPath);
     if (!oldCache) {
       return;
