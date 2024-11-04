@@ -6,6 +6,7 @@ import {
 } from 'obsidian';
 
 import type { KeysMatching } from '../../@types.ts';
+import type { MaybePromise } from '../../Async.ts';
 import type { PluginBase } from './PluginBase.ts';
 
 /**
@@ -68,6 +69,11 @@ interface BindValueComponentOptions<PluginSettings, UIValue> {
    * @returns An error message if the value is invalid, or `null` if it is valid.
    */
   valueValidator?: (uiValue: UIValue) => string | null;
+
+  /**
+   * A callback function that is called when the value of the component changes.
+   */
+  onChanged?: () => MaybePromise<void>;
 }
 
 /**
@@ -195,6 +201,8 @@ export function bindValueComponent<
       if (optionsExt.autoSave) {
         await pluginExt.saveSettings(pluginSettings);
       }
+
+      await optionsExt.onChanged?.();
     });
 
   const validatorElement = getValidatorElement(valueComponent);
