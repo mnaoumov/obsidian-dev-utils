@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.1.0
+
+- Add onChanged callback
+
 ## 4.0.0
 
 - Don't lose validation on blur
