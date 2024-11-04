@@ -12,7 +12,7 @@ import type { PluginBase } from './PluginBase.ts';
 /**
  * A ValueComponent that can be bound to a plugin setting.
  */
-export interface ValueComponent<UIValue> {
+interface ValueComponent<UIValue> {
   /**
    * Gets the value of the component.
    *
@@ -118,8 +118,8 @@ export function bindValueComponent<
   UIValue = TValueComponent extends ValueComponent<infer P> ? P : never,
   PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
 >(
-  plugin: Plugin,
   valueComponent: TValueComponent,
+  plugin: Plugin,
   property: Property,
   options?: BindValueComponentOptions<PluginSettings, UIValue>
 ): TValueComponent;
@@ -146,8 +146,8 @@ export function bindValueComponent<
   UIValue = TValueComponent extends ValueComponent<infer P> ? P : never,
   PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
 >(
-  plugin: Plugin,
   valueComponent: TValueComponent,
+  plugin: Plugin,
   property: Property,
   options: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property>
 ): TValueComponent;
@@ -174,8 +174,8 @@ export function bindValueComponent<
   UIValue = TValueComponent extends ValueComponent<infer P> ? P : never,
   PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
 >(
-  plugin: Plugin,
   valueComponent: TValueComponent,
+  plugin: Plugin,
   property: Property,
   options?: BindValueComponentOptions<PluginSettings, UIValue>
 ): TValueComponent {
