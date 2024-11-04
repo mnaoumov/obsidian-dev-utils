@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.2.0
+
+- Refactor
+
 ## 4.1.0
 
 - Add onChanged callback
