@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.0.0
+
+- Don't lose validation on blur
+
 ## 3.44.0
 
 - Delete only if has own attachment folder
