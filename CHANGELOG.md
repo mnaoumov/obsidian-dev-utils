@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.3.0
+
+- Simplify generics
+
 ## 4.2.0
 
 - Refactor
