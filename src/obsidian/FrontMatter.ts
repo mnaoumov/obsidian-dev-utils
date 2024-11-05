@@ -9,6 +9,8 @@ import {
   stringifyYaml
 } from 'obsidian';
 
+import { insertAt } from '../String.ts';
+
 /**
  * Represents the front matter of an Obsidian file.
  * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Default+properties}
@@ -95,6 +97,6 @@ export function setFrontMatter(content: string, newFrontMatter: object): string 
   const newFrontMatterStr = stringifyYaml(newFrontMatter);
 
   return frontMatterInfo.exists
-    ? content.slice(0, frontMatterInfo.from) + newFrontMatterStr + content.slice(frontMatterInfo.to)
+    ? insertAt(content, newFrontMatterStr, frontMatterInfo.from, frontMatterInfo.to)
     : '---\n' + newFrontMatterStr + '---\n' + content;
 }

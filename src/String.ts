@@ -174,3 +174,17 @@ export function replace(str: string, replacementsMap: Record<string, string>): s
   const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join('|'), 'g');
   return str.replaceAll(regExp, (source: string) => replacementsMap[source] ?? throwExpression(new Error(`Unexpected replacement source: ${source}`)));
 }
+
+/**
+ * Inserts a substring at a specified position in a string.
+ *
+ * @param str - The string to insert the substring into.
+ * @param substring - The substring to insert.
+ * @param startIndex - The index to insert the substring at.
+ * @param endIndex - The index to end the substring at.
+ * @returns The modified string with the substring inserted.
+ */
+export function insertAt(str: string, substring: string, startIndex: number, endIndex?: number): string {
+  endIndex ??= startIndex;
+  return str.slice(0, startIndex) + substring + str.slice(endIndex);
+}
