@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.5.0
+
+- Add insertAt
+
 ## 4.4.0
 
 - Validate initial value
