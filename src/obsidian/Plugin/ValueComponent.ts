@@ -100,10 +100,26 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     const optionsExt: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = { ...DEFAULT_OPTIONS, ...options };
     const pluginExt = plugin as unknown as PluginBase<PluginSettings>;
     const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? pluginExt.settingsCopy;
+
+    const validate = (uiValue?: UIValue): boolean => {
+      if (!optionsExt.valueValidator) {
+        return true;
+      }
+      uiValue ??= this.valueComponent.getValue();
+      const errorMessage = optionsExt.valueValidator(uiValue);
+      const validatorElement = getValidatorElement(this.valueComponent);
+      if (validatorElement) {
+        validatorElement.setCustomValidity(errorMessage ?? '');
+        validatorElement.reportValidity();
+      }
+
+      return !errorMessage;
+    };
+
     this.valueComponent
       .setValue(optionsExt.pluginSettingsToComponentValueConverter(pluginSettingsFn()[property]))
       .onChange(async (uiValue) => {
-        if (!this.validate(optionsExt.valueValidator, uiValue)) {
+        if (!validate(uiValue)) {
           return;
         }
         const pluginSettings = pluginSettingsFn();
@@ -115,28 +131,15 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
         await optionsExt.onChanged?.();
       });
 
+    validate();
+
     const validatorElement = getValidatorElement(this.valueComponent);
     if (validatorElement) {
-      validatorElement.addEventListener('focus', () => this.validate(optionsExt.valueValidator));
-      validatorElement.addEventListener('blur', () => this.validate(optionsExt.valueValidator));
+      validatorElement.addEventListener('focus', () => validate());
+      validatorElement.addEventListener('blur', () => validate());
     }
 
     return this.asExtended();
-  }
-
-  private validate(valueValidator: ((uiValue: UIValue) => string | null) | undefined, uiValue?: UIValue): boolean {
-    if (!valueValidator) {
-      return true;
-    }
-    uiValue ??= this.valueComponent.getValue();
-    const errorMessage = valueValidator(uiValue);
-    const validatorElement = getValidatorElement(this.valueComponent);
-    if (validatorElement) {
-      validatorElement.setCustomValidity(errorMessage ?? '');
-      validatorElement.reportValidity();
-    }
-
-    return !errorMessage;
   }
 }
 
