@@ -1,4 +1,9 @@
 /**
+ * @packageDocumentation Function
+ * Contains utility functions for working with functions.
+ */
+
+/**
  * Makes a function that calls the original function with the provided arguments and omits the return value.
  *
  * @typeParam Args - Arguments to be passed to the function.
