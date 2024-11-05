@@ -59,6 +59,9 @@ export function nameof<T>(name: Extract<keyof T, string>): string {
  * @returns The prototype of the object.
  */
 export function getPrototypeOf<T>(instance: T): T {
+  if (instance === undefined || instance === null) {
+    return instance;
+  }
   return Object.getPrototypeOf(instance) as T;
 }
 
@@ -153,4 +156,68 @@ export function setNestedPropertyValue(obj: Record<string, unknown>, path: strin
   }
 
   node[lastKey] = value;
+}
+
+/**
+ * Clones an object, including non-enumerable properties.
+ *
+ * @param obj - The object to clone.
+ * @returns A new object with the same properties as the original object, including non-enumerable properties.
+ */
+export function cloneWithNonEnumerableProperties<T extends object>(obj: T): T {
+  return Object.create(getPrototypeOf(obj), Object.getOwnPropertyDescriptors(obj)) as T;
+}
+
+/**
+ * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
+ *
+ * @param target - The target object to assign properties to.
+ * @param source - The source object to assign properties from.
+ * @returns The target object with the assigned properties.
+ */
+export function assignWithNonEnumerableProperties<T extends object, U>(target: T, source: U): T & U;
+
+/**
+ * @param target - The target object to assign properties to.
+ * @param source1 - The first source object to assign properties from.
+ * @param source2 - The second source object to assign properties from.
+ * @returns The target object with the assigned properties.
+ */
+export function assignWithNonEnumerableProperties<T extends object, U, V>(target: T, source1: U, source2: V): T & U & V;
+
+/**
+ * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
+ *
+ * @param target - The target object to assign properties to.
+ * @param source1 - The first source object to assign properties from.
+ * @param source2 - The second source object to assign properties from.
+ * @param source3 - The third source object to assign properties from.
+ * @returns The target object with the assigned properties.
+ */
+export function assignWithNonEnumerableProperties<T extends object, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
+
+/**
+ * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
+ *
+ * @param target - The target object to assign properties to.
+ * @param sources - The source objects to assign properties from.
+ * @returns The target object with the assigned properties.
+ */
+export function assignWithNonEnumerableProperties(target: object, ...sources: object[]): object {
+  return _assignWithNonEnumerableProperties(target, ...sources);
+}
+
+function _assignWithNonEnumerableProperties(target: object, ...sources: object[]): object {
+  for (const source of sources) {
+    Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+  }
+
+  const sourcePrototypes = (sources.map((source) => getPrototypeOf(source)) as (object | null)[]).filter<object | null>((proto) => !!proto) as object[];
+
+  if (sourcePrototypes.length > 0) {
+    const targetPrototype = _assignWithNonEnumerableProperties({}, getPrototypeOf(target), ...sourcePrototypes);
+    Object.setPrototypeOf(target, targetPrototype);
+  }
+
+  return target;
 }

@@ -9,6 +9,7 @@ import {
 import type { KeysMatching } from '../../@types.ts';
 import type { MaybePromise } from '../../Async.ts';
 import type { ValidatorElement } from '../../HTMLElement.ts';
+import { assignWithNonEnumerableProperties } from '../../Object.ts';
 import type { PluginBase } from './PluginBase.ts';
 
 /**
@@ -27,8 +28,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
    * Returns the ValueComponent with extended functionality.
    */
   public asExtended(): ValueComponentExType<UIValue, TValueComponent> {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    return { ...this.valueComponent, ...this };
+    return assignWithNonEnumerableProperties({}, this.valueComponent, this);
   }
 
   /**
