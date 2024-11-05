@@ -34,21 +34,19 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
   /**
    * Binds the ValueComponent to a property in the plugin settings.
    *
-   * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
-   * @typeParam Property - The key of the plugin setting that the component is bound to.
    * @typeParam PluginSettings - The type of the plugin settings object.
+   * @typeParam Property - The key of the plugin setting that the component is bound to.
    * @param plugin - The plugin.
    * @param property - The property key in `PluginSettings` to bind to the UI component.
    * @param options - Configuration options.
    * @returns The `ValueComponent` instance that was bound to the property.
    */
   public bind<
-    Plugin extends PluginBase<object>,
+    PluginSettings extends object,
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-    Property extends KeysMatching<PluginSettings, UIValue>,
-    PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
+    Property extends KeysMatching<PluginSettings, UIValue>
   >(
-    plugin: Plugin,
+    plugin: PluginBase<PluginSettings>,
     property: Property,
     options?: BindValueComponentOptions<PluginSettings, UIValue>
   ): ValueComponentExType<UIValue, TValueComponent>;
@@ -65,11 +63,10 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
    * @returns The `ValueComponent` instance that was bound to the property.
    */
   public bind<
-    Plugin extends PluginBase<object>,
-    Property extends keyof PluginSettings,
-    PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
+    PluginSettings extends object,
+    Property extends keyof PluginSettings
   >(
-    plugin: Plugin,
+    plugin: PluginBase<PluginSettings>,
     property: Property,
     options: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property>
   ): ValueComponentExType<UIValue, TValueComponent>;
@@ -86,11 +83,10 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
    * @returns The `ValueComponent` instance that was bound to the property.
    */
   public bind<
-    Plugin extends PluginBase<object>,
-    Property extends keyof PluginSettings,
-    PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
+    PluginSettings extends object,
+    Property extends keyof PluginSettings
   >(
-    plugin: Plugin,
+    plugin: PluginBase<PluginSettings>,
     property: Property,
     options?: BindValueComponentOptions<PluginSettings, UIValue>
   ): ValueComponentExType<UIValue, TValueComponent> {
