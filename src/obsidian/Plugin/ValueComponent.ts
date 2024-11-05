@@ -2,51 +2,170 @@ import {
   DropdownComponent,
   SliderComponent,
   TextAreaComponent,
-  TextComponent
+  TextComponent,
+  ValueComponent
 } from 'obsidian';
 
 import type { KeysMatching } from '../../@types.ts';
 import type { MaybePromise } from '../../Async.ts';
+import type { ValidatorElement } from '../../HTMLElement.ts';
 import type { PluginBase } from './PluginBase.ts';
 
 /**
- * A ValueComponent that can be bound to a plugin setting.
+ * ValueComponent that can be used as an original ValueComponent with extended functionality.
  */
-interface ValueComponent<UIValue> {
+type ValueComponentExType<UIValue, TValueComponent extends ValueComponentWithChangeTracking<UIValue>> = TValueComponent & ValueComponentEx<UIValue, TValueComponent>;
+
+/**
+ * ValueComponent with extended functionality.
+ */
+class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChangeTracking<UIValue>> {
+  public constructor(private valueComponent: TValueComponent) {
+  }
+
   /**
-   * Gets the value of the component.
+   * Returns the ValueComponent with extended functionality.
+   */
+  public asExtended(): ValueComponentExType<UIValue, TValueComponent> {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    return { ...this.valueComponent, ...this };
+  }
+
+  /**
+   * Binds the ValueComponent to a property in the plugin settings.
    *
-   * @returns The value of the component.
+   * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
+   * @typeParam Property - The key of the plugin setting that the component is bound to.
+   * @typeParam PluginSettings - The type of the plugin settings object.
+   * @param plugin - The plugin.
+   * @param property - The property key in `PluginSettings` to bind to the UI component.
+   * @param options - Configuration options.
+   * @returns The `ValueComponent` instance that was bound to the property.
    */
-  getValue(): UIValue;
+  public bind<
+    Plugin extends PluginBase<object>,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+    Property extends KeysMatching<PluginSettings, UIValue>,
+    PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
+  >(
+    plugin: Plugin,
+    property: Property,
+    options?: BindValueComponentOptions<PluginSettings, UIValue>
+  ): ValueComponentExType<UIValue, TValueComponent>;
 
   /**
-   * Sets the value of the component.
-   * @param value - The value to set on the component.
+   * Binds the ValueComponent to a property in the plugin settings.
+   *
+   * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
+   * @typeParam Property - The key of the plugin setting that the component is bound to.
+   * @typeParam PluginSettings - The type of the plugin settings object.
+   * @param plugin - The plugin.
+   * @param property - The property key in `PluginSettings` to bind to the UI component.
+   * @param options - Configuration options.
+   * @returns The `ValueComponent` instance that was bound to the property.
    */
-  setValue(value: UIValue): this;
+  public bind<
+    Plugin extends PluginBase<object>,
+    Property extends keyof PluginSettings,
+    PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
+  >(
+    plugin: Plugin,
+    property: Property,
+    options: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property>
+  ): ValueComponentExType<UIValue, TValueComponent>;
 
   /**
-   * Sets a callback function to be called when the value of the component changes.
-   * @param callback - A callback function that is called when the value of the component changes.
+   * Binds the ValueComponent to a property in the plugin settings.
+   *
+   * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
+   * @typeParam Property - The key of the plugin setting that the component is bound to.
+   * @typeParam PluginSettings - The type of the plugin settings object.
+   * @param plugin - The plugin.
+   * @param property - The property key in `PluginSettings` to bind to the UI component.
+   * @param options - Configuration options.
+   * @returns The `ValueComponent` instance that was bound to the property.
    */
-  onChange(callback: (newValue: UIValue) => Promise<void>): this;
+  public bind<
+    Plugin extends PluginBase<object>,
+    Property extends keyof PluginSettings,
+    PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
+  >(
+    plugin: Plugin,
+    property: Property,
+    options?: BindValueComponentOptions<PluginSettings, UIValue>
+  ): ValueComponentExType<UIValue, TValueComponent> {
+    type PropertyType = PluginSettings[Property];
+    const DEFAULT_OPTIONS: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = {
+      autoSave: true,
+      pluginSettingsToComponentValueConverter: (value): UIValue => value as UIValue,
+      componentToPluginSettingsValueConverter: (value): PropertyType => value as PropertyType
+    };
+
+    const optionsExt: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = { ...DEFAULT_OPTIONS, ...options };
+    const pluginExt = plugin as unknown as PluginBase<PluginSettings>;
+    const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? pluginExt.settingsCopy;
+    this.valueComponent
+      .setValue(optionsExt.pluginSettingsToComponentValueConverter(pluginSettingsFn()[property]))
+      .onChange(async (uiValue) => {
+        if (!this.validate(optionsExt.valueValidator, uiValue)) {
+          return;
+        }
+        const pluginSettings = pluginSettingsFn();
+        pluginSettings[property] = optionsExt.componentToPluginSettingsValueConverter(uiValue);
+        if (optionsExt.autoSave) {
+          await pluginExt.saveSettings(pluginSettings);
+        }
+
+        await optionsExt.onChanged?.();
+      });
+
+    const validatorElement = getValidatorElement(this.valueComponent);
+    if (validatorElement) {
+      validatorElement.addEventListener('focus', () => this.validate(optionsExt.valueValidator));
+      validatorElement.addEventListener('blur', () => this.validate(optionsExt.valueValidator));
+    }
+
+    return this.asExtended();
+  }
+
+  private validate(valueValidator: ((uiValue: UIValue) => string | null) | undefined, uiValue?: UIValue): boolean {
+    if (!valueValidator) {
+      return true;
+    }
+    uiValue ??= this.valueComponent.getValue();
+    const errorMessage = valueValidator(uiValue);
+    const validatorElement = getValidatorElement(this.valueComponent);
+    if (validatorElement) {
+      validatorElement.setCustomValidity(errorMessage ?? '');
+      validatorElement.reportValidity();
+    }
+
+    return !errorMessage;
+  }
 }
 
 /**
- * A HTML element that can be validated.
+ * Extends a ValueComponent with additional functionality.
+ *
+ * @typeParam UIValue - The type of the value the component displays.
+ * @typeParam TValueComponent - The type of the value component extending `ValueComponent`.
+ * @param valueComponent - The value component to extend.
+ * @returns The value component with extended functionality.
  */
-interface ValidatorElement extends HTMLElement {
-  /**
-   * Sets a custom error message on the element.
-   * @param error - The error message to set on the element.
-   */
-  setCustomValidity(error: string): void;
+export function extend<UIValue, TValueComponent extends ValueComponentWithChangeTracking<UIValue>>(valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>): ValueComponentExType<UIValue, TValueComponent> {
+  return new ValueComponentEx<UIValue, TValueComponent>(valueComponent).asExtended();
+}
 
+/**
+ * A ValueComponent that can track changes.
+ */
+interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
   /**
-   * Reports the validity of the element.
+   * Sets a callback function to be called when the value of the component changes.
+   *
+   * @param callback - A callback function that is called when the value of the component changes.
    */
-  reportValidity(): boolean;
+  onChange(callback: (newValue: T) => Promise<void>): this;
 }
 
 /**
@@ -96,146 +215,12 @@ interface BindValueComponentOptionsExtended<PluginSettings, UIValue, Property ex
 }
 
 /**
- * Binds a value component to a property in the plugin settings with optional automatic saving and value conversion.
- *
- * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
- * @typeParam TValueComponent - The type of the value component extending `ValueComponent`.
- * @typeParam Property - The key of the plugin setting that the component is bound to.
- * @typeParam UIValue - The inferred type based on the UI component's type.
- * @typeParam PluginSettings - The inferred type of the plugin settings object.
- *
- * @param plugin - The plugin.
- * @param valueComponent - The component that will display and interact with the setting value.
- * @param property - The property key in `PluginSettings` to bind to the UI component.
- * @param options - Configuration options.
- * @returns The `ValueComponent` instance that was bound to the property.
- */
-export function bindValueComponent<
-  Plugin extends PluginBase<object>,
-  TValueComponent extends ValueComponent<unknown>,
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  Property extends KeysMatching<PluginSettings, UIValue>,
-  UIValue = TValueComponent extends ValueComponent<infer P> ? P : never,
-  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
->(
-  valueComponent: TValueComponent,
-  plugin: Plugin,
-  property: Property,
-  options?: BindValueComponentOptions<PluginSettings, UIValue>
-): TValueComponent;
-
-/**
- * Binds a value component to a property in the plugin settings with optional automatic saving and value conversion.
- *
- * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
- * @typeParam TValueComponent - The type of the value component extending `ValueComponent`.
- * @typeParam Property - The key of the plugin setting that the component is bound to.
- * @typeParam UIValue - The inferred type based on the value component's type.
- * @typeParam PluginSettings - The inferred type of the plugin settings object.
- *
- * @param plugin - The plugin.
- * @param valueComponent - The component that will display and interact with the setting value.
- * @param property - The property key in `PluginSettings` to bind to the UI component.
- * @param options - Configuration options.
- * @returns The `ValueComponent` instance that was bound to the property.
- */
-export function bindValueComponent<
-  Plugin extends PluginBase<object>,
-  TValueComponent extends ValueComponent<unknown>,
-  Property extends keyof PluginSettings,
-  UIValue = TValueComponent extends ValueComponent<infer P> ? P : never,
-  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
->(
-  valueComponent: TValueComponent,
-  plugin: Plugin,
-  property: Property,
-  options: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property>
-): TValueComponent;
-
-/**
- * Binds a value component to a property in the plugin settings with optional automatic saving and value conversion.
- *
- * @typeParam Plugin - The type of the plugin that extends `PluginBase`.
- * @typeParam TValueComponent - The type of the value component extending `ValueComponent`.
- * @typeParam Property - The key of the plugin setting that the component is bound to.
- * @typeParam UIValue - The inferred type based on the value component's type.
- * @typeParam PluginSettings - The inferred type of the plugin settings object.
- *
- * @param plugin - The plugin.
- * @param valueComponent - The component that will display and interact with the setting value.
- * @param property - The property key in `PluginSettings` to bind to the UI component.
- * @param options - Configuration options.
- * @returns The `ValueComponent` instance that was bound to the property.
- */
-export function bindValueComponent<
-  Plugin extends PluginBase<object>,
-  TValueComponent extends ValueComponent<unknown>,
-  Property extends keyof PluginSettings,
-  UIValue = TValueComponent extends ValueComponent<infer P> ? P : never,
-  PluginSettings extends object = Plugin extends PluginBase<infer P> ? P : never
->(
-  valueComponent: TValueComponent,
-  plugin: Plugin,
-  property: Property,
-  options?: BindValueComponentOptions<PluginSettings, UIValue>
-): TValueComponent {
-  type PropertyType = PluginSettings[Property];
-  const DEFAULT_OPTIONS: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = {
-    autoSave: true,
-    pluginSettingsToComponentValueConverter: (value): UIValue => value as UIValue,
-    componentToPluginSettingsValueConverter: (value): PropertyType => value as PropertyType
-  };
-
-  const optionsExt: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = { ...DEFAULT_OPTIONS, ...options };
-  const pluginExt = plugin as unknown as PluginBase<PluginSettings>;
-  const uiComponentExt = valueComponent as ValueComponent<UIValue>;
-  const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? pluginExt.settingsCopy;
-  uiComponentExt
-    .setValue(optionsExt.pluginSettingsToComponentValueConverter(pluginSettingsFn()[property]))
-    .onChange(async (uiValue) => {
-      if (!validateComponent(uiValue)) {
-        return;
-      }
-      const pluginSettings = pluginSettingsFn();
-      pluginSettings[property] = optionsExt.componentToPluginSettingsValueConverter(uiValue);
-      if (optionsExt.autoSave) {
-        await pluginExt.saveSettings(pluginSettings);
-      }
-
-      await optionsExt.onChanged?.();
-    });
-
-  const validatorElement = getValidatorElement(valueComponent);
-  if (validatorElement) {
-    validatorElement.addEventListener('focus', () => validateComponent());
-    validatorElement.addEventListener('blur', () => validateComponent());
-  }
-
-  return valueComponent;
-
-  function validateComponent(uiValue?: UIValue): boolean {
-    if (!optionsExt.valueValidator) {
-      return true;
-    }
-    uiValue ??= uiComponentExt.getValue();
-    const errorMessage = optionsExt.valueValidator(uiValue);
-    const validatorElement = getValidatorElement(valueComponent);
-    if (validatorElement) {
-      validatorElement.setCustomValidity(errorMessage ?? '');
-      validatorElement.reportValidity();
-    }
-
-    return !errorMessage;
-  }
-}
-
-/**
  * Gets the validator element from a value component if it exists.
  *
  * @param valueComponent - The value component to get the validator element from.
  * @returns The validator element if it exists, or `null` if it does not.
  */
-function getValidatorElement(valueComponent: ValueComponent<unknown>): ValidatorElement | null {
+function getValidatorElement<UIValue>(valueComponent: ValueComponentWithChangeTracking<UIValue>): ValidatorElement | null {
   if (valueComponent instanceof DropdownComponent) {
     return valueComponent.selectEl;
   }
