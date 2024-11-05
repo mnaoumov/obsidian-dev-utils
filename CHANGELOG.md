@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.3.1
+
+- Fix assignWithNonEnumerableProperties
+
 ## 4.3.0
 
 - Simplify generics
