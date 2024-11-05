@@ -104,7 +104,7 @@ function parseErrorEntries(error: unknown, level = 0, entries: ErrorEntry[] = []
   entries.push({ level, message: title, shouldClearAnsiSequence: true });
 
   if (error.stack) {
-    const restStack = error.stack.startsWith(title) ? error.stack.substring(title.length + 1) : error.stack;
+    const restStack = error.stack.startsWith(title) ? error.stack.slice(title.length + 1) : error.stack;
     entries.push({ level, message: `Error stack:\n${restStack}` });
   }
 
