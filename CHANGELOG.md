@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.4.0
+
+- Validate initial value
+
 ## 4.3.1
 
 - Fix assignWithNonEnumerableProperties
