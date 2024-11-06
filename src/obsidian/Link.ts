@@ -10,6 +10,7 @@ import type {
   Reference,
   TFile
 } from 'obsidian';
+
 import {
   normalizePath,
   parseLinktext
@@ -19,6 +20,9 @@ import type {
   MaybePromise,
   RetryOptions
 } from '../Async.ts';
+import type { FileChange } from './FileChange.ts';
+import type { PathOrFile } from './FileSystem.ts';
+
 import {
   basename,
   dirname,
@@ -27,9 +31,7 @@ import {
   relative
 } from '../Path.ts';
 import { normalize } from '../String.ts';
-import type { FileChange } from './FileChange.ts';
 import { applyFileChanges } from './FileChange.ts';
-import type { PathOrFile } from './FileSystem.ts';
 import {
   getFile,
   getPath,
@@ -97,19 +99,9 @@ export interface UpdateLinksInFileOptions {
   app: App;
 
   /**
-   * The file to update the links in.
+   * Whether to update only embedded links.
    */
-  pathOrFile: PathOrFile;
-
-  /**
-   * The old path of the file.
-   */
-  oldPathOrFile?: PathOrFile | undefined;
-
-  /**
-   * A map of old and new paths for renaming links.
-   */
-  renameMap?: Map<string, string> | undefined;
+  embedOnlyLinks?: boolean | undefined;
 
   /**
    * Whether to force the links to be in Markdown format.
@@ -117,9 +109,19 @@ export interface UpdateLinksInFileOptions {
   forceMarkdownLinks?: boolean | undefined;
 
   /**
-   * Whether to update only embedded links.
+   * The old path of the file.
    */
-  embedOnlyLinks?: boolean | undefined;
+  oldPathOrFile?: PathOrFile | undefined;
+
+  /**
+   * The file to update the links in.
+   */
+  pathOrFile: PathOrFile;
+
+  /**
+   * A map of old and new paths for renaming links.
+   */
+  renameMap?: Map<string, string> | undefined;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
@@ -136,11 +138,11 @@ export interface UpdateLinksInFileOptions {
 export async function updateLinksInFile(options: UpdateLinksInFileOptions): Promise<void> {
   const {
     app,
-    pathOrFile,
-    oldPathOrFile,
-    renameMap,
-    forceMarkdownLinks,
     embedOnlyLinks,
+    forceMarkdownLinks,
+    oldPathOrFile,
+    pathOrFile,
+    renameMap,
     shouldUpdateFilenameAlias
   } = options;
   await editLinks(app, pathOrFile, (link) => {
@@ -150,12 +152,12 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     }
     return convertLink({
       app,
+      forceMarkdownLinks,
       link,
-      sourcePathOrFile: pathOrFile,
       oldPathOrFile,
       renameMap,
-      forceMarkdownLinks,
-      shouldUpdateFilenameAlias
+      shouldUpdateFilenameAlias,
+      sourcePathOrFile: pathOrFile
     });
   });
 }
@@ -170,14 +172,14 @@ export interface ConvertLinkOptions {
   app: App;
 
   /**
+   * Whether to force markdown links.
+   */
+  forceMarkdownLinks?: boolean | undefined;
+
+  /**
    * The reference for the link.
    */
   link: Reference;
-
-  /**
-   * The source file containing the link.
-   */
-  sourcePathOrFile: PathOrFile;
 
   /**
    * The old path of the link.
@@ -190,14 +192,14 @@ export interface ConvertLinkOptions {
   renameMap?: Map<string, string> | undefined;
 
   /**
-   * Whether to force markdown links.
-   */
-  forceMarkdownLinks?: boolean | undefined;
-
-  /**
    * Whether to update filename alias. Defaults to `true`.
    */
   shouldUpdateFilenameAlias?: boolean | undefined;
+
+  /**
+   * The source file containing the link.
+   */
+  sourcePathOrFile: PathOrFile;
 }
 
 /**
@@ -209,13 +211,13 @@ export interface ConvertLinkOptions {
 export function convertLink(options: ConvertLinkOptions): string {
   return updateLink({
     app: options.app,
-    link: options.link,
-    pathOrFile: extractLinkFile(options.app, options.link, options.sourcePathOrFile),
-    oldPathOrFile: options.oldPathOrFile,
-    sourcePathOrFile: options.sourcePathOrFile,
-    renameMap: options.renameMap,
     forceMarkdownLinks: options.forceMarkdownLinks,
-    shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias
+    link: options.link,
+    oldPathOrFile: options.oldPathOrFile,
+    pathOrFile: extractLinkFile(options.app, options.link, options.sourcePathOrFile),
+    renameMap: options.renameMap,
+    shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias,
+    sourcePathOrFile: options.sourcePathOrFile
   });
 }
 
@@ -227,7 +229,7 @@ export function convertLink(options: ConvertLinkOptions): string {
  * @param notePathOrFile - The path or file of the note containing the link.
  * @returns The file associated with the link, or null if not found.
  */
-export function extractLinkFile(app: App, link: Reference, notePathOrFile: PathOrFile): TFile | null {
+export function extractLinkFile(app: App, link: Reference, notePathOrFile: PathOrFile): null | TFile {
   const { linkPath } = splitSubpath(link.link);
   return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(notePathOrFile));
 }
@@ -242,14 +244,14 @@ export interface UpdateLinkOptions {
   app: App;
 
   /**
+   * Whether to force markdown links.
+   */
+  forceMarkdownLinks?: boolean | undefined;
+
+  /**
    * The reference for the link.
    */
   link: Reference;
-
-  /**
-   * The file associated with the link.
-   */
-  pathOrFile: PathOrFile | null;
 
   /**
    * The old path of the file.
@@ -257,9 +259,9 @@ export interface UpdateLinkOptions {
   oldPathOrFile?: PathOrFile | undefined;
 
   /**
-   * The source file containing the link.
+   * The file associated with the link.
    */
-  sourcePathOrFile: PathOrFile;
+  pathOrFile: null | PathOrFile;
 
   /**
    * A map of old and new file paths.
@@ -267,14 +269,14 @@ export interface UpdateLinkOptions {
   renameMap?: Map<string, string> | undefined;
 
   /**
-   * Whether to force markdown links.
-   */
-  forceMarkdownLinks?: boolean | undefined;
-
-  /**
    * Whether to update filename alias. Defaults to `true`.
    */
   shouldUpdateFilenameAlias?: boolean | undefined;
+
+  /**
+   * The source file containing the link.
+   */
+  sourcePathOrFile: PathOrFile;
 }
 
 /**
@@ -286,13 +288,13 @@ export interface UpdateLinkOptions {
 export function updateLink(options: UpdateLinkOptions): string {
   const {
     app,
-    link,
-    pathOrFile,
-    oldPathOrFile,
-    sourcePathOrFile,
-    renameMap,
     forceMarkdownLinks,
-    shouldUpdateFilenameAlias
+    link,
+    oldPathOrFile,
+    pathOrFile,
+    renameMap,
+    shouldUpdateFilenameAlias,
+    sourcePathOrFile
   } = options;
   if (!pathOrFile) {
     return link.original;
@@ -306,10 +308,10 @@ export function updateLink(options: UpdateLinkOptions): string {
   let alias = shouldResetAlias({
     app,
     displayText: link.displayText,
-    pathOrFile,
+    isWikilink,
     otherPathOrFiles: [oldPath, newPath],
-    sourcePathOrFile,
-    isWikilink
+    pathOrFile,
+    sourcePathOrFile
   })
     ? undefined
     : link.displayText;
@@ -327,13 +329,13 @@ export function updateLink(options: UpdateLinkOptions): string {
   }
 
   const newLink = generateMarkdownLink({
+    alias,
     app,
+    isWikilink: forceMarkdownLinks ? false : undefined,
+    originalLink: link.original,
     pathOrFile: file,
     sourcePathOrFile,
-    subpath,
-    alias,
-    isWikilink: forceMarkdownLinks ? false : undefined,
-    originalLink: link.original
+    subpath
   });
   return newLink;
 }
@@ -353,9 +355,9 @@ export interface ShouldResetAliasOptions {
   displayText: string | undefined;
 
   /**
-   * The path or file of the link.
+   * Indicates if the link is a wikilink.
    */
-  pathOrFile: PathOrFile;
+  isWikilink?: boolean | undefined;
 
   /**
    * Other paths associated with the link.
@@ -363,14 +365,14 @@ export interface ShouldResetAliasOptions {
   otherPathOrFiles: (PathOrFile | undefined)[];
 
   /**
+   * The path or file of the link.
+   */
+  pathOrFile: PathOrFile;
+
+  /**
    * The source path of the link.
    */
   sourcePathOrFile: PathOrFile;
-
-  /**
-   * Indicates if the link is a wikilink.
-   */
-  isWikilink?: boolean | undefined;
 }
 
 /**
@@ -383,10 +385,10 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
   const {
     app,
     displayText,
-    pathOrFile,
+    isWikilink,
     otherPathOrFiles,
-    sourcePathOrFile,
-    isWikilink
+    pathOrFile,
+    sourcePathOrFile
   } = options;
   if (isWikilink === false) {
     return false;
@@ -448,9 +450,50 @@ export interface GenerateMarkdownLinkDefaultOptionsWrapper {
  */
 export interface GenerateMarkdownLinkOptions {
   /**
+   * The alias for the link.
+   */
+  alias?: string | undefined;
+
+  /**
+   * Whether to allow an empty alias for embeds. Defaults to `true`.
+   */
+  allowEmptyEmbedAlias?: boolean | undefined;
+
+  /**
+   * Whether to allow non-existing files. If `false` and `pathOrFile` is a non-existing file, an error will be thrown. Defaults to `false`.
+   */
+  allowNonExistingFile?: boolean | undefined;
+
+  /**
    * The Obsidian app instance.
    */
   app: App;
+
+  /**
+   * Indicates if the link should be relative. If not provided or `false`, it will be inferred based on the Obsidian settings.
+   */
+  forceRelativePath?: boolean | undefined;
+
+  /**
+   * Whether to include the attachment extension in the embed alias. Has no effect if `allowEmptyEmbedAlias` is `true`. Defaults to `false`.
+   */
+  includeAttachmentExtensionToEmbedAlias?: boolean | undefined;
+
+  /**
+   * Indicates if the link should be embedded. If not provided, it will be inferred based on the file type.
+   */
+  isEmbed?: boolean | undefined;
+
+  /**
+   * Indicates if the link should be a wikilink. If not provided, it will be inferred based on the Obsidian settings.
+   */
+  isWikilink?: boolean | undefined;
+
+  /**
+    * The original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
+    * These inferred values will be overridden by corresponding settings if specified.
+    */
+  originalLink?: string | undefined;
 
   /**
    * The file to link to.
@@ -468,55 +511,14 @@ export interface GenerateMarkdownLinkOptions {
   subpath?: string | undefined;
 
   /**
-   * The alias for the link.
-   */
-  alias?: string | undefined;
-
-  /**
-   * Indicates if the link should be embedded. If not provided, it will be inferred based on the file type.
-   */
-  isEmbed?: boolean | undefined;
-
-  /**
-   * Indicates if the link should be a wikilink. If not provided, it will be inferred based on the Obsidian settings.
-   */
-  isWikilink?: boolean | undefined;
-
-  /**
-   * Indicates if the link should be relative. If not provided or `false`, it will be inferred based on the Obsidian settings.
-   */
-  forceRelativePath?: boolean | undefined;
-
-  /**
-   * Indicates if the link should use a leading dot. Defaults to `false`. Has no effect if `isWikilink` is `true` or `isRelative` is `false`.
-   */
-  useLeadingDot?: boolean | undefined;
-
-  /**
    * Indicates if the link should use angle brackets. Defaults to `false`. Has no effect if `isWikilink` is `true`
    */
   useAngleBrackets?: boolean | undefined;
 
   /**
-    * The original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
-    * These inferred values will be overridden by corresponding settings if specified.
-    */
-  originalLink?: string | undefined;
-
-  /**
-   * Whether to allow non-existing files. If `false` and `pathOrFile` is a non-existing file, an error will be thrown. Defaults to `false`.
+   * Indicates if the link should use a leading dot. Defaults to `false`. Has no effect if `isWikilink` is `true` or `isRelative` is `false`.
    */
-  allowNonExistingFile?: boolean | undefined;
-
-  /**
-   * Whether to allow an empty alias for embeds. Defaults to `true`.
-   */
-  allowEmptyEmbedAlias?: boolean | undefined;
-
-  /**
-   * Whether to include the attachment extension in the embed alias. Has no effect if `allowEmptyEmbedAlias` is `true`. Defaults to `false`.
-   */
-  includeAttachmentExtensionToEmbedAlias?: boolean | undefined;
+  useLeadingDot?: boolean | undefined;
 }
 
 /**

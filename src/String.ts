@@ -3,9 +3,10 @@
  * Contains utility functions for string operations.
  */
 
+import type { ValueProvider } from './ValueProvider.ts';
+
 import { throwExpression } from './Error.ts';
 import { escapeRegExp } from './RegExp.ts';
-import type { ValueProvider } from './ValueProvider.ts';
 import { resolveValue } from './ValueProvider.ts';
 
 /**
@@ -17,14 +18,14 @@ export type AsyncReplacer<Args extends unknown[]> = ValueProvider<string, [strin
  * Mapping of special characters to their escaped counterparts.
  */
 const ESCAPE_MAP: Record<string, string> = {
-  '\\': '\\\\',
-  '"': '\\"',
-  '\'': '\\\'',
   '\n': '\\n',
   '\r': '\\r',
   '\t': '\\t',
   '\b': '\\b',
-  '\f': '\\f'
+  '\f': '\\f',
+  '\'': '\\\'',
+  '"': '\\"',
+  '\\': '\\\\'
 } as const;
 
 /**
@@ -98,7 +99,7 @@ export function normalize(str: string): string {
  */
 export async function replaceAllAsync<Args extends unknown[]>(
   str: string,
-  searchValue: string | RegExp,
+  searchValue: RegExp | string,
   replacer: AsyncReplacer<Args>
 ): Promise<string> {
   const replacementPromises: Promise<string>[] = [];

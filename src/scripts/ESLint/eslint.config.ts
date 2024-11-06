@@ -10,13 +10,15 @@
  * @packageDocumentation eslint-config
  */
 
+import type { Linter } from 'eslint';
+
 import eslint from '@eslint/js';
+
 // eslint-disable-next-line import-x/no-rename-default
 import stylistic from '@stylistic/eslint-plugin';
-import type { Linter } from 'eslint';
 import eslintPluginImportX from 'eslint-plugin-import-x';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
-import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import perfectionist from 'eslint-plugin-perfectionist';
 // eslint-disable-next-line import-x/no-rename-default
 import tseslint from 'typescript-eslint';
 
@@ -55,6 +57,7 @@ export const configs: Linter.Config[] = tseslint.config(
   eslintPluginImportX.flatConfigs.typescript,
   eslintPluginImportX.flatConfigs.errors,
   eslintPluginImportX.flatConfigs.warnings,
+  perfectionist.configs['recommended-alphabetical'],
   {
     files: [
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
@@ -64,8 +67,7 @@ export const configs: Linter.Config[] = tseslint.config(
       join(ObsidianDevUtilsRepoPaths.SrcObsidianTypesDataview)
     ],
     plugins: {
-      'modules-newlines': eslintPluginModulesNewlines,
-      'simple-import-sort': simpleImportSort
+      'modules-newlines': eslintPluginModulesNewlines
     },
     rules: {
       '@stylistic/no-extra-semi': 'error',
@@ -121,12 +123,9 @@ export const configs: Linter.Config[] = tseslint.config(
       'import-x/no-unused-modules': 'error',
       'import-x/no-useless-path-segments': 'error',
       'import-x/no-webpack-loader-syntax': 'error',
-      'import-x/order': 'error',
       'import-x/unambiguous': 'error',
-      'modules-newlines/import-declaration-newline': 'error',
       'modules-newlines/export-declaration-newline': 'error',
-      'simple-import-sort/imports': 'error',
-      'simple-import-sort/exports': 'error'
+      'modules-newlines/import-declaration-newline': 'error'
     },
     settings: {
       'import/resolver': {

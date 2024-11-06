@@ -14,7 +14,7 @@ import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPa
 await wrapCliTask(async () => {
   const libDirs: string[] = [ObsidianDevUtilsRepoPaths.DistLib];
 
-  for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.DistLib, { withFileTypes: true, recursive: true })) {
+  for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.DistLib, { recursive: true, withFileTypes: true })) {
     if (!dirent.isDirectory()) {
       continue;
     }
@@ -34,10 +34,12 @@ await wrapCliTask(async () => {
       const importPath = libDir.replace(ObsidianDevUtilsRepoPaths.DistLib, '.');
       npmPackage.exports[importPath] = {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts)),
+        // eslint-disable-next-line perfectionist/sort-objects
         default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
       };
       npmPackage.exports[normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any))] = {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
+        // eslint-disable-next-line perfectionist/sort-objects
         default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
       };
     }

@@ -14,8 +14,9 @@ import {
 import type { KeysMatching } from '../../@types.ts';
 import type { MaybePromise } from '../../Async.ts';
 import type { ValidatorElement } from '../../HTMLElement.ts';
-import { assignWithNonEnumerableProperties } from '../../Object.ts';
 import type { PluginBase } from './PluginBase.ts';
+
+import { assignWithNonEnumerableProperties } from '../../Object.ts';
 
 /**
  * ValueComponent that can be used as an original ValueComponent with extended functionality.
@@ -98,8 +99,8 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     type PropertyType = PluginSettings[Property];
     const DEFAULT_OPTIONS: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = {
       autoSave: true,
-      pluginSettingsToComponentValueConverter: (value): UIValue => value as UIValue,
-      componentToPluginSettingsValueConverter: (value): PropertyType => value as PropertyType
+      componentToPluginSettingsValueConverter: (value): PropertyType => value as PropertyType,
+      pluginSettingsToComponentValueConverter: (value): UIValue => value as UIValue
     };
 
     const optionsExt: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = { ...DEFAULT_OPTIONS, ...options };
@@ -182,6 +183,11 @@ interface BindValueComponentOptions<PluginSettings, UIValue> {
   autoSave?: boolean;
 
   /**
+   * A callback function that is called when the value of the component changes.
+   */
+  onChanged?: () => MaybePromise<void>;
+
+  /**
    * The plugin settings object to bind the component to. Default is the plugin's current settings.
    */
   pluginSettings?: PluginSettings;
@@ -191,12 +197,7 @@ interface BindValueComponentOptions<PluginSettings, UIValue> {
    * @param uiValue - The value of the UI component.
    * @returns An error message if the value is invalid, or `null` if it is valid.
    */
-  valueValidator?: (uiValue: UIValue) => string | null;
-
-  /**
-   * A callback function that is called when the value of the component changes.
-   */
-  onChanged?: () => MaybePromise<void>;
+  valueValidator?: (uiValue: UIValue) => null | string;
 }
 
 /**
@@ -204,18 +205,18 @@ interface BindValueComponentOptions<PluginSettings, UIValue> {
  */
 interface BindValueComponentOptionsExtended<PluginSettings, UIValue, Property extends keyof PluginSettings> extends BindValueComponentOptions<PluginSettings, UIValue> {
   /**
-   * Converts the plugin settings value to the value used by the UI component.
-   * @param pluginSettingsValue - The value of the property in the plugin settings.
-   * @returns The value to set on the UI component.
-   */
-  pluginSettingsToComponentValueConverter: (pluginSettingsValue: PluginSettings[Property]) => UIValue;
-
-  /**
    * Converts the UI component's value back to the plugin settings value.
    * @param uiValue - The value of the UI component.
    * @returns The value to set on the plugin settings.
    */
   componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[Property];
+
+  /**
+   * Converts the plugin settings value to the value used by the UI component.
+   * @param pluginSettingsValue - The value of the property in the plugin settings.
+   * @returns The value to set on the UI component.
+   */
+  pluginSettingsToComponentValueConverter: (pluginSettingsValue: PluginSettings[Property]) => UIValue;
 }
 
 /**
@@ -224,7 +225,7 @@ interface BindValueComponentOptionsExtended<PluginSettings, UIValue, Property ex
  * @param valueComponent - The value component to get the validator element from.
  * @returns The validator element if it exists, or `null` if it does not.
  */
-function getValidatorElement<UIValue>(valueComponent: ValueComponentWithChangeTracking<UIValue>): ValidatorElement | null {
+function getValidatorElement<UIValue>(valueComponent: ValueComponentWithChangeTracking<UIValue>): null | ValidatorElement {
   if (valueComponent instanceof DropdownComponent) {
     return valueComponent.selectEl;
   }

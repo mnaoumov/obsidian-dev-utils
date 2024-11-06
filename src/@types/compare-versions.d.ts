@@ -13,7 +13,7 @@ declare module 'compare-versions' {
    * - `<`: Checks if the first version is less than the second.
    * - `<=`: Checks if the first version is less than or equal to the second.
    */
-  export type CompareOperator = '>' | '>=' | '=' | '<' | '<=';
+  export type CompareOperator = '<' | '<=' | '=' | '>' | '>=';
 
   /**
    * Compares two version strings using semantic versioning rules.

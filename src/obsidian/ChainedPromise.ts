@@ -6,9 +6,10 @@
 import type { App } from 'obsidian';
 
 import type { MaybePromise } from '../Async.ts';
+import type { ValueWrapper } from './App.ts';
+
 import { addErrorHandler } from '../Async.ts';
 import { getStackTrace } from '../Error.ts';
-import type { ValueWrapper } from './App.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import { invokeAsyncAndLog } from './Logger.ts';
 

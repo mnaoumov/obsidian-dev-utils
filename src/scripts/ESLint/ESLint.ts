@@ -45,8 +45,8 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
   const FlatESLint = await loadESLint({ useFlatConfig: true });
   const eslint = new FlatESLint({
     fix,
-    overrideConfigFile: join(packageDir, ObsidianDevUtilsRepoPaths.DistEslintConfigEmptyCjs),
-    overrideConfig: configs
+    overrideConfig: configs,
+    overrideConfigFile: join(packageDir, ObsidianDevUtilsRepoPaths.DistEslintConfigEmptyCjs)
   });
 
   const includePatterns = configs
@@ -74,7 +74,7 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
 
     for (const message of lintResult.messages) {
       const canAutoFix = message.fix !== undefined;
-      console.log(`${toRelativeFromRoot(lintResult.filePath)}:${(message.line as number | null)?.toString() ?? '(null)'}:${(message.column as number | null)?.toString() ?? '(null)'} - ${message.message} [rule ${message.ruleId ?? '(null)'}]${canAutoFix ? ' (auto-fixable)' : ''}`);
+      console.log(`${toRelativeFromRoot(lintResult.filePath)}:${(message.line as null | number)?.toString() ?? '(null)'}:${(message.column as null | number)?.toString() ?? '(null)'} - ${message.message} [rule ${message.ruleId ?? '(null)'}]${canAutoFix ? ' (auto-fixable)' : ''}`);
       errorsCount++;
     }
   }

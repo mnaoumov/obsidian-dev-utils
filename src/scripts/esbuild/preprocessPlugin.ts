@@ -30,11 +30,6 @@ import {
  */
 export function preprocessPlugin(): Plugin {
   const replacements = {
-    process: {
-      cwd: () => '/',
-      env: {},
-      platform: 'android'
-    } as typeof process,
     ['import(dot)meta(dot)url'.replaceAll('(dot)', '.')]: (): string => {
       if (typeof (module as unknown as Record<string, unknown>)['exports'] !== 'undefined') {
         // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
@@ -48,7 +43,12 @@ export function preprocessPlugin(): Plugin {
 
       // Fallback to an empty string if the environment is unknown
       return '';
-    }
+    },
+    process: {
+      cwd: () => '/',
+      env: {},
+      platform: 'android'
+    } as typeof process
   };
 
   return {

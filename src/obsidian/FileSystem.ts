@@ -70,7 +70,7 @@ export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, insens
  * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The instance of TAbstractFile if found, otherwise null.
  */
-export function getAbstractFileOrNull(app: App, pathOrFile: PathOrAbstractFile | null, insensitive?: boolean): TAbstractFile | null {
+export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstractFile, insensitive?: boolean): null | TAbstractFile {
   if (pathOrFile === null) {
     return null;
   }
@@ -124,7 +124,7 @@ export function getFile(app: App, pathOrFile: PathOrFile, allowNonExisting?: boo
  * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The TFile object if found, otherwise null.
  */
-export function getFileOrNull(app: App, pathOrFile: PathOrFile | null, insensitive?: boolean): TFile | null {
+export function getFileOrNull(app: App, pathOrFile: null | PathOrFile, insensitive?: boolean): null | TFile {
   const file = getAbstractFileOrNull(app, pathOrFile, insensitive);
   if (isFile(file)) {
     return file;
@@ -165,7 +165,7 @@ export function getFolder(app: App, pathOrFolder: PathOrFolder, allowNonExisting
  * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The TFolder object if found, otherwise null.
  */
-export function getFolderOrNull(app: App, pathOrFolder: PathOrFolder | null, insensitive?: boolean): TFolder | null {
+export function getFolderOrNull(app: App, pathOrFolder: null | PathOrFolder, insensitive?: boolean): null | TFolder {
   const folder = getAbstractFileOrNull(app, pathOrFolder, insensitive);
   if (isFolder(folder)) {
     return folder;
@@ -236,7 +236,7 @@ export function isFolder(file: unknown): file is TFolder {
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a note.
  */
-export function isNote(pathOrFile: PathOrAbstractFile | null): boolean {
+export function isNote(pathOrFile: null | PathOrAbstractFile): boolean {
   return isMarkdownFile(pathOrFile) || isCanvasFile(pathOrFile);
 }
 
@@ -246,7 +246,7 @@ export function isNote(pathOrFile: PathOrAbstractFile | null): boolean {
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a Markdown file.
  */
-export function isMarkdownFile(pathOrFile: PathOrAbstractFile | null): boolean {
+export function isMarkdownFile(pathOrFile: null | PathOrAbstractFile): boolean {
   return checkExtension(pathOrFile, MARKDOWN_FILE_EXTENSION);
 }
 
@@ -256,7 +256,7 @@ export function isMarkdownFile(pathOrFile: PathOrAbstractFile | null): boolean {
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a canvas file or not.
  */
-export function isCanvasFile(pathOrFile: PathOrAbstractFile | null): boolean {
+export function isCanvasFile(pathOrFile: null | PathOrAbstractFile): boolean {
   return checkExtension(pathOrFile, CANVAS_FILE_EXTENSION);
 }
 
@@ -267,7 +267,7 @@ export function isCanvasFile(pathOrFile: PathOrAbstractFile | null): boolean {
  * @param extension - The extension to compare against.
  * @returns Returns `true` if the path or file has the specified extension, `false` otherwise.
  */
-export function checkExtension(pathOrFile: PathOrAbstractFile | null, extension: string): boolean {
+export function checkExtension(pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
   if (pathOrFile === null) {
     return false;
   }

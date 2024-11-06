@@ -9,8 +9,9 @@ import type {
   Reference,
   TAbstractFile
 } from 'obsidian';
-import { MarkdownView } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
+
+import { MarkdownView } from 'obsidian';
 import {
   isFrontmatterLinkCache,
   isReferenceCache,
@@ -18,10 +19,12 @@ import {
 } from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';
+import type { PathOrFile } from './FileSystem.ts';
+import type { CombinedFrontMatter } from './FrontMatter.ts';
+
 import { retryWithTimeout } from '../Async.ts';
 import { noop } from '../Function.ts';
 import { getNestedPropertyValue } from '../Object.ts';
-import type { PathOrFile } from './FileSystem.ts';
 import {
   getFile,
   getFileOrNull,
@@ -30,7 +33,6 @@ import {
   isFile,
   isMarkdownFile
 } from './FileSystem.ts';
-import type { CombinedFrontMatter } from './FrontMatter.ts';
 import { parseFrontMatter } from './FrontMatter.ts';
 import { sortReferences } from './Reference.ts';
 

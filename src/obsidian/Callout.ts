@@ -3,11 +3,12 @@
  * This module provides utility functions for rendering callouts in Dataview.
  */
 
-import { throwExpression } from '../Error.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
+import type { DataviewInlineApi } from './Dataview.ts';
+
+import { throwExpression } from '../Error.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { chain } from './ChainedPromise.ts';
-import type { DataviewInlineApi } from './Dataview.ts';
 import { getRenderedContainer } from './Dataview.ts';
 
 /**
@@ -46,19 +47,15 @@ function getModifier(mode: CalloutMode): string {
  */
 export interface RenderCalloutOptions {
   /**
+   * An optional provider for the content, which can be either a string or a Node.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  contentProvider?: ValueProvider<Node | string | void>;
+
+  /**
    * The DataviewInlineApi instance.
    */
   dv: DataviewInlineApi;
-
-  /**
-   * The type of the callout, default is `"NOTE"`.
-   */
-  type?: string;
-
-  /**
-   * The callout mode, default is `CalloutMode.FoldableCollapsed`.
-   */
-  mode?: CalloutMode;
 
   /**
    * The header text of the callout, default is an empty string.
@@ -66,10 +63,14 @@ export interface RenderCalloutOptions {
   header?: string;
 
   /**
-   * An optional provider for the content, which can be either a string or a Node.
+   * The callout mode, default is `CalloutMode.FoldableCollapsed`.
    */
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  contentProvider?: ValueProvider<string | Node | void>;
+  mode?: CalloutMode;
+
+  /**
+   * The type of the callout, default is `"NOTE"`.
+   */
+  type?: string;
 }
 
 /**
@@ -79,11 +80,11 @@ export interface RenderCalloutOptions {
  */
 export function renderCallout(options: RenderCalloutOptions): void {
   const {
+    contentProvider = '',
     dv,
-    type = 'NOTE',
-    mode = CalloutMode.FoldableCollapsed,
     header = '',
-    contentProvider = ''
+    mode = CalloutMode.FoldableCollapsed,
+    type = 'NOTE'
   } = options;
   const modifier = getModifier(mode);
   const callout = dv.paragraph(`> [!${type}]${modifier} ${header}\n>\n> <div class="content"></div>`);
@@ -103,7 +104,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
   async function loadContent(): Promise<void> {
     await sleep(50);
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    let content: string | Node | void | undefined;
+    let content: Node | string | undefined | void;
 
     const paragraph = await getRenderedContainer(dv, async () => {
       content = await resolveValue(contentProvider);

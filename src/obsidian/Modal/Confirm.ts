@@ -6,6 +6,7 @@
  */
 
 import type { App } from 'obsidian';
+
 import {
   ButtonComponent,
   Modal
@@ -21,19 +22,9 @@ export interface ConfirmOptions {
   app: App;
 
   /**
-   * The title of the modal.
+   * The styles to apply to the "Cancel" button.
    */
-  title?: string | DocumentFragment;
-
-  /**
-   * The message to display in the modal.
-   */
-  message: string | DocumentFragment;
-
-  /**
-   * The text for the "OK" button.
-   */
-  okButtonText?: string;
+  cancelButtonStyles?: Partial<CSSStyleDeclaration>;
 
   /**
    * The text for the "Cancel" button.
@@ -41,14 +32,24 @@ export interface ConfirmOptions {
   cancelButtonText?: string;
 
   /**
+   * The message to display in the modal.
+   */
+  message: DocumentFragment | string;
+
+  /**
    * The styles to apply to the "OK" button.
    */
   okButtonStyles?: Partial<CSSStyleDeclaration>;
 
   /**
-   * The styles to apply to the "Cancel" button.
+   * The text for the "OK" button.
    */
-  cancelButtonStyles?: Partial<CSSStyleDeclaration>;
+  okButtonText?: string;
+
+  /**
+   * The title of the modal.
+   */
+  title?: DocumentFragment | string;
 }
 
 /**
@@ -65,24 +66,28 @@ export async function confirm(options: ConfirmOptions): Promise<boolean> {
 }
 
 class ConfirmModal extends Modal {
-  private options: Required<ConfirmOptions>;
   private isConfirmed = false;
+  private options: Required<ConfirmOptions>;
 
   public constructor(options: ConfirmOptions, private resolve: (value: boolean) => void) {
     super(options.app);
     const DEFAULT_OPTIONS: Required<ConfirmOptions> = {
       app: options.app,
-      title: '',
-      message: '',
-      okButtonText: 'OK',
+      cancelButtonStyles: {},
       cancelButtonText: 'Cancel',
+      message: '',
       okButtonStyles: {
-        marginTop: '20px',
-        marginRight: '10px'
+        marginRight: '10px',
+        marginTop: '20px'
       },
-      cancelButtonStyles: {}
+      okButtonText: 'OK',
+      title: ''
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
+  }
+
+  public override onClose(): void {
+    this.resolve(this.isConfirmed);
   }
 
   public override onOpen(): void {
@@ -102,9 +107,5 @@ class ConfirmModal extends Modal {
     cancelButton.setButtonText(this.options.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
     Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
-  }
-
-  public override onClose(): void {
-    this.resolve(this.isConfirmed);
   }
 }

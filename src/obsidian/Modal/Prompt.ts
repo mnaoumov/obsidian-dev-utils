@@ -22,26 +22,9 @@ export interface PromptOptions {
   app: App;
 
   /**
-   * The title of the modal.
+   * The styles to apply to the "Cancel" button.
    */
-  title?: string | DocumentFragment;
-
-  /**
-   * The default value to pre-fill the input field.
-   */
-  defaultValue?: string;
-
-  /**
-   * A function to validate the input value.
-   * @param value - The input value to validate.
-   * @returns an error message if the value is invalid, or null if the value is valid.
-   */
-  valueValidator?: (value: string) => string | null;
-
-  /**
-   * The text for the "OK" button.
-   */
-  okButtonText?: string;
+  cancelButtonStyles?: Partial<CSSStyleDeclaration>;
 
   /**
    * The text for the "Cancel" button.
@@ -49,9 +32,9 @@ export interface PromptOptions {
   cancelButtonText?: string;
 
   /**
-   * The styles to apply to the input field.
+   * The default value to pre-fill the input field.
    */
-  textBoxStyles?: Partial<CSSStyleDeclaration>;
+  defaultValue?: string;
 
   /**
    * The styles to apply to the "OK" button.
@@ -59,14 +42,31 @@ export interface PromptOptions {
   okButtonStyles?: Partial<CSSStyleDeclaration>;
 
   /**
-   * The styles to apply to the "Cancel" button.
+   * The text for the "OK" button.
    */
-  cancelButtonStyles?: Partial<CSSStyleDeclaration>;
+  okButtonText?: string;
 
   /**
    * The placeholder text for the input field.
    */
   placeholder?: string;
+
+  /**
+   * The styles to apply to the input field.
+   */
+  textBoxStyles?: Partial<CSSStyleDeclaration>;
+
+  /**
+   * The title of the modal.
+   */
+  title?: DocumentFragment | string;
+
+  /**
+   * A function to validate the input value.
+   * @param value - The input value to validate.
+   * @returns an error message if the value is invalid, or null if the value is valid.
+   */
+  valueValidator?: (value: string) => null | string;
 }
 
 /**
@@ -75,39 +75,53 @@ export interface PromptOptions {
  * @param options - The options for the prompt modal.
  * @returns A promise that resolves with the user input or null if the prompt was cancelled.
  */
-export async function prompt(options: PromptOptions): Promise<string | null> {
-  return new Promise<string | null>((resolve) => {
+export async function prompt(options: PromptOptions): Promise<null | string> {
+  return new Promise<null | string>((resolve) => {
     const modal = new PromptModal(options, resolve);
     modal.open();
   });
 }
 
 class PromptModal extends Modal {
-  private value: string;
   private isOkClicked = false;
   private options: Required<PromptOptions>;
+  private value: string;
 
-  public constructor(options: PromptOptions, private resolve: (value: string | null) => void) {
+  public constructor(options: PromptOptions, private resolve: (value: null | string) => void) {
     super(options.app);
     const DEFAULT_OPTIONS: Required<PromptOptions> = {
       app: options.app,
-      title: '',
-      defaultValue: '',
-      valueValidator: () => null,
-      okButtonText: 'OK',
+      cancelButtonStyles: {},
       cancelButtonText: 'Cancel',
+      defaultValue: '',
+      okButtonStyles: {
+        marginRight: '10px',
+        marginTop: '20px'
+      },
+      okButtonText: 'OK',
+      placeholder: '',
       textBoxStyles: {
         width: '100%'
       },
-      okButtonStyles: {
-        marginTop: '20px',
-        marginRight: '10px'
-      },
-      cancelButtonStyles: {},
-      placeholder: ''
+      title: '',
+      valueValidator: () => null
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.value = options.defaultValue ?? '';
+  }
+
+  private handleOk(event: Event, textComponent: TextComponent): void {
+    event.preventDefault();
+    if (!textComponent.inputEl.checkValidity()) {
+      return;
+    }
+
+    this.isOkClicked = true;
+    this.close();
+  }
+
+  public override onClose(): void {
+    this.resolve(this.isOkClicked ? this.value : null);
   }
 
   public override onOpen(): void {
@@ -140,19 +154,5 @@ class PromptModal extends Modal {
     cancelButton.setButtonText(this.options.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
     Object.assign(cancelButton.buttonEl.style, this.options.cancelButtonStyles);
-  }
-
-  public override onClose(): void {
-    this.resolve(this.isOkClicked ? this.value : null);
-  }
-
-  private handleOk(event: Event, textComponent: TextComponent): void {
-    event.preventDefault();
-    if (!textComponent.inputEl.checkValidity()) {
-      return;
-    }
-
-    this.isOkClicked = true;
-    this.close();
   }
 }

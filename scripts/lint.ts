@@ -11,14 +11,14 @@ await wrapCliTask(async () => {
   const fix = process.argv[2] === 'fix';
   return await lint(fix, [{
     plugins: {
+      'eslint-plugin-tsdoc-required': eslintPluginTsdocRequired,
       'tsdoc': eslintPluginTsdoc,
-      'verify-tsdoc': eslintPluginVerifyTsdoc,
-      'eslint-plugin-tsdoc-required': eslintPluginTsdocRequired
+      'verify-tsdoc': eslintPluginVerifyTsdoc
     },
     rules: {
+      'eslint-plugin-tsdoc-required/tsdoc-required': 'error',
       'tsdoc/syntax': 'error',
-      'verify-tsdoc/verify-tsdoc-params': 'error',
-      'eslint-plugin-tsdoc-required/tsdoc-required': 'error'
+      'verify-tsdoc/verify-tsdoc-params': 'error'
     }
   }]);
 });

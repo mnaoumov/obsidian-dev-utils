@@ -5,6 +5,7 @@
  */
 
 import type { MaybePromise } from '../Async.ts';
+
 import { printError } from '../Error.ts';
 import { noop } from '../Function.ts';
 import { process } from './NodeModules.ts';
@@ -14,11 +15,6 @@ import { process } from './NodeModules.ts';
  * exit codes, and chaining tasks.
  */
 export abstract class CliTaskResult {
-  /**
-   * Exits the process based on the task result.
-   */
-  public abstract exit(): void;
-
   /**
    * Chains multiple tasks together, executing them sequentially until one fails.
    *
@@ -38,20 +34,12 @@ export abstract class CliTaskResult {
   }
 
   /**
-   * Determines if the task was successful.
+   * Creates a `TaskResult` that does not exit the process.
    *
-   * @returns `true` if the task was successful, otherwise `false`.
+   * @returns A `TaskResult` that does not exit the process.
    */
-  protected abstract isSuccessful(): boolean;
-
-  /**
-   * Creates a CliTaskResult representing a successful task result.
-   *
-   * @param isSuccess - A boolean indicating whether the task was successful. Default is true.
-   * @returns A CliTaskResult object representing a successful task result.
-   */
-  public static Success(isSuccess = true): CliTaskResult {
-    return new SuccessTaskResult(isSuccess);
+  public static DoNotExit(): CliTaskResult {
+    return new DoNotExitTaskResult();
   }
 
   /**
@@ -74,13 +62,26 @@ export abstract class CliTaskResult {
   }
 
   /**
-   * Creates a `TaskResult` that does not exit the process.
+   * Creates a CliTaskResult representing a successful task result.
    *
-   * @returns A `TaskResult` that does not exit the process.
+   * @param isSuccess - A boolean indicating whether the task was successful. Default is true.
+   * @returns A CliTaskResult object representing a successful task result.
    */
-  public static DoNotExit(): CliTaskResult {
-    return new DoNotExitTaskResult();
+  public static Success(isSuccess = true): CliTaskResult {
+    return new SuccessTaskResult(isSuccess);
   }
+
+  /**
+   * Determines if the task was successful.
+   *
+   * @returns `true` if the task was successful, otherwise `false`.
+   */
+  protected abstract isSuccessful(): boolean;
+
+  /**
+   * Exits the process based on the task result.
+   */
+  public abstract exit(): void;
 }
 
 /**
@@ -91,15 +92,15 @@ class SuccessTaskResult extends CliTaskResult {
     super();
   }
 
+  protected override isSuccessful(): boolean {
+    return this._isSuccessful;
+  }
+
   /**
    * Exits the process based on the success of the task.
    */
   public override exit(): void {
     process.exit(this._isSuccessful ? 0 : 1);
-  }
-
-  protected override isSuccessful(): boolean {
-    return this._isSuccessful;
   }
 }
 
@@ -111,15 +112,15 @@ class ExitCodeTaskResult extends CliTaskResult {
     super();
   }
 
+  protected override isSuccessful(): boolean {
+    return this.exitCode === 0;
+  }
+
   /**
    * Exits the process with the specified exit code.
    */
   public override exit(): void {
     process.exit(this.exitCode);
-  }
-
-  protected override isSuccessful(): boolean {
-    return this.exitCode === 0;
   }
 }
 
@@ -131,15 +132,15 @@ class DoNotExitTaskResult extends CliTaskResult {
     super();
   }
 
+  protected override isSuccessful(): boolean {
+    return true;
+  }
+
   /**
    * Does not exit the process.
    */
   public override exit(): void {
     noop();
-  }
-
-  protected override isSuccessful(): boolean {
-    return true;
   }
 }
 

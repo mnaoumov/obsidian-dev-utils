@@ -3,31 +3,32 @@
  * Contains utility functions for file system operations.
  */
 
-import {
-  toPosixBuffer,
-  toPosixPath
-} from '../Path.ts';
 import type {
   Dirent,
   ObjectEncodingOptions,
   PathLike
 } from './NodeModules.ts';
+
+import {
+  toPosixBuffer,
+  toPosixPath
+} from '../Path.ts';
 import { readdir } from './NodeModules.ts';
 
 /**
  * Options for controlling the format of the result when returning strings.
  */
-export type StringResultOptions = undefined | ObjectEncodingOptions & {
-  /**
-   * Should be set to `false` to return strings.
-   */
-  withFileTypes?: false;
-
+export type StringResultOptions = {
   /**
    * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
    */
   recursive?: boolean;
-};
+
+  /**
+   * Should be set to `false` to return strings.
+   */
+  withFileTypes?: false;
+} & ObjectEncodingOptions | undefined;
 
 /**
  * Options for controlling the format of the result when returning buffers.
@@ -39,30 +40,30 @@ export type BufferResultOptions = 'buffer' | {
   encoding: 'buffer';
 
   /**
-   * Should be set to `false` to return buffers.
-   */
-  withFileTypes?: false;
-
-  /**
    * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
    */
   recursive?: boolean;
+
+  /**
+   * Should be set to `false` to return buffers.
+   */
+  withFileTypes?: false;
 };
 
 /**
  * Options for controlling the format of the result when returning Dirent objects.
  */
-export type DirentResultOptions = ObjectEncodingOptions & {
-  /**
-   * Should be set to `true` to return Dirent objects.
-   */
-  withFileTypes: true;
-
+export type DirentResultOptions = {
   /**
    * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
    */
   recursive?: boolean;
-};
+
+  /**
+   * Should be set to `true` to return Dirent objects.
+   */
+  withFileTypes: true;
+} & ObjectEncodingOptions;
 
 /**
  * Common options for controlling the format of the result.
@@ -71,7 +72,7 @@ interface CommonOptions {
   /**
    * Encoding to use when returning strings.
    */
-  encoding?: BufferEncoding | 'buffer';
+  encoding?: 'buffer' | BufferEncoding;
 
   /**
    * Set `true` to return Dirent objects or `false` to return strings or buffers.
@@ -115,8 +116,8 @@ export async function readdirPosix(path: PathLike, options: DirentResultOptions)
  */
 export async function readdirPosix(
   path: PathLike,
-  options: StringResultOptions | BufferResultOptions | DirentResultOptions = {}
-): Promise<string[] | Buffer[] | Dirent[]> {
+  options: BufferResultOptions | DirentResultOptions | StringResultOptions = {}
+): Promise<Buffer[] | Dirent[] | string[]> {
   if (isStringResultOptions(options)) {
     const paths = await readdir(path, options);
     return paths.map(toPosixPath);
@@ -142,7 +143,7 @@ export async function readdirPosix(
  * @param options - The options to check.
  * @returns `true` if the options are for returning strings, otherwise `false`.
  */
-function isStringResultOptions(options: StringResultOptions | BufferResultOptions | DirentResultOptions): options is StringResultOptions {
+function isStringResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is StringResultOptions {
   if (options === undefined) {
     return true;
   }
@@ -170,7 +171,7 @@ function isStringResultOptions(options: StringResultOptions | BufferResultOption
  * @param options - The options to check.
  * @returns `true` if the options are for returning buffers, otherwise `false`.
  */
-function isBufferResultOptions(options: StringResultOptions | BufferResultOptions | DirentResultOptions): options is BufferResultOptions {
+function isBufferResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is BufferResultOptions {
   if (options === undefined) {
     return false;
   }

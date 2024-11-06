@@ -3,20 +3,21 @@
  * Contains utility functions for handling rename and delete events in Obsidian.
  */
 
-import { around } from 'monkey-around';
 import type {
   CachedMetadata,
   Plugin,
   Reference,
   TAbstractFile
 } from 'obsidian';
+import type { CustomArrayDict } from 'obsidian-typings';
+import type { CanvasData } from 'obsidian/canvas.js';
+
+import { around } from 'monkey-around';
 import {
   App,
   TFile,
   Vault
 } from 'obsidian';
-import type { CanvasData } from 'obsidian/canvas.js';
-import type { CustomArrayDict } from 'obsidian-typings';
 
 import { printError } from '../Error.ts';
 import { noopAsync } from '../Function.ts';
@@ -247,11 +248,11 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
         return updateLink({
           app: app,
           link,
-          pathOrFile: newRelatedPath,
           oldPathOrFile: oldRelatedPath,
-          sourcePathOrFile: newBacklinkPath,
+          pathOrFile: newRelatedPath,
           renameMap,
-          shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
+          shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases,
+          sourcePathOrFile: newBacklinkPath
         });
       });
     }
@@ -280,8 +281,8 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
     } else if (isMarkdownFile(newPath)) {
       await updateLinksInFile({
         app: app,
-        pathOrFile: newPath,
         oldPathOrFile: oldPath,
+        pathOrFile: newPath,
         renameMap,
         shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
       });

@@ -6,6 +6,7 @@
  */
 
 import type { FuzzyMatch } from 'obsidian';
+
 import {
   App,
   FuzzySuggestModal
@@ -44,8 +45,8 @@ export interface SelectItemOptions<T> {
  * @param options - The options for the selection modal.
  * @returns A promise that resolves with the selected item or null if no item was selected.
  */
-export async function selectItem<T>(options: SelectItemOptions<T>): Promise<T | null> {
-  return await new Promise<T | null>((resolve) => {
+export async function selectItem<T>(options: SelectItemOptions<T>): Promise<null | T> {
+  return await new Promise<null | T>((resolve) => {
     const modal = new ItemSelectModal<T>(options, resolve);
     modal.open();
   });
@@ -54,7 +55,7 @@ export async function selectItem<T>(options: SelectItemOptions<T>): Promise<T | 
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   private isSelected = false;
 
-  public constructor(private options: SelectItemOptions<T>, private resolve: (item: T | null) => void) {
+  public constructor(private options: SelectItemOptions<T>, private resolve: (item: null | T) => void) {
     super(options.app);
     this.setPlaceholder(options.placeholder ?? '');
   }
@@ -67,14 +68,6 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
     return this.options.itemTextFunc(item);
   }
 
-  public override selectSuggestion(
-    value: FuzzyMatch<T>,
-    evt: MouseEvent | KeyboardEvent
-  ): void {
-    this.isSelected = true;
-    super.selectSuggestion(value, evt);
-  }
-
   public override onChooseItem(item: T): void {
     this.resolve(item);
   }
@@ -83,5 +76,13 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
     if (!this.isSelected) {
       this.resolve(null);
     }
+  }
+
+  public override selectSuggestion(
+    value: FuzzyMatch<T>,
+    evt: KeyboardEvent | MouseEvent
+  ): void {
+    this.isSelected = true;
+    super.selectSuggestion(value, evt);
   }
 }

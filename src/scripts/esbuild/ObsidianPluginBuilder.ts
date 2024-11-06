@@ -5,12 +5,13 @@
  * and it sets up various esbuild plugins to preprocess, lint, fix source maps, and copy files to the Obsidian plugins folder.
  */
 
-import { config } from 'dotenv';
 import type {
   BuildContext,
   BuildOptions,
   Plugin
 } from 'esbuild';
+
+import { config } from 'dotenv';
 import { context } from 'esbuild';
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
@@ -58,6 +59,11 @@ if you want to view the source, please visit the github repository of this plugi
  */
 export interface BuildObsidianPluginOptions {
   /**
+   * Custom esbuild plugins to be used during the build process.
+   */
+  customEsbuildPlugins?: Plugin[];
+
+  /**
    * The build mode, either Development or Production
    */
   mode: BuildMode;
@@ -66,11 +72,6 @@ export interface BuildObsidianPluginOptions {
    * The directory for Obsidian configuration. Defaults to the `OBSIDIAN_CONFIG_DIR` environment variable.
    */
   obsidianConfigDir?: string;
-
-  /**
-   * Custom esbuild plugins to be used during the build process.
-   */
-  customEsbuildPlugins?: Plugin[];
 }
 
 /**
@@ -84,9 +85,9 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
   const dotenvConfigOutput = config();
 
   const {
+    customEsbuildPlugins = [],
     mode,
-    obsidianConfigDir: _obsidianConfigDir,
-    customEsbuildPlugins = []
+    obsidianConfigDir: _obsidianConfigDir
   } = options;
 
   const obsidianConfigDir = (_obsidianConfigDir ?? '') || (dotenvConfigOutput.parsed?.[OBSIDIAN_CONFIG_DIR_KEY] ?? '') || (process.env[OBSIDIAN_CONFIG_DIR_KEY] ?? '');
