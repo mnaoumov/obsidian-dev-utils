@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation Logger
+ * Contains utility functions for logging in Obsidian.
+ */
+
 import type { MaybePromise } from '../Async.ts';
 import { getStackTrace } from '../Error.ts';
 

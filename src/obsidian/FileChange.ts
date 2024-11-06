@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation FileChange
+ * Contains utility types and functions for handling file changes in Obsidian.
+ */
+
 import type { App } from 'obsidian';
 
 import type { RetryOptions } from '../Async.ts';

@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation NodeModules
+ * Contains utility functions for Node.js modules.
+ */
+
 // eslint-disable-next-line import-x/no-nodejs-modules
 import process from 'node:process';
 
