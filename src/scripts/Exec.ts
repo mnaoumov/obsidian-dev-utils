@@ -17,7 +17,7 @@ export interface ExecResult {
   /**
    * The exit code of the command. A value of `null` indicates that the process did not exit normally.
    */
-  exitCode: number | null;
+  exitCode: null | number;
 
   /**
    * The signal that caused the process to be terminated. A value of `null` indicates that no signal was received.
@@ -40,9 +40,9 @@ export interface ExecResult {
  */
 export interface ExecOption {
   /**
-   * If true, suppresses the output of the command.
+   * The current working directory for the command execution.
    */
-  quiet?: boolean;
+  cwd?: string | undefined;
 
   /**
    * If true, ignores the exit code of the command.
@@ -50,14 +50,14 @@ export interface ExecOption {
   ignoreExitCode?: boolean;
 
   /**
+   * If true, suppresses the output of the command.
+   */
+  quiet?: boolean;
+
+  /**
    * The input to be passed to the command.
    */
   stdin?: string;
-
-  /**
-   * The current working directory for the command execution.
-   */
-  cwd?: string | undefined;
 
   /**
    * If false, only returns the output of the command.
@@ -76,7 +76,7 @@ export interface ExecOption {
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export async function exec(command: string | string[], options?: ExecOption & { withDetails?: false }): Promise<string>;
+export async function exec(command: string | string[], options?: { withDetails?: false } & ExecOption): Promise<string>;
 
 /**
  * Executes a command.
@@ -90,7 +90,7 @@ export async function exec(command: string | string[], options?: ExecOption & { 
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export function exec(command: string | string[], options: ExecOption & { withDetails: true }): Promise<ExecResult>;
+export function exec(command: string | string[], options: { withDetails: true } & ExecOption): Promise<ExecResult>;
 
 /**
  * Executes a command.
@@ -104,12 +104,12 @@ export function exec(command: string | string[], options: ExecOption & { withDet
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export function exec(command: string | string[], options: ExecOption = {}): Promise<string | ExecResult> {
+export function exec(command: string | string[], options: ExecOption = {}): Promise<ExecResult | string> {
   const {
-    quiet = false,
-    ignoreExitCode = false,
-    stdin = '',
     cwd = process.cwd(),
+    ignoreExitCode = false,
+    quiet = false,
+    stdin = '',
     withDetails = false
   } = options;
   if (Array.isArray(command)) {
@@ -122,8 +122,8 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
 
     const child = spawn(cmd, args, {
       cwd,
-      stdio: 'pipe',
-      shell: true
+      shell: true,
+      stdio: 'pipe'
     });
 
     let stdout = '';
@@ -158,7 +158,7 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
       if (exitCode !== 0 && !ignoreExitCode) {
         reject(new Error(`Command failed with exit code ${exitCode?.toString() ?? '(null)'}\n${stderr}`));
       } else {
-        let result: string | ExecResult;
+        let result: ExecResult | string;
         if (!withDetails) {
           result = stdout;
         } else {
@@ -177,7 +177,7 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
       if (!ignoreExitCode) {
         reject(err);
       } else {
-        let result: string | ExecResult;
+        let result: ExecResult | string;
         if (!withDetails) {
           result = stdout;
         } else {

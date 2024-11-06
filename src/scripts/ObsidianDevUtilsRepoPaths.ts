@@ -9,14 +9,14 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Matches any file or directory (`*`). */
   Any = '*',
 
-  /** Matches any path recursively (`**`). */
-  AnyPath = '**',
-
   /** Matches any `.cjs` file (`*.cjs`). */
   AnyCjs = '*.cjs',
 
   /** Matches any TypeScript declaration file (`*.d.ts`). */
   AnyDts = '*.d.ts',
+
+  /** Matches any path recursively (`**`). */
+  AnyPath = '**',
 
   /** Matches any TypeScript file (`*.ts`). */
   AnyTs = '*.ts',
@@ -68,11 +68,11 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `src` directory. */
   Src = 'src',
 
-  /** The path to the `src` directory. */
-  SrcObsidianTypesDataview = 'src/obsidian/@types/Dataview',
-
   /** The path to the `_dependencies.ts` file within the `src` directory. */
   SrcDependenciesTs = './src/_dependencies.ts',
+
+  /** The path to the `src` directory. */
+  SrcObsidianTypesDataview = 'src/obsidian/@types/Dataview',
 
   /** The path to the `static` directory. */
   Static = 'static',

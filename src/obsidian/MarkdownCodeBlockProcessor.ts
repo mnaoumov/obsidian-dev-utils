@@ -14,7 +14,7 @@ import { throwExpression } from '../Error.ts';
  * @param el - The HTMLElement representing the code block.
  * @returns The argument of the code block as a string, or null if no argument is found.
  */
-export function getCodeBlockArgument(ctx: MarkdownPostProcessorContext, el: HTMLElement): string | null {
+export function getCodeBlockArgument(ctx: MarkdownPostProcessorContext, el: HTMLElement): null | string {
   const sectionInfo = ctx.getSectionInfo(el);
   if (!sectionInfo) {
     return null;

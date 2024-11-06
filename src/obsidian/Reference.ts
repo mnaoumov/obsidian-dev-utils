@@ -4,6 +4,7 @@
  */
 
 import type { Reference } from 'obsidian';
+
 import {
   isFrontmatterLinkCache,
   isReferenceCache
@@ -45,16 +46,16 @@ export function sortReferences(references: Reference[]): Reference[] {
 export function referenceToFileChange(reference: Reference, newContent: string): FileChange {
   if (isReferenceCache(reference)) {
     return {
-      startIndex: reference.position.start.offset,
       endIndex: reference.position.end.offset,
+      newContent,
       oldContent: reference.original,
-      newContent
+      startIndex: reference.position.start.offset
     } as ContentChange;
   } else if (isFrontmatterLinkCache(reference)) {
     return {
-      oldContent: reference.original,
+      frontMatterKey: reference.key,
       newContent,
-      frontMatterKey: reference.key
+      oldContent: reference.original
     } as FrontmatterChange;
   }
 

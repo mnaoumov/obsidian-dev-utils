@@ -4,6 +4,7 @@
  */
 
 import type { App } from 'obsidian';
+
 import { Platform } from 'obsidian';
 
 import { toPosixPath } from '../Path.ts';

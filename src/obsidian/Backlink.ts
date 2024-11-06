@@ -4,20 +4,22 @@
  */
 
 import type { TFile } from 'obsidian';
+
 import { TFolder } from 'obsidian';
 
-import { throwExpression } from '../Error.ts';
-import { renderCallout } from './Callout.ts';
 import type {
   DataviewInlineApi,
   Link
 } from './Dataview.ts';
-import { renderPaginatedTable } from './Dataview.ts';
-import { fixTitle } from './DataviewLink.ts';
 import type {
   PathOrAbstractFile,
   PathOrFile
 } from './FileSystem.ts';
+
+import { throwExpression } from '../Error.ts';
+import { renderCallout } from './Callout.ts';
+import { renderPaginatedTable } from './Dataview.ts';
+import { fixTitle } from './DataviewLink.ts';
 import {
   getAbstractFileOrNull,
   getMarkdownFiles,
@@ -58,11 +60,11 @@ export function renderDelayedBacklinks(options: RenderDelayedBacklinksOptions): 
     title = 'Backlinks'
   } = options;
   renderCallout({
-    dv,
-    header: title,
     async contentProvider() {
       await renderBacklinksTable(dv, files);
-    }
+    },
+    dv,
+    header: title
   });
 }
 

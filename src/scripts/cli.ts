@@ -9,6 +9,7 @@
 import { Command } from 'commander';
 
 import type { MaybePromise } from '../Async.ts';
+
 import { invokeAsyncSafely } from '../Async.ts';
 import { getDirname } from '../Path.ts';
 import {

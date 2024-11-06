@@ -6,14 +6,15 @@
 import type { App } from 'obsidian';
 
 import type { RetryOptions } from '../Async.ts';
+import type { ValueProvider } from '../ValueProvider.ts';
+import type { PathOrFile } from './FileSystem.ts';
+
 import {
   deepEqual,
   getNestedPropertyValue,
   setNestedPropertyValue
 } from '../Object.ts';
-import type { ValueProvider } from '../ValueProvider.ts';
 import { resolveValue } from '../ValueProvider.ts';
-import type { PathOrFile } from './FileSystem.ts';
 import { getPath } from './FileSystem.ts';
 import {
   parseFrontMatter,
@@ -26,14 +27,14 @@ import { process } from './Vault.ts';
  */
 export interface FileChange {
   /**
-   * The old content that will be replaced.
-   */
-  oldContent: string;
-
-  /**
    * The new content to replace the old content.
    */
   newContent: string;
+
+  /**
+   * The old content that will be replaced.
+   */
+  oldContent: string;
 }
 
 /**
@@ -51,14 +52,14 @@ export interface FrontmatterChange extends FileChange {
  */
 export interface ContentChange extends FileChange {
   /**
-     * The start index of the change in the file content.
-     */
-  startIndex: number;
-
-  /**
      * The end index of the change in the file content.
      */
   endIndex: number;
+
+  /**
+     * The start index of the change in the file content.
+     */
+  startIndex: number;
 }
 
 /**
@@ -103,11 +104,11 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
         const actualContent = content.slice(change.startIndex, change.endIndex);
         if (actualContent !== change.oldContent) {
           console.warn('Content mismatch', {
-            startIndex: change.startIndex,
+            actualContent,
             endIndex: change.endIndex,
-            path: getPath(pathOrFile),
             expectedContent: change.oldContent,
-            actualContent
+            path: getPath(pathOrFile),
+            startIndex: change.startIndex
           });
 
           return null;
@@ -116,10 +117,10 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
         const actualContent = getNestedPropertyValue(frontMatter, change.frontMatterKey);
         if (actualContent !== change.oldContent) {
           console.warn('Content mismatch', {
-            path: getPath(pathOrFile),
-            expectedContent: change.oldContent,
             actualContent,
-            frontMatterKey: change.frontMatterKey
+            expectedContent: change.oldContent,
+            frontMatterKey: change.frontMatterKey,
+            path: getPath(pathOrFile)
           });
 
           return null;
@@ -162,8 +163,8 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
 
       if (isContentChange(previousChange) && isContentChange(change) && previousChange.endIndex && change.startIndex && previousChange.endIndex > change.startIndex) {
         console.warn('Overlapping changes', {
-          previousChange,
-          change
+          change,
+          previousChange
         });
         return null;
       }

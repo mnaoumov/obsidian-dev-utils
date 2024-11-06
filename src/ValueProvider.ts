@@ -11,7 +11,7 @@ import type { MaybePromise } from './Async.ts';
  * @typeParam Value - The type of the value provided.
  * @typeParam Args - The types of arguments passed to the function if the provider is a function.
  */
-export type ValueProvider<Value, Args extends unknown[] = []> = Value | ((...args: Args) => MaybePromise<Value>);
+export type ValueProvider<Value, Args extends unknown[] = []> = ((...args: Args) => MaybePromise<Value>) | Value;
 
 /**
  * Determines whether a given value provider is a function.

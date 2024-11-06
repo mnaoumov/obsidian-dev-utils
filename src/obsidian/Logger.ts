@@ -4,6 +4,7 @@
  */
 
 import type { MaybePromise } from '../Async.ts';
+
 import { getStackTrace } from '../Error.ts';
 
 /**
@@ -19,25 +20,25 @@ export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<vo
     stackTrace = getStackTrace().split('\n').slice(1).join('\n');
   }
   console.debug(`${title}:start`, {
-    timestampStart,
     fn,
-    stackTrace
+    stackTrace,
+    timestampStart
   });
   try {
     await fn();
     const timestampEnd = Date.now();
     console.debug(`${title}:end`, {
-      timestampStart,
+      duration: timestampEnd - timestampStart,
       timestampEnd,
-      duration: timestampEnd - timestampStart
+      timestampStart
     });
   } catch (error) {
     const timestampEnd = Date.now();
     console.debug(`${title}:error`, {
-      timestampStart,
-      timestampEnd: Date.now(),
       duration: timestampEnd - timestampStart,
-      error
+      error,
+      timestampEnd: Date.now(),
+      timestampStart
     });
 
     throw error;

@@ -24,7 +24,7 @@ import { execFromRoot } from './Root.ts';
  * @returns A promise that resolves when all files have been copied.
  */
 export async function buildStatic(): Promise<void> {
-  for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.Static, { withFileTypes: true, recursive: true })) {
+  for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.Static, { recursive: true, withFileTypes: true })) {
     if (!dirent.isFile()) {
       continue;
     }
@@ -42,7 +42,7 @@ export async function buildStatic(): Promise<void> {
  * @returns A promise that resolves when the directory has been removed.
  */
 export async function buildClean(): Promise<void> {
-  await rm(ObsidianDevUtilsRepoPaths.Dist, { recursive: true, force: true });
+  await rm(ObsidianDevUtilsRepoPaths.Dist, { force: true, recursive: true });
 }
 
 /**

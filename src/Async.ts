@@ -13,21 +13,21 @@ import {
  * A type representing a value that can either be a direct value or a Promise resolving to that value.
  * @typeParam T - The type of the value.
  */
-export type MaybePromise<T> = T | Promise<T>;
+export type MaybePromise<T> = Promise<T> | T;
 
 /**
  * Options for configuring the retry behavior.
  */
 export interface RetryOptions {
   /**
-   * The maximum time in milliseconds to wait before giving up on retrying.
-   */
-  timeoutInMilliseconds: number;
-
-  /**
    * The delay in milliseconds between retry attempts.
    */
   retryDelayInMilliseconds: number;
+
+  /**
+   * The maximum time in milliseconds to wait before giving up on retrying.
+   */
+  timeoutInMilliseconds: number;
 }
 
 /**
@@ -40,8 +40,8 @@ export interface RetryOptions {
 export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const stackTrace = getStackTrace();
   const DEFAULT_RETRY_OPTIONS: RetryOptions = {
-    timeoutInMilliseconds: 5000,
-    retryDelayInMilliseconds: 100
+    retryDelayInMilliseconds: 100,
+    timeoutInMilliseconds: 5000
   };
   const overriddenOptions: RetryOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await runWithTimeout(overriddenOptions.timeoutInMilliseconds, async () => {

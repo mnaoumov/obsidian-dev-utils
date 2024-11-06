@@ -7,11 +7,6 @@
 import '../@types/compare-versions.d.ts';
 
 import type { MaybePromise } from '../Async.ts';
-import { convertAsyncToSync } from '../Async.ts';
-import {
-  errorToString,
-  throwExpression
-} from '../Error.ts';
 import type { DataviewInlineApi as DataviewInlineApiOriginal } from './@types/Dataview/api/inline-api.d.ts';
 import type {
   DataArray,
@@ -19,11 +14,17 @@ import type {
   SMarkdownPage
 } from './@types/Dataview/index.d.ts';
 import type { PathOrFile } from './FileSystem.ts';
+import type { CombinedFrontMatter } from './FrontMatter.ts';
+
+import { convertAsyncToSync } from '../Async.ts';
+import {
+  errorToString,
+  throwExpression
+} from '../Error.ts';
 import {
   getFile,
   getPath
 } from './FileSystem.ts';
-import type { CombinedFrontMatter } from './FrontMatter.ts';
 import { relativePathToResourceUrl } from './ResourceUrl.ts';
 
 /**
@@ -45,7 +46,7 @@ declare global {
 /**
  * DomElementInfo with an optional container.
  */
-export type DomElementInfoWithContainer = DomElementInfo & { container?: HTMLElement };
+export type DomElementInfoWithContainer = { container?: HTMLElement } & DomElementInfo;
 
 /**
  * Extended interface for the Dataview Inline API, providing additional methods for custom page types and array handling.
@@ -54,14 +55,6 @@ export type DomElementInfoWithContainer = DomElementInfo & { container?: HTMLEle
  */
 export interface DataviewInlineApi extends DataviewInlineApiOriginal {
   /**
-   * Retrieves the current page, with an optional custom page type.
-   *
-   * @typeParam CustomPage - The type of the custom page. Defaults to `SMarkdownPage`.
-   * @returns The current page.
-   */
-  current<CustomFrontMatter = unknown>(): CombinedPage<CustomFrontMatter>;
-
-  /**
    * Wraps an array of items into a `DataArray` object.
    *
    * @typeParam T - The type of the items in the array.
@@ -69,6 +62,14 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * @returns A `DataArray` containing the items.
    */
   array<T>(arr: T[]): DataArray<T>;
+
+  /**
+   * Retrieves the current page, with an optional custom page type.
+   *
+   * @typeParam CustomPage - The type of the custom page. Defaults to `SMarkdownPage`.
+   * @returns The current page.
+   */
+  current<CustomFrontMatter = unknown>(): CombinedPage<CustomFrontMatter>;
 
   /**
    * Retrieves pages based on an optional query, with an optional custom page type.
@@ -105,7 +106,7 @@ export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<voi
 /**
  * The combined page type, which includes the front matter and the SMarkdownPage.
  */
-export type CombinedPage<CustomFrontMatter = unknown> = SMarkdownPage & CombinedFrontMatter<CustomFrontMatter>;
+export type CombinedPage<CustomFrontMatter = unknown> = CombinedFrontMatter<CustomFrontMatter> & SMarkdownPage;
 
 /**
  * The combined file type, which includes the front matter and the SMarkdownFile.
@@ -147,7 +148,7 @@ const paginationCss = `
 /**
  * Array or DataArray type.
  */
-export type ArrayOrDataArray<T> = T[] | DataArray<T>;
+export type ArrayOrDataArray<T> = DataArray<T> | T[];
 
 /**
  * Options for rendering a paginated list using the Dataview API.
@@ -159,14 +160,14 @@ export interface RenderPaginatedListOptions<T> {
   dv: DataviewInlineApi;
 
   /**
-   * The list of items to paginate.
-   */
-  rows: ArrayOrDataArray<T>;
-
-  /**
    * Options for items per page. Defaults to `[10, 20, 50, 100]`.
    */
   itemsPerPageOptions?: number[];
+
+  /**
+   * The list of items to paginate.
+   */
+  rows: ArrayOrDataArray<T>;
 }
 
 /**
@@ -181,16 +182,16 @@ export interface RenderPaginatedListOptions<T> {
 export async function renderPaginatedList<T>(options: RenderPaginatedListOptions<T>): Promise<void> {
   const {
     dv,
-    rows,
-    itemsPerPageOptions = [10, 20, 50, 100]
+    itemsPerPageOptions = [10, 20, 50, 100],
+    rows
   } = options;
   await renderPaginated({
     dv,
-    rows,
     itemsPerPageOptions,
     renderer: async (rows: ArrayOrDataArray<T>): Promise<void> => {
       await dv.list(rows);
-    }
+    },
+    rows
   });
 }
 
@@ -209,14 +210,14 @@ export interface RenderPaginatedTableOptions<T> {
   headers: string[];
 
   /**
-   * The rows of the table to paginate.
-   */
-  rows: ArrayOrDataArray<T>;
-
-  /**
    * Options for items per page. Defaults to `[10, 20, 50, 100]`.
    */
   itemsPerPageOptions?: number[];
+
+  /**
+   * The rows of the table to paginate.
+   */
+  rows: ArrayOrDataArray<T>;
 }
 
 /**
@@ -232,16 +233,16 @@ export async function renderPaginatedTable<T extends unknown[]>(options: RenderP
   const {
     dv,
     headers,
-    rows,
-    itemsPerPageOptions = [10, 20, 50, 100]
+    itemsPerPageOptions = [10, 20, 50, 100],
+    rows
   } = options;
   await renderPaginated({
     dv,
-    rows,
     itemsPerPageOptions,
     renderer: async (rows: ArrayOrDataArray<T>): Promise<void> => {
       await dv.table(headers, rows);
-    }
+    },
+    rows
   });
 }
 
@@ -255,11 +256,6 @@ export interface RenderPaginatedOptions<T> {
   dv: DataviewInlineApi;
 
   /**
-   * The rows to paginate.
-   */
-  rows: ArrayOrDataArray<T>;
-
-  /**
    * Options for items per page.
    */
   itemsPerPageOptions: number[];
@@ -270,6 +266,11 @@ export interface RenderPaginatedOptions<T> {
    * @returns A promise that resolves when the content is rendered.
    */
   renderer: (rows: ArrayOrDataArray<T>) => MaybePromise<void>;
+
+  /**
+   * The rows to paginate.
+   */
+  rows: ArrayOrDataArray<T>;
 }
 
 /**
@@ -284,9 +285,9 @@ export interface RenderPaginatedOptions<T> {
 async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<void> {
   const {
     dv,
-    rows,
     itemsPerPageOptions = [10, 20, 50, 100],
-    renderer
+    renderer,
+    rows
   } = options;
   if (rows.length === 0) {
     dv.paragraph('No items found');
@@ -339,7 +340,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
 
     paginationRow2Div.createEl('span', { text: '  Jump to page: ' });
 
-    const jumpToPageInput = paginationRow2Div.createEl('input', { type: 'number', attr: { min: 1, max: totalPages } });
+    const jumpToPageInput = paginationRow2Div.createEl('input', { attr: { max: totalPages, min: 1 }, type: 'number' });
     jumpToPageInput.addEventListener('keydown', convertAsyncToSync(async (event: KeyboardEvent): Promise<void> => {
       if (event.key === 'Enter') {
         const page = parseInt(jumpToPageInput.value);
@@ -352,7 +353,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     paginationRow2Div.createEl('span', { text: `  Page ${pageNumber.toString()} of ${totalPages.toString()}, Total items: ${rows.length.toString()}` });
 
     function createPageLink(text: string, pageNumber: number, disabled = false): HTMLAnchorElement {
-      const link = paginationRow1Div.createEl('a', { cls: 'page-link', text: text, href: `#${pageNumber.toString()}` });
+      const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${pageNumber.toString()}`, text: text });
       if (disabled) {
         link.addClass('disabled');
         link.onclick = (event: MouseEvent): void => {
@@ -427,6 +428,11 @@ export interface RenderIframeOptions {
   dv: DataviewInlineApi;
 
   /**
+   * The height of the iframe.
+   */
+  height: string;
+
+  /**
    * The relative path to the resource to be displayed in the iframe.
    */
   relativePathOrFile: PathOrFile;
@@ -435,11 +441,6 @@ export interface RenderIframeOptions {
    * The width of the iframe.
    */
   width: string;
-
-  /**
-   * The height of the iframe.
-   */
-  height: string;
 }
 
 /**
@@ -452,15 +453,15 @@ export interface RenderIframeOptions {
 export function renderIframe(options: RenderIframeOptions): void {
   const {
     dv,
+    height = '600px',
     relativePathOrFile,
-    width = '100%',
-    height = '600px'
+    width = '100%'
   } = options;
   dv.el('iframe', '', {
     attr: {
+      height,
       src: relativePathToResourceUrl(dv.app, getPath(relativePathOrFile), dv.current().file.path),
-      width,
-      height
+      width
     }
   });
 }

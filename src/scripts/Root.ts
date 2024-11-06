@@ -4,6 +4,11 @@
  * resolving paths relative to the root.
  */
 
+import type {
+  ExecOption,
+  ExecResult
+} from './Exec.ts';
+
 import {
   dirname,
   join,
@@ -11,10 +16,6 @@ import {
   resolve,
   toPosixPath
 } from '../Path.ts';
-import type {
-  ExecOption,
-  ExecResult
-} from './Exec.ts';
 import { exec } from './Exec.ts';
 import { existsSync } from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
@@ -30,7 +31,7 @@ import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export async function execFromRoot(command: string | string[], options?: ExecOption & { withDetails?: false }): Promise<string>;
+export async function execFromRoot(command: string | string[], options?: { withDetails?: false } & ExecOption): Promise<string>;
 
 /**
  * Executes a command from the root directory of the project.
@@ -44,7 +45,7 @@ export async function execFromRoot(command: string | string[], options?: ExecOpt
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: string | string[], options: ExecOption & { withDetails: true }): Promise<ExecResult>;
+export function execFromRoot(command: string | string[], options: { withDetails: true } & ExecOption): Promise<ExecResult>;
 
 /**
  * Executes a command from the root directory of the project.
@@ -58,7 +59,7 @@ export function execFromRoot(command: string | string[], options: ExecOption & {
  *         If an error occurs during the execution and ignoreExitCode is true,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: string | string[], options: ExecOption = {}): Promise<string | ExecResult> {
+export function execFromRoot(command: string | string[], options: ExecOption = {}): Promise<ExecResult | string> {
   const root = getRootDir(options.cwd);
   if (options.withDetails) {
     return exec(command, { ...options, cwd: root, withDetails: true });

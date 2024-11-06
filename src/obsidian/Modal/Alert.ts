@@ -6,6 +6,7 @@
  */
 
 import type { App } from 'obsidian';
+
 import {
   ButtonComponent,
   Modal
@@ -21,14 +22,14 @@ export interface AlertOptions {
   app: App;
 
   /**
-   * The title of the modal.
-   */
-  title?: string | DocumentFragment;
-
-  /**
    * The message to display in the modal.
    */
-  message: string | DocumentFragment;
+  message: DocumentFragment | string;
+
+  /**
+   * The styles to apply to the "OK" button.
+   */
+  okButtonStyles?: Partial<CSSStyleDeclaration>;
 
   /**
    * The text for the "OK" button.
@@ -36,9 +37,9 @@ export interface AlertOptions {
   okButtonText?: string;
 
   /**
-   * The styles to apply to the "OK" button.
+   * The title of the modal.
    */
-  okButtonStyles?: Partial<CSSStyleDeclaration>;
+  title?: DocumentFragment | string;
 }
 
 /**
@@ -61,12 +62,16 @@ class AlertModal extends Modal {
     super(options.app);
     const DEFAULT_OPTIONS: Required<AlertOptions> = {
       app: options.app,
-      title: '',
       message: '',
+      okButtonStyles: {},
       okButtonText: 'OK',
-      okButtonStyles: {}
+      title: ''
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
+  }
+
+  public override onClose(): void {
+    this.resolve();
   }
 
   public override onOpen(): void {
@@ -78,9 +83,5 @@ class AlertModal extends Modal {
     okButton.setCta();
     okButton.onClick(this.close.bind(this));
     Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
-  }
-
-  public override onClose(): void {
-    this.resolve();
   }
 }

@@ -9,6 +9,7 @@ import type {
   BuildOptions,
   Plugin
 } from 'esbuild';
+
 import { context } from 'esbuild';
 
 import { throwExpression } from '../../Error.ts';
@@ -42,7 +43,7 @@ interface ModuleWithDefaultExport {
  */
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const npmPackage = await readNpmPackage(getDirname(import.meta.url));
-  const dependenciesToSkip = new Set<string>([...Object.keys(npmPackage.dependencies ?? {}).filter(canSkipFromBundling), ...builtinModules]);
+  const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(npmPackage.dependencies ?? {}).filter(canSkipFromBundling)]);
   return dependenciesToSkip;
 }
 
@@ -98,7 +99,7 @@ function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, depe
             dependenciesToBundle.add(args.path);
           }
         }
-        return { path: args.path, external: true };
+        return { external: true, path: args.path };
       });
     }
   };

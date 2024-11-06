@@ -39,12 +39,12 @@ import {
  * Enum representing different types of version updates.
  */
 export enum VersionUpdateType {
-  Major = 'major',
-  Minor = 'minor',
-  Patch = 'patch',
   Beta = 'beta',
+  Invalid = 'invalid',
+  Major = 'major',
   Manual = 'manual',
-  Invalid = 'invalid'
+  Minor = 'minor',
+  Patch = 'patch'
 }
 
 /**
@@ -191,10 +191,10 @@ export async function checkGitRepoClean(): Promise<void> {
 export function getVersionUpdateType(versionUpdateType: string): VersionUpdateType {
   const versionUpdateTypeEnum = versionUpdateType as VersionUpdateType;
   switch (versionUpdateTypeEnum) {
+    case VersionUpdateType.Beta:
     case VersionUpdateType.Major:
     case VersionUpdateType.Minor:
     case VersionUpdateType.Patch:
-    case VersionUpdateType.Beta:
       return versionUpdateTypeEnum;
 
     default:
@@ -268,6 +268,12 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
   let beta = match[5] ? Number(match[5]) : 0;
 
   switch (versionType) {
+    case VersionUpdateType.Beta:
+      if (beta === 0) {
+        patch++;
+      }
+      beta++;
+      break;
     case VersionUpdateType.Major:
       major++;
       minor = 0;
@@ -282,12 +288,6 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
     case VersionUpdateType.Patch:
       patch++;
       beta = 0;
-      break;
-    case VersionUpdateType.Beta:
-      if (beta === 0) {
-        patch++;
-      }
-      beta++;
       break;
   }
 

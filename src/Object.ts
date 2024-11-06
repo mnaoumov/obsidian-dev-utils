@@ -76,7 +76,7 @@ export interface ToJsonOptions {
   /**
    * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
    */
-  space?: string | number | undefined;
+  space?: number | string | undefined;
 }
 
 /**
@@ -212,7 +212,7 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
     Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
   }
 
-  const sourcePrototypes = (sources.map((source) => getPrototypeOf(source)) as (object | null)[]).filter<object | null>((proto) => !!proto) as object[];
+  const sourcePrototypes = (sources.map((source) => getPrototypeOf(source)) as (null | object)[]).filter<null | object>((proto) => !!proto) as object[];
 
   if (sourcePrototypes.length > 0) {
     const targetPrototype = _assignWithNonEnumerableProperties({}, getPrototypeOf(target), ...sourcePrototypes);

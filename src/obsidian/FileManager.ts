@@ -9,10 +9,11 @@ import type {
   MaybePromise,
   RetryOptions
 } from '../Async.ts';
-import { deepEqual } from '../Object.ts';
 import type { PathOrFile } from './FileSystem.ts';
-import { getFile } from './FileSystem.ts';
 import type { CombinedFrontMatter } from './FrontMatter.ts';
+
+import { deepEqual } from '../Object.ts';
+import { getFile } from './FileSystem.ts';
 import {
   parseFrontMatter,
   setFrontMatter
@@ -30,7 +31,7 @@ import { process } from './Vault.ts';
  * @returns A promise that resolves when the front matter has been processed and saved.
  */
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: CombinedFrontMatter<CustomFrontMatter>) => MaybePromise<void | null>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: CombinedFrontMatter<CustomFrontMatter>) => MaybePromise<null | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const file = getFile(app, pathOrFile);
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };

@@ -4,6 +4,7 @@
  */
 
 import type { MaybePromise } from '../Async.ts';
+
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   editJson,

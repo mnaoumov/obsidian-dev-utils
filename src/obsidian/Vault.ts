@@ -7,6 +7,7 @@ import type {
   ListedFiles,
   TFolder
 } from 'obsidian';
+
 import {
   App,
   Notice,
@@ -15,6 +16,13 @@ import {
 import { parentFolderPath } from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';
+import type { ValueProvider } from '../ValueProvider.ts';
+import type {
+  PathOrAbstractFile,
+  PathOrFile,
+  PathOrFolder
+} from './FileSystem.ts';
+
 import { retryWithTimeout } from '../Async.ts';
 import { printError } from '../Error.ts';
 import { noopAsync } from '../Function.ts';
@@ -24,13 +32,7 @@ import {
   extname,
   join
 } from '../Path.ts';
-import type { ValueProvider } from '../ValueProvider.ts';
 import { resolveValue } from '../ValueProvider.ts';
-import type {
-  PathOrAbstractFile,
-  PathOrFile,
-  PathOrFolder
-} from './FileSystem.ts';
 import {
   getAbstractFileOrNull,
   getFile,
@@ -77,7 +79,7 @@ export function getNoteFilesSorted(app: App): TFile[] {
  *
  * @throws Will throw an error if the process fails after the specified number of retries or timeout.
  */
-export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<string | null, [string]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<null | string, [string]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const file = getFile(app, pathOrFile);
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
@@ -91,9 +93,9 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
     await app.vault.process(file, (content) => {
       if (content !== oldContent) {
         console.warn('Content has changed since it was read. Retrying...', {
-          path: file.path,
+          actualContent: content,
           expectedContent: oldContent,
-          actualContent: content
+          path: file.path
         });
         success = false;
         return content;
@@ -216,7 +218,7 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
  * @param pathOrFolder - The folder to start removing empty hierarchy from.
  * @returns A promise that resolves when the empty hierarchy is deleted.
  */
-export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: PathOrFolder | null): Promise<void> {
+export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
   let folder = getFolderOrNull(app, pathOrFolder);
 
   while (folder) {
@@ -315,7 +317,7 @@ export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: 
   if (app.vault.adapter.insensitive) {
     let folderPath = dirname(newPath);
     let nonExistingPath = basename(newPath);
-    let folder: TFolder | null = null;
+    let folder: null | TFolder = null;
     for (; ;) {
       folder = getFolderOrNull(app, folderPath, true);
       if (folder) {
