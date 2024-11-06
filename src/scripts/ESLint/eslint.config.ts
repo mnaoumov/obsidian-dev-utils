@@ -69,19 +69,26 @@ export const configs: Linter.Config[] = tseslint.config(
     },
     rules: {
       '@stylistic/no-extra-semi': 'error',
-      '@stylistic/object-curly-newline': ['error', {
-        ExportDeclaration: {
-          minProperties: 2,
-          multiline: true
-        },
-        ImportDeclaration: {
-          minProperties: 2,
-          multiline: true
+      '@stylistic/object-curly-newline': [
+        'error',
+        {
+          ExportDeclaration: {
+            minProperties: 2,
+            multiline: true
+          },
+          ImportDeclaration: {
+            minProperties: 2,
+            multiline: true
+          }
         }
-      }],
-      '@stylistic/quotes': ['error', 'single', {
-        allowTemplateLiterals: false
-      }],
+      ],
+      '@stylistic/quotes': [
+        'error',
+        'single',
+        {
+          allowTemplateLiterals: false
+        }
+      ],
       '@typescript-eslint/explicit-function-return-type': 'error',
       '@typescript-eslint/explicit-member-accessibility': 'error',
       'curly': ['error'],
