@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 4.6.0
+
+- Add more sorting
+- Add markdownToHtml
+- Add missing docs
+
 ## 4.5.0
 
 - Add insertAt
