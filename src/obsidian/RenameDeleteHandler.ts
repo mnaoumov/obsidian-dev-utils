@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation RenameDeleteHandler
+ * Contains utility functions for handling rename and delete events in Obsidian.
+ */
+
 import { around } from 'monkey-around';
 import type {
   CachedMetadata,

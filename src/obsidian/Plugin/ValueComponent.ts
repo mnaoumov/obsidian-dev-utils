@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation ValueComponent
+ * Contains utility types and functions for handling value components, which are UI components that display and edit values.
+ */
+
 import {
   DropdownComponent,
   SliderComponent,

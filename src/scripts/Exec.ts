@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation Exec
+ * Contains utility functions for executing commands.
+ */
+
 import { trimEnd } from '../String.ts';
 import { toCommandLine } from './CliUtils.ts';
 import {

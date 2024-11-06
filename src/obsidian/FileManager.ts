@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation FileManager
+ * Contains utility functions for managing files in Obsidian.
+ */
+
 import type { App } from 'obsidian';
 
 import type {

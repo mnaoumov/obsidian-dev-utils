@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation Reference
+ * Contains utility functions for handling references in Obsidian.
+ */
+
 import type { Reference } from 'obsidian';
 import {
   isFrontmatterLinkCache,

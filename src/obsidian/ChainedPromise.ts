@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation ChainedPromise
+ * Contains utility functions for chaining functions in Obsidian.
+ */
+
 import type { App } from 'obsidian';
 
 import type { MaybePromise } from '../Async.ts';
@@ -12,7 +17,7 @@ function getChainedPromiseWrapper(app: App): ValueWrapper<Promise<void>> {
 }
 
 /**
- * Chains an asynchronous function to be executed after the previous asynchronous function completes.
+ * Chains an asynchronous function to be executed after the previous function completes.
  *
  * @param app - The Obsidian application instance.
  * @param fn - The function to chain.
