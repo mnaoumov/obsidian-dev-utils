@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.7.0
+
+- Add getFullContentHtml
+
 ## 4.6.0
 
 - Add more sorting
