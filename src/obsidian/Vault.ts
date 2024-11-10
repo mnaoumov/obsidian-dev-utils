@@ -23,7 +23,10 @@ import type {
   PathOrFolder
 } from './FileSystem.ts';
 
-import { retryWithTimeout } from '../Async.ts';
+import {
+  marksAsTerminateRetry,
+  retryWithTimeout
+} from '../Async.ts';
 import { printError } from '../Error.ts';
 import { noopAsync } from '../Function.ts';
 import {
@@ -84,6 +87,9 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await retryWithTimeout(async () => {
+    if (file.deleted) {
+      throw marksAsTerminateRetry(new Error(`File ${file.path} is deleted`));
+    }
     const oldContent = await app.vault.read(file);
     const newContent = await resolveValue(newContentProvider, oldContent);
     if (newContent === null) {
@@ -181,7 +187,6 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
     if (!await app.vault.exists(path)) {
       throw e;
     }
-
     return true;
   }
 }

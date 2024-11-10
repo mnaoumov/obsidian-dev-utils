@@ -25,6 +25,11 @@ export interface RetryOptions {
   retryDelayInMilliseconds: number;
 
   /**
+   * Whether to retry the function on error.
+   */
+  shouldRetryOnError: boolean;
+
+  /**
    * The maximum time in milliseconds to wait before giving up on retrying.
    */
   timeoutInMilliseconds: number;
@@ -41,6 +46,7 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
   const stackTrace = getStackTrace();
   const DEFAULT_RETRY_OPTIONS: RetryOptions = {
     retryDelayInMilliseconds: 100,
+    shouldRetryOnError: true,
     timeoutInMilliseconds: 5000
   };
   const overriddenOptions: RetryOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
@@ -52,6 +58,9 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
       try {
         isSuccess = await fn();
       } catch (error) {
+        if (!overriddenOptions.shouldRetryOnError || (error as Partial<TerminateRetry>).__terminateRetry) {
+          throw error;
+        }
         printError(error);
         isSuccess = false;
       }
@@ -204,4 +213,24 @@ export async function toArray<T>(iter: AsyncIterableIterator<T>): Promise<T[]> {
     arr.push(item);
   }
   return arr;
+}
+
+/**
+ * A marker interface to indicate that an error should terminate retry logic.
+ */
+export interface TerminateRetry {
+  /**
+   * A marker property to indicate that an error should terminate retry logic.
+   */
+  __terminateRetry: true;
+}
+
+/**
+ * Marks an error to terminate retry logic.
+ *
+ * @param error - The error to mark to terminate retry logic.
+ * @returns An error that should terminate retry logic.
+ */
+export function marksAsTerminateRetry<TError extends Error>(error: TError): TerminateRetry & TError {
+  return Object.assign(error, { __terminateRetry: true } as TerminateRetry);
 }
