@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.8.0
+
+- Configure retry on error
+
 ## 4.7.0
 
 - Add getFullContentHtml
