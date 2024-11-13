@@ -104,7 +104,6 @@ export const configs: Linter.Config[] = tseslint.config(
       'import-x/no-anonymous-default-export': 'error',
       'import-x/no-commonjs': 'error',
       'import-x/no-cycle': 'error',
-      'import-x/no-default-export': 'error',
       'import-x/no-deprecated': 'error',
       'import-x/no-duplicates': 'error',
       'import-x/no-dynamic-require': 'error',
@@ -122,7 +121,6 @@ export const configs: Linter.Config[] = tseslint.config(
       'import-x/no-unused-modules': 'error',
       'import-x/no-useless-path-segments': 'error',
       'import-x/no-webpack-loader-syntax': 'error',
-      'import-x/unambiguous': 'error',
       'modules-newlines/export-declaration-newline': 'error',
       'modules-newlines/import-declaration-newline': 'error'
     },
