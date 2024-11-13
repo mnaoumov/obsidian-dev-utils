@@ -113,7 +113,6 @@ export const configs: Linter.Config[] = tseslint.config(
       'import-x/no-import-module-exports': 'error',
       'import-x/no-mutable-exports': 'error',
       'import-x/no-named-default': 'error',
-      'import-x/no-named-export': 'error',
       'import-x/no-namespace': 'error',
       'import-x/no-nodejs-modules': 'error',
       'import-x/no-relative-packages': 'error',
