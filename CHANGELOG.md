@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 4.8.1
+
+- Lint
+- Update libs
+
 ## 4.8.0
 
 - Configure retry on error
