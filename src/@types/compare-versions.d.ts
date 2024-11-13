@@ -3,6 +3,7 @@
  * Fixed typings for the `compare-versions` package.
  */
 
+// eslint-disable-next-line import-x/unambiguous
 declare module 'compare-versions' {
   /**
    * Defines the set of comparison operators that can be used to compare version strings.
@@ -32,5 +33,6 @@ declare module 'compare-versions' {
     CompareOperator: CompareOperator;
   };
 
+  // eslint-disable-next-line import-x/no-default-export
   export default compareVersions;
 }
