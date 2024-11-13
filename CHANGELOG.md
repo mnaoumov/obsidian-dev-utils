@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.8.2
+
+- Disable import rules
+
 ## 4.8.1
 
 - Lint
