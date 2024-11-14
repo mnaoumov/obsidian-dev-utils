@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 4.9.0
+
+- Add replaceCodeBlock
+- Refactor getCodeBlockArguments
+
 ## 4.8.2
 
 - Disable import rules
