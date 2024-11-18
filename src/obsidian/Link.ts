@@ -23,6 +23,7 @@ import type {
 import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
 
+import { toJson } from '../Object.ts';
 import {
   basename,
   dirname,
@@ -40,6 +41,7 @@ import {
 } from './FileSystem.ts';
 import {
   getAllLinks,
+  getBacklinksForFileSafe,
   getCacheSafe,
   tempRegisterFileAndRun
 } from './MetadataCache.ts';
@@ -670,4 +672,30 @@ export function testLeadingDot(link: string): boolean {
  */
 export function testAngleBrackets(link: string): boolean {
   return link.includes('](<');
+}
+
+/**
+ * Edits the backlinks for a file or path.
+ *
+ * @param app - The Obsidian application instance.
+ * @param pathOrFile - The path or file to edit the backlinks for.
+ * @param linkConverter - The function that converts each link.
+ * @param retryOptions - Optional options for retrying the operation.
+ * @returns A promise that resolves when the backlinks have been edited.
+ */
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConverter: (link: Reference) => MaybePromise<string | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+  const backlinks = await getBacklinksForFileSafe(app, pathOrFile, retryOptions);
+  for (const backlinkNotePath of backlinks.keys()) {
+    const currentLinks = backlinks.get(backlinkNotePath) ?? [];
+    const linkJsons = new Set<string>(currentLinks.map((link) => toJson(link)));
+    await editLinks(app, backlinkNotePath, (link) => {
+      const linkJson = toJson(link);
+      if (!linkJsons.has(linkJson)) {
+        return;
+      }
+
+      return linkConverter(link);
+    }, retryOptions);
+  }
 }
