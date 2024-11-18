@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 4.10.0
+
+- ChainedPromise
+- editBacklinks
+
 ## 4.9.0
 
 - Add replaceCodeBlock
