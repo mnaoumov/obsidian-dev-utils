@@ -99,7 +99,26 @@ export async function sleep(milliseconds: number): Promise<void> {
  * @returns A Promise that resolves with the result of the asynchronous function or rejects if it times out.
  */
 export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => MaybePromise<R>): Promise<R> {
-  return await Promise.race([fn(), timeout(timeoutInMilliseconds)]);
+  let timedOut = false;
+  let result: R = null as R;
+
+  await Promise.race([run(), timeout()]);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (timedOut) {
+    console.error(`Timed out in ${timeoutInMilliseconds.toString()} milliseconds`, { fn });
+    throw new Error('Timed out');
+  }
+  return result;
+
+  async function run(): Promise<void> {
+    result = await fn();
+    timedOut = false;
+  }
+
+  async function timeout(): Promise<void> {
+    await sleep(timeoutInMilliseconds);
+    timedOut = true;
+  }
 }
 
 /**
