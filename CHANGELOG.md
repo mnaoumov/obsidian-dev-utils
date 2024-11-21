@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.13.0
+
+- Fix logging
+
 ## 4.12.0
 
 - Don't allow default exports
