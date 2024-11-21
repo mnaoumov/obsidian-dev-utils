@@ -103,6 +103,7 @@ export const configs: Linter.Config[] = tseslint.config(
       'import-x/no-anonymous-default-export': 'error',
       'import-x/no-commonjs': 'error',
       'import-x/no-cycle': 'error',
+      'import-x/no-default-export': 'error',
       'import-x/no-deprecated': 'error',
       'import-x/no-duplicates': 'error',
       'import-x/no-dynamic-require': 'error',
