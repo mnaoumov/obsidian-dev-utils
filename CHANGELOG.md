@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 4.11.0
+
+- Lint
+- Update libs
+- Refactor to Queue
+- Log timeout
+
 ## 4.10.0
 
 - ChainedPromise
