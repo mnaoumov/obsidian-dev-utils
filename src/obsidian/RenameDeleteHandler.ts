@@ -35,7 +35,6 @@ import {
   getAttachmentFolderPath,
   hasOwnAttachmentFolder
 } from './AttachmentPath.ts';
-import { chain } from './ChainedPromise.ts';
 import {
   getFile,
   getFileOrNull,
@@ -58,6 +57,7 @@ import {
   getBacklinksMap,
   getCacheSafe
 } from './MetadataCache.ts';
+import { addToQueue } from './Queue.ts';
 import {
   deleteEmptyFolderHierarchy,
   deleteSafe,
@@ -134,7 +134,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
         return;
       }
       const path = file.path;
-      chain(app, () => handleDelete(app, path));
+      addToQueue(app, () => handleDelete(app, path));
     })
   );
 
@@ -185,7 +185,7 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
   }
 
   const backlinks = getBacklinksForFileOrPath(app, oldPath);
-  chain(app, () => handleRenameAsync(app, oldPath, newPath, backlinks));
+  addToQueue(app, () => handleRenameAsync(app, oldPath, newPath, backlinks));
 }
 
 async function handleRenameAsync(app: App, oldPath: string, newPath: string, backlinks: CustomArrayDict<Reference>): Promise<void> {
@@ -290,7 +290,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
   } finally {
     restoreUpdateAllLinks();
     const orphanKeys = Array.from(handledRenames);
-    chain(app, () => {
+    addToQueue(app, () => {
       for (const key of orphanKeys) {
         handledRenames.delete(key);
       }

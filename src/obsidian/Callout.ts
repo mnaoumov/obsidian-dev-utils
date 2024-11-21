@@ -8,8 +8,8 @@ import type { DataviewInlineApi } from './Dataview.ts';
 
 import { throwExpression } from '../Error.ts';
 import { resolveValue } from '../ValueProvider.ts';
-import { chain } from './ChainedPromise.ts';
 import { getRenderedContainer } from './Dataview.ts';
+import { addToQueue } from './Queue.ts';
 
 /**
  * Enum representing the mode of a callout.
@@ -95,7 +95,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
     for (const entry of entries) {
       if (entry.isIntersecting) {
         observer.unobserve(entry.target);
-        chain(dv.app, loadContent);
+        addToQueue(dv.app, loadContent);
       }
     }
   });
