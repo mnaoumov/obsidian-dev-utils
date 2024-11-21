@@ -23,7 +23,8 @@ interface Queue {
 }
 
 interface QueueItem {
-  fn(): MaybePromise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  fn(this: void): MaybePromise<void>;
   stackTrace: string;
   timeoutInMilliseconds: number;
 }
@@ -76,6 +77,6 @@ async function processNextQueueItem(app: App): Promise<void> {
     return;
   }
 
-  await addErrorHandler(() => runWithTimeout(item.timeoutInMilliseconds, () => invokeAsyncAndLog(processNextQueueItem.name, () => item.fn(), item.stackTrace)));
+  await addErrorHandler(() => runWithTimeout(item.timeoutInMilliseconds, () => invokeAsyncAndLog(processNextQueueItem.name, item.fn, item.stackTrace)));
   queue.items.shift();
 }
