@@ -7,5 +7,7 @@ declare module 'eslint-plugin-verify-tsdoc' {
   import type { ESLint } from 'eslint';
 
   const plugin: ESLint.Plugin;
+
+  // eslint-disable-next-line import-x/no-default-export
   export default plugin;
 }
