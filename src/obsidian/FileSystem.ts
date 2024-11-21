@@ -45,6 +45,20 @@ export type PathOrFile = string | TFile;
 export type PathOrFolder = string | TFolder;
 
 /**
+ * Checks if the given path or file has the specified extension.
+ *
+ * @param pathOrFile - The path or abstract file to check.
+ * @param extension - The extension to compare against.
+ * @returns Returns `true` if the path or file has the specified extension, `false` otherwise.
+ */
+export function checkExtension(pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
+  if (pathOrFile === null) {
+    return false;
+  }
+  return extname(getPath(pathOrFile)).toLowerCase().slice(1) === extension.toLowerCase();
+}
+
+/**
  * Retrieves the TAbstractFile object for the given path or abstract file.
  *
  * @param app - The App instance.
@@ -201,105 +215,6 @@ export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursi
 }
 
 /**
- * Checks if the given file is an instance of TAbstractFile.
- *
- * @param file - The file to check.
- * @returns A boolean indicating whether the file is an instance of TAbstractFile.
- */
-export function isAbstractFile(file: unknown): file is TAbstractFile {
-  return file instanceof TAbstractFile;
-}
-
-/**
- * Checks if the given file is an instance of TFile.
- *
- * @param file - The file to check.
- * @returns A boolean indicating whether the file is an instance of TFile.
- */
-export function isFile(file: unknown): file is TFile {
-  return file instanceof TFile;
-}
-
-/**
- * Checks if the given file is a folder.
- *
- * @param file - The file to check.
- * @returns `true` if the file is a folder, `false` otherwise.
- */
-export function isFolder(file: unknown): file is TFolder {
-  return file instanceof TFolder;
-}
-
-/**
- * Checks if the given file is a note.
- *
- * @param pathOrFile - The path or file to check.
- * @returns A boolean indicating whether the file is a note.
- */
-export function isNote(pathOrFile: null | PathOrAbstractFile): boolean {
-  return isMarkdownFile(pathOrFile) || isCanvasFile(pathOrFile);
-}
-
-/**
- * Checks if the given file is a Markdown file.
- *
- * @param pathOrFile - The path or file to check.
- * @returns A boolean indicating whether the file is a Markdown file.
- */
-export function isMarkdownFile(pathOrFile: null | PathOrAbstractFile): boolean {
-  return checkExtension(pathOrFile, MARKDOWN_FILE_EXTENSION);
-}
-
-/**
- * Checks if the given file is a canvas file.
- *
- * @param pathOrFile - The path or file to check.
- * @returns A boolean indicating whether the file is a canvas file or not.
- */
-export function isCanvasFile(pathOrFile: null | PathOrAbstractFile): boolean {
-  return checkExtension(pathOrFile, CANVAS_FILE_EXTENSION);
-}
-
-/**
- * Checks if the given path or file has the specified extension.
- *
- * @param pathOrFile - The path or abstract file to check.
- * @param extension - The extension to compare against.
- * @returns Returns `true` if the path or file has the specified extension, `false` otherwise.
- */
-export function checkExtension(pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
-  if (pathOrFile === null) {
-    return false;
-  }
-  return extname(getPath(pathOrFile)).toLowerCase().slice(1) === extension.toLowerCase();
-}
-
-/**
- * Trims the markdown extension from the file path if the file is a markdown file.
- * If the file is not a markdown file, the original file path is returned.
- *
- * @param file - The file to trim the markdown extension from.
- * @returns The file path with the markdown extension trimmed.
- */
-export function trimMarkdownExtension(file: TAbstractFile): string {
-  if (!isMarkdownFile(file)) {
-    return file.path;
-  }
-
-  return trimEnd(file.path, '.' + MARKDOWN_FILE_EXTENSION);
-}
-
-/**
- * Returns the path of the given `pathOrFile`.
- *
- * @param pathOrFile - The path or abstract file.
- * @returns The path of the `pathOrFile`.
- */
-export function getPath(pathOrFile: PathOrAbstractFile): string {
-  return isAbstractFile(pathOrFile) ? pathOrFile.path : pathOrFile;
-}
-
-/**
  * Retrieves the TFile object for the given path or creates a new one if it does not exist.
  *
  * @param app - The Obsidian App instance.
@@ -332,4 +247,89 @@ export async function getOrCreateFolder(app: App, path: string): Promise<TFolder
   }
 
   return await app.vault.createFolder(path);
+}
+
+/**
+ * Returns the path of the given `pathOrFile`.
+ *
+ * @param pathOrFile - The path or abstract file.
+ * @returns The path of the `pathOrFile`.
+ */
+export function getPath(pathOrFile: PathOrAbstractFile): string {
+  return isAbstractFile(pathOrFile) ? pathOrFile.path : pathOrFile;
+}
+
+/**
+ * Checks if the given file is an instance of TAbstractFile.
+ *
+ * @param file - The file to check.
+ * @returns A boolean indicating whether the file is an instance of TAbstractFile.
+ */
+export function isAbstractFile(file: unknown): file is TAbstractFile {
+  return file instanceof TAbstractFile;
+}
+
+/**
+ * Checks if the given file is a canvas file.
+ *
+ * @param pathOrFile - The path or file to check.
+ * @returns A boolean indicating whether the file is a canvas file or not.
+ */
+export function isCanvasFile(pathOrFile: null | PathOrAbstractFile): boolean {
+  return checkExtension(pathOrFile, CANVAS_FILE_EXTENSION);
+}
+
+/**
+ * Checks if the given file is an instance of TFile.
+ *
+ * @param file - The file to check.
+ * @returns A boolean indicating whether the file is an instance of TFile.
+ */
+export function isFile(file: unknown): file is TFile {
+  return file instanceof TFile;
+}
+
+/**
+ * Checks if the given file is a folder.
+ *
+ * @param file - The file to check.
+ * @returns `true` if the file is a folder, `false` otherwise.
+ */
+export function isFolder(file: unknown): file is TFolder {
+  return file instanceof TFolder;
+}
+
+/**
+ * Checks if the given file is a Markdown file.
+ *
+ * @param pathOrFile - The path or file to check.
+ * @returns A boolean indicating whether the file is a Markdown file.
+ */
+export function isMarkdownFile(pathOrFile: null | PathOrAbstractFile): boolean {
+  return checkExtension(pathOrFile, MARKDOWN_FILE_EXTENSION);
+}
+
+/**
+ * Checks if the given file is a note.
+ *
+ * @param pathOrFile - The path or file to check.
+ * @returns A boolean indicating whether the file is a note.
+ */
+export function isNote(pathOrFile: null | PathOrAbstractFile): boolean {
+  return isMarkdownFile(pathOrFile) || isCanvasFile(pathOrFile);
+}
+
+/**
+ * Trims the markdown extension from the file path if the file is a markdown file.
+ * If the file is not a markdown file, the original file path is returned.
+ *
+ * @param file - The file to trim the markdown extension from.
+ * @returns The file path with the markdown extension trimmed.
+ */
+export function trimMarkdownExtension(file: TAbstractFile): string {
+  if (!isMarkdownFile(file)) {
+    return file.path;
+  }
+
+  return trimEnd(file.path, '.' + MARKDOWN_FILE_EXTENSION);
 }

@@ -69,17 +69,6 @@ export function execFromRoot(command: string | string[], options: ExecOption = {
 }
 
 /**
- * Resolves a path relative to the root directory of the project.
- *
- * @param path - The path to resolve.
- * @param cwd - The current working directory to resolve from.
- * @returns The resolved absolute path.
- */
-export function resolvePathFromRoot(path: string, cwd?: string): string {
-  return resolve(getRootDir(cwd), path);
-}
-
-/**
  * Retrieves the root directory of the project.
  *
  * @param cwd - The current working directory to resolve from.
@@ -96,6 +85,17 @@ export function getRootDir(cwd?: string): string {
   }
 
   throw new Error('Could not find root directory');
+}
+
+/**
+ * Resolves a path relative to the root directory of the project.
+ *
+ * @param path - The path to resolve.
+ * @param cwd - The current working directory to resolve from.
+ * @returns The resolved absolute path.
+ */
+export function resolvePathFromRoot(path: string, cwd?: string): string {
+  return resolve(getRootDir(cwd), path);
 }
 
 /**

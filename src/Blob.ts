@@ -6,6 +6,25 @@
 import { throwExpression } from './Error.ts';
 
 /**
+ * Converts a base64 encoded string to an ArrayBuffer.
+ *
+ * @param code - The base64 encoded string.
+ * @returns The decoded ArrayBuffer.
+ */
+export function base64ToArrayBuffer(code: string): ArrayBuffer {
+  const parts = code.split(';base64,');
+  const raw = window.atob(parts[1] ?? throwExpression(new Error('Invalid base64 string')));
+  const rawLength = raw.length;
+
+  const uInt8Array = new Uint8Array(rawLength);
+
+  for (let i = 0; i < rawLength; ++i) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+  return uInt8Array.buffer;
+}
+
+/**
  * Converts a Blob object to an ArrayBuffer.
  *
  * @param blob - The Blob object to convert.
@@ -64,25 +83,6 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
     };
     reader.readAsDataURL(blob);
   });
-}
-
-/**
- * Converts a base64 encoded string to an ArrayBuffer.
- *
- * @param code - The base64 encoded string.
- * @returns The decoded ArrayBuffer.
- */
-export function base64ToArrayBuffer(code: string): ArrayBuffer {
-  const parts = code.split(';base64,');
-  const raw = window.atob(parts[1] ?? throwExpression(new Error('Invalid base64 string')));
-  const rawLength = raw.length;
-
-  const uInt8Array = new Uint8Array(rawLength);
-
-  for (let i = 0; i < rawLength; ++i) {
-    uInt8Array[i] = raw.charCodeAt(i);
-  }
-  return uInt8Array.buffer;
 }
 
 /**

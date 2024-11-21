@@ -21,38 +21,6 @@ import {
 import { process } from './Vault.ts';
 
 /**
- * Processes the front matter of a given file, allowing modifications via a provided function.
- *
- * @typeParam CustomFrontMatter - The type of custom front matter.
- * @param app - The Obsidian app instance.
- * @param pathOrFile - The path or TFile object representing the note.
- * @param frontMatterFn - A function that modifies the front matter.
- * @param retryOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
- * @returns A promise that resolves when the front matter has been processed and saved.
- */
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: CombinedFrontMatter<CustomFrontMatter>) => MaybePromise<null | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
-  const file = getFile(app, pathOrFile);
-  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
-  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-
-  await process(app, file, async (content) => {
-    const oldFrontMatter = parseFrontMatter<CustomFrontMatter>(content);
-    const newFrontMatter = parseFrontMatter<CustomFrontMatter>(content);
-    const result = await frontMatterFn(newFrontMatter);
-    if (result === null) {
-      return null;
-    }
-
-    if (deepEqual(oldFrontMatter, newFrontMatter)) {
-      return content;
-    }
-
-    return setFrontMatter(content, newFrontMatter);
-  }, overriddenOptions);
-}
-
-/**
  * Adds an alias to the front matter of a given file if it does not already exist.
  *
  * @param app - The Obsidian app instance.
@@ -105,4 +73,36 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
       delete frontMatter.aliases;
     }
   });
+}
+
+/**
+ * Processes the front matter of a given file, allowing modifications via a provided function.
+ *
+ * @typeParam CustomFrontMatter - The type of custom front matter.
+ * @param app - The Obsidian app instance.
+ * @param pathOrFile - The path or TFile object representing the note.
+ * @param frontMatterFn - A function that modifies the front matter.
+ * @param retryOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
+ * @returns A promise that resolves when the front matter has been processed and saved.
+ */
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: CombinedFrontMatter<CustomFrontMatter>) => MaybePromise<null | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+  const file = getFile(app, pathOrFile);
+  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
+  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
+
+  await process(app, file, async (content) => {
+    const oldFrontMatter = parseFrontMatter<CustomFrontMatter>(content);
+    const newFrontMatter = parseFrontMatter<CustomFrontMatter>(content);
+    const result = await frontMatterFn(newFrontMatter);
+    if (result === null) {
+      return null;
+    }
+
+    if (deepEqual(oldFrontMatter, newFrontMatter)) {
+      return content;
+    }
+
+    return setFrontMatter(content, newFrontMatter);
+  }, overriddenOptions);
 }

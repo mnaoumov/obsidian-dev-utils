@@ -29,46 +29,6 @@ import { generateMarkdownLink } from './Link.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
 
 /**
- * Options for rendering delayed backlinks.
- */
-export interface RenderDelayedBacklinksOptions {
-  /**
-   * The DataviewInlineApi instance.
-   */
-  dv: DataviewInlineApi;
-
-  /**
-   * An array of PathOrFile.
-   */
-  files: PathOrFile[];
-
-  /**
-   * The title for the rendered backlinks. Defaults to "Backlinks".
-   */
-  title?: string;
-}
-
-/**
- * Renders delayed backlinks.
- *
- * @param options - The options for rendering delayed backlinks.
- */
-export function renderDelayedBacklinks(options: RenderDelayedBacklinksOptions): void {
-  const {
-    dv,
-    files,
-    title = 'Backlinks'
-  } = options;
-  renderCallout({
-    async contentProvider() {
-      await renderBacklinksTable(dv, files);
-    },
-    dv,
-    header: title
-  });
-}
-
-/**
  * Options for rendering delayed backlinks for a folder.
  */
 export interface RenderDelayedBacklinksForFolderOptions {
@@ -89,22 +49,23 @@ export interface RenderDelayedBacklinksForFolderOptions {
 }
 
 /**
- * Renders delayed backlinks for a specific folder.
- *
- * @param options - The options for rendering delayed backlinks.
+ * Options for rendering delayed backlinks.
  */
-export function renderDelayedBacklinksForFolder(options: RenderDelayedBacklinksForFolderOptions): void {
-  const {
-    dv,
-    folder,
-    title = 'Folder Backlinks'
-  } = options;
-  const folder2 = folder ?? dv.current().file.folder;
-  renderDelayedBacklinks({
-    dv,
-    files: getMarkdownFiles(dv.app, folder2, true),
-    title
-  });
+export interface RenderDelayedBacklinksOptions {
+  /**
+   * The DataviewInlineApi instance.
+   */
+  dv: DataviewInlineApi;
+
+  /**
+   * An array of PathOrFile.
+   */
+  files: PathOrFile[];
+
+  /**
+   * The title for the rendered backlinks. Defaults to "Backlinks".
+   */
+  title?: string;
 }
 
 /**
@@ -154,5 +115,44 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
     dv,
     headers: ['Note', 'Backlinks'],
     rows: backlinkRows
+  });
+}
+
+/**
+ * Renders delayed backlinks.
+ *
+ * @param options - The options for rendering delayed backlinks.
+ */
+export function renderDelayedBacklinks(options: RenderDelayedBacklinksOptions): void {
+  const {
+    dv,
+    files,
+    title = 'Backlinks'
+  } = options;
+  renderCallout({
+    async contentProvider() {
+      await renderBacklinksTable(dv, files);
+    },
+    dv,
+    header: title
+  });
+}
+
+/**
+ * Renders delayed backlinks for a specific folder.
+ *
+ * @param options - The options for rendering delayed backlinks.
+ */
+export function renderDelayedBacklinksForFolder(options: RenderDelayedBacklinksForFolderOptions): void {
+  const {
+    dv,
+    folder,
+    title = 'Folder Backlinks'
+  } = options;
+  const folder2 = folder ?? dv.current().file.folder;
+  renderDelayedBacklinks({
+    dv,
+    files: getMarkdownFiles(dv.app, folder2, true),
+    title
   });
 }

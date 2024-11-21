@@ -39,6 +39,21 @@ import { updateVersion } from './version.ts';
 const NODE_SCRIPT_ARGV_SKIP_COUNT = 2;
 
 /**
+ * Enum representing the names of the commands available in the CLI.
+ */
+enum CommandNames {
+  Build = 'build',
+  BuildClean = 'build:clean',
+  BuildStatic = 'build:static',
+  BuildValidate = 'build:validate',
+  Dev = 'dev',
+  Lint = 'lint',
+  LintFix = 'lint:fix',
+  Spellcheck = 'spellcheck',
+  Version = 'version'
+}
+
+/**
  * Main function to run the CLI. It sets up the commands using the `commander` library and
  * handles the execution of tasks like building, cleaning, linting, spellchecking, and versioning.
  *
@@ -83,19 +98,4 @@ function addCommand<Args extends unknown[]>(program: Command, name: string, desc
   return program.command(name)
     .description(description)
     .action((...args: Args) => wrapCliTask(() => taskFn(...args)));
-}
-
-/**
- * Enum representing the names of the commands available in the CLI.
- */
-enum CommandNames {
-  Build = 'build',
-  BuildClean = 'build:clean',
-  BuildStatic = 'build:static',
-  BuildValidate = 'build:validate',
-  Dev = 'dev',
-  Lint = 'lint',
-  LintFix = 'lint:fix',
-  Spellcheck = 'spellcheck',
-  Version = 'version'
 }

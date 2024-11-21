@@ -13,28 +13,6 @@ import {
 } from './NodeModules.ts';
 
 /**
- * Reads a JSON file and parses its contents into a JavaScript object of type `T`.
- *
- * @typeParam T - The type to which the JSON content will be parsed.
- * @param path - The path to the JSON file.
- * @returns A promise that resolves with the parsed JSON object of type `T`.
- */
-export async function readJson<T>(path: string): Promise<T> {
-  return JSON.parse(await readFile(path, 'utf-8')) as T;
-}
-
-/**
- * Writes a JavaScript object to a JSON file.
- *
- * @param path - The path to the JSON file.
- * @param data - The data to write to the JSON file.
- * @returns A promise that resolves when the file has been written.
- */
-export async function writeJson(path: string, data: unknown): Promise<void> {
-  await writeFile(path, toJson(data) + '\n');
-}
-
-/**
  * Options for editing JSON.
  */
 export interface EditJsonOptions {
@@ -67,4 +45,26 @@ export async function editJson<T>(
   const data = await readJson<T>(path);
   await editFn(data);
   await writeJson(path, data);
+}
+
+/**
+ * Reads a JSON file and parses its contents into a JavaScript object of type `T`.
+ *
+ * @typeParam T - The type to which the JSON content will be parsed.
+ * @param path - The path to the JSON file.
+ * @returns A promise that resolves with the parsed JSON object of type `T`.
+ */
+export async function readJson<T>(path: string): Promise<T> {
+  return JSON.parse(await readFile(path, 'utf-8')) as T;
+}
+
+/**
+ * Writes a JavaScript object to a JSON file.
+ *
+ * @param path - The path to the JSON file.
+ * @param data - The data to write to the JSON file.
+ * @returns A promise that resolves when the file has been written.
+ */
+export async function writeJson(path: string, data: unknown): Promise<void> {
+  await writeFile(path, toJson(data) + '\n');
 }

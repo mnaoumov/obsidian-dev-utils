@@ -16,21 +16,6 @@ import {
 import { readdir } from './NodeModules.ts';
 
 /**
- * Options for controlling the format of the result when returning strings.
- */
-export type StringResultOptions = {
-  /**
-   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
-   */
-  recursive?: boolean;
-
-  /**
-   * Should be set to `false` to return strings.
-   */
-  withFileTypes?: false;
-} & ObjectEncodingOptions | undefined;
-
-/**
  * Options for controlling the format of the result when returning buffers.
  */
 export type BufferResultOptions = 'buffer' | {
@@ -64,6 +49,21 @@ export type DirentResultOptions = {
    */
   withFileTypes: true;
 } & ObjectEncodingOptions;
+
+/**
+ * Options for controlling the format of the result when returning strings.
+ */
+export type StringResultOptions = {
+  /**
+   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+   */
+  recursive?: boolean;
+
+  /**
+   * Should be set to `false` to return strings.
+   */
+  withFileTypes?: false;
+} & ObjectEncodingOptions | undefined;
 
 /**
  * Common options for controlling the format of the result.
@@ -138,34 +138,6 @@ export async function readdirPosix(
 }
 
 /**
- * Type guard to check if the options are for returning strings.
- *
- * @param options - The options to check.
- * @returns `true` if the options are for returning strings, otherwise `false`.
- */
-function isStringResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is StringResultOptions {
-  if (options === undefined) {
-    return true;
-  }
-
-  if (options === 'buffer') {
-    return false;
-  }
-
-  const commonOptions = options as CommonOptions;
-
-  if (commonOptions.encoding === 'buffer') {
-    return false;
-  }
-
-  if (commonOptions.withFileTypes === true) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
  * Type guard to check if the options are for returning buffers.
  *
  * @param options - The options to check.
@@ -187,6 +159,34 @@ function isBufferResultOptions(options: BufferResultOptions | DirentResultOption
   }
 
   if (commonOptions.encoding !== 'buffer') {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Type guard to check if the options are for returning strings.
+ *
+ * @param options - The options to check.
+ * @returns `true` if the options are for returning strings, otherwise `false`.
+ */
+function isStringResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is StringResultOptions {
+  if (options === undefined) {
+    return true;
+  }
+
+  if (options === 'buffer') {
+    return false;
+  }
+
+  const commonOptions = options as CommonOptions;
+
+  if (commonOptions.encoding === 'buffer') {
+    return false;
+  }
+
+  if (commonOptions.withFileTypes === true) {
     return false;
   }
 

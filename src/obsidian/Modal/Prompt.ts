@@ -69,19 +69,6 @@ export interface PromptOptions {
   valueValidator?: (value: string) => null | string;
 }
 
-/**
- * Displays a prompt modal in Obsidian to get user input.
- *
- * @param options - The options for the prompt modal.
- * @returns A promise that resolves with the user input or null if the prompt was cancelled.
- */
-export async function prompt(options: PromptOptions): Promise<null | string> {
-  return new Promise<null | string>((resolve) => {
-    const modal = new PromptModal(options, resolve);
-    modal.open();
-  });
-}
-
 class PromptModal extends Modal {
   private isOkClicked = false;
   private options: Required<PromptOptions>;
@@ -108,16 +95,6 @@ class PromptModal extends Modal {
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.value = options.defaultValue ?? '';
-  }
-
-  private handleOk(event: Event, textComponent: TextComponent): void {
-    event.preventDefault();
-    if (!textComponent.inputEl.checkValidity()) {
-      return;
-    }
-
-    this.isOkClicked = true;
-    this.close();
   }
 
   public override onClose(): void {
@@ -155,4 +132,27 @@ class PromptModal extends Modal {
     cancelButton.onClick(this.close.bind(this));
     Object.assign(cancelButton.buttonEl.style, this.options.cancelButtonStyles);
   }
+
+  private handleOk(event: Event, textComponent: TextComponent): void {
+    event.preventDefault();
+    if (!textComponent.inputEl.checkValidity()) {
+      return;
+    }
+
+    this.isOkClicked = true;
+    this.close();
+  }
+}
+
+/**
+ * Displays a prompt modal in Obsidian to get user input.
+ *
+ * @param options - The options for the prompt modal.
+ * @returns A promise that resolves with the user input or null if the prompt was cancelled.
+ */
+export async function prompt(options: PromptOptions): Promise<null | string> {
+  return new Promise<null | string>((resolve) => {
+    const modal = new PromptModal(options, resolve);
+    modal.open();
+  });
 }

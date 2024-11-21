@@ -37,17 +37,6 @@ interface ModuleWithDefaultExport {
 }
 
 /**
- * Retrieves the list of dependencies that should be skipped during the bundling process.
- *
- * @returns A `Promise` that resolves to a `Set` of dependency names to skip.
- */
-export async function getDependenciesToSkip(): Promise<Set<string>> {
-  const npmPackage = await readNpmPackage(getDirname(import.meta.url));
-  const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(npmPackage.dependencies ?? {}).filter(canSkipFromBundling)]);
-  return dependenciesToSkip;
-}
-
-/**
  * Determines which dependencies should be bundled by esbuild.
  *
  * @returns A `Promise` that resolves to an array of dependency names to bundle.
@@ -82,27 +71,14 @@ export async function getDependenciesToBundle(): Promise<string[]> {
 }
 
 /**
- * Creates an esbuild plugin that identifies which dependencies should be bundled.
+ * Retrieves the list of dependencies that should be skipped during the bundling process.
  *
- * @param dependenciesToSkip - A set of dependency names that should be skipped during bundling.
- * @param dependenciesToBundle - A set where the names of dependencies to be bundled will be added.
- * @returns An esbuild `Plugin` object that extracts dependencies to bundle.
+ * @returns A `Promise` that resolves to a `Set` of dependency names to skip.
  */
-function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, dependenciesToBundle: Set<string>): Plugin {
-  return {
-    name: 'test',
-    setup(build): void {
-      build.onResolve({ filter: /^[^./]/ }, (args) => {
-        if (!args.importer.endsWith('.d.ts')) {
-          const moduleName = trimStart(args.path.split('/')[0] ?? throwExpression(new Error('Wrong path')), 'node:');
-          if (!dependenciesToSkip.has(args.path) && !dependenciesToSkip.has(moduleName)) {
-            dependenciesToBundle.add(args.path);
-          }
-        }
-        return { external: true, path: args.path };
-      });
-    }
-  };
+export async function getDependenciesToSkip(): Promise<Set<string>> {
+  const npmPackage = await readNpmPackage(getDirname(import.meta.url));
+  const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(npmPackage.dependencies ?? {}).filter(canSkipFromBundling)]);
+  return dependenciesToSkip;
 }
 
 /**
@@ -131,4 +107,28 @@ function canSkipFromBundling(moduleName: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Creates an esbuild plugin that identifies which dependencies should be bundled.
+ *
+ * @param dependenciesToSkip - A set of dependency names that should be skipped during bundling.
+ * @param dependenciesToBundle - A set where the names of dependencies to be bundled will be added.
+ * @returns An esbuild `Plugin` object that extracts dependencies to bundle.
+ */
+function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, dependenciesToBundle: Set<string>): Plugin {
+  return {
+    name: 'test',
+    setup(build): void {
+      build.onResolve({ filter: /^[^./]/ }, (args) => {
+        if (!args.importer.endsWith('.d.ts')) {
+          const moduleName = trimStart(args.path.split('/')[0] ?? throwExpression(new Error('Wrong path')), 'node:');
+          if (!dependenciesToSkip.has(args.path) && !dependenciesToSkip.has(moduleName)) {
+            dependenciesToBundle.add(args.path);
+          }
+        }
+        return { external: true, path: args.path };
+      });
+    }
+  };
 }

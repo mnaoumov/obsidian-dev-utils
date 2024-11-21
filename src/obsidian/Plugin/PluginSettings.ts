@@ -5,6 +5,21 @@
  */
 
 /**
+ * Clones plugin settings by loading them from the given settings object and default settings factory.
+ *
+ * @typeParam PluginSettings - The type of plugin settings object.
+ * @param defaultPluginSettingsFactory - A factory function that returns the default settings.
+ * @param settings - The settings to clone.
+ * @returns A new settings object that is a clone of the provided settings.
+ */
+export function clonePluginSettings<PluginSettings extends object>(
+  defaultPluginSettingsFactory: () => PluginSettings,
+  settings: PluginSettings
+): PluginSettings {
+  return loadPluginSettings(defaultPluginSettingsFactory, settings);
+}
+
+/**
  * Loads plugin settings by merging provided data with default settings.
  *
  * @typeParam PluginSettings - The type of plugin settings object.
@@ -31,19 +46,4 @@ export function loadPluginSettings<PluginSettings extends object>(
   }
 
   return defaultPluginSettings;
-}
-
-/**
- * Clones plugin settings by loading them from the given settings object and default settings factory.
- *
- * @typeParam PluginSettings - The type of plugin settings object.
- * @param defaultPluginSettingsFactory - A factory function that returns the default settings.
- * @param settings - The settings to clone.
- * @returns A new settings object that is a clone of the provided settings.
- */
-export function clonePluginSettings<PluginSettings extends object>(
-  defaultPluginSettingsFactory: () => PluginSettings,
-  settings: PluginSettings
-): PluginSettings {
-  return loadPluginSettings(defaultPluginSettingsFactory, settings);
 }

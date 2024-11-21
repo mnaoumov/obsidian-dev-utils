@@ -26,23 +26,6 @@ export enum CalloutMode {
 }
 
 /**
- * Returns the modifier string based on the callout mode.
- *
- * @param mode - The mode of the callout.
- * @returns The corresponding modifier string.
- */
-function getModifier(mode: CalloutMode): string {
-  switch (mode) {
-    case CalloutMode.FoldableCollapsed:
-      return '-';
-    case CalloutMode.FoldableExpanded:
-      return '+';
-    default:
-      return '';
-  }
-}
-
-/**
  * Options for rendering a callout block in Dataview.
  */
 export interface RenderCalloutOptions {
@@ -127,4 +110,21 @@ export function wrapForCallout(content: string): string {
   const lines = content.split('\n');
   const prefixedLines = lines.map((line) => `> ${line}`);
   return prefixedLines.join('\n');
+}
+
+/**
+ * Returns the modifier string based on the callout mode.
+ *
+ * @param mode - The mode of the callout.
+ * @returns The corresponding modifier string.
+ */
+function getModifier(mode: CalloutMode): string {
+  switch (mode) {
+    case CalloutMode.FoldableCollapsed:
+      return '-';
+    case CalloutMode.FoldableExpanded:
+      return '+';
+    default:
+      return '';
+  }
 }

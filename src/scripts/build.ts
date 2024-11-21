@@ -16,6 +16,17 @@ import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 import { execFromRoot } from './Root.ts';
 
 /**
+ * Removes the distribution directory and its contents.
+ *
+ * This function deletes the entire distribution directory to ensure a clean build environment.
+ *
+ * @returns A promise that resolves when the directory has been removed.
+ */
+export async function buildClean(): Promise<void> {
+  await rm(ObsidianDevUtilsRepoPaths.Dist, { force: true, recursive: true });
+}
+
+/**
  * Copies all static files from the static assets directory to the distribution directory.
  *
  * This function recursively reads the contents of the static assets directory and copies
@@ -32,17 +43,6 @@ export async function buildStatic(): Promise<void> {
     const path = trimStart(join(dirent.parentPath, dirent.name), ObsidianDevUtilsRepoPaths.Static + '/');
     await cp(join(ObsidianDevUtilsRepoPaths.Static, path), join(ObsidianDevUtilsRepoPaths.Dist, path));
   }
-}
-
-/**
- * Removes the distribution directory and its contents.
- *
- * This function deletes the entire distribution directory to ensure a clean build environment.
- *
- * @returns A promise that resolves when the directory has been removed.
- */
-export async function buildClean(): Promise<void> {
-  await rm(ObsidianDevUtilsRepoPaths.Dist, { force: true, recursive: true });
 }
 
 /**

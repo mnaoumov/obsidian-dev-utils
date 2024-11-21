@@ -11,31 +11,6 @@ import {
 } from './NodeModules.ts';
 
 /**
- * Represents the result of executing a command.
- */
-export interface ExecResult {
-  /**
-   * The exit code of the command. A value of `null` indicates that the process did not exit normally.
-   */
-  exitCode: null | number;
-
-  /**
-   * The signal that caused the process to be terminated. A value of `null` indicates that no signal was received.
-   */
-  exitSignal: NodeJS.Signals | null;
-
-  /**
-   * The standard error output from the command.
-   */
-  stderr: string;
-
-  /**
-   * The standard output from the command.
-   */
-  stdout: string;
-}
-
-/**
  * Options for executing a command.
  */
 export interface ExecOption {
@@ -63,6 +38,31 @@ export interface ExecOption {
    * If false, only returns the output of the command.
    */
   withDetails?: boolean;
+}
+
+/**
+ * Represents the result of executing a command.
+ */
+export interface ExecResult {
+  /**
+   * The exit code of the command. A value of `null` indicates that the process did not exit normally.
+   */
+  exitCode: null | number;
+
+  /**
+   * The signal that caused the process to be terminated. A value of `null` indicates that no signal was received.
+   */
+  exitSignal: NodeJS.Signals | null;
+
+  /**
+   * The standard error output from the command.
+   */
+  stderr: string;
+
+  /**
+   * The standard output from the command.
+   */
+  stdout: string;
 }
 
 /**

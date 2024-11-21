@@ -17,26 +17,6 @@ import type {
 } from './FileChange.ts';
 
 /**
- * Sorts references by their type and position.
- *
- * @param references - The references to sort.
- * @returns The sorted references.
- */
-export function sortReferences(references: Reference[]): Reference[] {
-  return references.sort((a, b) => {
-    if (isFrontmatterLinkCache(a) && isFrontmatterLinkCache(b)) {
-      return a.key.localeCompare(b.key);
-    }
-
-    if (isReferenceCache(a) && isReferenceCache(b)) {
-      return a.position.start.offset - b.position.start.offset;
-    }
-
-    return isFrontmatterLinkCache(a) ? 1 : -1;
-  });
-}
-
-/**
 * Converts a reference to a file change.
 *
 * @param reference - The reference to convert.
@@ -60,4 +40,24 @@ export function referenceToFileChange(reference: Reference, newContent: string):
   }
 
   throw new Error('Unknown link type');
+}
+
+/**
+ * Sorts references by their type and position.
+ *
+ * @param references - The references to sort.
+ * @returns The sorted references.
+ */
+export function sortReferences(references: Reference[]): Reference[] {
+  return references.sort((a, b) => {
+    if (isFrontmatterLinkCache(a) && isFrontmatterLinkCache(b)) {
+      return a.key.localeCompare(b.key);
+    }
+
+    if (isReferenceCache(a) && isReferenceCache(b)) {
+      return a.position.start.offset - b.position.start.offset;
+    }
+
+    return isFrontmatterLinkCache(a) ? 1 : -1;
+  });
 }

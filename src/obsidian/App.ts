@@ -15,6 +15,17 @@ interface AppWrapper {
   app: App;
 }
 
+interface ObsidianDevUtilsStateWrapper {
+  obsidianDevUtilsState: Record<string, unknown>;
+}
+
+/**
+ * Wrapper type for storing shared state in the Obsidian app.
+ */
+export class ValueWrapper<T> {
+  public constructor(public value: T) { }
+}
+
 /**
  * Retrieves the Obsidian `App` instance.
  *
@@ -42,17 +53,6 @@ export function getApp(): App {
   }
 
   throw new Error('Obsidian app not found');
-}
-
-interface ObsidianDevUtilsStateWrapper {
-  obsidianDevUtilsState: Record<string, unknown>;
-}
-
-/**
- * Wrapper type for storing shared state in the Obsidian app.
- */
-export class ValueWrapper<T> {
-  public constructor(public value: T) { }
 }
 
 /**

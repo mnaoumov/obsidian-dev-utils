@@ -158,22 +158,159 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
   );
 }
 
-function shouldInvokeHandler(app: App, pluginId: string): boolean {
-  const renameDeleteHandlerPluginIds = getRenameDeleteHandlersMap(app);
-  const mainPluginId = Array.from(renameDeleteHandlerPluginIds.keys())[0];
-  if (mainPluginId !== pluginId) {
-    return false;
+async function fillRenameMap(app: App, oldPath: string, newPath: string, renameMap: Map<string, string>): Promise<void> {
+  renameMap.set(oldPath, newPath);
+
+  if (!isNote(oldPath)) {
+    return;
   }
-  return true;
+
+  const settings = getSettings(app);
+
+  const oldAttachmentFolderPath = await getAttachmentFolderPath(app, oldPath);
+  const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
+    ? await getAttachmentFolderPath(app, newPath)
+    : oldAttachmentFolderPath;
+
+  const oldAttachmentFolder = getFolderOrNull(app, oldAttachmentFolderPath);
+
+  if (!oldAttachmentFolder) {
+    return;
+  }
+
+  if (oldAttachmentFolderPath === newAttachmentFolderPath && !settings.shouldRenameAttachmentFiles) {
+    return;
+  }
+
+  const oldAttachmentFiles: TFile[] = [];
+
+  if (!(await hasOwnAttachmentFolder(app, oldPath))) {
+    const oldCache = await getCacheSafe(app, oldPath);
+    if (!oldCache) {
+      return;
+    }
+    for (const oldLink of getAllLinks(oldCache)) {
+      const oldAttachmentFile = extractLinkFile(app, oldLink, oldPath);
+      if (!oldAttachmentFile) {
+        continue;
+      }
+
+      if (oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
+        const oldAttachmentBacklinks = await getBacklinksForFileSafe(app, oldAttachmentFile);
+        if (oldAttachmentBacklinks.keys().length === 1) {
+          oldAttachmentFiles.push(oldAttachmentFile);
+        }
+      }
+    }
+  } else {
+    Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
+      if (isFile(oldAttachmentFile)) {
+        oldAttachmentFiles.push(oldAttachmentFile);
+      }
+    });
+  }
+
+  const oldBasename = basename(oldPath, extname(oldPath));
+  const newBasename = basename(newPath, extname(newPath));
+
+  for (const oldAttachmentFile of oldAttachmentFiles) {
+    if (isNote(oldAttachmentFile)) {
+      continue;
+    }
+    const relativePath = relative(oldAttachmentFolderPath, oldAttachmentFile.path);
+    const newDir = join(newAttachmentFolderPath, dirname(relativePath));
+    const newChildBasename = settings.shouldRenameAttachmentFiles
+      ? oldAttachmentFile.basename.replaceAll(oldBasename, newBasename)
+      : oldAttachmentFile.basename;
+    let newChildPath = join(newDir, makeFileName(newChildBasename, oldAttachmentFile.extension));
+
+    if (oldAttachmentFile.path === newChildPath) {
+      continue;
+    }
+
+    if (settings.shouldDeleteConflictingAttachments) {
+      const newChildFile = getFileOrNull(app, newChildPath);
+      if (newChildFile) {
+        await app.fileManager.trashFile(newChildFile);
+      }
+    } else {
+      newChildPath = app.vault.getAvailablePath(join(newDir, newChildBasename), oldAttachmentFile.extension);
+    }
+    renameMap.set(oldAttachmentFile.path, newChildPath);
+  }
 }
 
 function getRenameDeleteHandlersMap(app: App): Map<string, () => Partial<RenameDeleteHandlerSettings>> {
   return getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
 }
 
-function logRegisteredHandlers(app: App): void {
+function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
-  console.debug(`Plugins with registered rename/delete handlers: ${Array.from(renameDeleteHandlersMap.keys()).join(', ')}`);
+  const settingsBuilders = Array.from(renameDeleteHandlersMap.values()).reverse();
+
+  const settings: Partial<RenameDeleteHandlerSettings> = {};
+  for (const settingsBuilder of settingsBuilders) {
+    const newSettings = settingsBuilder();
+    for (const [key, value] of Object.entries(newSettings) as [keyof RenameDeleteHandlerSettings, boolean][]) {
+      settings[key] ||= value;
+    }
+  }
+
+  return settings;
+}
+
+async function handleDelete(app: App, path: string): Promise<void> {
+  console.debug(`Handle Delete ${path}`);
+  if (!isNote(path)) {
+    return;
+  }
+
+  const settings = getSettings(app);
+  if (!settings.shouldDeleteOrphanAttachments) {
+    return;
+  }
+
+  const cache = deletedMetadataCacheMap.get(path);
+  deletedMetadataCacheMap.delete(path);
+  if (cache) {
+    const links = getAllLinks(cache);
+
+    for (const link of links) {
+      const attachmentFile = extractLinkFile(app, link, path);
+      if (!attachmentFile) {
+        continue;
+      }
+
+      if (isNote(attachmentFile)) {
+        continue;
+      }
+
+      await deleteSafe(app, attachmentFile, path, settings.shouldDeleteEmptyFolders);
+    }
+  }
+
+  const attachmentFolderPath = await getAttachmentFolderPath(app, path);
+  const attachmentFolder = getFolderOrNull(app, attachmentFolderPath);
+
+  if (!attachmentFolder) {
+    return;
+  }
+
+  if (!(await hasOwnAttachmentFolder(app, path))) {
+    return;
+  }
+
+  await deleteSafe(app, attachmentFolder, path, false, settings.shouldDeleteEmptyFolders);
+}
+
+function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
+  const settings = getSettings(app);
+  if (!settings.shouldDeleteOrphanAttachments) {
+    return;
+  }
+  if (isMarkdownFile(file) && prevCache) {
+    deletedMetadataCacheMap.set(file.path, prevCache);
+  }
 }
 
 function handleRename(app: App, oldPath: string, newPath: string): void {
@@ -309,155 +446,9 @@ function initBacklinksMap(currentBacklinksMap: Map<string, Reference[]>, renameM
   }
 }
 
-async function handleDelete(app: App, path: string): Promise<void> {
-  console.debug(`Handle Delete ${path}`);
-  if (!isNote(path)) {
-    return;
-  }
-
-  const settings = getSettings(app);
-  if (!settings.shouldDeleteOrphanAttachments) {
-    return;
-  }
-
-  const cache = deletedMetadataCacheMap.get(path);
-  deletedMetadataCacheMap.delete(path);
-  if (cache) {
-    const links = getAllLinks(cache);
-
-    for (const link of links) {
-      const attachmentFile = extractLinkFile(app, link, path);
-      if (!attachmentFile) {
-        continue;
-      }
-
-      if (isNote(attachmentFile)) {
-        continue;
-      }
-
-      await deleteSafe(app, attachmentFile, path, settings.shouldDeleteEmptyFolders);
-    }
-  }
-
-  const attachmentFolderPath = await getAttachmentFolderPath(app, path);
-  const attachmentFolder = getFolderOrNull(app, attachmentFolderPath);
-
-  if (!attachmentFolder) {
-    return;
-  }
-
-  if (!(await hasOwnAttachmentFolder(app, path))) {
-    return;
-  }
-
-  await deleteSafe(app, attachmentFolder, path, false, settings.shouldDeleteEmptyFolders);
-}
-
-async function fillRenameMap(app: App, oldPath: string, newPath: string, renameMap: Map<string, string>): Promise<void> {
-  renameMap.set(oldPath, newPath);
-
-  if (!isNote(oldPath)) {
-    return;
-  }
-
-  const settings = getSettings(app);
-
-  const oldAttachmentFolderPath = await getAttachmentFolderPath(app, oldPath);
-  const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
-    ? await getAttachmentFolderPath(app, newPath)
-    : oldAttachmentFolderPath;
-
-  const oldAttachmentFolder = getFolderOrNull(app, oldAttachmentFolderPath);
-
-  if (!oldAttachmentFolder) {
-    return;
-  }
-
-  if (oldAttachmentFolderPath === newAttachmentFolderPath && !settings.shouldRenameAttachmentFiles) {
-    return;
-  }
-
-  const oldAttachmentFiles: TFile[] = [];
-
-  if (!(await hasOwnAttachmentFolder(app, oldPath))) {
-    const oldCache = await getCacheSafe(app, oldPath);
-    if (!oldCache) {
-      return;
-    }
-    for (const oldLink of getAllLinks(oldCache)) {
-      const oldAttachmentFile = extractLinkFile(app, oldLink, oldPath);
-      if (!oldAttachmentFile) {
-        continue;
-      }
-
-      if (oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
-        const oldAttachmentBacklinks = await getBacklinksForFileSafe(app, oldAttachmentFile);
-        if (oldAttachmentBacklinks.keys().length === 1) {
-          oldAttachmentFiles.push(oldAttachmentFile);
-        }
-      }
-    }
-  } else {
-    Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
-      if (isFile(oldAttachmentFile)) {
-        oldAttachmentFiles.push(oldAttachmentFile);
-      }
-    });
-  }
-
-  const oldBasename = basename(oldPath, extname(oldPath));
-  const newBasename = basename(newPath, extname(newPath));
-
-  for (const oldAttachmentFile of oldAttachmentFiles) {
-    if (isNote(oldAttachmentFile)) {
-      continue;
-    }
-    const relativePath = relative(oldAttachmentFolderPath, oldAttachmentFile.path);
-    const newDir = join(newAttachmentFolderPath, dirname(relativePath));
-    const newChildBasename = settings.shouldRenameAttachmentFiles
-      ? oldAttachmentFile.basename.replaceAll(oldBasename, newBasename)
-      : oldAttachmentFile.basename;
-    let newChildPath = join(newDir, makeFileName(newChildBasename, oldAttachmentFile.extension));
-
-    if (oldAttachmentFile.path === newChildPath) {
-      continue;
-    }
-
-    if (settings.shouldDeleteConflictingAttachments) {
-      const newChildFile = getFileOrNull(app, newChildPath);
-      if (newChildFile) {
-        await app.fileManager.trashFile(newChildFile);
-      }
-    } else {
-      newChildPath = app.vault.getAvailablePath(join(newDir, newChildBasename), oldAttachmentFile.extension);
-    }
-    renameMap.set(oldAttachmentFile.path, newChildPath);
-  }
-}
-
-function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
+function logRegisteredHandlers(app: App): void {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
-  const settingsBuilders = Array.from(renameDeleteHandlersMap.values()).reverse();
-
-  const settings: Partial<RenameDeleteHandlerSettings> = {};
-  for (const settingsBuilder of settingsBuilders) {
-    const newSettings = settingsBuilder();
-    for (const [key, value] of Object.entries(newSettings) as [keyof RenameDeleteHandlerSettings, boolean][]) {
-      settings[key] ||= value;
-    }
-  }
-
-  return settings;
-}
-
-function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
-  const settings = getSettings(app);
-  if (!settings.shouldDeleteOrphanAttachments) {
-    return;
-  }
-  if (isMarkdownFile(file) && prevCache) {
-    deletedMetadataCacheMap.set(file.path, prevCache);
-  }
+  console.debug(`Plugins with registered rename/delete handlers: ${Array.from(renameDeleteHandlersMap.keys()).join(', ')}`);
 }
 
 function makeKey(oldPath: string, newPath: string): string {
@@ -473,4 +464,13 @@ async function renameHandled(app: App, oldPath: string, newPath: string): Promis
   handledRenames.add(key);
   newPath = await renameSafe(app, oldPath, newPath);
   return newPath;
+}
+
+function shouldInvokeHandler(app: App, pluginId: string): boolean {
+  const renameDeleteHandlerPluginIds = getRenameDeleteHandlersMap(app);
+  const mainPluginId = Array.from(renameDeleteHandlerPluginIds.keys())[0];
+  if (mainPluginId !== pluginId) {
+    return false;
+  }
+  return true;
 }

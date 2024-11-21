@@ -19,9 +19,67 @@ import type { PluginBase } from './PluginBase.ts';
 import { assignWithNonEnumerableProperties } from '../../Object.ts';
 
 /**
+ * Options for binding a value component to a plugin setting.
+ */
+interface BindValueComponentOptions<PluginSettings, UIValue> {
+  /**
+   * If true, saves the plugin settings automatically after the component value changes. Default is `true`.
+   */
+  autoSave?: boolean;
+
+  /**
+   * A callback function that is called when the value of the component changes.
+   */
+  onChanged?: () => MaybePromise<void>;
+
+  /**
+   * The plugin settings object to bind the component to. Default is the plugin's current settings.
+   */
+  pluginSettings?: PluginSettings;
+
+  /**
+   * Validates the UI value before setting it on the plugin settings.
+   * @param uiValue - The value of the UI component.
+   * @returns An error message if the value is invalid, or `null` if it is valid.
+   */
+  valueValidator?: (uiValue: UIValue) => null | string;
+}
+
+/**
+ * Extended options for binding a value component to a plugin setting.
+ */
+interface BindValueComponentOptionsExtended<PluginSettings, UIValue, Property extends keyof PluginSettings> extends BindValueComponentOptions<PluginSettings, UIValue> {
+  /**
+   * Converts the UI component's value back to the plugin settings value.
+   * @param uiValue - The value of the UI component.
+   * @returns The value to set on the plugin settings.
+   */
+  componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[Property];
+
+  /**
+   * Converts the plugin settings value to the value used by the UI component.
+   * @param pluginSettingsValue - The value of the property in the plugin settings.
+   * @returns The value to set on the UI component.
+   */
+  pluginSettingsToComponentValueConverter: (pluginSettingsValue: PluginSettings[Property]) => UIValue;
+}
+
+/**
  * ValueComponent that can be used as an original ValueComponent with extended functionality.
  */
 type ValueComponentExType<UIValue, TValueComponent extends ValueComponentWithChangeTracking<UIValue>> = TValueComponent & ValueComponentEx<UIValue, TValueComponent>;
+
+/**
+ * A ValueComponent that can track changes.
+ */
+interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
+  /**
+   * Sets a callback function to be called when the value of the component changes.
+   *
+   * @param callback - A callback function that is called when the value of the component changes.
+   */
+  onChange(callback: (newValue: T) => Promise<void>): this;
+}
 
 /**
  * ValueComponent with extended functionality.
@@ -159,64 +217,6 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
  */
 export function extend<UIValue, TValueComponent extends ValueComponentWithChangeTracking<UIValue>>(valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>): ValueComponentExType<UIValue, TValueComponent> {
   return new ValueComponentEx<UIValue, TValueComponent>(valueComponent).asExtended();
-}
-
-/**
- * A ValueComponent that can track changes.
- */
-interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
-  /**
-   * Sets a callback function to be called when the value of the component changes.
-   *
-   * @param callback - A callback function that is called when the value of the component changes.
-   */
-  onChange(callback: (newValue: T) => Promise<void>): this;
-}
-
-/**
- * Options for binding a value component to a plugin setting.
- */
-interface BindValueComponentOptions<PluginSettings, UIValue> {
-  /**
-   * If true, saves the plugin settings automatically after the component value changes. Default is `true`.
-   */
-  autoSave?: boolean;
-
-  /**
-   * A callback function that is called when the value of the component changes.
-   */
-  onChanged?: () => MaybePromise<void>;
-
-  /**
-   * The plugin settings object to bind the component to. Default is the plugin's current settings.
-   */
-  pluginSettings?: PluginSettings;
-
-  /**
-   * Validates the UI value before setting it on the plugin settings.
-   * @param uiValue - The value of the UI component.
-   * @returns An error message if the value is invalid, or `null` if it is valid.
-   */
-  valueValidator?: (uiValue: UIValue) => null | string;
-}
-
-/**
- * Extended options for binding a value component to a plugin setting.
- */
-interface BindValueComponentOptionsExtended<PluginSettings, UIValue, Property extends keyof PluginSettings> extends BindValueComponentOptions<PluginSettings, UIValue> {
-  /**
-   * Converts the UI component's value back to the plugin settings value.
-   * @param uiValue - The value of the UI component.
-   * @returns The value to set on the plugin settings.
-   */
-  componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[Property];
-
-  /**
-   * Converts the plugin settings value to the value used by the UI component.
-   * @param pluginSettingsValue - The value of the property in the plugin settings.
-   * @returns The value to set on the UI component.
-   */
-  pluginSettingsToComponentValueConverter: (pluginSettingsValue: PluginSettings[Property]) => UIValue;
 }
 
 /**

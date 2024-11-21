@@ -28,10 +28,6 @@ interface QueueItem {
   timeoutInMilliseconds: number;
 }
 
-function getQueue(app: App): ValueWrapper<Queue> {
-  return getObsidianDevUtilsState(app, 'queue', { items: [], promise: Promise.resolve() });
-}
-
 /**
  * Adds an asynchronous function to be executed after the previous function completes.
  *
@@ -60,6 +56,19 @@ export async function addToQueueAndWait(app: App, fn: () => MaybePromise<void>, 
   await queue.promise;
 }
 
+/**
+ * Flushes the queue;
+ *
+ * @param app - The Obsidian application instance.
+ */
+export async function flushQueue(app: App): Promise<void> {
+  await addToQueueAndWait(app, noop);
+}
+
+function getQueue(app: App): ValueWrapper<Queue> {
+  return getObsidianDevUtilsState(app, 'queue', { items: [], promise: Promise.resolve() });
+}
+
 async function processNextQueueItem(app: App): Promise<void> {
   const queue = getQueue(app).value;
   const item = queue.items[0];
@@ -69,13 +78,4 @@ async function processNextQueueItem(app: App): Promise<void> {
 
   await addErrorHandler(() => runWithTimeout(item.timeoutInMilliseconds, () => invokeAsyncAndLog(processNextQueueItem.name, () => item.fn(), item.stackTrace)));
   queue.items.shift();
-}
-
-/**
- * Flushes the queue;
- *
- * @param app - The Obsidian application instance.
- */
-export async function flushQueue(app: App): Promise<void> {
-  await addToQueueAndWait(app, noop);
 }

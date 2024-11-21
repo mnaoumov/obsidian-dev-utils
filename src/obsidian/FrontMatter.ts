@@ -12,6 +12,13 @@ import {
 import { insertAt } from '../String.ts';
 
 /**
+ * Represents the combined front matter of a document.
+ * It is a union of custom front matter, Obsidian front matter, and additional properties.
+ * @typeParam CustomFrontMatter - The type of custom front matter.
+ */
+export type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & ObsidianFrontMatter & Record<string, unknown>;
+
+/**
  * Represents the front matter of an Obsidian file.
  * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Default+properties}
  */
@@ -62,13 +69,6 @@ export interface ObsidianPublishFrontMatter {
    */
   publish?: boolean;
 }
-
-/**
- * Represents the combined front matter of a document.
- * It is a union of custom front matter, Obsidian front matter, and additional properties.
- * @typeParam CustomFrontMatter - The type of custom front matter.
- */
-export type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & ObsidianFrontMatter & Record<string, unknown>;
 
 /**
  * Parses the front matter of a given content string.

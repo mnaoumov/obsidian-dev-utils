@@ -37,56 +37,35 @@ import { parseFrontMatter } from './FrontMatter.ts';
 import { sortReferences } from './Reference.ts';
 
 /**
- * Retrieves the cached metadata for a given file or path.
- *
- * @param app - The Obsidian app instance.
- * @param fileOrPath - The file or path to retrieve the metadata for.
- * @param retryOptions - Optional retry options for the retrieval process.
- * @returns The cached metadata for the file, or null if it doesn't exist.
+ * Wrapper for the getBacklinksForFile method that provides a safe overload.
  */
-export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CachedMetadata | null> {
-  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
-  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  let cache: CachedMetadata | null = null;
+export interface GetBacklinksForFileSafeWrapper {
+  /**
+   * Retrieves the backlinks for a file safely.
+   *
+   * @param pathOrFile - The path or file object.
+   * @returns A promise that resolves to an array dictionary of backlinks.
+   */
+  safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<Reference>>;
+}
 
-  await retryWithTimeout(async () => {
-    const file = getFileOrNull(app, fileOrPath);
-
-    if (!file || file.deleted) {
-      cache = null;
-      return true;
+/**
+ * Ensures that the metadata cache is ready for all files.
+ * @param app - The Obsidian app instance.
+ * @returns A promise that resolves when the metadata cache is ready.
+ */
+export async function ensureMetadataCacheReady(app: App): Promise<void> {
+  for (const [path, cache] of Object.entries(app.metadataCache.fileCache)) {
+    if (!cache.hash) {
+      continue;
     }
 
-    await saveNote(app, file);
-
-    const fileInfo = app.metadataCache.getFileInfo(file.path);
-    const stat = await app.vault.adapter.stat(file.path);
-
-    if (!fileInfo) {
-      console.debug(`File cache info for ${file.path} is missing`);
-      return false;
-    } else if (!stat) {
-      console.debug(`File stat for ${file.path} is missing`);
-      return false;
-    } else if (file.stat.mtime < stat.mtime) {
-      app.vault.onChange('modified', file.path, undefined, stat);
-      console.debug(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
-      return false;
-    } else if (fileInfo.mtime < stat.mtime) {
-      console.debug(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
-      return false;
-    } else {
-      cache = app.metadataCache.getFileCache(file);
-      if (!cache) {
-        console.debug(`File cache for ${file.path} is missing`);
-        return false;
-      } else {
-        return true;
-      }
+    if (app.metadataCache.metadataCache[cache.hash]) {
+      continue;
     }
-  }, overriddenOptions);
 
-  return cache;
+    await getCacheSafe(app, path);
+  }
 }
 
 /**
@@ -135,19 +114,6 @@ export function getAllLinks(cache: CachedMetadata): Reference[] {
   });
 
   return links;
-}
-
-/**
- * Wrapper for the getBacklinksForFile method that provides a safe overload.
- */
-export interface GetBacklinksForFileSafeWrapper {
-  /**
-   * Retrieves the backlinks for a file safely.
-   *
-   * @param pathOrFile - The path or file object.
-   * @returns A promise that resolves to an array dictionary of backlinks.
-   */
-  safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<Reference>>;
 }
 
 /**
@@ -246,24 +212,56 @@ export async function getBacklinksMap(app: App, pathOrFiles: PathOrFile[], retry
 }
 
 /**
- * Saves the specified note in the Obsidian app.
+ * Retrieves the cached metadata for a given file or path.
  *
  * @param app - The Obsidian app instance.
- * @param pathOrFile - The note to be saved.
- * @returns A promise that resolves when the note is saved.
+ * @param fileOrPath - The file or path to retrieve the metadata for.
+ * @param retryOptions - Optional retry options for the retrieval process.
+ * @returns The cached metadata for the file, or null if it doesn't exist.
  */
-async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
-  if (!isMarkdownFile(pathOrFile)) {
-    return;
-  }
+export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CachedMetadata | null> {
+  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
+  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
+  let cache: CachedMetadata | null = null;
 
-  const path = getPath(pathOrFile);
+  await retryWithTimeout(async () => {
+    const file = getFileOrNull(app, fileOrPath);
 
-  for (const leaf of app.workspace.getLeavesOfType('markdown')) {
-    if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
-      await leaf.view.save();
+    if (!file || file.deleted) {
+      cache = null;
+      return true;
     }
-  }
+
+    await saveNote(app, file);
+
+    const fileInfo = app.metadataCache.getFileInfo(file.path);
+    const stat = await app.vault.adapter.stat(file.path);
+
+    if (!fileInfo) {
+      console.debug(`File cache info for ${file.path} is missing`);
+      return false;
+    } else if (!stat) {
+      console.debug(`File stat for ${file.path} is missing`);
+      return false;
+    } else if (file.stat.mtime < stat.mtime) {
+      app.vault.onChange('modified', file.path, undefined, stat);
+      console.debug(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
+      return false;
+    } else if (fileInfo.mtime < stat.mtime) {
+      console.debug(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
+      return false;
+    } else {
+      cache = app.metadataCache.getFileCache(file);
+      if (!cache) {
+        console.debug(`File cache for ${file.path} is missing`);
+        return false;
+      } else {
+        return true;
+      }
+    }
+  }, overriddenOptions);
+
+  return cache;
 }
 
 /**
@@ -277,24 +275,6 @@ async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
 export async function getFrontMatterSafe<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile): Promise<CombinedFrontMatter<CustomFrontMatter>> {
   const cache = await getCacheSafe(app, pathOrFile);
   return (cache?.frontmatter ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
-}
-
-/**
- * Temporarily registers a file and runs a function.
- *
- * @param app - The Obsidian app instance.
- * @param file - The file to temporarily register.
- * @param fn - The function to run.
- * @returns The result of the function.
- */
-export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () => T): T {
-  const unregister = registerFile(app, file);
-
-  try {
-    return fn();
-  } finally {
-    unregister();
-  }
 }
 
 /***
@@ -336,20 +316,40 @@ export function registerFile(app: App, file: TAbstractFile): () => void {
 }
 
 /**
- * Ensures that the metadata cache is ready for all files.
+ * Temporarily registers a file and runs a function.
+ *
  * @param app - The Obsidian app instance.
- * @returns A promise that resolves when the metadata cache is ready.
+ * @param file - The file to temporarily register.
+ * @param fn - The function to run.
+ * @returns The result of the function.
  */
-export async function ensureMetadataCacheReady(app: App): Promise<void> {
-  for (const [path, cache] of Object.entries(app.metadataCache.fileCache)) {
-    if (!cache.hash) {
-      continue;
-    }
+export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () => T): T {
+  const unregister = registerFile(app, file);
 
-    if (app.metadataCache.metadataCache[cache.hash]) {
-      continue;
-    }
+  try {
+    return fn();
+  } finally {
+    unregister();
+  }
+}
 
-    await getCacheSafe(app, path);
+/**
+ * Saves the specified note in the Obsidian app.
+ *
+ * @param app - The Obsidian app instance.
+ * @param pathOrFile - The note to be saved.
+ * @returns A promise that resolves when the note is saved.
+ */
+async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
+  if (!isMarkdownFile(pathOrFile)) {
+    return;
+  }
+
+  const path = getPath(pathOrFile);
+
+  for (const leaf of app.workspace.getLeavesOfType('markdown')) {
+    if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
+      await leaf.view.save();
+    }
   }
 }

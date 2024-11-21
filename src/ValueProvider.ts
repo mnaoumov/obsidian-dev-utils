@@ -14,18 +14,6 @@ import type { MaybePromise } from './Async.ts';
 export type ValueProvider<Value, Args extends unknown[] = []> = ((...args: Args) => MaybePromise<Value>) | Value;
 
 /**
- * Determines whether a given value provider is a function.
- *
- * @typeParam Value - The type of the value provided.
- * @typeParam Args - The types of arguments passed to the function if the provider is a function.
- * @param value - The value provider to check.
- * @returns `true` if the value provider is a function, otherwise `false`.
- */
-function isFunction<Value, Args extends unknown[]>(value: ValueProvider<Value, Args>): value is (...args: Args) => MaybePromise<Value> {
-  return typeof value === 'function';
-}
-
-/**
  * Resolves a value from a value provider, which can be either a direct value or a function that returns a value.
  *
  * @typeParam Args - The types of arguments passed to the function if the provider is a function.
@@ -40,4 +28,16 @@ export async function resolveValue<Value, Args extends unknown[]>(provider: Valu
   } else {
     return provider;
   }
+}
+
+/**
+ * Determines whether a given value provider is a function.
+ *
+ * @typeParam Value - The type of the value provided.
+ * @typeParam Args - The types of arguments passed to the function if the provider is a function.
+ * @param value - The value provider to check.
+ * @returns `true` if the value provider is a function, otherwise `false`.
+ */
+function isFunction<Value, Args extends unknown[]>(value: ValueProvider<Value, Args>): value is (...args: Args) => MaybePromise<Value> {
+  return typeof value === 'function';
 }
