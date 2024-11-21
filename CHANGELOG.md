@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.12.0
+
+- Don't allow default exports
+
 ## 4.11.0
 
 - Lint
