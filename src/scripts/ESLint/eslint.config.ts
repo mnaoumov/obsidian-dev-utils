@@ -13,7 +13,6 @@
 import type { Linter } from 'eslint';
 
 import eslint from '@eslint/js';
-
 // eslint-disable-next-line import-x/no-rename-default
 import stylistic from '@stylistic/eslint-plugin';
 import eslintPluginImportX from 'eslint-plugin-import-x';

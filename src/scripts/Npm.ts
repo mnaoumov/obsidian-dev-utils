@@ -14,6 +14,21 @@ import {
 import { resolvePathFromRoot } from './Root.ts';
 
 /**
+ * Options for editing an NPM package.
+ */
+export interface EditNpmPackageOptions {
+  /**
+   * The current working directory where `package.json` is located.
+   */
+  cwd?: string | undefined;
+
+  /**
+   * If true, skips editing if the file does not exist.
+   */
+  skipIfMissing?: boolean | undefined;
+}
+
+/**
  * Represents the structure of an `NpmPackage` as defined in a `package.json` file.
  */
 export interface NpmPackage {
@@ -67,42 +82,6 @@ interface Export {
 }
 
 /**
- * Reads the `package.json` file from the specified directory or from the root if no directory is specified.
- *
- * @param cwd - The current working directory where `package.json` is located.
- * @returns A promise that resolves with the parsed `NpmPackage` object.
- */
-export async function readNpmPackage(cwd?: string): Promise<NpmPackage> {
-  return await readJson<NpmPackage>(getPackageJsonPath(cwd));
-}
-
-/**
- * Writes the provided `NpmPackage` object to the `package.json` file in the specified directory or in the root.
- *
- * @param npmPackage - The `NpmPackage` object to write.
- * @param cwd - The current working directory where `package.json` is located.
- * @returns A promise that resolves when the file has been written.
- */
-export async function writeNpmPackage(npmPackage: NpmPackage, cwd?: string): Promise<void> {
-  await writeJson(getPackageJsonPath(cwd), npmPackage);
-}
-
-/**
- * Options for editing an NPM package.
- */
-export interface EditNpmPackageOptions {
-  /**
-   * The current working directory where `package.json` is located.
-   */
-  cwd?: string | undefined;
-
-  /**
-   * If true, skips editing if the file does not exist.
-   */
-  skipIfMissing?: boolean | undefined;
-}
-
-/**
  * Reads, edits, and writes back the `package.json` file using the provided edit function.
  *
  * @param editFn - The function to edit the parsed `NpmPackage` object.
@@ -116,27 +95,6 @@ export async function editNpmPackage(
     skipIfMissing
   } = options;
   await editJson<NpmPackage>(getPackageJsonPath(cwd), editFn, { skipIfMissing });
-}
-
-/**
- * Reads the `package-lock.json` file from the specified directory or from the root if no directory is specified.
- *
- * @param cwd - The current working directory where `package-lock.json` is located.
- * @returns A promise that resolves with the parsed `NpmPackage` object.
- */
-export async function readNpmPackageLock(cwd?: string): Promise<NpmPackage> {
-  return await readJson<NpmPackage>(getPackageLockJsonPath(cwd));
-}
-
-/**
- * Writes the provided `NpmPackage` object to the `package-lock.json` file in the specified directory or in the root.
- *
- * @param npmPackage - The `NpmPackage` object to write.
- * @param cwd - The current working directory where `package-lock.json` is located.
- * @returns A promise that resolves when the file has been written.
- */
-export async function writeNpmPackageLock(npmPackage: NpmPackage, cwd?: string): Promise<void> {
-  await writeJson(getPackageLockJsonPath(cwd), npmPackage);
 }
 
 /**
@@ -174,4 +132,46 @@ export function getPackageJsonPath(cwd?: string): string {
  */
 export function getPackageLockJsonPath(cwd?: string): string {
   return resolvePathFromRoot(ObsidianPluginRepoPaths.PackageLockJson, cwd);
+}
+
+/**
+ * Reads the `package.json` file from the specified directory or from the root if no directory is specified.
+ *
+ * @param cwd - The current working directory where `package.json` is located.
+ * @returns A promise that resolves with the parsed `NpmPackage` object.
+ */
+export async function readNpmPackage(cwd?: string): Promise<NpmPackage> {
+  return await readJson<NpmPackage>(getPackageJsonPath(cwd));
+}
+
+/**
+ * Reads the `package-lock.json` file from the specified directory or from the root if no directory is specified.
+ *
+ * @param cwd - The current working directory where `package-lock.json` is located.
+ * @returns A promise that resolves with the parsed `NpmPackage` object.
+ */
+export async function readNpmPackageLock(cwd?: string): Promise<NpmPackage> {
+  return await readJson<NpmPackage>(getPackageLockJsonPath(cwd));
+}
+
+/**
+ * Writes the provided `NpmPackage` object to the `package.json` file in the specified directory or in the root.
+ *
+ * @param npmPackage - The `NpmPackage` object to write.
+ * @param cwd - The current working directory where `package.json` is located.
+ * @returns A promise that resolves when the file has been written.
+ */
+export async function writeNpmPackage(npmPackage: NpmPackage, cwd?: string): Promise<void> {
+  await writeJson(getPackageJsonPath(cwd), npmPackage);
+}
+
+/**
+ * Writes the provided `NpmPackage` object to the `package-lock.json` file in the specified directory or in the root.
+ *
+ * @param npmPackage - The `NpmPackage` object to write.
+ * @param cwd - The current working directory where `package-lock.json` is located.
+ * @returns A promise that resolves when the file has been written.
+ */
+export async function writeNpmPackageLock(npmPackage: NpmPackage, cwd?: string): Promise<void> {
+  await writeJson(getPackageLockJsonPath(cwd), npmPackage);
 }

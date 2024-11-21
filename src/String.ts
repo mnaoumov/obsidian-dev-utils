@@ -37,45 +37,59 @@ for (const [key, value] of Object.entries(ESCAPE_MAP)) {
 }
 
 /**
- * Trims the specified prefix from the start of a string.
+ * Ensures that a string ends with the specified suffix, adding it if necessary.
  *
- * @param str - The string to trim.
- * @param prefix - The prefix to remove from the start of the string.
- * @param validate - If true, throws an error if the string does not start with the prefix.
- * @returns The trimmed string.
- * @throws If `validate` is true and the string does not start with the prefix.
+ * @param str - The string to check.
+ * @param suffix - The suffix to ensure.
+ * @returns The string that ends with the suffix.
  */
-export function trimStart(str: string, prefix: string, validate?: boolean): string {
-  if (str.startsWith(prefix)) {
-    return str.slice(prefix.length);
-  }
-
-  if (validate) {
-    throw new Error(`String ${str} does not start with prefix ${prefix}`);
-  }
-
-  return str;
+export function ensureEndsWith(str: string, suffix: string): string {
+  return str.endsWith(suffix) ? str : str + suffix;
 }
 
 /**
- * Trims the specified suffix from the end of a string.
+ * Ensures that a string starts with the specified prefix, adding it if necessary.
  *
- * @param str - The string to trim.
- * @param suffix - The suffix to remove from the end of the string.
- * @param validate - If true, throws an error if the string does not end with the suffix.
- * @returns The trimmed string.
- * @throws If `validate` is true and the string does not end with the suffix.
+ * @param str - The string to check.
+ * @param prefix - The prefix to ensure.
+ * @returns The string that starts with the prefix.
  */
-export function trimEnd(str: string, suffix: string, validate?: boolean): string {
-  if (str.endsWith(suffix)) {
-    return str.slice(0, -suffix.length);
-  }
+export function ensureStartsWith(str: string, prefix: string): string {
+  return str.startsWith(prefix) ? str : prefix + str;
+}
 
-  if (validate) {
-    throw new Error(`String ${str} does not end with suffix ${suffix}`);
-  }
+/**
+ * Escapes special characters in a string.
+ *
+ * @param str - The string to escape.
+ * @returns The escaped string.
+ */
+export function escape(str: string): string {
+  return replace(str, ESCAPE_MAP);
+}
 
-  return str;
+/**
+ * Inserts a substring at a specified position in a string.
+ *
+ * @param str - The string to insert the substring into.
+ * @param substring - The substring to insert.
+ * @param startIndex - The index to insert the substring at.
+ * @param endIndex - The index to end the substring at.
+ * @returns The modified string with the substring inserted.
+ */
+export function insertAt(str: string, substring: string, startIndex: number, endIndex?: number): string {
+  endIndex ??= startIndex;
+  return str.slice(0, startIndex) + substring + str.slice(endIndex);
+}
+
+/**
+ * Converts a string into a valid JavaScript variable name by replacing invalid characters with underscores.
+ *
+ * @param str - The string to convert.
+ * @returns The valid variable name.
+ */
+export function makeValidVariableName(str: string): string {
+  return str.replace(/[^a-zA-Z0-9_]/g, '_');
 }
 
 /**
@@ -86,6 +100,18 @@ export function trimEnd(str: string, suffix: string, validate?: boolean): string
  */
 export function normalize(str: string): string {
   return str.replace(/\u00A0|\u202F/g, ' ').normalize('NFC');
+}
+
+/**
+ * Replaces occurrences of strings in a given string based on a replacements map.
+ *
+ * @param str - The string to perform replacements on.
+ * @param replacementsMap - An object mapping strings to their replacement values.
+ * @returns The modified string with replacements applied.
+ */
+export function replace(str: string, replacementsMap: Record<string, string>): string {
+  const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join('|'), 'g');
+  return str.replaceAll(regExp, (source: string) => replacementsMap[source] ?? throwExpression(new Error(`Unexpected replacement source: ${source}`)));
 }
 
 /**
@@ -113,45 +139,45 @@ export async function replaceAllAsync<Args extends unknown[]>(
 }
 
 /**
- * Converts a string into a valid JavaScript variable name by replacing invalid characters with underscores.
+ * Trims the specified suffix from the end of a string.
  *
- * @param str - The string to convert.
- * @returns The valid variable name.
+ * @param str - The string to trim.
+ * @param suffix - The suffix to remove from the end of the string.
+ * @param validate - If true, throws an error if the string does not end with the suffix.
+ * @returns The trimmed string.
+ * @throws If `validate` is true and the string does not end with the suffix.
  */
-export function makeValidVariableName(str: string): string {
-  return str.replace(/[^a-zA-Z0-9_]/g, '_');
+export function trimEnd(str: string, suffix: string, validate?: boolean): string {
+  if (str.endsWith(suffix)) {
+    return str.slice(0, -suffix.length);
+  }
+
+  if (validate) {
+    throw new Error(`String ${str} does not end with suffix ${suffix}`);
+  }
+
+  return str;
 }
 
 /**
- * Ensures that a string starts with the specified prefix, adding it if necessary.
+ * Trims the specified prefix from the start of a string.
  *
- * @param str - The string to check.
- * @param prefix - The prefix to ensure.
- * @returns The string that starts with the prefix.
+ * @param str - The string to trim.
+ * @param prefix - The prefix to remove from the start of the string.
+ * @param validate - If true, throws an error if the string does not start with the prefix.
+ * @returns The trimmed string.
+ * @throws If `validate` is true and the string does not start with the prefix.
  */
-export function ensureStartsWith(str: string, prefix: string): string {
-  return str.startsWith(prefix) ? str : prefix + str;
-}
+export function trimStart(str: string, prefix: string, validate?: boolean): string {
+  if (str.startsWith(prefix)) {
+    return str.slice(prefix.length);
+  }
 
-/**
- * Ensures that a string ends with the specified suffix, adding it if necessary.
- *
- * @param str - The string to check.
- * @param suffix - The suffix to ensure.
- * @returns The string that ends with the suffix.
- */
-export function ensureEndsWith(str: string, suffix: string): string {
-  return str.endsWith(suffix) ? str : str + suffix;
-}
+  if (validate) {
+    throw new Error(`String ${str} does not start with prefix ${prefix}`);
+  }
 
-/**
- * Escapes special characters in a string.
- *
- * @param str - The string to escape.
- * @returns The escaped string.
- */
-export function escape(str: string): string {
-  return replace(str, ESCAPE_MAP);
+  return str;
 }
 
 /**
@@ -162,30 +188,4 @@ export function escape(str: string): string {
  */
 export function unescape(str: string): string {
   return replace(str, UNESCAPE_MAP);
-}
-
-/**
- * Replaces occurrences of strings in a given string based on a replacements map.
- *
- * @param str - The string to perform replacements on.
- * @param replacementsMap - An object mapping strings to their replacement values.
- * @returns The modified string with replacements applied.
- */
-export function replace(str: string, replacementsMap: Record<string, string>): string {
-  const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join('|'), 'g');
-  return str.replaceAll(regExp, (source: string) => replacementsMap[source] ?? throwExpression(new Error(`Unexpected replacement source: ${source}`)));
-}
-
-/**
- * Inserts a substring at a specified position in a string.
- *
- * @param str - The string to insert the substring into.
- * @param substring - The substring to insert.
- * @param startIndex - The index to insert the substring at.
- * @param endIndex - The index to end the substring at.
- * @returns The modified string with the substring inserted.
- */
-export function insertAt(str: string, substring: string, startIndex: number, endIndex?: number): string {
-  endIndex ??= startIndex;
-  return str.slice(0, startIndex) + substring + str.slice(endIndex);
 }

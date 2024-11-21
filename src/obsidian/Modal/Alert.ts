@@ -42,19 +42,6 @@ export interface AlertOptions {
   title?: DocumentFragment | string;
 }
 
-/**
- * Displays an alert modal in Obsidian with a specified message.
- *
- * @param options - The options for the alert modal.
- * @returns A promise that resolves when the modal is closed.
- */
-export async function alert(options: AlertOptions): Promise<void> {
-  return new Promise<void>((resolve) => {
-    const modal = new AlertModal(options, resolve);
-    modal.open();
-  });
-}
-
 class AlertModal extends Modal {
   private options: Required<AlertOptions>;
 
@@ -84,4 +71,17 @@ class AlertModal extends Modal {
     okButton.onClick(this.close.bind(this));
     Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
   }
+}
+
+/**
+ * Displays an alert modal in Obsidian with a specified message.
+ *
+ * @param options - The options for the alert modal.
+ * @returns A promise that resolves when the modal is closed.
+ */
+export async function alert(options: AlertOptions): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const modal = new AlertModal(options, resolve);
+    modal.open();
+  });
 }

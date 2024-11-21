@@ -50,6 +50,18 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string
 }
 
 /**
+ * Converts a given file path to an Obsidian-specific URL.
+ *
+ * @param path - The original file path.
+ * @param pluginName - The name of the Obsidian plugin.
+ * @returns The converted path as an Obsidian-specific URL.
+ */
+function convertPathToObsidianUrl(path: string, pluginName: string): string {
+  const convertedPath = toPosixPath(path).replace(/^(\.\.\/)+/, '');
+  return `app://obsidian.md/plugin:${pluginName}/${convertedPath}`;
+}
+
+/**
  * Adjusts the paths in the base64-encoded source map to be compatible with Obsidian's URL scheme.
  *
  * @param sourceMapBase64 - The base64-encoded source map content.
@@ -61,16 +73,4 @@ function fixSourceMap(sourceMapBase64: string, pluginName: string): string {
   const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
   sourceMap.sources = sourceMap.sources.map((path) => convertPathToObsidianUrl(path, pluginName));
   return Buffer.from(JSON.stringify(sourceMap)).toString('base64');
-}
-
-/**
- * Converts a given file path to an Obsidian-specific URL.
- *
- * @param path - The original file path.
- * @param pluginName - The name of the Obsidian plugin.
- * @returns The converted path as an Obsidian-specific URL.
- */
-function convertPathToObsidianUrl(path: string, pluginName: string): string {
-  const convertedPath = toPosixPath(path).replace(/^(\.\.\/)+/, '');
-  return `app://obsidian.md/plugin:${pluginName}/${convertedPath}`;
 }

@@ -39,19 +39,6 @@ export interface SelectItemOptions<T> {
   placeholder?: string;
 }
 
-/**
- * Displays a selection modal in Obsidian for choosing an item from a list.
- *
- * @param options - The options for the selection modal.
- * @returns A promise that resolves with the selected item or null if no item was selected.
- */
-export async function selectItem<T>(options: SelectItemOptions<T>): Promise<null | T> {
-  return await new Promise<null | T>((resolve) => {
-    const modal = new ItemSelectModal<T>(options, resolve);
-    modal.open();
-  });
-}
-
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   private isSelected = false;
 
@@ -85,4 +72,17 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
     this.isSelected = true;
     super.selectSuggestion(value, evt);
   }
+}
+
+/**
+ * Displays a selection modal in Obsidian for choosing an item from a list.
+ *
+ * @param options - The options for the selection modal.
+ * @returns A promise that resolves with the selected item or null if no item was selected.
+ */
+export async function selectItem<T>(options: SelectItemOptions<T>): Promise<null | T> {
+  return await new Promise<null | T>((resolve) => {
+    const modal = new ItemSelectModal<T>(options, resolve);
+    modal.open();
+  });
 }

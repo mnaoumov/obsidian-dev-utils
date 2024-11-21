@@ -72,35 +72,35 @@ export abstract class CliTaskResult {
   }
 
   /**
+   * Exits the process based on the task result.
+   */
+  public abstract exit(): void;
+
+  /**
    * Determines if the task was successful.
    *
    * @returns `true` if the task was successful, otherwise `false`.
    */
   protected abstract isSuccessful(): boolean;
-
-  /**
-   * Exits the process based on the task result.
-   */
-  public abstract exit(): void;
 }
 
 /**
- * Represents a task result based on success or failure.
+ * Represents a task result that does not exit the process.
  */
-class SuccessTaskResult extends CliTaskResult {
-  public constructor(private readonly _isSuccessful: boolean) {
+class DoNotExitTaskResult extends CliTaskResult {
+  public constructor() {
     super();
   }
 
-  protected override isSuccessful(): boolean {
-    return this._isSuccessful;
-  }
-
   /**
-   * Exits the process based on the success of the task.
+   * Does not exit the process.
    */
   public override exit(): void {
-    process.exit(this._isSuccessful ? 0 : 1);
+    noop();
+  }
+
+  protected override isSuccessful(): boolean {
+    return true;
   }
 }
 
@@ -112,65 +112,36 @@ class ExitCodeTaskResult extends CliTaskResult {
     super();
   }
 
-  protected override isSuccessful(): boolean {
-    return this.exitCode === 0;
-  }
-
   /**
    * Exits the process with the specified exit code.
    */
   public override exit(): void {
     process.exit(this.exitCode);
   }
+
+  protected override isSuccessful(): boolean {
+    return this.exitCode === 0;
+  }
 }
 
 /**
- * Represents a task result that does not exit the process.
+ * Represents a task result based on success or failure.
  */
-class DoNotExitTaskResult extends CliTaskResult {
-  public constructor() {
+class SuccessTaskResult extends CliTaskResult {
+  public constructor(private readonly _isSuccessful: boolean) {
     super();
   }
 
-  protected override isSuccessful(): boolean {
-    return true;
-  }
-
   /**
-   * Does not exit the process.
+   * Exits the process based on the success of the task.
    */
   public override exit(): void {
-    noop();
+    process.exit(this._isSuccessful ? 0 : 1);
   }
-}
 
-/**
- * Safely executes a task function and returns a `TaskResult`. If the task function throws an error,
- * the error is caught, and a failure `TaskResult` is returned.
- *
- * @param taskFn - The task function to execute.
- * @returns A promise that resolves with a `TaskResult` representing the outcome of the task.
- */
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-async function wrapResult(taskFn: () => MaybePromise<CliTaskResult | void>): Promise<CliTaskResult> {
-  try {
-    return await taskFn() as CliTaskResult | undefined ?? CliTaskResult.Success();
-  } catch (error) {
-    printError(new Error('An error occurred during task execution', { cause: error }));
-    return CliTaskResult.Failure();
+  protected override isSuccessful(): boolean {
+    return this._isSuccessful;
   }
-}
-
-/**
- * Wraps a CLI task function to ensure it runs safely and handles its `TaskResult`.
- *
- * @param taskFn - The task function to execute, which may return a `TaskResult` or void.
- * @returns A promise that resolves when the task is completed and exits with the appropriate status.
- */
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function wrapCliTask(taskFn: () => MaybePromise<CliTaskResult | void>): Promise<void> {
-  const result = await wrapResult(taskFn);
-  result.exit();
 }
 
 /**
@@ -190,4 +161,33 @@ export function toCommandLine(args: string[]): string {
       return arg;
     })
     .join(' ');
+}
+
+/**
+ * Wraps a CLI task function to ensure it runs safely and handles its `TaskResult`.
+ *
+ * @param taskFn - The task function to execute, which may return a `TaskResult` or void.
+ * @returns A promise that resolves when the task is completed and exits with the appropriate status.
+ */
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+export async function wrapCliTask(taskFn: () => MaybePromise<CliTaskResult | void>): Promise<void> {
+  const result = await wrapResult(taskFn);
+  result.exit();
+}
+
+/**
+ * Safely executes a task function and returns a `TaskResult`. If the task function throws an error,
+ * the error is caught, and a failure `TaskResult` is returned.
+ *
+ * @param taskFn - The task function to execute.
+ * @returns A promise that resolves with a `TaskResult` representing the outcome of the task.
+ */
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+async function wrapResult(taskFn: () => MaybePromise<CliTaskResult | void>): Promise<CliTaskResult> {
+  try {
+    return await taskFn() as CliTaskResult | undefined ?? CliTaskResult.Success();
+  } catch (error) {
+    printError(new Error('An error occurred during task execution', { cause: error }));
+    return CliTaskResult.Failure();
+  }
 }

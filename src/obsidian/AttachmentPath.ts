@@ -30,17 +30,6 @@ import {
 } from './FileSystem.ts';
 
 /**
- * Retrieves the attachment folder path for a given note.
- *
- * @param app - The Obsidian application instance.
- * @param notePathOrFile - The path of the note.
- * @returns A promise that resolves to the attachment folder path.
- */
-export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
-  return parentFolderPath(await getAttachmentFilePath(app, 'DUMMY_FILE.pdf', notePathOrFile));
-}
-
-/**
  * Is overridden wrapper.
  */
 export interface ExtendedWrapper {
@@ -77,6 +66,17 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
   }
 
   return await getAvailablePathForAttachments(app, fileName, ext.slice(1), note, true);
+}
+
+/**
+ * Retrieves the attachment folder path for a given note.
+ *
+ * @param app - The Obsidian application instance.
+ * @param notePathOrFile - The path of the note.
+ * @returns A promise that resolves to the attachment folder path.
+ */
+export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
+  return parentFolderPath(await getAttachmentFilePath(app, 'DUMMY_FILE.pdf', notePathOrFile));
 }
 
 /**
@@ -121,17 +121,6 @@ export async function getAvailablePathForAttachments(app: App, filename: string,
 }
 
 /**
- * Normalizes a path by combining multiple slashes into a single slash and removing leading and trailing slashes.
- * @param path - Path to normalize.
- * @returns The normalized path.
- */
-function normalizeSlashes(path: string): string {
-  path = path.replace(/([\\/])+/g, '/');
-  path = path.replace(/(^\/+|\/+$)/g, '');
-  return path || '/';
-}
-
-/**
  * Checks if a note has its own attachment folder.
  *
  * @param app - The Obsidian application instance.
@@ -142,4 +131,15 @@ export async function hasOwnAttachmentFolder(app: App, path: string): Promise<bo
   const attachmentFolderPath = await getAttachmentFolderPath(app, path);
   const dummyAttachmentFolderPath = await getAttachmentFolderPath(app, join(dirname(path), 'DUMMY_FILE.md'));
   return attachmentFolderPath !== dummyAttachmentFolderPath;
+}
+
+/**
+ * Normalizes a path by combining multiple slashes into a single slash and removing leading and trailing slashes.
+ * @param path - Path to normalize.
+ * @returns The normalized path.
+ */
+function normalizeSlashes(path: string): string {
+  path = path.replace(/([\\/])+/g, '/');
+  path = path.replace(/(^\/+|\/+$)/g, '');
+  return path || '/';
 }

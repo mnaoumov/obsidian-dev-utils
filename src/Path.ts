@@ -101,36 +101,13 @@ export const parse = posix.parse;
 export const relative = posix.relative;
 
 /**
- * Resolves a sequence of paths or path segments into an absolute path.
+ * Gets the directory name from the `import(dot)meta(dot)url`, converting it to a POSIX-style path.
  *
- * @param pathSegments - The sequence of path segments to resolve.
- * @returns The resolved absolute path.
+ * @param importMetaUrl - The `import(dot)meta(dot)url` from which to extract the directory name.
+ * @returns The POSIX-style directory name.
  */
-export function resolve(...pathSegments: string[]): string {
-  let path = posix.resolve(...pathSegments);
-  path = toPosixPath(path);
-  const match = WINDOWS_POSIX_LIKE_PATH_REG_EXP.exec(path);
-  return match?.[0] ?? path;
-}
-
-/**
- * Converts a given path to a POSIX-style path by replacing backslashes with forward slashes.
- *
- * @param path - The path to convert.
- * @returns The POSIX-style path.
- */
-export function toPosixPath(path: string): string {
-  return path.replace(/\\/g, '/');
-}
-
-/**
- * Converts a buffer containing a path to a POSIX-style buffer by replacing backslashes with forward slashes.
- *
- * @param buffer - The buffer to convert.
- * @returns A new buffer containing the POSIX-style path.
- */
-export function toPosixBuffer(buffer: Buffer): Buffer {
-  return Buffer.from(toPosixPath(buffer.toString()));
+export function getDirname(importMetaUrl: string): string {
+  return dirname(getFilename(importMetaUrl));
 }
 
 /**
@@ -144,13 +121,15 @@ export function getFilename(importMetaUrl: string): string {
 }
 
 /**
- * Gets the directory name from the `import(dot)meta(dot)url`, converting it to a POSIX-style path.
+ * Makes a filename by appending an extension to a given filename.
+ * If the extension is empty, the filename is returned as is.
  *
- * @param importMetaUrl - The `import(dot)meta(dot)url` from which to extract the directory name.
- * @returns The POSIX-style directory name.
+ * @param fileName - The filename to append the extension to.
+ * @param extension - The extension to append to the filename.
+ * @returns The filename with the extension appended.
  */
-export function getDirname(importMetaUrl: string): string {
-  return dirname(getFilename(importMetaUrl));
+export function makeFileName(fileName: string, extension: string): string {
+  return extension ? `${fileName}.${extension}` : fileName;
 }
 
 /**
@@ -168,13 +147,34 @@ export function normalizeIfRelative(path: string): string {
 }
 
 /**
- * Makes a filename by appending an extension to a given filename.
- * If the extension is empty, the filename is returned as is.
+ * Resolves a sequence of paths or path segments into an absolute path.
  *
- * @param fileName - The filename to append the extension to.
- * @param extension - The extension to append to the filename.
- * @returns The filename with the extension appended.
+ * @param pathSegments - The sequence of path segments to resolve.
+ * @returns The resolved absolute path.
  */
-export function makeFileName(fileName: string, extension: string): string {
-  return extension ? `${fileName}.${extension}` : fileName;
+export function resolve(...pathSegments: string[]): string {
+  let path = posix.resolve(...pathSegments);
+  path = toPosixPath(path);
+  const match = WINDOWS_POSIX_LIKE_PATH_REG_EXP.exec(path);
+  return match?.[0] ?? path;
+}
+
+/**
+ * Converts a buffer containing a path to a POSIX-style buffer by replacing backslashes with forward slashes.
+ *
+ * @param buffer - The buffer to convert.
+ * @returns A new buffer containing the POSIX-style path.
+ */
+export function toPosixBuffer(buffer: Buffer): Buffer {
+  return Buffer.from(toPosixPath(buffer.toString()));
+}
+
+/**
+ * Converts a given path to a POSIX-style path by replacing backslashes with forward slashes.
+ *
+ * @param path - The path to convert.
+ * @returns The POSIX-style path.
+ */
+export function toPosixPath(path: string): string {
+  return path.replace(/\\/g, '/');
 }

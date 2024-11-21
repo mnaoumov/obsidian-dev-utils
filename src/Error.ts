@@ -10,13 +10,10 @@ const ASYNC_ERROR_EVENT = 'asyncError';
 const asyncErrorEventEmitter = new EventEmitter();
 asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
 
-/**
- * Handles asynchronous errors by printing them.
- *
- * @param asyncError - The asynchronous error to handle.
- */
-function handleAsyncError(asyncError: unknown): void {
-  printError(new Error('An unhandled error occurred executing async operation', { cause: asyncError }));
+interface ErrorEntry {
+  level: number;
+  message: string;
+  shouldClearAnsiSequence?: boolean;
 }
 
 /**
@@ -29,20 +26,24 @@ export function emitAsyncErrorEvent(asyncError: unknown): void {
 }
 
 /**
- * Registers an event handler for asynchronous errors.
+ * Converts an error to a string representation, including nested causes with indentation.
  *
- * @param handler - The handler function to be called when an asynchronous error event occurs.
- * @returns A function to unregister the handler.
+ * @param error - The error to convert to a string.
+ * @returns The string representation of the error.
  */
-export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): () => void {
-  asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handler);
-  return () => asyncErrorEventEmitter.off(ASYNC_ERROR_EVENT, handler);
+export function errorToString(error: unknown): string {
+  return parseErrorEntries(error).map((entry) => '  '.repeat(entry.level) + entry.message).join('\n');
 }
 
-interface ErrorEntry {
-  level: number;
-  message: string;
-  shouldClearAnsiSequence?: boolean;
+/**
+ * Gets the current stack trace as a string, excluding the current function call.
+ *
+ * @returns A string representation of the current stack trace, excluding the current function call.
+ */
+export function getStackTrace(): string {
+  const stack = new Error().stack ?? '';
+  const lines = stack.split('\n');
+  return lines.slice(2).join('\n');
 }
 
 /**
@@ -63,13 +64,33 @@ export function printError(error: unknown): void {
 }
 
 /**
- * Converts an error to a string representation, including nested causes with indentation.
+ * Registers an event handler for asynchronous errors.
  *
- * @param error - The error to convert to a string.
- * @returns The string representation of the error.
+ * @param handler - The handler function to be called when an asynchronous error event occurs.
+ * @returns A function to unregister the handler.
  */
-export function errorToString(error: unknown): string {
-  return parseErrorEntries(error).map((entry) => '  '.repeat(entry.level) + entry.message).join('\n');
+export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): () => void {
+  asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handler);
+  return () => asyncErrorEventEmitter.off(ASYNC_ERROR_EVENT, handler);
+}
+
+/**
+ * Throws an error with the specified message.
+ *
+ * @param error - The error to throw.
+ * @returns A never-returning function.
+ */
+export function throwExpression(error: unknown): never {
+  throw error;
+}
+
+/**
+ * Handles asynchronous errors by printing them.
+ *
+ * @param asyncError - The asynchronous error to handle.
+ */
+function handleAsyncError(asyncError: unknown): void {
+  printError(new Error('An unhandled error occurred executing async operation', { cause: asyncError }));
 }
 
 /**
@@ -114,25 +135,4 @@ function parseErrorEntries(error: unknown, level = 0, entries: ErrorEntry[] = []
   }
 
   return entries;
-}
-
-/**
- * Throws an error with the specified message.
- *
- * @param error - The error to throw.
- * @returns A never-returning function.
- */
-export function throwExpression(error: unknown): never {
-  throw error;
-}
-
-/**
- * Gets the current stack trace as a string, excluding the current function call.
- *
- * @returns A string representation of the current stack trace, excluding the current function call.
- */
-export function getStackTrace(): string {
-  const stack = new Error().stack ?? '';
-  const lines = stack.split('\n');
-  return lines.slice(2).join('\n');
 }

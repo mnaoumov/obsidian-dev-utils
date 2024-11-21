@@ -28,9 +28,72 @@ import {
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
 export abstract class PluginBase<PluginSettings extends object> extends Plugin {
+  /**
+   * Gets a copy of the current plugin settings.
+   *
+   * @returns A copy of the plugin settings.
+   */
+  public get settingsCopy(): PluginSettings {
+    return clonePluginSettings(this.createDefaultPluginSettings.bind(this), this.settings);
+  }
+
+  /**
+   * Gets the AbortSignal used for aborting long-running operations.
+   *
+   * @returns The abort signal.
+   */
+  protected get abortSignal(): AbortSignal {
+    return this._abortSignal;
+  }
+
+  /**
+   * Gets the plugin settings.
+   *
+   * @returns The plugin settings.
+   */
+  protected get settings(): PluginSettings {
+    return this._settings;
+  }
+
   private _abortSignal!: AbortSignal;
+
   private _settings!: PluginSettings;
+
   private notice?: Notice;
+
+  /**
+   * Called when the plugin is loaded
+   */
+  public override async onload(): Promise<void> {
+    this.register(registerAsyncErrorEventHandler(() => {
+      this.showNotice('An unhandled error occurred. Please check the console for more information.');
+    }));
+
+    await this.loadSettings();
+    const pluginSettingsTab = this.createPluginSettingsTab();
+    if (pluginSettingsTab) {
+      this.addSettingTab(pluginSettingsTab);
+    }
+
+    const abortController = new AbortController();
+    this._abortSignal = abortController.signal;
+    this.register(() => {
+      abortController.abort();
+    });
+    await this.onloadComplete();
+    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+  }
+
+  /**
+   * Saves the new plugin settings.
+   *
+   * @param newSettings - The new settings to save.
+   * @returns A promise that resolves when the settings are saved.
+   */
+  public async saveSettings(newSettings: PluginSettings): Promise<void> {
+    this._settings = clonePluginSettings(this.createDefaultPluginSettings.bind(this), newSettings);
+    await this.saveData(this.settings);
+  }
 
   /**
    * Creates the default plugin settings. This method must be implemented by subclasses.
@@ -97,66 +160,5 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   private async loadSettings(): Promise<void> {
     const data = await this.loadData() as unknown;
     this._settings = await this.parseSettings(data);
-  }
-
-  /**
-   * Called when the plugin is loaded
-   */
-  public override async onload(): Promise<void> {
-    this.register(registerAsyncErrorEventHandler(() => {
-      this.showNotice('An unhandled error occurred. Please check the console for more information.');
-    }));
-
-    await this.loadSettings();
-    const pluginSettingsTab = this.createPluginSettingsTab();
-    if (pluginSettingsTab) {
-      this.addSettingTab(pluginSettingsTab);
-    }
-
-    const abortController = new AbortController();
-    this._abortSignal = abortController.signal;
-    this.register(() => {
-      abortController.abort();
-    });
-    await this.onloadComplete();
-    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
-  }
-
-  /**
-   * Saves the new plugin settings.
-   *
-   * @param newSettings - The new settings to save.
-   * @returns A promise that resolves when the settings are saved.
-   */
-  public async saveSettings(newSettings: PluginSettings): Promise<void> {
-    this._settings = clonePluginSettings(this.createDefaultPluginSettings.bind(this), newSettings);
-    await this.saveData(this.settings);
-  }
-
-  /**
-   * Gets the AbortSignal used for aborting long-running operations.
-   *
-   * @returns The abort signal.
-   */
-  protected get abortSignal(): AbortSignal {
-    return this._abortSignal;
-  }
-
-  /**
-   * Gets the plugin settings.
-   *
-   * @returns The plugin settings.
-   */
-  protected get settings(): PluginSettings {
-    return this._settings;
-  }
-
-  /**
-   * Gets a copy of the current plugin settings.
-   *
-   * @returns A copy of the plugin settings.
-   */
-  public get settingsCopy(): PluginSettings {
-    return clonePluginSettings(this.createDefaultPluginSettings.bind(this), this.settings);
   }
 }

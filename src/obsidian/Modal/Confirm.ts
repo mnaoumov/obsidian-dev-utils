@@ -52,19 +52,6 @@ export interface ConfirmOptions {
   title?: DocumentFragment | string;
 }
 
-/**
- * Displays an confirm modal in Obsidian with a specified message.
- *
- * @param options - The options for the confirm modal.
- * @returns A promise that resolves with a boolean indicating whether the "OK" button was clicked.
- */
-export async function confirm(options: ConfirmOptions): Promise<boolean> {
-  return new Promise<boolean>((resolve) => {
-    const modal = new ConfirmModal(options, resolve);
-    modal.open();
-  });
-}
-
 class ConfirmModal extends Modal {
   private isConfirmed = false;
   private options: Required<ConfirmOptions>;
@@ -108,4 +95,17 @@ class ConfirmModal extends Modal {
     cancelButton.onClick(this.close.bind(this));
     Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
   }
+}
+
+/**
+ * Displays an confirm modal in Obsidian with a specified message.
+ *
+ * @param options - The options for the confirm modal.
+ * @returns A promise that resolves with a boolean indicating whether the "OK" button was clicked.
+ */
+export async function confirm(options: ConfirmOptions): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const modal = new ConfirmModal(options, resolve);
+    modal.open();
+  });
 }

@@ -63,108 +63,6 @@ const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\[\]<>_*~=`$]/g;
 
 /**
- * Splits a link into its link path and subpath.
- */
-export interface SplitSubpathResult {
-  /**
-   * The link path.
-   */
-  linkPath: string;
-
-  /**
-   * The subpath.
-   */
-  subpath: string;
-}
-
-/**
- * Splits a link into its link path and subpath.
- *
- * @param link - The link to split.
- * @returns An object containing the link path and subpath.
- */
-export function splitSubpath(link: string): SplitSubpathResult {
-  const parsed = parseLinktext(normalize(link));
-  return {
-    linkPath: parsed.path,
-    subpath: parsed.subpath
-  };
-}
-
-/**
- * Options for updating links in a file.
- */
-export interface UpdateLinksInFileOptions {
-  /**
-   * The obsidian app instance.
-   */
-  app: App;
-
-  /**
-   * Whether to update only embedded links.
-   */
-  embedOnlyLinks?: boolean | undefined;
-
-  /**
-   * Whether to force the links to be in Markdown format.
-   */
-  forceMarkdownLinks?: boolean | undefined;
-
-  /**
-   * The old path of the file.
-   */
-  oldPathOrFile?: PathOrFile | undefined;
-
-  /**
-   * The file to update the links in.
-   */
-  pathOrFile: PathOrFile;
-
-  /**
-   * A map of old and new paths for renaming links.
-   */
-  renameMap?: Map<string, string> | undefined;
-
-  /**
-   * Whether to update filename alias. Defaults to `true`.
-   */
-  shouldUpdateFilenameAlias?: boolean | undefined;
-}
-
-/**
- * Updates the links in a file based on the provided parameters.
- *
- * @param options - The options for updating the links.
- * @returns A promise that resolves when the links are updated.
- */
-export async function updateLinksInFile(options: UpdateLinksInFileOptions): Promise<void> {
-  const {
-    app,
-    embedOnlyLinks,
-    forceMarkdownLinks,
-    oldPathOrFile,
-    pathOrFile,
-    renameMap,
-    shouldUpdateFilenameAlias
-  } = options;
-  await editLinks(app, pathOrFile, (link) => {
-    const isEmbedLink = testEmbed(link.original);
-    if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
-      return;
-    }
-    return convertLink({
-      app,
-      forceMarkdownLinks,
-      link,
-      oldPathOrFile,
-      renameMap,
-      shouldUpdateFilenameAlias,
-      sourcePathOrFile: pathOrFile
-    });
-  });
-}
-
-/**
  * Options for converting a link.
  */
 export interface ConvertLinkOptions {
@@ -202,239 +100,6 @@ export interface ConvertLinkOptions {
    * The source file containing the link.
    */
   sourcePathOrFile: PathOrFile;
-}
-
-/**
- * Converts a link to a new path.
- *
- * @param options - The options for converting the link.
- * @returns The converted link.
- */
-export function convertLink(options: ConvertLinkOptions): string {
-  return updateLink({
-    app: options.app,
-    forceMarkdownLinks: options.forceMarkdownLinks,
-    link: options.link,
-    oldPathOrFile: options.oldPathOrFile,
-    pathOrFile: extractLinkFile(options.app, options.link, options.sourcePathOrFile),
-    renameMap: options.renameMap,
-    shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias,
-    sourcePathOrFile: options.sourcePathOrFile
-  });
-}
-
-/**
- * Extracts the file associated with a link.
- *
- * @param app - The Obsidian application instance.
- * @param link - The reference cache for the link.
- * @param notePathOrFile - The path or file of the note containing the link.
- * @returns The file associated with the link, or null if not found.
- */
-export function extractLinkFile(app: App, link: Reference, notePathOrFile: PathOrFile): null | TFile {
-  const { linkPath } = splitSubpath(link.link);
-  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(notePathOrFile));
-}
-
-/**
- * Options for updating a link.
- */
-export interface UpdateLinkOptions {
-  /**
-   * The Obsidian app instance.
-   */
-  app: App;
-
-  /**
-   * Whether to force markdown links.
-   */
-  forceMarkdownLinks?: boolean | undefined;
-
-  /**
-   * The reference for the link.
-   */
-  link: Reference;
-
-  /**
-   * The old path of the file.
-   */
-  oldPathOrFile?: PathOrFile | undefined;
-
-  /**
-   * The file associated with the link.
-   */
-  pathOrFile: null | PathOrFile;
-
-  /**
-   * A map of old and new file paths.
-   */
-  renameMap?: Map<string, string> | undefined;
-
-  /**
-   * Whether to update filename alias. Defaults to `true`.
-   */
-  shouldUpdateFilenameAlias?: boolean | undefined;
-
-  /**
-   * The source file containing the link.
-   */
-  sourcePathOrFile: PathOrFile;
-}
-
-/**
- * Updates a link based on the provided parameters.
- *
- * @param options - The options for updating the link.
- * @returns The updated link.
- */
-export function updateLink(options: UpdateLinkOptions): string {
-  const {
-    app,
-    forceMarkdownLinks,
-    link,
-    oldPathOrFile,
-    pathOrFile,
-    renameMap,
-    shouldUpdateFilenameAlias,
-    sourcePathOrFile
-  } = options;
-  if (!pathOrFile) {
-    return link.original;
-  }
-  let file = getFile(app, pathOrFile);
-  const oldPath = getPath(oldPathOrFile ?? sourcePathOrFile);
-  const isWikilink = testWikilink(link.original) && forceMarkdownLinks !== true;
-  const { subpath } = splitSubpath(link.link);
-
-  const newPath = renameMap?.get(file.path);
-  let alias = shouldResetAlias({
-    app,
-    displayText: link.displayText,
-    isWikilink,
-    otherPathOrFiles: [oldPath, newPath],
-    pathOrFile,
-    sourcePathOrFile
-  })
-    ? undefined
-    : link.displayText;
-
-  if (shouldUpdateFilenameAlias ?? true) {
-    if (alias?.toLowerCase() === basename(oldPath, extname(oldPath)).toLowerCase()) {
-      alias = file.basename;
-    } else if (alias?.toLowerCase() === basename(oldPath).toLowerCase()) {
-      alias = file.name;
-    }
-  }
-
-  if (newPath) {
-    file = getFile(app, newPath, true);
-  }
-
-  const newLink = generateMarkdownLink({
-    alias,
-    app,
-    isWikilink: forceMarkdownLinks ? false : undefined,
-    originalLink: link.original,
-    pathOrFile: file,
-    sourcePathOrFile,
-    subpath
-  });
-  return newLink;
-}
-
-/**
- * Options for determining if the alias of a link should be reset.
- */
-export interface ShouldResetAliasOptions {
-  /**
-   * The Obsidian app instance.
-   */
-  app: App;
-
-  /**
-   * The display text of the link.
-   */
-  displayText: string | undefined;
-
-  /**
-   * Indicates if the link is a wikilink.
-   */
-  isWikilink?: boolean | undefined;
-
-  /**
-   * Other paths associated with the link.
-   */
-  otherPathOrFiles: (PathOrFile | undefined)[];
-
-  /**
-   * The path or file of the link.
-   */
-  pathOrFile: PathOrFile;
-
-  /**
-   * The source path of the link.
-   */
-  sourcePathOrFile: PathOrFile;
-}
-
-/**
- * Determines if the alias of a link should be reset.
- *
- * @param options - The options for determining if the alias should be reset.
- * @returns Whether the alias should be reset.
- */
-export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
-  const {
-    app,
-    displayText,
-    isWikilink,
-    otherPathOrFiles,
-    pathOrFile,
-    sourcePathOrFile
-  } = options;
-  if (isWikilink === false) {
-    return false;
-  }
-
-  const file = getFile(app, pathOrFile);
-
-  if (!displayText) {
-    return true;
-  }
-
-  const sourcePath = getPath(sourcePathOrFile);
-  const sourceDir = dirname(sourcePath);
-
-  const aliasesToReset = new Set<string>();
-
-  for (const pathOrFile of [file.path, ...otherPathOrFiles]) {
-    if (!pathOrFile) {
-      continue;
-    }
-
-    const path = getPath(pathOrFile);
-    aliasesToReset.add(path);
-    aliasesToReset.add(basename(path));
-    aliasesToReset.add(relative(sourceDir, path));
-  }
-
-  aliasesToReset.add(app.metadataCache.fileToLinktext(file, sourcePath, false));
-
-  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/^\.\//, '').toLowerCase();
-
-  for (const alias of aliasesToReset) {
-    if (alias.toLowerCase() === cleanDisplayText) {
-      return true;
-    }
-
-    const dir = dirname(alias);
-    const base = basename(alias, extname(alias));
-    if (join(dir, base).toLowerCase() === cleanDisplayText) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 /**
@@ -524,6 +189,235 @@ export interface GenerateMarkdownLinkOptions {
 }
 
 /**
+ * Options for determining if the alias of a link should be reset.
+ */
+export interface ShouldResetAliasOptions {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * The display text of the link.
+   */
+  displayText: string | undefined;
+
+  /**
+   * Indicates if the link is a wikilink.
+   */
+  isWikilink?: boolean | undefined;
+
+  /**
+   * Other paths associated with the link.
+   */
+  otherPathOrFiles: (PathOrFile | undefined)[];
+
+  /**
+   * The path or file of the link.
+   */
+  pathOrFile: PathOrFile;
+
+  /**
+   * The source path of the link.
+   */
+  sourcePathOrFile: PathOrFile;
+}
+
+/**
+ * Splits a link into its link path and subpath.
+ */
+export interface SplitSubpathResult {
+  /**
+   * The link path.
+   */
+  linkPath: string;
+
+  /**
+   * The subpath.
+   */
+  subpath: string;
+}
+
+/**
+ * Options for updating a link.
+ */
+export interface UpdateLinkOptions {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * Whether to force markdown links.
+   */
+  forceMarkdownLinks?: boolean | undefined;
+
+  /**
+   * The reference for the link.
+   */
+  link: Reference;
+
+  /**
+   * The old path of the file.
+   */
+  oldPathOrFile?: PathOrFile | undefined;
+
+  /**
+   * The file associated with the link.
+   */
+  pathOrFile: null | PathOrFile;
+
+  /**
+   * A map of old and new file paths.
+   */
+  renameMap?: Map<string, string> | undefined;
+
+  /**
+   * Whether to update filename alias. Defaults to `true`.
+   */
+  shouldUpdateFilenameAlias?: boolean | undefined;
+
+  /**
+   * The source file containing the link.
+   */
+  sourcePathOrFile: PathOrFile;
+}
+
+/**
+ * Options for updating links in a file.
+ */
+export interface UpdateLinksInFileOptions {
+  /**
+   * The obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * Whether to update only embedded links.
+   */
+  embedOnlyLinks?: boolean | undefined;
+
+  /**
+   * Whether to force the links to be in Markdown format.
+   */
+  forceMarkdownLinks?: boolean | undefined;
+
+  /**
+   * The old path of the file.
+   */
+  oldPathOrFile?: PathOrFile | undefined;
+
+  /**
+   * The file to update the links in.
+   */
+  pathOrFile: PathOrFile;
+
+  /**
+   * A map of old and new paths for renaming links.
+   */
+  renameMap?: Map<string, string> | undefined;
+
+  /**
+   * Whether to update filename alias. Defaults to `true`.
+   */
+  shouldUpdateFilenameAlias?: boolean | undefined;
+}
+
+/**
+ * Converts a link to a new path.
+ *
+ * @param options - The options for converting the link.
+ * @returns The converted link.
+ */
+export function convertLink(options: ConvertLinkOptions): string {
+  return updateLink({
+    app: options.app,
+    forceMarkdownLinks: options.forceMarkdownLinks,
+    link: options.link,
+    oldPathOrFile: options.oldPathOrFile,
+    pathOrFile: extractLinkFile(options.app, options.link, options.sourcePathOrFile),
+    renameMap: options.renameMap,
+    shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias,
+    sourcePathOrFile: options.sourcePathOrFile
+  });
+}
+
+/**
+ * Edits the backlinks for a file or path.
+ *
+ * @param app - The Obsidian application instance.
+ * @param pathOrFile - The path or file to edit the backlinks for.
+ * @param linkConverter - The function that converts each link.
+ * @param retryOptions - Optional options for retrying the operation.
+ * @returns A promise that resolves when the backlinks have been edited.
+ */
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConverter: (link: Reference) => MaybePromise<string | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+  const backlinks = await getBacklinksForFileSafe(app, pathOrFile, retryOptions);
+  for (const backlinkNotePath of backlinks.keys()) {
+    const currentLinks = backlinks.get(backlinkNotePath) ?? [];
+    const linkJsons = new Set<string>(currentLinks.map((link) => toJson(link)));
+    await editLinks(app, backlinkNotePath, (link) => {
+      const linkJson = toJson(link);
+      if (!linkJsons.has(linkJson)) {
+        return;
+      }
+
+      return linkConverter(link);
+    }, retryOptions);
+  }
+}
+
+/**
+ * Edits the links in the specified file or path using the provided link converter function.
+ *
+ * @param app - The Obsidian application instance.
+ * @param pathOrFile - The path or file to edit the links in.
+ * @param linkConverter - The function that converts each link.
+ * @param retryOptions - Optional options for retrying the operation.
+ * @returns A promise that resolves when the links have been edited.
+ */
+export async function editLinks(
+  app: App,
+  pathOrFile: PathOrFile,
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  linkConverter: (link: Reference) => MaybePromise<string | void>,
+  retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+  await applyFileChanges(app, pathOrFile, async () => {
+    const cache = await getCacheSafe(app, pathOrFile);
+    if (!cache) {
+      return [];
+    }
+
+    const changes: FileChange[] = [];
+
+    for (const link of getAllLinks(cache)) {
+      const newContent = await linkConverter(link);
+      if (newContent === undefined) {
+        continue;
+      }
+
+      changes.push(referenceToFileChange(link, newContent));
+    }
+
+    return changes;
+  }, retryOptions);
+}
+
+/**
+ * Extracts the file associated with a link.
+ *
+ * @param app - The Obsidian application instance.
+ * @param link - The reference cache for the link.
+ * @param notePathOrFile - The path or file of the note containing the link.
+ * @returns The file associated with the link, or null if not found.
+ */
+export function extractLinkFile(app: App, link: Reference, notePathOrFile: PathOrFile): null | TFile {
+  const { linkPath } = splitSubpath(link.link);
+  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(notePathOrFile));
+}
+
+/**
  * Generates a markdown link based on the provided parameters.
  *
  * @param options - The options for generating the markdown link.
@@ -594,39 +488,88 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
 }
 
 /**
- * Edits the links in the specified file or path using the provided link converter function.
+ * Determines if the alias of a link should be reset.
  *
- * @param app - The Obsidian application instance.
- * @param pathOrFile - The path or file to edit the links in.
- * @param linkConverter - The function that converts each link.
- * @param retryOptions - Optional options for retrying the operation.
- * @returns A promise that resolves when the links have been edited.
+ * @param options - The options for determining if the alias should be reset.
+ * @returns Whether the alias should be reset.
  */
-export async function editLinks(
-  app: App,
-  pathOrFile: PathOrFile,
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: Reference) => MaybePromise<string | void>,
-  retryOptions: Partial<RetryOptions> = {}): Promise<void> {
-  await applyFileChanges(app, pathOrFile, async () => {
-    const cache = await getCacheSafe(app, pathOrFile);
-    if (!cache) {
-      return [];
+export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
+  const {
+    app,
+    displayText,
+    isWikilink,
+    otherPathOrFiles,
+    pathOrFile,
+    sourcePathOrFile
+  } = options;
+  if (isWikilink === false) {
+    return false;
+  }
+
+  const file = getFile(app, pathOrFile);
+
+  if (!displayText) {
+    return true;
+  }
+
+  const sourcePath = getPath(sourcePathOrFile);
+  const sourceDir = dirname(sourcePath);
+
+  const aliasesToReset = new Set<string>();
+
+  for (const pathOrFile of [file.path, ...otherPathOrFiles]) {
+    if (!pathOrFile) {
+      continue;
     }
 
-    const changes: FileChange[] = [];
+    const path = getPath(pathOrFile);
+    aliasesToReset.add(path);
+    aliasesToReset.add(basename(path));
+    aliasesToReset.add(relative(sourceDir, path));
+  }
 
-    for (const link of getAllLinks(cache)) {
-      const newContent = await linkConverter(link);
-      if (newContent === undefined) {
-        continue;
-      }
+  aliasesToReset.add(app.metadataCache.fileToLinktext(file, sourcePath, false));
 
-      changes.push(referenceToFileChange(link, newContent));
+  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/^\.\//, '').toLowerCase();
+
+  for (const alias of aliasesToReset) {
+    if (alias.toLowerCase() === cleanDisplayText) {
+      return true;
     }
 
-    return changes;
-  }, retryOptions);
+    const dir = dirname(alias);
+    const base = basename(alias, extname(alias));
+    if (join(dir, base).toLowerCase() === cleanDisplayText) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Splits a link into its link path and subpath.
+ *
+ * @param link - The link to split.
+ * @returns An object containing the link path and subpath.
+ */
+export function splitSubpath(link: string): SplitSubpathResult {
+  const parsed = parseLinktext(normalize(link));
+  return {
+    linkPath: parsed.path,
+    subpath: parsed.subpath
+  };
+}
+
+/**
+ * Tests whether a link uses angle brackets, possibly embed:
+ * `[title](<link>)`, `![title](<link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link uses angle brackets
+ */
+export function testAngleBrackets(link: string): boolean {
+  return link.includes('](<');
 }
 
 /**
@@ -638,17 +581,6 @@ export async function editLinks(
  */
 export function testEmbed(link: string): boolean {
   return link.startsWith('![');
-}
-
-/**
- * Tests whether a link is a wikilink, possibly embed:
- * `[[link]]`, `![[link]]`.
- *
- * @param link - Link to test
- * @returns Whether the link is a wikilink
- */
-export function testWikilink(link: string): boolean {
-  return link.includes('[[');
 }
 
 /**
@@ -664,38 +596,106 @@ export function testLeadingDot(link: string): boolean {
 }
 
 /**
- * Tests whether a link uses angle brackets, possibly embed:
- * `[title](<link>)`, `![title](<link>)`.
+ * Tests whether a link is a wikilink, possibly embed:
+ * `[[link]]`, `![[link]]`.
  *
  * @param link - Link to test
- * @returns Whether the link uses angle brackets
+ * @returns Whether the link is a wikilink
  */
-export function testAngleBrackets(link: string): boolean {
-  return link.includes('](<');
+export function testWikilink(link: string): boolean {
+  return link.includes('[[');
 }
 
 /**
- * Edits the backlinks for a file or path.
+ * Updates a link based on the provided parameters.
  *
- * @param app - The Obsidian application instance.
- * @param pathOrFile - The path or file to edit the backlinks for.
- * @param linkConverter - The function that converts each link.
- * @param retryOptions - Optional options for retrying the operation.
- * @returns A promise that resolves when the backlinks have been edited.
+ * @param options - The options for updating the link.
+ * @returns The updated link.
  */
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConverter: (link: Reference) => MaybePromise<string | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
-  const backlinks = await getBacklinksForFileSafe(app, pathOrFile, retryOptions);
-  for (const backlinkNotePath of backlinks.keys()) {
-    const currentLinks = backlinks.get(backlinkNotePath) ?? [];
-    const linkJsons = new Set<string>(currentLinks.map((link) => toJson(link)));
-    await editLinks(app, backlinkNotePath, (link) => {
-      const linkJson = toJson(link);
-      if (!linkJsons.has(linkJson)) {
-        return;
-      }
-
-      return linkConverter(link);
-    }, retryOptions);
+export function updateLink(options: UpdateLinkOptions): string {
+  const {
+    app,
+    forceMarkdownLinks,
+    link,
+    oldPathOrFile,
+    pathOrFile,
+    renameMap,
+    shouldUpdateFilenameAlias,
+    sourcePathOrFile
+  } = options;
+  if (!pathOrFile) {
+    return link.original;
   }
+  let file = getFile(app, pathOrFile);
+  const oldPath = getPath(oldPathOrFile ?? sourcePathOrFile);
+  const isWikilink = testWikilink(link.original) && forceMarkdownLinks !== true;
+  const { subpath } = splitSubpath(link.link);
+
+  const newPath = renameMap?.get(file.path);
+  let alias = shouldResetAlias({
+    app,
+    displayText: link.displayText,
+    isWikilink,
+    otherPathOrFiles: [oldPath, newPath],
+    pathOrFile,
+    sourcePathOrFile
+  })
+    ? undefined
+    : link.displayText;
+
+  if (shouldUpdateFilenameAlias ?? true) {
+    if (alias?.toLowerCase() === basename(oldPath, extname(oldPath)).toLowerCase()) {
+      alias = file.basename;
+    } else if (alias?.toLowerCase() === basename(oldPath).toLowerCase()) {
+      alias = file.name;
+    }
+  }
+
+  if (newPath) {
+    file = getFile(app, newPath, true);
+  }
+
+  const newLink = generateMarkdownLink({
+    alias,
+    app,
+    isWikilink: forceMarkdownLinks ? false : undefined,
+    originalLink: link.original,
+    pathOrFile: file,
+    sourcePathOrFile,
+    subpath
+  });
+  return newLink;
+}
+
+/**
+ * Updates the links in a file based on the provided parameters.
+ *
+ * @param options - The options for updating the links.
+ * @returns A promise that resolves when the links are updated.
+ */
+export async function updateLinksInFile(options: UpdateLinksInFileOptions): Promise<void> {
+  const {
+    app,
+    embedOnlyLinks,
+    forceMarkdownLinks,
+    oldPathOrFile,
+    pathOrFile,
+    renameMap,
+    shouldUpdateFilenameAlias
+  } = options;
+  await editLinks(app, pathOrFile, (link) => {
+    const isEmbedLink = testEmbed(link.original);
+    if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
+      return;
+    }
+    return convertLink({
+      app,
+      forceMarkdownLinks,
+      link,
+      oldPathOrFile,
+      renameMap,
+      shouldUpdateFilenameAlias,
+      sourcePathOrFile: pathOrFile
+    });
+  });
 }

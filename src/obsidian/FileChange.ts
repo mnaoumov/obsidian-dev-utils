@@ -23,6 +23,21 @@ import {
 import { process } from './Vault.ts';
 
 /**
+ * Represents a content body change in the Vault.
+ */
+export interface ContentChange extends FileChange {
+  /**
+     * The end index of the change in the file content.
+     */
+  endIndex: number;
+
+  /**
+     * The start index of the change in the file content.
+     */
+  startIndex: number;
+}
+
+/**
  * Represents a file change in the Vault.
  */
 export interface FileChange {
@@ -45,41 +60,6 @@ export interface FrontmatterChange extends FileChange {
    * The key in the frontmatter to use for the link.
    */
   frontMatterKey: string;
-}
-
-/**
- * Represents a content body change in the Vault.
- */
-export interface ContentChange extends FileChange {
-  /**
-     * The end index of the change in the file content.
-     */
-  endIndex: number;
-
-  /**
-     * The start index of the change in the file content.
-     */
-  startIndex: number;
-}
-
-/**
- * Checks if a file change is a content change.
- *
- * @param fileChange - The file change to check.
- * @returns A boolean indicating whether the file change is a content change.
- */
-export function isContentChange(fileChange: FileChange): fileChange is ContentChange {
-  return (fileChange as Partial<ContentChange>).startIndex !== undefined;
-}
-
-/**
- * Checks if a file change is a frontmatter change.
- *
- * @param fileChange - The file change to check.
- * @returns A boolean indicating whether the file change is a frontmatter change.
- */
-export function isFrontmatterChange(fileChange: FileChange): fileChange is FrontmatterChange {
-  return (fileChange as Partial<FrontmatterChange>).frontMatterKey !== undefined;
 }
 
 /**
@@ -191,4 +171,24 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
     }
     return newContent;
   }, overriddenOptions);
+}
+
+/**
+ * Checks if a file change is a content change.
+ *
+ * @param fileChange - The file change to check.
+ * @returns A boolean indicating whether the file change is a content change.
+ */
+export function isContentChange(fileChange: FileChange): fileChange is ContentChange {
+  return (fileChange as Partial<ContentChange>).startIndex !== undefined;
+}
+
+/**
+ * Checks if a file change is a frontmatter change.
+ *
+ * @param fileChange - The file change to check.
+ * @returns A boolean indicating whether the file change is a frontmatter change.
+ */
+export function isFrontmatterChange(fileChange: FileChange): fileChange is FrontmatterChange {
+  return (fileChange as Partial<FrontmatterChange>).frontMatterKey !== undefined;
 }
