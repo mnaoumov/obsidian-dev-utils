@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.13.1
+
+- Add support for missing modules such as electron
+
 ## 4.13.0
 
 - Fix logging
