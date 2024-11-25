@@ -18,6 +18,11 @@ import {
   readFile
 } from '../NodeModules.ts';
 
+interface EsmModule {
+  __esModule: boolean;
+  default: unknown;
+}
+
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
  *
@@ -60,6 +65,10 @@ export function preprocessPlugin(): Plugin {
         build.initialOptions.define[key] = `__${makeValidVariableName(key)}`;
       }
 
+      build.initialOptions.banner ??= {};
+      build.initialOptions.banner['js'] ??= '';
+      build.initialOptions.banner['js'] += '\n' + `(${patchRequireEsmDefault.toString()})()\n`;
+
       build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, 'utf-8');
 
@@ -86,4 +95,12 @@ export function preprocessPlugin(): Plugin {
       });
     }
   };
+}
+
+function patchRequireEsmDefault(): void {
+  const __require = require;
+  require = Object.assign((id: string): unknown => {
+    const module = __require(id) as (Partial<EsmModule> | undefined) ?? {};
+    return module.__esModule && module.default ? module.default : module;
+  }, __require);
 }
