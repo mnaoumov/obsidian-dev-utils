@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.13.2
+
+- Move patching require to preprocess
+
 ## 4.13.1
 
 - Add support for missing modules such as electron
