@@ -55,7 +55,7 @@ export function renameToCjsPlugin(): Plugin {
 function patchRequireEsmDefault(): void {
   const __require = require;
   require = Object.assign((id: string): unknown => {
-    const module = __require(id) as Partial<EsmModule>;
+    const module = __require(id) as (Partial<EsmModule> | undefined) ?? {};
     return module.__esModule && module.default ? module.default : module;
   }, __require);
 }
