@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.14.0
+
+- Load cache from newPath
+
 ## 4.13.3
 
 - Repeat
