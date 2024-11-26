@@ -185,7 +185,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
   const oldAttachmentFiles: TFile[] = [];
 
   if (!(await hasOwnAttachmentFolder(app, oldPath))) {
-    const oldCache = await getCacheSafe(app, oldPath);
+    const oldCache = await getCacheSafe(app, newPath);
     if (!oldCache) {
       return;
     }
