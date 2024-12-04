@@ -5,6 +5,7 @@
 
 import {
   App,
+  normalizePath,
   TAbstractFile,
   TFile,
   TFolder,
@@ -16,7 +17,10 @@ import {
   parentFolderPath
 } from 'obsidian-typings/implementations';
 
-import { extname } from '../Path.ts';
+import {
+  extname,
+  resolve
+} from '../Path.ts';
 import { trimEnd } from '../String.ts';
 
 /**
@@ -89,19 +93,17 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
     return null;
   }
 
-  if (pathOrFile === '.' || pathOrFile === '') {
-    return app.vault.getRoot();
-  }
-
   if (isAbstractFile(pathOrFile)) {
     return pathOrFile;
   }
 
+  const path = getPath(pathOrFile);
+
   if (insensitive) {
-    return app.vault.getAbstractFileByPathInsensitive(pathOrFile);
+    return app.vault.getAbstractFileByPathInsensitive(path);
   }
 
-  return app.vault.getAbstractFileByPath(pathOrFile);
+  return app.vault.getAbstractFileByPath(path);
 }
 
 /**
@@ -256,7 +258,9 @@ export async function getOrCreateFolder(app: App, path: string): Promise<TFolder
  * @returns The path of the `pathOrFile`.
  */
 export function getPath(pathOrFile: PathOrAbstractFile): string {
-  return isAbstractFile(pathOrFile) ? pathOrFile.path : pathOrFile;
+  return isAbstractFile(pathOrFile)
+    ? pathOrFile.path
+    : normalizePath(resolve('/', pathOrFile));
 }
 
 /**
