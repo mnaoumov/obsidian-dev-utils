@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.15.0
+
+- Add support for indirect paths such as `a/b/../c`
+
 ## 4.14.0
 
 - Load cache from newPath
