@@ -4,15 +4,18 @@
  */
 
 /**
- * Determines whether a given string is a valid URL, excluding file URLs.
+ * Determines whether a given string is a valid URL
  *
  * @param str - The string to validate as a URL.
- * @returns `true` if the string is a valid URL and not a file URL, otherwise `false`.
+ * @returns `true` if the string is a valid URL, otherwise `false`.
  */
 export function isUrl(str: string): boolean {
   try {
-    const url = new URL(str);
-    return url.protocol !== 'file:';
+    if (!str.includes('://')) {
+      return false;
+    }
+    new URL(str);
+    return true;
   } catch {
     return false;
   }
