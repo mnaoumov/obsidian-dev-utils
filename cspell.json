@@ -51,6 +51,7 @@
     "localtime",
     "luxon",
     "maxby",
+    "mdast",
     "mday",
     "minby",
     "nameof",
