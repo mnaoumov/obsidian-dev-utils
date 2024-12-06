@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 4.16.0
+
+- Add parseLink
+- Distinguish file path and file:// urls
+
 ## 4.15.0
 
 - Add support for indirect paths such as `a/b/../c`
