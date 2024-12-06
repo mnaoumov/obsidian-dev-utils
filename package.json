@@ -16,7 +16,8 @@
     "lint": "tsx scripts/lint.ts",
     "lint:fix": "tsx scripts/lint.ts fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
-    "version": "tsx scripts/cli.ts version"
+    "version": "tsx scripts/cli.ts version",
+    "test": "tsx scripts/test.ts"
   },
   "repository": {
     "type": "git",
@@ -71,6 +72,9 @@
     "obsidian-typings": "^2.3.3",
     "path-browserify": "^1.0.1",
     "preact": "^10.24.3",
+    "remark": "^15.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-wiki-link": "^2.0.1",
     "shell-quote": "^1.8.1",
     "tsx": "^4.19.2",
     "type-fest": "^4.27.0",

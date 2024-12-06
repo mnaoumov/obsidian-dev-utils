@@ -6,6 +6,10 @@
  **/
 
 import type {
+  Link,
+  Text
+} from 'mdast';
+import type {
   App,
   Reference,
   TFile
@@ -15,6 +19,9 @@ import {
   normalizePath,
   parseLinktext
 } from 'obsidian';
+import { remark } from 'remark';
+import remarkParse from 'remark-parse';
+import { wikiLinkPlugin } from 'remark-wiki-link';
 
 import type {
   MaybePromise,
@@ -31,7 +38,11 @@ import {
   join,
   relative
 } from '../Path.ts';
-import { normalize } from '../String.ts';
+import {
+  normalize,
+  trimStart
+} from '../String.ts';
+import { isUrl } from '../url.ts';
 import { applyFileChanges } from './FileChange.ts';
 import {
   getFile,
@@ -189,6 +200,41 @@ export interface GenerateMarkdownLinkOptions {
 }
 
 /**
+ * The result of parsing a link.
+ */
+export interface ParseLinkResult extends SplitSubpathResult {
+  /**
+   * The alias of the link.
+   */
+  alias?: string | undefined;
+
+  /**
+   * Indicates if the link has angle brackets.
+   */
+  hasAngleBrackets?: boolean;
+
+  /**
+   * Indicates if the link is an embed link.
+   */
+  isEmbed: boolean;
+
+  /**
+   * Indicates if the link is external.
+   */
+  isExternal?: boolean;
+
+  /**
+   * Indicates if the link is a wikilink.
+   */
+  isWikilink: boolean;
+
+  /**
+   * The title of the link.
+   */
+  title?: string | undefined;
+}
+
+/**
  * Options for determining if the alias of a link should be reset.
  */
 export interface ShouldResetAliasOptions {
@@ -321,6 +367,13 @@ export interface UpdateLinksInFileOptions {
    * Whether to update filename alias. Defaults to `true`.
    */
   shouldUpdateFilenameAlias?: boolean | undefined;
+}
+
+interface WikiLinkNode {
+  data: {
+    alias: string;
+    permalink: string;
+  };
 }
 
 /**
@@ -488,6 +541,92 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
 }
 
 /**
+ * Parses a link into its components.
+ *
+ * @param str - The link to parse.
+ * @returns The parsed link.
+ */
+export function parseLink(str: string): null | ParseLinkResult {
+  const EMBED_PREFIX = '!';
+  const OPEN_ANGLE_BRACKET = '<';
+  const LINK_ALIAS_SUFFIX = '](';
+  const LINK_SUFFIX = ')';
+  const WIKILINK_DIVIDER = '|';
+
+  const isEmbed = str.startsWith(EMBED_PREFIX);
+  if (isEmbed) {
+    str = trimStart(str, EMBED_PREFIX);
+  }
+  const processor = remark().use(remarkParse).use(wikiLinkPlugin, { aliasDivider: WIKILINK_DIVIDER });
+  const root = processor.parse(str);
+
+  if (root.children.length !== 1) {
+    return null;
+  }
+
+  const paragraph = root.children[0];
+
+  if (paragraph?.type !== 'paragraph') {
+    return null;
+  }
+
+  if (paragraph.children.length !== 1) {
+    return null;
+  }
+
+  const node = paragraph.children[0];
+
+  if (node?.position?.start.offset !== 0) {
+    return null;
+  }
+
+  if (node.position.end.offset !== str.length) {
+    return null;
+  }
+
+  switch (node.type as string) {
+    case 'link': {
+      const linkNode = node as Link;
+      const aliasNode = linkNode.children[0] as Text;
+      const rawUrl = str.slice((aliasNode.position?.end.offset ?? 0) + LINK_ALIAS_SUFFIX.length, (linkNode.position?.end.offset ?? 0) - LINK_SUFFIX.length);
+      const hasAngleBrackets = str.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
+      const isExternal = isUrl(linkNode.url);
+      let linkPath = linkNode.url;
+      let subpath = '';
+      if (!isExternal) {
+        if (!hasAngleBrackets) {
+          linkPath = decodeURIComponent(linkPath);
+        }
+        ({ linkPath, subpath } = splitSubpath(linkPath));
+      }
+      return {
+        alias: aliasNode.value,
+        hasAngleBrackets,
+        isEmbed,
+        isExternal,
+        isWikilink: false,
+        linkPath,
+        subpath,
+        title: linkNode.title ?? undefined
+      };
+    }
+    case 'wikiLink': {
+      const wikiLinkNode = node as unknown as WikiLinkNode;
+      const { linkPath, subpath } = splitSubpath(wikiLinkNode.data.permalink);
+      return {
+        alias: str.includes(WIKILINK_DIVIDER) ? wikiLinkNode.data.alias : undefined,
+        isEmbed,
+        isWikilink: true,
+        linkPath,
+        subpath
+      };
+    }
+    default:
+      return null;
+  }
+}
+
+/**
  * Determines if the alias of a link should be reset.
  *
  * @param options - The options for determining if the alias should be reset.
@@ -569,7 +708,8 @@ export function splitSubpath(link: string): SplitSubpathResult {
  * @returns Whether the link uses angle brackets
  */
 export function testAngleBrackets(link: string): boolean {
-  return link.includes('](<');
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.hasAngleBrackets ?? false;
 }
 
 /**
@@ -580,7 +720,8 @@ export function testAngleBrackets(link: string): boolean {
  * @returns Whether the link is an embed link
  */
 export function testEmbed(link: string): boolean {
-  return link.startsWith('![');
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.isEmbed ?? false;
 }
 
 /**
@@ -592,7 +733,8 @@ export function testEmbed(link: string): boolean {
  * @returns Whether the link has a leading dot
  */
 export function testLeadingDot(link: string): boolean {
-  return link.includes('[[./') || link.includes('](./') || link.includes('](<./');
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.linkPath.startsWith('./') ?? false;
 }
 
 /**
@@ -603,7 +745,8 @@ export function testLeadingDot(link: string): boolean {
  * @returns Whether the link is a wikilink
  */
 export function testWikilink(link: string): boolean {
-  return link.includes('[[');
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.isWikilink ?? false;
 }
 
 /**
