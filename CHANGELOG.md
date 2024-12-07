@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.18.1
+
+- Handle wikilinks with spaces
+
 ## 4.18.0
 
 - Update libs
