@@ -67,6 +67,7 @@ export function preprocessPlugin(): Plugin {
 
       build.initialOptions.banner ??= {};
       build.initialOptions.banner['js'] ??= '';
+      build.initialOptions.banner['js'] += '\n' + `${__extractDefault.toString()}\n`;
       build.initialOptions.banner['js'] += '\n' + `(${patchRequireEsmDefault.toString()})()\n`;
 
       build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
@@ -97,10 +98,14 @@ export function preprocessPlugin(): Plugin {
   };
 }
 
+function __extractDefault(module: Partial<EsmModule> | undefined): unknown {
+  return module && module.__esModule && module.default ? module.default : module;
+}
+
 function patchRequireEsmDefault(): void {
   const __require = require;
   require = Object.assign((id: string): unknown => {
     const module = __require(id) as (Partial<EsmModule> | undefined) ?? {};
-    return module.__esModule && module.default ? module.default : module;
+    return __extractDefault(module);
   }, __require);
 }

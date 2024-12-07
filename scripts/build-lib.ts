@@ -7,6 +7,7 @@ import {
   normalizeIfRelative
 } from '../src/Path.ts';
 import { wrapCliTask } from '../src/scripts/CliUtils.ts';
+import { fixEsmPlugin } from '../src/scripts/esbuild/fixEsmPlugin.ts';
 import {
   banner,
   invokeEsbuild
@@ -29,6 +30,7 @@ await wrapCliTask(async () => {
     platform: 'node',
     plugins: [
       preprocessPlugin(),
+      fixEsmPlugin(),
       renameToCjsPlugin()
     ],
     sourcemap: 'inline',
