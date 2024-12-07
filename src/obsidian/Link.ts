@@ -377,8 +377,8 @@ export interface UpdateLinksInFileOptions {
 interface WikiLinkNode {
   data: {
     alias: string;
-    permalink: string;
   };
+  value: string;
 }
 
 /**
@@ -618,7 +618,7 @@ export function parseLink(str: string): null | ParseLinkResult {
         alias: str.includes(WIKILINK_DIVIDER) ? wikiLinkNode.data.alias : undefined,
         isEmbed,
         isWikilink: true,
-        url: wikiLinkNode.data.permalink
+        url: wikiLinkNode.value
       };
     }
     default:
