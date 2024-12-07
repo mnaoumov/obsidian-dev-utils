@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.17.0
+
+- Fix esm defaults
+
 ## 4.16.0
 
 - Add parseLink
