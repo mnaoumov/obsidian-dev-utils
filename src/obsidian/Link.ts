@@ -202,7 +202,7 @@ export interface GenerateMarkdownLinkOptions {
 /**
  * The result of parsing a link.
  */
-export interface ParseLinkResult extends SplitSubpathResult {
+export interface ParseLinkResult {
   /**
    * The alias of the link.
    */
@@ -232,6 +232,11 @@ export interface ParseLinkResult extends SplitSubpathResult {
    * The title of the link.
    */
   title?: string | undefined;
+
+  /**
+   * The URL of the link.
+   */
+  url: string;
 }
 
 /**
@@ -591,13 +596,11 @@ export function parseLink(str: string): null | ParseLinkResult {
       const rawUrl = str.slice((aliasNode.position?.end.offset ?? 0) + LINK_ALIAS_SUFFIX.length, (linkNode.position?.end.offset ?? 0) - LINK_SUFFIX.length);
       const hasAngleBrackets = str.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
       const isExternal = isUrl(linkNode.url);
-      let linkPath = linkNode.url;
-      let subpath = '';
+      let url = linkNode.url;
       if (!isExternal) {
         if (!hasAngleBrackets) {
-          linkPath = decodeURIComponent(linkPath);
+          url = decodeURIComponent(url);
         }
-        ({ linkPath, subpath } = splitSubpath(linkPath));
       }
       return {
         alias: aliasNode.value,
@@ -605,20 +608,17 @@ export function parseLink(str: string): null | ParseLinkResult {
         isEmbed,
         isExternal,
         isWikilink: false,
-        linkPath,
-        subpath,
-        title: linkNode.title ?? undefined
+        title: linkNode.title ?? undefined,
+        url
       };
     }
     case 'wikiLink': {
       const wikiLinkNode = node as unknown as WikiLinkNode;
-      const { linkPath, subpath } = splitSubpath(wikiLinkNode.data.permalink);
       return {
         alias: str.includes(WIKILINK_DIVIDER) ? wikiLinkNode.data.alias : undefined,
         isEmbed,
         isWikilink: true,
-        linkPath,
-        subpath
+        url: wikiLinkNode.data.permalink
       };
     }
     default:
@@ -734,7 +734,7 @@ export function testEmbed(link: string): boolean {
  */
 export function testLeadingDot(link: string): boolean {
   const parseLinkResult = parseLink(link);
-  return parseLinkResult?.linkPath.startsWith('./') ?? false;
+  return parseLinkResult?.url.startsWith('./') ?? false;
 }
 
 /**
