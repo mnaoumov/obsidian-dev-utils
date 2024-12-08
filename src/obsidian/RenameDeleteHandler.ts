@@ -394,7 +394,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
       });
     }
 
-    if (isCanvasFile(newPath)) {
+    if (isCanvasFile(newPath) && !!app.internalPlugins.getEnabledPluginById('canvas')) {
       await process(app, newPath, (content) => {
         let canvasData: CanvasData;
         try {
