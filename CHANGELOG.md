@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 4.21.0
+
+- Use Frontmatter casing
+
 ## 4.20.0
 
 - Support string urls
