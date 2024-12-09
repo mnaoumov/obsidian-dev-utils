@@ -15,7 +15,10 @@ import {
   setNestedPropertyValue
 } from '../Object.ts';
 import { resolveValue } from '../ValueProvider.ts';
-import { getPath } from './FileSystem.ts';
+import {
+  getPath,
+  isCanvasFile
+} from './FileSystem.ts';
 import {
   parseFrontMatter,
   setFrontMatter
@@ -77,7 +80,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await process(app, pathOrFile, async (content) => {
     let changes = await resolveValue(changesProvider);
-    const frontMatter = parseFrontMatter(content);
+    const frontMatter = isCanvasFile(pathOrFile) ? JSON.parse(content) as Record<string, unknown> : parseFrontMatter(content);
 
     for (const change of changes) {
       if (isContentChange(change)) {
@@ -165,9 +168,13 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
       }
     }
 
-    newContent += content.slice(lastIndex);
-    if (frontMatterChanged) {
-      newContent = setFrontMatter(newContent, frontMatter);
+    if (isCanvasFile(pathOrFile)) {
+      newContent = JSON.stringify(frontMatter, null, '\t');
+    } else {
+      newContent += content.slice(lastIndex);
+      if (frontMatterChanged) {
+        newContent = setFrontMatter(newContent, frontMatter);
+      }
     }
     return newContent;
   }, overriddenOptions);
