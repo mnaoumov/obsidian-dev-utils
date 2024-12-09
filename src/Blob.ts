@@ -3,27 +3,6 @@
  * Contains utility functions for Blob objects.
  */
 
-import { throwExpression } from './Error.ts';
-
-/**
- * Converts a base64 encoded string to an ArrayBuffer.
- *
- * @param code - The base64 encoded string.
- * @returns The decoded ArrayBuffer.
- */
-export function base64ToArrayBuffer(code: string): ArrayBuffer {
-  const parts = code.split(';base64,');
-  const raw = window.atob(parts[1] ?? throwExpression(new Error('Invalid base64 string')));
-  const rawLength = raw.length;
-
-  const uInt8Array = new Uint8Array(rawLength);
-
-  for (let i = 0; i < rawLength; ++i) {
-    uInt8Array[i] = raw.charCodeAt(i);
-  }
-  return uInt8Array.buffer;
-}
-
 /**
  * Converts a Blob object to an ArrayBuffer.
  *
@@ -33,10 +12,30 @@ export function base64ToArrayBuffer(code: string): ArrayBuffer {
 export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   return await new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onloadend = (): void => {
-      resolve(reader.result as ArrayBuffer);
-    };
+    reader.addEventListener('loadend', handleLoadEnd);
     reader.readAsArrayBuffer(blob);
+
+    function handleLoadEnd(): void {
+      resolve(reader.result as ArrayBuffer);
+    }
+  });
+}
+
+/**
+ * Converts a Blob object to a data URL.
+ *
+ * @param blob - The Blob object to convert.
+ * @returns A promise that resolves to a data URL.
+ */
+export async function blobToDataUrl(blob: Blob): Promise<string> {
+  return await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.addEventListener('loadend', handleLoadEnd);
+    reader.readAsDataURL(blob);
+
+    function handleLoadEnd(): void {
+      resolve(reader.result as string);
+    }
   });
 }
 
@@ -48,41 +47,61 @@ export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
  * @returns A promise that resolves to an ArrayBuffer.
  */
 export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Promise<ArrayBuffer> {
+  const dataUrl = await blobToDataUrl(blob);
   return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = (): void => {
-      const image = new Image();
-      image.onload = (): void => {
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        if (!context) {
-          throw new Error('Could not get 2D context.');
-        }
-        const imageWidth = image.width;
-        const imageHeight = image.height;
-        let data = '';
+    const image = new Image();
+    image.addEventListener('load', handleLoad);
+    image.src = dataUrl;
 
-        canvas.width = imageWidth;
-        canvas.height = imageHeight;
+    function handleLoad(): void {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (!context) {
+        throw new Error('Could not get 2D context.');
+      }
+      const imageWidth = image.width;
+      const imageHeight = image.height;
 
-        context.fillStyle = '#fff';
-        context.fillRect(0, 0, imageWidth, imageHeight);
-        context.save();
+      canvas.width = imageWidth;
+      canvas.height = imageHeight;
 
-        context.translate(imageWidth / 2, imageHeight / 2);
-        context.drawImage(image, 0, 0, imageWidth, imageHeight, -imageWidth / 2, -imageHeight / 2, imageWidth, imageHeight);
-        context.restore();
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, imageWidth, imageHeight);
+      context.save();
 
-        data = canvas.toDataURL('image/jpeg', jpegQuality);
+      context.translate(imageWidth / 2, imageHeight / 2);
+      context.drawImage(image, 0, 0, imageWidth, imageHeight, -imageWidth / 2, -imageHeight / 2, imageWidth, imageHeight);
+      context.restore();
 
-        const arrayBuffer = base64ToArrayBuffer(data);
-        resolve(arrayBuffer);
-      };
-
-      image.src = reader.result as string;
-    };
-    reader.readAsDataURL(blob);
+      const dataUrl = canvas.toDataURL('image/jpeg', jpegQuality);
+      const arrayBuffer = dataUrlToArrayBuffer(dataUrl);
+      resolve(arrayBuffer);
+    }
   });
+}
+
+/**
+ * Converts a base64 encoded string to an ArrayBuffer.
+ *
+ * @param dataUrl - The data URL to convert.
+ * @returns The decoded ArrayBuffer.
+ */
+export function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
+  const parts = dataUrl.split(';base64,');
+  const base64 = parts[1];
+  if (!base64) {
+    throw new Error('Invalid data URL');
+  }
+
+  const raw = window.atob(base64);
+  const rawLength = raw.length;
+
+  const uInt8Array = new Uint8Array(rawLength);
+
+  for (let i = 0; i < rawLength; i++) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+  return uInt8Array.buffer;
 }
 
 /**
