@@ -47,6 +47,7 @@ import { applyFileChanges } from './FileChange.ts';
 import {
   getFile,
   getPath,
+  isCanvasFile,
   isMarkdownFile,
   trimMarkdownExtension
 } from './FileSystem.ts';
@@ -800,6 +801,10 @@ export function updateLink(options: UpdateLinkOptions): string {
 
   if (newPath) {
     file = getFile(app, newPath, true);
+  }
+
+  if (isCanvasFile(sourcePathOrFile)) {
+    return file.path;
   }
 
   const newLink = generateMarkdownLink({
