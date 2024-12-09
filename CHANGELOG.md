@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 4.20.0
+
+- Support string urls
+- Don't allow whitespace in url
+
 ## 4.19.0
 
 - Don't fail if couldn't decode URL
