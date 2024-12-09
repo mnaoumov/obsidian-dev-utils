@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation FrontMatter
+ * @packageDocumentation Frontmatter
  * This module provides utility functions for processing and managing YAML front matter in Obsidian notes.
  */
 
@@ -14,15 +14,15 @@ import { insertAt } from '../String.ts';
 /**
  * Represents the combined front matter of a document.
  * It is a union of custom front matter, Obsidian front matter, and additional properties.
- * @typeParam CustomFrontMatter - The type of custom front matter.
+ * @typeParam CustomFrontmatter - The type of custom front matter.
  */
-export type CombinedFrontMatter<CustomFrontMatter> = CustomFrontMatter & ObsidianFrontMatter & Record<string, unknown>;
+export type CombinedFrontmatter<CustomFrontmatter> = CustomFrontmatter & ObsidianFrontmatter & Record<string, unknown>;
 
 /**
  * Represents the front matter of an Obsidian file.
  * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Default+properties}
  */
-export interface ObsidianFrontMatter {
+export interface ObsidianFrontmatter {
   /**
    * An array of aliases for the note.
    */
@@ -43,7 +43,7 @@ export interface ObsidianFrontMatter {
  * Represents the front matter for publishing in Obsidian.
  * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Properties+for+Obsidian+Publish}
  */
-export interface ObsidianPublishFrontMatter {
+export interface ObsidianPublishFrontmatter {
   /**
    * The cover image for the note.
    */
@@ -76,27 +76,27 @@ export interface ObsidianPublishFrontMatter {
  * @param content - The content string to parse.
  * @returns The parsed front matter.
  */
-export function parseFrontMatter<CustomFrontMatter = unknown>(content: string): CombinedFrontMatter<CustomFrontMatter> {
-  const frontMatterInfo = getFrontMatterInfo(content);
-  return (parseYaml(frontMatterInfo.frontmatter) ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
+export function parseFrontmatter<CustomFrontmatter = unknown>(content: string): CombinedFrontmatter<CustomFrontmatter> {
+  const frontmatterInfo = getFrontMatterInfo(content);
+  return (parseYaml(frontmatterInfo.frontmatter) ?? {}) as CombinedFrontmatter<CustomFrontmatter>;
 }
 
 /**
  * Sets the front matter of a given content string.
  *
  * @param content - The content string to set the front matter in.
- * @param newFrontMatter - The new front matter to set.
+ * @param newFrontmatter - The new front matter to set.
  * @returns The new content string with the front matter set.
  */
-export function setFrontMatter(content: string, newFrontMatter: object): string {
-  const frontMatterInfo = getFrontMatterInfo(content);
-  if (Object.keys(newFrontMatter).length === 0) {
-    return content.slice(frontMatterInfo.contentStart);
+export function setFrontmatter(content: string, newFrontmatter: object): string {
+  const frontmatterInfo = getFrontMatterInfo(content);
+  if (Object.keys(newFrontmatter).length === 0) {
+    return content.slice(frontmatterInfo.contentStart);
   }
 
-  const newFrontMatterStr = stringifyYaml(newFrontMatter);
+  const newFrontmatterStr = stringifyYaml(newFrontmatter);
 
-  return frontMatterInfo.exists
-    ? insertAt(content, newFrontMatterStr, frontMatterInfo.from, frontMatterInfo.to)
-    : '---\n' + newFrontMatterStr + '---\n' + content;
+  return frontmatterInfo.exists
+    ? insertAt(content, newFrontmatterStr, frontmatterInfo.from, frontmatterInfo.to)
+    : '---\n' + newFrontmatterStr + '---\n' + content;
 }

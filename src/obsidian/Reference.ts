@@ -33,7 +33,7 @@ export function referenceToFileChange(reference: Reference, newContent: string):
     } as ContentChange;
   } else if (isFrontmatterLinkCache(reference)) {
     return {
-      frontMatterKey: reference.key,
+      frontmatterKey: reference.key,
       newContent,
       oldContent: reference.original
     } as FrontmatterChange;

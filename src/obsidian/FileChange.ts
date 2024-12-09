@@ -20,9 +20,9 @@ import {
   isCanvasFile
 } from './FileSystem.ts';
 import {
-  parseFrontMatter,
-  setFrontMatter
-} from './FrontMatter.ts';
+  parseFrontmatter,
+  setFrontmatter
+} from './Frontmatter.ts';
 import { process } from './Vault.ts';
 
 /**
@@ -62,7 +62,7 @@ export interface FrontmatterChange extends FileChange {
   /**
    * The key in the frontmatter to use for the link.
    */
-  frontMatterKey: string;
+  frontmatterKey: string;
 }
 
 /**
@@ -80,7 +80,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await process(app, pathOrFile, async (content) => {
     let changes = await resolveValue(changesProvider);
-    const frontMatter = isCanvasFile(pathOrFile) ? JSON.parse(content) as Record<string, unknown> : parseFrontMatter(content);
+    const frontmatter = isCanvasFile(pathOrFile) ? JSON.parse(content) as Record<string, unknown> : parseFrontmatter(content);
 
     for (const change of changes) {
       if (isContentChange(change)) {
@@ -97,12 +97,12 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
           return null;
         }
       } else if (isFrontmatterChange(change)) {
-        const actualContent = getNestedPropertyValue(frontMatter, change.frontMatterKey);
+        const actualContent = getNestedPropertyValue(frontmatter, change.frontmatterKey);
         if (actualContent !== change.oldContent) {
           console.warn('Content mismatch', {
             actualContent,
             expectedContent: change.oldContent,
-            frontMatterKey: change.frontMatterKey,
+            frontmatterKey: change.frontmatterKey,
             path: getPath(pathOrFile)
           });
 
@@ -117,7 +117,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
       }
 
       if (isFrontmatterChange(a) && isFrontmatterChange(b)) {
-        return a.frontMatterKey.localeCompare(b.frontMatterKey);
+        return a.frontmatterKey.localeCompare(b.frontmatterKey);
       }
 
       return isContentChange(a) ? -1 : 1;
@@ -155,7 +155,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
 
     let newContent = '';
     let lastIndex = 0;
-    let frontMatterChanged = false;
+    let frontmatterChanged = false;
 
     for (const change of changes) {
       if (isContentChange(change)) {
@@ -163,17 +163,17 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
         newContent += change.newContent;
         lastIndex = change.endIndex;
       } else if (isFrontmatterChange(change)) {
-        setNestedPropertyValue(frontMatter, change.frontMatterKey, change.newContent);
-        frontMatterChanged = true;
+        setNestedPropertyValue(frontmatter, change.frontmatterKey, change.newContent);
+        frontmatterChanged = true;
       }
     }
 
     if (isCanvasFile(pathOrFile)) {
-      newContent = JSON.stringify(frontMatter, null, '\t');
+      newContent = JSON.stringify(frontmatter, null, '\t');
     } else {
       newContent += content.slice(lastIndex);
-      if (frontMatterChanged) {
-        newContent = setFrontMatter(newContent, frontMatter);
+      if (frontmatterChanged) {
+        newContent = setFrontmatter(newContent, frontmatter);
       }
     }
     return newContent;
@@ -197,5 +197,5 @@ export function isContentChange(fileChange: FileChange): fileChange is ContentCh
  * @returns A boolean indicating whether the file change is a frontmatter change.
  */
 export function isFrontmatterChange(fileChange: FileChange): fileChange is FrontmatterChange {
-  return (fileChange as Partial<FrontmatterChange>).frontMatterKey !== undefined;
+  return (fileChange as Partial<FrontmatterChange>).frontmatterKey !== undefined;
 }

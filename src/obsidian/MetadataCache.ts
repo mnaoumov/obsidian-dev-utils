@@ -20,7 +20,7 @@ import {
 
 import type { RetryOptions } from '../Async.ts';
 import type { PathOrFile } from './FileSystem.ts';
-import type { CombinedFrontMatter } from './FrontMatter.ts';
+import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { retryWithTimeout } from '../Async.ts';
 import { noop } from '../Function.ts';
@@ -33,7 +33,7 @@ import {
   isFile,
   isMarkdownFile
 } from './FileSystem.ts';
-import { parseFrontMatter } from './FrontMatter.ts';
+import { parseFrontmatter } from './Frontmatter.ts';
 import { sortReferences } from './Reference.ts';
 
 /**
@@ -158,7 +158,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
       await saveNote(app, note);
 
       const content = await app.vault.read(note);
-      const frontMatter = parseFrontMatter(content);
+      const frontmatter = parseFrontmatter(content);
       const links = backlinks.get(notePath);
       if (!links) {
         return false;
@@ -169,7 +169,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
         if (isReferenceCache(link)) {
           actualLink = content.slice(link.position.start.offset, link.position.end.offset);
         } else if (isFrontmatterLinkCache(link)) {
-          const linkValue = getNestedPropertyValue(frontMatter, link.key);
+          const linkValue = getNestedPropertyValue(frontmatter, link.key);
           if (typeof linkValue !== 'string') {
             return false;
           }
@@ -267,14 +267,14 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
 /**
  * Retrieves the front matter from the metadata cache safely.
  *
- * @typeParam CustomFrontMatter - The type of custom front matter.
+ * @typeParam CustomFrontmatter - The type of custom front matter.
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or file to retrieve the front matter from.
  * @returns The combined front matter.
  */
-export async function getFrontMatterSafe<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile): Promise<CombinedFrontMatter<CustomFrontMatter>> {
+export async function getFrontmatterSafe<CustomFrontmatter = unknown>(app: App, pathOrFile: PathOrFile): Promise<CombinedFrontmatter<CustomFrontmatter>> {
   const cache = await getCacheSafe(app, pathOrFile);
-  return (cache?.frontmatter ?? {}) as CombinedFrontMatter<CustomFrontMatter>;
+  return (cache?.frontmatter ?? {}) as CombinedFrontmatter<CustomFrontmatter>;
 }
 
 /***

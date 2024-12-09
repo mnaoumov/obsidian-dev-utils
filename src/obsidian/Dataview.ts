@@ -14,7 +14,7 @@ import type {
   SMarkdownPage
 } from './@types/Dataview/index.d.ts';
 import type { PathOrFile } from './FileSystem.ts';
-import type { CombinedFrontMatter } from './FrontMatter.ts';
+import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { convertAsyncToSync } from '../Async.ts';
 import {
@@ -46,7 +46,7 @@ declare global {
 /**
  * The combined page type, which includes the front matter and the SMarkdownPage.
  */
-export type CombinedPage<CustomFrontMatter = unknown> = CombinedFrontMatter<CustomFrontMatter> & SMarkdownPage;
+export type CombinedPage<CustomFrontmatter = unknown> = CombinedFrontmatter<CustomFrontmatter> & SMarkdownPage;
 
 /**
  * Extended interface for the Dataview Inline API, providing additional methods for custom page types and array handling.
@@ -69,7 +69,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * @typeParam CustomPage - The type of the custom page. Defaults to `SMarkdownPage`.
    * @returns The current page.
    */
-  current<CustomFrontMatter = unknown>(): CombinedPage<CustomFrontMatter>;
+  current<CustomFrontmatter = unknown>(): CombinedPage<CustomFrontmatter>;
 
   /**
    * Retrieves pages based on an optional query, with an optional custom page type.
@@ -78,7 +78,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * @param query - An optional string query to filter the pages.
    * @returns A `DataArray` of pages matching the query.
    */
-  pages<CustomFrontMatter = unknown>(query?: string): DataArray<CombinedPage<CustomFrontMatter>>;
+  pages<CustomFrontmatter = unknown>(query?: string): DataArray<CombinedPage<CustomFrontmatter>>;
 
   /**
    * Creates a paragraph HTML element with the provided text and optional DOM element options.
