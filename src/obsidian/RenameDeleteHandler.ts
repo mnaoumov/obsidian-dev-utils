@@ -394,30 +394,9 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
       });
     }
 
-    if (isCanvasFile(newPath) && !!app.internalPlugins.getEnabledPluginById('canvas')) {
-      await process(app, newPath, (content) => {
-        let canvasData: CanvasData;
-        try {
-          canvasData = JSON.parse(content) as CanvasData;
-        } catch (e) {
-          printError(new Error(`Failed to parse canvas data for ${newPath}`, { cause: e }));
-          return content;
-        }
-        for (const node of canvasData.nodes) {
-          if (node.type !== 'file') {
-            continue;
-          }
-          const newPath = renameMap.get(node.file);
-          if (!newPath) {
-            continue;
-          }
-          node.file = newPath;
-        }
-        return toJson(canvasData);
-      });
-    } else if (isMarkdownFile(newPath)) {
+    if (isNote(newPath)) {
       await updateLinksInFile({
-        app: app,
+        app,
         oldPathOrFile: oldPath,
         pathOrFile: newPath,
         renameMap,
