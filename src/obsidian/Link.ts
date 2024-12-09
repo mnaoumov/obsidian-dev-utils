@@ -553,6 +553,15 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
  * @returns The parsed link.
  */
 export function parseLink(str: string): null | ParseLinkResult {
+  if (isUrl(str)) {
+    return {
+      isEmbed: false,
+      isExternal: true,
+      isWikilink: false,
+      url: str
+    };
+  }
+
   const EMBED_PREFIX = '!';
   const OPEN_ANGLE_BRACKET = '<';
   const LINK_ALIAS_SUFFIX = '](';
