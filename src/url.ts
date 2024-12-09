@@ -14,6 +14,9 @@ export function isUrl(str: string): boolean {
     if (!str.includes('://')) {
       return false;
     }
+    if (str.trim() !== str) {
+      return false;
+    }
     new URL(str);
     return true;
   } catch {
