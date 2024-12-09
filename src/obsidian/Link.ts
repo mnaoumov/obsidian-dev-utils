@@ -804,7 +804,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   }
 
   if (isCanvasFile(sourcePathOrFile)) {
-    return file.path;
+    return file.path + subpath;
   }
 
   const newLink = generateMarkdownLink({
