@@ -10,14 +10,14 @@ import type {
   RetryOptions
 } from '../Async.ts';
 import type { PathOrFile } from './FileSystem.ts';
-import type { CombinedFrontMatter } from './FrontMatter.ts';
+import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { deepEqual } from '../Object.ts';
 import { getFile } from './FileSystem.ts';
 import {
-  parseFrontMatter,
-  setFrontMatter
-} from './FrontMatter.ts';
+  parseFrontmatter,
+  setFrontmatter
+} from './Frontmatter.ts';
 import { process } from './Vault.ts';
 
 /**
@@ -38,13 +38,13 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
     return;
   }
 
-  await processFrontMatter(app, pathOrFile, (frontMatter) => {
-    if (!frontMatter.aliases) {
-      frontMatter.aliases = [];
+  await processFrontmatter(app, pathOrFile, (frontmatter) => {
+    if (!frontmatter.aliases) {
+      frontmatter.aliases = [];
     }
 
-    if (!frontMatter.aliases.includes(alias)) {
-      frontMatter.aliases.push(alias);
+    if (!frontmatter.aliases.includes(alias)) {
+      frontmatter.aliases.push(alias);
     }
   });
 }
@@ -62,15 +62,15 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
     return;
   }
 
-  await processFrontMatter(app, pathOrFile, (frontMatter) => {
-    if (!frontMatter.aliases) {
+  await processFrontmatter(app, pathOrFile, (frontmatter) => {
+    if (!frontmatter.aliases) {
       return;
     }
 
-    frontMatter.aliases = frontMatter.aliases.filter((a) => a != alias);
+    frontmatter.aliases = frontmatter.aliases.filter((a) => a != alias);
 
-    if (frontMatter.aliases.length === 0) {
-      delete frontMatter.aliases;
+    if (frontmatter.aliases.length === 0) {
+      delete frontmatter.aliases;
     }
   });
 }
@@ -78,31 +78,31 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
 /**
  * Processes the front matter of a given file, allowing modifications via a provided function.
  *
- * @typeParam CustomFrontMatter - The type of custom front matter.
+ * @typeParam CustomFrontmatter - The type of custom front matter.
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or TFile object representing the note.
- * @param frontMatterFn - A function that modifies the front matter.
+ * @param frontmatterFn - A function that modifies the front matter.
  * @param retryOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
  * @returns A promise that resolves when the front matter has been processed and saved.
  */
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function processFrontMatter<CustomFrontMatter = unknown>(app: App, pathOrFile: PathOrFile, frontMatterFn: (frontMatter: CombinedFrontMatter<CustomFrontMatter>) => MaybePromise<null | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function processFrontmatter<CustomFrontmatter = unknown>(app: App, pathOrFile: PathOrFile, frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => MaybePromise<null | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
   const file = getFile(app, pathOrFile);
   const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
 
   await process(app, file, async (content) => {
-    const oldFrontMatter = parseFrontMatter<CustomFrontMatter>(content);
-    const newFrontMatter = parseFrontMatter<CustomFrontMatter>(content);
-    const result = await frontMatterFn(newFrontMatter);
+    const oldFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
+    const newFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
+    const result = await frontmatterFn(newFrontmatter);
     if (result === null) {
       return null;
     }
 
-    if (deepEqual(oldFrontMatter, newFrontMatter)) {
+    if (deepEqual(oldFrontmatter, newFrontmatter)) {
       return content;
     }
 
-    return setFrontMatter(content, newFrontMatter);
+    return setFrontmatter(content, newFrontmatter);
   }, overriddenOptions);
 }
