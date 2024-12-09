@@ -10,7 +10,6 @@ import type {
   TAbstractFile
 } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
-import type { CanvasData } from 'obsidian/canvas.js';
 
 import { around } from 'monkey-around';
 import {
@@ -19,7 +18,6 @@ import {
   Vault
 } from 'obsidian';
 
-import { printError } from '../Error.ts';
 import { noopAsync } from '../Function.ts';
 import { toJson } from '../Object.ts';
 import {
@@ -39,7 +37,6 @@ import {
   getFile,
   getFileOrNull,
   getFolderOrNull,
-  isCanvasFile,
   isFile,
   isMarkdownFile,
   isNote
@@ -62,7 +59,6 @@ import {
   deleteEmptyFolderHierarchy,
   deleteSafe,
   getSafeRenamePath,
-  process,
   renameSafe
 } from './Vault.ts';
 
