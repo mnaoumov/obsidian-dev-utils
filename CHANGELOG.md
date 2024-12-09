@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 4.19.0
+
+- Don't fail if couldn't decode URL
+- Support canvas changes
+- Update canvas files only if Canvas Plugin enabled
+
 ## 4.18.1
 
 - Handle wikilinks with spaces
