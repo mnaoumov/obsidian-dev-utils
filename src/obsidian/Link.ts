@@ -599,7 +599,11 @@ export function parseLink(str: string): null | ParseLinkResult {
       let url = linkNode.url;
       if (!isExternal) {
         if (!hasAngleBrackets) {
-          url = decodeURIComponent(url);
+          try {
+            url = decodeURIComponent(url);
+          } catch (error) {
+            console.error(`Failed to decode URL ${url}`, error);
+          }
         }
       }
       return {
