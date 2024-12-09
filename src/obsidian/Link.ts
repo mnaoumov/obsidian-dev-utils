@@ -835,6 +835,12 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     renameMap,
     shouldUpdateFilenameAlias
   } = options;
+
+
+  if (isCanvasFile(pathOrFile) && !app.internalPlugins.getEnabledPluginById('canvas')) {
+    return;
+  }
+
   await editLinks(app, pathOrFile, (link) => {
     const isEmbedLink = testEmbed(link.original);
     if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
