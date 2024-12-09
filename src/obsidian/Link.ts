@@ -836,7 +836,6 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     shouldUpdateFilenameAlias
   } = options;
 
-
   if (isCanvasFile(pathOrFile) && !app.internalPlugins.getEnabledPluginById('canvas')) {
     return;
   }
