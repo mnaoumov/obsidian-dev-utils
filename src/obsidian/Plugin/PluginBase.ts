@@ -42,7 +42,7 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    *
    * @returns The abort signal.
    */
-  protected get abortSignal(): AbortSignal {
+  public get abortSignal(): AbortSignal {
     return this._abortSignal;
   }
 
