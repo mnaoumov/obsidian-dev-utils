@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.2.0
+
+- Switch to emitAsyncErrorEvent
+
 ## 5.1.0
 
 - Add Loop
