@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.0.1
+
+- Add support for parsing `[](url)`
+
 ## 5.0.0
 
 - Don't retry on error by default
