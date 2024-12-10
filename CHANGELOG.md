@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.0.0
+
+- Don't retry on error by default
+
 ## 4.21.0
 
 - Use Frontmatter casing
