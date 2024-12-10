@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.3.1
+
+- Properly resolve path on rename
+
 ## 5.3.0
 
 - Make abortSignal public
