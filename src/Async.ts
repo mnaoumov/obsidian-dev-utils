@@ -153,7 +153,7 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
   const stackTrace = getStackTrace();
   const DEFAULT_RETRY_OPTIONS: RetryOptions = {
     retryDelayInMilliseconds: 100,
-    shouldRetryOnError: true,
+    shouldRetryOnError: false,
     timeoutInMilliseconds: 5000
   };
   const overriddenOptions: RetryOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
