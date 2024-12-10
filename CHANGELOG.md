@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.1.0
+
+- Add Loop
+
 ## 5.0.1
 
 - Add support for parsing `[](url)`
