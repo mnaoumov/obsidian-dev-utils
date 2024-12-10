@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 5.3.0
+
+- Make abortSignal public
+
 ## 5.2.0
 
 - Switch to emitAsyncErrorEvent
