@@ -602,8 +602,8 @@ export function parseLink(str: string): null | ParseLinkResult {
   switch (node.type as string) {
     case 'link': {
       const linkNode = node as Link;
-      const aliasNode = linkNode.children[0] as Text;
-      const rawUrl = str.slice((aliasNode.position?.end.offset ?? 0) + LINK_ALIAS_SUFFIX.length, (linkNode.position?.end.offset ?? 0) - LINK_SUFFIX.length);
+      const aliasNode = linkNode.children[0] as Text | undefined;
+      const rawUrl = str.slice((aliasNode?.position?.end.offset ?? 1) + LINK_ALIAS_SUFFIX.length, (linkNode.position?.end.offset ?? 0) - LINK_SUFFIX.length);
       const hasAngleBrackets = str.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
       const isExternal = isUrl(linkNode.url);
       let url = linkNode.url;
@@ -617,7 +617,7 @@ export function parseLink(str: string): null | ParseLinkResult {
         }
       }
       return {
-        alias: aliasNode.value,
+        alias: aliasNode?.value,
         hasAngleBrackets,
         isEmbed,
         isExternal,
