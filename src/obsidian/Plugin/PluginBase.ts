@@ -29,21 +29,21 @@ import {
  */
 export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   /**
-   * Gets a copy of the current plugin settings.
-   *
-   * @returns A copy of the plugin settings.
-   */
-  public get settingsCopy(): PluginSettings {
-    return clonePluginSettings(this.createDefaultPluginSettings.bind(this), this.settings);
-  }
-
-  /**
    * Gets the AbortSignal used for aborting long-running operations.
    *
    * @returns The abort signal.
    */
   public get abortSignal(): AbortSignal {
     return this._abortSignal;
+  }
+
+  /**
+   * Gets a copy of the current plugin settings.
+   *
+   * @returns A copy of the plugin settings.
+   */
+  public get settingsCopy(): PluginSettings {
+    return clonePluginSettings(this.createDefaultPluginSettings.bind(this), this.settings);
   }
 
   /**
