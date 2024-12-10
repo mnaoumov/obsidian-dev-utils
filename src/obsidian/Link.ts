@@ -389,12 +389,13 @@ interface WikiLinkNode {
  * @returns The converted link.
  */
 export function convertLink(options: ConvertLinkOptions): string {
+  const pathOrFile = options.oldPathOrFile ? extractLinkFile(options.app, options.link, options.oldPathOrFile) : null;
   return updateLink({
     app: options.app,
     forceMarkdownLinks: options.forceMarkdownLinks,
     link: options.link,
-    oldPathOrFile: options.oldPathOrFile,
-    pathOrFile: extractLinkFile(options.app, options.link, options.sourcePathOrFile),
+    oldPathOrFile: pathOrFile ?? undefined,
+    pathOrFile,
     renameMap: options.renameMap,
     shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias,
     sourcePathOrFile: options.sourcePathOrFile
