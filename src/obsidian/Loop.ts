@@ -5,7 +5,7 @@
 
 import type { MaybePromise } from '../Async.ts';
 
-import { printError } from '../Error.ts';
+import { emitAsyncErrorEvent } from '../Error.ts';
 
 /**
  * Options for the loop function.
@@ -60,7 +60,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
         notice.hide();
         throw error;
       } else {
-        printError(error);
+        emitAsyncErrorEvent(error);
       }
     }
   }
