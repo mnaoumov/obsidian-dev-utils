@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 6.0.0
+
+- Add abortSignal
+- Fix for link converters
+- Rename many properties (BREAKING CHANGE)
+
 ## 5.3.1
 
 - Properly resolve path on rename
