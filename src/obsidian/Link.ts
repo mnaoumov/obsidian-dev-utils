@@ -175,9 +175,9 @@ export interface GenerateMarkdownLinkOptions {
   originalLink?: string | undefined;
 
   /**
-   * The file to link to.
+   * The target path or file.
    */
-  pathOrFile: PathOrFile;
+  targetPathOrFile: PathOrFile;
 
   /**
    * The source path of the link.
@@ -265,9 +265,9 @@ export interface ShouldResetAliasOptions {
   otherPathOrFiles: (PathOrFile | undefined)[];
 
   /**
-   * The path or file of the link.
+   * The target path or file.
    */
-  pathOrFile: PathOrFile;
+  targetPathOrFile: PathOrFile;
 
   /**
    * The source path of the link.
@@ -312,12 +312,12 @@ export interface UpdateLinkOptions {
   /**
    * The old path of the file.
    */
-  oldPathOrFile?: PathOrFile | undefined;
+  oldTargetPathOrFile?: PathOrFile | undefined;
 
   /**
    * The file associated with the link.
    */
-  pathOrFile: null | PathOrFile;
+  newTargetPathOrFile: null | PathOrFile;
 
   /**
    * A map of old and new file paths.
@@ -389,13 +389,13 @@ interface WikiLinkNode {
  * @returns The converted link.
  */
 export function convertLink(options: ConvertLinkOptions): string {
-  const pathOrFile = options.oldPathOrFile ? extractLinkFile(options.app, options.link, options.oldPathOrFile) : null;
+  const targetPathOrFile = options.oldPathOrFile ? extractLinkFile(options.app, options.link, options.oldPathOrFile) : null;
   return updateLink({
     app: options.app,
     forceMarkdownLinks: options.forceMarkdownLinks,
     link: options.link,
-    oldPathOrFile: pathOrFile ?? undefined,
-    pathOrFile,
+    oldTargetPathOrFile: targetPathOrFile ?? undefined,
+    newTargetPathOrFile: targetPathOrFile,
     renameMap: options.renameMap,
     shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias,
     sourcePathOrFile: options.sourcePathOrFile
@@ -495,23 +495,23 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
 
   options = { ...DEFAULT_OPTIONS, ...configurableDefaultOptions, ...options };
 
-  const file = getFile(app, options.pathOrFile, options.allowNonExistingFile);
+  const targetFile = getFile(app, options.targetPathOrFile, options.allowNonExistingFile);
 
-  return tempRegisterFileAndRun(app, file, () => {
+  return tempRegisterFileAndRun(app, targetFile, () => {
     const sourcePath = getPath(options.sourcePathOrFile);
     const subpath = options.subpath ?? '';
     let alias = options.alias ?? '';
-    const isEmbed = options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(file);
+    const isEmbed = options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(targetFile);
     const isWikilink = options.isWikilink ?? (options.originalLink ? testWikilink(options.originalLink) : undefined) ?? shouldUseWikilinks(app);
     const forceRelativePath = options.forceRelativePath ?? shouldUseRelativeLinks(app);
     const useLeadingDot = options.useLeadingDot ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false;
     const useAngleBrackets = options.useAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false;
 
-    let linkText = file.path === sourcePath && subpath
+    let linkText = targetFile.path === sourcePath && subpath
       ? subpath
       : forceRelativePath
-        ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(file) : file.path) + subpath
-        : app.metadataCache.fileToLinktext(file, sourcePath, isWikilink) + subpath;
+        ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(targetFile) : targetFile.path) + subpath
+        : app.metadataCache.fileToLinktext(targetFile, sourcePath, isWikilink) + subpath;
 
     if (forceRelativePath && useLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
       linkText = './' + linkText;
@@ -529,7 +529,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
       }
 
       if (!alias && (!isEmbed || !options.allowEmptyEmbedAlias)) {
-        alias = !options.includeAttachmentExtensionToEmbedAlias || isMarkdownFile(file) ? file.basename : file.name;
+        alias = !options.includeAttachmentExtensionToEmbedAlias || isMarkdownFile(targetFile) ? targetFile.basename : targetFile.name;
       }
 
       alias = alias.replace(SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
@@ -653,14 +653,14 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     displayText,
     isWikilink,
     otherPathOrFiles,
-    pathOrFile,
+    targetPathOrFile,
     sourcePathOrFile
   } = options;
   if (isWikilink === false) {
     return false;
   }
 
-  const file = getFile(app, pathOrFile);
+  const targetFile = getFile(app, targetPathOrFile);
 
   if (!displayText) {
     return true;
@@ -671,7 +671,7 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
 
   const aliasesToReset = new Set<string>();
 
-  for (const pathOrFile of [file.path, ...otherPathOrFiles]) {
+  for (const pathOrFile of [targetFile.path, ...otherPathOrFiles]) {
     if (!pathOrFile) {
       continue;
     }
@@ -682,7 +682,7 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     aliasesToReset.add(relative(sourceDir, path));
   }
 
-  aliasesToReset.add(app.metadataCache.fileToLinktext(file, sourcePath, false));
+  aliasesToReset.add(app.metadataCache.fileToLinktext(targetFile, sourcePath, false));
 
   const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/^\.\//, '').toLowerCase();
 
@@ -775,27 +775,27 @@ export function updateLink(options: UpdateLinkOptions): string {
     app,
     forceMarkdownLinks,
     link,
-    oldPathOrFile,
-    pathOrFile,
+    oldTargetPathOrFile,
+    newTargetPathOrFile,
     renameMap,
     shouldUpdateFilenameAlias,
     sourcePathOrFile
   } = options;
-  if (!pathOrFile) {
+  if (!newTargetPathOrFile) {
     return link.original;
   }
-  let file = getFile(app, pathOrFile);
-  const oldPath = getPath(oldPathOrFile ?? sourcePathOrFile);
+  let targetFile = getFile(app, newTargetPathOrFile);
+  const oldPath = getPath(oldTargetPathOrFile ?? sourcePathOrFile);
   const isWikilink = testWikilink(link.original) && forceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
 
-  const newPath = renameMap?.get(file.path);
+  const newPath = renameMap?.get(targetFile.path);
   let alias = shouldResetAlias({
     app,
     displayText: link.displayText,
     isWikilink,
     otherPathOrFiles: [oldPath, newPath],
-    pathOrFile,
+    targetPathOrFile: newTargetPathOrFile,
     sourcePathOrFile
   })
     ? undefined
@@ -803,18 +803,18 @@ export function updateLink(options: UpdateLinkOptions): string {
 
   if (shouldUpdateFilenameAlias ?? true) {
     if (alias?.toLowerCase() === basename(oldPath, extname(oldPath)).toLowerCase()) {
-      alias = file.basename;
+      alias = targetFile.basename;
     } else if (alias?.toLowerCase() === basename(oldPath).toLowerCase()) {
-      alias = file.name;
+      alias = targetFile.name;
     }
   }
 
   if (newPath) {
-    file = getFile(app, newPath, true);
+    targetFile = getFile(app, newPath, true);
   }
 
   if (isCanvasFile(sourcePathOrFile)) {
-    return file.path + subpath;
+    return targetFile.path + subpath;
   }
 
   const newLink = generateMarkdownLink({
@@ -822,7 +822,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     app,
     isWikilink: forceMarkdownLinks ? false : undefined,
     originalLink: link.original,
-    pathOrFile: file,
+    targetPathOrFile: targetFile,
     sourcePathOrFile,
     subpath
   });

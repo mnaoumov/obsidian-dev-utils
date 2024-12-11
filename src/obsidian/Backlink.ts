@@ -100,7 +100,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
     const backlinkLinks = backlinks.keys().map((backLinkPath) => {
       const markdownLink = generateMarkdownLink({
         app: dv.app,
-        pathOrFile: dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path) ?? throwExpression(new Error('Link not found')),
+        targetPathOrFile: dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path) ?? throwExpression(new Error('Link not found')),
         sourcePathOrFile: dv.current().file.path
       });
 
