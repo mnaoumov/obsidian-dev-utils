@@ -96,7 +96,7 @@ export interface ConvertLinkOptions {
   /**
    * The old path of the link.
    */
-  oldSourcePathOrFile?: PathOrFile;
+  oldSourcePathOrFile?: PathOrFile | undefined;
 
   /**
    * Whether to force markdown links.
@@ -255,14 +255,19 @@ export interface ShouldResetAliasOptions {
   isWikilink?: boolean | undefined;
 
   /**
+   * The source path of the link.
+   */
+  newSourcePathOrFile: PathOrFile;
+
+  /**
+   * The old source file containing the link.
+   */
+  oldSourcePathOrFile?: PathOrFile | undefined;
+
+  /**
    * The old target path of the link.
    */
   oldTargetPath: PathOrFile;
-
-  /**
-   * The source path of the link.
-   */
-  sourcePathOrFile: PathOrFile;
 
   /**
    * The target path or file.
@@ -300,9 +305,19 @@ export interface UpdateLinkOptions {
   link: Reference;
 
   /**
+   * The source file containing the link.
+   */
+  newSourcePathOrFile: PathOrFile;
+
+  /**
    * The file associated with the link.
    */
   newTargetPathOrFile: PathOrFile;
+
+  /**
+   * The old source file containing the link.
+   */
+  oldSourcePathOrFile?: PathOrFile | undefined;
 
   /**
    * The old path of the file.
@@ -318,11 +333,6 @@ export interface UpdateLinkOptions {
    * Whether to update filename alias. Defaults to `true`.
    */
   shouldUpdateFilenameAlias?: boolean | undefined;
-
-  /**
-   * The source file containing the link.
-   */
-  sourcePathOrFile: PathOrFile;
 }
 
 /**
@@ -342,7 +352,7 @@ export interface UpdateLinksInFileOptions {
   /**
    * The old path of the file.
    */
-  oldSourcePathOrFile: PathOrFile;
+  oldSourcePathOrFile?: PathOrFile;
 
   /**
    * Whether to force the links to be in Markdown format.
@@ -382,10 +392,11 @@ export function convertLink(options: ConvertLinkOptions): string {
   return updateLink({
     app: options.app,
     link: options.link,
+    newSourcePathOrFile: options.newSourcePathOrFile,
     newTargetPathOrFile: targetFile,
+    oldSourcePathOrFile: options.oldSourcePathOrFile,
     shouldForceMarkdownLinks: options.shouldForceMarkdownLinks,
-    shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias,
-    sourcePathOrFile: options.newSourcePathOrFile
+    shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias
   });
 }
 
@@ -639,8 +650,9 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     app,
     displayText,
     isWikilink,
+    newSourcePathOrFile,
+    oldSourcePathOrFile,
     oldTargetPath,
-    sourcePathOrFile,
     targetPathOrFile
   } = options;
   if (isWikilink === false) {
@@ -652,8 +664,10 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
   }
 
   const targetFile = getFile(app, targetPathOrFile);
-  const sourcePath = getPath(sourcePathOrFile);
-  const sourceDir = dirname(sourcePath);
+  const newSourcePath = getPath(newSourcePathOrFile);
+  const oldSourcePath = getPath(oldSourcePathOrFile ?? newSourcePathOrFile);
+  const newSourceDir = dirname(newSourcePath);
+  const oldSourceDir = dirname(oldSourcePath);
   const aliasesToReset = new Set<string>();
 
   for (const pathOrFile of [targetFile.path, oldTargetPath]) {
@@ -664,10 +678,13 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     const path = getPath(pathOrFile);
     aliasesToReset.add(path);
     aliasesToReset.add(basename(path));
-    aliasesToReset.add(relative(sourceDir, path));
+    aliasesToReset.add(relative(newSourceDir, path));
+    aliasesToReset.add(relative(oldSourceDir, path));
   }
 
-  aliasesToReset.add(app.metadataCache.fileToLinktext(targetFile, sourcePath, false));
+  for (const sourcePath of [oldSourcePath, newSourcePath]) {
+    aliasesToReset.add(app.metadataCache.fileToLinktext(targetFile, sourcePath, false));
+  }
 
   const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/^\.\//, '').toLowerCase();
 
@@ -759,11 +776,12 @@ export function updateLink(options: UpdateLinkOptions): string {
   const {
     app,
     link,
+    newSourcePathOrFile: newSourcePathOrFile,
     newTargetPathOrFile,
+    oldSourcePathOrFile,
     oldTargetPathOrFile,
     shouldForceMarkdownLinks,
-    shouldUpdateFilenameAlias,
-    sourcePathOrFile
+    shouldUpdateFilenameAlias
   } = options;
   if (!newTargetPathOrFile) {
     return link.original;
@@ -773,7 +791,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   const isWikilink = testWikilink(link.original) && shouldForceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
 
-  if (isCanvasFile(sourcePathOrFile)) {
+  if (isCanvasFile(newSourcePathOrFile)) {
     return targetFile.path + subpath;
   }
 
@@ -781,8 +799,9 @@ export function updateLink(options: UpdateLinkOptions): string {
     app,
     displayText: link.displayText,
     isWikilink,
+    newSourcePathOrFile,
+    oldSourcePathOrFile,
     oldTargetPath,
-    sourcePathOrFile,
     targetPathOrFile: targetFile
   })
     ? undefined
@@ -801,7 +820,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     app,
     isWikilink: shouldForceMarkdownLinks ? false : undefined,
     originalLink: link.original,
-    sourcePathOrFile,
+    sourcePathOrFile: newSourcePathOrFile,
     subpath,
     targetPathOrFile: targetFile
   });

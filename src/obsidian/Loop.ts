@@ -20,10 +20,6 @@ export interface LoopOptions<T> {
    */
   buildNoticeMessage(item: T, iterationStr: string): string;
   /**
-   * Whether to continue the loop on error.
-   */
-  shouldContinueOnError?: boolean;
-  /**
    * The items to loop over.
    */
   items: T[];
@@ -31,6 +27,10 @@ export interface LoopOptions<T> {
    * The function to process each item.
    */
   processItem(item: T): MaybePromise<void>;
+  /**
+   * Whether to continue the loop on error.
+   */
+  shouldContinueOnError?: boolean;
 }
 
 /**
