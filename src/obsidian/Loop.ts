@@ -22,7 +22,7 @@ export interface LoopOptions<T> {
   /**
    * Whether to continue the loop on error.
    */
-  continueOnError?: boolean;
+  shouldContinueOnError?: boolean;
   /**
    * The items to loop over.
    */
@@ -56,7 +56,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     try {
       await options.processItem(item);
     } catch (error) {
-      if (!options.continueOnError) {
+      if (!options.shouldContinueOnError) {
         notice.hide();
         throw error;
       } else {

@@ -79,7 +79,7 @@ export interface ObsidianReleasesJson {
  * @returns A promise that resolves when the tag has been created.
  */
 export async function addGitTag(newVersion: string): Promise<void> {
-  await execFromRoot(`git tag -a ${newVersion} -m ${newVersion} --force`, { quiet: true });
+  await execFromRoot(`git tag -a ${newVersion} -m ${newVersion} --force`, { isQuiet: true });
 }
 
 /**
@@ -96,8 +96,8 @@ export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
     ObsidianPluginRepoPaths.VersionsJson,
     ObsidianPluginRepoPaths.ChangelogMd
   ].filter((file) => existsSync(resolvePathFromRoot(file)));
-  await execFromRoot(['git', 'add', ...files], { quiet: true });
-  await execFromRoot(`git commit -m ${newVersion} --allow-empty`, { quiet: true });
+  await execFromRoot(['git', 'add', ...files], { isQuiet: true });
+  await execFromRoot(`git commit -m ${newVersion} --allow-empty`, { isQuiet: true });
 }
 
 /**
@@ -109,7 +109,7 @@ export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
  */
 export async function checkGitHubCliInstalled(): Promise<void> {
   try {
-    await execFromRoot('gh --version', { quiet: true });
+    await execFromRoot('gh --version', { isQuiet: true });
   } catch {
     throw new Error('GitHub CLI is not installed. Please install it from https://cli.github.com/');
   }
@@ -124,7 +124,7 @@ export async function checkGitHubCliInstalled(): Promise<void> {
  */
 export async function checkGitInstalled(): Promise<void> {
   try {
-    await execFromRoot('git --version', { quiet: true });
+    await execFromRoot('git --version', { isQuiet: true });
   } catch {
     throw new Error('Git is not installed. Please install it from https://git-scm.com/');
   }
@@ -139,7 +139,7 @@ export async function checkGitInstalled(): Promise<void> {
  */
 export async function checkGitRepoClean(): Promise<void> {
   try {
-    const stdout = await execFromRoot('git status --porcelain --untracked-files=all', { quiet: true });
+    const stdout = await execFromRoot('git status --porcelain --untracked-files=all', { isQuiet: true });
     if (stdout) {
       throw new Error();
     }
@@ -223,11 +223,11 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
   const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
   let releaseNotes = match?.[1] ? match[1] + '\n\n' : '';
 
-  const tags = (await execFromRoot('git tag --sort=-creatordate', { quiet: true })).split(/\r?\n/);
+  const tags = (await execFromRoot('git tag --sort=-creatordate', { isQuiet: true })).split(/\r?\n/);
   const previousVersion = tags[1];
   let changesUrl = '';
 
-  const repoUrl = await execFromRoot('gh repo view --json url -q .url', { quiet: true });
+  const repoUrl = await execFromRoot('gh repo view --json url -q .url', { isQuiet: true });
 
   if (previousVersion) {
     changesUrl = `${repoUrl}/compare/${previousVersion}...${newVersion}`;
@@ -269,7 +269,7 @@ export function getVersionUpdateType(versionUpdateType: string): VersionUpdateTy
  * @returns A promise that resolves when the push operation is complete.
  */
 export async function gitPush(): Promise<void> {
-  await execFromRoot('git push --follow-tags --force', { quiet: true });
+  await execFromRoot('git push --follow-tags --force', { isQuiet: true });
 }
 
 /**
@@ -310,7 +310,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
   }
 
   await execFromRoot(['gh', 'release', 'create', newVersion, ...filePaths, '--title', `v${newVersion}`, '--notes-file', '-'], {
-    quiet: true,
+    isQuiet: true,
     stdin: await getReleaseNotes(newVersion)
   });
 }
@@ -339,7 +339,7 @@ export async function updateChangelog(newVersion: string): Promise<void> {
 
   const lastTag = previousChangelogLines[0]?.replace('## ', '');
   const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
-  const commitMessages = (await execFromRoot(`git log ${commitRange} --format=%s --first-parent`, { quiet: true })).split(/\r?\n/);
+  const commitMessages = (await execFromRoot(`git log ${commitRange} --format=%s --first-parent`, { isQuiet: true })).split(/\r?\n/);
 
   let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
 

@@ -61,11 +61,11 @@ export function execFromRoot(command: string | string[], options: { withDetails:
  */
 export function execFromRoot(command: string | string[], options: ExecOption = {}): Promise<ExecResult | string> {
   const root = getRootDir(options.cwd);
-  if (options.withDetails) {
-    return exec(command, { ...options, cwd: root, withDetails: true });
+  if (options.shouldIncludeDetails) {
+    return exec(command, { ...options, cwd: root, shouldIncludeDetails: true });
   }
 
-  return exec(command, { ...options, cwd: root, withDetails: false });
+  return exec(command, { ...options, cwd: root, shouldIncludeDetails: false });
 }
 
 /**

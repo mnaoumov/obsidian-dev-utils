@@ -19,7 +19,7 @@ export interface EditJsonOptions {
   /**
    * If true, skips editing if the file does not exist.
    */
-  skipIfMissing?: boolean | undefined;
+  shouldSkipIfMissing?: boolean | undefined;
 }
 
 /**
@@ -37,7 +37,7 @@ export async function editJson<T>(
   editFn: (data: T) => MaybePromise<void>,
   options: EditJsonOptions = {}): Promise<void> {
   const {
-    skipIfMissing
+    shouldSkipIfMissing: skipIfMissing
   } = options;
   if (skipIfMissing && !existsSync(path)) {
     return;

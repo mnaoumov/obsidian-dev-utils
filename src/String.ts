@@ -143,16 +143,16 @@ export async function replaceAllAsync<Args extends unknown[]>(
  *
  * @param str - The string to trim.
  * @param suffix - The suffix to remove from the end of the string.
- * @param validate - If true, throws an error if the string does not end with the suffix.
+ * @param shouldValidate - If true, throws an error if the string does not end with the suffix.
  * @returns The trimmed string.
  * @throws If `validate` is true and the string does not end with the suffix.
  */
-export function trimEnd(str: string, suffix: string, validate?: boolean): string {
+export function trimEnd(str: string, suffix: string, shouldValidate?: boolean): string {
   if (str.endsWith(suffix)) {
     return str.slice(0, -suffix.length);
   }
 
-  if (validate) {
+  if (shouldValidate) {
     throw new Error(`String ${str} does not end with suffix ${suffix}`);
   }
 
