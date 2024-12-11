@@ -175,11 +175,6 @@ export interface GenerateMarkdownLinkOptions {
   originalLink?: string | undefined;
 
   /**
-   * The target path or file.
-   */
-  targetPathOrFile: PathOrFile;
-
-  /**
    * The source path of the link.
    */
   sourcePathOrFile: PathOrFile;
@@ -188,6 +183,11 @@ export interface GenerateMarkdownLinkOptions {
    * The subpath of the link.
    */
   subpath?: string | undefined;
+
+  /**
+   * The target path or file.
+   */
+  targetPathOrFile: PathOrFile;
 
   /**
    * Indicates if the link should use angle brackets. Defaults to `false`. Has no effect if `isWikilink` is `true`
@@ -265,14 +265,14 @@ export interface ShouldResetAliasOptions {
   otherPathOrFiles: (PathOrFile | undefined)[];
 
   /**
-   * The target path or file.
-   */
-  targetPathOrFile: PathOrFile;
-
-  /**
    * The source path of the link.
    */
   sourcePathOrFile: PathOrFile;
+
+  /**
+   * The target path or file.
+   */
+  targetPathOrFile: PathOrFile;
 }
 
 /**
@@ -310,14 +310,14 @@ export interface UpdateLinkOptions {
   link: Reference;
 
   /**
-   * The old path of the file.
-   */
-  oldTargetPathOrFile?: PathOrFile | undefined;
-
-  /**
    * The file associated with the link.
    */
   newTargetPathOrFile: null | PathOrFile;
+
+  /**
+   * The old path of the file.
+   */
+  oldTargetPathOrFile?: PathOrFile | undefined;
 
   /**
    * A map of old and new file paths.
@@ -394,8 +394,8 @@ export function convertLink(options: ConvertLinkOptions): string {
     app: options.app,
     forceMarkdownLinks: options.forceMarkdownLinks,
     link: options.link,
-    oldTargetPathOrFile: targetPathOrFile ?? undefined,
     newTargetPathOrFile: targetPathOrFile,
+    oldTargetPathOrFile: targetPathOrFile ?? undefined,
     renameMap: options.renameMap,
     shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias,
     sourcePathOrFile: options.sourcePathOrFile
@@ -653,8 +653,8 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     displayText,
     isWikilink,
     otherPathOrFiles,
-    targetPathOrFile,
-    sourcePathOrFile
+    sourcePathOrFile,
+    targetPathOrFile
   } = options;
   if (isWikilink === false) {
     return false;
@@ -775,8 +775,8 @@ export function updateLink(options: UpdateLinkOptions): string {
     app,
     forceMarkdownLinks,
     link,
-    oldTargetPathOrFile,
     newTargetPathOrFile,
+    oldTargetPathOrFile,
     renameMap,
     shouldUpdateFilenameAlias,
     sourcePathOrFile
@@ -795,8 +795,8 @@ export function updateLink(options: UpdateLinkOptions): string {
     displayText: link.displayText,
     isWikilink,
     otherPathOrFiles: [oldPath, newPath],
-    targetPathOrFile: newTargetPathOrFile,
-    sourcePathOrFile
+    sourcePathOrFile,
+    targetPathOrFile: newTargetPathOrFile
   })
     ? undefined
     : link.displayText;
@@ -822,9 +822,9 @@ export function updateLink(options: UpdateLinkOptions): string {
     app,
     isWikilink: forceMarkdownLinks ? false : undefined,
     originalLink: link.original,
-    targetPathOrFile: targetFile,
     sourcePathOrFile,
-    subpath
+    subpath,
+    targetPathOrFile: targetFile
   });
   return newLink;
 }
