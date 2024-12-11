@@ -381,8 +381,8 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
         return updateLink({
           app: app,
           link,
-          oldTargetPathOrFile: oldAttachmentPath,
           newTargetPathOrFile: newAttachmentPath,
+          oldTargetPathOrFile: oldAttachmentPath,
           renameMap,
           shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases,
           sourcePathOrFile: newBacklinkPath
