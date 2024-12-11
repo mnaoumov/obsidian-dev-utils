@@ -20,6 +20,11 @@ export type MaybePromise<T> = Promise<T> | T;
  */
 export interface RetryOptions {
   /**
+   * The abort signal to cancel the retry operation.
+   */
+  abortSignal?: AbortSignal;
+
+  /**
    * The delay in milliseconds between retry attempts.
    */
   retryDelayInMilliseconds: number;
@@ -160,6 +165,7 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
   await runWithTimeout(overriddenOptions.timeoutInMilliseconds, async () => {
     let attempt = 0;
     for (; ;) {
+      overriddenOptions.abortSignal?.throwIfAborted();
       attempt++;
       let isSuccess: boolean;
       try {
