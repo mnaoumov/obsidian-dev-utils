@@ -84,11 +84,6 @@ export interface ConvertLinkOptions {
   app: App;
 
   /**
-   * Whether to force markdown links.
-   */
-  forceMarkdownLinks?: boolean | undefined;
-
-  /**
    * The reference for the link.
    */
   link: Reference;
@@ -102,6 +97,11 @@ export interface ConvertLinkOptions {
    * The old path of the link.
    */
   oldSourcePathOrFile?: PathOrFile;
+
+  /**
+   * Whether to force markdown links.
+   */
+  shouldForceMarkdownLinks?: boolean | undefined;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
@@ -129,34 +129,24 @@ export interface GenerateMarkdownLinkOptions {
   alias?: string | undefined;
 
   /**
-   * Whether to allow an empty alias for embeds. Defaults to `true`.
-   */
-  allowEmptyEmbedAlias?: boolean | undefined;
-
-  /**
-   * Whether to allow non-existing files. If `false` and `pathOrFile` is a non-existing file, an error will be thrown. Defaults to `false`.
-   */
-  allowNonExistingFile?: boolean | undefined;
-
-  /**
    * The Obsidian app instance.
    */
   app: App;
 
   /**
-   * Indicates if the link should be relative. If not provided or `false`, it will be inferred based on the Obsidian settings.
-   */
-  forceRelativePath?: boolean | undefined;
-
-  /**
-   * Whether to include the attachment extension in the embed alias. Has no effect if `allowEmptyEmbedAlias` is `true`. Defaults to `false`.
-   */
-  includeAttachmentExtensionToEmbedAlias?: boolean | undefined;
-
-  /**
    * Indicates if the link should be embedded. If not provided, it will be inferred based on the file type.
    */
   isEmbed?: boolean | undefined;
+
+  /**
+   * Whether to allow an empty alias for embeds. Defaults to `true`.
+   */
+  isEmptyEmbedAliasAllowed?: boolean | undefined;
+
+  /**
+   * Whether to allow non-existing files. If `false` and `pathOrFile` is a non-existing file, an error will be thrown. Defaults to `false`.
+   */
+  isNonExistingFileAllowed?: boolean | undefined;
 
   /**
    * Indicates if the link should be a wikilink. If not provided, it will be inferred based on the Obsidian settings.
@@ -168,6 +158,26 @@ export interface GenerateMarkdownLinkOptions {
     * These inferred values will be overridden by corresponding settings if specified.
     */
   originalLink?: string | undefined;
+
+  /**
+   * Indicates if the link should be relative. If not provided or `false`, it will be inferred based on the Obsidian settings.
+   */
+  shouldForceRelativePath?: boolean | undefined;
+
+  /**
+   * Whether to include the attachment extension in the embed alias. Has no effect if `allowEmptyEmbedAlias` is `true`. Defaults to `false`.
+   */
+  shouldIncludeAttachmentExtensionToEmbedAlias?: boolean | undefined;
+
+  /**
+   * Indicates if the link should use angle brackets. Defaults to `false`. Has no effect if `isWikilink` is `true`
+   */
+  shouldUseAngleBrackets?: boolean | undefined;
+
+  /**
+   * Indicates if the link should use a leading dot. Defaults to `false`. Has no effect if `isWikilink` is `true` or `isRelative` is `false`.
+   */
+  shouldUseLeadingDot?: boolean | undefined;
 
   /**
    * The source path of the link.
@@ -183,16 +193,6 @@ export interface GenerateMarkdownLinkOptions {
    * The target path or file.
    */
   targetPathOrFile: PathOrFile;
-
-  /**
-   * Indicates if the link should use angle brackets. Defaults to `false`. Has no effect if `isWikilink` is `true`
-   */
-  useAngleBrackets?: boolean | undefined;
-
-  /**
-   * Indicates if the link should use a leading dot. Defaults to `false`. Has no effect if `isWikilink` is `true` or `isRelative` is `false`.
-   */
-  useLeadingDot?: boolean | undefined;
 }
 
 /**
@@ -295,11 +295,6 @@ export interface UpdateLinkOptions {
   app: App;
 
   /**
-   * Whether to force markdown links.
-   */
-  forceMarkdownLinks?: boolean | undefined;
-
-  /**
    * The reference for the link.
    */
   link: Reference;
@@ -313,6 +308,11 @@ export interface UpdateLinkOptions {
    * The old path of the file.
    */
   oldTargetPathOrFile?: PathOrFile | undefined;
+
+  /**
+   * Whether to force markdown links.
+   */
+  shouldForceMarkdownLinks?: boolean | undefined;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
@@ -335,16 +335,6 @@ export interface UpdateLinksInFileOptions {
   app: App;
 
   /**
-   * Whether to update only embedded links.
-   */
-  embedOnlyLinks?: boolean | undefined;
-
-  /**
-   * Whether to force the links to be in Markdown format.
-   */
-  forceMarkdownLinks?: boolean | undefined;
-
-  /**
    * The file to update the links in.
    */
   newSourcePathOrFile: PathOrFile;
@@ -353,6 +343,16 @@ export interface UpdateLinksInFileOptions {
    * The old path of the file.
    */
   oldSourcePathOrFile: PathOrFile;
+
+  /**
+   * Whether to force the links to be in Markdown format.
+   */
+  shouldForceMarkdownLinks?: boolean | undefined;
+
+  /**
+   * Whether to update only embedded links.
+   */
+  shouldUpdateEmbedOnlyLinks?: boolean | undefined;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
@@ -381,9 +381,9 @@ export function convertLink(options: ConvertLinkOptions): string {
 
   return updateLink({
     app: options.app,
-    forceMarkdownLinks: options.forceMarkdownLinks,
     link: options.link,
     newTargetPathOrFile: targetFile,
+    shouldForceMarkdownLinks: options.shouldForceMarkdownLinks,
     shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias,
     sourcePathOrFile: options.newSourcePathOrFile
   });
@@ -456,12 +456,12 @@ export async function editLinks(
  *
  * @param app - The Obsidian application instance.
  * @param link - The reference cache for the link.
- * @param notePathOrFile - The path or file of the note containing the link.
+ * @param sourcePathOrFile - The source path or file.
  * @returns The file associated with the link, or null if not found.
  */
-export function extractLinkFile(app: App, link: Reference, notePathOrFile: PathOrFile): null | TFile {
+export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: PathOrFile): null | TFile {
   const { linkPath } = splitSubpath(link.link);
-  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(notePathOrFile));
+  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(sourcePathOrFile));
 }
 
 /**
@@ -477,12 +477,12 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
   const configurableDefaultOptions = configurableDefaultOptionsFn();
 
   const DEFAULT_OPTIONS: Partial<GenerateMarkdownLinkOptions> = {
-    allowEmptyEmbedAlias: true
+    isEmptyEmbedAliasAllowed: true
   };
 
   options = { ...DEFAULT_OPTIONS, ...configurableDefaultOptions, ...options };
 
-  const targetFile = getFile(app, options.targetPathOrFile, options.allowNonExistingFile);
+  const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
 
   return tempRegisterFileAndRun(app, targetFile, () => {
     const sourcePath = getPath(options.sourcePathOrFile);
@@ -490,24 +490,24 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
     let alias = options.alias ?? '';
     const isEmbed = options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(targetFile);
     const isWikilink = options.isWikilink ?? (options.originalLink ? testWikilink(options.originalLink) : undefined) ?? shouldUseWikilinks(app);
-    const forceRelativePath = options.forceRelativePath ?? shouldUseRelativeLinks(app);
-    const useLeadingDot = options.useLeadingDot ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false;
-    const useAngleBrackets = options.useAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false;
+    const shouldForceRelativePath = options.shouldForceRelativePath ?? shouldUseRelativeLinks(app);
+    const shouldUseLeadingDot = options.shouldUseLeadingDot ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false;
+    const shouldUseAngleBrackets = options.shouldUseAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false;
 
     let linkText = targetFile.path === sourcePath && subpath
       ? subpath
-      : forceRelativePath
+      : shouldForceRelativePath
         ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(targetFile) : targetFile.path) + subpath
         : app.metadataCache.fileToLinktext(targetFile, sourcePath, isWikilink) + subpath;
 
-    if (forceRelativePath && useLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
+    if (shouldForceRelativePath && shouldUseLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
       linkText = './' + linkText;
     }
 
     const embedPrefix = isEmbed ? '!' : '';
 
     if (!isWikilink) {
-      if (useAngleBrackets) {
+      if (shouldUseAngleBrackets) {
         linkText = `<${linkText}>`;
       } else {
         linkText = linkText.replace(SPECIAL_LINK_SYMBOLS_REGEXP, function (specialLinkSymbol) {
@@ -515,8 +515,8 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
         });
       }
 
-      if (!alias && (!isEmbed || !options.allowEmptyEmbedAlias)) {
-        alias = !options.includeAttachmentExtensionToEmbedAlias || isMarkdownFile(targetFile) ? targetFile.basename : targetFile.name;
+      if (!alias && (!isEmbed || !options.isEmptyEmbedAliasAllowed)) {
+        alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(targetFile) ? targetFile.basename : targetFile.name;
       }
 
       alias = alias.replace(SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
@@ -647,15 +647,13 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     return false;
   }
 
-  const targetFile = getFile(app, targetPathOrFile);
-
   if (!displayText) {
     return true;
   }
 
+  const targetFile = getFile(app, targetPathOrFile);
   const sourcePath = getPath(sourcePathOrFile);
   const sourceDir = dirname(sourcePath);
-
   const aliasesToReset = new Set<string>();
 
   for (const pathOrFile of [targetFile.path, oldTargetPath]) {
@@ -760,10 +758,10 @@ export function testWikilink(link: string): boolean {
 export function updateLink(options: UpdateLinkOptions): string {
   const {
     app,
-    forceMarkdownLinks,
     link,
     newTargetPathOrFile,
     oldTargetPathOrFile,
+    shouldForceMarkdownLinks,
     shouldUpdateFilenameAlias,
     sourcePathOrFile
   } = options;
@@ -772,7 +770,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   }
   const targetFile = getFile(app, newTargetPathOrFile);
   const oldTargetPath = getPath(oldTargetPathOrFile ?? newTargetPathOrFile);
-  const isWikilink = testWikilink(link.original) && forceMarkdownLinks !== true;
+  const isWikilink = testWikilink(link.original) && shouldForceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
 
   if (isCanvasFile(sourcePathOrFile)) {
@@ -801,7 +799,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   const newLink = generateMarkdownLink({
     alias,
     app,
-    isWikilink: forceMarkdownLinks ? false : undefined,
+    isWikilink: shouldForceMarkdownLinks ? false : undefined,
     originalLink: link.original,
     sourcePathOrFile,
     subpath,
@@ -819,10 +817,10 @@ export function updateLink(options: UpdateLinkOptions): string {
 export async function updateLinksInFile(options: UpdateLinksInFileOptions): Promise<void> {
   const {
     app,
-    embedOnlyLinks,
-    forceMarkdownLinks,
     newSourcePathOrFile,
     oldSourcePathOrFile,
+    shouldForceMarkdownLinks,
+    shouldUpdateEmbedOnlyLinks,
     shouldUpdateFilenameAlias
   } = options;
 
@@ -832,15 +830,15 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
 
   await editLinks(app, newSourcePathOrFile, (link) => {
     const isEmbedLink = testEmbed(link.original);
-    if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
+    if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
       return;
     }
     return convertLink({
       app,
-      forceMarkdownLinks,
       link,
       newSourcePathOrFile,
       oldSourcePathOrFile,
+      shouldForceMarkdownLinks,
       shouldUpdateFilenameAlias
     });
   });

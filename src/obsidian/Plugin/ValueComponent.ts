@@ -23,11 +23,6 @@ import { assignWithNonEnumerableProperties } from '../../Object.ts';
  */
 interface BindValueComponentOptions<PluginSettings, UIValue> {
   /**
-   * If true, saves the plugin settings automatically after the component value changes. Default is `true`.
-   */
-  autoSave?: boolean;
-
-  /**
    * A callback function that is called when the value of the component changes.
    */
   onChanged?: () => MaybePromise<void>;
@@ -36,6 +31,11 @@ interface BindValueComponentOptions<PluginSettings, UIValue> {
    * The plugin settings object to bind the component to. Default is the plugin's current settings.
    */
   pluginSettings?: PluginSettings;
+
+  /**
+   * If true, saves the plugin settings automatically after the component value changes. Default is `true`.
+   */
+  shouldAutoSave?: boolean;
 
   /**
    * Validates the UI value before setting it on the plugin settings.
@@ -156,9 +156,9 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
   ): ValueComponentExType<UIValue, TValueComponent> {
     type PropertyType = PluginSettings[Property];
     const DEFAULT_OPTIONS: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = {
-      autoSave: true,
       componentToPluginSettingsValueConverter: (value): PropertyType => value as PropertyType,
-      pluginSettingsToComponentValueConverter: (value): UIValue => value as UIValue
+      pluginSettingsToComponentValueConverter: (value): UIValue => value as UIValue,
+      shouldAutoSave: true
     };
 
     const optionsExt: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = { ...DEFAULT_OPTIONS, ...options };
@@ -188,7 +188,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
         }
         const pluginSettings = pluginSettingsFn();
         pluginSettings[property] = optionsExt.componentToPluginSettingsValueConverter(uiValue);
-        if (optionsExt.autoSave) {
+        if (optionsExt.shouldAutoSave) {
           await pluginExt.saveSettings(pluginSettings);
         }
 

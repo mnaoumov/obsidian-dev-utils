@@ -94,7 +94,7 @@ export async function editNpmPackage(
     cwd,
     skipIfMissing
   } = options;
-  await editJson<NpmPackage>(getPackageJsonPath(cwd), editFn, { skipIfMissing });
+  await editJson<NpmPackage>(getPackageJsonPath(cwd), editFn, { shouldSkipIfMissing: skipIfMissing });
 }
 
 /**
@@ -111,7 +111,7 @@ export async function editNpmPackageLock(
     cwd,
     skipIfMissing
   } = options;
-  await editJson<NpmPackage>(getPackageLockJsonPath(cwd), editFn, { skipIfMissing });
+  await editJson<NpmPackage>(getPackageLockJsonPath(cwd), editFn, { shouldSkipIfMissing: skipIfMissing });
 }
 
 /**

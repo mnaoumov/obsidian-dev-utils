@@ -20,24 +20,24 @@ export interface ExecOption {
   cwd?: string | undefined;
 
   /**
-   * If true, ignores the exit code of the command.
-   */
-  ignoreExitCode?: boolean;
-
-  /**
    * If true, suppresses the output of the command.
    */
-  quiet?: boolean;
+  isQuiet?: boolean;
+
+  /**
+   * If true, ignores the exit code of the command.
+   */
+  shouldIgnoreExitCode?: boolean;
+
+  /**
+   * If false, only returns the output of the command.
+   */
+  shouldIncludeDetails?: boolean;
 
   /**
    * The input to be passed to the command.
    */
   stdin?: string;
-
-  /**
-   * If false, only returns the output of the command.
-   */
-  withDetails?: boolean;
 }
 
 /**
@@ -107,10 +107,10 @@ export function exec(command: string | string[], options: { withDetails: true } 
 export function exec(command: string | string[], options: ExecOption = {}): Promise<ExecResult | string> {
   const {
     cwd = process.cwd(),
-    ignoreExitCode = false,
-    quiet = false,
-    stdin = '',
-    withDetails = false
+    isQuiet: quiet = false,
+    shouldIgnoreExitCode: ignoreExitCode = false,
+    shouldIncludeDetails: withDetails = false,
+    stdin = ''
   } = options;
   if (Array.isArray(command)) {
     command = toCommandLine(command);

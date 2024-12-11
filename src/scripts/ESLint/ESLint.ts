@@ -28,14 +28,14 @@ import { configs as defaultConfigs } from './eslint.config.ts';
 /**
  * Lints files according to the ESLint configurations and applies automatic fixes if specified.
  *
- * @param fix - Whether to automatically fix linting issues. Defaults to false.
+ * @param shouldFix - Whether to automatically fix linting issues. Defaults to false.
  * @param customConfigs - Custom ESLint configurations to merge with the default configurations.
  * @returns A promise that resolves to a CliTaskResult indicating success or failure.
  *
  * @throws If the package directory cannot be found.
  */
-export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Promise<CliTaskResult> {
-  fix ??= false;
+export async function lint(shouldFix?: boolean, customConfigs?: Linter.Config[]): Promise<CliTaskResult> {
+  shouldFix ??= false;
   const packageDir = getRootDir(getDirname(import.meta.url));
   if (!packageDir) {
     throw new Error('Could not find package directory.');
@@ -44,7 +44,7 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
   const configs = [...defaultConfigs, ...customConfigs ?? []];
   const FlatESLint = await loadESLint({ useFlatConfig: true });
   const eslint = new FlatESLint({
-    fix,
+    fix: shouldFix,
     overrideConfig: configs,
     overrideConfigFile: join(packageDir, ObsidianDevUtilsRepoPaths.DistEslintConfigEmptyCjs)
   });
@@ -58,7 +58,7 @@ export async function lint(fix?: boolean, customConfigs?: Linter.Config[]): Prom
   const files = await glob(includePatterns, { ignore: ignorePatterns });
   const lintResults = files.length > 0 ? await eslint.lintFiles(files) : [];
 
-  if (fix) {
+  if (shouldFix) {
     await FlatESLint.outputFixes(lintResults);
   }
 

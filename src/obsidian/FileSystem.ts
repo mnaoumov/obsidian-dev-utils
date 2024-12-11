@@ -67,12 +67,12 @@ export function checkExtension(pathOrFile: null | PathOrAbstractFile, extension:
  *
  * @param app - The App instance.
  * @param pathOrFile - The path or abstract file to retrieve the TAbstractFile for.
- * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
+ * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The TAbstractFile object.
  * @throws Error if the abstract file is not found.
  */
-export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, insensitive?: boolean): TAbstractFile {
-  const file = getAbstractFileOrNull(app, pathOrFile, insensitive);
+export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, isCaseInsensitive?: boolean): TAbstractFile {
+  const file = getAbstractFileOrNull(app, pathOrFile, isCaseInsensitive);
   if (!file) {
     throw new Error(`Abstract file not found: ${pathOrFile as string}`);
   }
@@ -85,10 +85,10 @@ export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, insens
  *
  * @param app - The application instance.
  * @param pathOrFile - The path or abstract file to retrieve.
- * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
+ * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The instance of TAbstractFile if found, otherwise null.
  */
-export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstractFile, insensitive?: boolean): null | TAbstractFile {
+export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstractFile, isCaseInsensitive?: boolean): null | TAbstractFile {
   if (pathOrFile === null) {
     return null;
   }
@@ -99,7 +99,7 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
 
   const path = getPath(pathOrFile);
 
-  if (insensitive) {
+  if (isCaseInsensitive) {
     return app.vault.getAbstractFileByPathInsensitive(path);
   }
 
@@ -111,17 +111,17 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
  *
  * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or file to retrieve the TFile object for.
- * @param allowNonExisting - Whether to allow the file to not exist.
+ * @param shouldIncludeNonExisting - Whether to include a non-existing file.
  *  If `true`, a new TFile object is created for the provided path.
  *  If `false`, an error is thrown if the file is not found.
- * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
+ * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The TFile object corresponding to the provided path or file.
  * @throws Error if the file is not found.
  */
-export function getFile(app: App, pathOrFile: PathOrFile, allowNonExisting?: boolean, insensitive?: boolean): TFile {
-  let file = getFileOrNull(app, pathOrFile, insensitive);
+export function getFile(app: App, pathOrFile: PathOrFile, shouldIncludeNonExisting?: boolean, isCaseInsensitive?: boolean): TFile {
+  let file = getFileOrNull(app, pathOrFile, isCaseInsensitive);
   if (!file) {
-    if (allowNonExisting) {
+    if (shouldIncludeNonExisting) {
       file = createTFileInstance(app.vault, pathOrFile as string);
     } else {
       throw new Error(`File not found: ${pathOrFile as string}`);
@@ -137,11 +137,11 @@ export function getFile(app: App, pathOrFile: PathOrFile, allowNonExisting?: boo
  * Otherwise, the function uses the app's vault to retrieve the TFile object by its path.
  * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or TFile object.
- * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
+ * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The TFile object if found, otherwise null.
  */
-export function getFileOrNull(app: App, pathOrFile: null | PathOrFile, insensitive?: boolean): null | TFile {
-  const file = getAbstractFileOrNull(app, pathOrFile, insensitive);
+export function getFileOrNull(app: App, pathOrFile: null | PathOrFile, isCaseInsensitive?: boolean): null | TFile {
+  const file = getAbstractFileOrNull(app, pathOrFile, isCaseInsensitive);
   if (isFile(file)) {
     return file;
   }
@@ -153,17 +153,17 @@ export function getFileOrNull(app: App, pathOrFile: null | PathOrFile, insensiti
  *
  * @param app - The Obsidian app instance.
  * @param pathOrFolder - The path or folder identifier.
- * @param allowNonExisting - Whether to allow the folder to not exist.
+ * @param shouldIncludeNonExisting - Whether to allow the folder to not exist.
  *  If `true`, a new TFolder object is created for the provided path.
  *  If `false`, an error is thrown if the folder is not found.
- * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
+ * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The retrieved TFolder object.
  * @throws If the folder is not found.
  */
-export function getFolder(app: App, pathOrFolder: PathOrFolder, allowNonExisting?: boolean, insensitive?: boolean): TFolder {
-  let folder = getFolderOrNull(app, pathOrFolder, insensitive);
+export function getFolder(app: App, pathOrFolder: PathOrFolder, shouldIncludeNonExisting?: boolean, isCaseInsensitive?: boolean): TFolder {
+  let folder = getFolderOrNull(app, pathOrFolder, isCaseInsensitive);
   if (!folder) {
-    if (allowNonExisting) {
+    if (shouldIncludeNonExisting) {
       folder = createTFolderInstance(app.vault, pathOrFolder as string);
     } else {
       throw new Error(`Folder not found: ${pathOrFolder as string}`);
@@ -178,11 +178,11 @@ export function getFolder(app: App, pathOrFolder: PathOrFolder, allowNonExisting
  *
  * @param app - The Obsidian application instance.
  * @param pathOrFolder - The path or folder to retrieve the TFolder from.
- * @param insensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
+ * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
  * @returns The TFolder object if found, otherwise null.
  */
-export function getFolderOrNull(app: App, pathOrFolder: null | PathOrFolder, insensitive?: boolean): null | TFolder {
-  const folder = getAbstractFileOrNull(app, pathOrFolder, insensitive);
+export function getFolderOrNull(app: App, pathOrFolder: null | PathOrFolder, isCaseInsensitive?: boolean): null | TFolder {
+  const folder = getAbstractFileOrNull(app, pathOrFolder, isCaseInsensitive);
   if (isFolder(folder)) {
     return folder;
   }
