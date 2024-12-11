@@ -350,13 +350,13 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
 
     const parentFolders = new Set<string>();
 
-    for (const [oldRelatedPath, newRelatedPath] of renameMap.entries()) {
-      if (oldRelatedPath === oldPath) {
+    for (const [oldAttachmentPath, newAttachmentPath] of renameMap.entries()) {
+      if (oldAttachmentPath === oldPath) {
         continue;
       }
-      const fixedNewRelatedPath = await renameHandled(app, oldRelatedPath, newRelatedPath);
-      renameMap.set(oldRelatedPath, fixedNewRelatedPath);
-      parentFolders.add(dirname(oldRelatedPath));
+      const fixedNewAttachmentPath = await renameHandled(app, oldAttachmentPath, newAttachmentPath);
+      renameMap.set(oldAttachmentPath, fixedNewAttachmentPath);
+      parentFolders.add(dirname(oldAttachmentPath));
     }
 
     const settings = getSettings(app);
@@ -368,21 +368,21 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
 
     for (const [newBacklinkPath, linkJsonToPathMap] of backlinksMap.entries()) {
       await editLinks(app, newBacklinkPath, (link) => {
-        const oldRelatedPath = linkJsonToPathMap.get(toJson(link));
-        if (!oldRelatedPath) {
+        const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
+        if (!oldAttachmentPath) {
           return;
         }
 
-        const newRelatedPath = renameMap.get(oldRelatedPath);
-        if (!newRelatedPath) {
+        const newAttachmentPath = renameMap.get(oldAttachmentPath);
+        if (!newAttachmentPath) {
           return;
         }
 
         return updateLink({
           app: app,
           link,
-          oldPathOrFile: oldRelatedPath,
-          pathOrFile: newRelatedPath,
+          oldTargetPathOrFile: oldAttachmentPath,
+          newTargetPathOrFile: newAttachmentPath,
           renameMap,
           shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases,
           sourcePathOrFile: newBacklinkPath
