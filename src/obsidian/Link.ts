@@ -94,24 +94,19 @@ export interface ConvertLinkOptions {
   link: Reference;
 
   /**
-   * The old path of the link.
+   * The source file containing the link.
    */
-  oldPathOrFile?: PathOrFile | undefined;
+  newSourcePathOrFile: PathOrFile;
 
   /**
-   * A map of old and new file paths.
+   * The old path of the link.
    */
-  renameMap?: Map<string, string> | undefined;
+  oldSourcePathOrFile?: PathOrFile;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
    */
   shouldUpdateFilenameAlias?: boolean | undefined;
-
-  /**
-   * The source file containing the link.
-   */
-  sourcePathOrFile: PathOrFile;
 }
 
 /**
@@ -260,9 +255,9 @@ export interface ShouldResetAliasOptions {
   isWikilink?: boolean | undefined;
 
   /**
-   * Other paths associated with the link.
+   * The old target path of the link.
    */
-  otherPathOrFiles: (PathOrFile | undefined)[];
+  oldTargetPath: PathOrFile;
 
   /**
    * The source path of the link.
@@ -312,17 +307,12 @@ export interface UpdateLinkOptions {
   /**
    * The file associated with the link.
    */
-  newTargetPathOrFile: null | PathOrFile;
+  newTargetPathOrFile: PathOrFile;
 
   /**
    * The old path of the file.
    */
   oldTargetPathOrFile?: PathOrFile | undefined;
-
-  /**
-   * A map of old and new file paths.
-   */
-  renameMap?: Map<string, string> | undefined;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
@@ -355,19 +345,14 @@ export interface UpdateLinksInFileOptions {
   forceMarkdownLinks?: boolean | undefined;
 
   /**
-   * The old path of the file.
-   */
-  oldPathOrFile?: PathOrFile | undefined;
-
-  /**
    * The file to update the links in.
    */
-  pathOrFile: PathOrFile;
+  newSourcePathOrFile: PathOrFile;
 
   /**
-   * A map of old and new paths for renaming links.
+   * The old path of the file.
    */
-  renameMap?: Map<string, string> | undefined;
+  oldSourcePathOrFile: PathOrFile;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
@@ -389,16 +374,18 @@ interface WikiLinkNode {
  * @returns The converted link.
  */
 export function convertLink(options: ConvertLinkOptions): string {
-  const targetPathOrFile = options.oldPathOrFile ? extractLinkFile(options.app, options.link, options.oldPathOrFile) : null;
+  const targetFile = extractLinkFile(options.app, options.link, options.oldSourcePathOrFile ?? options.newSourcePathOrFile);
+  if (!targetFile) {
+    return options.link.original;
+  }
+
   return updateLink({
     app: options.app,
     forceMarkdownLinks: options.forceMarkdownLinks,
     link: options.link,
-    newTargetPathOrFile: targetPathOrFile,
-    oldTargetPathOrFile: targetPathOrFile ?? undefined,
-    renameMap: options.renameMap,
+    newTargetPathOrFile: targetFile,
     shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias,
-    sourcePathOrFile: options.sourcePathOrFile
+    sourcePathOrFile: options.newSourcePathOrFile
   });
 }
 
@@ -652,7 +639,7 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     app,
     displayText,
     isWikilink,
-    otherPathOrFiles,
+    oldTargetPath,
     sourcePathOrFile,
     targetPathOrFile
   } = options;
@@ -671,7 +658,7 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
 
   const aliasesToReset = new Set<string>();
 
-  for (const pathOrFile of [targetFile.path, ...otherPathOrFiles]) {
+  for (const pathOrFile of [targetFile.path, oldTargetPath]) {
     if (!pathOrFile) {
       continue;
     }
@@ -777,44 +764,38 @@ export function updateLink(options: UpdateLinkOptions): string {
     link,
     newTargetPathOrFile,
     oldTargetPathOrFile,
-    renameMap,
     shouldUpdateFilenameAlias,
     sourcePathOrFile
   } = options;
   if (!newTargetPathOrFile) {
     return link.original;
   }
-  let targetFile = getFile(app, newTargetPathOrFile);
-  const oldPath = getPath(oldTargetPathOrFile ?? sourcePathOrFile);
+  const targetFile = getFile(app, newTargetPathOrFile);
+  const oldTargetPath = getPath(oldTargetPathOrFile ?? newTargetPathOrFile);
   const isWikilink = testWikilink(link.original) && forceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
 
-  const newPath = renameMap?.get(targetFile.path);
+  if (isCanvasFile(sourcePathOrFile)) {
+    return targetFile.path + subpath;
+  }
+
   let alias = shouldResetAlias({
     app,
     displayText: link.displayText,
     isWikilink,
-    otherPathOrFiles: [oldPath, newPath],
+    oldTargetPath,
     sourcePathOrFile,
-    targetPathOrFile: newTargetPathOrFile
+    targetPathOrFile: targetFile
   })
     ? undefined
     : link.displayText;
 
   if (shouldUpdateFilenameAlias ?? true) {
-    if (alias?.toLowerCase() === basename(oldPath, extname(oldPath)).toLowerCase()) {
+    if (alias?.toLowerCase() === basename(oldTargetPath, extname(oldTargetPath)).toLowerCase()) {
       alias = targetFile.basename;
-    } else if (alias?.toLowerCase() === basename(oldPath).toLowerCase()) {
+    } else if (alias?.toLowerCase() === basename(oldTargetPath).toLowerCase()) {
       alias = targetFile.name;
     }
-  }
-
-  if (newPath) {
-    targetFile = getFile(app, newPath, true);
-  }
-
-  if (isCanvasFile(sourcePathOrFile)) {
-    return targetFile.path + subpath;
   }
 
   const newLink = generateMarkdownLink({
@@ -840,17 +821,16 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     app,
     embedOnlyLinks,
     forceMarkdownLinks,
-    oldPathOrFile,
-    pathOrFile,
-    renameMap,
+    newSourcePathOrFile,
+    oldSourcePathOrFile,
     shouldUpdateFilenameAlias
   } = options;
 
-  if (isCanvasFile(pathOrFile) && !app.internalPlugins.getEnabledPluginById('canvas')) {
+  if (isCanvasFile(newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById('canvas')) {
     return;
   }
 
-  await editLinks(app, pathOrFile, (link) => {
+  await editLinks(app, newSourcePathOrFile, (link) => {
     const isEmbedLink = testEmbed(link.original);
     if (embedOnlyLinks !== undefined && embedOnlyLinks !== isEmbedLink) {
       return;
@@ -859,10 +839,9 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
       app,
       forceMarkdownLinks,
       link,
-      oldPathOrFile,
-      renameMap,
-      shouldUpdateFilenameAlias,
-      sourcePathOrFile: pathOrFile
+      newSourcePathOrFile,
+      oldSourcePathOrFile,
+      shouldUpdateFilenameAlias
     });
   });
 }

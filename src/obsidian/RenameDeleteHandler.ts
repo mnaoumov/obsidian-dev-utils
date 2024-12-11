@@ -51,7 +51,6 @@ import {
   getAllLinks,
   getBacklinksForFileOrPath,
   getBacklinksForFileSafe,
-  getBacklinksMap,
   getCacheSafe
 } from './MetadataCache.ts';
 import { addToQueue } from './Queue.ts';
@@ -344,7 +343,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
       if (attachmentOldPath === oldPath) {
         continue;
       }
-      const currentBacklinksMap = await getBacklinksMap(app, [attachmentOldPath]);
+      const currentBacklinksMap = (await getBacklinksForFileSafe(app, attachmentOldPath)).data;
       initBacklinksMap(currentBacklinksMap, renameMap, backlinksMap, attachmentOldPath);
     }
 
@@ -383,7 +382,6 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
           link,
           newTargetPathOrFile: newAttachmentPath,
           oldTargetPathOrFile: oldAttachmentPath,
-          renameMap,
           shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases,
           sourcePathOrFile: newBacklinkPath
         });
@@ -393,9 +391,8 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
     if (isNote(newPath)) {
       await updateLinksInFile({
         app,
-        oldPathOrFile: oldPath,
-        pathOrFile: newPath,
-        renameMap,
+        newSourcePathOrFile: newPath,
+        oldSourcePathOrFile: oldPath,
         shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
       });
     }
