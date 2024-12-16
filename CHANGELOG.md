@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 6.2.1
+
+- Republish
+
 ## 6.2.0
 
 - Add sync versions
