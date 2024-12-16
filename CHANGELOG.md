@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 6.1.0
+
+- Update libs
+- Add more node types
+- Allow call Root methods if no roots
+- Use full definition for PackageJson
+
 ## 6.0.0
 
 - Add abortSignal
