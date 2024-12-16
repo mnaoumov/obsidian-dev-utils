@@ -10,14 +10,24 @@ import process from 'node:process';
 export { spawn } from 'node:child_process';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
-export { existsSync } from 'node:fs';
+export {
+  existsSync,
+  readFileSync,
+  statSync,
+  watch
+} from 'node:fs';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
 export type {
   Dirent,
+  FSWatcher,
   ObjectEncodingOptions,
-  PathLike
+  PathLike,
+  WatchEventType
 } from 'node:fs';
+
+// eslint-disable-next-line eslint-plugin-tsdoc-required/tsdoc-required
+export { process };
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
 export {
@@ -26,17 +36,22 @@ export {
   readdir,
   readFile,
   rm,
+  stat,
   writeFile
 } from 'node:fs/promises';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
 export {
   builtinModules,
-  createRequire
+  createRequire,
+  Module
 } from 'node:module';
 
-// eslint-disable-next-line eslint-plugin-tsdoc-required/tsdoc-required
-export { process };
+// eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
+export {
+  arch,
+  endianness
+} from 'node:os';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
 export { createInterface } from 'node:readline/promises';
