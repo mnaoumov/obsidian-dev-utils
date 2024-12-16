@@ -3,6 +3,8 @@
  * Contains utility functions for NPM package.json.
  */
 
+import type { PackageJson } from 'type-fest';
+
 import type { MaybePromise } from '../Async.ts';
 
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
@@ -14,9 +16,9 @@ import {
 import { resolvePathFromRoot } from './Root.ts';
 
 /**
- * Options for editing an NPM package.
+ * Options for editing a package.json file.
  */
-export interface EditNpmPackageOptions {
+export interface EditPackageJsonOptions {
   /**
    * The current working directory where `package.json` is located.
    */
@@ -25,93 +27,55 @@ export interface EditNpmPackageOptions {
   /**
    * If true, skips editing if the file does not exist.
    */
-  skipIfMissing?: boolean | undefined;
+  shouldSkipIfMissing?: boolean | undefined;
 }
 
 /**
- * Represents the structure of an `NpmPackage` as defined in a `package.json` file.
+ * The type of the `package.json` file.
  */
-export interface NpmPackage {
-  /**
-   * An optional object that contains the package's dependencies, where the key is the package name
-   * and the value is the version required.
-   */
-  dependencies?: Record<string, string>;
-
-  /**
-   * An optional object that contains the package's development dependencies, where the key is the package name
-   * and the value is the version required.
-   */
-  devDependencies?: Record<string, string>;
-
-  /**
-   * An optional object that defines the package's export mappings, where the key is the export name
-   * and the value is the export details.
-   */
-  exports?: Record<string, Export>;
-
-  /**
-   * The name of the package.
-   */
-  name: string;
-
-  /**
-   * An optional object that contains the package's peer dependencies, where the key is the package name
-   */
-  packages?: Record<string, NpmPackage>;
-
-  /**
-   * The version of the package.
-   */
-  version: string;
-}
+export type { PackageJson };
 
 /**
- * Represents the export details in the `exports` field of a `package.json` file.
+ * The type of the `package-lock.json` file.
  */
-interface Export {
+export interface PackageLockJson extends Partial<PackageJson> {
   /**
-   * The default export path for the package.
+   * The packages in the `package-lock.json` file.
    */
-  default: string;
-
-  /**
-   * The path to the types file for the package.
-   */
-  types: string;
+  packages?: Record<string, PackageJson>;
 }
 
 /**
  * Reads, edits, and writes back the `package.json` file using the provided edit function.
  *
- * @param editFn - The function to edit the parsed `NpmPackage` object.
+ * @param editFn - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
  * @returns A promise that resolves when the file has been edited and written.
  */
-export async function editNpmPackage(
-  editFn: (npmPackage: NpmPackage) => MaybePromise<void>, options: EditNpmPackageOptions = {}): Promise<void> {
+export async function editPackageJson(
+  editFn: (packageJson: PackageJson) => MaybePromise<void>, options: EditPackageJsonOptions = {}): Promise<void> {
   const {
     cwd,
-    skipIfMissing
+    shouldSkipIfMissing
   } = options;
-  await editJson<NpmPackage>(getPackageJsonPath(cwd), editFn, { shouldSkipIfMissing: skipIfMissing });
+  await editJson<PackageJson>(getPackageJsonPath(cwd), editFn, { shouldSkipIfMissing });
 }
 
 /**
  * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
  *
- * @param editFn - The function to edit the parsed `NpmPackage` object.
+ * @param editFn - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
  * @returns A promise that resolves when the file has been edited and written.
  */
-export async function editNpmPackageLock(
-  editFn: (npmPackage: NpmPackage) => MaybePromise<void>,
-  options: EditNpmPackageOptions = {}): Promise<void> {
+export async function editPackageLockJson(
+  editFn: (PackageLockJson: PackageLockJson) => MaybePromise<void>,
+  options: EditPackageJsonOptions = {}): Promise<void> {
   const {
     cwd,
-    skipIfMissing
+    shouldSkipIfMissing
   } = options;
-  await editJson<NpmPackage>(getPackageLockJsonPath(cwd), editFn, { shouldSkipIfMissing: skipIfMissing });
+  await editJson<PackageJson>(getPackageLockJsonPath(cwd), editFn, { shouldSkipIfMissing });
 }
 
 /**
@@ -138,40 +102,40 @@ export function getPackageLockJsonPath(cwd?: string): string {
  * Reads the `package.json` file from the specified directory or from the root if no directory is specified.
  *
  * @param cwd - The current working directory where `package.json` is located.
- * @returns A promise that resolves with the parsed `NpmPackage` object.
+ * @returns A promise that resolves with the parsed `PackageJson` object.
  */
-export async function readNpmPackage(cwd?: string): Promise<NpmPackage> {
-  return await readJson<NpmPackage>(getPackageJsonPath(cwd));
+export async function readPackageJson(cwd?: string): Promise<PackageJson> {
+  return await readJson<PackageJson>(getPackageJsonPath(cwd));
 }
 
 /**
  * Reads the `package-lock.json` file from the specified directory or from the root if no directory is specified.
  *
  * @param cwd - The current working directory where `package-lock.json` is located.
- * @returns A promise that resolves with the parsed `NpmPackage` object.
+ * @returns A promise that resolves with the parsed `PackageJson` object.
  */
-export async function readNpmPackageLock(cwd?: string): Promise<NpmPackage> {
-  return await readJson<NpmPackage>(getPackageLockJsonPath(cwd));
+export async function readPackageLockJson(cwd?: string): Promise<PackageLockJson> {
+  return await readJson<PackageLockJson>(getPackageLockJsonPath(cwd));
 }
 
 /**
- * Writes the provided `NpmPackage` object to the `package.json` file in the specified directory or in the root.
+ * Writes the provided `PackageJson` object to the `package.json` file in the specified directory or in the root.
  *
- * @param npmPackage - The `NpmPackage` object to write.
+ * @param packageJson - The `PackageJson` object to write.
  * @param cwd - The current working directory where `package.json` is located.
  * @returns A promise that resolves when the file has been written.
  */
-export async function writeNpmPackage(npmPackage: NpmPackage, cwd?: string): Promise<void> {
-  await writeJson(getPackageJsonPath(cwd), npmPackage);
+export async function writePackageJson(packageJson: PackageJson, cwd?: string): Promise<void> {
+  await writeJson(getPackageJsonPath(cwd), packageJson);
 }
 
 /**
- * Writes the provided `NpmPackage` object to the `package-lock.json` file in the specified directory or in the root.
+ * Writes the provided `PackageJson` object to the `package-lock.json` file in the specified directory or in the root.
  *
- * @param npmPackage - The `NpmPackage` object to write.
+ * @param packageLockJson - The `PackageLockJson` object to write.
  * @param cwd - The current working directory where `package-lock.json` is located.
  * @returns A promise that resolves when the file has been written.
  */
-export async function writeNpmPackageLock(npmPackage: NpmPackage, cwd?: string): Promise<void> {
-  await writeJson(getPackageLockJsonPath(cwd), npmPackage);
+export async function writePackageLockJson(packageLockJson: PackageLockJson, cwd?: string): Promise<void> {
+  await writeJson(getPackageLockJsonPath(cwd), packageLockJson);
 }

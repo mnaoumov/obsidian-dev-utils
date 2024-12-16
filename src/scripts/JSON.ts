@@ -37,9 +37,9 @@ export async function editJson<T>(
   editFn: (data: T) => MaybePromise<void>,
   options: EditJsonOptions = {}): Promise<void> {
   const {
-    shouldSkipIfMissing: skipIfMissing
+    shouldSkipIfMissing
   } = options;
-  if (skipIfMissing && !existsSync(path)) {
+  if (shouldSkipIfMissing && !existsSync(path)) {
     return;
   }
   const data = await readJson<T>(path);

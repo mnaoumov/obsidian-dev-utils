@@ -27,7 +27,7 @@ import {
 } from './esbuild/ObsidianPluginBuilder.ts';
 import { lint } from './ESLint/ESLint.ts';
 import { process } from './NodeModules.ts';
-import { readNpmPackage } from './Npm.ts';
+import { readPackageJson } from './Npm.ts';
 import { spellcheck } from './spellcheck.ts';
 import { updateVersion } from './version.ts';
 
@@ -61,13 +61,13 @@ enum CommandNames {
  */
 export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_COUNT)): void {
   invokeAsyncSafely(() => wrapCliTask(async () => {
-    const npmPackage = await readNpmPackage(getDirname(import.meta.url));
+    const packageJson = await readPackageJson(getDirname(import.meta.url));
     const program = new Command();
 
     program
-      .name(npmPackage.name)
+      .name(packageJson.name ?? '(unknown)')
       .description('CLI for Obsidian plugin development utilities')
-      .version(npmPackage.version);
+      .version(packageJson.version ?? '(unknown)');
 
     addCommand(program, CommandNames.Build, 'Build the plugin', () => buildObsidianPlugin({ mode: BuildMode.Production }));
     addCommand(program, CommandNames.BuildClean, 'Clean the dist folder', () => buildClean());
