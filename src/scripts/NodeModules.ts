@@ -14,7 +14,8 @@ export {
   existsSync,
   readFileSync,
   statSync,
-  watch
+  watch,
+  writeFileSync
 } from 'node:fs';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required

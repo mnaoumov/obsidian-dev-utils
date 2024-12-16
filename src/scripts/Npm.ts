@@ -11,8 +11,11 @@ import { throwExpression } from '../Error.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   editJson,
+  editJsonSync,
   readJson,
-  writeJson
+  readJsonSync,
+  writeJson,
+  writeJsonSync
 } from './JSON.ts';
 import { resolvePathFromRoot } from './Root.ts';
 
@@ -63,6 +66,22 @@ export async function editPackageJson(
 }
 
 /**
+ * Reads, edits, and writes back the `package.json` file using the provided edit function.
+ *
+ * @param editFn - The function to edit the parsed `PackageJson` object.
+ * @param options - Additional options for editing.
+ * @returns A promise that resolves when the file has been edited and written.
+ */
+export function editPackageJsonSync(
+  editFn: (packageJson: PackageJson) => void, options: EditPackageJsonOptions = {}): void {
+  const {
+    cwd,
+    shouldSkipIfMissing
+  } = options;
+  editJsonSync<PackageJson>(getPackageJsonPath(cwd), editFn, { shouldSkipIfMissing });
+}
+
+/**
  * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
  *
  * @param editFn - The function to edit the parsed `PackageJson` object.
@@ -77,6 +96,23 @@ export async function editPackageLockJson(
     shouldSkipIfMissing
   } = options;
   await editJson<PackageJson>(getPackageLockJsonPath(cwd), editFn, { shouldSkipIfMissing });
+}
+
+/**
+ * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
+ *
+ * @param editFn - The function to edit the parsed `PackageLockJson` object.
+ * @param options - Additional options for editing.
+ * @returns A promise that resolves when the file has been edited and written.
+ */
+export function editPackageLockJsonSync(
+  editFn: (PackageLockJson: PackageLockJson) => void,
+  options: EditPackageJsonOptions = {}): void {
+  const {
+    cwd,
+    shouldSkipIfMissing
+  } = options;
+  editJsonSync<PackageLockJson>(getPackageLockJsonPath(cwd), editFn, { shouldSkipIfMissing });
 }
 
 /**
@@ -110,6 +146,16 @@ export async function readPackageJson(cwd?: string): Promise<PackageJson> {
 }
 
 /**
+ * Reads the `package.json` file from the specified directory or from the root if no directory is specified.
+ *
+ * @param cwd - The current working directory where `package.json` is located.
+ * @returns The parsed `PackageJson` object.
+ */
+export function readPackageJsonSync(cwd?: string): PackageJson {
+  return readJsonSync<PackageJson>(getPackageJsonPath(cwd));
+}
+
+/**
  * Reads the `package-lock.json` file from the specified directory or from the root if no directory is specified.
  *
  * @param cwd - The current working directory where `package-lock.json` is located.
@@ -117,6 +163,16 @@ export async function readPackageJson(cwd?: string): Promise<PackageJson> {
  */
 export async function readPackageLockJson(cwd?: string): Promise<PackageLockJson> {
   return await readJson<PackageLockJson>(getPackageLockJsonPath(cwd));
+}
+
+/**
+ * Reads the `package-lock.json` file from the specified directory or from the root if no directory is specified.
+ *
+ * @param cwd - The current working directory where `package-lock.json` is located.
+ * @returns The parsed `PackageLockJson` object.
+ */
+export function readPackageLockJsonSync(cwd?: string): PackageLockJson {
+  return readJsonSync<PackageLockJson>(getPackageLockJsonPath(cwd));
 }
 
 /**
@@ -131,6 +187,16 @@ export async function writePackageJson(packageJson: PackageJson, cwd?: string): 
 }
 
 /**
+ * Writes the provided `PackageJson` object to the `package.json` file in the specified directory or in the root.
+ *
+ * @param packageJson - The `PackageJson` object to write.
+ * @param cwd - The current working directory where `package.json` is located.
+ */
+export function writePackageJsonSync(packageJson: PackageJson, cwd?: string): void {
+  writeJsonSync(getPackageJsonPath(cwd), packageJson);
+}
+
+/**
  * Writes the provided `PackageJson` object to the `package-lock.json` file in the specified directory or in the root.
  *
  * @param packageLockJson - The `PackageLockJson` object to write.
@@ -139,4 +205,14 @@ export async function writePackageJson(packageJson: PackageJson, cwd?: string): 
  */
 export async function writePackageLockJson(packageLockJson: PackageLockJson, cwd?: string): Promise<void> {
   await writeJson(getPackageLockJsonPath(cwd), packageLockJson);
+}
+
+/**
+ * Writes the provided `PackageLockJson` object to the `package-lock.json` file in the specified directory or in the root.
+ *
+ * @param packageLockJson - The `PackageLockJson` object to write.
+ * @param cwd - The current working directory where `package-lock.json` is located.
+ */
+export function writePackageLockJsonSync(packageLockJson: PackageLockJson, cwd?: string): void {
+  writeJsonSync(getPackageLockJsonPath(cwd), packageLockJson);
 }

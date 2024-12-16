@@ -9,7 +9,9 @@ import { toJson } from '../Object.ts';
 import {
   existsSync,
   readFile,
-  writeFile
+  readFileSync,
+  writeFile,
+  writeFileSync
 } from './NodeModules.ts';
 
 /**
@@ -48,6 +50,30 @@ export async function editJson<T>(
 }
 
 /**
+ * Reads, edits, and writes back a JSON file using a provided edit function.
+ *
+ * @typeParam T - The type of the data to be edited.
+ * @param path - The path to the JSON file.
+ * @param editFn - The function to edit the parsed JSON data.
+ * @param options - Additional options for editing.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+export function editJsonSync<T>(
+  path: string,
+  editFn: (data: T) => void,
+  options: EditJsonOptions = {}): void {
+  const {
+    shouldSkipIfMissing
+  } = options;
+  if (shouldSkipIfMissing && !existsSync(path)) {
+    return;
+  }
+  const data = readJsonSync<T>(path);
+  editFn(data);
+  writeJsonSync(path, data);
+}
+
+/**
  * Reads a JSON file and parses its contents into a JavaScript object of type `T`.
  *
  * @typeParam T - The type to which the JSON content will be parsed.
@@ -59,6 +85,18 @@ export async function readJson<T>(path: string): Promise<T> {
 }
 
 /**
+ * Reads a JSON file and parses its contents into a JavaScript object of type `T`.
+ *
+ * @typeParam T - The type to which the JSON content will be parsed.
+ * @param path - The path to the JSON file.
+ * @returns The parsed JSON object of type `T`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+export function readJsonSync<T>(path: string): T {
+  return JSON.parse(readFileSync(path, 'utf-8')) as T;
+}
+
+/**
  * Writes a JavaScript object to a JSON file.
  *
  * @param path - The path to the JSON file.
@@ -67,4 +105,14 @@ export async function readJson<T>(path: string): Promise<T> {
  */
 export async function writeJson(path: string, data: unknown): Promise<void> {
   await writeFile(path, toJson(data) + '\n');
+}
+
+/**
+ * Writes a JavaScript object to a JSON file.
+ *
+ * @param path - The path to the JSON file.
+ * @param data - The data to write to the JSON file.
+ */
+export function writeJsonSync(path: string, data: unknown): void {
+  writeFileSync(path, toJson(data) + '\n');
 }
