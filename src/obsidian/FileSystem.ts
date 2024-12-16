@@ -122,7 +122,7 @@ export function getFile(app: App, pathOrFile: PathOrFile, shouldIncludeNonExisti
   let file = getFileOrNull(app, pathOrFile, isCaseInsensitive);
   if (!file) {
     if (shouldIncludeNonExisting) {
-      file = createTFileInstance(app.vault, pathOrFile as string);
+      file = createTFileInstance(app, pathOrFile as string);
     } else {
       throw new Error(`File not found: ${pathOrFile as string}`);
     }
@@ -164,7 +164,7 @@ export function getFolder(app: App, pathOrFolder: PathOrFolder, shouldIncludeNon
   let folder = getFolderOrNull(app, pathOrFolder, isCaseInsensitive);
   if (!folder) {
     if (shouldIncludeNonExisting) {
-      folder = createTFolderInstance(app.vault, pathOrFolder as string);
+      folder = createTFolderInstance(app, pathOrFolder as string);
     } else {
       throw new Error(`Folder not found: ${pathOrFolder as string}`);
     }
