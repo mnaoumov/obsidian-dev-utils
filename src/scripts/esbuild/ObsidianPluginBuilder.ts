@@ -27,7 +27,7 @@ import {
   rm,
   writeFile
 } from '../NodeModules.ts';
-import { readNpmPackage } from '../Npm.ts';
+import { readPackageJson } from '../Npm.ts';
 import { resolvePathFromRoot } from '../Root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
 import { fixEsmPlugin } from './fixEsmPlugin.ts';
@@ -119,8 +119,8 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
 
   const distPath = join(distDir, ObsidianPluginRepoPaths.MainJs);
 
-  const npmPackage = await readNpmPackage();
-  const pluginName = npmPackage.name;
+  const packageJson = await readPackageJson();
+  const pluginName = packageJson.name ?? '(unknown)';
 
   const buildOptions: BuildOptions = {
     banner: {

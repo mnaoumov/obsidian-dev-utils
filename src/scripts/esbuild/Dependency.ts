@@ -22,7 +22,7 @@ import {
   builtinModules,
   createRequire
 } from '../NodeModules.ts';
-import { readNpmPackage } from '../Npm.ts';
+import { readPackageJson } from '../Npm.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import {
   banner,
@@ -76,8 +76,8 @@ export async function getDependenciesToBundle(): Promise<string[]> {
  * @returns A `Promise` that resolves to a `Set` of dependency names to skip.
  */
 export async function getDependenciesToSkip(): Promise<Set<string>> {
-  const npmPackage = await readNpmPackage(getDirname(import.meta.url));
-  const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(npmPackage.dependencies ?? {}).filter(canSkipFromBundling)]);
+  const packageJson = await readPackageJson(getDirname(import.meta.url));
+  const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(packageJson.dependencies ?? {}).filter(canSkipFromBundling)]);
   return dependenciesToSkip;
 }
 

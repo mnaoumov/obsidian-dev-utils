@@ -25,9 +25,9 @@ import {
   writeFile
 } from './NodeModules.ts';
 import {
-  editNpmPackage,
-  editNpmPackageLock,
-  readNpmPackage
+  editPackageJson,
+  editPackageLockJson,
+  readPackageJson
 } from './Npm.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 import {
@@ -170,8 +170,8 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
     return versionUpdateType;
   }
 
-  const npmPackage = await readNpmPackage();
-  const currentVersion = npmPackage.version;
+  const packageJson = await readPackageJson();
+  const currentVersion = packageJson.version ?? '';
 
   const match = /^(\d+)\.(\d+)\.(\d+)(-beta.(\d+))?/.exec(currentVersion);
   if (!match) {
@@ -303,8 +303,8 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
       zip.addLocalFile(resolvePathFromRoot(file));
     }
 
-    const npmPackage = await readNpmPackage();
-    const distZipPath = resolvePathFromRoot(join(ObsidianDevUtilsRepoPaths.Dist, `${npmPackage.name}-${newVersion}.zip`));
+    const packageJson = await readPackageJson();
+    const distZipPath = resolvePathFromRoot(join(ObsidianDevUtilsRepoPaths.Dist, `${packageJson.name ?? '(unknown)'}-${newVersion}.zip`));
     zip.writeZip(distZipPath);
     filePaths = [distZipPath];
   }
@@ -417,17 +417,17 @@ export async function updateVersion(versionUpdateType: string): Promise<void> {
  * @returns A `Promise` that resolves when the update is complete.
  */
 export async function updateVersionInFiles(newVersion: string, isObsidianPlugin: boolean): Promise<void> {
-  await editNpmPackage((npmPackage) => {
-    npmPackage.version = newVersion;
+  await editPackageJson((packageJson) => {
+    packageJson.version = newVersion;
   });
 
-  await editNpmPackageLock((npmPackageLock) => {
-    npmPackageLock.version = newVersion;
-    const defaultPackage = npmPackageLock.packages?.[''];
+  await editPackageLockJson((packageLockJson) => {
+    packageLockJson.version = newVersion;
+    const defaultPackage = packageLockJson.packages?.[''];
     if (defaultPackage) {
       defaultPackage.version = newVersion;
     }
-  }, { skipIfMissing: true });
+  }, { shouldSkipIfMissing: true });
 
   if (isObsidianPlugin) {
     const latestObsidianVersion = await getLatestObsidianVersion();

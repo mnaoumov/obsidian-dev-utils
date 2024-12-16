@@ -8,7 +8,7 @@ import {
   wrapCliTask
 } from '../src/scripts/CliUtils.ts';
 import { readdirPosix } from '../src/scripts/Fs.ts';
-import { editNpmPackage } from '../src/scripts/Npm.ts';
+import { editPackageJson } from '../src/scripts/Npm.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
 
 await wrapCliTask(async () => {
@@ -27,24 +27,24 @@ await wrapCliTask(async () => {
 
   let isChanged = false;
 
-  await editNpmPackage((npmPackage) => {
-    const oldExports = npmPackage.exports;
-    npmPackage.exports = {};
+  await editPackageJson((packageJson) => {
+    const oldExports = packageJson.exports;
+    packageJson.exports = {};
     for (const libDir of libDirs) {
       const importPath = libDir.replace(ObsidianDevUtilsRepoPaths.DistLib, '.');
-      npmPackage.exports[importPath] = {
+      packageJson.exports[importPath] = {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts)),
         // eslint-disable-next-line perfectionist/sort-objects
         default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
       };
-      npmPackage.exports[normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any))] = {
+      packageJson.exports[normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any))] = {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
         // eslint-disable-next-line perfectionist/sort-objects
         default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
       };
     }
 
-    isChanged = !deepEqual(oldExports, npmPackage.exports);
+    isChanged = !deepEqual(oldExports, packageJson.exports);
   });
 
   return CliTaskResult.Success(!isChanged);
