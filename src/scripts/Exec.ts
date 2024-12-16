@@ -25,6 +25,11 @@ export interface ExecOption {
   isQuiet?: boolean;
 
   /**
+   * If true, throws an error if the command fails.
+   */
+  shouldFailIfCalledFromOutsideRoot?: boolean;
+
+  /**
    * If true, ignores the exit code of the command.
    */
   shouldIgnoreExitCode?: boolean;

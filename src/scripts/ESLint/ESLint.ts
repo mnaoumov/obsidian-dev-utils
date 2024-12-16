@@ -68,13 +68,13 @@ export async function lint(shouldFix?: boolean, customConfigs?: Linter.Config[])
 
   for (const lintResult of lintResults) {
     if (lintResult.output) {
-      console.log(`${toRelativeFromRoot(lintResult.filePath)} - had some issues that were fixed automatically.`);
+      console.log(`${toRelativeFromRoot(lintResult.filePath) ?? lintResult.filePath} - had some issues that were fixed automatically.`);
       errorsCount++;
     }
 
     for (const message of lintResult.messages) {
       const canAutoFix = message.fix !== undefined;
-      console.log(`${toRelativeFromRoot(lintResult.filePath)}:${(message.line as null | number)?.toString() ?? '(null)'}:${(message.column as null | number)?.toString() ?? '(null)'} - ${message.message} [rule ${message.ruleId ?? '(null)'}]${canAutoFix ? ' (auto-fixable)' : ''}`);
+      console.log(`${toRelativeFromRoot(lintResult.filePath) ?? lintResult.filePath}:${(message.line as null | number)?.toString() ?? '(null)'}:${(message.column as null | number)?.toString() ?? '(null)'} - ${message.message} [rule ${message.ruleId ?? '(null)'}]${canAutoFix ? ' (auto-fixable)' : ''}`);
       errorsCount++;
     }
   }
