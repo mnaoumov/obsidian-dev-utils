@@ -95,7 +95,7 @@ export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
     ObsidianPluginRepoPaths.PackageLockJson,
     ObsidianPluginRepoPaths.VersionsJson,
     ObsidianPluginRepoPaths.ChangelogMd
-  ].filter((file) => existsSync(resolvePathFromRoot(file)));
+  ].filter((file) => existsSync(resolvePathFromRootSafe(file)));
   await execFromRoot(['git', 'add', ...files], { isQuiet: true });
   await execFromRoot(`git commit -m ${newVersion} --allow-empty`, { isQuiet: true });
 }
@@ -154,7 +154,7 @@ export async function checkGitRepoClean(): Promise<void> {
  * @returns A promise that resolves when the copy operation is complete.
  */
 export async function copyUpdatedManifest(): Promise<void> {
-  await cp(resolvePathFromRoot(ObsidianPluginRepoPaths.ManifestJson), resolvePathFromRoot(join(ObsidianPluginRepoPaths.DistBuild, ObsidianPluginRepoPaths.ManifestJson)), { force: true });
+  await cp(resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson), resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.DistBuild, ObsidianPluginRepoPaths.ManifestJson)), { force: true });
 }
 
 /**
@@ -217,7 +217,7 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
  * @returns A promise that resolves to the release notes for the specified version.
  */
 export async function getReleaseNotes(newVersion: string): Promise<string> {
-  const changelogPath = resolvePathFromRoot(ObsidianPluginRepoPaths.ChangelogMd);
+  const changelogPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ChangelogMd);
   const content = await readFile(changelogPath, 'utf-8');
   const newVersionEscaped = newVersion.replaceAll('.', '\\.');
   const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
@@ -285,12 +285,12 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
   let filePaths: string[];
 
   if (isObsidianPlugin) {
-    const buildDir = resolvePathFromRoot(ObsidianPluginRepoPaths.DistBuild);
+    const buildDir = resolvePathFromRootSafe(ObsidianPluginRepoPaths.DistBuild);
     const fileNames = await readdirPosix(buildDir);
     filePaths = fileNames.map((fileName) => join(buildDir, fileName));
   } else {
     const zip = new AdmZip();
-    zip.addLocalFolder(resolvePathFromRoot(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist, (filename) => !filename.endsWith('.zip'));
+    zip.addLocalFolder(resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist, (filename) => !filename.endsWith('.zip'));
 
     const files = [
       ObsidianDevUtilsRepoPaths.ChangelogMd,
@@ -300,11 +300,11 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     ];
 
     for (const file of files) {
-      zip.addLocalFile(resolvePathFromRoot(file));
+      zip.addLocalFile(resolvePathFromRootSafe(file));
     }
 
     const packageJson = await readPackageJson();
-    const distZipPath = resolvePathFromRoot(join(ObsidianDevUtilsRepoPaths.Dist, `${packageJson.name ?? '(unknown)'}-${newVersion}.zip`));
+    const distZipPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, `${packageJson.name ?? '(unknown)'}-${newVersion}.zip`));
     zip.writeZip(distZipPath);
     filePaths = [distZipPath];
   }
@@ -325,7 +325,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
  * @returns A promise that resolves when the changelog update is complete.
  */
 export async function updateChangelog(newVersion: string): Promise<void> {
-  const changelogPath = resolvePathFromRoot(ObsidianPluginRepoPaths.ChangelogMd);
+  const changelogPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ChangelogMd);
   let previousChangelogLines: string[];
   if (!existsSync(changelogPath)) {
     previousChangelogLines = [];
@@ -387,7 +387,7 @@ export async function updateVersion(versionUpdateType: string): Promise<void> {
     }
   }
 
-  const isObsidianPlugin = existsSync(resolvePathFromRoot(ObsidianPluginRepoPaths.ManifestJson));
+  const isObsidianPlugin = existsSync(resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson));
   validate(versionUpdateType);
   await checkGitInstalled();
   await checkGitRepoClean();
@@ -465,4 +465,8 @@ async function getLatestObsidianVersion(): Promise<string> {
   const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');
   const obsidianReleasesJson = await response.json() as ObsidianReleasesJson;
   return obsidianReleasesJson.name;
+}
+
+function resolvePathFromRootSafe(path: string): string {
+  return resolvePathFromRoot(path) ?? path;
 }

@@ -60,7 +60,16 @@ export function execFromRoot(command: string | string[], options: { withDetails:
  *         the error is resolved with the stdout and stderr.
  */
 export function execFromRoot(command: string | string[], options: ExecOption = {}): Promise<ExecResult | string> {
-  const root = getRootDir(options.cwd);
+  let root = getRootDir(options.cwd);
+
+  if (!root) {
+    if (options.shouldFailIfCalledFromOutsideRoot ?? true) {
+      throw new Error('Could not find root directory');
+    }
+
+    root = options.cwd ?? process.cwd();
+  }
+
   if (options.shouldIncludeDetails) {
     return exec(command, { ...options, cwd: root, shouldIncludeDetails: true });
   }
@@ -75,7 +84,7 @@ export function execFromRoot(command: string | string[], options: ExecOption = {
  * @returns The path to the root directory.
  * @throws If the root directory cannot be found.
  */
-export function getRootDir(cwd?: string): string {
+export function getRootDir(cwd?: string): null | string {
   let currentDir = toPosixPath(cwd ?? process.cwd());
   while (currentDir !== '.' && currentDir !== '/') {
     if (existsSync(join(currentDir, ObsidianDevUtilsRepoPaths.PackageJson))) {
@@ -84,7 +93,7 @@ export function getRootDir(cwd?: string): string {
     currentDir = dirname(currentDir);
   }
 
-  throw new Error('Could not find root directory');
+  return null;
 }
 
 /**
@@ -94,8 +103,13 @@ export function getRootDir(cwd?: string): string {
  * @param cwd - The current working directory to resolve from.
  * @returns The resolved absolute path.
  */
-export function resolvePathFromRoot(path: string, cwd?: string): string {
-  return resolve(getRootDir(cwd), path);
+export function resolvePathFromRoot(path: string, cwd?: string): null | string {
+  const rootDir = getRootDir(cwd);
+  if (!rootDir) {
+    return null;
+  }
+
+  return resolve(rootDir, path);
 }
 
 /**
@@ -105,8 +119,12 @@ export function resolvePathFromRoot(path: string, cwd?: string): string {
  * @param cwd - The current working directory to resolve from.
  * @returns The relative path from the root directory.
  */
-export function toRelativeFromRoot(path: string, cwd?: string): string {
+export function toRelativeFromRoot(path: string, cwd?: string): null | string {
   const rootDir = getRootDir(cwd);
+  if (!rootDir) {
+    return null;
+  }
+
   path = toPosixPath(path);
   return relative(rootDir, path);
 }
