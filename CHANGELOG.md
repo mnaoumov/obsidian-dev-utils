@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 6.2.0
+
+- Add sync versions
+
 ## 6.1.0
 
 - Update libs
