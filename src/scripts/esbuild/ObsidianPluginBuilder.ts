@@ -14,6 +14,7 @@ import type {
 import { config } from 'dotenv';
 import { context } from 'esbuild';
 
+import { throwExpression } from '../../Error.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
 import { buildValidate } from '../build.ts';
@@ -95,6 +96,10 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
   const isProductionBuild = mode === BuildMode.Production;
 
   const distDir = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);
+  if (!distDir) {
+    throw new Error('Could not determine the dist directory');
+  }
+
   if (existsSync(distDir)) {
     await rm(distDir, { recursive: true });
   }
@@ -110,6 +115,9 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
 
   for (const fileName of distFileNames) {
     const localFile = resolvePathFromRoot(fileName);
+    if (!localFile) {
+      throw new Error(`Could not determine the local file for ${fileName}`);
+    }
     const distFile = join(distDir, fileName);
 
     if (existsSync(localFile)) {
@@ -127,7 +135,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       js: banner
     },
     bundle: true,
-    entryPoints: [resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs))],
+    entryPoints: [resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs)) ?? throwExpression(new Error('Could not determine the entry point for the plugin'))],
     external: [
       'obsidian',
       'electron',

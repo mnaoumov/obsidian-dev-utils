@@ -7,6 +7,7 @@ import type { PackageJson } from 'type-fest';
 
 import type { MaybePromise } from '../Async.ts';
 
+import { throwExpression } from '../Error.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   editJson,
@@ -85,7 +86,7 @@ export async function editPackageLockJson(
  * @returns The resolved path to the `package.json` file.
  */
 export function getPackageJsonPath(cwd?: string): string {
-  return resolvePathFromRoot(ObsidianPluginRepoPaths.PackageJson, cwd);
+  return resolvePathFromRoot(ObsidianPluginRepoPaths.PackageJson, cwd) ?? throwExpression(new Error('Could not determine the package.json path'));
 }
 
 /**
@@ -95,7 +96,7 @@ export function getPackageJsonPath(cwd?: string): string {
  * @returns The resolved path to the `package-lock.json` file.
  */
 export function getPackageLockJsonPath(cwd?: string): string {
-  return resolvePathFromRoot(ObsidianPluginRepoPaths.PackageLockJson, cwd);
+  return resolvePathFromRoot(ObsidianPluginRepoPaths.PackageLockJson, cwd) ?? throwExpression(new Error('Could not determine the package-lock.json path'));
 }
 
 /**
