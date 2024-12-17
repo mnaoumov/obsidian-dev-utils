@@ -51,15 +51,26 @@ export type PathOrFolder = string | TFolder;
 /**
  * Checks if the given path or file has the specified extension.
  *
+ * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or abstract file to check.
  * @param extension - The extension to compare against.
  * @returns Returns `true` if the path or file has the specified extension, `false` otherwise.
  */
-export function checkExtension(pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
-  if (pathOrFile === null) {
-    return false;
+export function checkExtension(app: App, pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
+  if (isFile(pathOrFile)) {
+    return pathOrFile.extension === extension;
   }
-  return extname(getPath(pathOrFile)).toLowerCase().slice(1) === extension.toLowerCase();
+
+  if (typeof pathOrFile === 'string') {
+    const file = getFileOrNull(app, pathOrFile);
+    if (file) {
+      return file.extension === extension;
+    }
+
+    return extname(pathOrFile).slice(1) === extension;
+  }
+
+  return false;
 }
 
 /**
@@ -97,13 +108,19 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
     return pathOrFile;
   }
 
-  const path = getPath(pathOrFile);
+  const file = getFileInternal(app, pathOrFile, isCaseInsensitive);
 
-  if (isCaseInsensitive) {
-    return app.vault.getAbstractFileByPathInsensitive(path);
+  if (file) {
+    return file;
   }
 
-  return app.vault.getAbstractFileByPath(path);
+  const resolvedPath = getResolvedPath(pathOrFile);
+
+  if (resolvedPath === pathOrFile) {
+    return null;
+  }
+
+  return getFileInternal(app, resolvedPath, isCaseInsensitive);
 }
 
 /**
@@ -203,10 +220,10 @@ export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursi
   let markdownFiles: TFile[] = [];
 
   if (!isRecursive) {
-    markdownFiles = folder.children.filter((file) => isMarkdownFile(file)) as TFile[];
+    markdownFiles = folder.children.filter((file) => isMarkdownFile(app, file)) as TFile[];
   } else {
     Vault.recurseChildren(folder, (abstractFile) => {
-      if (isMarkdownFile(abstractFile)) {
+      if (isMarkdownFile(app, abstractFile)) {
         markdownFiles.push(abstractFile as TFile);
       }
     });
@@ -254,13 +271,21 @@ export async function getOrCreateFolder(app: App, path: string): Promise<TFolder
 /**
  * Returns the path of the given `pathOrFile`.
  *
+ * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or abstract file.
  * @returns The path of the `pathOrFile`.
  */
-export function getPath(pathOrFile: PathOrAbstractFile): string {
-  return isAbstractFile(pathOrFile)
-    ? pathOrFile.path
-    : normalizePath(resolve('/', pathOrFile));
+export function getPath(app: App, pathOrFile: PathOrAbstractFile): string {
+  if (isAbstractFile(pathOrFile)) {
+    return pathOrFile.path;
+  }
+
+  const file = getAbstractFileOrNull(app, pathOrFile);
+  if (file) {
+    return file.path;
+  }
+
+  return getResolvedPath(pathOrFile);
 }
 
 /**
@@ -276,11 +301,12 @@ export function isAbstractFile(file: unknown): file is TAbstractFile {
 /**
  * Checks if the given file is a canvas file.
  *
+ * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a canvas file or not.
  */
-export function isCanvasFile(pathOrFile: null | PathOrAbstractFile): boolean {
-  return checkExtension(pathOrFile, CANVAS_FILE_EXTENSION);
+export function isCanvasFile(app: App, pathOrFile: null | PathOrAbstractFile): boolean {
+  return checkExtension(app, pathOrFile, CANVAS_FILE_EXTENSION);
 }
 
 /**
@@ -306,34 +332,49 @@ export function isFolder(file: unknown): file is TFolder {
 /**
  * Checks if the given file is a Markdown file.
  *
+ * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a Markdown file.
  */
-export function isMarkdownFile(pathOrFile: null | PathOrAbstractFile): boolean {
-  return checkExtension(pathOrFile, MARKDOWN_FILE_EXTENSION);
+export function isMarkdownFile(app: App, pathOrFile: null | PathOrAbstractFile): boolean {
+  return checkExtension(app, pathOrFile, MARKDOWN_FILE_EXTENSION);
 }
 
 /**
  * Checks if the given file is a note.
  *
+ * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a note.
  */
-export function isNote(pathOrFile: null | PathOrAbstractFile): boolean {
-  return isMarkdownFile(pathOrFile) || isCanvasFile(pathOrFile);
+export function isNote(app: App, pathOrFile: null | PathOrAbstractFile): boolean {
+  return isMarkdownFile(app, pathOrFile) || isCanvasFile(app, pathOrFile);
 }
 
 /**
  * Trims the markdown extension from the file path if the file is a markdown file.
  * If the file is not a markdown file, the original file path is returned.
  *
+ * @param app - The Obsidian App instance.
  * @param file - The file to trim the markdown extension from.
  * @returns The file path with the markdown extension trimmed.
  */
-export function trimMarkdownExtension(file: TAbstractFile): string {
-  if (!isMarkdownFile(file)) {
+export function trimMarkdownExtension(app: App, file: TAbstractFile): string {
+  if (!isMarkdownFile(app, file)) {
     return file.path;
   }
 
   return trimEnd(file.path, '.' + MARKDOWN_FILE_EXTENSION);
+}
+
+function getFileInternal(app: App, path: string, isCaseInsensitive?: boolean): null | TAbstractFile {
+  if (isCaseInsensitive) {
+    return app.vault.getAbstractFileByPathInsensitive(path);
+  }
+
+  return app.vault.getAbstractFileByPath(path) as null | TFile;
+}
+
+function getResolvedPath(path: string): string {
+  return normalizePath(resolve('/', path));
 }

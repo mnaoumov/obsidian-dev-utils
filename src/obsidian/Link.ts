@@ -472,7 +472,7 @@ export async function editLinks(
  */
 export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: PathOrFile): null | TFile {
   const { linkPath } = splitSubpath(link.link);
-  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(sourcePathOrFile));
+  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(app, sourcePathOrFile));
 }
 
 /**
@@ -496,10 +496,10 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
   const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
 
   return tempRegisterFileAndRun(app, targetFile, () => {
-    const sourcePath = getPath(options.sourcePathOrFile);
+    const sourcePath = getPath(app, options.sourcePathOrFile);
     const subpath = options.subpath ?? '';
     let alias = options.alias ?? '';
-    const isEmbed = options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(targetFile);
+    const isEmbed = options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(app, targetFile);
     const isWikilink = options.isWikilink ?? (options.originalLink ? testWikilink(options.originalLink) : undefined) ?? shouldUseWikilinks(app);
     const shouldForceRelativePath = options.shouldForceRelativePath ?? shouldUseRelativeLinks(app);
     const shouldUseLeadingDot = options.shouldUseLeadingDot ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false;
@@ -508,7 +508,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
     let linkText = targetFile.path === sourcePath && subpath
       ? subpath
       : shouldForceRelativePath
-        ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(targetFile) : targetFile.path) + subpath
+        ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(app, targetFile) : targetFile.path) + subpath
         : app.metadataCache.fileToLinktext(targetFile, sourcePath, isWikilink) + subpath;
 
     if (shouldForceRelativePath && shouldUseLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
@@ -527,7 +527,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
       }
 
       if (!alias && (!isEmbed || !options.isEmptyEmbedAliasAllowed)) {
-        alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(targetFile) ? targetFile.basename : targetFile.name;
+        alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile) ? targetFile.basename : targetFile.name;
       }
 
       alias = alias.replace(SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
@@ -664,8 +664,8 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
   }
 
   const targetFile = getFile(app, targetPathOrFile);
-  const newSourcePath = getPath(newSourcePathOrFile);
-  const oldSourcePath = getPath(oldSourcePathOrFile ?? newSourcePathOrFile);
+  const newSourcePath = getPath(app, newSourcePathOrFile);
+  const oldSourcePath = getPath(app, oldSourcePathOrFile ?? newSourcePathOrFile);
   const newSourceDir = dirname(newSourcePath);
   const oldSourceDir = dirname(oldSourcePath);
   const aliasesToReset = new Set<string>();
@@ -675,7 +675,7 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
       continue;
     }
 
-    const path = getPath(pathOrFile);
+    const path = getPath(app, pathOrFile);
     aliasesToReset.add(path);
     aliasesToReset.add(basename(path));
     aliasesToReset.add(relative(newSourceDir, path));
@@ -787,11 +787,11 @@ export function updateLink(options: UpdateLinkOptions): string {
     return link.original;
   }
   const targetFile = getFile(app, newTargetPathOrFile);
-  const oldTargetPath = getPath(oldTargetPathOrFile ?? newTargetPathOrFile);
+  const oldTargetPath = getPath(app, oldTargetPathOrFile ?? newTargetPathOrFile);
   const isWikilink = testWikilink(link.original) && shouldForceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
 
-  if (isCanvasFile(newSourcePathOrFile)) {
+  if (isCanvasFile(app, newSourcePathOrFile)) {
     return targetFile.path + subpath;
   }
 
@@ -843,7 +843,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     shouldUpdateFilenameAlias
   } = options;
 
-  if (isCanvasFile(newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById('canvas')) {
+  if (isCanvasFile(app, newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById('canvas')) {
     return;
   }
 

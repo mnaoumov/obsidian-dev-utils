@@ -319,11 +319,11 @@ export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () 
  * @returns A promise that resolves when the note is saved.
  */
 async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
-  if (!isMarkdownFile(pathOrFile)) {
+  if (!isMarkdownFile(app, pathOrFile)) {
     return;
   }
 
-  const path = getPath(pathOrFile);
+  const path = getPath(app, pathOrFile);
 
   for (const leaf of app.workspace.getLeavesOfType('markdown')) {
     if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
