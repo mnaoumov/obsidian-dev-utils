@@ -12,3 +12,18 @@
 export function escapeRegExp(str: string): string {
   return str.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+/**
+ * Checks if a string is a valid regular expression.
+ *
+ * @param str - The string to check.
+ * @returns `true` if the string is a valid regular expression, `false` otherwise.
+ */
+export function isValidRegExp(str: string): boolean {
+  try {
+    new RegExp(str);
+    return true;
+  } catch {
+    return false;
+  }
+}
