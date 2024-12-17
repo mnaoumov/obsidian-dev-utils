@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 7.0.0
+
+- Improve FS performance
+
 ## 6.2.1
 
 - Republish
