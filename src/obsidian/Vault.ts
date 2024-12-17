@@ -262,7 +262,7 @@ export function getMarkdownFilesSorted(app: App): TFile[] {
  * @returns An array of all note files in the vault sorted by file path.
  */
 export function getNoteFilesSorted(app: App): TFile[] {
-  return app.vault.getAllLoadedFiles().filter((file) => isFile(file) && isNote(file)).sort((a, b) => a.path.localeCompare(b.path)) as TFile[];
+  return app.vault.getAllLoadedFiles().filter((file) => isFile(file) && isNote(app, file)).sort((a, b) => a.path.localeCompare(b.path)) as TFile[];
 }
 
 /**
@@ -274,7 +274,7 @@ export function getNoteFilesSorted(app: App): TFile[] {
  * @returns The safe rename path for the file.
  */
 export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: string): string {
-  const oldPath = getPath(oldPathOrFile);
+  const oldPath = getPath(app, oldPathOrFile);
 
   if (app.vault.adapter.insensitive) {
     let folderPath = dirname(newPath);
@@ -305,7 +305,7 @@ export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: 
  * @returns A promise that resolves to a boolean indicating whether the folder is empty.
  */
 export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promise<boolean> {
-  const listedFiles = await listSafe(app, getPath(pathOrFolder));
+  const listedFiles = await listSafe(app, getPath(app, pathOrFolder));
   return listedFiles.files.length === 0 && listedFiles.folders.length === 0;
 }
 
@@ -317,7 +317,7 @@ export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promi
  * @returns A promise that resolves to a `ListedFiles` object containing the listed files and folders.
  */
 export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<ListedFiles> {
-  const path = getPath(pathOrFolder);
+  const path = getPath(app, pathOrFolder);
   const EMPTY = { files: [], folders: [] };
 
   if ((await app.vault.adapter.stat(path))?.type !== 'folder') {

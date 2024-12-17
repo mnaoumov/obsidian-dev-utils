@@ -26,7 +26,7 @@ import { getPath } from './FileSystem.ts';
  * @returns A Link object with the corrected title.
  */
 export function fixTitle(dv: DataviewInlineApi, pathOrFile: PathOrFile, isFolderNote?: boolean): Link {
-  const path = getPath(pathOrFile);
+  const path = getPath(dv.app, pathOrFile);
   const ext = extname(path);
   const title = isFolderNote ? basename(dirname(path)) : basename(path, ext);
   return dv.fileLink(path, false, title);

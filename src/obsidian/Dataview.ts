@@ -310,7 +310,7 @@ export function renderIframe(options: RenderIframeOptions): void {
   dv.el('iframe', '', {
     attr: {
       height,
-      src: relativePathToResourceUrl(dv.app, getPath(relativePathOrFile), dv.current().file.path),
+      src: relativePathToResourceUrl(dv.app, getPath(dv.app, relativePathOrFile), dv.current().file.path),
       width
     }
   });

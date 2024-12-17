@@ -53,8 +53,8 @@ export type GetAvailablePathForAttachmentsExtendedFn = (filename: string, extens
  * @returns A promise that resolves to the file path of the attachment.
  */
 export async function getAttachmentFilePath(app: App, attachmentPathOrFile: PathOrFile, notePathOrFile: PathOrFile): Promise<string> {
-  const attachmentPath = getPath(attachmentPathOrFile);
-  const notePath = getPath(notePathOrFile);
+  const attachmentPath = getPath(app, attachmentPathOrFile);
+  const notePath = getPath(app, notePathOrFile);
   const note = getFile(app, notePath, true);
   const ext = extname(attachmentPath);
   const fileName = basename(attachmentPath, ext);

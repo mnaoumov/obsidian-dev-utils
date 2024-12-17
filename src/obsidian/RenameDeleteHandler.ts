@@ -156,7 +156,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
 async function fillRenameMap(app: App, oldPath: string, newPath: string, renameMap: Map<string, string>): Promise<void> {
   renameMap.set(oldPath, newPath);
 
-  if (!isNote(oldPath)) {
+  if (!isNote(app, oldPath)) {
     return;
   }
 
@@ -209,7 +209,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
   const newBasename = basename(newPath, extname(newPath));
 
   for (const oldAttachmentFile of oldAttachmentFiles) {
-    if (isNote(oldAttachmentFile)) {
+    if (isNote(app, oldAttachmentFile)) {
       continue;
     }
     const relativePath = relative(oldAttachmentFolderPath, oldAttachmentFile.path);
@@ -256,7 +256,7 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
 
 async function handleDelete(app: App, path: string): Promise<void> {
   console.debug(`Handle Delete ${path}`);
-  if (!isNote(path)) {
+  if (!isNote(app, path)) {
     return;
   }
 
@@ -276,7 +276,7 @@ async function handleDelete(app: App, path: string): Promise<void> {
         continue;
       }
 
-      if (isNote(attachmentFile)) {
+      if (isNote(app, attachmentFile)) {
         continue;
       }
 
@@ -303,7 +303,7 @@ function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedM
   if (!settings.shouldDeleteOrphanAttachments) {
     return;
   }
-  if (isMarkdownFile(file) && prevCache) {
+  if (isMarkdownFile(app, file) && prevCache) {
     deletedMetadataCacheMap.set(file.path, prevCache);
   }
 }
@@ -388,7 +388,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
       });
     }
 
-    if (isNote(newPath)) {
+    if (isNote(app, newPath)) {
       await updateLinksInFile({
         app,
         newSourcePathOrFile: newPath,

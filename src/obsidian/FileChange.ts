@@ -80,7 +80,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
   const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await process(app, pathOrFile, async (content) => {
     let changes = await resolveValue(changesProvider);
-    const frontmatter = isCanvasFile(pathOrFile) ? JSON.parse(content) as Record<string, unknown> : parseFrontmatter(content);
+    const frontmatter = isCanvasFile(app, pathOrFile) ? JSON.parse(content) as Record<string, unknown> : parseFrontmatter(content);
 
     for (const change of changes) {
       if (isContentChange(change)) {
@@ -90,7 +90,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
             actualContent,
             endIndex: change.endIndex,
             expectedContent: change.oldContent,
-            path: getPath(pathOrFile),
+            path: getPath(app, pathOrFile),
             startIndex: change.startIndex
           });
 
@@ -103,7 +103,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
             actualContent,
             expectedContent: change.oldContent,
             frontmatterKey: change.frontmatterKey,
-            path: getPath(pathOrFile)
+            path: getPath(app, pathOrFile)
           });
 
           return null;
@@ -168,7 +168,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
       }
     }
 
-    if (isCanvasFile(pathOrFile)) {
+    if (isCanvasFile(app, pathOrFile)) {
       newContent = JSON.stringify(frontmatter, null, '\t');
     } else {
       newContent += content.slice(lastIndex);
