@@ -9,8 +9,7 @@
 
 import {
   Notice,
-  Plugin,
-  PluginSettingTab
+  Plugin
 } from 'obsidian';
 
 import type { MaybePromise } from '../../Async.ts';
@@ -18,6 +17,10 @@ import type {
   PluginSettingsBase,
   PluginSettingsConstructor
 } from './PluginSettingsBase.ts';
+import type {
+  PluginSettingsTabBase,
+  PluginSettingsTabConstructor
+} from './PluginSettingsTabBase.ts';
 
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noop } from '../../Function.ts';
@@ -48,6 +51,11 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Plu
 
   protected abstract get PluginSettingsConstructor(): PluginSettingsConstructor<PluginSettings>;
 
+  // eslint-disable-next-line @typescript-eslint/class-literal-property-style
+  protected get PluginSettingsTabConstructor(): null | PluginSettingsTabConstructor<this, PluginSettings, PluginSettingsTabBase<this, PluginSettings>> {
+    return null;
+  }
+
   /**
    * Gets the plugin settings.
    *
@@ -72,9 +80,8 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Plu
     }));
 
     await this.loadSettings();
-    const pluginSettingsTab = this.createPluginSettingsTab();
-    if (pluginSettingsTab) {
-      this.addSettingTab(pluginSettingsTab);
+    if (this.PluginSettingsTabConstructor) {
+      this.addSettingTab(new this.PluginSettingsTabConstructor(this));
     }
 
     const abortController = new AbortController();
@@ -96,13 +103,6 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Plu
     this._settings = newSettings.clone();
     await this.saveData(this.settings.toJSON());
   }
-
-  /**
-   * Creates a plugin settings tab. This method must be implemented by subclasses.
-   *
-   * @returns The settings tab or null if not applicable.
-   */
-  protected abstract createPluginSettingsTab(): null | PluginSettingTab;
 
   /**
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
