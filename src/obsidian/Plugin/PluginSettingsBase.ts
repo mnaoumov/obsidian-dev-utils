@@ -20,7 +20,7 @@ export class PluginSettingsBase {
    * @param data - The data to initialize the settings from.
    */
   public constructor(data: unknown) {
-    this.initFromJson(data);
+    this.init(data);
   }
 
   /**
@@ -30,32 +30,6 @@ export class PluginSettingsBase {
    */
   public clone(): this {
     return new (this.constructor as PluginSettingsConstructor<this>)(this.toJSON());
-  }
-
-  /**
-   * Initializes the settings from JSON data.
-   *
-   * @param data - The data to initialize the settings from.
-   */
-  public initFromJson(data: unknown): void {
-    if (data === undefined || data === null) {
-      return;
-    }
-
-    if (typeof data !== 'object' || Array.isArray(data)) {
-      const type = Array.isArray(data) ? 'Array' : typeof data;
-      console.error(`Invalid data type. Expected Object, got: ${type}`);
-      return;
-    }
-
-    const record = data as Record<string, unknown>;
-    for (const [key, value] of Object.entries(record)) {
-      if (key in this) {
-        this[key as keyof this] = value as this[keyof this];
-      } else {
-        console.error(`Unknown property: ${key}`);
-      }
-    }
   }
 
   /**
@@ -74,5 +48,34 @@ export class PluginSettingsBase {
    */
   public toJSON(): Record<string, unknown> {
     return Object.fromEntries(Object.entries(this));
+  }
+
+  protected initFromRecord(record: Record<string, unknown>): void {
+    for (const [key, value] of Object.entries(record)) {
+      if (key in this) {
+        this[key as keyof this] = value as this[keyof this];
+      } else {
+        console.error(`Unknown property: ${key}`);
+      }
+    }
+  }
+
+  /**
+   * Initializes the settings from JSON data.
+   *
+   * @param data - The data to initialize the settings from.
+   */
+  private init(data: unknown): void {
+    if (data === undefined || data === null) {
+      return;
+    }
+
+    if (typeof data !== 'object' || Array.isArray(data)) {
+      const type = Array.isArray(data) ? 'Array' : typeof data;
+      console.error(`Invalid data type. Expected Object, got: ${type}`);
+      return;
+    }
+
+    this.initFromRecord(data as Record<string, unknown>);
   }
 }
