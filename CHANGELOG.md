@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 7.0.1-beta.3
+
+- Refactor to constructors
+
 ## 7.0.1-beta.2
 
 - Extract initFromRecord
