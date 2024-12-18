@@ -69,6 +69,11 @@ const handledRenames = new Set<string>();
  */
 export interface RenameDeleteHandlerSettings {
   /**
+   * Whether to ignore the path.
+   */
+  isPathIgnored(path: string): boolean;
+
+  /**
    * Whether to delete conflicting attachments.
    */
   shouldDeleteConflictingAttachments: boolean;
@@ -246,9 +251,15 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
   const settings: Partial<RenameDeleteHandlerSettings> = {};
   for (const settingsBuilder of settingsBuilders) {
     const newSettings = settingsBuilder();
-    for (const [key, value] of Object.entries(newSettings) as [keyof RenameDeleteHandlerSettings, boolean][]) {
-      settings[key] ||= value;
-    }
+    settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
+    settings.shouldDeleteEmptyFolders ||= newSettings.shouldDeleteEmptyFolders ?? false;
+    settings.shouldDeleteOrphanAttachments ||= newSettings.shouldDeleteOrphanAttachments ?? false;
+    settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
+    settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
+    settings.shouldUpdateFilenameAliases ||= newSettings.shouldUpdateFilenameAliases ?? false;
+    settings.shouldUpdateLinks ||= newSettings.shouldUpdateLinks ?? false;
+    const isPathIgnored = settings.isPathIgnored;
+    settings.isPathIgnored = (path: string): boolean => isPathIgnored?.(path) ?? newSettings.isPathIgnored?.(path) ?? false;
   }
 
   return settings;
@@ -262,6 +273,10 @@ async function handleDelete(app: App, path: string): Promise<void> {
 
   const settings = getSettings(app);
   if (!settings.shouldDeleteOrphanAttachments) {
+    return;
+  }
+
+  if (settings.isPathIgnored?.(path)) {
     return;
   }
 
@@ -300,6 +315,10 @@ async function handleDelete(app: App, path: string): Promise<void> {
 
 function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
   const settings = getSettings(app);
+  if (settings.isPathIgnored?.(file.path)) {
+    return;
+  }
+
   if (!settings.shouldDeleteOrphanAttachments) {
     return;
   }
@@ -313,6 +332,11 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
   console.debug(`Handle Rename ${key}`);
   if (handledRenames.has(key)) {
     handledRenames.delete(key);
+    return;
+  }
+
+  const settings = getSettings(app);
+  if (settings.isPathIgnored?.(oldPath) || settings.isPathIgnored?.(newPath)) {
     return;
   }
 
