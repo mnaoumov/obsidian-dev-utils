@@ -14,20 +14,20 @@ import {
 } from 'obsidian';
 
 import type { MaybePromise } from '../../Async.ts';
+import type {
+  PluginSettingsBase,
+  PluginSettingsConstructor
+} from './PluginSettingsBase.ts';
 
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noop } from '../../Function.ts';
-import {
-  clonePluginSettings,
-  loadPluginSettings
-} from './PluginSettings.ts';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
  *
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
-export abstract class PluginBase<PluginSettings extends object> extends Plugin {
+export abstract class PluginBase<PluginSettings extends PluginSettingsBase = PluginSettingsBase> extends Plugin {
   /**
    * Gets the AbortSignal used for aborting long-running operations.
    *
@@ -43,8 +43,10 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * @returns A copy of the plugin settings.
    */
   public get settingsCopy(): PluginSettings {
-    return clonePluginSettings(this.createDefaultPluginSettings.bind(this), this.settings);
+    return this.settings.clone();
   }
+
+  protected abstract get PluginSettingsConstructor(): PluginSettingsConstructor<PluginSettings>;
 
   /**
    * Gets the plugin settings.
@@ -91,16 +93,9 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    * @returns A promise that resolves when the settings are saved.
    */
   public async saveSettings(newSettings: PluginSettings): Promise<void> {
-    this._settings = clonePluginSettings(this.createDefaultPluginSettings.bind(this), newSettings);
-    await this.saveData(this.settings);
+    this._settings = newSettings.clone();
+    await this.saveData(this.settings.toJSON());
   }
-
-  /**
-   * Creates the default plugin settings. This method must be implemented by subclasses.
-   *
-   * @returns The default plugin settings.
-   */
-  protected abstract createDefaultPluginSettings(): PluginSettings;
 
   /**
    * Creates a plugin settings tab. This method must be implemented by subclasses.
@@ -130,16 +125,6 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
   }
 
   /**
-   * Parses the provided settings data and returns the parsed `PluginSettings`.
-   *
-   * @param data - The raw data to be parsed into `PluginSettings`.
-   * @returns A promise that resolves to `PluginSettings` or the settings directly.
-   */
-  protected parseSettings(data: unknown): MaybePromise<PluginSettings> {
-    return loadPluginSettings(this.createDefaultPluginSettings.bind(this), data);
-  }
-
-  /**
    * Displays a notice message to the user.
    *
    * @param message - The message to display.
@@ -159,6 +144,10 @@ export abstract class PluginBase<PluginSettings extends object> extends Plugin {
    */
   private async loadSettings(): Promise<void> {
     const data = await this.loadData() as unknown;
-    this._settings = await this.parseSettings(data);
+    const settings = new this.PluginSettingsConstructor(data);
+    this._settings = settings;
+    if (settings.shouldSaveAfterLoad()) {
+      await this.saveSettings(settings);
+    }
   }
 }
