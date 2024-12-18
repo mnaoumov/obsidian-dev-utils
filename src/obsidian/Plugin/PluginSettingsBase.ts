@@ -3,12 +3,7 @@
  * Base class for plugin settings.
  */
 
-/**
- * Type representing the constructor for plugin settings.
- *
- * @typeParam PluginSettings - The type of the plugin settings.
- */
-export type PluginSettingsConstructor<PluginSettings extends PluginSettingsBase> = new (data: unknown) => PluginSettings;
+type PluginSettingsConstructor<PluginSettings extends PluginSettingsBase> = new (data: unknown) => PluginSettings;
 
 /**
  * Base class for plugin settings.

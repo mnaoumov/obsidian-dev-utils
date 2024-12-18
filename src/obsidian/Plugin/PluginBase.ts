@@ -9,18 +9,12 @@
 
 import {
   Notice,
-  Plugin
+  Plugin,
+  PluginSettingTab
 } from 'obsidian';
 
 import type { MaybePromise } from '../../Async.ts';
-import type {
-  PluginSettingsBase,
-  PluginSettingsConstructor
-} from './PluginSettingsBase.ts';
-import type {
-  PluginSettingsTabBase,
-  PluginSettingsTabConstructor
-} from './PluginSettingsTabBase.ts';
+import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noop } from '../../Function.ts';
@@ -49,13 +43,6 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Plu
     return this.settings.clone();
   }
 
-  protected abstract get PluginSettingsConstructor(): PluginSettingsConstructor<PluginSettings>;
-
-  // eslint-disable-next-line @typescript-eslint/class-literal-property-style
-  protected get PluginSettingsTabConstructor(): null | PluginSettingsTabConstructor<this, PluginSettings, PluginSettingsTabBase<this, PluginSettings>> {
-    return null;
-  }
-
   /**
    * Gets the plugin settings.
    *
@@ -80,8 +67,9 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Plu
     }));
 
     await this.loadSettings();
-    if (this.PluginSettingsTabConstructor) {
-      this.addSettingTab(new this.PluginSettingsTabConstructor(this));
+    const pluginSettingsTab = this.createPluginSettingsTab();
+    if (pluginSettingsTab) {
+      this.addSettingTab(pluginSettingsTab);
     }
 
     const abortController = new AbortController();
@@ -103,6 +91,21 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Plu
     this._settings = newSettings.clone();
     await this.saveData(this.settings.toJSON());
   }
+
+  /**
+   * Creates the plugin settings. This method must be implemented by subclasses.
+   *
+   * @param data - The data to create the plugin settings from.
+   * @returns The plugin settings.
+   */
+  protected abstract createPluginSettings(data: unknown): PluginSettings;
+
+  /**
+   * Creates a plugin settings tab. This method must be implemented by subclasses.
+   *
+   * @returns The settings tab or null if not applicable.
+   */
+  protected abstract createPluginSettingsTab(): null | PluginSettingTab;
 
   /**
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
@@ -144,10 +147,9 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Plu
    */
   private async loadSettings(): Promise<void> {
     const data = await this.loadData() as unknown;
-    const settings = new this.PluginSettingsConstructor(data);
-    this._settings = settings;
-    if (settings.shouldSaveAfterLoad()) {
-      await this.saveSettings(settings);
+    this._settings = this.createPluginSettings(data);
+    if (this._settings.shouldSaveAfterLoad()) {
+      await this.saveSettings(this._settings);
     }
   }
 }
