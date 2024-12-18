@@ -398,7 +398,11 @@ export async function updateVersion(versionUpdateType: string): Promise<void> {
 
   const newVersion = await getNewVersion(versionUpdateType);
   await updateVersionInFiles(newVersion, isObsidianPlugin);
-  await updateChangelog(newVersion);
+
+  if (getVersionUpdateType(versionUpdateType) !== VersionUpdateType.Beta) {
+    await updateChangelog(newVersion);
+  }
+
   await addUpdatedFilesToGit(newVersion);
   await addGitTag(newVersion);
   await gitPush();
