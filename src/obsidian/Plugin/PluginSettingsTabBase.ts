@@ -11,19 +11,6 @@ import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 import { PluginBase } from './PluginBase.ts';
 
 /**
- * Type representing the constructor for plugin settings tabs.
- *
- * @typeParam Plugin - The type of the plugin that extends PluginBase.
- * @typeParam PluginSettings - The type of the plugin settings.
- * @typeParam PluginSettingsTab - The type of the plugin settings tab.
- */
-export type PluginSettingsTabConstructor<
-  Plugin extends PluginBase<PluginSettings>,
-  PluginSettings extends PluginSettingsBase,
-  PluginSettingsTab extends PluginSettingsTabBase<Plugin, PluginSettings>
-> = new (plugin: Plugin) => PluginSettingsTab;
-
-/**
  * Base class for creating plugin settings tabs in Obsidian.
  * Provides a method for binding value components to plugin settings and handling changes.
  *
