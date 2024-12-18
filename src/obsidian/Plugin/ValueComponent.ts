@@ -15,6 +15,7 @@ import type { KeysMatching } from '../../@types.ts';
 import type { MaybePromise } from '../../Async.ts';
 import type { ValidatorElement } from '../../HTMLElement.ts';
 import type { PluginBase } from './PluginBase.ts';
+import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
 import { assignWithNonEnumerableProperties } from '../../Object.ts';
 
@@ -106,7 +107,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
    * @returns The `ValueComponent` instance that was bound to the property.
    */
   public bind<
-    PluginSettings extends object,
+    PluginSettings extends PluginSettingsBase,
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
     Property extends KeysMatching<PluginSettings, UIValue>
   >(
@@ -127,7 +128,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
    * @returns The `ValueComponent` instance that was bound to the property.
    */
   public bind<
-    PluginSettings extends object,
+    PluginSettings extends PluginSettingsBase,
     Property extends keyof PluginSettings
   >(
     plugin: PluginBase<PluginSettings>,
@@ -147,7 +148,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
    * @returns The `ValueComponent` instance that was bound to the property.
    */
   public bind<
-    PluginSettings extends object,
+    PluginSettings extends PluginSettingsBase,
     Property extends keyof PluginSettings
   >(
     plugin: PluginBase<PluginSettings>,
