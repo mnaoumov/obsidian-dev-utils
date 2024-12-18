@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 7.0.1-beta.1
+
+- Refactor PluginSettings
+- isValidRegExp
+
 ## 7.0.0
 
 - Improve FS performance
