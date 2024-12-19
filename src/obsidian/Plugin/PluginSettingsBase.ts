@@ -3,28 +3,27 @@
  * Base class for plugin settings.
  */
 
-type PluginSettingsConstructor<PluginSettings extends PluginSettingsBase> = new (data: unknown) => PluginSettings;
-
 /**
  * Base class for plugin settings.
  */
-export class PluginSettingsBase {
+export abstract class PluginSettingsBase {
   /**
-   * Constructor for PluginSettingsBase.
+   * Initializes the settings from JSON data.
    *
    * @param data - The data to initialize the settings from.
    */
-  public constructor(data: unknown) {
-    this.init(data);
-  }
+  public init(data: unknown): void {
+    if (data === undefined || data === null) {
+      return;
+    }
 
-  /**
-   * Clones the settings.
-   *
-   * @returns A clone of the settings.
-   */
-  public clone(): this {
-    return new (this.constructor as PluginSettingsConstructor<this>)(this.toJSON());
+    if (typeof data !== 'object' || Array.isArray(data)) {
+      const type = Array.isArray(data) ? 'Array' : typeof data;
+      console.error(`Invalid data type. Expected Object, got: ${type}`);
+      return;
+    }
+
+    this.initFromRecord(data as Record<string, unknown>);
   }
 
   /**
@@ -53,24 +52,5 @@ export class PluginSettingsBase {
         console.error(`Unknown property: ${key}`);
       }
     }
-  }
-
-  /**
-   * Initializes the settings from JSON data.
-   *
-   * @param data - The data to initialize the settings from.
-   */
-  private init(data: unknown): void {
-    if (data === undefined || data === null) {
-      return;
-    }
-
-    if (typeof data !== 'object' || Array.isArray(data)) {
-      const type = Array.isArray(data) ? 'Array' : typeof data;
-      console.error(`Invalid data type. Expected Object, got: ${type}`);
-      return;
-    }
-
-    this.initFromRecord(data as Record<string, unknown>);
   }
 }

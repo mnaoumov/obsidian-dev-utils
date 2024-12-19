@@ -14,6 +14,7 @@ import {
 } from 'obsidian';
 
 import type { MaybePromise } from '../../Async.ts';
+import type { EmptySettings } from './EmptySettings.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
@@ -24,7 +25,7 @@ import { noop } from '../../Function.ts';
  *
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
-export abstract class PluginBase<PluginSettings extends PluginSettingsBase = PluginSettingsBase> extends Plugin {
+export abstract class PluginBase<PluginSettings extends PluginSettingsBase = EmptySettings> extends Plugin {
   /**
    * Gets the AbortSignal used for aborting long-running operations.
    *
@@ -40,7 +41,7 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Plu
    * @returns A copy of the plugin settings.
    */
   public get settingsCopy(): PluginSettings {
-    return this.settings.clone();
+    return this.createPluginSettings(this.settings.toJSON());
   }
 
   /**
@@ -88,8 +89,9 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Plu
    * @returns A promise that resolves when the settings are saved.
    */
   public async saveSettings(newSettings: PluginSettings): Promise<void> {
-    this._settings = newSettings.clone();
-    await this.saveData(this.settings.toJSON());
+    const json = newSettings.toJSON();
+    this._settings = this.createPluginSettings(json);
+    await this.saveData(json);
   }
 
   /**
