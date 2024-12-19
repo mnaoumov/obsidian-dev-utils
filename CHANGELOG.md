@@ -1,15 +1,9 @@
 # CHANGELOG
 
-## 7.0.1-beta.3
+## 8.0.0
 
-- Refactor to constructors
-
-## 7.0.1-beta.2
-
-- Extract initFromRecord
-
-## 7.0.1-beta.1
-
+- Don't update changelog for beta builds
+- Add support to ignore path
 - Refactor PluginSettings
 - isValidRegExp
 
