@@ -23,10 +23,7 @@ import type {
   PathOrFolder
 } from './FileSystem.ts';
 
-import {
-  marksAsTerminateRetry,
-  retryWithTimeout
-} from '../Async.ts';
+import { retryWithTimeout } from '../Async.ts';
 import { printError } from '../Error.ts';
 import { noopAsync } from '../Function.ts';
 import {
@@ -48,6 +45,16 @@ import {
   isNote
 } from './FileSystem.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
+
+/**
+ * Options for the `process` function.
+ */
+export interface ProcessOptions extends RetryOptions {
+  /**
+   * If `true`, the function will throw an error if the file is missing or deleted.
+   */
+  shouldFailOnMissingFile: boolean;
+}
 
 /**
  * Copies a file safely in the vault.
@@ -342,41 +349,60 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
  * @param newContentProvider - A value provider that returns the new content based on the old content of the file.
  * It can be a string or a function that takes the old content as an argument and returns the new content.
  * If function is provided, it should return `null` if the process should be retried.
- * @param retryOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
+ * @param options - Optional. Configuration options for retrying the process. If not provided, default options will be used.
  *
  * @returns A promise that resolves once the process is complete.
  *
  * @throws Will throw an error if the process fails after the specified number of retries or timeout.
  */
-export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<null | string, [string]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
-  const file = getFile(app, pathOrFile);
-  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
-  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
+export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<null | string, [string]>, options: Partial<RetryOptions> = {}): Promise<void> {
+  const DEFAULT_RETRY_OPTIONS: ProcessOptions = {
+    retryDelayInMilliseconds: 100,
+    shouldFailOnMissingFile: true,
+    shouldRetryOnError: false,
+    timeoutInMilliseconds: 60000
+  };
+  const overriddenOptions: ProcessOptions = { ...DEFAULT_RETRY_OPTIONS, ...options };
+  const path = getPath(app, pathOrFile);
+
   await retryWithTimeout(async () => {
-    if (file.deleted) {
-      throw marksAsTerminateRetry(new Error(`File ${file.path} is deleted`));
+    let oldContent = '';
+
+    let doesFileExist = await queueFileAction(app, path, overriddenOptions.shouldFailOnMissingFile, async (file) => {
+      oldContent = await app.vault.read(file);
+    });
+
+    if (!doesFileExist) {
+      return true;
     }
-    const oldContent = await app.vault.read(file);
+
     const newContent = await resolveValue(newContentProvider, oldContent);
     if (newContent === null) {
       return false;
     }
-    let success = true;
-    await app.vault.process(file, (content) => {
-      if (content !== oldContent) {
-        console.warn('Content has changed since it was read. Retrying...', {
-          actualContent: content,
-          expectedContent: oldContent,
-          path: file.path
-        });
-        success = false;
-        return content;
-      }
 
-      return newContent;
+    let isSuccess = true;
+    doesFileExist = await queueFileAction(app, path, overriddenOptions.shouldFailOnMissingFile, async (file) => {
+      await app.vault.process(file, (content) => {
+        if (content !== oldContent) {
+          console.warn('Content has changed since it was read. Retrying...', {
+            actualContent: content,
+            expectedContent: oldContent,
+            path: file.path
+          });
+          isSuccess = false;
+          return content;
+        }
+
+        return newContent;
+      });
     });
 
-    return success;
+    if (!doesFileExist) {
+      return true;
+    }
+
+    return isSuccess;
   }, overriddenOptions);
 }
 
@@ -413,4 +439,21 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
   }
 
   return newAvailablePath;
+}
+
+async function queueFileAction(app: App, path: string, shouldFailOnMissingFile: boolean, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {
+  let result = true;
+  await app.vault.adapter.queue(async () => {
+    const file = getFileOrNull(app, path);
+    if (!file || file.deleted) {
+      if (shouldFailOnMissingFile) {
+        throw new Error(`File ${path} not found`);
+      }
+      result = false;
+    } else {
+      await fileAction(file);
+    }
+  });
+
+  return result;
 }
