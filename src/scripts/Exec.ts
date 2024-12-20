@@ -17,7 +17,7 @@ export interface ExecOption {
   /**
    * The current working directory for the command execution.
    */
-  cwd?: string | undefined;
+  cwd?: string;
 
   /**
    * If true, suppresses the output of the command.

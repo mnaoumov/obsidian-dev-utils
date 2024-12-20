@@ -30,7 +30,10 @@ import type {
 import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
 
-import { toJson } from '../Object.ts';
+import {
+  normalizeOptionalProperties,
+  toJson
+} from '../Object.ts';
 import {
   basename,
   dirname,
@@ -96,17 +99,17 @@ export interface ConvertLinkOptions {
   /**
    * The old path of the link.
    */
-  oldSourcePathOrFile?: PathOrFile | undefined;
+  oldSourcePathOrFile?: PathOrFile;
 
   /**
    * Whether to force markdown links.
    */
-  shouldForceMarkdownLinks?: boolean | undefined;
+  shouldForceMarkdownLinks?: boolean;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
    */
-  shouldUpdateFilenameAlias?: boolean | undefined;
+  shouldUpdateFilenameAlias?: boolean;
 }
 
 /**
@@ -126,7 +129,7 @@ export interface GenerateMarkdownLinkOptions {
   /**
    * The alias for the link.
    */
-  alias?: string | undefined;
+  alias?: string;
 
   /**
    * The Obsidian app instance.
@@ -136,48 +139,48 @@ export interface GenerateMarkdownLinkOptions {
   /**
    * Indicates if the link should be embedded. If not provided, it will be inferred based on the file type.
    */
-  isEmbed?: boolean | undefined;
+  isEmbed?: boolean;
 
   /**
    * Whether to allow an empty alias for embeds. Defaults to `true`.
    */
-  isEmptyEmbedAliasAllowed?: boolean | undefined;
+  isEmptyEmbedAliasAllowed?: boolean;
 
   /**
    * Whether to allow non-existing files. If `false` and `pathOrFile` is a non-existing file, an error will be thrown. Defaults to `false`.
    */
-  isNonExistingFileAllowed?: boolean | undefined;
+  isNonExistingFileAllowed?: boolean;
 
   /**
    * Indicates if the link should be a wikilink. If not provided, it will be inferred based on the Obsidian settings.
    */
-  isWikilink?: boolean | undefined;
+  isWikilink?: boolean;
 
   /**
     * The original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
     * These inferred values will be overridden by corresponding settings if specified.
     */
-  originalLink?: string | undefined;
+  originalLink?: string;
 
   /**
    * Indicates if the link should be relative. If not provided or `false`, it will be inferred based on the Obsidian settings.
    */
-  shouldForceRelativePath?: boolean | undefined;
+  shouldForceRelativePath?: boolean;
 
   /**
    * Whether to include the attachment extension in the embed alias. Has no effect if `allowEmptyEmbedAlias` is `true`. Defaults to `false`.
    */
-  shouldIncludeAttachmentExtensionToEmbedAlias?: boolean | undefined;
+  shouldIncludeAttachmentExtensionToEmbedAlias?: boolean;
 
   /**
    * Indicates if the link should use angle brackets. Defaults to `false`. Has no effect if `isWikilink` is `true`
    */
-  shouldUseAngleBrackets?: boolean | undefined;
+  shouldUseAngleBrackets?: boolean;
 
   /**
    * Indicates if the link should use a leading dot. Defaults to `false`. Has no effect if `isWikilink` is `true` or `isRelative` is `false`.
    */
-  shouldUseLeadingDot?: boolean | undefined;
+  shouldUseLeadingDot?: boolean;
 
   /**
    * The source path of the link.
@@ -187,7 +190,7 @@ export interface GenerateMarkdownLinkOptions {
   /**
    * The subpath of the link.
    */
-  subpath?: string | undefined;
+  subpath?: string;
 
   /**
    * The target path or file.
@@ -202,7 +205,7 @@ export interface ParseLinkResult {
   /**
    * The alias of the link.
    */
-  alias?: string | undefined;
+  alias?: string;
 
   /**
    * Indicates if the link has angle brackets.
@@ -227,7 +230,7 @@ export interface ParseLinkResult {
   /**
    * The title of the link.
    */
-  title?: string | undefined;
+  title?: string;
 
   /**
    * The URL of the link.
@@ -252,7 +255,7 @@ export interface ShouldResetAliasOptions {
   /**
    * Indicates if the link is a wikilink.
    */
-  isWikilink?: boolean | undefined;
+  isWikilink?: boolean;
 
   /**
    * The source path of the link.
@@ -262,7 +265,7 @@ export interface ShouldResetAliasOptions {
   /**
    * The old source file containing the link.
    */
-  oldSourcePathOrFile?: PathOrFile | undefined;
+  oldSourcePathOrFile?: PathOrFile;
 
   /**
    * The old target path of the link.
@@ -317,22 +320,22 @@ export interface UpdateLinkOptions {
   /**
    * The old source file containing the link.
    */
-  oldSourcePathOrFile?: PathOrFile | undefined;
+  oldSourcePathOrFile?: PathOrFile;
 
   /**
    * The old path of the file.
    */
-  oldTargetPathOrFile?: PathOrFile | undefined;
+  oldTargetPathOrFile?: PathOrFile;
 
   /**
    * Whether to force markdown links.
    */
-  shouldForceMarkdownLinks?: boolean | undefined;
+  shouldForceMarkdownLinks?: boolean;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
    */
-  shouldUpdateFilenameAlias?: boolean | undefined;
+  shouldUpdateFilenameAlias?: boolean;
 }
 
 /**
@@ -357,17 +360,17 @@ export interface UpdateLinksInFileOptions {
   /**
    * Whether to force the links to be in Markdown format.
    */
-  shouldForceMarkdownLinks?: boolean | undefined;
+  shouldForceMarkdownLinks?: boolean;
 
   /**
    * Whether to update only embedded links.
    */
-  shouldUpdateEmbedOnlyLinks?: boolean | undefined;
+  shouldUpdateEmbedOnlyLinks?: boolean;
 
   /**
    * Whether to update filename alias. Defaults to `true`.
    */
-  shouldUpdateFilenameAlias?: boolean | undefined;
+  shouldUpdateFilenameAlias?: boolean;
 }
 
 interface WikiLinkNode {
@@ -389,7 +392,7 @@ export function convertLink(options: ConvertLinkOptions): string {
     return options.link.original;
   }
 
-  return updateLink({
+  return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
     app: options.app,
     link: options.link,
     newSourcePathOrFile: options.newSourcePathOrFile,
@@ -397,7 +400,7 @@ export function convertLink(options: ConvertLinkOptions): string {
     oldSourcePathOrFile: options.oldSourcePathOrFile,
     shouldForceMarkdownLinks: options.shouldForceMarkdownLinks,
     shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias
-  });
+  }));
 }
 
 /**
@@ -410,7 +413,7 @@ export function convertLink(options: ConvertLinkOptions): string {
  * @returns A promise that resolves when the backlinks have been edited.
  */
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConverter: (link: Reference) => MaybePromise<string | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConverter: (link: Reference) => MaybePromise<string | void>, retryOptions: RetryOptions = {}): Promise<void> {
   const backlinks = await getBacklinksForFileSafe(app, pathOrFile, retryOptions);
   for (const backlinkNotePath of backlinks.keys()) {
     const currentLinks = backlinks.get(backlinkNotePath) ?? [];
@@ -440,7 +443,7 @@ export async function editLinks(
   pathOrFile: PathOrFile,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   linkConverter: (link: Reference) => MaybePromise<string | void>,
-  retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+  retryOptions: RetryOptions = {}): Promise<void> {
   await applyFileChanges(app, pathOrFile, async () => {
     const cache = await getCacheSafe(app, pathOrFile);
     if (!cache) {
@@ -615,7 +618,7 @@ export function parseLink(str: string): null | ParseLinkResult {
           }
         }
       }
-      return {
+      return normalizeOptionalProperties<ParseLinkResult>({
         alias: aliasNode?.value,
         hasAngleBrackets,
         isEmbed,
@@ -623,16 +626,16 @@ export function parseLink(str: string): null | ParseLinkResult {
         isWikilink: false,
         title: linkNode.title ?? undefined,
         url
-      };
+      });
     }
     case 'wikiLink': {
       const wikiLinkNode = node as unknown as WikiLinkNode;
-      return {
+      return normalizeOptionalProperties<ParseLinkResult>({
         alias: str.includes(WIKILINK_DIVIDER) ? wikiLinkNode.data.alias : undefined,
         isEmbed,
         isWikilink: true,
         url: wikiLinkNode.value
-      };
+      });
     }
     default:
       return null;
@@ -795,7 +798,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     return targetFile.path + subpath;
   }
 
-  let alias = shouldResetAlias({
+  let alias = shouldResetAlias(normalizeOptionalProperties<ShouldResetAliasOptions>({
     app,
     displayText: link.displayText,
     isWikilink,
@@ -803,7 +806,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     oldSourcePathOrFile,
     oldTargetPath,
     targetPathOrFile: targetFile
-  })
+  }))
     ? undefined
     : link.displayText;
 
@@ -815,7 +818,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     }
   }
 
-  const newLink = generateMarkdownLink({
+  const newLink = generateMarkdownLink(normalizeOptionalProperties<GenerateMarkdownLinkOptions>({
     alias,
     app,
     isWikilink: shouldForceMarkdownLinks ? false : undefined,
@@ -823,7 +826,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     sourcePathOrFile: newSourcePathOrFile,
     subpath,
     targetPathOrFile: targetFile
-  });
+  }));
   return newLink;
 }
 
@@ -852,13 +855,13 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
       return;
     }
-    return convertLink({
+    return convertLink(normalizeOptionalProperties<ConvertLinkOptions>({
       app,
       link,
       newSourcePathOrFile,
       oldSourcePathOrFile,
       shouldForceMarkdownLinks,
       shouldUpdateFilenameAlias
-    });
+    }));
   });
 }

@@ -17,8 +17,16 @@ import {
   Vault
 } from 'obsidian';
 
+import type {
+  UpdateLinkOptions,
+  UpdateLinksInFileOptions
+} from './Link.ts';
+
 import { noopAsync } from '../Function.ts';
-import { toJson } from '../Object.ts';
+import {
+  normalizeOptionalProperties,
+  toJson
+} from '../Object.ts';
 import {
   basename,
   dirname,
@@ -44,7 +52,9 @@ import {
   editLinks,
   extractLinkFile,
   updateLink,
+
   updateLinksInFile
+
 } from './Link.ts';
 import {
   getAllLinks,
@@ -402,24 +412,24 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
           return;
         }
 
-        return updateLink({
+        return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
           app: app,
           link,
           newSourcePathOrFile: newBacklinkPath,
           newTargetPathOrFile: newAttachmentPath,
           oldTargetPathOrFile: oldAttachmentPath,
           shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
-        });
+        }));
       });
     }
 
     if (isNote(app, newPath)) {
-      await updateLinksInFile({
+      await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileOptions>({
         app,
         newSourcePathOrFile: newPath,
         oldSourcePathOrFile: oldPath,
         shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
-      });
+      }));
     }
   } finally {
     restoreUpdateAllLinks();

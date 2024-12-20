@@ -53,7 +53,7 @@ export interface ProcessOptions extends RetryOptions {
   /**
    * If `true`, the function will throw an error if the file is missing or deleted.
    */
-  shouldFailOnMissingFile: boolean;
+  shouldFailOnMissingFile?: boolean;
 }
 
 /**
@@ -355,20 +355,17 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
  *
  * @throws Will throw an error if the process fails after the specified number of retries or timeout.
  */
-export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<null | string, [string]>, options: Partial<RetryOptions> = {}): Promise<void> {
-  const DEFAULT_RETRY_OPTIONS: ProcessOptions = {
-    retryDelayInMilliseconds: 100,
-    shouldFailOnMissingFile: true,
-    shouldRetryOnError: false,
-    timeoutInMilliseconds: 60000
+export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<null | string, [string]>, options: RetryOptions = {}): Promise<void> {
+  const DEFAULT_RETRY_OPTIONS = {
+    shouldFailOnMissingFile: true
   };
-  const overriddenOptions: ProcessOptions = { ...DEFAULT_RETRY_OPTIONS, ...options };
+  const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...options };
   const path = getPath(app, pathOrFile);
 
   await retryWithTimeout(async () => {
     let oldContent = '';
 
-    let doesFileExist = await queueFileAction(app, path, overriddenOptions.shouldFailOnMissingFile, async (file) => {
+    let doesFileExist = await queueFileAction(app, path, fullOptions.shouldFailOnMissingFile, async (file) => {
       oldContent = await app.vault.read(file);
     });
 
@@ -382,7 +379,7 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
     }
 
     let isSuccess = true;
-    doesFileExist = await queueFileAction(app, path, overriddenOptions.shouldFailOnMissingFile, async (file) => {
+    doesFileExist = await queueFileAction(app, path, fullOptions.shouldFailOnMissingFile, async (file) => {
       await app.vault.process(file, (content) => {
         if (content !== oldContent) {
           console.warn('Content has changed since it was read. Retrying...', {
@@ -403,7 +400,7 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
     }
 
     return isSuccess;
-  }, overriddenOptions);
+  }, fullOptions);
 }
 
 /**

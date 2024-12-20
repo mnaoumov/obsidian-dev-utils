@@ -3,6 +3,8 @@
  * Contains utility functions for Objects.
  */
 
+import type { UndefinedOnPartialDeep } from 'type-fest';
+
 import { throwExpression } from './Error.ts';
 
 /**
@@ -16,7 +18,7 @@ export interface ToJsonOptions {
   /**
    * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
    */
-  space?: number | string | undefined;
+  space?: number | string;
 }
 
 /**
@@ -146,6 +148,30 @@ export function getPrototypeOf<T>(instance: T): T {
  */
 export function nameof<T>(name: Extract<keyof T, string>): string {
   return name;
+}
+
+/**
+ * Normalizes optional properties to allow `undefined` assignment in strict mode.
+ *
+ * This utility provides a workaround for the `exactOptionalPropertyTypes` TypeScript flag,
+ * which prohibits directly assigning `undefined` to optional properties when the type
+ * explicitly omits `undefined`.
+ *
+ * Example:
+ * ```typescript
+ * // With `exactOptionalPropertyTypes: true`
+ * const x: { prop?: string } = { prop: undefined }; // Compiler error
+ *
+ * // Using this utility:
+ * const y: { prop?: string } = normalizeOptionalProperties<{ prop?: string }>({ prop: undefined }); // Works
+ * ```
+ *
+ * @typeParam T - The target type with optional properties to normalize.
+ * @param obj - The object to normalize, allowing explicit `undefined` for optional properties.
+ * @returns The normalized object, compatible with `exactOptionalPropertyTypes`.
+ */
+export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): T {
+  return obj as T;
 }
 
 /**
