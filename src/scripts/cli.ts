@@ -28,6 +28,7 @@ import {
 import { lint } from './ESLint/ESLint.ts';
 import { process } from './NodeModules.ts';
 import { readPackageJson } from './Npm.ts';
+import { publish } from './NpmPublish.ts';
 import { spellcheck } from './spellcheck.ts';
 import { updateVersion } from './version.ts';
 
@@ -49,6 +50,7 @@ enum CommandNames {
   Dev = 'dev',
   Lint = 'lint',
   LintFix = 'lint:fix',
+  Publish = 'publish',
   Spellcheck = 'spellcheck',
   Version = 'version'
 }
@@ -76,6 +78,8 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
     addCommand(program, CommandNames.Dev, 'Build the plugin in development mode', () => buildObsidianPlugin({ mode: BuildMode.Development }));
     addCommand(program, CommandNames.Lint, 'Lint the source code', () => lint());
     addCommand(program, CommandNames.LintFix, 'Lint the source code and apply automatic fixes', () => lint(true));
+    addCommand(program, CommandNames.Publish, 'Publish to NPM', (isBeta: boolean) => publish(isBeta))
+      .argument('[isBeta]', 'Publish to NPM beta');
     addCommand(program, CommandNames.Spellcheck, 'Spellcheck the source code', () => spellcheck());
     addCommand(program, CommandNames.Version, 'Release a new version', (versionUpdateType: string) => updateVersion(versionUpdateType))
       .argument('[versionUpdateType]', 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]');
