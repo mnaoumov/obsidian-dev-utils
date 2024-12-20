@@ -23,12 +23,10 @@ import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
 
-import type {
-  MaybePromise,
-  RetryOptions
-} from '../Async.ts';
+import type { MaybePromise } from '../Async.ts';
 import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
+import type { ProcessOptions } from './Vault.ts';
 
 import {
   normalizeOptionalProperties,
@@ -341,7 +339,7 @@ export interface UpdateLinkOptions {
 /**
  * Options for updating links in a file.
  */
-export interface UpdateLinksInFileOptions {
+export interface UpdateLinksInFileOptions extends ProcessOptions {
   /**
    * The obsidian app instance.
    */
@@ -409,12 +407,12 @@ export function convertLink(options: ConvertLinkOptions): string {
  * @param app - The Obsidian application instance.
  * @param pathOrFile - The path or file to edit the backlinks for.
  * @param linkConverter - The function that converts each link.
- * @param retryOptions - Optional options for retrying the operation.
+ * @param processOptions - Optional options for retrying the operation.
  * @returns A promise that resolves when the backlinks have been edited.
  */
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConverter: (link: Reference) => MaybePromise<string | void>, retryOptions: RetryOptions = {}): Promise<void> {
-  const backlinks = await getBacklinksForFileSafe(app, pathOrFile, retryOptions);
+export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConverter: (link: Reference) => MaybePromise<string | void>, processOptions: ProcessOptions = {}): Promise<void> {
+  const backlinks = await getBacklinksForFileSafe(app, pathOrFile, processOptions);
   for (const backlinkNotePath of backlinks.keys()) {
     const currentLinks = backlinks.get(backlinkNotePath) ?? [];
     const linkJsons = new Set<string>(currentLinks.map((link) => toJson(link)));
@@ -425,7 +423,7 @@ export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConver
       }
 
       return linkConverter(link);
-    }, retryOptions);
+    }, processOptions);
   }
 }
 
@@ -435,7 +433,7 @@ export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConver
  * @param app - The Obsidian application instance.
  * @param pathOrFile - The path or file to edit the links in.
  * @param linkConverter - The function that converts each link.
- * @param retryOptions - Optional options for retrying the operation.
+ * @param processOptions - Optional options for processing/retrying the operation.
  * @returns A promise that resolves when the links have been edited.
  */
 export async function editLinks(
@@ -443,7 +441,7 @@ export async function editLinks(
   pathOrFile: PathOrFile,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   linkConverter: (link: Reference) => MaybePromise<string | void>,
-  retryOptions: RetryOptions = {}): Promise<void> {
+  processOptions: ProcessOptions = {}): Promise<void> {
   await applyFileChanges(app, pathOrFile, async () => {
     const cache = await getCacheSafe(app, pathOrFile);
     if (!cache) {
@@ -462,7 +460,7 @@ export async function editLinks(
     }
 
     return changes;
-  }, retryOptions);
+  }, processOptions);
 }
 
 /**
@@ -863,5 +861,5 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
       shouldForceMarkdownLinks,
       shouldUpdateFilenameAlias
     }));
-  });
+  }, options);
 }
