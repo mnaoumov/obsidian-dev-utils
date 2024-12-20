@@ -52,9 +52,7 @@ import {
   editLinks,
   extractLinkFile,
   updateLink,
-
   updateLinksInFile
-
 } from './Link.ts';
 import {
   getAllLinks,
@@ -71,6 +69,7 @@ import {
 
 const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
 const handledRenames = new Set<string>();
+const interruptedRenames = new Map<string, string>();
 
 /**
  * Settings for the rename/delete handler.
@@ -356,6 +355,12 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
 }
 
 async function handleRenameAsync(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>, oldPathLinks: Reference[]): Promise<void> {
+  const interruptedRenameOldPath = interruptedRenames.get(oldPath);
+  if (interruptedRenameOldPath) {
+    interruptedRenames.delete(oldPath);
+    await handleRenameAsync(app, interruptedRenameOldPath, newPath, oldPathBacklinksMap, oldPathLinks);
+  }
+
   if (app.vault.adapter.insensitive && oldPath.toLowerCase() === newPath.toLowerCase()) {
     const tempPath = join(dirname(newPath), '__temp__' + basename(newPath));
     await renameHandled(app, newPath, tempPath);
@@ -420,6 +425,8 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
           oldTargetPathOrFile: oldAttachmentPath,
           shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
         }));
+      }, {
+        shouldFailOnMissingFile: false
       });
     }
 
@@ -428,8 +435,16 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
         app,
         newSourcePathOrFile: newPath,
         oldSourcePathOrFile: oldPath,
+        shouldFailOnMissingFile: false,
         shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
       }));
+    }
+
+    if (!getFileOrNull(app, newPath)) {
+      interruptedRenames.set(newPath, oldPath);
+      addToQueue(app, () => {
+        interruptedRenames.delete(newPath);
+      });
     }
   } finally {
     restoreUpdateAllLinks();

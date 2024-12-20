@@ -349,13 +349,13 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
  * @param newContentProvider - A value provider that returns the new content based on the old content of the file.
  * It can be a string or a function that takes the old content as an argument and returns the new content.
  * If function is provided, it should return `null` if the process should be retried.
- * @param options - Optional. Configuration options for retrying the process. If not provided, default options will be used.
+ * @param options - Optional options for processing/retrying the operation.
  *
  * @returns A promise that resolves once the process is complete.
  *
  * @throws Will throw an error if the process fails after the specified number of retries or timeout.
  */
-export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<null | string, [string]>, options: RetryOptions = {}): Promise<void> {
+export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<null | string, [string]>, options: ProcessOptions = {}): Promise<void> {
   const DEFAULT_RETRY_OPTIONS = {
     shouldFailOnMissingFile: true
   };

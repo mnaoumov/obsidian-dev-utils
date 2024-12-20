@@ -71,7 +71,7 @@ export interface FrontmatterChange extends FileChange {
  * @param app - The application instance where the file changes will be applied.
  * @param pathOrFile - The path or file to which the changes should be applied.
  * @param changesProvider - A provider that returns an array of file changes to apply.
- * @param processOptions - Optional settings that determine how the operation should retry on failure.
+ * @param processOptions - Optional options for processing/retrying the operation.
  *
  * @returns A promise that resolves when the file changes have been successfully applied.
  */
