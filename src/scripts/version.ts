@@ -375,7 +375,7 @@ export async function updateChangelog(newVersion: string): Promise<void> {
  * @param versionUpdateType - The type of version update to perform (major, minor, patch, beta, or x.y.z[-beta:u]).
  * @returns A promise that resolves when the version update is complete.
  */
-export async function updateVersion(versionUpdateType: string): Promise<void> {
+export async function updateVersion(versionUpdateType?: string): Promise<void> {
   if (!versionUpdateType) {
     const npmOldVersion = process.env['npm_old_version'];
     const npmNewVersion = process.env['npm_new_version'];
@@ -385,6 +385,8 @@ export async function updateVersion(versionUpdateType: string): Promise<void> {
       await updateVersion(npmNewVersion);
       return;
     }
+
+    throw new Error('No version update type provided');
   }
 
   const isObsidianPlugin = existsSync(resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson));
