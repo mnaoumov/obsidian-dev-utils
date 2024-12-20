@@ -16,7 +16,7 @@
     "lint": "tsx scripts/lint.ts",
     "lint:fix": "tsx scripts/lint.ts fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
-    "version": "tsx scripts/cli.ts version",
+    "version": "tsx scripts/version.ts",
     "test": "tsx scripts/test.ts"
   },
   "repository": {
