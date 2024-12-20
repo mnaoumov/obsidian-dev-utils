@@ -481,7 +481,7 @@ function initBacklinksMap(singleBacklinksMap: Map<string, Reference[]>, renameMa
 
 function logRegisteredHandlers(app: App): void {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
-  console.debug(`Plugins with registered rename/delete handlers: ${JSON.stringify(renameDeleteHandlersMap.keys())}`);
+  console.debug(`Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`);
 }
 
 function makeKey(oldPath: string, newPath: string): string {
