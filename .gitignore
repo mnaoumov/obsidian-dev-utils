@@ -27,3 +27,4 @@ index.ts
 _dependencies.ts
 
 /tsconfig.tsbuildinfo
+/.env
