@@ -9,7 +9,6 @@ import type {
   Reference,
   TAbstractFile
 } from 'obsidian';
-import type { CustomArrayDict } from 'obsidian-typings';
 
 import { around } from 'monkey-around';
 import {
@@ -345,15 +344,15 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
     return;
   }
 
-  const backlinks = getBacklinksForFileOrPath(app, oldPath);
-  addToQueue(app, () => handleRenameAsync(app, oldPath, newPath, backlinks));
+  const oldPathBacklinksMap = getBacklinksForFileOrPath(app, oldPath).data;
+  addToQueue(app, () => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap));
 }
 
-async function handleRenameAsync(app: App, oldPath: string, newPath: string, backlinks: CustomArrayDict<Reference>): Promise<void> {
+async function handleRenameAsync(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>): Promise<void> {
   if (app.vault.adapter.insensitive && oldPath.toLowerCase() === newPath.toLowerCase()) {
     const tempPath = join(dirname(newPath), '__temp__' + basename(newPath));
     await renameHandled(app, newPath, tempPath);
-    await handleRenameAsync(app, oldPath, tempPath, backlinks);
+    await handleRenameAsync(app, oldPath, tempPath, oldPathBacklinksMap);
     await app.vault.rename(getFile(app, tempPath), newPath);
     return;
   }
@@ -365,15 +364,15 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
     const renameMap = new Map<string, string>();
     await fillRenameMap(app, oldPath, newPath, renameMap);
 
-    const backlinksMap = new Map<string, Map<string, string>>();
-    initBacklinksMap(backlinks.data, renameMap, backlinksMap, oldPath);
+    const combinedBacklinksMap = new Map<string, Map<string, string>>();
+    initBacklinksMap(oldPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
 
     for (const attachmentOldPath of renameMap.keys()) {
       if (attachmentOldPath === oldPath) {
         continue;
       }
-      const currentBacklinksMap = (await getBacklinksForFileSafe(app, attachmentOldPath)).data;
-      initBacklinksMap(currentBacklinksMap, renameMap, backlinksMap, attachmentOldPath);
+      const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe(app, attachmentOldPath)).data;
+      initBacklinksMap(attachmentOldPathBacklinksMap, renameMap, combinedBacklinksMap, attachmentOldPath);
     }
 
     const parentFolders = new Set<string>();
@@ -394,7 +393,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
       }
     }
 
-    for (const [newBacklinkPath, linkJsonToPathMap] of backlinksMap.entries()) {
+    for (const [newBacklinkPath, linkJsonToPathMap] of combinedBacklinksMap.entries()) {
       await editLinks(app, newBacklinkPath, (link) => {
         const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
         if (!oldAttachmentPath) {
@@ -447,11 +446,11 @@ function handleRenameIfEnabled(plugin: Plugin, file: TAbstractFile, oldPath: str
   handleRename(plugin.app, oldPath, newPath);
 }
 
-function initBacklinksMap(currentBacklinksMap: Map<string, Reference[]>, renameMap: Map<string, string>, backlinksMap: Map<string, Map<string, string>>, path: string): void {
-  for (const [backlinkPath, links] of currentBacklinksMap.entries()) {
+function initBacklinksMap(singleBacklinksMap: Map<string, Reference[]>, renameMap: Map<string, string>, combinedBacklinksMap: Map<string, Map<string, string>>, path: string): void {
+  for (const [backlinkPath, links] of singleBacklinksMap.entries()) {
     const newBacklinkPath = renameMap.get(backlinkPath) ?? backlinkPath;
-    const linkJsonToPathMap = backlinksMap.get(newBacklinkPath) ?? new Map<string, string>();
-    backlinksMap.set(newBacklinkPath, linkJsonToPathMap);
+    const linkJsonToPathMap = combinedBacklinksMap.get(newBacklinkPath) ?? new Map<string, string>();
+    combinedBacklinksMap.set(newBacklinkPath, linkJsonToPathMap);
     for (const link of links) {
       linkJsonToPathMap.set(toJson(link), path);
     }
