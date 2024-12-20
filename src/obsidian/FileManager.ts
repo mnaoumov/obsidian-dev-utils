@@ -5,12 +5,10 @@
 
 import type { App } from 'obsidian';
 
-import type {
-  MaybePromise,
-  RetryOptions
-} from '../Async.ts';
+import type { MaybePromise } from '../Async.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
+import type { ProcessOptions } from './Vault.ts';
 
 import { deepEqual } from '../Object.ts';
 import { getFile } from './FileSystem.ts';
@@ -82,14 +80,12 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or TFile object representing the note.
  * @param frontmatterFn - A function that modifies the front matter.
- * @param retryOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
+ * @param processOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
  * @returns A promise that resolves when the front matter has been processed and saved.
  */
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function processFrontmatter<CustomFrontmatter = unknown>(app: App, pathOrFile: PathOrFile, frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => MaybePromise<null | void>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function processFrontmatter<CustomFrontmatter = unknown>(app: App, pathOrFile: PathOrFile, frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => MaybePromise<null | void>, processOptions: ProcessOptions = {}): Promise<void> {
   const file = getFile(app, pathOrFile);
-  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
-  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
 
   await process(app, file, async (content) => {
     const oldFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
@@ -104,5 +100,5 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(app: App, 
     }
 
     return setFrontmatter(content, newFrontmatter);
-  }, overriddenOptions);
+  }, processOptions);
 }

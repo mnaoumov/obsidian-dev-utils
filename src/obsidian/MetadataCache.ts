@@ -137,13 +137,11 @@ export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): Cus
  * @param retryOptions - Optional retry options.
  * @returns A promise that resolves to an array dictionary of backlinks.
  */
-export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CustomArrayDict<Reference>> {
+export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: RetryOptions = {}): Promise<CustomArrayDict<Reference>> {
   const safeOverload = (app.metadataCache.getBacklinksForFile as Partial<GetBacklinksForFileSafeWrapper>).safe;
   if (safeOverload) {
     return safeOverload(pathOrFile);
   }
-  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
-  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   let backlinks: CustomArrayDict<Reference> = null as unknown as CustomArrayDict<Reference>;
   await retryWithTimeout(async () => {
     const file = getFile(app, pathOrFile);
@@ -184,7 +182,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
     }
 
     return true;
-  }, overriddenOptions);
+  }, retryOptions);
 
   return backlinks;
 }
@@ -197,9 +195,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
  * @param retryOptions - Optional retry options for the retrieval process.
  * @returns The cached metadata for the file, or null if it doesn't exist.
  */
-export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOptions: Partial<RetryOptions> = {}): Promise<CachedMetadata | null> {
-  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
-  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
+export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOptions: RetryOptions = {}): Promise<CachedMetadata | null> {
   let cache: CachedMetadata | null = null;
 
   await retryWithTimeout(async () => {
@@ -237,7 +233,7 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
         return true;
       }
     }
-  }, overriddenOptions);
+  }, retryOptions);
 
   return cache;
 }

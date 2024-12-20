@@ -6,11 +6,14 @@
 import type { PackageJson } from 'type-fest';
 
 import type { MaybePromise } from '../Async.ts';
+import type { EditJsonOptions } from './JSON.ts';
 
 import { throwExpression } from '../Error.ts';
+import { normalizeOptionalProperties } from '../Object.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   editJson,
+
   editJsonSync,
   readJson,
   readJsonSync,
@@ -26,12 +29,12 @@ export interface EditPackageJsonOptions {
   /**
    * The current working directory where `package.json` is located.
    */
-  cwd?: string | undefined;
+  cwd?: string;
 
   /**
    * If true, skips editing if the file does not exist.
    */
-  shouldSkipIfMissing?: boolean | undefined;
+  shouldSkipIfMissing?: boolean;
 }
 
 /**
@@ -62,7 +65,7 @@ export async function editPackageJson(
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(getPackageJsonPath(cwd), editFn, { shouldSkipIfMissing });
+  await editJson<PackageJson>(getPackageJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
 }
 
 /**
@@ -78,7 +81,7 @@ export function editPackageJsonSync(
     cwd,
     shouldSkipIfMissing
   } = options;
-  editJsonSync<PackageJson>(getPackageJsonPath(cwd), editFn, { shouldSkipIfMissing });
+  editJsonSync<PackageJson>(getPackageJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
 }
 
 /**
@@ -95,7 +98,7 @@ export async function editPackageLockJson(
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(getPackageLockJsonPath(cwd), editFn, { shouldSkipIfMissing });
+  await editJson<PackageJson>(getPackageLockJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
 }
 
 /**
@@ -112,7 +115,7 @@ export function editPackageLockJsonSync(
     cwd,
     shouldSkipIfMissing
   } = options;
-  editJsonSync<PackageLockJson>(getPackageLockJsonPath(cwd), editFn, { shouldSkipIfMissing });
+  editJsonSync<PackageLockJson>(getPackageLockJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
 }
 
 /**

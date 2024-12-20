@@ -27,17 +27,17 @@ export interface RetryOptions {
   /**
    * The delay in milliseconds between retry attempts.
    */
-  retryDelayInMilliseconds: number;
+  retryDelayInMilliseconds?: number;
 
   /**
    * Whether to retry the function on error.
    */
-  shouldRetryOnError: boolean;
+  shouldRetryOnError?: boolean;
 
   /**
    * The maximum time in milliseconds to wait before giving up on retrying.
    */
-  timeoutInMilliseconds: number;
+  timeoutInMilliseconds?: number;
 }
 
 /**
@@ -154,24 +154,24 @@ export function marksAsTerminateRetry<TError extends Error>(error: TError): Term
  * @param retryOptions - Optional parameters to configure the retry behavior.
  * @returns A Promise that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
+export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions: RetryOptions = {}): Promise<void> {
   const stackTrace = getStackTrace();
-  const DEFAULT_RETRY_OPTIONS: RetryOptions = {
+  const DEFAULT_RETRY_OPTIONS = {
     retryDelayInMilliseconds: 100,
     shouldRetryOnError: false,
     timeoutInMilliseconds: 5000
   };
-  const overriddenOptions: RetryOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  await runWithTimeout(overriddenOptions.timeoutInMilliseconds, async () => {
+  const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
+  await runWithTimeout(fullOptions.timeoutInMilliseconds, async () => {
     let attempt = 0;
     for (; ;) {
-      overriddenOptions.abortSignal?.throwIfAborted();
+      fullOptions.abortSignal?.throwIfAborted();
       attempt++;
       let isSuccess: boolean;
       try {
         isSuccess = await fn();
       } catch (error) {
-        if (!overriddenOptions.shouldRetryOnError || (error as Partial<TerminateRetry>).__terminateRetry) {
+        if (!fullOptions.shouldRetryOnError || (error as Partial<TerminateRetry>).__terminateRetry) {
           throw error;
         }
         printError(error);
@@ -184,11 +184,11 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
         return;
       }
 
-      console.debug(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${overriddenOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
+      console.debug(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
         fn,
         stackTrace
       });
-      await sleep(overriddenOptions.retryDelayInMilliseconds);
+      await sleep(fullOptions.retryDelayInMilliseconds);
     }
   });
 }

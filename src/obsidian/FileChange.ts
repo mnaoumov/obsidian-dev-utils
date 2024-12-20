@@ -5,9 +5,9 @@
 
 import type { App } from 'obsidian';
 
-import type { RetryOptions } from '../Async.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { PathOrFile } from './FileSystem.ts';
+import type { ProcessOptions } from './Vault.ts';
 
 import {
   deepEqual,
@@ -71,13 +71,11 @@ export interface FrontmatterChange extends FileChange {
  * @param app - The application instance where the file changes will be applied.
  * @param pathOrFile - The path or file to which the changes should be applied.
  * @param changesProvider - A provider that returns an array of file changes to apply.
- * @param retryOptions - Optional settings that determine how the operation should retry on failure.
+ * @param processOptions - Optional settings that determine how the operation should retry on failure.
  *
  * @returns A promise that resolves when the file changes have been successfully applied.
  */
-export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changesProvider: ValueProvider<FileChange[]>, retryOptions: Partial<RetryOptions> = {}): Promise<void> {
-  const DEFAULT_RETRY_OPTIONS: Partial<RetryOptions> = { timeoutInMilliseconds: 60000 };
-  const overriddenOptions: Partial<RetryOptions> = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
+export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changesProvider: ValueProvider<FileChange[]>, processOptions: ProcessOptions = {}): Promise<void> {
   await process(app, pathOrFile, async (content) => {
     let changes = await resolveValue(changesProvider);
     const frontmatter = isCanvasFile(app, pathOrFile) ? JSON.parse(content) as Record<string, unknown> : parseFrontmatter(content);
@@ -177,7 +175,7 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
       }
     }
     return newContent;
-  }, overriddenOptions);
+  }, processOptions);
 }
 
 /**

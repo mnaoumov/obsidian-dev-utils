@@ -31,7 +31,7 @@ import {
 export function copyToObsidianPluginsFolderPlugin(
   isProductionBuild: boolean,
   distDir: string,
-  obsidianConfigDir: string | undefined,
+  obsidianConfigDir: string,
   pluginName: string
 ): Plugin {
   return {
