@@ -80,6 +80,16 @@ npx obsidian-dev-utils lint:fix
 
 Lints your code and automatically applies fixes where possible.
 
+#### Publish
+
+```bash
+npx obsidian-dev-utils publish
+```
+
+Publishes the package to NPM. Usually not applicable for plugins.
+
+To bypass manual verification, consider setting `NPM_TOKEN` to the environment variable or in your `.env` file.
+
 #### Spellcheck Code
 
 ```bash
