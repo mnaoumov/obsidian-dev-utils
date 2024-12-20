@@ -49,8 +49,7 @@ import {
 import {
   getAllLinks,
   getBacklinksForFileOrPath,
-  getBacklinksForFileSafe,
-  getCacheSafe
+  getBacklinksForFileSafe
 } from './MetadataCache.ts';
 import { addToQueue } from './Queue.ts';
 import {
@@ -146,7 +145,7 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
   );
 }
 
-async function fillRenameMap(app: App, oldPath: string, newPath: string, renameMap: Map<string, string>): Promise<void> {
+async function fillRenameMap(app: App, oldPath: string, newPath: string, renameMap: Map<string, string>, oldPathLinks: Reference[]): Promise<void> {
   renameMap.set(oldPath, newPath);
 
   if (!isNote(app, oldPath)) {
@@ -173,12 +172,8 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
   const oldAttachmentFiles: TFile[] = [];
 
   if (!(await hasOwnAttachmentFolder(app, oldPath))) {
-    const oldCache = await getCacheSafe(app, newPath);
-    if (!oldCache) {
-      return;
-    }
-    for (const oldLink of getAllLinks(oldCache)) {
-      const oldAttachmentFile = extractLinkFile(app, oldLink, oldPath);
+    for (const oldPathLink of oldPathLinks) {
+      const oldAttachmentFile = extractLinkFile(app, oldPathLink, oldPath);
       if (!oldAttachmentFile) {
         continue;
       }
@@ -344,15 +339,17 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
     return;
   }
 
+  const oldPathCache = app.metadataCache.getCache(oldPath);
+  const oldPathLinks = oldPathCache ? getAllLinks(oldPathCache) : [];
   const oldPathBacklinksMap = getBacklinksForFileOrPath(app, oldPath).data;
-  addToQueue(app, () => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap));
+  addToQueue(app, () => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks));
 }
 
-async function handleRenameAsync(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>): Promise<void> {
+async function handleRenameAsync(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>, oldPathLinks: Reference[]): Promise<void> {
   if (app.vault.adapter.insensitive && oldPath.toLowerCase() === newPath.toLowerCase()) {
     const tempPath = join(dirname(newPath), '__temp__' + basename(newPath));
     await renameHandled(app, newPath, tempPath);
-    await handleRenameAsync(app, oldPath, tempPath, oldPathBacklinksMap);
+    await handleRenameAsync(app, oldPath, tempPath, oldPathBacklinksMap, oldPathLinks);
     await app.vault.rename(getFile(app, tempPath), newPath);
     return;
   }
@@ -362,7 +359,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
   });
   try {
     const renameMap = new Map<string, string>();
-    await fillRenameMap(app, oldPath, newPath, renameMap);
+    await fillRenameMap(app, oldPath, newPath, renameMap, oldPathLinks);
 
     const combinedBacklinksMap = new Map<string, Map<string, string>>();
     initBacklinksMap(oldPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
