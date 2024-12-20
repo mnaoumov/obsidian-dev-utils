@@ -130,30 +130,19 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
   const app = plugin.app;
   plugin.registerEvent(
     app.vault.on('delete', (file) => {
-      if (!shouldInvokeHandler(app, pluginId)) {
-        return;
-      }
-      const path = file.path;
-      addToQueue(app, () => handleDelete(app, path));
+      handleDeleteIfEnabled(plugin, file);
     })
   );
 
   plugin.registerEvent(
     app.vault.on('rename', (file, oldPath) => {
-      if (!shouldInvokeHandler(app, pluginId)) {
-        return;
-      }
-      if (!isFile(file)) {
-        return;
-      }
-      const newPath = file.path;
-      handleRename(app, oldPath, newPath);
+      handleRenameIfEnabled(plugin, file, oldPath);
     })
   );
 
   plugin.registerEvent(
     app.metadataCache.on('deleted', (file, prevCache) => {
-      handleMetadataDeleted(app, file, prevCache);
+      handleMetadataDeletedIfEnabled(plugin, file, prevCache);
     })
   );
 }
@@ -313,6 +302,15 @@ async function handleDelete(app: App, path: string): Promise<void> {
   await deleteSafe(app, attachmentFolder, path, false, settings.shouldDeleteEmptyFolders);
 }
 
+function handleDeleteIfEnabled(plugin: Plugin, file: TAbstractFile): void {
+  const app = plugin.app;
+  if (!shouldInvokeHandler(plugin)) {
+    return;
+  }
+  const path = file.path;
+  addToQueue(app, () => handleDelete(app, path));
+}
+
 function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
   const settings = getSettings(app);
   if (settings.isPathIgnored?.(file.path)) {
@@ -325,6 +323,13 @@ function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedM
   if (isMarkdownFile(app, file) && prevCache) {
     deletedMetadataCacheMap.set(file.path, prevCache);
   }
+}
+
+function handleMetadataDeletedIfEnabled(plugin: Plugin, file: TAbstractFile, prevCache: CachedMetadata | null): void {
+  if (!shouldInvokeHandler(plugin)) {
+    return;
+  }
+  handleMetadataDeleted(plugin.app, file, prevCache);
 }
 
 function handleRename(app: App, oldPath: string, newPath: string): void {
@@ -431,6 +436,17 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, bac
   }
 }
 
+function handleRenameIfEnabled(plugin: Plugin, file: TAbstractFile, oldPath: string): void {
+  if (!shouldInvokeHandler(plugin)) {
+    return;
+  }
+  if (!isFile(file)) {
+    return;
+  }
+  const newPath = file.path;
+  handleRename(plugin.app, oldPath, newPath);
+}
+
 function initBacklinksMap(currentBacklinksMap: Map<string, Reference[]>, renameMap: Map<string, string>, backlinksMap: Map<string, Map<string, string>>, path: string): void {
   for (const [backlinkPath, links] of currentBacklinksMap.entries()) {
     const newBacklinkPath = renameMap.get(backlinkPath) ?? backlinkPath;
@@ -462,7 +478,10 @@ async function renameHandled(app: App, oldPath: string, newPath: string): Promis
   return newPath;
 }
 
-function shouldInvokeHandler(app: App, pluginId: string): boolean {
+function shouldInvokeHandler(plugin: Plugin): boolean {
+  const app = plugin.app;
+  const pluginId = plugin.manifest.id;
+
   const renameDeleteHandlerPluginIds = getRenameDeleteHandlersMap(app);
   const mainPluginId = Array.from(renameDeleteHandlerPluginIds.keys())[0];
   if (mainPluginId !== pluginId) {
