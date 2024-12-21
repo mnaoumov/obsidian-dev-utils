@@ -19,7 +19,7 @@ interface NpmEnv {
 export async function publish(isBeta?: boolean): Promise<void> {
   config();
   const npmEnv = process.env as Partial<NpmEnv>;
-  await execFromRoot(['npm', 'config', 'set', '//registry.npmjs.org/:_authToken', npmEnv.NPM_TOKEN ?? '']);
+  await execFromRoot(['npm', 'config', 'set', `//registry.npmjs.org/:_authToken=${npmEnv.NPM_TOKEN ?? ''}`]);
 
   const tag = isBeta ? 'beta' : 'latest';
   await execFromRoot(['npm', 'publish', '--tag', tag]);
