@@ -61,11 +61,13 @@ import {
 } from './MetadataCache.ts';
 import { addToQueue } from './Queue.ts';
 import {
-  deleteEmptyFolderHierarchy,
-  deleteSafe,
   getSafeRenamePath,
   renameSafe
 } from './Vault.ts';
+import {
+  deleteEmptyFolderHierarchy,
+  deleteSafe
+} from './VaultEx.ts';
 
 const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
 const handledRenames = new Set<string>();
