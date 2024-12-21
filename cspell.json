@@ -1,6 +1,7 @@
 {
   "version": "0.2",
   "ignorePaths": [
+    ".env",
     "dist",
     "node_modules",
     "tsconfig.tsbuildinfo"
