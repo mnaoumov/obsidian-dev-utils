@@ -205,32 +205,37 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
  * @returns A Promise that resolves with the result of the asynchronous function or rejects if it times out.
  */
 export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => MaybePromise<R>): Promise<R> {
-  let timedOut = false;
+  let isTimedOut = true;
   let result: R = null as R;
   const startTime = performance.now();
   await Promise.race([run(), timeout()]);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (timedOut) {
+  if (isTimedOut) {
     throw new Error('Timed out');
   }
   return result;
 
   async function run(): Promise<void> {
     result = await fn();
-    timedOut = false;
+    isTimedOut = false;
     const duration = performance.now() - startTime;
     console.debug(`Execution time: ${duration.toString()} milliseconds`, { fn });
   }
 
   async function timeout(): Promise<void> {
+    if (!isTimedOut) {
+      return;
+    }
     await sleep(timeoutInMilliseconds);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!isTimedOut) {
+      return;
+    }
     const duration = performance.now() - startTime;
     console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn });
     if (isDebug()) {
       console.warn('The execution is not terminated because window.DEBUG is set');
       await timeout();
-    } else {
-      timedOut = true;
     }
   }
 }
