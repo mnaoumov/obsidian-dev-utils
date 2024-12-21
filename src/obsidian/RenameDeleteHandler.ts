@@ -338,6 +338,13 @@ function handleMetadataDeletedIfEnabled(plugin: Plugin, file: TAbstractFile, pre
 }
 
 function handleRename(app: App, oldPath: string, newPath: string): void {
+  const interruptedRenameOldPath = interruptedRenames.get(oldPath);
+  if (interruptedRenameOldPath) {
+    interruptedRenames.delete(oldPath);
+    handleRename(app, interruptedRenameOldPath, newPath);
+    return;
+  }
+
   const key = makeKey(oldPath, newPath);
   console.debug(`Handle Rename ${key}`);
   if (handledRenames.has(key)) {
@@ -357,12 +364,6 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
 }
 
 async function handleRenameAsync(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>, oldPathLinks: Reference[]): Promise<void> {
-  const interruptedRenameOldPath = interruptedRenames.get(oldPath);
-  if (interruptedRenameOldPath) {
-    interruptedRenames.delete(oldPath);
-    await handleRenameAsync(app, interruptedRenameOldPath, newPath, oldPathBacklinksMap, oldPathLinks);
-  }
-
   if (app.vault.adapter.insensitive && oldPath.toLowerCase() === newPath.toLowerCase()) {
     const tempPath = join(dirname(newPath), '__temp__' + basename(newPath));
     await renameHandled(app, newPath, tempPath);
