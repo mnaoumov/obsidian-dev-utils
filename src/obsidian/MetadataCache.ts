@@ -35,6 +35,7 @@ import {
 } from './FileSystem.ts';
 import { parseFrontmatter } from './Frontmatter.ts';
 import { sortReferences } from './Reference.ts';
+import { readSafe } from './Vault.ts';
 
 /**
  * Wrapper for the getBacklinksForFile method that provides a safe overload.
@@ -155,7 +156,10 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
 
       await saveNote(app, note);
 
-      const content = await app.vault.read(note);
+      const content = await readSafe(app, note);
+      if (!content) {
+        return false;
+      }
       const frontmatter = parseFrontmatter(content);
       const links = backlinks.get(notePath);
       if (!links) {

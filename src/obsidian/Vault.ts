@@ -360,20 +360,12 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
     shouldFailOnMissingFile: true
   };
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...options };
-  const path = getPath(app, pathOrFile);
 
   await retryWithTimeout(async () => {
-    let oldContent = '';
+    const oldContent = await readSafe(app, pathOrFile);
 
-    let doesFileExist = await invokeFileActionIfFileExists(app, path, async (file) => {
-      oldContent = await app.vault.read(file);
-    });
-
-    if (!doesFileExist) {
-      if (fullOptions.shouldFailOnMissingFile) {
-        throw new Error(`File '${path}' not found`);
-      }
-      return true;
+    if (!oldContent) {
+      return handleMissingFile();
     }
 
     const newContent = await resolveValue(newContentProvider, oldContent);
@@ -382,7 +374,7 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
     }
 
     let isSuccess = true;
-    doesFileExist = await invokeFileActionIfFileExists(app, path, async (file) => {
+    const doesFileExist = await invokeFileActionSafe(app, pathOrFile, async (file) => {
       await app.vault.process(file, (content) => {
         if (content !== oldContent) {
           console.warn('Content has changed since it was read. Retrying...', {
@@ -399,14 +391,36 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
     });
 
     if (!doesFileExist) {
+      return handleMissingFile();
+    }
+
+    return isSuccess;
+
+    function handleMissingFile(): boolean {
       if (fullOptions.shouldFailOnMissingFile) {
+        const path = getPath(app, pathOrFile);
         throw new Error(`File '${path}' not found`);
       }
       return true;
     }
-
-    return isSuccess;
   }, fullOptions);
+}
+
+/**
+ * Reads the content of a file safely from the vault.
+ *
+ * It covers the case when the file was removed during the reading.
+ *
+ * @param app - The application instance.
+ * @param pathOrFile - The path or file to read.
+ * @returns A promise that resolves to the content of the file or `null` if the file is missing or deleted.
+ */
+export async function readSafe(app: App, pathOrFile: PathOrFile): Promise<null | string> {
+  let content: null | string = null;
+  await invokeFileActionSafe(app, pathOrFile, async (file) => {
+    content = await app.vault.read(file);
+  });
+  return content;
 }
 
 /**
@@ -444,19 +458,19 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
   return newAvailablePath;
 }
 
-async function invokeFileActionIfFileExists(app: App, path: string, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {
-  const file = getFileOrNull(app, path);
-  if (!file) {
+async function invokeFileActionSafe(app: App, pathOrFile: PathOrFile, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {
+  const file = getFileOrNull(app, pathOrFile);
+  if (!file || file.deleted) {
     return false;
   }
   try {
     await fileAction(file);
+    return true;
   } catch (e) {
-    const file = getFileOrNull(app, path);
-    if (!file) {
+    const file = getFileOrNull(app, pathOrFile);
+    if (!file || file.deleted) {
       return false;
     }
     throw e;
   }
-  return true;
 }
