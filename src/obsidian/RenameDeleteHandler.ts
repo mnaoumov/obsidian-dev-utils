@@ -361,6 +361,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
   if (interruptedRenameOldPath) {
     interruptedRenames.delete(oldPath);
     handleRename(app, interruptedRenameOldPath, newPath);
+    handleRename(app, oldPath, newPath);
     return;
   }
 
