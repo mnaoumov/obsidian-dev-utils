@@ -15,7 +15,7 @@ import { getStackTrace } from '../Error.ts';
  * @param stackTrace - Optional stack trace.
  */
 export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<void>, stackTrace?: string): Promise<void> {
-  const timestampStart = Date.now();
+  const timestampStart = performance.now();
   if (stackTrace === undefined) {
     stackTrace = getStackTrace().split('\n').slice(1).join('\n');
   }
@@ -26,18 +26,18 @@ export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<vo
   });
   try {
     await fn();
-    const timestampEnd = Date.now();
+    const timestampEnd = performance.now();
     console.debug(`${title}:end`, {
       duration: timestampEnd - timestampStart,
       timestampEnd,
       timestampStart
     });
   } catch (error) {
-    const timestampEnd = Date.now();
+    const timestampEnd = performance.now();
     console.debug(`${title}:error`, {
       duration: timestampEnd - timestampStart,
       error,
-      timestampEnd: Date.now(),
+      timestampEnd,
       timestampStart
     });
 
