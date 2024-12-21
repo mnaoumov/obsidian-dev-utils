@@ -365,11 +365,14 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
   await retryWithTimeout(async () => {
     let oldContent = '';
 
-    let doesFileExist = await queueFileAction(app, path, fullOptions.shouldFailOnMissingFile, async (file) => {
+    let doesFileExist = await invokeFileActionIfFileExists(app, path, async (file) => {
       oldContent = await app.vault.read(file);
     });
 
     if (!doesFileExist) {
+      if (fullOptions.shouldFailOnMissingFile) {
+        throw new Error(`File '${path}' not found`);
+      }
       return true;
     }
 
@@ -379,7 +382,7 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
     }
 
     let isSuccess = true;
-    doesFileExist = await queueFileAction(app, path, fullOptions.shouldFailOnMissingFile, async (file) => {
+    doesFileExist = await invokeFileActionIfFileExists(app, path, async (file) => {
       await app.vault.process(file, (content) => {
         if (content !== oldContent) {
           console.warn('Content has changed since it was read. Retrying...', {
@@ -396,6 +399,9 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
     });
 
     if (!doesFileExist) {
+      if (fullOptions.shouldFailOnMissingFile) {
+        throw new Error(`File '${path}' not found`);
+      }
       return true;
     }
 
@@ -438,19 +444,19 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
   return newAvailablePath;
 }
 
-async function queueFileAction(app: App, path: string, shouldFailOnMissingFile: boolean, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {
-  let result = true;
-  await app.vault.adapter.queue(async () => {
+async function invokeFileActionIfFileExists(app: App, path: string, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {
+  const file = getFileOrNull(app, path);
+  if (!file) {
+    return false;
+  }
+  try {
+    await fileAction(file);
+  } catch (e) {
     const file = getFileOrNull(app, path);
-    if (!file || file.deleted) {
-      if (shouldFailOnMissingFile) {
-        throw new Error(`File ${path} not found`);
-      }
-      result = false;
-    } else {
-      await fileAction(file);
+    if (!file) {
+      return false;
     }
-  });
-
-  return result;
+    throw e;
+  }
+  return true;
 }
