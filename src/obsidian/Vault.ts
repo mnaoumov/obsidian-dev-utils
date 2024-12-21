@@ -380,7 +380,8 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
 }
 
 async function invokeFileActionSafe(app: App, pathOrFile: PathOrFile, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {
-  const file = getFileOrNull(app, pathOrFile);
+  const path = getPath(app, pathOrFile);
+  const file = getFileOrNull(app, path);
   if (!file || file.deleted) {
     return false;
   }
@@ -388,7 +389,7 @@ async function invokeFileActionSafe(app: App, pathOrFile: PathOrFile, fileAction
     await fileAction(file);
     return true;
   } catch (e) {
-    const file = getFileOrNull(app, pathOrFile);
+    const file = getFileOrNull(app, path);
     if (!file || file.deleted) {
       return false;
     }
