@@ -357,11 +357,21 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
 }
 
 async function handleRenameAsync(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>, oldPathLinks: Reference[]): Promise<void> {
-  const interruptedRenameOldPath = interruptedRenames.get(oldPath);
-  if (interruptedRenameOldPath) {
-    interruptedRenames.delete(oldPath);
-    handleRename(app, interruptedRenameOldPath, newPath);
-    handleRename(app, oldPath, newPath);
+  const interruptedRenamesChain: string[] = [];
+  let interruptedRenamePath: string | undefined = oldPath;
+
+  while (interruptedRenamePath) {
+    interruptedRenamePath = interruptedRenames.get(interruptedRenamePath);
+    if (!interruptedRenamePath) {
+      break;
+    }
+    interruptedRenamesChain.unshift(interruptedRenamePath);
+  }
+
+  if (interruptedRenamesChain.length > 0) {
+    for (const interruptedRenamePath of interruptedRenamesChain) {
+      handleRename(app, interruptedRenamePath, newPath);
+    }
     return;
   }
 
@@ -446,9 +456,9 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
 
     if (!getFileOrNull(app, newPath)) {
       interruptedRenames.set(newPath, oldPath);
-      addToQueue(app, () => {
-        interruptedRenames.delete(newPath);
-      });
+    } else {
+      interruptedRenames.delete(oldPath);
+      interruptedRenames.delete(newPath);
     }
   } finally {
     restoreUpdateAllLinks();
