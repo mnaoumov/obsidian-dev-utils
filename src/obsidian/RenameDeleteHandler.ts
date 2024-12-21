@@ -350,8 +350,8 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
     return;
   }
 
-  const oldPathCache = app.metadataCache.getCache(oldPath);
-  const oldPathLinks = oldPathCache ? getAllLinks(oldPathCache) : [];
+  const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
+  const oldPathLinks = cache ? getAllLinks(cache) : [];
   const oldPathBacklinksMap = getBacklinksForFileOrPath(app, oldPath).data;
   addToQueue(app, () => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks));
 }
