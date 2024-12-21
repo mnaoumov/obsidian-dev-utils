@@ -664,7 +664,7 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     return true;
   }
 
-  const targetFile = getFile(app, targetPathOrFile);
+  const targetFile = getFile(app, targetPathOrFile, true);
   const newSourcePath = getPath(app, newSourcePathOrFile);
   const oldSourcePath = getPath(app, oldSourcePathOrFile ?? newSourcePathOrFile);
   const newSourceDir = dirname(newSourcePath);
@@ -787,7 +787,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   if (!newTargetPathOrFile) {
     return link.original;
   }
-  const targetFile = getFile(app, newTargetPathOrFile);
+  const targetFile = getFile(app, newTargetPathOrFile, true);
   const oldTargetPath = getPath(app, oldTargetPathOrFile ?? newTargetPathOrFile);
   const isWikilink = testWikilink(link.original) && shouldForceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
