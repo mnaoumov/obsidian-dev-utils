@@ -3,6 +3,7 @@
  * Contains utility functions for asynchronous operations.
  */
 
+import { isDebug } from './Debug.ts';
 import {
   emitAsyncErrorEvent,
   getStackTrace,
@@ -196,6 +197,8 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
 /**
  * Executes a function with a timeout. If the function does not complete within the specified time, it is considered to have timed out.
  *
+ * If `window.DEBUG` is set, the execution is not terminated after the timeout and the function is allowed to run indefinitely.
+ *
  * @typeParam R - The type of the result from the asynchronous function.
  * @param timeoutInMilliseconds - The maximum time to wait in milliseconds.
  * @param fn - The function to execute.
@@ -204,11 +207,10 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
 export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => MaybePromise<R>): Promise<R> {
   let timedOut = false;
   let result: R = null as R;
-
+  const startTime = performance.now();
   await Promise.race([run(), timeout()]);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (timedOut) {
-    console.error(`Timed out in ${timeoutInMilliseconds.toString()} milliseconds`, { fn });
     throw new Error('Timed out');
   }
   return result;
@@ -216,11 +218,20 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
   async function run(): Promise<void> {
     result = await fn();
     timedOut = false;
+    const duration = performance.now() - startTime;
+    console.debug(`Execution time: ${duration.toString()} milliseconds`, { fn });
   }
 
   async function timeout(): Promise<void> {
     await sleep(timeoutInMilliseconds);
-    timedOut = true;
+    const duration = performance.now() - startTime;
+    console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn });
+    if (isDebug()) {
+      console.warn('The execution is not terminated because window.DEBUG is set');
+      await timeout();
+    } else {
+      timedOut = true;
+    }
   }
 }
 
