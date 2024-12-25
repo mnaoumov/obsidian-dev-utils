@@ -71,7 +71,7 @@ import {
 
 const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
 const handledRenames = new Set<string>();
-const interruptedRenames = new Map<string, string>();
+const interruptedRenamesMap = new Map<string, InterruptedRename[]>();
 
 /**
  * Settings for the rename/delete handler.
@@ -116,6 +116,11 @@ export interface RenameDeleteHandlerSettings {
    * Whether to update links when a note or attachment is renamed.
    */
   shouldUpdateLinks: boolean;
+}
+
+interface InterruptedRename {
+  combinedBacklinksMap: Map<string, Map<string, string>>;
+  oldPath: string;
 }
 
 /**
@@ -356,20 +361,24 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
   addToQueue(app, () => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks));
 }
 
-async function handleRenameAsync(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>, oldPathLinks: Reference[]): Promise<void> {
-  const interruptedRenamesChain: string[] = [];
-  let interruptedRenamePath: string | undefined = oldPath;
-
-  while (interruptedRenamePath) {
-    interruptedRenamesChain.unshift(interruptedRenamePath);
-    interruptedRenamePath = interruptedRenames.get(interruptedRenamePath);
+async function handleRenameAsync(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>, oldPathLinks: Reference[], interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>): Promise<void> {
+  const interruptedRenames = interruptedRenamesMap.get(oldPath);
+  if (interruptedRenames) {
+    interruptedRenamesMap.delete(oldPath);
+    for (const interruptedRename of interruptedRenames) {
+      await handleRenameAsync(app, interruptedRename.oldPath, newPath, oldPathBacklinksMap, oldPathLinks, interruptedRename.combinedBacklinksMap);
+    }
   }
 
-  if (interruptedRenamesChain.length > 1) {
-    for (const interruptedRenamePath of interruptedRenamesChain) {
-      handleRename(app, interruptedRenamePath, newPath);
+  const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
+  const oldPathLinks2 = cache ? getAllLinks(cache) : [];
+  const oldPathBacklinksMap2 = getBacklinksForFileOrPath(app, oldPath).data;
+
+  for (const link of oldPathLinks2) {
+    if (oldPathLinks.includes(link)) {
+      continue;
     }
-    return;
+    oldPathLinks.push(link);
   }
 
   if (app.vault.adapter.insensitive && oldPath.toLowerCase() === newPath.toLowerCase()) {
@@ -389,6 +398,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
 
     const combinedBacklinksMap = new Map<string, Map<string, string>>();
     initBacklinksMap(oldPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
+    initBacklinksMap(oldPathBacklinksMap2, renameMap, combinedBacklinksMap, oldPath);
 
     for (const attachmentOldPath of renameMap.keys()) {
       if (attachmentOldPath === oldPath) {
@@ -416,7 +426,7 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
       }
     }
 
-    for (const [newBacklinkPath, linkJsonToPathMap] of combinedBacklinksMap.entries()) {
+    for (const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(Array.from(interruptedCombinedBacklinksMap?.entries() ?? []))) {
       await editLinks(app, newBacklinkPath, (link) => {
         const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
         if (!oldAttachmentPath) {
@@ -452,10 +462,15 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
     }
 
     if (!getFileOrNull(app, newPath)) {
-      interruptedRenames.set(newPath, oldPath);
-    } else {
-      interruptedRenames.delete(oldPath);
-      interruptedRenames.delete(newPath);
+      let interruptedRenames = interruptedRenamesMap.get(newPath);
+      if (!interruptedRenames) {
+        interruptedRenames = [];
+        interruptedRenamesMap.set(newPath, interruptedRenames);
+      }
+      interruptedRenames.push({
+        combinedBacklinksMap,
+        oldPath
+      });
     }
   } finally {
     restoreUpdateAllLinks();
