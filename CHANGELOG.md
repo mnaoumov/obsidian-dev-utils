@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## 9.0.0
+
+- Support multiple interrupted renames
+- Reinitiate rename
+- Move check
+- Try handle interrupted renames earlier
+- Accept non-existing files
+- Check both old and new path caches
+- Use path instead of file instance for check
+- Extract VaultEx to avoid circular ref
+- Extract readSafe
+- Don't log timeout if already finished
+- Use key=value format for npm config set
+- Rewrite without queue to avoid deadlocks
+- Lint
+- Use performance.now() for bigger accuracy
+- Disable timeout in DEBUG mode
+- Refactor dotenv usages
+- Extract Publish command
+- Pass NPM_TOKEN
+- Add publish
+- Log handlers array, because iterator logs as empty
+- Handle case where file renamed during running handler
+- Make all optional parameters truly optional
+- Carefully check for missing file
+- Pass oldPathLinks earlier
+- Better logging Plugins with registered rename/delete handlers
+- Rename variables for clarity
+- Extract ...ifEnabled functions
+
 ## 8.0.0
 
 - Don't update changelog for beta builds
