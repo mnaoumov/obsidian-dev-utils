@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 9.0.1
+
+- Update libs
+- cspell
+
 ## 9.0.0
 
 - Support multiple interrupted renames
