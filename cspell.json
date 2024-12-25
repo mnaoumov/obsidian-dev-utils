@@ -79,6 +79,7 @@
     "regexmatch",
     "regexreplace",
     "regextest",
+    "Reinitiate",
     "Repr",
     "sourcemaps",
     "striptime",
