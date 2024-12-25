@@ -361,14 +361,11 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
   let interruptedRenamePath: string | undefined = oldPath;
 
   while (interruptedRenamePath) {
-    interruptedRenamePath = interruptedRenames.get(interruptedRenamePath);
-    if (!interruptedRenamePath) {
-      break;
-    }
     interruptedRenamesChain.unshift(interruptedRenamePath);
+    interruptedRenamePath = interruptedRenames.get(interruptedRenamePath);
   }
 
-  if (interruptedRenamesChain.length > 0) {
+  if (interruptedRenamesChain.length > 1) {
     for (const interruptedRenamePath of interruptedRenamesChain) {
       handleRename(app, interruptedRenamePath, newPath);
     }
