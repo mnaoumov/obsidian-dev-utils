@@ -93,9 +93,14 @@ export interface RenameDeleteHandlerSettings {
   shouldDeleteEmptyFolders: boolean;
 
   /**
-   * Whether to delete orphan attachments after a delete.
+   * Whether to handle deletions.
    */
-  shouldDeleteOrphanAttachments: boolean;
+  shouldHandleDeletions: boolean;
+
+  /**
+   * Whether to handle renames.
+   */
+  shouldHandleRenames: boolean;
 
   /**
    * Whether to rename attachment files when a note is renamed.
@@ -252,7 +257,8 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
     const newSettings = settingsBuilder();
     settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
     settings.shouldDeleteEmptyFolders ||= newSettings.shouldDeleteEmptyFolders ?? false;
-    settings.shouldDeleteOrphanAttachments ||= newSettings.shouldDeleteOrphanAttachments ?? false;
+    settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
+    settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
     settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
     settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
     settings.shouldUpdateFilenameAliases ||= newSettings.shouldUpdateFilenameAliases ?? false;
@@ -271,7 +277,7 @@ async function handleDelete(app: App, path: string): Promise<void> {
   }
 
   const settings = getSettings(app);
-  if (!settings.shouldDeleteOrphanAttachments) {
+  if (!settings.shouldHandleDeletions) {
     return;
   }
 
@@ -327,7 +333,7 @@ function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedM
     return;
   }
 
-  if (!settings.shouldDeleteOrphanAttachments) {
+  if (!settings.shouldHandleDeletions) {
     return;
   }
   if (isMarkdownFile(app, file) && prevCache) {
@@ -351,7 +357,7 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
   }
 
   const settings = getSettings(app);
-  if (settings.isPathIgnored?.(oldPath) || settings.isPathIgnored?.(newPath)) {
+  if (!settings.shouldHandleRenames || settings.isPathIgnored?.(oldPath) || settings.isPathIgnored?.(newPath)) {
     return;
   }
 
