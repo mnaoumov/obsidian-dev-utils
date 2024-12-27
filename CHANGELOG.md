@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 10.0.0
+
+- Add shouldHandleRenames/Deletions
+
 ## 9.0.2
 
 - Handle empty files properly
