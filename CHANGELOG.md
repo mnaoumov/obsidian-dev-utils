@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 9.0.2
+
+- Handle empty files properly
+
 ## 9.0.1
 
 - Update libs
