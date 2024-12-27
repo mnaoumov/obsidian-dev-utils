@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.0.0
+
+- Remove shouldUpdateLinks
+
 ## 10.0.0
 
 - Add shouldHandleRenames/Deletions
