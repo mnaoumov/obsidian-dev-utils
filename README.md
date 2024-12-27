@@ -135,20 +135,20 @@ This setup allows you to run the commands using `npm run`, like `npm run build`.
 The functions are grouped by files and folders and you have multiple ways to import them:
 
 ```typescript
-import { loadPluginSettings } from "obsidian-dev-utils/obsidian/Plugin/PluginSettings";
-loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
+import { prompt } from 'obsidian-dev-utils/obsidian/Modal/Prompt';
+await prompt({ app, title: 'Enter your name' });
 
-import { PluginSettings } from "obsidian-dev-utils/obsidian/Plugin";
-PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
+import { Prompt } from 'obsidian-dev-utils/obsidian/Modal';
+await Prompt.prompt({ app, title: 'Enter your name' });
 
-import { Plugin } from "obsidian-dev-utils/obsidian";
-Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
+import { Modal } from 'obsidian-dev-utils/obsidian';
+await Modal.Prompt.prompt({ app, title: 'Enter your name' });
 
-import { obsidian } from "obsidian-dev-utils";
-obsidian.Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
+import { obsidian } from 'obsidian-dev-utils';
+await obsidian.Modal.Prompt.prompt({ app, title: 'Enter your name' });
 
 import * as obsidianDevUtils from "obsidian-dev-utils";
-obsidianDevUtils.obsidian.Plugin.PluginSettings.loadPluginSettings(() => ({ key: "defaultValue" }), { key: "newValue" });
+await obsidianDevUtils.obsidian.Modal.Prompt.prompt({ app, title: 'Enter your name' });
 ```
 
 ## Support
