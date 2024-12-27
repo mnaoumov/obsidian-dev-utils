@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 11.1.0
+
+- Preserve link alias case
+- Create FUNDING.yml
+- Update README examples
+
 ## 11.0.0
 
 - Remove shouldUpdateLinks
