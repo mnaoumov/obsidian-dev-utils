@@ -809,9 +809,9 @@ export function updateLink(options: UpdateLinkOptions): string {
     : link.displayText;
 
   if (shouldUpdateFilenameAlias ?? true) {
-    if (alias?.toLowerCase() === basename(oldTargetPath, extname(oldTargetPath)).toLowerCase()) {
+    if (alias === basename(oldTargetPath, extname(oldTargetPath))) {
       alias = targetFile.basename;
-    } else if (alias?.toLowerCase() === basename(oldTargetPath).toLowerCase()) {
+    } else if (alias === basename(oldTargetPath)) {
       alias = targetFile.name;
     }
   }
