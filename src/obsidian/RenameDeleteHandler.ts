@@ -116,11 +116,6 @@ export interface RenameDeleteHandlerSettings {
    * Whether to update filename aliases when a note is renamed.
    */
   shouldUpdateFilenameAliases: boolean;
-
-  /**
-   * Whether to update links when a note or attachment is renamed.
-   */
-  shouldUpdateLinks: boolean;
 }
 
 interface InterruptedRename {
@@ -262,7 +257,6 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
     settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
     settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
     settings.shouldUpdateFilenameAliases ||= newSettings.shouldUpdateFilenameAliases ?? false;
-    settings.shouldUpdateLinks ||= newSettings.shouldUpdateLinks ?? false;
     const isPathIgnored = settings.isPathIgnored;
     settings.isPathIgnored = (path: string): boolean => isPathIgnored?.(path) ?? newSettings.isPathIgnored?.(path) ?? false;
   }
