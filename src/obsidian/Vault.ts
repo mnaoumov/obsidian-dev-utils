@@ -285,7 +285,7 @@ export async function process(app: App, pathOrFile: PathOrFile, newContentProvid
   await retryWithTimeout(async () => {
     const oldContent = await readSafe(app, pathOrFile);
 
-    if (!oldContent) {
+    if (oldContent === null) {
       return handleMissingFile();
     }
 
