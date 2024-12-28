@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.2.0
+
+- Add deleteProperty/ies
+
 ## 11.1.0
 
 - Preserve link alias case
