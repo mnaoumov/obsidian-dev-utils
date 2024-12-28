@@ -106,6 +106,39 @@ export function deepEqual(a: unknown, b: unknown): boolean {
 }
 
 /**
+ * Deletes multiple properties from an object.
+ *
+ * @param obj - The object to delete the properties from.
+ * @param propertyNames - The names of the properties to delete.
+ * @returns `true` if any of the properties were present, otherwise `false`.
+ */
+export function deleteProperties(obj: Record<string, unknown>, propertyNames: string[]): boolean {
+  let ans = false;
+
+  for (const propertyName of propertyNames) {
+    ans = deleteProperty(obj, propertyName) || ans;
+  }
+
+  return ans;
+}
+
+/**
+ * Deletes a property from an object.
+ *
+ * @param obj - The object to delete the property from.
+ * @param propertyName - The name of the property to delete.
+ * @returns `true` if the property was present, otherwise `false`.
+ */
+export function deleteProperty(obj: Record<string, unknown>, propertyName: string): boolean {
+  if (!Object.prototype.hasOwnProperty.call(obj, propertyName)) {
+    return false;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  delete obj[propertyName];
+  return true;
+}
+
+/**
  * Gets the value of a nested property from an object.
  *
  * @param obj - The object to get the nested property value from.
