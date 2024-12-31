@@ -36,7 +36,7 @@ interface EsmModule {
 export function preprocessPlugin(): Plugin {
   const replacements = {
     ['import(dot)meta(dot)url'.replaceAll('(dot)', '.')]: (): string => {
-      if (typeof (module as unknown as Record<string, unknown>)['exports'] !== 'undefined') {
+      if (typeof __filename === 'string') {
         // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
         const url = require('node:url') as typeof import('node:url');
         return url.pathToFileURL(__filename).href;
