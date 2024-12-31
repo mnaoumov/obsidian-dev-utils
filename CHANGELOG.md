@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 11.3.0
+
+- Change check for __filename
+
 ## 11.2.0
 
 - Add deleteProperty/ies
