@@ -96,16 +96,16 @@ export function preprocessPlugin(): Plugin {
       });
     }
   };
-}
 
-function __extractDefault(module: Partial<EsmModule> | undefined): unknown {
-  return module && module.__esModule && module.default ? module.default : module;
-}
+  function __extractDefault(module: Partial<EsmModule> | undefined): unknown {
+    return module && module.__esModule && module.default ? module.default : module;
+  }
 
-function patchRequireEsmDefault(): void {
-  const __require = require;
-  require = Object.assign((id: string): unknown => {
-    const module = __require(id) as (Partial<EsmModule> | undefined) ?? {};
-    return __extractDefault(module);
-  }, __require);
+  function patchRequireEsmDefault(): void {
+    const __require = require;
+    require = Object.assign((id: string): unknown => {
+      const module = __require(id) as (Partial<EsmModule> | undefined) ?? {};
+      return __extractDefault(module);
+    }, __require);
+  }
 }
