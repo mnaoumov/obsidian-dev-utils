@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 11.4.0
+
+- Don't put helper functions to top-level as applying to itself produces invalid code
+- Minify prod builds
+
 ## 11.3.0
 
 - Change check for __filename
