@@ -30,7 +30,7 @@ import {
 } from './ObsidianPluginBuilder.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
 
-const require = createRequire(import.meta.url);
+const esmRequire = createRequire(import.meta.url);
 
 interface ModuleWithDefaultExport {
   default: unknown;
@@ -101,8 +101,7 @@ function canSkipFromBundling(moduleName: string): boolean {
   }
 
   try {
-    // eslint-disable-next-line import-x/no-dynamic-require
-    const module = require(moduleName) as ModuleWithDefaultExport;
+    const module = esmRequire(moduleName) as ModuleWithDefaultExport;
     return !module.default;
   } catch {
     return false;
