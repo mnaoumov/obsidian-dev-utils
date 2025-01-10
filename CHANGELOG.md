@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 11.5.0
+
+- Update libs
+- Fix double require transform
+
 ## 11.4.0
 
 - Don't put helper functions to top-level as applying to itself produces invalid code
