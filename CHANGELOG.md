@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 12.0.0
+
+- Refactor appendCodeBlock to DocumentFragment or HTMLElement
+
 ## 11.5.0
 
 - Update libs
