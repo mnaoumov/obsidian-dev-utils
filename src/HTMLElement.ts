@@ -18,3 +18,15 @@ export interface ValidatorElement extends HTMLElement {
    */
   setCustomValidity(error: string): void;
 }
+
+/**
+ * Appends a code block to the given DocumentFragment or HTMLElement.
+ *
+ * @param el - The DocumentFragment or HTMLElement to append the code block to.
+ * @param code - The code to be displayed in the code block.
+ */
+export function appendCodeBlock(el: DocumentFragment | HTMLElement, code: string): void {
+  el.createEl('strong', { cls: 'markdown-rendered code' }, (strong) => {
+    strong.createEl('code', { text: code });
+  });
+}
