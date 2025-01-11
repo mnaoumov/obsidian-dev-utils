@@ -181,12 +181,12 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
       }
       if (isSuccess) {
         if (attempt > 1) {
-          debug('obsidian-dev-utils:Async:runWithTimeout').log(`Retry completed successfully after ${attempt.toString()} attempts`);
+          debug.default('obsidian-dev-utils:Async:runWithTimeout').log(`Retry completed successfully after ${attempt.toString()} attempts`);
         }
         return;
       }
 
-      debug('obsidian-dev-utils:Async:runWithTimeout').log(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
+      debug.default('obsidian-dev-utils:Async:runWithTimeout').log(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
         fn,
         stackTrace
       });
@@ -220,7 +220,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     result = await fn();
     isTimedOut = false;
     const duration = performance.now() - startTime;
-    debug('obsidian-dev-utils:Async:runWithTimeout').log(`Execution time: ${duration.toString()} milliseconds`, { fn });
+    debug.default('obsidian-dev-utils:Async:runWithTimeout').log(`Execution time: ${duration.toString()} milliseconds`, { fn });
   }
 
   async function timeout(): Promise<void> {
@@ -234,7 +234,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     }
     const duration = performance.now() - startTime;
     console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn });
-    if (debug.enabled('obsidian-dev-utils:Async:timeout')) {
+    if (debug.default.enabled('obsidian-dev-utils:Async:timeout')) {
       console.warn('The execution is not terminated because localStorage.debug=\'obsidian-dev-utils:Async:timeout\' is enabled. See https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information');
       await timeout();
     }
