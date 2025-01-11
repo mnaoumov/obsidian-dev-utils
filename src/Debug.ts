@@ -14,22 +14,22 @@ interface DebuggerEx extends Debugger {
 /**
  * Returns a debugger instance with a log function that includes the caller's file name and line number.
  *
- * @param id - The namespace for the debugger instance.
+ * @param namespace - The namespace for the debugger instance.
  * @returns A debugger instance with a log function that includes the caller's file name and line number.
  */
-export function getDebugger(id: string): DebuggerEx {
-  const debugInstance = debug.default(id) as DebuggerEx;
+export function getDebugger(namespace: string): DebuggerEx {
+  const debugInstance = debug.default(namespace) as DebuggerEx;
   debugInstance.log = (message: string, ...args: unknown[]): void => {
-    logWithCaller(id, message, ...args);
+    logWithCaller(namespace, message, ...args);
   };
   debugInstance.printStackTrace = (stackTrace, title): void => {
-    printStackTrace(id, stackTrace, title);
+    printStackTrace(namespace, stackTrace, title);
   };
   return debugInstance;
 }
 
-function logWithCaller(id: string, message: string, ...args: unknown[]): void {
-  if (!debug.enabled(id)) {
+function logWithCaller(namespace: string, message: string, ...args: unknown[]): void {
+  if (!debug.enabled(namespace)) {
     return;
   }
 
@@ -47,11 +47,11 @@ function logWithCaller(id: string, message: string, ...args: unknown[]): void {
   const stackLines = new Error().stack?.split('\n') ?? [];
   const callerLine = stackLines[CALLER_LINE_INDEX] ?? '';
   console.debug(message, ...args);
-  printStackTrace(id, callerLine, 'Original debug message caller');
+  printStackTrace(namespace, callerLine, 'Original debug message caller');
 }
 
-function printStackTrace(id: string, stackTrace: string, title?: string): void {
-  if (!debug.enabled(id)) {
+function printStackTrace(namespace: string, stackTrace: string, title?: string): void {
+  if (!debug.enabled(namespace)) {
     return;
   }
 
@@ -61,5 +61,5 @@ function printStackTrace(id: string, stackTrace: string, title?: string): void {
   if (!title) {
     title = 'Caller stack trace';
   }
-  console.debug(`NotError:${id}:${title}\n${stackTrace}`);
+  console.debug(`NotError:${namespace}:${title}\n${stackTrace}`);
 }
