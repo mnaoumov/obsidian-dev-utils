@@ -82,7 +82,7 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    */
   public constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
-    const consoleDebugInstance = debug(manifest.id);
+    const consoleDebugInstance = debug.default(manifest.id);
     this.consoleDebug = (...args: unknown[]): void => void consoleDebugInstance.log(...args);
     console.debug(`Debug messages for plugin '${manifest.name}' are not shown by default. Set localStorage.debug='${manifest.id}' to see them. See https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information`);
   }
