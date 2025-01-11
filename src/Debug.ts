@@ -26,16 +26,13 @@ function logWithCaller(message: string, ...args: unknown[]): void {
    * 2:     at debug (plugin:?:?:?)
    * 3:     at functionName (path/to/caller.js:?:?)
    */
-  // const CALLER_LINE_INDEX = 3;
+  const CALLER_LINE_INDEX = 3;
 
-  // const stackLines = new Error().stack?.split('\n') ?? [];
-  // const callerLine = stackLines[CALLER_LINE_INDEX] ?? '';
+  const stackLines = new Error().stack?.split('\n') ?? [];
+  const callerLine = stackLines[CALLER_LINE_INDEX] ?? '';
 
-  const originalPrepareStackTrace = Error.prepareStackTrace;
-  Error.prepareStackTrace = function (error, structuredStackTrace): unknown {
-    const stackTrace = originalPrepareStackTrace?.call(Error, error, structuredStackTrace) as unknown;
-    return stackTrace;
-  };
   console.debug(message, ...args);
-  Error.prepareStackTrace = originalPrepareStackTrace;
+  if (callerLine) {
+    console.debug(`NotError:Original debug message caller\n${callerLine}`);
+  }
 }
