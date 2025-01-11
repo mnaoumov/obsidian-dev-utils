@@ -18,14 +18,14 @@ import {
   readFile
 } from '../NodeModules.ts';
 
-type ProcessEx = typeof process & {
-  browser: boolean;
-};
-
 interface EsmModule {
   __esModule: boolean;
   default: unknown;
 }
+
+type ProcessEx = {
+  browser: boolean;
+} & typeof process;
 
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
