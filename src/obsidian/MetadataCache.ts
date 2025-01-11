@@ -51,6 +51,8 @@ export interface GetBacklinksForFileSafeWrapper {
   safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<Reference>>;
 }
 
+const getCacheSafeDebugger = getDebugger('obsidian-dev-utils:MetadataCache:getCacheSafe');
+
 /**
  * Ensures that the metadata cache is ready for all files.
  * @param app - The Obsidian app instance.
@@ -217,22 +219,22 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
     const stat = await app.vault.adapter.stat(file.path);
 
     if (!fileInfo) {
-      getDebugger('obsidian-dev-utils:MetadataCache:getCacheSafe')(`File cache info for ${file.path} is missing`);
+      getCacheSafeDebugger(`File cache info for ${file.path} is missing`);
       return false;
     } else if (!stat) {
-      getDebugger('obsidian-dev-utils:MetadataCache:getCacheSafe')(`File stat for ${file.path} is missing`);
+      getCacheSafeDebugger(`File stat for ${file.path} is missing`);
       return false;
     } else if (file.stat.mtime < stat.mtime) {
       app.vault.onChange('modified', file.path, undefined, stat);
-      getDebugger('obsidian-dev-utils:MetadataCache:getCacheSafe')(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
+      getCacheSafeDebugger(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
       return false;
     } else if (fileInfo.mtime < stat.mtime) {
-      getDebugger('obsidian-dev-utils:MetadataCache:getCacheSafe')(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
+      getCacheSafeDebugger(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
       return false;
     } else {
       cache = app.metadataCache.getFileCache(file);
       if (!cache) {
-        getDebugger('obsidian-dev-utils:MetadataCache:getCacheSafe')(`File cache for ${file.path} is missing`);
+        getCacheSafeDebugger(`File cache for ${file.path} is missing`);
         return false;
       } else {
         return true;
