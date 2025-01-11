@@ -238,7 +238,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     const duration = performance.now() - startTime;
     console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn });
     if (getDebugger('obsidian-dev-utils:Async:timeout').enabled) {
-      console.warn('The execution is not terminated because debugger obsidian-dev-utils:Async:timeout is enabled. See window.enableDebuggers and https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information');
+      console.warn('The execution is not terminated because debugger obsidian-dev-utils:Async:timeout is enabled. See window.DEBUG.enable(\'obsidian-dev-utils:Async:timeout\') and https://github.com/debug-js/debug?tab=readme-ov-file for more information');
       await timeout();
     }
   }
