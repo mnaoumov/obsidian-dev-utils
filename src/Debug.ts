@@ -18,8 +18,20 @@ export function getDebugger(id: string): debug.Debugger {
 }
 
 function logWithCaller(message: string, ...args: unknown[]): void {
-  const lines = new Error().stack?.split('\n') ?? [];
-  const stack = lines[2] ?? '';
-  const caller = stack.trim().replace(/^at /, '');
-  console.debug(message, ...args, `[${caller}]`);
+  /**
+   * The caller line index is 3 because the call stack is as follows:
+   *
+   * 0: Error
+   * 1:     at Function.logWithCaller [as log] (?:?:?)
+   * 2:     at debug (plugin:?:?:?)
+   * 3:     at functionName (path/to/caller.js:?:?)
+   */
+  const CALLER_LINE_INDEX = 3;
+
+  const stackLines = new Error().stack?.split('\n') ?? [];
+  const callerLine = stackLines[CALLER_LINE_INDEX] ?? '';
+  console.debug(message, ...args);
+  if (callerLine) {
+    console.debug(`DebugMessageStackError\n${callerLine}`);
+  }
 }
