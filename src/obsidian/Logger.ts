@@ -8,6 +8,8 @@ import type { MaybePromise } from '../Async.ts';
 import { getDebugger } from '../Debug.ts';
 import { getStackTrace } from '../Error.ts';
 
+const invokeAsyncAndLogDebugger = getDebugger('obsidian-dev-utils:Logger:invokeAsyncAndLog');
+
 /**
  * Invokes a function and logs the start, end, and duration of the invocation.
  *
@@ -17,30 +19,32 @@ import { getStackTrace } from '../Error.ts';
  */
 export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<void>, stackTrace?: string): Promise<void> {
   const timestampStart = performance.now();
-  if (stackTrace === undefined) {
-    stackTrace = getStackTrace().split('\n').slice(1).join('\n');
-  }
-  getDebugger('obsidian-dev-utils:Logger:invokeAsyncAndLog')(`${title}:start`, {
+  stackTrace ??= getStackTrace(1);
+  invokeAsyncAndLogDebugger(`${title}:start`, {
     fn,
-    stackTrace,
     timestampStart
   });
+  invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
   try {
     await fn();
     const timestampEnd = performance.now();
-    getDebugger('obsidian-dev-utils:Logger:invokeAsyncAndLog')(`${title}:end`, {
+    invokeAsyncAndLogDebugger(`${title}:end`, {
       duration: timestampEnd - timestampStart,
+      fn,
       timestampEnd,
       timestampStart
     });
+    invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
   } catch (error) {
     const timestampEnd = performance.now();
-    getDebugger('obsidian-dev-utils:Logger:invokeAsyncAndLog')(`${title}:error`, {
+    invokeAsyncAndLogDebugger(`${title}:error`, {
       duration: timestampEnd - timestampStart,
       error,
+      fn,
       timestampEnd,
       timestampStart
     });
+    invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
 
     throw error;
   }

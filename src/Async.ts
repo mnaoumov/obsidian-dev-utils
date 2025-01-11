@@ -51,6 +51,8 @@ export interface TerminateRetry {
   __terminateRetry: true;
 }
 
+const retryWithTimeoutDebugger = getDebugger('obsidian-dev-utils:Async:retryWithTimeout');
+
 /**
  * Adds an error handler to a Promise that catches any errors and emits an async error event.
  *
@@ -153,10 +155,11 @@ export function marksAsTerminateRetry<TError extends Error>(error: TError): Term
  *
  * @param fn - The function to retry.
  * @param retryOptions - Optional parameters to configure the retry behavior.
+ * @param stackTrace - Optional stack trace.
  * @returns A Promise that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions: RetryOptions = {}): Promise<void> {
-  const stackTrace = getStackTrace();
+export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions: RetryOptions = {}, stackTrace?: string): Promise<void> {
+  stackTrace ??= getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
     retryDelayInMilliseconds: 100,
     shouldRetryOnError: false,
@@ -180,15 +183,16 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
       }
       if (isSuccess) {
         if (attempt > 1) {
-          getDebugger('obsidian-dev-utils:Async:runWithTimeout')(`Retry completed successfully after ${attempt.toString()} attempts`);
+          retryWithTimeoutDebugger(`Retry completed successfully after ${attempt.toString()} attempts`);
+          retryWithTimeoutDebugger.printStackTrace(stackTrace);
         }
         return;
       }
 
-      getDebugger('obsidian-dev-utils:Async:runWithTimeout')(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
-        fn,
-        stackTrace
+      retryWithTimeoutDebugger(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
+        fn
       });
+      retryWithTimeoutDebugger.printStackTrace(stackTrace);
       await sleep(fullOptions.retryDelayInMilliseconds);
     }
   });
