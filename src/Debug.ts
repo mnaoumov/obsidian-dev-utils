@@ -81,7 +81,7 @@ function enableNamespaces(namespaces: string | string[]): void {
 }
 
 function getNamespaces(): string[] {
-  return toArray(debug.load());
+  return toArray(debug.load() ?? '');
 }
 
 function logWithCaller(namespace: string, message: string, ...args: unknown[]): void {

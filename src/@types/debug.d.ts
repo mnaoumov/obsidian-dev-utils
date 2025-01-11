@@ -11,6 +11,6 @@ declare module 'debug' {
      * Loads the debug configuration from the environment.
      * @returns The loaded debug configuration.
      */
-    load(): string;
+    load(): null | string;
   }
 }
