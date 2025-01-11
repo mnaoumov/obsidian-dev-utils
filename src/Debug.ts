@@ -29,6 +29,10 @@ export function getDebugger(id: string): DebuggerEx {
 }
 
 function logWithCaller(id: string, message: string, ...args: unknown[]): void {
+  if (!debug.enabled(id)) {
+    return;
+  }
+
   /**
    * The caller line index is 4 because the call stack is as follows:
    *
@@ -47,6 +51,10 @@ function logWithCaller(id: string, message: string, ...args: unknown[]): void {
 }
 
 function printStackTrace(id: string, stackTrace: string, title?: string): void {
+  if (!debug.enabled(id)) {
+    return;
+  }
+
   if (!stackTrace) {
     stackTrace = '(unavailable)';
   }
