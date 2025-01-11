@@ -7,7 +7,11 @@
  * loading tasks.
  */
 
+import type { PluginManifest } from 'obsidian';
+
+import debug from 'debug';
 import {
+  App,
   Notice,
   Plugin,
   PluginSettingTab
@@ -26,6 +30,17 @@ import { noop } from '../../Function.ts';
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
 export abstract class PluginBase<PluginSettings extends PluginSettingsBase = EmptySettings> extends Plugin {
+  /**
+   * Use instead of `console.debug()` to log messages.
+   *
+   * Those messages are not shown by default, but can be shown by setting the `DEBUG` environment variable to the plugin ID.
+   *
+   * @see {@link https://github.com/debug-js/debug?tab=readme-ov-file#browser-support}
+   *
+   * @param args - The arguments to log.
+   */
+  public readonly consoleDebug: (...args: unknown[]) => void;
+
   /**
    * Gets the AbortSignal used for aborting long-running operations.
    *
@@ -58,6 +73,19 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   private _settings!: PluginSettings;
 
   private notice?: Notice;
+
+  /**
+   * Constructs a new PluginBase instance.
+   *
+   * @param app - The Obsidian app instance.
+   * @param manifest - The plugin manifest.
+   */
+  public constructor(app: App, manifest: PluginManifest) {
+    super(app, manifest);
+    const consoleDebugInstance = debug(manifest.id);
+    this.consoleDebug = (...args: unknown[]): void => void consoleDebugInstance.log(...args);
+    console.debug(`Debug messages for plugin '${manifest.name}' are not shown by default. Set localStorage.debug='${manifest.id}' to see them. See https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information`);
+  }
 
   /**
    * Called when the plugin is loaded
