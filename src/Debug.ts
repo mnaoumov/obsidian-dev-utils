@@ -26,12 +26,15 @@ function logWithCaller(message: string, ...args: unknown[]): void {
    * 2:     at debug (plugin:?:?:?)
    * 3:     at functionName (path/to/caller.js:?:?)
    */
-  const CALLER_LINE_INDEX = 3;
+  // const CALLER_LINE_INDEX = 3;
 
-  const stackLines = new Error().stack?.split('\n') ?? [];
-  const callerLine = stackLines[CALLER_LINE_INDEX] ?? '';
+  // const stackLines = new Error().stack?.split('\n') ?? [];
+  // const callerLine = stackLines[CALLER_LINE_INDEX] ?? '';
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+  const originalCaptureStackTrace = Error.captureStackTrace;
+  Error.captureStackTrace = function (target, constructorOpt): void {
+    originalCaptureStackTrace.call(Error, target, constructorOpt);
+  };
   console.debug(message, ...args);
-  if (callerLine) {
-    console.debug(`DebugMessageStackError\n${callerLine}`);
-  }
+  Error.captureStackTrace = originalCaptureStackTrace;
 }
