@@ -11,6 +11,19 @@ interface DebuggerEx extends Debugger {
   printStackTrace: (stackTrace: string, title?: string) => void;
 }
 
+interface EnableDebuggersWrapper {
+  enableDebuggers: typeof enableDebuggers;
+}
+
+/**
+ * Enables the debuggers for the given namespaces.
+ *
+ * @param namespaces - The namespaces to enable.
+ */
+export function enableDebuggers(namespaces: string): void {
+  debug.enable(namespaces);
+}
+
 /**
  * Returns a debugger instance with a log function that includes the caller's file name and line number.
  *
@@ -26,6 +39,13 @@ export function getDebugger(namespace: string): DebuggerEx {
     printStackTrace(namespace, stackTrace, title);
   };
   return debugInstance;
+}
+
+/**
+ * Sets the enableDebuggers function on the window object.
+ */
+export function setEnableDebuggers(): void {
+  (window as Partial<EnableDebuggersWrapper>).enableDebuggers = enableDebuggers;
 }
 
 function logWithCaller(namespace: string, message: string, ...args: unknown[]): void {
