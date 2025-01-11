@@ -10,7 +10,6 @@ import type {
   TAbstractFile
 } from 'obsidian';
 
-import debug from 'debug';
 import { around } from 'monkey-around';
 import {
   App,
@@ -23,6 +22,7 @@ import type {
   UpdateLinksInFileOptions
 } from './Link.ts';
 
+import { getDebugger } from '../Debug.ts';
 import { noopAsync } from '../Function.ts';
 import {
   normalizeOptionalProperties,
@@ -266,7 +266,7 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
 }
 
 async function handleDelete(app: App, path: string): Promise<void> {
-  debug.default('obsidian-dev-utils:RenameDeleteHandler:handleDelete')(`Handle Delete ${path}`);
+  getDebugger('obsidian-dev-utils:RenameDeleteHandler:handleDelete')(`Handle Delete ${path}`);
   if (!isNote(app, path)) {
     return;
   }
@@ -345,7 +345,7 @@ function handleMetadataDeletedIfEnabled(plugin: Plugin, file: TAbstractFile, pre
 
 function handleRename(app: App, oldPath: string, newPath: string): void {
   const key = makeKey(oldPath, newPath);
-  debug.default('obsidian-dev-utils:RenameDeleteHandler:handleRename')(`Handle Rename ${key}`);
+  getDebugger('obsidian-dev-utils:RenameDeleteHandler:handleRename')(`Handle Rename ${key}`);
   if (handledRenames.has(key)) {
     handledRenames.delete(key);
     return;
@@ -508,7 +508,7 @@ function initBacklinksMap(singleBacklinksMap: Map<string, Reference[]>, renameMa
 
 function logRegisteredHandlers(app: App): void {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
-  debug.default('obsidian-dev-utils:RenameDeleteHandler:logRegisteredHandlers')(`Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`);
+  getDebugger('obsidian-dev-utils:RenameDeleteHandler:logRegisteredHandlers')(`Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`);
 }
 
 function makeKey(oldPath: string, newPath: string): string {
