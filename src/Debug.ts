@@ -18,7 +18,8 @@ export function getDebugger(id: string): debug.Debugger {
 }
 
 function logWithCaller(message: string, ...args: unknown[]): void {
-  const stack = new Error().stack?.split('\n')[2];
-  const caller = stack?.trim().replace(/^at /, '') ?? '';
+  const lines = new Error().stack?.split('\n') ?? [];
+  const stack = lines[2] ?? '';
+  const caller = stack.trim().replace(/^at /, '');
   console.debug(message, ...args, `[${caller}]`);
 }
