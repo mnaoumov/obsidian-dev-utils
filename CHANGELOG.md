@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 12.1.0
+
+- Don't fail when no root dir
+- Set process.browser
+- Switch to debug lib
+
 ## 12.0.0
 
 - Refactor appendCodeBlock to DocumentFragment or HTMLElement
