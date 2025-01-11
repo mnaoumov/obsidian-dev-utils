@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 12.2.0
+
+- Refactor DEBUG
+
 ## 12.1.0
 
 - Don't fail when no root dir
