@@ -21,7 +21,6 @@ import perfectionist from 'eslint-plugin-perfectionist';
 // eslint-disable-next-line import-x/no-rename-default
 import tseslint from 'typescript-eslint';
 
-import { throwExpression } from '../../Error.ts';
 import { join } from '../../Path.ts';
 import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import { getRootDir } from '../Root.ts';
@@ -39,7 +38,7 @@ export const configs: Linter.Config[] = tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: getRootDir() ?? throwExpression(new Error('Could not determine the root directory'))
+        tsconfigRootDir: getRootDir() ?? ''
       }
     }
   },
