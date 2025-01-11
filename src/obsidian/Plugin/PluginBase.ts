@@ -34,9 +34,9 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   /**
    * Use instead of `console.debug()` to log messages.
    *
-   * Those messages are not shown by default, but can be shown by setting the `DEBUG` environment variable to the plugin ID.
+   * Those messages are not shown by default, but can be shown by setting `window.DEBUG.enable('plugin-id')`.
    *
-   * @see {@link https://github.com/debug-js/debug?tab=readme-ov-file#browser-support}
+   * @see {@link https://github.com/debug-js/debug?tab=readme-ov-file}
    *
    * @param message - The message to log.
    * @param args - The arguments to log.
@@ -86,7 +86,7 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
     super(app, manifest);
     initDebugHelpers();
     this.consoleDebug = debug.default(manifest.id);
-    console.debug(`Debug messages for plugin '${manifest.name}' are not shown by default. Set window.enableDebuggers('${manifest.id}') to see them. See https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information`);
+    console.debug(`Debug messages for plugin '${manifest.name}' are not shown by default. Set window.DEBUG.enable('${manifest.id}') to see them. See https://github.com/debug-js/debug?tab=readme-ov-file for more information`);
   }
 
   /**
