@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 12.2.1
+
+- Update tsdoc
+
 ## 12.2.0
 
 - Refactor DEBUG
