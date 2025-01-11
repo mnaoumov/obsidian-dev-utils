@@ -8,22 +8,20 @@ import type { Debugger } from 'debug';
 import debug from 'debug';
 
 interface DebuggerEx extends Debugger {
-  printStackTrace: (stackTrace: string, title?: string) => void;
+  printStackTrace(stackTrace: string, title?: string): void;
 }
 
-interface EnableDebuggersWrapper {
-  enableDebuggers: typeof enableDebuggers;
+interface DebugWrapper {
+  DEBUG: {
+    disable(namespaces: string | string[]): void;
+    enable(namespaces: string | string[]): void;
+    get(): string[];
+    set(namespaces: string | string[]): void;
+  };
 }
 
-/**
- * Enables the debuggers for the given namespaces.
- *
- * @param namespaces - The namespaces to enable.
- */
-export function enableDebuggers(namespaces: string): void {
-  debug.enable(namespaces);
-}
-
+const NAMESPACE_SEPARATOR = ',';
+const NEGATED_NAMESPACE_PREFIX = '-';
 /**
  * Returns a debugger instance with a log function that includes the caller's file name and line number.
  *
@@ -42,10 +40,48 @@ export function getDebugger(namespace: string): DebuggerEx {
 }
 
 /**
- * Sets the enableDebuggers function on the window object.
+ * Adds the DEBUG variable to the window object.
  */
-export function setEnableDebuggers(): void {
-  (window as Partial<EnableDebuggersWrapper>).enableDebuggers = enableDebuggers;
+export function initDebugHelpers(): void {
+  (window as Partial<DebugWrapper>).DEBUG = {
+    disable: disableNamespaces,
+    enable: enableNamespaces,
+    get: getNamespaces,
+    set: setNamespaces
+  };
+}
+
+function disableNamespaces(namespaces: string | string[]): void {
+  const set = new Set(getNamespaces());
+  for (const namespace of toArray(namespaces)) {
+    if (namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
+      continue;
+    }
+    const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
+    if (set.has(namespace)) {
+      set.delete(namespace);
+    }
+    set.add(negatedNamespace);
+  }
+  setNamespaces(Array.from(set));
+}
+
+function enableNamespaces(namespaces: string | string[]): void {
+  const set = new Set(getNamespaces());
+  for (const namespace of toArray(namespaces)) {
+    if (!namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
+      const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
+      if (set.has(negatedNamespace)) {
+        set.delete(negatedNamespace);
+      }
+    }
+    set.add(namespace);
+  }
+  setNamespaces(Array.from(set));
+}
+
+function getNamespaces(): string[] {
+  return toArray(debug.load());
 }
 
 function logWithCaller(namespace: string, message: string, ...args: unknown[]): void {
@@ -82,4 +118,12 @@ function printStackTrace(namespace: string, stackTrace: string, title?: string):
     title = 'Caller stack trace';
   }
   console.debug(`NotError:${namespace}:${title}\n${stackTrace}`);
+}
+
+function setNamespaces(namespaces: string | string[]): void {
+  debug.enable(toArray(namespaces).join(NAMESPACE_SEPARATOR));
+}
+
+function toArray(namespaces: string | string[]): string[] {
+  return typeof namespaces === 'string' ? namespaces.split(NAMESPACE_SEPARATOR) : namespaces.flatMap(toArray);
 }

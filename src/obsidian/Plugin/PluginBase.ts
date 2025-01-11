@@ -21,7 +21,7 @@ import type { MaybePromise } from '../../Async.ts';
 import type { EmptySettings } from './EmptySettings.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
-import { setEnableDebuggers } from '../../Debug.ts';
+import { initDebugHelpers } from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noop } from '../../Function.ts';
 
@@ -84,7 +84,7 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    */
   public constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
-    setEnableDebuggers();
+    initDebugHelpers();
     this.consoleDebug = debug.default(manifest.id);
     console.debug(`Debug messages for plugin '${manifest.name}' are not shown by default. Set window.enableDebuggers('${manifest.id}') to see them. See https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information`);
   }
