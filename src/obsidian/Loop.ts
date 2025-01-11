@@ -3,10 +3,9 @@
  * Contains utility functions for looping in Obsidian.
  */
 
-import debug from 'debug';
-
 import type { MaybePromise } from '../Async.ts';
 
+import { getDebugger } from '../Debug.ts';
 import { emitAsyncErrorEvent } from '../Error.ts';
 
 /**
@@ -53,7 +52,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     const iterationStr = `# ${iterationCount.toString()} / ${items.length.toString()}`;
     const message = options.buildNoticeMessage(item, iterationStr);
     notice.setMessage(message);
-    debug.default('obsidian-dev-utils:loop')(message);
+    getDebugger('obsidian-dev-utils:loop')(message);
 
     try {
       await options.processItem(item);

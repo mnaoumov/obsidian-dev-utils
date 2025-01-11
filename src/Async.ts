@@ -3,8 +3,7 @@
  * Contains utility functions for asynchronous operations.
  */
 
-import debug from 'debug';
-
+import { getDebugger } from './Debug.ts';
 import {
   emitAsyncErrorEvent,
   getStackTrace,
@@ -181,12 +180,12 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
       }
       if (isSuccess) {
         if (attempt > 1) {
-          debug.default('obsidian-dev-utils:Async:runWithTimeout')(`Retry completed successfully after ${attempt.toString()} attempts`);
+          getDebugger('obsidian-dev-utils:Async:runWithTimeout')(`Retry completed successfully after ${attempt.toString()} attempts`);
         }
         return;
       }
 
-      debug.default('obsidian-dev-utils:Async:runWithTimeout')(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
+      getDebugger('obsidian-dev-utils:Async:runWithTimeout')(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
         fn,
         stackTrace
       });
@@ -220,7 +219,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     result = await fn();
     isTimedOut = false;
     const duration = performance.now() - startTime;
-    debug.default('obsidian-dev-utils:Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { fn });
+    getDebugger('obsidian-dev-utils:Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { fn });
   }
 
   async function timeout(): Promise<void> {
@@ -234,7 +233,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     }
     const duration = performance.now() - startTime;
     console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn });
-    if (debug.default.enabled('obsidian-dev-utils:Async:timeout')) {
+    if (getDebugger('obsidian-dev-utils:Async:timeout').enabled) {
       console.warn('The execution is not terminated because localStorage.debug=\'obsidian-dev-utils:Async:timeout\' is enabled. See https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information');
       await timeout();
     }
