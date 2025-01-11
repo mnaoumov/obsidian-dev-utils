@@ -37,9 +37,10 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    *
    * @see {@link https://github.com/debug-js/debug?tab=readme-ov-file#browser-support}
    *
+   * @param message - The message to log.
    * @param args - The arguments to log.
    */
-  public readonly consoleDebug: (...args: unknown[]) => void;
+  public readonly consoleDebug: (message: string, ...args: unknown[]) => void;
 
   /**
    * Gets the AbortSignal used for aborting long-running operations.
@@ -83,8 +84,8 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   public constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
     const consoleDebugInstance = debug.default(manifest.id);
-    this.consoleDebug = (...args: unknown[]): void => void consoleDebugInstance.log(...args);
-    console.debug(`Debug messages for plugin '${manifest.name}' are not shown by default. Set localStorage.debug='${manifest.id}' to see them. See https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information`);
+    this.consoleDebug = (message: string, ...args: unknown[]): void => void consoleDebugInstance(message, ...args);
+    consoleDebugInstance(`Debug messages for plugin '${manifest.name}' are not shown by default. Set localStorage.debug='${manifest.id}' to see them. See https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information`);
   }
 
   /**

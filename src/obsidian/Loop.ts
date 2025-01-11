@@ -53,7 +53,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     const iterationStr = `# ${iterationCount.toString()} / ${items.length.toString()}`;
     const message = options.buildNoticeMessage(item, iterationStr);
     notice.setMessage(message);
-    debug.default('obsidian-dev-utils:loop').log(message);
+    debug.default('obsidian-dev-utils:loop')(message);
 
     try {
       await options.processItem(item);
