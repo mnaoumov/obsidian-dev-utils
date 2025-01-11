@@ -18,6 +18,10 @@ import {
   readFile
 } from '../NodeModules.ts';
 
+type ProcessEx = typeof process & {
+  browser: boolean;
+};
+
 interface EsmModule {
   __esModule: boolean;
   default: unknown;
@@ -50,10 +54,11 @@ export function preprocessPlugin(): Plugin {
       return '';
     },
     process: {
+      browser: true,
       cwd: () => '/',
       env: {},
       platform: 'android'
-    } as typeof process
+    } as ProcessEx
   };
 
   return {
