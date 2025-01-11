@@ -30,14 +30,15 @@ export function getDebugger(id: string): DebuggerEx {
 
 function logWithCaller(id: string, message: string, ...args: unknown[]): void {
   /**
-   * The caller line index is 3 because the call stack is as follows:
+   * The caller line index is 4 because the call stack is as follows:
    *
    * 0: Error
-   * 1:     at Function.logWithCaller [as log] (?:?:?)
-   * 2:     at debug (?:?:?)
-   * 3:     at functionName (path/to/caller.js:?:?)
+   * 1:     at logWithCaller (?:?:?)
+   * 2:     at debugInstance.log (?:?:?)
+   * 3:     at debug (?:?:?)
+   * 4:     at functionName (path/to/caller.js:?:?)
    */
-  const CALLER_LINE_INDEX = 3;
+  const CALLER_LINE_INDEX = 4;
 
   const stackLines = new Error().stack?.split('\n') ?? [];
   const callerLine = stackLines[CALLER_LINE_INDEX] ?? '';
