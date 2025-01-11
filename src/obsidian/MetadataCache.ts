@@ -217,22 +217,22 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
     const stat = await app.vault.adapter.stat(file.path);
 
     if (!fileInfo) {
-      debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe').log(`File cache info for ${file.path} is missing`);
+      debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe')(`File cache info for ${file.path} is missing`);
       return false;
     } else if (!stat) {
-      debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe').log(`File stat for ${file.path} is missing`);
+      debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe')(`File stat for ${file.path} is missing`);
       return false;
     } else if (file.stat.mtime < stat.mtime) {
       app.vault.onChange('modified', file.path, undefined, stat);
-      debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe').log(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
+      debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe')(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
       return false;
     } else if (fileInfo.mtime < stat.mtime) {
-      debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe').log(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
+      debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe')(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
       return false;
     } else {
       cache = app.metadataCache.getFileCache(file);
       if (!cache) {
-        debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe').log(`File cache for ${file.path} is missing`);
+        debug.default('obsidian-dev-utils:MetadataCache:getCacheSafe')(`File cache for ${file.path} is missing`);
         return false;
       } else {
         return true;

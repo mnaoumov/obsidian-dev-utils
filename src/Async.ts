@@ -181,12 +181,12 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
       }
       if (isSuccess) {
         if (attempt > 1) {
-          debug.default('obsidian-dev-utils:Async:runWithTimeout').log(`Retry completed successfully after ${attempt.toString()} attempts`);
+          debug.default('obsidian-dev-utils:Async:runWithTimeout')(`Retry completed successfully after ${attempt.toString()} attempts`);
         }
         return;
       }
 
-      debug.default('obsidian-dev-utils:Async:runWithTimeout').log(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
+      debug.default('obsidian-dev-utils:Async:runWithTimeout')(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
         fn,
         stackTrace
       });
@@ -198,7 +198,7 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
 /**
  * Executes a function with a timeout. If the function does not complete within the specified time, it is considered to have timed out.
  *
- * If `window.DEBUG` is set, the execution is not terminated after the timeout and the function is allowed to run indefinitely.
+ * If `DEBUG=obsidian-dev-utils:Async:runWithTimeout` is set, the execution is not terminated after the timeout and the function is allowed to run indefinitely.
  *
  * @typeParam R - The type of the result from the asynchronous function.
  * @param timeoutInMilliseconds - The maximum time to wait in milliseconds.
@@ -220,7 +220,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     result = await fn();
     isTimedOut = false;
     const duration = performance.now() - startTime;
-    debug.default('obsidian-dev-utils:Async:runWithTimeout').log(`Execution time: ${duration.toString()} milliseconds`, { fn });
+    debug.default('obsidian-dev-utils:Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { fn });
   }
 
   async function timeout(): Promise<void> {
