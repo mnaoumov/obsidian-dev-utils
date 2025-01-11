@@ -12,7 +12,7 @@ import debug from 'debug';
  * @returns A debugger instance with a log function that includes the caller's file name and line number.
  */
 export function getDebugger(id: string): debug.Debugger {
-  const debugInstance = getDebugger(id);
+  const debugInstance = debug.default(id);
   debugInstance.log = logWithCaller;
   return debugInstance;
 }
