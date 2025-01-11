@@ -3,7 +3,8 @@
  * Contains utility functions for asynchronous operations.
  */
 
-import { isDebug } from './Debug.ts';
+import debug from 'debug';
+
 import {
   emitAsyncErrorEvent,
   getStackTrace,
@@ -180,12 +181,12 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
       }
       if (isSuccess) {
         if (attempt > 1) {
-          console.debug(`Retry completed successfully after ${attempt.toString()} attempts`);
+          debug('obsidian-dev-utils:Async:runWithTimeout').log(`Retry completed successfully after ${attempt.toString()} attempts`);
         }
         return;
       }
 
-      console.debug(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
+      debug('obsidian-dev-utils:Async:runWithTimeout').log(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
         fn,
         stackTrace
       });
@@ -219,7 +220,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     result = await fn();
     isTimedOut = false;
     const duration = performance.now() - startTime;
-    console.debug(`Execution time: ${duration.toString()} milliseconds`, { fn });
+    debug('obsidian-dev-utils:Async:runWithTimeout').log(`Execution time: ${duration.toString()} milliseconds`, { fn });
   }
 
   async function timeout(): Promise<void> {
@@ -233,8 +234,8 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     }
     const duration = performance.now() - startTime;
     console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn });
-    if (isDebug()) {
-      console.warn('The execution is not terminated because window.DEBUG is set');
+    if (debug.enabled('obsidian-dev-utils:Async:timeout')) {
+      console.warn('The execution is not terminated because localStorage.debug=\'obsidian-dev-utils:Async:timeout\' is enabled. See https://github.com/debug-js/debug?tab=readme-ov-file#browser-support for more information');
       await timeout();
     }
   }

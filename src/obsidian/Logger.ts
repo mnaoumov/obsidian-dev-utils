@@ -3,6 +3,8 @@
  * Contains utility functions for logging in Obsidian.
  */
 
+import debug from 'debug';
+
 import type { MaybePromise } from '../Async.ts';
 
 import { getStackTrace } from '../Error.ts';
@@ -19,7 +21,7 @@ export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<vo
   if (stackTrace === undefined) {
     stackTrace = getStackTrace().split('\n').slice(1).join('\n');
   }
-  console.debug(`${title}:start`, {
+  debug('obsidian-dev-utils:invokeAsyncAndLog').log(`${title}:start`, {
     fn,
     stackTrace,
     timestampStart
@@ -27,14 +29,14 @@ export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<vo
   try {
     await fn();
     const timestampEnd = performance.now();
-    console.debug(`${title}:end`, {
+    debug('obsidian-dev-utils:invokeAsyncAndLog').log(`${title}:end`, {
       duration: timestampEnd - timestampStart,
       timestampEnd,
       timestampStart
     });
   } catch (error) {
     const timestampEnd = performance.now();
-    console.debug(`${title}:error`, {
+    debug('obsidian-dev-utils:invokeAsyncAndLog').log(`${title}:error`, {
       duration: timestampEnd - timestampStart,
       error,
       timestampEnd,
