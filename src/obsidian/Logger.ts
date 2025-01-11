@@ -20,7 +20,7 @@ export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<vo
   if (stackTrace === undefined) {
     stackTrace = getStackTrace().split('\n').slice(1).join('\n');
   }
-  getDebugger('obsidian-dev-utils:invokeAsyncAndLog')(`${title}:start`, {
+  getDebugger('obsidian-dev-utils:Logger:invokeAsyncAndLog')(`${title}:start`, {
     fn,
     stackTrace,
     timestampStart
@@ -28,14 +28,14 @@ export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<vo
   try {
     await fn();
     const timestampEnd = performance.now();
-    getDebugger('obsidian-dev-utils:invokeAsyncAndLog')(`${title}:end`, {
+    getDebugger('obsidian-dev-utils:Logger:invokeAsyncAndLog')(`${title}:end`, {
       duration: timestampEnd - timestampStart,
       timestampEnd,
       timestampStart
     });
   } catch (error) {
     const timestampEnd = performance.now();
-    getDebugger('obsidian-dev-utils:invokeAsyncAndLog')(`${title}:error`, {
+    getDebugger('obsidian-dev-utils:Logger:invokeAsyncAndLog')(`${title}:error`, {
       duration: timestampEnd - timestampStart,
       error,
       timestampEnd,
