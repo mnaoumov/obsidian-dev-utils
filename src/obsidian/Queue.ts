@@ -35,9 +35,11 @@ interface QueueItem {
  * @param app - The Obsidian application instance.
  * @param fn - The function to add.
  * @param timeoutInMilliseconds - The timeout in milliseconds.
+ * @param stackTrace - Optional stack trace.
  */
-export function addToQueue(app: App, fn: () => MaybePromise<void>, timeoutInMilliseconds?: number): void {
-  void addToQueueAndWait(app, fn, timeoutInMilliseconds);
+export function addToQueue(app: App, fn: () => MaybePromise<void>, timeoutInMilliseconds?: number, stackTrace?: string): void {
+  stackTrace ??= getStackTrace(1);
+  void addToQueueAndWait(app, fn, timeoutInMilliseconds, stackTrace);
 }
 
 /**
@@ -46,11 +48,12 @@ export function addToQueue(app: App, fn: () => MaybePromise<void>, timeoutInMill
  * @param app - The Obsidian application instance.
  * @param fn - The function to add.
  * @param timeoutInMilliseconds - The timeout in milliseconds.
+ * @param stackTrace - Optional stack trace.
  */
-export async function addToQueueAndWait(app: App, fn: () => MaybePromise<void>, timeoutInMilliseconds?: number): Promise<void> {
+export async function addToQueueAndWait(app: App, fn: () => MaybePromise<void>, timeoutInMilliseconds?: number, stackTrace?: string): Promise<void> {
   const DEFAULT_TIMEOUT_IN_MILLISECONDS = 60000;
   timeoutInMilliseconds ??= DEFAULT_TIMEOUT_IN_MILLISECONDS;
-  const stackTrace = getStackTrace();
+  stackTrace ??= getStackTrace(1);
   const queue = getQueue(app).value;
   queue.items.push({ fn, stackTrace, timeoutInMilliseconds });
   queue.promise = queue.promise.then(() => processNextQueueItem(app));

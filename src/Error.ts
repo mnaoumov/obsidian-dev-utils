@@ -38,12 +38,13 @@ export function errorToString(error: unknown): string {
 /**
  * Gets the current stack trace as a string, excluding the current function call.
  *
+ * @param framesToSkip - The number of frames to skip in the stack trace.
  * @returns A string representation of the current stack trace, excluding the current function call.
  */
-export function getStackTrace(): string {
+export function getStackTrace(framesToSkip = 0): string {
   const stack = new Error().stack ?? '';
   const lines = stack.split('\n');
-  return lines.slice(2).join('\n');
+  return lines.slice(framesToSkip + 2).join('\n');
 }
 
 /**
