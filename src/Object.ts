@@ -287,11 +287,18 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
   const maxDepth = fullOptions.maxDepth === -1 ? Infinity : fullOptions.maxDepth;
 
+  if (value === undefined) {
+    return 'undefined';
+  }
+
   const functionTexts: string[] = [];
   const objectDepthMap = new WeakMap<object, number>();
   const usedObjects = new WeakSet<object>();
 
-  const replacer = (_key: string, value: unknown): unknown => {
+  const replacer = (_key: string, value: unknown): JSONValueF<unknown> | undefined => {
+    if (value === null) {
+      return null;
+    }
     if (value === undefined) {
       if (fullOptions.shouldHandleUndefined) {
         return '__UNDEFINED__';
@@ -329,15 +336,15 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
         if (!property || typeof property !== 'object') {
           continue;
         }
-        objectDepthMap.set(property as object, depth + 1);
+        objectDepthMap.set(property, depth + 1);
       }
     }
 
-    return value;
+    return value as JSONValueF<unknown>;
   };
 
-  let json = JSON.stringify(value, replacer, fullOptions.space);
-  json = json.replaceAll(/"__FUNCTION__(\d+)"/g, (_, indexStr: string) => functionTexts[parseInt(indexStr)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
+  let json = JSON.stringify(value, replacer, fullOptions.space) ?? 'undefined';
+  json = json.replaceAll(/"__FUNCTION__(\d+)"/g, (_, indexStr: number | string) => functionTexts[parseInt(indexStr as string)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
   json = json.replaceAll('"__UNDEFINED__"', 'undefined');
   return json;
 }

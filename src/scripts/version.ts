@@ -34,6 +34,7 @@ import {
   execFromRoot,
   resolvePathFromRoot
 } from './Root.ts';
+import { throwExpression } from '../Error.ts';
 
 /**
  * Enum representing different types of version updates.
@@ -469,8 +470,8 @@ export function validate(versionUpdateType: string): void {
  */
 async function getLatestObsidianVersion(): Promise<string> {
   const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');
-  const obsidianReleasesJson = await response.json() as ObsidianReleasesJson;
-  return obsidianReleasesJson.name;
+  const obsidianReleasesJson = await response.json() as Partial<ObsidianReleasesJson>;
+  return obsidianReleasesJson.name ?? throwExpression(new Error('Could not find the name of the latest Obsidian release'));
 }
 
 function resolvePathFromRootSafe(path: string): string {

@@ -77,7 +77,7 @@ export async function addErrorHandler(asyncFn: () => Promise<unknown>): Promise<
  */
 export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: number, array: T[]) => MaybePromise<boolean>): Promise<T[]> {
   const predicateResults = await asyncMap(arr, predicate);
-  return arr.filter((_, index) => predicateResults[index]);
+  return arr.filter((_, index) => predicateResults[index] ?? false);
 }
 
 /**
@@ -147,7 +147,7 @@ export function invokeAsyncSafely(asyncFn: () => Promise<unknown>): void {
  * @returns An error that should terminate retry logic.
  */
 export function marksAsTerminateRetry<TError extends Error>(error: TError): TerminateRetry & TError {
-  return Object.assign(error, { __terminateRetry: true } as TerminateRetry);
+  return Object.assign(error, { __terminateRetry: true }) as TerminateRetry & TError;
 }
 
 /**
