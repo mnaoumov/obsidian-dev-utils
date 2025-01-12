@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.0.0
+
+- Refactor toJson
+
 ## 12.2.1
 
 - Update tsdoc
