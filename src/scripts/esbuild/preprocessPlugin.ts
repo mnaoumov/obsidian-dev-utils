@@ -11,7 +11,10 @@
 
 import type { Plugin } from 'esbuild';
 
-import { toJson } from '../../Object.ts';
+import {
+  FunctionHandlingMode,
+  toJson
+} from '../../Object.ts';
 import { makeValidVariableName } from '../../String.ts';
 import {
   process,
@@ -83,7 +86,7 @@ export function preprocessPlugin(): Plugin {
           if (!contents.includes(key)) {
             continue;
           }
-          const valueStr = typeof value === 'function' ? `(${value.toString()})()` : toJson(value, { shouldHandleFunctions: true });
+          const valueStr = typeof value === 'function' ? `(${value.toString()})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });
           if (contents.includes(`var ${variable}`)) {
             continue;
           }
