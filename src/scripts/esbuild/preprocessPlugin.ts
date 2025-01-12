@@ -114,6 +114,6 @@ export function preprocessPlugin(): Plugin {
     require = Object.assign((id: string): unknown => {
       const module = __require(id) as (Partial<EsmModule> | undefined) ?? {};
       return __extractDefault(module);
-    }, __require);
+    }, __require) as NodeRequire;
   }
 }

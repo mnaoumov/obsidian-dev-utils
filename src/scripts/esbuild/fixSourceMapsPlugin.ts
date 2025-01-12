@@ -38,7 +38,7 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string
         const content = await readFile(distPath, 'utf-8');
         const newContent = content.replaceAll(
           /(\n\/\/# sourceMappingURL=data:application\/json;base64,)(.+)\n(.|\n)*/g,
-          (_: string, prefix: string, sourceMapBase64: string): string => prefix + fixSourceMap(sourceMapBase64, pluginName) + '\n/* nosourcemap */'
+          (_: string, prefix: number | string, sourceMapBase64: number | string): string => prefix + fixSourceMap(sourceMapBase64 as string, pluginName) + '\n/* nosourcemap */'
         );
 
         if (content !== newContent) {
@@ -70,7 +70,7 @@ function convertPathToObsidianUrl(path: string, pluginName: string): string {
  */
 function fixSourceMap(sourceMapBase64: string, pluginName: string): string {
   const sourceMapJson = Buffer.from(sourceMapBase64, 'base64').toString('utf-8');
-  const sourceMap = JSON.parse(sourceMapJson) as SourceMap;
-  sourceMap.sources = sourceMap.sources.map((path) => convertPathToObsidianUrl(path, pluginName));
+  const sourceMap = JSON.parse(sourceMapJson) as Partial<SourceMap>;
+  sourceMap.sources = (sourceMap.sources ?? []).map((path) => convertPathToObsidianUrl(path, pluginName));
   return Buffer.from(JSON.stringify(sourceMap)).toString('base64');
 }

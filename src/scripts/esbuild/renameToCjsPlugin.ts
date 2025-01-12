@@ -27,7 +27,8 @@ export function renameToCjsPlugin(): Plugin {
 
           const newPath = file.path.replaceAll(/\.js$/g, '.cjs');
 
-          const newText = file.text.replaceAll(/require\(["'](.+?)["']\)/g, (_, importPath: string) => {
+          const newText = file.text.replaceAll(/require\(["'](.+?)["']\)/g, (_, _importPath: number | string) => {
+            const importPath = _importPath as string;
             if (importPath.endsWith('.d.ts')) {
               return 'undefined';
             }

@@ -115,7 +115,7 @@ function parseErrorEntries(error: unknown, level = 0, entries: ErrorEntry[] = []
     } else if (typeof error === 'string') {
       str = error;
     } else {
-      str = JSON.stringify(error);
+      str = JSON.stringify(error) ?? 'undefined';
     }
 
     entries.push({ level, message: str });
