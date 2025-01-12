@@ -8,17 +8,51 @@ import type { UndefinedOnPartialDeep } from 'type-fest';
 import { throwExpression } from './Error.ts';
 
 /**
+ * Specifies how functions should be handled in the JSON output.
+   */
+export enum FunctionHandlingMode {
+  /**
+   * Excludes functions from the JSON output.
+   */
+  Exclude = 'exclude',
+  /**
+   * Includes the full function definition in the JSON output.
+   */
+  Full = 'full',
+  /**
+   * Includes only the function name in the JSON output.
+   */
+  NameOnly = 'nameOnly'
+}
+
+/**
  * Options for converting an object to JSON.
  */
 export interface ToJsonOptions {
   /**
-   * If `true`, functions within the value will be handled and included in the JSON string. Defaults to `false`.
+   * Specifies how functions should be handled in the JSON output (default: `exclude`).
    */
-  shouldHandleFunctions?: boolean;
+  functionHandlingMode: FunctionHandlingMode;
+  /**
+   * Specifies the maximum depth of nested objects to include in the JSON output.
+   * Use `-1` for no limit.
+   * Defaults to `-1`.
+   */
+  maxDepth: number;
+  /**
+   * Specifies whether to handle circular references in the JSON output.
+   * Defaults to `false`.
+   */
+  shouldHandleCircularReferences: boolean;
+  /**
+   * Specifies whether to handle undefined values in the JSON output.
+   * Defaults to `false`.
+   */
+  shouldHandleUndefined: boolean;
   /**
    * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
    */
-  space?: number | string;
+  space: number | string;
 }
 
 /**
@@ -240,29 +274,71 @@ export function setNestedPropertyValue(obj: Record<string, unknown>, path: strin
  * @param options - Options for customizing the JSON conversion process.
  * @returns The JSON string representation of the input value.
  */
-export function toJson(value: unknown, options: ToJsonOptions = {}): string {
-  const {
-    shouldHandleFunctions = false,
-    space = 2
-  } = options;
-  if (!shouldHandleFunctions) {
-    return JSON.stringify(value, null, space);
-  }
+export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): string {
+  const DEFAULT_OPTIONS: ToJsonOptions = {
+    functionHandlingMode: FunctionHandlingMode.Exclude,
+    maxDepth: -1,
+    shouldHandleCircularReferences: false,
+    shouldHandleUndefined: false,
+    space: 2
+  };
+
+  const fullOptions = { ...DEFAULT_OPTIONS, ...options };
+
+  const maxDepth = fullOptions.maxDepth === -1 ? Infinity : fullOptions.maxDepth;
 
   const functionTexts: string[] = [];
+  const objectDepthMap = new WeakMap<object, number>();
+  const usedObjects = new WeakSet<object>();
 
-  const replacer = (_: string, value: unknown): unknown => {
+  const replacer = (_key: string, value: unknown): unknown => {
+    if (value === undefined) {
+      if (fullOptions.shouldHandleUndefined) {
+        return '__UNDEFINED__';
+      }
+      return undefined;
+    }
     if (typeof value === 'function') {
+      if (fullOptions.functionHandlingMode === FunctionHandlingMode.Exclude) {
+        return undefined;
+      }
       const index = functionTexts.length;
-      functionTexts.push(value.toString());
-      return `__FUNCTION_${index.toString()}`;
+      const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full ? value.toString() : `function ${value.name || 'anonymous'}()`;
+      functionTexts.push(functionText);
+      return `__FUNCTION__${index.toString()}`;
+    }
+    if (typeof value === 'object' && value !== null) {
+      if (fullOptions.shouldHandleCircularReferences) {
+        if (usedObjects.has(value)) {
+          return '[Circular Reference]';
+        }
+        usedObjects.add(value);
+      }
+
+      let depth = objectDepthMap.get(value);
+      if (depth === undefined) {
+        depth = 0;
+        objectDepthMap.set(value, 0);
+      }
+
+      if (depth > maxDepth) {
+        return '[...]';
+      }
+
+      for (const property of Object.values(value)) {
+        if (!property || typeof property !== 'object') {
+          continue;
+        }
+        objectDepthMap.set(property as object, depth + 1);
+      }
     }
 
     return value;
   };
 
-  let json = JSON.stringify(value, replacer, space);
-  json = json.replaceAll(/"__FUNCTION_(\d+)"/g, (_, indexStr: string) => functionTexts[parseInt(indexStr)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
+  let json = JSON.stringify(value, replacer, fullOptions.space);
+  json = json.replaceAll(/"__FUNCTION__(\d+)"/g, (_, indexStr: string) => functionTexts[parseInt(indexStr)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
+  json = json.replaceAll('"__UNDEFINED__"', 'undefined');
   return json;
 }
 
