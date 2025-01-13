@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.7.3
+
+- Search key only letters
+
 ## 13.7.2
 
 - Fix index formatting
