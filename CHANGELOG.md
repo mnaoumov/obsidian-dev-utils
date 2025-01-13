@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.7.2
+
+- Fix index formatting
+
 ## 13.7.1
 
 - Fix pretty format
