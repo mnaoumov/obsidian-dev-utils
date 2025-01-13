@@ -317,14 +317,14 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
         return undefined;
       }
       const index = functionTexts.length;
-      const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full ? value.toString() : `function ${value.name || 'anonymous'}()`;
+      const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full ? value.toString() : `function ${value.name || 'anonymous'}() { /* ... */ }`;
       functionTexts.push(functionText);
       return `__FUNCTION__${index.toString()}`;
     }
     if (typeof value === 'object') {
       if (fullOptions.shouldHandleCircularReferences) {
         if (usedObjects.has(value)) {
-          return '[Circular Reference]';
+          return '__CIRCULAR_REFERENCE__';
         }
         usedObjects.add(value);
       }
@@ -336,7 +336,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
       }
 
       if (depth > maxDepth) {
-        return '[...]';
+        return '__MAX_DEPTH_LIMIT_REACHED__';
       }
 
       for (const property of Object.values(value)) {
@@ -357,6 +357,8 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   let json = JSON.stringify(value, replacer, fullOptions.space) ?? 'undefined';
   json = replaceAll(json, /"__FUNCTION__(\d+)"/g, (_, indexStr) => functionTexts[parseInt(indexStr)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
   json = replaceAll(json, '"__UNDEFINED__"', 'undefined');
+  json = replaceAll(json, '"__MAX_DEPTH_LIMIT_REACHED__"', '{ /* ... */ }');
+  json = replaceAll(json, '"__CIRCULAR_REFERENCE__"', '{ /* CIRCULAR REFERENCE */ }');
   return json;
 }
 
