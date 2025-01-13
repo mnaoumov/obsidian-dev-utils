@@ -51,6 +51,11 @@ export interface ToJsonOptions {
    */
   shouldHandleUndefined: boolean;
   /**
+   * Specifies whether to sort the keys of the JSON output.
+   * Defaults to `false`.
+   */
+  shouldSortKeys: boolean;
+  /**
    * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
    */
   space: number | string;
@@ -281,6 +286,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
     maxDepth: -1,
     shouldHandleCircularReferences: false,
     shouldHandleUndefined: false,
+    shouldSortKeys: false,
     space: 2
   };
 
@@ -338,6 +344,10 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
           continue;
         }
         objectDepthMap.set(property, depth + 1);
+      }
+
+      if (fullOptions.shouldSortKeys) {
+        return Object.fromEntries(Object.entries(value).sort(([key1], [key2]) => key1.localeCompare(key2)));
       }
     }
 
