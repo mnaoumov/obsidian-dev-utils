@@ -58,7 +58,7 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string
  * @returns The converted path as an Obsidian-specific URL.
  */
 function convertPathToObsidianUrl(path: string, pluginName: string): string {
-  const convertedPath = replaceAll(toPosixPath(path), /^(\.\.\/)+/, '');
+  const convertedPath = replaceAll(toPosixPath(path), /^(\.\.\/)+/g, '');
   return `app://obsidian.md/plugin:${pluginName}/${convertedPath}`;
 }
 

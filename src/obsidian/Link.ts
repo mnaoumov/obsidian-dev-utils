@@ -686,7 +686,7 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     aliasesToReset.add(app.metadataCache.fileToLinktext(targetFile, sourcePath, false));
   }
 
-  const cleanDisplayText = replaceAll(normalizePath(displayText.split(' > ')[0] ?? ''), /^\.\//, '').toLowerCase();
+  const cleanDisplayText = replaceAll(normalizePath(displayText.split(' > ')[0] ?? ''), /^\.\//g, '').toLowerCase();
 
   for (const alias of aliasesToReset) {
     if (alias.toLowerCase() === cleanDisplayText) {
