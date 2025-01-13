@@ -350,7 +350,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
   const plainObject = toPlainObject(value, '', 0, true);
   let json = JSON.stringify(plainObject, null, fullOptions.space) ?? '';
-  json = replaceAll(json, /"\[\[(\w+)(\d*)\]\]"/g, (_, key, indexStr) => applySubstitutions({
+  json = replaceAll(json, /"\[\[([A-Za-z]+)(\d*)\]\]"/g, (_, key, indexStr) => applySubstitutions({
     functionTexts,
     index: indexStr ? parseInt(indexStr) : 0,
     key: key as TokenSubstitutionKey,
