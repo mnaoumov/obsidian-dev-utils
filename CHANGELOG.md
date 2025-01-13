@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.8.0
+
+- Add shouldHandleErrors
+- Pass optional console
+
 ## 13.7.3
 
 - Search key only letters
