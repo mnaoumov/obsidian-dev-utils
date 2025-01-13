@@ -342,7 +342,7 @@ export async function updateChangelog(newVersion: string): Promise<void> {
   const lastTag = replaceAll(previousChangelogLines[0] ?? '', '## ', '');
   const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
   const commitMessagesStr = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
-  const commitMessages = commitMessagesStr.split('\0').map(toSingleLine);
+  const commitMessages = commitMessagesStr.split('\0').filter(Boolean).map(toSingleLine);
 
   let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
 
