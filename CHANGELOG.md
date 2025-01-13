@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 13.3.1
+
+- Include full body
+- Add missing NUL separator flag
+- Fix non-global regexps
+
 ## 13.3.0
 
 - Support multi-line log commits
