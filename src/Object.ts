@@ -468,6 +468,5 @@ function makeObjectTokenSubstitution(key: TokenSubstitutionKey): string {
 }
 
 function makePlaceholder(key: TokenSubstitutionKey, index?: number): string {
-  const indexStr = index === undefined ? '' : `:${index.toString()}`;
-  return `[[${key}${indexStr}]]`;
+  return `[[${key}${index?.toString() ?? ''}]]`;
 }
