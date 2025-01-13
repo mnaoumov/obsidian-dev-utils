@@ -341,7 +341,8 @@ export async function updateChangelog(newVersion: string): Promise<void> {
 
   const lastTag = replaceAll(previousChangelogLines[0] ?? '', '## ', '');
   const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
-  const commitMessages = (await execFromRoot(`git log ${commitRange} --format=%s --first-parent`, { isQuiet: true })).split(/\r?\n/);
+  const commitMessagesStr = await execFromRoot(`git log ${commitRange} --format=%s --first-parent`, { isQuiet: true });
+  const commitMessages = commitMessagesStr.split('\0').map(toSingleLine);
 
   let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
 
@@ -477,4 +478,9 @@ async function getLatestObsidianVersion(): Promise<string> {
 
 function resolvePathFromRootSafe(path: string): string {
   return resolvePathFromRoot(path) ?? path;
+}
+
+function toSingleLine(str: string): string {
+  const lines = str.split(/\r?\n/).filter(Boolean);
+  return lines.join(' ');
 }
