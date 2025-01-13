@@ -341,6 +341,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   };
   const functionTexts: string[] = [];
   const usedObjects = new WeakSet<object>();
+  const valueConstructorName = value?.constructor?.name ?? 'Object';
 
   const plainObject = toPlainObject(value, '', 0, true);
   let json = JSON.stringify(plainObject, null, options.space) ?? '';
@@ -376,7 +377,12 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
     }
 
     if (usedObjects.has(value)) {
-      return makePlaceholder(TokenSubstitutionKey.CircularReference);
+      if (fullOptions.shouldHandleCircularReferences) {
+        return makePlaceholder(TokenSubstitutionKey.CircularReference);
+      }
+      throw new TypeError(`Converting circular structure to JSON
+    --> starting at object with constructor '${valueConstructorName}'
+    --- property '${key}' closes the circle`);
     }
 
     usedObjects.add(value);
