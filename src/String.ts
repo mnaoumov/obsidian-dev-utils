@@ -10,9 +10,39 @@ import { escapeRegExp } from './RegExp.ts';
 import { resolveValue } from './ValueProvider.ts';
 
 /**
- * An asynchronous function that generates replacement strings.
+ * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
  */
-export type AsyncReplacer<Args extends unknown[]> = ValueProvider<string, [string, ...Args]>;
+export type AsyncReplacer<ReplaceGroupArgs extends string[]> = ValueProvider<string, [...ReplaceGroupArgs, ReplaceCommonArgs]>;
+
+/**
+ * Common arguments for the `replaceAll`/`replaceAllAsync` functions.
+ */
+export interface ReplaceCommonArgs {
+  /**
+   * The groups of the match.
+   */
+  groups: Record<string, string | undefined> | undefined;
+
+  /**
+   * The offset of the match.
+   */
+  offset: number;
+
+  /**
+   * The source of the match.
+   */
+  source: string;
+
+  /**
+   * The substring of the match.
+   */
+  substring: string;
+}
+
+/**
+ * A synchronous function that generates replacement strings, or a string to replace with.
+ */
+export type Replacer<ReplaceGroupArgs extends string[]> = ((...args: [...ReplaceGroupArgs, ReplaceCommonArgs]) => string) | string;
 
 /**
  * Mapping of special characters to their escaped counterparts.
@@ -115,27 +145,63 @@ export function replace(str: string, replacementsMap: Record<string, string>): s
 }
 
 /**
- * Asynchronously replaces all occurrences of a search string or pattern with the results of an asynchronous replacer function.
+ * Replaces all occurrences of a search string or pattern with the results of an replacer function.
  *
- * @typeParam Args - The type of additional arguments passed to the replacer function.
+ * @typeParam ReplaceGroupArgs - The type of additional arguments passed to the replacer function.
  * @param str - The string in which to perform replacements.
  * @param searchValue - The string or regular expression to search for.
- * @param replacer - An asynchronous function that generates replacement strings.
- * @returns A promise that resolves to the string with all replacements made.
+ * @param replacer - A replacer function that generates replacement strings, or a string to replace with.
+ * @returns The string with all replacements made.
  */
-export async function replaceAllAsync<Args extends unknown[]>(
+export function replaceAll<ReplaceGroupArgs extends string[]>(
   str: string,
   searchValue: RegExp | string,
-  replacer: AsyncReplacer<Args>
+  replacer: Replacer<ReplaceGroupArgs>
+): string {
+  return str.replaceAll(searchValue, (substring: string, ...args: unknown[]) => {
+    const hasGroupsArg = typeof args.at(-1) === 'object';
+    const sourceIndex = hasGroupsArg ? args.length - 2 : args.length - 1;
+
+    const commonArgs: ReplaceCommonArgs = {
+      groups: hasGroupsArg ? args.at(-1) as Record<string, string | undefined> : undefined,
+      offset: args.at(sourceIndex - 1) as number,
+      source: args.at(sourceIndex) as string,
+      substring
+    };
+
+    const groupArgs = args.slice(0, sourceIndex - 1) as ReplaceGroupArgs;
+
+    if (typeof replacer === 'function') {
+      return replacer(...groupArgs, commonArgs);
+    }
+
+    return replacer;
+  });
+}
+
+/**
+ * Asynchronously replaces all occurrences of a search string or pattern with the results of an asynchronous replacer function.
+ *
+ * @typeParam ReplaceGroupArgs - The type of additional arguments passed to the replacer function.
+ * @param str - The string in which to perform replacements.
+ * @param searchValue - The string or regular expression to search for.
+ * @param replacer - A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
+ * @returns A promise that resolves to the string with all replacements made.
+ */
+export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
+  str: string,
+  searchValue: RegExp | string,
+  replacer: AsyncReplacer<ReplaceGroupArgs>
 ): Promise<string> {
   const replacementPromises: Promise<string>[] = [];
 
-  str.replaceAll(searchValue, (substring: string, ...args: unknown[]) => {
-    replacementPromises.push(resolveValue(replacer, substring, ...args as [...Args]));
-    return substring;
+  replaceAll(str, searchValue, (...args: [...ReplaceGroupArgs, ReplaceCommonArgs]) => {
+    replacementPromises.push(resolveValue(replacer, ...args));
+    return '';
   });
+
   const replacements = await Promise.all(replacementPromises);
-  return str.replaceAll(searchValue, (): string => replacements.shift() ?? throwExpression(new Error('Unexpected empty replacement')));
+  return replaceAll(str, searchValue, (): string => replacements.shift() ?? throwExpression(new Error('Unexpected missing replacement')));
 }
 
 /**
