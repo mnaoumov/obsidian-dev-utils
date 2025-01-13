@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.4.0
+
+- Update libs
+- Add key sorting
+
 ## 13.3.2
 
 - Skip empty messages
