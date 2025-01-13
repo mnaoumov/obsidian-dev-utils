@@ -314,7 +314,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
       functionTexts.push(functionText);
       return `__FUNCTION__${index.toString()}`;
     }
-    if (typeof value === 'object' && value !== null) {
+    if (typeof value === 'object') {
       if (fullOptions.shouldHandleCircularReferences) {
         if (usedObjects.has(value)) {
           return '[Circular Reference]';
@@ -344,7 +344,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   };
 
   let json = JSON.stringify(value, replacer, fullOptions.space) ?? 'undefined';
-  json = json.replaceAll(/"__FUNCTION__(\d+)"/g, (_, indexStr: number | string) => functionTexts[parseInt(indexStr as string)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
+  json = json.replaceAll(/"__FUNCTION__(\d+)"/g, (_, indexStr: number | string) => functionTexts[parseInt(indexStr as string)] ?? throwExpression(new Error(`Function with index ${indexStr as string} not found`)));
   json = json.replaceAll('"__UNDEFINED__"', 'undefined');
   return json;
 }
