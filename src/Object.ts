@@ -339,6 +339,11 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
       ...options.tokenSubstitutions
     }
   };
+
+  if (fullOptions.maxDepth === -1) {
+    fullOptions.maxDepth = Infinity;
+  }
+
   const functionTexts: string[] = [];
   const usedObjects = new WeakSet<object>();
   const valueConstructorName = value?.constructor?.name ?? 'Object';
@@ -403,14 +408,14 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
     }
 
     if (Array.isArray(value)) {
-      if (depth === fullOptions.maxDepth) {
+      if (depth > fullOptions.maxDepth) {
         return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length);
       }
 
       return value.map((item, index) => toPlainObject(item, index.toString(), depth + 1, canUseToJSON));
     }
 
-    if (depth === fullOptions.maxDepth) {
+    if (depth > fullOptions.maxDepth) {
       return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReached);
     }
 
