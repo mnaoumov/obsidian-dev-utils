@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.7.0
+
+- Edit CHANGELOG.md in editor
+- Calculate maxDepth properly
+
 ## 13.6.1
 
 - Check shouldHandleCircularReferences
