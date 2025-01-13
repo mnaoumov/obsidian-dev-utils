@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.3.2
+
+- Skip empty messages
+
 ## 13.3.1
 
 - Include full body
