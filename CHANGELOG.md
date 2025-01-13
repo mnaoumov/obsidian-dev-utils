@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.5.0
+
+- Add shouldCatchToJSONErrors
+- Make toJson valid JavaScript object
+
 ## 13.4.0
 
 - Update libs
