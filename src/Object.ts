@@ -5,7 +5,10 @@
 
 import type { UndefinedOnPartialDeep } from 'type-fest';
 
-import { throwExpression } from './Error.ts';
+import {
+  errorToString,
+  throwExpression
+} from './Error.ts';
 import { replaceAll } from './String.ts';
 
 /**
@@ -59,6 +62,11 @@ export interface ToJsonOptions {
    * Defaults to `false`.
    */
   shouldHandleCircularReferences: boolean;
+  /**
+   * Specifies whether to handle errors in the JSON output.
+   * Defaults to `false`.
+   */
+  shouldHandleErrors: boolean;
   /**
    * Specifies whether to handle undefined values in the JSON output.
    * Defaults to `false`.
@@ -321,6 +329,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
     maxDepth: -1,
     shouldCatchToJSONErrors: false,
     shouldHandleCircularReferences: false,
+    shouldHandleErrors: false,
     shouldHandleUndefined: false,
     shouldSortKeys: false,
     space: 2,
@@ -417,6 +426,10 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
     if (depth > fullOptions.maxDepth) {
       return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReached);
+    }
+
+    if (value instanceof Error && fullOptions.shouldHandleErrors) {
+      return errorToString(value);
     }
 
     const entries = Object.entries(value);
