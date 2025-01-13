@@ -41,6 +41,11 @@ export interface ToJsonOptions {
    */
   maxDepth: number;
   /**
+   * Specifies whether to catch errors in `toJSON()` and replace them with a placeholder.
+   * Defaults to `false`.
+   */
+  shouldCatchToJSONErrors: boolean;
+  /**
    * Specifies whether to handle circular references in the JSON output.
    * Defaults to `false`.
    */
@@ -59,6 +64,10 @@ export interface ToJsonOptions {
    * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
    */
   space: number | string;
+}
+
+interface ObjectWithToJSON {
+  toJSON(): unknown;
 }
 
 /**
@@ -284,6 +293,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   const DEFAULT_OPTIONS: ToJsonOptions = {
     functionHandlingMode: FunctionHandlingMode.Exclude,
     maxDepth: -1,
+    shouldCatchToJSONErrors: false,
     shouldHandleCircularReferences: false,
     shouldHandleUndefined: false,
     shouldSortKeys: false,
@@ -302,7 +312,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   const objectDepthMap = new WeakMap<object, number>();
   const usedObjects = new WeakSet<object>();
 
-  const replacer = (_key: string, value: unknown): JSONValueF<unknown> | undefined => {
+  const replacer = (key: string, value: unknown): JSONValueF<unknown> | undefined => {
     if (value === null) {
       return null;
     }
@@ -339,6 +349,22 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
         return '__MAX_DEPTH_LIMIT_REACHED__';
       }
 
+      const toJSON = (value as Partial<ObjectWithToJSON>).toJSON;
+      if (typeof toJSON === 'function') {
+        try {
+          value = toJSON.call(value);
+          if (value && typeof value === 'object') {
+            objectDepthMap.set(value, depth);
+          }
+          return replacer(key, value);
+        } catch (error) {
+          if (fullOptions.shouldCatchToJSONErrors) {
+            return '__TO_JSON_FAILED__';
+          }
+          throw error;
+        }
+      }
+
       for (const property of Object.values(value)) {
         if (!property || typeof property !== 'object') {
           continue;
@@ -359,6 +385,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   json = replaceAll(json, '"__UNDEFINED__"', 'undefined');
   json = replaceAll(json, '"__MAX_DEPTH_LIMIT_REACHED__"', '{ /* ... */ }');
   json = replaceAll(json, '"__CIRCULAR_REFERENCE__"', '{ /* CIRCULAR REFERENCE */ }');
+  json = replaceAll(json, '"__TO_JSON_FAILED__"', '{ /* toJSON() failed */ }');
   return json;
 }
 
