@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.2.0
+
+- Update libs
+- Update targets
+
 ## 13.1.0
 
 - Refactor replaceAll/replaceAllSync
