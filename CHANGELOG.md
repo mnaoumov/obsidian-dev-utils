@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.1.0
+
+- Refactor replaceAll/replaceAllSync
+- Use stricter typescript
+
 ## 13.0.0
 
 - Refactor toJson
