@@ -387,8 +387,11 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
         try {
           value = toJSON.call(value, key);
           return toPlainObject(value, key, depth, false);
-        } catch {
-          return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
+        } catch (e) {
+          if (fullOptions.shouldCatchToJSONErrors) {
+            return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
+          }
+          throw e;
         }
       }
     }
