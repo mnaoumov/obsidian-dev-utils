@@ -51,8 +51,10 @@ export function getStackTrace(framesToSkip = 0): string {
  * Prints an error to the console, including nested causes and optional ANSI sequence clearing.
  *
  * @param error - The error to print.
+ * @param console - The console to print to (default: `window.console`).
  */
-export function printError(error: unknown): void {
+export function printError(error: unknown, console?: Console): void {
+  console ??= window.console;
   const entries = parseErrorEntries(error);
 
   for (const entry of entries) {
