@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.6.0
+
+- Add void replacer
+- Refactor toJson
+
 ## 13.5.0
 
 - Add shouldCatchToJSONErrors
