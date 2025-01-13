@@ -158,6 +158,10 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
   searchValue: RegExp | string,
   replacer: Replacer<ReplaceGroupArgs>
 ): string {
+  if (searchValue instanceof RegExp && !searchValue.global) {
+    searchValue = new RegExp(searchValue.source, `${searchValue.flags}g`);
+  }
+
   if (typeof replacer === 'string') {
     return str.replaceAll(searchValue, replacer);
   }
