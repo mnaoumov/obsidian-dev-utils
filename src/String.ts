@@ -158,6 +158,10 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
   searchValue: RegExp | string,
   replacer: Replacer<ReplaceGroupArgs>
 ): string {
+  if (typeof replacer === 'string') {
+    return str.replaceAll(searchValue, replacer);
+  }
+
   return str.replaceAll(searchValue, (substring: string, ...args: unknown[]) => {
     const hasGroupsArg = typeof args.at(-1) === 'object';
     const sourceIndex = hasGroupsArg ? args.length - 2 : args.length - 1;
@@ -170,12 +174,7 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
     };
 
     const groupArgs = args.slice(0, sourceIndex - 1) as ReplaceGroupArgs;
-
-    if (typeof replacer === 'function') {
-      return replacer(commonArgs, ...groupArgs);
-    }
-
-    return replacer;
+    return replacer(commonArgs, ...groupArgs);
   });
 }
 
@@ -193,6 +192,10 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
   searchValue: RegExp | string,
   replacer: AsyncReplacer<ReplaceGroupArgs>
 ): Promise<string> {
+  if (typeof replacer === 'string') {
+    return replaceAll(str, searchValue, replacer);
+  }
+
   const replacementPromises: Promise<string>[] = [];
 
   replaceAll<ReplaceGroupArgs>(str, searchValue, (commonArgs, ...groupArgs) => {
