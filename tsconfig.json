@@ -10,12 +10,12 @@
     "inlineSources": true,
     "lib": [
       "DOM",
-      "ES2023"
+      "ES2024"
     ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
-    "target": "ESNext",
+    "target": "ES2024",
     "types": [
       "node",
       "obsidian-typings"
