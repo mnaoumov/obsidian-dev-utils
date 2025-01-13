@@ -13,6 +13,7 @@
 
 import AdmZip from 'adm-zip';
 
+import { throwExpression } from '../Error.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../Path.ts';
 import { readdirPosix } from './Fs.ts';
@@ -34,7 +35,6 @@ import {
   execFromRoot,
   resolvePathFromRoot
 } from './Root.ts';
-import { throwExpression } from '../Error.ts';
 
 /**
  * Enum representing different types of version updates.
