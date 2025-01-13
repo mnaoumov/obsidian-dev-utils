@@ -26,6 +26,15 @@ export enum FunctionHandlingMode {
   NameOnly = 'nameOnly'
 }
 
+enum TokenSubstitutionKey {
+  CircularReference = 'CircularReference',
+  Function = 'Function',
+  MaxDepthLimitReached = 'MaxDepthLimitReached',
+  MaxDepthLimitReachedArray = 'MaxDepthLimitReachedArray',
+  ToJSONFailed = 'ToJSONFailed',
+  Undefined = 'Undefined'
+}
+
 /**
  * Options for converting an object to JSON.
  */
@@ -64,10 +73,28 @@ export interface ToJsonOptions {
    * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
    */
   space: number | string;
+  /**
+   * Specifies the substitutions to use in the JSON output.
+   */
+  tokenSubstitutions: Partial<TokenSubstitutions>;
 }
 
-interface ObjectWithToJSON {
-  toJSON(): unknown;
+interface ApplySubstitutionsOptions {
+  escapedPlaceholder: string;
+  functionTexts: string[];
+  index: number;
+  key: TokenSubstitutionKey;
+  substitutions: TokenSubstitutions;
+}
+
+interface JSONSerializable {
+  toJSON(...args: unknown[]): unknown;
+}
+
+interface TokenSubstitutions {
+  circularReference: string;
+  maxDepthLimitReached: string;
+  toJSONFailed: string;
 }
 
 /**
@@ -290,38 +317,52 @@ export function setNestedPropertyValue(obj: Record<string, unknown>, path: strin
  * @returns The JSON string representation of the input value.
  */
 export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): string {
-  const DEFAULT_OPTIONS: ToJsonOptions = {
+  const DEFAULT_OPTIONS: { tokenSubstitutions: TokenSubstitutions } & ToJsonOptions = {
     functionHandlingMode: FunctionHandlingMode.Exclude,
     maxDepth: -1,
     shouldCatchToJSONErrors: false,
     shouldHandleCircularReferences: false,
     shouldHandleUndefined: false,
     shouldSortKeys: false,
-    space: 2
+    space: 2,
+    tokenSubstitutions: {
+      circularReference: makeObjectTokenSubstitution(TokenSubstitutionKey.CircularReference),
+      maxDepthLimitReached: makeObjectTokenSubstitution(TokenSubstitutionKey.MaxDepthLimitReached),
+      toJSONFailed: makeObjectTokenSubstitution(TokenSubstitutionKey.ToJSONFailed)
+    }
   };
 
-  const fullOptions = { ...DEFAULT_OPTIONS, ...options };
-
-  const maxDepth = fullOptions.maxDepth === -1 ? Infinity : fullOptions.maxDepth;
-
-  if (value === undefined) {
-    return 'undefined';
-  }
-
+  const fullOptions = {
+    ...DEFAULT_OPTIONS,
+    ...options,
+    tokenSubstitutions: {
+      ...DEFAULT_OPTIONS.tokenSubstitutions,
+      ...options.tokenSubstitutions
+    }
+  };
   const functionTexts: string[] = [];
-  const objectDepthMap = new WeakMap<object, number>();
   const usedObjects = new WeakSet<object>();
 
-  const replacer = (key: string, value: unknown): JSONValueF<unknown> | undefined => {
+  const plainObject = toPlainObject(value, '', 0, true);
+  let json = JSON.stringify(plainObject, null, options.space) ?? '';
+  json = replaceAll(json, /"\[\[(\w+)(\d*)\]\]"/g, (args, key, indexStr) => applySubstitutions({
+    escapedPlaceholder: args.substring,
+    functionTexts,
+    index: indexStr ? parseInt(indexStr) : 0,
+    key: key as TokenSubstitutionKey,
+    substitutions: fullOptions.tokenSubstitutions
+  }));
+  return json;
+
+  function toPlainObject(value: unknown, key: string, depth: number, canUseToJSON: boolean): unknown {
+    if (value === undefined) {
+      return (depth === 0 || fullOptions.shouldHandleUndefined) ? makePlaceholder(TokenSubstitutionKey.Undefined) : undefined;
+    }
+
     if (value === null) {
       return null;
     }
-    if (value === undefined) {
-      if (fullOptions.shouldHandleUndefined) {
-        return '__UNDEFINED__';
-      }
-      return undefined;
-    }
+
     if (typeof value === 'function') {
       if (fullOptions.functionHandlingMode === FunctionHandlingMode.Exclude) {
         return undefined;
@@ -329,64 +370,50 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
       const index = functionTexts.length;
       const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full ? value.toString() : `function ${value.name || 'anonymous'}() { /* ... */ }`;
       functionTexts.push(functionText);
-      return `__FUNCTION__${index.toString()}`;
+      return makePlaceholder(TokenSubstitutionKey.Function, index);
     }
-    if (typeof value === 'object') {
-      if (fullOptions.shouldHandleCircularReferences) {
-        if (usedObjects.has(value)) {
-          return '__CIRCULAR_REFERENCE__';
-        }
-        usedObjects.add(value);
-      }
 
-      let depth = objectDepthMap.get(value);
-      if (depth === undefined) {
-        depth = 0;
-        objectDepthMap.set(value, 0);
-      }
+    if (typeof value !== 'object') {
+      return value;
+    }
 
-      if (depth > maxDepth) {
-        return '__MAX_DEPTH_LIMIT_REACHED__';
-      }
+    if (usedObjects.has(value)) {
+      return makePlaceholder(TokenSubstitutionKey.CircularReference);
+    }
 
-      const toJSON = (value as Partial<ObjectWithToJSON>).toJSON;
+    usedObjects.add(value);
+
+    if (canUseToJSON) {
+      const toJSON = (value as Partial<JSONSerializable>).toJSON;
       if (typeof toJSON === 'function') {
         try {
-          value = toJSON.call(value);
-          if (value && typeof value === 'object') {
-            objectDepthMap.set(value, depth);
-          }
-          return replacer(key, value);
-        } catch (error) {
-          if (fullOptions.shouldCatchToJSONErrors) {
-            return '__TO_JSON_FAILED__';
-          }
-          throw error;
+          value = toJSON.call(value, key);
+          return toPlainObject(value, key, depth, false);
+        } catch {
+          return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
         }
-      }
-
-      for (const property of Object.values(value)) {
-        if (!property || typeof property !== 'object') {
-          continue;
-        }
-        objectDepthMap.set(property, depth + 1);
-      }
-
-      if (fullOptions.shouldSortKeys) {
-        return Object.fromEntries(Object.entries(value).sort(([key1], [key2]) => key1.localeCompare(key2)));
       }
     }
 
-    return value as JSONValueF<unknown>;
-  };
+    if (Array.isArray(value)) {
+      if (depth === fullOptions.maxDepth) {
+        return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length);
+      }
 
-  let json = JSON.stringify(value, replacer, fullOptions.space) ?? 'undefined';
-  json = replaceAll(json, /"__FUNCTION__(\d+)"/g, (_, indexStr) => functionTexts[parseInt(indexStr)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
-  json = replaceAll(json, '"__UNDEFINED__"', 'undefined');
-  json = replaceAll(json, '"__MAX_DEPTH_LIMIT_REACHED__"', '{ /* ... */ }');
-  json = replaceAll(json, '"__CIRCULAR_REFERENCE__"', '{ /* CIRCULAR REFERENCE */ }');
-  json = replaceAll(json, '"__TO_JSON_FAILED__"', '{ /* toJSON() failed */ }');
-  return json;
+      return value.map((item, index) => toPlainObject(item, index.toString(), depth + 1, canUseToJSON));
+    }
+
+    if (depth === fullOptions.maxDepth) {
+      return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReached);
+    }
+
+    const entries = Object.entries(value);
+    if (fullOptions.shouldSortKeys) {
+      entries.sort(([key1], [key2]) => key1.localeCompare(key2));
+    }
+
+    return Object.fromEntries(entries.map(([key, value]) => [key, toPlainObject(value, key, depth + 1, canUseToJSON)]));
+  }
 }
 
 function _assignWithNonEnumerableProperties(target: object, ...sources: object[]): object {
@@ -402,4 +429,32 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
   }
 
   return target;
+}
+
+function applySubstitutions(options: ApplySubstitutionsOptions): string {
+  switch (options.key) {
+    case TokenSubstitutionKey.CircularReference:
+      return options.substitutions.circularReference;
+    case TokenSubstitutionKey.Function:
+      return options.functionTexts[options.index] ?? throwExpression(new Error(`Function with index ${options.index.toString()} not found`));
+    case TokenSubstitutionKey.MaxDepthLimitReached:
+      return options.substitutions.maxDepthLimitReached;
+    case TokenSubstitutionKey.MaxDepthLimitReachedArray:
+      return `Array(${options.index.toString()})`;
+    case TokenSubstitutionKey.ToJSONFailed:
+      return options.substitutions.toJSONFailed;
+    case TokenSubstitutionKey.Undefined:
+      return 'undefined';
+    default:
+      return options.escapedPlaceholder;
+  }
+}
+
+function makeObjectTokenSubstitution(key: TokenSubstitutionKey): string {
+  return `{ "[[${key}]]": null }`;
+}
+
+function makePlaceholder(key: TokenSubstitutionKey, index?: number): string {
+  const indexStr = index === undefined ? '' : `:${index.toString()}`;
+  return `[[${key}${indexStr}]]`;
 }
