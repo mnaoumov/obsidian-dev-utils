@@ -80,7 +80,6 @@ export interface ToJsonOptions {
 }
 
 interface ApplySubstitutionsOptions {
-  escapedPlaceholder: string;
   functionTexts: string[];
   index: number;
   key: TokenSubstitutionKey;
@@ -345,8 +344,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
   const plainObject = toPlainObject(value, '', 0, true);
   let json = JSON.stringify(plainObject, null, options.space) ?? '';
-  json = replaceAll(json, /"\[\[(\w+)(\d*)\]\]"/g, (args, key, indexStr) => applySubstitutions({
-    escapedPlaceholder: args.substring,
+  json = replaceAll(json, /"\[\[(\w+)(\d*)\]\]"/g, (_, key, indexStr) => applySubstitutions({
     functionTexts,
     index: indexStr ? parseInt(indexStr) : 0,
     key: key as TokenSubstitutionKey,
@@ -431,7 +429,8 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
   return target;
 }
 
-function applySubstitutions(options: ApplySubstitutionsOptions): string {
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+function applySubstitutions(options: ApplySubstitutionsOptions): string | void {
   switch (options.key) {
     case TokenSubstitutionKey.CircularReference:
       return options.substitutions.circularReference;
@@ -446,7 +445,7 @@ function applySubstitutions(options: ApplySubstitutionsOptions): string {
     case TokenSubstitutionKey.Undefined:
       return 'undefined';
     default:
-      return options.escapedPlaceholder;
+      return;
   }
 }
 

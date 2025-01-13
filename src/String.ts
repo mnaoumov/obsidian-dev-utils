@@ -12,7 +12,7 @@ import { resolveValue } from './ValueProvider.ts';
 /**
  * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
  */
-export type AsyncReplacer<ReplaceGroupArgs extends string[]> = ValueProvider<string, [ReplaceCommonArgs, ...ReplaceGroupArgs]>;
+export type AsyncReplacer<ReplaceGroupArgs extends string[]> = ValueProvider<StringReplacement, [ReplaceCommonArgs, ...ReplaceGroupArgs]>;
 
 /**
  * Common arguments for the `replaceAll`/`replaceAllAsync` functions.
@@ -42,7 +42,10 @@ export interface ReplaceCommonArgs {
 /**
  * A synchronous function that generates replacement strings, or a string to replace with.
  */
-export type Replacer<ReplaceGroupArgs extends string[]> = ((...args: [ReplaceCommonArgs, ...ReplaceGroupArgs]) => string) | string;
+export type Replacer<ReplaceGroupArgs extends string[]> = ((...args: [ReplaceCommonArgs, ...ReplaceGroupArgs]) => StringReplacement) | StringReplacement;
+
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+type StringReplacement = string | void;
 
 /**
  * Mapping of special characters to their escaped counterparts.
@@ -158,6 +161,10 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
   searchValue: RegExp | string,
   replacer: Replacer<ReplaceGroupArgs>
 ): string {
+  if (typeof replacer === 'undefined') {
+    return str;
+  }
+
   if (searchValue instanceof RegExp && !searchValue.global) {
     searchValue = new RegExp(searchValue.source, `${searchValue.flags}g`);
   }
@@ -178,7 +185,7 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
     };
 
     const groupArgs = args.slice(0, sourceIndex - 1) as ReplaceGroupArgs;
-    return replacer(commonArgs, ...groupArgs);
+    return (replacer(commonArgs, ...groupArgs) as string | undefined) ?? commonArgs.substring;
   });
 }
 
@@ -200,7 +207,7 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
     return replaceAll(str, searchValue, replacer);
   }
 
-  const replacementPromises: Promise<string>[] = [];
+  const replacementPromises: Promise<StringReplacement>[] = [];
 
   replaceAll<ReplaceGroupArgs>(str, searchValue, (commonArgs, ...groupArgs) => {
     replacementPromises.push(resolveValue(replacer, commonArgs, ...groupArgs));
@@ -208,7 +215,7 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
   });
 
   const replacements = await Promise.all(replacementPromises);
-  return replaceAll(str, searchValue, (): string => replacements.shift() ?? throwExpression(new Error('Unexpected missing replacement')));
+  return replaceAll(str, searchValue, (args): string => replacements.shift() ?? args.substring);
 }
 
 /**
