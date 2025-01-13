@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.3.0
+
+- Support multi-line log commits
+
 ## 13.2.1
 
 - Special handle when replacer is the string. Didn't work correctly for string with $1 $2 etc
