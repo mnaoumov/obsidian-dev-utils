@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.6.1
+
+- Check shouldHandleCircularReferences
+- Check shouldCatchToJSONErrors
+
 ## 13.6.0
 
 - Add void replacer
