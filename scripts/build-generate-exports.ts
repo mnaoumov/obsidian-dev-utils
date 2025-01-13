@@ -10,6 +10,7 @@ import {
 import { readdirPosix } from '../src/scripts/Fs.ts';
 import { editPackageJson } from '../src/scripts/Npm.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
+import { replaceAll } from '../src/String.ts';
 
 await wrapCliTask(async () => {
   const libDirs: string[] = [ObsidianDevUtilsRepoPaths.DistLib];
@@ -31,7 +32,7 @@ await wrapCliTask(async () => {
     const oldExports = packageJson.exports;
     packageJson.exports = {};
     for (const libDir of libDirs) {
-      const importPath = libDir.replace(ObsidianDevUtilsRepoPaths.DistLib, '.');
+      const importPath = replaceAll(libDir, ObsidianDevUtilsRepoPaths.DistLib, '.');
       packageJson.exports[importPath] = {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts)),
         // eslint-disable-next-line perfectionist/sort-objects

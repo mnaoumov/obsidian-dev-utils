@@ -12,7 +12,7 @@ import { resolveValue } from './ValueProvider.ts';
 /**
  * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
  */
-export type AsyncReplacer<ReplaceGroupArgs extends string[]> = ValueProvider<string, [...ReplaceGroupArgs, ReplaceCommonArgs]>;
+export type AsyncReplacer<ReplaceGroupArgs extends string[]> = ValueProvider<string, [ReplaceCommonArgs, ...ReplaceGroupArgs]>;
 
 /**
  * Common arguments for the `replaceAll`/`replaceAllAsync` functions.
@@ -42,7 +42,7 @@ export interface ReplaceCommonArgs {
 /**
  * A synchronous function that generates replacement strings, or a string to replace with.
  */
-export type Replacer<ReplaceGroupArgs extends string[]> = ((...args: [...ReplaceGroupArgs, ReplaceCommonArgs]) => string) | string;
+export type Replacer<ReplaceGroupArgs extends string[]> = ((...args: [ReplaceCommonArgs, ...ReplaceGroupArgs]) => string) | string;
 
 /**
  * Mapping of special characters to their escaped counterparts.
@@ -119,7 +119,7 @@ export function insertAt(str: string, substring: string, startIndex: number, end
  * @returns The valid variable name.
  */
 export function makeValidVariableName(str: string): string {
-  return str.replace(/[^a-zA-Z0-9_]/g, '_');
+  return replaceAll(str, /[^a-zA-Z0-9_]/g, '_');
 }
 
 /**
@@ -129,7 +129,7 @@ export function makeValidVariableName(str: string): string {
  * @returns The normalized string.
  */
 export function normalize(str: string): string {
-  return str.replace(/\u00A0|\u202F/g, ' ').normalize('NFC');
+  return replaceAll(str, /\u00A0|\u202F/g, ' ').normalize('NFC');
 }
 
 /**
@@ -141,7 +141,7 @@ export function normalize(str: string): string {
  */
 export function replace(str: string, replacementsMap: Record<string, string>): string {
   const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join('|'), 'g');
-  return str.replaceAll(regExp, (source: string) => replacementsMap[source] ?? throwExpression(new Error(`Unexpected replacement source: ${source}`)));
+  return replaceAll(str, regExp, ({ substring: source }) => replacementsMap[source] ?? throwExpression(new Error(`Unexpected replacement source: ${source}`)));
 }
 
 /**
@@ -172,7 +172,7 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
     const groupArgs = args.slice(0, sourceIndex - 1) as ReplaceGroupArgs;
 
     if (typeof replacer === 'function') {
-      return replacer(...groupArgs, commonArgs);
+      return replacer(commonArgs, ...groupArgs);
     }
 
     return replacer;
@@ -195,8 +195,8 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
 ): Promise<string> {
   const replacementPromises: Promise<string>[] = [];
 
-  replaceAll(str, searchValue, (...args: [...ReplaceGroupArgs, ReplaceCommonArgs]) => {
-    replacementPromises.push(resolveValue(replacer, ...args));
+  replaceAll<ReplaceGroupArgs>(str, searchValue, (commonArgs, ...groupArgs) => {
+    replacementPromises.push(resolveValue(replacer, commonArgs, ...groupArgs));
     return '';
   });
 

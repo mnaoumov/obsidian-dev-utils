@@ -5,7 +5,10 @@
 
 import path from 'path-browserify';
 
-import { ensureStartsWith } from './String.ts';
+import {
+  ensureStartsWith,
+  replaceAll
+} from './String.ts';
 
 const WINDOWS_POSIX_LIKE_PATH_REG_EXP = /[a-zA-Z]:\/[^:]*$/;
 
@@ -176,5 +179,5 @@ export function toPosixBuffer(buffer: Buffer): Buffer {
  * @returns The POSIX-style path.
  */
 export function toPosixPath(path: string): string {
-  return path.replace(/\\/g, '/');
+  return replaceAll(path, '\\', '/');
 }

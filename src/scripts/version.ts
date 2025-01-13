@@ -16,6 +16,7 @@ import AdmZip from 'adm-zip';
 import { throwExpression } from '../Error.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../Path.ts';
+import { replaceAll } from '../String.ts';
 import { readdirPosix } from './Fs.ts';
 import { editJson } from './JSON.ts';
 import {
@@ -220,7 +221,7 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
 export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ChangelogMd);
   const content = await readFile(changelogPath, 'utf-8');
-  const newVersionEscaped = newVersion.replaceAll('.', '\\.');
+  const newVersionEscaped = replaceAll(newVersion, '.', '\\.');
   const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
   let releaseNotes = match?.[1] ? match[1] + '\n\n' : '';
 
@@ -338,7 +339,7 @@ export async function updateChangelog(newVersion: string): Promise<void> {
     }
   }
 
-  const lastTag = previousChangelogLines[0]?.replace('## ', '');
+  const lastTag = replaceAll(previousChangelogLines[0] ?? '', '## ', '');
   const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
   const commitMessages = (await execFromRoot(`git log ${commitRange} --format=%s --first-parent`, { isQuiet: true })).split(/\r?\n/);
 

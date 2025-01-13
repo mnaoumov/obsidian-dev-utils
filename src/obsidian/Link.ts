@@ -41,6 +41,7 @@ import {
 } from '../Path.ts';
 import {
   normalize,
+  replaceAll,
   trimStart
 } from '../String.ts';
 import { isUrl } from '../url.ts';
@@ -522,16 +523,14 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
       if (shouldUseAngleBrackets) {
         linkText = `<${linkText}>`;
       } else {
-        linkText = linkText.replace(SPECIAL_LINK_SYMBOLS_REGEXP, function (specialLinkSymbol) {
-          return encodeURIComponent(specialLinkSymbol);
-        });
+        linkText = replaceAll(linkText, SPECIAL_LINK_SYMBOLS_REGEXP, ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol));
       }
 
       if (!alias && (!isEmbed || !options.isEmptyEmbedAliasAllowed)) {
         alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile) ? targetFile.basename : targetFile.name;
       }
 
-      alias = alias.replace(SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
+      alias = replaceAll(alias, SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
 
       return `${embedPrefix}[${alias}](${linkText})`;
     } else {
@@ -687,7 +686,7 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     aliasesToReset.add(app.metadataCache.fileToLinktext(targetFile, sourcePath, false));
   }
 
-  const cleanDisplayText = normalizePath(displayText.split(' > ')[0] ?? '').replace(/^\.\//, '').toLowerCase();
+  const cleanDisplayText = replaceAll(normalizePath(displayText.split(' > ')[0] ?? ''), /^\.\//, '').toLowerCase();
 
   for (const alias of aliasesToReset) {
     if (alias.toLowerCase() === cleanDisplayText) {

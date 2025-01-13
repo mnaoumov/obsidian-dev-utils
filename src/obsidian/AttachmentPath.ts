@@ -20,6 +20,7 @@ import {
 } from '../Path.ts';
 import {
   normalize,
+  replaceAll,
   trimStart
 } from '../String.ts';
 import {
@@ -139,7 +140,7 @@ export async function hasOwnAttachmentFolder(app: App, path: string): Promise<bo
  * @returns The normalized path.
  */
 function normalizeSlashes(path: string): string {
-  path = path.replace(/([\\/])+/g, '/');
-  path = path.replace(/(^\/+|\/+$)/g, '');
+  path = replaceAll(path, /([\\/])+/g, '/');
+  path = replaceAll(path, /(^\/+|\/+$)/g, '');
   return path || '/';
 }

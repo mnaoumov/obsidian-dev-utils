@@ -13,6 +13,7 @@ import { parse } from 'shell-quote';
 import type { ValueProvider } from '../ValueProvider.ts';
 
 import { throwExpression } from '../Error.ts';
+import { replaceAll } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { process } from './Vault.ts';
 
@@ -56,5 +57,5 @@ export async function replaceCodeBlock(app: App, ctx: MarkdownPostProcessorConte
   const suffix = lines.slice(sectionInfo.lineEnd + 1).join('\n');
   const newCodeBlock = await resolveValue(codeBlockProvider, oldCodeBlock);
   const newSectionText = prefix + '\n' + newCodeBlock + (newCodeBlock ? '\n' : '') + suffix;
-  await process(app, ctx.sourcePath, (content) => content.replace(sectionInfo.text, newSectionText));
+  await process(app, ctx.sourcePath, (content) => replaceAll(content, sectionInfo.text, newSectionText));
 }

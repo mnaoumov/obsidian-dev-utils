@@ -15,7 +15,10 @@ import {
   FunctionHandlingMode,
   toJson
 } from '../../Object.ts';
-import { makeValidVariableName } from '../../String.ts';
+import {
+  makeValidVariableName,
+  replaceAll
+} from '../../String.ts';
 import {
   process,
   readFile
@@ -42,7 +45,13 @@ type ProcessEx = {
  */
 export function preprocessPlugin(): Plugin {
   const replacements = {
-    ['import(dot)meta(dot)url'.replaceAll('(dot)', '.')]: (): string => {
+    process: {
+      browser: true,
+      cwd: () => '/',
+      env: {},
+      platform: 'android'
+    } as ProcessEx,
+    [replaceAll('import(dot)meta(dot)url', '(dot)', '.')]: (): string => {
       if (typeof __filename === 'string') {
         // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
         const url = require('node:url') as typeof import('node:url');
@@ -55,13 +64,7 @@ export function preprocessPlugin(): Plugin {
 
       // Fallback to an empty string if the environment is unknown
       return '';
-    },
-    process: {
-      browser: true,
-      cwd: () => '/',
-      env: {},
-      platform: 'android'
-    } as ProcessEx
+    }
   };
 
   return {
@@ -95,7 +98,7 @@ export function preprocessPlugin(): Plugin {
 
         // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
         // otherwise, it stops loading after the first line of the sourceMappingURL comment.
-        contents = contents.replace(/`\r?\n\/\/# sourceMappingURL/g, '`\n//#${\'\'} sourceMappingURL');
+        contents = replaceAll(contents, /`\r?\n\/\/# sourceMappingURL/g, '`\n//#${\'\'} sourceMappingURL');
 
         return {
           contents,

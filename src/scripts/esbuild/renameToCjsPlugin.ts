@@ -7,6 +7,7 @@
 
 import type { Plugin } from 'esbuild';
 
+import { replaceAll } from '../../String.ts';
 import { writeFile } from '../NodeModules.ts';
 
 /**
@@ -25,15 +26,15 @@ export function renameToCjsPlugin(): Plugin {
             continue;
           }
 
-          const newPath = file.path.replaceAll(/\.js$/g, '.cjs');
+          const newPath = replaceAll(file.path, /\.js$/g, '.cjs');
 
-          const newText = file.text.replaceAll(/require\(["'](.+?)["']\)/g, (_, _importPath: number | string) => {
+          const newText = replaceAll(file.text, /require\(["'](.+?)["']\)/g, (_, _importPath: number | string) => {
             const importPath = _importPath as string;
             if (importPath.endsWith('.d.ts')) {
               return 'undefined';
             }
 
-            const cjsImportPath = importPath.replaceAll(/\.ts$/g, '.cjs');
+            const cjsImportPath = replaceAll(importPath, /\.ts$/g, '.cjs');
             return `require('${cjsImportPath}')`;
           });
 
