@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.7.1
+
+- Fix pretty format
+
 ## 13.7.0
 
 - Edit CHANGELOG.md in editor
