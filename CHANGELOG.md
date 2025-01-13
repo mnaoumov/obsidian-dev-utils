@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.2.1
+
+- Special handle when replacer is the string. Didn't work correctly for string with $1 $2 etc
+
 ## 13.2.0
 
 - Update libs
