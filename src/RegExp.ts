@@ -10,6 +10,7 @@
  * @returns The escaped string with special characters prefixed with a backslash.
  */
 export function escapeRegExp(str: string): string {
+  // NOTE: We can't use `replaceAll()` from `String.ts` here because it introduces a circular dependency.
   return str.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 

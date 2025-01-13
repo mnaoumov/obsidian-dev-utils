@@ -6,6 +6,7 @@
 import type { UndefinedOnPartialDeep } from 'type-fest';
 
 import { throwExpression } from './Error.ts';
+import { replaceAll } from './String.ts';
 
 /**
  * Specifies how functions should be handled in the JSON output.
@@ -344,8 +345,8 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   };
 
   let json = JSON.stringify(value, replacer, fullOptions.space) ?? 'undefined';
-  json = json.replaceAll(/"__FUNCTION__(\d+)"/g, (_, indexStr: number | string) => functionTexts[parseInt(indexStr as string)] ?? throwExpression(new Error(`Function with index ${indexStr as string} not found`)));
-  json = json.replaceAll('"__UNDEFINED__"', 'undefined');
+  json = replaceAll(json, /"__FUNCTION__(\d+)"/g, (_, indexStr) => functionTexts[parseInt(indexStr)] ?? throwExpression(new Error(`Function with index ${indexStr} not found`)));
+  json = replaceAll(json, '"__UNDEFINED__"', 'undefined');
   return json;
 }
 

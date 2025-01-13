@@ -36,6 +36,7 @@ import {
   makeFileName,
   relative
 } from '../Path.ts';
+import { replaceAll } from '../String.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import {
   getAttachmentFolderPath,
@@ -220,7 +221,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
     const relativePath = relative(oldAttachmentFolderPath, oldAttachmentFile.path);
     const newDir = join(newAttachmentFolderPath, dirname(relativePath));
     const newChildBasename = settings.shouldRenameAttachmentFiles
-      ? oldAttachmentFile.basename.replaceAll(oldBasename, newBasename)
+      ? replaceAll(oldAttachmentFile.basename, oldBasename, newBasename)
       : oldAttachmentFile.basename;
     let newChildPath = join(newDir, makeFileName(newChildBasename, oldAttachmentFile.extension));
 

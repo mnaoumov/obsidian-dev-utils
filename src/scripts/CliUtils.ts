@@ -8,6 +8,7 @@ import type { MaybePromise } from '../Async.ts';
 
 import { printError } from '../Error.ts';
 import { noop } from '../Function.ts';
+import { replaceAll } from '../String.ts';
 import { process } from './NodeModules.ts';
 
 /**
@@ -155,7 +156,9 @@ export function toCommandLine(args: string[]): string {
   return args
     .map((arg) => {
       if (/[\s"\n]/.test(arg)) {
-        const escapedArg = arg.replace(/"/g, '\\"').replace(/\n/g, '\\n');
+        let escapedArg = arg;
+        escapedArg = replaceAll(escapedArg, /"/g, '\\"');
+        escapedArg = replaceAll(escapedArg, /\n/g, '\\n');
         return `"${escapedArg}"`;
       }
       return arg;
