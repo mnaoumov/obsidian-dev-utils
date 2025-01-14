@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.9.0
+
+- Update libs
+- Make printError working in node.js
+
 ## 13.8.0
 
 - Add shouldHandleErrors
