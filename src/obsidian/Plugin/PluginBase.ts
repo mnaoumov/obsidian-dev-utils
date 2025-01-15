@@ -91,7 +91,9 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    * @param args - The arguments to log.
    */
   public consoleDebug(message: string, ...args: unknown[]): void {
-    const _debugger = getDebugger(this.manifest.id);
+    // Skip the `consoleDebug()` call itself
+    const FRAMES_TO_SKIP = 1;
+    const _debugger = getDebugger(this.manifest.id, FRAMES_TO_SKIP);
     _debugger(message, ...args);
   }
 
