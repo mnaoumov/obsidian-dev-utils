@@ -85,7 +85,9 @@
     "typescript-eslint": "^8.20.0"
   },
   "type": "module",
-  "bin": "./dist/bin/cli.cjs",
+  "bin": {
+    "obsidian-dev-utils": "dist/bin/cli.cjs"
+  },
   "exports": {
     ".": {
       "types": "./dist/lib/index.d.ts",
