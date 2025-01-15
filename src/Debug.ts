@@ -117,11 +117,13 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   const stackLines = new Error().stack?.split('\n') ?? [];
   const callerLine = stackLines[CALLER_LINE_INDEX + framesToSkip] ?? '';
   console.debug(message, ...args);
-  printStackTrace(namespace, callerLine, 'Original debug message caller');
+  printStackTrace(namespace, callerLine, 'Debug message caller');
 }
 
 function printStackTrace(namespace: string, stackTrace: string, title?: string): void {
-  if (!debug.enabled(namespace)) {
+  const _debugger = debug(namespace);
+
+  if (!_debugger.enabled) {
     return;
   }
 
@@ -131,7 +133,9 @@ function printStackTrace(namespace: string, stackTrace: string, title?: string):
   if (!title) {
     title = 'Caller stack trace';
   }
-  console.debug(`NotError:${namespace}:${title}\n${stackTrace}`);
+
+  _debugger.log(title);
+  console.debug(`StackTraceFakeError\n${stackTrace}`);
 }
 
 function setNamespaces(namespaces: string | string[]): void {
