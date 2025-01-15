@@ -97,6 +97,13 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   }
 
   /**
+   * Called when the external settings change.
+   */
+  public override async onExternalSettingsChange(): Promise<void> {
+    await this.loadSettings();
+  }
+
+  /**
    * Called when the plugin is loaded
    */
   public override async onload(): Promise<void> {
