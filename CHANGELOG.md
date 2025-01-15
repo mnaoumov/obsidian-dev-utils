@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.14.0
+
+- Ensure all env variables passed
+
 ## 13.13.1
 
 - Missing release
