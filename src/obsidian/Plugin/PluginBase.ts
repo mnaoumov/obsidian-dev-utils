@@ -75,7 +75,6 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   public constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
     initDebugHelpers(manifest.id);
-    console.debug(`Debug messages for plugin ${manifest.id} are not shown by default. Set https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging for more information`);
   }
 
   /**
