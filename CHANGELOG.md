@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.12.1
+
+- Fix formatting
+
 ## 13.12.0
 
 - Improve init message
