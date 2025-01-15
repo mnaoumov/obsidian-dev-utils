@@ -3,7 +3,7 @@
  * Contains utility functions for asynchronous operations.
  */
 
-import { getDebugger } from './Debug.ts';
+import { getLibDebugger } from './Debug.ts';
 import {
   emitAsyncErrorEvent,
   getStackTrace,
@@ -50,8 +50,6 @@ export interface TerminateRetry {
    */
   __terminateRetry: true;
 }
-
-const retryWithTimeoutDebugger = getDebugger('obsidian-dev-utils:Async:retryWithTimeout');
 
 /**
  * Adds an error handler to a Promise that catches any errors and emits an async error event.
@@ -159,6 +157,7 @@ export function marksAsTerminateRetry<TError extends Error>(error: TError): Term
  * @returns A Promise that resolves when the function returns true or rejects when the timeout is reached.
  */
 export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions: RetryOptions = {}, stackTrace?: string): Promise<void> {
+  const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
   stackTrace ??= getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
     retryDelayInMilliseconds: 100,
@@ -223,7 +222,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     result = await fn();
     isTimedOut = false;
     const duration = performance.now() - startTime;
-    getDebugger('obsidian-dev-utils:Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { fn });
+    getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { fn });
   }
 
   async function timeout(): Promise<void> {
@@ -237,8 +236,9 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     }
     const duration = performance.now() - startTime;
     console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn });
-    if (getDebugger('obsidian-dev-utils:Async:timeout').enabled) {
-      console.warn('The execution is not terminated because debugger obsidian-dev-utils:Async:timeout is enabled. See window.DEBUG.enable(\'obsidian-dev-utils:Async:timeout\') and https://github.com/debug-js/debug?tab=readme-ov-file for more information');
+    const _debugger = getLibDebugger('Async:runWithTimeout:timeout');
+    if (_debugger.enabled) {
+      _debugger.log(`The execution is not terminated because debugger ${_debugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging for more information`);
       await timeout();
     }
   }

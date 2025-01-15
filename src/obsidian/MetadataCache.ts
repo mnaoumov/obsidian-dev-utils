@@ -23,7 +23,7 @@ import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { retryWithTimeout } from '../Async.ts';
-import { getDebugger } from '../Debug.ts';
+import { getLibDebugger } from '../Debug.ts';
 import { noop } from '../Function.ts';
 import { getNestedPropertyValue } from '../Object.ts';
 import {
@@ -50,8 +50,6 @@ export interface GetBacklinksForFileSafeWrapper {
    */
   safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<Reference>>;
 }
-
-const getCacheSafeDebugger = getDebugger('obsidian-dev-utils:MetadataCache:getCacheSafe');
 
 /**
  * Ensures that the metadata cache is ready for all files.
@@ -203,6 +201,8 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
  * @returns The cached metadata for the file, or null if it doesn't exist.
  */
 export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOptions: RetryOptions = {}): Promise<CachedMetadata | null> {
+  const _debugger = getLibDebugger('MetadataCache:getCacheSafe');
+
   let cache: CachedMetadata | null = null;
 
   await retryWithTimeout(async () => {
@@ -219,22 +219,22 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
     const stat = await app.vault.adapter.stat(file.path);
 
     if (!fileInfo) {
-      getCacheSafeDebugger(`File cache info for ${file.path} is missing`);
+      _debugger(`File cache info for ${file.path} is missing`);
       return false;
     } else if (!stat) {
-      getCacheSafeDebugger(`File stat for ${file.path} is missing`);
+      _debugger(`File stat for ${file.path} is missing`);
       return false;
     } else if (file.stat.mtime < stat.mtime) {
       app.vault.onChange('modified', file.path, undefined, stat);
-      getCacheSafeDebugger(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
+      _debugger(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
       return false;
     } else if (fileInfo.mtime < stat.mtime) {
-      getCacheSafeDebugger(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
+      _debugger(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
       return false;
     } else {
       cache = app.metadataCache.getFileCache(file);
       if (!cache) {
-        getCacheSafeDebugger(`File cache for ${file.path} is missing`);
+        _debugger(`File cache for ${file.path} is missing`);
         return false;
       } else {
         return true;
