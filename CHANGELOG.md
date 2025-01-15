@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.13.0
+
+- Add support for CLI
+- Fix formatting
+
 ## 13.12.1
 
 - Fix formatting
