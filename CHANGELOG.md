@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.14.1
+
+- Fix package warning
+
 ## 13.14.0
 
 - Ensure all env variables passed
