@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.10.0
+
+- Refactor and document debugging
+
 ## 13.9.0
 
 - Update libs
