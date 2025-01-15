@@ -25,12 +25,13 @@ const NEGATED_NAMESPACE_PREFIX = '-';
  * Returns a debugger instance with a log function that includes the caller's file name and line number.
  *
  * @param namespace - The namespace for the debugger instance.
+ * @param framesToSkip - The number of frames to skip in the stack trace.
  * @returns A debugger instance with a log function that includes the caller's file name and line number.
  */
-export function getDebugger(namespace: string): DebuggerEx {
+export function getDebugger(namespace: string, framesToSkip = 0): DebuggerEx {
   const debugInstance = debug(namespace) as DebuggerEx;
   debugInstance.log = (message: string, ...args: unknown[]): void => {
-    logWithCaller(namespace, message, ...args);
+    logWithCaller(namespace, framesToSkip, message, ...args);
   };
   debugInstance.printStackTrace = (stackTrace, title): void => {
     printStackTrace(namespace, stackTrace, title);
@@ -97,7 +98,7 @@ function getNamespaces(): string[] {
   return toArray(debug.load() ?? '');
 }
 
-function logWithCaller(namespace: string, message: string, ...args: unknown[]): void {
+function logWithCaller(namespace: string, framesToSkip: number, message: string, ...args: unknown[]): void {
   if (!debug.enabled(namespace)) {
     return;
   }
@@ -114,7 +115,7 @@ function logWithCaller(namespace: string, message: string, ...args: unknown[]): 
   const CALLER_LINE_INDEX = 4;
 
   const stackLines = new Error().stack?.split('\n') ?? [];
-  const callerLine = stackLines[CALLER_LINE_INDEX] ?? '';
+  const callerLine = stackLines[CALLER_LINE_INDEX + framesToSkip] ?? '';
   console.debug(message, ...args);
   printStackTrace(namespace, callerLine, 'Original debug message caller');
 }
