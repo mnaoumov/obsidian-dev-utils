@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.12.0
+
+- Improve init message
+- Fix broken call
+
 ## 13.11.0
 
 - Improve stack trace printer
