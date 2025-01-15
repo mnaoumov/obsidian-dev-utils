@@ -134,7 +134,7 @@ function printStackTrace(namespace: string, stackTrace: string, title?: string):
     title = 'Caller stack trace';
   }
 
-  _debugger.log(title);
+  _debugger(title);
   console.debug(`StackTraceFakeError\n${stackTrace}`);
 }
 
