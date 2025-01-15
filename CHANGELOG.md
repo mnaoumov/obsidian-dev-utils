@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.10.1
+
+- Update libs
+- Don't show `consoleDebug()` in call stack
+
 ## 13.10.0
 
 - Refactor and document debugging
