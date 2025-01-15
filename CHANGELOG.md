@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 13.15.0
+
+- Allow underscored unused-vars
+- Add onExternalSettingsChange
+
 ## 13.14.1
 
 - Fix package warning
