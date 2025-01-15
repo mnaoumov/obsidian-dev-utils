@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 13.11.0
+
+- Improve stack trace printer
+
 ## 13.10.1
 
 - Update libs
