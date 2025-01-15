@@ -129,7 +129,8 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
     const child = spawn(cmd, args, {
       cwd,
       env: {
-        DEBUG_COLORS: '1'
+        DEBUG_COLORS: '1',
+        ...process.env
       },
       shell: true,
       stdio: 'pipe'
