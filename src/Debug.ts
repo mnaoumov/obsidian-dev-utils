@@ -63,6 +63,14 @@ export function initDebugHelpers(pluginId: string): void {
     get: getNamespaces,
     set: setNamespaces
   };
+
+  const isEnabled = debug.enabled(pluginId);
+  const state = isEnabled ? 'enabled' : 'disabled';
+  const changeAction = isEnabled ? 'disable' : 'enable';
+  const namespaces = getNamespaces();
+  setNamespaces(pluginId);
+  getDebugger(pluginId).log(`Debug messages for plugin ${pluginId} are ${state}. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging how to ${changeAction} them.`);
+  setNamespaces(namespaces);
 }
 
 function disableNamespaces(namespaces: string | string[]): void {
