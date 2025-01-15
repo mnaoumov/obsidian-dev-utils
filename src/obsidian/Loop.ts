@@ -5,7 +5,7 @@
 
 import type { MaybePromise } from '../Async.ts';
 
-import { getDebugger } from '../Debug.ts';
+import { getLibDebugger } from '../Debug.ts';
 import { emitAsyncErrorEvent } from '../Error.ts';
 
 /**
@@ -52,7 +52,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     const iterationStr = `# ${iterationCount.toString()} / ${items.length.toString()}`;
     const message = options.buildNoticeMessage(item, iterationStr);
     notice.setMessage(message);
-    getDebugger('obsidian-dev-utils:loop')(message);
+    getLibDebugger('Loop')(message);
 
     try {
       await options.processItem(item);

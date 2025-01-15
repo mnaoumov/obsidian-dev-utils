@@ -151,6 +151,30 @@ import * as obsidianDevUtils from "obsidian-dev-utils";
 await obsidianDevUtils.obsidian.Modal.Prompt.prompt({ app, title: 'Enter your name' });
 ```
 
+## Debugging
+
+By default, console debug messages are not shown. To enable them you have to enable `Verbose` mode in the console settings.
+
+![Console settings](./images/console-settings.png)
+
+When you enable `Verbose` mode, you will see debug messages in the console sent via `console.debug()` calls.
+
+`obsidian-dev-utils` library uses [debug](https://github.com/debug-js/debug) library to enable conditional logging.
+
+By default, none of the debug messages are shown. You have to enable the debug namespace explicitly.
+
+To see debug messages for your plugin `foo`, you have to enable them:
+
+```javascript
+window.DEBUG.enable('foo'); // show all debug messages from the `foo` plugin
+window.DEBUG.enable('foo:obsidian-dev-utils:*'); // show all debug messages from the `obsidian-dev-utils` library within the `foo` plugin
+window.DEBUG.enable('foo:*'); // show all debug messages from the `foo` plugin and its submodules
+window.DEBUG.enable('*:obsidian-dev-utils:*'); // show all debug messages for the `obsidian-dev-utils` library within any plugin
+window.DEBUG.enable('*'); // show all debug messages
+```
+
+See full documentation of [`window.DEBUG`](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/DebugController.ts).
+
 ## Support
 
 <a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;"></a>

@@ -364,10 +364,10 @@ export async function updateChangelog(newVersion: string): Promise<void> {
     shouldIgnoreExitCode: true
   });
   if (!codeVersion) {
-    console.debug('Could not find Visual Studio Code in your PATH. Using console mode instead.');
+    console.log('Could not find Visual Studio Code in your PATH. Using console mode instead.');
     await createInterface(process.stdin, process.stdout).question(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Press Enter when you are done...`);
   } else {
-    console.debug(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Close Visual Studio Code when you are done...`);
+    console.log(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Close Visual Studio Code when you are done...`);
     await execFromRoot(['code', '-w', changelogPath], {
       isQuiet: true,
       shouldIgnoreExitCode: true

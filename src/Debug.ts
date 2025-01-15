@@ -7,21 +7,20 @@ import type { Debugger } from 'debug';
 
 import debug from 'debug';
 
+import type { DebugController } from './DebugController.ts';
+
 interface DebuggerEx extends Debugger {
   printStackTrace(stackTrace: string, title?: string): void;
 }
 
 interface DebugWrapper {
-  DEBUG: {
-    disable(namespaces: string | string[]): void;
-    enable(namespaces: string | string[]): void;
-    get(): string[];
-    set(namespaces: string | string[]): void;
-  };
+  DEBUG: DebugController;
 }
 
+let currentPluginId = '';
 const NAMESPACE_SEPARATOR = ',';
 const NEGATED_NAMESPACE_PREFIX = '-';
+
 /**
  * Returns a debugger instance with a log function that includes the caller's file name and line number.
  *
@@ -29,7 +28,7 @@ const NEGATED_NAMESPACE_PREFIX = '-';
  * @returns A debugger instance with a log function that includes the caller's file name and line number.
  */
 export function getDebugger(namespace: string): DebuggerEx {
-  const debugInstance = debug.default(namespace) as DebuggerEx;
+  const debugInstance = debug(namespace) as DebuggerEx;
   debugInstance.log = (message: string, ...args: unknown[]): void => {
     logWithCaller(namespace, message, ...args);
   };
@@ -40,9 +39,23 @@ export function getDebugger(namespace: string): DebuggerEx {
 }
 
 /**
- * Adds the DEBUG variable to the window object.
+ * Returns a debugger instance for the `obsidian-dev-utils` library.
+ *
+ * @param namespace - The namespace for the debugger instance.
+ * @returns A debugger instance for the `obsidian-dev-utils` library.
  */
-export function initDebugHelpers(): void {
+export function getLibDebugger(namespace: string): DebuggerEx {
+  const prefix = currentPluginId ? `${currentPluginId}:` : '';
+  return getDebugger(`${prefix}obsidian-dev-utils:${namespace}`);
+}
+
+/**
+ * Adds the DEBUG variable to the window object.
+ *
+ * @param pluginId - The plugin ID.
+ */
+export function initDebugHelpers(pluginId: string): void {
+  currentPluginId = pluginId;
   (window as Partial<DebugWrapper>).DEBUG = {
     disable: disableNamespaces,
     enable: enableNamespaces,

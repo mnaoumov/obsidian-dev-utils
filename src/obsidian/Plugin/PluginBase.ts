@@ -9,7 +9,6 @@
 
 import type { PluginManifest } from 'obsidian';
 
-import debug from 'debug';
 import {
   App,
   Notice,
@@ -21,7 +20,10 @@ import type { MaybePromise } from '../../Async.ts';
 import type { EmptySettings } from './EmptySettings.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
-import { initDebugHelpers } from '../../Debug.ts';
+import {
+  getDebugger,
+  initDebugHelpers
+} from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noop } from '../../Function.ts';
 
@@ -31,18 +33,6 @@ import { noop } from '../../Function.ts';
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
 export abstract class PluginBase<PluginSettings extends PluginSettingsBase = EmptySettings> extends Plugin {
-  /**
-   * Use instead of `console.debug()` to log messages.
-   *
-   * Those messages are not shown by default, but can be shown by setting `window.DEBUG.enable('plugin-id')`.
-   *
-   * @see {@link https://github.com/debug-js/debug?tab=readme-ov-file}
-   *
-   * @param message - The message to log.
-   * @param args - The arguments to log.
-   */
-  public readonly consoleDebug: (message: string, ...args: unknown[]) => void;
-
   /**
    * Gets the AbortSignal used for aborting long-running operations.
    *
@@ -84,9 +74,25 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    */
   public constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
-    initDebugHelpers();
-    this.consoleDebug = debug.default(manifest.id);
-    console.debug(`Debug messages for plugin '${manifest.name}' are not shown by default. Set window.DEBUG.enable('${manifest.id}') to see them. See https://github.com/debug-js/debug?tab=readme-ov-file for more information`);
+    initDebugHelpers(manifest.id);
+    console.debug(`Debug messages for plugin ${manifest.id} are not shown by default. Set https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging for more information`);
+  }
+
+  /**
+   * Logs a message to the console.
+   *
+   * Use instead of `console.debug()`.
+   *
+   * Those messages are not shown by default, but they can be shown by enabling `your-plugin-id` debugger namespace.
+   *
+   * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging} for more information.
+   *
+   * @param message - The message to log.
+   * @param args - The arguments to log.
+   */
+  public consoleDebug(message: string, ...args: unknown[]): void {
+    const _debugger = getDebugger(this.manifest.id);
+    _debugger(message, ...args);
   }
 
   /**
