@@ -175,7 +175,7 @@ window.DEBUG.enable('*'); // show all debug messages
 
 See full documentation of [`window.DEBUG`](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/DebugController.ts).
 
-> [!INFO]
+> [!NOTE]
 >
 > You will see `StackTraceFakeError` in the debug messages. They are not actual errors. It's just a workaround to make stack trace links clickable.
 
