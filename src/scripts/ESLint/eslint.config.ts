@@ -92,6 +92,18 @@ export const configs: Linter.Config[] = tseslint.config(
       ],
       '@typescript-eslint/explicit-function-return-type': 'error',
       '@typescript-eslint/explicit-member-accessibility': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          args: 'all',
+          argsIgnorePattern: '^_',
+          caughtErrors: 'all',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+          varsIgnorePattern: '^_'
+        }
+      ],
       'curly': ['error'],
       'import-x/consistent-type-specifier-style': 'error',
       'import-x/extensions': ['error', 'ignorePackages'],
@@ -135,7 +147,6 @@ export const configs: Linter.Config[] = tseslint.config(
 ) as Linter.Config[];
 
 function excludeFilesProperty<Config extends { files?: unknown }>(config: Config): Omit<Config, 'files'> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { files, ...configWithoutFiles } = config;
+  const { files: _files, ...configWithoutFiles } = config;
   return configWithoutFiles;
 }
