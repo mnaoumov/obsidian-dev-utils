@@ -22,6 +22,25 @@ const NAMESPACE_SEPARATOR = ',';
 const NEGATED_NAMESPACE_PREFIX = '-';
 
 /**
+ * Enables the specified namespaces.
+ *
+ * @param namespaces - The namespaces to enable.
+ */
+export function enableNamespaces(namespaces: string | string[]): void {
+  const set = new Set(getNamespaces());
+  for (const namespace of toArray(namespaces)) {
+    if (!namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
+      const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
+      if (set.has(negatedNamespace)) {
+        set.delete(negatedNamespace);
+      }
+    }
+    set.add(namespace);
+  }
+  setNamespaces(Array.from(set));
+}
+
+/**
  * Returns a debugger instance with a log function that includes the caller's file name and line number.
  *
  * @param namespace - The namespace for the debugger instance.
@@ -88,22 +107,12 @@ function disableNamespaces(namespaces: string | string[]): void {
   setNamespaces(Array.from(set));
 }
 
-function enableNamespaces(namespaces: string | string[]): void {
-  const set = new Set(getNamespaces());
-  for (const namespace of toArray(namespaces)) {
-    if (!namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
-      const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
-      if (set.has(negatedNamespace)) {
-        set.delete(negatedNamespace);
-      }
-    }
-    set.add(namespace);
-  }
-  setNamespaces(Array.from(set));
-}
-
 function getNamespaces(): string[] {
   return toArray(debug.load() ?? '');
+}
+
+function isInObsidian(): boolean {
+  return typeof window !== 'undefined';
 }
 
 function logWithCaller(namespace: string, framesToSkip: number, message: string, ...args: unknown[]): void {
@@ -125,7 +134,9 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   const stackLines = new Error().stack?.split('\n') ?? [];
   const callerLine = stackLines[CALLER_LINE_INDEX + framesToSkip] ?? '';
   console.debug(message, ...args);
-  printStackTrace(namespace, callerLine, 'Debug message caller');
+  if (isInObsidian()) {
+    printStackTrace(namespace, callerLine, 'Debug message caller');
+  }
 }
 
 function printStackTrace(namespace: string, stackTrace: string, title?: string): void {
@@ -143,7 +154,8 @@ function printStackTrace(namespace: string, stackTrace: string, title?: string):
   }
 
   _debugger(title);
-  console.debug(`StackTraceFakeError\n${stackTrace}`);
+  const prefix = isInObsidian() ? 'StackTraceFakeError\n' : '';
+  console.debug(`${prefix}${stackTrace}`);
 }
 
 function setNamespaces(namespaces: string | string[]): void {

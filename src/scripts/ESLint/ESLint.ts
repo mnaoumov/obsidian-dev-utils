@@ -12,6 +12,7 @@ import {
 } from 'eslint';
 import { glob } from 'glob';
 
+import { getLibDebugger } from '../../Debug.ts';
 import {
   getDirname,
   join,
@@ -65,20 +66,21 @@ export async function lint(shouldFix?: boolean, customConfigs?: Linter.Config[])
   lintResults.sort((a, b) => a.filePath.localeCompare(b.filePath));
 
   let errorsCount = 0;
+  const _debugger = getLibDebugger('ESLint');
 
   for (const lintResult of lintResults) {
     if (lintResult.output) {
-      console.log(`${toRelativeFromRoot(lintResult.filePath) ?? lintResult.filePath} - had some issues that were fixed automatically.`);
+      _debugger(`${toRelativeFromRoot(lintResult.filePath) ?? lintResult.filePath} - had some issues that were fixed automatically.`);
       errorsCount++;
     }
 
     for (const message of lintResult.messages) {
       const canAutoFix = message.fix !== undefined;
-      console.log(`${toRelativeFromRoot(lintResult.filePath) ?? lintResult.filePath}:${(message.line as null | number)?.toString() ?? '(null)'}:${(message.column as null | number)?.toString() ?? '(null)'} - ${message.message} [rule ${message.ruleId ?? '(null)'}]${canAutoFix ? ' (auto-fixable)' : ''}`);
+      _debugger(`${toRelativeFromRoot(lintResult.filePath) ?? lintResult.filePath}:${(message.line as null | number)?.toString() ?? '(null)'}:${(message.column as null | number)?.toString() ?? '(null)'} - ${message.message} [rule ${message.ruleId ?? '(null)'}]${canAutoFix ? ' (auto-fixable)' : ''}`);
       errorsCount++;
     }
   }
 
-  console.log(`Linted ${lintResults.length.toString()} files with ${errorsCount.toString()} issues.`);
+  _debugger(`Linted ${lintResults.length.toString()} files with ${errorsCount.toString()} issues.`);
   return CliTaskResult.Success(errorsCount === 0);
 }

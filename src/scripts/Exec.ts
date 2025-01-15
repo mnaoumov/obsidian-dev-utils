@@ -3,6 +3,7 @@
  * Contains utility functions for executing commands.
  */
 
+import { getLibDebugger } from '../Debug.ts';
 import { trimEnd } from '../String.ts';
 import { toCommandLine } from './CliUtils.ts';
 import {
@@ -122,7 +123,7 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
   }
 
   return new Promise((resolve, reject) => {
-    console.log(`Executing command: ${command}`);
+    getLibDebugger('Exec')(`Executing command: ${command}`);
     const [cmd = '', ...args] = command.split(' ');
 
     const child = spawn(cmd, args, {

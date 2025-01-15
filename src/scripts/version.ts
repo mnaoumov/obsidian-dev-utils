@@ -13,6 +13,7 @@
 
 import AdmZip from 'adm-zip';
 
+import { getLibDebugger } from '../Debug.ts';
 import { throwExpression } from '../Error.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../Path.ts';
@@ -363,11 +364,12 @@ export async function updateChangelog(newVersion: string): Promise<void> {
     isQuiet: true,
     shouldIgnoreExitCode: true
   });
+  const _debugger = getLibDebugger('Version');
   if (!codeVersion) {
-    console.log('Could not find Visual Studio Code in your PATH. Using console mode instead.');
+    _debugger('Could not find Visual Studio Code in your PATH. Using console mode instead.');
     await createInterface(process.stdin, process.stdout).question(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Press Enter when you are done...`);
   } else {
-    console.log(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Close Visual Studio Code when you are done...`);
+    _debugger(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Close Visual Studio Code when you are done...`);
     await execFromRoot(['code', '-w', changelogPath], {
       isQuiet: true,
       shouldIgnoreExitCode: true
