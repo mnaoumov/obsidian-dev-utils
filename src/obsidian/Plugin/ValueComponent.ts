@@ -180,12 +180,6 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
       return !errorMessage;
     };
 
-    const validateSync = convertAsyncToSync(async () => {
-      await validate();
-      const validatorElement = getValidatorElement(this.valueComponent);
-      validatorElement?.reportValidity();
-    });
-
     this.valueComponent
       .setValue(optionsExt.pluginSettingsToComponentValueConverter(pluginSettingsFn()[property]))
       .onChange(async (uiValue) => {
@@ -201,10 +195,12 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
         await optionsExt.onChanged?.();
       });
 
-    validateSync();
-
     const validatorElement = getValidatorElement(this.valueComponent);
-    validatorElement?.addEventListener('focus', validateSync);
+    validatorElement?.addEventListener('focus', convertAsyncToSync(async () => {
+      await validate();
+      const validatorElement = getValidatorElement(this.valueComponent);
+      validatorElement?.reportValidity();
+    }));
 
     return this.asExtended();
   }
