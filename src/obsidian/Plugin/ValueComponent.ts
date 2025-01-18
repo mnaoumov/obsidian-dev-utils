@@ -17,7 +17,7 @@ import type { ValidatorElement } from '../../HTMLElement.ts';
 import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
-import { invokeAsyncSafely } from '../../Async.ts';
+import { convertAsyncToSync } from '../../Async.ts';
 import { assignWithNonEnumerableProperties } from '../../Object.ts';
 
 /**
@@ -175,13 +175,16 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
       uiValue ??= this.valueComponent.getValue();
       const errorMessage = await optionsExt.valueValidator(uiValue) as string | undefined;
       const validatorElement = getValidatorElement(this.valueComponent);
-      if (validatorElement) {
-        validatorElement.setCustomValidity(errorMessage ?? '');
-        validatorElement.reportValidity();
-      }
+      validatorElement?.setCustomValidity(errorMessage ?? '');
 
       return !errorMessage;
     };
+
+    const validateSync = convertAsyncToSync(async () => {
+      await validate();
+      const validatorElement = getValidatorElement(this.valueComponent);
+      validatorElement?.reportValidity();
+    });
 
     this.valueComponent
       .setValue(optionsExt.pluginSettingsToComponentValueConverter(pluginSettingsFn()[property]))
@@ -198,17 +201,10 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
         await optionsExt.onChanged?.();
       });
 
-    invokeAsyncSafely(validate);
+    validateSync();
 
     const validatorElement = getValidatorElement(this.valueComponent);
-    if (validatorElement) {
-      validatorElement.addEventListener('focus', () => {
-        invokeAsyncSafely(validate);
-      });
-      validatorElement.addEventListener('blur', () => {
-        invokeAsyncSafely(validate);
-      });
-    }
+    validatorElement?.addEventListener('focus', validateSync);
 
     return this.asExtended();
   }
