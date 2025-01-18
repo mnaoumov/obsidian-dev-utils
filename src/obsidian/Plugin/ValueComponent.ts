@@ -17,6 +17,7 @@ import type { ValidatorElement } from '../../HTMLElement.ts';
 import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
+import { invokeAsyncSafely } from '../../Async.ts';
 import { assignWithNonEnumerableProperties } from '../../Object.ts';
 
 /**
@@ -43,7 +44,7 @@ interface BindValueComponentOptions<PluginSettings, UIValue> {
    * @param uiValue - The value of the UI component.
    * @returns An error message if the value is invalid, or `null` if it is valid.
    */
-  valueValidator?: (uiValue: UIValue) => null | string;
+  valueValidator?: (uiValue: UIValue) => MaybePromise<null | string>;
 }
 
 /**
@@ -166,12 +167,27 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     const pluginExt = plugin as unknown as PluginBase<PluginSettings>;
     const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? pluginExt.settingsCopy;
 
-    const validate = (uiValue?: UIValue): boolean => {
+    const validate = (retriggerEventCallback?: () => void, uiValue?: UIValue): boolean => {
+      if (!optionsExt.valueValidator) {
+        return true;
+      }
+
+      invokeAsyncSafely(async () => {
+        const isValid = await validateAsync(uiValue);
+        if (isValid && retriggerEventCallback) {
+          retriggerEventCallback();
+        }
+      });
+
+      return false;
+    };
+
+    const validateAsync = async (uiValue?: UIValue): Promise<boolean> => {
       if (!optionsExt.valueValidator) {
         return true;
       }
       uiValue ??= this.valueComponent.getValue();
-      const errorMessage = optionsExt.valueValidator(uiValue);
+      const errorMessage = await optionsExt.valueValidator(uiValue);
       const validatorElement = getValidatorElement(this.valueComponent);
       if (validatorElement) {
         validatorElement.setCustomValidity(errorMessage ?? '');
@@ -184,7 +200,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     this.valueComponent
       .setValue(optionsExt.pluginSettingsToComponentValueConverter(pluginSettingsFn()[property]))
       .onChange(async (uiValue) => {
-        if (!validate(uiValue)) {
+        if (!await validateAsync(uiValue)) {
           return;
         }
         const pluginSettings = pluginSettingsFn();
@@ -200,8 +216,12 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
 
     const validatorElement = getValidatorElement(this.valueComponent);
     if (validatorElement) {
-      validatorElement.addEventListener('focus', () => validate());
-      validatorElement.addEventListener('blur', () => validate());
+      validatorElement.addEventListener('focus', () => validate(() => {
+        validatorElement.focus();
+      }));
+      validatorElement.addEventListener('blur', () => validate(() => {
+        validatorElement.blur();
+      }));
     }
 
     return this.asExtended();
