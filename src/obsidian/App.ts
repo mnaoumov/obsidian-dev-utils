@@ -5,6 +5,8 @@
 
 import type { App } from 'obsidian';
 
+import { throwExpression } from '../Error.ts';
+
 /**
  * Wrapper type for accessing the `App` instance globally.
  */
@@ -32,27 +34,14 @@ export class ValueWrapper<T> {
  * @returns The `App` instance.
  * @throws Will throw an error if the `App` instance cannot be found.
  *
- * @see {@link https://github.com/mnaoumov/obsidian-fix-require-modules/?tab=readme-ov-file#obsidianapp-module}
+ * @see {@link https://github.com/mnaoumov/obsidian-codescript-toolkit?tab=readme-ov-file#obsidianapp-module}
  */
 export function getApp(): App {
-  let canRequire: boolean;
   try {
-    globalThis.require.resolve('obsidian/app');
-    canRequire = true;
-  } catch {
-    canRequire = false;
-  }
-
-  if (canRequire) {
     return globalThis.require('obsidian/app') as App;
+  } catch {
+    return (globalThis as Partial<AppWrapper>).app ?? throwExpression(new Error('Obsidian app not found'));
   }
-
-  const app = (globalThis as Partial<AppWrapper>).app;
-  if (app) {
-    return app;
-  }
-
-  throw new Error('Obsidian app not found');
 }
 
 /**
