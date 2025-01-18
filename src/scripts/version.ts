@@ -12,6 +12,7 @@
  */
 
 import AdmZip from 'adm-zip';
+import { glob } from 'glob';
 
 import { getLibDebugger } from '../Debug.ts';
 import { throwExpression } from '../Error.ts';
@@ -292,21 +293,53 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     const fileNames = await readdirPosix(buildDir);
     filePaths = fileNames.map((fileName) => join(buildDir, fileName));
   } else {
-    const zip = new AdmZip();
-    zip.addLocalFolder(resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.Dist), ObsidianDevUtilsRepoPaths.Dist, (filename) => !filename.endsWith('.zip'));
-
-    const files = [
-      ObsidianDevUtilsRepoPaths.ChangelogMd,
-      ObsidianDevUtilsRepoPaths.License,
-      ObsidianDevUtilsRepoPaths.ReadmeMd,
-      ObsidianDevUtilsRepoPaths.PackageJson
+    const packageJson = await readPackageJson();
+    const FILES_ALWAYS_INCLUDE = [
+      'package.json',
+      'README.*',
+      'LICENCE.*',
+      'LICENSE.*',
+      '!.git',
+      '!.npmrc',
+      '!node_modules',
+      '!package-lock.json',
+      '!pnpm-lock.yaml',
+      '!yarn.lock',
+      '!bun.lockb'
     ];
+    const filesToPackage = new Set([
+      ...(packageJson.files ?? []),
+      ...FILES_ALWAYS_INCLUDE
+    ]);
 
+    if (packageJson.main) {
+      filesToPackage.add(packageJson.main);
+    }
+
+    if (packageJson.bin) {
+      if (typeof packageJson.bin === 'string') {
+        filesToPackage.add(packageJson.bin);
+      } else {
+        for (const pathToBinary of Object.values(packageJson.bin)) {
+          if (pathToBinary) {
+            filesToPackage.add(pathToBinary);
+          }
+        }
+      }
+    }
+
+    const EXCLUDE_PREFIX = '!';
+
+    const includePatterns = Array.from(filesToPackage).filter((file) => !file.startsWith(EXCLUDE_PREFIX));
+    const excludePatterns = Array.from(filesToPackage).filter((file) => file.startsWith(EXCLUDE_PREFIX));
+
+    const files = await glob(includePatterns, { ignore: excludePatterns });
+
+    const zip = new AdmZip();
     for (const file of files) {
       zip.addLocalFile(resolvePathFromRootSafe(file));
     }
 
-    const packageJson = await readPackageJson();
     const distZipPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, `${packageJson.name ?? '(unknown)'}-${newVersion}.zip`));
     zip.writeZip(distZipPath);
     filePaths = [distZipPath];
