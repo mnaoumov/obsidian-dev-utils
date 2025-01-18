@@ -168,22 +168,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     const pluginExt = plugin as unknown as PluginBase<PluginSettings>;
     const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? pluginExt.settingsCopy;
 
-    const validate = (retriggerEventCallback?: () => void, uiValue?: UIValue): boolean => {
-      if (!optionsExt.valueValidator) {
-        return true;
-      }
-
-      invokeAsyncSafely(async () => {
-        const isValid = await validateAsync(uiValue);
-        if (isValid && retriggerEventCallback) {
-          retriggerEventCallback();
-        }
-      });
-
-      return false;
-    };
-
-    const validateAsync = async (uiValue?: UIValue): Promise<boolean> => {
+    const validate = async (uiValue?: UIValue): Promise<boolean> => {
       if (!optionsExt.valueValidator) {
         return true;
       }
@@ -201,7 +186,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     this.valueComponent
       .setValue(optionsExt.pluginSettingsToComponentValueConverter(pluginSettingsFn()[property]))
       .onChange(async (uiValue) => {
-        if (!await validateAsync(uiValue)) {
+        if (!await validate(uiValue)) {
           return;
         }
         const pluginSettings = pluginSettingsFn();
@@ -213,16 +198,16 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
         await optionsExt.onChanged?.();
       });
 
-    validate();
+    invokeAsyncSafely(validate);
 
     const validatorElement = getValidatorElement(this.valueComponent);
     if (validatorElement) {
-      validatorElement.addEventListener('focus', () => validate(() => {
-        validatorElement.focus();
-      }));
-      validatorElement.addEventListener('blur', () => validate(() => {
-        validatorElement.blur();
-      }));
+      validatorElement.addEventListener('focus', () => {
+        invokeAsyncSafely(validate);
+      });
+      validatorElement.addEventListener('blur', () => {
+        invokeAsyncSafely(validate);
+      });
     }
 
     return this.asExtended();
