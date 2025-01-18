@@ -42,9 +42,10 @@ interface BindValueComponentOptions<PluginSettings, UIValue> {
   /**
    * Validates the UI value before setting it on the plugin settings.
    * @param uiValue - The value of the UI component.
-   * @returns An error message if the value is invalid, or `null` if it is valid.
+   * @returns An error message if the value is invalid, or `(empty string)` or `void` if it is valid.
    */
-  valueValidator?: (uiValue: UIValue) => MaybePromise<null | string>;
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  valueValidator?: (uiValue: UIValue) => MaybePromise<string | void>;
 }
 
 /**
@@ -187,7 +188,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
         return true;
       }
       uiValue ??= this.valueComponent.getValue();
-      const errorMessage = await optionsExt.valueValidator(uiValue);
+      const errorMessage = await optionsExt.valueValidator(uiValue) as string | undefined;
       const validatorElement = getValidatorElement(this.valueComponent);
       if (validatorElement) {
         validatorElement.setCustomValidity(errorMessage ?? '');
