@@ -337,7 +337,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
 
     const zip = new AdmZip();
     for (const file of files) {
-      zip.addLocalFile(resolvePathFromRootSafe(file));
+      zip.addLocalFile(resolvePathFromRootSafe(file), file);
     }
 
     const distZipPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, `${packageJson.name ?? '(unknown)'}-${newVersion}.zip`));
