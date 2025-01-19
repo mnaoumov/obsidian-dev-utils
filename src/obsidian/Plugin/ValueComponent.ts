@@ -85,6 +85,7 @@ interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
 }
 
 const VALUE_COMPONENT_INVALID_CLASS = 'value-component-invalid';
+const validatorsMap = new WeakMap<ValueComponent<unknown>, () => Promise<boolean>>();
 
 /**
  * ValueComponent with extended functionality.
@@ -206,6 +207,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     const validatorElement = getValidatorElement(this.valueComponent);
     validatorElement?.addEventListener('focus', convertAsyncToSync(() => validate()));
     validatorElement?.addEventListener('blur', convertAsyncToSync(() => validate()));
+    validatorsMap.set(this.valueComponent as ValueComponent<unknown>, () => validate());
 
     return this.asExtended();
   }
@@ -221,6 +223,21 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
  */
 export function extend<UIValue, TValueComponent extends ValueComponentWithChangeTracking<UIValue>>(valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>): ValueComponentExType<UIValue, TValueComponent> {
   return new ValueComponentEx<UIValue, TValueComponent>(valueComponent).asExtended();
+}
+
+/**
+ * Revalidates a value component.
+ *
+ * @param valueComponent - The value component to revalidate.
+ * @returns `true` if the value component is valid, `false` otherwise.
+ */
+export async function revalidate(valueComponent: ValueComponent<unknown>): Promise<boolean> {
+  const validator = validatorsMap.get(valueComponent);
+  if (validator) {
+    return await validator();
+  }
+
+  return true;
 }
 
 /**
