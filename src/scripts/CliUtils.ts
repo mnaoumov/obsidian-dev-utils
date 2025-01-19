@@ -9,6 +9,7 @@ import type { MaybePromise } from '../Async.ts';
 import { enableNamespaces } from '../Debug.ts';
 import { printError } from '../Error.ts';
 import { noop } from '../Function.ts';
+import { LIBRARY_NAME } from '../Library.ts';
 import { replaceAll } from '../String.ts';
 import { process } from './NodeModules.ts';
 
@@ -175,7 +176,7 @@ export function toCommandLine(args: string[]): string {
  */
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 export async function wrapCliTask(taskFn: () => MaybePromise<CliTaskResult | void>): Promise<void> {
-  enableNamespaces(['obsidian-dev-utils', 'obsidian-dev-utils:*']);
+  enableNamespaces([LIBRARY_NAME, `${LIBRARY_NAME}:*`]);
   const result = await wrapResult(taskFn);
   result.exit();
 }
