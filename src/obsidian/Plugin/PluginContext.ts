@@ -5,10 +5,7 @@ import { compareVersions } from 'compare-versions';
 import type { DebugController } from '../../DebugController.ts';
 
 import {
-  disableNamespaces,
-  enableNamespaces,
-  getNamespaces,
-  setNamespaces,
+  getDebugController,
   showInitialDebugMessage
 } from '../../Debug.ts';
 import { LIBRARY_VERSION } from '../../Library.ts';
@@ -37,12 +34,7 @@ export function initPluginContext(app: App, pluginId: string): void {
   lastLibraryVersionWrapper.value = LIBRARY_VERSION;
 
   const pluginContextWindow = getPluginContextWindow();
-  pluginContextWindow.DEBUG = {
-    disable: disableNamespaces,
-    enable: enableNamespaces,
-    get: getNamespaces,
-    set: setNamespaces
-  };
+  pluginContextWindow.DEBUG = getDebugController();
 }
 
 function getPluginContextWindow(): Partial<PluginContextWindow> {
