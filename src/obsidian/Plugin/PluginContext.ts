@@ -4,13 +4,13 @@ import { compareVersions } from 'compare-versions';
 
 import type { DebugController } from '../../DebugController.ts';
 
-import stylesCss from '../../../static/styles.css';
 import {
   getDebugController,
   showInitialDebugMessage
 } from '../../Debug.ts';
 import {
   LIBRARY_NAME,
+  LIBRARY_STYLES,
   LIBRARY_VERSION
 } from '../../Library.ts';
 import { getObsidianDevUtilsState } from '../App.ts';
@@ -47,7 +47,7 @@ export function initPluginContext(app: App, pluginId: string): void {
     attr: {
       id: STYLES_ID
     },
-    text: stylesCss
+    text: LIBRARY_STYLES
   });
 }
 
