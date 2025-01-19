@@ -23,6 +23,6 @@ async function prepareGitHubRelease(newVersion: string): Promise<void> {
   let libraryCjsContent = await readFile(libraryCjsPath, 'utf-8');
   const stylesCssContent = await readFile(stylesCssPath, 'utf-8');
   libraryCjsContent = libraryCjsContent.replace('$(LIBRARY_VERSION)', newVersion);
-  libraryCjsContent = libraryCjsContent.replace('$(LIBRARY_STYLES)', JSON.stringify(stylesCssContent).slice(1, -1));
+  libraryCjsContent = libraryCjsContent.replace('"$(LIBRARY_STYLES)"', JSON.stringify(stylesCssContent));
   await writeFile(libraryCjsPath, libraryCjsContent, 'utf-8');
 }
