@@ -41,6 +41,11 @@ interface BindValueComponentOptions<PluginSettings, UIValue> {
   shouldAutoSave?: boolean;
 
   /**
+   * If true, shows the validation message when the component value is invalid. Default is `true`.
+   */
+  shouldShowValidationMessage?: boolean;
+
+  /**
    * Validates the UI value before setting it on the plugin settings.
    * @param uiValue - The value of the UI component.
    * @returns An error message if the value is invalid, or `(empty string)` or `void` if it is valid.
@@ -164,7 +169,8 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     const DEFAULT_OPTIONS: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = {
       componentToPluginSettingsValueConverter: (value): PropertyType => value as PropertyType,
       pluginSettingsToComponentValueConverter: (value): UIValue => value as UIValue,
-      shouldAutoSave: true
+      shouldAutoSave: true,
+      shouldShowValidationMessage: true
     };
 
     const optionsExt: BindValueComponentOptionsExtended<PluginSettings, UIValue, Property> = { ...DEFAULT_OPTIONS, ...options };
@@ -179,11 +185,9 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
       const errorMessage = await optionsExt.valueValidator(uiValue) as string | undefined;
       const validatorElement = getValidatorElement(this.valueComponent);
       validatorElement?.setCustomValidity(errorMessage ?? '');
-      if (validatorElement?.isActiveElement()) {
-        validatorElement.removeClass(CssClass.ValueComponentInvalid);
+      validatorElement?.toggleClass(CssClass.ValueComponentInvalid, !!errorMessage);
+      if (validatorElement?.isActiveElement() && optionsExt.shouldShowValidationMessage) {
         validatorElement.reportValidity();
-      } else {
-        validatorElement?.toggleClass(CssClass.ValueComponentInvalid, !!errorMessage);
       }
 
       return !errorMessage;
