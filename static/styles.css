@@ -1,3 +1,27 @@
+.obsidian-dev-utils {
+  /* default styles */
+}
+
+.obsidian-dev-utils.alert-modal {
+  /* default styles */
+}
+
+.obsidian-dev-utils.confirm-modal {
+  /* default styles */
+}
+
+.obsidian-dev-utils.plugin-settings-tab {
+  /* default styles */
+}
+
 .obsidian-dev-utils.plugin-settings-tab .value-component-invalid {
   box-shadow: 0 0 0 2px var(--text-error);
+}
+
+.obsidian-dev-utils.prompt-modal {
+  /* default styles */
+}
+
+.obsidian-dev-utils.select-item-modal {
+  /* default styles */
 }
