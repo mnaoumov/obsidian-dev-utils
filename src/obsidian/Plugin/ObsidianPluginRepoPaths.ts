@@ -28,6 +28,12 @@ export enum ObsidianPluginRepoPaths {
   /** Represents the hot reload file. */
   HotReload = '.hotreload',
 
+  /** Represents the lib directory. */
+  Lib = 'lib',
+
+  /** Represents the Library.cjs file. */
+  LibraryCjs = 'Library.cjs',
+
   /** Represents the main JavaScript file. */
   MainJs = 'main.js',
 
