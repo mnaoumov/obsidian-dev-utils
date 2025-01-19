@@ -8,7 +8,9 @@ import { PluginSettingTab } from 'obsidian';
 
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
+import { LIBRARY_NAME } from '../../Library.ts';
 import { PluginBase } from './PluginBase.ts';
+import { getPluginId } from './PluginId.ts';
 
 /**
  * Base class for creating plugin settings tabs in Obsidian.
@@ -23,5 +25,6 @@ export abstract class PluginSettingsTabBase<
 > extends PluginSettingTab {
   public constructor(public override plugin: TPlugin) {
     super(plugin.app, plugin);
+    this.containerEl.addClass(LIBRARY_NAME, getPluginId(), 'plugin-settings-tab');
   }
 }
