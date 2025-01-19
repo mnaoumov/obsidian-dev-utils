@@ -447,6 +447,11 @@ export async function updateVersionInFiles(newVersion: string, isObsidianPlugin:
     await editJson<Record<string, string>>(ObsidianPluginRepoPaths.VersionsJson, (versions) => {
       versions[newVersion] = latestObsidianVersion;
     });
+
+    const libraryCjsPath = resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.DistBuild, ObsidianPluginRepoPaths.Lib, ObsidianPluginRepoPaths.LibraryCjs));
+    const libraryCjsContent = await readFile(libraryCjsPath, 'utf-8');
+    const newLibraryCjsContent = libraryCjsContent.replace('$(LIBRARY_VERSION)', newVersion);
+    await writeFile(libraryCjsPath, newLibraryCjsContent, 'utf-8');
   }
 }
 
