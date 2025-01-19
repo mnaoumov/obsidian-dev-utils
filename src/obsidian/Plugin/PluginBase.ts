@@ -20,12 +20,10 @@ import type { MaybePromise } from '../../Async.ts';
 import type { EmptySettings } from './EmptySettings.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
-import {
-  getDebugger,
-  initDebugHelpers
-} from '../../Debug.ts';
+import { getDebugger } from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noop } from '../../Function.ts';
+import { initPluginContext } from './PluginContext.ts';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
@@ -74,7 +72,7 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    */
   public constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
-    initDebugHelpers(manifest.id);
+    initPluginContext(app, manifest.id);
   }
 
   /**
