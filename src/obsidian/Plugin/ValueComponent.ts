@@ -207,7 +207,8 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     const validatorElement = getValidatorElement(this.valueComponent);
     validatorElement?.addEventListener('focus', convertAsyncToSync(() => validate()));
     validatorElement?.addEventListener('blur', convertAsyncToSync(() => validate()));
-    validatorsMap.set(this.valueComponent as ValueComponent<unknown>, () => validate());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    validatorsMap.set(this.valueComponent as ValueComponent<any>, () => validate());
 
     return this.asExtended();
   }
@@ -231,7 +232,8 @@ export function extend<UIValue, TValueComponent extends ValueComponentWithChange
  * @param valueComponent - The value component to revalidate.
  * @returns `true` if the value component is valid, `false` otherwise.
  */
-export async function revalidate(valueComponent: ValueComponent<unknown>): Promise<boolean> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function revalidate(valueComponent: ValueComponent<any>): Promise<boolean> {
   const validator = validatorsMap.get(valueComponent);
   if (validator) {
     return await validator();
