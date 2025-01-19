@@ -7,6 +7,8 @@ import type { Debugger } from 'debug';
 
 import debug from 'debug';
 
+import type { DebugController } from './DebugController.ts';
+
 import { LIBRARY_NAME } from './Library.ts';
 import { getPluginId } from './obsidian/Plugin/PluginId.ts';
 
@@ -18,42 +20,24 @@ const NAMESPACE_SEPARATOR = ',';
 const NEGATED_NAMESPACE_PREFIX = '-';
 
 /**
- * Disables the specified namespaces.
- *
- * @param namespaces - The namespaces to disable.
+ * Enables the debuggers for the `obsidian-dev-utils` library.
  */
-export function disableNamespaces(namespaces: string | string[]): void {
-  const set = new Set(getNamespaces());
-  for (const namespace of toArray(namespaces)) {
-    if (namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
-      continue;
-    }
-    const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
-    if (set.has(namespace)) {
-      set.delete(namespace);
-    }
-    set.add(negatedNamespace);
-  }
-  setNamespaces(Array.from(set));
+export function enableLibraryDebuggers(): void {
+  enableNamespaces([LIBRARY_NAME, `${LIBRARY_NAME}:*`]);
 }
 
 /**
- * Enables the specified namespaces.
+ * Returns a debug controller.
  *
- * @param namespaces - The namespaces to enable.
+ * @returns A debug controller.
  */
-export function enableNamespaces(namespaces: string | string[]): void {
-  const set = new Set(getNamespaces());
-  for (const namespace of toArray(namespaces)) {
-    if (!namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
-      const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
-      if (set.has(negatedNamespace)) {
-        set.delete(negatedNamespace);
-      }
-    }
-    set.add(namespace);
-  }
-  setNamespaces(Array.from(set));
+export function getDebugController(): DebugController {
+  return {
+    disable: disableNamespaces,
+    enable: enableNamespaces,
+    get: getNamespaces,
+    set: setNamespaces
+  };
 }
 
 /**
@@ -87,24 +71,6 @@ export function getLibDebugger(namespace: string): DebuggerEx {
 }
 
 /**
- * Returns the currently enabled namespaces.
- *
- * @returns The currently enabled namespaces.
- */
-export function getNamespaces(): string[] {
-  return toArray(debug.load() ?? '');
-}
-
-/**
- * Sets the namespaces to enable.
- *
- * @param namespaces - The namespaces to enable.
- */
-export function setNamespaces(namespaces: string | string[]): void {
-  debug.enable(toArray(namespaces).join(NAMESPACE_SEPARATOR));
-}
-
-/**
  * Shows an initial debug message.
  *
  * @param pluginId - The plugin ID.
@@ -117,6 +83,39 @@ export function showInitialDebugMessage(pluginId: string): void {
   setNamespaces(pluginId);
   getDebugger(pluginId)(`Debug messages for plugin ${pluginId} are ${state}. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging how to ${changeAction} them.`);
   setNamespaces(namespaces);
+}
+
+function disableNamespaces(namespaces: string | string[]): void {
+  const set = new Set(getNamespaces());
+  for (const namespace of toArray(namespaces)) {
+    if (namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
+      continue;
+    }
+    const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
+    if (set.has(namespace)) {
+      set.delete(namespace);
+    }
+    set.add(negatedNamespace);
+  }
+  setNamespaces(Array.from(set));
+}
+
+function enableNamespaces(namespaces: string | string[]): void {
+  const set = new Set(getNamespaces());
+  for (const namespace of toArray(namespaces)) {
+    if (!namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
+      const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
+      if (set.has(negatedNamespace)) {
+        set.delete(negatedNamespace);
+      }
+    }
+    set.add(namespace);
+  }
+  setNamespaces(Array.from(set));
+}
+
+function getNamespaces(): string[] {
+  return toArray(debug.load() ?? '');
 }
 
 function isInObsidian(): boolean {
@@ -164,6 +163,15 @@ function printStackTrace(namespace: string, stackTrace: string, title?: string):
   _debugger(title);
   const prefix = isInObsidian() ? 'StackTraceFakeError\n' : '';
   console.debug(`${prefix}${stackTrace}`);
+}
+
+/**
+ * Sets the namespaces to enable.
+ *
+ * @param namespaces - The namespaces to enable.
+ */
+function setNamespaces(namespaces: string | string[]): void {
+  debug.enable(toArray(namespaces).join(NAMESPACE_SEPARATOR));
 }
 
 function toArray(namespaces: string | string[]): string[] {
