@@ -113,6 +113,16 @@ export function resolvePathFromRoot(path: string, cwd?: string): null | string {
 }
 
 /**
+ * Resolves a path relative to the root directory, returning the resolved path or the original path if it does not exist.
+ *
+ * @param path - The path to resolve.
+ * @returns The resolved path or the original path if it does not exist.
+ */
+export function resolvePathFromRootSafe(path: string): string {
+  return resolvePathFromRoot(path) ?? path;
+}
+
+/**
  * Converts an absolute path to a relative path from the root directory of the project.
  *
  * @param path - The absolute path to convert.
