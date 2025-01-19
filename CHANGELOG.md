@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.1.0
+
+- Add shouldShowValidationMessage
+
 ## 14.0.0
 
 - Inject CSS styles
