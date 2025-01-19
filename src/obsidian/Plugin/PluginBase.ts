@@ -7,10 +7,7 @@
  * loading tasks.
  */
 
-import type { PluginManifest } from 'obsidian';
-
 import {
-  App,
   Notice,
   Plugin,
   PluginSettingTab
@@ -65,17 +62,6 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   private notice?: Notice;
 
   /**
-   * Constructs a new PluginBase instance.
-   *
-   * @param app - The Obsidian app instance.
-   * @param manifest - The plugin manifest.
-   */
-  public constructor(app: App, manifest: PluginManifest) {
-    super(app, manifest);
-    initPluginContext(app, manifest.id);
-  }
-
-  /**
    * Logs a message to the console.
    *
    * Use instead of `console.debug()`.
@@ -105,6 +91,8 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    * Called when the plugin is loaded
    */
   public override async onload(): Promise<void> {
+    initPluginContext(this.app, this.manifest.id);
+
     this.register(registerAsyncErrorEventHandler(() => {
       this.showNotice('An unhandled error occurred. Please check the console for more information.');
     }));
