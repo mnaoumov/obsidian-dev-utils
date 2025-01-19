@@ -84,6 +84,8 @@ interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
   onChange(callback: (newValue: T) => Promise<void>): this;
 }
 
+const VALUE_COMPONENT_INVALID_CLASS = 'value-component-invalid';
+
 /**
  * ValueComponent with extended functionality.
  */
@@ -199,7 +201,13 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     validatorElement?.addEventListener('focus', convertAsyncToSync(async () => {
       await validate();
       const validatorElement = getValidatorElement(this.valueComponent);
+      validatorElement?.removeClass(VALUE_COMPONENT_INVALID_CLASS);
       validatorElement?.reportValidity();
+    }));
+    validatorElement?.addEventListener('blur', convertAsyncToSync(async () => {
+      const isValid = await validate();
+      const validatorElement = getValidatorElement(this.valueComponent);
+      validatorElement?.toggleClass(VALUE_COMPONENT_INVALID_CLASS, !isValid);
     }));
 
     return this.asExtended();
