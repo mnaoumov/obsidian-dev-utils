@@ -17,7 +17,10 @@ import type { ValidatorElement } from '../../HTMLElement.ts';
 import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
-import { convertAsyncToSync } from '../../Async.ts';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { assignWithNonEnumerableProperties } from '../../Object.ts';
 
@@ -214,6 +217,7 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     validatorsMap.set(this.valueComponent as ValueComponent<any>, () => validate());
 
+    invokeAsyncSafely(() => validate());
     return this.asExtended();
   }
 }
