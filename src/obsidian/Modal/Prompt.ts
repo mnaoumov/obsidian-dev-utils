@@ -12,6 +12,9 @@ import {
   TextComponent
 } from 'obsidian';
 
+import { CssClass } from '../../CssClass.ts';
+import { getPluginId } from '../Plugin/PluginId.ts';
+
 /**
  * The options for the prompt modal.
  */
@@ -95,6 +98,7 @@ class PromptModal extends Modal {
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.value = options.defaultValue ?? '';
+    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PromptModal);
   }
 
   public override onClose(): void {
