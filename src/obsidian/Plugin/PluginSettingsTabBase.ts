@@ -8,7 +8,7 @@ import { PluginSettingTab } from 'obsidian';
 
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
-import { LIBRARY_NAME } from '../../Library.ts';
+import { CssClass } from '../../CssClass.ts';
 import { PluginBase } from './PluginBase.ts';
 import { getPluginId } from './PluginId.ts';
 
@@ -25,6 +25,6 @@ export abstract class PluginSettingsTabBase<
 > extends PluginSettingTab {
   public constructor(public override plugin: TPlugin) {
     super(plugin.app, plugin);
-    this.containerEl.addClass(LIBRARY_NAME, getPluginId(), 'plugin-settings-tab');
+    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
   }
 }

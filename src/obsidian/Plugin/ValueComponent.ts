@@ -18,6 +18,7 @@ import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
 import { convertAsyncToSync } from '../../Async.ts';
+import { CssClass } from '../../CssClass.ts';
 import { assignWithNonEnumerableProperties } from '../../Object.ts';
 
 /**
@@ -84,7 +85,6 @@ interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
   onChange(callback: (newValue: T) => Promise<void>): this;
 }
 
-const VALUE_COMPONENT_INVALID_CLASS = 'value-component-invalid';
 const validatorsMap = new WeakMap<ValueComponent<unknown>, () => Promise<boolean>>();
 
 /**
@@ -180,10 +180,10 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
       const validatorElement = getValidatorElement(this.valueComponent);
       validatorElement?.setCustomValidity(errorMessage ?? '');
       if (validatorElement?.isActiveElement()) {
-        validatorElement.removeClass(VALUE_COMPONENT_INVALID_CLASS);
+        validatorElement.removeClass(CssClass.ValueComponentInvalid);
         validatorElement.reportValidity();
       } else {
-        validatorElement?.toggleClass(VALUE_COMPONENT_INVALID_CLASS, !!errorMessage);
+        validatorElement?.toggleClass(CssClass.ValueComponentInvalid, !!errorMessage);
       }
 
       return !errorMessage;

@@ -12,6 +12,9 @@ import {
   FuzzySuggestModal
 } from 'obsidian';
 
+import { CssClass } from '../../CssClass.ts';
+import { getPluginId } from '../Plugin/PluginId.ts';
+
 /**
  * The parameters for the selection modal.
  */
@@ -45,6 +48,7 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   public constructor(private options: SelectItemOptions<T>, private resolve: (item: null | T) => void) {
     super(options.app);
     this.setPlaceholder(options.placeholder ?? '');
+    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.SelectItemModal);
   }
 
   public override getItems(): T[] {

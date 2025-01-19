@@ -12,6 +12,9 @@ import {
   Modal
 } from 'obsidian';
 
+import { CssClass } from '../../CssClass.ts';
+import { getPluginId } from '../Plugin/PluginId.ts';
+
 /**
  * The options for the confirm modal.
  */
@@ -71,6 +74,7 @@ class ConfirmModal extends Modal {
       title: ''
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.ConfirmModal);
   }
 
   public override onClose(): void {
