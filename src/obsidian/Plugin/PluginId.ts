@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation PluginId
+ * Holder for the plugin ID.
+ */
+
 let pluginId = '';
 
 /**

@@ -1,3 +1,8 @@
+/**
+ * @packageDocumentation PluginContext
+ * Initializes the plugin context and sets up the plugin ID.
+ */
+
 import type { App } from 'obsidian';
 
 import { compareVersions } from 'compare-versions';
