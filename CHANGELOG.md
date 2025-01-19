@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 14.0.0
+
+- Inject CSS styles
+- Add revalidate
+- Extract prepareGitHubRelease
+- Init context only if plugin loads
+- Migrate getApp() to re-branded plugin
+- Show errors for current element only
+- Add NPM release to GitHub
+- Remove `rule` word from ESLint output
+- Use async validation
+
 ## 13.15.0
 
 - Allow underscored unused-vars
