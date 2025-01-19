@@ -3,9 +3,6 @@
  * This module provides utility functions for working with Dataview in Obsidian.
  */
 
-// eslint-disable-next-line import-x/no-unassigned-import
-import '../@types/compare-versions.d.ts';
-
 import type { MaybePromise } from '../Async.ts';
 import type { DataviewInlineApi as DataviewInlineApiOriginal } from './@types/Dataview/api/inline-api.d.ts';
 import type {
