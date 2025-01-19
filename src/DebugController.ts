@@ -2,16 +2,16 @@
  * @packageDocumentation
  * Provides the interface for controlling debug output through namespace management.
  *
- * Debug namespaces follow the pattern 'foo', `foo:bar`, `foo:bar:baz`, etc, and can use wildcards (`*`).
+ * Debug namespaces follow the pattern 'lorem', `lorem:ipsum`, `lorem:ipsum:dolor`, etc, and can use wildcards (`*`).
  *
  * @example
- * - `foo:*` matches all submodules of 'foo'
- * - `*:bar` matches all plugins' `bar` submodules
+ * - `lorem:*` matches all submodules of 'lorem'
+ * - `*:ipsum` matches all plugins' `ipsum` submodules
  * - `*` matches everything
  *
  * Special syntax:
  * - Namespaces prefixed with '-' are explicitly disabled
- * - Multiple namespaces can be combined with commas: `foo,-foo:bar,baz:*`
+ * - Multiple namespaces can be combined with commas: `lorem,-lorem:ipsum,dolor:*`
  *
  * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging}
  */
@@ -30,10 +30,10 @@ export interface DebugController {
    *
    * @example
    * ```typescript
-   * window.DEBUG.disable('foo'); // hide all debug messages from the `foo` plugin
-   * window.DEBUG.disable('foo:*'); // hide all debug messages from the `foo` plugin submodules
-   * window.DEBUG.disable(['foo', 'bar']); // disable multiple namespaces
-   * window.DEBUG.disable('foo,bar'); // disable multiple namespaces using comma-separated string
+   * window.DEBUG.disable('foo-bar'); // hide all debug messages from the `foo-bar` plugin
+   * window.DEBUG.disable('foo-bar:*'); // hide all debug messages from the `foo-bar` plugin submodules
+   * window.DEBUG.disable(['foo-bar', 'baz-qux']); // disable multiple namespaces
+   * window.DEBUG.disable('foo-bar,baz-qux'); // disable multiple namespaces using comma-separated string
    * window.DEBUG.disable('*'); // disable all debug messages
    * ```
    *
@@ -47,12 +47,12 @@ export interface DebugController {
    *
    * @example
    * ```typescript
-   * window.DEBUG.enable('foo'); // show all debug messages from the `foo` plugin
-   * window.DEBUG.enable('foo:obsidian-dev-utils:*'); // show all debug messages from the `obsidian-dev-utils` library within the `foo` plugin
-   * window.DEBUG.enable('foo:*'); // show all debug messages from the `foo` plugin and its submodules
+   * window.DEBUG.enable('foo-bar'); // show all debug messages from the `foo-bar` plugin
+   * window.DEBUG.enable('foo-bar:obsidian-dev-utils:*'); // show all debug messages from the `obsidian-dev-utils` library within the `foo-bar` plugin
+   * window.DEBUG.enable('foo-bar:*'); // show all debug messages from the `foo-bar` plugin and its submodules
    * window.DEBUG.enable('*:obsidian-dev-utils:*'); // show all debug messages for the `obsidian-dev-utils` library within any plugin
-   * window.DEBUG.enable(['foo', 'bar']); // enable multiple namespaces
-   * window.DEBUG.enable('foo,bar'); // enable multiple namespaces using comma-separated string
+   * window.DEBUG.enable(['foo-bar', 'baz-qux']); // enable multiple namespaces
+   * window.DEBUG.enable('foo-bar,baz-qux'); // enable multiple namespaces using comma-separated string
    * window.DEBUG.enable('*'); // show all debug messages
    * ```
    *
@@ -65,7 +65,7 @@ export interface DebugController {
    *
    * @example
    * ```typescript
-   * window.DEBUG.get(); // returns ['foo', 'bar:*', '-baz']
+   * window.DEBUG.get(); // returns ['foo-bar', 'baz-qux:*', '-lorem-ipsum']
    * ```
    *
    * @returns Array of enabled and disabled (prefixed with `-`) debug namespaces
@@ -77,8 +77,8 @@ export interface DebugController {
    *
    * @example
    * ```typescript
-   * window.DEBUG.set(['foo', 'bar:*', '-baz']); // Enable 'foo' and 'bar:*', explicitly disable 'baz'
-   * window.DEBUG.set('foo,bar:*,-baz'); // Same thing using comma-separated string
+   * window.DEBUG.set(['foo-bar', 'baz-qux:*', '-lorem-ipsum']); // Enable 'foo-bar' and 'baz-qux:*', explicitly disable 'lorem-ipsum'
+   * window.DEBUG.set('foo-bar,baz-qux:*,-lorem-ipsum'); // Same thing using comma-separated string
    * window.DEBUG.set('*'); // Enable all debug messages
    * window.DEBUG.set(''); // Disable all debug messages
    * ```
