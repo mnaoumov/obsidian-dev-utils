@@ -178,6 +178,12 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
       const errorMessage = await optionsExt.valueValidator(uiValue) as string | undefined;
       const validatorElement = getValidatorElement(this.valueComponent);
       validatorElement?.setCustomValidity(errorMessage ?? '');
+      if (validatorElement?.isActiveElement()) {
+        validatorElement.removeClass(VALUE_COMPONENT_INVALID_CLASS);
+        validatorElement.reportValidity();
+      } else {
+        validatorElement?.toggleClass(VALUE_COMPONENT_INVALID_CLASS, !!errorMessage);
+      }
 
       return !errorMessage;
     };
@@ -198,17 +204,8 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
       });
 
     const validatorElement = getValidatorElement(this.valueComponent);
-    validatorElement?.addEventListener('focus', convertAsyncToSync(async () => {
-      await validate();
-      const validatorElement = getValidatorElement(this.valueComponent);
-      validatorElement?.removeClass(VALUE_COMPONENT_INVALID_CLASS);
-      validatorElement?.reportValidity();
-    }));
-    validatorElement?.addEventListener('blur', convertAsyncToSync(async () => {
-      const isValid = await validate();
-      const validatorElement = getValidatorElement(this.valueComponent);
-      validatorElement?.toggleClass(VALUE_COMPONENT_INVALID_CLASS, !isValid);
-    }));
+    validatorElement?.addEventListener('focus', convertAsyncToSync(() => validate()));
+    validatorElement?.addEventListener('blur', convertAsyncToSync(() => validate()));
 
     return this.asExtended();
   }
