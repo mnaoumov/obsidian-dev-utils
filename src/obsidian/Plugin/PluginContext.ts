@@ -32,7 +32,7 @@ export function initPluginContext(app: App, pluginId: string): void {
   setPluginId(pluginId);
   showInitialDebugMessage(pluginId);
 
-  const lastLibraryVersionWrapper = getObsidianDevUtilsState(app, 'lastLibraryVersion', '');
+  const lastLibraryVersionWrapper = getObsidianDevUtilsState(app, 'lastLibraryVersion', '0.0.0');
   if (compareVersions(LIBRARY_VERSION, lastLibraryVersionWrapper.value) >= 0) {
     return;
   }
