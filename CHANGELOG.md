@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.2.0
+
+- Validate on bind
+
 ## 14.1.0
 
 - Add shouldShowValidationMessage
