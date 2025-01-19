@@ -447,11 +447,14 @@ export async function updateVersionInFiles(newVersion: string, isObsidianPlugin:
     await editJson<Record<string, string>>(ObsidianPluginRepoPaths.VersionsJson, (versions) => {
       versions[newVersion] = latestObsidianVersion;
     });
-
-    const libraryCjsPath = resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.DistBuild, ObsidianPluginRepoPaths.Lib, ObsidianPluginRepoPaths.LibraryCjs));
-    const libraryCjsContent = await readFile(libraryCjsPath, 'utf-8');
-    const newLibraryCjsContent = libraryCjsContent.replace('$(LIBRARY_VERSION)', newVersion);
-    await writeFile(libraryCjsPath, newLibraryCjsContent, 'utf-8');
+  } else {
+    const libraryCjsPath = resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.Lib, ObsidianPluginRepoPaths.LibraryCjs));
+    const stylesCssPath = resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.StylesCss));
+    let libraryCjsContent = await readFile(libraryCjsPath, 'utf-8');
+    const stylesCssContent = await readFile(stylesCssPath, 'utf-8');
+    libraryCjsContent = libraryCjsContent.replace('$(LIBRARY_VERSION)', newVersion);
+    libraryCjsContent = libraryCjsContent.replace('$(LIBRARY_STYLES)', JSON.stringify(stylesCssContent).slice(1, -1));
+    await writeFile(libraryCjsPath, libraryCjsContent, 'utf-8');
   }
 }
 
