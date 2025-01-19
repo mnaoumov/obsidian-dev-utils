@@ -151,6 +151,20 @@ import * as obsidianDevUtils from "obsidian-dev-utils";
 await obsidianDevUtils.obsidian.Modal.Prompt.prompt({ app, title: 'Enter your name' });
 ```
 
+## Styling
+
+The library provides some extensible styles that you can use to style your plugin.
+
+Default styles are defined in [styles.css](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/static/styles.css).
+
+You can override those styles in your plugin's `styles.css` file via adding your plugin's id to the selector, e.g. for plugin `foo-bar`:
+
+```css
+.foo-bar.obsidian-dev-utils.plugin-settings-tab .value-component-invalid {
+  box-shadow: 0 0 0 2px var(--text-error);
+}
+```
+
 ## Debugging
 
 By default, console debug messages are not shown. To enable them you have to enable `Verbose` mode in the console settings.
