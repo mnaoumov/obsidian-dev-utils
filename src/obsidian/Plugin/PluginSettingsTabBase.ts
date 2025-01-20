@@ -94,22 +94,6 @@ export abstract class PluginSettingsTabBase<
   }
 
   /**
-   * Revalidates the value component.
-   *
-   * @param valueComponent - The value component to revalidate.
-   * @returns A promise that resolves to a boolean indicating whether the value component is valid.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async revalidate(valueComponent: ValueComponent<any>): Promise<boolean> {
-    const validator = this.validatorsMap.get(valueComponent);
-    if (validator) {
-      return await validator();
-    }
-
-    return true;
-  }
-
-  /**
    * Binds a value component to a plugin setting.
    *
    * @typeParam UIValue - The type of the value of the UI component.
@@ -222,5 +206,21 @@ export abstract class PluginSettingsTabBase<
 
     invokeAsyncSafely(() => validate());
     return valueComponent;
+  }
+
+  /**
+   * Revalidates the value component.
+   *
+   * @param valueComponent - The value component to revalidate.
+   * @returns A promise that resolves to a boolean indicating whether the value component is valid.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected async revalidate(valueComponent: ValueComponent<any>): Promise<boolean> {
+    const validator = this.validatorsMap.get(valueComponent);
+    if (validator) {
+      return await validator();
+    }
+
+    return true;
   }
 }
