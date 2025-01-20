@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.3.0
+
+- Add error tooltip
+
 ## 14.2.0
 
 - Validate on bind
