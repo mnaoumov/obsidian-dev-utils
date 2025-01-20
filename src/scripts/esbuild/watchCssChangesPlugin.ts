@@ -11,11 +11,11 @@ import { resolvePathFromRootSafe } from '../Root.ts';
  * @returns A plugin that watches for changes to CSS files and rebuilds the plugin when they change.
  */
 export function watchCssChangesPlugin(): Plugin {
-  let isInitialized = false;
-
   return {
     name: 'watch-css-changes',
     setup(build): void {
+      let isInitialized = false;
+
       build.onLoad({ filter: /\.*/ }, (): null | OnLoadResult => {
         if (isInitialized) {
           return null;
