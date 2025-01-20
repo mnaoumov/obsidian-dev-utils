@@ -34,6 +34,7 @@ import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolder
 import { fixEsmPlugin } from './fixEsmPlugin.ts';
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
+import { watchCssChangesPlugin } from './watchCssChangesPlugin.ts';
 
 /**
  * Enumeration representing the build modes.
@@ -163,6 +164,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     outfile: distPath,
     platform: 'node',
     plugins: [
+      watchCssChangesPlugin(),
       preprocessPlugin(),
       fixEsmPlugin(),
       fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
