@@ -187,10 +187,13 @@ class ValueComponentEx<UIValue, TValueComponent extends ValueComponentWithChange
       uiValue ??= this.valueComponent.getValue();
       const errorMessage = await optionsExt.valueValidator(uiValue) as string | undefined;
       const validatorElement = getValidatorElement(this.valueComponent);
-      validatorElement?.setCustomValidity(errorMessage ?? '');
-      validatorElement?.toggleClass(CssClass.ValueComponentInvalid, !!errorMessage);
-      if (validatorElement?.isActiveElement() && optionsExt.shouldShowValidationMessage) {
-        validatorElement.reportValidity();
+      if (validatorElement) {
+        validatorElement.setCustomValidity(errorMessage ?? '');
+        validatorElement.title = errorMessage ?? '';
+        validatorElement.toggleClass(CssClass.ValueComponentInvalid, !!errorMessage);
+        if (validatorElement.isActiveElement() && optionsExt.shouldShowValidationMessage) {
+          validatorElement.reportValidity();
+        }
       }
 
       return !errorMessage;
