@@ -43,6 +43,9 @@ export enum ObsidianPluginRepoPaths {
   /** Represents the manifest file. */
   ManifestJson = 'manifest.json',
 
+  /** Represents the npm-shrinkwrap.json file. */
+  NpmShrinkwrapJson = 'npm-shrinkwrap.json',
+
   /** Represents the package.json file. */
   PackageJson = 'package.json',
 

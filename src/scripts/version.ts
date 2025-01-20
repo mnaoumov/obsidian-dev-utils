@@ -11,6 +11,8 @@
  * new versions on GitHub.
  */
 
+import type { PackageLockJson } from './Npm.ts';
+
 import { getLibDebugger } from '../Debug.ts';
 import { throwExpression } from '../Error.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
@@ -26,6 +28,7 @@ import {
   writeFile
 } from './NodeModules.ts';
 import {
+  editNpmShrinkWrapJson,
   editPackageJson,
   editPackageLockJson,
   readPackageJson
@@ -92,6 +95,7 @@ export async function addGitTag(newVersion: string): Promise<void> {
 export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
   const files = [
     ObsidianPluginRepoPaths.ManifestJson,
+    ObsidianPluginRepoPaths.NpmShrinkwrapJson,
     ObsidianPluginRepoPaths.PackageJson,
     ObsidianPluginRepoPaths.PackageLockJson,
     ObsidianPluginRepoPaths.VersionsJson,
@@ -430,13 +434,16 @@ export async function updateVersionInFiles(newVersion: string): Promise<void> {
     packageJson.version = newVersion;
   });
 
-  await editPackageLockJson((packageLockJson) => {
+  await editPackageLockJson(update, { shouldSkipIfMissing: true });
+  await editNpmShrinkWrapJson(update, { shouldSkipIfMissing: true });
+
+  function update(packageLockJson: PackageLockJson): void {
     packageLockJson.version = newVersion;
     const defaultPackage = packageLockJson.packages?.[''];
     if (defaultPackage) {
       defaultPackage.version = newVersion;
     }
-  }, { shouldSkipIfMissing: true });
+  }
 }
 
 /**
