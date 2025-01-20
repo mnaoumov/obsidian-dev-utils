@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 14.4.0
+
+- Update NpmShrinkwrapJson
+
 ## 14.3.0
 
 - Add error tooltip
