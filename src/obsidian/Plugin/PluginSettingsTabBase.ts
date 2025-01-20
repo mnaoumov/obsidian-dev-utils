@@ -93,8 +93,14 @@ export abstract class PluginSettingsTabBase<
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
   }
 
+  /**
+   * Revalidates the value component.
+   *
+   * @param valueComponent - The value component to revalidate.
+   * @returns A promise that resolves to a boolean indicating whether the value component is valid.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public async revalidate(valueComponent: ValueComponent<any>): Promise<boolean> {
+  protected async revalidate(valueComponent: ValueComponent<any>): Promise<boolean> {
     const validator = this.validatorsMap.get(valueComponent);
     if (validator) {
       return await validator();
@@ -103,6 +109,16 @@ export abstract class PluginSettingsTabBase<
     return true;
   }
 
+  /**
+   * Binds a value component to a plugin setting.
+   *
+   * @typeParam UIValue - The type of the value of the UI component.
+   * @typeParam TValueComponent - The type of the value component.
+   * @param valueComponent - The value component to bind.
+   * @param property - The property of the plugin settings to bind to.
+   * @param options - The options for binding the value component.
+   * @returns The value component.
+   */
   protected bind<
     UIValue,
     TValueComponent
@@ -112,6 +128,17 @@ export abstract class PluginSettingsTabBase<
     options?: BindOptions<PluginSettings, UIValue>
   ): TValueComponent;
 
+  /**
+   * Binds a value component to a plugin setting.
+   *
+   * @typeParam UIValue - The type of the value of the UI component.
+   * @typeParam TValueComponent - The type of the value component.
+   * @typeParam Property - The property of the plugin settings to bind to.
+   * @param valueComponent - The value component to bind.
+   * @param property - The property of the plugin settings to bind to.
+   * @param options - The options for binding the value component.
+   * @returns The value component.
+   */
   protected bind<
     UIValue,
     TValueComponent,
@@ -122,6 +149,17 @@ export abstract class PluginSettingsTabBase<
     options: BindOptionsExtended<PluginSettings, UIValue, Property>
   ): TValueComponent;
 
+  /**
+   * Binds a value component to a plugin setting.
+   *
+   * @typeParam UIValue - The type of the value of the UI component.
+   * @typeParam TValueComponent - The type of the value component.
+   * @typeParam Property - The property of the plugin settings to bind to.
+   * @param valueComponent - The value component to bind.
+   * @param property - The property of the plugin settings to bind to.
+   * @param options - The options for binding the value component.
+   * @returns The value component.
+   */
   protected bind<
     UIValue,
     TValueComponent,
