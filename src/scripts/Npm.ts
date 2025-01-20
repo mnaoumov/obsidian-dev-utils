@@ -53,6 +53,23 @@ export interface PackageLockJson extends Partial<PackageJson> {
 }
 
 /**
+ * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
+ *
+ * @param editFn - The function to edit the parsed `PackageJson` object.
+ * @param options - Additional options for editing.
+ * @returns A promise that resolves when the file has been edited and written.
+ */
+export async function editNpmShrinkWrapJson(
+  editFn: (PackageLockJson: PackageLockJson) => MaybePromise<void>,
+  options: EditPackageJsonOptions = {}): Promise<void> {
+  const {
+    cwd,
+    shouldSkipIfMissing
+  } = options;
+  await editJson<PackageJson>(getNpmShrinkWrapJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
+}
+
+/**
  * Reads, edits, and writes back the `package.json` file using the provided edit function.
  *
  * @param editFn - The function to edit the parsed `PackageJson` object.
@@ -116,6 +133,16 @@ export function editPackageLockJsonSync(
     shouldSkipIfMissing
   } = options;
   editJsonSync<PackageLockJson>(getPackageLockJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
+}
+
+/**
+ * Resolves the path to the `npm-shrinkwrap.json` file in the specified directory or in the root if no directory is specified.
+ *
+ * @param cwd - The current working directory where `npm-shrinkwrap.json` is located.
+ * @returns The resolved path to the `npm-shrinkwrap.json` file.
+ */
+export function getNpmShrinkWrapJsonPath(cwd?: string): string {
+  return resolvePathFromRoot(ObsidianPluginRepoPaths.NpmShrinkwrapJson, cwd) ?? throwExpression(new Error('Could not determine the npm-shrinkwrap.json path'));
 }
 
 /**
