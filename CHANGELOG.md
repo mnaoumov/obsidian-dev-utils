@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.0.1
+
+- Fix generics
+
 ## 16.0.0
 
 - Refactor settings
