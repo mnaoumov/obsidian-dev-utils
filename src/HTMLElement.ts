@@ -30,3 +30,83 @@ export function appendCodeBlock(el: DocumentFragment | HTMLElement, code: string
     strong.createEl('code', { text: code });
   });
 }
+
+/**
+ * Ensures that the given element is loaded.
+ *
+ * @param el - The element to ensure is loaded.
+ * @returns A promise that resolves when the element is loaded.
+ */
+export async function ensureLoaded(el: Element): Promise<void> {
+  if (isLoaded(el)) {
+    return;
+  }
+  if (
+    el instanceof HTMLBodyElement
+    || el instanceof HTMLImageElement
+    || el instanceof HTMLIFrameElement
+    || el instanceof HTMLEmbedElement
+    || el instanceof HTMLLinkElement
+    || el instanceof HTMLObjectElement
+    || el instanceof HTMLStyleElement
+    || el instanceof HTMLTrackElement
+  ) {
+    await new Promise((resolve) => {
+      el.addEventListener('load', resolve);
+      el.addEventListener('error', resolve);
+    });
+    return;
+  }
+
+  await Promise.all(getLoadableElements(el).map(ensureLoaded));
+}
+
+/**
+ * Checks if the element is loaded.
+ *
+ * @param el - The element to check.
+ * @returns True if the element is loaded, false otherwise.
+ */
+export function isLoaded(el: Element): boolean {
+  if (el instanceof HTMLBodyElement) {
+    return document.readyState === 'complete' || document.readyState === 'interactive';
+  }
+
+  if (el instanceof HTMLImageElement) {
+    return el.complete && el.naturalWidth > 0;
+  }
+
+  if (el instanceof HTMLIFrameElement) {
+    return !!el.contentDocument;
+  }
+
+  if (el instanceof HTMLEmbedElement) {
+    return !!el.getSVGDocument();
+  }
+
+  if (el instanceof HTMLLinkElement) {
+    return el.rel === 'stylesheet' ? el.sheet !== null : true;
+  }
+
+  if (el instanceof HTMLObjectElement) {
+    return !!el.contentDocument || !!el.getSVGDocument();
+  }
+
+  if (el instanceof HTMLScriptElement) {
+    return true;
+  }
+
+  if (el instanceof HTMLStyleElement) {
+    return !!el.sheet;
+  }
+
+  if (el instanceof HTMLTrackElement) {
+    return el.readyState === 2;
+  }
+
+  return getLoadableElements(el).every(isLoaded);
+}
+
+function getLoadableElements(el: Element): Element[] {
+  return Array.from(el.querySelectorAll('body, img, iframe, embed, link, object, script, style, track'));
+}
