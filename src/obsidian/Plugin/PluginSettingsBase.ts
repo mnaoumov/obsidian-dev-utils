@@ -18,7 +18,7 @@ export abstract class PluginSettingsBase {
     return this._shouldSaveAfterLoad;
   }
 
-  private _shouldSaveAfterLoad = false;
+  protected _shouldSaveAfterLoad = false;
 
   /**
    * Initializes the settings from JSON data.
