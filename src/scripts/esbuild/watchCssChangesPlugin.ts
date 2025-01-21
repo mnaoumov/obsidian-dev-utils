@@ -1,5 +1,5 @@
 import type {
-  OnLoadResult,
+  OnResolveResult,
   Plugin
 } from 'esbuild';
 
@@ -14,14 +14,15 @@ export function watchCssChangesPlugin(): Plugin {
   const stylesCssPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.StylesCss);
   const watchFiles: string[] = [];
   if (existsSync(stylesCssPath)) {
-    watchFiles.push(ObsidianPluginRepoPaths.StylesCss);
+    watchFiles.push(stylesCssPath);
   }
 
   return {
     name: 'watch-css-changes',
     setup(build): void {
-      build.onLoad({ filter: /\.*/, namespace: 'watch-css-changes' }, (): OnLoadResult => {
+      build.onResolve({ filter: /main\.ts/ }, (args): OnResolveResult => {
         return {
+          path: args.path,
           watchFiles
         };
       });
