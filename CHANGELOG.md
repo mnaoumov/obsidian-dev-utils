@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.0.3
+
+- Make _shouldSaveAfterLoad protected
+
 ## 16.0.2
 
 - Fix Settings generics
