@@ -17,6 +17,8 @@ export function watchCssChangesPlugin(): Plugin {
     watchFiles.push(stylesCssPath);
   }
 
+  console.warn(watchFiles);
+
   return {
     name: 'watch-css-changes',
     setup(build): void {
