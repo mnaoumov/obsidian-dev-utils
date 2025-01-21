@@ -134,16 +134,19 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
 
   const packageJson = await readPackageJson();
   const pluginName = packageJson.name ?? '(unknown)';
+  const entryPoints = [
+    join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs),
+    ObsidianPluginRepoPaths.StylesCss
+  ]
+    .map((path) => resolvePathFromRootSafe(path))
+    .filter((path) => existsSync(path));
 
   const buildOptions: BuildOptions = {
     banner: {
       js: banner
     },
     bundle: true,
-    entryPoints: [
-      resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs)),
-      resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.StylesCss))
-    ],
+    entryPoints,
     external: [
       'obsidian',
       'electron',
