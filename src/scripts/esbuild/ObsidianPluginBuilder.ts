@@ -14,7 +14,6 @@ import type {
 import { config } from 'dotenv';
 import { context } from 'esbuild';
 
-import { throwExpression } from '../../Error.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
 import { buildValidate } from '../build.ts';
@@ -29,12 +28,14 @@ import {
   writeFile
 } from '../NodeModules.ts';
 import { readPackageJson } from '../Npm.ts';
-import { resolvePathFromRoot } from '../Root.ts';
+import {
+  resolvePathFromRoot,
+  resolvePathFromRootSafe
+} from '../Root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
 import { fixEsmPlugin } from './fixEsmPlugin.ts';
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
-import { watchCssChangesPlugin } from './watchCssChangesPlugin.ts';
 
 /**
  * Enumeration representing the build modes.
@@ -139,7 +140,10 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       js: banner
     },
     bundle: true,
-    entryPoints: [resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs)) ?? throwExpression(new Error('Could not determine the entry point for the plugin'))],
+    entryPoints: [
+      resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs)),
+      resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.StylesCss))
+    ],
     external: [
       'obsidian',
       'electron',
@@ -159,6 +163,9 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       ...builtinModules
     ],
     format: 'cjs',
+    loader: {
+      '.css': 'text'
+    },
     logLevel: 'info',
     minify: isProductionBuild,
     outfile: distPath,
@@ -168,7 +175,6 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       fixEsmPlugin(),
       fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
       ...customEsbuildPlugins,
-      watchCssChangesPlugin(),
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
     ],
     sourcemap: isProductionBuild ? false : 'inline',
