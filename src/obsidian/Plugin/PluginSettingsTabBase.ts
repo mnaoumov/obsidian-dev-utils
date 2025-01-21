@@ -162,7 +162,7 @@ export abstract class PluginSettingsTabBase<
     };
 
     const optionsExt: BindOptionsExtended<PluginSettings, UIValue, Property> = { ...DEFAULT_OPTIONS, ...options };
-    const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? this.plugin.settingsCopy;
+    const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? this.plugin.settingsClone;
 
     const validate = async (uiValue?: UIValue): Promise<boolean> => {
       if (!optionsExt.valueValidator) {
