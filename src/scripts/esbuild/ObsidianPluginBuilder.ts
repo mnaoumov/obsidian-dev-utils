@@ -168,7 +168,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     },
     logLevel: 'info',
     minify: isProductionBuild,
-    outfile: distPath,
+    outdir: distDir,
     platform: 'node',
     plugins: [
       preprocessPlugin(),
