@@ -20,7 +20,7 @@ export function watchCssChangesPlugin(): Plugin {
   return {
     name: 'watch-css-changes',
     setup(build): void {
-      build.onLoad({ filter: /\.*/ }, (): OnLoadResult => {
+      build.onLoad({ filter: /\.*/, namespace: 'watch-css-changes' }, (): OnLoadResult => {
         return {
           watchFiles
         };
