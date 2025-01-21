@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.1.0
+
+- Use shared debugLib
+
 ## 16.0.3
 
 - Make _shouldSaveAfterLoad protected
