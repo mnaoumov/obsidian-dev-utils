@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.2.0
+
+- printToPdf
+
 ## 16.1.0
 
 - Use shared debugLib
