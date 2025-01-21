@@ -10,6 +10,10 @@ import debug from 'debug';
 import type { DebugController } from './DebugController.ts';
 
 import { LIBRARY_NAME } from './Library.ts';
+import {
+  getApp,
+  getObsidianDevUtilsState
+} from './obsidian/App.ts';
 import { getPluginId } from './obsidian/Plugin/PluginId.ts';
 
 interface DebuggerEx extends Debugger {
@@ -48,7 +52,7 @@ export function getDebugController(): DebugController {
  * @returns A debugger instance with a log function that includes the caller's file name and line number.
  */
 export function getDebugger(namespace: string, framesToSkip = 0): DebuggerEx {
-  const debugInstance = debug(namespace) as DebuggerEx;
+  const debugInstance = getSharedDebugLibInstance()(namespace) as DebuggerEx;
   debugInstance.log = (message: string, ...args: unknown[]): void => {
     logWithCaller(namespace, framesToSkip, message, ...args);
   };
@@ -76,7 +80,7 @@ export function getLibDebugger(namespace: string): DebuggerEx {
  * @param pluginId - The plugin ID.
  */
 export function showInitialDebugMessage(pluginId: string): void {
-  const isEnabled = debug.enabled(pluginId);
+  const isEnabled = getSharedDebugLibInstance().enabled(pluginId);
   const state = isEnabled ? 'enabled' : 'disabled';
   const changeAction = isEnabled ? 'disable' : 'enable';
   const namespaces = getNamespaces();
@@ -115,7 +119,15 @@ function enableNamespaces(namespaces: string | string[]): void {
 }
 
 function getNamespaces(): string[] {
-  return toArray(debug.load() ?? '');
+  return toArray(getSharedDebugLibInstance().load() ?? '');
+}
+
+function getSharedDebugLibInstance(): typeof debug {
+  if (typeof window === 'undefined') {
+    return debug;
+  }
+  const app = getApp();
+  return getObsidianDevUtilsState(app, 'debug', debug).value;
 }
 
 function isInObsidian(): boolean {
@@ -123,7 +135,7 @@ function isInObsidian(): boolean {
 }
 
 function logWithCaller(namespace: string, framesToSkip: number, message: string, ...args: unknown[]): void {
-  if (!debug.enabled(namespace)) {
+  if (!getSharedDebugLibInstance().enabled(namespace)) {
     return;
   }
 
@@ -147,7 +159,7 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
 }
 
 function printStackTrace(namespace: string, stackTrace: string, title?: string): void {
-  const _debugger = debug(namespace);
+  const _debugger = getSharedDebugLibInstance()(namespace);
 
   if (!_debugger.enabled) {
     return;
@@ -171,7 +183,7 @@ function printStackTrace(namespace: string, stackTrace: string, title?: string):
  * @param namespaces - The namespaces to enable.
  */
 function setNamespaces(namespaces: string | string[]): void {
-  debug.enable(toArray(namespaces).join(NAMESPACE_SEPARATOR));
+  getSharedDebugLibInstance().enable(toArray(namespaces).join(NAMESPACE_SEPARATOR));
 }
 
 function toArray(namespaces: string | string[]): string[] {
