@@ -7,6 +7,8 @@
  * loading tasks.
  */
 
+import type { ReadonlyDeep } from 'type-fest';
+
 import {
   Notice,
   Plugin,
@@ -38,21 +40,21 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   }
 
   /**
-   * Gets a copy of the current plugin settings.
+   * Gets the readonly plugin settings.
    *
-   * @returns A copy of the plugin settings.
+   * @returns The readonly plugin settings.
    */
-  public get settingsCopy(): PluginSettings {
-    return this.createPluginSettings(this.settings.toJSON());
+  public get settings(): ReadonlyDeep<PluginSettings> {
+    return this._settings as ReadonlyDeep<PluginSettings>;
   }
 
   /**
-   * Gets the plugin settings.
+   * Gets a writable copy of the plugin settings.
    *
-   * @returns The plugin settings.
+   * @returns A writable copy of the plugin settings.
    */
-  protected get settings(): PluginSettings {
-    return this._settings;
+  public get settingsClone(): PluginSettings {
+    return this.createPluginSettings(this.settings.toJSON());
   }
 
   private _abortSignal!: AbortSignal;
@@ -180,7 +182,7 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   private async loadSettings(): Promise<void> {
     const data = await this.loadData() as unknown;
     this._settings = this.createPluginSettings(data);
-    if (this._settings.shouldSaveAfterLoad()) {
+    if (this.settings.shouldSaveAfterLoad) {
       await this.saveSettings(this._settings);
     }
   }
