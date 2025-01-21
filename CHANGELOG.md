@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.0.0
+
+- Refactor settings
+
 ## 15.0.0
 
 - Watch css changes
