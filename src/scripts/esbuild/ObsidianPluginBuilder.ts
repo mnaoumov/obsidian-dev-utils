@@ -164,11 +164,11 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     outfile: distPath,
     platform: 'node',
     plugins: [
-      watchCssChangesPlugin(),
       preprocessPlugin(),
       fixEsmPlugin(),
       fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
       ...customEsbuildPlugins,
+      watchCssChangesPlugin(),
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
     ],
     sourcemap: isProductionBuild ? false : 'inline',
