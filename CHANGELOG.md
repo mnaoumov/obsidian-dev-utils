@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 15.0.0
+
+- Watch css changes
+- Refactor bind
+
 ## 14.4.0
 
 - Update NpmShrinkwrapJson
