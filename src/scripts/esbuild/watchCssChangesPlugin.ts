@@ -14,10 +14,8 @@ export function watchCssChangesPlugin(): Plugin {
   const stylesCssPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.StylesCss);
   const watchFiles: string[] = [];
   if (existsSync(stylesCssPath)) {
-    watchFiles.push(stylesCssPath);
+    watchFiles.push(ObsidianPluginRepoPaths.StylesCss);
   }
-
-  console.warn(watchFiles);
 
   return {
     name: 'watch-css-changes',
