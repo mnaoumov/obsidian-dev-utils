@@ -83,12 +83,13 @@ export interface BindOptionsExtended<PluginSettings, UIValue, Property extends k
  * @typeParam PluginSettings - The type of the plugin settings object.
  */
 export abstract class PluginSettingsTabBase<
-  TPlugin extends PluginBase<PluginSettings>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TPlugin extends PluginBase<any>,
   PluginSettings extends PluginSettingsBase = TPlugin extends PluginBase<infer P> ? P : never
 > extends PluginSettingTab {
   private validatorsMap = new WeakMap<ValueComponent<unknown>, () => Promise<boolean>>();
 
-  public constructor(public override plugin: TPlugin) {
+  public constructor(public override plugin: PluginBase<PluginSettings>) {
     super(plugin.app, plugin);
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
   }
