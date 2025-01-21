@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.0.2
+
+- Fix Settings generics
+
 ## 16.0.1
 
 - Fix generics
