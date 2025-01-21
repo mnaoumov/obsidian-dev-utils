@@ -75,21 +75,20 @@ export interface BindOptionsExtended<PluginSettings, UIValue, Property extends k
   pluginSettingsToComponentValueConverter: (pluginSettingsValue: PluginSettings[Property]) => UIValue;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ExtractPluginSettings<T extends PluginBase<any>> = PluginSettingsBase & T['settingsClone'];
+
 /**
  * Base class for creating plugin settings tabs in Obsidian.
  * Provides a method for binding value components to plugin settings and handling changes.
  *
  * @typeParam TPlugin - The type of the plugin that extends PluginBase.
- * @typeParam PluginSettings - The type of the plugin settings object.
  */
-export abstract class PluginSettingsTabBase<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  TPlugin extends PluginBase<any>,
-  PluginSettings extends PluginSettingsBase = TPlugin extends PluginBase<infer P> ? P : never
-> extends PluginSettingTab {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> extends PluginSettingTab {
   private validatorsMap = new WeakMap<ValueComponent<unknown>, () => Promise<boolean>>();
 
-  public constructor(public override plugin: PluginBase<PluginSettings>) {
+  public constructor(public override plugin: TPlugin) {
     super(plugin.app, plugin);
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
   }
@@ -109,8 +108,8 @@ export abstract class PluginSettingsTabBase<
     TValueComponent
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
-    property: KeysMatching<PluginSettings, UIValue>,
-    options?: BindOptions<PluginSettings, UIValue>
+    property: KeysMatching<ExtractPluginSettings<TPlugin>, UIValue>,
+    options?: BindOptions<ExtractPluginSettings<TPlugin>, UIValue>
   ): TValueComponent;
 
   /**
@@ -127,11 +126,11 @@ export abstract class PluginSettingsTabBase<
   protected bind<
     UIValue,
     TValueComponent,
-    Property extends keyof PluginSettings
+    Property extends keyof ExtractPluginSettings<TPlugin>
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     property: Property,
-    options: BindOptionsExtended<PluginSettings, UIValue, Property>
+    options: BindOptionsExtended<ExtractPluginSettings<TPlugin>, UIValue, Property>
   ): TValueComponent;
 
   /**
@@ -148,14 +147,16 @@ export abstract class PluginSettingsTabBase<
   protected bind<
     UIValue,
     TValueComponent,
-    Property extends keyof PluginSettings
+    Property extends keyof ExtractPluginSettings<TPlugin>
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     property: Property,
-    options?: BindOptions<PluginSettings, UIValue>
+    options?: BindOptions<ExtractPluginSettings<TPlugin>, UIValue>
   ): TValueComponent {
+    type PluginSettings = ExtractPluginSettings<TPlugin>;
     type PropertyType = PluginSettings[Property];
     const DEFAULT_OPTIONS: BindOptionsExtended<PluginSettings, UIValue, Property> = {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
       pluginSettingsToComponentValueConverter: (value: PropertyType): UIValue => value as UIValue,
       shouldAutoSave: true,
@@ -163,6 +164,8 @@ export abstract class PluginSettingsTabBase<
     };
 
     const optionsExt: BindOptionsExtended<PluginSettings, UIValue, Property> = { ...DEFAULT_OPTIONS, ...options };
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? this.plugin.settingsClone;
 
     const validate = async (uiValue?: UIValue): Promise<boolean> => {
