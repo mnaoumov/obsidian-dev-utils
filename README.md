@@ -149,6 +149,9 @@ await obsidian.Modal.Prompt.prompt({ app, title: 'Enter your name' });
 
 import * as obsidianDevUtils from "obsidian-dev-utils";
 await obsidianDevUtils.obsidian.Modal.Prompt.prompt({ app, title: 'Enter your name' });
+
+// if you have `moduleResolution` set to `node` in your `tsconfig.json`, you should use the import in the following way:
+import { prompt } from 'obsidian-dev-utils/dist/lib/obsidian/Modal/Prompt';
 ```
 
 ## Styling
