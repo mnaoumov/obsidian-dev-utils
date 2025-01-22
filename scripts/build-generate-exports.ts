@@ -43,6 +43,16 @@ await wrapCliTask(async () => {
         // eslint-disable-next-line perfectionist/sort-objects
         default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
       };
+      packageJson.exports[normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, importPath))] = {
+        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts)),
+        // eslint-disable-next-line perfectionist/sort-objects
+        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
+      };
+      packageJson.exports[normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, importPath, ObsidianDevUtilsRepoPaths.Any))] = {
+        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
+        // eslint-disable-next-line perfectionist/sort-objects
+        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
+      };
     }
 
     isChanged = !deepEqual(oldExports, packageJson.exports);
