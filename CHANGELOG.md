@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.3.0
+
+- Generate exports for moduleResolution=node
+
 ## 16.2.0
 
 - printToPdf
