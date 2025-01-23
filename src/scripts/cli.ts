@@ -49,6 +49,7 @@ enum CommandNames {
   BuildValidate = 'build:validate',
   Dev = 'dev',
   Format = 'format',
+  FormatCheck = 'format:check',
   Lint = 'lint',
   LintFix = 'lint:fix',
   Publish = 'publish',
@@ -79,6 +80,7 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
       addCommand(program, CommandNames.BuildValidate, 'Validates if TypeScript code compiles', () => buildValidate());
       addCommand(program, CommandNames.Dev, 'Build the plugin in development mode', () => buildObsidianPlugin({ mode: BuildMode.Development }));
       addCommand(program, CommandNames.Format, 'Format the source code', () => format());
+      addCommand(program, CommandNames.FormatCheck, 'Check if the source code is formatted', () => format(false));
       addCommand(program, CommandNames.Lint, 'Lint the source code', () => lint());
       addCommand(program, CommandNames.LintFix, 'Lint the source code and apply automatic fixes', () => lint(true));
       addCommand(program, CommandNames.Publish, 'Publish to NPM', (isBeta: boolean) => publish(isBeta))

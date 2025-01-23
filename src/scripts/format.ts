@@ -9,6 +9,7 @@ import { execFromRoot } from './Root.ts';
  *
  * @returns A promise that resolves when the source code has been formatted.
  */
-export async function format(): Promise<void> {
-  await execFromRoot('dprint fmt **/*');
+export async function format(rewrite = true): Promise<void> {
+  const command = rewrite ? 'fmt' : 'check';
+  await execFromRoot(`dprint ${command} **/*`);
 }
