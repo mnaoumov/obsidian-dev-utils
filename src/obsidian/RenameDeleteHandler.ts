@@ -110,8 +110,8 @@ export interface RenameDeleteHandlerSettings {
   shouldRenameAttachmentFiles: boolean;
 
   /**
-    * Whether to rename attachment folder when a note is renamed.
-    */
+   * Whether to rename attachment folder when a note is renamed.
+   */
   shouldRenameAttachmentFolder: boolean;
 
   /**
@@ -363,7 +363,14 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
   addToQueue(app, () => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks));
 }
 
-async function handleRenameAsync(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>, oldPathLinks: Reference[], interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>): Promise<void> {
+async function handleRenameAsync(
+  app: App,
+  oldPath: string,
+  newPath: string,
+  oldPathBacklinksMap: Map<string, Reference[]>,
+  oldPathLinks: Reference[],
+  interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>
+): Promise<void> {
   const interruptedRenames = interruptedRenamesMap.get(oldPath);
   if (interruptedRenames) {
     interruptedRenamesMap.delete(oldPath);
@@ -428,7 +435,11 @@ async function handleRenameAsync(app: App, oldPath: string, newPath: string, old
       }
     }
 
-    for (const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(Array.from(interruptedCombinedBacklinksMap?.entries() ?? []))) {
+    for (
+      const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(
+        Array.from(interruptedCombinedBacklinksMap?.entries() ?? [])
+      )
+    ) {
       await editLinks(app, newBacklinkPath, (link) => {
         const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
         if (!oldAttachmentPath) {
@@ -496,7 +507,12 @@ function handleRenameIfEnabled(plugin: Plugin, file: TAbstractFile, oldPath: str
   handleRename(plugin.app, oldPath, newPath);
 }
 
-function initBacklinksMap(singleBacklinksMap: Map<string, Reference[]>, renameMap: Map<string, string>, combinedBacklinksMap: Map<string, Map<string, string>>, path: string): void {
+function initBacklinksMap(
+  singleBacklinksMap: Map<string, Reference[]>,
+  renameMap: Map<string, string>,
+  combinedBacklinksMap: Map<string, Map<string, string>>,
+  path: string
+): void {
   for (const [backlinkPath, links] of singleBacklinksMap.entries()) {
     const newBacklinkPath = renameMap.get(backlinkPath) ?? backlinkPath;
     const linkJsonToPathMap = combinedBacklinksMap.get(newBacklinkPath) ?? new Map<string, string>();
@@ -509,7 +525,9 @@ function initBacklinksMap(singleBacklinksMap: Map<string, Reference[]>, renameMa
 
 function logRegisteredHandlers(app: App): void {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
-  getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(`Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`);
+  getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
+    `Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`
+  );
 }
 
 function makeKey(oldPath: string, newPath: string): string {

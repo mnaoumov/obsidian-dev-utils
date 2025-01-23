@@ -159,7 +159,11 @@ export async function checkGitRepoClean(): Promise<void> {
  * @returns A promise that resolves when the copy operation is complete.
  */
 export async function copyUpdatedManifest(): Promise<void> {
-  await cp(resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson), resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.DistBuild, ObsidianPluginRepoPaths.ManifestJson)), { force: true });
+  await cp(
+    resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson),
+    resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.DistBuild, ObsidianPluginRepoPaths.ManifestJson)),
+    { force: true }
+  );
 }
 
 /**
@@ -354,7 +358,9 @@ export async function updateChangelog(newVersion: string): Promise<void> {
   const _debugger = getLibDebugger('Version');
   if (!codeVersion) {
     _debugger('Could not find Visual Studio Code in your PATH. Using console mode instead.');
-    await createInterface(process.stdin, process.stdout).question(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Press Enter when you are done...`);
+    await createInterface(process.stdin, process.stdout).question(
+      `Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Press Enter when you are done...`
+    );
   } else {
     _debugger(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Close Visual Studio Code when you are done...`);
     await execFromRoot(['code', '-w', changelogPath], {

@@ -37,7 +37,8 @@ export interface EditJsonOptions {
 export async function editJson<T>(
   path: string,
   editFn: (data: T) => MaybePromise<void>,
-  options: EditJsonOptions = {}): Promise<void> {
+  options: EditJsonOptions = {}
+): Promise<void> {
   const {
     shouldSkipIfMissing
   } = options;
@@ -61,7 +62,8 @@ export async function editJson<T>(
 export function editJsonSync<T>(
   path: string,
   editFn: (data: T) => void,
-  options: EditJsonOptions = {}): void {
+  options: EditJsonOptions = {}
+): void {
   const {
     shouldSkipIfMissing
   } = options;

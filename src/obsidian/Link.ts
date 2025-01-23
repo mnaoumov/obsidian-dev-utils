@@ -3,7 +3,7 @@
  * This module provides utilities for handling and updating links within Obsidian vaults. It includes
  * functions to split paths, update links in files, and generate markdown links with various options.
  * The functions integrate with Obsidian's API to ensure that links are managed correctly within the vault.
- **/
+ */
 
 import type {
   Link,
@@ -156,9 +156,9 @@ export interface GenerateMarkdownLinkOptions {
   isWikilink?: boolean;
 
   /**
-    * The original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
-    * These inferred values will be overridden by corresponding settings if specified.
-    */
+   * The original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
+   * These inferred values will be overridden by corresponding settings if specified.
+   */
   originalLink?: string;
 
   /**
@@ -412,7 +412,12 @@ export function convertLink(options: ConvertLinkOptions): string {
  * @returns A promise that resolves when the backlinks have been edited.
  */
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function editBacklinks(app: App, pathOrFile: PathOrFile, linkConverter: (link: Reference) => MaybePromise<string | void>, processOptions: ProcessOptions = {}): Promise<void> {
+export async function editBacklinks(
+  app: App,
+  pathOrFile: PathOrFile,
+  linkConverter: (link: Reference) => MaybePromise<string | void>,
+  processOptions: ProcessOptions = {}
+): Promise<void> {
   const backlinks = await getBacklinksForFileSafe(app, pathOrFile, processOptions);
   for (const backlinkNotePath of backlinks.keys()) {
     const currentLinks = backlinks.get(backlinkNotePath) ?? [];
@@ -442,7 +447,8 @@ export async function editLinks(
   pathOrFile: PathOrFile,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   linkConverter: (link: Reference) => MaybePromise<string | void>,
-  processOptions: ProcessOptions = {}): Promise<void> {
+  processOptions: ProcessOptions = {}
+): Promise<void> {
   await applyFileChanges(app, pathOrFile, async () => {
     const cache = await getCacheSafe(app, pathOrFile);
     if (!cache) {
@@ -486,7 +492,8 @@ export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: Pat
 export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): string {
   const { app } = options;
 
-  const configurableDefaultOptionsFn = (app.fileManager.generateMarkdownLink as Partial<GenerateMarkdownLinkDefaultOptionsWrapper>).defaultOptionsFn ?? ((): Partial<GenerateMarkdownLinkOptions> => ({}));
+  const configurableDefaultOptionsFn = (app.fileManager.generateMarkdownLink as Partial<GenerateMarkdownLinkDefaultOptionsWrapper>).defaultOptionsFn
+    ?? ((): Partial<GenerateMarkdownLinkOptions> => ({}));
   const configurableDefaultOptions = configurableDefaultOptionsFn();
 
   const DEFAULT_OPTIONS: Partial<GenerateMarkdownLinkOptions> = {
@@ -510,8 +517,8 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
     let linkText = targetFile.path === sourcePath && subpath
       ? subpath
       : shouldForceRelativePath
-        ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(app, targetFile) : targetFile.path) + subpath
-        : app.metadataCache.fileToLinktext(targetFile, sourcePath, isWikilink) + subpath;
+      ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(app, targetFile) : targetFile.path) + subpath
+      : app.metadataCache.fileToLinktext(targetFile, sourcePath, isWikilink) + subpath;
 
     if (shouldForceRelativePath && shouldUseLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
       linkText = './' + linkText;
@@ -796,14 +803,14 @@ export function updateLink(options: UpdateLinkOptions): string {
   }
 
   let alias = shouldResetAlias(normalizeOptionalProperties<ShouldResetAliasOptions>({
-    app,
-    displayText: link.displayText,
-    isWikilink,
-    newSourcePathOrFile,
-    oldSourcePathOrFile,
-    oldTargetPath,
-    targetPathOrFile: targetFile
-  }))
+      app,
+      displayText: link.displayText,
+      isWikilink,
+      newSourcePathOrFile,
+      oldSourcePathOrFile,
+      oldTargetPath,
+      targetPathOrFile: targetFile
+    }))
     ? undefined
     : link.displayText;
 

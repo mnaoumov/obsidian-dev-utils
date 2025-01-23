@@ -55,7 +55,13 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | 
  * @param shouldDeleteEmptyFolders - Optional. If `true`, empty folders will be deleted.
  * @returns A promise that resolves to a boolean indicating whether the removal was successful.
  */
-export async function deleteSafe(app: App, pathOrFile: PathOrAbstractFile, deletedNotePath?: string, shouldReportUsedAttachments?: boolean, shouldDeleteEmptyFolders?: boolean): Promise<boolean> {
+export async function deleteSafe(
+  app: App,
+  pathOrFile: PathOrAbstractFile,
+  deletedNotePath?: string,
+  shouldReportUsedAttachments?: boolean,
+  shouldDeleteEmptyFolders?: boolean
+): Promise<boolean> {
   const file = getAbstractFileOrNull(app, pathOrFile);
 
   if (!file) {

@@ -13,7 +13,7 @@ import { replaceAll } from './String.ts';
 
 /**
  * Specifies how functions should be handled in the JSON output.
-   */
+ */
 export enum FunctionHandlingMode {
   /**
    * Excludes functions from the JSON output.
@@ -359,12 +359,13 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
   const plainObject = toPlainObject(value, '', 0, true);
   let json = JSON.stringify(plainObject, null, fullOptions.space) ?? '';
-  json = replaceAll(json, /"\[\[([A-Za-z]+)(\d*)\]\]"/g, (_, key, indexStr) => applySubstitutions({
-    functionTexts,
-    index: indexStr ? parseInt(indexStr) : 0,
-    key: key as TokenSubstitutionKey,
-    substitutions: fullOptions.tokenSubstitutions
-  }));
+  json = replaceAll(json, /"\[\[([A-Za-z]+)(\d*)\]\]"/g, (_, key, indexStr) =>
+    applySubstitutions({
+      functionTexts,
+      index: indexStr ? parseInt(indexStr) : 0,
+      key: key as TokenSubstitutionKey,
+      substitutions: fullOptions.tokenSubstitutions
+    }));
   return json;
 
   function toPlainObject(value: unknown, key: string, depth: number, canUseToJSON: boolean): unknown {
@@ -381,7 +382,9 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
         return undefined;
       }
       const index = functionTexts.length;
-      const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full ? value.toString() : `function ${value.name || 'anonymous'}() { /* ... */ }`;
+      const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full
+        ? value.toString()
+        : `function ${value.name || 'anonymous'}() { /* ... */ }`;
       functionTexts.push(functionText);
       return makePlaceholder(TokenSubstitutionKey.Function, index);
     }

@@ -84,7 +84,12 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
  * @returns A promise that resolves when the front matter has been processed and saved.
  */
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export async function processFrontmatter<CustomFrontmatter = unknown>(app: App, pathOrFile: PathOrFile, frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => MaybePromise<null | void>, processOptions: ProcessOptions = {}): Promise<void> {
+export async function processFrontmatter<CustomFrontmatter = unknown>(
+  app: App,
+  pathOrFile: PathOrFile,
+  frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => MaybePromise<null | void>,
+  processOptions: ProcessOptions = {}
+): Promise<void> {
   const file = getFile(app, pathOrFile);
 
   await process(app, file, async (content) => {

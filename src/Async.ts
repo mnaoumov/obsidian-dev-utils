@@ -167,7 +167,7 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await runWithTimeout(fullOptions.timeoutInMilliseconds, async () => {
     let attempt = 0;
-    for (; ;) {
+    for (;;) {
       fullOptions.abortSignal?.throwIfAborted();
       attempt++;
       let isSuccess: boolean;
@@ -188,9 +188,12 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
         return;
       }
 
-      retryWithTimeoutDebugger(`Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`, {
-        fn
-      });
+      retryWithTimeoutDebugger(
+        `Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`,
+        {
+          fn
+        }
+      );
       retryWithTimeoutDebugger.printStackTrace(stackTrace);
       await sleep(fullOptions.retryDelayInMilliseconds);
     }
@@ -238,7 +241,9 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn });
     const _debugger = getLibDebugger('Async:runWithTimeout:timeout');
     if (_debugger.enabled) {
-      _debugger(`The execution is not terminated because debugger ${_debugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging for more information`);
+      _debugger(
+        `The execution is not terminated because debugger ${_debugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging for more information`
+      );
       await timeout();
     }
   }

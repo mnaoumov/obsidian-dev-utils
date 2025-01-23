@@ -85,7 +85,9 @@ export function showInitialDebugMessage(pluginId: string): void {
   const changeAction = isEnabled ? 'disable' : 'enable';
   const namespaces = getNamespaces();
   setNamespaces(pluginId);
-  getDebugger(pluginId)(`Debug messages for plugin ${pluginId} are ${state}. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging how to ${changeAction} them.`);
+  getDebugger(pluginId)(
+    `Debug messages for plugin ${pluginId} are ${state}. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging how to ${changeAction} them.`
+  );
   setNamespaces(namespaces);
 }
 

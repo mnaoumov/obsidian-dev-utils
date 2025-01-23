@@ -208,7 +208,7 @@ export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: 
     let folderPath = dirname(newPath);
     let nonExistingPath = basename(newPath);
     let folder: null | TFolder = null;
-    for (; ;) {
+    for (;;) {
       folder = getFolderOrNull(app, folderPath, true);
       if (folder) {
         break;
@@ -276,7 +276,12 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
  *
  * @throws Will throw an error if the process fails after the specified number of retries or timeout.
  */
-export async function process(app: App, pathOrFile: PathOrFile, newContentProvider: ValueProvider<null | string, [string]>, options: ProcessOptions = {}): Promise<void> {
+export async function process(
+  app: App,
+  pathOrFile: PathOrFile,
+  newContentProvider: ValueProvider<null | string, [string]>,
+  options: ProcessOptions = {}
+): Promise<void> {
   const DEFAULT_RETRY_OPTIONS = {
     shouldFailOnMissingFile: true
   };

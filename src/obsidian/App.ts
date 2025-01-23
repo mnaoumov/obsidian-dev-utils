@@ -25,7 +25,7 @@ interface ObsidianDevUtilsStateWrapper {
  * Wrapper type for storing shared state in the Obsidian app.
  */
 export class ValueWrapper<T> {
-  public constructor(public value: T) { }
+  public constructor(public value: T) {}
 }
 
 /**

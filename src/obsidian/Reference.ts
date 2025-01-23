@@ -17,12 +17,12 @@ import type {
 } from './FileChange.ts';
 
 /**
-* Converts a reference to a file change.
-*
-* @param reference - The reference to convert.
-* @param newContent - The new content for the reference.
-* @returns The file change.
-*/
+ * Converts a reference to a file change.
+ *
+ * @param reference - The reference to convert.
+ * @param newContent - The new content for the reference.
+ * @returns The file change.
+ */
 export function referenceToFileChange(reference: Reference, newContent: string): FileChange {
   if (isReferenceCache(reference)) {
     return {
