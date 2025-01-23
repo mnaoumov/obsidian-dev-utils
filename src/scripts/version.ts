@@ -407,6 +407,7 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
   await checkGitInstalled();
   await checkGitRepoClean();
   await checkGitHubCliInstalled();
+  await execFromRoot('npm run format:check');
   await execFromRoot('npm run spellcheck');
   await execFromRoot('npm run build');
   await execFromRoot('npm run lint');

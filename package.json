@@ -425,6 +425,7 @@
     "build:types": "tsx scripts/build-types.ts",
     "build:validate": "tsc --build --force",
     "format": "tsx scripts/cli.ts format",
+    "format:check": "tsx scripts/cli.ts format:check",
     "lint": "tsx scripts/lint.ts",
     "lint:fix": "tsx scripts/lint.ts fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
