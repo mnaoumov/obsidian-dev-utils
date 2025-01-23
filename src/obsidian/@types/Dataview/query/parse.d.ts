@@ -1,23 +1,36 @@
-import * as P from "parsimmon";
-import type { FlattenStep, GroupStep, LimitStep, NamedField, Query, QueryHeader, QueryOperation, QuerySortBy, QueryType, SortByStep, WhereStep, Comment } from "./query.d.ts";
-import type { Source } from "../data-index/source.d.ts";
-import type { Result } from "../api/result.d.ts";
+import * as P from 'parsimmon';
+import type { Result } from '../api/result.d.ts';
+import type { Source } from '../data-index/source.d.ts';
+import type {
+  Comment,
+  FlattenStep,
+  GroupStep,
+  LimitStep,
+  NamedField,
+  Query,
+  QueryHeader,
+  QueryOperation,
+  QuerySortBy,
+  QueryType,
+  SortByStep,
+  WhereStep
+} from './query.d.ts';
 /** Typings for the outputs of all of the parser combinators. */
 interface QueryLanguageTypes {
-    queryType: QueryType;
-    comment: Comment;
-    explicitNamedField: NamedField;
-    namedField: NamedField;
-    sortField: QuerySortBy;
-    headerClause: QueryHeader;
-    fromClause: Source;
-    whereClause: WhereStep;
-    sortByClause: SortByStep;
-    limitClause: LimitStep;
-    flattenClause: FlattenStep;
-    groupByClause: GroupStep;
-    clause: QueryOperation;
-    query: Query;
+  queryType: QueryType;
+  comment: Comment;
+  explicitNamedField: NamedField;
+  namedField: NamedField;
+  sortField: QuerySortBy;
+  headerClause: QueryHeader;
+  fromClause: Source;
+  whereClause: WhereStep;
+  sortByClause: SortByStep;
+  limitClause: LimitStep;
+  flattenClause: FlattenStep;
+  groupByClause: GroupStep;
+  clause: QueryOperation;
+  query: Query;
 }
 /** Return a new parser which executes the underlying parser and returns it's raw string representation. */
 export declare function captureRaw<T>(base: P.Parser<T>): P.Parser<[T, string]>;

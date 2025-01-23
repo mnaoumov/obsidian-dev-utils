@@ -423,23 +423,29 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
       itemsPerPageSelect.createEl('option', { text: option.toString(), value: option.toString() });
     });
     itemsPerPageSelect.value = itemsPerPage.toString();
-    itemsPerPageSelect.addEventListener('change', convertAsyncToSync(async (): Promise<void> => {
-      itemsPerPage = parseInt(itemsPerPageSelect.value);
-      totalPages = Math.ceil(rows.length / itemsPerPage);
-      await renderPage(1);
-    }));
+    itemsPerPageSelect.addEventListener(
+      'change',
+      convertAsyncToSync(async (): Promise<void> => {
+        itemsPerPage = parseInt(itemsPerPageSelect.value);
+        totalPages = Math.ceil(rows.length / itemsPerPage);
+        await renderPage(1);
+      })
+    );
 
     paginationRow2Div.createEl('span', { text: '  Jump to page: ' });
 
     const jumpToPageInput = paginationRow2Div.createEl('input', { attr: { max: totalPages, min: 1 }, type: 'number' });
-    jumpToPageInput.addEventListener('keydown', convertAsyncToSync(async (event: KeyboardEvent): Promise<void> => {
-      if (event.key === 'Enter') {
-        const page = parseInt(jumpToPageInput.value);
-        if (page >= 1 && page <= totalPages) {
-          await renderPage(page);
+    jumpToPageInput.addEventListener(
+      'keydown',
+      convertAsyncToSync(async (event: KeyboardEvent): Promise<void> => {
+        if (event.key === 'Enter') {
+          const page = parseInt(jumpToPageInput.value);
+          if (page >= 1 && page <= totalPages) {
+            await renderPage(page);
+          }
         }
-      }
-    }));
+      })
+    );
 
     paginationRow2Div.createEl('span', { text: `  Page ${pageNumber.toString()} of ${totalPages.toString()}, Total items: ${rows.length.toString()}` });
 
@@ -451,10 +457,13 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
           event.preventDefault();
         };
       } else {
-        link.addEventListener('click', convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
-          event.preventDefault();
-          await renderPage(pageNumber);
-        }));
+        link.addEventListener(
+          'click',
+          convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
+            event.preventDefault();
+            await renderPage(pageNumber);
+          })
+        );
       }
       return link;
     }

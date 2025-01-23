@@ -3,7 +3,7 @@
  * Fixed typings for the `debug` package.
  */
 
-export { };
+export {};
 
 declare module 'debug' {
   interface Debug {

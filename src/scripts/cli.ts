@@ -62,30 +62,32 @@ enum CommandNames {
  * @param argv - The command-line arguments to parse. Defaults to `process.argv` minus the first two elements.
  */
 export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_COUNT)): void {
-  invokeAsyncSafely(() => wrapCliTask(async () => {
-    const packageJson = await readPackageJson(getDirname(import.meta.url));
-    const program = new Command();
+  invokeAsyncSafely(() =>
+    wrapCliTask(async () => {
+      const packageJson = await readPackageJson(getDirname(import.meta.url));
+      const program = new Command();
 
-    program
-      .name(packageJson.name ?? '(unknown)')
-      .description('CLI for Obsidian plugin development utilities')
-      .version(packageJson.version ?? '(unknown)');
+      program
+        .name(packageJson.name ?? '(unknown)')
+        .description('CLI for Obsidian plugin development utilities')
+        .version(packageJson.version ?? '(unknown)');
 
-    addCommand(program, CommandNames.Build, 'Build the plugin', () => buildObsidianPlugin({ mode: BuildMode.Production }));
-    addCommand(program, CommandNames.BuildClean, 'Clean the dist folder', () => buildClean());
-    addCommand(program, CommandNames.BuildStatic, 'Copy static content to dist', () => buildStatic());
-    addCommand(program, CommandNames.BuildValidate, 'Validates if TypeScript code compiles', () => buildValidate());
-    addCommand(program, CommandNames.Dev, 'Build the plugin in development mode', () => buildObsidianPlugin({ mode: BuildMode.Development }));
-    addCommand(program, CommandNames.Lint, 'Lint the source code', () => lint());
-    addCommand(program, CommandNames.LintFix, 'Lint the source code and apply automatic fixes', () => lint(true));
-    addCommand(program, CommandNames.Publish, 'Publish to NPM', (isBeta: boolean) => publish(isBeta))
-      .argument('[isBeta]', 'Publish to NPM beta');
-    addCommand(program, CommandNames.Spellcheck, 'Spellcheck the source code', () => spellcheck());
-    addCommand(program, CommandNames.Version, 'Release a new version', (versionUpdateType: string) => updateVersion(versionUpdateType))
-      .argument('[versionUpdateType]', 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]');
-    await program.parseAsync(argv, { from: 'user' });
-    return CliTaskResult.DoNotExit();
-  }));
+      addCommand(program, CommandNames.Build, 'Build the plugin', () => buildObsidianPlugin({ mode: BuildMode.Production }));
+      addCommand(program, CommandNames.BuildClean, 'Clean the dist folder', () => buildClean());
+      addCommand(program, CommandNames.BuildStatic, 'Copy static content to dist', () => buildStatic());
+      addCommand(program, CommandNames.BuildValidate, 'Validates if TypeScript code compiles', () => buildValidate());
+      addCommand(program, CommandNames.Dev, 'Build the plugin in development mode', () => buildObsidianPlugin({ mode: BuildMode.Development }));
+      addCommand(program, CommandNames.Lint, 'Lint the source code', () => lint());
+      addCommand(program, CommandNames.LintFix, 'Lint the source code and apply automatic fixes', () => lint(true));
+      addCommand(program, CommandNames.Publish, 'Publish to NPM', (isBeta: boolean) => publish(isBeta))
+        .argument('[isBeta]', 'Publish to NPM beta');
+      addCommand(program, CommandNames.Spellcheck, 'Spellcheck the source code', () => spellcheck());
+      addCommand(program, CommandNames.Version, 'Release a new version', (versionUpdateType: string) => updateVersion(versionUpdateType))
+        .argument('[versionUpdateType]', 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]');
+      await program.parseAsync(argv, { from: 'user' });
+      return CliTaskResult.DoNotExit();
+    })
+  );
 }
 
 /**
@@ -98,7 +100,12 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
  * @returns The `commander` command instance for further chaining.
  */
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters, @typescript-eslint/no-invalid-void-type
-function addCommand<Args extends unknown[]>(program: Command, name: string, description: string, taskFn: (...args: Args) => MaybePromise<CliTaskResult | void>): Command {
+function addCommand<Args extends unknown[]>(
+  program: Command,
+  name: string,
+  description: string,
+  taskFn: (...args: Args) => MaybePromise<CliTaskResult | void>
+): Command {
   return program.command(name)
     .description(description)
     .action((...args: Args) => wrapCliTask(() => taskFn(...args)));

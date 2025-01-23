@@ -53,17 +53,19 @@ export type DirentResultOptions = {
 /**
  * Options for controlling the format of the result when returning strings.
  */
-export type StringResultOptions = {
-  /**
-   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
-   */
-  recursive?: boolean;
+export type StringResultOptions =
+  | {
+    /**
+     * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+     */
+    recursive?: boolean;
 
-  /**
-   * Should be set to `false` to return strings.
-   */
-  withFileTypes?: false;
-} & ObjectEncodingOptions | undefined;
+    /**
+     * Should be set to `false` to return strings.
+     */
+    withFileTypes?: false;
+  } & ObjectEncodingOptions
+  | undefined;
 
 /**
  * Common options for controlling the format of the result.

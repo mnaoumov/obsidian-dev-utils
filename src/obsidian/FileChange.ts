@@ -30,13 +30,13 @@ import { process } from './Vault.ts';
  */
 export interface ContentChange extends FileChange {
   /**
-     * The end index of the change in the file content.
-     */
+   * The end index of the change in the file content.
+   */
   endIndex: number;
 
   /**
-     * The start index of the change in the file content.
-     */
+   * The start index of the change in the file content.
+   */
   startIndex: number;
 }
 
@@ -75,7 +75,12 @@ export interface FrontmatterChange extends FileChange {
  *
  * @returns A promise that resolves when the file changes have been successfully applied.
  */
-export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changesProvider: ValueProvider<FileChange[]>, processOptions: ProcessOptions = {}): Promise<void> {
+export async function applyFileChanges(
+  app: App,
+  pathOrFile: PathOrFile,
+  changesProvider: ValueProvider<FileChange[]>,
+  processOptions: ProcessOptions = {}
+): Promise<void> {
   await process(app, pathOrFile, async (content) => {
     let changes = await resolveValue(changesProvider);
     const frontmatter = isCanvasFile(app, pathOrFile) ? JSON.parse(content) as Record<string, unknown> : parseFrontmatter(content);
@@ -142,7 +147,10 @@ export async function applyFileChanges(app: App, pathOrFile: PathOrFile, changes
         continue;
       }
 
-      if (isContentChange(previousChange) && isContentChange(change) && previousChange.endIndex && change.startIndex && previousChange.endIndex > change.startIndex) {
+      if (
+        isContentChange(previousChange) && isContentChange(change) && previousChange.endIndex && change.startIndex
+        && previousChange.endIndex > change.startIndex
+      ) {
         console.warn('Overlapping changes', {
           change,
           previousChange

@@ -1,19 +1,19 @@
 /** Parse inline fields and other embedded metadata in a line. */
-import type { Literal } from "../data-model/value.d.ts";
+import type { Literal } from '../data-model/value.d.ts';
 /** A parsed inline field. */
 export interface InlineField {
-    /** The raw parsed key. */
-    key: string;
-    /** The raw value of the field. */
-    value: string;
-    /** The start column of the field. */
-    start: number;
-    /** The start column of the *value* for the field. */
-    startValue: number;
-    /** The end column of the field. */
-    end: number;
-    /** If this inline field was defined via a wrapping ('[' or '('), then the wrapping that was used. */
-    wrapping?: string;
+  /** The raw parsed key. */
+  key: string;
+  /** The raw value of the field. */
+  value: string;
+  /** The start column of the field. */
+  start: number;
+  /** The start column of the *value* for the field. */
+  startValue: number;
+  /** The end column of the field. */
+  end: number;
+  /** If this inline field was defined via a wrapping ('[' or '('), then the wrapping that was used. */
+  wrapping?: string;
 }
 /** The wrapper characters that can be used to define an inline field. */
 export declare const INLINE_FIELD_WRAPPERS: Readonly<Record<string, string>>;
@@ -34,8 +34,8 @@ export declare const DONE_DATE_REGEX: RegExp;
 export declare const SCHEDULED_DATE_REGEX: RegExp;
 export declare const START_DATE_REGEX: RegExp;
 export declare const EMOJI_REGEXES: {
-    regex: RegExp;
-    key: string;
+  regex: RegExp;
+  key: string;
 }[];
 /** Sets or replaces the value of an inline field; if the value is 'undefined', deletes the key. */
 export declare function setInlineField(source: string, key: string, value?: string): string;

@@ -79,11 +79,11 @@ export function isAbsolute(path: string): boolean {
 export const join = posix.join;
 
 /**
-  * Normalizes a path, resolving '..' and '.' segments.
-  *
-  * @param path - The path to normalize.
-  * @returns The normalized path.
-  */
+ * Normalizes a path, resolving '..' and '.' segments.
+ *
+ * @param path - The path to normalize.
+ * @returns The normalized path.
+ */
 export const normalize = posix.normalize;
 
 /**

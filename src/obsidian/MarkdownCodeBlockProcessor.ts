@@ -46,7 +46,12 @@ export function getCodeBlockArguments(ctx: MarkdownPostProcessorContext, el: HTM
  * @param el - The HTMLElement representing the code block.
  * @param codeBlockProvider - The ValueProvider that provides the new code block.
  */
-export async function replaceCodeBlock(app: App, ctx: MarkdownPostProcessorContext, el: HTMLElement, codeBlockProvider: ValueProvider<string, [string]>): Promise<void> {
+export async function replaceCodeBlock(
+  app: App,
+  ctx: MarkdownPostProcessorContext,
+  el: HTMLElement,
+  codeBlockProvider: ValueProvider<string, [string]>
+): Promise<void> {
   const sectionInfo = ctx.getSectionInfo(el);
   if (!sectionInfo) {
     return;

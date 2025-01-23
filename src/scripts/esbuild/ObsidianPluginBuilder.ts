@@ -139,7 +139,10 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       js: banner
     },
     bundle: true,
-    entryPoints: [resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs)) ?? throwExpression(new Error('Could not determine the entry point for the plugin'))],
+    entryPoints: [
+      resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs))
+        ?? throwExpression(new Error('Could not determine the entry point for the plugin'))
+    ],
     external: [
       'obsidian',
       'electron',

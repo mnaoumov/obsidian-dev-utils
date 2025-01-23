@@ -226,10 +226,18 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOption
       return false;
     } else if (file.stat.mtime < stat.mtime) {
       app.vault.onChange('modified', file.path, undefined, stat);
-      _debugger(`Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${new Date(stat.mtime).toString()}`);
+      _debugger(
+        `Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${
+          new Date(stat.mtime).toString()
+        }`
+      );
       return false;
     } else if (fileInfo.mtime < stat.mtime) {
-      _debugger(`File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${new Date(stat.mtime).toString()}`);
+      _debugger(
+        `File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${
+          new Date(stat.mtime).toString()
+        }`
+      );
       return false;
     } else {
       cache = app.metadataCache.getFileCache(file);

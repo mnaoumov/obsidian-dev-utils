@@ -1,12 +1,15 @@
 /** Collect data matching a source query. */
-import type { FullIndex } from "../data-index/index.d.ts";
-import type { Result } from "../api/result.d.ts";
-import type { Source } from "./source.d.ts";
-import type { DataObject, Literal } from "../data-model/value.d.ts";
+import type { Result } from '../api/result.d.ts';
+import type { FullIndex } from '../data-index/index.d.ts';
+import type {
+  DataObject,
+  Literal
+} from '../data-model/value.d.ts';
+import type { Source } from './source.d.ts';
 /** A data row which has an ID and associated data (like page link / page data). */
 export type Datarow<T> = {
-    id: Literal;
-    data: T;
+  id: Literal;
+  data: T;
 };
 /** Find source paths which match the given source. */
 export declare function matchingSourcePaths(source: Source, index: FullIndex, originFile?: string): Result<Set<string>, string>;

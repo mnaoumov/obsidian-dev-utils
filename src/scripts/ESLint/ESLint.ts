@@ -76,7 +76,11 @@ export async function lint(shouldFix?: boolean, customConfigs?: Linter.Config[])
 
     for (const message of lintResult.messages) {
       const canAutoFix = message.fix !== undefined;
-      _debugger(`${toRelativeFromRoot(lintResult.filePath) ?? lintResult.filePath}:${(message.line as null | number)?.toString() ?? '(null)'}:${(message.column as null | number)?.toString() ?? '(null)'} - ${message.message} [${message.ruleId ?? '(unknown rule)'}]${canAutoFix ? ' (auto-fixable)' : ''}`);
+      _debugger(
+        `${toRelativeFromRoot(lintResult.filePath) ?? lintResult.filePath}:${(message.line as null | number)?.toString() ?? '(null)'}:${
+          (message.column as null | number)?.toString() ?? '(null)'
+        } - ${message.message} [${message.ruleId ?? '(unknown rule)'}]${canAutoFix ? ' (auto-fixable)' : ''}`
+      );
       errorsCount++;
     }
   }

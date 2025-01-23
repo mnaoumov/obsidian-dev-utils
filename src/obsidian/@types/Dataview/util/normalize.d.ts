@@ -1,6 +1,9 @@
-import type { DateTime, Duration } from "luxon";
-import type { Result } from "../api/result.d.ts";
-import type { QuerySettings } from "../settings.d.ts";
+import type {
+  DateTime,
+  Duration
+} from 'luxon';
+import type { Result } from '../api/result.d.ts';
+import type { QuerySettings } from '../settings.d.ts';
 /** Normalize a duration to all of the proper units. */
 export declare function normalizeDuration(dur: Duration): Duration;
 /** Strip the time components of a date time object. */

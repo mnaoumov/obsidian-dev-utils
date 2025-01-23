@@ -13,7 +13,6 @@ import { normalizeOptionalProperties } from '../Object.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   editJson,
-
   editJsonSync,
   readJson,
   readJsonSync,
@@ -61,7 +60,8 @@ export interface PackageLockJson extends Partial<PackageJson> {
  */
 export async function editNpmShrinkWrapJson(
   editFn: (PackageLockJson: PackageLockJson) => MaybePromise<void>,
-  options: EditPackageJsonOptions = {}): Promise<void> {
+  options: EditPackageJsonOptions = {}
+): Promise<void> {
   const {
     cwd,
     shouldSkipIfMissing
@@ -77,7 +77,9 @@ export async function editNpmShrinkWrapJson(
  * @returns A promise that resolves when the file has been edited and written.
  */
 export async function editPackageJson(
-  editFn: (packageJson: PackageJson) => MaybePromise<void>, options: EditPackageJsonOptions = {}): Promise<void> {
+  editFn: (packageJson: PackageJson) => MaybePromise<void>,
+  options: EditPackageJsonOptions = {}
+): Promise<void> {
   const {
     cwd,
     shouldSkipIfMissing
@@ -93,7 +95,9 @@ export async function editPackageJson(
  * @returns A promise that resolves when the file has been edited and written.
  */
 export function editPackageJsonSync(
-  editFn: (packageJson: PackageJson) => void, options: EditPackageJsonOptions = {}): void {
+  editFn: (packageJson: PackageJson) => void,
+  options: EditPackageJsonOptions = {}
+): void {
   const {
     cwd,
     shouldSkipIfMissing
@@ -110,7 +114,8 @@ export function editPackageJsonSync(
  */
 export async function editPackageLockJson(
   editFn: (PackageLockJson: PackageLockJson) => MaybePromise<void>,
-  options: EditPackageJsonOptions = {}): Promise<void> {
+  options: EditPackageJsonOptions = {}
+): Promise<void> {
   const {
     cwd,
     shouldSkipIfMissing
@@ -127,7 +132,8 @@ export async function editPackageLockJson(
  */
 export function editPackageLockJsonSync(
   editFn: (PackageLockJson: PackageLockJson) => void,
-  options: EditPackageJsonOptions = {}): void {
+  options: EditPackageJsonOptions = {}
+): void {
   const {
     cwd,
     shouldSkipIfMissing

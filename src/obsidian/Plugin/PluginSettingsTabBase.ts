@@ -16,7 +16,6 @@ import type { ValueComponentWithChangeTracking } from './ValueComponent.ts';
 import {
   convertAsyncToSync,
   invokeAsyncSafely
-
 } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { PluginBase } from './PluginBase.ts';

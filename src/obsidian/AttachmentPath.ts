@@ -43,7 +43,12 @@ export interface ExtendedWrapper {
 /**
  * Get available path for attachments function.
  */
-export type GetAvailablePathForAttachmentsExtendedFn = (filename: string, extension: string, file: null | TFile, shouldSkipFolderCreation?: boolean) => Promise<string>;
+export type GetAvailablePathForAttachmentsExtendedFn = (
+  filename: string,
+  extension: string,
+  file: null | TFile,
+  shouldSkipFolderCreation?: boolean
+) => Promise<string>;
 
 /**
  * Retrieves the file path for an attachment within a note.
@@ -89,7 +94,13 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
  * @param shouldSkipFolderCreation - Should folder creation be skipped?
  * @returns A promise that resolves to the available path for attachments.
  */
-export async function getAvailablePathForAttachments(app: App, filename: string, extension: string, file: null | TFile, shouldSkipFolderCreation: boolean): Promise<string> {
+export async function getAvailablePathForAttachments(
+  app: App,
+  filename: string,
+  extension: string,
+  file: null | TFile,
+  shouldSkipFolderCreation: boolean
+): Promise<string> {
   let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
   const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
   let relativePath = null;
