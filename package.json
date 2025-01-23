@@ -453,6 +453,7 @@
     "cspell": "^8.17.2",
     "debug": "^4.4.0",
     "dotenv": "^16.4.7",
+    "dprint": "^0.48.0",
     "enhanced-resolve": "^5.18.0",
     "esbuild": "^0.24.2",
     "eslint": "^9.18.0",
