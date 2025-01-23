@@ -69,6 +69,8 @@ export const configs: Linter.Config[] = tseslint.config(
       'modules-newlines': eslintPluginModulesNewlines
     },
     rules: {
+      '@stylistic/indent': 'off',
+      '@stylistic/indent-binary-ops': 'off',
       '@stylistic/no-extra-semi': 'error',
       '@stylistic/object-curly-newline': [
         'error',
