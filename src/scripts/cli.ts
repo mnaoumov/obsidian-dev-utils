@@ -26,12 +26,12 @@ import {
   buildObsidianPlugin
 } from './esbuild/ObsidianPluginBuilder.ts';
 import { lint } from './ESLint/ESLint.ts';
+import { format } from './format.ts';
 import { process } from './NodeModules.ts';
 import { readPackageJson } from './Npm.ts';
 import { publish } from './NpmPublish.ts';
 import { spellcheck } from './spellcheck.ts';
 import { updateVersion } from './version.ts';
-
 /**
  * The number of leading arguments to skip when parsing command-line arguments.
  * The first two elements typically represent the Node.js executable and the script path:
@@ -48,6 +48,7 @@ enum CommandNames {
   BuildStatic = 'build:static',
   BuildValidate = 'build:validate',
   Dev = 'dev',
+  Format = 'format',
   Lint = 'lint',
   LintFix = 'lint:fix',
   Publish = 'publish',
@@ -77,6 +78,7 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
       addCommand(program, CommandNames.BuildStatic, 'Copy static content to dist', () => buildStatic());
       addCommand(program, CommandNames.BuildValidate, 'Validates if TypeScript code compiles', () => buildValidate());
       addCommand(program, CommandNames.Dev, 'Build the plugin in development mode', () => buildObsidianPlugin({ mode: BuildMode.Development }));
+      addCommand(program, CommandNames.Format, 'Format the source code', () => format());
       addCommand(program, CommandNames.Lint, 'Lint the source code', () => lint());
       addCommand(program, CommandNames.LintFix, 'Lint the source code and apply automatic fixes', () => lint(true));
       addCommand(program, CommandNames.Publish, 'Publish to NPM', (isBeta: boolean) => publish(isBeta))
