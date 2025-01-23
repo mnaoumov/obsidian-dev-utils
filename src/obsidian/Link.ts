@@ -411,10 +411,11 @@ export function convertLink(options: ConvertLinkOptions): string {
  * @param processOptions - Optional options for retrying the operation.
  * @returns A promise that resolves when the backlinks have been edited.
  */
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+
 export async function editBacklinks(
   app: App,
   pathOrFile: PathOrFile,
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   linkConverter: (link: Reference) => MaybePromise<string | void>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
