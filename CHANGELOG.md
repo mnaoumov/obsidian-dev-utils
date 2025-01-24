@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.4.4
+
+- Disable line break before =
+
 ## 16.4.3
 
 - functionExpression.spaceAfterFunctionKeyword
