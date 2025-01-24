@@ -65,7 +65,7 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
       return;
     }
 
-    frontmatter.aliases = frontmatter.aliases.filter((a) => a != alias);
+    frontmatter.aliases = frontmatter.aliases.filter((a) => a !== alias);
 
     if (frontmatter.aliases.length === 0) {
       delete frontmatter.aliases;

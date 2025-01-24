@@ -193,7 +193,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
 export async function invokeEsbuild(buildContext: BuildContext, isProductionBuild: boolean): Promise<CliTaskResult> {
   if (isProductionBuild) {
     const result = await buildContext.rebuild();
-    const isSuccess = result.errors.length == 0 && result.warnings.length == 0;
+    const isSuccess = result.errors.length === 0 && result.warnings.length === 0;
     return CliTaskResult.Success(isSuccess);
   } else {
     await buildContext.watch();
