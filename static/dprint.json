@@ -1,5 +1,6 @@
 {
   "typescript": {
+    "constructSignature.spaceAfterNewKeyword": true,
     "constructorType.spaceAfterNewKeyword": true,
     "exportDeclaration.forceMultiLine": "whenMultiple",
     "importDeclaration.forceMultiLine": "whenMultiple",
