@@ -33,6 +33,10 @@ type ProcessEx = {
   browser: boolean;
 } & typeof process;
 
+interface RequirePatched extends NodeJS.Require {
+  __patched: boolean;
+}
+
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
  *
@@ -113,10 +117,15 @@ export function preprocessPlugin(): Plugin {
   }
 
   function patchRequireEsmDefault(): void {
+    if ((require as Partial<RequirePatched>).__patched) {
+      return;
+    }
     const __require = require;
-    require = Object.assign((id: string): unknown => {
+    require = Object.assign(requirePatched, __require, { __patched: true }) as RequirePatched;
+
+    function requirePatched(id: string): unknown {
       const module = __require(id) as (Partial<EsmModule> | undefined) ?? {};
       return __extractDefault(module);
-    }, __require) as NodeJS.Require;
+    }
   }
 }
