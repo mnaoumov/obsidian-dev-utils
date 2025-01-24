@@ -2,7 +2,10 @@
  * Format the source code.
  */
 
-import { join } from '../Path.ts';
+import {
+ getDirname,
+join
+} from '../Path.ts';
 import { existsSync } from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 import {
@@ -24,7 +27,11 @@ export async function format(rewrite = true): Promise<void> {
   }
   let dprintJsonPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.DprintJson);
   if (!existsSync(dprintJsonPath)) {
-    dprintJsonPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.DprintJson));
+    const packageDir = getRootDir(getDirname(import.meta.url));
+    if (!packageDir) {
+      throw new Error('Could not find package directory.');
+    }
+    dprintJsonPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.DprintJson), packageDir);
   }
 
   if (!existsSync(dprintJsonPath)) {
