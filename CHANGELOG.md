@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.4.3
+
+- functionExpression.spaceAfterFunctionKeyword
+
 ## 16.4.2
 
 - Space after new
