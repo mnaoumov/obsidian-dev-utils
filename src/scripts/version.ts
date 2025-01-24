@@ -407,10 +407,10 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
   await checkGitInstalled();
   await checkGitRepoClean();
   await checkGitHubCliInstalled();
-  await execFromRoot('npm run format:check');
-  await execFromRoot('npm run spellcheck');
-  await execFromRoot('npm run build');
-  await execFromRoot('npm run lint');
+  await runCommand('format:check');
+  await runCommand('spellcheck');
+  await runCommand('build');
+  await runCommand('lint');
 
   const newVersion = await getNewVersion(versionUpdateType);
   await updateVersionInFiles(newVersion);
@@ -475,6 +475,12 @@ async function getLatestObsidianVersion(): Promise<string> {
   const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');
   const obsidianReleasesJson = await response.json() as Partial<ObsidianReleasesJson>;
   return obsidianReleasesJson.name ?? throwExpression(new Error('Could not find the name of the latest Obsidian release'));
+}
+
+async function runCommand(command: string): Promise<void> {
+  const packageJson = await readPackageJson();
+  const isKnownCommand = Object.keys(packageJson.scripts ?? {}).includes(command);
+  await execFromRoot(['npm', 'run', ...(isKnownCommand ? [] : ['obsidian-dev-utils']), command]);
 }
 
 function toSingleLine(str: string): string {

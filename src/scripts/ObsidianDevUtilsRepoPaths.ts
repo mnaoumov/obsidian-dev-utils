@@ -36,6 +36,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `_dependencies.cjs` file within the `lib` directory in the `dist` directory. */
   DistLibDependenciesCjs = './dist/lib/_dependencies.cjs',
 
+  /** The path to the `dprint.json` file. */
+  DprintJson = 'dprint.json',
+
   /** The `.d.ts` file extension. */
   DtsExtension = '.d.ts',
 
