@@ -116,10 +116,11 @@ export function resolvePathFromRoot(path: string, cwd?: string): null | string {
  * Resolves a path relative to the root directory, returning the resolved path or the original path if it does not exist.
  *
  * @param path - The path to resolve.
+ * @param cwd - The current working directory to resolve from.
  * @returns The resolved path or the original path if it does not exist.
  */
-export function resolvePathFromRootSafe(path: string): string {
-  return resolvePathFromRoot(path) ?? path;
+export function resolvePathFromRootSafe(path: string, cwd?: string): string {
+  return resolvePathFromRoot(path, cwd) ?? path;
 }
 
 /**
