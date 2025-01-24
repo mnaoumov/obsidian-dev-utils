@@ -3,6 +3,7 @@
     "constructSignature.spaceAfterNewKeyword": true,
     "constructorType.spaceAfterNewKeyword": true,
     "exportDeclaration.forceMultiLine": "whenMultiple",
+    "functionExpression.spaceAfterFunctionKeyword": true,
     "importDeclaration.forceMultiLine": "whenMultiple",
     "lineWidth": 160,
     "quoteStyle": "alwaysSingle",
