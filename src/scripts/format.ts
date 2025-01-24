@@ -3,8 +3,8 @@
  */
 
 import {
- getDirname,
-join
+  getDirname,
+  join
 } from '../Path.ts';
 import { existsSync } from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
