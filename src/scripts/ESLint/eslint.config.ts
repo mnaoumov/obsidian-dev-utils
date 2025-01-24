@@ -107,6 +107,7 @@ export const configs: Linter.Config[] = tseslint.config(
         }
       ],
       'curly': ['error'],
+      'eqeqeq': 'error',
       'import-x/consistent-type-specifier-style': 'error',
       'import-x/extensions': ['error', 'ignorePackages'],
       'import-x/first': 'error',
