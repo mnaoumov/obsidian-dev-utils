@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.4.2
+
+- Space after new
+
 ## 16.4.1
 
 - Fix dir path
