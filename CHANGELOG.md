@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 16.4.1
+
+- Fix dir path
+- resolvePathFromRootSafe
+
 ## 16.4.0
 
 - Add `eqeqeq` rule
