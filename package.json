@@ -409,7 +409,7 @@
   },
   "files": [
     "dist/",
-    "!dist/*.zip",
+    "!dist/*.tgz",
     "CHANGELOG.md",
     "LICENSE",
     "README.md",
