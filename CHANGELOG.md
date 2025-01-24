@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 16.4.0
+
+- Add `eqeqeq` rule
+- Add `format:check` command
+- Add `format` script
+- Add `fullRender`
+
 ## 16.3.0
 
 - Generate exports for moduleResolution=node
