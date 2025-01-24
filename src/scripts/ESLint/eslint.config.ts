@@ -85,6 +85,15 @@ export const configs: Linter.Config[] = tseslint.config(
           }
         }
       ],
+      '@stylistic/operator-linebreak': [
+        'error',
+        'before',
+        {
+          overrides: {
+            '=': 'after'
+          }
+        }
+      ],
       '@stylistic/quotes': [
         'error',
         'single',
