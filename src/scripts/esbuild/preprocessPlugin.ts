@@ -26,6 +26,10 @@ interface EsmModule {
   default: unknown;
 }
 
+interface RequirePatched extends NodeJS.Require {
+  __isPatched: boolean;
+}
+
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
  *
@@ -99,16 +103,19 @@ function init(): void {
   const globalThisRecord = globalThis as unknown as Record<string, unknown>;
   globalThisRecord['__name'] ??= name;
 
+  if (!(require as Partial<RequirePatched>).__isPatched) {
+    const originalRequire = require;
+    require = Object.assign(
+      (id: string) => requirePatched(id, originalRequire),
+      originalRequire,
+      {
+        __isPatched: true
+      }
+    ) as RequirePatched;
+  }
+
   const newFuncs: Record<string, () => unknown> = {
     __extractDefault: () => extractDefault,
-    __requirePatched: () => {
-      const originalRequire = require;
-      require = Object.assign(
-        (id: string) => requirePatched(id, originalRequire),
-        originalRequire
-      ) as NodeJS.Require;
-      return true;
-    },
     process: () => ({
       browser: true,
       cwd: () => '/',
