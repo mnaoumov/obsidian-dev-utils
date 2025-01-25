@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.6.2
+
+- Ensure __extractDefault
+
 ## 16.6.1
 
 - Revert to globalThis
