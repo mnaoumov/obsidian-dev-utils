@@ -26,10 +26,6 @@ interface EsmModule {
   default: unknown;
 }
 
-type ProcessEx = {
-  browser: boolean;
-} & Partial<NodeJS.Process>;
-
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
  *
@@ -100,29 +96,28 @@ export function preprocessPlugin(): Plugin {
 }
 
 function init(): void {
-  const globalThisRecord = globalThis as unknown as Record<string, unknown>;
-
-  if (!globalThisRecord['__name']) {
-    globalThisRecord['__name'] = name;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!globalThis.process) {
-    globalThis.process = {
+  const newFuncs: Record<string, () => unknown> = {
+    __extractDefault: () => extractDefault,
+    __name: () => name,
+    __requirePatched: () => {
+      const originalRequire = globalThis.require;
+      globalThis.require = Object.assign(
+        (id: string) => requirePatched(id, originalRequire),
+        originalRequire
+      ) as NodeJS.Require;
+      return true;
+    },
+    process: () => ({
       browser: true,
       cwd: () => '/',
       env: {},
       platform: 'android'
-    } as ProcessEx as NodeJS.Process;
-  }
+    })
+  };
 
-  if (!globalThisRecord['__requirePatched']) {
-    const originalRequire = globalThis.require;
-    globalThis.require = Object.assign(
-      (id: string) => requirePatched(id, originalRequire),
-      originalRequire
-    ) as NodeJS.Require;
-    globalThisRecord['__requirePatched'] = true;
+  const globalThisRecord = globalThis as unknown as Record<string, unknown>;
+  for (const key of Object.keys(newFuncs)) {
+    globalThisRecord[key] ??= newFuncs[key]?.();
   }
 
   function name(obj: unknown): unknown {
