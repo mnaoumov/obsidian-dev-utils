@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 16.6.4
+
+- Init require for each plugin separately
+- Use local require
+
 ## 16.6.3
 
 - Init name first
