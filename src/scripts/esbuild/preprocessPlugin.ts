@@ -96,9 +96,11 @@ export function preprocessPlugin(): Plugin {
 }
 
 function init(): void {
+  const globalThisRecord = globalThis as unknown as Record<string, unknown>;
+  globalThisRecord['__name'] ??= name;
+
   const newFuncs: Record<string, () => unknown> = {
     __extractDefault: () => extractDefault,
-    __name: () => name,
     __requirePatched: () => {
       const originalRequire = globalThis.require;
       globalThis.require = Object.assign(
@@ -115,7 +117,6 @@ function init(): void {
     })
   };
 
-  const globalThisRecord = globalThis as unknown as Record<string, unknown>;
   for (const key of Object.keys(newFuncs)) {
     globalThisRecord[key] ??= newFuncs[key]?.();
   }
