@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.6.0
+
+- Refactor init
+
 ## 16.5.0
 
 - Mock process
