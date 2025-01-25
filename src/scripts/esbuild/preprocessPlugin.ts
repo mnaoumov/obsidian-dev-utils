@@ -30,10 +30,6 @@ type ProcessEx = {
   browser: boolean;
 } & Partial<NodeJS.Process>;
 
-interface RequirePatched extends NodeJS.Require {
-  __patched: boolean;
-}
-
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
  *
@@ -73,10 +69,7 @@ export function preprocessPlugin(): Plugin {
 
       build.initialOptions.banner ??= {};
       build.initialOptions.banner['js'] ??= '';
-      build.initialOptions.banner['js'] += '\n' + `if (typeof __name === 'undefined') { __name = (fn) => fn; }\n`;
-      build.initialOptions.banner['js'] += '\n' + `${__extractDefault.toString()}\n`;
-      build.initialOptions.banner['js'] += '\n' + `(${patchRequireEsmDefault.toString()})()\n`;
-      build.initialOptions.banner['js'] += '\n' + `(${patchProcess.toString()})()\n`;
+      build.initialOptions.banner['js'] += `\n(${init.toString()})()\n`;
 
       build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, 'utf-8');
@@ -90,7 +83,7 @@ export function preprocessPlugin(): Plugin {
           if (contents.includes(`var ${variable}`)) {
             continue;
           }
-          contents = `var ${variable} = globalThis['${key}'] ?? ${valueStr};\n` + contents;
+          contents = `var ${variable} = window['${key}'] ?? ${valueStr};\n` + contents;
         }
 
         // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
@@ -104,44 +97,54 @@ export function preprocessPlugin(): Plugin {
       });
     }
   };
+}
 
-  function __extractDefault(module: Partial<EsmModule> | undefined): unknown {
+function init(): void {
+  const windowRecord = window as unknown as Record<string, unknown>;
+
+  if (!windowRecord['__name']) {
+    windowRecord['__name'] = name;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!window.process) {
+    window.process = {
+      browser: true,
+      cwd: () => '/',
+      env: {},
+      platform: 'android'
+    } as ProcessEx as NodeJS.Process;
+  }
+
+  if (!windowRecord['__requirePatched']) {
+    const originalRequire = window.require;
+    window.require = Object.assign(
+      (id: string) => requirePatched(id, originalRequire),
+      originalRequire
+    ) as NodeJS.Require;
+    windowRecord['__requirePatched'] = true;
+  }
+
+  function name(obj: unknown): unknown {
+    return obj;
+  }
+
+  function extractDefault(module: Partial<EsmModule> | undefined): unknown {
     return module && module.__esModule && module.default ? module.default : module;
   }
 
-  function patchRequireEsmDefault(): void {
-    if ((require as Partial<RequirePatched>).__patched) {
-      return;
+  function requirePatched(id: string, originalRequire: NodeJS.Require): unknown {
+    const module = originalRequire(id) as (Partial<EsmModule> | undefined);
+    if (module) {
+      return extractDefault(module);
     }
-    const __require = require;
-    require = Object.assign(requirePatched, __require, { __patched: true }) as RequirePatched;
 
-    function requirePatched(id: string): unknown {
-      const module = __require(id) as (Partial<EsmModule> | undefined);
-      if (module) {
-        return __extractDefault(module);
-      }
-
-      if (id === 'process' || id === 'node:process') {
-        console.error(`Module not found: ${id}. Fake process object is returned instead.`);
-        return globalThis.process;
-      }
-
-      console.error(`Module not found: ${id}. Empty object is returned instead.`);
-      return {};
+    if (id === 'process' || id === 'node:process') {
+      console.error(`Module not found: ${id}. Fake process object is returned instead.`);
+      return window.process;
     }
-  }
-}
 
-function patchProcess(): void {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (globalThis.process) {
-    return;
+    console.error(`Module not found: ${id}. Empty object is returned instead.`);
+    return {};
   }
-  globalThis.process = {
-    browser: true,
-    cwd: () => '/',
-    env: {},
-    platform: 'android'
-  } as ProcessEx as NodeJS.Process;
 }
