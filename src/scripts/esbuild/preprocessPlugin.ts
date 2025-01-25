@@ -83,7 +83,7 @@ export function preprocessPlugin(): Plugin {
           if (contents.includes(`var ${variable}`)) {
             continue;
           }
-          contents = `var ${variable} = window['${key}'] ?? ${valueStr};\n` + contents;
+          contents = `var ${variable} = globalThis['${key}'] ?? ${valueStr};\n` + contents;
         }
 
         // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
@@ -100,15 +100,15 @@ export function preprocessPlugin(): Plugin {
 }
 
 function init(): void {
-  const windowRecord = window as unknown as Record<string, unknown>;
+  const globalThisRecord = globalThis as unknown as Record<string, unknown>;
 
-  if (!windowRecord['__name']) {
-    windowRecord['__name'] = name;
+  if (!globalThisRecord['__name']) {
+    globalThisRecord['__name'] = name;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!window.process) {
-    window.process = {
+  if (!globalThis.process) {
+    globalThis.process = {
       browser: true,
       cwd: () => '/',
       env: {},
@@ -116,13 +116,13 @@ function init(): void {
     } as ProcessEx as NodeJS.Process;
   }
 
-  if (!windowRecord['__requirePatched']) {
-    const originalRequire = window.require;
-    window.require = Object.assign(
+  if (!globalThisRecord['__requirePatched']) {
+    const originalRequire = globalThis.require;
+    globalThis.require = Object.assign(
       (id: string) => requirePatched(id, originalRequire),
       originalRequire
     ) as NodeJS.Require;
-    windowRecord['__requirePatched'] = true;
+    globalThisRecord['__requirePatched'] = true;
   }
 
   function name(obj: unknown): unknown {
@@ -141,7 +141,7 @@ function init(): void {
 
     if (id === 'process' || id === 'node:process') {
       console.error(`Module not found: ${id}. Fake process object is returned instead.`);
-      return window.process;
+      return globalThis.process;
     }
 
     console.error(`Module not found: ${id}. Empty object is returned instead.`);
