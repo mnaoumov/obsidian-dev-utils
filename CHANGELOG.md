@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.6.1
+
+- Revert to globalThis
+
 ## 16.6.0
 
 - Refactor init
