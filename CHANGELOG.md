@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 16.6.3
+
+- Init name first
+
 ## 16.6.2
 
 - Ensure __extractDefault
