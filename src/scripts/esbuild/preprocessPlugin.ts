@@ -73,6 +73,7 @@ export function preprocessPlugin(): Plugin {
 
       build.initialOptions.banner ??= {};
       build.initialOptions.banner['js'] ??= '';
+      build.initialOptions.banner['js'] += '\n' + `if (typeof __name === 'undefined') { __name = (fn) => fn; }\n`;
       build.initialOptions.banner['js'] += '\n' + `${__extractDefault.toString()}\n`;
       build.initialOptions.banner['js'] += '\n' + `(${patchRequireEsmDefault.toString()})()\n`;
       build.initialOptions.banner['js'] += '\n' + `(${patchProcess.toString()})()\n`;
