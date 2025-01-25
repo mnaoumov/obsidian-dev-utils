@@ -19,10 +19,7 @@ import {
   makeValidVariableName,
   replaceAll
 } from '../../String.ts';
-import {
-  process,
-  readFile
-} from '../NodeModules.ts';
+import { readFile } from '../NodeModules.ts';
 
 interface EsmModule {
   __esModule: boolean;
@@ -31,7 +28,7 @@ interface EsmModule {
 
 type ProcessEx = {
   browser: boolean;
-} & typeof process;
+} & Partial<NodeJS.Process>;
 
 interface RequirePatched extends NodeJS.Require {
   __patched: boolean;
@@ -49,12 +46,6 @@ interface RequirePatched extends NodeJS.Require {
  */
 export function preprocessPlugin(): Plugin {
   const replacements = {
-    process: {
-      browser: true,
-      cwd: () => '/',
-      env: {},
-      platform: 'android'
-    } as ProcessEx,
     [replaceAll('import(dot)meta(dot)url', '(dot)', '.')]: (): string => {
       if (typeof __filename === 'string') {
         // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
@@ -84,6 +75,7 @@ export function preprocessPlugin(): Plugin {
       build.initialOptions.banner['js'] ??= '';
       build.initialOptions.banner['js'] += '\n' + `${__extractDefault.toString()}\n`;
       build.initialOptions.banner['js'] += '\n' + `(${patchRequireEsmDefault.toString()})()\n`;
+      build.initialOptions.banner['js'] += '\n' + `(${patchProcess.toString()})()\n`;
 
       build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, 'utf-8');
@@ -124,8 +116,31 @@ export function preprocessPlugin(): Plugin {
     require = Object.assign(requirePatched, __require, { __patched: true }) as RequirePatched;
 
     function requirePatched(id: string): unknown {
-      const module = __require(id) as (Partial<EsmModule> | undefined) ?? {};
-      return __extractDefault(module);
+      const module = __require(id) as (Partial<EsmModule> | undefined);
+      if (module) {
+        return __extractDefault(module);
+      }
+
+      if (id === 'process' || id === 'node:process') {
+        console.error(`Module not found: ${id}. Fake process object is returned instead.`);
+        return globalThis.process;
+      }
+
+      console.error(`Module not found: ${id}. Empty object is returned instead.`);
+      return {};
     }
   }
+}
+
+function patchProcess(): void {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (globalThis.process) {
+    return;
+  }
+  globalThis.process = {
+    browser: true,
+    cwd: () => '/',
+    env: {},
+    platform: 'android'
+  } as ProcessEx as NodeJS.Process;
 }
