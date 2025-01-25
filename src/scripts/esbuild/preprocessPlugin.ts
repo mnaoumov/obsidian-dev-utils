@@ -102,8 +102,8 @@ function init(): void {
   const newFuncs: Record<string, () => unknown> = {
     __extractDefault: () => extractDefault,
     __requirePatched: () => {
-      const originalRequire = globalThis.require;
-      globalThis.require = Object.assign(
+      const originalRequire = require;
+      require = Object.assign(
         (id: string) => requirePatched(id, originalRequire),
         originalRequire
       ) as NodeJS.Require;
