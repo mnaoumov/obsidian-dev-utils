@@ -13,6 +13,8 @@ import type {
 
 import { config } from 'dotenv';
 import { context } from 'esbuild';
+import esbuildSvelte_ from 'esbuild-svelte';
+import { sveltePreprocess } from 'svelte-preprocess';
 
 import { throwExpression } from '../../Error.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
@@ -35,6 +37,8 @@ import { fixEsmPlugin } from './fixEsmPlugin.ts';
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
 import { watchCssChangesPlugin } from './watchCssChangesPlugin.ts';
+
+const esbuildSvelte = esbuildSvelte_ as unknown as typeof esbuildSvelte_.default;
 
 /**
  * Enumeration representing the build modes.
@@ -139,6 +143,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       js: banner
     },
     bundle: true,
+    conditions: ['browser'],
     entryPoints: [
       resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs))
         ?? throwExpression(new Error('Could not determine the entry point for the plugin'))
@@ -167,6 +172,16 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     outfile: distPath,
     platform: 'node',
     plugins: [
+      esbuildSvelte({
+        compilerOptions: {
+          css: 'injected',
+          dev: !isProductionBuild
+        },
+        moduleCompilerOptions: {
+          dev: !isProductionBuild
+        },
+        preprocess: sveltePreprocess()
+      }),
       preprocessPlugin(),
       watchCssChangesPlugin(),
       fixEsmPlugin(),
