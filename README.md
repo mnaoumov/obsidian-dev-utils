@@ -40,6 +40,14 @@ npx obsidian-dev-utils build:clean
 
 Cleans `dist` folder.
 
+#### Compile TypeScript
+
+```bash
+npx obsidian-dev-utils build:compile
+```
+
+Checks if TypeScript code compiles.
+
 #### Build static assets
 
 ```bash
@@ -47,14 +55,6 @@ npx obsidian-dev-utils build:static
 ```
 
 Copies `static` folder to `dist` folder.
-
-#### Validate TypeScript build
-
-```bash
-npx obsidian-dev-utils build:validate
-```
-
-Validates if TypeScript code compiles.
 
 #### Build Development Version
 

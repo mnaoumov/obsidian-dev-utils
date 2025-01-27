@@ -27,6 +27,15 @@ export async function buildClean(): Promise<void> {
 }
 
 /**
+ * Compiles the TypeScript code.
+ *
+ * @returns A promise that resolves when the code compiles successfully.
+ */
+export async function buildCompile(): Promise<void> {
+  await execFromRoot(['tsc', '--build', '--force']);
+}
+
+/**
  * Copies all static files from the static assets directory to the distribution directory.
  *
  * This function recursively reads the contents of the static assets directory and copies
@@ -43,13 +52,4 @@ export async function buildStatic(): Promise<void> {
     const path = trimStart(join(dirent.parentPath, dirent.name), ObsidianDevUtilsRepoPaths.Static + '/');
     await cp(join(ObsidianDevUtilsRepoPaths.Static, path), join(ObsidianDevUtilsRepoPaths.Dist, path));
   }
-}
-
-/**
- * Validates if the TypeScript code compiles successfully.
- *
- * @returns A promise that resolves when the code compiles successfully.
- */
-export async function buildValidate(): Promise<void> {
-  await execFromRoot(['tsc', '--build', '--force']);
 }

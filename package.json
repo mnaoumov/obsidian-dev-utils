@@ -416,14 +416,14 @@
     "package.json"
   ],
   "scripts": {
-    "build": "npm-run-all build:clean build:validate build:generate-index build:types build:lib build:generate-exports build:static",
+    "build": "npm-run-all build:clean build:compile build:generate-index build:types build:lib build:generate-exports build:static",
     "build:clean": "tsx scripts/build-clean.ts",
+    "build:compile": "tsc --build --force",
     "build:generate-exports": "tsx scripts/build-generate-exports.ts",
     "build:generate-index": "tsx scripts/build-generate-index.ts",
     "build:lib": "tsx scripts/build-lib.ts",
     "build:static": "tsx scripts/cli.ts build:static",
     "build:types": "tsx scripts/build-types.ts",
-    "build:validate": "tsc --build --force",
     "format": "tsx scripts/cli.ts format",
     "format:check": "tsx scripts/cli.ts format:check",
     "lint": "tsx scripts/lint.ts",

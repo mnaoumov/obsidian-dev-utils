@@ -19,7 +19,7 @@ import { sveltePreprocess } from 'svelte-preprocess';
 import { throwExpression } from '../../Error.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
-import { buildValidate } from '../build.ts';
+import { buildCompile } from '../build.ts';
 import { CliTaskResult } from '../CliUtils.ts';
 import {
   builtinModules,
@@ -90,7 +90,7 @@ interface ObsidianPluginBuilderEnv {
  * @returns A promise that resolves to a `TaskResult` indicating the success or failure of the build.
  */
 export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): Promise<CliTaskResult> {
-  await buildValidate();
+  await buildCompile();
   config();
   const obsidianPluginBuilderEnv = process.env as Partial<ObsidianPluginBuilderEnv>;
 
