@@ -14,8 +14,8 @@ import { invokeAsyncSafely } from '../Async.ts';
 import { getDirname } from '../Path.ts';
 import {
   buildClean,
-  buildStatic,
-  buildValidate
+  buildCompile,
+  buildStatic
 } from './build.ts';
 import {
   CliTaskResult,
@@ -45,8 +45,8 @@ const NODE_SCRIPT_ARGV_SKIP_COUNT = 2;
 enum CommandNames {
   Build = 'build',
   BuildClean = 'build:clean',
+  BuildCompile = 'build:compile',
   BuildStatic = 'build:static',
-  BuildValidate = 'build:validate',
   Dev = 'dev',
   Format = 'format',
   FormatCheck = 'format:check',
@@ -76,8 +76,8 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
 
       addCommand(program, CommandNames.Build, 'Build the plugin', () => buildObsidianPlugin({ mode: BuildMode.Production }));
       addCommand(program, CommandNames.BuildClean, 'Clean the dist folder', () => buildClean());
+      addCommand(program, CommandNames.BuildCompile, 'Check if TypeScript code compiles', () => buildCompile());
       addCommand(program, CommandNames.BuildStatic, 'Copy static content to dist', () => buildStatic());
-      addCommand(program, CommandNames.BuildValidate, 'Validates if TypeScript code compiles', () => buildValidate());
       addCommand(program, CommandNames.Dev, 'Build the plugin in development mode', () => buildObsidianPlugin({ mode: BuildMode.Development }));
       addCommand(program, CommandNames.Format, 'Format the source code', () => format());
       addCommand(program, CommandNames.FormatCheck, 'Check if the source code is formatted', () => format(false));
