@@ -111,7 +111,9 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
       abortController.abort();
     });
     await this.onloadComplete();
-    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+    setTimeout(() => {
+      this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+    }, 0);
   }
 
   /**
