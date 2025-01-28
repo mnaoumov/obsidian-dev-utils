@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.1.1
+
+- Extend source maps regex
+
 ## 17.1.0
 
 - Fix source maps for css
