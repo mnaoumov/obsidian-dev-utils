@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.0.1
+
+- Allow css imports
+
 ## 17.0.0
 
 - Remove allowJs setting
