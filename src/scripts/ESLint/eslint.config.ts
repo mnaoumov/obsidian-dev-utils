@@ -141,7 +141,16 @@ export const configs: Linter.Config[] = tseslint.config(
       'import-x/no-relative-packages': 'error',
       'import-x/no-restricted-paths': 'error',
       'import-x/no-self-import': 'error',
-      'import-x/no-unassigned-import': 'error',
+      'import-x/no-unassigned-import': [
+        'error',
+        {
+          allow: [
+            '**/*.css',
+            '**/*.sass',
+            '**/*.scss'
+          ]
+        }
+      ],
       'import-x/no-unused-modules': 'error',
       'import-x/no-useless-path-segments': 'error',
       'import-x/no-webpack-loader-syntax': 'error',
