@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.0.2
+
+- Fix sassPlugin cjs/esm binding
+
 ## 17.0.1
 
 - Allow css imports
