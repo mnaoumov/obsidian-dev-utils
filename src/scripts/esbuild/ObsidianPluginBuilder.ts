@@ -135,6 +135,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
   }
 
   const distPath = join(distDir, ObsidianPluginRepoPaths.MainJs);
+  const cssPath = join(distDir, ObsidianPluginRepoPaths.StylesCss);
 
   const packageJson = await readPackageJson();
   const pluginName = packageJson.name ?? '(unknown)';
@@ -189,7 +190,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       renameCssPlugin(distDir),
       preprocessPlugin(),
       fixEsmPlugin(),
-      fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
+      fixSourceMapsPlugin(isProductionBuild, [distPath, cssPath], pluginName),
       ...customEsbuildPlugins,
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
     ],
