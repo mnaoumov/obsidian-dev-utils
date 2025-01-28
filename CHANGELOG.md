@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 17.0.0
+
+- Remove allowJs setting
+- Update libs
+- Add support for sass
+- Add svelte compile
+- Ensure onLayoutReady is called after onload completed
+
 ## 16.6.4
 
 - Init require for each plugin separately
