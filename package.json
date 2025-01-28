@@ -479,6 +479,7 @@
     "obsidian-typings": "^2.15.0",
     "path-browserify": "^1.0.1",
     "postcss": "^8.5.1",
+    "postcss-modules": "^6.0.1",
     "preact": "^10.25.4",
     "remark": "^15.0.1",
     "remark-parse": "^11.0.0",
