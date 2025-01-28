@@ -13,7 +13,7 @@ import type {
 
 import { config } from 'dotenv';
 import { context } from 'esbuild';
-import { sassPlugin } from 'esbuild-sass-plugin';
+import sassPlugin_ from 'esbuild-sass-plugin';
 import esbuildSvelte_ from 'esbuild-svelte';
 import { sveltePreprocess } from 'svelte-preprocess';
 
@@ -40,6 +40,7 @@ import { preprocessPlugin } from './preprocessPlugin.ts';
 import { renameCssPlugin } from './renameCssPlugin.ts';
 
 const esbuildSvelte = esbuildSvelte_ as unknown as typeof esbuildSvelte_.default;
+const sassPlugin = sassPlugin_ as unknown as typeof sassPlugin_.default;
 
 /**
  * Enumeration representing the build modes.
