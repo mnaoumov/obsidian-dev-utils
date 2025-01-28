@@ -10,6 +10,10 @@
 
 This package is ideal for developers who are building or maintaining plugins for Obsidian. It provides a range of tools to make the development process easier, including automated builds, linting, spellchecking, and more.
 
+## Plugin Generator
+
+There is a [Obsidian Plugin Yeoman Generator](https://github.com/mnaoumov/generator-obsidian-plugin) that sets up a new Obsidian plugin project with a basic structure and some useful scripts from this library.
+
 ## Installation
 
 To install the package, run the following command:
