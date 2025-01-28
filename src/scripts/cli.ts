@@ -15,6 +15,8 @@ import { getDirname } from '../Path.ts';
 import {
   buildClean,
   buildCompile,
+  buildCompileSvelte,
+  buildCompileTypeScript,
   buildStatic
 } from './build.ts';
 import {
@@ -46,6 +48,8 @@ enum CommandNames {
   Build = 'build',
   BuildClean = 'build:clean',
   BuildCompile = 'build:compile',
+  BuildCompileSvelte = 'build:compile:svelte',
+  BuildCompileTypeScript = 'build:compile:typescript',
   BuildStatic = 'build:static',
   Dev = 'dev',
   Format = 'format',
@@ -76,7 +80,9 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
 
       addCommand(program, CommandNames.Build, 'Build the plugin', () => buildObsidianPlugin({ mode: BuildMode.Production }));
       addCommand(program, CommandNames.BuildClean, 'Clean the dist folder', () => buildClean());
-      addCommand(program, CommandNames.BuildCompile, 'Check if TypeScript code compiles', () => buildCompile());
+      addCommand(program, CommandNames.BuildCompile, 'Check if code compiles', () => buildCompile());
+      addCommand(program, CommandNames.BuildCompileSvelte, 'Check if Svelte code compiles', () => buildCompileSvelte());
+      addCommand(program, CommandNames.BuildCompileTypeScript, 'Check if TypeScript code compiles', () => buildCompileTypeScript());
       addCommand(program, CommandNames.BuildStatic, 'Copy static content to dist', () => buildStatic());
       addCommand(program, CommandNames.Dev, 'Build the plugin in development mode', () => buildObsidianPlugin({ mode: BuildMode.Development }));
       addCommand(program, CommandNames.Format, 'Format the source code', () => format());
