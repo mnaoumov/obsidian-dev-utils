@@ -5,15 +5,24 @@
  * and to remove the existing build output.
  */
 
+import type { TsConfigJson } from 'type-fest';
+
+import { glob } from 'glob';
+
+import { getLibDebugger } from '../Debug.ts';
 import { join } from '../Path.ts';
 import { trimStart } from '../String.ts';
 import { readdirPosix } from './Fs.ts';
+import { readJson } from './JSON.ts';
 import {
   cp,
   rm
 } from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
-import { execFromRoot } from './Root.ts';
+import {
+  execFromRoot,
+  resolvePathFromRootSafe
+} from './Root.ts';
 
 /**
  * Removes the distribution directory and its contents.
@@ -27,11 +36,40 @@ export async function buildClean(): Promise<void> {
 }
 
 /**
- * Compiles the TypeScript code.
+ * Compiles the code.
  *
  * @returns A promise that resolves when the code compiles successfully.
  */
 export async function buildCompile(): Promise<void> {
+  await buildCompileSvelte();
+  await buildCompileTypeScript();
+}
+
+/**
+ * Compiles the Svelte code.
+ *
+ * @returns A promise that resolves when the code compiles successfully.
+ */
+export async function buildCompileSvelte(): Promise<void> {
+  const tsConfigPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.TsConfigJson);
+  const tsConfig = await readJson<TsConfigJson>(tsConfigPath);
+  const allFiles = await glob(tsConfig.include ?? [], { ignore: tsConfig.exclude ?? [] });
+  const svelteFiles = allFiles.filter((file) => file.endsWith('.svelte') || file.endsWith('.svelte.js') || file.endsWith('.svelte.ts'));
+
+  if (svelteFiles.length === 0) {
+    getLibDebugger('build:buildCompileSvelte')('No Svelte files found in the project, skipping Svelte compilation');
+    return;
+  }
+
+  await execFromRoot(['svelte-check', '--tsconfig', ObsidianDevUtilsRepoPaths.TsConfigJson]);
+}
+
+/**
+ * Compiles the TypeScript code.
+ *
+ * @returns A promise that resolves when the code compiles successfully.
+ */
+export async function buildCompileTypeScript(): Promise<void> {
   await execFromRoot(['tsc', '--build', '--force']);
 }
 

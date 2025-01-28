@@ -40,10 +40,26 @@ npx obsidian-dev-utils build:clean
 
 Cleans `dist` folder.
 
-#### Compile TypeScript
+#### Compile code
 
 ```bash
 npx obsidian-dev-utils build:compile
+```
+
+Checks if code compiles.
+
+#### Compile Svelte code
+
+```bash
+npx obsidian-dev-utils build:compile:svelte
+```
+
+Checks if Svelte code compiles.
+
+#### Compile TypeScript code
+
+```bash
+npx obsidian-dev-utils build:compile:typeScript
 ```
 
 Checks if TypeScript code compiles.
