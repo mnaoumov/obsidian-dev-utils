@@ -10,6 +10,7 @@ import type { Plugin } from 'esbuild';
 import { toPosixPath } from '../../Path.ts';
 import { replaceAll } from '../../String.ts';
 import {
+  existsSync,
   readFile,
   writeFile
 } from '../NodeModules.ts';
@@ -23,11 +24,11 @@ interface SourceMap {
  * with Obsidian's internal URL scheme.
  *
  * @param isProductionBuild - A boolean indicating whether the build is a production build. The plugin only runs in non-production builds.
- * @param distPath - The path to the output file containing the source map.
+ * @param distPaths - The paths to the output files containing the source maps.
  * @param pluginName - The name of the Obsidian plugin, used to construct the Obsidian-specific URLs.
  * @returns An esbuild `Plugin` object that fixes source maps.
  */
-export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string, pluginName: string): Plugin {
+export function fixSourceMapsPlugin(isProductionBuild: boolean, distPaths: string[], pluginName: string): Plugin {
   return {
     name: 'fix-source-maps',
     setup(build): void {
@@ -36,15 +37,21 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPath: string
           return;
         }
 
-        const content = await readFile(distPath, 'utf-8');
-        const newContent = replaceAll(
-          content,
-          /(\n\/\/# sourceMappingURL=data:application\/json;base64,)(.+)\n(.|\n)*/g,
-          (_, prefix, sourceMapBase64): string => prefix + fixSourceMap(sourceMapBase64, pluginName) + '\n/* nosourcemap */'
-        );
+        for (const distPath of distPaths) {
+          if (!existsSync(distPath)) {
+            continue;
+          }
 
-        if (content !== newContent) {
-          await writeFile(distPath, newContent);
+          const content = await readFile(distPath, 'utf-8');
+          const newContent = replaceAll(
+            content,
+            /(\n\/\/# sourceMappingURL=data:application\/json;base64,)(.+)\n(.|\n)*/g,
+            (_, prefix, sourceMapBase64): string => prefix + fixSourceMap(sourceMapBase64, pluginName) + '\n/* nosourcemap */'
+          );
+
+          if (content !== newContent) {
+            await writeFile(distPath, newContent);
+          }
         }
       });
     }
