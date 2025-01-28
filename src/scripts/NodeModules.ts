@@ -36,6 +36,7 @@ export {
   mkdir,
   readdir,
   readFile,
+  rename,
   rm,
   stat,
   writeFile

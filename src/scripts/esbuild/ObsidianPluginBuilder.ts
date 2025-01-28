@@ -13,6 +13,7 @@ import type {
 
 import { config } from 'dotenv';
 import { context } from 'esbuild';
+import { sassPlugin } from 'esbuild-sass-plugin';
 import esbuildSvelte_ from 'esbuild-svelte';
 import { sveltePreprocess } from 'svelte-preprocess';
 
@@ -36,7 +37,7 @@ import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolder
 import { fixEsmPlugin } from './fixEsmPlugin.ts';
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
-import { watchCssChangesPlugin } from './watchCssChangesPlugin.ts';
+import { renameCssPlugin } from './renameCssPlugin.ts';
 
 const esbuildSvelte = esbuildSvelte_ as unknown as typeof esbuildSvelte_.default;
 
@@ -182,8 +183,11 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
         },
         preprocess: sveltePreprocess()
       }),
+      sassPlugin({
+        sourceMap: !isProductionBuild
+      }),
+      renameCssPlugin(distDir),
       preprocessPlugin(),
-      watchCssChangesPlugin(),
       fixEsmPlugin(),
       fixSourceMapsPlugin(isProductionBuild, distPath, pluginName),
       ...customEsbuildPlugins,
