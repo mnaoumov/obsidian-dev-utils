@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.1.0
+
+- Fix source maps for css
+
 ## 17.0.2
 
 - Fix sassPlugin cjs/esm binding
