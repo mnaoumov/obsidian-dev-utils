@@ -34,6 +34,9 @@ export enum ObsidianPluginRepoPaths {
   /** Represents the Library.cjs file. */
   LibraryCjs = 'Library.cjs',
 
+  /** Represents the main CSS file. */
+  MainCss = 'main.css',
+
   /** Represents the main JavaScript file. */
   MainJs = 'main.js',
 
