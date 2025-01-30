@@ -10,6 +10,8 @@
  * @packageDocumentation eslint-config
  */
 
+/* eslint-disable no-magic-numbers */
+
 import type { Linter } from 'eslint';
 
 import eslint from '@eslint/js';
@@ -115,8 +117,32 @@ export const configs: Linter.Config[] = tseslint.config(
           varsIgnorePattern: '^_'
         }
       ],
+      'accessor-pairs': 'error',
+      'array-callback-return': 'error',
+      'camelcase': 'error',
+      'capitalized-comments': 'error',
+      'class-methods-use-this': 'error',
+      'complexity': 'error',
+      'consistent-this': 'error',
       'curly': 'error',
+      'default-case': 'error',
+      'default-case-last': 'error',
+      'default-param-last': 'error',
       'eqeqeq': 'error',
+      'func-name-matching': 'error',
+      'func-names': 'error',
+      'func-style': [
+        'error',
+        'declaration',
+        {
+          allowArrowFunctions: true
+        }
+      ],
+      'grouped-accessor-pairs': [
+        'error',
+        'getBeforeSet'
+      ],
+      'guard-for-in': 'error',
       'import-x/consistent-type-specifier-style': 'error',
       'import-x/extensions': ['error', 'ignorePackages'],
       'import-x/first': 'error',
@@ -155,7 +181,112 @@ export const configs: Linter.Config[] = tseslint.config(
       'import-x/no-useless-path-segments': 'error',
       'import-x/no-webpack-loader-syntax': 'error',
       'modules-newlines/export-declaration-newline': 'error',
-      'modules-newlines/import-declaration-newline': 'error'
+      'modules-newlines/import-declaration-newline': 'error',
+      'no-alert': 'error',
+      'no-array-constructor': 'error',
+      'no-bitwise': 'error',
+      'no-caller': 'error',
+      'no-console': [
+        'error',
+        {
+          allow: [
+            'warn',
+            'error'
+          ]
+        }
+      ],
+      'no-constructor-return': 'error',
+      'no-div-regex': 'error',
+      'no-else-return': [
+        'error',
+        {
+          allowElseIf: false
+        }
+      ],
+      'no-empty-function': 'error',
+      'no-extend-native': 'error',
+      'no-extra-bind': 'error',
+      'no-extra-label': 'error',
+      'no-implicit-coercion': [
+        'error',
+        {
+          allow: [
+            '!!'
+          ]
+        }
+      ],
+      'no-implied-eval': 'error',
+      'no-inner-declarations': 'error',
+      'no-invalid-this': 'error',
+      'no-iterator': 'error',
+      'no-label-var': 'error',
+      'no-labels': 'error',
+      'no-lone-blocks': 'error',
+      'no-lonely-if': 'error',
+      'no-loop-func': 'error',
+      'no-magic-numbers': [
+        'error',
+        {
+          detectObjects: true,
+          enforceConst: true,
+          ignore: [
+            -1,
+            0,
+            1
+          ]
+        }
+      ],
+      'no-multi-assign': 'error',
+      'no-multi-str': 'error',
+      'no-negated-condition': 'error',
+      'no-nested-ternary': 'error',
+      'no-new-func': 'error',
+      'no-new-wrappers': 'error',
+      'no-object-constructor': 'error',
+      'no-octal-escape': 'error',
+      'no-promise-executor-return': 'error',
+      'no-proto': 'error',
+      'no-return-assign': 'error',
+      'no-script-url': 'error',
+      'no-self-compare': 'error',
+      'no-sequences': 'error',
+      'no-shadow': 'error',
+      'no-template-curly-in-string': 'error',
+      'no-throw-literal': 'error',
+      'no-unmodified-loop-condition': 'error',
+      'no-unneeded-ternary': 'error',
+      'no-unreachable-loop': 'error',
+      'no-unused-expressions': 'error',
+      'no-useless-assignment': 'error',
+      'no-useless-call': 'error',
+      'no-useless-computed-key': 'error',
+      'no-useless-concat': 'error',
+      'no-useless-constructor': 'error',
+      'no-useless-rename': 'error',
+      'no-useless-return': 'error',
+      'no-var': 'error',
+      'no-void': 'error',
+      'object-shorthand': 'error',
+      'operator-assignment': 'error',
+      'prefer-arrow-callback': 'error',
+      'prefer-const': 'error',
+      'prefer-exponentiation-operator': 'error',
+      'prefer-named-capture-group': 'error',
+      'prefer-numeric-literals': 'error',
+      'prefer-object-has-own': 'error',
+      'prefer-object-spread': 'error',
+      'prefer-promise-reject-errors': 'error',
+      'prefer-regex-literals': 'error',
+      'prefer-rest-params': 'error',
+      'prefer-spread': 'error',
+      'prefer-template': 'error',
+      'radix': 'error',
+      'require-atomic-updates': 'error',
+      'require-await': 'error',
+      'symbol-description': 'error',
+      'unicode-bom': 'error',
+      'vars-on-top': 'error',
+      'yoda': 'error'
     },
     settings: {
       'import/resolver': {
