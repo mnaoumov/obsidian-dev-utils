@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.2.1
+
+- Disable class-methods-use-this as it will always fail for settings classes
+
 ## 17.2.0
 
 - Update libs
