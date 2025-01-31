@@ -219,14 +219,14 @@ export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursi
 
   let markdownFiles: TFile[] = [];
 
-  if (!isRecursive) {
-    markdownFiles = folder.children.filter((file) => isMarkdownFile(app, file)) as TFile[];
-  } else {
+  if (isRecursive) {
     Vault.recurseChildren(folder, (abstractFile) => {
       if (isMarkdownFile(app, abstractFile)) {
         markdownFiles.push(abstractFile as TFile);
       }
     });
+  } else {
+    markdownFiles = folder.children.filter((file) => isMarkdownFile(app, file)) as TFile[];
   }
 
   markdownFiles = markdownFiles.sort((a, b) => a.path.localeCompare(b.path));
@@ -364,7 +364,7 @@ export function trimMarkdownExtension(app: App, file: TAbstractFile): string {
     return file.path;
   }
 
-  return trimEnd(file.path, '.' + MARKDOWN_FILE_EXTENSION);
+  return trimEnd(file.path, `.${MARKDOWN_FILE_EXTENSION}`);
 }
 
 function getFileInternal(app: App, path: string, isCaseInsensitive?: boolean): null | TAbstractFile {

@@ -6,6 +6,7 @@
 import type { App } from 'obsidian';
 
 import { throwExpression } from '../Error.ts';
+import { noop } from '../Function.ts';
 
 /**
  * Wrapper type for accessing the `App` instance globally.
@@ -25,7 +26,9 @@ interface ObsidianDevUtilsStateWrapper {
  * Wrapper type for storing shared state in the Obsidian app.
  */
 export class ValueWrapper<T> {
-  public constructor(public value: T) {}
+  public constructor(public value: T) {
+    noop();
+  }
 }
 
 /**
@@ -54,6 +57,6 @@ export function getApp(): App {
  */
 export function getObsidianDevUtilsState<T>(app: App, key: string, defaultValue: T): ValueWrapper<T> {
   const sharedStateWrapper = app as Partial<ObsidianDevUtilsStateWrapper>;
-  const sharedState = sharedStateWrapper.obsidianDevUtilsState ??= {};
-  return (sharedState[key] ??= new ValueWrapper<T>(defaultValue)) as ValueWrapper<T>;
+  sharedStateWrapper.obsidianDevUtilsState ??= {};
+  return (sharedStateWrapper.obsidianDevUtilsState[key] ??= new ValueWrapper<T>(defaultValue)) as ValueWrapper<T>;
 }

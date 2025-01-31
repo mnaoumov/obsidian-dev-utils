@@ -36,7 +36,7 @@ declare global {
   /**
    * The DataviewAPI object represents the API for interacting with Dataview in Obsidian.
    */
-  // eslint-disable-next-line no-var
+  // eslint-disable-next-line no-var, vars-on-top
   var DataviewAPI: DataviewApi | undefined;
 }
 
@@ -208,10 +208,10 @@ export interface RenderPaginatedOptions<T> {
 
   /**
    * The renderer function to display the paginated content.
-   * @param rows - The rows to render.
+   * @param rowsForOnePage - The rows to render.
    * @returns A promise that resolves when the content is rendered.
    */
-  renderer: (rows: ArrayOrDataArray<T>) => MaybePromise<void>;
+  renderer: (rowsForOnePage: ArrayOrDataArray<T>) => MaybePromise<void>;
 
   /**
    * The rows to paginate.
@@ -261,8 +261,9 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
   try {
     await renderer();
   } catch (e) {
-    dv.paragraph('❌' + errorToString(e));
+    dv.paragraph(`❌${errorToString(e)}`);
   } finally {
+    // eslint-disable-next-line require-atomic-updates
     dv.container = tempContainer.parentElement ?? throwExpression(new Error('Container parent not found'));
     tempContainer.remove();
   }
@@ -279,10 +280,12 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
  * @returns This function does not return a value.
  */
 export function insertCodeBlock(dv: DataviewInlineApi, language: string, code: string): void {
-  const fenceMatches = code.matchAll(/^`{3,}/gm);
+  const MIN_FENCE_LENGTH = 3;
+  const fenceRegExp = new RegExp(`^\`{${MIN_FENCE_LENGTH.toString()},}`, 'gm');
+  const fenceMatches = code.matchAll(fenceRegExp);
   const fenceLengths = Array.from(fenceMatches).map((fenceMatch) => fenceMatch[0].length);
   const maxFenceLength = Math.max(0, ...fenceLengths);
-  const resultFenceLength = Math.max(3, maxFenceLength + 1);
+  const resultFenceLength = Math.max(MIN_FENCE_LENGTH, maxFenceLength + 1);
   const resultFence = '`'.repeat(resultFenceLength);
 
   dv.paragraph(`${resultFence}${language}
@@ -325,14 +328,15 @@ export function renderIframe(options: RenderIframeOptions): void {
 export async function renderPaginatedList<T>(options: RenderPaginatedListOptions<T>): Promise<void> {
   const {
     dv,
+    // eslint-disable-next-line no-magic-numbers
     itemsPerPageOptions = [10, 20, 50, 100],
     rows
   } = options;
   await renderPaginated({
     dv,
     itemsPerPageOptions,
-    renderer: async (rows: ArrayOrDataArray<T>): Promise<void> => {
-      await dv.list(rows);
+    renderer: async (rowsForOnePage: ArrayOrDataArray<T>): Promise<void> => {
+      await dv.list(rowsForOnePage);
     },
     rows
   });
@@ -351,14 +355,15 @@ export async function renderPaginatedTable<T extends unknown[]>(options: RenderP
   const {
     dv,
     headers,
+    // eslint-disable-next-line no-magic-numbers
     itemsPerPageOptions = [10, 20, 50, 100],
     rows
   } = options;
   await renderPaginated({
     dv,
     itemsPerPageOptions,
-    renderer: async (rows: ArrayOrDataArray<T>): Promise<void> => {
-      await dv.table(headers, rows);
+    renderer: async (rowsForOnePage: ArrayOrDataArray<T>): Promise<void> => {
+      await dv.table(headers, rowsForOnePage);
     },
     rows
   });
@@ -374,8 +379,11 @@ export async function renderPaginatedTable<T extends unknown[]>(options: RenderP
  * @returns A promise that resolves when the content is rendered.
  */
 async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<void> {
+  const SECOND_PAGE_NUMBER = 2;
+  const MORE_PAGE_NUMBER = 3;
   const {
     dv,
+    // eslint-disable-next-line no-magic-numbers
     itemsPerPageOptions = [10, 20, 50, 100],
     renderer,
     rows
@@ -396,18 +404,18 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     createPageLink('First', 1, pageNumber === 1);
     createPageLink('Prev', pageNumber - 1, pageNumber === 1);
 
-    if (pageNumber > 3) {
+    if (pageNumber > MORE_PAGE_NUMBER) {
       paginationRow1Div.createEl('span', { text: '...' });
     }
 
-    for (let i = Math.max(1, pageNumber - 2); i <= Math.min(totalPages, pageNumber + 2); i++) {
+    for (let i = Math.max(1, pageNumber - SECOND_PAGE_NUMBER); i <= Math.min(totalPages, pageNumber + SECOND_PAGE_NUMBER); i++) {
       const pageLink = createPageLink(i.toString(), i, i === pageNumber);
       if (i === pageNumber) {
         pageLink.addClass('current');
       }
     }
 
-    if (pageNumber < totalPages - 2) {
+    if (pageNumber < totalPages - SECOND_PAGE_NUMBER) {
       paginationRow1Div.createEl('span', { text: '...' });
     }
 
@@ -426,7 +434,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     itemsPerPageSelect.addEventListener(
       'change',
       convertAsyncToSync(async (): Promise<void> => {
-        itemsPerPage = parseInt(itemsPerPageSelect.value);
+        itemsPerPage = parseInt(itemsPerPageSelect.value, 10);
         totalPages = Math.ceil(rows.length / itemsPerPage);
         await renderPage(1);
       })
@@ -439,7 +447,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
       'keydown',
       convertAsyncToSync(async (event: KeyboardEvent): Promise<void> => {
         if (event.key === 'Enter') {
-          const page = parseInt(jumpToPageInput.value);
+          const page = parseInt(jumpToPageInput.value, 10);
           if (page >= 1 && page <= totalPages) {
             await renderPage(page);
           }
@@ -449,8 +457,8 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
 
     paginationRow2Div.createEl('span', { text: `  Page ${pageNumber.toString()} of ${totalPages.toString()}, Total items: ${rows.length.toString()}` });
 
-    function createPageLink(text: string, pageNumber: number, disabled = false): HTMLAnchorElement {
-      const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${pageNumber.toString()}`, text: text });
+    function createPageLink(text: string, currentPageNumber: number, disabled = false): HTMLAnchorElement {
+      const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${currentPageNumber.toString()}`, text });
       if (disabled) {
         link.addClass('disabled');
         link.onclick = (event: MouseEvent): void => {
@@ -461,7 +469,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
           'click',
           convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
             event.preventDefault();
-            await renderPage(pageNumber);
+            await renderPage(currentPageNumber);
           })
         );
       }
@@ -483,8 +491,9 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     try {
       await renderer(rowsForCurrentPage);
     } catch (e) {
-      dv.paragraph('❌' + errorToString(e));
+      dv.paragraph(`❌${errorToString(e)}`);
     } finally {
+      // eslint-disable-next-line require-atomic-updates
       dv.container = oldContainer;
     }
 

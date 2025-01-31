@@ -10,6 +10,7 @@ import type { ValueWrapper } from './App.ts';
 
 import {
   addErrorHandler,
+  invokeAsyncSafely,
   runWithTimeout
 } from '../Async.ts';
 import { getStackTrace } from '../Error.ts';
@@ -39,7 +40,7 @@ interface QueueItem {
  */
 export function addToQueue(app: App, fn: () => MaybePromise<void>, timeoutInMilliseconds?: number, stackTrace?: string): void {
   stackTrace ??= getStackTrace(1);
-  void addToQueueAndWait(app, fn, timeoutInMilliseconds, stackTrace);
+  invokeAsyncSafely(() => addToQueueAndWait(app, fn, timeoutInMilliseconds, stackTrace));
 }
 
 /**

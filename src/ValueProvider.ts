@@ -25,9 +25,8 @@ export type ValueProvider<Value, Args extends unknown[] = []> = ((...args: Args)
 export async function resolveValue<Value, Args extends unknown[]>(provider: ValueProvider<Value, Args>, ...args: Args): Promise<Value> {
   if (isFunction(provider)) {
     return await provider(...args);
-  } else {
-    return provider;
   }
+  return provider;
 }
 
 /**

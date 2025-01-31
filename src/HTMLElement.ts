@@ -101,7 +101,8 @@ export function isLoaded(el: Element): boolean {
   }
 
   if (el instanceof HTMLTrackElement) {
-    return el.readyState === 2;
+    const READY_STATE_LOADED = 2;
+    return el.readyState === READY_STATE_LOADED;
   }
 
   return getLoadableElements(el).every(isLoaded);

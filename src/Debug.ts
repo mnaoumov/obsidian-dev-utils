@@ -154,6 +154,7 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
 
   const stackLines = new Error().stack?.split('\n') ?? [];
   const callerLine = stackLines[CALLER_LINE_INDEX + framesToSkip] ?? '';
+  // eslint-disable-next-line no-console
   console.debug(message, ...args);
   if (isInObsidian()) {
     printStackTrace(namespace, callerLine, 'Debug message caller');
@@ -176,6 +177,7 @@ function printStackTrace(namespace: string, stackTrace: string, title?: string):
 
   _debugger(title);
   const prefix = isInObsidian() ? 'StackTraceFakeError\n' : '';
+  // eslint-disable-next-line no-console
   console.debug(`${prefix}${stackTrace}`);
 }
 

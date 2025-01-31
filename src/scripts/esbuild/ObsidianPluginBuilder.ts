@@ -215,8 +215,7 @@ export async function invokeEsbuild(buildContext: BuildContext, isProductionBuil
     const result = await buildContext.rebuild();
     const isSuccess = result.errors.length === 0 && result.warnings.length === 0;
     return CliTaskResult.Success(isSuccess);
-  } else {
-    await buildContext.watch();
-    return CliTaskResult.DoNotExit();
   }
+  await buildContext.watch();
+  return CliTaskResult.DoNotExit();
 }

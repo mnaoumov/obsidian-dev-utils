@@ -163,6 +163,22 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
   );
 }
 
+async function continueInterruptedRenames(
+  app: App,
+  oldPath: string,
+  newPath: string,
+  oldPathBacklinksMap: Map<string, Reference[]>,
+  oldPathLinks: Reference[]
+): Promise<void> {
+  const interruptedRenames = interruptedRenamesMap.get(oldPath);
+  if (interruptedRenames) {
+    interruptedRenamesMap.delete(oldPath);
+    for (const interruptedRename of interruptedRenames) {
+      await handleRenameAsync(app, interruptedRename.oldPath, newPath, oldPathBacklinksMap, oldPathLinks, interruptedRename.combinedBacklinksMap);
+    }
+  }
+}
+
 async function fillRenameMap(app: App, oldPath: string, newPath: string, renameMap: Map<string, string>, oldPathLinks: Reference[]): Promise<void> {
   renameMap.set(oldPath, newPath);
 
@@ -189,7 +205,13 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
 
   const oldAttachmentFiles: TFile[] = [];
 
-  if (!(await hasOwnAttachmentFolder(app, oldPath))) {
+  if (await hasOwnAttachmentFolder(app, oldPath)) {
+    Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
+      if (isFile(oldAttachmentFile)) {
+        oldAttachmentFiles.push(oldAttachmentFile);
+      }
+    });
+  } else {
     for (const oldPathLink of oldPathLinks) {
       const oldAttachmentFile = extractLinkFile(app, oldPathLink, oldPath);
       if (!oldAttachmentFile) {
@@ -203,12 +225,6 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
         }
       }
     }
-  } else {
-    Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
-      if (isFile(oldAttachmentFile)) {
-        oldAttachmentFiles.push(oldAttachmentFile);
-      }
-    });
   }
 
   const oldBasename = basename(oldPath, extname(oldPath));
@@ -264,6 +280,24 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
   }
 
   return settings;
+}
+
+async function handleCaseCollision(
+  app: App,
+  oldPath: string,
+  newPath: string,
+  oldPathBacklinksMap: Map<string, Reference[]>,
+  oldPathLinks: Reference[]
+): Promise<boolean> {
+  if (!app.vault.adapter.insensitive || oldPath.toLowerCase() !== newPath.toLowerCase()) {
+    return false;
+  }
+
+  const tempPath = join(dirname(newPath), `__temp__${basename(newPath)}`);
+  await renameHandled(app, newPath, tempPath);
+  await handleRenameAsync(app, oldPath, tempPath, oldPathBacklinksMap, oldPathLinks);
+  await app.vault.rename(getFile(app, tempPath), newPath);
+  return true;
 }
 
 async function handleDelete(app: App, path: string): Promise<void> {
@@ -371,30 +405,9 @@ async function handleRenameAsync(
   oldPathLinks: Reference[],
   interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>
 ): Promise<void> {
-  const interruptedRenames = interruptedRenamesMap.get(oldPath);
-  if (interruptedRenames) {
-    interruptedRenamesMap.delete(oldPath);
-    for (const interruptedRename of interruptedRenames) {
-      await handleRenameAsync(app, interruptedRename.oldPath, newPath, oldPathBacklinksMap, oldPathLinks, interruptedRename.combinedBacklinksMap);
-    }
-  }
-
-  const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
-  const oldPathLinks2 = cache ? getAllLinks(cache) : [];
-  const oldPathBacklinksMap2 = getBacklinksForFileOrPath(app, oldPath).data;
-
-  for (const link of oldPathLinks2) {
-    if (oldPathLinks.includes(link)) {
-      continue;
-    }
-    oldPathLinks.push(link);
-  }
-
-  if (app.vault.adapter.insensitive && oldPath.toLowerCase() === newPath.toLowerCase()) {
-    const tempPath = join(dirname(newPath), '__temp__' + basename(newPath));
-    await renameHandled(app, newPath, tempPath);
-    await handleRenameAsync(app, oldPath, tempPath, oldPathBacklinksMap, oldPathLinks);
-    await app.vault.rename(getFile(app, tempPath), newPath);
+  await continueInterruptedRenames(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
+  refreshLinks(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
+  if (await handleCaseCollision(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks)) {
     return;
   }
 
@@ -407,7 +420,6 @@ async function handleRenameAsync(
 
     const combinedBacklinksMap = new Map<string, Map<string, string>>();
     initBacklinksMap(oldPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
-    initBacklinksMap(oldPathBacklinksMap2, renameMap, combinedBacklinksMap, oldPath);
 
     for (const attachmentOldPath of renameMap.keys()) {
       if (attachmentOldPath === oldPath) {
@@ -452,7 +464,7 @@ async function handleRenameAsync(
         }
 
         return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
-          app: app,
+          app,
           link,
           newSourcePathOrFile: newBacklinkPath,
           newTargetPathOrFile: newAttachmentPath,
@@ -532,6 +544,34 @@ function logRegisteredHandlers(app: App): void {
 
 function makeKey(oldPath: string, newPath: string): string {
   return `${oldPath} -> ${newPath}`;
+}
+
+function refreshLinks(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>, oldPathLinks: Reference[]): void {
+  const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
+  const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
+  const oldPathBacklinksMapRefreshed = getBacklinksForFileOrPath(app, oldPath).data;
+
+  for (const link of oldPathLinksRefreshed) {
+    if (oldPathLinks.includes(link)) {
+      continue;
+    }
+    oldPathLinks.push(link);
+  }
+
+  for (const [backlinkPath, refreshedLinks] of oldPathBacklinksMapRefreshed.entries()) {
+    let oldLinks = oldPathBacklinksMap.get(backlinkPath);
+    if (!oldLinks) {
+      oldLinks = [];
+      oldPathBacklinksMap.set(backlinkPath, oldLinks);
+    }
+
+    for (const link of refreshedLinks) {
+      if (oldLinks.includes(link)) {
+        continue;
+      }
+      oldLinks.push(link);
+    }
+  }
 }
 
 async function renameHandled(app: App, oldPath: string, newPath: string): Promise<string> {

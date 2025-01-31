@@ -11,7 +11,8 @@ import { resolvePathFromRootSafe } from '../src/scripts/Root.ts';
 import { updateVersion } from '../src/scripts/version.ts';
 
 await wrapCliTask(async () => {
-  const versionUpdateTypeStr = process.argv[2];
+  const VERSION_UPDATE_TYPE_ARG_INDEX = 2;
+  const versionUpdateTypeStr = process.argv[VERSION_UPDATE_TYPE_ARG_INDEX];
   await updateVersion(versionUpdateTypeStr, prepareGitHubRelease);
   const isBeta = versionUpdateTypeStr === 'beta';
   await publish(isBeta);

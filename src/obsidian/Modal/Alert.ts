@@ -84,7 +84,7 @@ class AlertModal extends Modal {
  * @returns A promise that resolves when the modal is closed.
  */
 export async function alert(options: AlertOptions): Promise<void> {
-  return new Promise<void>((resolve) => {
+  await new Promise<void>((resolve) => {
     const modal = new AlertModal(options, resolve);
     modal.open();
   });

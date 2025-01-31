@@ -59,7 +59,7 @@ export interface PackageLockJson extends Partial<PackageJson> {
  * @returns A promise that resolves when the file has been edited and written.
  */
 export async function editNpmShrinkWrapJson(
-  editFn: (PackageLockJson: PackageLockJson) => MaybePromise<void>,
+  editFn: (packageLockJson: PackageLockJson) => MaybePromise<void>,
   options: EditPackageJsonOptions = {}
 ): Promise<void> {
   const {
@@ -113,7 +113,7 @@ export function editPackageJsonSync(
  * @returns A promise that resolves when the file has been edited and written.
  */
 export async function editPackageLockJson(
-  editFn: (PackageLockJson: PackageLockJson) => MaybePromise<void>,
+  editFn: (packageLockJson: PackageLockJson) => MaybePromise<void>,
   options: EditPackageJsonOptions = {}
 ): Promise<void> {
   const {
@@ -131,7 +131,7 @@ export async function editPackageLockJson(
  * @returns A promise that resolves when the file has been edited and written.
  */
 export function editPackageLockJsonSync(
-  editFn: (PackageLockJson: PackageLockJson) => void,
+  editFn: (packageLockJson: PackageLockJson) => void,
   options: EditPackageJsonOptions = {}
 ): void {
   const {

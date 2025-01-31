@@ -69,12 +69,13 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
       context.fillRect(0, 0, imageWidth, imageHeight);
       context.save();
 
-      context.translate(imageWidth / 2, imageHeight / 2);
-      context.drawImage(image, 0, 0, imageWidth, imageHeight, -imageWidth / 2, -imageHeight / 2, imageWidth, imageHeight);
+      const HALF = 0.5;
+      context.translate(imageWidth * HALF, imageHeight * HALF);
+      context.drawImage(image, 0, 0, imageWidth, imageHeight, -imageWidth * HALF, -imageHeight * HALF, imageWidth, imageHeight);
       context.restore();
 
-      const dataUrl = canvas.toDataURL('image/jpeg', jpegQuality);
-      const arrayBuffer = dataUrlToArrayBuffer(dataUrl);
+      const jpegDataUrl = canvas.toDataURL('image/jpeg', jpegQuality);
+      const arrayBuffer = dataUrlToArrayBuffer(jpegDataUrl);
       resolve(arrayBuffer);
     }
   });

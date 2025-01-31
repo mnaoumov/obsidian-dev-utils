@@ -123,9 +123,8 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
     }
   }
 
-  file = getFile(app, path);
-
   return async () => {
+    file = getFile(app, path);
     if (!file.deleted) {
       await app.fileManager.trashFile(file);
     }
@@ -152,9 +151,8 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
 
   await createFolderSafe(app, path);
 
-  folder = getFolder(app, path);
-
   return async () => {
+    folder = getFolder(app, path);
     if (!folder.deleted) {
       await app.fileManager.trashFile(folder);
     }
@@ -207,7 +205,7 @@ export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: 
   if (app.vault.adapter.insensitive) {
     let folderPath = dirname(newPath);
     let nonExistingPath = basename(newPath);
-    let folder: null | TFolder = null;
+    let folder: null | TFolder;
     for (;;) {
       folder = getFolderOrNull(app, folderPath, true);
       if (folder) {
@@ -386,7 +384,7 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
 
 async function invokeFileActionSafe(app: App, pathOrFile: PathOrFile, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {
   const path = getPath(app, pathOrFile);
-  const file = getFileOrNull(app, path);
+  let file = getFileOrNull(app, path);
   if (!file || file.deleted) {
     return false;
   }
@@ -394,7 +392,7 @@ async function invokeFileActionSafe(app: App, pathOrFile: PathOrFile, fileAction
     await fileAction(file);
     return true;
   } catch (e) {
-    const file = getFileOrNull(app, path);
+    file = getFileOrNull(app, path);
     if (!file || file.deleted) {
       return false;
     }
