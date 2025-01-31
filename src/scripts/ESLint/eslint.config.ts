@@ -216,7 +216,6 @@ export const configs: Linter.Config[] = tseslint.config(
       ],
       'no-implied-eval': 'error',
       'no-inner-declarations': 'error',
-      'no-invalid-this': 'error',
       'no-iterator': 'error',
       'no-label-var': 'error',
       'no-labels': 'error',
