@@ -149,7 +149,6 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    *
    * @returns A promise or void indicating the completion of the layout setup.
    */
-  // eslint-disable-next-line class-methods-use-this
   protected onLayoutReady(): MaybePromise<void> {
     noop();
   }
@@ -160,7 +159,6 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    *
    * @returns A promise or void indicating the completion of the load process.
    */
-  // eslint-disable-next-line class-methods-use-this
   protected onloadComplete(): MaybePromise<void> {
     noop();
   }
