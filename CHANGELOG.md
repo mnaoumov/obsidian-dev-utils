@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 17.2.0
+
+- Update libs
+- More lint rules
+
 ## 17.1.1
 
 - Extend source maps regex
