@@ -121,7 +121,6 @@ export const configs: Linter.Config[] = tseslint.config(
       'array-callback-return': 'error',
       'camelcase': 'error',
       'capitalized-comments': 'error',
-      'class-methods-use-this': 'error',
       'complexity': 'error',
       'consistent-this': 'error',
       'curly': 'error',
