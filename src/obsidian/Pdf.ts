@@ -37,6 +37,7 @@ export async function printToPdf(el: HTMLElement, options: Partial<PrintToPdfOpt
   printDiv.appendChild(el);
   await ensureLoaded(printDiv);
 
+  const DEFAULT_SCALE_FACTOR = 100;
   const DEFAULT_OPTIONS: PrintToPdfOptions = {
     filepath: 'Untitled.pdf',
     includeName: false,
@@ -45,7 +46,7 @@ export async function printToPdf(el: HTMLElement, options: Partial<PrintToPdfOpt
     open: true,
     pageSize: 'A4',
     scale: 1,
-    scaleFactor: 100
+    scaleFactor: DEFAULT_SCALE_FACTOR
   };
 
   const fullOptions = { ...DEFAULT_OPTIONS, ...options };

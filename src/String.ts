@@ -174,8 +174,9 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
   }
 
   return str.replaceAll(searchValue, (substring: string, ...args: unknown[]) => {
+    const SOURCE_INDEX_OFFSET_FOR_GROUP_ARG = 2;
     const hasGroupsArg = typeof args.at(-1) === 'object';
-    const sourceIndex = hasGroupsArg ? args.length - 2 : args.length - 1;
+    const sourceIndex = hasGroupsArg ? args.length - SOURCE_INDEX_OFFSET_FOR_GROUP_ARG : args.length - 1;
 
     const commonArgs: ReplaceCommonArgs = {
       groups: hasGroupsArg ? args.at(-1) as Record<string, string | undefined> : undefined,

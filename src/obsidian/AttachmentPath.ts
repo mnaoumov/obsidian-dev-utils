@@ -121,10 +121,10 @@ export async function getAvailablePathForAttachments(
   let folder = getFolderOrNull(app, attachmentFolderPath, true);
 
   if (!folder && relativePath) {
-    if (!shouldSkipFolderCreation) {
-      folder = await app.vault.createFolder(attachmentFolderPath);
-    } else {
+    if (shouldSkipFolderCreation) {
       folder = getFolder(app, attachmentFolderPath, true);
+    } else {
+      folder = await app.vault.createFolder(attachmentFolderPath);
     }
   }
 
@@ -151,7 +151,7 @@ export async function hasOwnAttachmentFolder(app: App, path: string): Promise<bo
  * @returns The normalized path.
  */
 function normalizeSlashes(path: string): string {
-  path = replaceAll(path, /([\\/])+/g, '/');
-  path = replaceAll(path, /(^\/+|\/+$)/g, '');
+  path = replaceAll(path, /(?:[\\/])+/g, '/');
+  path = replaceAll(path, /^\/+|\/+$/g, '');
   return path || '/';
 }

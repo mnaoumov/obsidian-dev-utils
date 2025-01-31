@@ -111,7 +111,9 @@ class PromptModal extends Modal {
     textComponent.setValue(this.value);
     textComponent.setPlaceholder(this.options.placeholder);
     Object.assign(textComponent.inputEl.style, this.options.textBoxStyles);
-    textComponent.onChange((newValue) => this.value = newValue);
+    textComponent.onChange((newValue) => {
+      this.value = newValue;
+    });
     textComponent.inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
         this.handleOk(event, textComponent);
@@ -155,7 +157,7 @@ class PromptModal extends Modal {
  * @returns A promise that resolves with the user input or null if the prompt was cancelled.
  */
 export async function prompt(options: PromptOptions): Promise<null | string> {
-  return new Promise<null | string>((resolve) => {
+  return await new Promise<null | string>((resolve) => {
     const modal = new PromptModal(options, resolve);
     modal.open();
   });

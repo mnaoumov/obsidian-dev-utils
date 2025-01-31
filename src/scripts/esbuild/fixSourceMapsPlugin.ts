@@ -45,8 +45,8 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPaths: strin
           const content = await readFile(distPath, 'utf-8');
           const newContent = replaceAll(
             content,
-            /(\n(?:\/\/|\/\*)# sourceMappingURL=data:application\/json;base64,)(.+)($|\n| \*\/)(.|\n)*/g,
-            (_, prefix, sourceMapBase64, suffix): string => prefix + fixSourceMap(sourceMapBase64, pluginName) + suffix.trim() + '\n/* nosourcemap */'
+            /(?<Prefix>\n(?:\/\/|\/\*)# sourceMappingURL=data:application\/json;base64,)(?<SourceMapBase64>.+)(?<Suffix>$|\n| \*\/)(?:.|\n)*/g,
+            (_, prefix, sourceMapBase64, suffix): string => `${prefix + fixSourceMap(sourceMapBase64, pluginName) + suffix.trim()}\n/* nosourcemap */`
           );
 
           if (content !== newContent) {
@@ -66,7 +66,7 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPaths: strin
  * @returns The converted path as an Obsidian-specific URL.
  */
 function convertPathToObsidianUrl(path: string, pluginName: string): string {
-  const convertedPath = replaceAll(toPosixPath(path), /^(\.\.\/)+/g, '');
+  const convertedPath = replaceAll(toPosixPath(path), /^(?:\.\.\/)+/g, '');
   return `app://obsidian.md/plugin:${pluginName}/${convertedPath}`;
 }
 

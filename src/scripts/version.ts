@@ -182,15 +182,15 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
   const packageJson = await readPackageJson();
   const currentVersion = packageJson.version ?? '';
 
-  const match = /^(\d+)\.(\d+)\.(\d+)(-beta.(\d+))?/.exec(currentVersion);
+  const match = /^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Patch>\d+)(?:-beta\.(?<Beta>\d+))?$/.exec(currentVersion);
   if (!match) {
     throw new Error(`Invalid current version format: ${currentVersion}`);
   }
 
-  let major = Number(match[1]);
-  let minor = Number(match[2]);
-  let patch = Number(match[3]);
-  let beta = match[5] ? Number(match[5]) : 0;
+  let major = Number(match.groups?.['Major'] ?? '');
+  let minor = Number(match.groups?.['Minor'] ?? '');
+  let patch = Number(match.groups?.['Patch'] ?? '');
+  let beta = Number(match.groups?.['Beta'] ?? '');
 
   switch (versionType) {
     case VersionUpdateType.Beta:
@@ -214,6 +214,8 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
       patch++;
       beta = 0;
       break;
+    default:
+      throw new Error(`Invalid version update type: ${versionType}`);
   }
 
   return `${major.toString()}.${minor.toString()}.${patch.toString()}${beta > 0 ? `-beta.${beta.toString()}` : ''}`;
@@ -230,11 +232,11 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
   const content = await readFile(changelogPath, 'utf-8');
   const newVersionEscaped = replaceAll(newVersion, '.', '\\.');
   const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
-  let releaseNotes = match?.[1] ? match[1] + '\n\n' : '';
+  let releaseNotes = match?.[1] ? `${match[1]}\n\n` : '';
 
   const tags = (await execFromRoot('git tag --sort=-creatordate', { isQuiet: true })).split(/\r?\n/);
   const previousVersion = tags[1];
-  let changesUrl = '';
+  let changesUrl: string;
 
   const repoUrl = await execFromRoot('gh repo view --json url -q .url', { isQuiet: true });
 
@@ -264,7 +266,7 @@ export function getVersionUpdateType(versionUpdateType: string): VersionUpdateTy
       return versionUpdateTypeEnum;
 
     default:
-      if (/^\d+\.\d+\.\d+(-[\w\d.-]+)?$/.test(versionUpdateType)) {
+      if (/^\d+\.\d+\.\d+(?:-[\w\d.-]+)?$/.test(versionUpdateType)) {
         return VersionUpdateType.Manual;
       }
 
@@ -319,16 +321,17 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
  * @returns A promise that resolves when the changelog update is complete.
  */
 export async function updateChangelog(newVersion: string): Promise<void> {
+  const HEADER_LINES_COUNT = 2;
   const changelogPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ChangelogMd);
   let previousChangelogLines: string[];
-  if (!existsSync(changelogPath)) {
-    previousChangelogLines = [];
-  } else {
+  if (existsSync(changelogPath)) {
     const content = await readFile(changelogPath, 'utf-8');
-    previousChangelogLines = content.split('\n').slice(2);
+    previousChangelogLines = content.split('\n').slice(HEADER_LINES_COUNT);
     if (previousChangelogLines.at(-1) === '') {
       previousChangelogLines.pop();
     }
+  } else {
+    previousChangelogLines = [];
   }
 
   const lastTag = replaceAll(previousChangelogLines[0] ?? '', '## ', '');
@@ -356,17 +359,17 @@ export async function updateChangelog(newVersion: string): Promise<void> {
     shouldIgnoreExitCode: true
   });
   const _debugger = getLibDebugger('Version');
-  if (!codeVersion) {
-    _debugger('Could not find Visual Studio Code in your PATH. Using console mode instead.');
-    await createInterface(process.stdin, process.stdout).question(
-      `Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Press Enter when you are done...`
-    );
-  } else {
+  if (codeVersion) {
     _debugger(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Close Visual Studio Code when you are done...`);
     await execFromRoot(['code', '-w', changelogPath], {
       isQuiet: true,
       shouldIgnoreExitCode: true
     });
+  } else {
+    _debugger('Could not find Visual Studio Code in your PATH. Using console mode instead.');
+    await createInterface(process.stdin, process.stdout).question(
+      `Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Press Enter when you are done...`
+    );
   }
 }
 

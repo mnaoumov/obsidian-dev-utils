@@ -3,7 +3,7 @@
  * Contains utility functions for handling paths.
  */
 
-import path from 'path-browserify';
+import pathBrowserify from 'path-browserify';
 
 import {
   ensureStartsWith,
@@ -15,7 +15,7 @@ const WINDOWS_POSIX_LIKE_PATH_REG_EXP = /[a-zA-Z]:\/[^:]*$/;
 /**
  * Provides methods for handling POSIX paths.
  */
-export const posix = path.posix;
+export const posix = pathBrowserify.posix;
 
 /**
  * The POSIX path delimiter.
@@ -25,7 +25,7 @@ export const delimiter = posix.delimiter;
 /**
  * The POSIX segment separator.
  */
-export const sep = path.posix.sep;
+export const sep = pathBrowserify.posix.sep;
 
 /**
  * Returns the base name of a file, optionally removing the file extension.

@@ -135,6 +135,7 @@ export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: (...a
  * @param asyncFn - The asynchronous function to invoke safely.
  */
 export function invokeAsyncSafely(asyncFn: () => Promise<unknown>): void {
+  // eslint-disable-next-line no-void
   void addErrorHandler(asyncFn);
 }
 
@@ -156,12 +157,14 @@ export function marksAsTerminateRetry<TError extends Error>(error: TError): Term
  * @param stackTrace - Optional stack trace.
  * @returns A Promise that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions: RetryOptions = {}, stackTrace?: string): Promise<void> {
+export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions?: RetryOptions, stackTrace?: string): Promise<void> {
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
   stackTrace ??= getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
+    // eslint-disable-next-line no-magic-numbers
     retryDelayInMilliseconds: 100,
     shouldRetryOnError: false,
+    // eslint-disable-next-line no-magic-numbers
     timeoutInMilliseconds: 5000
   };
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
@@ -214,7 +217,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
   let isTimedOut = true;
   let result: R = null as R;
   const startTime = performance.now();
-  await Promise.race([run(), timeout()]);
+  await Promise.race([run(), innerTimeout()]);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (isTimedOut) {
     throw new Error('Timed out');
@@ -228,7 +231,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { fn });
   }
 
-  async function timeout(): Promise<void> {
+  async function innerTimeout(): Promise<void> {
     if (!isTimedOut) {
       return;
     }
@@ -244,7 +247,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
       _debugger(
         `The execution is not terminated because debugger ${_debugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging for more information`
       );
-      await timeout();
+      await innerTimeout();
     }
   }
 }
@@ -256,7 +259,9 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
  * @returns A Promise that resolves after the specified delay.
  */
 export async function sleep(milliseconds: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, milliseconds));
+  await new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
 }
 
 /**

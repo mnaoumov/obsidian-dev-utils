@@ -98,5 +98,5 @@ export function setFrontmatter(content: string, newFrontmatter: object): string 
 
   return frontmatterInfo.exists
     ? insertAt(content, newFrontmatterStr, frontmatterInfo.from, frontmatterInfo.to)
-    : '---\n' + newFrontmatterStr + '---\n' + content;
+    : `---\n${newFrontmatterStr}---\n${content}`;
 }

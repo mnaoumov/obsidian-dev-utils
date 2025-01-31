@@ -108,7 +108,7 @@ class ConfirmModal extends Modal {
  * @returns A promise that resolves with a boolean indicating whether the "OK" button was clicked.
  */
 export async function confirm(options: ConfirmOptions): Promise<boolean> {
-  return new Promise<boolean>((resolve) => {
+  return await new Promise<boolean>((resolve) => {
     const modal = new ConfirmModal(options, resolve);
     modal.open();
   });

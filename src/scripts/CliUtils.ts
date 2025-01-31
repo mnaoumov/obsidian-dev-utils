@@ -90,17 +90,15 @@ export abstract class CliTaskResult {
  * Represents a task result that does not exit the process.
  */
 class DoNotExitTaskResult extends CliTaskResult {
-  public constructor() {
-    super();
-  }
-
   /**
    * Does not exit the process.
    */
+  // eslint-disable-next-line class-methods-use-this
   public override exit(): void {
     noop();
   }
 
+  // eslint-disable-next-line class-methods-use-this
   protected override isSuccessful(): boolean {
     return true;
   }

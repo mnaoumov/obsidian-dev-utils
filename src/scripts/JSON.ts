@@ -106,7 +106,7 @@ export function readJsonSync<T>(path: string): T {
  * @returns A promise that resolves when the file has been written.
  */
 export async function writeJson(path: string, data: unknown): Promise<void> {
-  await writeFile(path, toJson(data) + '\n');
+  await writeFile(path, `${toJson(data)}\n`);
 }
 
 /**
@@ -116,5 +116,5 @@ export async function writeJson(path: string, data: unknown): Promise<void> {
  * @param data - The data to write to the JSON file.
  */
 export function writeJsonSync(path: string, data: unknown): void {
-  writeFileSync(path, toJson(data) + '\n');
+  writeFileSync(path, `${toJson(data)}\n`);
 }

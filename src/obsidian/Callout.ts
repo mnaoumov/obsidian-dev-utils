@@ -85,7 +85,6 @@ export function renderCallout(options: RenderCalloutOptions): void {
   observer.observe(contentDiv);
 
   async function loadContent(): Promise<void> {
-    await sleep(50);
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     let content: Node | string | undefined | void;
 

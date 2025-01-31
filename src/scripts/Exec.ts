@@ -167,39 +167,38 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
     child.on('close', (exitCode, exitSignal) => {
       if (exitCode !== 0 && !ignoreExitCode) {
         reject(new Error(`Command failed with exit code ${exitCode?.toString() ?? '(null)'}\n${stderr}`));
-      } else {
-        let result: ExecResult | string;
-        if (!withDetails) {
-          result = stdout;
-        } else {
-          result = {
-            exitCode,
-            exitSignal,
-            stderr,
-            stdout
-          };
-        }
-        resolve(result);
+        return;
       }
+
+      if (!withDetails) {
+        resolve(stdout);
+        return;
+      }
+      resolve({
+        exitCode,
+        exitSignal,
+        stderr,
+        stdout
+      });
     });
 
     child.on('error', (err) => {
       if (!ignoreExitCode) {
         reject(err);
-      } else {
-        let result: ExecResult | string;
-        if (!withDetails) {
-          result = stdout;
-        } else {
-          result = {
-            exitCode: null,
-            exitSignal: null,
-            stderr,
-            stdout
-          };
-        }
-        resolve(result);
+        return;
       }
+
+      if (!withDetails) {
+        resolve(stdout);
+        return;
+      }
+
+      resolve({
+        exitCode: null,
+        exitSignal: null,
+        stderr,
+        stdout
+      });
     });
   });
 }

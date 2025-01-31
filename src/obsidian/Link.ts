@@ -76,6 +76,8 @@ const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
  */
 const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\[\]<>_*~=`$]/g;
 
+const WIKILINK_DIVIDER = '|';
+
 /**
  * Options for converting a link.
  */
@@ -372,6 +374,14 @@ export interface UpdateLinksInFileOptions extends ProcessOptions {
   shouldUpdateFilenameAlias?: boolean;
 }
 
+interface LinkConfig {
+  isEmbed: boolean;
+  isWikilink: boolean;
+  shouldForceRelativePath: boolean;
+  shouldUseAngleBrackets: boolean;
+  shouldUseLeadingDot: boolean;
+}
+
 interface WikiLinkNode {
   data: {
     alias: string;
@@ -411,7 +421,6 @@ export function convertLink(options: ConvertLinkOptions): string {
  * @param processOptions - Optional options for retrying the operation.
  * @returns A promise that resolves when the backlinks have been edited.
  */
-
 export async function editBacklinks(
   app: App,
   pathOrFile: PathOrFile,
@@ -435,13 +444,13 @@ export async function editBacklinks(
 }
 
 /**
- * Edits the links in the specified file or path using the provided link converter function.
+ * Edits the backlinks for a file or path.
  *
  * @param app - The Obsidian application instance.
- * @param pathOrFile - The path or file to edit the links in.
+ * @param pathOrFile - The path or file to edit the backlinks for.
  * @param linkConverter - The function that converts each link.
- * @param processOptions - Optional options for processing/retrying the operation.
- * @returns A promise that resolves when the links have been edited.
+ * @param processOptions - Optional options for retrying the operation.
+ * @returns A promise that resolves when the backlinks have been edited.
  */
 export async function editLinks(
   app: App,
@@ -505,52 +514,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
 
   const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
 
-  return tempRegisterFileAndRun(app, targetFile, () => {
-    const sourcePath = getPath(app, options.sourcePathOrFile);
-    const subpath = options.subpath ?? '';
-    let alias = options.alias ?? '';
-    const isEmbed = options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(app, targetFile);
-    const isWikilink = options.isWikilink ?? (options.originalLink ? testWikilink(options.originalLink) : undefined) ?? shouldUseWikilinks(app);
-    const shouldForceRelativePath = options.shouldForceRelativePath ?? shouldUseRelativeLinks(app);
-    const shouldUseLeadingDot = options.shouldUseLeadingDot ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false;
-    const shouldUseAngleBrackets = options.shouldUseAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false;
-
-    let linkText = targetFile.path === sourcePath && subpath
-      ? subpath
-      : shouldForceRelativePath
-      ? relative(dirname(sourcePath), isWikilink ? trimMarkdownExtension(app, targetFile) : targetFile.path) + subpath
-      : app.metadataCache.fileToLinktext(targetFile, sourcePath, isWikilink) + subpath;
-
-    if (shouldForceRelativePath && shouldUseLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
-      linkText = './' + linkText;
-    }
-
-    const embedPrefix = isEmbed ? '!' : '';
-
-    if (!isWikilink) {
-      if (shouldUseAngleBrackets) {
-        linkText = `<${linkText}>`;
-      } else {
-        linkText = replaceAll(linkText, SPECIAL_LINK_SYMBOLS_REGEXP, ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol));
-      }
-
-      if (!alias && (!isEmbed || !options.isEmptyEmbedAliasAllowed)) {
-        alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile) ? targetFile.basename : targetFile.name;
-      }
-
-      alias = replaceAll(alias, SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
-
-      return `${embedPrefix}[${alias}](${linkText})`;
-    } else {
-      if (alias && alias.toLowerCase() === linkText.toLowerCase()) {
-        linkText = alias;
-        alias = '';
-      }
-
-      const aliasPart = alias ? `|${alias}` : '';
-      return `${embedPrefix}[[${linkText}${aliasPart}]]`;
-    }
-  });
+  return tempRegisterFileAndRun(app, targetFile, () => generateMarkdownLinkImpl(options));
 }
 
 /**
@@ -560,20 +524,12 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
  * @returns The parsed link.
  */
 export function parseLink(str: string): null | ParseLinkResult {
-  if (isUrl(str)) {
-    return {
-      isEmbed: false,
-      isExternal: true,
-      isWikilink: false,
-      url: str
-    };
+  const result = parseLinkUrl(str);
+  if (result) {
+    return result;
   }
 
   const EMBED_PREFIX = '!';
-  const OPEN_ANGLE_BRACKET = '<';
-  const LINK_ALIAS_SUFFIX = '](';
-  const LINK_SUFFIX = ')';
-  const WIKILINK_DIVIDER = '|';
 
   const isEmbed = str.startsWith(EMBED_PREFIX);
   if (isEmbed) {
@@ -607,41 +563,10 @@ export function parseLink(str: string): null | ParseLinkResult {
   }
 
   switch (node.type as string) {
-    case 'link': {
-      const linkNode = node as Link;
-      const aliasNode = linkNode.children[0] as Text | undefined;
-      const rawUrl = str.slice((aliasNode?.position?.end.offset ?? 1) + LINK_ALIAS_SUFFIX.length, (linkNode.position?.end.offset ?? 0) - LINK_SUFFIX.length);
-      const hasAngleBrackets = str.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
-      const isExternal = isUrl(linkNode.url);
-      let url = linkNode.url;
-      if (!isExternal) {
-        if (!hasAngleBrackets) {
-          try {
-            url = decodeURIComponent(url);
-          } catch (error) {
-            console.error(`Failed to decode URL ${url}`, error);
-          }
-        }
-      }
-      return normalizeOptionalProperties<ParseLinkResult>({
-        alias: aliasNode?.value,
-        hasAngleBrackets,
-        isEmbed,
-        isExternal,
-        isWikilink: false,
-        title: linkNode.title ?? undefined,
-        url
-      });
-    }
-    case 'wikiLink': {
-      const wikiLinkNode = node as unknown as WikiLinkNode;
-      return normalizeOptionalProperties<ParseLinkResult>({
-        alias: str.includes(WIKILINK_DIVIDER) ? wikiLinkNode.data.alias : undefined,
-        isEmbed,
-        isWikilink: true,
-        url: wikiLinkNode.value
-      });
-    }
+    case 'link':
+      return parseLinkNode(node as Link, str, isEmbed);
+    case 'wikiLink':
+      return parseWikilinkNode(node as unknown as WikiLinkNode, str, isEmbed);
     default:
       return null;
   }
@@ -784,7 +709,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   const {
     app,
     link,
-    newSourcePathOrFile: newSourcePathOrFile,
+    newSourcePathOrFile,
     newTargetPathOrFile,
     oldSourcePathOrFile,
     oldTargetPathOrFile,
@@ -869,4 +794,130 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
       shouldUpdateFilenameAlias
     }));
   }, options);
+}
+
+function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpath: string, config: LinkConfig): string {
+  let linkText: string;
+
+  if (targetFile.path === sourcePath && subpath) {
+    linkText = subpath;
+  } else if (config.shouldForceRelativePath) {
+    linkText = relative(dirname(sourcePath), config.isWikilink ? trimMarkdownExtension(app, targetFile) : targetFile.path) + subpath;
+  } else {
+    linkText = app.metadataCache.fileToLinktext(targetFile, sourcePath, config.isWikilink) + subpath;
+  }
+
+  if (config.shouldForceRelativePath && config.shouldUseLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
+    linkText = `./${linkText}`;
+  }
+
+  return linkText;
+}
+
+function generateMarkdownLinkImpl(options: GenerateMarkdownLinkOptions): string {
+  const { app } = options;
+  const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
+  const sourcePath = getPath(app, options.sourcePathOrFile);
+  const subpath = options.subpath ?? '';
+
+  const linkConfig = getLinkConfig(options, targetFile);
+  const linkText = generateLinkText(app, targetFile, sourcePath, subpath, linkConfig);
+
+  return linkConfig.isWikilink
+    ? generateWikiLink(linkText, options.alias, linkConfig.isEmbed)
+    : generateMarkdownStyleLink(linkText, targetFile, options, linkConfig);
+}
+
+function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options: GenerateMarkdownLinkOptions, config: LinkConfig): string {
+  const { app } = options;
+  const embedPrefix = config.isEmbed ? '!' : '';
+
+  const processedLinkText = config.shouldUseAngleBrackets
+    ? `<${linkText}>`
+    : replaceAll(linkText, SPECIAL_LINK_SYMBOLS_REGEXP, ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol));
+
+  let alias = options.alias ?? '';
+  if (!alias && (!config.isEmbed || !options.isEmptyEmbedAliasAllowed)) {
+    alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile)
+      ? targetFile.basename
+      : targetFile.name;
+  }
+
+  const escapedAlias = replaceAll(alias, SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
+  return `${embedPrefix}[${escapedAlias}](${processedLinkText})`;
+}
+
+function generateWikiLink(linkText: string, alias: string | undefined, isEmbed: boolean): string {
+  const embedPrefix = isEmbed ? '!' : '';
+  const normalizedAlias = alias ?? '';
+
+  if (normalizedAlias && normalizedAlias.toLowerCase() === linkText.toLowerCase()) {
+    return `${embedPrefix}[[${normalizedAlias}]]`;
+  }
+
+  const aliasPart = normalizedAlias ? `|${normalizedAlias}` : '';
+  return `${embedPrefix}[[${linkText}${aliasPart}]]`;
+}
+
+function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile): LinkConfig {
+  const { app } = options;
+  return {
+    isEmbed: options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(app, targetFile),
+    isWikilink: options.isWikilink ?? (options.originalLink ? testWikilink(options.originalLink) : undefined) ?? shouldUseWikilinks(app),
+    shouldForceRelativePath: options.shouldForceRelativePath ?? shouldUseRelativeLinks(app),
+    shouldUseAngleBrackets: options.shouldUseAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false,
+    shouldUseLeadingDot: options.shouldUseLeadingDot ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false
+  };
+}
+
+function parseLinkNode(node: Link, str: string, isEmbed: boolean): ParseLinkResult {
+  const OPEN_ANGLE_BRACKET = '<';
+  const LINK_ALIAS_SUFFIX = '](';
+  const LINK_SUFFIX = ')';
+
+  const aliasNode = node.children[0] as Text | undefined;
+  const rawUrl = str.slice((aliasNode?.position?.end.offset ?? 1) + LINK_ALIAS_SUFFIX.length, (node.position?.end.offset ?? 0) - LINK_SUFFIX.length);
+  const hasAngleBrackets = str.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
+  const isExternal = isUrl(node.url);
+  let url = node.url;
+  if (!isExternal) {
+    if (!hasAngleBrackets) {
+      try {
+        url = decodeURIComponent(url);
+      } catch (error) {
+        console.error(`Failed to decode URL ${url}`, error);
+      }
+    }
+  }
+  return normalizeOptionalProperties<ParseLinkResult>({
+    alias: aliasNode?.value,
+    hasAngleBrackets,
+    isEmbed,
+    isExternal,
+    isWikilink: false,
+    title: node.title ?? undefined,
+    url
+  });
+}
+
+function parseLinkUrl(str: string): null | ParseLinkResult {
+  if (!isUrl(str)) {
+    return null;
+  }
+
+  return {
+    isEmbed: false,
+    isExternal: true,
+    isWikilink: false,
+    url: str
+  };
+}
+
+function parseWikilinkNode(node: WikiLinkNode, str: string, isEmbed: boolean): ParseLinkResult {
+  return normalizeOptionalProperties<ParseLinkResult>({
+    alias: str.includes(WIKILINK_DIVIDER) ? node.data.alias : undefined,
+    isEmbed,
+    isWikilink: true,
+    url: node.value
+  });
 }

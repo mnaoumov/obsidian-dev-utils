@@ -213,7 +213,7 @@ export function deleteProperties(obj: Record<string, unknown>, propertyNames: st
  * @returns `true` if the property was present, otherwise `false`.
  */
 export function deleteProperty(obj: Record<string, unknown>, propertyName: string): boolean {
-  if (!Object.prototype.hasOwnProperty.call(obj, propertyName)) {
+  if (!Object.hasOwn(obj, propertyName)) {
     return false;
   }
   // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
@@ -332,6 +332,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
     shouldHandleErrors: false,
     shouldHandleUndefined: false,
     shouldSortKeys: false,
+    // eslint-disable-next-line no-magic-numbers
     space: 2,
     tokenSubstitutions: {
       circularReference: makeObjectTokenSubstitution(TokenSubstitutionKey.CircularReference),
@@ -355,93 +356,17 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
   const functionTexts: string[] = [];
   const usedObjects = new WeakSet<object>();
-  const valueConstructorName = value?.constructor?.name ?? 'Object';
 
-  const plainObject = toPlainObject(value, '', 0, true);
+  const plainObject = toPlainObject(value, '', 0, true, fullOptions, functionTexts, usedObjects);
   let json = JSON.stringify(plainObject, null, fullOptions.space) ?? '';
-  json = replaceAll(json, /"\[\[([A-Za-z]+)(\d*)\]\]"/g, (_, key, indexStr) =>
+  json = replaceAll(json, /"\[\[(?<Key>[A-Za-z]+)(?<Index>\d*)\]\]"/g, (_, key, indexStr) =>
     applySubstitutions({
       functionTexts,
-      index: indexStr ? parseInt(indexStr) : 0,
+      index: indexStr ? parseInt(indexStr, 10) : 0,
       key: key as TokenSubstitutionKey,
       substitutions: fullOptions.tokenSubstitutions
     }));
   return json;
-
-  function toPlainObject(value: unknown, key: string, depth: number, canUseToJSON: boolean): unknown {
-    if (value === undefined) {
-      return (depth === 0 || fullOptions.shouldHandleUndefined) ? makePlaceholder(TokenSubstitutionKey.Undefined) : undefined;
-    }
-
-    if (value === null) {
-      return null;
-    }
-
-    if (typeof value === 'function') {
-      if (fullOptions.functionHandlingMode === FunctionHandlingMode.Exclude) {
-        return undefined;
-      }
-      const index = functionTexts.length;
-      const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full
-        ? value.toString()
-        : `function ${value.name || 'anonymous'}() { /* ... */ }`;
-      functionTexts.push(functionText);
-      return makePlaceholder(TokenSubstitutionKey.Function, index);
-    }
-
-    if (typeof value !== 'object') {
-      return value;
-    }
-
-    if (usedObjects.has(value)) {
-      if (fullOptions.shouldHandleCircularReferences) {
-        return makePlaceholder(TokenSubstitutionKey.CircularReference);
-      }
-      throw new TypeError(`Converting circular structure to JSON
-    --> starting at object with constructor '${valueConstructorName}'
-    --- property '${key}' closes the circle`);
-    }
-
-    usedObjects.add(value);
-
-    if (canUseToJSON) {
-      const toJSON = (value as Partial<JSONSerializable>).toJSON;
-      if (typeof toJSON === 'function') {
-        try {
-          value = toJSON.call(value, key);
-          return toPlainObject(value, key, depth, false);
-        } catch (e) {
-          if (fullOptions.shouldCatchToJSONErrors) {
-            return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
-          }
-          throw e;
-        }
-      }
-    }
-
-    if (Array.isArray(value)) {
-      if (depth > fullOptions.maxDepth) {
-        return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length);
-      }
-
-      return value.map((item, index) => toPlainObject(item, index.toString(), depth + 1, canUseToJSON));
-    }
-
-    if (depth > fullOptions.maxDepth) {
-      return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReached);
-    }
-
-    if (value instanceof Error && fullOptions.shouldHandleErrors) {
-      return errorToString(value);
-    }
-
-    const entries = Object.entries(value);
-    if (fullOptions.shouldSortKeys) {
-      entries.sort(([key1], [key2]) => key1.localeCompare(key2));
-    }
-
-    return Object.fromEntries(entries.map(([key, value]) => [key, toPlainObject(value, key, depth + 1, canUseToJSON)]));
-  }
 }
 
 function _assignWithNonEnumerableProperties(target: object, ...sources: object[]): object {
@@ -475,8 +400,104 @@ function applySubstitutions(options: ApplySubstitutionsOptions): string | void {
     case TokenSubstitutionKey.Undefined:
       return 'undefined';
     default:
-      return;
+      break;
   }
+}
+
+function handleArray(
+  value: unknown[],
+  depth: number,
+  canUseToJSON: boolean,
+  fullOptions: ToJsonOptions,
+  functionTexts: string[],
+  usedObjects: WeakSet<object>
+): unknown {
+  if (depth > fullOptions.maxDepth) {
+    return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length);
+  }
+
+  return value.map((item, index) => toPlainObject(item, index.toString(), depth + 1, canUseToJSON, fullOptions, functionTexts, usedObjects));
+}
+
+function handleCircularReference(value: object, key: string, fullOptions: ToJsonOptions): unknown {
+  if (fullOptions.shouldHandleCircularReferences) {
+    return makePlaceholder(TokenSubstitutionKey.CircularReference);
+  }
+  const valueConstructorName = value.constructor.name || 'Object';
+  throw new TypeError(`Converting circular structure to JSON
+--> starting at object with constructor '${valueConstructorName}'
+--- property '${key}' closes the circle`);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+function handleFunction(value: Function, functionTexts: string[], fullOptions: ToJsonOptions): unknown {
+  if (fullOptions.functionHandlingMode === FunctionHandlingMode.Exclude) {
+    return undefined;
+  }
+  const index = functionTexts.length;
+  const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full
+    ? value.toString()
+    : `function ${value.name || 'anonymous'}() { /* ... */ }`;
+  functionTexts.push(functionText);
+  return makePlaceholder(TokenSubstitutionKey.Function, index);
+}
+
+function handleObject(
+  value: object,
+  key: string,
+  depth: number,
+  canUseToJSON: boolean,
+  fullOptions: ToJsonOptions,
+  functionTexts: string[],
+  usedObjects: WeakSet<object>
+): unknown {
+  if (usedObjects.has(value)) {
+    return handleCircularReference(value, key, fullOptions);
+  }
+
+  usedObjects.add(value);
+
+  if (canUseToJSON) {
+    const toJSONResult = tryHandleToJSON(value, key, depth, fullOptions, functionTexts, usedObjects);
+    if (toJSONResult !== undefined) {
+      return toJSONResult;
+    }
+  }
+
+  if (Array.isArray(value)) {
+    return handleArray(value, depth, canUseToJSON, fullOptions, functionTexts, usedObjects);
+  }
+
+  if (depth > fullOptions.maxDepth) {
+    return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReached);
+  }
+
+  if (value instanceof Error && fullOptions.shouldHandleErrors) {
+    return errorToString(value);
+  }
+
+  return handlePlainObject(value, depth, canUseToJSON, fullOptions, functionTexts, usedObjects);
+}
+
+function handlePlainObject(
+  value: object,
+  depth: number,
+  canUseToJSON: boolean,
+  fullOptions: ToJsonOptions,
+  functionTexts: string[],
+  usedObjects: WeakSet<object>
+): unknown {
+  const entries = Object.entries(value);
+  if (fullOptions.shouldSortKeys) {
+    entries.sort(([key1], [key2]) => key1.localeCompare(key2));
+  }
+
+  return Object.fromEntries(
+    entries.map(([key2, value2]) => [
+      key2,
+      toPlainObject(value2, key2, depth + 1, canUseToJSON, fullOptions, functionTexts, usedObjects)
+    ])
+  );
 }
 
 function makeObjectTokenSubstitution(key: TokenSubstitutionKey): string {
@@ -485,4 +506,53 @@ function makeObjectTokenSubstitution(key: TokenSubstitutionKey): string {
 
 function makePlaceholder(key: TokenSubstitutionKey, index?: number): string {
   return `[[${key}${index?.toString() ?? ''}]]`;
+}
+
+function toPlainObject(
+  value: unknown,
+  key: string,
+  depth: number,
+  canUseToJSON: boolean,
+  fullOptions: ToJsonOptions,
+  functionTexts: string[],
+  usedObjects: WeakSet<object>
+): unknown {
+  if (value === undefined) {
+    return (depth === 0 || fullOptions.shouldHandleUndefined)
+      ? makePlaceholder(TokenSubstitutionKey.Undefined)
+      : undefined;
+  }
+
+  if (typeof value === 'function') {
+    return handleFunction(value, functionTexts, fullOptions);
+  }
+
+  if (typeof value !== 'object' || value === null) {
+    return value;
+  }
+
+  return handleObject(value, key, depth, canUseToJSON, fullOptions, functionTexts, usedObjects);
+}
+
+function tryHandleToJSON(
+  value: object,
+  key: string,
+  depth: number,
+  fullOptions: ToJsonOptions,
+  functionTexts: string[],
+  usedObjects: WeakSet<object>
+): unknown {
+  const toJSON = (value as Partial<JSONSerializable>).toJSON;
+  if (typeof toJSON === 'function') {
+    try {
+      const newValue = toJSON.call(value, key);
+      return toPlainObject(newValue, key, depth, false, fullOptions, functionTexts, usedObjects);
+    } catch (e) {
+      if (fullOptions.shouldCatchToJSONErrors) {
+        return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
+      }
+      throw e;
+    }
+  }
+  return undefined;
 }

@@ -31,11 +31,11 @@ export function getCodeBlockArguments(ctx: MarkdownPostProcessorContext, el: HTM
   }
   const lines = sectionInfo.text.split('\n');
   const codeBlockHeader = lines[sectionInfo.lineStart] ?? throwExpression(new Error('Code block header not found'));
-  const match = /^`{3,}\S+\s+(.*)$/.exec(codeBlockHeader);
+  const match = /^`{3,}\S+\s+(?<Arguments>.*)$/.exec(codeBlockHeader);
   if (!match) {
     return [];
   }
-  return parse(match[1] ?? '').map(String);
+  return parse(match.groups?.['Arguments'] ?? '').map(String);
 }
 
 /**
@@ -61,6 +61,6 @@ export async function replaceCodeBlock(
   const oldCodeBlock = lines.slice(sectionInfo.lineStart, sectionInfo.lineEnd + 1).join('\n');
   const suffix = lines.slice(sectionInfo.lineEnd + 1).join('\n');
   const newCodeBlock = await resolveValue(codeBlockProvider, oldCodeBlock);
-  const newSectionText = prefix + '\n' + newCodeBlock + (newCodeBlock ? '\n' : '') + suffix;
+  const newSectionText = `${prefix}\n${newCodeBlock}${newCodeBlock ? '\n' : ''}${suffix}`;
   await process(app, ctx.sourcePath, (content) => replaceAll(content, sectionInfo.text, newSectionText));
 }

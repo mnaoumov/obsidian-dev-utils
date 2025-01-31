@@ -71,7 +71,7 @@ export function preprocessPlugin(): Plugin {
       build.initialOptions.banner['js'] ??= '';
       build.initialOptions.banner['js'] += `\n(${init.toString()})()\n`;
 
-      build.onLoad({ filter: /\.(js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
+      build.onLoad({ filter: /\.(?:js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, 'utf-8');
 
         for (const [key, value] of Object.entries(replacements)) {
@@ -83,11 +83,12 @@ export function preprocessPlugin(): Plugin {
           if (contents.includes(`var ${variable}`)) {
             continue;
           }
-          contents = `var ${variable} = globalThis['${key}'] ?? ${valueStr};\n` + contents;
+          contents = `var ${variable} = globalThis['${key}'] ?? ${valueStr};\n${contents}`;
         }
 
         // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
-        // otherwise, it stops loading after the first line of the sourceMappingURL comment.
+        // Otherwise, it stops loading after the first line of the sourceMappingURL comment.
+        // eslint-disable-next-line no-template-curly-in-string
         contents = replaceAll(contents, /`\r?\n\/\/# sourceMappingURL/g, '`\n//#${\'\'} sourceMappingURL');
 
         return {

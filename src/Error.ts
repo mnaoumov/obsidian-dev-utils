@@ -42,9 +42,11 @@ export function errorToString(error: unknown): string {
  * @returns A string representation of the current stack trace, excluding the current function call.
  */
 export function getStackTrace(framesToSkip = 0): string {
+  // Skipping Error prefix and `getStackTrace` function call
+  const ADDITIONAL_FRAMES_TO_SKIP = 2;
   const stack = new Error().stack ?? '';
   const lines = stack.split('\n');
-  return lines.slice(framesToSkip + 2).join('\n');
+  return lines.slice(framesToSkip + ADDITIONAL_FRAMES_TO_SKIP).join('\n');
 }
 
 /**
@@ -110,7 +112,7 @@ function parseErrorEntries(error: unknown, level = 0, entries: ErrorEntry[] = []
   }
 
   if (!(error instanceof Error)) {
-    let str = '';
+    let str: string;
 
     if (error === null) {
       str = '(null)';

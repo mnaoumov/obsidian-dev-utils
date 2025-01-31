@@ -8,8 +8,10 @@ import { lint } from '../src/scripts/ESLint/ESLint.ts';
 import { process } from '../src/scripts/NodeModules.ts';
 
 await wrapCliTask(async () => {
-  const fix = process.argv[2] === 'fix';
+  const FIX_ARG_INDEX = 2;
+  const fix = process.argv[FIX_ARG_INDEX] === 'fix';
   return await lint(fix, [{
+    ignores: ['**/index.ts'],
     plugins: {
       'eslint-plugin-tsdoc-required': eslintPluginTsdocRequired,
       'tsdoc': eslintPluginTsdoc,
