@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.2.2
+
+- Disable no-invalid-this as it will always fail for prototype methods
+
 ## 17.2.1
 
 - Disable class-methods-use-this as it will always fail for settings classes
