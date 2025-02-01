@@ -49,6 +49,22 @@
       "types": "./dist/lib/@types/*.d.ts",
       "default": "./dist/lib/@types/*.cjs"
     },
+    "./codemirror": {
+      "types": "./dist/lib/codemirror/index.d.ts",
+      "default": "./dist/lib/codemirror/index.cjs"
+    },
+    "./codemirror/*": {
+      "types": "./dist/lib/codemirror/*.d.ts",
+      "default": "./dist/lib/codemirror/*.cjs"
+    },
+    "./dist/lib/codemirror": {
+      "types": "./dist/lib/codemirror/index.d.ts",
+      "default": "./dist/lib/codemirror/index.cjs"
+    },
+    "./dist/lib/codemirror/*": {
+      "types": "./dist/lib/codemirror/*.d.ts",
+      "default": "./dist/lib/codemirror/*.cjs"
+    },
     "./obsidian": {
       "types": "./dist/lib/obsidian/index.d.ts",
       "default": "./dist/lib/obsidian/index.cjs"
