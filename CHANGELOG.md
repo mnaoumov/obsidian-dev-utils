@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 17.4.0
+
+- Add svelte-wrapper
+- Update libs
+
 ## 17.3.0
 
 - Add CodeMirror's StateFieldSpec
