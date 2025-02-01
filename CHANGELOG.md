@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.3.0
+
+- Add CodeMirror's StateFieldSpec
+
 ## 17.2.2
 
 - Disable no-invalid-this as it will always fail for prototype methods
