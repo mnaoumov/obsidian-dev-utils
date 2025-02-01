@@ -14,8 +14,6 @@ import type {
 import { config } from 'dotenv';
 import { context } from 'esbuild';
 import sassPlugin_ from 'esbuild-sass-plugin';
-import esbuildSvelte_ from 'esbuild-svelte';
-import { sveltePreprocess } from 'svelte-preprocess';
 
 import { throwExpression } from '../../Error.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
@@ -38,8 +36,8 @@ import { fixEsmPlugin } from './fixEsmPlugin.ts';
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
 import { renameCssPlugin } from './renameCssPlugin.ts';
+import { svelteWrapperPlugin } from './svelteWrapperPlugin.ts';
 
-const esbuildSvelte = esbuildSvelte_ as unknown as typeof esbuildSvelte_.default;
 const sassPlugin = sassPlugin_ as unknown as typeof sassPlugin_.default;
 
 /**
@@ -174,16 +172,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     outfile: distPath,
     platform: 'node',
     plugins: [
-      esbuildSvelte({
-        compilerOptions: {
-          css: 'injected',
-          dev: !isProductionBuild
-        },
-        moduleCompilerOptions: {
-          dev: !isProductionBuild
-        },
-        preprocess: sveltePreprocess()
-      }),
+      svelteWrapperPlugin(isProductionBuild),
       sassPlugin({
         sourceMap: !isProductionBuild
       }),
