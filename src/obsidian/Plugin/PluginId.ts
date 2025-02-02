@@ -3,7 +3,7 @@
  * Holder for the plugin ID.
  */
 
-let pluginId = '';
+let pluginId = '__no-plugin-id-provided';
 
 /**
  * Returns the plugin ID.
@@ -20,5 +20,7 @@ export function getPluginId(): string {
  * @param newPluginId - The new plugin ID.
  */
 export function setPluginId(newPluginId: string): void {
-  pluginId = newPluginId;
+  if (newPluginId) {
+    pluginId = newPluginId;
+  }
 }
