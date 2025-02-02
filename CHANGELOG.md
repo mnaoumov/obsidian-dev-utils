@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.5.0
+
+- Ensure not-empty pluginId
+
 ## 17.4.0
 
 - Add svelte-wrapper
