@@ -5,6 +5,9 @@
 *.iml
 .idea
 
+# Emacs
+.projectile
+
 # npm
 node_modules
 

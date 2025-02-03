@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.5.1
+
+- Copy `styles.css` when building
+
 ## 17.5.0
 
 - Ensure not-empty pluginId

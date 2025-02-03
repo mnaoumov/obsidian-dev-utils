@@ -114,7 +114,8 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
   await mkdir(distDir, { recursive: true });
 
   const distFileNames = [
-    ObsidianPluginRepoPaths.ManifestJson
+    ObsidianPluginRepoPaths.ManifestJson,
+    ObsidianPluginRepoPaths.StylesCss,
   ];
   if (!isProductionBuild) {
     await writeFile(join(distDir, ObsidianPluginRepoPaths.HotReload), '', 'utf-8');
