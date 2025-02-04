@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.6.0
+
+- Typed deleteProperty/deleteProperties
+
 ## 17.5.0
 
 - Ensure not-empty pluginId
