@@ -191,11 +191,12 @@ export function deepEqual(a: unknown, b: unknown): boolean {
 /**
  * Deletes multiple properties from an object.
  *
+ * @typeParam T - The type of the object.
  * @param obj - The object to delete the properties from.
  * @param propertyNames - The names of the properties to delete.
  * @returns `true` if any of the properties were present, otherwise `false`.
  */
-export function deleteProperties(obj: Record<string, unknown>, propertyNames: string[]): boolean {
+export function deleteProperties<T extends object>(obj: T, propertyNames: (keyof T)[]): boolean {
   let ans = false;
 
   for (const propertyName of propertyNames) {
@@ -208,11 +209,12 @@ export function deleteProperties(obj: Record<string, unknown>, propertyNames: st
 /**
  * Deletes a property from an object.
  *
+ * @typeParam T - The type of the object.
  * @param obj - The object to delete the property from.
  * @param propertyName - The name of the property to delete.
  * @returns `true` if the property was present, otherwise `false`.
  */
-export function deleteProperty(obj: Record<string, unknown>, propertyName: string): boolean {
+export function deleteProperty<T extends object>(obj: T, propertyName: keyof T): boolean {
   if (!Object.hasOwn(obj, propertyName)) {
     return false;
   }
