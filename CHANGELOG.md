@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.8.0
+
+- Add enum helpers
+
 ## 17.7.0
 
 - Lint
