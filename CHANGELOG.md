@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 17.7.0
+
+- Lint
+- Update libs
+- Ensure proper debugger in CLI
+
 ## 17.6.0
 
 - Typed deleteProperty/deleteProperties
