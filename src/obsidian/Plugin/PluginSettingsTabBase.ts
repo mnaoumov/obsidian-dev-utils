@@ -110,7 +110,6 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     property: KeysMatching<ExtractPluginSettings<TPlugin>, UIValue>,
     options?: BindOptions<ExtractPluginSettings<TPlugin>, UIValue>
   ): TValueComponent;
-
   /**
    * Binds a value component to a plugin setting.
    *
@@ -131,7 +130,6 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     property: Property,
     options: BindOptionsExtended<ExtractPluginSettings<TPlugin>, UIValue, Property>
   ): TValueComponent;
-
   /**
    * Binds a value component to a plugin setting.
    *
