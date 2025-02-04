@@ -3,7 +3,12 @@
  * Holder for the plugin ID.
  */
 
-let pluginId = '__no-plugin-id-provided';
+/**
+ * The plugin ID for no plugin.
+ */
+export const NO_PLUGIN_ID_INITIALIZED = '__no-plugin-id-initialized__';
+
+let pluginId = NO_PLUGIN_ID_INITIALIZED;
 
 /**
  * Returns the plugin ID.

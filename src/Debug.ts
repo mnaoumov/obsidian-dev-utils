@@ -14,7 +14,10 @@ import {
   getApp,
   getObsidianDevUtilsState
 } from './obsidian/App.ts';
-import { getPluginId } from './obsidian/Plugin/PluginId.ts';
+import {
+  getPluginId,
+  NO_PLUGIN_ID_INITIALIZED
+} from './obsidian/Plugin/PluginId.ts';
 
 interface DebuggerEx extends Debugger {
   printStackTrace(stackTrace: string, title?: string): void;
@@ -70,7 +73,7 @@ export function getDebugger(namespace: string, framesToSkip = 0): DebuggerEx {
  */
 export function getLibDebugger(namespace: string): DebuggerEx {
   const pluginId = getPluginId();
-  const prefix = pluginId ? `${pluginId}:` : '';
+  const prefix = pluginId === NO_PLUGIN_ID_INITIALIZED ? '' : `${pluginId}:`;
   return getDebugger(`${prefix}${LIBRARY_NAME}:${namespace}`);
 }
 
