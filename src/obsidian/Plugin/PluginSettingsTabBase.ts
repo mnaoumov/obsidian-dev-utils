@@ -175,6 +175,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
       const validatorElement = getValidatorElement(valueComponent);
       if (validatorElement) {
         if (!errorMessage) {
+          validatorElement.setCustomValidity('');
           validatorElement.checkValidity();
           errorMessage = validatorElement.validationMessage;
         }
