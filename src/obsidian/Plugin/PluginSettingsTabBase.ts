@@ -4,7 +4,7 @@
  * It provides a utility method to bind value components to plugin settings and handle changes.
  */
 
-import type { ValueComponent } from 'obsidian';
+import type { BaseComponent } from 'obsidian';
 
 import { PluginSettingTab } from 'obsidian';
 
@@ -84,9 +84,8 @@ type ExtractPluginSettings<T extends PluginBase<any>> = PluginSettingsBase & T['
  *
  * @typeParam TPlugin - The type of the plugin that extends PluginBase.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> extends PluginSettingTab {
-  private validatorsMap = new WeakMap<ValueComponent<unknown>, () => Promise<boolean>>();
+  private validatorsMap = new WeakMap<BaseComponent, () => Promise<boolean>>();
 
   public constructor(public override plugin: TPlugin) {
     super(plugin.app, plugin);
@@ -207,8 +206,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
 
     validatorElement?.addEventListener('focus', convertAsyncToSync(() => validate()));
     validatorElement?.addEventListener('blur', convertAsyncToSync(() => validate()));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.validatorsMap.set(valueComponent as ValueComponent<any>, () => validate());
+    this.validatorsMap.set(valueComponent, () => validate());
 
     invokeAsyncSafely(() => validate());
     return valueComponent;
@@ -217,12 +215,11 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
   /**
    * Revalidates the value component.
    *
-   * @param valueComponent - The value component to revalidate.
+   * @param baseComponent - The base component to revalidate.
    * @returns A promise that resolves to a boolean indicating whether the value component is valid.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async revalidate(valueComponent: ValueComponent<any>): Promise<boolean> {
-    const validator = this.validatorsMap.get(valueComponent);
+  protected async revalidate(baseComponent: BaseComponent): Promise<boolean> {
+    const validator = this.validatorsMap.get(baseComponent);
     if (validator) {
       return await validator();
     }
