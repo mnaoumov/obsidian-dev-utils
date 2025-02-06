@@ -11,10 +11,13 @@ import { DateComponent } from './Components/DateComponent.ts';
 import { DateTimeComponent } from './Components/DateTimeComponent.ts';
 import { EmailComponent } from './Components/EmailComponent.ts';
 import { FileComponent } from './Components/FileComponent.ts';
+import { MonthComponent } from './Components/MonthComponent.ts';
 import { MultipleEmailComponent } from './Components/MultipleEmailComponent.ts';
 import { MultipleFileComponent } from './Components/MultipleFileComponent.ts';
 import { NumberComponent } from './Components/NumberComponent.ts';
 import { TimeComponent } from './Components/TimeComponent.ts';
+import { UrlComponent } from './Components/UrlComponent.ts';
+import { WeekComponent } from './Components/WeekComponent.ts';
 
 /**
  * Extends the Setting class with additional methods for adding components.
@@ -76,10 +79,19 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a multiple email component to the setting.
+   * Adds a month component to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
+   */
+  public addMonth(cb: (component: MonthComponent) => void): this {
+    return this.addComponent(MonthComponent, cb);
+  }
+
+  /**
+   * Adds a multiple email component to the setting.
+   *
+   * @param cb - The callback to call with the component.
    */
   public addMultipleEmail(cb: (component: MultipleEmailComponent) => void): this {
     return this.addComponent(MultipleEmailComponent, cb);
@@ -113,5 +125,25 @@ export class SettingEx extends Setting {
    */
   public addTime(cb: (component: TimeComponent) => void): this {
     return this.addComponent(TimeComponent, cb);
+  }
+
+  /**
+   * Adds a url component to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addUrl(cb: (component: UrlComponent) => void): this {
+    return this.addComponent(UrlComponent, cb);
+  }
+
+  /**
+   * Adds a week component to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addWeek(cb: (component: WeekComponent) => void): this {
+    return this.addComponent(WeekComponent, cb);
   }
 }
