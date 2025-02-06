@@ -1,28 +1,27 @@
 /**
- * @packageDocumentation ValueComponent
- * Contains utility types and functions for handling value components, which are UI components that display and edit values.
+ * @packageDocumentation ValidatorComponent
+ * Contains a component that has a validator element.
  */
+
+import type { BaseComponent } from 'obsidian';
 
 import {
   DropdownComponent,
   SliderComponent,
   TextAreaComponent,
-  TextComponent,
-  ValueComponent
+  TextComponent
 } from 'obsidian';
 
 import type { ValidatorElement } from '../../HTMLElement.ts';
 
 /**
- * A ValueComponent that can track changes.
+ * A component that has a validator element.
  */
-export interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
+export interface ValidatorComponent {
   /**
-   * Sets a callback function to be called when the value of the component changes.
-   *
-   * @param callback - A callback function that is called when the value of the component changes.
+   * The validator element of the component.
    */
-  onChange(callback: (newValue: T) => Promise<void>): this;
+  readonly validatorEl: ValidatorElement;
 }
 
 /**
@@ -31,7 +30,13 @@ export interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
  * @param valueComponent - The value component to get the validator element from.
  * @returns The validator element if it exists, or `null` if it does not.
  */
-export function getValidatorElement<UIValue>(valueComponent: ValueComponentWithChangeTracking<UIValue>): null | ValidatorElement {
+export function getValidatorElement(valueComponent: BaseComponent): null | ValidatorElement {
+  const validatorComponent = valueComponent as Partial<ValidatorComponent>;
+
+  if (validatorComponent.validatorEl) {
+    return validatorComponent.validatorEl;
+  }
+
   if (valueComponent instanceof DropdownComponent) {
     return valueComponent.selectEl;
   }
