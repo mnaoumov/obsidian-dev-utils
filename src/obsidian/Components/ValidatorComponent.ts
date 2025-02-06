@@ -25,32 +25,48 @@ export interface ValidatorComponent {
 }
 
 /**
- * Gets the validator element from a value component if it exists.
+ * Gets a validator component related to the base component
  *
- * @param valueComponent - The value component to get the validator element from.
- * @returns The validator element if it exists, or `null` if it does not.
+ * @param baseComponent - A base component
+ * @returns related validator component or `null` if no related validator component is found
  */
-export function getValidatorElement(valueComponent: BaseComponent): null | ValidatorElement {
-  const validatorComponent = valueComponent as Partial<ValidatorComponent>;
+export function getValidatorComponent(baseComponent: BaseComponent): null | ValidatorComponent {
+  const validatorComponent = baseComponent as Partial<ValidatorComponent>;
 
   if (validatorComponent.validatorEl) {
-    return validatorComponent.validatorEl;
+    return validatorComponent as ValidatorComponent;
   }
 
-  if (valueComponent instanceof DropdownComponent) {
-    return valueComponent.selectEl;
+  if (baseComponent instanceof DropdownComponent) {
+    return {
+      get validatorEl(): ValidatorElement {
+        return baseComponent.selectEl;
+      }
+    };
   }
 
-  if (valueComponent instanceof SliderComponent) {
-    return valueComponent.sliderEl;
+  if (baseComponent instanceof SliderComponent) {
+    return {
+      get validatorEl(): ValidatorElement {
+        return baseComponent.sliderEl;
+      }
+    };
   }
 
-  if (valueComponent instanceof TextAreaComponent) {
-    return valueComponent.inputEl;
+  if (baseComponent instanceof TextAreaComponent) {
+    return {
+      get validatorEl(): ValidatorElement {
+        return baseComponent.inputEl;
+      }
+    };
   }
 
-  if (valueComponent instanceof TextComponent) {
-    return valueComponent.inputEl;
+  if (baseComponent instanceof TextComponent) {
+    return {
+      get validatorEl(): ValidatorElement {
+        return baseComponent.inputEl;
+      }
+    };
   }
 
   return null;

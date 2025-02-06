@@ -19,7 +19,7 @@ import {
 } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
-import { getValidatorElement } from '../Components/ValidatorComponent.ts';
+import { getValidatorComponent } from '../Components/ValidatorComponent.ts';
 import { PluginBase } from './PluginBase.ts';
 import { getPluginId } from './PluginId.ts';
 
@@ -168,11 +168,11 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? this.plugin.settingsClone;
+    const validatorElement = getValidatorComponent(valueComponent)?.validatorEl;
 
     const validate = async (uiValue?: UIValue): Promise<boolean> => {
       uiValue ??= valueComponent.getValue();
       let errorMessage = await optionsExt.valueValidator(uiValue) as string | undefined;
-      const validatorElement = getValidatorElement(valueComponent);
       if (validatorElement) {
         if (!errorMessage) {
           validatorElement.setCustomValidity('');
@@ -205,7 +205,6 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
         await optionsExt.onChanged();
       });
 
-    const validatorElement = getValidatorElement(valueComponent);
     validatorElement?.addEventListener('focus', convertAsyncToSync(() => validate()));
     validatorElement?.addEventListener('blur', convertAsyncToSync(() => validate()));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
