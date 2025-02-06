@@ -337,21 +337,21 @@
       "types": "./dist/lib/obsidian/Components/*.d.ts",
       "default": "./dist/lib/obsidian/Components/*.cjs"
     },
-    "./obsidian/Modal": {
-      "types": "./dist/lib/obsidian/Modal/index.d.ts",
-      "default": "./dist/lib/obsidian/Modal/index.cjs"
+    "./obsidian/Modals": {
+      "types": "./dist/lib/obsidian/Modals/index.d.ts",
+      "default": "./dist/lib/obsidian/Modals/index.cjs"
     },
-    "./obsidian/Modal/*": {
-      "types": "./dist/lib/obsidian/Modal/*.d.ts",
-      "default": "./dist/lib/obsidian/Modal/*.cjs"
+    "./obsidian/Modals/*": {
+      "types": "./dist/lib/obsidian/Modals/*.d.ts",
+      "default": "./dist/lib/obsidian/Modals/*.cjs"
     },
-    "./dist/lib/obsidian/Modal": {
-      "types": "./dist/lib/obsidian/Modal/index.d.ts",
-      "default": "./dist/lib/obsidian/Modal/index.cjs"
+    "./dist/lib/obsidian/Modals": {
+      "types": "./dist/lib/obsidian/Modals/index.d.ts",
+      "default": "./dist/lib/obsidian/Modals/index.cjs"
     },
-    "./dist/lib/obsidian/Modal/*": {
-      "types": "./dist/lib/obsidian/Modal/*.d.ts",
-      "default": "./dist/lib/obsidian/Modal/*.cjs"
+    "./dist/lib/obsidian/Modals/*": {
+      "types": "./dist/lib/obsidian/Modals/*.d.ts",
+      "default": "./dist/lib/obsidian/Modals/*.cjs"
     },
     "./obsidian/Plugin": {
       "types": "./dist/lib/obsidian/Plugin/index.d.ts",
