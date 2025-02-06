@@ -10,17 +10,17 @@ import { PluginSettingTab } from 'obsidian';
 
 import type { KeysMatching } from '../../@types.ts';
 import type { MaybePromise } from '../../Async.ts';
+import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
-import type { ValueComponentWithChangeTracking } from './ValueComponent.ts';
 
 import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
+import { getValidatorElement } from '../Components/ValidatorComponent.ts';
 import { PluginBase } from './PluginBase.ts';
 import { getPluginId } from './PluginId.ts';
-import { getValidatorElement } from './ValueComponent.ts';
 
 /**
  * Options for binding a value component to a plugin setting.
