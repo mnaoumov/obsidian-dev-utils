@@ -59,7 +59,7 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
    * @returns The component.
    */
   public onChange(callback: (value: T) => MaybePromise<void>): this {
-    this.textComponent.onChange((value) => callback(this.valueFromString(value)));
+    this.textComponent.onChange(() => callback(this.getValue()));
     return this;
   }
 
@@ -117,5 +117,7 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
    * @param value - The value to convert.
    * @returns The string.
    */
-  public abstract valueToString(value: T): string;
+  public valueToString(value: T): string {
+    return String(value);
+  }
 }

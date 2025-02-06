@@ -27,14 +27,4 @@ export class NumberComponent extends TypedRangeTextComponent<number> {
   public override valueFromString(str: string): number {
     return parseInt(str, 10);
   }
-
-  /**
-   * Converts a number to a string.
-   *
-   * @param value - The number to convert.
-   * @returns The string.
-   */
-  public override valueToString(value: number): string {
-    return value.toString();
-  }
 }

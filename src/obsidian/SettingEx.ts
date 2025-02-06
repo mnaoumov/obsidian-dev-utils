@@ -10,7 +10,9 @@ import { Setting } from 'obsidian';
 import { DateComponent } from './Components/DateComponent.ts';
 import { DateTimeComponent } from './Components/DateTimeComponent.ts';
 import { EmailComponent } from './Components/EmailComponent.ts';
+import { FileComponent } from './Components/FileComponent.ts';
 import { MultipleEmailComponent } from './Components/MultipleEmailComponent.ts';
+import { MultipleFileComponent } from './Components/MultipleFileComponent.ts';
 import { NumberComponent } from './Components/NumberComponent.ts';
 import { TimeComponent } from './Components/TimeComponent.ts';
 
@@ -64,6 +66,16 @@ export class SettingEx extends Setting {
   }
 
   /**
+   * Adds a file component to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addFile(cb: (component: FileComponent) => void): this {
+    return this.addComponent(FileComponent, cb);
+  }
+
+  /**
    * Adds a multiple email component to the setting.
    *
    * @param cb - The callback to call with the component.
@@ -71,6 +83,16 @@ export class SettingEx extends Setting {
    */
   public addMultipleEmail(cb: (component: MultipleEmailComponent) => void): this {
     return this.addComponent(MultipleEmailComponent, cb);
+  }
+
+  /**
+   * Adds a multiple file component to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addMultipleFile(cb: (component: MultipleFileComponent) => void): this {
+    return this.addComponent(MultipleFileComponent, cb);
   }
 
   /**

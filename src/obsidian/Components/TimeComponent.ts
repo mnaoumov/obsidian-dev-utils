@@ -27,14 +27,4 @@ export class TimeComponent extends TypedRangeTextComponent<string> {
   public override valueFromString(str: string): string {
     return str;
   }
-
-  /**
-   * Converts a time to a string.
-   *
-   * @param value - The time to convert.
-   * @returns The string.
-   */
-  public override valueToString(value: string): string {
-    return value;
-  }
 }
