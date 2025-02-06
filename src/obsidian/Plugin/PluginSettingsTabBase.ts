@@ -84,6 +84,7 @@ type ExtractPluginSettings<T extends PluginBase<any>> = PluginSettingsBase & T['
  *
  * @typeParam TPlugin - The type of the plugin that extends PluginBase.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> extends PluginSettingTab {
   private validatorsMap = new WeakMap<BaseComponent, () => Promise<boolean>>();
 
