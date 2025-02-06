@@ -18,6 +18,7 @@ import {
   invokeAsyncSafely
 } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
+import { noop } from '../../Function.ts';
 import { getValidatorElement } from '../Components/ValidatorComponent.ts';
 import { PluginBase } from './PluginBase.ts';
 import { getPluginId } from './PluginId.ts';
@@ -152,30 +153,34 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
   ): TValueComponent {
     type PluginSettings = ExtractPluginSettings<TPlugin>;
     type PropertyType = PluginSettings[Property];
-    const DEFAULT_OPTIONS: BindOptionsExtended<PluginSettings, UIValue, Property> = {
+    const DEFAULT_OPTIONS: Required<BindOptionsExtended<PluginSettings, UIValue, Property>> = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
+      onChanged: noop,
+      pluginSettings: this.plugin.settingsClone as PluginSettings,
       pluginSettingsToComponentValueConverter: (value: PropertyType): UIValue => value as UIValue,
       shouldAutoSave: true,
-      shouldShowValidationMessage: true
+      shouldShowValidationMessage: true,
+      valueValidator: noop
     };
 
-    const optionsExt: BindOptionsExtended<PluginSettings, UIValue, Property> = { ...DEFAULT_OPTIONS, ...options };
+    const optionsExt: Required<BindOptionsExtended<PluginSettings, UIValue, Property>> = { ...DEFAULT_OPTIONS, ...options };
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? this.plugin.settingsClone;
 
     const validate = async (uiValue?: UIValue): Promise<boolean> => {
-      if (!optionsExt.valueValidator) {
-        return true;
-      }
       uiValue ??= valueComponent.getValue();
-      const errorMessage = await optionsExt.valueValidator(uiValue) as string | undefined;
+      let errorMessage = await optionsExt.valueValidator(uiValue) as string | undefined;
       const validatorElement = getValidatorElement(valueComponent);
       if (validatorElement) {
-        validatorElement.setCustomValidity(errorMessage ?? '');
-        validatorElement.title = errorMessage ?? '';
-        validatorElement.toggleClass(CssClass.ValueComponentInvalid, !!errorMessage);
+        if (!errorMessage) {
+          validatorElement.checkValidity();
+          errorMessage = validatorElement.validationMessage;
+        }
+
+        validatorElement.setCustomValidity(errorMessage);
+        validatorElement.title = errorMessage;
         if (validatorElement.isActiveElement() && optionsExt.shouldShowValidationMessage) {
           validatorElement.reportValidity();
         }
@@ -196,7 +201,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
           await this.plugin.saveSettings(pluginSettings);
         }
 
-        await optionsExt.onChanged?.();
+        await optionsExt.onChanged();
       });
 
     const validatorElement = getValidatorElement(valueComponent);
