@@ -8,6 +8,13 @@
  */
 export interface ValidatorElement extends HTMLElement {
   /**
+   * Checks the validity of the element.
+   *
+   * @returns True if the element is valid, false otherwise.
+   */
+  checkValidity(): boolean;
+
+  /**
    * Reports the validity of the element.
    */
   reportValidity(): boolean;
@@ -17,6 +24,11 @@ export interface ValidatorElement extends HTMLElement {
    * @param error - The error message to set on the element.
    */
   setCustomValidity(error: string): void;
+
+  /**
+   * The error message of the element.
+   */
+  readonly validationMessage: string;
 }
 
 /**
