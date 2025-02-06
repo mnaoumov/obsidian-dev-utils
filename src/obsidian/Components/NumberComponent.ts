@@ -3,12 +3,12 @@
  * Contains a component that displays and edits a number.
  */
 
-import { TypedTextComponent } from './TypedTextComponent.ts';
+import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 
 /**
  * A component that displays and edits a number.
  */
-export class NumberComponent extends TypedTextComponent<number> {
+export class NumberComponent extends TypedRangeTextComponent<number> {
   /**
    * Creates a new number component.
    *

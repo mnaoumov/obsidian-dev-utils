@@ -1,25 +1,25 @@
 /**
- * @packageDocumentation DateComponent
- * Contains a component that displays and edits a date.
+ * @packageDocumentation DateTimeComponent
+ * Contains a component that displays and edits a date and time.
  */
 
 import moment from 'moment';
 
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 
-const DATE_FORMAT = 'YYYY-MM-DD';
+const DATE_TIME_FORMAT = 'YYYY-MM-DDTHH:mm';
 
 /**
- * A component that displays and edits a date.
+ * A component that displays and edits a date and time.
  */
-export class DateComponent extends TypedRangeTextComponent<Date> {
+export class DateTimeComponent extends TypedRangeTextComponent<Date> {
   /**
-   * Creates a new date component.
+   * Creates a new date and time component.
    *
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'date');
+    super(containerEl, 'datetime-local');
   }
 
   /**
@@ -29,7 +29,7 @@ export class DateComponent extends TypedRangeTextComponent<Date> {
    * @returns The date.
    */
   public override valueFromString(str: string): Date {
-    return moment(str, DATE_FORMAT).toDate();
+    return moment(str, DATE_TIME_FORMAT).toDate();
   }
 
   /**
@@ -39,6 +39,6 @@ export class DateComponent extends TypedRangeTextComponent<Date> {
    * @returns The string.
    */
   public override valueToString(value: Date): string {
-    return moment(value).format(DATE_FORMAT);
+    return moment(value).format(DATE_TIME_FORMAT);
   }
 }
