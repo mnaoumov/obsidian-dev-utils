@@ -12,6 +12,7 @@ import { DateTimeComponent } from './Components/DateTimeComponent.ts';
 import { EmailComponent } from './Components/EmailComponent.ts';
 import { FileComponent } from './Components/FileComponent.ts';
 import { MonthComponent } from './Components/MonthComponent.ts';
+import { MultipleDropdownComponent } from './Components/MultipleDropdownComponent.ts';
 import { MultipleEmailComponent } from './Components/MultipleEmailComponent.ts';
 import { MultipleFileComponent } from './Components/MultipleFileComponent.ts';
 import { NumberComponent } from './Components/NumberComponent.ts';
@@ -89,9 +90,20 @@ export class SettingEx extends Setting {
   }
 
   /**
+   * Adds a multiple dropdown component to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addMultipleDropdown(cb: (component: MultipleDropdownComponent) => void): this {
+    return this.addComponent(MultipleDropdownComponent, cb);
+  }
+
+  /**
    * Adds a multiple email component to the setting.
    *
    * @param cb - The callback to call with the component.
+   * @returns The setting instance.
    */
   public addMultipleEmail(cb: (component: MultipleEmailComponent) => void): this {
     return this.addComponent(MultipleEmailComponent, cb);
