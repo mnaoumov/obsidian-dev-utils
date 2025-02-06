@@ -321,6 +321,22 @@
       "types": "./dist/lib/obsidian/@types/Dataview/util/*.d.ts",
       "default": "./dist/lib/obsidian/@types/Dataview/util/*.cjs"
     },
+    "./obsidian/Components": {
+      "types": "./dist/lib/obsidian/Components/index.d.ts",
+      "default": "./dist/lib/obsidian/Components/index.cjs"
+    },
+    "./obsidian/Components/*": {
+      "types": "./dist/lib/obsidian/Components/*.d.ts",
+      "default": "./dist/lib/obsidian/Components/*.cjs"
+    },
+    "./dist/lib/obsidian/Components": {
+      "types": "./dist/lib/obsidian/Components/index.d.ts",
+      "default": "./dist/lib/obsidian/Components/index.cjs"
+    },
+    "./dist/lib/obsidian/Components/*": {
+      "types": "./dist/lib/obsidian/Components/*.d.ts",
+      "default": "./dist/lib/obsidian/Components/*.cjs"
+    },
     "./obsidian/Modal": {
       "types": "./dist/lib/obsidian/Modal/index.d.ts",
       "default": "./dist/lib/obsidian/Modal/index.cjs"
