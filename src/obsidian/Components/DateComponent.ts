@@ -6,6 +6,9 @@
 import moment from 'moment';
 
 import { TypedTextComponent } from './TypedTextComponent.ts';
+
+const DATE_FORMAT = 'YYYY-MM-DD';
+
 /**
  * A component that displays and edits a number.
  */
@@ -15,7 +18,7 @@ export class DateComponent extends TypedTextComponent<Date> {
    *
    * @param containerEl - The container element of the component.
    */
-  public constructor(containerEl: HTMLElement, private readonly format: string) {
+  public constructor(containerEl: HTMLElement) {
     super(containerEl, 'date');
   }
 
@@ -26,7 +29,7 @@ export class DateComponent extends TypedTextComponent<Date> {
    * @returns The date.
    */
   public override valueFromString(str: string): Date {
-    return moment(str, this.format).toDate();
+    return moment(str, DATE_FORMAT).toDate();
   }
 
   /**
@@ -36,6 +39,6 @@ export class DateComponent extends TypedTextComponent<Date> {
    * @returns The string.
    */
   public override valueToString(value: Date): string {
-    return moment(value).format(this.format);
+    return moment(value).format(DATE_FORMAT);
   }
 }
