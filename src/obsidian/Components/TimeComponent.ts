@@ -3,6 +3,13 @@
  * Contains a component that displays and edits a time.
  */
 
+import type { Duration } from 'moment';
+
+import {
+  duration,
+  utc
+} from 'moment';
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { initPluginContext } from '../Plugin/PluginContext.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -20,7 +27,7 @@ import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
  *
  * Alternatively, you can copy styles from {@link file://./../../../static/styles.css}.
  */
-export class TimeComponent extends TypedRangeTextComponent<string> {
+export class TimeComponent extends TypedRangeTextComponent<Duration> {
   /**
    * Creates a new time component.
    *
@@ -36,7 +43,26 @@ export class TimeComponent extends TypedRangeTextComponent<string> {
    * @param str - The string to convert.
    * @returns The date.
    */
-  public override valueFromString(str: string): string {
-    return str;
+  public override valueFromString(str: string): Duration {
+    return duration(str);
+  }
+
+  /**
+   * Converts a time to a string.
+   *
+   * @param value - The time to convert.
+   * @returns The string.
+   */
+  public override valueToString(value: Duration): string {
+    let format: string;
+    if (value.milliseconds() > 0) {
+      format = 'HH:mm:ss.SSS';
+    } else if (value.seconds() > 0) {
+      format = 'HH:mm:ss';
+    } else {
+      format = 'HH:mm';
+    }
+
+    return utc(value.asMilliseconds()).format(format);
   }
 }
