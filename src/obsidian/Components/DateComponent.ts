@@ -5,6 +5,11 @@
 
 import moment from 'moment';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { initPluginContext } from '../Plugin/PluginContext.ts';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { SettingEx } from '../SettingEx.ts';
+
 import { CssClass } from '../../CssClass.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 
@@ -12,6 +17,12 @@ const DATE_FORMAT = 'YYYY-MM-DD';
 
 /**
  * A component that displays and edits a date.
+ *
+ * You can add this component using {@link SettingEx.addDate}.
+ *
+ * In order to add the styles for the component, use {@link initPluginContext} in your plugin's `onload()` function.
+ *
+ * Alternatively, you can copy styles from {@link file://./../../../static/styles.css}.
  */
 export class DateComponent extends TypedRangeTextComponent<Date> {
   /**
