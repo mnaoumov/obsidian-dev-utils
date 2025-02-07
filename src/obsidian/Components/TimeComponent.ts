@@ -3,6 +3,7 @@
  * Contains a component that displays and edits a time.
  */
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 
 /**
@@ -15,7 +16,7 @@ export class TimeComponent extends TypedRangeTextComponent<string> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'time');
+    super(containerEl, 'time', CssClass.TimeComponent);
   }
 
   /**

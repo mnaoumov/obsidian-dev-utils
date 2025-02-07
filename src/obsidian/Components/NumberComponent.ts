@@ -3,6 +3,7 @@
  * Contains a component that displays and edits a number.
  */
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 
 /**
@@ -15,7 +16,7 @@ export class NumberComponent extends TypedRangeTextComponent<number> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'number');
+    super(containerEl, 'number', CssClass.NumberComponent);
   }
 
   /**

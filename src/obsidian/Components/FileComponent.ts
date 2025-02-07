@@ -3,6 +3,7 @@
  * Contains a component that displays and edits a file.
  */
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedTextComponent } from './TypedTextComponent.ts';
 
 /**
@@ -15,7 +16,7 @@ export class FileComponent extends TypedTextComponent<File | null> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'file');
+    super(containerEl, 'file', CssClass.FileComponent);
   }
 
   /**

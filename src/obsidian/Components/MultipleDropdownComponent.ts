@@ -13,6 +13,9 @@ import type { ValidatorElement } from '../../HTMLElement.ts';
 import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
+import { CssClass } from '../../CssClass.ts';
+import { getPluginId } from '../Plugin/PluginId.ts';
+
 /**
  * A multi-select dropdown component.
  */
@@ -35,6 +38,7 @@ export class MultipleDropdownComponent extends ValueComponent<string[]> implemen
     super();
     this.dropdownComponent = new DropdownComponent(containerEl);
     this.dropdownComponent.selectEl.multiple = true;
+    containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.MultipleDropdownComponent);
   }
 
   /**

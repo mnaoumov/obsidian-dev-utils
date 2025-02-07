@@ -3,6 +3,7 @@
  * Contains a component that displays and edits an url.
  */
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedTextComponent } from './TypedTextComponent.ts';
 
 /**
@@ -15,7 +16,7 @@ export class UrlComponent extends TypedTextComponent<string> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'url');
+    super(containerEl, 'url', CssClass.UrlComponent);
   }
 
   /**

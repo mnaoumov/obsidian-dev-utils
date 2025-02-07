@@ -18,9 +18,54 @@ export enum CssClass {
   ConfirmModal = 'confirm-modal',
 
   /**
+   * The CSS class for the date component.
+   */
+  DateComponent = 'date-component',
+
+  /**
+   * The CSS class for the date and time component.
+   */
+  DateTimeComponent = 'datetime-component',
+
+  /**
+   * The CSS class for the email component.
+   */
+  EmailComponent = 'email-component',
+
+  /**
+   * The CSS class for the file component.
+   */
+  FileComponent = 'file-component',
+
+  /**
    * The CSS class for the library name.
    */
   LibraryName = 'obsidian-dev-utils',
+
+  /**
+   * The CSS class for the month component.
+   */
+  MonthComponent = 'month-component',
+
+  /**
+   * The CSS class for the multiple dropdown component.
+   */
+  MultipleDropdownComponent = 'multiple-dropdown-component',
+
+  /**
+   * The CSS class for the multiple email component.
+   */
+  MultipleEmailComponent = 'multiple-email-component',
+
+  /**
+   * The CSS class for the multiple file component.
+   */
+  MultipleFileComponent = 'multiple-file-component',
+
+  /**
+   * The CSS class for the number component.
+   */
+  NumberComponent = 'number-component',
 
   /**
    * The CSS class for the plugin settings tab.
@@ -38,7 +83,17 @@ export enum CssClass {
   SelectItemModal = 'select-item-modal',
 
   /**
-   * The CSS class for the value component invalid.
+   * The CSS class for the time component.
    */
-  ValueComponentInvalid = 'value-component-invalid'
+  TimeComponent = 'time-component',
+
+  /**
+   * The CSS class for the url component.
+   */
+  UrlComponent = 'url-component',
+
+  /**
+   * The CSS class for the week component.
+   */
+  WeekComponent = 'week-component'
 }

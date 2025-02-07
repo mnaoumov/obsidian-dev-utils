@@ -3,6 +3,7 @@
  * Contains a component that displays and edits multiple files.
  */
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedTextComponent } from './TypedTextComponent.ts';
 
 /**
@@ -15,7 +16,7 @@ export class MultipleFileComponent extends TypedTextComponent<File[]> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'file');
+    super(containerEl, 'file', CssClass.MultipleFileComponent);
     this.inputEl.multiple = true;
   }
 

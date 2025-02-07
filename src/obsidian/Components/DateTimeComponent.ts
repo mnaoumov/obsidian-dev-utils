@@ -5,6 +5,7 @@
 
 import moment from 'moment';
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 
 const DATE_TIME_FORMAT = 'YYYY-MM-DDTHH:mm';
@@ -19,7 +20,7 @@ export class DateTimeComponent extends TypedRangeTextComponent<Date> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'datetime-local');
+    super(containerEl, 'datetime-local', CssClass.DateTimeComponent);
   }
 
   /**
