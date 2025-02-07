@@ -38,6 +38,29 @@ export class MultipleDropdownComponent extends ValueComponent<string[]> implemen
   }
 
   /**
+   * Adds an option to the dropdown.
+   *
+   * @param value - The value of the option.
+   * @param display - The display text of the option.
+   * @returns The component.
+   */
+  public addOption(value: string, display: string): this {
+    this.dropdownComponent.addOption(value, display);
+    return this;
+  }
+
+  /**
+   * Adds multiple options to the dropdown.
+   *
+   * @param options - The options to add.
+   * @returns The component.
+   */
+  public addOptions(options: Record<string, string>): this {
+    this.dropdownComponent.addOptions(options);
+    return this;
+  }
+
+  /**
    * Gets the value of the component.
    *
    * @returns The value of the component.
