@@ -25,6 +25,7 @@ import {
   createInterface,
   existsSync,
   readFile,
+  rm,
   writeFile
 } from './NodeModules.ts';
 import {
@@ -95,6 +96,7 @@ export async function addGitTag(newVersion: string): Promise<void> {
 export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
   const files = [
     ObsidianPluginRepoPaths.ManifestJson,
+    ObsidianPluginRepoPaths.ManifestBetaJson,
     ObsidianPluginRepoPaths.NpmShrinkwrapJson,
     ObsidianPluginRepoPaths.PackageJson,
     ObsidianPluginRepoPaths.PackageLockJson,
@@ -297,6 +299,7 @@ export async function gitPush(): Promise<void> {
  */
 export async function publishGitHubRelease(newVersion: string, isObsidianPlugin: boolean): Promise<void> {
   let filePaths: string[];
+  const isBeta = getVersionUpdateType(newVersion) === VersionUpdateType.Beta;
 
   if (isObsidianPlugin) {
     const buildDir = resolvePathFromRootSafe(ObsidianPluginRepoPaths.DistBuild);
@@ -308,7 +311,18 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     filePaths = [join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename)];
   }
 
-  await execFromRoot(['gh', 'release', 'create', newVersion, ...filePaths, '--title', `v${newVersion}`, '--notes-file', '-'], {
+  await execFromRoot([
+    'gh',
+    'release',
+    'create',
+    newVersion,
+    ...filePaths,
+    '--title',
+    `v${newVersion}`,
+    ...(isBeta ? ['--prerelease'] : []),
+    '--notes-file',
+    '-'
+  ], {
     isQuiet: true,
     stdin: await getReleaseNotes(newVersion)
   });
@@ -424,10 +438,7 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
     await updateVersionInFilesForPlugin(newVersion);
   }
 
-  if (getVersionUpdateType(versionUpdateType) !== VersionUpdateType.Beta) {
-    await updateChangelog(newVersion);
-  }
-
+  await updateChangelog(newVersion);
   await addUpdatedFilesToGit(newVersion);
   await addGitTag(newVersion);
   await gitPush();
@@ -495,16 +506,33 @@ function toSingleLine(str: string): string {
 }
 
 async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> {
-  const latestObsidianVersion = await getLatestObsidianVersion();
+  const versionUpdateType = getVersionUpdateType(newVersion);
+  const manifestBetaJsonPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestBetaJson);
+  if (versionUpdateType === VersionUpdateType.Beta) {
+    await cp(
+      resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson),
+      manifestBetaJsonPath,
+      { force: true }
+    );
+    await editJson<Manifest>(ObsidianPluginRepoPaths.ManifestBetaJson, (manifest) => {
+      manifest.version = newVersion;
+    });
+  } else {
+    const latestObsidianVersion = await getLatestObsidianVersion();
 
-  await editJson<Manifest>(ObsidianPluginRepoPaths.ManifestJson, (manifest) => {
-    manifest.minAppVersion = latestObsidianVersion;
-    manifest.version = newVersion;
-  });
+    await editJson<Manifest>(ObsidianPluginRepoPaths.ManifestJson, (manifest) => {
+      manifest.minAppVersion = latestObsidianVersion;
+      manifest.version = newVersion;
+    });
 
-  await editJson<Record<string, string>>(ObsidianPluginRepoPaths.VersionsJson, (versions) => {
-    versions[newVersion] = latestObsidianVersion;
-  });
+    await editJson<Record<string, string>>(ObsidianPluginRepoPaths.VersionsJson, (versions) => {
+      versions[newVersion] = latestObsidianVersion;
+    });
+
+    if (existsSync(manifestBetaJsonPath)) {
+      await rm(manifestBetaJsonPath);
+    }
+  }
 
   await copyUpdatedManifest();
 }
