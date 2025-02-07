@@ -211,8 +211,11 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
       beta = 0;
       break;
     case VersionUpdateType.Patch:
-      patch++;
-      beta = 0;
+      if (beta === 0) {
+        patch++;
+      } else {
+        beta = 0;
+      }
       break;
     default:
       throw new Error(`Invalid version update type: ${versionType}`);
