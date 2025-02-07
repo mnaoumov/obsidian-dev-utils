@@ -94,16 +94,7 @@ export async function addGitTag(newVersion: string): Promise<void> {
  * @returns A promise that resolves when the files have been added and committed.
  */
 export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
-  const files = [
-    ObsidianPluginRepoPaths.ManifestJson,
-    ObsidianPluginRepoPaths.ManifestBetaJson,
-    ObsidianPluginRepoPaths.NpmShrinkwrapJson,
-    ObsidianPluginRepoPaths.PackageJson,
-    ObsidianPluginRepoPaths.PackageLockJson,
-    ObsidianPluginRepoPaths.VersionsJson,
-    ObsidianPluginRepoPaths.ChangelogMd
-  ].filter((file) => existsSync(resolvePathFromRootSafe(file)));
-  await execFromRoot(['git', 'add', ...files], { isQuiet: true });
+  await execFromRoot(['git', 'add', '--all'], { isQuiet: true });
   await execFromRoot(`git commit -m ${newVersion} --allow-empty`, { isQuiet: true });
 }
 
