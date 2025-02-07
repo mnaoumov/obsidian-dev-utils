@@ -43,6 +43,9 @@ export enum ObsidianPluginRepoPaths {
   /** Represents the main TypeScript file. */
   MainTs = 'main.ts',
 
+  /** Represents the manifest file for beta releases. */
+  ManifestBetaJson = 'manifest-beta.json',
+
   /** Represents the manifest file. */
   ManifestJson = 'manifest.json',
 
