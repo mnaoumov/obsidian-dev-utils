@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.10.1
+
+- Simplify styles
+
 ## 17.10.0
 
 - Switch to moment.Duration
