@@ -5,6 +5,7 @@
 
 import moment from 'moment';
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 
 const DATE_FORMAT = 'YYYY-[W]WW';
@@ -33,7 +34,7 @@ export class WeekComponent extends TypedRangeTextComponent<IsoWeek> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'Week');
+    super(containerEl, 'week', CssClass.WeekComponent);
   }
 
   /**

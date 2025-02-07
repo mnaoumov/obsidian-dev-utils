@@ -3,6 +3,7 @@
  * Contains a component that displays and edits an email address.
  */
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedTextComponent } from './TypedTextComponent.ts';
 
 /**
@@ -15,7 +16,7 @@ export class EmailComponent extends TypedTextComponent<string> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'email');
+    super(containerEl, 'email', CssClass.EmailComponent);
   }
 
   /**

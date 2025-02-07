@@ -3,6 +3,7 @@
  * Contains a component that displays and edits multiple email addresses.
  */
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedTextComponent } from './TypedTextComponent.ts';
 
 /**
@@ -15,7 +16,7 @@ export class MultipleEmailComponent extends TypedTextComponent<string[]> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'email');
+    super(containerEl, 'email', CssClass.MultipleEmailComponent);
     this.inputEl.multiple = true;
   }
 

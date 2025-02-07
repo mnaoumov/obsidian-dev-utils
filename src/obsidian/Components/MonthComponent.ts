@@ -5,6 +5,7 @@
 
 import moment from 'moment';
 
+import { CssClass } from '../../CssClass.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 
 const DATE_FORMAT = 'YYYY-MM';
@@ -33,7 +34,7 @@ export class MonthComponent extends TypedRangeTextComponent<IsoMonth> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'month');
+    super(containerEl, 'month', CssClass.MonthComponent);
   }
 
   /**

@@ -2,6 +2,10 @@
   /* default styles */
 }
 
+.obsidian-dev-utils :invalid {
+  box-shadow: 0 0 0 2px var(--text-error);
+}
+
 .obsidian-dev-utils.alert-modal {
   /* default styles */
 }
@@ -10,12 +14,50 @@
   /* default styles */
 }
 
-.obsidian-dev-utils.plugin-settings-tab {
+.obsidian-dev-utils.date-component {
   /* default styles */
 }
 
-.obsidian-dev-utils :invalid {
-  box-shadow: 0 0 0 2px var(--text-error);
+.obsidian-dev-utils.datetime-component {
+  /* default styles */
+}
+
+.obsidian-dev-utils.email-component {
+  /* default styles */
+}
+
+
+.obsidian-dev-utils.file-component {
+  /* default styles */
+}
+
+.obsidian-dev-utils.month-component {
+  /* default styles */
+}
+
+select.obsidian-dev-utils.month-component,
+select.obsidian-dev-utils.month-component.dropdown {
+  height: auto;
+}
+
+.obsidian-dev-utils.multiple-dropdown-component {
+  /* default styles */
+}
+
+.obsidian-dev-utils.multiple-email-component {
+  /* default styles */
+}
+
+.obsidian-dev-utils.multiple-file-component {
+  /* default styles */
+}
+
+.obsidian-dev-utils.number-component {
+  /* default styles */
+}
+
+.obsidian-dev-utils.plugin-settings-tab {
+  /* default styles */
 }
 
 .obsidian-dev-utils.prompt-modal {
@@ -23,5 +65,17 @@
 }
 
 .obsidian-dev-utils.select-item-modal {
+  /* default styles */
+}
+
+.obsidian-dev-utils.time-component {
+  /* default styles */
+}
+
+.obsidian-dev-utils.url-component {
+  /* default styles */
+}
+
+.obsidian-dev-utils.week-component {
   /* default styles */
 }
