@@ -142,6 +142,8 @@ npx obsidian-dev-utils version <versionUpdateType>
 
 Runs build checks before updating the version and releases if all checks pass. The `<versionUpdateType>` can be `major`, `minor`, `patch`, `beta`, or a specific version like `x.y.z[-suffix]`.
 
+If you use `beta` as `<versionUpdateType>` for your Obsidian plugin, the plugin will be deployed compatible to install with [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
+
 #### Simplified Usage
 
 To simplify the usage of these commands, you can add them to your `package.json`:
@@ -202,7 +204,7 @@ Default styles are defined in [styles.css](https://github.com/mnaoumov/obsidian-
 You can override those styles in your plugin's `styles.css` file via adding your plugin's id to the selector, e.g. for plugin `foo-bar`:
 
 ```css
-.foo-bar.obsidian-dev-utils.plugin-settings-tab .value-component-invalid {
+.foo-bar.obsidian-dev-utils :invalid {
   box-shadow: 0 0 0 2px var(--text-error);
 }
 ```
