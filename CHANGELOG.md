@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.9.1
+
+- Fix beta check
+
 ## 17.9.0
 
 - Add plugin beta releases for BRAT
