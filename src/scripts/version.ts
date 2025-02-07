@@ -299,7 +299,6 @@ export async function gitPush(): Promise<void> {
  */
 export async function publishGitHubRelease(newVersion: string, isObsidianPlugin: boolean): Promise<void> {
   let filePaths: string[];
-  const isBeta = getVersionUpdateType(newVersion) === VersionUpdateType.Beta;
 
   if (isObsidianPlugin) {
     const buildDir = resolvePathFromRootSafe(ObsidianPluginRepoPaths.DistBuild);
@@ -319,7 +318,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     ...filePaths,
     '--title',
     `v${newVersion}`,
-    ...(isBeta ? ['--prerelease'] : []),
+    ...(isBeta(newVersion) ? ['--prerelease'] : []),
     '--notes-file',
     '-'
   ], {
@@ -494,6 +493,10 @@ async function getLatestObsidianVersion(): Promise<string> {
   return obsidianReleasesJson.name ?? throwExpression(new Error('Could not find the name of the latest Obsidian release'));
 }
 
+function isBeta(version: string): boolean {
+  return version.includes(VersionUpdateType.Beta);
+}
+
 async function runCommand(command: string): Promise<void> {
   const packageJson = await readPackageJson();
   const isKnownCommand = Object.keys(packageJson.scripts ?? {}).includes(command);
@@ -506,9 +509,8 @@ function toSingleLine(str: string): string {
 }
 
 async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> {
-  const versionUpdateType = getVersionUpdateType(newVersion);
   const manifestBetaJsonPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestBetaJson);
-  if (versionUpdateType === VersionUpdateType.Beta) {
+  if (isBeta(newVersion)) {
     await cp(
       resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson),
       manifestBetaJsonPath,
