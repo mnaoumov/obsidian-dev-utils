@@ -50,14 +50,12 @@ export abstract class PluginSettingsBase {
 
   protected initFromRecord(record: Record<string, unknown>): void {
     for (const [key, value] of Object.entries(record)) {
-      if (key.startsWith(PRIVATE_PROPERTY_PREFIX)) {
+      if (key.startsWith(PRIVATE_PROPERTY_PREFIX) || !(key in this)) {
+        console.warn(`Unknown property: ${key}`);
         continue;
       }
-      if (key in this) {
-        this[key as keyof this] = value as this[keyof this];
-      } else {
-        console.error(`Unknown property: ${key}`);
-      }
+
+      this[key as keyof this] = value as this[keyof this];
     }
   }
 }
