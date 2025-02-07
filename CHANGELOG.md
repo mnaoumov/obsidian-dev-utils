@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 17.10.0
+
+- Switch to moment.Duration
+- Add comments
+- Add all files
+
 ## 17.9.1
 
 - Fix beta check
