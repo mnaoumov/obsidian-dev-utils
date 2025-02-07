@@ -40,7 +40,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a date component to the setting.
+   * Adds a {@link DateComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -50,7 +50,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a date and time component to the setting.
+   * Adds a {@link DateTimeComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -60,7 +60,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds an email component to the setting.
+   * Adds an {@link EmailComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -70,7 +70,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a file component to the setting.
+   * Adds a {@link FileComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -80,7 +80,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a month component to the setting.
+   * Adds a {@link MonthComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -90,7 +90,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a multiple dropdown component to the setting.
+   * Adds a {@link MultipleDropdownComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -100,7 +100,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a multiple email component to the setting.
+   * Adds a {@link MultipleEmailComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -110,7 +110,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a multiple file component to the setting.
+   * Adds a {@link MultipleFileComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -120,7 +120,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a number component to the setting.
+   * Adds a {@link NumberComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -130,7 +130,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a time component to the setting.
+   * Adds a {@link TimeComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -140,7 +140,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a url component to the setting.
+   * Adds an {@link UrlComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
@@ -150,7 +150,7 @@ export class SettingEx extends Setting {
   }
 
   /**
-   * Adds a week component to the setting.
+   * Adds a {@link WeekComponent} to the setting.
    *
    * @param cb - The callback to call with the component.
    * @returns The setting instance.

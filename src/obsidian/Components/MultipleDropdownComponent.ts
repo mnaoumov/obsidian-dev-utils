@@ -10,6 +10,10 @@ import {
 
 import type { MaybePromise } from '../../Async.ts';
 import type { ValidatorElement } from '../../HTMLElement.ts';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { initPluginContext } from '../Plugin/PluginContext.ts';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { SettingEx } from '../SettingEx.ts';
 import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
@@ -18,6 +22,12 @@ import { getPluginId } from '../Plugin/PluginId.ts';
 
 /**
  * A multi-select dropdown component.
+ *
+ * You can add this component using {@link SettingEx.addMultipleDropdown}.
+ *
+ * In order to add the styles for the component, use {@link initPluginContext} in your plugin's `onload()` function.
+ *
+ * Alternatively, you can copy styles from {@link file://./../../../static/styles.css}.
  */
 export class MultipleDropdownComponent extends ValueComponent<string[]> implements ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
   /**
