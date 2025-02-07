@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 17.9.0
+
+- Add plugin beta releases for BRAT
+- Add components
+- Don't increase patch after beta
+- Fix `any`
+- Add `SettingEx`
+- Switch to plural `Modals`
+- Use builtin validation
+
 ## 17.8.0
 
 - Add enum helpers
