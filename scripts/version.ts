@@ -19,11 +19,17 @@ await wrapCliTask(async () => {
 });
 
 async function prepareGitHubRelease(newVersion: string): Promise<void> {
-  const libraryCjsPath = resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.Lib, ObsidianPluginRepoPaths.LibraryCjs));
   const stylesCssPath = resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.StylesCss));
-  let libraryCjsContent = await readFile(libraryCjsPath, 'utf-8');
   const stylesCssContent = await readFile(stylesCssPath, 'utf-8');
-  libraryCjsContent = libraryCjsContent.replace('$(LIBRARY_VERSION)', newVersion);
-  libraryCjsContent = libraryCjsContent.replace('"$(LIBRARY_STYLES)"', JSON.stringify(stylesCssContent));
-  await writeFile(libraryCjsPath, libraryCjsContent, 'utf-8');
+  const stylesCssContentJson = JSON.stringify(stylesCssContent);
+
+  const libraryCjsPath = resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.Lib, ObsidianPluginRepoPaths.LibraryCjs));
+  const libraryMjsPath = resolvePathFromRootSafe(join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.Lib, ObsidianPluginRepoPaths.LibraryMjs));
+
+  for (const libraryPath of [libraryCjsPath, libraryMjsPath]) {
+    let libraryContent = await readFile(libraryPath, 'utf-8');
+    libraryContent = libraryContent.replace('$(LIBRARY_VERSION)', newVersion);
+    libraryContent = libraryContent.replace('"$(LIBRARY_STYLES)"', stylesCssContentJson);
+    await writeFile(libraryPath, libraryContent, 'utf-8');
+  }
 }
