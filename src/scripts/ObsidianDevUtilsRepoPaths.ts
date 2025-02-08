@@ -15,6 +15,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Matches any TypeScript declaration file (`*.d.ts`). */
   AnyDts = '*.d.ts',
 
+  /** Matches any `.mjs` file (`*.mjs`). */
+  AnyMjs = '*.mjs',
+
   /** Matches any path recursively (`**`). */
   AnyPath = '**',
 
@@ -47,6 +50,9 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** The path to the `index.d.ts` file. */
   IndexDts = 'index.d.ts',
+
+  /** The path to the `index.mjs` file. */
+  IndexMjs = 'index.mjs',
 
   /** The path to the `index.ts` file. */
   IndexTs = 'index.ts',

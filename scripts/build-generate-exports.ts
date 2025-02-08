@@ -33,26 +33,28 @@ await wrapCliTask(async () => {
     packageJson.exports = {};
     for (const libDir of libDirs) {
       const importPath = replaceAll(libDir, ObsidianDevUtilsRepoPaths.DistLib, '.');
+      /* eslint-disable perfectionist/sort-objects */
       packageJson.exports[importPath] = {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts)),
-        // eslint-disable-next-line perfectionist/sort-objects
-        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
+        import: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexMjs)),
+        require: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
       };
       packageJson.exports[normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any))] = {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
-        // eslint-disable-next-line perfectionist/sort-objects
-        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
+        import: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyMjs)),
+        require: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
       };
       packageJson.exports[normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, importPath))] = {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts)),
-        // eslint-disable-next-line perfectionist/sort-objects
-        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
+        import: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexMjs)),
+        require: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
       };
       packageJson.exports[normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, importPath, ObsidianDevUtilsRepoPaths.Any))] = {
         types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
-        // eslint-disable-next-line perfectionist/sort-objects
-        default: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
+        import: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyMjs)),
+        require: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
       };
+      /* eslint-enable perfectionist/sort-objects */
     }
 
     isChanged = !deepEqual(oldExports, packageJson.exports);
