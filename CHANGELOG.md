@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 17.10.2-beta.1
+
+- Don't replace import.meta.url in esm
+- Refactor require usage
+- Refactor changeExtension
+- Regenerate exports
+- Don't generate cjs/mjs exports for @types folder
+- Move from @types.ts
+- Generate mjs exports
+- Refactor to transformer
+- Warn unknown properties
+
 ## 17.10.1
 
 - Simplify styles
