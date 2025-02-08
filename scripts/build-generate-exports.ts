@@ -1,3 +1,5 @@
+import type { PackageJson } from '../src/scripts/Npm.ts';
+
 import { deepEqual } from '../src/Object.ts';
 import {
   join,
@@ -33,32 +35,42 @@ await wrapCliTask(async () => {
     packageJson.exports = {};
     for (const libDir of libDirs) {
       const importPath = replaceAll(libDir, ObsidianDevUtilsRepoPaths.DistLib, '.');
-      /* eslint-disable perfectionist/sort-objects */
-      packageJson.exports[importPath] = {
-        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts)),
-        import: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexMjs)),
-        require: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
-      };
-      packageJson.exports[normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any))] = {
-        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
-        import: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyMjs)),
-        require: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
-      };
-      packageJson.exports[normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, importPath))] = {
-        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexDts)),
-        import: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexMjs)),
-        require: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.IndexCjs))
-      };
-      packageJson.exports[normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, importPath, ObsidianDevUtilsRepoPaths.Any))] = {
-        types: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyDts)),
-        import: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyMjs)),
-        require: normalizeIfRelative(join(libDir, ObsidianDevUtilsRepoPaths.AnyCjs))
-      };
-      /* eslint-enable perfectionist/sort-objects */
+
+      packageJson.exports[importPath] = getExport(libDir, ObsidianDevUtilsRepoPaths.IndexDts);
+      packageJson.exports[normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any))] = getExport(libDir, ObsidianDevUtilsRepoPaths.AnyDts);
+      packageJson.exports[normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, importPath))] = getExport(libDir, ObsidianDevUtilsRepoPaths.IndexDts);
+      packageJson.exports[normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, importPath, ObsidianDevUtilsRepoPaths.Any))] = getExport(
+        libDir,
+        ObsidianDevUtilsRepoPaths.AnyDts
+      );
     }
 
     isChanged = !deepEqual(oldExports, packageJson.exports);
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (isChanged) {
+    console.error('Package exports have changed. Please review the changes and commit them.');
+  }
+
   return CliTaskResult.Success(!isChanged);
 });
+
+function getExport(libDir: string, dtsPath: string): PackageJson.Exports {
+  if (libDir.includes(ObsidianDevUtilsRepoPaths.Types)) {
+    return {
+      types: normalizeIfRelative(join(libDir, dtsPath))
+    };
+  }
+
+  const mjsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.MjsExtension);
+  const cjsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.CjsExtension);
+
+  return {
+    /* eslint-disable perfectionist/sort-objects */
+    types: normalizeIfRelative(join(libDir, dtsPath)),
+    import: normalizeIfRelative(join(libDir, mjsPath)),
+    require: normalizeIfRelative(join(libDir, cjsPath))
+    /* eslint-enable perfectionist/sort-objects */
+  };
+}
