@@ -27,6 +27,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `CHANGELOG.md` file. */
   ChangelogMd = 'CHANGELOG.md',
 
+  /** The `.cjs` file extension. */
+  CjsExtension = '.cjs',
+
   /** The path to the distribution (`dist`) directory. */
   Dist = 'dist',
 
@@ -59,6 +62,9 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** The path to the `LICENSE` file. */
   License = 'LICENSE',
+
+  /** The `.mjs` file extension. */
+  MjsExtension = '.mjs',
 
   /**
    * The path to the `node_modules` directory.
