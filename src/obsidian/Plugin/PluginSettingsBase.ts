@@ -3,7 +3,14 @@
  * Base class for plugin settings.
  */
 
-const PRIVATE_PROPERTY_PREFIX = '_';
+import { DateTransformer } from '../../Transformers/DateTransformer.ts';
+import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';
+import { SkipPrivatePropertyTransformer } from '../../Transformers/SkipPrivatePropertyTransformer.ts';
+
+const transformer = new GroupTransformer([
+  new SkipPrivatePropertyTransformer(),
+  new DateTransformer()
+]);
 
 /**
  * Base class for plugin settings.
@@ -45,12 +52,13 @@ export abstract class PluginSettingsBase {
    * @returns The settings as a JSON object.
    */
   public toJSON(): Record<string, unknown> {
-    return Object.fromEntries(Object.entries(this).filter(([key]) => !key.startsWith(PRIVATE_PROPERTY_PREFIX)));
+    return transformer.transformObjectRecursively(this);
   }
 
   protected initFromRecord(record: Record<string, unknown>): void {
+    record = transformer.transformObjectRecursively(record);
     for (const [key, value] of Object.entries(record)) {
-      if (key.startsWith(PRIVATE_PROPERTY_PREFIX) || !(key in this)) {
+      if (!(key in this)) {
         console.warn(`Unknown property: ${key}`);
         continue;
       }
