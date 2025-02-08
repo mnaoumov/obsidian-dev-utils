@@ -8,8 +8,8 @@ import type { BaseComponent } from 'obsidian';
 
 import { PluginSettingTab } from 'obsidian';
 
-import type { KeysMatching } from '../../@types.ts';
 import type { MaybePromise } from '../../Async.ts';
+import type { KeysMatching } from '../../Object.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
