@@ -36,7 +36,7 @@ async function build(libFiles: string[], format: 'cjs' | 'esm'): Promise<void> {
     outdir: ObsidianDevUtilsRepoPaths.DistLib,
     platform: 'node',
     plugins: [
-      preprocessPlugin(),
+      preprocessPlugin(format === 'esm'),
       fixEsmPlugin(),
       changeExtensionPlugin(extension)
     ],
