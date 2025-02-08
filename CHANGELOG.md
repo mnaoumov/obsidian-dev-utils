@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 17.10.2-beta.2
+
+- Allow override getTransformer
+- Add DurationTransformer
+- Fix localRequire
+- Add trailing semicolon
+
 ## 17.10.2-beta.1
 
 - Don't replace import.meta.url in esm
