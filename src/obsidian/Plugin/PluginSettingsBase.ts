@@ -7,8 +7,9 @@ import { DateTransformer } from '../../Transformers/DateTransformer.ts';
 import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
 import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';
 import { SkipPrivatePropertyTransformer } from '../../Transformers/SkipPrivatePropertyTransformer.ts';
+import { Transformer } from '../../Transformers/Transformer.ts';
 
-const transformer = new GroupTransformer([
+const defaultTransformer = new GroupTransformer([
   new SkipPrivatePropertyTransformer(),
   new DateTransformer(),
   new DurationTransformer()
@@ -54,11 +55,15 @@ export abstract class PluginSettingsBase {
    * @returns The settings as a JSON object.
    */
   public toJSON(): Record<string, unknown> {
-    return transformer.transformObjectRecursively(this);
+    return this.getTransformer().transformObjectRecursively(this);
+  }
+
+  protected getTransformer(): Transformer {
+    return defaultTransformer;
   }
 
   protected initFromRecord(record: Record<string, unknown>): void {
-    record = transformer.transformObjectRecursively(record);
+    record = this.getTransformer().transformObjectRecursively(record);
     for (const [key, value] of Object.entries(record)) {
       if (!(key in this)) {
         console.warn(`Unknown property: ${key}`);
