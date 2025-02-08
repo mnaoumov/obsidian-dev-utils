@@ -47,7 +47,8 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
     : {
       [replaceAll('import(dot)meta(dot)url', '(dot)', '.')]: (): string => {
         if (typeof __filename === 'string') {
-          const url = globalThis.require('node:url') as typeof import('node:url');
+          const localRequire = require;
+          const url = localRequire('node:url') as typeof import('node:url');
           return url.pathToFileURL(__filename).href;
         }
 
