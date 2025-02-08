@@ -71,7 +71,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 
       build.initialOptions.banner ??= {};
       build.initialOptions.banner['js'] ??= '';
-      build.initialOptions.banner['js'] += `\n(${init.toString()})()\n`;
+      build.initialOptions.banner['js'] += `\n(${init.toString()})();\n`;
 
       build.onLoad({ filter: /\.(?:js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, 'utf-8');
