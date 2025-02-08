@@ -1,12 +1,12 @@
 /**
  * @packageDocumentation DateTransformer
- * A transformer that can transform Date &lt;-&gt; ISO string.
+ * A transformer that can transform Date to an ISO string and back.
  */
 
 import { TypedTransformer } from './TypedTransformer.ts';
 
 /**
- * A transformer that can transform Date &lt;-&gt; ISO string.
+ * A transformer that can transform Date to an ISO string and back.
  */
 export class DateTransformer extends TypedTransformer<Date, string> {
   /**

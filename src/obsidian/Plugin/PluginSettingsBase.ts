@@ -4,12 +4,14 @@
  */
 
 import { DateTransformer } from '../../Transformers/DateTransformer.ts';
+import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
 import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';
 import { SkipPrivatePropertyTransformer } from '../../Transformers/SkipPrivatePropertyTransformer.ts';
 
 const transformer = new GroupTransformer([
   new SkipPrivatePropertyTransformer(),
-  new DateTransformer()
+  new DateTransformer(),
+  new DurationTransformer()
 ]);
 
 /**
