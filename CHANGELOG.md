@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.10.2-beta.3
+
+- Replace libraries in mjs
+
 ## 17.10.2-beta.2
 
 - Allow override getTransformer
