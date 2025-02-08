@@ -7,31 +7,38 @@ import {
   normalizeIfRelative
 } from '../src/Path.ts';
 import { wrapCliTask } from '../src/scripts/CliUtils.ts';
+import { changeExtensionPlugin } from '../src/scripts/esbuild/changeExtensionPlugin.ts';
 import { fixEsmPlugin } from '../src/scripts/esbuild/fixEsmPlugin.ts';
 import {
   banner,
   invokeEsbuild
 } from '../src/scripts/esbuild/ObsidianPluginBuilder.ts';
 import { preprocessPlugin } from '../src/scripts/esbuild/preprocessPlugin.ts';
-import { renameToCjsPlugin } from '../src/scripts/esbuild/renameToCjsPlugin.ts';
 import { readdirPosix } from '../src/scripts/Fs.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
 
 await wrapCliTask(async () => {
+  const libFiles = await getLibFiles();
+  await build(libFiles, 'cjs');
+  await build(libFiles, 'esm');
+});
+
+async function build(libFiles: string[], format: 'cjs' | 'esm'): Promise<void> {
+  const extension = format === 'cjs' ? ObsidianDevUtilsRepoPaths.CjsExtension : ObsidianDevUtilsRepoPaths.MjsExtension;
   const buildOptions: BuildOptions = {
     banner: {
       js: banner
     },
     bundle: false,
-    entryPoints: await getLibFiles(),
-    format: 'cjs',
+    entryPoints: libFiles,
+    format,
     logLevel: 'info',
     outdir: ObsidianDevUtilsRepoPaths.DistLib,
     platform: 'node',
     plugins: [
       preprocessPlugin(),
       fixEsmPlugin(),
-      renameToCjsPlugin()
+      changeExtensionPlugin(extension)
     ],
     sourcemap: 'inline',
     target: 'ESNext',
@@ -41,7 +48,7 @@ await wrapCliTask(async () => {
 
   const buildContext = await context(buildOptions);
   await invokeEsbuild(buildContext, true);
-});
+}
 
 async function getLibFiles(): Promise<string[]> {
   let files = await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true });
