@@ -44,8 +44,7 @@ export function preprocessPlugin(): Plugin {
   const replacements = {
     [replaceAll('import(dot)meta(dot)url', '(dot)', '.')]: (): string => {
       if (typeof __filename === 'string') {
-        // eslint-disable-next-line import-x/no-nodejs-modules, @typescript-eslint/no-require-imports
-        const url = require('node:url') as typeof import('node:url');
+        const url = globalThis.require('node:url') as typeof import('node:url');
         return url.pathToFileURL(__filename).href;
       }
 
