@@ -38,24 +38,27 @@ interface RequirePatched extends NodeJS.Require {
  * - Modifies the `sourceMappingURL` comment to ensure compatibility with Obsidian's plugin system.
  * - Adds a basic `process` object to the global scope if `process` is referenced but not defined.
  *
+ * @param isEsm - Whether the build is for an ESM format.
  * @returns An esbuild `Plugin` object that handles the preprocessing.
  */
-export function preprocessPlugin(): Plugin {
-  const replacements = {
-    [replaceAll('import(dot)meta(dot)url', '(dot)', '.')]: (): string => {
-      if (typeof __filename === 'string') {
-        const url = globalThis.require('node:url') as typeof import('node:url');
-        return url.pathToFileURL(__filename).href;
-      }
+export function preprocessPlugin(isEsm?: boolean): Plugin {
+  const replacements = isEsm
+    ? {}
+    : {
+      [replaceAll('import(dot)meta(dot)url', '(dot)', '.')]: (): string => {
+        if (typeof __filename === 'string') {
+          const url = globalThis.require('node:url') as typeof import('node:url');
+          return url.pathToFileURL(__filename).href;
+        }
 
-      if (typeof window !== 'undefined') {
-        return window.location.href;
-      }
+        if (typeof window !== 'undefined') {
+          return window.location.href;
+        }
 
-      // Fallback to an empty string if the environment is unknown
-      return '';
-    }
-  };
+        // Fallback to an empty string if the environment is unknown
+        return '';
+      }
+    };
 
   return {
     name: 'preprocess',
