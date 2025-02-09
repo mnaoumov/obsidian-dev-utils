@@ -22,8 +22,6 @@ import {
  * @param shouldFix - Whether to fix linting issues automatically.
  */
 export async function lint(shouldFix?: boolean): Promise<void> {
-  shouldFix ??= false;
-
   const eslintConfigMjsPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMjs);
   if (!existsSync(eslintConfigMjsPath)) {
     console.warn(`ESLint configuration file not found at ${eslintConfigMjsPath}. Creating default config...`);
