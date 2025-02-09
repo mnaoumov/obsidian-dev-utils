@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.10.2-beta.9
+
+- Better css
+
 ## 17.10.2-beta.8
 
 - Fix selected style
