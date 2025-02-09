@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.10.2-beta.4
+
+- Fix styles.css and clean it
+
 ## 17.10.2-beta.3
 
 - Replace libraries in mjs
