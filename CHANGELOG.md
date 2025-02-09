@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 18.0.3
+
+- Init separately
+
 ## 18.0.2
 
 - Refactor BrowserProcess
