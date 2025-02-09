@@ -14,8 +14,6 @@ export const configs: Linter.Config[] = [
   ...defaultConfigs,
   {
     ignores: [
-      '**/*.cjs',
-      '**/*.mjs',
       '**/index.ts',
       'src/obsidian/@types/Dataview/**/*.d.ts'
     ]
