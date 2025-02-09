@@ -20,7 +20,7 @@ async function generateIndex(dir: string): Promise<void> {
   const lines = (await asyncMap(dirents, async (dirent) => {
     if (
       dirent.name === ObsidianDevUtilsRepoPaths.IndexTs as string || dirent.name === ObsidianDevUtilsRepoPaths.Types as string
-      || dirent.name.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)
+      || !dirent.name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension)
     ) {
       return;
     }
