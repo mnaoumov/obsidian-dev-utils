@@ -240,6 +240,24 @@ Example of all settings components: built-in and custom:
 
 ![Components 2](./images/components2.png)
 
+## Modals
+
+The library provides some modals that you can use in your plugin.
+
+See all available modals in the [Modals](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/Modals) folder.
+
+In order for models to look properly, their styles has to be initialized. See [Styling](#styling) for more details.
+
+Example of all modals:
+
+![Alert](./images/alert.png)
+
+![Confirm](./images/confirm.png)
+
+![Prompt](./images/prompt.png)
+
+![Select Item](./images/select-item.png)
+
 ## Debugging
 
 By default, console debug messages are not shown. To enable them you have to enable `Verbose` mode in the console settings.
