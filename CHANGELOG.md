@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 18.3.0
+
+- Add validation
+
 ## 18.2.1
 
 - Fix style
