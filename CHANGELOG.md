@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.10.2-beta.5
+
+- Fix nested style
+
 ## 17.10.2-beta.4
 
 - Fix styles.css and clean it
