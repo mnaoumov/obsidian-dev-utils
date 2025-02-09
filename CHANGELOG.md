@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 18.0.4
+
+- Fix ignores
+- Ignore js
+
 ## 18.0.3
 
 - Init separately
