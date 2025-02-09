@@ -6,6 +6,10 @@
   .multiple-dropdown-component {
     select, .dropdown {
       height: auto;
+
+      option:checked {
+        background-color: initial;
+      }
     }
   }
 }
