@@ -17,6 +17,14 @@ import {
 export type MaybePromise<T> = Promise<T> | T;
 
 /**
+ * A type representing a function that resolves a Promise.
+ *
+ * @typeParam T - The type of the value.
+ */
+export type PromiseResolve<T> = undefined extends T ? (value?: PromiseLike<T> | T) => void
+  : (value: PromiseLike<T> | T) => void;
+
+/**
  * Options for configuring the retry behavior.
  */
 export interface RetryOptions {

@@ -13,6 +13,11 @@ export enum CssClass {
   AlertModal = 'alert-modal',
 
   /**
+   * The CSS class for the cancel button.
+   */
+  CancelButton = 'cancel-button',
+
+  /**
    * The CSS class for the confirm modal.
    */
   ConfirmModal = 'confirm-modal',
@@ -68,6 +73,11 @@ export enum CssClass {
   NumberComponent = 'number-component',
 
   /**
+   * The CSS class for the ok button.
+   */
+  OkButton = 'ok-button',
+
+  /**
    * The CSS class for the plugin settings tab.
    */
   PluginSettingsTab = 'plugin-settings-tab',
@@ -81,6 +91,11 @@ export enum CssClass {
    * The CSS class for the select item modal.
    */
   SelectItemModal = 'select-item-modal',
+
+  /**
+   * The CSS class for the text box.
+   */
+  TextBox = 'text-box',
 
   /**
    * The CSS class for the time component.

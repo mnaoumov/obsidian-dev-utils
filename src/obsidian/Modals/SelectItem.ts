@@ -12,8 +12,11 @@ import {
   FuzzySuggestModal
 } from 'obsidian';
 
+import type { PromiseResolve } from '../../Async.ts';
+
 import { CssClass } from '../../CssClass.ts';
 import { getPluginId } from '../Plugin/PluginId.ts';
+import { showModal } from './ModalBase.ts';
 
 /**
  * The parameters for the selection modal.
@@ -23,6 +26,11 @@ export interface SelectItemOptions<T> {
    * The Obsidian app instance.
    */
   app: App;
+
+  /**
+   * The CSS class to apply to the modal.
+   */
+  cssClass?: string;
 
   /**
    * The list of items to choose from.
@@ -45,10 +53,13 @@ export interface SelectItemOptions<T> {
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   private isSelected = false;
 
-  public constructor(private options: SelectItemOptions<T>, private resolve: (item: null | T) => void) {
+  public constructor(private options: SelectItemOptions<T>, private resolve: PromiseResolve<null | T>) {
     super(options.app);
     this.setPlaceholder(options.placeholder ?? '');
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.SelectItemModal);
+    if (options.cssClass) {
+      this.containerEl.addClass(options.cssClass);
+    }
   }
 
   public override getItems(): T[] {
@@ -85,8 +96,5 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
  * @returns A promise that resolves with the selected item or null if no item was selected.
  */
 export async function selectItem<T>(options: SelectItemOptions<T>): Promise<null | T> {
-  return await new Promise<null | T>((resolve) => {
-    const modal = new ItemSelectModal<T>(options, resolve);
-    modal.open();
-  });
+  return await showModal<null | T>((resolve) => new ItemSelectModal(options, resolve));
 }

@@ -8,12 +8,16 @@
 import {
   App,
   ButtonComponent,
-  Modal,
   TextComponent
 } from 'obsidian';
 
+import type { PromiseResolve } from '../../Async.ts';
+
 import { CssClass } from '../../CssClass.ts';
-import { getPluginId } from '../Plugin/PluginId.ts';
+import {
+  ModalBase,
+  showModal
+} from './ModalBase.ts';
 
 /**
  * The options for the prompt modal.
@@ -23,11 +27,6 @@ export interface PromptOptions {
    * The Obsidian app instance.
    */
   app: App;
-
-  /**
-   * The styles to apply to the "Cancel" button.
-   */
-  cancelButtonStyles?: Partial<CSSStyleDeclaration>;
 
   /**
    * The text for the "Cancel" button.
@@ -40,11 +39,6 @@ export interface PromptOptions {
   defaultValue?: string;
 
   /**
-   * The styles to apply to the "OK" button.
-   */
-  okButtonStyles?: Partial<CSSStyleDeclaration>;
-
-  /**
    * The text for the "OK" button.
    */
   okButtonText?: string;
@@ -53,11 +47,6 @@ export interface PromptOptions {
    * The placeholder text for the input field.
    */
   placeholder?: string;
-
-  /**
-   * The styles to apply to the input field.
-   */
-  textBoxStyles?: Partial<CSSStyleDeclaration>;
 
   /**
    * The title of the modal.
@@ -72,33 +61,24 @@ export interface PromptOptions {
   valueValidator?: (value: string) => null | string;
 }
 
-class PromptModal extends Modal {
+class PromptModal extends ModalBase<null | string, PromptOptions> {
   private isOkClicked = false;
   private options: Required<PromptOptions>;
   private value: string;
 
-  public constructor(options: PromptOptions, private resolve: (value: null | string) => void) {
-    super(options.app);
+  public constructor(options: PromptOptions, resolve: PromiseResolve<null | string>) {
+    super(options, resolve, CssClass.PromptModal);
     const DEFAULT_OPTIONS: Required<PromptOptions> = {
       app: options.app,
-      cancelButtonStyles: {},
       cancelButtonText: 'Cancel',
       defaultValue: '',
-      okButtonStyles: {
-        marginRight: '10px',
-        marginTop: '20px'
-      },
       okButtonText: 'OK',
       placeholder: '',
-      textBoxStyles: {
-        width: '100%'
-      },
       title: '',
       valueValidator: () => null
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.value = options.defaultValue ?? '';
-    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PromptModal);
   }
 
   public override onClose(): void {
@@ -110,7 +90,7 @@ class PromptModal extends Modal {
     const textComponent = new TextComponent(this.contentEl);
     textComponent.setValue(this.value);
     textComponent.setPlaceholder(this.options.placeholder);
-    Object.assign(textComponent.inputEl.style, this.options.textBoxStyles);
+    textComponent.inputEl.addClass(CssClass.TextBox);
     textComponent.onChange((newValue) => {
       this.value = newValue;
     });
@@ -132,11 +112,11 @@ class PromptModal extends Modal {
     okButton.onClick((event) => {
       this.handleOk(event, textComponent);
     });
-    Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
+    okButton.setClass(CssClass.OkButton);
     const cancelButton = new ButtonComponent(this.contentEl);
     cancelButton.setButtonText(this.options.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
-    Object.assign(cancelButton.buttonEl.style, this.options.cancelButtonStyles);
+    cancelButton.setClass(CssClass.CancelButton);
   }
 
   private handleOk(event: Event, textComponent: TextComponent): void {
@@ -157,8 +137,5 @@ class PromptModal extends Modal {
  * @returns A promise that resolves with the user input or null if the prompt was cancelled.
  */
 export async function prompt(options: PromptOptions): Promise<null | string> {
-  return await new Promise<null | string>((resolve) => {
-    const modal = new PromptModal(options, resolve);
-    modal.open();
-  });
+  return await showModal<null | string>((resolve) => new PromptModal(options, resolve));
 }

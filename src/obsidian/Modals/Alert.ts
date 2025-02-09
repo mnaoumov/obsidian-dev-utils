@@ -7,13 +7,15 @@
 
 import type { App } from 'obsidian';
 
-import {
-  ButtonComponent,
-  Modal
-} from 'obsidian';
+import { ButtonComponent } from 'obsidian';
+
+import type { PromiseResolve } from '../../Async.ts';
 
 import { CssClass } from '../../CssClass.ts';
-import { getPluginId } from '../Plugin/PluginId.ts';
+import {
+  ModalBase,
+  showModal
+} from './ModalBase.ts';
 
 /**
  * The options for the alert modal.
@@ -25,14 +27,14 @@ export interface AlertOptions {
   app: App;
 
   /**
+   * The CSS class to apply to the modal.
+   */
+  cssClass?: string;
+
+  /**
    * The message to display in the modal.
    */
   message: DocumentFragment | string;
-
-  /**
-   * The styles to apply to the "OK" button.
-   */
-  okButtonStyles?: Partial<CSSStyleDeclaration>;
 
   /**
    * The text for the "OK" button.
@@ -45,20 +47,19 @@ export interface AlertOptions {
   title?: DocumentFragment | string;
 }
 
-class AlertModal extends Modal {
+class AlertModal extends ModalBase<void, AlertOptions> {
   private options: Required<AlertOptions>;
 
-  public constructor(options: AlertOptions, private resolve: () => void) {
-    super(options.app);
+  public constructor(options: AlertOptions, resolve: PromiseResolve<void>) {
+    super(options, resolve, CssClass.AlertModal);
     const DEFAULT_OPTIONS: Required<AlertOptions> = {
       app: options.app,
-      message: '',
-      okButtonStyles: {},
+      cssClass: '',
+      message: options.message,
       okButtonText: 'OK',
       title: ''
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
-    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.AlertModal);
   }
 
   public override onClose(): void {
@@ -67,13 +68,12 @@ class AlertModal extends Modal {
 
   public override onOpen(): void {
     this.titleEl.setText(this.options.title);
-    const paragraph = this.contentEl.createEl('p');
-    paragraph.setText(this.options.message);
+    this.contentEl.createEl('p', { text: this.options.message });
     const okButton = new ButtonComponent(this.contentEl);
     okButton.setButtonText(this.options.okButtonText);
     okButton.setCta();
     okButton.onClick(this.close.bind(this));
-    Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
+    okButton.setClass(CssClass.OkButton);
   }
 }
 
@@ -84,8 +84,5 @@ class AlertModal extends Modal {
  * @returns A promise that resolves when the modal is closed.
  */
 export async function alert(options: AlertOptions): Promise<void> {
-  await new Promise<void>((resolve) => {
-    const modal = new AlertModal(options, resolve);
-    modal.open();
-  });
+  await showModal((resolve) => new AlertModal(options, resolve));
 }

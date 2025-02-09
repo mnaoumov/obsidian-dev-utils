@@ -3,14 +3,29 @@
     box-shadow: 0 0 0 2px var(--text-error);
   }
 
+  .modal-container {
+    .ok-button {
+      margin-right: 10px;
+      margin-top: 20px;
+    }
+  }
+
   .multiple-dropdown-component {
-    select, select:focus, .dropdown {
+    select,
+    select:focus,
+    .dropdown {
       height: auto;
 
       option:checked {
         background-color: #1967d2;
         color: #fff;
       }
+    }
+  }
+
+  .prompt-modal {
+    .text-box {
+      width: 100%;
     }
   }
 }
