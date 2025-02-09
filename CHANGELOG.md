@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.10.2-beta.8
+
+- Fix selected style
+
 ## 17.10.2-beta.7
 
 - Release styles.css if exists
