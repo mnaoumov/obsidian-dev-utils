@@ -5,7 +5,9 @@ import eslintPluginTsdocRequired from '@guardian/eslint-plugin-tsdoc-required';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
 import eslintPluginVerifyTsdoc from 'eslint-plugin-verify-tsdoc';
 
+import { join } from '../src/Path.ts';
 import { configs as defaultConfigs } from '../src/scripts/ESLint/eslint.config.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
 
 /**
  * The ESLint configurations
@@ -14,8 +16,8 @@ export const configs: Linter.Config[] = [
   ...defaultConfigs,
   {
     ignores: [
-      '**/index.ts',
-      'src/obsidian/@types/Dataview/**'
+      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
+      ObsidianDevUtilsRepoPaths.DataviewTypes
     ]
   },
   {

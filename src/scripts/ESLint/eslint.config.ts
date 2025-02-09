@@ -39,10 +39,10 @@ export const configs: Linter.Config[] = tseslint.config(
   },
   {
     ignores: [
-      '**/*.cjs',
-      '**/*.js',
-      '**/*.mjs',
-      'dist/**'
+      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyCjs),
+      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyJs),
+      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyMjs),
+      join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.AnyPath)
     ]
   },
   eslint.configs.recommended,
