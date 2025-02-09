@@ -298,8 +298,13 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
   } else {
     const resultJson = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json'], { isQuiet: true });
     const result = JSON.parse(resultJson) as [{ filename: string }];
-    filePaths = [join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename)];
+    filePaths = [
+      join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename),
+      join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.StylesCss)
+    ];
   }
+
+  filePaths = filePaths.filter((filePath) => existsSync(resolvePathFromRootSafe(filePath)));
 
   await execFromRoot([
     'gh',
