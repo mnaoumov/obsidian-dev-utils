@@ -33,9 +33,6 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the distribution (`dist`) directory. */
   Dist = 'dist',
 
-  /** The path to the empty ESLint config in CommonJS format within the `dist` directory. */
-  DistEslintConfigEmptyCjs = 'dist/eslint.config.empty.cjs',
-
   /** The path to the `lib` directory within the `dist` directory. */
   DistLib = 'dist/lib',
 

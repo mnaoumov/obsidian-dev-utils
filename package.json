@@ -447,8 +447,8 @@
     "build:types": "tsx scripts/build-types.ts",
     "format": "tsx scripts/cli.ts format",
     "format:check": "tsx scripts/cli.ts format:check",
-    "lint": "tsx scripts/lint.ts",
-    "lint:fix": "tsx scripts/lint.ts fix",
+    "lint": "tsx scripts/cli.ts lint",
+    "lint:fix": "tsx scripts/cli.ts lint:fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
     "test": "tsx scripts/test.ts",
     "version": "tsx scripts/version.ts"
