@@ -31,6 +31,12 @@ import { getRootDir } from '../Root.ts';
  * The ESLint configurations for TypeScript projects.
  */
 export const configs: Linter.Config[] = tseslint.config(
+  {
+    files: [
+      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
+      join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
+    ]
+  },
   eslint.configs.recommended,
   // eslint-disable-next-line import-x/no-named-as-default-member
   ...tseslint.configs.strictTypeChecked.map(excludeFilesProperty),
@@ -60,13 +66,6 @@ export const configs: Linter.Config[] = tseslint.config(
   eslintPluginImportX.flatConfigs.warnings,
   perfectionist.configs['recommended-alphabetical'],
   {
-    files: [
-      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
-      join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
-    ],
-    ignores: [
-      join(ObsidianDevUtilsRepoPaths.SrcObsidianTypesDataview)
-    ],
     plugins: {
       'modules-newlines': eslintPluginModulesNewlines
     },
