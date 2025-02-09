@@ -95,6 +95,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `styles` directory. */
   Styles = 'styles',
 
+  /** The path to the `styles.css` file. */
+  StylesCss = 'styles.css',
+
   /** The path to the `tsconfig.json` file. */
   TsConfigJson = 'tsconfig.json',
 
