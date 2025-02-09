@@ -22,7 +22,7 @@ await wrapCliTask(async () => {
       continue;
     }
 
-    if (dirent.name === ObsidianDevUtilsRepoPaths.Styles) {
+    if (dirent.name === ObsidianDevUtilsRepoPaths.Styles as string) {
       continue;
     }
 
