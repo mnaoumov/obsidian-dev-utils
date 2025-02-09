@@ -289,17 +289,11 @@ export async function gitPush(): Promise<void> {
  * @returns A promise that resolves when the release has been published.
  */
 export async function publishGitHubRelease(newVersion: string, isObsidianPlugin: boolean): Promise<void> {
-  let filePaths: string[];
-
-  if (isObsidianPlugin) {
-    const buildDir = resolvePathFromRootSafe(ObsidianPluginRepoPaths.DistBuild);
-    const fileNames = await readdirPosix(buildDir);
-    filePaths = fileNames.map((fileName) => join(buildDir, fileName));
-  } else {
-    const resultJson = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json'], { isQuiet: true });
-    const result = JSON.parse(resultJson) as [{ filename: string }];
-    filePaths = [join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename)];
-  }
+  const dir = isObsidianPlugin ? ObsidianPluginRepoPaths.DistBuild : ObsidianDevUtilsRepoPaths.Dist;
+  const dirents = await readdirPosix(dir, { recursive: true, withFileTypes: true });
+  const filePaths = dirents
+    .filter((f) => f.isFile())
+    .map((f) => join(f.parentPath, f.name));
 
   await execFromRoot([
     'gh',
