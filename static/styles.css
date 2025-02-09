@@ -1,44 +1,8 @@
-.obsidian-dev-utils {}
-
 .obsidian-dev-utils :invalid {
   box-shadow: 0 0 0 2px var(--text-error);
 }
 
-.obsidian-dev-utils.alert-modal {}
-
-.obsidian-dev-utils.confirm-modal {}
-
-.obsidian-dev-utils.date-component {}
-
-.obsidian-dev-utils.datetime-component {}
-
-.obsidian-dev-utils.email-component {}
-
-.obsidian-dev-utils.file-component {}
-
-.obsidian-dev-utils.month-component {}
-
-select.obsidian-dev-utils.month-component,
-.obsidian-dev-utils.month-component.dropdown {
+select.obsidian-dev-utils.multiple-dropdown-component,
+.obsidian-dev-utils.multiple-dropdown-component.dropdown {
   height: auto;
 }
-
-.obsidian-dev-utils.multiple-dropdown-component {}
-
-.obsidian-dev-utils.multiple-email-component {}
-
-.obsidian-dev-utils.multiple-file-component {}
-
-.obsidian-dev-utils.number-component {}
-
-.obsidian-dev-utils.plugin-settings-tab {}
-
-.obsidian-dev-utils.prompt-modal {}
-
-.obsidian-dev-utils.select-item-modal {}
-
-.obsidian-dev-utils.time-component {}
-
-.obsidian-dev-utils.url-component {}
-
-.obsidian-dev-utils.week-component {}
