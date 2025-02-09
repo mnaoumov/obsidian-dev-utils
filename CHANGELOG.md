@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 18.0.1
+
+- Ensure build:static executed before version
+- Fix package dir path
+
 ## 18.0.0
 
 - Add static eslint config
