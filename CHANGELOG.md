@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 18.1.0
+
+- Refactor modals
+
 ## 18.0.5
 
 - Extract constants
