@@ -11,9 +11,14 @@ import {
   TextComponent
 } from 'obsidian';
 
-import type { PromiseResolve } from '../../Async.ts';
+import type {
+  MaybePromise,
+  PromiseResolve
+} from '../../Async.ts';
 
+import { convertAsyncToSync } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
+import { noop } from '../../Function.ts';
 import {
   ModalBase,
   showModal
@@ -58,7 +63,8 @@ export interface PromptOptions {
    * @param value - The input value to validate.
    * @returns an error message if the value is invalid, or null if the value is valid.
    */
-  valueValidator?: (value: string) => null | string;
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  valueValidator?: (value: string) => MaybePromise<string | void>;
 }
 
 class PromptModal extends ModalBase<null | string, PromptOptions> {
@@ -75,7 +81,7 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
       okButtonText: 'OK',
       placeholder: '',
       title: '',
-      valueValidator: () => null
+      valueValidator: noop
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
     this.value = options.defaultValue ?? '';
@@ -101,11 +107,14 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
         this.close();
       }
     });
-    textComponent.inputEl.addEventListener('input', () => {
-      const errorMessage = this.options.valueValidator(textComponent.inputEl.value);
-      textComponent.inputEl.setCustomValidity(errorMessage ?? '');
-      textComponent.inputEl.reportValidity();
-    });
+    textComponent.inputEl.addEventListener(
+      'input',
+      convertAsyncToSync(async () => {
+        const errorMessage = await this.options.valueValidator(textComponent.inputEl.value) as string | undefined;
+        textComponent.inputEl.setCustomValidity(errorMessage ?? '');
+        textComponent.inputEl.reportValidity();
+      })
+    );
     const okButton = new ButtonComponent(this.contentEl);
     okButton.setButtonText(this.options.okButtonText);
     okButton.setCta();
