@@ -7,10 +7,14 @@ import {
   writeFile
 } from '../src/scripts/NodeModules.ts';
 import { publish } from '../src/scripts/NpmPublish.ts';
-import { resolvePathFromRootSafe } from '../src/scripts/Root.ts';
+import {
+  execFromRoot,
+  resolvePathFromRootSafe
+} from '../src/scripts/Root.ts';
 import { updateVersion } from '../src/scripts/version.ts';
 
 await wrapCliTask(async () => {
+  await execFromRoot(['npm', 'run', 'build:static']);
   const VERSION_UPDATE_TYPE_ARG_INDEX = 2;
   const versionUpdateTypeStr = process.argv[VERSION_UPDATE_TYPE_ARG_INDEX];
   await updateVersion(versionUpdateTypeStr, prepareGitHubRelease);
