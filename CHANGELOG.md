@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 17.10.2-beta.7
+
+- Release styles.css if exists
+- Revert "Use the same format for releases"
+
 ## 17.10.2-beta.6
 
 - Fix cast
