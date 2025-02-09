@@ -20,11 +20,11 @@ const DATE_FORMAT = 'YYYY-MM';
  */
 export interface IsoMonth {
   /**
-   * The month.
+   * The month (1-12).
    */
   month: number;
   /**
-   * The year.
+   * The year (1-9999).
    */
   year: number;
 }
@@ -62,7 +62,7 @@ export class MonthComponent extends TypedRangeTextComponent<IsoMonth> {
     }
 
     return {
-      month: parsed.month(),
+      month: parsed.month() + 1,
       year: parsed.year()
     };
   }
@@ -74,7 +74,7 @@ export class MonthComponent extends TypedRangeTextComponent<IsoMonth> {
    * @returns The string.
    */
   public override valueToString(value: IsoMonth): string {
-    const date = moment().year(value.year).month(value.month);
+    const date = moment().year(value.year).month(value.month - 1);
     return date.format(DATE_FORMAT);
   }
 }
