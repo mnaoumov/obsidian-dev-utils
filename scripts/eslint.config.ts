@@ -15,7 +15,7 @@ export const configs: Linter.Config[] = [
   {
     ignores: [
       '**/index.ts',
-      'src/obsidian/@types/Dataview/**/*.d.ts'
+      'src/obsidian/@types/Dataview/**'
     ]
   },
   {
