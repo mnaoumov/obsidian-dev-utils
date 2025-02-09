@@ -76,7 +76,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 
       build.initialOptions.banner ??= {};
       build.initialOptions.banner['js'] ??= '';
-      build.initialOptions.banner['js'] += `\n(${init.toString()})();\n`;
+      build.initialOptions.banner['js'] += `\n(${(isEsm ? initEsm : initCjs).toString()})();\n`;
 
       build.onLoad({ filter: /\.(?:js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, 'utf-8');
@@ -107,7 +107,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
   };
 }
 
-function init(): void {
+function initCjs(): void {
   const globalThisRecord = globalThis as unknown as Record<string, unknown>;
   globalThisRecord['__name'] ??= name;
   const originalRequire = require as (NodeJS.Require & Partial<RequirePatched> | undefined);
@@ -160,4 +160,18 @@ function init(): void {
     console.error(`Module not found: ${id}. Empty object is returned instead.`);
     return {};
   }
+}
+
+function initEsm(): void {
+  if ((globalThis.process as NodeJS.Process | undefined)) {
+    return;
+  }
+
+  const browserProcess: BrowserProcess = {
+    browser: true,
+    cwd: () => '/',
+    env: {},
+    platform: 'android'
+  };
+  globalThis.process = browserProcess as NodeJS.Process;
 }
