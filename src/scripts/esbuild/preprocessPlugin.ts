@@ -21,6 +21,10 @@ import {
 } from '../../String.ts';
 import { readFile } from '../NodeModules.ts';
 
+interface BrowserProcess extends Partial<NodeJS.Process> {
+  browser: boolean;
+}
+
 interface EsmModule {
   __esModule: boolean;
   default: unknown;
@@ -119,12 +123,15 @@ function init(): void {
 
   const newFuncs: Record<string, () => unknown> = {
     __extractDefault: () => extractDefault,
-    process: () => ({
-      browser: true,
-      cwd: () => '/',
-      env: {},
-      platform: 'android'
-    })
+    process: () => {
+      const browserProcess: BrowserProcess = {
+        browser: true,
+        cwd: () => '/',
+        env: {},
+        platform: 'android'
+      };
+      return browserProcess;
+    }
   };
 
   for (const key of Object.keys(newFuncs)) {
