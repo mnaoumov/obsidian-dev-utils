@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 18.0.2
+
+- Refactor BrowserProcess
+- Refactor require usages
+
 ## 18.0.1
 
 - Ensure build:static executed before version
