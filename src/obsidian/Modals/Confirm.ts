@@ -7,13 +7,15 @@
 
 import type { App } from 'obsidian';
 
-import {
-  ButtonComponent,
-  Modal
-} from 'obsidian';
+import { ButtonComponent } from 'obsidian';
+
+import type { PromiseResolve } from '../../Async.ts';
 
 import { CssClass } from '../../CssClass.ts';
-import { getPluginId } from '../Plugin/PluginId.ts';
+import {
+  ModalBase,
+  showModal
+} from './ModalBase.ts';
 
 /**
  * The options for the confirm modal.
@@ -25,24 +27,19 @@ export interface ConfirmOptions {
   app: App;
 
   /**
-   * The styles to apply to the "Cancel" button.
-   */
-  cancelButtonStyles?: Partial<CSSStyleDeclaration>;
-
-  /**
    * The text for the "Cancel" button.
    */
   cancelButtonText?: string;
 
   /**
+   * The CSS class to apply to the modal.
+   */
+  cssClass?: string;
+
+  /**
    * The message to display in the modal.
    */
   message: DocumentFragment | string;
-
-  /**
-   * The styles to apply to the "OK" button.
-   */
-  okButtonStyles?: Partial<CSSStyleDeclaration>;
 
   /**
    * The text for the "OK" button.
@@ -55,26 +52,21 @@ export interface ConfirmOptions {
   title?: DocumentFragment | string;
 }
 
-class ConfirmModal extends Modal {
+class ConfirmModal extends ModalBase<boolean, ConfirmOptions> {
   private isConfirmed = false;
   private options: Required<ConfirmOptions>;
 
-  public constructor(options: ConfirmOptions, private resolve: (value: boolean) => void) {
-    super(options.app);
+  public constructor(options: ConfirmOptions, resolve: PromiseResolve<boolean>) {
+    super(options, resolve, CssClass.ConfirmModal);
     const DEFAULT_OPTIONS: Required<ConfirmOptions> = {
       app: options.app,
-      cancelButtonStyles: {},
       cancelButtonText: 'Cancel',
-      message: '',
-      okButtonStyles: {
-        marginRight: '10px',
-        marginTop: '20px'
-      },
+      cssClass: '',
+      message: options.message,
       okButtonText: 'OK',
       title: ''
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
-    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.ConfirmModal);
   }
 
   public override onClose(): void {
@@ -83,8 +75,7 @@ class ConfirmModal extends Modal {
 
   public override onOpen(): void {
     this.titleEl.setText(this.options.title);
-    const paragraph = this.contentEl.createEl('p');
-    paragraph.setText(this.options.message);
+    this.contentEl.createEl('p', { text: this.options.message });
     const okButton = new ButtonComponent(this.contentEl);
     okButton.setButtonText(this.options.okButtonText);
     okButton.setCta();
@@ -92,12 +83,12 @@ class ConfirmModal extends Modal {
       this.isConfirmed = true;
       this.close();
     });
-    Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
+    okButton.setClass(CssClass.OkButton);
 
     const cancelButton = new ButtonComponent(this.contentEl);
     cancelButton.setButtonText(this.options.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
-    Object.assign(okButton.buttonEl.style, this.options.okButtonStyles);
+    cancelButton.setClass(CssClass.CancelButton);
   }
 }
 
@@ -108,8 +99,5 @@ class ConfirmModal extends Modal {
  * @returns A promise that resolves with a boolean indicating whether the "OK" button was clicked.
  */
 export async function confirm(options: ConfirmOptions): Promise<boolean> {
-  return await new Promise<boolean>((resolve) => {
-    const modal = new ConfirmModal(options, resolve);
-    modal.open();
-  });
+  return await showModal<boolean>((resolve) => new ConfirmModal(options, resolve));
 }
