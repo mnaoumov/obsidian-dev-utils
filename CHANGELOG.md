@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 17.10.2-beta.10
+
+- Try other style
+
 ## 17.10.2-beta.9
 
 - Better css
