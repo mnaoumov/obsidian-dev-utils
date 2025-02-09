@@ -35,11 +35,14 @@ export const configs: Linter.Config[] = tseslint.config(
     files: [
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
       join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
-    ],
+    ]
+  },
+  {
     ignores: [
       '**/*.cjs',
       '**/*.js',
-      '**/*.mjs'
+      '**/*.mjs',
+      'dist/**'
     ]
   },
   eslint.configs.recommended,
