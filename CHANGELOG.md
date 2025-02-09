@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 17.10.2-beta.6
+
+- Fix cast
+- Don't generate export for styles folder
+- Fix sass arg
+- Generate index.ts only if there are other .ts
+- Use the same format for releases
+- Switch to compile sass
+- Improve style
+
 ## 17.10.2-beta.5
 
 - Fix nested style
