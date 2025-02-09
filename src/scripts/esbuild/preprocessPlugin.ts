@@ -106,11 +106,10 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 function init(): void {
   const globalThisRecord = globalThis as unknown as Record<string, unknown>;
   globalThisRecord['__name'] ??= name;
-
-  if (!(require as Partial<RequirePatched>).__isPatched) {
-    const originalRequire = require;
+  const originalRequire = require as (NodeJS.Require & Partial<RequirePatched> | undefined);
+  if (originalRequire && !originalRequire.__isPatched) {
     require = Object.assign(
-      (id: string) => requirePatched(id, originalRequire),
+      (id: string) => requirePatched(id),
       originalRequire,
       {
         __isPatched: true
@@ -140,8 +139,8 @@ function init(): void {
     return module && module.__esModule && module.default ? module.default : module;
   }
 
-  function requirePatched(id: string, originalRequire: NodeJS.Require): unknown {
-    const module = originalRequire(id) as (Partial<EsmModule> | undefined);
+  function requirePatched(id: string): unknown {
+    const module = originalRequire?.(id) as (Partial<EsmModule> | undefined);
     if (module) {
       return extractDefault(module);
     }
