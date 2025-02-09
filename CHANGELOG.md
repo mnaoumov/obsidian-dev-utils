@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 18.0.0
+
+- Add static eslint config
+- Update libs
+- Fix eslint warning
+- Use 1-based month
+
 ## 17.10.2-beta.10
 
 - Try other style
