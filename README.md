@@ -197,9 +197,26 @@ import { prompt } from 'obsidian-dev-utils/dist/lib/obsidian/Modal/Prompt';
 
 ## Styling
 
-The library provides some extensible styles that you can use to style your plugin.
+The library provides some extensible styles that you can use to style your plugin UI controls.
 
-Default styles are defined in [styles.css](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/static/styles.css).
+In order to use those styles in your plugin, you have to initialize the plugin context:
+
+```ts
+import {
+  initPluginContext
+} from 'obsidian-dev-utils/obsidian/Plugin/PluginContext';
+
+class MyPlugin extends Plugin {
+  public override onload(): void {
+    initPluginContext(this.app, this.manifest.id);
+    // ...
+  }
+}
+```
+
+Default styles are defined in [main.scss](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/styles/main.scss).
+
+The list of css classes is defined in [CssClass.ts](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/CssClass.ts).
 
 You can override those styles in your plugin's `styles.css` file via adding your plugin's id to the selector, e.g. for plugin `foo-bar`:
 
@@ -208,6 +225,20 @@ You can override those styles in your plugin's `styles.css` file via adding your
   box-shadow: 0 0 0 2px var(--text-error);
 }
 ```
+
+## Components
+
+The library provides some components that you can use in your plugin.
+
+See all available components in the [Components](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/Components) folder.
+
+In order for components to look properly, their styles has to be initialized. See [Styling](#styling) for more details.
+
+Example of all settings components: built-in and custom:
+
+![Components 1](./images/components1.png)
+
+![Components 2](./images/components2.png)
 
 ## Debugging
 
