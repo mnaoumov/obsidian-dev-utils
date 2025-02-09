@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 18.2.1
+
+- Fix style
+
 ## 18.2.0
 
 - Fix style
