@@ -22,6 +22,10 @@ await wrapCliTask(async () => {
       continue;
     }
 
+    if (dirent.name === ObsidianDevUtilsRepoPaths.Styles) {
+      continue;
+    }
+
     const path = join(dirent.parentPath, dirent.name);
     libDirs.push(path);
   }
