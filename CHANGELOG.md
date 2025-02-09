@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 18.2.0
+
+- Fix style
+- Refactor to async Prompt
+- Update libs
+
 ## 18.1.0
 
 - Refactor modals
