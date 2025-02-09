@@ -106,6 +106,8 @@ Checks formatting of your code using [dprint](https://dprint.dev/).
 npx obsidian-dev-utils lint
 ```
 
+This command is looking for `eslint.config.mjs` file in the root of your project and if it's not found, it creates it referencing the default configuration.
+
 Lints your code, enforcing a code convention to minimize common errors.
 
 #### Lint and Fix Code
@@ -115,6 +117,8 @@ npx obsidian-dev-utils lint:fix
 ```
 
 Lints your code and automatically applies fixes where possible.
+
+This command is looking for `eslint.config.mjs` file in the root of your project and if it's not found, it creates it referencing the default configuration.
 
 #### Publish
 
