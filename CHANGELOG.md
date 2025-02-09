@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 18.0.5
+
+- Extract constants
+
 ## 18.0.4
 
 - Fix ignores
