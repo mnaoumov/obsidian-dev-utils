@@ -16,7 +16,10 @@ import type {
   PromiseResolve
 } from '../../Async.ts';
 
-import { convertAsyncToSync } from '../../Async.ts';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
 import {
@@ -94,27 +97,30 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
   public override onOpen(): void {
     this.titleEl.setText(this.options.title);
     const textComponent = new TextComponent(this.contentEl);
+    const inputEl = textComponent.inputEl;
+
+    const validate = async (): Promise<void> => {
+      const errorMessage = await this.options.valueValidator(inputEl.value) as string | undefined;
+      inputEl.setCustomValidity(errorMessage ?? '');
+      inputEl.reportValidity();
+    };
+
     textComponent.setValue(this.value);
     textComponent.setPlaceholder(this.options.placeholder);
-    textComponent.inputEl.addClass(CssClass.TextBox);
+    inputEl.addClass(CssClass.TextBox);
     textComponent.onChange((newValue) => {
       this.value = newValue;
     });
-    textComponent.inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
+    addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
         this.handleOk(event, textComponent);
       } else if (event.key === 'Escape') {
         this.close();
       }
     });
-    textComponent.inputEl.addEventListener(
-      'input',
-      convertAsyncToSync(async () => {
-        const errorMessage = await this.options.valueValidator(textComponent.inputEl.value) as string | undefined;
-        textComponent.inputEl.setCustomValidity(errorMessage ?? '');
-        textComponent.inputEl.reportValidity();
-      })
-    );
+    inputEl.addEventListener('input', convertAsyncToSync(validate));
+    inputEl.addEventListener('focus', convertAsyncToSync(validate));
+    invokeAsyncSafely(validate);
     const okButton = new ButtonComponent(this.contentEl);
     okButton.setButtonText(this.options.okButtonText);
     okButton.setCta();
