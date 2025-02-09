@@ -4,11 +4,12 @@
   }
 
   .multiple-dropdown-component {
-    select, .dropdown {
+    select, select:-internal-list-box:focus, .dropdown {
       height: auto;
 
       option:checked {
-        background-color: #1967D2;
+        background-color: #1967d2;
+        color: #fff;
       }
     }
   }
