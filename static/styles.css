@@ -2,7 +2,7 @@
   box-shadow: 0 0 0 2px var(--text-error);
 }
 
-select.obsidian-dev-utils.multiple-dropdown-component,
-.obsidian-dev-utils.multiple-dropdown-component.dropdown {
+.obsidian-dev-utils.multiple-dropdown-component select,
+.obsidian-dev-utils.multiple-dropdown-component .dropdown {
   height: auto;
 }
