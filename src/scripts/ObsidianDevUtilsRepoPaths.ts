@@ -15,6 +15,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Matches any TypeScript declaration file (`*.d.ts`). */
   AnyDts = '*.d.ts',
 
+  /** Matches any `.js` file (`*.js`). */
+  AnyJs = '*.js',
+
   /** Matches any `.mjs` file (`*.mjs`). */
   AnyMjs = '*.mjs',
 
@@ -29,6 +32,9 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** The `.cjs` file extension. */
   CjsExtension = '.cjs',
+
+  /** The path to the `src/obsidian/@types/Dataview` files. */
+  DataviewTypes = 'src/obsidian/@types/Dataview/**',
 
   /** The path to the distribution (`dist`) directory. */
   Dist = 'dist',
