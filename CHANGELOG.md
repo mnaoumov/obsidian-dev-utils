@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 18.4.0
+
+- Add MultipleTextComponent
+
 ## 18.3.0
 
 - Add validation
