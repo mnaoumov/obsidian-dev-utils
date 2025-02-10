@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 18.4.2
+
+- Fix setDisabled
+
 ## 18.4.1
 
 - Fix event listener
