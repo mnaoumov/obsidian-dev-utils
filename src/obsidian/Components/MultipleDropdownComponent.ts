@@ -95,6 +95,18 @@ export class MultipleDropdownComponent extends ValueComponent<string[]> implemen
   }
 
   /**
+   * Sets the disabled state of the component.
+   *
+   * @param disabled - The disabled state to set.
+   * @returns The component.
+   */
+  public override setDisabled(disabled: boolean): this {
+    this.dropdownComponent.setDisabled(disabled);
+    this.disabled = disabled;
+    return this;
+  }
+
+  /**
    * Sets the value of the component.
    *
    * @param value - The value to set.

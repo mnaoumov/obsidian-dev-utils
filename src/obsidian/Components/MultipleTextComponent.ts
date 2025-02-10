@@ -73,17 +73,6 @@ export class MultipleTextComponent extends ValueComponent<string[]> implements V
   }
 
   /**
-   * Sets the value of the component.
-   *
-   * @param value - The value to set.
-   * @returns The component.
-   */
-  public override setValue(value: string[]): this {
-    this.textAreaComponent.setValue(value.join('\n'));
-    return this;
-  }
-
-  /**
    * Sets the disabled state of the component.
    *
    * @param disabled - The disabled state to set.
@@ -103,6 +92,17 @@ export class MultipleTextComponent extends ValueComponent<string[]> implements V
    */
   public setPlaceholder(placeholder: string): this {
     this.textAreaComponent.setPlaceholder(placeholder);
+    return this;
+  }
+
+  /**
+   * Sets the value of the component.
+   *
+   * @param value - The value to set.
+   * @returns The component.
+   */
+  public override setValue(value: string[]): this {
+    this.textAreaComponent.setValue(value.join('\n'));
     return this;
   }
 }
