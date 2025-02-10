@@ -111,7 +111,7 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
     textComponent.onChange((newValue) => {
       this.value = newValue;
     });
-    addEventListener('keydown', (event: KeyboardEvent) => {
+    inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
         this.handleOk(event, textComponent);
       } else if (event.key === 'Escape') {
