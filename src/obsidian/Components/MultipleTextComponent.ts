@@ -82,4 +82,27 @@ export class MultipleTextComponent extends ValueComponent<string[]> implements V
     this.textAreaComponent.setValue(value.join('\n'));
     return this;
   }
+
+  /**
+   * Sets the disabled state of the component.
+   *
+   * @param disabled - The disabled state to set.
+   * @returns The component.
+   */
+  public override setDisabled(disabled: boolean): this {
+    this.textAreaComponent.setDisabled(disabled);
+    this.disabled = disabled;
+    return this;
+  }
+
+  /**
+   * Sets the placeholder of the component.
+   *
+   * @param placeholder - The placeholder to set.
+   * @returns The component.
+   */
+  public setPlaceholder(placeholder: string): this {
+    this.textAreaComponent.setPlaceholder(placeholder);
+    return this;
+  }
 }
