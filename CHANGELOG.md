@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 18.4.1
+
+- Fix event listener
+
 ## 18.4.0
 
 - Add MultipleTextComponent
