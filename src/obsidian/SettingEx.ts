@@ -15,6 +15,7 @@ import { MonthComponent } from './Components/MonthComponent.ts';
 import { MultipleDropdownComponent } from './Components/MultipleDropdownComponent.ts';
 import { MultipleEmailComponent } from './Components/MultipleEmailComponent.ts';
 import { MultipleFileComponent } from './Components/MultipleFileComponent.ts';
+import { MultipleTextComponent } from './Components/MultipleTextComponent.ts';
 import { NumberComponent } from './Components/NumberComponent.ts';
 import { TimeComponent } from './Components/TimeComponent.ts';
 import { UrlComponent } from './Components/UrlComponent.ts';
@@ -117,6 +118,16 @@ export class SettingEx extends Setting {
    */
   public addMultipleFile(cb: (component: MultipleFileComponent) => void): this {
     return this.addComponent(MultipleFileComponent, cb);
+  }
+
+  /**
+   * Adds a {@link MultipleTextComponent} to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addMultipleText(cb: (component: MultipleTextComponent) => void): this {
+    return this.addComponent(MultipleTextComponent, cb);
   }
 
   /**

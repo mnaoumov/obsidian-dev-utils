@@ -68,6 +68,11 @@ export enum CssClass {
   MultipleFileComponent = 'multiple-file-component',
 
   /**
+   * The CSS class for the multiple text component.
+   */
+  MultipleTextComponent = 'multiple-text-component',
+
+  /**
    * The CSS class for the number component.
    */
   NumberComponent = 'number-component',
