@@ -7,6 +7,7 @@ import type { Plugin } from 'esbuild';
 
 import { replaceAll } from '../../String.ts';
 import { writeFile } from '../NodeModules.ts';
+import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 
 /**
  * Creates an esbuild plugin that changes the extension of JavaScript files after the build process.
@@ -20,14 +21,14 @@ export function changeExtensionPlugin(extension: string): Plugin {
     setup(build): void {
       build.onEnd(async (result) => {
         for (const file of result.outputFiles ?? []) {
-          if (!file.path.endsWith('.js') || file.path.endsWith('.d.js')) {
+          if (!file.path.endsWith(ObsidianDevUtilsRepoPaths.JsExtension) || file.path.endsWith(ObsidianDevUtilsRepoPaths.DjsExtension)) {
             continue;
           }
 
           const newPath = replaceAll(file.path, /\.js$/g, extension);
 
           let newText = replaceAll(file.text, /require\(["'](?<ImportPath>.+?)["']\)/g, (_, importPath) => {
-            if (importPath.endsWith('.d.ts')) {
+            if (importPath.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
               return 'undefined';
             }
 
@@ -36,7 +37,7 @@ export function changeExtensionPlugin(extension: string): Plugin {
           });
 
           newText = replaceAll(newText, /from "(?<ImportPath>.+?)"/g, (_, importPath) => {
-            if (importPath.endsWith('.d.ts')) {
+            if (importPath.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
               return 'undefined';
             }
 
