@@ -4,16 +4,30 @@ import { readdirPosix } from '../src/scripts/Fs.ts';
 import { cp } from '../src/scripts/NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
 import { execFromRoot } from '../src/scripts/Root.ts';
+import { trimEnd } from '../src/String.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');
+
+  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.DistLib, { recursive: true })) {
+    if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
+      continue;
+    }
+
+    const fullSourcePath = join(ObsidianDevUtilsRepoPaths.DistLib, file);
+    const fullTargetBasePath = trimEnd(fullSourcePath, ObsidianDevUtilsRepoPaths.DtsExtension);
+
+    await cp(fullSourcePath, fullTargetBasePath + ObsidianDevUtilsRepoPaths.DctsExtension);
+    await cp(fullSourcePath, fullTargetBasePath + ObsidianDevUtilsRepoPaths.DmtsExtension);
+  }
+
   for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
     if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
       continue;
     }
 
     const fullSourcePath = join(ObsidianDevUtilsRepoPaths.Src, file);
-    const fullTargetBasePath = join(ObsidianDevUtilsRepoPaths.DistLib, file);
+    const fullTargetBasePath = join(ObsidianDevUtilsRepoPaths.DistLib, trimEnd(file, ObsidianDevUtilsRepoPaths.DtsExtension));
 
     await cp(fullSourcePath, fullTargetBasePath + ObsidianDevUtilsRepoPaths.DctsExtension);
     await cp(fullSourcePath, fullTargetBasePath + ObsidianDevUtilsRepoPaths.DmtsExtension);

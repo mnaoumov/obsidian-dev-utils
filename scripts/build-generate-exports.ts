@@ -10,8 +10,10 @@ import {
   wrapCliTask
 } from '../src/scripts/CliUtils.ts';
 import { readdirPosix } from '../src/scripts/Fs.ts';
+import { existsSync } from '../src/scripts/NodeModules.ts';
 import { editPackageJson } from '../src/scripts/Npm.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
+import { resolvePathFromRoot } from '../src/scripts/Root.ts';
 import { replaceAll } from '../src/String.ts';
 
 await wrapCliTask(async () => {
@@ -40,7 +42,11 @@ await wrapCliTask(async () => {
     for (const libDir of libDirs) {
       const importPath = replaceAll(libDir, ObsidianDevUtilsRepoPaths.DistLib, '.');
 
-      packageJson.exports[importPath] = getExport(libDir, ObsidianDevUtilsRepoPaths.IndexDts);
+      const relativeIndexPath = join(ObsidianDevUtilsRepoPaths.DistLib, importPath, ObsidianDevUtilsRepoPaths.IndexDcts);
+      const fullIndexPath = resolvePathFromRoot(relativeIndexPath);
+      if (fullIndexPath && existsSync(fullIndexPath)) {
+        packageJson.exports[importPath] = getExport(libDir, ObsidianDevUtilsRepoPaths.IndexDts);
+      }
       packageJson.exports[normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any))] = getExport(libDir, ObsidianDevUtilsRepoPaths.AnyDts);
     }
 

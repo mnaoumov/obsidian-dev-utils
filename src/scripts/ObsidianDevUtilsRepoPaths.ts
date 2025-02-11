@@ -63,6 +63,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `index.cjs` file. */
   IndexCjs = 'index.cjs',
 
+  /** The path to the `index.d.cts` file. */
+  IndexDcts = 'index.d.cts',
+
   /** The path to the `index.d.ts` file. */
   IndexDts = 'index.d.ts',
 
