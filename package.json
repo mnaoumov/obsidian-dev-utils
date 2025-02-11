@@ -45,6 +45,38 @@
         "require": "./dist/lib/@types/*.d.cts"
       }
     },
+    "./Transformers": {
+      "types": {
+        "import": "./dist/lib/Transformers/index.d.mts",
+        "require": "./dist/lib/Transformers/index.d.cts"
+      },
+      "import": "./dist/lib/Transformers/index.mjs",
+      "require": "./dist/lib/Transformers/index.cjs"
+    },
+    "./Transformers/*": {
+      "types": {
+        "import": "./dist/lib/Transformers/*.d.mts",
+        "require": "./dist/lib/Transformers/*.d.cts"
+      },
+      "import": "./dist/lib/Transformers/*.mjs",
+      "require": "./dist/lib/Transformers/*.cjs"
+    },
+    "./codemirror": {
+      "types": {
+        "import": "./dist/lib/codemirror/index.d.mts",
+        "require": "./dist/lib/codemirror/index.d.cts"
+      },
+      "import": "./dist/lib/codemirror/index.mjs",
+      "require": "./dist/lib/codemirror/index.cjs"
+    },
+    "./codemirror/*": {
+      "types": {
+        "import": "./dist/lib/codemirror/*.d.mts",
+        "require": "./dist/lib/codemirror/*.d.cts"
+      },
+      "import": "./dist/lib/codemirror/*.mjs",
+      "require": "./dist/lib/codemirror/*.cjs"
+    },
     "./obsidian": {
       "types": {
         "import": "./dist/lib/obsidian/index.d.mts",
@@ -241,6 +273,54 @@
         "require": "./dist/lib/obsidian/@types/Dataview/util/*.d.cts"
       }
     },
+    "./obsidian/Components": {
+      "types": {
+        "import": "./dist/lib/obsidian/Components/index.d.mts",
+        "require": "./dist/lib/obsidian/Components/index.d.cts"
+      },
+      "import": "./dist/lib/obsidian/Components/index.mjs",
+      "require": "./dist/lib/obsidian/Components/index.cjs"
+    },
+    "./obsidian/Components/*": {
+      "types": {
+        "import": "./dist/lib/obsidian/Components/*.d.mts",
+        "require": "./dist/lib/obsidian/Components/*.d.cts"
+      },
+      "import": "./dist/lib/obsidian/Components/*.mjs",
+      "require": "./dist/lib/obsidian/Components/*.cjs"
+    },
+    "./obsidian/Modals": {
+      "types": {
+        "import": "./dist/lib/obsidian/Modals/index.d.mts",
+        "require": "./dist/lib/obsidian/Modals/index.d.cts"
+      },
+      "import": "./dist/lib/obsidian/Modals/index.mjs",
+      "require": "./dist/lib/obsidian/Modals/index.cjs"
+    },
+    "./obsidian/Modals/*": {
+      "types": {
+        "import": "./dist/lib/obsidian/Modals/*.d.mts",
+        "require": "./dist/lib/obsidian/Modals/*.d.cts"
+      },
+      "import": "./dist/lib/obsidian/Modals/*.mjs",
+      "require": "./dist/lib/obsidian/Modals/*.cjs"
+    },
+    "./obsidian/Plugin": {
+      "types": {
+        "import": "./dist/lib/obsidian/Plugin/index.d.mts",
+        "require": "./dist/lib/obsidian/Plugin/index.d.cts"
+      },
+      "import": "./dist/lib/obsidian/Plugin/index.mjs",
+      "require": "./dist/lib/obsidian/Plugin/index.cjs"
+    },
+    "./obsidian/Plugin/*": {
+      "types": {
+        "import": "./dist/lib/obsidian/Plugin/*.d.mts",
+        "require": "./dist/lib/obsidian/Plugin/*.d.cts"
+      },
+      "import": "./dist/lib/obsidian/Plugin/*.mjs",
+      "require": "./dist/lib/obsidian/Plugin/*.cjs"
+    },
     "./scripts": {
       "types": {
         "import": "./dist/lib/scripts/index.d.mts",
@@ -284,6 +364,22 @@
         "import": "./dist/lib/scripts/ESLint/@types/*.d.mts",
         "require": "./dist/lib/scripts/ESLint/@types/*.d.cts"
       }
+    },
+    "./scripts/esbuild": {
+      "types": {
+        "import": "./dist/lib/scripts/esbuild/index.d.mts",
+        "require": "./dist/lib/scripts/esbuild/index.d.cts"
+      },
+      "import": "./dist/lib/scripts/esbuild/index.mjs",
+      "require": "./dist/lib/scripts/esbuild/index.cjs"
+    },
+    "./scripts/esbuild/*": {
+      "types": {
+        "import": "./dist/lib/scripts/esbuild/*.d.mts",
+        "require": "./dist/lib/scripts/esbuild/*.d.cts"
+      },
+      "import": "./dist/lib/scripts/esbuild/*.mjs",
+      "require": "./dist/lib/scripts/esbuild/*.cjs"
     }
   },
   "main": "./dist/lib/index.cjs",
