@@ -36,6 +36,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `src/obsidian/@types/Dataview` files. */
   DataviewTypes = 'src/obsidian/@types/Dataview/**',
 
+  /** The `.d.cts` file extension. */
+  DctsExtension = '.d.cts',
+
   /** The path to the distribution (`dist`) directory. */
   Dist = 'dist',
 
@@ -44,6 +47,9 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** The path to the `_dependencies.cjs` file within the `lib` directory in the `dist` directory. */
   DistLibDependenciesCjs = './dist/lib/_dependencies.cjs',
+
+  /** The `.d.mts` file extension. */
+  DmtsExtension = '.d.mts',
 
   /** The path to the `dprint.json` file. */
   DprintJson = 'dprint.json',
