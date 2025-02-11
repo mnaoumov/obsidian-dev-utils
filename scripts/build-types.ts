@@ -7,7 +7,7 @@ import { execFromRoot } from '../src/scripts/Root.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');
-  for (const file of await readdirPosix('src', { recursive: true })) {
+  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
     if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
       continue;
     }
