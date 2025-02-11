@@ -8,8 +8,14 @@ import { execFromRoot } from '../src/scripts/Root.ts';
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');
   for (const file of await readdirPosix('src', { recursive: true })) {
-    if (file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
-      await cp(join(ObsidianDevUtilsRepoPaths.Src, file), join(ObsidianDevUtilsRepoPaths.DistLib, file));
+    if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
+      continue;
     }
+
+    const fullSourcePath = join(ObsidianDevUtilsRepoPaths.Src, file);
+    const fullTargetBasePath = join(ObsidianDevUtilsRepoPaths.DistLib, file);
+
+    await cp(fullSourcePath, fullTargetBasePath + ObsidianDevUtilsRepoPaths.DctsExtension);
+    await cp(fullSourcePath, fullTargetBasePath + ObsidianDevUtilsRepoPaths.DmtsExtension);
   }
 });
