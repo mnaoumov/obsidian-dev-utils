@@ -48,6 +48,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `_dependencies.cjs` file within the `lib` directory in the `dist` directory. */
   DistLibDependenciesCjs = './dist/lib/_dependencies.cjs',
 
+  /** The `.d.js` file extension. */
+  DjsExtension = '.d.js',
+
   /** The `.d.mts` file extension. */
   DmtsExtension = '.d.mts',
 
@@ -68,6 +71,9 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** The path to the `index.ts` file. */
   IndexTs = 'index.ts',
+
+  /** The `.js` file extension. */
+  JsExtension = '.js',
 
   /** The path to the `LICENSE` file. */
   License = 'LICENSE',

@@ -120,7 +120,7 @@ function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, depe
     name: 'test',
     setup(build): void {
       build.onResolve({ filter: /^[^./]/ }, (args) => {
-        if (!args.importer.endsWith('.d.ts')) {
+        if (!args.importer.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
           const moduleName = trimStart(args.path.split('/')[0] ?? throwExpression(new Error('Wrong path')), 'node:');
           if (!dependenciesToSkip.has(args.path) && !dependenciesToSkip.has(moduleName)) {
             dependenciesToBundle.add(args.path);
