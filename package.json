@@ -341,8 +341,8 @@
     "@types/path-browserify": "^1.0.3",
     "@types/pug": "^2.0.10",
     "@types/shell-quote": "^1.7.5",
-    "@typescript-eslint/eslint-plugin": "^8.23.0",
-    "@typescript-eslint/parser": "^8.23.0",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
     "better-typescript-lib": "^2.10.1",
     "commander": "^13.1.0",
     "compare-versions": "^6.1.1",
@@ -354,7 +354,7 @@
     "esbuild": "^0.25.0",
     "esbuild-sass-plugin": "^3.3.1",
     "esbuild-svelte": "^0.9.0",
-    "eslint": "^9.20.0",
+    "eslint": "^9.20.1",
     "eslint-import-resolver-typescript": "^3.7.0",
     "eslint-plugin-import-x": "^4.6.1",
     "eslint-plugin-modules-newlines": "^0.0.7",
@@ -369,9 +369,9 @@
     "monkey-around": "^3.0.0",
     "npm-run-all": "^4.1.5",
     "obsidian": "^1.7.2",
-    "obsidian-typings": "^2.17.0",
+    "obsidian-typings": "^2.21.0",
     "path-browserify": "^1.0.1",
-    "postcss": "^8.5.1",
+    "postcss": "^8.5.2",
     "postcss-modules": "^6.0.1",
     "preact": "^10.25.4",
     "remark": "^15.0.1",
@@ -384,6 +384,6 @@
     "tsx": "^4.19.2",
     "type-fest": "^4.34.1",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.23.0"
+    "typescript-eslint": "^8.24.0"
   }
 }
