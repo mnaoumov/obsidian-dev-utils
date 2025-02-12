@@ -92,6 +92,7 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
           const name = basename(file, ObsidianDevUtilsRepoPaths.DctsExtension);
           const packageJsonPath = join(importPath.replace(ObsidianDevUtilsRepoPaths.Any, name), ObsidianDevUtilsRepoPaths.PackageJson);
           const packageJson: PackageJson = {
+            type: 'module',
             types: relative(importPath, join(libDir, dctsPath.replace(ObsidianDevUtilsRepoPaths.Any, name)))
           };
           console.log(packageJsonPath);
@@ -101,6 +102,7 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
       } else {
         const packageJsonPath = join(importPath, ObsidianDevUtilsRepoPaths.PackageJson);
         const packageJson: PackageJson = {
+          type: 'module',
           types: relative(importPath, join(libDir, dctsPath))
         };
         console.log(packageJsonPath);
@@ -135,6 +137,7 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
         const packageJson: PackageJson = {
           main: relative(importPath, join(libDir, cjsPath.replace(ObsidianDevUtilsRepoPaths.Any, name))),
           module: relative(importPath, join(libDir, mjsPath.replace(ObsidianDevUtilsRepoPaths.Any, name))),
+          type: 'module',
           types: relative(importPath, join(libDir, dctsPath.replace(ObsidianDevUtilsRepoPaths.Any, name)))
         };
         console.log(packageJsonPath);
@@ -146,6 +149,7 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
       const packageJson: PackageJson = {
         main: relative(importPath, join(libDir, cjsPath)),
         module: relative(importPath, join(libDir, mjsPath)),
+        type: 'module',
         types: relative(importPath, join(libDir, dctsPath))
       };
       console.log(packageJsonPath);
