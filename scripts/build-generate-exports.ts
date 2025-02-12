@@ -95,7 +95,6 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
             type: 'module',
             types: relative(importPath, join(libDir, dctsPath.replace(ObsidianDevUtilsRepoPaths.Any, name)))
           };
-          console.log(packageJsonPath);
           await mkdir(dirname(packageJsonPath), { recursive: true });
           await writeJson(packageJsonPath, packageJson);
         }
@@ -105,7 +104,6 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
           type: 'module',
           types: relative(importPath, join(libDir, dctsPath))
         };
-        console.log(packageJsonPath);
         await mkdir(dirname(packageJsonPath), { recursive: true });
         await writeJson(packageJsonPath, packageJson);
       }
@@ -140,7 +138,6 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
           type: 'module',
           types: relative(importPath, join(libDir, dctsPath.replace(ObsidianDevUtilsRepoPaths.Any, name)))
         };
-        console.log(packageJsonPath);
         await mkdir(dirname(packageJsonPath), { recursive: true });
         await writeJson(packageJsonPath, packageJson);
       }
@@ -152,7 +149,6 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
         type: 'module',
         types: relative(importPath, join(libDir, dctsPath))
       };
-      console.log(packageJsonPath);
       await mkdir(dirname(packageJsonPath), { recursive: true });
       await writeJson(packageJsonPath, packageJson);
     }
