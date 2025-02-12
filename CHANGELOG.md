@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.0.1
+
+- Avoid duplication
+- Use fixed typings
+
 ## 19.0.0
 
 - Make compatible with https://arethetypeswrong.github.io/
