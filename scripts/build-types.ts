@@ -1,4 +1,5 @@
 import {
+  basename,
   dirname,
   join
 } from '../src/Path.ts';
@@ -29,8 +30,10 @@ await wrapCliTask(async () => {
 
     const fullTargetBasePath = join(ObsidianDevUtilsRepoPaths.DistLib, trimEnd(file, ObsidianDevUtilsRepoPaths.DtsExtension));
     const parentDir = dirname(fullTargetBasePath);
+    const name = basename(fullTargetBasePath, ObsidianDevUtilsRepoPaths.DtsExtension);
+
     await mkdir(parentDir, { recursive: true });
     await writeFile(fullTargetBasePath + ObsidianDevUtilsRepoPaths.DctsExtension, replaceAll(content, '.ts\'', '.cjs\''));
-    await writeFile(fullTargetBasePath + ObsidianDevUtilsRepoPaths.DmtsExtension, replaceAll(content, '.ts\'', '.mjs\''));
+    await writeFile(fullTargetBasePath + ObsidianDevUtilsRepoPaths.DmtsExtension, `export * from './${name}.cjs';\n`);
   }
 });
