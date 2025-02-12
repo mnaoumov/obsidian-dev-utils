@@ -17,7 +17,9 @@ export const configs: Linter.Config[] = [
   {
     ignores: [
       join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
-      ObsidianDevUtilsRepoPaths.DataviewTypes
+      ObsidianDevUtilsRepoPaths.DataviewTypes,
+      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts),
+      `!${join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.Types, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts)}`
     ]
   },
   {
