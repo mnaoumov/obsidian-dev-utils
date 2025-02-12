@@ -62,7 +62,7 @@ await wrapCliTask(async () => {
   return CliTaskResult.Success(!isChanged);
 });
 
-async function setExport(exports: PackageJson.ExportConditions, importPath: string, libDir: string, dtsPath: string): Promise<void> {
+async function setExport(exportConditions: PackageJson.ExportConditions, importPath: string, libDir: string, dtsPath: string): Promise<void> {
   const dmtsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.DmtsExtension);
   const dctsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.DctsExtension);
 
@@ -78,7 +78,7 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
   };
 
   if (libDir.includes(ObsidianDevUtilsRepoPaths.Types)) {
-    exports[importPath] = {
+    exportConditions[importPath] = {
       types
     };
 
@@ -115,7 +115,7 @@ async function setExport(exports: PackageJson.ExportConditions, importPath: stri
   const mjsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.MjsExtension);
   const cjsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.CjsExtension);
 
-  exports[importPath] = {
+  exportConditions[importPath] = {
     /* eslint-disable perfectionist/sort-objects */
     types,
     import: normalizeIfRelative(join(libDir, mjsPath)),
