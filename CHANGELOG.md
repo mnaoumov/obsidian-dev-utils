@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.0.0
+
+- Make compatible with https://arethetypeswrong.github.io/
+
 ## 18.4.2
 
 - Fix setDisabled
