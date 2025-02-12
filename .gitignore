@@ -31,3 +31,6 @@ _dependencies.ts
 
 /src/**/*.d.ts
 !/src/**/@types/**/*.d.ts
+
+package.json
+!/package.json
