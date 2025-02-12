@@ -28,3 +28,6 @@ _dependencies.ts
 
 /tsconfig.tsbuildinfo
 /.env
+
+/src/**/*.d.ts
+!/src/**/@types/**/*.d.ts

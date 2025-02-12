@@ -11,11 +11,13 @@ import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPa
 await wrapCliTask(async () => {
   await buildClean();
   for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
-    if (basename(file) !== ObsidianDevUtilsRepoPaths.IndexTs as string) {
-      continue;
+    if (basename(file) === ObsidianDevUtilsRepoPaths.IndexTs as string) {
+      await rm(join(ObsidianDevUtilsRepoPaths.Src, file));
     }
 
-    await rm(join(ObsidianDevUtilsRepoPaths.Src, file));
+    if (file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) && !file.split('/').includes(ObsidianDevUtilsRepoPaths.Types)) {
+      await rm(join(ObsidianDevUtilsRepoPaths.Src, file));
+    }
   }
 
   await rm(ObsidianDevUtilsRepoPaths.SrcDependenciesTs, { force: true });

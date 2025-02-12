@@ -22,11 +22,17 @@ async function generateIndex(dir: string): Promise<void> {
   const lines = (await asyncMap(dirents, (dirent) => handleDirent(dir, dirent)))
     .filter((line) => line !== undefined);
 
-  await generate(join(dir, ObsidianDevUtilsRepoPaths.IndexTs), lines);
+  if (lines.length > 0) {
+    await generate(join(dir, ObsidianDevUtilsRepoPaths.IndexTs), lines);
+  }
 }
 
 async function handleDirent(dir: string, dirent: Dirent): Promise<string | undefined> {
   if (dirent.name === ObsidianDevUtilsRepoPaths.IndexTs as string) {
+    return;
+  }
+
+  if (dirent.name.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
     return;
   }
 
