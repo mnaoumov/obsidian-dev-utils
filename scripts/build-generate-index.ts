@@ -1,3 +1,5 @@
+import type { Dirent } from '../src/scripts/NodeModules.ts';
+
 import { asyncMap } from '../src/Async.ts';
 import {
   basename,
@@ -17,27 +19,40 @@ await wrapCliTask(async () => {
 
 async function generateIndex(dir: string): Promise<void> {
   const dirents = await readdirPosix(dir, { withFileTypes: true });
-  const lines = (await asyncMap(dirents, async (dirent) => {
-    if (
-      dirent.name === ObsidianDevUtilsRepoPaths.IndexTs as string || dirent.name === ObsidianDevUtilsRepoPaths.Types as string
-      || !dirent.name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension)
-    ) {
-      return;
-    }
-    let sourceFile: string;
-    let name: string;
-    if (dirent.isDirectory()) {
-      await generateIndex(join(dir, dirent.name));
-      sourceFile = normalizeIfRelative(join(dirent.name, ObsidianDevUtilsRepoPaths.IndexTs));
-      name = dirent.name;
-    } else {
-      const extension = extname(dirent.name);
-      name = basename(dirent.name, extension);
-      sourceFile = normalizeIfRelative(dirent.name);
-    }
-
-    return `export * as ${makeValidVariableName(name)} from '${sourceFile}';`;
-  })).filter((line) => line !== undefined);
+  const lines = (await asyncMap(dirents, (dirent) => handleDirent(dir, dirent)))
+    .filter((line) => line !== undefined);
 
   await generate(join(dir, ObsidianDevUtilsRepoPaths.IndexTs), lines);
+}
+
+async function handleDirent(dir: string, dirent: Dirent): Promise<string | undefined> {
+  if (dirent.name === ObsidianDevUtilsRepoPaths.IndexTs as string) {
+    return;
+  }
+
+  if (dirent.name === ObsidianDevUtilsRepoPaths.Types as string || dir.split('/').includes(ObsidianDevUtilsRepoPaths.Types)) {
+    return;
+  }
+
+  if (dirent.name === ObsidianDevUtilsRepoPaths.Styles as string) {
+    return;
+  }
+
+  if (dirent.isFile() && !dirent.name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension)) {
+    return;
+  }
+
+  let sourceFile: string;
+  let name: string;
+  if (dirent.isDirectory()) {
+    await generateIndex(join(dir, dirent.name));
+    sourceFile = normalizeIfRelative(join(dirent.name, ObsidianDevUtilsRepoPaths.IndexTs));
+    name = dirent.name;
+  } else {
+    const extension = extname(dirent.name);
+    name = basename(dirent.name, extension);
+    sourceFile = normalizeIfRelative(dirent.name);
+  }
+
+  return `export * as ${makeValidVariableName(name)} from '${sourceFile}';`;
 }
