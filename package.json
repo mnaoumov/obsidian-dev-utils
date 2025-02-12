@@ -304,7 +304,7 @@
     "CHANGELOG.md",
     "LICENSE",
     "README.md",
-    "package.json"
+    "**/package.json"
   ],
   "scripts": {
     "build": "npm-run-all build:clean build:compile build:generate-index build:types build:lib build:generate-exports build:static build:styles",
