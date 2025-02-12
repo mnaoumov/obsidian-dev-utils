@@ -1,17 +1,17 @@
 import { ObsidianPluginRepoPaths } from '../src/obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../src/Path.ts';
-import { wrapCliTask } from '../src/scripts/CliUtils.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
 import {
   process,
   readFile,
   writeFile
-} from '../src/scripts/NodeModules.ts';
-import { publish } from '../src/scripts/NpmPublish.ts';
+} from '../src/ScriptUtils/NodeModules.ts';
+import { publish } from '../src/ScriptUtils/NpmPublish.ts';
 import {
   execFromRoot,
   resolvePathFromRootSafe
-} from '../src/scripts/Root.ts';
-import { updateVersion } from '../src/scripts/version.ts';
+} from '../src/ScriptUtils/Root.ts';
+import { updateVersion } from '../src/ScriptUtils/version.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot(['npm', 'run', 'build:static']);

@@ -1,4 +1,4 @@
-import type { PackageJson } from '../src/scripts/Npm.ts';
+import type { PackageJson } from '../src/ScriptUtils/Npm.ts';
 
 import { deepEqual } from '../src/Object.ts';
 import {
@@ -11,15 +11,15 @@ import {
 import {
   CliTaskResult,
   wrapCliTask
-} from '../src/scripts/CliUtils.ts';
-import { readdirPosix } from '../src/scripts/Fs.ts';
-import { writeJson } from '../src/scripts/JSON.ts';
+} from '../src/ScriptUtils/CliUtils.ts';
+import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
+import { writeJson } from '../src/ScriptUtils/JSON.ts';
 import {
   existsSync,
   mkdir
-} from '../src/scripts/NodeModules.ts';
-import { editPackageJson } from '../src/scripts/Npm.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
+} from '../src/ScriptUtils/NodeModules.ts';
+import { editPackageJson } from '../src/ScriptUtils/Npm.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 import { replaceAll } from '../src/String.ts';
 
 await wrapCliTask(async () => {

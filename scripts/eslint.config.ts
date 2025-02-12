@@ -6,8 +6,8 @@ import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
 import eslintPluginVerifyTsdoc from 'eslint-plugin-verify-tsdoc';
 
 import { join } from '../src/Path.ts';
-import { configs as defaultConfigs } from '../src/scripts/ESLint/eslint.config.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
+import { configs as defaultConfigs } from '../src/ScriptUtils/ESLint/eslint.config.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 
 /**
  * The ESLint configurations

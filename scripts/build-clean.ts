@@ -2,11 +2,11 @@ import {
   basename,
   join
 } from '../src/Path.ts';
-import { buildClean } from '../src/scripts/build.ts';
-import { wrapCliTask } from '../src/scripts/CliUtils.ts';
-import { readdirPosix } from '../src/scripts/Fs.ts';
-import { rm } from '../src/scripts/NodeModules.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
+import { buildClean } from '../src/ScriptUtils/build.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
+import { rm } from '../src/ScriptUtils/NodeModules.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 
 await wrapCliTask(async () => {
   await buildClean();

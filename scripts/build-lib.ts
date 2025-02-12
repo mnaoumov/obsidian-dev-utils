@@ -6,16 +6,16 @@ import {
   join,
   normalizeIfRelative
 } from '../src/Path.ts';
-import { wrapCliTask } from '../src/scripts/CliUtils.ts';
-import { changeExtensionPlugin } from '../src/scripts/esbuild/changeExtensionPlugin.ts';
-import { fixEsmPlugin } from '../src/scripts/esbuild/fixEsmPlugin.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { changeExtensionPlugin } from '../src/ScriptUtils/esbuild/changeExtensionPlugin.ts';
+import { fixEsmPlugin } from '../src/ScriptUtils/esbuild/fixEsmPlugin.ts';
 import {
   banner,
   invokeEsbuild
-} from '../src/scripts/esbuild/ObsidianPluginBuilder.ts';
-import { preprocessPlugin } from '../src/scripts/esbuild/preprocessPlugin.ts';
-import { readdirPosix } from '../src/scripts/Fs.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
+} from '../src/ScriptUtils/esbuild/ObsidianPluginBuilder.ts';
+import { preprocessPlugin } from '../src/ScriptUtils/esbuild/preprocessPlugin.ts';
+import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 
 await wrapCliTask(async () => {
   const libFiles = await getLibFiles();

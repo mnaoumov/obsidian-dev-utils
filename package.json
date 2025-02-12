@@ -39,6 +39,60 @@
         "require": "./dist/lib/@types/*.d.cts"
       }
     },
+    "./ScriptUtils": {
+      "types": {
+        "import": "./dist/lib/ScriptUtils/index.d.mts",
+        "require": "./dist/lib/ScriptUtils/index.d.cts"
+      },
+      "import": "./dist/lib/ScriptUtils/index.mjs",
+      "require": "./dist/lib/ScriptUtils/index.cjs"
+    },
+    "./ScriptUtils/*": {
+      "types": {
+        "import": "./dist/lib/ScriptUtils/*.d.mts",
+        "require": "./dist/lib/ScriptUtils/*.d.cts"
+      },
+      "import": "./dist/lib/ScriptUtils/*.mjs",
+      "require": "./dist/lib/ScriptUtils/*.cjs"
+    },
+    "./ScriptUtils/ESLint": {
+      "types": {
+        "import": "./dist/lib/ScriptUtils/ESLint/index.d.mts",
+        "require": "./dist/lib/ScriptUtils/ESLint/index.d.cts"
+      },
+      "import": "./dist/lib/ScriptUtils/ESLint/index.mjs",
+      "require": "./dist/lib/ScriptUtils/ESLint/index.cjs"
+    },
+    "./ScriptUtils/ESLint/*": {
+      "types": {
+        "import": "./dist/lib/ScriptUtils/ESLint/*.d.mts",
+        "require": "./dist/lib/ScriptUtils/ESLint/*.d.cts"
+      },
+      "import": "./dist/lib/ScriptUtils/ESLint/*.mjs",
+      "require": "./dist/lib/ScriptUtils/ESLint/*.cjs"
+    },
+    "./ScriptUtils/ESLint/@types/*": {
+      "types": {
+        "import": "./dist/lib/ScriptUtils/ESLint/@types/*.d.mts",
+        "require": "./dist/lib/ScriptUtils/ESLint/@types/*.d.cts"
+      }
+    },
+    "./ScriptUtils/esbuild": {
+      "types": {
+        "import": "./dist/lib/ScriptUtils/esbuild/index.d.mts",
+        "require": "./dist/lib/ScriptUtils/esbuild/index.d.cts"
+      },
+      "import": "./dist/lib/ScriptUtils/esbuild/index.mjs",
+      "require": "./dist/lib/ScriptUtils/esbuild/index.cjs"
+    },
+    "./ScriptUtils/esbuild/*": {
+      "types": {
+        "import": "./dist/lib/ScriptUtils/esbuild/*.d.mts",
+        "require": "./dist/lib/ScriptUtils/esbuild/*.d.cts"
+      },
+      "import": "./dist/lib/ScriptUtils/esbuild/*.mjs",
+      "require": "./dist/lib/ScriptUtils/esbuild/*.cjs"
+    },
     "./Transformers": {
       "types": {
         "import": "./dist/lib/Transformers/index.d.mts",
@@ -236,60 +290,6 @@
       },
       "import": "./dist/lib/obsidian/Plugin/*.mjs",
       "require": "./dist/lib/obsidian/Plugin/*.cjs"
-    },
-    "./scripts": {
-      "types": {
-        "import": "./dist/lib/scripts/index.d.mts",
-        "require": "./dist/lib/scripts/index.d.cts"
-      },
-      "import": "./dist/lib/scripts/index.mjs",
-      "require": "./dist/lib/scripts/index.cjs"
-    },
-    "./scripts/*": {
-      "types": {
-        "import": "./dist/lib/scripts/*.d.mts",
-        "require": "./dist/lib/scripts/*.d.cts"
-      },
-      "import": "./dist/lib/scripts/*.mjs",
-      "require": "./dist/lib/scripts/*.cjs"
-    },
-    "./scripts/ESLint": {
-      "types": {
-        "import": "./dist/lib/scripts/ESLint/index.d.mts",
-        "require": "./dist/lib/scripts/ESLint/index.d.cts"
-      },
-      "import": "./dist/lib/scripts/ESLint/index.mjs",
-      "require": "./dist/lib/scripts/ESLint/index.cjs"
-    },
-    "./scripts/ESLint/*": {
-      "types": {
-        "import": "./dist/lib/scripts/ESLint/*.d.mts",
-        "require": "./dist/lib/scripts/ESLint/*.d.cts"
-      },
-      "import": "./dist/lib/scripts/ESLint/*.mjs",
-      "require": "./dist/lib/scripts/ESLint/*.cjs"
-    },
-    "./scripts/ESLint/@types/*": {
-      "types": {
-        "import": "./dist/lib/scripts/ESLint/@types/*.d.mts",
-        "require": "./dist/lib/scripts/ESLint/@types/*.d.cts"
-      }
-    },
-    "./scripts/esbuild": {
-      "types": {
-        "import": "./dist/lib/scripts/esbuild/index.d.mts",
-        "require": "./dist/lib/scripts/esbuild/index.d.cts"
-      },
-      "import": "./dist/lib/scripts/esbuild/index.mjs",
-      "require": "./dist/lib/scripts/esbuild/index.cjs"
-    },
-    "./scripts/esbuild/*": {
-      "types": {
-        "import": "./dist/lib/scripts/esbuild/*.d.mts",
-        "require": "./dist/lib/scripts/esbuild/*.d.cts"
-      },
-      "import": "./dist/lib/scripts/esbuild/*.mjs",
-      "require": "./dist/lib/scripts/esbuild/*.cjs"
     }
   },
   "main": "./dist/lib/index.cjs",
