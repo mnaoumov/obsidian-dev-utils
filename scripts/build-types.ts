@@ -2,15 +2,15 @@ import {
   dirname,
   join
 } from '../src/Path.ts';
-import { wrapCliTask } from '../src/scripts/CliUtils.ts';
-import { readdirPosix } from '../src/scripts/Fs.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
 import {
   mkdir,
   readFile,
   writeFile
-} from '../src/scripts/NodeModules.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
-import { execFromRoot } from '../src/scripts/Root.ts';
+} from '../src/ScriptUtils/NodeModules.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
+import { execFromRoot } from '../src/ScriptUtils/Root.ts';
 import {
   replaceAll,
   trimEnd

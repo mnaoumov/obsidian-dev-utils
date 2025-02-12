@@ -1,4 +1,4 @@
-import type { Dirent } from '../src/scripts/NodeModules.ts';
+import type { Dirent } from '../src/ScriptUtils/NodeModules.ts';
 
 import { asyncMap } from '../src/Async.ts';
 import {
@@ -7,10 +7,10 @@ import {
   join,
   normalizeIfRelative
 } from '../src/Path.ts';
-import { wrapCliTask } from '../src/scripts/CliUtils.ts';
-import { generate } from '../src/scripts/CodeGenerator.ts';
-import { readdirPosix } from '../src/scripts/Fs.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/scripts/ObsidianDevUtilsRepoPaths.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { generate } from '../src/ScriptUtils/CodeGenerator.ts';
+import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 import { makeValidVariableName } from '../src/String.ts';
 
 await wrapCliTask(async () => {

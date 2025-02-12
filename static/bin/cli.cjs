@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require('../lib/scripts/cli.cjs').cli();
+require('../lib/ScriptUtils/cli.cjs').cli();
