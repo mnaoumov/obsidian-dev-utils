@@ -293,7 +293,8 @@
     }
   },
   "main": "./dist/lib/index.cjs",
-  "types": "./dist/lib/index.d.ts",
+  "module": "./dist/lib/index.mjs",
+  "types": "./dist/lib/index.d.cts",
   "bin": {
     "obsidian-dev-utils": "dist/bin/cli.cjs"
   },
