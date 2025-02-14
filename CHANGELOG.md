@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.1.0
+
+- Update libs
+
 ## 19.0.1
 
 - Avoid duplication
