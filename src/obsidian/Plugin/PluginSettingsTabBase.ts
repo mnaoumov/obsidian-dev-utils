@@ -157,7 +157,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
       onChanged: noop,
-      pluginSettings: this.plugin.settingsClone as PluginSettings,
+      pluginSettings: undefined as PluginSettings,
       pluginSettingsToComponentValueConverter: (value: PropertyType): UIValue => value as UIValue,
       shouldAutoSave: true,
       shouldShowValidationMessage: true,
