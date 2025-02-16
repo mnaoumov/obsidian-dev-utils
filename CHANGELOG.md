@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.1.1
+
+- Don't use cached settings
+
 ## 19.1.0
 
 - Update libs
