@@ -33,6 +33,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The `.cjs` file extension. */
   CjsExtension = '.cjs',
 
+  /** The path to the current directory. */
+  CurrentDir = '.',
+
   /** The path to the `src/obsidian/@types/Dataview` files. */
   DataviewTypes = 'src/obsidian/@types/Dataview/**',
 
@@ -59,6 +62,15 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** The `.d.ts` file extension. */
   DtsExtension = '.d.ts',
+
+  /** The path to the `esm` directory. */
+  Esm = 'esm',
+
+  /** The path to the `cjs` directory. */
+  Cjs = 'cjs',
+
+  /** The path to the `index.d.mts` file. */
+  IndexDmts = 'index.d.mts',
 
   /** The path to the `index.cjs` file. */
   IndexCjs = 'index.cjs',

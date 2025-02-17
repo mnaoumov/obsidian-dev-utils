@@ -120,6 +120,8 @@ interface TokenSubstitutions {
   toJSONFailed: string;
 }
 
+const KEY_SEPARATOR = '.'
+
 /**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
  *
@@ -248,7 +250,7 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
  */
 export function getNestedPropertyValue(obj: Record<string, unknown>, path: string): unknown {
   let node: Record<string, unknown> | undefined = obj;
-  const keys = path.split('.');
+  const keys = path.split(KEY_SEPARATOR);
   for (const key of keys) {
     if (node === undefined) {
       return undefined;
@@ -318,7 +320,7 @@ export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): 
 export function setNestedPropertyValue(obj: Record<string, unknown>, path: string, value: unknown): void {
   const error = new Error(`Property path ${path} not found`);
   let node: Record<string, unknown> | undefined = obj;
-  const keys = path.split('.');
+  const keys = path.split(KEY_SEPARATOR);
   for (const key of keys.slice(0, -1)) {
     if (node === undefined) {
       throw error;

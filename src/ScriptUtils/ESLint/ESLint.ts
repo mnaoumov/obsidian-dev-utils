@@ -28,5 +28,5 @@ export async function lint(shouldFix?: boolean): Promise<void> {
     await writeFile(eslintConfigMjsPath, 'export { configs as default } from \'obsidian-dev-utils/scripts/ESLint/eslint.config\';\n');
   }
 
-  await execFromRoot(['eslint', ...(shouldFix ? ['--fix'] : []), '.']);
+  await execFromRoot(['eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentDir]);
 }
