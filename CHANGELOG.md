@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.2.2
+
+- Fix audit
+- Update libs
+
 ## 19.2.1
 
 - Fix eslint.config path
