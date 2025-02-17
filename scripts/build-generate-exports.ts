@@ -64,8 +64,22 @@ await wrapCliTask(async () => {
 async function setExport(exportConditions: PackageJson.ExportConditions, srcDir: string, isWildcard: boolean): Promise<void> {
   const importPath = replaceAll(srcDir, ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.CurrentDir);
   const conditionPath = isWildcard ? `${importPath}/${ObsidianDevUtilsRepoPaths.Any}` : importPath;
-  const dmtsPath = normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, importPath, isWildcard ? ObsidianDevUtilsRepoPaths.AnyDmts : ObsidianDevUtilsRepoPaths.IndexDmts));
-  const dctsPath = normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, importPath, isWildcard ? ObsidianDevUtilsRepoPaths.AnyDmts : ObsidianDevUtilsRepoPaths.IndexDcts));
+  const dmtsPath = normalizeIfRelative(
+    join(
+      ObsidianDevUtilsRepoPaths.DistLib,
+      ObsidianDevUtilsRepoPaths.Esm,
+      importPath,
+      isWildcard ? ObsidianDevUtilsRepoPaths.AnyDmts : ObsidianDevUtilsRepoPaths.IndexDmts
+    )
+  );
+  const dctsPath = normalizeIfRelative(
+    join(
+      ObsidianDevUtilsRepoPaths.DistLib,
+      ObsidianDevUtilsRepoPaths.Cjs,
+      importPath,
+      isWildcard ? ObsidianDevUtilsRepoPaths.AnyDmts : ObsidianDevUtilsRepoPaths.IndexDcts
+    )
+  );
   const dmtsDirPath = dirname(dmtsPath);
   const dctsDirPath = dirname(dctsPath);
 
@@ -83,7 +97,7 @@ async function setExport(exportConditions: PackageJson.ExportConditions, srcDir:
       }
     };
 
-    if (importPath !== ObsidianDevUtilsRepoPaths.CurrentDir) {
+    if (importPath !== ObsidianDevUtilsRepoPaths.CurrentDir as string) {
       if (isWildcard) {
         const files = await readdirPosix(dctsDirPath);
         for (const file of files) {
@@ -112,8 +126,22 @@ async function setExport(exportConditions: PackageJson.ExportConditions, srcDir:
     return;
   }
 
-  const mjsPath = normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, importPath, isWildcard ? ObsidianDevUtilsRepoPaths.AnyMjs : ObsidianDevUtilsRepoPaths.IndexMjs));
-  const cjsPath = normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, importPath, isWildcard ? ObsidianDevUtilsRepoPaths.AnyCjs : ObsidianDevUtilsRepoPaths.IndexCjs));
+  const mjsPath = normalizeIfRelative(
+    join(
+      ObsidianDevUtilsRepoPaths.DistLib,
+      ObsidianDevUtilsRepoPaths.Esm,
+      importPath,
+      isWildcard ? ObsidianDevUtilsRepoPaths.AnyMjs : ObsidianDevUtilsRepoPaths.IndexMjs
+    )
+  );
+  const cjsPath = normalizeIfRelative(
+    join(
+      ObsidianDevUtilsRepoPaths.DistLib,
+      ObsidianDevUtilsRepoPaths.Cjs,
+      importPath,
+      isWildcard ? ObsidianDevUtilsRepoPaths.AnyCjs : ObsidianDevUtilsRepoPaths.IndexCjs
+    )
+  );
 
   exportConditions[conditionPath] = {
     /* eslint-disable perfectionist/sort-objects */
@@ -128,7 +156,7 @@ async function setExport(exportConditions: PackageJson.ExportConditions, srcDir:
     /* eslint-enable perfectionist/sort-objects */
   };
 
-  if (importPath !== ObsidianDevUtilsRepoPaths.CurrentDir) {
+  if (importPath !== ObsidianDevUtilsRepoPaths.CurrentDir as string) {
     if (isWildcard) {
       const files = await readdirPosix(dctsDirPath);
       for (const file of files) {

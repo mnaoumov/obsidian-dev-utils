@@ -16,11 +16,11 @@ export enum ObsidianPluginRepoPaths {
   /** Represents the changelog file. */
   ChangelogMd = 'CHANGELOG.md',
 
-  /** Represents the distribution directory. */
-  Dist = 'dist',
-
   /** Represents the current directory. */
   CurrentDir = '.',
+
+  /** Represents the distribution directory. */
+  Dist = 'dist',
 
   /** Represents the build directory within the distribution directory. */
   DistBuild = 'dist/build',

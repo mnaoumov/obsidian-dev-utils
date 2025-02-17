@@ -1,8 +1,8 @@
-import { relative } from 'path';
 import {
   basename,
   dirname,
-  join
+  join,
+  relative
 } from '../src/Path.ts';
 import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
 import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
@@ -34,7 +34,7 @@ await wrapCliTask(async () => {
     await mkdir(dirname(ctsPath), { recursive: true });
     await mkdir(dirname(mtsPath), { recursive: true });
     await writeFile(ctsPath, replaceAll(content, '.ts\'', '.cts\''));
-    const relativeCjsPath = join(relative(dirname(mtsPath), dirname(mtsPath)), name + ObsidianDevUtilsRepoPaths.CjsExtension)
+    const relativeCjsPath = join(relative(dirname(mtsPath), dirname(mtsPath)), name + ObsidianDevUtilsRepoPaths.CjsExtension);
     await writeFile(mtsPath, `export * from '${relativeCjsPath}';\n`);
   }
 });

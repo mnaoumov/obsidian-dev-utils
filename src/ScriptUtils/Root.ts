@@ -86,7 +86,7 @@ export function execFromRoot(command: string | string[], options: ExecOption = {
  */
 export function getRootDir(cwd?: string): null | string {
   let currentDir = toPosixPath(cwd ?? process.cwd());
-  while (currentDir !== ObsidianDevUtilsRepoPaths.CurrentDir && currentDir !== ObsidianDevUtilsRepoPaths.RootDir) {
+  while (currentDir !== ObsidianDevUtilsRepoPaths.CurrentDir as string && currentDir !== ObsidianDevUtilsRepoPaths.RootDir as string) {
     if (existsSync(join(currentDir, ObsidianDevUtilsRepoPaths.PackageJson))) {
       return toPosixPath(currentDir);
     }
