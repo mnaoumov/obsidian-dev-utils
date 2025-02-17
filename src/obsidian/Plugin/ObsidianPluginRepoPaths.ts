@@ -19,6 +19,9 @@ export enum ObsidianPluginRepoPaths {
   /** Represents the distribution directory. */
   Dist = 'dist',
 
+  /** Represents the current directory. */
+  CurrentDir = '.',
+
   /** Represents the build directory within the distribution directory. */
   DistBuild = 'dist/build',
 
