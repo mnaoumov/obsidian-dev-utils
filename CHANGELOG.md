@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 19.2.0
+
+- Fix node10 attw
+- Simplify replacement
+- Replace import/export, don't modify type
+- Change extension to fix imports
+
 ## 19.1.2-beta.5
 
 - Fix cli
