@@ -16,7 +16,7 @@ import { replaceAll } from '../src/String.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');
-  const IMPORT_REG_EXP = /import(?:(?: type)?) (?<Imports>(?:.|\n)+?) from '(?<ImportPath>.+?)\.ts';/g;
+  const IMPORT_REG_EXP = /import(?:(?: type)?) (?<Imports>(?:[^;]|\n)+?) from '(?<ImportPath>.+?)\.ts';/g;
 
   for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
     if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
