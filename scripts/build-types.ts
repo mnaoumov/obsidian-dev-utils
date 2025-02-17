@@ -33,8 +33,8 @@ await wrapCliTask(async () => {
 
     await mkdir(dirname(ctsPath), { recursive: true });
     await mkdir(dirname(mtsPath), { recursive: true });
-    const ctsContent = replaceAll(content, IMPORT_REG_EXP, 'import type $<Imports> from \'$<ImportPath>.d.cts\';');
-    const mtsContent = replaceAll(content, IMPORT_REG_EXP, 'import type $<Imports> from \'$<ImportPath>.d.mts\';');
+    const ctsContent = replaceAll(content, IMPORT_REG_EXP, 'import type $<Imports> from \'$<ImportPath>.cjs\';');
+    const mtsContent = replaceAll(content, IMPORT_REG_EXP, 'import type $<Imports> from \'$<ImportPath>.mjs\';');
     await writeFile(ctsPath, ctsContent);
     await writeFile(mtsPath, mtsContent);
   }
