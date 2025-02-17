@@ -370,7 +370,7 @@
       }
     }
   },
-  "main": "./dist/lib/src/index.cjs",
+  "main": "./dist/lib/cjs/index.cjs",
   "module": "./dist/lib/esm/index.mjs",
   "types": "./dist/lib/cjs/index.d.cts",
   "bin": {
