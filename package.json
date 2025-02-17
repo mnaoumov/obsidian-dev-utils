@@ -370,9 +370,9 @@
       }
     }
   },
-  "main": "./dist/lib/index.cjs",
-  "module": "./dist/lib/index.mjs",
-  "types": "./dist/lib/index.d.cts",
+  "main": "./dist/lib/src/index.cjs",
+  "module": "./dist/lib/esm/index.mjs",
+  "types": "./dist/lib/cjs/index.d.cts",
   "bin": {
     "obsidian-dev-utils": "dist/bin/cli.cjs"
   },
