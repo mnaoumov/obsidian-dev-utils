@@ -1,3 +1,4 @@
+import { relative } from 'path';
 import {
   basename,
   dirname,
@@ -12,10 +13,7 @@ import {
 } from '../src/ScriptUtils/NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 import { execFromRoot } from '../src/ScriptUtils/Root.ts';
-import {
-  replaceAll,
-  trimEnd
-} from '../src/String.ts';
+import { replaceAll } from '../src/String.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');
@@ -25,15 +23,18 @@ await wrapCliTask(async () => {
       continue;
     }
 
+    const dir = dirname(file);
+    const name = basename(file, ObsidianDevUtilsRepoPaths.DtsExtension);
     const fullSourcePath = join(ObsidianDevUtilsRepoPaths.Src, file);
     const content = await readFile(fullSourcePath, 'utf-8');
 
-    const fullTargetBasePath = join(ObsidianDevUtilsRepoPaths.DistLib, trimEnd(file, ObsidianDevUtilsRepoPaths.DtsExtension));
-    const parentDir = dirname(fullTargetBasePath);
-    const name = basename(fullTargetBasePath, ObsidianDevUtilsRepoPaths.DtsExtension);
+    const ctsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, dir, name + ObsidianDevUtilsRepoPaths.DctsExtension);
+    const mtsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, dir, name + ObsidianDevUtilsRepoPaths.DmtsExtension);
 
-    await mkdir(parentDir, { recursive: true });
-    await writeFile(fullTargetBasePath + ObsidianDevUtilsRepoPaths.DctsExtension, replaceAll(content, '.ts\'', '.cjs\''));
-    await writeFile(fullTargetBasePath + ObsidianDevUtilsRepoPaths.DmtsExtension, `export * from './${name}.cjs';\n`);
+    await mkdir(dirname(ctsPath), { recursive: true });
+    await mkdir(dirname(mtsPath), { recursive: true });
+    await writeFile(ctsPath, replaceAll(content, '.ts\'', '.cts\''));
+    const relativeCjsPath = join(relative(dirname(mtsPath), dirname(mtsPath)), name + ObsidianDevUtilsRepoPaths.CjsExtension)
+    await writeFile(mtsPath, `export * from '${relativeCjsPath}';\n`);
   }
 });

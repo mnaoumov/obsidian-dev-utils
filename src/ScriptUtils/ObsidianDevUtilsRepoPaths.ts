@@ -15,6 +15,12 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Matches any TypeScript declaration file (`*.d.ts`). */
   AnyDts = '*.d.ts',
 
+  /** Matches any `.d.cts` file (`*.d.cts`). */
+  AnyDcts = '*.d.cts',
+
+  /** Matches any `.d.mts` file (`*.d.mts`). */
+  AnyDmts = '*.d.mts',
+
   /** Matches any `.js` file (`*.js`). */
   AnyJs = '*.js',
 
@@ -35,6 +41,9 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** The path to the current directory. */
   CurrentDir = '.',
+
+  /** The path to the root directory. */
+  RootDir = '/',
 
   /** The path to the `src/obsidian/@types/Dataview` files. */
   DataviewTypes = 'src/obsidian/@types/Dataview/**',

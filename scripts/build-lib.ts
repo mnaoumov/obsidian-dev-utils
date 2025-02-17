@@ -33,7 +33,7 @@ async function build(libFiles: string[], format: 'cjs' | 'esm'): Promise<void> {
     entryPoints: libFiles,
     format,
     logLevel: 'info',
-    outdir: ObsidianDevUtilsRepoPaths.DistLib,
+    outdir: join(ObsidianDevUtilsRepoPaths.DistLib, format),
     platform: 'node',
     plugins: [
       preprocessPlugin(format === 'esm'),

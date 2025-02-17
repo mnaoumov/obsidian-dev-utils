@@ -23,9 +23,9 @@ import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRe
 import { replaceAll } from '../src/String.ts';
 
 await wrapCliTask(async () => {
-  const libDirs: string[] = [ObsidianDevUtilsRepoPaths.DistLib];
+  const srcDirs: string[] = [ObsidianDevUtilsRepoPaths.Src];
 
-  for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.DistLib, { recursive: true, withFileTypes: true })) {
+  for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true, withFileTypes: true })) {
     if (!dirent.isDirectory()) {
       continue;
     }
@@ -35,20 +35,19 @@ await wrapCliTask(async () => {
     }
 
     const path = join(dirent.parentPath, dirent.name);
-    libDirs.push(path);
+    srcDirs.push(path);
   }
 
-  libDirs.sort();
+  srcDirs.sort();
 
   let isChanged = false;
 
   await editPackageJson(async (packageJson) => {
     const oldExports = packageJson.exports;
     packageJson.exports = {};
-    for (const libDir of libDirs) {
-      const importPath = replaceAll(libDir, ObsidianDevUtilsRepoPaths.DistLib, '.');
-      await setExport(packageJson.exports, importPath, libDir, ObsidianDevUtilsRepoPaths.IndexDts);
-      await setExport(packageJson.exports, normalizeIfRelative(join(importPath, ObsidianDevUtilsRepoPaths.Any)), libDir, ObsidianDevUtilsRepoPaths.AnyDts);
+    for (const srcDir of srcDirs) {
+      await setExport(packageJson.exports, srcDir, false);
+      await setExport(packageJson.exports, srcDir, true);
     }
 
     isChanged = !deepEqual(oldExports, packageJson.exports);
@@ -62,95 +61,100 @@ await wrapCliTask(async () => {
   return CliTaskResult.Success(!isChanged);
 });
 
-async function setExport(exportConditions: PackageJson.ExportConditions, importPath: string, libDir: string, dtsPath: string): Promise<void> {
-  const dmtsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.DmtsExtension);
-  const dctsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.DctsExtension);
+async function setExport(exportConditions: PackageJson.ExportConditions, srcDir: string, isWildcard: boolean): Promise<void> {
+  const importPath = replaceAll(srcDir, ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.CurrentDir);
+  const conditionPath = isWildcard ? `${importPath}/${ObsidianDevUtilsRepoPaths.Any}` : importPath;
+  const dmtsPath = normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, importPath, isWildcard ? ObsidianDevUtilsRepoPaths.AnyDmts : ObsidianDevUtilsRepoPaths.IndexDmts));
+  const dctsPath = normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, importPath, isWildcard ? ObsidianDevUtilsRepoPaths.AnyDmts : ObsidianDevUtilsRepoPaths.IndexDcts));
+  const dmtsDirPath = dirname(dmtsPath);
+  const dctsDirPath = dirname(dctsPath);
 
-  const isWildcard = importPath.endsWith(ObsidianDevUtilsRepoPaths.Any);
-
-  if (!isWildcard && !existsSync(join(libDir, dctsPath))) {
+  if (!isWildcard && !existsSync(dctsPath)) {
     return;
   }
 
-  const types = {
-    import: normalizeIfRelative(join(libDir, dmtsPath)),
-    require: normalizeIfRelative(join(libDir, dctsPath))
-  };
-
-  if (libDir.includes(ObsidianDevUtilsRepoPaths.Types)) {
-    exportConditions[importPath] = {
-      types
+  if (importPath.includes(ObsidianDevUtilsRepoPaths.Types)) {
+    exportConditions[conditionPath] = {
+      import: {
+        types: dmtsPath
+      },
+      require: {
+        types: dctsPath
+      }
     };
 
-    if (importPath !== '.') {
+    if (importPath !== ObsidianDevUtilsRepoPaths.CurrentDir) {
       if (isWildcard) {
-        const files = await readdirPosix(libDir);
+        const files = await readdirPosix(dctsDirPath);
         for (const file of files) {
           if (!file.endsWith(ObsidianDevUtilsRepoPaths.DctsExtension)) {
             continue;
           }
           const name = basename(file, ObsidianDevUtilsRepoPaths.DctsExtension);
-          const packageJsonPath = join(importPath.replace(ObsidianDevUtilsRepoPaths.Any, name), ObsidianDevUtilsRepoPaths.PackageJson);
+          const packageJsonDirPath = join(importPath, name);
           const packageJson: PackageJson = {
             type: 'module',
-            types: relative(importPath, join(libDir, dctsPath.replace(ObsidianDevUtilsRepoPaths.Any, name)))
+            types: relative(packageJsonDirPath, join(dctsDirPath, name + ObsidianDevUtilsRepoPaths.DctsExtension))
           };
-          await mkdir(dirname(packageJsonPath), { recursive: true });
-          await writeJson(packageJsonPath, packageJson);
+          await mkdir(packageJsonDirPath, { recursive: true });
+          await writeJson(join(packageJsonDirPath, ObsidianDevUtilsRepoPaths.PackageJson), packageJson);
         }
       } else {
-        const packageJsonPath = join(importPath, ObsidianDevUtilsRepoPaths.PackageJson);
         const packageJson: PackageJson = {
           type: 'module',
-          types: relative(importPath, join(libDir, dctsPath))
+          types: relative(importPath, dctsPath)
         };
-        await mkdir(dirname(packageJsonPath), { recursive: true });
-        await writeJson(packageJsonPath, packageJson);
+        await mkdir(dirname(importPath), { recursive: true });
+        await writeJson(join(importPath, ObsidianDevUtilsRepoPaths.PackageJson), packageJson);
       }
     }
 
     return;
   }
 
-  const mjsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.MjsExtension);
-  const cjsPath = dtsPath.replace(ObsidianDevUtilsRepoPaths.DtsExtension, ObsidianDevUtilsRepoPaths.CjsExtension);
+  const mjsPath = normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, importPath, isWildcard ? ObsidianDevUtilsRepoPaths.AnyMjs : ObsidianDevUtilsRepoPaths.IndexMjs));
+  const cjsPath = normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, importPath, isWildcard ? ObsidianDevUtilsRepoPaths.AnyCjs : ObsidianDevUtilsRepoPaths.IndexCjs));
 
-  exportConditions[importPath] = {
+  exportConditions[conditionPath] = {
     /* eslint-disable perfectionist/sort-objects */
-    types,
-    import: normalizeIfRelative(join(libDir, mjsPath)),
-    require: normalizeIfRelative(join(libDir, cjsPath))
+    import: {
+      types: dmtsPath,
+      default: mjsPath
+    },
+    require: {
+      types: dctsPath,
+      default: cjsPath
+    }
     /* eslint-enable perfectionist/sort-objects */
   };
 
-  if (importPath !== '.') {
+  if (importPath !== ObsidianDevUtilsRepoPaths.CurrentDir) {
     if (isWildcard) {
-      const files = await readdirPosix(libDir);
+      const files = await readdirPosix(dctsDirPath);
       for (const file of files) {
         if (!file.endsWith(ObsidianDevUtilsRepoPaths.DctsExtension)) {
           continue;
         }
         const name = basename(file, ObsidianDevUtilsRepoPaths.DctsExtension);
-        const packageJsonPath = join(importPath.replace(ObsidianDevUtilsRepoPaths.Any, name), ObsidianDevUtilsRepoPaths.PackageJson);
+        const packageJsonDirPath = join(importPath, name);
         const packageJson: PackageJson = {
-          main: relative(importPath, join(libDir, cjsPath.replace(ObsidianDevUtilsRepoPaths.Any, name))),
-          module: relative(importPath, join(libDir, mjsPath.replace(ObsidianDevUtilsRepoPaths.Any, name))),
+          main: relative(packageJsonDirPath, join(dctsDirPath, name + ObsidianDevUtilsRepoPaths.CjsExtension)),
+          module: relative(packageJsonDirPath, join(dmtsDirPath, name + ObsidianDevUtilsRepoPaths.MjsExtension)),
           type: 'module',
-          types: relative(importPath, join(libDir, dctsPath.replace(ObsidianDevUtilsRepoPaths.Any, name)))
+          types: relative(packageJsonDirPath, join(dctsDirPath, name + ObsidianDevUtilsRepoPaths.DctsExtension))
         };
-        await mkdir(dirname(packageJsonPath), { recursive: true });
-        await writeJson(packageJsonPath, packageJson);
+        await mkdir(packageJsonDirPath, { recursive: true });
+        await writeJson(join(packageJsonDirPath, ObsidianDevUtilsRepoPaths.PackageJson), packageJson);
       }
     } else {
-      const packageJsonPath = join(importPath, ObsidianDevUtilsRepoPaths.PackageJson);
       const packageJson: PackageJson = {
-        main: relative(importPath, join(libDir, cjsPath)),
-        module: relative(importPath, join(libDir, mjsPath)),
+        main: relative(importPath, cjsPath),
+        module: relative(importPath, mjsPath),
         type: 'module',
-        types: relative(importPath, join(libDir, dctsPath))
+        types: relative(importPath, dctsPath)
       };
-      await mkdir(dirname(packageJsonPath), { recursive: true });
-      await writeJson(packageJsonPath, packageJson);
+      await mkdir(importPath, { recursive: true });
+      await writeJson(join(importPath, ObsidianDevUtilsRepoPaths.PackageJson), packageJson);
     }
   }
 }
