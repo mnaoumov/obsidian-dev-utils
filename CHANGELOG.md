@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.1.2-beta.4
+
+- Fix extra space
+- Switch to import type
+
 ## 19.1.2-beta.3
 
 - Fix types generator
