@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.1.2-beta.3
+
+- Fix types generator
+
 ## 19.1.2-beta.2
 
 - Fix Library paths
