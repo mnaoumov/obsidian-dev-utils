@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 19.1.2-beta.5
+
+- Fix cli
+- Fix multiline case
+- Extract unused types
+- Group by eslint plugins
+
 ## 19.1.2-beta.4
 
 - Fix extra space
