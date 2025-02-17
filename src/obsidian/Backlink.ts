@@ -3,9 +3,10 @@
  * Provides utility functions for working with backlinks.
  */
 
-import type { TFile } from 'obsidian';
-
-import { TFolder } from 'obsidian';
+import type {
+  TFile,
+  TFolder
+} from 'obsidian';
 
 import type {
   DataviewInlineApi,

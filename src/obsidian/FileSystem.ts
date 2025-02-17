@@ -3,8 +3,9 @@
  * This module provides utility functions for working with TAbstractFile, TFile, and TFolder instances in Obsidian.
  */
 
+import type { App } from 'obsidian';
+
 import {
-  App,
   normalizePath,
   TAbstractFile,
   TFile,

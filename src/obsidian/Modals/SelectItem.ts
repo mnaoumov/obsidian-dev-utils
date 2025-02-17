@@ -5,12 +5,12 @@
  * This module exports a function to display a modal that allows the user to select an item from a list. The modal uses fuzzy search to help the user find the item.
  */
 
-import type { FuzzyMatch } from 'obsidian';
-
-import {
+import type {
   App,
-  FuzzySuggestModal
+  FuzzyMatch
 } from 'obsidian';
+
+import { FuzzySuggestModal } from 'obsidian';
 
 import type { PromiseResolve } from '../../Async.ts';
 
