@@ -16,6 +16,7 @@ import { replaceAll } from '../src/String.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');
+  const IMPORT_REG_EXP = /import(?:(?: type )?) (?<Imports>(?:.|\n)+?) from '(?<ImportPath>.+?)\.ts';/g;
 
   for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
     if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
@@ -32,7 +33,9 @@ await wrapCliTask(async () => {
 
     await mkdir(dirname(ctsPath), { recursive: true });
     await mkdir(dirname(mtsPath), { recursive: true });
-    await writeFile(ctsPath, replaceAll(content, '.ts\'', '.d.cts\''));
-    await writeFile(mtsPath, replaceAll(content, '.ts\'', '.d.mts\''));
+    const ctsContent = replaceAll(content, IMPORT_REG_EXP, 'import type $<Imports> from \'$<ImportPath>.d.cts\';');
+    const mtsContent = replaceAll(content, IMPORT_REG_EXP, 'import type $<Imports> from \'$<ImportPath>.d.mts\';');
+    await writeFile(ctsPath, ctsContent);
+    await writeFile(mtsPath, mtsContent);
   }
 });
