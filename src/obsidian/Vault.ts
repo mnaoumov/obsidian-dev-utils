@@ -4,14 +4,12 @@
  */
 
 import type {
+  App,
   ListedFiles,
+  TFile,
   TFolder
 } from 'obsidian';
 
-import {
-  App,
-  TFile
-} from 'obsidian';
 import { parentFolderPath } from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';

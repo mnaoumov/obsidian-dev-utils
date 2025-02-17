@@ -3,11 +3,12 @@
  * Base class for plugin settings.
  */
 
+import type { Transformer } from '../../Transformers/Transformer.ts';
+
 import { DateTransformer } from '../../Transformers/DateTransformer.ts';
 import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
 import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';
 import { SkipPrivatePropertyTransformer } from '../../Transformers/SkipPrivatePropertyTransformer.ts';
-import { Transformer } from '../../Transformers/Transformer.ts';
 
 const defaultTransformer = new GroupTransformer([
   new SkipPrivatePropertyTransformer(),

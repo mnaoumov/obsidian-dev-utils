@@ -11,6 +11,7 @@ import { PluginSettingTab } from 'obsidian';
 import type { MaybePromise } from '../../Async.ts';
 import type { KeysMatching } from '../../Object.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
+import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
 import {
@@ -20,7 +21,6 @@ import {
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
 import { getValidatorComponent } from '../Components/ValidatorComponent.ts';
-import { PluginBase } from './PluginBase.ts';
 import { getPluginId } from './PluginId.ts';
 
 /**

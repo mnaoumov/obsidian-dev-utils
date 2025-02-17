@@ -7,12 +7,12 @@
  * loading tasks.
  */
 
+import type { PluginSettingTab } from 'obsidian';
 import type { ReadonlyDeep } from 'type-fest';
 
 import {
   Notice,
-  Plugin,
-  PluginSettingTab
+  Plugin
 } from 'obsidian';
 
 import type { MaybePromise } from '../../Async.ts';

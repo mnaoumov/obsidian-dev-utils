@@ -3,7 +3,7 @@
  * Contains a type that extends ValueComponent to allow for change tracking.
  */
 
-import { ValueComponent } from 'obsidian';
+import type { ValueComponent } from 'obsidian';
 
 import type { MaybePromise } from '../../Async.ts';
 

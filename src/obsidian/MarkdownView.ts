@@ -3,7 +3,7 @@
  * Utilities for working with MarkdownView
  */
 
-import { MarkdownView } from 'obsidian';
+import type { MarkdownView } from 'obsidian';
 
 /**
  * Get the full HTML content of the current MarkdownView

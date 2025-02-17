@@ -3,11 +3,11 @@
  * This module provides utility functions for processing Markdown content in Obsidian.
  */
 
+import type { App } from 'obsidian';
 import type { EmbeddableConstructor } from 'obsidian-typings';
 
 import { around } from 'monkey-around';
 import {
-  App,
   Component,
   MarkdownRenderer
 } from 'obsidian';

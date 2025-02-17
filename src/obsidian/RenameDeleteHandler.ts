@@ -4,18 +4,16 @@
  */
 
 import type {
+  App,
   CachedMetadata,
   Plugin,
   Reference,
-  TAbstractFile
+  TAbstractFile,
+  TFile
 } from 'obsidian';
 
 import { around } from 'monkey-around';
-import {
-  App,
-  TFile,
-  Vault
-} from 'obsidian';
+import { Vault } from 'obsidian';
 
 import type {
   UpdateLinkOptions,

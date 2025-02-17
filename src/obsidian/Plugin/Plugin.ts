@@ -4,10 +4,9 @@
  * including displaying error messages, disabling plugins, and reloading them.
  */
 
-import {
-  Notice,
-  Plugin
-} from 'obsidian';
+import type { Plugin } from 'obsidian';
+
+import { Notice } from 'obsidian';
 
 import { printError } from '../../Error.ts';
 
