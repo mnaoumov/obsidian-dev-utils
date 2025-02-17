@@ -25,7 +25,7 @@ export async function lint(shouldFix?: boolean): Promise<void> {
   const eslintConfigMjsPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMjs);
   if (!existsSync(eslintConfigMjsPath)) {
     console.warn(`ESLint configuration file not found at ${eslintConfigMjsPath}. Creating default config...`);
-    await writeFile(eslintConfigMjsPath, 'export { configs as default } from \'obsidian-dev-utils/scripts/ESLint/eslint.config\';\n');
+    await writeFile(eslintConfigMjsPath, 'export { configs as default } from \'obsidian-dev-utils/ScriptUtils/ESLint/eslint.config\';\n');
   }
 
   await execFromRoot(['eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentDir]);
