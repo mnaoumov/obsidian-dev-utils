@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.1.2-beta.1
+
+- Separate esm/cjs folders
+- Update libs
+
 ## 19.1.1
 
 - Don't use cached settings
