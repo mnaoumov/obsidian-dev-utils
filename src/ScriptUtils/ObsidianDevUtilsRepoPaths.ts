@@ -12,14 +12,14 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Matches any `.cjs` file (`*.cjs`). */
   AnyCjs = '*.cjs',
 
-  /** Matches any TypeScript declaration file (`*.d.ts`). */
-  AnyDts = '*.d.ts',
-
   /** Matches any `.d.cts` file (`*.d.cts`). */
   AnyDcts = '*.d.cts',
 
   /** Matches any `.d.mts` file (`*.d.mts`). */
   AnyDmts = '*.d.mts',
+
+  /** Matches any TypeScript declaration file (`*.d.ts`). */
+  AnyDts = '*.d.ts',
 
   /** Matches any `.js` file (`*.js`). */
   AnyJs = '*.js',
@@ -36,14 +36,14 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `CHANGELOG.md` file. */
   ChangelogMd = 'CHANGELOG.md',
 
+  /** The path to the `cjs` directory. */
+  Cjs = 'cjs',
+
   /** The `.cjs` file extension. */
   CjsExtension = '.cjs',
 
   /** The path to the current directory. */
   CurrentDir = '.',
-
-  /** The path to the root directory. */
-  RootDir = '/',
 
   /** The path to the `src/obsidian/@types/Dataview` files. */
   DataviewTypes = 'src/obsidian/@types/Dataview/**',
@@ -75,17 +75,14 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The path to the `esm` directory. */
   Esm = 'esm',
 
-  /** The path to the `cjs` directory. */
-  Cjs = 'cjs',
-
-  /** The path to the `index.d.mts` file. */
-  IndexDmts = 'index.d.mts',
-
   /** The path to the `index.cjs` file. */
   IndexCjs = 'index.cjs',
 
   /** The path to the `index.d.cts` file. */
   IndexDcts = 'index.d.cts',
+
+  /** The path to the `index.d.mts` file. */
+  IndexDmts = 'index.d.mts',
 
   /** The path to the `index.d.ts` file. */
   IndexDts = 'index.d.ts',
@@ -115,6 +112,9 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** The path to the `README.md` file. */
   ReadmeMd = 'README.md',
+
+  /** The path to the root directory. */
+  RootDir = '/',
 
   /** The path to the `scripts` directory. */
   Scripts = 'scripts',

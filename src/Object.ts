@@ -120,7 +120,7 @@ interface TokenSubstitutions {
   toJSONFailed: string;
 }
 
-const KEY_SEPARATOR = '.'
+const KEY_SEPARATOR = '.';
 
 /**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
