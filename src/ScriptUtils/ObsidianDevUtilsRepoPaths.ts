@@ -96,6 +96,12 @@ export enum ObsidianDevUtilsRepoPaths {
   /** The `.js` file extension. */
   JsExtension = '.js',
 
+  /** Represents the Library.cjs file. */
+  LibraryCjs = 'Library.cjs',
+
+  /** Represents the Library.mjs file. */
+  LibraryMjs = 'Library.mjs',
+
   /** The path to the `LICENSE` file. */
   License = 'LICENSE',
 
