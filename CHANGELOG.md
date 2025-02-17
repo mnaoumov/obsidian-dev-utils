@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.1.2-beta.2
+
+- Fix Library paths
+
 ## 19.1.2-beta.1
 
 - Separate esm/cjs folders
