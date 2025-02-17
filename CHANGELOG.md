@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.2.1
+
+- Fix eslint.config path
+
 ## 19.2.0
 
 - Fix node10 attw
