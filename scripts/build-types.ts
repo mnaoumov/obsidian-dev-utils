@@ -30,11 +30,12 @@ await wrapCliTask(async () => {
 
     const ctsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, dir, name + ObsidianDevUtilsRepoPaths.DctsExtension);
     const mtsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, dir, name + ObsidianDevUtilsRepoPaths.DmtsExtension);
+    const cjsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, dir, name + ObsidianDevUtilsRepoPaths.CjsExtension);
 
     await mkdir(dirname(ctsPath), { recursive: true });
     await mkdir(dirname(mtsPath), { recursive: true });
     await writeFile(ctsPath, replaceAll(content, '.ts\'', '.cts\''));
-    const relativeCjsPath = join(relative(dirname(mtsPath), dirname(mtsPath)), name + ObsidianDevUtilsRepoPaths.CjsExtension);
+    const relativeCjsPath = relative(dirname(mtsPath), cjsPath);
     await writeFile(mtsPath, `export * from '${relativeCjsPath}';\n`);
   }
 });
