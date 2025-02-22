@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.4.0
+
+- Update libs
+- Ensure isExternal is always set
+
 ## 19.3.0
 
 - Remove deprecated rules
