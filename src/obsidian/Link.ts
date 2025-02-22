@@ -723,12 +723,23 @@ export function updateLink(options: UpdateLinkOptions): string {
   const oldTargetPath = getPath(app, oldTargetPathOrFile ?? newTargetPathOrFile);
   const isWikilink = testWikilink(link.original) && shouldForceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
+  let shouldKeepAlias = !shouldUpdateFilenameAlias;
 
   if (isCanvasFile(app, newSourcePathOrFile)) {
     return targetFile.path + subpath;
   }
 
-  let alias = shouldResetAlias(normalizeOptionalProperties<ShouldResetAliasOptions>({
+  let alias: string | undefined;
+
+  if (isWikilink) {
+    const parseLinkResult = parseLink(link.original);
+    if (parseLinkResult?.alias) {
+      alias = parseLinkResult.alias;
+      shouldKeepAlias = true;
+    }
+  }
+
+  alias ??= shouldResetAlias(normalizeOptionalProperties<ShouldResetAliasOptions>({
       app,
       displayText: link.displayText,
       isWikilink,
@@ -740,7 +751,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     ? undefined
     : link.displayText;
 
-  if (shouldUpdateFilenameAlias ?? true) {
+  if (!shouldKeepAlias) {
     if (alias === basename(oldTargetPath, extname(oldTargetPath))) {
       alias = targetFile.basename;
     } else if (alias === basename(oldTargetPath)) {
