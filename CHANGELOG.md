@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 19.3.0
+
+- Remove deprecated rules
+- Update libs
+- Keep wikilinks explicit alias
+
 ## 19.2.2
 
 - Fix audit
