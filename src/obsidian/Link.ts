@@ -221,7 +221,7 @@ export interface ParseLinkResult {
   /**
    * Indicates if the link is external.
    */
-  isExternal?: boolean;
+  isExternal: boolean;
 
   /**
    * Indicates if the link is a wikilink.
@@ -928,6 +928,7 @@ function parseWikilinkNode(node: WikiLinkNode, str: string, isEmbed: boolean): P
   return normalizeOptionalProperties<ParseLinkResult>({
     alias: str.includes(WIKILINK_DIVIDER) ? node.data.alias : undefined,
     isEmbed,
+    isExternal: false,
     isWikilink: true,
     url: node.value
   });
