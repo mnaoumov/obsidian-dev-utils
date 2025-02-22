@@ -287,13 +287,12 @@ function getPerfectionistConfigs(): InfiniteDepthConfigWithExtends[] {
 function getStylisticConfigs(): InfiniteDepthConfigWithExtends[] {
   return [
     // eslint-disable-next-line import-x/no-named-as-default-member
-    stylistic.configs['recommended-flat'],
+    stylistic.configs.recommended,
     // eslint-disable-next-line import-x/no-named-as-default-member
     stylistic.configs.customize({
       arrowParens: true,
       braceStyle: '1tbs',
       commaDangle: 'never',
-      flat: true,
       semi: true
     }),
     {
