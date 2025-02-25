@@ -267,6 +267,19 @@ export async function getFrontmatterSafe<CustomFrontmatter = unknown>(app: App, 
   return (cache?.frontmatter ?? {}) as CombinedFrontmatter<CustomFrontmatter>;
 }
 
+/**
+ * Parses the metadata for a given string.
+ *
+ * @param app - The Obsidian app instance.
+ * @param str - The string to parse the metadata for.
+ * @returns The parsed metadata.
+ */
+export async function parseMetadata(app: App, str: string): Promise<CachedMetadata> {
+  const encoder = new TextEncoder();
+  const buffer = encoder.encode(str).buffer as ArrayBuffer;
+  return await app.metadataCache.computeMetadataAsync(buffer) ?? {};
+}
+
 /***
  * Registers a file in the Obsidian app.
  *
