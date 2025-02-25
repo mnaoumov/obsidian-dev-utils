@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.5.0
+
+- parseMetadata
+
 ## 19.4.0
 
 - Update libs
