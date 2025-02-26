@@ -11,6 +11,7 @@ import type {
 } from 'mdast';
 import type {
   App,
+  CachedMetadata,
   Reference,
   TFile
 } from 'obsidian';
@@ -19,6 +20,7 @@ import {
   normalizePath,
   parseLinktext
 } from 'obsidian';
+import { InternalPluginName } from 'obsidian-typings/implementations';
 import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
@@ -64,7 +66,6 @@ import {
   shouldUseWikilinks
 } from './ObsidianSettings.ts';
 import { referenceToFileChange } from './Reference.ts';
-import { InternalPluginName } from 'obsidian-typings/implementations';
 
 /**
  * Regular expression for special link symbols.
@@ -495,6 +496,16 @@ export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: Pat
 }
 
 /**
+ * Fixes the frontmatter markdown links in the provided metadata cache.
+ *
+ * @param cache - The metadata cache to fix the frontmatter markdown links in.
+ * @returns Whether the frontmatter markdown links were fixed.
+ */
+export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
+  return _fixFrontmatterMarkdownLinks(cache.frontmatter, '', cache);
+}
+
+/**
  * Generates a markdown link based on the provided parameters.
  *
  * @param options - The options for generating the markdown link.
@@ -806,6 +817,48 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
       shouldUpdateFilenameAlias
     }));
   }, options);
+}
+
+function _fixFrontmatterMarkdownLinks(value: unknown, key: string, cache: CachedMetadata): boolean {
+  if (typeof value === 'string') {
+    const parseLinkResult = parseLink(value);
+    if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
+      return false;
+    }
+
+    cache.frontmatterLinks ??= [];
+    let link = cache.frontmatterLinks.find((frontmatterLink) => frontmatterLink.key === key);
+
+    if (!link) {
+      link = {
+        key,
+        link: '',
+        original: ''
+      };
+      cache.frontmatterLinks.push(link);
+    }
+
+    link.link = parseLinkResult.url;
+    link.original = value;
+    if (parseLinkResult.alias !== undefined) {
+      link.displayText = parseLinkResult.alias;
+    }
+
+    return true;
+  }
+
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  let hasFrontmatterLinks = false;
+
+  for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
+    const hasChildFrontmatterLinks = _fixFrontmatterMarkdownLinks(childValue, key ? `${key}.${childKey}` : childKey, cache);
+    hasFrontmatterLinks ||= hasChildFrontmatterLinks;
+  }
+
+  return hasFrontmatterLinks;
 }
 
 function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpath: string, config: LinkConfig): string {
