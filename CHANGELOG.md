@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.7.0
+
+- fixFrontmatterMarkdownLinks
+
 ## 19.6.0
 
 - Don't fail on invalid json
