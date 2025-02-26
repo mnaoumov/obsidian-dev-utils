@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.6.0
+
+- Don't fail on invalid json
+
 ## 19.5.0
 
 - parseMetadata
