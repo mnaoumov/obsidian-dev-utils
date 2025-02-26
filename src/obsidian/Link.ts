@@ -64,6 +64,7 @@ import {
   shouldUseWikilinks
 } from './ObsidianSettings.ts';
 import { referenceToFileChange } from './Reference.ts';
+import { InternalPluginName } from 'obsidian-typings/implementations';
 
 /**
  * Regular expression for special link symbols.
@@ -787,7 +788,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     shouldUpdateFilenameAlias
   } = options;
 
-  if (isCanvasFile(app, newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById('canvas')) {
+  if (isCanvasFile(app, newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
     return;
   }
 
