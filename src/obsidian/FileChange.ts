@@ -83,7 +83,7 @@ export async function applyFileChanges(
 ): Promise<void> {
   await process(app, pathOrFile, async (content) => {
     let changes = await resolveValue(changesProvider);
-    const frontmatter = isCanvasFile(app, pathOrFile) ? JSON.parse(content) as Record<string, unknown> : parseFrontmatter(content);
+    const frontmatter = isCanvasFile(app, pathOrFile) ? parseJsonSafe(content) : parseFrontmatter(content);
 
     for (const change of changes) {
       if (isContentChange(change)) {
@@ -204,4 +204,19 @@ export function isContentChange(fileChange: FileChange): fileChange is ContentCh
  */
 export function isFrontmatterChange(fileChange: FileChange): fileChange is FrontmatterChange {
   return (fileChange as Partial<FrontmatterChange>).frontmatterKey !== undefined;
+}
+
+function parseJsonSafe(content: string): Record<string, unknown> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    parsed = null;
+  }
+
+  if (parsed === null || typeof parsed !== 'object') {
+    parsed = {};
+  }
+
+  return parsed as Record<string, unknown>;
 }
