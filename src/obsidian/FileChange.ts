@@ -4,6 +4,7 @@
  */
 
 import type { App } from 'obsidian';
+import type { CanvasData } from 'obsidian/Canvas.d.ts';
 
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { PathOrFile } from './FileSystem.ts';
@@ -23,6 +24,11 @@ import {
   parseFrontmatter,
   setFrontmatter
 } from './Frontmatter.ts';
+import {
+  getAllLinks,
+  parseMetadata
+} from './MetadataCache.ts';
+import { referenceToFileChange } from './Reference.ts';
 import { process } from './Vault.ts';
 
 /**
@@ -82,107 +88,11 @@ export async function applyFileChanges(
   processOptions: ProcessOptions = {}
 ): Promise<void> {
   await process(app, pathOrFile, async (content) => {
-    let changes = await resolveValue(changesProvider);
-    const frontmatter = isCanvasFile(app, pathOrFile) ? parseJsonSafe(content) : parseFrontmatter(content);
-
-    for (const change of changes) {
-      if (isContentChange(change)) {
-        const actualContent = content.slice(change.startIndex, change.endIndex);
-        if (actualContent !== change.oldContent) {
-          console.warn('Content mismatch', {
-            actualContent,
-            endIndex: change.endIndex,
-            expectedContent: change.oldContent,
-            path: getPath(app, pathOrFile),
-            startIndex: change.startIndex
-          });
-
-          return null;
-        }
-      } else if (isFrontmatterChange(change)) {
-        const actualContent = getNestedPropertyValue(frontmatter, change.frontmatterKey);
-        if (actualContent !== change.oldContent) {
-          console.warn('Content mismatch', {
-            actualContent,
-            expectedContent: change.oldContent,
-            frontmatterKey: change.frontmatterKey,
-            path: getPath(app, pathOrFile)
-          });
-
-          return null;
-        }
-      }
-    }
-
-    changes.sort((a, b) => {
-      if (isContentChange(a) && isContentChange(b)) {
-        return a.startIndex - b.startIndex;
-      }
-
-      if (isFrontmatterChange(a) && isFrontmatterChange(b)) {
-        return a.frontmatterKey.localeCompare(b.frontmatterKey);
-      }
-
-      return isContentChange(a) ? -1 : 1;
-    });
-
-    // BUG: https://forum.obsidian.md/t/bug-duplicated-links-in-metadatacache-inside-footnotes/85551
-    changes = changes.filter((change, index) => {
-      if (change.oldContent === change.newContent) {
-        return false;
-      }
-      if (index === 0) {
-        return true;
-      }
-      return !deepEqual(change, changes[index - 1]);
-    });
-
-    for (let i = 1; i < changes.length; i++) {
-      const change = changes[i];
-      if (!change) {
-        continue;
-      }
-      const previousChange = changes[i - 1];
-      if (!previousChange) {
-        continue;
-      }
-
-      if (
-        isContentChange(previousChange) && isContentChange(change) && previousChange.endIndex && change.startIndex
-        && previousChange.endIndex > change.startIndex
-      ) {
-        console.warn('Overlapping changes', {
-          change,
-          previousChange
-        });
-        return null;
-      }
-    }
-
-    let newContent = '';
-    let lastIndex = 0;
-    let frontmatterChanged = false;
-
-    for (const change of changes) {
-      if (isContentChange(change)) {
-        newContent += content.slice(lastIndex, change.startIndex);
-        newContent += change.newContent;
-        lastIndex = change.endIndex;
-      } else if (isFrontmatterChange(change)) {
-        setNestedPropertyValue(frontmatter, change.frontmatterKey, change.newContent);
-        frontmatterChanged = true;
-      }
-    }
-
     if (isCanvasFile(app, pathOrFile)) {
-      newContent = JSON.stringify(frontmatter, null, '\t');
-    } else {
-      newContent += content.slice(lastIndex);
-      if (frontmatterChanged) {
-        newContent = setFrontmatter(newContent, frontmatter);
-      }
+      return applyCanvasChanges(app, content, getPath(app, pathOrFile), changesProvider);
     }
-    return newContent;
+
+    return await applyContentChanges(content, getPath(app, pathOrFile), changesProvider);
   }, processOptions);
 }
 
@@ -204,6 +114,257 @@ export function isContentChange(fileChange: FileChange): fileChange is ContentCh
  */
 export function isFrontmatterChange(fileChange: FileChange): fileChange is FrontmatterChange {
   return (fileChange as Partial<FrontmatterChange>).frontmatterKey !== undefined;
+}
+
+async function applyCanvasChanges(app: App, content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
+  const changes = await resolveValue(changesProvider);
+  const canvasData = parseJsonSafe(content) as CanvasData;
+
+  const canvasTextChanges = new Map<number, Map<number, FrontmatterChange>>();
+
+  for (const change of changes) {
+    if (!isFrontmatterChange(change)) {
+      console.warn('Only frontmatter changes are supported for canvas files', {
+        change,
+        path
+      });
+      return null;
+    }
+
+    const keyParts = change.frontmatterKey.split('.');
+    const NODES_PART_INDEX = 0;
+    const NODE_INDEX_PART_INDEX = 1;
+    const NODE_TYPE_PART_INDEX = 2;
+    const LINK_INDEX_PART_INDEX = 3;
+
+    if (keyParts[NODES_PART_INDEX] !== 'nodes') {
+      console.warn('Only nodes changes are supported for canvas files', {
+        frontmatterKey: change.frontmatterKey,
+        path
+      });
+      return null;
+    }
+
+    const nodeIndex = parseInt(keyParts[NODE_INDEX_PART_INDEX] ?? '', 10);
+    if (isNaN(nodeIndex)) {
+      console.warn('Invalid node index', {
+        frontmatterKey: change.frontmatterKey,
+        path
+      });
+      return null;
+    }
+
+    const node = canvasData.nodes[nodeIndex];
+    if (!node) {
+      console.warn('Node not found', {
+        frontmatterKey: change.frontmatterKey,
+        path
+      });
+      return null;
+    }
+
+    switch (keyParts[NODE_TYPE_PART_INDEX]) {
+      case 'file':
+        if (node.file !== change.oldContent) {
+          console.warn('Content mismatch', {
+            actualContent: node.file as string | undefined,
+            expectedContent: change.oldContent,
+            frontmatterKey: change.frontmatterKey,
+            path
+          });
+
+          return null;
+        }
+        node.file = change.newContent;
+        break;
+      case 'text': {
+        if (node.text === undefined) {
+          console.warn('Missing text node', {
+            frontmatterKey: change.frontmatterKey,
+            path
+          });
+
+          return null;
+        }
+
+        const linkIndex = parseInt(keyParts[LINK_INDEX_PART_INDEX] ?? '', 10);
+        if (isNaN(linkIndex)) {
+          console.warn('Invalid link index', {
+            frontmatterKey: change.frontmatterKey,
+            path
+          });
+
+          return null;
+        }
+
+        let canvasTextChangesForNode = canvasTextChanges.get(linkIndex);
+        if (!canvasTextChangesForNode) {
+          canvasTextChangesForNode = new Map<number, FrontmatterChange>();
+          canvasTextChanges.set(linkIndex, canvasTextChangesForNode);
+        }
+
+        canvasTextChangesForNode.set(linkIndex, change);
+        break;
+      }
+      default:
+        console.warn('Unsupported node type', {
+          frontmatterKey: change.frontmatterKey,
+          path
+        });
+        break;
+    }
+  }
+
+  for (const [nodeIndex, canvasTextChangesForNode] of canvasTextChanges.entries()) {
+    const node = canvasData.nodes[nodeIndex];
+    if (!node) {
+      console.warn('Node not found', {
+        nodeIndex,
+        path
+      });
+
+      return null;
+    }
+
+    if (typeof node.text !== 'string') {
+      console.warn('Node text is not a string', {
+        nodeIndex,
+        path
+      });
+
+      return null;
+    }
+
+    const cache = await parseMetadata(app, node.text);
+    const links = getAllLinks(cache);
+    const contentChanges: FileChange[] = [];
+
+    for (let linkIndex = 0; linkIndex < links.length; linkIndex++) {
+      const link = links[linkIndex];
+      if (!link) {
+        console.warn('Missing link', {
+          linkIndex,
+          nodeIndex,
+          nodeText: node.text,
+          path
+        });
+
+        return null;
+      }
+
+      const canvasTextChange = canvasTextChangesForNode.get(linkIndex);
+      if (canvasTextChange) {
+        const contentChange = referenceToFileChange(link, canvasTextChange.newContent);
+        contentChange.oldContent = canvasTextChange.oldContent;
+        contentChanges.push(contentChange);
+      }
+    }
+
+    node.text = await applyContentChanges(node.text, `${path}.FAKE_TEXT.node${nodeIndex.toString()}.md`, contentChanges);
+  }
+
+  return JSON.stringify(canvasData, null, '\t');
+}
+
+async function applyContentChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
+  let changes = await resolveValue(changesProvider);
+  const frontmatter = parseFrontmatter(content);
+
+  for (const change of changes) {
+    if (isContentChange(change)) {
+      const actualContent = content.slice(change.startIndex, change.endIndex);
+      if (actualContent !== change.oldContent) {
+        console.warn('Content mismatch', {
+          actualContent,
+          endIndex: change.endIndex,
+          expectedContent: change.oldContent,
+          path,
+          startIndex: change.startIndex
+        });
+
+        return null;
+      }
+    } else if (isFrontmatterChange(change)) {
+      const actualContent = getNestedPropertyValue(frontmatter, change.frontmatterKey);
+      if (actualContent !== change.oldContent) {
+        console.warn('Content mismatch', {
+          actualContent,
+          expectedContent: change.oldContent,
+          frontmatterKey: change.frontmatterKey,
+          path
+        });
+
+        return null;
+      }
+    }
+  }
+
+  changes.sort((a, b) => {
+    if (isContentChange(a) && isContentChange(b)) {
+      return a.startIndex - b.startIndex;
+    }
+
+    if (isFrontmatterChange(a) && isFrontmatterChange(b)) {
+      return a.frontmatterKey.localeCompare(b.frontmatterKey);
+    }
+
+    return isContentChange(a) ? -1 : 1;
+  });
+
+  // BUG: https://forum.obsidian.md/t/bug-duplicated-links-in-metadatacache-inside-footnotes/85551
+  changes = changes.filter((change, index) => {
+    if (change.oldContent === change.newContent) {
+      return false;
+    }
+    if (index === 0) {
+      return true;
+    }
+    return !deepEqual(change, changes[index - 1]);
+  });
+
+  for (let i = 1; i < changes.length; i++) {
+    const change = changes[i];
+    if (!change) {
+      continue;
+    }
+    const previousChange = changes[i - 1];
+    if (!previousChange) {
+      continue;
+    }
+
+    if (
+      isContentChange(previousChange) && isContentChange(change) && previousChange.endIndex && change.startIndex
+      && previousChange.endIndex > change.startIndex
+    ) {
+      console.warn('Overlapping changes', {
+        change,
+        previousChange
+      });
+      return null;
+    }
+  }
+
+  let newContent = '';
+  let lastIndex = 0;
+  let frontmatterChanged = false;
+
+  for (const change of changes) {
+    if (isContentChange(change)) {
+      newContent += content.slice(lastIndex, change.startIndex);
+      newContent += change.newContent;
+      lastIndex = change.endIndex;
+    } else if (isFrontmatterChange(change)) {
+      setNestedPropertyValue(frontmatter, change.frontmatterKey, change.newContent);
+      frontmatterChanged = true;
+    }
+  }
+
+  newContent += content.slice(lastIndex);
+  if (frontmatterChanged) {
+    newContent = setFrontmatter(newContent, frontmatter);
+  }
+
+  return newContent;
 }
 
 function parseJsonSafe(content: string): Record<string, unknown> {
