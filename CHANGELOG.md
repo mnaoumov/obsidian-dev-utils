@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.7.1-beta.1
+
+- Handle canvas text changes
+- Update libs
+
 ## 19.7.0
 
 - fixFrontmatterMarkdownLinks
