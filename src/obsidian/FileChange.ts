@@ -17,6 +17,11 @@ import {
 } from '../Object.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import {
+  isCanvasFileLink,
+  isCanvasTextLink,
+  parseCanvasLinkKey
+} from './Canvas.ts';
+import {
   getPath,
   isCanvasFile
 } from './FileSystem.ts';
@@ -131,87 +136,47 @@ async function applyCanvasChanges(app: App, content: string, path: string, chang
       return null;
     }
 
-    const keyParts = change.frontmatterKey.split('.');
-    const NODES_PART_INDEX = 0;
-    const NODE_INDEX_PART_INDEX = 1;
-    const NODE_TYPE_PART_INDEX = 2;
-    const LINK_INDEX_PART_INDEX = 3;
+    const canvasLink = parseCanvasLinkKey(change.frontmatterKey);
 
-    if (keyParts[NODES_PART_INDEX] !== 'nodes') {
-      console.warn('Only nodes changes are supported for canvas files', {
-        frontmatterKey: change.frontmatterKey,
+    if (!canvasLink) {
+      console.warn('Invalid canvas link', {
+        key: change.frontmatterKey,
         path
       });
       return null;
     }
 
-    const nodeIndex = parseInt(keyParts[NODE_INDEX_PART_INDEX] ?? '', 10);
-    if (isNaN(nodeIndex)) {
-      console.warn('Invalid node index', {
-        frontmatterKey: change.frontmatterKey,
-        path
-      });
-      return null;
-    }
-
-    const node = canvasData.nodes[nodeIndex];
+    const node = canvasData.nodes[canvasLink.nodeIndex];
     if (!node) {
       console.warn('Node not found', {
-        frontmatterKey: change.frontmatterKey,
+        key: change.frontmatterKey,
         path
       });
       return null;
     }
 
-    switch (keyParts[NODE_TYPE_PART_INDEX]) {
-      case 'file':
-        if (node.file !== change.oldContent) {
-          console.warn('Content mismatch', {
-            actualContent: node.file as string | undefined,
-            expectedContent: change.oldContent,
-            frontmatterKey: change.frontmatterKey,
-            path
-          });
-
-          return null;
-        }
-        node.file = change.newContent;
-        break;
-      case 'text': {
-        if (node.text === undefined) {
-          console.warn('Missing text node', {
-            frontmatterKey: change.frontmatterKey,
-            path
-          });
-
-          return null;
-        }
-
-        const linkIndex = parseInt(keyParts[LINK_INDEX_PART_INDEX] ?? '', 10);
-        if (isNaN(linkIndex)) {
-          console.warn('Invalid link index', {
-            frontmatterKey: change.frontmatterKey,
-            path
-          });
-
-          return null;
-        }
-
-        let canvasTextChangesForNode = canvasTextChanges.get(linkIndex);
-        if (!canvasTextChangesForNode) {
-          canvasTextChangesForNode = new Map<number, FrontmatterChange>();
-          canvasTextChanges.set(linkIndex, canvasTextChangesForNode);
-        }
-
-        canvasTextChangesForNode.set(linkIndex, change);
-        break;
-      }
-      default:
-        console.warn('Unsupported node type', {
+    if (isCanvasFileLink(canvasLink)) {
+      if (node.file !== change.oldContent) {
+        console.warn('Content mismatch', {
+          actualContent: node.file as string | undefined,
+          expectedContent: change.oldContent,
           frontmatterKey: change.frontmatterKey,
           path
         });
-        break;
+
+        return null;
+      }
+      node.file = change.newContent;
+      break;
+    } else if (isCanvasTextLink(canvasLink)) {
+      let canvasTextChangesForNode = canvasTextChanges.get(canvasLink.linkIndex);
+      if (!canvasTextChangesForNode) {
+        canvasTextChangesForNode = new Map<number, FrontmatterChange>();
+        canvasTextChanges.set(canvasLink.linkIndex, canvasTextChangesForNode);
+      }
+
+      canvasTextChangesForNode.set(canvasLink.linkIndex, change);
+      break;
     }
   }
 
