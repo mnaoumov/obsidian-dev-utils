@@ -20,7 +20,10 @@ import {
   normalizePath,
   parseLinktext
 } from 'obsidian';
-import { InternalPluginName } from 'obsidian-typings/implementations';
+import {
+  InternalPluginName,
+  isFrontmatterLinkCache
+} from 'obsidian-typings/implementations';
 import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
@@ -47,6 +50,10 @@ import {
   trimStart
 } from '../String.ts';
 import { isUrl } from '../url.ts';
+import {
+  isCanvasFileLink,
+  parseCanvasLinkKey
+} from './Canvas.ts';
 import { applyFileChanges } from './FileChange.ts';
 import {
   getFile,
@@ -738,7 +745,13 @@ export function updateLink(options: UpdateLinkOptions): string {
   let shouldKeepAlias = !shouldUpdateFilenameAlias;
 
   if (isCanvasFile(app, newSourcePathOrFile)) {
-    return targetFile.path + subpath;
+    const canvasLink = isFrontmatterLinkCache(link) ? parseCanvasLinkKey(link.key) : null;
+    if (!canvasLink) {
+      throw new Error('Invalid canvas link');
+    }
+    if (isCanvasFileLink(canvasLink)) {
+      return targetFile.path + subpath;
+    }
   }
 
   let alias: string | undefined;
