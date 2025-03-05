@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 19.7.1-beta.2
+
+- Extract canvas key parsing
+- Update libs
+- Fix sourcemaps regex
+
 ## 19.7.1-beta.1
 
 - Handle canvas text changes
