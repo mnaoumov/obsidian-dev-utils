@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.7.1-beta.4
+
+- Add missing properties
+
 ## 19.7.1-beta.3
 
 - Refactor Canvas links
