@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.7.1-beta.5
+
+- Use proper index
+
 ## 19.7.1-beta.4
 
 - Add missing properties
