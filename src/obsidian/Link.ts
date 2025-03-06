@@ -20,10 +20,7 @@ import {
   normalizePath,
   parseLinktext
 } from 'obsidian';
-import {
-  InternalPluginName,
-  isFrontmatterLinkCache
-} from 'obsidian-typings/implementations';
+import { InternalPluginName } from 'obsidian-typings/implementations';
 import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
@@ -51,10 +48,9 @@ import {
 } from '../String.ts';
 import { isUrl } from '../url.ts';
 import {
-  isCanvasFileLink,
-  parseCanvasLinkKey
-} from './Canvas.ts';
-import { applyFileChanges } from './FileChange.ts';
+  applyFileChanges,
+  isCanvasChange
+} from './FileChange.ts';
 import {
   getFile,
   getPath,
@@ -72,7 +68,10 @@ import {
   shouldUseRelativeLinks,
   shouldUseWikilinks
 } from './ObsidianSettings.ts';
-import { referenceToFileChange } from './Reference.ts';
+import {
+  isCanvasFileNodeReference,
+  referenceToFileChange
+} from './Reference.ts';
 
 /**
  * Regular expression for special link symbols.
@@ -482,7 +481,17 @@ export async function editLinks(
         continue;
       }
 
-      changes.push(referenceToFileChange(link, newContent));
+      const fileChange = referenceToFileChange(link, newContent);
+
+      if (isCanvasFile(app, pathOrFile)) {
+        if (isCanvasChange(fileChange)) {
+          changes.push(fileChange);
+        } else {
+          console.warn('Unsupported file change', fileChange);
+        }
+      } else {
+        changes.push(fileChange);
+      }
     }
 
     return changes;
@@ -745,11 +754,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   let shouldKeepAlias = !shouldUpdateFilenameAlias;
 
   if (isCanvasFile(app, newSourcePathOrFile)) {
-    const canvasLink = isFrontmatterLinkCache(link) ? parseCanvasLinkKey(link.key) : null;
-    if (!canvasLink) {
-      throw new Error('Invalid canvas link');
-    }
-    if (isCanvasFileLink(canvasLink)) {
+    if (isCanvasFileNodeReference(link)) {
       return targetFile.path + subpath;
     }
   }
