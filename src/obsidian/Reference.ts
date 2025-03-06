@@ -114,21 +114,26 @@ export function referenceToFileChange(reference: Reference, newContent: string):
   }
 
   if (isCanvasFileNodeReference(reference)) {
-    return {
+    const canvasFileNodeChange: CanvasFileNodeChange = {
+      isCanvas: true,
       newContent,
       nodeIndex: reference.nodeIndex,
       oldContent: reference.original,
       type: 'file'
-    } as CanvasFileNodeChange;
+    };
+    return canvasFileNodeChange;
   }
 
   if (isCanvasTextNodeReference(reference)) {
-    return {
+    const canvasTextNodeChange: CanvasTextNodeChange = {
+      isCanvas: true,
       linkIndex: reference.linkIndex,
       newContent,
+      nodeIndex: reference.nodeIndex,
       oldContent: reference.original,
       type: 'text'
-    } as CanvasTextNodeChange;
+    };
+    return canvasTextNodeChange;
   }
 
   if (isFrontmatterLinkCache(reference)) {
