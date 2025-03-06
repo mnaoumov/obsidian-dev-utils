@@ -228,7 +228,6 @@ async function applyCanvasChanges(app: App, content: string, path: string, chang
         return null;
       }
       node.file = change.newContent;
-      break;
     } else if (isCanvasTextNodeChange(change)) {
       let canvasTextChangesForNode = canvasTextChanges.get(change.nodeIndex);
       if (!canvasTextChangesForNode) {
@@ -237,7 +236,6 @@ async function applyCanvasChanges(app: App, content: string, path: string, chang
       }
 
       canvasTextChangesForNode.set(change.linkIndex, change);
-      break;
     }
   }
 
