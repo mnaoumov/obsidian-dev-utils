@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.7.1-beta.3
+
+- Refactor Canvas links
+
 ## 19.7.1-beta.2
 
 - Extract canvas key parsing
