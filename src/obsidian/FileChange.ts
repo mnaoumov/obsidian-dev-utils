@@ -230,10 +230,10 @@ async function applyCanvasChanges(app: App, content: string, path: string, chang
       node.file = change.newContent;
       break;
     } else if (isCanvasTextNodeChange(change)) {
-      let canvasTextChangesForNode = canvasTextChanges.get(change.linkIndex);
+      let canvasTextChangesForNode = canvasTextChanges.get(change.nodeIndex);
       if (!canvasTextChangesForNode) {
         canvasTextChangesForNode = new Map<number, CanvasTextNodeChange>();
-        canvasTextChanges.set(change.linkIndex, canvasTextChangesForNode);
+        canvasTextChanges.set(change.nodeIndex, canvasTextChangesForNode);
       }
 
       canvasTextChangesForNode.set(change.linkIndex, change);
