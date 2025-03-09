@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.8.1
+
+- Pass original reference
+
 ## 19.8.0
 
 - Complete canvas link text editing
