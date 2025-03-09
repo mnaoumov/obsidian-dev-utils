@@ -3,7 +3,10 @@
  * Contains utility types and functions for handling file changes in Obsidian.
  */
 
-import type { App } from 'obsidian';
+import type {
+  App,
+  Reference
+} from 'obsidian';
 import type { CanvasData } from 'obsidian/Canvas.d.ts';
 
 import type { ValueProvider } from '../ValueProvider.ts';
@@ -24,10 +27,6 @@ import {
   parseFrontmatter,
   setFrontmatter
 } from './Frontmatter.ts';
-import {
-  getAllLinks,
-  parseMetadata
-} from './MetadataCache.ts';
 import { referenceToFileChange } from './Reference.ts';
 import { process } from './Vault.ts';
 
@@ -66,9 +65,9 @@ export interface CanvasFileNodeChange extends CanvasChange {
  */
 export interface CanvasTextNodeChange extends CanvasChange {
   /**
-   * The index of the link in the node.
+   * The original reference.
    */
-  linkIndex: number;
+  originalReference: Reference;
 
   /**
    * The type of link.
@@ -134,7 +133,7 @@ export async function applyFileChanges(
 ): Promise<void> {
   await process(app, pathOrFile, async (content) => {
     if (isCanvasFile(app, pathOrFile)) {
-      return applyCanvasChanges(app, content, getPath(app, pathOrFile), changesProvider);
+      return applyCanvasChanges(content, getPath(app, pathOrFile), changesProvider);
     }
 
     return await applyContentChanges(content, getPath(app, pathOrFile), changesProvider);
@@ -191,11 +190,11 @@ export function isFrontmatterChange(fileChange: FileChange): fileChange is Front
   return (fileChange as Partial<FrontmatterChange>).frontmatterKey !== undefined;
 }
 
-async function applyCanvasChanges(app: App, content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
+async function applyCanvasChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
   const changes = await resolveValue(changesProvider);
   const canvasData = parseJsonSafe(content) as CanvasData;
 
-  const canvasTextChanges = new Map<number, Map<number, CanvasTextNodeChange>>();
+  const canvasTextChanges = new Map<number, CanvasTextNodeChange[]>();
 
   for (const change of changes) {
     if (!isCanvasChange(change)) {
@@ -231,11 +230,11 @@ async function applyCanvasChanges(app: App, content: string, path: string, chang
     } else if (isCanvasTextNodeChange(change)) {
       let canvasTextChangesForNode = canvasTextChanges.get(change.nodeIndex);
       if (!canvasTextChangesForNode) {
-        canvasTextChangesForNode = new Map<number, CanvasTextNodeChange>();
+        canvasTextChangesForNode = [];
         canvasTextChanges.set(change.nodeIndex, canvasTextChangesForNode);
       }
 
-      canvasTextChangesForNode.set(change.linkIndex, change);
+      canvasTextChangesForNode.push(change);
     }
   }
 
@@ -259,31 +258,7 @@ async function applyCanvasChanges(app: App, content: string, path: string, chang
       return null;
     }
 
-    const cache = await parseMetadata(app, node.text);
-    const links = getAllLinks(cache);
-    const contentChanges: FileChange[] = [];
-
-    for (let linkIndex = 0; linkIndex < links.length; linkIndex++) {
-      const link = links[linkIndex];
-      if (!link) {
-        console.warn('Missing link', {
-          linkIndex,
-          nodeIndex,
-          nodeText: node.text,
-          path
-        });
-
-        return null;
-      }
-
-      const canvasTextChange = canvasTextChangesForNode.get(linkIndex);
-      if (canvasTextChange) {
-        const contentChange = referenceToFileChange(link, canvasTextChange.newContent);
-        contentChange.oldContent = canvasTextChange.oldContent;
-        contentChanges.push(contentChange);
-      }
-    }
-
+    const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.originalReference, change.newContent));
     node.text = await applyContentChanges(node.text, `${path}.node${nodeIndex.toString()}.VIRTUAL_FILE.md`, contentChanges);
   }
 
