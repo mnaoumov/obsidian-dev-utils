@@ -56,9 +56,9 @@ export interface CanvasReference extends FrontmatterLinkCache {
  */
 export interface CanvasTextNodeReference extends CanvasReference {
   /**
-   * The index of the link in the node.
+   * The original reference.
    */
-  linkIndex: number;
+  originalReference: Reference;
 
   /**
    * The type of reference.
@@ -127,10 +127,10 @@ export function referenceToFileChange(reference: Reference, newContent: string):
   if (isCanvasTextNodeReference(reference)) {
     const canvasTextNodeChange: CanvasTextNodeChange = {
       isCanvas: true,
-      linkIndex: reference.linkIndex,
       newContent,
       nodeIndex: reference.nodeIndex,
       oldContent: reference.original,
+      originalReference: reference.originalReference,
       type: 'text'
     };
     return canvasTextNodeChange;
