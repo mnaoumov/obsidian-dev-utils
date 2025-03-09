@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.8.2
+
+- Update libs
+
 ## 19.8.1
 
 - Pass original reference
