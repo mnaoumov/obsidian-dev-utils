@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.8.0
+
+- Complete canvas link text editing
+
 ## 19.7.1-beta.6
 
 - Apply multiple links
