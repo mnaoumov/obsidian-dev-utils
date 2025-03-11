@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.9.0
+
+- Update libs
+- Lint tsx
+
 ## 19.8.2
 
 - Update libs
