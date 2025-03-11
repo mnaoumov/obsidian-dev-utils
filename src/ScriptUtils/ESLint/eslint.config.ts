@@ -35,6 +35,7 @@ export const configs: Linter.Config[] = tseslint.config(
   {
     files: [
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
+      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTsx),
       join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
     ]
   },
@@ -343,6 +344,9 @@ function getTseslintConfigs(): InfiniteDepthConfigWithExtends[] {
     {
       languageOptions: {
         parserOptions: {
+          ecmaFeatures: {
+            jsx: true
+          },
           projectService: true,
           tsconfigRootDir: getRootDir() ?? ''
         }
@@ -364,6 +368,13 @@ function getTseslintConfigs(): InfiniteDepthConfigWithExtends[] {
             varsIgnorePattern: '^_'
           }
         ]
+      }
+    },
+    {
+      settings: {
+        react: {
+          version: 'detect'
+        }
       }
     }
   ];

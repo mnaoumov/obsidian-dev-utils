@@ -33,6 +33,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Matches any TypeScript file (`*.ts`). */
   AnyTs = '*.ts',
 
+  /** Matches any React TypeScript file (`*.tsx`). */
+  AnyTsx = '*.tsx',
+
   /** The path to the `CHANGELOG.md` file. */
   ChangelogMd = 'CHANGELOG.md',
 
