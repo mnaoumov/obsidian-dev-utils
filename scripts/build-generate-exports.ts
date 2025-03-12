@@ -77,7 +77,7 @@ async function setExport(exportConditions: PackageJson.ExportConditions, srcDir:
       ObsidianDevUtilsRepoPaths.DistLib,
       ObsidianDevUtilsRepoPaths.Cjs,
       importPath,
-      isWildcard ? ObsidianDevUtilsRepoPaths.AnyDmts : ObsidianDevUtilsRepoPaths.IndexDcts
+      isWildcard ? ObsidianDevUtilsRepoPaths.AnyDcts : ObsidianDevUtilsRepoPaths.IndexDcts
     )
   );
   const dmtsDirPath = dirname(dmtsPath);
