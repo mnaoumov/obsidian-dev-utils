@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 19.10.0
+
+- Fix d.cts path
+- Add exports
+- Add AppContext
+
 ## 19.9.0
 
 - Update libs
