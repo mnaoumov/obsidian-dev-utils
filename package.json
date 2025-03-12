@@ -368,6 +368,26 @@
         "types": "./dist/lib/cjs/obsidian/Plugin/*.d.mts",
         "default": "./dist/lib/cjs/obsidian/Plugin/*.cjs"
       }
+    },
+    "./obsidian/React": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/React/index.d.mts",
+        "default": "./dist/lib/esm/obsidian/React/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/React/index.d.cts",
+        "default": "./dist/lib/cjs/obsidian/React/index.cjs"
+      }
+    },
+    "./obsidian/React/*": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/React/*.d.mts",
+        "default": "./dist/lib/esm/obsidian/React/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/React/*.d.mts",
+        "default": "./dist/lib/cjs/obsidian/React/*.cjs"
+      }
     }
   },
   "main": "./dist/lib/cjs/index.cjs",
