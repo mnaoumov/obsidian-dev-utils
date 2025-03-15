@@ -461,6 +461,7 @@
     "eslint-plugin-verify-tsdoc": "^1.0.20",
     "eventemitter3": "^5.0.1",
     "glob": "^11.0.1",
+    "jiti": "^2.4.2",
     "localforage": "^1.10.0",
     "lru-cache": "^11.0.2",
     "moment": "^2.30.1",
