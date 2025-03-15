@@ -406,7 +406,7 @@
   ],
   "scripts": {
     "build": "npm-run-all build:clean build:compile build:generate-index build:types build:lib build:generate-exports build:static build:styles",
-    "build:clean": "tsx scripts/build-clean.ts",
+    "build:clean": "tsx scripts/cli.ts build:clean",
     "build:compile": "tsx scripts/cli.ts build:compile",
     "build:generate-exports": "tsx scripts/build-generate-exports.ts",
     "build:generate-index": "tsx scripts/build-generate-index.ts",
