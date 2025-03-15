@@ -29,7 +29,22 @@ export enum ObsidianPluginRepoPaths {
   DistDev = 'dist/dev',
 
   /** Represents the ESLint configuration file. */
+  EslintConfigCjs = 'eslint.config.cjs',
+
+  /** Represents the ESLint configuration file. */
+  EslintConfigCts = 'eslint.config.cts',
+
+  /** Represents the ESLint configuration file. */
+  EslintConfigJs = 'eslint.config.js',
+
+  /** Represents the ESLint configuration file. */
   EslintConfigMjs = 'eslint.config.mjs',
+
+  /** Represents the ESLint configuration file. */
+  EslintConfigMts = 'eslint.config.mts',
+
+  /** Represents the ESLint configuration file. */
+  EslintConfigTs = 'eslint.config.ts',
 
   /** Represents the hot reload file. */
   HotReload = '.hotreload',

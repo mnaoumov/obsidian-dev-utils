@@ -8,11 +8,16 @@
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
-  existsSync,
-  writeFile
+  getDirname,
+  join
+} from '../../Path.ts';
+import {
+  cp,
+  existsSync
 } from '../NodeModules.ts';
 import {
   execFromRoot,
+  getRootDir,
   resolvePathFromRootSafe
 } from '../Root.ts';
 
@@ -22,10 +27,27 @@ import {
  * @param shouldFix - Whether to fix linting issues automatically.
  */
 export async function lint(shouldFix?: boolean): Promise<void> {
-  const eslintConfigMjsPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMjs);
-  if (!existsSync(eslintConfigMjsPath)) {
-    console.warn(`ESLint configuration file not found at ${eslintConfigMjsPath}. Creating default config...`);
-    await writeFile(eslintConfigMjsPath, 'import { configs } from \'obsidian-dev-utils/ScriptUtils/ESLint/eslint.config\';\nexport default configs;\n');
+  const configFiles = [
+    ObsidianPluginRepoPaths.EslintConfigJs,
+    ObsidianPluginRepoPaths.EslintConfigMjs,
+    ObsidianPluginRepoPaths.EslintConfigCjs,
+    ObsidianPluginRepoPaths.EslintConfigTs,
+    ObsidianPluginRepoPaths.EslintConfigMts,
+    ObsidianPluginRepoPaths.EslintConfigCts
+  ];
+
+  const configFileExist = configFiles.some((configFile) => {
+    const configFilePath = resolvePathFromRootSafe(configFile);
+    return existsSync(configFilePath);
+  });
+
+  if (!configFileExist) {
+    console.warn('ESLint configuration file not found. Creating default config...');
+    const packageDir = getRootDir(getDirname(import.meta.url));
+    if (!packageDir) {
+      throw new Error('Package directory not found');
+    }
+    await cp(join(packageDir, ObsidianPluginRepoPaths.EslintConfigMts), resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMts));
   }
 
   await execFromRoot(['eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentDir]);
