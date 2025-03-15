@@ -419,7 +419,6 @@
     "lint": "tsx scripts/cli.ts lint",
     "lint:fix": "tsx scripts/cli.ts lint:fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
-    "test": "tsx scripts/test.ts",
     "version": "tsx scripts/version.ts"
   },
   "dependencies": {
