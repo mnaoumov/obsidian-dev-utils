@@ -1,4 +1,7 @@
-import type { ESLint, Linter } from 'eslint';
+import type {
+  ESLint,
+  Linter
+} from 'eslint';
 
 import eslintPluginTsdocRequired_ = require('@guardian/eslint-plugin-tsdoc-required');
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
