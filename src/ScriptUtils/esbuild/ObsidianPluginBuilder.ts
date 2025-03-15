@@ -13,6 +13,7 @@ import type {
 
 import { config } from 'dotenv';
 import { context } from 'esbuild';
+// eslint-disable-next-line import-x/no-rename-default
 import sassPlugin_ from 'esbuild-sass-plugin';
 
 import { throwExpression } from '../../Error.ts';
