@@ -63,7 +63,7 @@ Checks if Svelte code compiles.
 #### Compile TypeScript code
 
 ```bash
-npx obsidian-dev-utils build:compile:typeScript
+npx obsidian-dev-utils build:compile:typescript
 ```
 
 Checks if TypeScript code compiles.
