@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.12.0
+
+- Use invoke model
+
 ## 19.11.0
 
 - Hack for sassPlugin
