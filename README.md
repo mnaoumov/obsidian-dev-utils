@@ -106,7 +106,7 @@ Checks formatting of your code using [dprint](https://dprint.dev/).
 npx obsidian-dev-utils lint
 ```
 
-This command is looking for `eslint.config.mjs` file in the root of your project and if it's not found, it creates it referencing the default configuration.
+This command is looking for `eslint.config.js/mjs/cjs/ts/mts/cts` file in the root of your project and if it's not found, it creates it referencing the default configuration.
 
 Lints your code, enforcing a code convention to minimize common errors.
 
