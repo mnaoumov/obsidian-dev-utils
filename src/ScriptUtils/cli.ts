@@ -72,6 +72,10 @@ enum CommandNames {
   Version = 'version'
 }
 
+interface ClickTaskResultModule {
+  cliTaskResult: CliTaskResult;
+}
+
 /**
  * Main function to run the CLI. It sets up the commands using the `commander` library and
  * handles the execution of tasks like building, cleaning, linting, spellchecking, and versioning.
@@ -136,8 +140,8 @@ function addCommand<Args extends unknown[]>(
         if (existsSync(scriptPath)) {
           const dir = getDirname(import.meta.url);
           const relativeScriptPath = relative(dir, scriptPath);
-          const module = await tsImport(relativeScriptPath, { parentURL: import.meta.url });
-          return module.cliTaskResult as CliTaskResult | undefined;
+          const module = await tsImport(relativeScriptPath, { parentURL: import.meta.url }) as Partial<ClickTaskResultModule>;
+          return module.cliTaskResult;
         }
 
         return await taskFn(...args);
