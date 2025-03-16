@@ -39,7 +39,7 @@ import { preprocessPlugin } from './preprocessPlugin.ts';
 import { renameCssPlugin } from './renameCssPlugin.ts';
 import { svelteWrapperPlugin } from './svelteWrapperPlugin.ts';
 
-const sassPlugin = sassPlugin_ as unknown as typeof sassPlugin_.default;
+const sassPlugin = ('default' in sassPlugin_ ? sassPlugin_.default : sassPlugin_) as unknown as typeof sassPlugin_.default;
 
 /**
  * Enumeration representing the build modes.
