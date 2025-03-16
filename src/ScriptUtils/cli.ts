@@ -7,11 +7,16 @@
  */
 
 import { Command } from 'commander';
+import { tsImport } from 'tsx/esm/api';
 
 import type { MaybePromise } from '../Async.ts';
 
 import { invokeAsyncSafely } from '../Async.ts';
-import { getDirname } from '../Path.ts';
+import {
+  getDirname,
+  join,
+  relative
+} from '../Path.ts';
 import {
   buildClean,
   buildCompile,
@@ -29,11 +34,17 @@ import {
 } from './esbuild/ObsidianPluginBuilder.ts';
 import { lint } from './ESLint/ESLint.ts';
 import { format } from './format.ts';
-import { process } from './NodeModules.ts';
+import {
+  existsSync,
+  process
+} from './NodeModules.ts';
 import { readPackageJson } from './Npm.ts';
 import { publish } from './NpmPublish.ts';
+import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
+import { resolvePathFromRootSafe } from './Root.ts';
 import { spellcheck } from './spellcheck.ts';
 import { updateVersion } from './version.ts';
+
 /**
  * The number of leading arguments to skip when parsing command-line arguments.
  * The first two elements typically represent the Node.js executable and the script path:
@@ -119,5 +130,17 @@ function addCommand<Args extends unknown[]>(
 ): Command {
   return program.command(name)
     .description(description)
-    .action((...args: Args) => wrapCliTask(() => taskFn(...args)));
+    .action((...args: Args) =>
+      wrapCliTask(async () => {
+        const scriptPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Scripts, `${name.replace(':', '-')}.ts`));
+        if (existsSync(scriptPath)) {
+          const dir = getDirname(import.meta.url);
+          const relativeScriptPath = relative(dir, scriptPath);
+          const module = await tsImport(relativeScriptPath, { parentURL: import.meta.url });
+          return module.cliTaskResult as CliTaskResult | undefined;
+        }
+
+        return await taskFn(...args);
+      })
+    );
 }
