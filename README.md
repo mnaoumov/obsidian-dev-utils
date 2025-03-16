@@ -156,11 +156,17 @@ To simplify the usage of these commands, you can add them to your `package.json`
 {
   "scripts": {
     "build": "obsidian-dev-utils build",
+    "build:compile": "obsidian-dev-utils build:compile",
+    "build:compile:svelte": "obsidian-dev-utils build:compile:svelte",
+    "build:compile:typescript": "obsidian-dev-utils build:compile:typescript",
     "build:clean": "obsidian-dev-utils build:clean",
     "build:static": "obsidian-dev-utils build:static",
     "dev": "obsidian-dev-utils dev",
+    "format": "obsidian-dev-utils format",
+    "format:check": "obsidian-dev-utils format:check",
     "lint": "obsidian-dev-utils lint",
     "lint:fix": "obsidian-dev-utils lint:fix",
+    "publish": "obsidian-dev-utils publish",
     "spellcheck": "obsidian-dev-utils spellcheck",
     "version": "obsidian-dev-utils version"
   },
