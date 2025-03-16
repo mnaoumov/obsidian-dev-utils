@@ -72,8 +72,9 @@ enum CommandNames {
   Version = 'version'
 }
 
-interface ClickTaskResultModule {
-  cliTaskResult: CliTaskResult;
+interface OverrideModule<Args extends unknown[]> {
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  invoke(...args: Args): Promise<CliTaskResult | void>;
 }
 
 /**
@@ -140,8 +141,11 @@ function addCommand<Args extends unknown[]>(
         if (existsSync(scriptPath)) {
           const dir = getDirname(import.meta.url);
           const relativeScriptPath = relative(dir, scriptPath);
-          const module = await tsImport(relativeScriptPath, { parentURL: import.meta.url }) as Partial<ClickTaskResultModule>;
-          return module.cliTaskResult;
+          const module = await tsImport(relativeScriptPath, { parentURL: import.meta.url }) as Partial<OverrideModule<Args>>;
+          if (typeof module.invoke !== 'function') {
+            throw new Error(`${relativeScriptPath} does not export an invoke function`);
+          }
+          return module.invoke(...args);
         }
 
         return await taskFn(...args);
