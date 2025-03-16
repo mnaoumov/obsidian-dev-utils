@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 19.11.0
+
+- Hack for sassPlugin
+- Allow override
+- Fix docs
+- Add support for any eslint.config file
+- Switch to mts as default
+- Refactor eslint.config.mjs
+
 ## 19.10.0
 
 - Fix d.cts path
