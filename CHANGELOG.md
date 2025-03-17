@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.16.2
+
+- Disable jsx formatting rule
+
 ## 19.16.1
 
 - Fix input time styles
