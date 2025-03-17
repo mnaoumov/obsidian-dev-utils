@@ -1,0 +1,14 @@
+.obsidian-dev-utils {
+  .multiple-dropdown-component {
+    select,
+    select:focus,
+    .dropdown {
+      height: auto;
+
+      option:checked {
+        background-color: #1967d2;
+        color: #fff;
+      }
+    }
+  }
+}
