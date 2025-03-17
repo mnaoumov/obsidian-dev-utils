@@ -118,7 +118,7 @@ async function setExport(exportConditions: PackageJson.ExportConditions, srcDir:
           type: 'module',
           types: relative(importPath, dctsPath)
         };
-        await mkdir(dirname(importPath), { recursive: true });
+        await mkdir(importPath, { recursive: true });
         await writeJson(join(importPath, ObsidianDevUtilsRepoPaths.PackageJson), packageJson);
       }
     }
