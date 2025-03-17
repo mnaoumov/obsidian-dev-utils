@@ -18,6 +18,7 @@ import {
   cp,
   rm
 } from './NodeModules.ts';
+import { npmRun } from './NpmRun.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 import {
   execFromRoot,
@@ -41,8 +42,8 @@ export async function buildClean(): Promise<void> {
  * @returns A promise that resolves when the code compiles successfully.
  */
 export async function buildCompile(): Promise<void> {
-  await buildCompileSvelte();
-  await buildCompileTypeScript();
+  await npmRun('build:compile:svelte');
+  await npmRun('build:compile:typescript');
 }
 
 /**
