@@ -103,7 +103,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
    * @param options - The options for binding the value component.
    * @returns The value component.
    */
-  protected bind<
+  public bind<
     UIValue,
     TValueComponent
   >(
@@ -122,7 +122,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
    * @param options - The options for binding the value component.
    * @returns The value component.
    */
-  protected bind<
+  public bind<
     UIValue,
     TValueComponent,
     Property extends keyof ExtractPluginSettings<TPlugin>
@@ -142,7 +142,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
    * @param options - The options for binding the value component.
    * @returns The value component.
    */
-  protected bind<
+  public bind<
     UIValue,
     TValueComponent,
     Property extends keyof ExtractPluginSettings<TPlugin>
