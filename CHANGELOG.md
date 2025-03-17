@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.14.0
+
+- Clear pending tasks from queue function #12
+
 ## 19.13.0
 
 - Switch to `build:compile:typescript`
