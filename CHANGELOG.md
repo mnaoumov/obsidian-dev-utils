@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.16.1
+
+- Fix input time styles
+
 ## 19.16.0
 
 - Expose bind
