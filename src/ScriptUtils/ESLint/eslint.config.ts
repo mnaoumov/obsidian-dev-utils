@@ -300,6 +300,7 @@ function getStylisticConfigs(): InfiniteDepthConfigWithExtends[] {
       rules: {
         '@stylistic/indent': 'off',
         '@stylistic/indent-binary-ops': 'off',
+        '@stylistic/jsx-one-expression-per-line': 'off',
         '@stylistic/no-extra-semi': 'error',
         '@stylistic/object-curly-newline': [
           'error',
