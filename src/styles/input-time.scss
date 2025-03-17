@@ -12,9 +12,14 @@
 
     &::-webkit-calendar-picker-indicator {
       position: absolute;
-      left: var(--size-4-1);
       right: auto;
       opacity: 0.5;
+    }
+
+    &:not(input[type='time']) {
+      &::-webkit-calendar-picker-indicator {
+        left: var(--size-4-1);
+      }
     }
 
     &::-webkit-datetime-edit-month-field,
@@ -33,8 +38,13 @@
       .rtl & {
       direction: rtl;
 
+      &:not(input[type='time']) {
+        &::-webkit-calendar-picker-indicator {
+          right: var(--size-4-1);
+        }
+      }
+
       &::-webkit-calendar-picker-indicator {
-        right: var(--size-4-1);
         left: auto;
       }
     }
