@@ -2,7 +2,7 @@
 
 ## 19.14.0
 
-- Clear pending tasks from queue function #12
+- Clear pending tasks from queue function #12 (thanks to @shumadrid)
 
 ## 19.13.0
 
