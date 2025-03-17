@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.15.1
+
+- Fix folder creation
+
 ## 19.15.0
 
 - Add input styles
