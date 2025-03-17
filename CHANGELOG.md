@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.15.0
+
+- Add input styles
+- Extract css
+
 ## 19.14.0
 
 - Clear pending tasks from queue function #12 (thanks to @shumadrid)
