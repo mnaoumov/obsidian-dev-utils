@@ -65,6 +65,7 @@
     "nonnull",
     "nosourcemap",
     "npmjs",
+    "nums",
     "outdir",
     "outfile",
     "outlinks",

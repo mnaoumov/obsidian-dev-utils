@@ -1,0 +1,48 @@
+.obsidian-dev-utils {
+  input[type='month'],
+  input[type='time'],
+  input[type='week'] {
+    font-variant-numeric: tabular-nums;
+    position: relative;
+
+    &::-webkit-datetime-edit-text {
+      color: var(--text-faint);
+      padding-inline-end: 0;
+    }
+
+    &::-webkit-calendar-picker-indicator {
+      position: absolute;
+      left: var(--size-4-1);
+      right: auto;
+      opacity: 0.5;
+    }
+
+    &::-webkit-datetime-edit-month-field,
+    &::-webkit-datetime-edit-day-field,
+    &::-webkit-datetime-edit-year-field {
+      &:active,
+      &:focus {
+        background-color: var(--text-selection);
+        color: var(--text-normal);
+        cursor: text;
+      }
+    }
+
+    @at-root .mod-rtl &,
+      .is-rtl &,
+      .rtl & {
+      direction: rtl;
+
+      &::-webkit-calendar-picker-indicator {
+        right: var(--size-4-1);
+        left: auto;
+      }
+    }
+
+    @at-root {
+      body:not(.is-ios):not(.is-android) & {
+        padding-inline-start: var(--size-4-6);
+      }
+    }
+  }
+}

@@ -1,0 +1,68 @@
+.obsidian-dev-utils {
+  input[type='url'] {
+    height: var(--input-height)
+  }
+
+  input[type='month'],
+  input[type='time'],
+  input[type='url'],
+  input[type='week'] {
+    -webkit-app-region: no-drag;
+    background: var(--background-modifier-form-field);
+    border: var(--input-border-width) solid var(--background-modifier-border);
+    color: var(--text-normal);
+    font-family: inherit;
+    padding: var(--size-4-1) var(--size-4-2);
+    font-size: var(--font-ui-small);
+    border-radius: var(--input-radius);
+    outline: none;
+
+    @at-root {
+      @media (hover: hover) {
+        &:hover {
+          border-color: var(--background-modifier-border-hover);
+          transition:
+            box-shadow 0.15s ease-in-out,
+            border 0.15s ease-in-out;
+        }
+      }
+    }
+
+    &:active,
+    &:focus {
+      border-color: var(--background-modifier-border-focus);
+      transition:
+        box-shadow 0.15s ease-in-out,
+        border 0.15s ease-in-out;
+    }
+
+    &:active,
+    &:focus,
+    &:focus-visible {
+      box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+    }
+
+    &::placeholder {
+      color: var(--text-faint);
+    }
+  }
+
+  @at-root {
+    .mod-rtl,
+    .is-rtl,
+    .rtl {
+      & {
+        input[type='month'],
+        input[type='time'],
+        input[type='week'] {
+          direction: rtl;
+
+          &::-webkit-calendar-picker-indicator {
+            right: var(--size-4-1);
+            left: auto;
+          }
+        }
+      }
+    }
+  }
+}
