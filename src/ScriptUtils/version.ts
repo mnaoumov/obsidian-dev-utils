@@ -34,6 +34,7 @@ import {
   editPackageLockJson,
   readPackageJson
 } from './Npm.ts';
+import { npmRun } from './NpmRun.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 import {
   execFromRoot,
@@ -422,10 +423,10 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
   await checkGitInstalled();
   await checkGitRepoClean();
   await checkGitHubCliInstalled();
-  await runCommand('format:check');
-  await runCommand('spellcheck');
-  await runCommand('build');
-  await runCommand('lint');
+  await npmRun('format:check');
+  await npmRun('spellcheck');
+  await npmRun('build');
+  await npmRun('lint');
 
   const newVersion = await getNewVersion(versionUpdateType);
   await updateVersionInFiles(newVersion);
@@ -491,12 +492,6 @@ async function getLatestObsidianVersion(): Promise<string> {
 
 function isBeta(version: string): boolean {
   return version.includes(VersionUpdateType.Beta);
-}
-
-async function runCommand(command: string): Promise<void> {
-  const packageJson = await readPackageJson();
-  const isKnownCommand = Object.keys(packageJson.scripts ?? {}).includes(command);
-  await execFromRoot(['npm', 'run', ...(isKnownCommand ? [] : ['obsidian-dev-utils']), command]);
 }
 
 function toSingleLine(str: string): string {
