@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.15.3
+
+- Don't move time icon
+
 ## 19.15.2
 
 - Fix deploy
