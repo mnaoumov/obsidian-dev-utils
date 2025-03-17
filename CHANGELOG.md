@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.16.0
+
+- Expose bind
+
 ## 19.15.4
 
 - Explicit move time icon
