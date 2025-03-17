@@ -176,6 +176,34 @@ To simplify the usage of these commands, you can add them to your `package.json`
 
 This setup allows you to run the commands using `npm run`, like `npm run build`.
 
+### Customizing CLI commands
+
+If you want to alter the way provided CLI commands work, you have two ways
+
+#### Make your own scripts and replace the CLI command in `package.json`
+
+```json
+{
+  "scripts": {
+    "build": "node my-build.mjs",
+    "build:compile:typescript": "tsx my-build-compile-typescript.ts"
+  },
+  "...": "..."
+}
+```
+
+#### Add hook scripts into `scripts` folder (recommended)
+
+Hook scripts follow naming conventions:
+
+1. They are put in `scripts folder.
+2. They are named as the CLI command.
+3. If CLI command name contains `:`, it is replaces with `-`.
+
+E.g., `scripts/build.ts`, `scripts/build-compile-typescript.ts`.
+
+[See the example of such hook scripts](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/static/scripts). You can copy them into your `scripts` folder and modify according to your needs.
+
 ### Helper Functions
 
 `Obsidian Dev Utils` also provides a range of general-purpose and Obsidian-specific helper functions.
