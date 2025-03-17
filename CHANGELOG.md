@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.15.2
+
+- Fix deploy
+
 ## 19.15.1
 
 - Fix folder creation
