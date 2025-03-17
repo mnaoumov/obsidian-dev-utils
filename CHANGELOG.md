@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 19.13.0
+
+- Switch to `build:compile:typescript`
+- Allow custom commands
+- Refactor to `npmRun`
+
 ## 19.12.0
 
 - Use invoke model
