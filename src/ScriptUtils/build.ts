@@ -62,7 +62,7 @@ export async function buildCompileSvelte(): Promise<void> {
     return;
   }
 
-  await execFromRoot(['svelte-check', '--tsconfig', ObsidianDevUtilsRepoPaths.TsConfigJson]);
+  await execFromRoot(['npx', 'svelte-check', '--tsconfig', ObsidianDevUtilsRepoPaths.TsConfigJson]);
 }
 
 /**
@@ -71,7 +71,7 @@ export async function buildCompileSvelte(): Promise<void> {
  * @returns A promise that resolves when the code compiles successfully.
  */
 export async function buildCompileTypeScript(): Promise<void> {
-  await execFromRoot(['tsc', '--build', '--force']);
+  await execFromRoot(['npx', 'tsc', '--build', '--force']);
 }
 
 /**
