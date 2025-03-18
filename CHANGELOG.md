@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.17.0
+
+- Escape links in table
+
 ## 19.16.2
 
 - Disable jsx formatting rule
