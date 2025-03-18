@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.17.3
+
+- Ensure called with npx
+
 ## 19.17.2
 
 - Fix build
