@@ -196,7 +196,7 @@ If you want to alter the way provided CLI commands work, you have two ways
 
 Hook scripts follow naming conventions:
 
-1. They are put in `scripts folder.
+1. They are put in `scripts` folder.
 2. They are named as the CLI command.
 3. If CLI command name contains `:`, it is replaces with `-`.
 
