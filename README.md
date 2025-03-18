@@ -198,7 +198,7 @@ Hook scripts follow naming conventions:
 
 1. They are put in `scripts` folder.
 2. They are named as the CLI command.
-3. If CLI command name contains `:`, it is replaces with `-`.
+3. If CLI command name contains `:`, it is replaced with `-`.
 
 E.g., `scripts/build.ts`, `scripts/build-compile-typescript.ts`.
 
