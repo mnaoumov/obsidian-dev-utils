@@ -57,9 +57,10 @@ export const configs: Linter.Config[] = tseslint.config(
   ...getEslintImportResolverTypescriptConfigs()
 ) as Linter.Config[];
 
-function excludeFilesProperty<Config extends { files?: unknown }>(config: Config): Omit<Config, 'files'> {
-  const { files: _files, ...configWithoutFiles } = config;
-  return configWithoutFiles;
+function excludeFilesProperty<Config extends { files?: unknown }>(config: Config): Config {
+  const newConfig = { ...config };
+  delete newConfig.files;
+  return newConfig;
 }
 
 function getEslintConfigs(): InfiniteDepthConfigWithExtends[] {
