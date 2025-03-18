@@ -9,5 +9,9 @@ import { execFromRoot } from './Root.ts';
 export async function npmRun(command: string): Promise<void> {
   const packageJson = await readPackageJson();
   const isKnownCommand = Object.keys(packageJson.scripts ?? {}).includes(command);
-  await execFromRoot(['npm', 'run', ...(isKnownCommand ? [] : ['obsidian-dev-utils']), command]);
+  if (isKnownCommand) {
+    await execFromRoot(['npm', 'run', command]);
+  } else {
+    await execFromRoot(['npx', 'obsidian-dev-utils', command]);
+  }
 }
