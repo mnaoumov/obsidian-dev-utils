@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.17.1
+
+- Fix run for unknown commands
+
 ## 19.17.0
 
 - Escape links in table
