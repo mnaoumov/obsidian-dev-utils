@@ -50,5 +50,5 @@ export async function lint(shouldFix?: boolean): Promise<void> {
     await cp(join(packageDir, ObsidianPluginRepoPaths.EslintConfigMts), resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMts));
   }
 
-  await execFromRoot(['eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentDir]);
+  await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentDir]);
 }
