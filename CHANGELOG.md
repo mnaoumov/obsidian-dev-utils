@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.17.2
+
+- Fix build
+- Update libs
+
 ## 19.17.1
 
 - Fix run for unknown commands
