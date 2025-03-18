@@ -49,7 +49,8 @@ import {
 import { isUrl } from '../url.ts';
 import {
   applyFileChanges,
-  isCanvasChange
+  isCanvasChange,
+  isContentChange
 } from './FileChange.ts';
 import {
   getFile,
@@ -73,6 +74,8 @@ import {
   referenceToFileChange
 } from './Reference.ts';
 
+const ESCAPED_WIKILINK_DIVIDER = '\\|';
+
 /**
  * Regular expression for special link symbols.
  */
@@ -83,6 +86,11 @@ const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
  * Regular expression for special markdown link symbols.
  */
 const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\[\]<>_*~=`$]/g;
+
+/**
+ * Regular expression for unescaped pipes.
+ */
+const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
 
 const WIKILINK_DIVIDER = '|';
 
@@ -390,6 +398,11 @@ interface LinkConfig {
   shouldUseLeadingDot: boolean;
 }
 
+interface TablePosition {
+  end: number;
+  start: number;
+}
+
 interface WikiLinkNode {
   data: {
     alias: string;
@@ -475,6 +488,11 @@ export async function editLinks(
 
     const changes: FileChange[] = [];
 
+    const tablePositions: TablePosition[] = (cache.sections ?? []).filter((section) => section.type === 'table').map((section) => ({
+      end: section.position.end.offset,
+      start: section.position.start.offset
+    }));
+
     for (const link of getAllLinks(cache)) {
       const newContent = await linkConverter(link);
       if (newContent === undefined) {
@@ -490,6 +508,10 @@ export async function editLinks(
           console.warn('Unsupported file change', fileChange);
         }
       } else {
+        if (shouldEscapeWikilinkDivider(fileChange, tablePositions)) {
+          fileChange.newContent = fileChange.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, ESCAPED_WIKILINK_DIVIDER);
+        }
+
         changes.push(fileChange);
       }
     }
@@ -1004,4 +1026,16 @@ function parseWikilinkNode(node: WikiLinkNode, str: string, isEmbed: boolean): P
     isWikilink: true,
     url: node.value
   });
+}
+
+function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: TablePosition[]): boolean {
+  if (!isContentChange(fileChange)) {
+    return false;
+  }
+
+  if (!UNESCAPED_WIKILINK_DIVIDER_REGEXP.test(fileChange.newContent)) {
+    return false;
+  }
+
+  return tablePositions.some((tablePosition) => tablePosition.start <= fileChange.startIndex && fileChange.endIndex <= tablePosition.end);
 }
