@@ -24,6 +24,7 @@ export type {
   FSWatcher,
   ObjectEncodingOptions,
   PathLike,
+  Stats,
   WatchEventType
 } from 'node:fs';
 
