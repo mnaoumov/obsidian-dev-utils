@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.18.0
+
+- Export Stats
+
 ## 19.17.6
 
 - Update libs
