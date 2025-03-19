@@ -57,7 +57,8 @@ import {
 import {
   getAllLinks,
   getBacklinksForFileOrPath,
-  getBacklinksForFileSafe
+  getBacklinksForFileSafe,
+  tempRegisterFileAndRun
 } from './MetadataCache.ts';
 import { addToQueue } from './Queue.ts';
 import {
@@ -404,7 +405,7 @@ async function handleRenameAsync(
   interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>
 ): Promise<void> {
   await continueInterruptedRenames(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
-  refreshLinks(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
+  await refreshLinks(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
   if (await handleCaseCollision(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks)) {
     return;
   }
@@ -544,10 +545,20 @@ function makeKey(oldPath: string, newPath: string): string {
   return `${oldPath} -> ${newPath}`;
 }
 
-function refreshLinks(app: App, oldPath: string, newPath: string, oldPathBacklinksMap: Map<string, Reference[]>, oldPathLinks: Reference[]): void {
+async function refreshLinks(
+  app: App,
+  oldPath: string,
+  newPath: string,
+  oldPathBacklinksMap: Map<string, Reference[]>,
+  oldPathLinks: Reference[]
+): Promise<void> {
   const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
   const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
-  const oldPathBacklinksMapRefreshed = getBacklinksForFileOrPath(app, oldPath).data;
+  const fakeOldFile = getFile(app, oldPath, true);
+  let oldPathBacklinksMapRefreshed = new Map<string, Reference[]>();
+  await tempRegisterFileAndRun(app, fakeOldFile, async () => {
+    oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe(app, fakeOldFile)).data;
+  });
 
   for (const link of oldPathLinksRefreshed) {
     if (oldPathLinks.includes(link)) {
