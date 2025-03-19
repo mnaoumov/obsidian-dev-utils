@@ -27,7 +27,7 @@ export class DurationTransformer extends TypedTransformer<Duration, string> {
    * @returns True if the value is a Duration, false otherwise.
    */
   public override canTransform(value: unknown): value is Duration {
-    const maybeDuration = value as Partial<Duration>;
+    const maybeDuration = (value ?? {}) as Partial<Duration>;
     return !!maybeDuration.asHours && !!maybeDuration.asMinutes && !!maybeDuration.asSeconds && !!maybeDuration.asMilliseconds;
   }
 
