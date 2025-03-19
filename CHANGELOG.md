@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.17.5
+
+- Ensure backlinks refreshed
+- Revert broken logic
+
 ## 19.17.4
 
 - Update backlinks info
