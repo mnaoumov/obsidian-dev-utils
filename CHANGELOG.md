@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.17.6
+
+- Update libs
+- Fix transformer check for DurationTransformer
+
 ## 19.17.5
 
 - Ensure backlinks refreshed
