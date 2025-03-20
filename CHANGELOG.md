@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.19.0
+
+- Add error async stack trace
+
 ## 19.18.0
 
 - Export Stats
