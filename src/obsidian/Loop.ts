@@ -6,7 +6,10 @@
 import type { MaybePromise } from '../Async.ts';
 
 import { getLibDebugger } from '../Debug.ts';
-import { emitAsyncErrorEvent } from '../Error.ts';
+import {
+  ASYNC_ERROR_WRAPPER_MESSAGE,
+  emitAsyncErrorEvent
+} from '../Error.ts';
 
 /**
  * Options for the loop function.
@@ -54,6 +57,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     notice.setMessage(message);
     getLibDebugger('Loop')(message);
 
+    const asyncErrorWrapper = new Error(ASYNC_ERROR_WRAPPER_MESSAGE);
     try {
       await options.processItem(item);
     } catch (error) {
@@ -61,7 +65,8 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
         notice.hide();
         throw error;
       }
-      emitAsyncErrorEvent(error);
+      asyncErrorWrapper.cause = error;
+      emitAsyncErrorEvent(asyncErrorWrapper);
     }
   }
   notice.hide();
