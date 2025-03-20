@@ -5,6 +5,7 @@
 
 import { getLibDebugger } from './Debug.ts';
 import {
+  ASYNC_ERROR_WRAPPER_MESSAGE,
   emitAsyncErrorEvent,
   getStackTrace,
   printError
@@ -66,7 +67,7 @@ export interface TerminateRetry {
  * @returns A Promise that resolves when the asynchronous function completes or emits async error event.
  */
 export async function addErrorHandler(asyncFn: () => Promise<unknown>): Promise<void> {
-  const asyncErrorWrapper = new Error('An unhandled error occurred executing async operation');
+  const asyncErrorWrapper = new Error(ASYNC_ERROR_WRAPPER_MESSAGE);
   try {
     await asyncFn();
   } catch (asyncError) {

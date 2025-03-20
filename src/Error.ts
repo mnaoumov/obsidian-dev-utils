@@ -7,6 +7,11 @@ import { EventEmitter } from 'eventemitter3';
 
 const ASYNC_ERROR_EVENT = 'asyncError';
 
+/**
+ * The message of the error wrapper that is used to wrap an actual error that occurred during an async operation.
+ */
+export const ASYNC_ERROR_WRAPPER_MESSAGE = 'An unhandled error occurred executing async operation';
+
 const asyncErrorEventEmitter = new EventEmitter();
 asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
 
