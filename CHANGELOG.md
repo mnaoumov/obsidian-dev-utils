@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.19.1
+
+- Wrap loop error
+
 ## 19.19.0
 
 - Add error async stack trace
