@@ -66,10 +66,12 @@ export interface TerminateRetry {
  * @returns A Promise that resolves when the asynchronous function completes or emits async error event.
  */
 export async function addErrorHandler(asyncFn: () => Promise<unknown>): Promise<void> {
+  const asyncErrorWrapper = new Error('An unhandled error occurred executing async operation');
   try {
     await asyncFn();
   } catch (asyncError) {
-    emitAsyncErrorEvent(asyncError);
+    asyncErrorWrapper.cause = asyncError;
+    emitAsyncErrorEvent(asyncErrorWrapper);
   }
 }
 

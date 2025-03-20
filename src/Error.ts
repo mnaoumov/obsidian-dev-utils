@@ -95,7 +95,7 @@ export function throwExpression(error: unknown): never {
  * @param asyncError - The asynchronous error to handle.
  */
 function handleAsyncError(asyncError: unknown): void {
-  printError(new Error('An unhandled error occurred executing async operation', { cause: asyncError }));
+  printError(asyncError);
 }
 
 /**
