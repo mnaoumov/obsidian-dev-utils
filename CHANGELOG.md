@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.20.0
+
+- Add tmpdir to NodeModules
+- Update libs
+
 ## 19.19.1
 
 - Wrap loop error
