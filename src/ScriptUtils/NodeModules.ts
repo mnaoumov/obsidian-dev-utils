@@ -53,7 +53,8 @@ export {
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
 export {
   arch,
-  endianness
+  endianness,
+  tmpdir
 } from 'node:os';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
