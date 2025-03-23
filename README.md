@@ -305,7 +305,7 @@ When you enable `Verbose` mode, you will see debug messages in the console sent 
 
 By default, none of the debug messages are shown. You have to enable the debug namespace explicitly.
 
-To see debug messages for your plugin `foo-bar`, you have to enable them:
+To see debug messages for your plugin `foo-bar`, you have to enable them by running the corresponding command in the console:
 
 ```javascript
 window.DEBUG.enable('foo-bar'); // show all debug messages from the `foo-bar` plugin
