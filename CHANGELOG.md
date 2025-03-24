@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.22.0
+
+- Update libs
+- Support ~ fenced code blocks
+
 ## 19.21.1
 
 - Fix inverted condition
