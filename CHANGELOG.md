@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.21.0
+
+- Allow aliasing `this` to `that`
+- Update libs
+
 ## 19.20.0
 
 - Add tmpdir to NodeModules
