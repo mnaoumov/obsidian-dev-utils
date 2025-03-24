@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.21.1
+
+- Fix inverted condition
+
 ## 19.21.0
 
 - Allow aliasing `this` to `that`
