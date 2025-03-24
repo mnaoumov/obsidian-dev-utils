@@ -174,7 +174,7 @@ function printStackTrace(namespace: string, stackTrace: string, title?: string):
   if (!stackTrace) {
     stackTrace = '(unavailable)';
   }
-  if (!title) {
+  if (!(title ?? '')) {
     title = 'Caller stack trace';
   }
 

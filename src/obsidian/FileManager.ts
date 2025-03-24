@@ -37,9 +37,7 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
   }
 
   await processFrontmatter(app, pathOrFile, (frontmatter) => {
-    if (!frontmatter.aliases) {
-      frontmatter.aliases = [];
-    }
+    frontmatter.aliases ??= [];
 
     if (!frontmatter.aliases.includes(alias)) {
       frontmatter.aliases.push(alias);

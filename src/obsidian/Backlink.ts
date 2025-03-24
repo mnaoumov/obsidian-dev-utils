@@ -77,9 +77,7 @@ export interface RenderDelayedBacklinksOptions {
  * @returns A Promise that resolves when the backlinks table has been rendered.
  */
 export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: PathOrAbstractFile[]): Promise<void> {
-  if (!pathOrFiles) {
-    pathOrFiles = [];
-  }
+  pathOrFiles ??= [];
   const files: TFile[] = pathOrFiles.flatMap((abstractFileOrPath) => {
     const abstractFile = getAbstractFileOrNull(dv.app, abstractFileOrPath);
     if (!abstractFile) {
