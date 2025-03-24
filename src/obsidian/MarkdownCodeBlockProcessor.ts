@@ -31,7 +31,7 @@ export function getCodeBlockArguments(ctx: MarkdownPostProcessorContext, el: HTM
   }
   const lines = sectionInfo.text.split('\n');
   const codeBlockHeader = lines[sectionInfo.lineStart] ?? throwExpression(new Error('Code block header not found'));
-  const match = /^(`{3,}|~{3,})\S+\s+(?<Arguments>.*)$/.exec(codeBlockHeader);
+  const match = /^(?:`{3,}|~{3,})\S+\s+(?<Arguments>.*)$/.exec(codeBlockHeader);
   if (!match) {
     return [];
   }
