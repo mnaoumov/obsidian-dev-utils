@@ -148,7 +148,7 @@ Runs build checks before updating the version and releases if all checks pass. T
 
 If you use `beta` as `<versionUpdateType>` for your Obsidian plugin, the plugin will be deployed compatible to install with [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
 
-For the script to be able to publish releases in your repository, you need to enable the `Read and write permissions` setting for your repository in `Settings` -> `Actions` -> `General`.
+For the script to be able to publish releases in your repository, you need to enable the `Read and write permissions` setting in `Settings` -> `Actions` -> `General`.
 
 #### Simplified Usage
 
