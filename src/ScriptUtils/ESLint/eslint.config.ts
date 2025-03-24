@@ -358,6 +358,11 @@ function getTseslintConfigs(): InfiniteDepthConfigWithExtends[] {
       rules: {
         '@typescript-eslint/explicit-function-return-type': 'error',
         '@typescript-eslint/explicit-member-accessibility': 'error',
+        '@typescript-eslint/no-this-alias': ['error', {
+          allowedNames: [
+            'that'
+          ]
+        }],
         '@typescript-eslint/no-unused-vars': [
           'error',
           {
