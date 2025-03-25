@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.24.0
+
+- Allow this: void
+- Update libs
+
 ## 19.23.0
 
 - Skip properties that cannot be set
