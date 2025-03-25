@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 19.23.0
+
+- Skip properties that cannot be set
+
 ## 19.22.0
 
 - Update libs
