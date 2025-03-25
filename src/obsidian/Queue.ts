@@ -24,7 +24,6 @@ interface Queue {
 }
 
 interface QueueItem {
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   fn(this: void): MaybePromise<void>;
   stackTrace: string;
   timeoutInMilliseconds: number;
