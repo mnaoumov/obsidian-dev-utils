@@ -391,14 +391,38 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
 function _assignWithNonEnumerableProperties(target: object, ...sources: object[]): object {
   for (const source of sources) {
-    Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    const descriptors = Object.getOwnPropertyDescriptors(source);
+
+    for (const [key, descriptor] of Object.entries(descriptors)) {
+      try {
+        // Avoid redefining read-only properties (especially `prototype`)
+        if (
+          key === "prototype" ||
+          (Object.getOwnPropertyDescriptor(target, key)?.writable === false &&
+            !Object.getOwnPropertyDescriptor(target, key)?.configurable)
+        ) {
+          continue;
+        }
+
+        Object.defineProperty(target, key, descriptor);
+      } catch {
+        // Silently ignore if defineProperty fails
+      }
+    }
   }
 
-  const sourcePrototypes = (sources.map((source) => getPrototypeOf(source)) as (null | object)[]).filter<null | object>((proto) => !!proto) as object[];
+  const sourcePrototypes = sources
+    .map((source) => getPrototypeOf(source))
+    .filter((proto): proto is object => !!proto);
 
   if (sourcePrototypes.length > 0) {
     const targetPrototype = _assignWithNonEnumerableProperties({}, getPrototypeOf(target), ...sourcePrototypes);
-    Object.setPrototypeOf(target, targetPrototype);
+
+    try {
+      Object.setPrototypeOf(target, targetPrototype);
+    } catch {
+      // Silently ignore if setPrototypeOf fails
+    }
   }
 
   return target;
