@@ -397,9 +397,9 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
       try {
         // Avoid redefining read-only properties (especially `prototype`)
         if (
-          key === "prototype" ||
-          (Object.getOwnPropertyDescriptor(target, key)?.writable === false &&
-            !Object.getOwnPropertyDescriptor(target, key)?.configurable)
+          key === 'prototype'
+          || (Object.getOwnPropertyDescriptor(target, key)?.writable === false
+            && !Object.getOwnPropertyDescriptor(target, key)?.configurable)
         ) {
           continue;
         }
@@ -412,7 +412,7 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
   }
 
   const sourcePrototypes = sources
-    .map((source) => getPrototypeOf(source))
+    .map((source) => getPrototypeOf<object | undefined>(source))
     .filter((proto): proto is object => !!proto);
 
   if (sourcePrototypes.length > 0) {
