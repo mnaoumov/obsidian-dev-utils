@@ -321,6 +321,7 @@ export function registerFile(app: App, file: TAbstractFile): () => void {
 /**
  * Temporarily registers a file and runs a function.
  *
+ * @typeParam T - The type of the result of the function.
  * @param app - The Obsidian app instance.
  * @param file - The file to temporarily register.
  * @param fn - The function to run.
@@ -331,6 +332,25 @@ export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () 
 
   try {
     return fn();
+  } finally {
+    unregister();
+  }
+}
+
+/**
+ * Temporarily registers a file and runs an async function.
+ *
+ * @typeParam T - The type of the result of the function.
+ * @param app - The Obsidian app instance.
+ * @param file - The file to temporarily register.
+ * @param fn - The function to run.
+ * @returns The result of the function.
+ */
+export async function tempRegisterFileAndRunAsync<T>(app: App, file: TAbstractFile, fn: () => Promise<T>): Promise<T> {
+  const unregister = registerFile(app, file);
+
+  try {
+    return await fn();
   } finally {
     unregister();
   }
