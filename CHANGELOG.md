@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.1.0
+
+- tempRegisterFileAndRunAsync
+
 ## 20.0.0
 
 - Reuse type-fest
