@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 20.0.0
+
+- Reuse type-fest
+- Update libs
+- MonkeyAround wrapper
+
 ## 19.24.0
 
 - Allow this: void
