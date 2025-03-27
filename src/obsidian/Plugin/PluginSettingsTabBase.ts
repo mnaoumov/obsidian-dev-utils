@@ -5,11 +5,11 @@
  */
 
 import type { BaseComponent } from 'obsidian';
+import type { ConditionalKeys } from 'type-fest';
 
 import { PluginSettingTab } from 'obsidian';
 
 import type { MaybePromise } from '../../Async.ts';
-import type { KeysMatching } from '../../Object.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
 import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
@@ -108,7 +108,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     TValueComponent
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
-    property: KeysMatching<ExtractPluginSettings<TPlugin>, UIValue>,
+    property: ConditionalKeys<ExtractPluginSettings<TPlugin>, UIValue>,
     options?: BindOptions<ExtractPluginSettings<TPlugin>, UIValue>
   ): TValueComponent;
   /**
