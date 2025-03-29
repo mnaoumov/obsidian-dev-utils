@@ -121,7 +121,7 @@ export interface FrontmatterChange extends FileChange {
  * @param content - The content to which the changes should be applied.
  * @param path - The path to which the changes should be applied.
  * @param changesProvider - A provider that returns an array of content changes to apply.
- * @returns A promise that resolves when the content changes have been successfully applied.
+ * @returns A promise that resolves to the updated content or to `null` if update didn't succeed.
  */
 export async function applyContentChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
   let changes = await resolveValue(changesProvider);

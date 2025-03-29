@@ -534,18 +534,24 @@ export async function editLinks(
  * @param app - The Obsidian application instance.
  * @param content - The content to edit the links in.
  * @param linkConverter - The function that converts each link.
- * @returns A promise that resolves when the links are updated.
+ * @returns The promise that resolves to the updated content.
  */
 export async function editLinksInContent(
   app: App,
   content: string,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   linkConverter: (link: Reference) => MaybePromise<string | void>
-): Promise<void> {
-  await applyContentChanges(content, '', async () => {
+): Promise<string> {
+  const newContent = await applyContentChanges(content, '', async () => {
     const cache = await parseMetadata(app, content);
     return await getFileChanges(cache, false, linkConverter);
   });
+
+  if (newContent === null) {
+    throw new Error('Failed to update links in content');
+  }
+
+  return newContent;
 }
 
 /**
@@ -855,9 +861,9 @@ export function updateLink(options: UpdateLinkOptions): string {
  * Updates the links in a content string based on the provided parameters.
  *
  * @param options - The options for updating the links.
- * @returns A promise that resolves when the links are updated.
+ * @returns A promise that resolves to the content with updated links.
  */
-export async function updateLinksInContent(options: UpdateLinksInContentOptions): Promise<void> {
+export async function updateLinksInContent(options: UpdateLinksInContentOptions): Promise<string> {
   const {
     app,
     content,
@@ -868,7 +874,7 @@ export async function updateLinksInContent(options: UpdateLinksInContentOptions)
     shouldUpdateFilenameAlias
   } = options;
 
-  await editLinksInContent(app, content, (link) => {
+  return await editLinksInContent(app, content, (link) => {
     const isEmbedLink = testEmbed(link.original);
     if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
       return;
