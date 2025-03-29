@@ -116,6 +116,115 @@ export interface FrontmatterChange extends FileChange {
 }
 
 /**
+ * Applies a series of content changes to the specified content.
+ *
+ * @param content - The content to which the changes should be applied.
+ * @param path - The path to which the changes should be applied.
+ * @param changesProvider - A provider that returns an array of content changes to apply.
+ * @returns A promise that resolves when the content changes have been successfully applied.
+ */
+export async function applyContentChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
+  let changes = await resolveValue(changesProvider);
+  const frontmatter = parseFrontmatter(content);
+
+  for (const change of changes) {
+    if (isContentChange(change)) {
+      const actualContent = content.slice(change.startIndex, change.endIndex);
+      if (actualContent !== change.oldContent) {
+        console.warn('Content mismatch', {
+          actualContent,
+          endIndex: change.endIndex,
+          expectedContent: change.oldContent,
+          path,
+          startIndex: change.startIndex
+        });
+
+        return null;
+      }
+    } else if (isFrontmatterChange(change)) {
+      const actualContent = getNestedPropertyValue(frontmatter, change.frontmatterKey);
+      if (actualContent !== change.oldContent) {
+        console.warn('Content mismatch', {
+          actualContent,
+          expectedContent: change.oldContent,
+          frontmatterKey: change.frontmatterKey,
+          path
+        });
+
+        return null;
+      }
+    }
+  }
+
+  changes.sort((a, b) => {
+    if (isContentChange(a) && isContentChange(b)) {
+      return a.startIndex - b.startIndex;
+    }
+
+    if (isFrontmatterChange(a) && isFrontmatterChange(b)) {
+      return a.frontmatterKey.localeCompare(b.frontmatterKey);
+    }
+
+    return isContentChange(a) ? -1 : 1;
+  });
+
+  // BUG: https://forum.obsidian.md/t/bug-duplicated-links-in-metadatacache-inside-footnotes/85551
+  changes = changes.filter((change, index) => {
+    if (change.oldContent === change.newContent) {
+      return false;
+    }
+    if (index === 0) {
+      return true;
+    }
+    return !deepEqual(change, changes[index - 1]);
+  });
+
+  for (let i = 1; i < changes.length; i++) {
+    const change = changes[i];
+    if (!change) {
+      continue;
+    }
+    const previousChange = changes[i - 1];
+    if (!previousChange) {
+      continue;
+    }
+
+    if (
+      isContentChange(previousChange) && isContentChange(change) && previousChange.endIndex && change.startIndex
+      && previousChange.endIndex > change.startIndex
+    ) {
+      console.warn('Overlapping changes', {
+        change,
+        previousChange
+      });
+      return null;
+    }
+  }
+
+  let newContent = '';
+  let lastIndex = 0;
+  let frontmatterChanged = false;
+
+  for (const change of changes) {
+    if (isContentChange(change)) {
+      newContent += content.slice(lastIndex, change.startIndex);
+      newContent += change.newContent;
+      lastIndex = change.endIndex;
+    } else if (isFrontmatterChange(change)) {
+      setNestedPropertyValue(frontmatter, change.frontmatterKey, change.newContent);
+      frontmatterChanged = true;
+    }
+  }
+
+  newContent += content.slice(lastIndex);
+  if (frontmatterChanged) {
+    newContent = setFrontmatter(newContent, frontmatter);
+  }
+
+  return newContent;
+}
+
+/**
  * Applies a series of file changes to the specified file or path within the application.
  *
  * @param app - The application instance where the file changes will be applied.
@@ -263,107 +372,6 @@ async function applyCanvasChanges(content: string, path: string, changesProvider
   }
 
   return JSON.stringify(canvasData, null, '\t');
-}
-
-async function applyContentChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
-  let changes = await resolveValue(changesProvider);
-  const frontmatter = parseFrontmatter(content);
-
-  for (const change of changes) {
-    if (isContentChange(change)) {
-      const actualContent = content.slice(change.startIndex, change.endIndex);
-      if (actualContent !== change.oldContent) {
-        console.warn('Content mismatch', {
-          actualContent,
-          endIndex: change.endIndex,
-          expectedContent: change.oldContent,
-          path,
-          startIndex: change.startIndex
-        });
-
-        return null;
-      }
-    } else if (isFrontmatterChange(change)) {
-      const actualContent = getNestedPropertyValue(frontmatter, change.frontmatterKey);
-      if (actualContent !== change.oldContent) {
-        console.warn('Content mismatch', {
-          actualContent,
-          expectedContent: change.oldContent,
-          frontmatterKey: change.frontmatterKey,
-          path
-        });
-
-        return null;
-      }
-    }
-  }
-
-  changes.sort((a, b) => {
-    if (isContentChange(a) && isContentChange(b)) {
-      return a.startIndex - b.startIndex;
-    }
-
-    if (isFrontmatterChange(a) && isFrontmatterChange(b)) {
-      return a.frontmatterKey.localeCompare(b.frontmatterKey);
-    }
-
-    return isContentChange(a) ? -1 : 1;
-  });
-
-  // BUG: https://forum.obsidian.md/t/bug-duplicated-links-in-metadatacache-inside-footnotes/85551
-  changes = changes.filter((change, index) => {
-    if (change.oldContent === change.newContent) {
-      return false;
-    }
-    if (index === 0) {
-      return true;
-    }
-    return !deepEqual(change, changes[index - 1]);
-  });
-
-  for (let i = 1; i < changes.length; i++) {
-    const change = changes[i];
-    if (!change) {
-      continue;
-    }
-    const previousChange = changes[i - 1];
-    if (!previousChange) {
-      continue;
-    }
-
-    if (
-      isContentChange(previousChange) && isContentChange(change) && previousChange.endIndex && change.startIndex
-      && previousChange.endIndex > change.startIndex
-    ) {
-      console.warn('Overlapping changes', {
-        change,
-        previousChange
-      });
-      return null;
-    }
-  }
-
-  let newContent = '';
-  let lastIndex = 0;
-  let frontmatterChanged = false;
-
-  for (const change of changes) {
-    if (isContentChange(change)) {
-      newContent += content.slice(lastIndex, change.startIndex);
-      newContent += change.newContent;
-      lastIndex = change.endIndex;
-    } else if (isFrontmatterChange(change)) {
-      setNestedPropertyValue(frontmatter, change.frontmatterKey, change.newContent);
-      frontmatterChanged = true;
-    }
-  }
-
-  newContent += content.slice(lastIndex);
-  if (frontmatterChanged) {
-    newContent = setFrontmatter(newContent, frontmatter);
-  }
-
-  return newContent;
 }
 
 function parseJsonSafe(content: string): Record<string, unknown> {

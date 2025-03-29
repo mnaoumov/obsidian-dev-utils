@@ -48,6 +48,7 @@ import {
 } from '../String.ts';
 import { isUrl } from '../url.ts';
 import {
+  applyContentChanges,
   applyFileChanges,
   isCanvasChange,
   isContentChange
@@ -63,6 +64,7 @@ import {
   getAllLinks,
   getBacklinksForFileSafe,
   getCacheSafe,
+  parseMetadata,
   tempRegisterFileAndRun
 } from './MetadataCache.ts';
 import {
@@ -403,6 +405,46 @@ interface TablePosition {
   start: number;
 }
 
+/**
+ * The options for updating the links in a content string.
+ */
+interface UpdateLinksInContentOptions {
+  /**
+   * The Obsidian application instance.
+   */
+  app: App;
+
+  /**
+   * The content to update the links in.
+   */
+  content: string;
+
+  /**
+   * The new source path or file.
+   */
+  newSourcePathOrFile: PathOrFile;
+
+  /**
+   * The old source path or file.
+   */
+  oldSourcePathOrFile?: PathOrFile;
+
+  /**
+   * Whether to force markdown links.
+   */
+  shouldForceMarkdownLinks?: boolean;
+
+  /**
+   * Whether to update only embedded links.
+   */
+  shouldUpdateEmbedOnlyLinks?: boolean;
+
+  /**
+   * Whether to update filename alias.
+   */
+  shouldUpdateFilenameAlias?: boolean;
+}
+
 interface WikiLinkNode {
   data: {
     alias: string;
@@ -482,42 +524,28 @@ export async function editLinks(
 ): Promise<void> {
   await applyFileChanges(app, pathOrFile, async () => {
     const cache = await getCacheSafe(app, pathOrFile);
-    if (!cache) {
-      return [];
-    }
-
-    const changes: FileChange[] = [];
-
-    const tablePositions: TablePosition[] = (cache.sections ?? []).filter((section) => section.type === 'table').map((section) => ({
-      end: section.position.end.offset,
-      start: section.position.start.offset
-    }));
-
-    for (const link of getAllLinks(cache)) {
-      const newContent = await linkConverter(link);
-      if (newContent === undefined) {
-        continue;
-      }
-
-      const fileChange = referenceToFileChange(link, newContent);
-
-      if (isCanvasFile(app, pathOrFile)) {
-        if (isCanvasChange(fileChange)) {
-          changes.push(fileChange);
-        } else {
-          console.warn('Unsupported file change', fileChange);
-        }
-      } else {
-        if (shouldEscapeWikilinkDivider(fileChange, tablePositions)) {
-          fileChange.newContent = fileChange.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, ESCAPED_WIKILINK_DIVIDER);
-        }
-
-        changes.push(fileChange);
-      }
-    }
-
-    return changes;
+    return await getFileChanges(cache, isCanvasFile(app, pathOrFile), linkConverter);
   }, processOptions);
+}
+
+/**
+ * Edits the links in a content string.
+ *
+ * @param app - The Obsidian application instance.
+ * @param content - The content to edit the links in.
+ * @param linkConverter - The function that converts each link.
+ * @returns A promise that resolves when the links are updated.
+ */
+export async function editLinksInContent(
+  app: App,
+  content: string,
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  linkConverter: (link: Reference) => MaybePromise<string | void>
+): Promise<void> {
+  await applyContentChanges(content, '', async () => {
+    const cache = await parseMetadata(app, content);
+    return await getFileChanges(cache, false, linkConverter);
+  });
 }
 
 /**
@@ -824,6 +852,39 @@ export function updateLink(options: UpdateLinkOptions): string {
 }
 
 /**
+ * Updates the links in a content string based on the provided parameters.
+ *
+ * @param options - The options for updating the links.
+ * @returns A promise that resolves when the links are updated.
+ */
+export async function updateLinksInContent(options: UpdateLinksInContentOptions): Promise<void> {
+  const {
+    app,
+    content,
+    newSourcePathOrFile,
+    oldSourcePathOrFile,
+    shouldForceMarkdownLinks,
+    shouldUpdateEmbedOnlyLinks,
+    shouldUpdateFilenameAlias
+  } = options;
+
+  await editLinksInContent(app, content, (link) => {
+    const isEmbedLink = testEmbed(link.original);
+    if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
+      return;
+    }
+    return convertLink(normalizeOptionalProperties<ConvertLinkOptions>({
+      app,
+      link,
+      newSourcePathOrFile,
+      oldSourcePathOrFile,
+      shouldForceMarkdownLinks,
+      shouldUpdateFilenameAlias
+    }));
+  });
+}
+
+/**
  * Updates the links in a file based on the provided parameters.
  *
  * @param options - The options for updating the links.
@@ -962,6 +1023,48 @@ function generateWikiLink(linkText: string, alias: string | undefined, isEmbed: 
 
   const aliasPart = normalizedAlias ? `|${normalizedAlias}` : '';
   return `${embedPrefix}[[${linkText}${aliasPart}]]`;
+}
+
+async function getFileChanges(
+  cache: CachedMetadata | null,
+  isCanvasFileCache: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  linkConverter: (link: Reference) => MaybePromise<string | void>
+): Promise<FileChange[]> {
+  if (!cache) {
+    return [];
+  }
+
+  const changes: FileChange[] = [];
+
+  const tablePositions: TablePosition[] = (cache.sections ?? []).filter((section) => section.type === 'table').map((section) => ({
+    end: section.position.end.offset,
+    start: section.position.start.offset
+  }));
+
+  for (const link of getAllLinks(cache)) {
+    const newContent = await linkConverter(link);
+    if (newContent === undefined) {
+      continue;
+    }
+
+    const fileChange = referenceToFileChange(link, newContent);
+
+    if (isCanvasFileCache) {
+      if (isCanvasChange(fileChange)) {
+        changes.push(fileChange);
+      } else {
+        console.warn('Unsupported file change', fileChange);
+      }
+    } else {
+      if (shouldEscapeWikilinkDivider(fileChange, tablePositions)) {
+        fileChange.newContent = fileChange.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, ESCAPED_WIKILINK_DIVIDER);
+      }
+
+      changes.push(fileChange);
+    }
+  }
+  return changes;
 }
 
 function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile): LinkConfig {
