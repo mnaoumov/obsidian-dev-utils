@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 20.2.1
+
+- Return updated content
+
 ## 20.2.0
 
 - Extract `editLinksInContent`
