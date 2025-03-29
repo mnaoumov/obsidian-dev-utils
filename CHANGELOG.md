@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 20.2.0
+
+- Extract `editLinksInContent`
+- Update libs
+
 ## 20.1.0
 
 - tempRegisterFileAndRunAsync
