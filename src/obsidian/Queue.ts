@@ -61,16 +61,6 @@ export async function addToQueueAndWait(app: App, fn: () => MaybePromise<void>, 
 }
 
 /**
- * Clears all pending tasks from the queue, but preserves the currently running task.
- *
- * @param app - The Obsidian application instance.
- */
-export function clearPendingQueueItems(app: App): void {
-  const queue = getQueue(app).value;
-  queue.items.splice(1);
-}
-
-/**
  * Flushes the queue;
  *
  * @param app - The Obsidian application instance.
