@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 20.3.0
+
+- Remove unreliable `clearPendingQueueItems`
+- Update libs
+
 ## 20.2.1
 
 - Return updated content
