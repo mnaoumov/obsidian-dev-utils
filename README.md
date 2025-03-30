@@ -236,7 +236,11 @@ await obsidianDevUtils.obsidian.Modal.Prompt.prompt({
 
 The library provides some extensible styles that you can use to style your plugin UI controls.
 
-In order to use those styles in your plugin, you have to initialize the plugin context:
+In order to use those styles in your plugin, the plugin context has to be initialized.
+
+If your plugin class extends `PluginBase` (it should if your project was generated using [generator-obsidian-plugin](https://github.com/mnaoumov/generator-obsidian-plugin)), this is handled automatically.
+
+Otherwise, you need to initialize it manually:
 
 ```ts
 import {
@@ -325,7 +329,7 @@ See full documentation of [`window.DEBUG`](https://github.com/mnaoumov/obsidian-
 >
 > Do not add `window.DEBUG` calls in your plugin code. This is designed to be run only from the console.
 
-In order to write your debug messages from your plugin use:
+In order to write your debug messages from your plugin, use:
 
 ```js
 plugin.consoleDebug('foo', 'bar', 'baz');
