@@ -70,7 +70,7 @@ export interface BuildObsidianPluginOptions {
   customEsbuildPlugins?: Plugin[];
 
   /**
-   * Drop certain labels during the build process. Useful for removing expensive debug code.
+   * Drop certain labels during the build process. Can be used to remove expensive debug code.
    */
   dropLabels?: string[];
 
