@@ -276,6 +276,31 @@ export async function sleep(milliseconds: number): Promise<void> {
 }
 
 /**
+ * Returns a Promise that rejects when the abort signal is aborted.
+ *
+ * @param abortSignal - The abort signal to listen to.
+ * @returns A Promise that rejects when the abort signal is aborted.
+ */
+export function throwOnAbort(abortSignal: AbortSignal): Promise<void> {
+  return new Promise((_resolve, reject) => {
+    if (handleAbort()) {
+      return;
+    }
+    abortSignal.addEventListener('abort', handleAbort, { once: true });
+
+    function handleAbort(): boolean {
+      try {
+        abortSignal.throwIfAborted();
+        return false;
+      } catch (e) {
+        reject(e as Error);
+        return true;
+      }
+    }
+  });
+}
+
+/**
  * Returns a Promise that rejects after the specified timeout period.
  *
  * @param timeoutInMilliseconds - The timeout period in milliseconds.
