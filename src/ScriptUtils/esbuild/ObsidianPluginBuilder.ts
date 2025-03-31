@@ -70,6 +70,11 @@ export interface BuildObsidianPluginOptions {
   customEsbuildPlugins?: Plugin[];
 
   /**
+   * Drop certain labels during the build process. Useful for removing expensive debug code.
+   */
+  dropLabels?: string[];
+
+  /**
    * The build mode, either Development or Production
    */
   mode: BuildMode;
@@ -97,6 +102,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
 
   const {
     customEsbuildPlugins = [],
+    dropLabels = [],
     mode,
     obsidianConfigDir: _obsidianConfigDir
   } = options;
@@ -145,6 +151,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     },
     bundle: true,
     conditions: ['browser'],
+    dropLabels,
     entryPoints: [
       resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs))
         ?? throwExpression(new Error('Could not determine the entry point for the plugin'))
