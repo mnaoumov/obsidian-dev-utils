@@ -33,6 +33,7 @@ import {
 import { readPackageJson } from '../Npm.ts';
 import { resolvePathFromRoot } from '../Root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
+import { customEsbuildOptionsPlugin } from './customEsbuildOptionsPlugin.ts';
 import { fixEsmPlugin } from './fixEsmPlugin.ts';
 import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
 import { preprocessPlugin } from './preprocessPlugin.ts';
@@ -65,6 +66,11 @@ if you want to view the source, please visit the github repository of this plugi
  */
 export interface BuildObsidianPluginOptions {
   /**
+   * Custom esbuild options to be used during the build process.
+   */
+  customEsbuildOptions?: BuildOptions;
+
+  /**
    * Custom esbuild plugins to be used during the build process.
    */
   customEsbuildPlugins?: Plugin[];
@@ -95,14 +101,8 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
   config();
   const obsidianPluginBuilderEnv = process.env as Partial<ObsidianPluginBuilderEnv>;
 
-  const {
-    customEsbuildPlugins = [],
-    mode,
-    obsidianConfigDir: _obsidianConfigDir
-  } = options;
-
-  const obsidianConfigDir = _obsidianConfigDir ?? obsidianPluginBuilderEnv.OBSIDIAN_CONFIG_DIR ?? '';
-  const isProductionBuild = mode === BuildMode.Production;
+  const obsidianConfigDir = options.obsidianConfigDir ?? obsidianPluginBuilderEnv.OBSIDIAN_CONFIG_DIR ?? '';
+  const isProductionBuild = options.mode === BuildMode.Production;
 
   const distDir = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);
   if (!distDir) {
@@ -173,6 +173,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     outfile: distPath,
     platform: 'node',
     plugins: [
+      customEsbuildOptionsPlugin(options.customEsbuildOptions),
       svelteWrapperPlugin(isProductionBuild),
       sassPlugin({
         sourceMap: !isProductionBuild
@@ -181,7 +182,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       preprocessPlugin(),
       fixEsmPlugin(),
       fixSourceMapsPlugin(isProductionBuild, [distPath, cssPath], pluginName),
-      ...customEsbuildPlugins,
+      ...options.customEsbuildPlugins ?? [],
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
     ],
     sourcemap: isProductionBuild ? false : 'inline',
