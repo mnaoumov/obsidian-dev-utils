@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 21.0.0
+
+- Allow customEsbuildOptions
+- ignoreError
+- Refactor to Promisable
+- throwOnAbort
+- Update libs
+
 ## 20.3.0
 
 - Remove unreliable `clearPendingQueueItems`
