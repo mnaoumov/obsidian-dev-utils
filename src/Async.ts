@@ -137,6 +137,31 @@ export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: (...a
 }
 
 /**
+ * Ignores an error that is thrown by an asynchronous function.
+ *
+ * @param asyncFn - The asynchronous function to ignore the error of.
+ * @param fallbackValue - Always `undefined`.
+ * @returns A Promise that resolves when the asynchronous function completes or fails.
+ */
+export async function ignoreError(asyncFn: () => Promise<unknown>, fallbackValue?: undefined): Promise<void>;
+
+/**
+ * Invokes an asynchronous function and returns a fallback value if an error is thrown.
+ *
+ * @typeParam T - The type of the value returned by the asynchronous function.
+ * @param asyncFn - The asynchronous function to invoke.
+ * @param fallbackValue - The value to return if an error is thrown.
+ * @returns A Promise that resolves with the value returned by the asynchronous function or the fallback value if an error is thrown.
+ */
+export async function ignoreError<T>(asyncFn: () => Promise<T>, fallbackValue: T): Promise<T> {
+  try {
+    return await asyncFn();
+  } catch {
+    return fallbackValue;
+  }
+}
+
+/**
  * Invokes a Promise and safely handles any errors by catching them and emitting an async error event.
  *
  * @param asyncFn - The asynchronous function to invoke safely.
