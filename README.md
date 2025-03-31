@@ -148,6 +148,10 @@ Runs build checks before updating the version and releases if all checks pass. T
 
 If you use `beta` as `<versionUpdateType>` for your Obsidian plugin, the plugin will be deployed compatible to install with [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
 
+Additionally, the script fetches the latest stable Obsidian version, which is used to update the `minAppVersion` in `manifest.json` and to add a new entry to `versions.json`.
+
+For the script to be able to publish releases in your repository, you need to enable the `Read and write permissions` setting in `Settings` -> `Actions` -> `General`.
+
 #### Simplified Usage
 
 To simplify the usage of these commands, you can add them to your `package.json`:
@@ -234,7 +238,11 @@ await obsidianDevUtils.obsidian.Modal.Prompt.prompt({
 
 The library provides some extensible styles that you can use to style your plugin UI controls.
 
-In order to use those styles in your plugin, you have to initialize the plugin context:
+In order to use those styles in your plugin, the plugin context has to be initialized.
+
+If your plugin class extends `PluginBase` (it should if your project was generated using [generator-obsidian-plugin](https://github.com/mnaoumov/generator-obsidian-plugin)), this is handled automatically.
+
+Otherwise, you need to initialize it manually:
 
 ```ts
 import {
@@ -323,7 +331,7 @@ See full documentation of [`window.DEBUG`](https://github.com/mnaoumov/obsidian-
 >
 > Do not add `window.DEBUG` calls in your plugin code. This is designed to be run only from the console.
 
-In order to write your debug messages from your plugin use:
+In order to write your debug messages from your plugin, use:
 
 ```js
 plugin.consoleDebug('foo', 'bar', 'baz');
