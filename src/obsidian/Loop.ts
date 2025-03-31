@@ -3,7 +3,7 @@
  * Contains utility functions for looping in Obsidian.
  */
 
-import type { MaybePromise } from '../Async.ts';
+import type { Promisable } from 'type-fest';
 
 import { getLibDebugger } from '../Debug.ts';
 import {
@@ -30,7 +30,7 @@ export interface LoopOptions<T> {
   /**
    * The function to process each item.
    */
-  processItem(item: T): MaybePromise<void>;
+  processItem(item: T): Promisable<void>;
   /**
    * Whether to continue the loop on error.
    */

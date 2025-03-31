@@ -3,11 +3,10 @@
  * Contains utility functions for logging in Obsidian.
  */
 
-import type { MaybePromise } from '../Async.ts';
+import type { Promisable } from 'type-fest';
 
 import { getLibDebugger } from '../Debug.ts';
 import { getStackTrace } from '../Error.ts';
-
 /**
  * Invokes a function and logs the start, end, and duration of the invocation.
  *
@@ -15,7 +14,7 @@ import { getStackTrace } from '../Error.ts';
  * @param fn - The function to invoke.
  * @param stackTrace - Optional stack trace.
  */
-export async function invokeAsyncAndLog(title: string, fn: () => MaybePromise<void>, stackTrace?: string): Promise<void> {
+export async function invokeAsyncAndLog(title: string, fn: () => Promisable<void>, stackTrace?: string): Promise<void> {
   const _debugger = getLibDebugger('Logger:invokeAsyncAndLog');
   const timestampStart = performance.now();
   stackTrace ??= getStackTrace(1);

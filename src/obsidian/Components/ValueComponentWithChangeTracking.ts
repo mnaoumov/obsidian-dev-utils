@@ -4,8 +4,7 @@
  */
 
 import type { ValueComponent } from 'obsidian';
-
-import type { MaybePromise } from '../../Async.ts';
+import type { Promisable } from 'type-fest';
 
 /**
  * A ValueComponent that can track changes.
@@ -16,5 +15,5 @@ export interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
    *
    * @param callback - A callback function that is called when the value of the component changes.
    */
-  onChange(callback: (newValue: T) => MaybePromise<void>): this;
+  onChange(callback: (newValue: T) => Promisable<void>): this;
 }

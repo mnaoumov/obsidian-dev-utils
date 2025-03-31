@@ -4,8 +4,8 @@
  */
 
 import type { App } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
-import type { MaybePromise } from '../Async.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 import type { ProcessOptions } from './Vault.ts';
@@ -86,7 +86,7 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(
   app: App,
   pathOrFile: PathOrFile,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => MaybePromise<null | void>,
+  frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => Promisable<null | void>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
   const file = getFile(app, pathOrFile);

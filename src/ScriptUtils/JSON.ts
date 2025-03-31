@@ -3,7 +3,7 @@
  * Contains utility functions for JSON.
  */
 
-import type { MaybePromise } from '../Async.ts';
+import type { Promisable } from 'type-fest';
 
 import { toJson } from '../Object.ts';
 import {
@@ -36,7 +36,7 @@ export interface EditJsonOptions {
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export async function editJson<T>(
   path: string,
-  editFn: (data: T) => MaybePromise<void>,
+  editFn: (data: T) => Promisable<void>,
   options: EditJsonOptions = {}
 ): Promise<void> {
   const {

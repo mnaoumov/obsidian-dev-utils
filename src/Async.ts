@@ -3,6 +3,8 @@
  * Contains utility functions for asynchronous operations.
  */
 
+import type { Promisable } from 'type-fest';
+
 import { getLibDebugger } from './Debug.ts';
 import {
   ASYNC_ERROR_WRAPPER_MESSAGE,
@@ -10,12 +12,6 @@ import {
   getStackTrace,
   printError
 } from './Error.ts';
-
-/**
- * A type representing a value that can either be a direct value or a Promise resolving to that value.
- * @typeParam T - The type of the value.
- */
-export type MaybePromise<T> = Promise<T> | T;
 
 /**
  * A type representing a function that resolves a Promise.
@@ -84,7 +80,7 @@ export async function addErrorHandler(asyncFn: () => Promise<unknown>): Promise<
  * @param predicate - The predicate function to test each element.
  * @returns A Promise that resolves with an array of elements that satisfy the predicate function.
  */
-export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: number, array: T[]) => MaybePromise<boolean>): Promise<T[]> {
+export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: number, array: T[]) => Promisable<boolean>): Promise<T[]> {
   const predicateResults = await asyncMap(arr, predicate);
   return arr.filter((_, index) => predicateResults[index] ?? false);
 }
@@ -98,7 +94,7 @@ export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: numb
  * @param callback - The callback function to apply to each element.
  * @returns A Promise that resolves with a flattened array of the results of the callback function.
  */
-export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => MaybePromise<U[]>): Promise<U[]> {
+export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => Promisable<U[]>): Promise<U[]> {
   return (await asyncMap(arr, callback)).flat();
 }
 
@@ -111,7 +107,7 @@ export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: n
  * @param callback - The callback function to apply to each element.
  * @returns A Promise that resolves with an array of the results of the callback function.
  */
-export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => MaybePromise<U>): Promise<U[]> {
+export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => Promisable<U>): Promise<U[]> {
   return await Promise.all(arr.map(callback));
 }
 
@@ -168,7 +164,7 @@ export function marksAsTerminateRetry<TError extends Error>(error: TError): Term
  * @param stackTrace - Optional stack trace.
  * @returns A Promise that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOptions?: RetryOptions, stackTrace?: string): Promise<void> {
+export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptions?: RetryOptions, stackTrace?: string): Promise<void> {
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
   stackTrace ??= getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
@@ -224,7 +220,7 @@ export async function retryWithTimeout(fn: () => MaybePromise<boolean>, retryOpt
  * @param fn - The function to execute.
  * @returns A Promise that resolves with the result of the asynchronous function or rejects if it times out.
  */
-export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => MaybePromise<R>): Promise<R> {
+export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => Promisable<R>): Promise<R> {
   let isTimedOut = true;
   let result: R = null as R;
   const startTime = performance.now();

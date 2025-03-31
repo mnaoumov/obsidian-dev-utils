@@ -3,7 +3,8 @@
  * This module provides utility functions for working with Dataview in Obsidian.
  */
 
-import type { MaybePromise } from '../Async.ts';
+import type { Promisable } from 'type-fest';
+
 import type { DataviewInlineApi as DataviewInlineApiOriginal } from './@types/Dataview/api/inline-api.d.ts';
 import type {
   DataArray,
@@ -211,7 +212,7 @@ export interface RenderPaginatedOptions<T> {
    * @param rowsForOnePage - The rows to render.
    * @returns A promise that resolves when the content is rendered.
    */
-  renderer: (rowsForOnePage: ArrayOrDataArray<T>) => MaybePromise<void>;
+  renderer: (rowsForOnePage: ArrayOrDataArray<T>) => Promisable<void>;
 
   /**
    * The rows to paginate.
@@ -253,7 +254,7 @@ export interface RenderPaginatedTableOptions<T> {
  * @returns A promise that resolves to the HTML paragraph element
  * that was used as the temporary container.
  */
-export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () => MaybePromise<void>): Promise<HTMLParagraphElement> {
+export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () => Promisable<void>): Promise<HTMLParagraphElement> {
   const tempContainer = dv.paragraph('');
   dv.container = tempContainer;
   dv.container.empty();

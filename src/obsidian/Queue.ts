@@ -4,8 +4,8 @@
  */
 
 import type { App } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
-import type { MaybePromise } from '../Async.ts';
 import type { ValueWrapper } from './App.ts';
 
 import {
@@ -24,7 +24,7 @@ interface Queue {
 }
 
 interface QueueItem {
-  fn(this: void): MaybePromise<void>;
+  fn(this: void): Promisable<void>;
   stackTrace: string;
   timeoutInMilliseconds: number;
 }
@@ -37,7 +37,7 @@ interface QueueItem {
  * @param timeoutInMilliseconds - The timeout in milliseconds.
  * @param stackTrace - Optional stack trace.
  */
-export function addToQueue(app: App, fn: () => MaybePromise<void>, timeoutInMilliseconds?: number, stackTrace?: string): void {
+export function addToQueue(app: App, fn: () => Promisable<void>, timeoutInMilliseconds?: number, stackTrace?: string): void {
   stackTrace ??= getStackTrace(1);
   invokeAsyncSafely(() => addToQueueAndWait(app, fn, timeoutInMilliseconds, stackTrace));
 }
@@ -50,7 +50,7 @@ export function addToQueue(app: App, fn: () => MaybePromise<void>, timeoutInMill
  * @param timeoutInMilliseconds - The timeout in milliseconds.
  * @param stackTrace - Optional stack trace.
  */
-export async function addToQueueAndWait(app: App, fn: () => MaybePromise<void>, timeoutInMilliseconds?: number, stackTrace?: string): Promise<void> {
+export async function addToQueueAndWait(app: App, fn: () => Promisable<void>, timeoutInMilliseconds?: number, stackTrace?: string): Promise<void> {
   const DEFAULT_TIMEOUT_IN_MILLISECONDS = 60000;
   timeoutInMilliseconds ??= DEFAULT_TIMEOUT_IN_MILLISECONDS;
   stackTrace ??= getStackTrace(1);

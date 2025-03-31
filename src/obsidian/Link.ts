@@ -15,6 +15,7 @@ import type {
   Reference,
   TFile
 } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
 import {
   normalizePath,
@@ -25,7 +26,6 @@ import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
 
-import type { MaybePromise } from '../Async.ts';
 import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { ProcessOptions } from './Vault.ts';
@@ -488,7 +488,7 @@ export async function editBacklinks(
   app: App,
   pathOrFile: PathOrFile,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: Reference) => MaybePromise<string | void>,
+  linkConverter: (link: Reference) => Promisable<string | void>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
   const backlinks = await getBacklinksForFileSafe(app, pathOrFile, processOptions);
@@ -519,7 +519,7 @@ export async function editLinks(
   app: App,
   pathOrFile: PathOrFile,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: Reference) => MaybePromise<string | void>,
+  linkConverter: (link: Reference) => Promisable<string | void>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
   await applyFileChanges(app, pathOrFile, async () => {
@@ -540,7 +540,7 @@ export async function editLinksInContent(
   app: App,
   content: string,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: Reference) => MaybePromise<string | void>
+  linkConverter: (link: Reference) => Promisable<string | void>
 ): Promise<string> {
   const newContent = await applyContentChanges(content, '', async () => {
     const cache = await parseMetadata(app, content);
@@ -1035,7 +1035,7 @@ async function getFileChanges(
   cache: CachedMetadata | null,
   isCanvasFileCache: boolean,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: Reference) => MaybePromise<string | void>
+  linkConverter: (link: Reference) => Promisable<string | void>
 ): Promise<FileChange[]> {
   if (!cache) {
     return [];
