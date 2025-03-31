@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 21.0.1
+
+- ignoreError
+
 ## 21.0.0
 
 - Allow customEsbuildOptions
