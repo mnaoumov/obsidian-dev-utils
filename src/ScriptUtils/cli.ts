@@ -6,10 +6,10 @@
  * synchronous and asynchronous tasks.
  */
 
+import type { Promisable } from 'type-fest';
+
 import { Command } from 'commander';
 import { tsImport } from 'tsx/esm/api';
-
-import type { MaybePromise } from '../Async.ts';
 
 import { invokeAsyncSafely } from '../Async.ts';
 import {
@@ -131,7 +131,7 @@ function addCommand<Args extends unknown[]>(
   name: string,
   description: string,
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  taskFn: (...args: Args) => MaybePromise<CliTaskResult | void>
+  taskFn: (...args: Args) => Promisable<CliTaskResult | void>
 ): Command {
   return program.command(name)
     .description(description)

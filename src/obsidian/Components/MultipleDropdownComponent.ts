@@ -3,12 +3,13 @@
  * Contains a component that displays and edits a multi-select dropdown.
  */
 
+import type { Promisable } from 'type-fest';
+
 import {
   DropdownComponent,
   ValueComponent
 } from 'obsidian';
 
-import type { MaybePromise } from '../../Async.ts';
 import type { ValidatorElement } from '../../HTMLElement.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { initPluginContext } from '../Plugin/PluginContext.ts';
@@ -89,7 +90,7 @@ export class MultipleDropdownComponent extends ValueComponent<string[]> implemen
    * @param callback - The callback function to be called when the component is changed.
    * @returns The component.
    */
-  public onChange(callback: (value: string[]) => MaybePromise<void>): this {
+  public onChange(callback: (value: string[]) => Promisable<void>): this {
     this.dropdownComponent.onChange(() => callback(this.getValue()));
     return this;
   }

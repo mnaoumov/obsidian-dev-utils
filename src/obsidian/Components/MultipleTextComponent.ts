@@ -3,12 +3,13 @@
  * Contains a component that displays and edits multiple text values.
  */
 
+import type { Promisable } from 'type-fest';
+
 import {
   TextAreaComponent,
   ValueComponent
 } from 'obsidian';
 
-import type { MaybePromise } from '../../Async.ts';
 import type { ValidatorElement } from '../../HTMLElement.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { initPluginContext } from '../Plugin/PluginContext.ts';
@@ -67,7 +68,7 @@ export class MultipleTextComponent extends ValueComponent<string[]> implements V
    * @param callback - The callback to call when the value changes.
    * @returns The component.
    */
-  public onChange(callback: (newValue: string[]) => MaybePromise<void>): this {
+  public onChange(callback: (newValue: string[]) => Promisable<void>): this {
     this.textAreaComponent.onChange(() => callback(this.getValue()));
     return this;
   }

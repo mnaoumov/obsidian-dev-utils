@@ -8,14 +8,16 @@
  */
 
 import type { PluginSettingTab } from 'obsidian';
-import type { ReadonlyDeep } from 'type-fest';
+import type {
+  Promisable,
+  ReadonlyDeep
+} from 'type-fest';
 
 import {
   Notice,
   Plugin
 } from 'obsidian';
 
-import type { MaybePromise } from '../../Async.ts';
 import type { EmptySettings } from './EmptySettings.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
@@ -149,7 +151,7 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    *
    * @returns A promise or void indicating the completion of the layout setup.
    */
-  protected onLayoutReady(): MaybePromise<void> {
+  protected onLayoutReady(): Promisable<void> {
     noop();
   }
 
@@ -159,7 +161,7 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    *
    * @returns A promise or void indicating the completion of the load process.
    */
-  protected onloadComplete(): MaybePromise<void> {
+  protected onloadComplete(): Promisable<void> {
     noop();
   }
 

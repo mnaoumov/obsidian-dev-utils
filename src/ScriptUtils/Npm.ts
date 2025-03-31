@@ -3,9 +3,11 @@
  * Contains utility functions for NPM package.json.
  */
 
-import type { PackageJson } from 'type-fest';
+import type {
+  PackageJson,
+  Promisable
+} from 'type-fest';
 
-import type { MaybePromise } from '../Async.ts';
 import type { EditJsonOptions } from './JSON.ts';
 
 import { throwExpression } from '../Error.ts';
@@ -59,7 +61,7 @@ export interface PackageLockJson extends Partial<PackageJson> {
  * @returns A promise that resolves when the file has been edited and written.
  */
 export async function editNpmShrinkWrapJson(
-  editFn: (packageLockJson: PackageLockJson) => MaybePromise<void>,
+  editFn: (packageLockJson: PackageLockJson) => Promisable<void>,
   options: EditPackageJsonOptions = {}
 ): Promise<void> {
   const {
@@ -77,7 +79,7 @@ export async function editNpmShrinkWrapJson(
  * @returns A promise that resolves when the file has been edited and written.
  */
 export async function editPackageJson(
-  editFn: (packageJson: PackageJson) => MaybePromise<void>,
+  editFn: (packageJson: PackageJson) => Promisable<void>,
   options: EditPackageJsonOptions = {}
 ): Promise<void> {
   const {
@@ -113,7 +115,7 @@ export function editPackageJsonSync(
  * @returns A promise that resolves when the file has been edited and written.
  */
 export async function editPackageLockJson(
-  editFn: (packageLockJson: PackageLockJson) => MaybePromise<void>,
+  editFn: (packageLockJson: PackageLockJson) => Promisable<void>,
   options: EditPackageJsonOptions = {}
 ): Promise<void> {
   const {

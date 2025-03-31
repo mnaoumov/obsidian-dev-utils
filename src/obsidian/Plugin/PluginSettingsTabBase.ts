@@ -5,11 +5,13 @@
  */
 
 import type { BaseComponent } from 'obsidian';
-import type { ConditionalKeys } from 'type-fest';
+import type {
+  ConditionalKeys,
+  Promisable
+} from 'type-fest';
 
 import { PluginSettingTab } from 'obsidian';
 
-import type { MaybePromise } from '../../Async.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
 import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsBase } from './PluginSettingsBase.ts';
@@ -30,7 +32,7 @@ export interface BindOptions<PluginSettings, UIValue> {
   /**
    * A callback function that is called when the value of the component changes.
    */
-  onChanged?: () => MaybePromise<void>;
+  onChanged?: () => Promisable<void>;
 
   /**
    * The plugin settings object to bind the component to. Default is the plugin's current settings.
@@ -53,7 +55,7 @@ export interface BindOptions<PluginSettings, UIValue> {
    * @returns An error message if the value is invalid, or `(empty string)` or `void` if it is valid.
    */
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  valueValidator?: (uiValue: UIValue) => MaybePromise<string | void>;
+  valueValidator?: (uiValue: UIValue) => Promisable<string | void>;
 }
 
 /**
