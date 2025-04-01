@@ -150,7 +150,7 @@ If you use `beta` as `<versionUpdateType>` for your Obsidian plugin, the plugin 
 
 Additionally, the script fetches the latest stable Obsidian version, which is used to update the `minAppVersion` in `manifest.json` and to add a new entry to `versions.json`.
 
-For the script to be able to publish releases in your repository, you need to enable the `Read and write permissions` setting in `Settings` -> `Actions` -> `General`.
+For the script to be able to publish releases in your repository, you need to ensure your `GitHub` token has `Read and write permissions` in `Settings > Actions > General`.
 
 #### Simplified Usage
 
