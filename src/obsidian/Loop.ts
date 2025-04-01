@@ -28,13 +28,25 @@ export interface LoopOptions<T> {
    */
   items: T[];
   /**
+   * The minimum timeout for the notice.
+   */
+  noticeMinTimeoutInMs?: number;
+  /**
    * The function to process each item.
    */
   processItem(item: T): Promisable<void>;
   /**
+   * The title of the progress bar.
+   */
+  progressBarTitle?: string;
+  /**
    * Whether to continue the loop on error.
    */
   shouldContinueOnError?: boolean;
+  /**
+   * Whether to show a progress bar.
+   */
+  shouldShowProgressBar?: boolean;
 }
 
 /**
@@ -46,6 +58,18 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   const items = options.items;
   let iterationCount = 0;
   const notice = new Notice('', 0);
+  const DEFAULT_NOTICE_MIN_TIMEOUT_IN_MS = 2000;
+  const noticeMinTimeoutPromise = sleep(options.noticeMinTimeoutInMs ?? DEFAULT_NOTICE_MIN_TIMEOUT_IN_MS);
+  const progressBarEl = createEl('progress');
+  progressBarEl.max = items.length;
+  if (options.shouldShowProgressBar) {
+    const fragment = createFragment();
+    if (options.progressBarTitle) {
+      fragment.appendText(options.progressBarTitle);
+    }
+    fragment.appendChild(progressBarEl);
+    notice.setMessage(fragment);
+  }
   for (const item of items) {
     if (options.abortSignal?.aborted) {
       notice.hide();
@@ -54,7 +78,9 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     iterationCount++;
     const iterationStr = `# ${iterationCount.toString()} / ${items.length.toString()}`;
     const message = options.buildNoticeMessage(item, iterationStr);
-    notice.setMessage(message);
+    if (!options.shouldShowProgressBar) {
+      notice.setMessage(message);
+    }
     getLibDebugger('Loop')(message);
 
     const asyncErrorWrapper = new Error(ASYNC_ERROR_WRAPPER_MESSAGE);
@@ -68,6 +94,8 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
       asyncErrorWrapper.cause = error;
       emitAsyncErrorEvent(asyncErrorWrapper);
     }
+    progressBarEl.value++;
   }
+  await noticeMinTimeoutPromise;
   notice.hide();
 }
