@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 22.0.0
+
+- Update libs
+- customizeEsbuildOptions
+
 ## 21.1.0
 
 - Update libs
