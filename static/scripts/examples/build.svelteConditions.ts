@@ -11,8 +11,8 @@ export async function invoke(): Promise<CliTaskResult> {
 export async function buildWithSvelteConditions(): Promise<CliTaskResult> {
   return await buildObsidianPlugin({
     mode: BuildMode.Production,
-    customEsbuildOptions: {
-      conditions: ['svelte']
+    customizeEsbuildOptions: (buildOptions) => {
+      buildOptions.conditions = [...(buildOptions.conditions ?? []), 'svelte'];
     }
   });
 }
