@@ -4,8 +4,8 @@ import type {
 } from 'esbuild';
 import type { CliTaskResult } from 'obsidian-dev-utils/ScriptUtils/CliUtils';
 import {
-  buildObsidianPlugin,
-  BuildMode
+  BuildMode,
+  buildObsidianPlugin
 } from 'obsidian-dev-utils/ScriptUtils/esbuild/ObsidianPluginBuilder';
 import { readFile } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
 
