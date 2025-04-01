@@ -18,7 +18,7 @@ import type { InfiniteDepthConfigWithExtends } from 'typescript-eslint';
 import eslint from '@eslint/js';
 // eslint-disable-next-line import-x/no-rename-default
 import stylistic from '@stylistic/eslint-plugin';
-import eslintPluginImportX from 'eslint-plugin-import-x';
+import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-import-x';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 import perfectionist from 'eslint-plugin-perfectionist';
 // eslint-disable-next-line import-x/no-rename-default
@@ -218,10 +218,10 @@ function getEslintImportResolverTypescriptConfigs(): InfiniteDepthConfigWithExte
 
 function getImportXConfigs(): InfiniteDepthConfigWithExtends[] {
   return [
-    eslintPluginImportX.flatConfigs.recommended,
-    eslintPluginImportX.flatConfigs.typescript,
-    eslintPluginImportX.flatConfigs.errors,
-    eslintPluginImportX.flatConfigs.warnings,
+    eslintPluginImportXFlatConfigs.recommended,
+    eslintPluginImportXFlatConfigs.typescript,
+    eslintPluginImportXFlatConfigs.errors,
+    eslintPluginImportXFlatConfigs.warnings,
     {
       rules: {
         'import-x/consistent-type-specifier-style': 'error',
