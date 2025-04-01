@@ -435,7 +435,7 @@
     "@types/node": "^22.13.17",
     "@types/parsimmon": "^1.10.9",
     "@types/path-browserify": "^1.0.3",
-    "@types/picomatch": "^3.0.2",
+    "@types/picomatch": "^4.0.0",
     "@types/pug": "^2.0.10",
     "@types/react": "^19.0.12",
     "@types/shell-quote": "^1.7.5",
