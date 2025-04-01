@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 21.1.0
+
+- Update libs
+- Add progress bar
+- Add script examples
+
 ## 21.0.1
 
 - ignoreError
