@@ -66,14 +66,14 @@ if you want to view the source, please visit the github repository of this plugi
  */
 export interface BuildObsidianPluginOptions {
   /**
-   * Custom esbuild options to be used during the build process.
-   */
-  customEsbuildOptions?: BuildOptions;
-
-  /**
    * Custom esbuild plugins to be used during the build process.
    */
   customEsbuildPlugins?: Plugin[];
+
+  /**
+   * Customizes the esbuild options.
+   */
+  customizeEsbuildOptions?(options: BuildOptions): void;
 
   /**
    * The build mode, either Development or Production
@@ -173,7 +173,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     outfile: distPath,
     platform: 'node',
     plugins: [
-      customEsbuildOptionsPlugin(options.customEsbuildOptions),
+      customEsbuildOptionsPlugin(options.customizeEsbuildOptions?.bind(options)),
       svelteWrapperPlugin(isProductionBuild),
       sassPlugin({
         sourceMap: !isProductionBuild
