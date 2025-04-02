@@ -87,6 +87,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     try {
       await options.processItem(item);
     } catch (error) {
+      console.error('Error processing item', item);
       if (!options.shouldContinueOnError) {
         notice.hide();
         throw error;
