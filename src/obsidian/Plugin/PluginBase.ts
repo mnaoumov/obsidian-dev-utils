@@ -32,6 +32,10 @@ import { initPluginContext } from './PluginContext.ts';
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
 export abstract class PluginBase<PluginSettings extends PluginSettingsBase = EmptySettings> extends Plugin {
+  private _abortSignal!: AbortSignal;
+  private _settings!: PluginSettings;
+  private notice?: Notice;
+
   /**
    * Gets the AbortSignal used for aborting long-running operations.
    *
@@ -58,12 +62,6 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   public get settingsClone(): PluginSettings {
     return this.createPluginSettings(this.settings.toJSON());
   }
-
-  private _abortSignal!: AbortSignal;
-
-  private _settings!: PluginSettings;
-
-  private notice?: Notice;
 
   /**
    * Logs a message to the console.
