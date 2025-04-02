@@ -202,7 +202,8 @@ export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptio
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   await runWithTimeout(fullOptions.timeoutInMilliseconds, async () => {
     let attempt = 0;
-    for (;;) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    while (true) {
       fullOptions.abortSignal?.throwIfAborted();
       attempt++;
       let isSuccess: boolean;
