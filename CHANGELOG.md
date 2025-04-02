@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 22.1.0
+
+- Output which item caused error
+
 ## 22.0.0
 
 - Update libs
