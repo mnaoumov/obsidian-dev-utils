@@ -66,7 +66,7 @@ export interface PromptOptions {
    * @returns an error message if the value is invalid, or null if the value is valid.
    */
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  valueValidator?: (value: string) => Promisable<string | void>;
+  valueValidator?(value: string): Promisable<string | void>;
 }
 
 class PromptModal extends ModalBase<null | string, PromptOptions> {

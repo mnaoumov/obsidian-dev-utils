@@ -24,7 +24,7 @@ export interface StateFieldSpec<Value> {
    * @param b - The second value to compare.
    * @returns `true` if the values are the same, `false` otherwise.
    */
-  compare?: (a: Value, b: Value) => boolean;
+  compare?(a: Value, b: Value): boolean;
 
   /**
    * Creates the initial value for the field when a state is created.
@@ -42,7 +42,7 @@ export interface StateFieldSpec<Value> {
    * @param state - The state to deserialize the value for.
    * @returns The deserialized value.
    */
-  fromJSON?: (json: unknown, state: EditorState) => Value;
+  fromJSON?(json: unknown, state: EditorState): Value;
 
   /**
    * Provide extensions based on this field. The given function will
@@ -55,7 +55,7 @@ export interface StateFieldSpec<Value> {
    * @param field - The initialized field.
    * @returns The extensions to enable when the field is present in a configuration.
    */
-  provide?: (field: StateField<Value>) => Extension;
+  provide?(field: StateField<Value>): Extension;
 
   /**
    * A function used to serialize this field's content to JSON. Only
@@ -66,7 +66,7 @@ export interface StateFieldSpec<Value> {
    * @param state - The state to serialize the value for.
    * @returns The serialized value.
    */
-  toJSON?: (value: Value, state: EditorState) => unknown;
+  toJSON?(value: Value, state: EditorState): unknown;
 
   /**
    * Compute a new value from the field's previous value and a

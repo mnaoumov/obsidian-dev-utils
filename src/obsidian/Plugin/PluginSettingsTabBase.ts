@@ -32,7 +32,7 @@ export interface BindOptions<PluginSettings, UIValue> {
   /**
    * A callback function that is called when the value of the component changes.
    */
-  onChanged?: () => Promisable<void>;
+  onChanged?(): Promisable<void>;
 
   /**
    * The plugin settings object to bind the component to. Default is the plugin's current settings.
@@ -55,7 +55,7 @@ export interface BindOptions<PluginSettings, UIValue> {
    * @returns An error message if the value is invalid, or `(empty string)` or `void` if it is valid.
    */
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  valueValidator?: (uiValue: UIValue) => Promisable<string | void>;
+  valueValidator?(uiValue: UIValue): Promisable<string | void>;
 }
 
 /**
