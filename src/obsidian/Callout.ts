@@ -3,6 +3,7 @@
  * This module provides utility functions for rendering callouts in Dataview.
  */
 
+import type { MaybeReturn } from '../Object.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { DataviewInlineApi } from './Dataview.ts';
 
@@ -32,8 +33,7 @@ export interface RenderCalloutOptions {
   /**
    * An optional provider for the content, which can be either a string or a Node.
    */
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  contentProvider?: ValueProvider<Node | string | void>;
+  contentProvider?: ValueProvider<MaybeReturn<Node | string>>;
 
   /**
    * The DataviewInlineApi instance.
@@ -85,8 +85,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
   observer.observe(contentDiv);
 
   async function loadContent(): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    let content: Node | string | undefined | void;
+    let content: MaybeReturn<Node | string | undefined>;
 
     const paragraph = await getRenderedContainer(dv, async () => {
       content = await resolveValue(contentProvider);
