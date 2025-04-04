@@ -102,8 +102,6 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
         return this.properties.get(prop)?.getSafe();
       }
     }) as ReadonlyDeep<PluginSettings>;
-
-    this.addValidators();
   }
 
   public getProperty<Property extends StringKeys<PluginSettings>>(property: Property): PluginSettingsProperty<PluginSettings[Property]> {
