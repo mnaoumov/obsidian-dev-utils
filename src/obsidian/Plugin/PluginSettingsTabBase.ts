@@ -39,7 +39,7 @@ export interface BindOptions {
 /**
  * Extended options for binding a value component to a plugin setting.
  */
-export interface BindOptionsExtended<PluginSettings, UIValue, Property extends keyof PluginSettings> extends BindOptions {
+export interface BindOptionsExtended<PluginSettings extends object, UIValue, Property extends StringKeys<PluginSettings>> extends BindOptions {
   /**
    * Converts the UI component's value back to the plugin settings value.
    * @param uiValue - The value of the UI component.
@@ -107,7 +107,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
   public bind<
     UIValue,
     TValueComponent,
-    Property extends keyof ExtractPluginSettings<TPlugin>
+    Property extends StringKeys<ExtractPluginSettings<TPlugin>>
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     property: Property,
