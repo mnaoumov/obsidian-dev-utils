@@ -1,11 +1,17 @@
-import type { ReadonlyDeep } from 'type-fest';
+import type {
+  Promisable,
+  ReadonlyDeep
+} from 'type-fest';
 
 import { Plugin } from 'obsidian';
 
 import type { StringKeys } from '../../Object.ts';
 import type { Transformer } from '../../Transformers/Transformer.ts';
 
-import { noopAsync } from '../../Function.ts';
+import {
+  noop,
+  noopAsync
+} from '../../Function.ts';
 import { DateTransformer } from '../../Transformers/DateTransformer.ts';
 import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
 import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';
@@ -17,48 +23,48 @@ const defaultTransformer = new GroupTransformer([
   new DurationTransformer()
 ]);
 
-class PluginSettingsProperty<PluginSettings extends object, Property extends StringKeys<PluginSettings>> {
-  public validationMessage = '';
-  private value: PluginSettings[Property] | undefined;
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+type Validator<T> = (value: T) => Promisable<string | void>;
 
-  public constructor(
-    private readonly manager: PluginSettingsManagerBase<PluginSettings>,
-    private readonly property: Property,
-    public readonly defaultValue: PluginSettings[Property]
-  ) {}
+class PluginSettingsProperty<T> {
+  public validationMessage = '';
+  private value: T | undefined;
+
+  public constructor(public readonly defaultValue: T, private readonly validator: Validator<T>) {}
 
   public clear(): void {
     this.value = undefined;
     this.validationMessage = '';
   }
 
-  public get(): PluginSettings[Property] {
+  public get(): T {
     return this.value ?? this.defaultValue;
   }
 
-  public getSafe(): PluginSettings[Property] {
+  public getSafe(): T {
     return this.validationMessage ? this.defaultValue : this.get();
   }
 
-  public async set(value: PluginSettings[Property] | undefined): Promise<void> {
+  public async set(value: T | undefined): Promise<void> {
     this.value = value;
     if (this.value !== undefined) {
-      this.validationMessage = (await this.manager.validate(this.property, this.value) as string | undefined) ?? '';
+      this.validationMessage = (await this.validator(this.value) as string | undefined) ?? '';
     }
   }
 }
 
-class PropertiesMap<PluginSettings extends object> extends Map<string, PluginSettingsProperty<PluginSettings, StringKeys<PluginSettings>>> {
-  public getTyped<Property extends StringKeys<PluginSettings>>(key: Property): PluginSettingsProperty<PluginSettings, Property> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+class PropertiesMap<PluginSettings extends object> extends Map<string, PluginSettingsProperty<any>> {
+  public getTyped<Property extends StringKeys<PluginSettings>>(key: Property): PluginSettingsProperty<PluginSettings[Property]> {
     const property = super.get(key);
     if (!property) {
       throw new Error(`Property ${String(key)} not found`);
     }
 
-    return property as PluginSettingsProperty<PluginSettings, Property>;
+    return property as PluginSettingsProperty<PluginSettings[Property]>;
   }
 
-  public setTyped<Property extends StringKeys<PluginSettings>>(key: Property, value: PluginSettingsProperty<PluginSettings, Property>): this {
+  public setTyped<Property extends StringKeys<PluginSettings>>(key: Property, value: PluginSettingsProperty<PluginSettings[Property]>): this {
     return super.set(key, value);
   }
 }
@@ -72,14 +78,21 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   public readonly safeSettings: ReadonlyDeep<PluginSettings>;
 
   private properties: PropertiesMap<PluginSettings>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private validators: Map<string, Validator<any>> = new Map<string, Validator<any>>();
 
   public constructor(private plugin: Plugin) {
     const defaultSettings = this.createDefaultSettings();
+
+    this.addValidators();
+
     this.properties = new PropertiesMap<PluginSettings>();
 
     for (const key of Object.keys(defaultSettings) as StringKeys<PluginSettings>[]) {
-      this.properties.set(key, new PluginSettingsProperty(this, key, defaultSettings[key]));
+      this.properties.set(key, new PluginSettingsProperty(defaultSettings[key], this.validators.get(key) ?? noop));
     }
+
+    this.validators.clear();
 
     this.safeSettings = new Proxy(defaultSettings, {
       get: (_target, prop): unknown => {
@@ -90,9 +103,11 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
         return this.properties.get(prop);
       }
     }) as ReadonlyDeep<PluginSettings>;
+
+    this.addValidators();
   }
 
-  public getProperty<Property extends StringKeys<PluginSettings>>(property: Property): PluginSettingsProperty<PluginSettings, Property> {
+  public getProperty<Property extends StringKeys<PluginSettings>>(property: Property): PluginSettingsProperty<PluginSettings[Property]> {
     return this.properties.getTyped(property);
   }
 
@@ -148,6 +163,14 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     await noopAsync();
   }
 
+  protected addValidator<Property extends StringKeys<PluginSettings>>(property: Property, validator: Validator<PluginSettings[Property]>): void {
+    this.validators.set(property, validator);
+  }
+
+  protected addValidators(): void {
+    noop();
+  }
+
   protected abstract createDefaultSettings(): PluginSettings;
 
   protected getTransformer(): Transformer {
@@ -161,7 +184,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   private getSettings(): Record<StringKeys<PluginSettings>, unknown> {
     const settings: Record<StringKeys<PluginSettings>, unknown> = {} as Record<StringKeys<PluginSettings>, unknown>;
     for (const [key, property] of this.properties.entries()) {
-      settings[key as StringKeys<PluginSettings>] = property.get();
+      settings[key as StringKeys<PluginSettings>] = property.get() as unknown;
     }
 
     return settings;
