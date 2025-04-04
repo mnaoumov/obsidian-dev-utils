@@ -120,6 +120,11 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    */
   protected abstract createPluginSettingsTab(): null | PluginSettingTab;
 
+  /**
+   * Creates the plugin settings manager. This method must be implemented by subclasses.
+   *
+   * @returns The plugin settings manager.
+   */
   protected abstract createSettingsManager(): PluginSettingsManagerBase<PluginSettings>;
 
   /**
