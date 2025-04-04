@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 22.1.1-beta.4
+
+- Switch to promisable
+- Remove unused
+
 ## 22.1.1-beta.3
 
 - Add validators
