@@ -21,16 +21,17 @@ import { invokeAsyncSafely } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
 import { getValidatorComponent } from '../Components/ValidatorComponent.ts';
+import { isValidationMessageHolder } from '../ValidationMessage.ts';
 import { getPluginId } from './PluginId.ts';
 
 /**
  * Options for binding a value component to a plugin setting.
  */
-export interface BindOptions {
+export interface BindOptions<T> {
   /**
    * A callback function that is called when the value of the component changes.
    */
-  onChanged?(): Promisable<void>;
+  onChanged?(newValue: T | undefined, oldValue: T): Promisable<void>;
 
   /**
    * If true, shows the validation message when the component value is invalid. Default is `true`.
@@ -41,7 +42,8 @@ export interface BindOptions {
 /**
  * Extended options for binding a value component to a plugin setting.
  */
-export interface BindOptionsExtended<PluginSettings extends object, UIValue, Property extends StringKeys<PluginSettings>> extends BindOptions {
+export interface BindOptionsExtended<PluginSettings extends object, UIValue, Property extends StringKeys<PluginSettings>>
+  extends BindOptions<PluginSettings[Property]> {
   /**
    * Converts the UI component's value back to the plugin settings value.
    * @param uiValue - The value of the UI component.
@@ -89,7 +91,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     property: ConditionalKeys<ExtractPluginSettings<TPlugin>, UIValue>,
-    options?: BindOptions
+    options?: BindOptions<UIValue>
   ): TValueComponent;
   /**
    * Binds a value component to a plugin setting.
@@ -129,7 +131,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     property: Property,
-    options?: BindOptions
+    options?: BindOptions<ExtractPluginSettings<TPlugin>[Property]>
   ): TValueComponent {
     type PluginSettings = ExtractPluginSettings<TPlugin>;
     type PropertyType = PluginSettings[Property];
@@ -150,9 +152,11 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     valueComponent
       .setValue(optionsExt.pluginSettingsToComponentValueConverter(propertyObj.get() as PropertyType))
       .onChange(async (uiValue) => {
+        const oldValue = propertyObj.get() as PropertyType;
         const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
         await propertyObj.setAndValidate(convertedValue);
-        await optionsExt.onChanged();
+        const newValue = isValidationMessageHolder(convertedValue) ? undefined : convertedValue;
+        await optionsExt.onChanged(newValue, oldValue);
       });
 
     validatorElement?.addEventListener('focus', validate);
