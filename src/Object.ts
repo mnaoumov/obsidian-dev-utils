@@ -39,6 +39,13 @@ enum TokenSubstitutionKey {
 }
 
 /**
+ * A type that represents the keys of an object as strings.
+ *
+ * @typeParam T - The type of the object.
+ */
+export type StringKeys<T extends object> = Extract<keyof T, string>;
+
+/**
  * Options for converting an object to JSON.
  */
 export interface ToJsonOptions {

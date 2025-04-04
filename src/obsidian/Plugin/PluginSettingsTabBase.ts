@@ -4,7 +4,6 @@
  * It provides a utility method to bind value components to plugin settings and handle changes.
  */
 
-import type { BaseComponent } from 'obsidian';
 import type {
   ConditionalKeys,
   Promisable
@@ -12,14 +11,11 @@ import type {
 
 import { PluginSettingTab } from 'obsidian';
 
+import type { StringKeys } from '../../Object.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
 import type { PluginBase } from './PluginBase.ts';
-import type { PluginSettingsBase } from './PluginSettingsBase.ts';
 
-import {
-  convertAsyncToSync,
-  invokeAsyncSafely
-} from '../../Async.ts';
+import { invokeAsyncSafely } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
 import { getValidatorComponent } from '../Components/ValidatorComponent.ts';
@@ -28,46 +24,28 @@ import { getPluginId } from './PluginId.ts';
 /**
  * Options for binding a value component to a plugin setting.
  */
-export interface BindOptions<PluginSettings, UIValue> {
+export interface BindOptions {
   /**
    * A callback function that is called when the value of the component changes.
    */
   onChanged?(): Promisable<void>;
 
   /**
-   * The plugin settings object to bind the component to. Default is the plugin's current settings.
-   */
-  pluginSettings?: PluginSettings;
-
-  /**
-   * If true, saves the plugin settings automatically after the component value changes. Default is `true`.
-   */
-  shouldAutoSave?: boolean;
-
-  /**
    * If true, shows the validation message when the component value is invalid. Default is `true`.
    */
   shouldShowValidationMessage?: boolean;
-
-  /**
-   * Validates the UI value before setting it on the plugin settings.
-   * @param uiValue - The value of the UI component.
-   * @returns An error message if the value is invalid, or `(empty string)` or `void` if it is valid.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  valueValidator?(uiValue: UIValue): Promisable<string | void>;
 }
 
 /**
  * Extended options for binding a value component to a plugin setting.
  */
-export interface BindOptionsExtended<PluginSettings, UIValue, Property extends keyof PluginSettings> extends BindOptions<PluginSettings, UIValue> {
+export interface BindOptionsExtended<PluginSettings, UIValue, Property extends keyof PluginSettings> extends BindOptions {
   /**
    * Converts the UI component's value back to the plugin settings value.
    * @param uiValue - The value of the UI component.
    * @returns The value to set on the plugin settings.
    */
-  componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[Property];
+  componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[Property] | ValidationMessageHolder;
 
   /**
    * Converts the plugin settings value to the value used by the UI component.
@@ -78,7 +56,11 @@ export interface BindOptionsExtended<PluginSettings, UIValue, Property extends k
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExtractPluginSettings<T extends PluginBase<any>> = PluginSettingsBase & T['settingsClone'];
+type ExtractPluginSettings<T extends PluginBase<any>> = Writable<T['settings']>;
+
+interface ValidationMessageHolder {
+  validationMessage: string;
+}
 
 /**
  * Base class for creating plugin settings tabs in Obsidian.
@@ -88,8 +70,6 @@ type ExtractPluginSettings<T extends PluginBase<any>> = PluginSettingsBase & T['
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> extends PluginSettingTab {
-  private validatorsMap = new WeakMap<BaseComponent, () => Promise<boolean>>();
-
   public constructor(public override plugin: TPlugin) {
     super(plugin.app, plugin);
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
@@ -111,7 +91,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     property: ConditionalKeys<ExtractPluginSettings<TPlugin>, UIValue>,
-    options?: BindOptions<ExtractPluginSettings<TPlugin>, UIValue>
+    options?: BindOptions
   ): TValueComponent;
   /**
    * Binds a value component to a plugin setting.
@@ -147,11 +127,11 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
   public bind<
     UIValue,
     TValueComponent,
-    Property extends keyof ExtractPluginSettings<TPlugin>
+    Property extends StringKeys<ExtractPluginSettings<TPlugin>>
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     property: Property,
-    options?: BindOptions<ExtractPluginSettings<TPlugin>, UIValue>
+    options?: BindOptions
   ): TValueComponent {
     type PluginSettings = ExtractPluginSettings<TPlugin>;
     type PropertyType = PluginSettings[Property];
@@ -159,74 +139,60 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
       onChanged: noop,
-      pluginSettings: undefined as PluginSettings,
       pluginSettingsToComponentValueConverter: (value: PropertyType): UIValue => value as UIValue,
-      shouldAutoSave: true,
-      shouldShowValidationMessage: true,
-      valueValidator: noop
+      shouldShowValidationMessage: true
     };
 
     const optionsExt: Required<BindOptionsExtended<PluginSettings, UIValue, Property>> = { ...DEFAULT_OPTIONS, ...options };
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    const pluginSettingsFn = (): PluginSettings => optionsExt.pluginSettings ?? this.plugin.settingsClone;
     const validatorElement = getValidatorComponent(valueComponent)?.validatorEl;
 
-    const validate = async (uiValue?: UIValue): Promise<boolean> => {
-      uiValue ??= valueComponent.getValue();
-      let errorMessage = await optionsExt.valueValidator(uiValue) as string | undefined;
-      if (validatorElement) {
-        if (!errorMessage) {
-          validatorElement.setCustomValidity('');
-          validatorElement.checkValidity();
-          errorMessage = validatorElement.validationMessage;
-        }
-
-        validatorElement.setCustomValidity(errorMessage);
-        validatorElement.title = errorMessage;
-        if (validatorElement.isActiveElement() && optionsExt.shouldShowValidationMessage) {
-          validatorElement.reportValidity();
-        }
-      }
-
-      return !errorMessage;
-    };
+    const propertyObj = this.plugin.settingsManager.getProperty(property);
 
     valueComponent
-      .setValue(optionsExt.pluginSettingsToComponentValueConverter(pluginSettingsFn()[property]))
+      .setValue(optionsExt.pluginSettingsToComponentValueConverter(propertyObj.get() as PropertyType))
       .onChange(async (uiValue) => {
-        if (!await validate(uiValue)) {
-          return;
+        const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
+        if (isValidationMessageHolder(convertedValue)) {
+          propertyObj.validationMessage = convertedValue.validationMessage;
+          await propertyObj.set(undefined);
+        } else {
+          await propertyObj.set(convertedValue);
         }
-        const pluginSettings = pluginSettingsFn();
-        pluginSettings[property] = optionsExt.componentToPluginSettingsValueConverter(uiValue);
-        if (optionsExt.shouldAutoSave) {
-          await this.plugin.saveSettings(pluginSettings);
-        }
-
         await optionsExt.onChanged();
       });
 
-    validatorElement?.addEventListener('focus', convertAsyncToSync(() => validate()));
-    validatorElement?.addEventListener('blur', convertAsyncToSync(() => validate()));
-    this.validatorsMap.set(valueComponent, () => validate());
+    validatorElement?.addEventListener('focus', validate);
+    validatorElement?.addEventListener('blur', validate);
 
-    invokeAsyncSafely(() => validate());
+    validate();
     return valueComponent;
-  }
 
-  /**
-   * Revalidates the value component.
-   *
-   * @param baseComponent - The base component to revalidate.
-   * @returns A promise that resolves to a boolean indicating whether the value component is valid.
-   */
-  protected async revalidate(baseComponent: BaseComponent): Promise<boolean> {
-    const validator = this.validatorsMap.get(baseComponent);
-    if (validator) {
-      return await validator();
+    function validate(): void {
+      if (!validatorElement) {
+        return;
+      }
+
+      if (!propertyObj.validationMessage) {
+        validatorElement.setCustomValidity('');
+        validatorElement.checkValidity();
+        propertyObj.validationMessage = validatorElement.validationMessage;
+      }
+
+      validatorElement.setCustomValidity(propertyObj.validationMessage);
+      validatorElement.title = propertyObj.validationMessage;
+      if (validatorElement.isActiveElement() && optionsExt.shouldShowValidationMessage) {
+        validatorElement.reportValidity();
+      }
     }
-
-    return true;
   }
+
+  public override hide(): void {
+    super.hide();
+    invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile());
+  }
+}
+
+function isValidationMessageHolder(value: unknown): value is ValidationMessageHolder {
+  return !!(value as Partial<ValidationMessageHolder>).validationMessage;
 }

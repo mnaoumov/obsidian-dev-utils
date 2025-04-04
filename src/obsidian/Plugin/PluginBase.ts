@@ -18,24 +18,18 @@ import {
   Plugin
 } from 'obsidian';
 
-import type { EmptySettings } from './EmptySettings.ts';
-import type { PluginSettingsBase } from './PluginSettingsBase.ts';
-
 import { getDebugger } from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noop } from '../../Function.ts';
 import { initPluginContext } from './PluginContext.ts';
+import { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
  *
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
-export abstract class PluginBase<PluginSettings extends PluginSettingsBase = EmptySettings> extends Plugin {
-  private _abortSignal!: AbortSignal;
-  private _settings!: PluginSettings;
-  private notice?: Notice;
-
+export abstract class PluginBase<PluginSettings extends object = object> extends Plugin {
   /**
    * Gets the AbortSignal used for aborting long-running operations.
    *
@@ -51,17 +45,18 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    * @returns The readonly plugin settings.
    */
   public get settings(): ReadonlyDeep<PluginSettings> {
-    return this._settings as ReadonlyDeep<PluginSettings>;
+    return this.settingsManager.safeSettings;
   }
 
-  /**
-   * Gets a writable copy of the plugin settings.
-   *
-   * @returns A writable copy of the plugin settings.
-   */
-  public get settingsClone(): PluginSettings {
-    return this.createPluginSettings(this.settings.toJSON());
+  public get settingsManager(): PluginSettingsManagerBase<PluginSettings> {
+    return this._settingsManager;
   }
+
+  private _abortSignal!: AbortSignal;
+
+  private _settingsManager!: PluginSettingsManagerBase<PluginSettings>;
+
+  private notice?: Notice;
 
   /**
    * Logs a message to the console.
@@ -86,7 +81,7 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    * Called when the external settings change.
    */
   public override async onExternalSettingsChange(): Promise<void> {
-    await this.loadSettings();
+    await this.settingsManager.loadFromFile();
   }
 
   /**
@@ -99,7 +94,9 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
       this.showNotice('An unhandled error occurred. Please check the console for more information.');
     }));
 
-    await this.loadSettings();
+    this._settingsManager = this.createSettingsManager();
+
+    await this.onExternalSettingsChange();
     const pluginSettingsTab = this.createPluginSettingsTab();
     if (pluginSettingsTab) {
       this.addSettingTab(pluginSettingsTab);
@@ -117,18 +114,6 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
   }
 
   /**
-   * Saves the new plugin settings.
-   *
-   * @param newSettings - The new settings to save.
-   * @returns A promise that resolves when the settings are saved.
-   */
-  public async saveSettings(newSettings: PluginSettings): Promise<void> {
-    const json = newSettings.toJSON();
-    this._settings = this.createPluginSettings(json);
-    await this.saveData(json);
-  }
-
-  /**
    * Creates the plugin settings. This method must be implemented by subclasses.
    *
    * @param data - The data to create the plugin settings from.
@@ -142,6 +127,8 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
    * @returns The settings tab or null if not applicable.
    */
   protected abstract createPluginSettingsTab(): null | PluginSettingTab;
+
+  protected abstract createSettingsManager(): PluginSettingsManagerBase<PluginSettings>;
 
   /**
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
@@ -174,18 +161,5 @@ export abstract class PluginBase<PluginSettings extends PluginSettingsBase = Emp
     }
 
     this.notice = new Notice(`${this.manifest.name}\n${message}`);
-  }
-
-  /**
-   * Loads the plugin settings from the saved data.
-   *
-   * @returns A promise that resolves when the settings are loaded.
-   */
-  private async loadSettings(): Promise<void> {
-    const data = await this.loadData() as unknown;
-    this._settings = this.createPluginSettings(data);
-    if (this.settings.shouldSaveAfterLoad) {
-      await this.saveSettings(this._settings);
-    }
   }
 }
