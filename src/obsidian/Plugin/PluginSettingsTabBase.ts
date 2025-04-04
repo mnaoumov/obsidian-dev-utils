@@ -6,8 +6,7 @@
 
 import type {
   ConditionalKeys,
-  Promisable,
-  WritableDeep
+  Promisable
 } from 'type-fest';
 
 import { PluginSettingTab } from 'obsidian';
@@ -60,7 +59,7 @@ export interface BindOptionsExtended<PluginSettings extends object, UIValue, Pro
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExtractPluginSettings<T extends PluginBase<any>> = WritableDeep<T['settings']>;
+type ExtractPluginSettings<Plugin extends PluginBase<any>> = Plugin extends PluginBase<infer PluginSettings> ? PluginSettings : never;
 
 /**
  * Base class for creating plugin settings tabs in Obsidian.
