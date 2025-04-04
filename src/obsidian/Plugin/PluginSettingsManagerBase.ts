@@ -158,11 +158,6 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     await this.plugin.saveData(record);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  public async validate<Property extends StringKeys<PluginSettings>>(_property: Property, _value: PluginSettings[Property]): Promise<string | void> {
-    await noopAsync();
-  }
-
   protected addValidator<Property extends StringKeys<PluginSettings>>(property: Property, validator: Validator<PluginSettings[Property]>): void {
     this.validators.set(property, validator);
   }
