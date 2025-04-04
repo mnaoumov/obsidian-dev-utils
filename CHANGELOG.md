@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 22.1.1-beta.3
+
+- Add validators
+
 ## 22.1.1-beta.2
 
 - Fix array props
