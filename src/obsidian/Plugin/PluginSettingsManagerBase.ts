@@ -73,57 +73,6 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
   }
 }
 
-class PluginSettingsProperty<T> {
-  public get validationMessage(): string {
-    return this._validationMessage;
-  }
-
-  private _validationMessage = '';
-
-  private savedValue: T | undefined;
-
-  private value: T | undefined;
-  public constructor(public readonly defaultValue: T, private readonly validator: Validator<T>) {}
-
-  public clear(): void {
-    this.value = undefined;
-    this._validationMessage = '';
-  }
-
-  public get(): T {
-    return this.value ?? this.defaultValue;
-  }
-
-  public getSafe(): T {
-    return this._validationMessage ? this.defaultValue : this.get();
-  }
-
-  public getSaved(): T | undefined {
-    return this.savedValue;
-  }
-
-  public save(): void {
-    this.savedValue = this.value;
-  }
-
-  public set(value: T | undefined | ValidationMessageHolder): void {
-    if (isValidationMessageHolder(value)) {
-      this._validationMessage = value.validationMessage;
-    } else {
-      this.value = value;
-    }
-  }
-
-  public async setAndValidate(value: T | undefined | ValidationMessageHolder): Promise<void> {
-    this.set(value);
-    if (this.value === undefined) {
-      return;
-    }
-
-    this._validationMessage = (await this.validator(this.value) as string | undefined) ?? '';
-  }
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 class PropertiesMap<PluginSettings extends object> extends Map<string, PluginSettingsProperty<any>> {
   public getTyped<Property extends StringKeys<PluginSettings>>(key: Property): PluginSettingsProperty<PluginSettings[Property]> {
@@ -284,5 +233,61 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     }
 
     return settings;
+  }
+}
+
+/**
+ * A property of a plugin settings.
+ *
+ * @typeParam T - The type of the property.
+ */
+export class PluginSettingsProperty<T> {
+  public get validationMessage(): string {
+    return this._validationMessage;
+  }
+
+  private _validationMessage = '';
+
+  private savedValue: T | undefined;
+
+  private value: T | undefined;
+  public constructor(public readonly defaultValue: T, private readonly validator: Validator<T>) {}
+
+  public clear(): void {
+    this.value = undefined;
+    this._validationMessage = '';
+  }
+
+  public get(): T {
+    return this.value ?? this.defaultValue;
+  }
+
+  public getSafe(): T {
+    return this._validationMessage ? this.defaultValue : this.get();
+  }
+
+  public getSaved(): T | undefined {
+    return this.savedValue;
+  }
+
+  public save(): void {
+    this.savedValue = this.value;
+  }
+
+  public set(value: T | undefined | ValidationMessageHolder): void {
+    if (isValidationMessageHolder(value)) {
+      this._validationMessage = value.validationMessage;
+    } else {
+      this.value = value;
+    }
+  }
+
+  public async setAndValidate(value: T | undefined | ValidationMessageHolder): Promise<void> {
+    this.set(value);
+    if (this.value === undefined) {
+      return;
+    }
+
+    this._validationMessage = (await this.validator(this.value) as string | undefined) ?? '';
   }
 }
