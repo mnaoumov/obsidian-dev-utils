@@ -11,6 +11,7 @@ import {
 } from 'obsidian';
 
 import type { ValidatorElement } from '../../HTMLElement.ts';
+import type { PlaceholderComponent } from './PlaceholderComponent.ts';
 import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
@@ -20,7 +21,7 @@ import { getPluginId } from '../Plugin/PluginId.ts';
 /**
  * A component that displays and edits a text-based value.
  */
-export abstract class TypedTextComponent<T> extends ValueComponent<T> implements ValidatorComponent, ValueComponentWithChangeTracking<T> {
+export abstract class TypedTextComponent<T> extends ValueComponent<T> implements PlaceholderComponent, ValidatorComponent, ValueComponentWithChangeTracking<T> {
   /**
    * The input element of the component.
    */

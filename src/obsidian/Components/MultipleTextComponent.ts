@@ -15,6 +15,7 @@ import type { ValidatorElement } from '../../HTMLElement.ts';
 import type { initPluginContext } from '../Plugin/PluginContext.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SettingEx } from '../SettingEx.ts';
+import type { PlaceholderComponent } from './PlaceholderComponent.ts';
 import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
@@ -30,7 +31,8 @@ import { getPluginId } from '../Plugin/PluginId.ts';
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class MultipleTextComponent extends ValueComponent<string[]> implements ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
+export class MultipleTextComponent extends ValueComponent<string[]>
+  implements PlaceholderComponent, ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
   /**
    * Gets the validator element of the component.
    *

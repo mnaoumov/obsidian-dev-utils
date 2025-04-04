@@ -15,10 +15,12 @@ import type { StringKeys } from '../../Object.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
 import type { ValidationMessageHolder } from '../ValidationMessage.ts';
 import type { PluginBase } from './PluginBase.ts';
+import type { PluginSettingsProperty } from './PluginSettingsManagerBase.ts';
 
 import { invokeAsyncSafely } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
+import { isPlaceholderComponent } from '../Components/PlaceholderComponent.ts';
 import { getValidatorComponent } from '../Components/ValidatorComponent.ts';
 import { isValidationMessageHolder } from '../ValidationMessage.ts';
 import { getPluginId } from './PluginId.ts';
@@ -149,17 +151,21 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
 
     const validatorElement = getValidatorComponent(valueComponent)?.validatorEl;
 
-    const propertyObj = this.plugin.settingsManager.getProperty(property);
+    const propertyObj = this.plugin.settingsManager.getProperty(property) as PluginSettingsProperty<PropertyType>;
 
     valueComponent
-      .setValue(optionsExt.pluginSettingsToComponentValueConverter(propertyObj.get() as PropertyType))
+      .setValue(optionsExt.pluginSettingsToComponentValueConverter(propertyObj.get()))
       .onChange(async (uiValue) => {
-        const oldValue = propertyObj.get() as PropertyType;
+        const oldValue = propertyObj.get();
         const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
         await propertyObj.setAndValidate(convertedValue);
         const newValue = isValidationMessageHolder(convertedValue) ? undefined : convertedValue;
         await optionsExt.onChanged(newValue, oldValue);
       });
+
+    if (isPlaceholderComponent(valueComponent)) {
+      valueComponent.setPlaceholder(optionsExt.pluginSettingsToComponentValueConverter(propertyObj.defaultValue) as string);
+    }
 
     validatorElement?.addEventListener('focus', validate);
     validatorElement?.addEventListener('blur', validate);
