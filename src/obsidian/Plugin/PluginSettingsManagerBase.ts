@@ -17,7 +17,7 @@ const defaultTransformer = new GroupTransformer([
   new DurationTransformer()
 ]);
 
-class PluginSettingsProperty<PluginSettings extends object, Property extends keyof PluginSettings> {
+class PluginSettingsProperty<PluginSettings extends object, Property extends StringKeys<PluginSettings>> {
   public validationMessage = '';
   private value: PluginSettings[Property] | undefined;
 
@@ -144,7 +144,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  public async validate<Property extends keyof PluginSettings>(_property: Property, _value: PluginSettings[Property]): Promise<string | void> {
+  public async validate<Property extends StringKeys<PluginSettings>>(_property: Property, _value: PluginSettings[Property]): Promise<string | void> {
     await noopAsync();
   }
 
@@ -158,8 +158,8 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     await noopAsync();
   }
 
-  private getSettings(): Record<keyof PluginSettings, unknown> {
-    const settings: Record<keyof PluginSettings, unknown> = {} as Record<keyof PluginSettings, unknown>;
+  private getSettings(): Record<StringKeys<PluginSettings>, unknown> {
+    const settings: Record<StringKeys<PluginSettings>, unknown> = {} as Record<StringKeys<PluginSettings>, unknown>;
     for (const [key, property] of this.properties.entries()) {
       settings[key as StringKeys<PluginSettings>] = property.get();
     }
