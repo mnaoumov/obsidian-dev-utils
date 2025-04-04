@@ -15,5 +15,5 @@ export interface ValidationMessageHolder {
  * @returns `true` if the value is a validation message holder, `false` otherwise.
  */
 export function isValidationMessageHolder(value: unknown): value is ValidationMessageHolder {
-  return !!(value as Partial<ValidationMessageHolder>).validationMessage;
+  return (value as Partial<ValidationMessageHolder>).validationMessage !== undefined;
 }
