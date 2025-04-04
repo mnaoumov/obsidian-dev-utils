@@ -8,10 +8,7 @@ import { Plugin } from 'obsidian';
 import type { StringKeys } from '../../Object.ts';
 import type { Transformer } from '../../Transformers/Transformer.ts';
 
-import {
-  noop,
-  noopAsync
-} from '../../Function.ts';
+import { noop } from '../../Function.ts';
 import { DateTransformer } from '../../Transformers/DateTransformer.ts';
 import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
 import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';
@@ -172,8 +169,8 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     return defaultTransformer;
   }
 
-  protected async prepareRecord(_record: Record<string, unknown>): Promise<void> {
-    await noopAsync();
+  protected prepareRecord(_record: Record<string, unknown>): Promisable<void> {
+    noop();
   }
 
   private getSettings(): Record<StringKeys<PluginSettings>, unknown> {
