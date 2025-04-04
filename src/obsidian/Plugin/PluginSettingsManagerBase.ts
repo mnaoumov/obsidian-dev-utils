@@ -5,7 +5,10 @@ import type {
 
 import { Plugin } from 'obsidian';
 
-import type { StringKeys } from '../../Object.ts';
+import type {
+  MaybeReturn,
+  StringKeys
+} from '../../Object.ts';
 import type { Transformer } from '../../Transformers/Transformer.ts';
 
 import { noop } from '../../Function.ts';
@@ -20,8 +23,7 @@ const defaultTransformer = new GroupTransformer([
   new DurationTransformer()
 ]);
 
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-type Validator<T> = (value: T) => Promisable<string | void>;
+type Validator<T> = (value: T) => Promisable<MaybeReturn<string>>;
 
 class PluginSettingsProperty<T> {
   public validationMessage = '';

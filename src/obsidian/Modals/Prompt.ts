@@ -14,6 +14,7 @@ import {
 } from 'obsidian';
 
 import type { PromiseResolve } from '../../Async.ts';
+import type { MaybeReturn } from '../../Object.ts';
 
 import {
   convertAsyncToSync,
@@ -65,8 +66,7 @@ export interface PromptOptions {
    * @param value - The input value to validate.
    * @returns an error message if the value is invalid, or null if the value is valid.
    */
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  valueValidator?(value: string): Promisable<string | void>;
+  valueValidator?(value: string): Promisable<MaybeReturn<string>>;
 }
 
 class PromptModal extends ModalBase<null | string, PromptOptions> {

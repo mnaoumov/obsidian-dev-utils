@@ -11,6 +11,8 @@ import type { Promisable } from 'type-fest';
 import { Command } from 'commander';
 import { tsImport } from 'tsx/esm/api';
 
+import type { MaybeReturn } from '../Object.ts';
+
 import { invokeAsyncSafely } from '../Async.ts';
 import {
   getDirname,
@@ -73,8 +75,7 @@ enum CommandNames {
 }
 
 interface OverrideModule<Args extends unknown[]> {
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  invoke(...args: Args): Promise<CliTaskResult | void>;
+  invoke(...args: Args): Promise<MaybeReturn<CliTaskResult>>;
 }
 
 /**
@@ -130,8 +131,7 @@ function addCommand<Args extends unknown[]>(
   program: Command,
   name: string,
   description: string,
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  taskFn: (...args: Args) => Promisable<CliTaskResult | void>
+  taskFn: (...args: Args) => Promisable<MaybeReturn<CliTaskResult>>
 ): Command {
   return program.command(name)
     .description(description)

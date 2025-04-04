@@ -6,6 +6,7 @@
 import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
+import type { MaybeReturn } from '../Object.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 import type { ProcessOptions } from './Vault.ts';
@@ -85,8 +86,7 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
 export async function processFrontmatter<CustomFrontmatter = unknown>(
   app: App,
   pathOrFile: PathOrFile,
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => Promisable<null | void>,
+  frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => Promisable<MaybeReturn<null>>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
   const file = getFile(app, pathOrFile);

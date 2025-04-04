@@ -26,6 +26,7 @@ import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
 
+import type { MaybeReturn } from '../Object.ts';
 import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { ProcessOptions } from './Vault.ts';
@@ -487,8 +488,7 @@ export function convertLink(options: ConvertLinkOptions): string {
 export async function editBacklinks(
   app: App,
   pathOrFile: PathOrFile,
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: Reference) => Promisable<string | void>,
+  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
   const backlinks = await getBacklinksForFileSafe(app, pathOrFile, processOptions);
@@ -518,8 +518,7 @@ export async function editBacklinks(
 export async function editLinks(
   app: App,
   pathOrFile: PathOrFile,
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: Reference) => Promisable<string | void>,
+  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
   await applyFileChanges(app, pathOrFile, async () => {
@@ -539,8 +538,7 @@ export async function editLinks(
 export async function editLinksInContent(
   app: App,
   content: string,
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: Reference) => Promisable<string | void>
+  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>
 ): Promise<string> {
   const newContent = await applyContentChanges(content, '', async () => {
     const cache = await parseMetadata(app, content);
@@ -1034,8 +1032,7 @@ function generateWikiLink(linkText: string, alias: string | undefined, isEmbed: 
 async function getFileChanges(
   cache: CachedMetadata | null,
   isCanvasFileCache: boolean,
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-  linkConverter: (link: Reference) => Promisable<string | void>
+  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>
 ): Promise<FileChange[]> {
   if (!cache) {
     return [];

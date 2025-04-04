@@ -3,6 +3,7 @@
  * Contains utility functions for string operations.
  */
 
+import type { MaybeReturn } from './Object.ts';
 import type { ValueProvider } from './ValueProvider.ts';
 
 import { throwExpression } from './Error.ts';
@@ -44,8 +45,7 @@ export interface ReplaceCommonArgs {
  */
 export type Replacer<ReplaceGroupArgs extends string[]> = ((...args: [ReplaceCommonArgs, ...ReplaceGroupArgs]) => StringReplacement) | StringReplacement;
 
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-type StringReplacement = string | void;
+type StringReplacement = MaybeReturn<string>;
 
 /**
  * Mapping of special characters to their escaped counterparts.
