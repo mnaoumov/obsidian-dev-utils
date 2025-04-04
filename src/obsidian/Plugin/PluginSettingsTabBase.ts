@@ -6,7 +6,8 @@
 
 import type {
   ConditionalKeys,
-  Promisable
+  Promisable,
+  WritableDeep
 } from 'type-fest';
 
 import { PluginSettingTab } from 'obsidian';
@@ -56,7 +57,7 @@ export interface BindOptionsExtended<PluginSettings extends object, UIValue, Pro
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExtractPluginSettings<T extends PluginBase<any>> = Writable<T['settings']>;
+type ExtractPluginSettings<T extends PluginBase<any>> = WritableDeep<T['settings']>;
 
 interface ValidationMessageHolder {
   validationMessage: string;
