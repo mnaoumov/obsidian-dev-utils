@@ -99,7 +99,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
           return undefined;
         }
 
-        return this.properties.get(prop);
+        return this.properties.get(prop)?.getSafe();
       }
     }) as ReadonlyDeep<PluginSettings>;
 
