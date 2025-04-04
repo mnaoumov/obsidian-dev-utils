@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 22.1.1-beta.1
+
+- Refactor plugin settings
+- Update libs
+
 ## 22.1.0
 
 - Output which item caused error
