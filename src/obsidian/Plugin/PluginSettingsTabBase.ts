@@ -14,6 +14,7 @@ import { PluginSettingTab } from 'obsidian';
 
 import type { StringKeys } from '../../Object.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
+import type { ValidationMessageHolder } from '../ValidationMessage.ts';
 import type { PluginBase } from './PluginBase.ts';
 
 import { invokeAsyncSafely } from '../../Async.ts';
@@ -58,10 +59,6 @@ export interface BindOptionsExtended<PluginSettings extends object, UIValue, Pro
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ExtractPluginSettings<T extends PluginBase<any>> = WritableDeep<T['settings']>;
-
-interface ValidationMessageHolder {
-  validationMessage: string;
-}
 
 /**
  * Base class for creating plugin settings tabs in Obsidian.
@@ -154,12 +151,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
       .setValue(optionsExt.pluginSettingsToComponentValueConverter(propertyObj.get() as PropertyType))
       .onChange(async (uiValue) => {
         const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
-        if (isValidationMessageHolder(convertedValue)) {
-          propertyObj.validationMessage = convertedValue.validationMessage;
-          await propertyObj.set(undefined);
-        } else {
-          await propertyObj.set(convertedValue);
-        }
+        await propertyObj.setAndValidate(convertedValue);
         await optionsExt.onChanged();
       });
 
@@ -177,7 +169,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
       if (!propertyObj.validationMessage) {
         validatorElement.setCustomValidity('');
         validatorElement.checkValidity();
-        propertyObj.validationMessage = validatorElement.validationMessage;
+        propertyObj.set(validatorElement);
       }
 
       validatorElement.setCustomValidity(propertyObj.validationMessage);
@@ -192,8 +184,4 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     super.hide();
     invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile());
   }
-}
-
-function isValidationMessageHolder(value: unknown): value is ValidationMessageHolder {
-  return !!(value as Partial<ValidationMessageHolder>).validationMessage;
 }
