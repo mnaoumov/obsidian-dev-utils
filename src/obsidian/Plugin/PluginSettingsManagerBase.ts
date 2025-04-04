@@ -207,7 +207,9 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
 
     let record = data as Record<string, unknown>;
     record = this.getTransformer().transformObjectRecursively(record);
+    const beforePrepareJson = JSON.stringify(record);
     await this.prepareRecord(record);
+    const afterPrepareJson = JSON.stringify(record);
 
     for (const [key, value] of Object.entries(record)) {
       const propertyObj = this.properties.get(key);
@@ -222,6 +224,10 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
       }
 
       await propertyObj.setAndValidate(value);
+    }
+
+    if (afterPrepareJson !== beforePrepareJson) {
+      await this.saveToFile();
     }
   }
 
