@@ -3,14 +3,13 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
-import { Plugin } from 'obsidian';
-
 import type {
   MaybeReturn,
   StringKeys
 } from '../../Object.ts';
 import type { Transformer } from '../../Transformers/Transformer.ts';
 import type { ValidationMessageHolder } from '../ValidationMessage.ts';
+import type { PluginBase } from './PluginBase.ts';
 
 import { noop } from '../../Function.ts';
 import { DateTransformer } from '../../Transformers/DateTransformer.ts';
@@ -27,16 +26,10 @@ const defaultTransformer = new GroupTransformer([
 
 type Validator<T> = (value: T) => Promisable<MaybeReturn<string>>;
 
-class EditableSettingsProxyHandler<PluginSettings extends object> implements ProxyHandler<PluginSettings> {
-  private validationPromise = Promise.resolve();
-
-  public constructor(private readonly properties: PropertiesMap<PluginSettings>) {}
+abstract class ProxyHandlerBase<PluginSettings extends object> implements ProxyHandler<PluginSettings> {
+  public constructor(protected readonly properties: PropertiesMap<PluginSettings>) {}
 
   public get(target: PluginSettings, prop: string | symbol): unknown {
-    if (prop === 'validationPromise') {
-      return this.validationPromise;
-    }
-
     const record = target as Record<string | symbol, unknown>;
     if (typeof prop !== 'string') {
       return record[prop];
@@ -47,9 +40,14 @@ class EditableSettingsProxyHandler<PluginSettings extends object> implements Pro
       return record[prop];
     }
 
-    return propertyObj.get();
+    return this.getPropertyValue(propertyObj);
   }
 
+  protected abstract getPropertyValue(propertyObj: PluginSettingsProperty<unknown>): unknown;
+}
+
+class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyHandlerBase<PluginSettings> {
+  private validationPromise = Promise.resolve();
   public set(target: PluginSettings, prop: string | symbol, value: unknown): boolean {
     const record = target as Record<string | symbol, unknown>;
 
@@ -69,6 +67,10 @@ class EditableSettingsProxyHandler<PluginSettings extends object> implements Pro
 
     return true;
   }
+
+  protected override getPropertyValue(propertyObj: PluginSettingsProperty<unknown>): unknown {
+    return propertyObj.get();
+  }
 }
 
 class PluginSettingsProperty<T> {
@@ -78,8 +80,9 @@ class PluginSettingsProperty<T> {
 
   private _validationMessage = '';
 
-  private value: T | undefined;
+  private savedValue: T | undefined;
 
+  private value: T | undefined;
   public constructor(public readonly defaultValue: T, private readonly validator: Validator<T>) {}
 
   public clear(): void {
@@ -93,6 +96,14 @@ class PluginSettingsProperty<T> {
 
   public getSafe(): T {
     return this._validationMessage ? this.defaultValue : this.get();
+  }
+
+  public getSaved(): T | undefined {
+    return this.savedValue;
+  }
+
+  public save(): void {
+    this.savedValue = this.value;
   }
 
   public set(value: T | undefined | ValidationMessageHolder): void {
@@ -129,20 +140,8 @@ class PropertiesMap<PluginSettings extends object> extends Map<string, PluginSet
   }
 }
 
-class SafeSettingsProxyHandler<PluginSettings extends object> implements ProxyHandler<PluginSettings> {
-  public constructor(private readonly properties: PropertiesMap<PluginSettings>) {}
-
-  public get(target: PluginSettings, prop: string | symbol): unknown {
-    const record = target as Record<string | symbol, unknown>;
-    if (typeof prop !== 'string') {
-      return record[prop];
-    }
-
-    const propertyObj = this.properties.get(prop);
-    if (!propertyObj) {
-      return record[prop];
-    }
-
+class SafeSettingsProxyHandler<PluginSettings extends object> extends ProxyHandlerBase<PluginSettings> {
+  protected override getPropertyValue(propertyObj: PluginSettingsProperty<unknown>): unknown {
     return propertyObj.getSafe();
   }
 }
@@ -160,7 +159,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private validators: Map<string, Validator<any>> = new Map<string, Validator<any>>();
 
-  public constructor(private plugin: Plugin) {
+  public constructor(private plugin: PluginBase<PluginSettings>) {
     this.defaultSettings = this.createDefaultSettings();
 
     this.addValidators();
@@ -232,8 +231,16 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
    * @returns A promise that resolves when the settings are saved.
    */
   public async saveToFile(): Promise<void> {
+    const oldSettings = this.getSavedSettings();
+
+    for (const property of this.properties.values()) {
+      property.save();
+    }
+
     const record = this.getTransformer().transformObjectRecursively(this.getSettingsRecord());
     await this.plugin.saveData(record);
+
+    await this.plugin.onSaveSettings(this.getSavedSettings(), oldSettings);
   }
 
   protected addValidator<Property extends StringKeys<PluginSettings>>(property: Property, validator: Validator<PluginSettings[Property]>): void {
@@ -252,6 +259,16 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
 
   protected prepareRecord(_record: Record<string, unknown>): Promisable<void> {
     noop();
+  }
+
+  private getSavedSettings(): Partial<PluginSettings> {
+    const savedSettings: Partial<PluginSettings> = {};
+    for (const [key, property] of this.properties.entries()) {
+      savedSettings[key as StringKeys<PluginSettings>] = property.getSaved() as PluginSettings[StringKeys<PluginSettings>] | undefined;
+    }
+    const proto = Object.getPrototypeOf(this.defaultSettings) as object;
+    Object.setPrototypeOf(savedSettings, proto);
+    return savedSettings;
   }
 
   private getSettingsRecord(): Record<StringKeys<PluginSettings>, unknown> {

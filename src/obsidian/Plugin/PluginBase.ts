@@ -20,7 +20,10 @@ import {
 
 import { getDebugger } from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
-import { noop } from '../../Function.ts';
+import {
+  noop,
+  noopAsync
+} from '../../Function.ts';
 import { initPluginContext } from './PluginContext.ts';
 import { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 
@@ -111,6 +114,17 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
     setTimeout(() => {
       this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
     }, 0);
+  }
+
+  /**
+   * Called when the plugin settings are saved.
+   *
+   * @param _newSettings - The new settings.
+   * @param _oldSettings - The old settings.
+   * @returns A promise or void indicating the completion of the save process.
+   */
+  public async onSaveSettings(_newSettings: Partial<PluginSettings>, _oldSettings: Partial<PluginSettings>): Promise<void> {
+    await noopAsync();
   }
 
   /**
