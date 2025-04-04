@@ -114,14 +114,6 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   /**
-   * Creates the plugin settings. This method must be implemented by subclasses.
-   *
-   * @param data - The data to create the plugin settings from.
-   * @returns The plugin settings.
-   */
-  protected abstract createPluginSettings(data: unknown): PluginSettings;
-
-  /**
    * Creates a plugin settings tab. This method must be implemented by subclasses.
    *
    * @returns The settings tab or null if not applicable.
