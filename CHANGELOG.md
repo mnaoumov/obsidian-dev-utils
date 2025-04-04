@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 22.1.1-beta.5
+
+- Format
+- Save transformed settings
+- onSaveSettings hook
+- Simplify ExtractPluginSettings
+- Pass values to onChanged
+- Add setAndValidate
+- Remove useless validations
+- Rename getSettingsRecord
+- Restore getSafe
+- Refactor to MaybeReturn
+
 ## 22.1.1-beta.4
 
 - Switch to promisable
