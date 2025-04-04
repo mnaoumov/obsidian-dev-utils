@@ -153,7 +153,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
    * @returns A promise that resolves when the settings are saved.
    */
   public async saveToFile(): Promise<void> {
-    const record = this.getTransformer().transformObjectRecursively(this.getSettings());
+    const record = this.getTransformer().transformObjectRecursively(this.getSettingsRecord());
     await this.plugin.saveData(record);
   }
 
@@ -175,7 +175,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     noop();
   }
 
-  private getSettings(): Record<StringKeys<PluginSettings>, unknown> {
+  private getSettingsRecord(): Record<StringKeys<PluginSettings>, unknown> {
     const settings: Record<StringKeys<PluginSettings>, unknown> = {} as Record<StringKeys<PluginSettings>, unknown>;
     for (const [key, property] of this.properties.entries()) {
       settings[key as StringKeys<PluginSettings>] = property.get() as unknown;
