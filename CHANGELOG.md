@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 22.1.1-beta.2
+
+- Fix array props
+- Add tsdoc
+- Remove abstract
+
 ## 22.1.1-beta.1
 
 - Refactor plugin settings
