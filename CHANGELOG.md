@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 22.1.1-beta.14
+
+- Allow optional functions
+
 ## 22.1.1-beta.13
 
 - Refactor to use monkey-around internally
