@@ -35,7 +35,13 @@ export interface BindOptions<T> {
   onChanged?(newValue: T | undefined, oldValue: T): Promisable<void>;
 
   /**
-   * If true, shows the validation message when the component value is invalid. Default is `true`.
+   * Whether to reset the setting when the component value is empty. Default is `true`.
+   * Applicable only to text-based components.
+   */
+  shouldResetSettingWhenComponentIsEmpty?: boolean;
+
+  /**
+   * Whether to show the validation message when the component value is invalid. Default is `true`.
    */
   shouldShowValidationMessage?: boolean;
 }
@@ -144,6 +150,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
       onChanged: noop,
       pluginSettingsToComponentValueConverter: (value: PropertyType): UIValue => value as UIValue,
+      shouldResetSettingWhenComponentIsEmpty: true,
       shouldShowValidationMessage: true
     };
 
@@ -168,7 +175,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     }
 
     valueComponent.onChange(async (uiValue) => {
-      if (textBasedComponent?.isEmpty()) {
+      if (textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
         property.setValue(undefined);
         return;
       }
