@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 22.1.1-beta.11
+
+- TextBasedComponent
+
 ## 22.1.1-beta.10
 
 - Init components without placeholders
