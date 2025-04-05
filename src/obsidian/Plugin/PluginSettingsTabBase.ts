@@ -166,7 +166,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     let value = property.getModifiedValue();
 
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
-    textBasedComponent?.setPlaceholder(optionsExt.pluginSettingsToComponentValueConverter(property.defaultValue) as string);
+    textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(property.defaultValue));
 
     if (value === undefined && !textBasedComponent) {
       value = property.defaultValue;
