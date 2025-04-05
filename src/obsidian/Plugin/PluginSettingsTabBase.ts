@@ -46,21 +46,21 @@ export interface BindOptions<T> {
 export interface BindOptionsExtended<
   PluginSettings extends object,
   UIValue,
-  Property extends StringKeys<PluginSettings>
-> extends BindOptions<PluginSettings[Property]> {
+  PropertyName extends StringKeys<PluginSettings>
+> extends BindOptions<PluginSettings[PropertyName]> {
   /**
    * Converts the UI component's value back to the plugin settings value.
    * @param uiValue - The value of the UI component.
    * @returns The value to set on the plugin settings.
    */
-  componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[Property] | ValidationMessageHolder;
+  componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[PropertyName] | ValidationMessageHolder;
 
   /**
    * Converts the plugin settings value to the value used by the UI component.
    * @param pluginSettingsValue - The value of the property in the plugin settings.
    * @returns The value to set on the UI component.
    */
-  pluginSettingsToComponentValueConverter: (pluginSettingsValue: PluginSettings[Property]) => UIValue;
+  pluginSettingsToComponentValueConverter: (pluginSettingsValue: PluginSettings[PropertyName]) => UIValue;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +85,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
    * @typeParam UIValue - The type of the value of the UI component.
    * @typeParam TValueComponent - The type of the value component.
    * @param valueComponent - The value component to bind.
-   * @param property - The property of the plugin settings to bind to.
+   * @param propertyName - The property of the plugin settings to bind to.
    * @param options - The options for binding the value component.
    * @returns The value component.
    */
@@ -94,7 +94,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     TValueComponent
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
-    property: ConditionalKeys<ExtractPluginSettings<TPlugin>, UIValue>,
+    propertyName: ConditionalKeys<ExtractPluginSettings<TPlugin>, UIValue>,
     options?: BindOptions<UIValue>
   ): TValueComponent;
   /**
@@ -102,44 +102,44 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
    *
    * @typeParam UIValue - The type of the value of the UI component.
    * @typeParam TValueComponent - The type of the value component.
-   * @typeParam Property - The property of the plugin settings to bind to.
+   * @typeParam PropertyName - The property name of the plugin settings to bind to.
    * @param valueComponent - The value component to bind.
-   * @param property - The property of the plugin settings to bind to.
+   * @param propertyName - The property name of the plugin settings to bind to.
    * @param options - The options for binding the value component.
    * @returns The value component.
    */
   public bind<
     UIValue,
     TValueComponent,
-    Property extends StringKeys<ExtractPluginSettings<TPlugin>>
+    PropertyName extends StringKeys<ExtractPluginSettings<TPlugin>>
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
-    property: Property,
-    options: BindOptionsExtended<ExtractPluginSettings<TPlugin>, UIValue, Property>
+    propertyName: PropertyName,
+    options: BindOptionsExtended<ExtractPluginSettings<TPlugin>, UIValue, PropertyName>
   ): TValueComponent;
   /**
    * Binds a value component to a plugin setting.
    *
    * @typeParam UIValue - The type of the value of the UI component.
    * @typeParam TValueComponent - The type of the value component.
-   * @typeParam Property - The property of the plugin settings to bind to.
+   * @typeParam PropertyName - The property name of the plugin settings to bind to.
    * @param valueComponent - The value component to bind.
-   * @param property - The property of the plugin settings to bind to.
+   * @param propertyName - The property name of the plugin settings to bind to.
    * @param options - The options for binding the value component.
    * @returns The value component.
    */
   public bind<
     UIValue,
     TValueComponent,
-    Property extends StringKeys<ExtractPluginSettings<TPlugin>>
+    PropertyName extends StringKeys<ExtractPluginSettings<TPlugin>>
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
-    property: Property,
-    options?: BindOptions<ExtractPluginSettings<TPlugin>[Property]>
+    propertyName: PropertyName,
+    options?: BindOptions<ExtractPluginSettings<TPlugin>[PropertyName]>
   ): TValueComponent {
     type PluginSettings = ExtractPluginSettings<TPlugin>;
-    type PropertyType = PluginSettings[Property];
-    const DEFAULT_OPTIONS: Required<BindOptionsExtended<PluginSettings, UIValue, Property>> = {
+    type PropertyType = PluginSettings[PropertyName];
+    const DEFAULT_OPTIONS: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
       onChanged: noop,
@@ -147,24 +147,24 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
       shouldShowValidationMessage: true
     };
 
-    const optionsExt: Required<BindOptionsExtended<PluginSettings, UIValue, Property>> = { ...DEFAULT_OPTIONS, ...options };
+    const optionsExt: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = { ...DEFAULT_OPTIONS, ...options };
 
     const validatorElement = getValidatorComponent(valueComponent)?.validatorEl;
 
-    const propertyObj = this.plugin.settingsManager.getProperty(property) as PluginSettingsProperty<PropertyType>;
+    const property = this.plugin.settingsManager.getProperty(propertyName) as PluginSettingsProperty<PropertyType>;
 
     valueComponent
-      .setValue(optionsExt.pluginSettingsToComponentValueConverter(propertyObj.get()))
+      .setValue(optionsExt.pluginSettingsToComponentValueConverter(property.get()))
       .onChange(async (uiValue) => {
-        const oldValue = propertyObj.get();
+        const oldValue = property.get();
         const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
-        await propertyObj.setAndValidate(convertedValue);
+        await property.setAndValidate(convertedValue);
         const newValue = isValidationMessageHolder(convertedValue) ? undefined : convertedValue;
         await optionsExt.onChanged(newValue, oldValue);
       });
 
     if (isPlaceholderComponent(valueComponent)) {
-      valueComponent.setPlaceholder(optionsExt.pluginSettingsToComponentValueConverter(propertyObj.defaultValue) as string);
+      valueComponent.setPlaceholder(optionsExt.pluginSettingsToComponentValueConverter(property.defaultValue) as string);
     }
 
     validatorElement?.addEventListener('focus', validate);
@@ -178,14 +178,14 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
         return;
       }
 
-      if (!propertyObj.validationMessage) {
+      if (!property.validationMessage) {
         validatorElement.setCustomValidity('');
         validatorElement.checkValidity();
-        propertyObj.set(validatorElement);
+        property.set(validatorElement);
       }
 
-      validatorElement.setCustomValidity(propertyObj.validationMessage);
-      validatorElement.title = propertyObj.validationMessage;
+      validatorElement.setCustomValidity(property.validationMessage);
+      validatorElement.title = property.validationMessage;
       if (validatorElement.isActiveElement() && optionsExt.shouldShowValidationMessage) {
         validatorElement.reportValidity();
       }
