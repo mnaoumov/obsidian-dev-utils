@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 22.1.1-beta.10
+
+- Init components without placeholders
+
 ## 22.1.1-beta.9
 
 - Separate setValueAndValidate and setValidationMessage
