@@ -1,3 +1,4 @@
+import type { App } from 'obsidian';
 import type {
   Promisable,
   ReadonlyDeep
@@ -104,6 +105,7 @@ class SafeSettingsProxyHandler<PluginSettings extends object> extends ProxyHandl
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
 export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
+  public readonly app: App;
   public readonly safeSettings: ReadonlyDeep<PluginSettings>;
 
   private defaultSettings: PluginSettings;
@@ -111,7 +113,8 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private validators: Map<string, Validator<any>> = new Map<string, Validator<any>>();
 
-  public constructor(private plugin: PluginBase<PluginSettings>) {
+  public constructor(public readonly plugin: PluginBase<PluginSettings>) {
+    this.app = plugin.app;
     this.defaultSettings = this.createDefaultSettings();
 
     this.addValidators();
