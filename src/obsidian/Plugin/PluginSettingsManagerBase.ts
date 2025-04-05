@@ -10,7 +10,6 @@ import type {
   StringKeys
 } from '../../Object.ts';
 import type { Transformer } from '../../Transformers/Transformer.ts';
-import type { ValidationMessageHolder } from '../ValidationMessage.ts';
 import type { PluginBase } from './PluginBase.ts';
 
 import { noop } from '../../Function.ts';
@@ -18,7 +17,6 @@ import { DateTransformer } from '../../Transformers/DateTransformer.ts';
 import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
 import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';
 import { SkipPrivatePropertyTransformer } from '../../Transformers/SkipPrivatePropertyTransformer.ts';
-import { isValidationMessageHolder } from '../ValidationMessage.ts';
 
 const defaultTransformer = new GroupTransformer([
   new SkipPrivatePropertyTransformer(),
@@ -64,8 +62,8 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
       return true;
     }
 
-    property.set(value);
-    this.validationPromise = this.validationPromise.then(() => property.setAndValidate(value));
+    property.setValue(value);
+    this.validationPromise = this.validationPromise.then(() => property.setValueAndValidate(value));
 
     return true;
   }
@@ -183,7 +181,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
         continue;
       }
 
-      await property.setAndValidate(value);
+      await property.setValueAndValidate(value);
     }
 
     const newJson = JSON.stringify(this.prepareRecordToSave());
@@ -302,22 +300,26 @@ export class PluginSettingsProperty<T> {
     return true;
   }
 
-  public set(value: T | undefined | ValidationMessageHolder): void {
-    if (isValidationMessageHolder(value)) {
-      this._validationMessage = value.validationMessage;
-    } else {
-      this.modifiedValue = value;
-    }
+  public setValidationMessage(validationMessage: string): void {
+    this._validationMessage = validationMessage;
+    this.showWarning();
   }
 
-  public async setAndValidate(value: T | undefined | ValidationMessageHolder): Promise<void> {
-    this.set(value);
+  public setValue(value: T | undefined): void {
+    this.modifiedValue = value;
+  }
+
+  public async setValueAndValidate(value: T): Promise<void> {
+    this.setValue(value);
     if (this.modifiedValue === undefined) {
       return;
     }
 
     this._validationMessage = (await this.validator(this.modifiedValue) as string | undefined) ?? '';
+    this.showWarning(value);
+  }
 
+  private showWarning(value?: T): void {
     if (!this._validationMessage) {
       return;
     }
