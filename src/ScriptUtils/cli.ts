@@ -11,7 +11,7 @@ import type { Promisable } from 'type-fest';
 import { Command } from 'commander';
 import { tsImport } from 'tsx/esm/api';
 
-import type { MaybeReturn } from '../Object.ts';
+import type { MaybeReturn } from '../Type.ts';
 
 import { invokeAsyncSafely } from '../Async.ts';
 import {

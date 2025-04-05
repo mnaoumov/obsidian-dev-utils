@@ -6,11 +6,11 @@ import type {
 
 import { Notice } from 'obsidian';
 
+import type { Transformer } from '../../Transformers/Transformer.ts';
 import type {
   MaybeReturn,
   StringKeys
-} from '../../Object.ts';
-import type { Transformer } from '../../Transformers/Transformer.ts';
+} from '../../Type.ts';
 import type { PluginBase } from './PluginBase.ts';
 
 import { noop } from '../../Function.ts';

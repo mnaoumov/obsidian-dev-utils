@@ -3,7 +3,7 @@
  * Contains utility functions for string operations.
  */
 
-import type { MaybeReturn } from './Object.ts';
+import type { MaybeReturn } from './Type.ts';
 import type { ValueProvider } from './ValueProvider.ts';
 
 import { throwExpression } from './Error.ts';

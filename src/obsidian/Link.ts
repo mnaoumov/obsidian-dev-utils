@@ -26,7 +26,7 @@ import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
 
-import type { MaybeReturn } from '../Object.ts';
+import type { MaybeReturn } from '../Type.ts';
 import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { ProcessOptions } from './Vault.ts';

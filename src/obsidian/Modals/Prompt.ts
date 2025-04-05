@@ -14,7 +14,7 @@ import {
 } from 'obsidian';
 
 import type { PromiseResolve } from '../../Async.ts';
-import type { MaybeReturn } from '../../Object.ts';
+import type { MaybeReturn } from '../../Type.ts';
 
 import {
   convertAsyncToSync,

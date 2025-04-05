@@ -6,7 +6,7 @@
 import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
-import type { MaybeReturn } from '../Object.ts';
+import type { MaybeReturn } from '../Type.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 import type { ProcessOptions } from './Vault.ts';
