@@ -71,7 +71,7 @@ export interface BindOptionsExtended<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExtractPluginSettings<Plugin extends PluginBase<any>> = Plugin['settings'] extends ReadonlyDeep<infer Settings> ? Settings : never;
+type ExtractPluginSettings<Plugin extends PluginBase<any>> = Plugin['settings'] extends ReadonlyDeep<infer Settings> ? object & Settings : never;
 
 /**
  * Base class for creating plugin settings tabs in Obsidian.

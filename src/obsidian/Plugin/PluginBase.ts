@@ -52,12 +52,16 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   public get settingsManager(): PluginSettingsManagerBase<PluginSettings> {
+    if (!this._settingsManager) {
+      throw new Error('Settings manager not defined');
+    }
+
     return this._settingsManager;
   }
 
   private _abortSignal!: AbortSignal;
 
-  private _settingsManager!: PluginSettingsManagerBase<PluginSettings>;
+  private _settingsManager: null | PluginSettingsManagerBase<PluginSettings> = null;
 
   private notice?: Notice;
 
@@ -128,18 +132,22 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   /**
-   * Creates a plugin settings tab. This method must be implemented by subclasses.
+   * Creates a plugin settings tab.
    *
    * @returns The settings tab or null if not applicable.
    */
-  protected abstract createPluginSettingsTab(): null | PluginSettingTab;
+  protected createPluginSettingsTab(): null | PluginSettingTab {
+    return null;
+  }
 
   /**
    * Creates the plugin settings manager. This method must be implemented by subclasses.
    *
    * @returns The plugin settings manager.
    */
-  protected abstract createSettingsManager(): PluginSettingsManagerBase<PluginSettings>;
+  protected createSettingsManager(): null | PluginSettingsManagerBase<PluginSettings> {
+    return null;
+  }
 
   /**
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
