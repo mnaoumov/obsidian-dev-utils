@@ -37,15 +37,15 @@ abstract class ProxyHandlerBase<PluginSettings extends object> implements ProxyH
       return record[prop];
     }
 
-    const propertyObj = this.properties.get(prop);
-    if (!propertyObj) {
+    const property = this.properties.get(prop);
+    if (!property) {
       return record[prop];
     }
 
-    return this.getPropertyValue(propertyObj);
+    return this.getPropertyValue(property);
   }
 
-  protected abstract getPropertyValue(propertyObj: PluginSettingsProperty<unknown>): unknown;
+  protected abstract getPropertyValue(property: PluginSettingsProperty<unknown>): unknown;
 }
 
 class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyHandlerBase<PluginSettings> {
@@ -58,42 +58,45 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
       return true;
     }
 
-    const propertyObj = this.properties.get(prop);
-    if (!propertyObj) {
+    const property = this.properties.get(prop);
+    if (!property) {
       record[prop] = value;
       return true;
     }
 
-    propertyObj.set(value);
-    this.validationPromise = this.validationPromise.then(() => propertyObj.setAndValidate(value));
+    property.set(value);
+    this.validationPromise = this.validationPromise.then(() => property.setAndValidate(value));
 
     return true;
   }
 
-  protected override getPropertyValue(propertyObj: PluginSettingsProperty<unknown>): unknown {
-    return propertyObj.get();
+  protected override getPropertyValue(property: PluginSettingsProperty<unknown>): unknown {
+    return property.get();
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 class PropertiesMap<PluginSettings extends object> extends Map<string, PluginSettingsProperty<any>> {
-  public getTyped<Property extends StringKeys<PluginSettings>>(key: Property): PluginSettingsProperty<PluginSettings[Property]> {
-    const property = super.get(key);
+  public getTyped<PropertyName extends StringKeys<PluginSettings>>(propertyName: PropertyName): PluginSettingsProperty<PluginSettings[PropertyName]> {
+    const property = super.get(propertyName);
     if (!property) {
-      throw new Error(`Property ${String(key)} not found`);
+      throw new Error(`Property ${String(propertyName)} not found`);
     }
 
-    return property as PluginSettingsProperty<PluginSettings[Property]>;
+    return property as PluginSettingsProperty<PluginSettings[PropertyName]>;
   }
 
-  public setTyped<Property extends StringKeys<PluginSettings>>(key: Property, value: PluginSettingsProperty<PluginSettings[Property]>): this {
-    return super.set(key, value);
+  public setTyped<PropertyName extends StringKeys<PluginSettings>>(
+    propertyName: PropertyName,
+    value: PluginSettingsProperty<PluginSettings[PropertyName]>
+  ): this {
+    return super.set(propertyName, value);
   }
 }
 
 class SafeSettingsProxyHandler<PluginSettings extends object> extends ProxyHandlerBase<PluginSettings> {
-  protected override getPropertyValue(propertyObj: PluginSettingsProperty<unknown>): unknown {
-    return propertyObj.getSafe();
+  protected override getPropertyValue(property: PluginSettingsProperty<unknown>): unknown {
+    return property.getSafe();
   }
 }
 
@@ -117,8 +120,11 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
 
     this.properties = new PropertiesMap<PluginSettings>();
 
-    for (const key of Object.keys(this.defaultSettings) as StringKeys<PluginSettings>[]) {
-      this.properties.set(key, new PluginSettingsProperty(key, this.defaultSettings[key], this.validators.get(key) ?? noop));
+    for (const propertyName of Object.keys(this.defaultSettings) as StringKeys<PluginSettings>[]) {
+      this.properties.set(
+        propertyName,
+        new PluginSettingsProperty(propertyName, this.defaultSettings[propertyName], this.validators.get(propertyName) ?? noop)
+      );
     }
 
     this.validators.clear();
@@ -135,8 +141,8 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     await this.saveToFile();
   }
 
-  public getProperty<Property extends StringKeys<PluginSettings>>(property: Property): PluginSettingsProperty<PluginSettings[Property]> {
-    return this.properties.getTyped(property);
+  public getProperty<PropertyName extends StringKeys<PluginSettings>>(propertyName: PropertyName): PluginSettingsProperty<PluginSettings[PropertyName]> {
+    return this.properties.getTyped(propertyName);
   }
 
   public async loadFromFile(): Promise<void> {
@@ -163,18 +169,18 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     const afterPrepareJson = JSON.stringify(record);
 
     for (const [key, value] of Object.entries(record)) {
-      const propertyObj = this.properties.get(key);
-      if (!propertyObj) {
+      const property = this.properties.get(key);
+      if (!property) {
         console.warn(`Unknown property: ${key}`);
         continue;
       }
 
-      if (typeof value !== typeof propertyObj.defaultValue) {
-        console.warn(`Invalid value type. Expected ${typeof propertyObj.defaultValue}, got: ${typeof value}`);
+      if (typeof value !== typeof property.defaultValue) {
+        console.warn(`Invalid value type. Expected ${typeof property.defaultValue}, got: ${typeof value}`);
         continue;
       }
 
-      await propertyObj.setAndValidate(value);
+      await property.setAndValidate(value);
     }
 
     if (afterPrepareJson !== beforePrepareJson) {
@@ -200,8 +206,11 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     await this.plugin.onSaveSettings(this.getSavedSettings(), oldSettings);
   }
 
-  protected addValidator<Property extends StringKeys<PluginSettings>>(property: Property, validator: Validator<PluginSettings[Property]>): void {
-    this.validators.set(property, validator);
+  protected addValidator<PropertyName extends StringKeys<PluginSettings>>(
+    propertyName: PropertyName,
+    validator: Validator<PluginSettings[PropertyName]>
+  ): void {
+    this.validators.set(propertyName, validator);
   }
 
   protected addValidators(): void {
@@ -220,8 +229,8 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
 
   private getSavedSettings(): Partial<PluginSettings> {
     const savedSettings: Partial<PluginSettings> = {};
-    for (const [key, property] of this.properties.entries()) {
-      savedSettings[key as StringKeys<PluginSettings>] = property.getSaved() as PluginSettings[StringKeys<PluginSettings>] | undefined;
+    for (const [propertyName, property] of this.properties.entries()) {
+      savedSettings[propertyName as StringKeys<PluginSettings>] = property.getSaved() as PluginSettings[StringKeys<PluginSettings>] | undefined;
     }
     const proto = Object.getPrototypeOf(this.defaultSettings) as object;
     Object.setPrototypeOf(savedSettings, proto);
@@ -230,8 +239,8 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
 
   private getSettingsRecord(): Record<StringKeys<PluginSettings>, unknown> {
     const settings: Record<StringKeys<PluginSettings>, unknown> = {} as Record<StringKeys<PluginSettings>, unknown>;
-    for (const [key, property] of this.properties.entries()) {
-      settings[key as StringKeys<PluginSettings>] = property.get() as unknown;
+    for (const [propertyName, property] of this.properties.entries()) {
+      settings[propertyName as StringKeys<PluginSettings>] = property.get() as unknown;
     }
 
     return settings;
