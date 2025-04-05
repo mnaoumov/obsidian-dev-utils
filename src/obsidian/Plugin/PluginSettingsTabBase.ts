@@ -20,7 +20,7 @@ import type { PluginSettingsProperty } from './PluginSettingsManagerBase.ts';
 import { invokeAsyncSafely } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
-import { isPlaceholderComponent } from '../Components/PlaceholderComponent.ts';
+import { getTextBasedComponentValue } from '../Components/TextBasedComponent.ts';
 import { getValidatorComponent } from '../Components/ValidatorComponent.ts';
 import { isValidationMessageHolder } from '../ValidationMessage.ts';
 import { getPluginId } from './PluginId.ts';
@@ -155,7 +155,10 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
 
     let value = property.getModifiedValue();
 
-    if (value === undefined && !isPlaceholderComponent(valueComponent)) {
+    const textBasedComponent = getTextBasedComponentValue(valueComponent);
+    textBasedComponent?.setPlaceholder(optionsExt.pluginSettingsToComponentValueConverter(property.defaultValue) as string);
+
+    if (value === undefined && !textBasedComponent) {
       value = property.defaultValue;
       property.setValue(value);
     }
@@ -165,6 +168,11 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     }
 
     valueComponent.onChange(async (uiValue) => {
+      if (textBasedComponent?.isEmpty()) {
+        property.setValue(undefined);
+        return;
+      }
+
       const oldValue = property.getModifiedOrDefaultValue();
       const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
       if (isValidationMessageHolder(convertedValue)) {
@@ -175,10 +183,6 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
       const newValue = isValidationMessageHolder(convertedValue) ? undefined : convertedValue;
       await optionsExt.onChanged(newValue, oldValue);
     });
-
-    if (isPlaceholderComponent(valueComponent)) {
-      valueComponent.setPlaceholder(optionsExt.pluginSettingsToComponentValueConverter(property.defaultValue) as string);
-    }
 
     validatorElement?.addEventListener('focus', validate);
     validatorElement?.addEventListener('blur', validate);

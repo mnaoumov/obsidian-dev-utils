@@ -15,7 +15,7 @@ import type { ValidatorElement } from '../../HTMLElement.ts';
 import type { initPluginContext } from '../Plugin/PluginContext.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SettingEx } from '../SettingEx.ts';
-import type { PlaceholderComponent } from './PlaceholderComponent.ts';
+import type { TextBasedComponent } from './TextBasedComponent.ts';
 import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
@@ -32,7 +32,7 @@ import { getPluginId } from '../Plugin/PluginId.ts';
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
 export class MultipleTextComponent extends ValueComponent<string[]>
-  implements PlaceholderComponent, ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
+  implements TextBasedComponent, ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
   /**
    * Gets the validator element of the component.
    *
@@ -62,6 +62,15 @@ export class MultipleTextComponent extends ValueComponent<string[]>
    */
   public override getValue(): string[] {
     return this.textAreaComponent.getValue().split('\n');
+  }
+
+  /**
+   * Checks if the component is empty.
+   *
+   * @returns `true` if the component is empty, `false` otherwise.
+   */
+  public isEmpty(): boolean {
+    return this.textAreaComponent.getValue() === '';
   }
 
   /**
