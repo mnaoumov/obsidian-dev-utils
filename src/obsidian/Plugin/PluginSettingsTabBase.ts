@@ -153,7 +153,12 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
 
     const property = this.plugin.settingsManager.getProperty(propertyName) as PluginSettingsProperty<PropertyType>;
 
-    const value = property.getModifiedValue();
+    let value = property.getModifiedValue();
+
+    if (value === undefined && !isPlaceholderComponent(valueComponent)) {
+      value = property.defaultValue;
+      property.setValue(value);
+    }
 
     if (value !== undefined) {
       valueComponent.setValue(optionsExt.pluginSettingsToComponentValueConverter(value));
