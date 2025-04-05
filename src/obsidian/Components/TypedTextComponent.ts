@@ -11,7 +11,7 @@ import {
 } from 'obsidian';
 
 import type { ValidatorElement } from '../../HTMLElement.ts';
-import type { PlaceholderComponent } from './PlaceholderComponent.ts';
+import type { TextBasedComponent } from './TextBasedComponent.ts';
 import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
@@ -21,7 +21,7 @@ import { getPluginId } from '../Plugin/PluginId.ts';
 /**
  * A component that displays and edits a text-based value.
  */
-export abstract class TypedTextComponent<T> extends ValueComponent<T> implements PlaceholderComponent, ValidatorComponent, ValueComponentWithChangeTracking<T> {
+export abstract class TypedTextComponent<T> extends ValueComponent<T> implements TextBasedComponent, ValidatorComponent, ValueComponentWithChangeTracking<T> {
   /**
    * The input element of the component.
    */
@@ -56,7 +56,11 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
    * @returns The value of the component.
    */
   public override getValue(): T {
-    return this.valueFromString(this.inputEl.value);
+    return this.valueFromString(this.textComponent.getValue());
+  }
+
+  public isEmpty(): boolean {
+    return this.textComponent.getValue() === '';
   }
 
   /**
@@ -107,7 +111,7 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
    * @returns The component.
    */
   public override setValue(value: T): this {
-    this.inputEl.value = this.valueToString(value);
+    this.textComponent.setValue(this.valueToString(value));
     return this;
   }
 
