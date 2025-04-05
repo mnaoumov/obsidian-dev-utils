@@ -70,7 +70,7 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
   }
 
   protected override getPropertyValue(property: PluginSettingsProperty<unknown>): unknown {
-    return property.getCurrentValue();
+    return property.currentValue;
   }
 }
 
@@ -95,7 +95,7 @@ class PropertiesMap<PluginSettings extends object> extends Map<string, PluginSet
 
 class SafeSettingsProxyHandler<PluginSettings extends object> extends ProxyHandlerBase<PluginSettings> {
   protected override getPropertyValue(property: PluginSettingsProperty<unknown>): unknown {
-    return property.getSafeValue();
+    return property.safeValue;
   }
 }
 
@@ -244,7 +244,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   private getSavedSettings(): Partial<PluginSettings> {
     const savedSettings: Partial<PluginSettings> = {};
     for (const [propertyName, property] of this.properties.entries()) {
-      savedSettings[propertyName as StringKeys<PluginSettings>] = property.getLastSavedValue() as PluginSettings[StringKeys<PluginSettings>] | undefined;
+      savedSettings[propertyName as StringKeys<PluginSettings>] = property.lastSavedValue as PluginSettings[StringKeys<PluginSettings>] | undefined;
     }
     const proto = Object.getPrototypeOf(this.defaultSettings) as object;
     Object.setPrototypeOf(savedSettings, proto);
@@ -254,7 +254,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   private async prepareRecordToSave(): Promise<Record<StringKeys<PluginSettings>, unknown>> {
     const settings: Record<StringKeys<PluginSettings>, unknown> = {} as Record<StringKeys<PluginSettings>, unknown>;
     for (const [propertyName, property] of this.properties.entries()) {
-      settings[propertyName as StringKeys<PluginSettings>] = property.getCurrentValue() as unknown;
+      settings[propertyName as StringKeys<PluginSettings>] = property.currentValue as unknown;
     }
 
     await this.onSavingRecord(settings);
@@ -269,42 +269,44 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
  * @typeParam T - The type of the property.
  */
 export class PluginSettingsProperty<T> {
+  public get currentValue(): T {
+    return this._currentValue;
+  }
+
+  public get lastSavedValue(): T {
+    return this._lastSavedValue;
+  }
+
+  public get safeValue(): T {
+    return this._validationMessage ? this.defaultValue : this._currentValue;
+  }
+
   public get validationMessage(): string {
     return this._validationMessage;
   }
 
+  private _currentValue: T;
+
+  private _lastSavedValue: T;
+
   private _validationMessage = '';
-  private currentValue: T;
-  private lastSavedValue: T;
 
   public constructor(private readonly propertyName: string, public readonly defaultValue: T, private readonly validator: Validator<T>) {
-    this.lastSavedValue = defaultValue;
-    this.currentValue = defaultValue;
-  }
-
-  public getCurrentValue(): T {
-    return this.currentValue;
-  }
-
-  public getLastSavedValue(): T {
-    return this.lastSavedValue;
-  }
-
-  public getSafeValue(): T {
-    return this._validationMessage ? this.defaultValue : this.currentValue;
+    this._lastSavedValue = defaultValue;
+    this._currentValue = defaultValue;
   }
 
   public reset(): void {
-    this.currentValue = this.defaultValue;
+    this._currentValue = this.defaultValue;
     this._validationMessage = '';
   }
 
   public save(): boolean {
-    if (this.lastSavedValue === this.currentValue) {
+    if (this._lastSavedValue === this._currentValue) {
       return false;
     }
 
-    this.lastSavedValue = this.currentValue;
+    this._lastSavedValue = this._currentValue;
     return true;
   }
 
@@ -314,16 +316,16 @@ export class PluginSettingsProperty<T> {
   }
 
   public setValue(value: T): void {
-    this.currentValue = value;
+    this._currentValue = value;
   }
 
   public async setValueAndValidate(value: T): Promise<void> {
     this.setValue(value);
-    if (this.currentValue === undefined) {
+    if (this._currentValue === undefined) {
       return;
     }
 
-    this._validationMessage = (await this.validator(this.currentValue) as string | undefined) ?? '';
+    this._validationMessage = (await this.validator(this._currentValue) as string | undefined) ?? '';
     this.showWarning(value);
   }
 
