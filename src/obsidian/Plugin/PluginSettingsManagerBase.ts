@@ -201,8 +201,14 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   public async saveToFile(): Promise<void> {
     const oldSettings = this.getSavedSettings();
 
+    let hasChanges = false;
+
     for (const property of this.properties.values()) {
-      property.save();
+      hasChanges ||= property.save();
+    }
+
+    if (!hasChanges) {
+      return;
     }
 
     await this.plugin.saveData(this.prepareRecordToSave());
@@ -284,8 +290,13 @@ export class PluginSettingsProperty<T> {
     return this.savedValue;
   }
 
-  public save(): void {
+  public save(): boolean {
+    if (this.savedValue === this.value) {
+      return false;
+    }
+
     this.savedValue = this.value;
+    return true;
   }
 
   public set(value: T | undefined | ValidationMessageHolder): void {
