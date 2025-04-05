@@ -6,8 +6,7 @@
 
 import type {
   ConditionalKeys,
-  Promisable,
-  ReadonlyDeep
+  Promisable
 } from 'type-fest';
 
 import {
@@ -74,7 +73,7 @@ export interface BindOptionsExtended<
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ExtractPluginSettings<Plugin extends PluginBase<any>> = Plugin['settings'] extends ReadonlyDeep<infer Settings> ? object & Settings : never;
+type ExtractPluginSettings<Plugin extends PluginBase<any>> = Plugin['__pluginSettingsType'];
 
 /**
  * Base class for creating plugin settings tabs in Obsidian.
@@ -150,6 +149,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
     type PluginSettings = ExtractPluginSettings<TPlugin>;
     type PropertyType = PluginSettings[PropertyName];
     const DEFAULT_OPTIONS: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
       onChanged: noop,
       pluginSettingsToComponentValueConverter: (value: PropertyType): UIValue => value as UIValue,

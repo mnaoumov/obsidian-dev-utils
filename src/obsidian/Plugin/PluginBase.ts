@@ -34,6 +34,11 @@ import { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
  */
 export abstract class PluginBase<PluginSettings extends object = object> extends Plugin {
   /**
+   * @deprecated Used only for type inference. Don't use it directly.
+   */
+  declare public __pluginSettingsType: PluginSettings;
+
+  /**
    * Gets the AbortSignal used for aborting long-running operations.
    *
    * @returns The abort signal.
