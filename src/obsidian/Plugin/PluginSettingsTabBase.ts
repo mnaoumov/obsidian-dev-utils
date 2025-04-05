@@ -10,7 +10,10 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
-import { PluginSettingTab } from 'obsidian';
+import {
+  PluginSettingTab,
+  setTooltip
+} from 'obsidian';
 
 import type { StringKeys } from '../../Type.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
@@ -209,7 +212,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
       }
 
       validatorElement.setCustomValidity(property.validationMessage);
-      validatorElement.title = property.validationMessage;
+      setTooltip(validatorElement, property.validationMessage);
       if (validatorElement.isActiveElement() && optionsExt.shouldShowValidationMessage) {
         validatorElement.reportValidity();
       }
