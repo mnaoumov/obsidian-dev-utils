@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 22.1.1-beta.7
+
+- Detailed Invalid value type warning
+
 ## 22.1.1-beta.6
 
 - Rename PropertyName
