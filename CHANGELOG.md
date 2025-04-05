@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 22.1.1-beta.18
+
+- Return full PluginSettings
+- Add missing await
+
 ## 22.1.1-beta.17
 
 - getAllKeys
