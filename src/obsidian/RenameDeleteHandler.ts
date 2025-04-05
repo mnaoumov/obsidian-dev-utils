@@ -12,7 +12,6 @@ import type {
   TFile
 } from 'obsidian';
 
-import { around } from 'monkey-around';
 import { Vault } from 'obsidian';
 
 import type {
@@ -60,6 +59,7 @@ import {
   getBacklinksForFileSafe,
   tempRegisterFileAndRun
 } from './MetadataCache.ts';
+import { invokeWithPatchAsync } from './MonkeyAround.ts';
 import { addToQueue } from './Queue.ts';
 import {
   getSafeRenamePath,
@@ -410,101 +410,101 @@ async function handleRenameAsync(
     return;
   }
 
-  const restoreUpdateAllLinks = around(app.fileManager, {
+  await invokeWithPatchAsync(app.fileManager, {
     updateAllLinks: () => noopAsync
-  });
-  try {
-    const renameMap = new Map<string, string>();
-    await fillRenameMap(app, oldPath, newPath, renameMap, oldPathLinks);
+  }, async () => {
+    try {
+      const renameMap = new Map<string, string>();
+      await fillRenameMap(app, oldPath, newPath, renameMap, oldPathLinks);
 
-    const combinedBacklinksMap = new Map<string, Map<string, string>>();
-    initBacklinksMap(oldPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
+      const combinedBacklinksMap = new Map<string, Map<string, string>>();
+      initBacklinksMap(oldPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
 
-    for (const attachmentOldPath of renameMap.keys()) {
-      if (attachmentOldPath === oldPath) {
-        continue;
-      }
-      const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe(app, attachmentOldPath)).data;
-      initBacklinksMap(attachmentOldPathBacklinksMap, renameMap, combinedBacklinksMap, attachmentOldPath);
-    }
-
-    const parentFolders = new Set<string>();
-
-    for (const [oldAttachmentPath, newAttachmentPath] of renameMap.entries()) {
-      if (oldAttachmentPath === oldPath) {
-        continue;
-      }
-      const fixedNewAttachmentPath = await renameHandled(app, oldAttachmentPath, newAttachmentPath);
-      renameMap.set(oldAttachmentPath, fixedNewAttachmentPath);
-      parentFolders.add(dirname(oldAttachmentPath));
-    }
-
-    const settings = getSettings(app);
-    if (settings.shouldDeleteEmptyFolders) {
-      for (const parentFolder of parentFolders) {
-        await deleteEmptyFolderHierarchy(app, parentFolder);
-      }
-    }
-
-    for (
-      const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(
-        Array.from(interruptedCombinedBacklinksMap?.entries() ?? [])
-      )
-    ) {
-      await editLinks(app, newBacklinkPath, (link) => {
-        const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
-        if (!oldAttachmentPath) {
-          return;
+      for (const attachmentOldPath of renameMap.keys()) {
+        if (attachmentOldPath === oldPath) {
+          continue;
         }
+        const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe(app, attachmentOldPath)).data;
+        initBacklinksMap(attachmentOldPathBacklinksMap, renameMap, combinedBacklinksMap, attachmentOldPath);
+      }
 
-        const newAttachmentPath = renameMap.get(oldAttachmentPath);
-        if (!newAttachmentPath) {
-          return;
+      const parentFolders = new Set<string>();
+
+      for (const [oldAttachmentPath, newAttachmentPath] of renameMap.entries()) {
+        if (oldAttachmentPath === oldPath) {
+          continue;
         }
+        const fixedNewAttachmentPath = await renameHandled(app, oldAttachmentPath, newAttachmentPath);
+        renameMap.set(oldAttachmentPath, fixedNewAttachmentPath);
+        parentFolders.add(dirname(oldAttachmentPath));
+      }
 
-        return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
+      const settings = getSettings(app);
+      if (settings.shouldDeleteEmptyFolders) {
+        for (const parentFolder of parentFolders) {
+          await deleteEmptyFolderHierarchy(app, parentFolder);
+        }
+      }
+
+      for (
+        const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(
+          Array.from(interruptedCombinedBacklinksMap?.entries() ?? [])
+        )
+      ) {
+        await editLinks(app, newBacklinkPath, (link) => {
+          const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
+          if (!oldAttachmentPath) {
+            return;
+          }
+
+          const newAttachmentPath = renameMap.get(oldAttachmentPath);
+          if (!newAttachmentPath) {
+            return;
+          }
+
+          return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
+            app,
+            link,
+            newSourcePathOrFile: newBacklinkPath,
+            newTargetPathOrFile: newAttachmentPath,
+            oldTargetPathOrFile: oldAttachmentPath,
+            shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
+          }));
+        }, {
+          shouldFailOnMissingFile: false
+        });
+      }
+
+      if (isNote(app, newPath)) {
+        await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileOptions>({
           app,
-          link,
-          newSourcePathOrFile: newBacklinkPath,
-          newTargetPathOrFile: newAttachmentPath,
-          oldTargetPathOrFile: oldAttachmentPath,
+          newSourcePathOrFile: newPath,
+          oldSourcePathOrFile: oldPath,
+          shouldFailOnMissingFile: false,
           shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
         }));
-      }, {
-        shouldFailOnMissingFile: false
+      }
+
+      if (!getFileOrNull(app, newPath)) {
+        let interruptedRenames = interruptedRenamesMap.get(newPath);
+        if (!interruptedRenames) {
+          interruptedRenames = [];
+          interruptedRenamesMap.set(newPath, interruptedRenames);
+        }
+        interruptedRenames.push({
+          combinedBacklinksMap,
+          oldPath
+        });
+      }
+    } finally {
+      const orphanKeys = Array.from(handledRenames);
+      addToQueue(app, () => {
+        for (const key of orphanKeys) {
+          handledRenames.delete(key);
+        }
       });
     }
-
-    if (isNote(app, newPath)) {
-      await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileOptions>({
-        app,
-        newSourcePathOrFile: newPath,
-        oldSourcePathOrFile: oldPath,
-        shouldFailOnMissingFile: false,
-        shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
-      }));
-    }
-
-    if (!getFileOrNull(app, newPath)) {
-      let interruptedRenames = interruptedRenamesMap.get(newPath);
-      if (!interruptedRenames) {
-        interruptedRenames = [];
-        interruptedRenamesMap.set(newPath, interruptedRenames);
-      }
-      interruptedRenames.push({
-        combinedBacklinksMap,
-        oldPath
-      });
-    }
-  } finally {
-    restoreUpdateAllLinks();
-    const orphanKeys = Array.from(handledRenames);
-    addToQueue(app, () => {
-      for (const key of orphanKeys) {
-        handledRenames.delete(key);
-      }
-    });
-  }
+  });
 }
 
 function handleRenameIfEnabled(plugin: Plugin, file: TAbstractFile, oldPath: string): void {

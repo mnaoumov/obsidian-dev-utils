@@ -6,11 +6,12 @@
 import type { App } from 'obsidian';
 import type { EmbeddableConstructor } from 'obsidian-typings';
 
-import { around } from 'monkey-around';
 import {
   Component,
   MarkdownRenderer
 } from 'obsidian';
+
+import { invokeWithPatchAsync } from './MonkeyAround.ts';
 
 /**
  * Render the markdown and embeds.
@@ -22,18 +23,14 @@ import {
  * @param component - The Component instance.
  */
 export async function fullRender(app: App, markdown: string, el: HTMLElement, sourcePath: string, component: Component): Promise<void> {
-  const uninstall = around(app.embedRegistry.embedByExtension, {
+  await invokeWithPatchAsync(app.embedRegistry.embedByExtension, {
     md: (next: EmbeddableConstructor): EmbeddableConstructor => (context, file, path) => {
       context.displayMode = false;
       return next(context, file, path);
     }
-  });
-
-  try {
+  }, async () => {
     await MarkdownRenderer.render(app, markdown, el, sourcePath, component);
-  } finally {
-    uninstall();
-  }
+  });
 }
 
 /**
