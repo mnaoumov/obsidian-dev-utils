@@ -163,10 +163,9 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     }
 
     let record = data as Record<string, unknown>;
+    const originalJson = JSON.stringify(record);
     record = this.getTransformer().transformObjectRecursively(record);
-    const beforePrepareJson = JSON.stringify(record);
     await this.prepareRecord(record);
-    const afterPrepareJson = JSON.stringify(record);
 
     for (const [propertyName, value] of Object.entries(record)) {
       const property = this.properties.get(propertyName);
@@ -187,7 +186,9 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
       await property.setAndValidate(value);
     }
 
-    if (afterPrepareJson !== beforePrepareJson) {
+    const newJson = JSON.stringify(this.prepareRecordToSave());
+
+    if (newJson !== originalJson) {
       await this.saveToFile();
     }
   }
@@ -204,9 +205,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
       property.save();
     }
 
-    const record = this.getTransformer().transformObjectRecursively(this.getSettingsRecord());
-    await this.plugin.saveData(record);
-
+    await this.plugin.saveData(this.prepareRecordToSave());
     await this.plugin.onSaveSettings(this.getSavedSettings(), oldSettings);
   }
 
@@ -241,13 +240,13 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     return savedSettings;
   }
 
-  private getSettingsRecord(): Record<StringKeys<PluginSettings>, unknown> {
+  private prepareRecordToSave(): Record<StringKeys<PluginSettings>, unknown> {
     const settings: Record<StringKeys<PluginSettings>, unknown> = {} as Record<StringKeys<PluginSettings>, unknown>;
     for (const [propertyName, property] of this.properties.entries()) {
       settings[propertyName as StringKeys<PluginSettings>] = property.get() as unknown;
     }
 
-    return settings;
+    return this.getTransformer().transformObjectRecursively(settings);
   }
 }
 
