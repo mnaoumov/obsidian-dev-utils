@@ -132,7 +132,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * @param _oldSettings - The old settings.
    * @returns A promise or void indicating the completion of the save process.
    */
-  public async onSaveSettings(_newSettings: Partial<PluginSettings>, _oldSettings: Partial<PluginSettings>): Promise<void> {
+  public async onSaveSettings(_newSettings: PluginSettings, _oldSettings: PluginSettings): Promise<void> {
     await noopAsync();
   }
 

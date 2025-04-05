@@ -242,14 +242,14 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     noop();
   }
 
-  private getSavedSettings(): Partial<PluginSettings> {
+  private getSavedSettings(): PluginSettings {
     const savedSettings: Partial<PluginSettings> = {};
     for (const [propertyName, property] of this.properties.entries()) {
       savedSettings[propertyName as StringKeys<PluginSettings>] = property.lastSavedValue as PluginSettings[StringKeys<PluginSettings>] | undefined;
     }
     const proto = Object.getPrototypeOf(this.defaultSettings) as object;
     Object.setPrototypeOf(savedSettings, proto);
-    return savedSettings;
+    return savedSettings as PluginSettings;
   }
 
   private async prepareRecordToSave(): Promise<Record<StringKeys<PluginSettings>, unknown>> {
