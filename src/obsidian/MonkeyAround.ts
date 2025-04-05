@@ -16,7 +16,7 @@ import { around as originalAround } from 'monkey-around';
 export type Factories<Obj extends object> = Partial<
   {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    [Key in ConditionalKeys<Obj, Function>]: WrapperFactory<Extract<Obj[Key], Function>>;
+    [Key in ConditionalKeys<Obj, Function | undefined>]: WrapperFactory<Extract<Obj[Key], Function | undefined>>;
   }
 >;
 
@@ -25,7 +25,7 @@ type OriginalFactories<Obj extends Record<string, unknown>> = Parameters<typeof 
 type Uninstaller = () => void;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-type WrapperFactory<T extends Function> = (next: T) => T;
+type WrapperFactory<T extends Function | undefined> = (next: T) => T;
 
 /**
  * Applies a patch to the object.
