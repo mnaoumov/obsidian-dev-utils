@@ -163,12 +163,12 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
 
     const property = this.plugin.settingsManager.getProperty(propertyName) as PluginSettingsProperty<PropertyType>;
 
-    const value = property.getCurrentValue();
+    const value = property.currentValue;
 
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
     textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(property.defaultValue));
 
-    if (property.getCurrentValue() === property.defaultValue && textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
+    if (property.currentValue === property.defaultValue && textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
       textBasedComponent.empty();
     } else {
       valueComponent.setValue(optionsExt.pluginSettingsToComponentValueConverter(value));
@@ -180,7 +180,7 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
         return;
       }
 
-      const oldValue = property.getCurrentValue();
+      const oldValue = property.currentValue;
       const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
       if (isValidationMessageHolder(convertedValue)) {
         property.setValidationMessage(convertedValue.validationMessage);
