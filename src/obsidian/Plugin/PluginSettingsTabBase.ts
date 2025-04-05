@@ -11,7 +11,7 @@ import type {
 
 import { PluginSettingTab } from 'obsidian';
 
-import type { StringKeys } from '../../Object.ts';
+import type { StringKeys } from '../../Type.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
 import type { ValidationMessageHolder } from '../ValidationMessage.ts';
 import type { PluginBase } from './PluginBase.ts';

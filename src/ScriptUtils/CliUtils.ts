@@ -6,7 +6,7 @@
 
 import type { Promisable } from 'type-fest';
 
-import type { MaybeReturn } from '../Object.ts';
+import type { MaybeReturn } from '../Type.ts';
 
 import { enableLibraryDebuggers } from '../Debug.ts';
 import { printError } from '../Error.ts';

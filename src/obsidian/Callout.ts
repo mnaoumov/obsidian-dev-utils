@@ -3,7 +3,7 @@
  * This module provides utility functions for rendering callouts in Dataview.
  */
 
-import type { MaybeReturn } from '../Object.ts';
+import type { MaybeReturn } from '../Type.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { DataviewInlineApi } from './Dataview.ts';
 
