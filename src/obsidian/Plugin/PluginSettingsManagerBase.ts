@@ -213,7 +213,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
       return;
     }
 
-    await this.plugin.saveData(this.prepareRecordToSave());
+    await this.plugin.saveData(await this.prepareRecordToSave());
     await this.plugin.onSaveSettings(this.getSavedSettings(), oldSettings);
   }
 
