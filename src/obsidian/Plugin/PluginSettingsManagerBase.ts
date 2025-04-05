@@ -3,6 +3,8 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
+import { Notice } from 'obsidian';
+
 import type {
   MaybeReturn,
   StringKeys
@@ -116,7 +118,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     this.properties = new PropertiesMap<PluginSettings>();
 
     for (const key of Object.keys(this.defaultSettings) as StringKeys<PluginSettings>[]) {
-      this.properties.set(key, new PluginSettingsProperty(this.defaultSettings[key], this.validators.get(key) ?? noop));
+      this.properties.set(key, new PluginSettingsProperty(key, this.defaultSettings[key], this.validators.get(key) ?? noop));
     }
 
     this.validators.clear();
@@ -251,7 +253,7 @@ export class PluginSettingsProperty<T> {
   private savedValue: T | undefined;
 
   private value: T | undefined;
-  public constructor(public readonly defaultValue: T, private readonly validator: Validator<T>) {}
+  public constructor(private readonly propertyName: string, public readonly defaultValue: T, private readonly validator: Validator<T>) {}
 
   public clear(): void {
     this.value = undefined;
@@ -289,5 +291,18 @@ export class PluginSettingsProperty<T> {
     }
 
     this._validationMessage = (await this.validator(this.value) as string | undefined) ?? '';
+
+    if (!this._validationMessage) {
+      return;
+    }
+
+    const warningMessage = `Could not set plugin setting: ${this.propertyName}. Using default value instead.`;
+    new Notice(warningMessage);
+    console.warn(warningMessage, {
+      defaultValue: this.defaultValue,
+      propertyName: this.propertyName,
+      validationMessage: this._validationMessage,
+      value
+    });
   }
 }
