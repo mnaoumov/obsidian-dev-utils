@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 22.1.1-beta.6
+
+- Rename PropertyName
+- Show warning for wrong values
+- Fix dprint rule
+- Add default value placeholder
+- Support empty validation messages
+
 ## 22.1.1-beta.5
 
 - Format
