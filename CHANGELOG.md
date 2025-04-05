@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 22.1.1-beta.12
+
+- Move helpers to Type
+- Add access to plugin and app
+- Update libs
+
 ## 22.1.1-beta.11
 
 - TextBasedComponent
