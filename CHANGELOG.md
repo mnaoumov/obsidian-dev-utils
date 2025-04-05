@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 22.1.1-beta.15
+
+- Use properties
+- Use default values by default
+- Better set placeholder
+- Show better tooltip
+- Make optional
+- Improve ExtractPluginSettings
+- shouldResetSettingWhenComponentIsEmpty
+
 ## 22.1.1-beta.14
 
 - Allow optional functions
