@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 22.1.1-beta.16
+
+- More reliable ExtractPluginSettings
+
 ## 22.1.1-beta.15
 
 - Use properties
