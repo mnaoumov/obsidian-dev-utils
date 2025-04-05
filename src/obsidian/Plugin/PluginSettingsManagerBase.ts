@@ -14,6 +14,7 @@ import type {
 import type { PluginBase } from './PluginBase.ts';
 
 import { noop } from '../../Function.ts';
+import { getAllKeys } from '../../Object.ts';
 import { DateTransformer } from '../../Transformers/DateTransformer.ts';
 import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
 import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';
@@ -121,7 +122,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
 
     this.properties = new PropertiesMap<PluginSettings>();
 
-    for (const propertyName of Object.keys(this.defaultSettings) as StringKeys<PluginSettings>[]) {
+    for (const propertyName of getAllKeys(this.defaultSettings)) {
       this.properties.set(
         propertyName,
         new PluginSettingsProperty(propertyName, this.defaultSettings[propertyName], this.validators.get(propertyName) ?? noop)

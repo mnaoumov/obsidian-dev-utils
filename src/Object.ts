@@ -5,7 +5,10 @@
 
 import type { UndefinedOnPartialDeep } from 'type-fest';
 
-import type { MaybeReturn } from './Type.ts';
+import type {
+  MaybeReturn,
+  StringKeys
+} from './Type.ts';
 
 import {
   errorToString,
@@ -225,6 +228,42 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
   // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
   delete obj[propertyName];
   return true;
+}
+
+/**
+ * Gets all keys of an object.
+ * Includes fields and properties.
+ *
+ * @param obj - The object to get the keys of.
+ * @returns An array of all keys of the object.
+ */
+export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
+  const keys: StringKeys<T>[] = [];
+  let current: null | object = obj;
+  while (current) {
+    const descriptors = Object.getOwnPropertyDescriptors(current) as Record<string, PropertyDescriptor>;
+    for (const [key, descriptor] of Object.entries(descriptors)) {
+      if (typeof descriptor.value === 'function') {
+        continue;
+      }
+
+      const hasGetter = typeof descriptor.get === 'function';
+      const hasSetter = typeof descriptor.set === 'function';
+      if (hasGetter || hasSetter) {
+        if (hasGetter && hasSetter) {
+          keys.push(key as StringKeys<T>);
+        }
+        continue;
+      }
+
+      if (descriptor.enumerable && descriptor.writable) {
+        keys.push(key as StringKeys<T>);
+      }
+    }
+
+    current = Object.getPrototypeOf(current) as null | object;
+  }
+  return keys;
 }
 
 /**
