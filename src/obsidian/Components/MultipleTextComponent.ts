@@ -32,7 +32,7 @@ import { getPluginId } from '../Plugin/PluginId.ts';
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
 export class MultipleTextComponent extends ValueComponent<string[]>
-  implements TextBasedComponent, ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
+  implements TextBasedComponent<string[]>, ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
   /**
    * Gets the validator element of the component.
    *
@@ -53,6 +53,13 @@ export class MultipleTextComponent extends ValueComponent<string[]>
     super();
     this.textAreaComponent = new TextAreaComponent(containerEl);
     containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.MultipleTextComponent);
+  }
+
+  /**
+   * Empties the component.
+   */
+  public empty(): void {
+    this.textAreaComponent.setValue('');
   }
 
   /**
@@ -108,13 +115,28 @@ export class MultipleTextComponent extends ValueComponent<string[]>
   }
 
   /**
+   * Sets the placeholder value of the component.
+   *
+   * @param placeholderValue - The placeholder value to set.
+   * @returns The component.
+   */
+  public setPlaceholderValue(placeholderValue: string[]): this {
+    this.setPlaceholder(this.valueToString(placeholderValue));
+    return this;
+  }
+
+  /**
    * Sets the value of the component.
    *
    * @param value - The value to set.
    * @returns The component.
    */
   public override setValue(value: string[]): this {
-    this.textAreaComponent.setValue(value.join('\n'));
+    this.textAreaComponent.setValue(this.valueToString(value));
     return this;
+  }
+
+  private valueToString(value: string[]): string {
+    return value.join('\n');
   }
 }

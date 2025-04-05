@@ -5,7 +5,12 @@ import { AbstractTextComponent } from 'obsidian';
 /**
  * A component based on a text input.
  */
-export interface TextBasedComponent {
+export interface TextBasedComponent<T> {
+  /**
+   * Empties the component.
+   */
+  empty(): void;
+
   /**
    * Checks if the component is empty.
    *
@@ -14,12 +19,12 @@ export interface TextBasedComponent {
   isEmpty(): boolean;
 
   /**
-   * Sets the placeholder of the component.
+   * Sets the placeholder value of the component.
    *
-   * @param placeholder - The placeholder to set.
+   * @param placeholderValue - The placeholder value to set.
    * @returns The component.
    */
-  setPlaceholder(placeholder: string): this;
+  setPlaceholderValue(placeholderValue: T): this;
 }
 
 /**
@@ -28,18 +33,21 @@ export interface TextBasedComponent {
  * @param component - The component to get the text based component value of.
  * @returns The text based component value of the component or `null` if the component is not a text based component.
  */
-export function getTextBasedComponentValue(component: BaseComponent): null | TextBasedComponent {
+export function getTextBasedComponentValue<T>(component: BaseComponent): null | TextBasedComponent<T> {
   if (isTextBasedComponent(component)) {
     return component;
   }
 
   if (component instanceof AbstractTextComponent) {
     return {
+      empty(): void {
+        component.setValue('');
+      },
       isEmpty(): boolean {
         return component.getValue() === '';
       },
-      setPlaceholder(placeholder: string): TextBasedComponent {
-        component.setPlaceholder(placeholder);
+      setPlaceholderValue(placeholderValue: T): TextBasedComponent<T> {
+        component.setPlaceholder(placeholderValue as string);
         return this;
       }
     };
@@ -48,7 +56,7 @@ export function getTextBasedComponentValue(component: BaseComponent): null | Tex
   return null;
 }
 
-function isTextBasedComponent(component: unknown): component is TextBasedComponent {
-  const textBasedComponent = component as Partial<TextBasedComponent>;
-  return typeof textBasedComponent.setPlaceholder === 'function' && typeof textBasedComponent.isEmpty === 'function';
+function isTextBasedComponent<T>(component: unknown): component is TextBasedComponent<T> {
+  const textBasedComponent = component as Partial<TextBasedComponent<T>>;
+  return typeof textBasedComponent.setPlaceholderValue === 'function' && typeof textBasedComponent.isEmpty === 'function';
 }

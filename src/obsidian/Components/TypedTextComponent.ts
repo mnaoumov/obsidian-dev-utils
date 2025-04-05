@@ -21,7 +21,8 @@ import { getPluginId } from '../Plugin/PluginId.ts';
 /**
  * A component that displays and edits a text-based value.
  */
-export abstract class TypedTextComponent<T> extends ValueComponent<T> implements TextBasedComponent, ValidatorComponent, ValueComponentWithChangeTracking<T> {
+export abstract class TypedTextComponent<T> extends ValueComponent<T>
+  implements TextBasedComponent<T>, ValidatorComponent, ValueComponentWithChangeTracking<T> {
   /**
    * The input element of the component.
    */
@@ -51,6 +52,13 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
   }
 
   /**
+   * Empties the component.
+   */
+  public empty(): void {
+    this.textComponent.setValue('');
+  }
+
+  /**
    * Gets the value of the component.
    *
    * @returns The value of the component.
@@ -59,6 +67,11 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
     return this.valueFromString(this.textComponent.getValue());
   }
 
+  /**
+   * Checks if the component is empty.
+   *
+   * @returns `true` if the component is empty, `false` otherwise.
+   */
   public isEmpty(): boolean {
     return this.textComponent.getValue() === '';
   }
@@ -101,6 +114,17 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
    */
   public setPlaceholder(placeholder: string): this {
     this.textComponent.setPlaceholder(placeholder);
+    return this;
+  }
+
+  /**
+   * Sets the placeholder value of the component.
+   *
+   * @param placeholderValue - The placeholder value to set.
+   * @returns The component.
+   */
+  public setPlaceholderValue(placeholderValue: T): this {
+    this.setPlaceholder(this.valueToString(placeholderValue));
     return this;
   }
 
