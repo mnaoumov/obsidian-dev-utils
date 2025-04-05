@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 22.1.1-beta.9
+
+- Separate setValueAndValidate and setValidationMessage
+- Don't save unmodified
+
 ## 22.1.1-beta.8
 
 - Save only if there are changes
