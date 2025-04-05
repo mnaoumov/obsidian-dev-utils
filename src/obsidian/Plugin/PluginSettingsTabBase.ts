@@ -153,15 +153,19 @@ export abstract class PluginSettingsTabBase<TPlugin extends PluginBase<any>> ext
 
     const property = this.plugin.settingsManager.getProperty(propertyName) as PluginSettingsProperty<PropertyType>;
 
-    valueComponent
-      .setValue(optionsExt.pluginSettingsToComponentValueConverter(property.get()))
-      .onChange(async (uiValue) => {
-        const oldValue = property.get();
-        const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
-        await property.setAndValidate(convertedValue);
-        const newValue = isValidationMessageHolder(convertedValue) ? undefined : convertedValue;
-        await optionsExt.onChanged(newValue, oldValue);
-      });
+    const value = property.getModifiedValue();
+
+    if (value !== undefined) {
+      valueComponent.setValue(optionsExt.pluginSettingsToComponentValueConverter(value));
+    }
+
+    valueComponent.onChange(async (uiValue) => {
+      const oldValue = property.getModifiedOrDefaultValue();
+      const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
+      await property.setAndValidate(convertedValue);
+      const newValue = isValidationMessageHolder(convertedValue) ? undefined : convertedValue;
+      await optionsExt.onChanged(newValue, oldValue);
+    });
 
     if (isPlaceholderComponent(valueComponent)) {
       valueComponent.setPlaceholder(optionsExt.pluginSettingsToComponentValueConverter(property.defaultValue) as string);

@@ -71,7 +71,7 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
   }
 
   protected override getPropertyValue(property: PluginSettingsProperty<unknown>): unknown {
-    return property.get();
+    return property.getModifiedOrDefaultValue();
   }
 }
 
@@ -96,7 +96,7 @@ class PropertiesMap<PluginSettings extends object> extends Map<string, PluginSet
 
 class SafeSettingsProxyHandler<PluginSettings extends object> extends ProxyHandlerBase<PluginSettings> {
   protected override getPropertyValue(property: PluginSettingsProperty<unknown>): unknown {
-    return property.getSafe();
+    return property.getSafeValue();
   }
 }
 
@@ -239,7 +239,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   private getSavedSettings(): Partial<PluginSettings> {
     const savedSettings: Partial<PluginSettings> = {};
     for (const [propertyName, property] of this.properties.entries()) {
-      savedSettings[propertyName as StringKeys<PluginSettings>] = property.getSaved() as PluginSettings[StringKeys<PluginSettings>] | undefined;
+      savedSettings[propertyName as StringKeys<PluginSettings>] = property.getLastSavedValue() as PluginSettings[StringKeys<PluginSettings>] | undefined;
     }
     const proto = Object.getPrototypeOf(this.defaultSettings) as object;
     Object.setPrototypeOf(savedSettings, proto);
@@ -249,7 +249,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   private prepareRecordToSave(): Record<StringKeys<PluginSettings>, unknown> {
     const settings: Record<StringKeys<PluginSettings>, unknown> = {} as Record<StringKeys<PluginSettings>, unknown>;
     for (const [propertyName, property] of this.properties.entries()) {
-      settings[propertyName as StringKeys<PluginSettings>] = property.get() as unknown;
+      settings[propertyName as StringKeys<PluginSettings>] = property.getModifiedValue() as unknown;
     }
 
     return this.getTransformer().transformObjectRecursively(settings);
@@ -267,35 +267,38 @@ export class PluginSettingsProperty<T> {
   }
 
   private _validationMessage = '';
+  private lastSavedValue: T | undefined;
+  private modifiedValue: T | undefined;
 
-  private savedValue: T | undefined;
-
-  private value: T | undefined;
   public constructor(private readonly propertyName: string, public readonly defaultValue: T, private readonly validator: Validator<T>) {}
 
   public clear(): void {
-    this.value = undefined;
+    this.modifiedValue = undefined;
     this._validationMessage = '';
   }
 
-  public get(): T {
-    return this.value ?? this.defaultValue;
+  public getLastSavedValue(): T | undefined {
+    return this.lastSavedValue;
   }
 
-  public getSafe(): T {
-    return this._validationMessage ? this.defaultValue : this.get();
+  public getModifiedOrDefaultValue(): T {
+    return this.modifiedValue ?? this.defaultValue;
   }
 
-  public getSaved(): T | undefined {
-    return this.savedValue;
+  public getModifiedValue(): T | undefined {
+    return this.modifiedValue;
+  }
+
+  public getSafeValue(): T {
+    return this._validationMessage ? this.defaultValue : this.getModifiedOrDefaultValue();
   }
 
   public save(): boolean {
-    if (this.savedValue === this.value) {
+    if (this.lastSavedValue === this.modifiedValue) {
       return false;
     }
 
-    this.savedValue = this.value;
+    this.lastSavedValue = this.modifiedValue;
     return true;
   }
 
@@ -303,17 +306,17 @@ export class PluginSettingsProperty<T> {
     if (isValidationMessageHolder(value)) {
       this._validationMessage = value.validationMessage;
     } else {
-      this.value = value;
+      this.modifiedValue = value;
     }
   }
 
   public async setAndValidate(value: T | undefined | ValidationMessageHolder): Promise<void> {
     this.set(value);
-    if (this.value === undefined) {
+    if (this.modifiedValue === undefined) {
       return;
     }
 
-    this._validationMessage = (await this.validator(this.value) as string | undefined) ?? '';
+    this._validationMessage = (await this.validator(this.modifiedValue) as string | undefined) ?? '';
 
     if (!this._validationMessage) {
       return;
