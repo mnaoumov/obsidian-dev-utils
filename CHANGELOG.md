@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 22.1.1-beta.13
+
+- Refactor to use monkey-around internally
+- Hook after load and before saving record
+
 ## 22.1.1-beta.12
 
 - Move helpers to Type
