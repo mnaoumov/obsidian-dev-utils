@@ -70,7 +70,7 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
   }
 
   protected override getPropertyValue(property: PluginSettingsProperty<unknown>): unknown {
-    return property.getModifiedOrDefaultValue();
+    return property.getCurrentValue();
   }
 }
 
@@ -148,7 +148,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
 
   public async loadFromFile(): Promise<void> {
     for (const property of this.properties.values()) {
-      property.clear();
+      property.reset();
     }
 
     const data = await this.plugin.loadData() as unknown;
@@ -254,7 +254,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   private async prepareRecordToSave(): Promise<Record<StringKeys<PluginSettings>, unknown>> {
     const settings: Record<StringKeys<PluginSettings>, unknown> = {} as Record<StringKeys<PluginSettings>, unknown>;
     for (const [propertyName, property] of this.properties.entries()) {
-      settings[propertyName as StringKeys<PluginSettings>] = property.getModifiedValue() as unknown;
+      settings[propertyName as StringKeys<PluginSettings>] = property.getCurrentValue() as unknown;
     }
 
     await this.onSavingRecord(settings);
@@ -274,38 +274,37 @@ export class PluginSettingsProperty<T> {
   }
 
   private _validationMessage = '';
-  private lastSavedValue: T | undefined;
-  private modifiedValue: T | undefined;
+  private currentValue: T;
+  private lastSavedValue: T;
 
-  public constructor(private readonly propertyName: string, public readonly defaultValue: T, private readonly validator: Validator<T>) {}
-
-  public clear(): void {
-    this.modifiedValue = undefined;
-    this._validationMessage = '';
+  public constructor(private readonly propertyName: string, public readonly defaultValue: T, private readonly validator: Validator<T>) {
+    this.lastSavedValue = defaultValue;
+    this.currentValue = defaultValue;
   }
 
-  public getLastSavedValue(): T | undefined {
+  public getCurrentValue(): T {
+    return this.currentValue;
+  }
+
+  public getLastSavedValue(): T {
     return this.lastSavedValue;
   }
 
-  public getModifiedOrDefaultValue(): T {
-    return this.modifiedValue ?? this.defaultValue;
-  }
-
-  public getModifiedValue(): T | undefined {
-    return this.modifiedValue;
-  }
-
   public getSafeValue(): T {
-    return this._validationMessage ? this.defaultValue : this.getModifiedOrDefaultValue();
+    return this._validationMessage ? this.defaultValue : this.currentValue;
+  }
+
+  public reset(): void {
+    this.currentValue = this.defaultValue;
+    this._validationMessage = '';
   }
 
   public save(): boolean {
-    if (this.lastSavedValue === this.modifiedValue) {
+    if (this.lastSavedValue === this.currentValue) {
       return false;
     }
 
-    this.lastSavedValue = this.modifiedValue;
+    this.lastSavedValue = this.currentValue;
     return true;
   }
 
@@ -314,17 +313,17 @@ export class PluginSettingsProperty<T> {
     this.showWarning();
   }
 
-  public setValue(value: T | undefined): void {
-    this.modifiedValue = value;
+  public setValue(value: T): void {
+    this.currentValue = value;
   }
 
   public async setValueAndValidate(value: T): Promise<void> {
     this.setValue(value);
-    if (this.modifiedValue === undefined) {
+    if (this.currentValue === undefined) {
       return;
     }
 
-    this._validationMessage = (await this.validator(this.modifiedValue) as string | undefined) ?? '';
+    this._validationMessage = (await this.validator(this.currentValue) as string | undefined) ?? '';
     this.showWarning(value);
   }
 
