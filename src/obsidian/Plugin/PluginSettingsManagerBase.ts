@@ -168,15 +168,19 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     await this.prepareRecord(record);
     const afterPrepareJson = JSON.stringify(record);
 
-    for (const [key, value] of Object.entries(record)) {
-      const property = this.properties.get(key);
+    for (const [propertyName, value] of Object.entries(record)) {
+      const property = this.properties.get(propertyName);
       if (!property) {
-        console.warn(`Unknown property: ${key}`);
+        console.warn(`Unknown property: ${propertyName}`);
         continue;
       }
 
       if (typeof value !== typeof property.defaultValue) {
-        console.warn(`Invalid value type. Expected ${typeof property.defaultValue}, got: ${typeof value}`);
+        console.warn('Invalid value type', {
+          propertyName,
+          propertyType: typeof property.defaultValue,
+          value
+        });
         continue;
       }
 
