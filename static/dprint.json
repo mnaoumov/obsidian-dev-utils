@@ -1,5 +1,6 @@
 {
   "typescript": {
+    "bracePosition": "sameLine",
     "constructSignature.spaceAfterNewKeyword": true,
     "constructorType.spaceAfterNewKeyword": true,
     "exportDeclaration.forceMultiLine": "whenMultiple",
