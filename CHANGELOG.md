@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 22.1.1-beta.8
+
+- Save only if there are changes
+- Properly check for JSON changes
+
 ## 22.1.1-beta.7
 
 - Detailed Invalid value type warning
