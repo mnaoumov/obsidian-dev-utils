@@ -81,7 +81,7 @@ class AlertModal extends ModalBase<void, AlertOptions> {
  * Displays an alert modal in Obsidian with a specified message.
  *
  * @param options - The options for the alert modal.
- * @returns A promise that resolves when the modal is closed.
+ * @returns A {@link Promise} that resolves when the modal is closed.
  */
 export async function alert(options: AlertOptions): Promise<void> {
   await showModal((resolve) => new AlertModal(options, resolve));

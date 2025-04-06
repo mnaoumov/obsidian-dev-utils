@@ -96,7 +96,7 @@ class ConfirmModal extends ModalBase<boolean, ConfirmOptions> {
  * Displays an confirm modal in Obsidian with a specified message.
  *
  * @param options - The options for the confirm modal.
- * @returns A promise that resolves with a boolean indicating whether the "OK" button was clicked.
+ * @returns A {@link Promise} that resolves with a boolean indicating whether the "OK" button was clicked.
  */
 export async function confirm(options: ConfirmOptions): Promise<boolean> {
   return await showModal<boolean>((resolve) => new ConfirmModal(options, resolve));

@@ -4,10 +4,10 @@
  */
 
 /**
- * Converts a Blob object to an ArrayBuffer.
+ * Converts a {@link Blob} object to an {@link ArrayBuffer}.
  *
  * @param blob - The Blob object to convert.
- * @returns A promise that resolves to an ArrayBuffer.
+ * @returns A {@link Promise} that resolves to an {@link ArrayBuffer}.
  */
 export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   return await new Promise((resolve) => {
@@ -22,10 +22,10 @@ export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
 }
 
 /**
- * Converts a Blob object to a data URL.
+ * Converts a {@link Blob} object to a data URL.
  *
  * @param blob - The Blob object to convert.
- * @returns A promise that resolves to a data URL.
+ * @returns A {@link Promise} that resolves to a data URL.
  */
 export async function blobToDataUrl(blob: Blob): Promise<string> {
   return await new Promise((resolve) => {
@@ -40,11 +40,11 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 /**
- * Converts a Blob object to a JPEG ArrayBuffer with the specified quality.
+ * Converts a {@link Blob} object to a JPEG ArrayBuffer with the specified quality.
  *
  * @param blob - The Blob object to convert.
  * @param jpegQuality - The quality of the JPEG image (0 to 1).
- * @returns A promise that resolves to an ArrayBuffer.
+ * @returns A {@link Promise} that resolves to an {@link ArrayBuffer}.
  */
 export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Promise<ArrayBuffer> {
   const dataUrl = await blobToDataUrl(blob);
@@ -82,7 +82,7 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
 }
 
 /**
- * Converts a base64 encoded string to an ArrayBuffer.
+ * Converts a base64 encoded string to an {@link ArrayBuffer}.
  *
  * @param dataUrl - The data URL to convert.
  * @returns The decoded ArrayBuffer.

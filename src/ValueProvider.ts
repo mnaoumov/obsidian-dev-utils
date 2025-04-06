@@ -19,7 +19,7 @@ export type ValueProvider<Value, Args extends unknown[] = []> = ((...args: Args)
  * @typeParam Value - The type of the value provided.
  * @param provider - The value provider to resolve.
  * @param args - The arguments to pass to the function if the provider is a function.
- * @returns A promise that resolves with the value provided by the value provider.
+ * @returns A {@link Promise} that resolves with the value provided by the value provider.
  */
 export async function resolveValue<Value, Args extends unknown[]>(provider: ValueProvider<Value, Args>, ...args: Args): Promise<Value> {
   if (isFunction(provider)) {

@@ -25,7 +25,7 @@ import { process } from './Vault.ts';
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or TFile object representing the note.
  * @param alias - The alias to add.
- * @returns A promise that resolves when the alias has been added.
+ * @returns A {@link Promise} that resolves when the alias has been added.
  */
 export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string): Promise<void> {
   if (!alias) {
@@ -52,7 +52,7 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or TFile object representing the note.
  * @param alias - The alias to delete.
- * @returns A promise that resolves when the alias has been deleted.
+ * @returns A {@link Promise} that resolves when the alias has been deleted.
  */
 export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: string): Promise<void> {
   if (!alias) {
@@ -80,7 +80,7 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
  * @param pathOrFile - The path or TFile object representing the note.
  * @param frontmatterFn - A function that modifies the front matter.
  * @param processOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
- * @returns A promise that resolves when the front matter has been processed and saved.
+ * @returns A {@link Promise} that resolves when the front matter has been processed and saved.
  */
 
 export async function processFrontmatter<CustomFrontmatter = unknown>(

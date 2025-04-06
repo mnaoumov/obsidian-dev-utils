@@ -56,7 +56,7 @@ export type GetAvailablePathForAttachmentsExtendedFn = (
  * @param app - The Obsidian application instance.
  * @param attachmentPathOrFile - The path of the attachment.
  * @param notePathOrFile - The path of the note.
- * @returns A promise that resolves to the file path of the attachment.
+ * @returns A {@link Promise} that resolves to the file path of the attachment.
  */
 export async function getAttachmentFilePath(app: App, attachmentPathOrFile: PathOrFile, notePathOrFile: PathOrFile): Promise<string> {
   const attachmentPath = getPath(app, attachmentPathOrFile);
@@ -79,7 +79,7 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
  *
  * @param app - The Obsidian application instance.
  * @param notePathOrFile - The path of the note.
- * @returns A promise that resolves to the attachment folder path.
+ * @returns A {@link Promise} that resolves to the attachment folder path.
  */
 export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
   return parentFolderPath(await getAttachmentFilePath(app, 'DUMMY_FILE.pdf', notePathOrFile));
@@ -92,7 +92,7 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
  * @param extension - Extension of the file.
  * @param file - The file to attach to.
  * @param shouldSkipFolderCreation - Should folder creation be skipped?
- * @returns A promise that resolves to the available path for attachments.
+ * @returns A {@link Promise} that resolves to the available path for attachments.
  */
 export async function getAvailablePathForAttachments(
   app: App,
@@ -137,7 +137,7 @@ export async function getAvailablePathForAttachments(
  *
  * @param app - The Obsidian application instance.
  * @param path - The path of the note.
- * @returns A promise that resolves to a boolean indicating whether the note has its own attachment folder.
+ * @returns A {@link Promise} that resolves to a boolean indicating whether the note has its own attachment folder.
  */
 export async function hasOwnAttachmentFolder(app: App, path: string): Promise<boolean> {
   const attachmentFolderPath = await getAttachmentFolderPath(app, path);

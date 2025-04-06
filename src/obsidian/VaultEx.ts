@@ -30,7 +30,7 @@ import {
  *
  * @param app - The application instance.
  * @param pathOrFolder - The folder to start removing empty hierarchy from.
- * @returns A promise that resolves when the empty hierarchy is deleted.
+ * @returns A {@link Promise} that resolves when the empty hierarchy is deleted.
  */
 export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
   let folder = getFolderOrNull(app, pathOrFolder);
@@ -53,7 +53,7 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | 
  * @param deletedNotePath - Optional. The path of the note that triggered the removal.
  * @param shouldReportUsedAttachments - Optional. If `true`, a notice will be shown for each attachment that is still used by other notes.
  * @param shouldDeleteEmptyFolders - Optional. If `true`, empty folders will be deleted.
- * @returns A promise that resolves to a boolean indicating whether the removal was successful.
+ * @returns A {@link Promise} that resolves to a boolean indicating whether the removal was successful.
  */
 export async function deleteSafe(
   app: App,

@@ -58,7 +58,7 @@ export interface PackageLockJson extends Partial<PackageJson> {
  *
  * @param editFn - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
- * @returns A promise that resolves when the file has been edited and written.
+ * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export async function editNpmShrinkWrapJson(
   editFn: (packageLockJson: PackageLockJson) => Promisable<void>,
@@ -76,7 +76,7 @@ export async function editNpmShrinkWrapJson(
  *
  * @param editFn - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
- * @returns A promise that resolves when the file has been edited and written.
+ * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export async function editPackageJson(
   editFn: (packageJson: PackageJson) => Promisable<void>,
@@ -94,7 +94,7 @@ export async function editPackageJson(
  *
  * @param editFn - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
- * @returns A promise that resolves when the file has been edited and written.
+ * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export function editPackageJsonSync(
   editFn: (packageJson: PackageJson) => void,
@@ -112,7 +112,7 @@ export function editPackageJsonSync(
  *
  * @param editFn - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
- * @returns A promise that resolves when the file has been edited and written.
+ * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export async function editPackageLockJson(
   editFn: (packageLockJson: PackageLockJson) => Promisable<void>,
@@ -130,7 +130,7 @@ export async function editPackageLockJson(
  *
  * @param editFn - The function to edit the parsed `PackageLockJson` object.
  * @param options - Additional options for editing.
- * @returns A promise that resolves when the file has been edited and written.
+ * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export function editPackageLockJsonSync(
   editFn: (packageLockJson: PackageLockJson) => void,
@@ -177,7 +177,7 @@ export function getPackageLockJsonPath(cwd?: string): string {
  * Reads the `package.json` file from the specified directory or from the root if no directory is specified.
  *
  * @param cwd - The current working directory where `package.json` is located.
- * @returns A promise that resolves with the parsed `PackageJson` object.
+ * @returns A {@link Promise} that resolves with the parsed `PackageJson` object.
  */
 export async function readPackageJson(cwd?: string): Promise<PackageJson> {
   return await readJson<PackageJson>(getPackageJsonPath(cwd));
@@ -197,7 +197,7 @@ export function readPackageJsonSync(cwd?: string): PackageJson {
  * Reads the `package-lock.json` file from the specified directory or from the root if no directory is specified.
  *
  * @param cwd - The current working directory where `package-lock.json` is located.
- * @returns A promise that resolves with the parsed `PackageJson` object.
+ * @returns A {@link Promise} that resolves with the parsed `PackageJson` object.
  */
 export async function readPackageLockJson(cwd?: string): Promise<PackageLockJson> {
   return await readJson<PackageLockJson>(getPackageLockJsonPath(cwd));
@@ -218,7 +218,7 @@ export function readPackageLockJsonSync(cwd?: string): PackageLockJson {
  *
  * @param packageJson - The `PackageJson` object to write.
  * @param cwd - The current working directory where `package.json` is located.
- * @returns A promise that resolves when the file has been written.
+ * @returns A {@link Promise} that resolves when the file has been written.
  */
 export async function writePackageJson(packageJson: PackageJson, cwd?: string): Promise<void> {
   await writeJson(getPackageJsonPath(cwd), packageJson);
@@ -239,7 +239,7 @@ export function writePackageJsonSync(packageJson: PackageJson, cwd?: string): vo
  *
  * @param packageLockJson - The `PackageLockJson` object to write.
  * @param cwd - The current working directory where `package-lock.json` is located.
- * @returns A promise that resolves when the file has been written.
+ * @returns A {@link Promise} that resolves when the file has been written.
  */
 export async function writePackageLockJson(packageLockJson: PackageLockJson, cwd?: string): Promise<void> {
   await writeJson(getPackageLockJsonPath(cwd), packageLockJson);

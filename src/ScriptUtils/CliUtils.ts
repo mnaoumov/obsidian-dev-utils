@@ -23,7 +23,7 @@ export abstract class CliTaskResult {
    * Chains multiple tasks together, executing them sequentially until one fails.
    *
    * @param tasks - An array of task functions that return a {@link CliTaskResult} or `void`.
-   * @returns A promise that resolves with the first failed {@link CliTaskResult} or a success result.
+   * @returns A {@link Promise} that resolves with the first failed {@link CliTaskResult} or a success result.
    */
   public static async chain(tasks: (() => Promisable<MaybeReturn<CliTaskResult>>)[]): Promise<CliTaskResult> {
     for (const task of tasks) {
@@ -168,7 +168,7 @@ export function toCommandLine(args: string[]): string {
  * Wraps a CLI task function to ensure it runs safely and handles its {@link CliTaskResult}.
  *
  * @param taskFn - The task function to execute, which may return a {@link CliTaskResult} or `void`.
- * @returns A promise that resolves when the task is completed and exits with the appropriate status.
+ * @returns A {@link Promise} that resolves when the task is completed and exits with the appropriate status.
  */
 export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<void> {
   enableLibraryDebuggers();
@@ -181,7 +181,7 @@ export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskRe
  * the error is caught, and a failure {@link CliTaskResult} is returned.
  *
  * @param taskFn - The task function to execute.
- * @returns A promise that resolves with a {@link CliTaskResult} representing the outcome of the task.
+ * @returns A {@link Promise} that resolves with a {@link CliTaskResult} representing the outcome of the task.
  */
 async function wrapResult(taskFn: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<CliTaskResult> {
   try {

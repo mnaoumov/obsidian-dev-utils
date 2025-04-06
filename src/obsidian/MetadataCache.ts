@@ -46,7 +46,7 @@ export interface GetBacklinksForFileSafeWrapper {
    * Retrieves the backlinks for a file safely.
    *
    * @param pathOrFile - The path or file object.
-   * @returns A promise that resolves to an array dictionary of backlinks.
+   * @returns A {@link Promise} that resolves to an array dictionary of backlinks.
    */
   safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<Reference>>;
 }
@@ -54,7 +54,7 @@ export interface GetBacklinksForFileSafeWrapper {
 /**
  * Ensures that the metadata cache is ready for all files.
  * @param app - The Obsidian app instance.
- * @returns A promise that resolves when the metadata cache is ready.
+ * @returns A {@link Promise} that resolves when the metadata cache is ready.
  */
 export async function ensureMetadataCacheReady(app: App): Promise<void> {
   for (const [path, cache] of Object.entries(app.metadataCache.fileCache)) {
@@ -137,7 +137,7 @@ export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): Cus
  * @param app - The Obsidian application instance.
  * @param pathOrFile - The path or file object.
  * @param retryOptions - Optional retry options.
- * @returns A promise that resolves to an array dictionary of backlinks.
+ * @returns A {@link Promise} that resolves to an array dictionary of backlinks.
  */
 export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: RetryOptions = {}): Promise<CustomArrayDict<Reference>> {
   const safeOverload = (app.metadataCache.getBacklinksForFile as Partial<GetBacklinksForFileSafeWrapper>).safe;
@@ -361,7 +361,7 @@ export async function tempRegisterFileAndRunAsync<T>(app: App, file: TAbstractFi
  *
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The note to be saved.
- * @returns A promise that resolves when the note is saved.
+ * @returns A {@link Promise} that resolves when the note is saved.
  */
 async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
   if (!isMarkdownFile(app, pathOrFile)) {

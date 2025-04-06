@@ -148,7 +148,7 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
  * Displays a prompt modal in Obsidian to get user input.
  *
  * @param options - The options for the prompt modal.
- * @returns A promise that resolves with the user input or null if the prompt was cancelled.
+ * @returns A {@link Promise} that resolves with the user input or null if the prompt was cancelled.
  */
 export async function prompt(options: PromptOptions): Promise<null | string> {
   return await showModal<null | string>((resolve) => new PromptModal(options, resolve));

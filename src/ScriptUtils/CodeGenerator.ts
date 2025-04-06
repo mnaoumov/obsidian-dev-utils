@@ -10,7 +10,7 @@ import { writeFile } from './NodeModules.ts';
  *
  * @param path - The path where the file will be generated.
  * @param lines - An array of strings representing the lines of code to be written in the file.
- * @returns A promise that resolves when the file generation is complete.
+ * @returns A {@link Promise} that resolves when the file generation is complete.
  */
 export async function generate(path: string, lines: string[]): Promise<void> {
   if (lines.at(-1)) {

@@ -47,7 +47,7 @@ export function appendCodeBlock(el: DocumentFragment | HTMLElement, code: string
  * Ensures that the given element is loaded.
  *
  * @param el - The element to ensure is loaded.
- * @returns A promise that resolves when the element is loaded.
+ * @returns A {@link Promise} that resolves when the element is loaded.
  */
 export async function ensureLoaded(el: Element): Promise<void> {
   if (isLoaded(el)) {

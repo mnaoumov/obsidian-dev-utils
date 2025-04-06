@@ -30,7 +30,7 @@ import {
  *
  * This function deletes the entire distribution directory to ensure a clean build environment.
  *
- * @returns A promise that resolves when the directory has been removed.
+ * @returns A {@link Promise} that resolves when the directory has been removed.
  */
 export async function buildClean(): Promise<void> {
   await rm(ObsidianDevUtilsRepoPaths.Dist, { force: true, recursive: true });
@@ -39,7 +39,7 @@ export async function buildClean(): Promise<void> {
 /**
  * Compiles the code.
  *
- * @returns A promise that resolves when the code compiles successfully.
+ * @returns A {@link Promise} that resolves when the code compiles successfully.
  */
 export async function buildCompile(): Promise<void> {
   await npmRun('build:compile:svelte');
@@ -49,7 +49,7 @@ export async function buildCompile(): Promise<void> {
 /**
  * Compiles the Svelte code.
  *
- * @returns A promise that resolves when the code compiles successfully.
+ * @returns A {@link Promise} that resolves when the code compiles successfully.
  */
 export async function buildCompileSvelte(): Promise<void> {
   const tsConfigPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.TsConfigJson);
@@ -68,7 +68,7 @@ export async function buildCompileSvelte(): Promise<void> {
 /**
  * Compiles the TypeScript code.
  *
- * @returns A promise that resolves when the code compiles successfully.
+ * @returns A {@link Promise} that resolves when the code compiles successfully.
  */
 export async function buildCompileTypeScript(): Promise<void> {
   await execFromRoot(['npx', 'tsc', '--build', '--force']);
@@ -80,7 +80,7 @@ export async function buildCompileTypeScript(): Promise<void> {
  * This function recursively reads the contents of the static assets directory and copies
  * each file to the corresponding path in the distribution directory.
  *
- * @returns A promise that resolves when all files have been copied.
+ * @returns A {@link Promise} that resolves when all files have been copied.
  */
 export async function buildStatic(): Promise<void> {
   for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.Static, { recursive: true, withFileTypes: true })) {

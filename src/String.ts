@@ -197,7 +197,7 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
  * @param str - The string in which to perform replacements.
  * @param searchValue - The string or regular expression to search for.
  * @param replacer - A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
- * @returns A promise that resolves to the string with all replacements made.
+ * @returns A {@link Promise} that resolves to the string with all replacements made.
  */
 export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
   str: string,
