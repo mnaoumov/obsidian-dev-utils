@@ -348,7 +348,15 @@ export class PluginSettingsProperty<T> {
 
   public async setValueAndValidate(value: T): Promise<void> {
     this.setValue(value);
-    this._validationMessage = (await this.validator(this._currentValue) as string | undefined) ?? '';
+    try {
+      this._validationMessage = (await this.validator(this._currentValue) as string | undefined) ?? '';
+    } catch (error) {
+      console.error('Validation failed', {
+        propertyName: this.propertyName,
+        value
+      }, error);
+      this._validationMessage = 'Validation failed';
+    }
     this.showWarning(value);
   }
 
