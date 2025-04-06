@@ -7,84 +7,96 @@
  * Enumeration of commonly used file and directory paths in Obsidian plugin development.
  */
 export enum ObsidianPluginRepoPaths {
-  /** Represents any path recursively. */
+  /** CommonJS file. */
+  AnyCjs = '*.cjs',
+
+  /** JavaScript file. */
+  AnyJs = '*.js',
+
+  /** ESM JavaScript file. */
+  AnyMjs = '*.mjs',
+
+  /** Any path recursively. */
   AnyPath = '**',
 
-  /** Represents any TypeScript file. */
+  /** TypeScript file. */
   AnyTs = '*.ts',
 
-  /** Represents the changelog file. */
+  /** ReactJS TypeScript file. */
+  AnyTsx = '*.tsx',
+
+  /** Changelog file. */
   ChangelogMd = 'CHANGELOG.md',
 
-  /** Represents the current directory. */
+  /** Current directory. */
   CurrentDir = '.',
 
-  /** Represents the distribution directory. */
+  /** Distribution directory. */
   Dist = 'dist',
 
-  /** Represents the build directory within the distribution directory. */
+  /** Build directory within the {@link Dist} directory. */
   DistBuild = 'dist/build',
 
-  /** Represents the development directory within the distribution directory. */
+  /** Development directory within the {@link Dist} directory. */
   DistDev = 'dist/dev',
 
-  /** Represents the ESLint configuration file. */
+  /** CommonJS ESLint configuration file. */
   EslintConfigCjs = 'eslint.config.cjs',
 
-  /** Represents the ESLint configuration file. */
+  /** CommonJS TypeScript ESLint configuration file. */
   EslintConfigCts = 'eslint.config.cts',
 
-  /** Represents the ESLint configuration file. */
+  /** JavaScript ESLint configuration file. */
   EslintConfigJs = 'eslint.config.js',
 
-  /** Represents the ESLint configuration file. */
+  /** ESM JavaScript ESLint configuration file. */
   EslintConfigMjs = 'eslint.config.mjs',
 
-  /** Represents the ESLint configuration file. */
+  /** ESM TypeScript ESLint configuration file. */
   EslintConfigMts = 'eslint.config.mts',
 
-  /** Represents the ESLint configuration file. */
+  /** TypeScript ESLint configuration file. */
   EslintConfigTs = 'eslint.config.ts',
 
-  /** Represents the hot reload file. */
+  /** Hot reload file. */
   HotReload = '.hotreload',
 
-  /** Represents the lib directory. */
-  Lib = 'lib',
-
-  /** Represents the main CSS file. */
+  /** Main CSS file. */
   MainCss = 'main.css',
 
-  /** Represents the main JavaScript file. */
+  /** Main JavaScript file. */
   MainJs = 'main.js',
 
-  /** Represents the main TypeScript file. */
+  /** Main TypeScript file. */
   MainTs = 'main.ts',
 
-  /** Represents the manifest file for beta releases. */
+  /** Manifest file for beta releases. */
   ManifestBetaJson = 'manifest-beta.json',
 
-  /** Represents the manifest file. */
+  /** Manifest file. */
   ManifestJson = 'manifest.json',
 
-  /** Represents the npm-shrinkwrap.json file. */
+  /** NPM shrinkwrap file. */
   NpmShrinkwrapJson = 'npm-shrinkwrap.json',
 
-  /** Represents the package.json file. */
+  /** Package JSON file. */
   PackageJson = 'package.json',
 
-  /** Represents the package-lock.json file. */
+  /** Package-lock JSON file. */
   PackageLockJson = 'package-lock.json',
 
-  /** Represents the source directory. */
+  /** Scripts directory. */
+  Scripts = 'scripts',
+
+  /** Source directory. */
   Src = 'src',
 
-  /** Represents the styles.css file. */
+  /** Styles CSS file. */
   StylesCss = 'styles.css',
 
-  /** Represents the TypeScript configuration file. */
+  /** TypeScript configuration file. */
   TsConfigJson = 'tsconfig.json',
 
-  /** Represents the versions.json file. */
+  /** Versions JSON file. */
   VersionsJson = 'versions.json'
 }

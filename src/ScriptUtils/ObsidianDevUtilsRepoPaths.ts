@@ -6,152 +6,123 @@
  */
 
 export enum ObsidianDevUtilsRepoPaths {
-  /** Matches any file or directory (`*`). */
+  /** Any file or directory. */
   Any = '*',
 
-  /** Matches any `.cjs` file (`*.cjs`). */
+  /** CommonJS file. */
   AnyCjs = '*.cjs',
 
-  /** Matches any `.d.cts` file (`*.d.cts`). */
+  /** CommonJS TypeScript declaration file. */
   AnyDcts = '*.d.cts',
 
-  /** Matches any `.d.mts` file (`*.d.mts`). */
+  /** ESM TypeScript declaration file. */
   AnyDmts = '*.d.mts',
 
-  /** Matches any TypeScript declaration file (`*.d.ts`). */
+  /** TypeScript declaration file. */
   AnyDts = '*.d.ts',
 
-  /** Matches any `.js` file (`*.js`). */
-  AnyJs = '*.js',
-
-  /** Matches any `.mjs` file (`*.mjs`). */
+  /** ESM JavaScript file. */
   AnyMjs = '*.mjs',
 
-  /** Matches any path recursively (`**`). */
+  /** Any path recursively. */
   AnyPath = '**',
 
-  /** Matches any TypeScript file (`*.ts`). */
+  /** Any TypeScript file. */
   AnyTs = '*.ts',
 
-  /** Matches any React TypeScript file (`*.tsx`). */
-  AnyTsx = '*.tsx',
-
-  /** The path to the `CHANGELOG.md` file. */
-  ChangelogMd = 'CHANGELOG.md',
-
-  /** The path to the `cjs` directory. */
+  /** CommonJS directory. */
   Cjs = 'cjs',
 
-  /** The `.cjs` file extension. */
+  /** CommonJS file extension. */
   CjsExtension = '.cjs',
 
-  /** The path to the current directory. */
+  /** Current directory. */
   CurrentDir = '.',
 
-  /** The path to the `src/obsidian/@types/Dataview` files. */
+  /** Dataview types. */
   DataviewTypes = 'src/obsidian/@types/Dataview/**',
 
-  /** The `.d.cts` file extension. */
+  /** CommonJS TypeScript declaration file extension. */
   DctsExtension = '.d.cts',
 
-  /** The path to the distribution (`dist`) directory. */
+  /** Distribution directory. */
   Dist = 'dist',
 
-  /** The path to the `lib` directory within the `dist` directory. */
+  /** The path to the `lib` directory within the {@link Dist} directory. */
   DistLib = 'dist/lib',
 
-  /** The path to the `_dependencies.cjs` file within the `lib` directory in the `dist` directory. */
-  DistLibDependenciesCjs = './dist/lib/_dependencies.cjs',
-
-  /** The `.d.js` file extension. */
+  /** Transpiled TypeScript declaration file extension. */
   DjsExtension = '.d.js',
 
-  /** The `.d.mts` file extension. */
+  /** ESM TypeScript declaration file extension. */
   DmtsExtension = '.d.mts',
 
-  /** The path to the `dprint.json` file. */
+  /** Dprint configuration file. */
   DprintJson = 'dprint.json',
 
-  /** The `.d.ts` file extension. */
+  /** TypeScript declaration file extension. */
   DtsExtension = '.d.ts',
 
-  /** The path to the `esm` directory. */
+  /** ESM JavaScript directory. */
   Esm = 'esm',
 
-  /** The path to the `index.cjs` file. */
+  /** CommonJS JavaScript index file. */
   IndexCjs = 'index.cjs',
 
-  /** The path to the `index.d.cts` file. */
+  /** CommonJS TypeScript declaration file index file. */
   IndexDcts = 'index.d.cts',
 
-  /** The path to the `index.d.mts` file. */
+  /** ESM TypeScript declaration file index file. */
   IndexDmts = 'index.d.mts',
 
-  /** The path to the `index.d.ts` file. */
-  IndexDts = 'index.d.ts',
-
-  /** The path to the `index.mjs` file. */
+  /** ESM JavaScript index file. */
   IndexMjs = 'index.mjs',
 
-  /** The path to the `index.ts` file. */
+  /** TypeScript index file. */
   IndexTs = 'index.ts',
 
-  /** The `.js` file extension. */
+  /** JavaScript file extension. */
   JsExtension = '.js',
 
-  /** Represents the Library.cjs file. */
+  /** Library CommonJS file. */
   LibraryCjs = 'Library.cjs',
 
-  /** Represents the Library.mjs file. */
+  /** Library ESM JavaScript file. */
   LibraryMjs = 'Library.mjs',
 
-  /** The path to the `LICENSE` file. */
-  License = 'LICENSE',
-
-  /** The `.mjs` file extension. */
+  /** ESM JavaScript file extension. */
   MjsExtension = '.mjs',
 
-  /**
-   * The path to the `node_modules` directory.
-   */
+  /** Node modules directory. */
   NodeModules = 'node_modules',
 
-  /** The path to the `package.json` file. */
+  /** Package JSON file. */
   PackageJson = 'package.json',
 
-  /** The path to the `README.md` file. */
-  ReadmeMd = 'README.md',
-
-  /** The path to the root directory. */
+  /** Root directory. */
   RootDir = '/',
 
-  /** The path to the `scripts` directory. */
+  /** Scripts directory. */
   Scripts = 'scripts',
 
-  /** The path to the `src` directory. */
+  /** Source directory. */
   Src = 'src',
 
-  /** The path to the `_dependencies.ts` file within the `src` directory. */
-  SrcDependenciesTs = './src/_dependencies.ts',
-
-  /** The path to the `src` directory. */
-  SrcObsidianTypesDataview = 'src/obsidian/@types/Dataview',
-
-  /** The path to the `static` directory. */
+  /** Static directory. */
   Static = 'static',
 
-  /** The path to the `styles` directory. */
+  /** Styles directory. */
   Styles = 'styles',
 
-  /** The path to the `styles.css` file. */
+  /** Styles CSS file. */
   StylesCss = 'styles.css',
 
-  /** The path to the `tsconfig.json` file. */
+  /** TypeScript configuration file. */
   TsConfigJson = 'tsconfig.json',
 
-  /** The `.ts` file extension. */
+  /** TypeScript file extension. */
   TsExtension = '.ts',
 
-  /** The path to the `@types` directory, typically used for TypeScript type declarations. */
+  /** Types directory. */
   Types = '@types'
 }
