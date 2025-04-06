@@ -20,6 +20,7 @@ import { MultipleTextComponent } from './Components/MultipleTextComponent.ts';
 import { NumberComponent } from './Components/NumberComponent.ts';
 import { TimeComponent } from './Components/TimeComponent.ts';
 import { TriStateCheckboxComponent } from './Components/TriStateCheckboxComponent.ts';
+import { TypedDropdownComponent } from './Components/TypedDropdownComponent.ts';
 import { UrlComponent } from './Components/UrlComponent.ts';
 import { WeekComponent } from './Components/WeekComponent.ts';
 
@@ -170,6 +171,16 @@ export class SettingEx extends Setting {
    */
   public addTriStateCheckbox(cb: (component: TriStateCheckboxComponent) => void): this {
     return this.addComponent(TriStateCheckboxComponent, cb);
+  }
+
+  /**
+   * Adds a {@link TypedDropdownComponent} to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addTypedDropdown<T>(cb: (component: TypedDropdownComponent<T>) => void): this {
+    return this.addComponent(TypedDropdownComponent<T>, cb);
   }
 
   /**
