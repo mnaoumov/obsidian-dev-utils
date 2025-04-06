@@ -6,7 +6,7 @@
 - Format
 - getAllEntries
 - Reuse getAllKeys
-- Skip __proto__
+- Skip `__proto__`
 
 ## 22.1.1-beta.19
 
