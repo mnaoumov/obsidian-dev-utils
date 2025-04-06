@@ -126,6 +126,17 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   /**
+   * Called when the plugin settings are loaded or reloaded.
+   *
+   * @param settings - The settings.
+   * @returns A promise or `void` indicating the completion of the save process
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public onLoadSettings(settings: PluginSettings): Promisable<void> {
+    noop();
+  }
+
+  /**
    * Called when the plugin settings are saved.
    *
    * @param _newSettings - The new settings.
