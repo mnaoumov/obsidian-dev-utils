@@ -6,6 +6,10 @@ import {
 } from 'obsidian';
 
 import type { ValidatorElement } from '../../HTMLElement.ts';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { initPluginContext } from '../Plugin/PluginContext.ts';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { SettingEx } from '../SettingEx.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
 import { CssClass } from '../../CssClass.ts';
@@ -13,6 +17,12 @@ import { getPluginId } from '../Plugin/PluginId.ts';
 
 /**
  * A dropdown component that can be used to select a value from a list.
+ *
+ * You can add this component using {@link SettingEx.addTypedDropdown}.
+ *
+ * In order to add the styles for the component, use {@link initPluginContext} in your plugin's `onload()` function.
+ *
+ * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  *
  * @typeParam T - The type of the value to select.
  */

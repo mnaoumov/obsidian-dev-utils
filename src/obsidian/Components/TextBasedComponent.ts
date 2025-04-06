@@ -4,6 +4,8 @@ import { AbstractTextComponent } from 'obsidian';
 
 /**
  * A component based on a text input.
+ *
+ * @typeParam T - The type of the value to set.
  */
 export interface TextBasedComponent<T> {
   /**
@@ -30,6 +32,7 @@ export interface TextBasedComponent<T> {
 /**
  * Gets the text based component value of the component.
  *
+ * @typeParam T - The type of the value to get.
  * @param component - The component to get the text based component value of.
  * @returns The text based component value of the component or `null` if the component is not a text based component.
  */

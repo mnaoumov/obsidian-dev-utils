@@ -8,6 +8,8 @@ import type { Promisable } from 'type-fest';
 
 /**
  * A ValueComponent that can track changes.
+ *
+ * @typeParam T - The type of the value to set.
  */
 export interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
   /**
