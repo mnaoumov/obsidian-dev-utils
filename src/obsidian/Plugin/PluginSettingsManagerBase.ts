@@ -348,10 +348,6 @@ export class PluginSettingsProperty<T> {
 
   public async setValueAndValidate(value: T): Promise<void> {
     this.setValue(value);
-    if (this._currentValue === undefined) {
-      return;
-    }
-
     this._validationMessage = (await this.validator(this._currentValue) as string | undefined) ?? '';
     this.showWarning(value);
   }
