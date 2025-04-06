@@ -100,7 +100,7 @@ export class AsyncEvents {
    *
    * @public
    */
-  public on(name: string, callback: (...args: unknown[]) => Promisable<unknown>, thisArg?: unknown): AsyncEventRef {
+  public on(name: string, callback: (...args: unknown[]) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
     let eventRefs = this.eventRefsMap.get(name);
     if (!eventRefs) {
       eventRefs = [];
@@ -135,7 +135,7 @@ export class AsyncEvents {
    *
    * @public
    */
-  public once(name: string, callback: (...args: unknown[]) => Promisable<unknown>, thisArg?: unknown): AsyncEventRef {
+  public once(name: string, callback: (...args: unknown[]) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
     const originalEventRef = this.on(name, callback, thisArg);
     const cleanupEventRef = this.on(name, () => {
       this.offref(originalEventRef);
