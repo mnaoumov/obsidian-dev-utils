@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Plugin settings manager base class.
+ */
+
 import type { App } from 'obsidian';
 import type {
   Promisable,
@@ -248,7 +254,6 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
    * Called when the plugin settings are loaded.
    *
    * @param _record - The record.
-   * @returns A {@link Promise} or `void` indicating the completion of the load process
    */
   protected onLoadRecord(_record: Record<string, unknown>): Promisable<void> {
     noop();
@@ -258,7 +263,6 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
    * Called when the plugin settings are saving.
    *
    * @param _record - The record.
-   * @returns A {@link Promise} or `void` indicating the completion of the save process
    */
   protected onSavingRecord(_record: Record<string, unknown>): Promisable<void> {
     noop();

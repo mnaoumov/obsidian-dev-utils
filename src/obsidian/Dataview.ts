@@ -279,7 +279,6 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
  * @param dv - The DataviewInlineApi instance to insert the code block into.
  * @param language - The language identifier for the code block.
  * @param code - The code content to be inserted into the code block.
- * @returns This function does not return a value.
  */
 export function insertCodeBlock(dv: DataviewInlineApi, language: string, code: string): void {
   const MIN_FENCE_LENGTH = 3;
@@ -299,8 +298,6 @@ ${resultFence}`);
  * Renders an iframe in the Dataview container with the specified relative path, width, and height.
  *
  * @param options - The options for rendering the iframe.
- *
- * @returns This function does not return a value.
  */
 export function renderIframe(options: RenderIframeOptions): void {
   const {

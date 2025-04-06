@@ -129,7 +129,6 @@ interface InterruptedRename {
  *
  * @param plugin - The plugin instance.
  * @param settingsBuilder - A function that returns the settings for the rename delete handler.
- * @returns void
  */
 export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: () => Partial<RenameDeleteHandlerSettings>): void {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(plugin.app);

@@ -1,4 +1,10 @@
 /**
+ * @packageDocumentation
+ *
+ * Validation message utilities.
+ */
+
+/**
  * Holds a validation message.
  */
 export interface ValidationMessageHolder {

@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Typed dropdown component.
+ */
+
 import type { Promisable } from 'type-fest';
 
 import {
@@ -29,6 +35,8 @@ import { getPluginId } from '../Plugin/PluginId.ts';
 export class TypedDropdownComponent<T> extends ValueComponent<null | T> implements ValueComponentWithChangeTracking<null | T> {
   /**
    * The validator element of the component.
+   *
+   * @returns The validator element.
    */
   public get validatorEl(): ValidatorElement {
     return this.dropdownComponent.selectEl;

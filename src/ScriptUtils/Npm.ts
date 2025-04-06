@@ -94,7 +94,6 @@ export async function editPackageJson(
  *
  * @param editFn - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
- * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export function editPackageJsonSync(
   editFn: (packageJson: PackageJson) => void,
@@ -130,7 +129,6 @@ export async function editPackageLockJson(
  *
  * @param editFn - The function to edit the parsed `PackageLockJson` object.
  * @param options - Additional options for editing.
- * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export function editPackageLockJsonSync(
   editFn: (packageLockJson: PackageLockJson) => void,

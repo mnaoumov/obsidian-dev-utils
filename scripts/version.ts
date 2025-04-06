@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Version script.
+ */
+
 import { join } from '../src/Path.ts';
 import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
 import {

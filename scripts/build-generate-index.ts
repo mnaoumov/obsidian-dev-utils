@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Build generate index script.
+ */
+
 import type { Dirent } from '../src/ScriptUtils/NodeModules.ts';
 
 import { asyncMap } from '../src/Async.ts';

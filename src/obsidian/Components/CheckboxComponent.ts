@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Checkbox component.
+ */
+
 import type { Promisable } from 'type-fest';
 
 import { ValueComponent } from 'obsidian';

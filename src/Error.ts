@@ -90,7 +90,7 @@ export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) =>
  * Throws an error with the specified message.
  *
  * @param error - The error to throw.
- * @returns A never-returning function.
+ * @throws
  */
 export function throwExpression(error: unknown): never {
   throw error;

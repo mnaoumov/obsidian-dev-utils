@@ -33,6 +33,8 @@ import { getPluginId } from '../Plugin/PluginId.ts';
 export class MultipleDropdownComponent extends ValueComponent<string[]> implements ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
   /**
    * The validator element of the component.
+   *
+   * @returns The validator element.
    */
   public get validatorEl(): ValidatorElement {
     return this.dropdownComponent.selectEl;

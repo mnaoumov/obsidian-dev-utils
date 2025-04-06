@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Tri-state checkbox component.
+ */
+
 import type { Promisable } from 'type-fest';
 
 import { ValueComponent } from 'obsidian';
