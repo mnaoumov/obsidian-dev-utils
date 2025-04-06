@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 22.1.1-beta.23
+
+- Support failing validators
+- Remove old code
+- Init and validate separately to allow dependent validators
+
 ## 22.1.1-beta.22
 
 - Subscribe once
