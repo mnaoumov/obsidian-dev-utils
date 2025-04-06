@@ -186,6 +186,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
       }
 
       await property.setValueAndValidate(value);
+      property.save();
     }
 
     const newJson = JSON.stringify(await this.prepareRecordToSave());
