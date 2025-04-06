@@ -113,6 +113,11 @@ export enum CssClass {
   TimeComponent = 'time-component',
 
   /**
+   * The CSS class for the tri-state checkbox component.
+   */
+  TriStateCheckboxComponent = 'tri-state-checkbox-component',
+
+  /**
    * The CSS class for the url component.
    */
   UrlComponent = 'url-component',
