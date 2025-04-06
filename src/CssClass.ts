@@ -123,6 +123,11 @@ export enum CssClass {
   TypedDropdownComponent = 'typed-dropdown-component',
 
   /**
+   * The CSS class for the typed multiple dropdown component.
+   */
+  TypedMultipleDropdownComponent = 'typed-multiple-dropdown-component',
+
+  /**
    * The CSS class for the url component.
    */
   UrlComponent = 'url-component',
