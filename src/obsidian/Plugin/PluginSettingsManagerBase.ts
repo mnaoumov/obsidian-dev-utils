@@ -194,6 +194,8 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     if (newJson !== originalJson) {
       await this.saveToFileImpl();
     }
+
+    await this.plugin.onLoadSettings(this.getSavedSettings());
   }
 
   /**
