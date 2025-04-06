@@ -19,6 +19,7 @@ import { MultipleFileComponent } from './Components/MultipleFileComponent.ts';
 import { MultipleTextComponent } from './Components/MultipleTextComponent.ts';
 import { NumberComponent } from './Components/NumberComponent.ts';
 import { TimeComponent } from './Components/TimeComponent.ts';
+import { TriStateCheckboxComponent } from './Components/TriStateCheckboxComponent.ts';
 import { UrlComponent } from './Components/UrlComponent.ts';
 import { WeekComponent } from './Components/WeekComponent.ts';
 
@@ -159,6 +160,16 @@ export class SettingEx extends Setting {
    */
   public addTime(cb: (component: TimeComponent) => void): this {
     return this.addComponent(TimeComponent, cb);
+  }
+
+  /**
+   * Adds a {@link TriStateCheckboxComponent} to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addTriStateCheckbox(cb: (component: TriStateCheckboxComponent) => void): this {
+    return this.addComponent(TriStateCheckboxComponent, cb);
   }
 
   /**
