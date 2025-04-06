@@ -18,11 +18,20 @@ import {
   Plugin
 } from 'obsidian';
 
+import type { AsyncEventRef } from '../../AsyncEvents.ts';
+
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from '../../Async.ts';
+import { AsyncEvents } from '../../AsyncEvents.ts';
 import { getDebugger } from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noop } from '../../Function.ts';
 import { initPluginContext } from './PluginContext.ts';
 import { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
+
+type LifecycleEventName = 'layoutReady' | 'loadComplete' | 'unload';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
@@ -34,6 +43,8 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * @deprecated Used only for type inference. Don't use it directly.
    */
   declare public __pluginSettingsType: PluginSettings;
+
+  public readonly events = new AsyncEvents();
 
   /**
    * Gets the AbortSignal used for aborting long-running operations.
@@ -62,9 +73,8 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   private _abortSignal!: AbortSignal;
-
   private _settingsManager: null | PluginSettingsManagerBase<PluginSettings> = null;
-
+  private lifecycleEventNames = new Set<LifecycleEventName>();
   private notice?: Notice;
 
   /**
@@ -94,6 +104,24 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   /**
+   * Adds a lifecycle event listener.
+   * If the event has already occurred, the callback will be called immediately.
+   *
+   * @param name - The name of the event.
+   * @param callback - The callback to call when the event is triggered.
+   * @returns A {@link Promise} that resolves when the callback is executed.
+   */
+  public async onLifecycleEvent(name: LifecycleEventName, callback: () => Promisable<unknown>): Promise<void> {
+    if (!this.lifecycleEventNames.has(name)) {
+      await new Promise<void>((resolve) => {
+        this.events.on(name, () => resolve());
+      })
+    }
+
+    await callback();
+  }
+
+  /**
    * Called when the plugin is loaded
    */
   public override async onload(): Promise<void> {
@@ -117,8 +145,12 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
       abortController.abort();
     });
     await this.onloadComplete();
+    await this.triggerLifecycleEvent('loadComplete');
     setTimeout(() => {
-      this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+      this.app.workspace.onLayoutReady(convertAsyncToSync(async () => {
+        await this.onLayoutReady();
+        await this.triggerLifecycleEvent('layoutReady');
+      }));
     }, 0);
   }
 
@@ -141,6 +173,22 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    */
   public onSaveSettings(_newSettings: PluginSettings, _oldSettings: PluginSettings): Promisable<void> {
     noop();
+  }
+
+  public override onunload(): void {
+    invokeAsyncSafely(() => this.triggerLifecycleEvent('unload'));
+  }
+
+  /**
+   * Registers an async event.
+   * Unregisters the event when the plugin is unloaded.
+   *
+   * @param eventRef - The event reference.
+   */
+  public registerAsyncEvent(eventRef: AsyncEventRef): void {
+    this.register(() => {
+      eventRef.asyncEvents.offref(eventRef);
+    });
   }
 
   /**
@@ -192,5 +240,10 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
     }
 
     this.notice = new Notice(`${this.manifest.name}\n${message}`);
+  }
+
+  private async triggerLifecycleEvent(name: LifecycleEventName): Promise<void> {
+    this.lifecycleEventNames.add(name);
+    await this.events.triggerAsync(name);
   }
 }
