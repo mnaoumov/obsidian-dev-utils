@@ -231,6 +231,16 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
 }
 
 /**
+ * Gets all entries of an object.
+ *
+ * @param obj - The object to get the entries of.
+ * @returns An array of all entries of the object.
+ */
+export function getAllEntries<T extends object>(obj: T): [StringKeys<T>, T[StringKeys<T>]][] {
+  return getAllKeys(obj).map((key) => [key, obj[key]]);
+}
+
+/**
  * Gets all keys of an object.
  * Includes fields and properties.
  *
