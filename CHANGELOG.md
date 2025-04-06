@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 22.1.1-beta.22
+
+- Subscribe once
+- Add once
+- Add plugin events
+- AsyncEvents
+- More tsdocs links
+
 ## 22.1.1-beta.21
 
 - Revert underscore logic to fix TS6133
