@@ -20,6 +20,8 @@ import { getPluginId } from '../Plugin/PluginId.ts';
 
 /**
  * A component that displays and edits a text-based value.
+ *
+ * @typeParam T - The type of the value to set.
  */
 export abstract class TypedTextComponent<T> extends ValueComponent<T>
   implements TextBasedComponent<T>, ValidatorComponent, ValueComponentWithChangeTracking<T> {

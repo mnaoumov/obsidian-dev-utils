@@ -7,6 +7,8 @@ import { TypedTextComponent } from './TypedTextComponent.ts';
 
 /**
  * A component that displays and edits a text-based value with a range.
+ *
+ * @typeParam T - The type of the value to set.
  */
 export abstract class TypedRangeTextComponent<T> extends TypedTextComponent<T> {
   /**

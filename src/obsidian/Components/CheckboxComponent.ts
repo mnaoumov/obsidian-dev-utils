@@ -2,6 +2,10 @@ import type { Promisable } from 'type-fest';
 
 import { ValueComponent } from 'obsidian';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { initPluginContext } from '../Plugin/PluginContext.ts';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { SettingEx } from '../SettingEx.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
 import { CssClass } from '../../CssClass.ts';
@@ -9,6 +13,12 @@ import { getPluginId } from '../Plugin/PluginId.ts';
 
 /**
  * A component that displays a checkbox.
+ *
+ * You can add this component using {@link SettingEx.addCheckbox}.
+ *
+ * In order to add the styles for the component, use {@link initPluginContext} in your plugin's `onload()` function.
+ *
+ * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
 export class CheckboxComponent extends ValueComponent<boolean> implements ValueComponentWithChangeTracking<boolean> {
   /**
