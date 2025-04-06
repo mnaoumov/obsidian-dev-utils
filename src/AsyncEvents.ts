@@ -118,6 +118,33 @@ export class AsyncEvents {
   }
 
   /**
+   * Add an event listener that will be triggered only once.
+   *
+   * @param name - The name of the event.
+   * @param callback - The callback to call when the event is triggered.
+   * @param thisArg - The context passed as `this` to the `callback`.
+   * @returns A reference to the event listener.
+   *
+   * @example
+   * ```ts
+   * events.once('my-event', async (arg1, arg2) => {
+   *     await sleep(100);
+   *     console.log(arg1, arg2);
+   * });
+   * ```
+   *
+   * @public
+   */
+  public once(name: string, callback: (...args: unknown[]) => Promisable<unknown>, thisArg?: unknown): AsyncEventRef {
+    const originalEventRef = this.on(name, callback, thisArg);
+    const cleanupEventRef = this.on(name, () => {
+      this.offref(originalEventRef);
+      this.offref(cleanupEventRef);
+    });
+    return originalEventRef;
+  }
+
+  /**
    * Trigger an event, executing all the listeners in order even if some of them throw an error.
    *
    * @param name - The name of the event.
