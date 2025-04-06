@@ -67,6 +67,7 @@
     "nosourcemap",
     "npmjs",
     "nums",
+    "offref",
     "outdir",
     "outfile",
     "outlinks",
