@@ -24,8 +24,8 @@ import perfectionist from 'eslint-plugin-perfectionist';
 // eslint-disable-next-line import-x/no-rename-default
 import tseslint from 'typescript-eslint';
 
+import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
-import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import { getRootDir } from '../Root.ts';
 
 /**
@@ -34,17 +34,20 @@ import { getRootDir } from '../Root.ts';
 export const configs: Linter.Config[] = tseslint.config(
   {
     files: [
-      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
-      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTsx),
-      join(ObsidianDevUtilsRepoPaths.Scripts, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
+      join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
+      join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTsx),
+      join(ObsidianPluginRepoPaths.Scripts, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
+      ObsidianPluginRepoPaths.EslintConfigCts,
+      ObsidianPluginRepoPaths.EslintConfigTs,
+      ObsidianPluginRepoPaths.EslintConfigMts
     ]
   },
   {
     ignores: [
-      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyCjs),
-      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyJs),
-      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyMjs),
-      join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.AnyPath)
+      join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyCjs),
+      join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyJs),
+      join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyMjs),
+      join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.AnyPath)
     ]
   },
   ...getEslintConfigs(),
