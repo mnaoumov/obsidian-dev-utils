@@ -10,8 +10,6 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
-import { Notice } from 'obsidian';
-
 import type { Transformer } from '../../Transformers/Transformer.ts';
 import type {
   MaybeReturn,
@@ -369,9 +367,7 @@ export class PluginSettingsProperty<T> {
       return;
     }
 
-    const warningMessage = `Could not set plugin setting: ${this.propertyName}. Using default value instead.`;
-    new Notice(warningMessage);
-    console.warn(warningMessage, {
+    console.warn(`Could not set plugin setting: ${this.propertyName}. Using default value instead.`, {
       defaultValue: this.defaultValue,
       propertyName: this.propertyName,
       validationMessage: this._validationMessage,
