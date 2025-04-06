@@ -237,11 +237,25 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     return defaultTransformer;
   }
 
-  protected onLoadRecord(_record: Record<string, unknown>): Promisable<void> {
+  /**
+   * Called when the plugin settings are loaded.
+   *
+   * @param record - The record.
+   * @returns A promise or `void` indicating the completion of the load process
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected onLoadRecord(record: Record<string, unknown>): Promisable<void> {
     noop();
   }
 
-  protected onSavingRecord(_record: Record<string, unknown>): Promisable<void> {
+  /**
+   * Called when the plugin settings are saving.
+   *
+   * @param record - The record.
+   * @returns A promise or `void` indicating the completion of the save process
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected onSavingRecord(record: Record<string, unknown>): Promisable<void> {
     noop();
   }
 

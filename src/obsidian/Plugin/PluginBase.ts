@@ -20,10 +20,7 @@ import {
 
 import { getDebugger } from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
-import {
-  noop,
-  noopAsync
-} from '../../Function.ts';
+import { noop } from '../../Function.ts';
 import { initPluginContext } from './PluginContext.ts';
 import { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 
@@ -139,12 +136,13 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   /**
    * Called when the plugin settings are saved.
    *
-   * @param _newSettings - The new settings.
-   * @param _oldSettings - The old settings.
-   * @returns A promise or void indicating the completion of the save process.
+   * @param newSettings - The new settings.
+   * @param oldSettings - The old settings.
+   * @returns A promise or `void` indicating the completion of the save process
    */
-  public async onSaveSettings(_newSettings: PluginSettings, _oldSettings: PluginSettings): Promise<void> {
-    await noopAsync();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public onSaveSettings(newSettings: PluginSettings, oldSettings: PluginSettings): Promisable<void> {
+    noop();
   }
 
   /**
@@ -169,7 +167,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
    * the layout is ready.
    *
-   * @returns A promise or void indicating the completion of the layout setup.
+   * @returns A promise or `void` indicating the completion of the layout setup.
    */
   protected onLayoutReady(): Promisable<void> {
     noop();
@@ -179,7 +177,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * Called when the plugin loading is complete. This method must be implemented by subclasses to perform
    * any additional setup required after loading is complete.
    *
-   * @returns A promise or void indicating the completion of the load process.
+   * @returns A promise or `void` indicating the completion of the load process.
    */
   protected onloadComplete(): Promisable<void> {
     noop();
