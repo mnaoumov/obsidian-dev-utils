@@ -104,26 +104,6 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   /**
-   * Adds a lifecycle event listener.
-   * If the event has already occurred, the callback will be called immediately.
-   *
-   * @param name - The name of the event.
-   * @param callback - The callback to call when the event is triggered.
-   * @returns A {@link Promise} that resolves when the callback is executed.
-   */
-  public async onLifecycleEvent(name: LifecycleEventName, callback: () => Promisable<unknown>): Promise<void> {
-    if (!this.lifecycleEventNames.has(name)) {
-      await new Promise<void>((resolve) => {
-        this.events.once(name, () => {
-          resolve();
-        });
-      });
-    }
-
-    await callback();
-  }
-
-  /**
    * Called when the plugin is loaded
    */
   public override async onload(): Promise<void> {
@@ -190,6 +170,28 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   public registerAsyncEvent(eventRef: AsyncEventRef): void {
     this.register(() => {
       eventRef.asyncEvents.offref(eventRef);
+    });
+  }
+
+  /**
+   * Waits for a lifecycle event to be triggered.
+   *
+   * If you `await` this method during lifecycle event, it might cause a deadlock.
+   *
+   * Consider wrapping this call with {@link invokeAsyncSafely}.
+   *
+   * @param name - The name of the event.
+   * @returns A {@link Promise} that resolves when the event is triggered.
+   */
+  public async waitForLifecycleEvent(name: LifecycleEventName): Promise<void> {
+    if (this.lifecycleEventNames.has(name)) {
+      return;
+    }
+
+    await new Promise<void>((resolve) => {
+      this.events.once(name, () => {
+        resolve();
+      });
     });
   }
 
