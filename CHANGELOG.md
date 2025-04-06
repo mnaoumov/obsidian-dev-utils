@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 22.1.1-beta.24
+
+- Add missing tsdocs
+- TypedMultipleDropdownComponent
+- TypedDropdownComponent
+- Proper setDisabled
+- Rename containerEl
+- TriStateCheckboxComponent
+- CheckboxComponent
+- waitForLifecycleEvent
+- Force void callbacks
+
 ## 22.1.1-beta.23
 
 - Support failing validators
