@@ -169,6 +169,8 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     record = this.getTransformer().transformObjectRecursively(record);
     await this.onLoadRecord(record);
 
+    const propertiesToSave: PluginSettingsProperty<unknown>[] = [];
+
     for (const [propertyName, value] of Object.entries(record)) {
       const property = this.properties.get(propertyName);
       if (!property) {
@@ -185,7 +187,12 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
         continue;
       }
 
-      await property.setValueAndValidate(value);
+      property.setValue(value);
+      propertiesToSave.push(property);
+    }
+
+    for (const property of propertiesToSave) {
+      await property.setValueAndValidate(property.currentValue);
       property.save();
     }
 
