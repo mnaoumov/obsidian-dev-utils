@@ -281,7 +281,7 @@ export async function parseMetadata(app: App, str: string): Promise<CachedMetada
   return await app.metadataCache.computeMetadataAsync(buffer) ?? {};
 }
 
-/***
+/**
  * Registers a file in the Obsidian app.
  *
  * @param app - The Obsidian app instance.
