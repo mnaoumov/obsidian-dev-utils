@@ -118,6 +118,11 @@ export enum CssClass {
   TriStateCheckboxComponent = 'tri-state-checkbox-component',
 
   /**
+   * The CSS class for the typed dropdown component.
+   */
+  TypedDropdownComponent = 'typed-dropdown-component',
+
+  /**
    * The CSS class for the url component.
    */
   UrlComponent = 'url-component',
