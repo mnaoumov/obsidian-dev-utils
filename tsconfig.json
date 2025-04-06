@@ -24,7 +24,7 @@
     "verbatimModuleSyntax": true
   },
   "include": [
-    "./eslint.config.mts",
+    "./eslint.config.*ts",
     "./src/**/*.ts",
     "./scripts/**/*.ts"
   ]
