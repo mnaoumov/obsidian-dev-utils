@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 22.1.1-beta.21
+
+- Revert underscore logic to fix TS6133
+- Add links in tsdocs
+- Fix CliTaskResult tsdocs
+- Improve virtual method arg naming
+- onLoadSettings
+- Force save after load if transformed
+- Fix formatting
+- Mark as saved on load
+
 ## 22.1.1-beta.20
 
 - Reuse getAllKeys when transform
