@@ -17,7 +17,7 @@ import {
 import { getPath } from './FileSystem.ts';
 
 /**
- * Fixes the title of a file or folder note by generating a `Link` object with a proper title.
+ * Fixes the title of a file or folder note by generating a {@link Link} object with a proper title.
  *
  * @param dv - The DataviewInlineApi instance used to create the file link.
  * @param pathOrFile - The file path for which the title is to be fixed.
@@ -33,7 +33,7 @@ export function fixTitle(dv: DataviewInlineApi, pathOrFile: PathOrFile, isFolder
 }
 
 /**
- * Generates a string representation of a `Link` object that includes both the link text and the file path.
+ * Generates a string representation of a {@link Link} object that includes both the link text and the file path.
  *
  * @param link - The Link object to be converted to a string with its path.
  * @returns A string representing the link in the format: "linkText (linkPath)".

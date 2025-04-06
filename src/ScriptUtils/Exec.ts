@@ -76,7 +76,7 @@ export interface ExecResult {
  *
  * @param command - The command to execute. It can be a string or an array of strings.
  * @param options - The options for the execution.
- * @returns A Promise that resolves with the output of the command.
+ * @returns A {@link Promise} that resolves with the output of the command.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is false.
  *         The error message includes the exit code and stderr.
  *         If an error occurs during the execution and ignoreExitCode is true,
@@ -89,7 +89,7 @@ export async function exec(command: string | string[], options?: { withDetails?:
  *
  * @param command - The command to execute. It can be a string or an array of strings.
  * @param options - The options for the execution.
- * @returns A Promise that resolves with ExecResult object.
+ * @returns A {@link Promise} that resolves with ExecResult object.
  *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is false.
  *         The error message includes the exit code and stderr.
@@ -103,7 +103,7 @@ export function exec(command: string | string[], options: { withDetails: true } 
  *
  * @param command - The command to execute. It can be a string or an array of strings.
  * @param options - The options for the execution.
- * @returns A Promise that resolves with the output of the command or an ExecResult object.
+ * @returns A {@link Promise} that resolves with the output of the command or an ExecResult object.
  *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is false.
  *         The error message includes the exit code and stderr.

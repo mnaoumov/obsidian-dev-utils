@@ -53,11 +53,11 @@ export type CombinedPage<CustomFrontmatter = unknown> = CombinedFrontmatter<Cust
  */
 export interface DataviewInlineApi extends DataviewInlineApiOriginal {
   /**
-   * Wraps an array of items into a `DataArray` object.
+   * Wraps an array of items into a {@link DataArray} object.
    *
    * @typeParam T - The type of the items in the array.
    * @param arr - The array of items to wrap.
-   * @returns A `DataArray` containing the items.
+   * @returns A {@link DataArray} containing the items.
    */
   array<T>(arr: T[]): DataArray<T>;
 
@@ -74,7 +74,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    *
    * @typeParam CustomPage - The type of the custom page. Defaults to `SMarkdownPage`.
    * @param query - An optional string query to filter the pages.
-   * @returns A `DataArray` of pages matching the query.
+   * @returns A {@link DataArray} of pages matching the query.
    */
   pages<CustomFrontmatter = unknown>(query?: string): DataArray<CombinedPage<CustomFrontmatter>>;
 

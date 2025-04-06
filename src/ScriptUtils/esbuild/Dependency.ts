@@ -39,7 +39,7 @@ interface ModuleWithDefaultExport {
 /**
  * Determines which dependencies should be bundled by esbuild.
  *
- * @returns A `Promise` that resolves to an array of dependency names to bundle.
+ * @returns A {@link Promise} that resolves to an array of dependency names to bundle.
  */
 export async function getDependenciesToBundle(): Promise<string[]> {
   const dependenciesToSkip = await getDependenciesToSkip();
@@ -73,7 +73,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
 /**
  * Retrieves the list of dependencies that should be skipped during the bundling process.
  *
- * @returns A `Promise` that resolves to a `Set` of dependency names to skip.
+ * @returns A {@link Promise} that resolves to a {@link Set} of dependency names to skip.
  */
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const packageJson = await readPackageJson(getDirname(import.meta.url));

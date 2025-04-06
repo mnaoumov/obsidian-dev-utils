@@ -74,7 +74,7 @@ export interface RenderDelayedBacklinksOptions {
  *
  * @param dv - The DataviewInlineApi instance.
  * @param pathOrFiles - An optional array of PathOrAbstractFile.
- * @returns A Promise that resolves when the backlinks table has been rendered.
+ * @returns A {@link Promise} that resolves when the backlinks table has been rendered.
  */
 export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: PathOrAbstractFile[]): Promise<void> {
   pathOrFiles ??= [];
