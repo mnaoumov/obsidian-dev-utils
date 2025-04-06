@@ -3,13 +3,15 @@ import type {
   Linter
 } from 'eslint';
 
-import eslintPluginTsdocRequired_ = require('@guardian/eslint-plugin-tsdoc-required');
+import jsdoc from 'eslint-plugin-jsdoc';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
 import eslintPluginVerifyTsdoc from 'eslint-plugin-verify-tsdoc';
 
 import { join } from './src/Path.ts';
 import { configs as defaultConfigs } from './src/ScriptUtils/ESLint/eslint.config.ts';
 import { ObsidianDevUtilsRepoPaths } from './src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
+
+import eslintPluginTsdocRequired_ = require('@guardian/eslint-plugin-tsdoc-required');
 
 const eslintPluginTsdocRequired = eslintPluginTsdocRequired_ as ESLint.Plugin;
 
@@ -33,7 +35,7 @@ const configs: Linter.Config[] = [
   },
   {
     plugins: {
-      'tsdoc': eslintPluginTsdoc
+      tsdoc: eslintPluginTsdoc
     },
     rules: {
       'tsdoc/syntax': 'error'
@@ -45,6 +47,48 @@ const configs: Linter.Config[] = [
     },
     rules: {
       'verify-tsdoc/verify-tsdoc-params': 'error'
+    }
+  },
+  jsdoc.configs['flat/recommended-typescript-error'],
+  {
+    plugins: {
+      jsdoc
+    },
+    rules: {
+      'jsdoc/check-tag-names': [
+        'error',
+        {
+          definedTags: [
+            'packageDocumentation',
+            'typeParam'
+          ]
+        }
+      ],
+      'jsdoc/require-file-overview': [
+        'error',
+        {
+          tags: {
+            packageDocumentation: {
+              initialCommentsOnly: true,
+              mustExist: true,
+              preventDuplicates: true
+            }
+          }
+        }
+      ],
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          publicOnly: true
+        }
+      ],
+      'jsdoc/tag-lines': [
+        'error',
+        'any',
+        {
+          startLines: 1
+        }
+      ]
     }
   }
 ];
