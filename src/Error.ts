@@ -3,7 +3,7 @@
  * Contains utility functions for error handling.
  */
 
-import { EventEmitter } from 'eventemitter3';
+import { AsyncEvents } from './AsyncEvents.ts';
 
 const ASYNC_ERROR_EVENT = 'asyncError';
 
@@ -12,7 +12,7 @@ const ASYNC_ERROR_EVENT = 'asyncError';
  */
 export const ASYNC_ERROR_WRAPPER_MESSAGE = 'An unhandled error occurred executing async operation';
 
-const asyncErrorEventEmitter = new EventEmitter();
+const asyncErrorEventEmitter = new AsyncEvents();
 asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
 
 interface ErrorEntry {
@@ -27,7 +27,7 @@ interface ErrorEntry {
  * @param asyncError - The error to emit as an asynchronous error event.
  */
 export function emitAsyncErrorEvent(asyncError: unknown): void {
-  asyncErrorEventEmitter.emit(ASYNC_ERROR_EVENT, asyncError);
+  asyncErrorEventEmitter.trigger(ASYNC_ERROR_EVENT, asyncError);
 }
 
 /**
@@ -80,8 +80,10 @@ export function printError(error: unknown, console?: Console): void {
  * @returns A function to unregister the handler.
  */
 export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): () => void {
-  asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handler);
-  return () => asyncErrorEventEmitter.off(ASYNC_ERROR_EVENT, handler);
+  const eventRef = asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handler);
+  return () => {
+    asyncErrorEventEmitter.offref(eventRef);
+  };
 }
 
 /**

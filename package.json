@@ -459,7 +459,6 @@
     "eslint-plugin-perfectionist": "^4.11.0",
     "eslint-plugin-tsdoc": "^0.4.0",
     "eslint-plugin-verify-tsdoc": "^1.0.20",
-    "eventemitter3": "^5.0.1",
     "glob": "^11.0.1",
     "jiti": "^2.4.2",
     "localforage": "^1.10.0",
