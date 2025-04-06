@@ -82,7 +82,7 @@ export interface ObsidianReleasesJson {
  * Creates a Git tag for the new version.
  *
  * @param newVersion - The new version number to use for the tag.
- * @returns A promise that resolves when the tag has been created.
+ * @returns A {@link Promise} that resolves when the tag has been created.
  */
 export async function addGitTag(newVersion: string): Promise<void> {
   await execFromRoot(`git tag -a ${newVersion} -m ${newVersion} --force`, { isQuiet: true });
@@ -92,7 +92,7 @@ export async function addGitTag(newVersion: string): Promise<void> {
  * Adds updated files to the Git staging area and commits them with the new version message.
  *
  * @param newVersion - The new version number used as the commit message.
- * @returns A promise that resolves when the files have been added and committed.
+ * @returns A {@link Promise} that resolves when the files have been added and committed.
  */
 export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
   await execFromRoot(['git', 'add', '--all'], { isQuiet: true });
@@ -150,7 +150,7 @@ export async function checkGitRepoClean(): Promise<void> {
 /**
  * Copies the updated manifest file to the distribution build directory.
  *
- * @returns A promise that resolves when the copy operation is complete.
+ * @returns A {@link Promise} that resolves when the copy operation is complete.
  */
 export async function copyUpdatedManifest(): Promise<void> {
   await cp(
@@ -222,7 +222,7 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
  * Retrieves the release notes for a specific version from the changelog.
  *
  * @param newVersion - The new version number for which to get the release notes.
- * @returns A promise that resolves to the release notes for the specified version.
+ * @returns A {@link Promise} that resolves to the release notes for the specified version.
  */
 export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ChangelogMd);
@@ -274,7 +274,7 @@ export function getVersionUpdateType(versionUpdateType: string): VersionUpdateTy
 /**
  * Pushes commits and tags to the remote Git repository.
  *
- * @returns A promise that resolves when the push operation is complete.
+ * @returns A {@link Promise} that resolves when the push operation is complete.
  */
 export async function gitPush(): Promise<void> {
   await execFromRoot('git push --follow-tags --force', { isQuiet: true });
@@ -287,7 +287,7 @@ export async function gitPush(): Promise<void> {
  *
  * @param newVersion - The new version number for the release.
  * @param isObsidianPlugin - A boolean indicating if the project is an Obsidian plugin.
- * @returns A promise that resolves when the release has been published.
+ * @returns A {@link Promise} that resolves when the release has been published.
  */
 export async function publishGitHubRelease(newVersion: string, isObsidianPlugin: boolean): Promise<void> {
   let filePaths: string[];
@@ -331,7 +331,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
  * and prompts the user to review the changes.
  *
  * @param newVersion - The new version number to be added to the changelog.
- * @returns A promise that resolves when the changelog update is complete.
+ * @returns A {@link Promise} that resolves when the changelog update is complete.
  */
 export async function updateChangelog(newVersion: string): Promise<void> {
   const HEADER_LINES_COUNT = 2;
@@ -401,7 +401,7 @@ export async function updateChangelog(newVersion: string): Promise<void> {
  *
  * @param versionUpdateType - The type of version update to perform (major, minor, patch, beta, or x.y.z[-beta:u]).
  * @param prepareGitHubRelease - A callback function to prepare the GitHub release.
- * @returns A promise that resolves when the version update is complete.
+ * @returns A {@link Promise} that resolves when the version update is complete.
  */
 export async function updateVersion(versionUpdateType?: string, prepareGitHubRelease?: (newVersion: string) => Promise<void>): Promise<void> {
   if (!versionUpdateType) {
@@ -482,7 +482,7 @@ export function validate(versionUpdateType: string): void {
 /**
  * Fetches the latest version of Obsidian from the GitHub releases API.
  *
- * @returns A promise that resolves to the latest version of Obsidian.
+ * @returns A {@link Promise} that resolves to the latest version of Obsidian.
  */
 async function getLatestObsidianVersion(): Promise<string> {
   const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');

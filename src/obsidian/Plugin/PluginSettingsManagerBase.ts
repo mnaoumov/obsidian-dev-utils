@@ -201,7 +201,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
   /**
    * Saves the new plugin settings.
    *
-   * @returns A promise that resolves when the settings are saved.
+   * @returns A {@link Promise} that resolves when the settings are saved.
    */
   public async saveToFile(): Promise<void> {
     const oldSettings = this.getSavedSettings();
@@ -241,7 +241,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
    * Called when the plugin settings are loaded.
    *
    * @param _record - The record.
-   * @returns A promise or `void` indicating the completion of the load process
+   * @returns A {@link Promise} or `void` indicating the completion of the load process
    */
   protected onLoadRecord(_record: Record<string, unknown>): Promisable<void> {
     noop();
@@ -251,7 +251,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
    * Called when the plugin settings are saving.
    *
    * @param _record - The record.
-   * @returns A promise or `void` indicating the completion of the save process
+   * @returns A {@link Promise} or `void` indicating the completion of the save process
    */
   protected onSavingRecord(_record: Record<string, unknown>): Promisable<void> {
     noop();

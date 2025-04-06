@@ -45,7 +45,7 @@ export abstract class ModalBase<Value, Options extends ModalOptionsBase> extends
  * Displays a modal in Obsidian.
  *
  * @param modalCreator - A function that creates a modal.
- * @returns A promise that resolves when the modal is closed.
+ * @returns A {@link Promise} that resolves when the modal is closed.
  */
 export async function showModal<T>(modalCreator: (resolve: PromiseResolve<T>) => Modal): Promise<T> {
   return await new Promise<T>((resolve) => {

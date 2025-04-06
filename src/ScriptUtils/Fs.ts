@@ -87,7 +87,7 @@ interface CommonOptions {
  *
  * @param path - The path to the directory.
  * @param options - Options to control the format of the result. If not provided, returns strings.
- * @returns A promise that resolves with an array of POSIX-formatted file paths.
+ * @returns A {@link Promise} that resolves with an array of POSIX-formatted file paths.
  */
 export async function readdirPosix(path: PathLike, options?: StringResultOptions): Promise<string[]>;
 
@@ -96,7 +96,7 @@ export async function readdirPosix(path: PathLike, options?: StringResultOptions
  *
  * @param path - The path to the directory.
  * @param options - Options to control the format of the result. Specify "buffer" to return buffers.
- * @returns A promise that resolves with an array of POSIX-formatted buffers.
+ * @returns A {@link Promise} that resolves with an array of POSIX-formatted buffers.
  */
 export async function readdirPosix(path: PathLike, options: BufferResultOptions): Promise<Buffer[]>;
 
@@ -105,7 +105,7 @@ export async function readdirPosix(path: PathLike, options: BufferResultOptions)
  *
  * @param path - The path to the directory.
  * @param options - Options to control the format of the result. Specify `withFileTypes: true` to return Dirent objects.
- * @returns A promise that resolves with an array of POSIX-formatted Dirent objects.
+ * @returns A {@link Promise} that resolves with an array of POSIX-formatted Dirent objects.
  */
 export async function readdirPosix(path: PathLike, options: DirentResultOptions): Promise<Dirent[]>;
 
@@ -114,7 +114,7 @@ export async function readdirPosix(path: PathLike, options: DirentResultOptions)
  *
  * @param path - The path to the directory.
  * @param options - Options to control the format of the result.
- * @returns A promise that resolves with an array of POSIX-formatted file paths, buffers, or Dirent objects.
+ * @returns A {@link Promise} that resolves with an array of POSIX-formatted file paths, buffers, or Dirent objects.
  */
 export async function readdirPosix(
   path: PathLike,

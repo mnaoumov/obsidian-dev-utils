@@ -54,7 +54,7 @@ export interface ProcessOptions extends RetryOptions {
  * @param app - The application instance.
  * @param oldPathOrFile - The old path or file to copy.
  * @param newPath - The new path to copy the file to.
- * @returns A promise that resolves to the new path of the copied file.
+ * @returns A {@link Promise} that resolves to the new path of the copied file.
  */
 export async function copySafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
   const file = getFile(app, oldPathOrFile);
@@ -80,7 +80,7 @@ export async function copySafe(app: App, oldPathOrFile: PathOrFile, newPath: str
  *
  * @param app - The application instance.
  * @param path - The path of the folder to create.
- * @returns A promise that resolves to a boolean indicating whether the folder was created.
+ * @returns A {@link Promise} that resolves to a boolean indicating whether the folder was created.
  * @throws If an error occurs while creating the folder and it still doesn't exist.
  */
 export async function createFolderSafe(app: App, path: string): Promise<boolean> {
@@ -103,7 +103,7 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
  * Creates a temporary file in the vault with parent folders if needed.
  * @param app - The application instance.
  * @param path - The path of the file to create.
- * @returns A promise that resolves to a function that can be called to delete the temporary file and all its created parents.
+ * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary file and all its created parents.
  */
 export async function createTempFile(app: App, path: string): Promise<() => Promise<void>> {
   let file = getFileOrNull(app, path);
@@ -134,7 +134,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
  * Creates a temporary folder in the vault with parent folders if needed.
  * @param app - The application instance.
  * @param path - The path of the folder to create.
- * @returns A promise that resolves to a function that can be called to delete the temporary folder and all its created parents.
+ * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary folder and all its created parents.
  */
 export async function createTempFolder(app: App, path: string): Promise<() => Promise<void>> {
   let folder = getFolderOrNull(app, path);
@@ -227,7 +227,7 @@ export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: 
  * Checks if a folder is empty.
  * @param app - The application instance.
  * @param pathOrFolder - The path or folder to check.
- * @returns A promise that resolves to a boolean indicating whether the folder is empty.
+ * @returns A {@link Promise} that resolves to a boolean indicating whether the folder is empty.
  */
 export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promise<boolean> {
   const listedFiles = await listSafe(app, getPath(app, pathOrFolder));
@@ -239,7 +239,7 @@ export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promi
  *
  * @param app - The Obsidian application instance.
  * @param pathOrFolder - The path or folder to list.
- * @returns A promise that resolves to a {@link ListedFiles} object containing the listed files and folders.
+ * @returns A {@link Promise} that resolves to a {@link ListedFiles} object containing the listed files and folders.
  */
 export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<ListedFiles> {
   const path = getPath(app, pathOrFolder);
@@ -269,7 +269,7 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
  * If function is provided, it should return `null` if the process should be retried.
  * @param options - Optional options for processing/retrying the operation.
  *
- * @returns A promise that resolves once the process is complete.
+ * @returns A {@link Promise} that resolves once the process is complete.
  *
  * @throws Will throw an error if the process fails after the specified number of retries or timeout.
  */
@@ -336,7 +336,7 @@ export async function process(
  *
  * @param app - The application instance.
  * @param pathOrFile - The path or file to read.
- * @returns A promise that resolves to the content of the file or `null` if the file is missing or deleted.
+ * @returns A {@link Promise} that resolves to the content of the file or `null` if the file is missing or deleted.
  */
 export async function readSafe(app: App, pathOrFile: PathOrFile): Promise<null | string> {
   let content: null | string = null;
@@ -353,7 +353,7 @@ export async function readSafe(app: App, pathOrFile: PathOrFile): Promise<null |
  * @param app - The application instance.
  * @param oldPathOrFile - The old path or file to rename.
  * @param newPath - The new path to rename the file to.
- * @returns A promise that resolves to the new path of the file.
+ * @returns A {@link Promise} that resolves to the new path of the file.
  */
 export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
   const oldFile = getFile(app, oldPathOrFile, false, true);

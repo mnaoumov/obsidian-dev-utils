@@ -18,7 +18,7 @@ import {
  * Format the source code.
  *
  * @param rewrite - Whether to rewrite the source code.
- * @returns A promise that resolves when the source code has been formatted.
+ * @returns A {@link Promise} that resolves when the source code has been formatted.
  */
 export async function format(rewrite = true): Promise<void> {
   const rootDir = getRootDir();

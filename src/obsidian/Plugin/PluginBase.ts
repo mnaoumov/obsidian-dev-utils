@@ -126,7 +126,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * Called when the plugin settings are loaded or reloaded.
    *
    * @param _settings - The settings.
-   * @returns A promise or `void` indicating the completion of the save process
+   * @returns A {@link Promise} or `void` indicating the completion of the save process
    */
   public onLoadSettings(_settings: PluginSettings): Promisable<void> {
     noop();
@@ -137,7 +137,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    *
    * @param _newSettings - The new settings.
    * @param _oldSettings - The old settings.
-   * @returns A promise or `void` indicating the completion of the save process
+   * @returns A {@link Promise} or `void` indicating the completion of the save process
    */
   public onSaveSettings(_newSettings: PluginSettings, _oldSettings: PluginSettings): Promisable<void> {
     noop();
@@ -165,7 +165,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
    * the layout is ready.
    *
-   * @returns A promise or `void` indicating the completion of the layout setup.
+   * @returns A {@link Promise} or `void` indicating the completion of the layout setup.
    */
   protected onLayoutReady(): Promisable<void> {
     noop();
@@ -175,7 +175,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * Called when the plugin loading is complete. This method must be implemented by subclasses to perform
    * any additional setup required after loading is complete.
    *
-   * @returns A promise or `void` indicating the completion of the load process.
+   * @returns A {@link Promise} or `void` indicating the completion of the load process.
    */
   protected onloadComplete(): Promisable<void> {
     noop();

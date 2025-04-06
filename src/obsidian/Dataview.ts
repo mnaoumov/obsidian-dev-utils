@@ -110,7 +110,7 @@ export type PageFiles = ArrayOrDataArray<PageFile>;
  * Reloads the current file cache using the Dataview API.
  *
  * @param dv - The DataviewInlineApi instance.
- * @returns A promise that resolves when the cache is reloaded.
+ * @returns A {@link Promise} that resolves when the cache is reloaded.
  */
 export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<void> {
   await DataviewAPI?.index.reload(getFile(dv.app, dv.current().file.path));
@@ -210,7 +210,7 @@ export interface RenderPaginatedOptions<T> {
   /**
    * The renderer function to display the paginated content.
    * @param rowsForOnePage - The rows to render.
-   * @returns A promise that resolves when the content is rendered.
+   * @returns A {@link Promise} that resolves when the content is rendered.
    */
   renderer: (rowsForOnePage: ArrayOrDataArray<T>) => Promisable<void>;
 
@@ -251,7 +251,7 @@ export interface RenderPaginatedTableOptions<T> {
  *
  * @param dv - The DataviewInlineApi instance.
  * @param renderer - The function responsible for rendering the content.
- * @returns A promise that resolves to the HTML paragraph element
+ * @returns A {@link Promise} that resolves to the HTML paragraph element
  * that was used as the temporary container.
  */
 export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () => Promisable<void>): Promise<HTMLParagraphElement> {
@@ -324,7 +324,7 @@ export function renderIframe(options: RenderIframeOptions): void {
  *
  * @param options - The options for rendering the paginated list.
  *
- * @returns A promise that resolves when the list is rendered.
+ * @returns A {@link Promise} that resolves when the list is rendered.
  */
 export async function renderPaginatedList<T>(options: RenderPaginatedListOptions<T>): Promise<void> {
   const {
@@ -350,7 +350,7 @@ export async function renderPaginatedList<T>(options: RenderPaginatedListOptions
  *
  * @param options - The options for rendering the paginated table.
  *
- * @returns A promise that resolves when the table is rendered.
+ * @returns A {@link Promise} that resolves when the table is rendered.
  */
 export async function renderPaginatedTable<T extends unknown[]>(options: RenderPaginatedTableOptions<T>): Promise<void> {
   const {
@@ -377,7 +377,7 @@ export async function renderPaginatedTable<T extends unknown[]>(options: RenderP
  *
  * @param options - The options for rendering the paginated content.
  *
- * @returns A promise that resolves when the content is rendered.
+ * @returns A {@link Promise} that resolves when the content is rendered.
  */
 async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<void> {
   const SECOND_PAGE_NUMBER = 2;

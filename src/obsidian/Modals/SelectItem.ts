@@ -93,7 +93,7 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
  * Displays a selection modal in Obsidian for choosing an item from a list.
  *
  * @param options - The options for the selection modal.
- * @returns A promise that resolves with the selected item or null if no item was selected.
+ * @returns A {@link Promise} that resolves with the selected item or null if no item was selected.
  */
 export async function selectItem<T>(options: SelectItemOptions<T>): Promise<null | T> {
   return await showModal<null | T>((resolve) => new ItemSelectModal(options, resolve));

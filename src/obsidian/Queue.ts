@@ -43,7 +43,7 @@ export function addToQueue(app: App, fn: () => Promisable<void>, timeoutInMillis
 }
 
 /**
- * Adds an asynchronous function to be executed after the previous function completes and returns a promise that resolves when the function completes.
+ * Adds an asynchronous function to be executed after the previous function completes and returns a {@link Promise} that resolves when the function completes.
  *
  * @param app - The Obsidian application instance.
  * @param fn - The function to add.

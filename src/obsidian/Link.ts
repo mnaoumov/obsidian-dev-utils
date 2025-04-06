@@ -483,7 +483,7 @@ export function convertLink(options: ConvertLinkOptions): string {
  * @param pathOrFile - The path or file to edit the backlinks for.
  * @param linkConverter - The function that converts each link.
  * @param processOptions - Optional options for retrying the operation.
- * @returns A promise that resolves when the backlinks have been edited.
+ * @returns A {@link Promise} that resolves when the backlinks have been edited.
  */
 export async function editBacklinks(
   app: App,
@@ -513,7 +513,7 @@ export async function editBacklinks(
  * @param pathOrFile - The path or file to edit the backlinks for.
  * @param linkConverter - The function that converts each link.
  * @param processOptions - Optional options for retrying the operation.
- * @returns A promise that resolves when the backlinks have been edited.
+ * @returns A {@link Promise} that resolves when the backlinks have been edited.
  */
 export async function editLinks(
   app: App,
@@ -859,7 +859,7 @@ export function updateLink(options: UpdateLinkOptions): string {
  * Updates the links in a content string based on the provided parameters.
  *
  * @param options - The options for updating the links.
- * @returns A promise that resolves to the content with updated links.
+ * @returns A {@link Promise} that resolves to the content with updated links.
  */
 export async function updateLinksInContent(options: UpdateLinksInContentOptions): Promise<string> {
   const {
@@ -892,7 +892,7 @@ export async function updateLinksInContent(options: UpdateLinksInContentOptions)
  * Updates the links in a file based on the provided parameters.
  *
  * @param options - The options for updating the links.
- * @returns A promise that resolves when the links are updated.
+ * @returns A {@link Promise} that resolves when the links are updated.
  */
 export async function updateLinksInFile(options: UpdateLinksInFileOptions): Promise<void> {
   const {
