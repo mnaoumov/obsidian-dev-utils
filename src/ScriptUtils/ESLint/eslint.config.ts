@@ -85,7 +85,7 @@ function getEslintConfigs(): InfiniteDepthConfigWithExtends[] {
           'error',
           'declaration',
           {
-            allowArrowFunctions: true
+            allowArrowFunctions: false
           }
         ],
         'grouped-accessor-pairs': [
