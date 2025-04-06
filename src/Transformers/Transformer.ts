@@ -3,6 +3,8 @@
  * A base class for transformers.
  */
 
+import { getAllKeys } from '../Object.ts';
+
 /**
  * A wrapper for a transformed value.
  */
@@ -133,6 +135,14 @@ export abstract class Transformer {
       return this.getTransformer(transformedValueWrapper.__transformerId).restoreValue(transformedValueWrapper.transformedValue, key);
     }
 
-    return Object.fromEntries(Object.entries(value).map(([childKey, childValue]) => [childKey, this.transformValueRecursively(childValue, childKey)]));
+    const record: Record<string, unknown> = {};
+
+    for (const childKey of getAllKeys(value)) {
+      const childValue = value[childKey];
+      const transformedChildValue = this.transformValueRecursively(childValue, childKey);
+      record[childKey] = transformedChildValue;
+    }
+
+    return record;
   }
 }
