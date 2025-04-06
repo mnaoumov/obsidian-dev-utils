@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Error
+ * @packageDocumentation
+ *
  * Contains utility functions for error handling.
  */
 

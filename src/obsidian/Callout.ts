@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Callout
+ * @packageDocumentation
+ *
  * This module provides utility functions for rendering callouts in Dataview.
  */
 

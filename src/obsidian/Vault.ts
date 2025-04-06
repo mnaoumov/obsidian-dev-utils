@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Vault
+ * @packageDocumentation
+ *
  * This module provides utility functions for working with the Obsidian Vault.
  */
 

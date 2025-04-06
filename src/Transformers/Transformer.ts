@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Transformer
+ * @packageDocumentation
+ *
  * A base class for transformers.
  */
 

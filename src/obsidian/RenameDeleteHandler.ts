@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation RenameDeleteHandler
+ * @packageDocumentation
+ *
  * Contains utility functions for handling rename and delete events in Obsidian.
  */
 

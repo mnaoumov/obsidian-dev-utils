@@ -1,5 +1,6 @@
 /**
  * @packageDocumentation eslint-plugin-modules-newlines
+ *
  * @see {@link https://www.npmjs.com/package/eslint-plugin-modules-newlines} for more information.
  */
 

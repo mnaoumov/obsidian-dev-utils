@@ -1,13 +1,12 @@
 /**
- * @packageDocumentation eslint.config
+ * @packageDocumentation
+ *
  * ESLint configuration for TypeScript projects with various plugins.
  *
  * This module exports ESLint configurations for TypeScript projects, integrating multiple ESLint plugins
  * such as `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`,
  * `eslint-plugin-modules-newlines`, `@stylistic/eslint-plugin`.
  * It sets up parsers, plugins, and rules for maintaining code quality and consistency.
- *
- * @packageDocumentation eslint-config
  */
 
 /* eslint-disable no-magic-numbers */

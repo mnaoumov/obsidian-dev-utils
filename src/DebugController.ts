@@ -1,5 +1,6 @@
 /**
  * @packageDocumentation
+ *
  * Provides the interface for controlling debug output through namespace management.
  *
  * Debug namespaces follow the pattern 'lorem', `lorem:ipsum`, `lorem:ipsum:dolor`, etc, and can use wildcards (`*`).

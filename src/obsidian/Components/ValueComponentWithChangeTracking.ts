@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation ValueComponentWithChangeTracking
+ * @packageDocumentation
+ *
  * Contains a type that extends ValueComponent to allow for change tracking.
  */
 

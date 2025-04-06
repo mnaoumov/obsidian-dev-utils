@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation MarkdownCodeBlockProcessor
+ * @packageDocumentation
+ *
  * This module provides utility functions for processing code blocks in Obsidian.
  */
 

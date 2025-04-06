@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Enum
+ * @packageDocumentation
+ *
  * Contains utility functions for enums.
  */
 

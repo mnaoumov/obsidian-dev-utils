@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation ValueProvider
+ * @packageDocumentation
+ *
  * Contains utility types and functions for handling value providers, which can be either direct values or functions that return values.
  */
 

@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Exec
+ * @packageDocumentation
+ *
  * Contains utility functions for executing commands.
  */
 

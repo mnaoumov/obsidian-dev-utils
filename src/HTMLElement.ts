@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation HTMLElement
+ * @packageDocumentation
+ *
  * Helpers for working with HTML elements.
  */
 

@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation GroupTransformer
+ * @packageDocumentation
+ *
  * A transformer that combines multiple transformers.
  */
 

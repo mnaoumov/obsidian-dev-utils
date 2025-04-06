@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Npm
+ * @packageDocumentation
+ *
  * Contains utility functions for NPM package.json.
  */
 

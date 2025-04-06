@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Object
+ * @packageDocumentation
+ *
  * Contains utility functions for Objects.
  */
 

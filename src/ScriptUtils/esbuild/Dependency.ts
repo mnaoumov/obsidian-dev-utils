@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Dependency
+ * @packageDocumentation
+ *
  * This module provides utilities for managing dependencies during the esbuild process.
  * It includes functions to determine which dependencies should be skipped and which
  * should be bundled, as well as an esbuild plugin for extracting dependencies to bundle.

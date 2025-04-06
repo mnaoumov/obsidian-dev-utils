@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation TypedTextComponent
+ * @packageDocumentation
+ *
  * Contains a component that displays and edits a text-based value.
  */
 

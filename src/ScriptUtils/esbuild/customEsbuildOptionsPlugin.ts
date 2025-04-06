@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation customEsbuildOptionsPlugin
+ * @packageDocumentation
+ *
  * This module defines an esbuild plugin that allows for custom esbuild options to be used during the build process.
  */
 

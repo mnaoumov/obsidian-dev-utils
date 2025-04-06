@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation SkipPrivatePropertyTransformer
+ * @packageDocumentation
+ *
  * A transformer that skips private properties.
  */
 

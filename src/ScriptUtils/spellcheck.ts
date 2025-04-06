@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation spellcheck
+ * @packageDocumentation
+ *
  * This module provides a function for running a spellcheck on the codebase using the `cspell` library.
  * It reports any spelling issues found in the code and returns a {@link CliTaskResult} indicating whether the spellcheck was successful.
  */

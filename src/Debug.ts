@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Debug
+ * @packageDocumentation
+ *
  * Contains utility functions for debugging.
  */
 

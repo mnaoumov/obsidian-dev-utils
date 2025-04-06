@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation WeekComponent
+ * @packageDocumentation
+ *
  * Contains a component that displays and edits a week.
  */
 

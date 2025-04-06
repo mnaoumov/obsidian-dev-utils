@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation format
+ * @packageDocumentation
+ *
  * Format the source code.
  */
 

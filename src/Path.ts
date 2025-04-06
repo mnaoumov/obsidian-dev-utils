@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Path
+ * @packageDocumentation
+ *
  * Contains utility functions for handling paths.
  */
 

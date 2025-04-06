@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation CssClass
+ * @packageDocumentation
+ *
  * CSS classes used by the `obsidian-dev-utils` library.
  */
 

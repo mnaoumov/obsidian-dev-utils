@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation EmailComponent
+ * @packageDocumentation
+ *
  * Contains a component that displays and edits an email address.
  */
 
