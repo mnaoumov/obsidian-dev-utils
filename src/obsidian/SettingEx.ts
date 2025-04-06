@@ -21,6 +21,7 @@ import { NumberComponent } from './Components/NumberComponent.ts';
 import { TimeComponent } from './Components/TimeComponent.ts';
 import { TriStateCheckboxComponent } from './Components/TriStateCheckboxComponent.ts';
 import { TypedDropdownComponent } from './Components/TypedDropdownComponent.ts';
+import { TypedMultipleDropdownComponent } from './Components/TypedMultipleDropdownComponent.ts';
 import { UrlComponent } from './Components/UrlComponent.ts';
 import { WeekComponent } from './Components/WeekComponent.ts';
 
@@ -181,6 +182,16 @@ export class SettingEx extends Setting {
    */
   public addTypedDropdown<T>(cb: (component: TypedDropdownComponent<T>) => void): this {
     return this.addComponent(TypedDropdownComponent<T>, cb);
+  }
+
+  /**
+   * Adds a {@link TypedMultipleDropdownComponent} to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addTypedMultipleDropdown<T>(cb: (component: TypedMultipleDropdownComponent<T>) => void): this {
+    return this.addComponent(TypedMultipleDropdownComponent<T>, cb);
   }
 
   /**
