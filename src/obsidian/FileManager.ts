@@ -82,7 +82,6 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
  * @param processOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
  * @returns A {@link Promise} that resolves when the front matter has been processed and saved.
  */
-
 export async function processFrontmatter<CustomFrontmatter = unknown>(
   app: App,
   pathOrFile: PathOrFile,
