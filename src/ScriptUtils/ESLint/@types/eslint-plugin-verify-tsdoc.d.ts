@@ -1,5 +1,6 @@
 /**
  * @packageDocumentation eslint-plugin-verify-tsdoc
+ *
  * @see {@link https://www.npmjs.com/package/eslint-plugin-verify-tsdoc} for more information.
  */
 

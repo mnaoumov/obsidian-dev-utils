@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation MonthComponent
+ * @packageDocumentation
+ *
  * Contains a component that displays and edits a month.
  */
 

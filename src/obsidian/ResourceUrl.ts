@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation ResourceUrl
+ * @packageDocumentation
+ *
  * This module provides utility functions for working with resource URLs in Obsidian.
  */
 

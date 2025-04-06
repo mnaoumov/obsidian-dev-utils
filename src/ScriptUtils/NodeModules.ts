@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation NodeModules
+ * @packageDocumentation
+ *
  * Contains utility functions for Node.js modules.
  */
 

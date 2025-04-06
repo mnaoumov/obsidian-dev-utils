@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation MultipleDropdownComponent
+ * @packageDocumentation
+ *
  * Contains a component that displays and edits a multi-select dropdown.
  */
 

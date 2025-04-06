@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation TimeComponent
+ * @packageDocumentation
+ *
  * Contains a component that displays and edits a time.
  */
 

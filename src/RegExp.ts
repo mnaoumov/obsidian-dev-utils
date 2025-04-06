@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation RegExp
+ * @packageDocumentation
+ *
  * Contains utility functions for regular expressions.
  */
 

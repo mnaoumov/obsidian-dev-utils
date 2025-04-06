@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation MultipleFileComponent
+ * @packageDocumentation
+ *
  * Contains a component that displays and edits multiple files.
  */
 

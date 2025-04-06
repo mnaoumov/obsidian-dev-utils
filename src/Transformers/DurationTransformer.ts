@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation DurationTransformer
+ * @packageDocumentation
+ *
  * A transformer that can transform Duration to an ISO string and back.
  */
 

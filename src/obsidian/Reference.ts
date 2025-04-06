@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Reference
+ * @packageDocumentation
+ *
  * Contains utility functions for handling references in Obsidian.
  */
 

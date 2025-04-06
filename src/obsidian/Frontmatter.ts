@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Frontmatter
+ * @packageDocumentation
+ *
  * This module provides utility functions for processing and managing YAML front matter in Obsidian notes.
  */
 

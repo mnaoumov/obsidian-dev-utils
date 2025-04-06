@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation version
+ * @packageDocumentation
+ *
  * This module provides functions for managing version updates in a project.
  * It includes tasks such as validating version update types, checking the state
  * of Git and GitHub CLI, updating version numbers in files, and performing

@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation url
+ * @packageDocumentation
+ *
  * Contains a utility function for validating URLs.
  */
 

@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation ValidatorComponent
+ * @packageDocumentation
+ *
  * Contains a component that has a validator element.
  */
 

@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Async
+ * @packageDocumentation
+ *
  * Contains utility functions for Blob objects.
  */
 

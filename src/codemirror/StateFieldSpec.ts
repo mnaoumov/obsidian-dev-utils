@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation StateFieldSpec
+ * @packageDocumentation
+ *
  * Contains a specification for a state field.
  */
 

@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Alert
+ * @packageDocumentation
+ *
  * Utility for displaying alert modals in Obsidian.
  *
  * This module exports a function to display a modal with a message in Obsidian. The modal includes an "OK" button to close it.

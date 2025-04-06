@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation MultipleEmailComponent
+ * @packageDocumentation
+ *
  * Contains a component that displays and edits multiple email addresses.
  */
 

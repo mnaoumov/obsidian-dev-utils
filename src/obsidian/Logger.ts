@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Logger
+ * @packageDocumentation
+ *
  * Contains utility functions for logging in Obsidian.
  */
 

@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation NpmPublish
+ * @packageDocumentation
+ *
  * Contains utility functions for NPM publish.
  */
 

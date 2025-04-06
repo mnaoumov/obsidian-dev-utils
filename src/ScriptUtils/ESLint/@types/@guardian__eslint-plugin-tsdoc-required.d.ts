@@ -1,5 +1,6 @@
 /**
  * @packageDocumentation \@guardian/eslint-plugin-tsdoc-required
+ *
  * @see {@link https://www.npmjs.com/package/@guardian/eslint-plugin-tsdoc-required} for more information.
  */
 

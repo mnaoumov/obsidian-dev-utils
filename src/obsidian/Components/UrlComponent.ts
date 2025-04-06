@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation UrlComponent
+ * @packageDocumentation
+ *
  * Contains a component that displays and edits an url.
  */
 

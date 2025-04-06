@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Link
+ * @packageDocumentation
+ *
  * This module provides utilities for handling and updating links within Obsidian vaults. It includes
  * functions to split paths, update links in files, and generate markdown links with various options.
  * The functions integrate with Obsidian's API to ensure that links are managed correctly within the vault.

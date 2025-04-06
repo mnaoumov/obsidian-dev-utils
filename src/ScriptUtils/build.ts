@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation build
+ * @packageDocumentation
+ *
  * This module provides utility functions to handle the build process for static assets and cleaning
  * the build output directory. It includes functions to copy static files to the distribution directory
  * and to remove the existing build output.

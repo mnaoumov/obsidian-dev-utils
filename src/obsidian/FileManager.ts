@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation FileManager
+ * @packageDocumentation
+ *
  * Contains utility functions for managing files in Obsidian.
  */
 

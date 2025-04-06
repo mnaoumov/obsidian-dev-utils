@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation JSON
+ * @packageDocumentation
+ *
  * Contains utility functions for JSON.
  */
 

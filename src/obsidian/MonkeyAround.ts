@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation MonkeyAround
+ * @packageDocumentation
+ *
  * Improved type-safe wrapper of {@link https://www.npmjs.com/package/monkey-around} library.
  */
 

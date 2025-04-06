@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Pdf
+ * @packageDocumentation
+ *
  * Contains utility functions for printing to PDF.
  */
 

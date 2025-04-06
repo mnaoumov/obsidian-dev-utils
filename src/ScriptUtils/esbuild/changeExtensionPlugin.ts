@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation changeExtensionPlugin
+ * @packageDocumentation
+ *
  * This module defines an esbuild plugin that changes the extension of JavaScript files after the build process.
  */
 

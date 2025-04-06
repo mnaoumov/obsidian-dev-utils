@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Backlink
+ * @packageDocumentation
+ *
  * Provides utility functions for working with backlinks.
  */
 

@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Function
+ * @packageDocumentation
+ *
  * Contains utility functions for working with functions.
  */
 

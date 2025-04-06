@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation copyToObsidianPluginsFolderPlugin
+ * @packageDocumentation
+ *
  * This module defines an esbuild plugin that automatically copies the build output
  * to the Obsidian plugins folder during development. This plugin helps streamline
  * the development workflow by ensuring that the latest build is always available

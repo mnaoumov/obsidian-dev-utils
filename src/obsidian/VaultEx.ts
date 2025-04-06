@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation VaultEx
+ * @packageDocumentation
+ *
  * This module provides additional utilities for working with the Obsidian Vault.
  *
  * It has to be extracted from `Vault` because of circular dependencies.

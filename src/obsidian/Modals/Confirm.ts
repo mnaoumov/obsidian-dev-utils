@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation Confirm
+ * @packageDocumentation
+ *
  * Utility for displaying confirm modals in Obsidian.
  *
  * This module exports a function to display a modal with a message in Obsidian. The modal includes "OK" and "Cancel" buttons to confirm or cancel the action.

@@ -1,5 +1,6 @@
 /**
- * @packageDocumentation CodeGenerator
+ * @packageDocumentation
+ *
  * Contains utility functions for code generation.
  */
 
