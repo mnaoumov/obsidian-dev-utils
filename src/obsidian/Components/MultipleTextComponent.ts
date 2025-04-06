@@ -98,8 +98,8 @@ export class MultipleTextComponent extends ValueComponent<string[]>
    * @returns The component.
    */
   public override setDisabled(disabled: boolean): this {
+    super.setDisabled(disabled);
     this.textAreaComponent.setDisabled(disabled);
-    this.disabled = disabled;
     return this;
   }
 
