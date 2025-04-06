@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 22.1.1-beta.25
+
+- Unify @packageDocumentation
+- Add eslint rules
+- Add missing tsdocs
+- Fix broken tsdoc
+- Add missing empty line
+- Remove unused SrcDependenciesTs
+- Cleanup path enums
+- Lint eslint.config files
+- Forbid arrow functions
+- Ensure eslint.config compiled
+- Add jsdoc rules
+
 ## 22.1.1-beta.24
 
 - Add missing tsdocs
