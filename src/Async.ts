@@ -14,7 +14,7 @@ import {
 } from './Error.ts';
 
 /**
- * A type representing a function that resolves a Promise.
+ * A type representing a function that resolves a {@link Promise}.
  *
  * @typeParam T - The type of the value.
  */
@@ -57,10 +57,10 @@ export interface TerminateRetry {
 }
 
 /**
- * Adds an error handler to a Promise that catches any errors and emits an async error event.
+ * Adds an error handler to a {@link Promise} that catches any errors and emits an async error event.
  *
  * @param asyncFn - The asynchronous function to add an error handler to.
- * @returns A Promise that resolves when the asynchronous function completes or emits async error event.
+ * @returns A {@link Promise} that resolves when the asynchronous function completes or emits async error event.
  */
 export async function addErrorHandler(asyncFn: () => Promise<unknown>): Promise<void> {
   const asyncErrorWrapper = new Error(ASYNC_ERROR_WRAPPER_MESSAGE);
@@ -78,7 +78,7 @@ export async function addErrorHandler(asyncFn: () => Promise<unknown>): Promise<
  * @typeParam T - The type of elements in the input array.
  * @param arr - The array to filter.
  * @param predicate - The predicate function to test each element.
- * @returns A Promise that resolves with an array of elements that satisfy the predicate function.
+ * @returns A {@link Promise} that resolves with an array of elements that satisfy the predicate function.
  */
 export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: number, array: T[]) => Promisable<boolean>): Promise<T[]> {
   const predicateResults = await asyncMap(arr, predicate);
@@ -92,7 +92,7 @@ export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: numb
  * @typeParam U - The type of elements in the output array.
  * @param arr - The array to map over and flatten.
  * @param callback - The callback function to apply to each element.
- * @returns A Promise that resolves with a flattened array of the results of the callback function.
+ * @returns A {@link Promise} that resolves with a flattened array of the results of the callback function.
  */
 export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => Promisable<U[]>): Promise<U[]> {
   return (await asyncMap(arr, callback)).flat();
@@ -105,7 +105,7 @@ export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: n
  * @typeParam U - The type of elements in the output array.
  * @param arr - The array to map over.
  * @param callback - The callback function to apply to each element.
- * @returns A Promise that resolves with an array of the results of the callback function.
+ * @returns A {@link Promise} that resolves with an array of the results of the callback function.
  */
 export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => Promisable<U>): Promise<U[]> {
   return await Promise.all(arr.map(callback));
@@ -125,7 +125,7 @@ export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: 
 }
 
 /**
- * Converts a synchronous function to an asynchronous one by wrapping it in a Promise.
+ * Converts a synchronous function to an asynchronous one by wrapping it in a {@link Promise}.
  *
  * @typeParam Args - The types of the arguments the function accepts.
  * @typeParam Result - The type of the function's return value.
@@ -141,7 +141,7 @@ export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: (...a
  *
  * @param promise - The promise to ignore the error of.
  * @param fallbackValue - Always `undefined`.
- * @returns A Promise that resolves when the asynchronous function completes or fails.
+ * @returns A {@link Promise} that resolves when the asynchronous function completes or fails.
  */
 export async function ignoreError(promise: Promise<unknown>, fallbackValue?: undefined): Promise<void>;
 
@@ -151,7 +151,7 @@ export async function ignoreError(promise: Promise<unknown>, fallbackValue?: und
  * @typeParam T - The type of the value returned by the asynchronous function.
  * @param promise - The promise to ignore the error of.
  * @param fallbackValue - The value to return if an error is thrown.
- * @returns A Promise that resolves with the value returned by the asynchronous function or the fallback value if an error is thrown.
+ * @returns A {@link Promise} that resolves with the value returned by the asynchronous function or the fallback value if an error is thrown.
  */
 export async function ignoreError<T>(promise: Promise<T>, fallbackValue: T): Promise<T> {
   try {
@@ -162,7 +162,7 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue: T): Pro
 }
 
 /**
- * Invokes a Promise and safely handles any errors by catching them and emitting an async error event.
+ * Invokes a {@link Promise} and safely handles any errors by catching them and emitting an async error event.
  *
  * @param asyncFn - The asynchronous function to invoke safely.
  */
@@ -187,7 +187,7 @@ export function marksAsTerminateRetry<TError extends Error>(error: TError): Term
  * @param fn - The function to retry.
  * @param retryOptions - Optional parameters to configure the retry behavior.
  * @param stackTrace - Optional stack trace.
- * @returns A Promise that resolves when the function returns true or rejects when the timeout is reached.
+ * @returns A {@link Promise} that resolves when the function returns true or rejects when the timeout is reached.
  */
 export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptions?: RetryOptions, stackTrace?: string): Promise<void> {
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
@@ -244,7 +244,7 @@ export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptio
  * @typeParam R - The type of the result from the asynchronous function.
  * @param timeoutInMilliseconds - The maximum time to wait in milliseconds.
  * @param fn - The function to execute.
- * @returns A Promise that resolves with the result of the asynchronous function or rejects if it times out.
+ * @returns A {@link Promise} that resolves with the result of the asynchronous function or rejects if it times out.
  */
 export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => Promisable<R>): Promise<R> {
   let isTimedOut = true;
@@ -289,7 +289,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
  * Delays execution for a specified number of milliseconds.
  *
  * @param milliseconds - The time to wait in milliseconds.
- * @returns A Promise that resolves after the specified delay.
+ * @returns A {@link Promise} that resolves after the specified delay.
  */
 export async function sleep(milliseconds: number): Promise<void> {
   await new Promise((resolve) => {
@@ -298,10 +298,10 @@ export async function sleep(milliseconds: number): Promise<void> {
 }
 
 /**
- * Returns a Promise that rejects when the abort signal is aborted.
+ * Returns a {@link Promise} that rejects when the abort signal is aborted.
  *
  * @param abortSignal - The abort signal to listen to.
- * @returns A Promise that rejects when the abort signal is aborted.
+ * @returns A {@link Promise} that rejects when the abort signal is aborted.
  */
 export function throwOnAbort(abortSignal: AbortSignal): Promise<void> {
   return new Promise((_resolve, reject) => {
@@ -323,10 +323,10 @@ export function throwOnAbort(abortSignal: AbortSignal): Promise<void> {
 }
 
 /**
- * Returns a Promise that rejects after the specified timeout period.
+ * Returns a {@link Promise} that rejects after the specified timeout period.
  *
  * @param timeoutInMilliseconds - The timeout period in milliseconds.
- * @returns A Promise that always rejects with a timeout error.
+ * @returns A {@link Promise} that always rejects with a timeout error.
  */
 export async function timeout(timeoutInMilliseconds: number): Promise<never> {
   await sleep(timeoutInMilliseconds);
@@ -338,7 +338,7 @@ export async function timeout(timeoutInMilliseconds: number): Promise<never> {
  *
  * @typeParam T - The type of elements produced by the AsyncIterableIterator.
  * @param iter - The AsyncIterableIterator to convert.
- * @returns A Promise that resolves with an array of all the elements in the AsyncIterableIterator.
+ * @returns A {@link Promise} that resolves with an array of all the elements in the AsyncIterableIterator.
  */
 export async function toArray<T>(iter: AsyncIterableIterator<T>): Promise<T[]> {
   const arr: T[] = [];

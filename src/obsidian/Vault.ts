@@ -239,7 +239,7 @@ export async function isEmptyFolder(app: App, pathOrFolder: PathOrFolder): Promi
  *
  * @param app - The Obsidian application instance.
  * @param pathOrFolder - The path or folder to list.
- * @returns A promise that resolves to a `ListedFiles` object containing the listed files and folders.
+ * @returns A promise that resolves to a {@link ListedFiles} object containing the listed files and folders.
  */
 export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<ListedFiles> {
   const path = getPath(app, pathOrFolder);

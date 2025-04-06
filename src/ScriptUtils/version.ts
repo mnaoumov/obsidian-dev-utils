@@ -164,7 +164,7 @@ export async function copyUpdatedManifest(): Promise<void> {
  * Generates a new version string based on the current version and the specified update type.
  *
  * @param versionUpdateType - The type of version update (major, minor, patch, beta, or manual).
- * @returns A `Promise` that resolves to the new version string.
+ * @returns A {@link Promise} that resolves to the new version string.
  * @throws Error if the current version format is invalid.
  */
 export async function getNewVersion(versionUpdateType: string): Promise<string> {
@@ -447,7 +447,7 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
  * and Obsidian plugin manifests if applicable.
  *
  * @param newVersion - The new version string to update in the files.
- * @returns A `Promise` that resolves when the update is complete.
+ * @returns A {@link Promise} that resolves when the update is complete.
  */
 export async function updateVersionInFiles(newVersion: string): Promise<void> {
   await editPackageJson((packageJson) => {
