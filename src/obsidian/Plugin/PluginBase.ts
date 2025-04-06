@@ -114,8 +114,10 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   public async onLifecycleEvent(name: LifecycleEventName, callback: () => Promisable<unknown>): Promise<void> {
     if (!this.lifecycleEventNames.has(name)) {
       await new Promise<void>((resolve) => {
-        this.events.on(name, () => resolve());
-      })
+        this.events.once(name, () => {
+          resolve();
+        });
+      });
     }
 
     await callback();
