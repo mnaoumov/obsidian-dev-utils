@@ -123,7 +123,7 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
  * @param program - The `commander` program instance to which the command is added.
  * @param name - The name of the command.
  * @param description - A brief description of what the command does.
- * @param taskFn - The function to execute when the command is invoked. Can return a `TaskResult` or void.
+ * @param taskFn - The function to execute when the command is invoked. Can return a {@link CliTaskResult} or `void`.
  * @returns The `commander` command instance for further chaining.
  */
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
