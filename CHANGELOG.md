@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 22.1.1-beta.20
+
+- Reuse getAllKeys when transform
+- Format
+- getAllEntries
+- Reuse getAllKeys
+- Skip __proto__
+
 ## 22.1.1-beta.19
 
 - Sort keys
