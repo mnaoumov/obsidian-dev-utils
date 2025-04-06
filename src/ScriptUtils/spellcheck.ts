@@ -1,7 +1,7 @@
 /**
  * @packageDocumentation spellcheck
  * This module provides a function for running a spellcheck on the codebase using the `cspell` library.
- * It reports any spelling issues found in the code and returns a `TaskResult` indicating whether the spellcheck was successful.
+ * It reports any spelling issues found in the code and returns a {@link CliTaskResult} indicating whether the spellcheck was successful.
  */
 
 import { execFromRoot } from './Root.ts';
@@ -12,7 +12,7 @@ import { execFromRoot } from './Root.ts';
  * The function checks all files in the current directory and its subdirectories for spelling issues.
  * If issues are found, they are logged to the console with their file path, line, and column number.
  *
- * @returns A `Promise` that resolves to a `TaskResult`, indicating the success or failure of the spellcheck.
+ * @returns A `Promise` that resolves to a {@link CliTaskResult}, indicating the success or failure of the spellcheck.
  */
 export async function spellcheck(): Promise<void> {
   await execFromRoot('npx cspell . --no-progress');
