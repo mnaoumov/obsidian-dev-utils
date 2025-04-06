@@ -243,6 +243,9 @@ export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
   while (current) {
     const descriptors = Object.getOwnPropertyDescriptors(current) as Record<string, PropertyDescriptor>;
     for (const [key, descriptor] of Object.entries(descriptors)) {
+      if (key === '__proto__') {
+        continue;
+      }
       if (typeof descriptor.value === 'function') {
         continue;
       }
