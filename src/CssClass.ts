@@ -18,6 +18,11 @@ export enum CssClass {
   CancelButton = 'cancel-button',
 
   /**
+   * The CSS class for the checkbox component.
+   */
+  CheckboxComponent = 'checkbox-component',
+
+  /**
    * The CSS class for the confirm modal.
    */
   ConfirmModal = 'confirm-modal',

@@ -7,6 +7,7 @@ import type { BaseComponent } from 'obsidian';
 
 import { Setting } from 'obsidian';
 
+import { CheckboxComponent } from './Components/CheckboxComponent.ts';
 import { DateComponent } from './Components/DateComponent.ts';
 import { DateTimeComponent } from './Components/DateTimeComponent.ts';
 import { EmailComponent } from './Components/EmailComponent.ts';
@@ -25,6 +26,16 @@ import { WeekComponent } from './Components/WeekComponent.ts';
  * Extends the Setting class with additional methods for adding components.
  */
 export class SettingEx extends Setting {
+  /**
+   * Adds a {@link CheckboxComponent} to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addCheckbox(cb: (component: CheckboxComponent) => void): this {
+    return this.addComponent(CheckboxComponent, cb);
+  }
+
   /**
    * Adds a component to the setting.
    *
