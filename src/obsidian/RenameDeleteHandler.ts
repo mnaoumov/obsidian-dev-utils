@@ -126,6 +126,7 @@ interface InterruptedRename {
 
 /**
  * Registers the rename/delete handlers.
+ *
  * @param plugin - The plugin instance.
  * @param settingsBuilder - A function that returns the settings for the rename delete handler.
  * @returns void

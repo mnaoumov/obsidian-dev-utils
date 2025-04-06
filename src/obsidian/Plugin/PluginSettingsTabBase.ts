@@ -59,6 +59,7 @@ export interface BindOptionsExtended<
 > extends BindOptions<PluginSettings[PropertyName]> {
   /**
    * Converts the UI component's value back to the plugin settings value.
+   *
    * @param uiValue - The value of the UI component.
    * @returns The value to set on the plugin settings.
    */
@@ -66,6 +67,7 @@ export interface BindOptionsExtended<
 
   /**
    * Converts the plugin settings value to the value used by the UI component.
+   *
    * @param pluginSettingsValue - The value of the property in the plugin settings.
    * @returns The value to set on the UI component.
    */

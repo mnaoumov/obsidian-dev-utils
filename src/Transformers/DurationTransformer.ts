@@ -15,6 +15,7 @@ import { TypedTransformer } from './TypedTransformer.ts';
 export class DurationTransformer extends TypedTransformer<Duration, string> {
   /**
    * The ID of the transformer.
+   *
    * @returns The ID of the transformer.
    */
   public override get id(): string {
@@ -23,6 +24,7 @@ export class DurationTransformer extends TypedTransformer<Duration, string> {
 
   /**
    * Checks if the value is a Duration.
+   *
    * @param value - The value to check.
    * @returns True if the value is a Duration, false otherwise.
    */
@@ -33,6 +35,7 @@ export class DurationTransformer extends TypedTransformer<Duration, string> {
 
   /**
    * Restores the value from a string.
+   *
    * @param transformedValue - The string to restore the value from.
    * @returns The restored value.
    */
@@ -42,6 +45,7 @@ export class DurationTransformer extends TypedTransformer<Duration, string> {
 
   /**
    * Transforms the value to a string.
+   *
    * @param value - The value to transform.
    * @returns The transformed value.
    */

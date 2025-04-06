@@ -63,6 +63,7 @@ export interface PromptOptions {
 
   /**
    * A function to validate the input value.
+   *
    * @param value - The input value to validate.
    * @returns an error message if the value is invalid, or null if the value is valid.
    */
