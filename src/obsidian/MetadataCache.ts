@@ -53,6 +53,7 @@ export interface GetBacklinksForFileSafeWrapper {
 
 /**
  * Ensures that the metadata cache is ready for all files.
+ *
  * @param app - The Obsidian app instance.
  * @returns A {@link Promise} that resolves when the metadata cache is ready.
  */

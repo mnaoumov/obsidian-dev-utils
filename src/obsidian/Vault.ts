@@ -101,6 +101,7 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
 
 /**
  * Creates a temporary file in the vault with parent folders if needed.
+ *
  * @param app - The application instance.
  * @param path - The path of the file to create.
  * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary file and all its created parents.
@@ -132,6 +133,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
 
 /**
  * Creates a temporary folder in the vault with parent folders if needed.
+ *
  * @param app - The application instance.
  * @param path - The path of the folder to create.
  * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary folder and all its created parents.
@@ -182,6 +184,7 @@ export function getMarkdownFilesSorted(app: App): TFile[] {
 
 /**
  * Retrieves an array of all note files from the app's vault and sorts them alphabetically by their file path.
+ *
  * @param app - The Obsidian app instance.
  * @returns An array of all note files in the vault sorted by file path.
  */
@@ -225,6 +228,7 @@ export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: 
 
 /**
  * Checks if a folder is empty.
+ *
  * @param app - The application instance.
  * @param pathOrFolder - The path or folder to check.
  * @returns A {@link Promise} that resolves to a boolean indicating whether the folder is empty.

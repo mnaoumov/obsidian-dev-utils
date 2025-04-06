@@ -14,6 +14,7 @@ interface NpmEnv {
 
 /**
  * Publish to NPM.
+ *
  * @param isBeta - Whether to publish to the beta NPM registry.
  */
 export async function publish(isBeta?: boolean): Promise<void> {

@@ -39,6 +39,7 @@ export interface SelectItemOptions<T> {
 
   /**
    * A function to get the display text for each item
+   *
    * @param item - The item to get the display text for.
    * @returns The display text for the item.
    */

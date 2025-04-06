@@ -153,6 +153,7 @@ export function getFile(app: App, pathOrFile: PathOrFile, shouldIncludeNonExisti
  * Retrieves a TFile object based on the provided path or file.
  * If the provided argument is already a TFile object, it is returned as is.
  * Otherwise, the function uses the app's vault to retrieve the TFile object by its path.
+ *
  * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or TFile object.
  * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.

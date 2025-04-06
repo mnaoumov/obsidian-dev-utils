@@ -209,6 +209,7 @@ export interface RenderPaginatedOptions<T> {
 
   /**
    * The renderer function to display the paginated content.
+   *
    * @param rowsForOnePage - The rows to render.
    * @returns A {@link Promise} that resolves when the content is rendered.
    */

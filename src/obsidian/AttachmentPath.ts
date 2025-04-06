@@ -87,6 +87,7 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
 
 /**
  * Retrieves the available path for attachments.
+ *
  * @param app - The Obsidian application instance.
  * @param filename - Name of the file.
  * @param extension - Extension of the file.
@@ -147,6 +148,7 @@ export async function hasOwnAttachmentFolder(app: App, path: string): Promise<bo
 
 /**
  * Normalizes a path by combining multiple slashes into a single slash and removing leading and trailing slashes.
+ *
  * @param path - Path to normalize.
  * @returns The normalized path.
  */
