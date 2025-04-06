@@ -1,16 +1,23 @@
+/**
+ * @packageDocumentation
+ *
+ * ESLint configuration.
+ */
+
 import type {
   ESLint,
   Linter
 } from 'eslint';
 
+// eslint-disable-next-line import-x/no-rename-default
 import jsdoc from 'eslint-plugin-jsdoc';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
-import eslintPluginVerifyTsdoc from 'eslint-plugin-verify-tsdoc';
 
 import { join } from './src/Path.ts';
 import { configs as defaultConfigs } from './src/ScriptUtils/ESLint/eslint.config.ts';
 import { ObsidianDevUtilsRepoPaths } from './src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 import eslintPluginTsdocRequired_ = require('@guardian/eslint-plugin-tsdoc-required');
 
 const eslintPluginTsdocRequired = eslintPluginTsdocRequired_ as ESLint.Plugin;
@@ -41,14 +48,6 @@ const configs: Linter.Config[] = [
       'tsdoc/syntax': 'error'
     }
   },
-  {
-    plugins: {
-      'verify-tsdoc': eslintPluginVerifyTsdoc
-    },
-    rules: {
-      'verify-tsdoc/verify-tsdoc-params': 'error'
-    }
-  },
   jsdoc.configs['flat/recommended-typescript-error'],
   {
     plugins: {
@@ -60,6 +59,7 @@ const configs: Linter.Config[] = [
         {
           definedTags: [
             'packageDocumentation',
+            'remarks',
             'typeParam'
           ]
         }
@@ -93,4 +93,5 @@ const configs: Linter.Config[] = [
   }
 ];
 
+// eslint-disable-next-line import-x/no-default-export
 export default configs;
