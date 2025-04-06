@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 22.1.1-beta.19
+
+- Sort keys
+
 ## 22.1.1-beta.18
 
 - Return full PluginSettings
