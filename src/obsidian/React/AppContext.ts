@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Passes obsidian {@link App} instance to React components.
+ */
+
 import { App } from 'obsidian';
 import {
   createContext,
@@ -18,11 +24,13 @@ export const AppContext = createContext<App | undefined>(undefined);
 
 /**
  * The hook to use the app context.
+ *
+ * @returns The app instance.
  */
-export const useApp = (): App => {
+export function useApp(): App {
   const app = useContext(AppContext);
   if (!app) {
     throw new Error('AppContext not found');
   }
   return app;
-};
+}

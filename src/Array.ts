@@ -1,4 +1,10 @@
 /**
+ * @packageDocumentation
+ *
+ * Array utilities.
+ */
+
+/**
  * Filter an array in place.
  *
  * @param arr - The array to filter.

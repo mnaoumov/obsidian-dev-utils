@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Rename CSS esbuild plugin.
+ */
+
 import type { Plugin } from 'esbuild';
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';

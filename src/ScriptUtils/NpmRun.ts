@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * NPM run utilities.
+ */
+
 import { readPackageJson } from './Npm.ts';
 import { execFromRoot } from './Root.ts';
 

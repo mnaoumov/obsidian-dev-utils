@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Svelte wrapper esbuild plugin.
+ */
+
 import type { Plugin } from 'esbuild';
 
 import esbuildSvelte_ from 'esbuild-svelte';

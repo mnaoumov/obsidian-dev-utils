@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Build clean script.
+ */
+
 import {
   basename,
   join

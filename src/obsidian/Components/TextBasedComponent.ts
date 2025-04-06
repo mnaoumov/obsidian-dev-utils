@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Text based component utilities.
+ */
+
 import type { BaseComponent } from 'obsidian';
 
 import { AbstractTextComponent } from 'obsidian';

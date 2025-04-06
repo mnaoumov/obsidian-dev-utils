@@ -31,6 +31,8 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T>
   public readonly inputEl: HTMLInputElement;
   /**
    * The validator element of the component.
+   *
+   * @returns The validator element.
    */
   public get validatorEl(): ValidatorElement {
     return this.inputEl;

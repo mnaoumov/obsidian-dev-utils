@@ -1,3 +1,9 @@
+/**
+ * @packageDocumentation
+ *
+ * Async event emitter.
+ */
+
 import type { Promisable } from 'type-fest';
 
 import { filterInPlace } from './Array.ts';

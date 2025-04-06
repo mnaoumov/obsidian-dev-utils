@@ -34,6 +34,7 @@ type WrapperFactory<T extends Function | undefined> = (next: T) => T;
  * @typeParam Obj - The object to patch.
  * @param obj - The object to patch.
  * @param factories - The factories to apply to the object.
+ * @returns The uninstaller that removes the patch when called.
  */
 export function around<Obj extends object>(obj: Obj, factories: Factories<Obj>): Uninstaller {
   return originalAround(obj as Record<string, unknown>, factories as OriginalFactories<Record<string, unknown>>);

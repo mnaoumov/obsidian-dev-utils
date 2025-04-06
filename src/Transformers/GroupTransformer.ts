@@ -12,6 +12,8 @@ import { Transformer } from './Transformer.ts';
 export class GroupTransformer extends Transformer {
   /**
    * The id of the transformer.
+   *
+   * @returns `group`.
    */
   public override get id(): string {
     return 'group';
@@ -19,6 +21,8 @@ export class GroupTransformer extends Transformer {
 
   /**
    * The transformers to combine.
+   *
+   * @param transformers - The transformers to combine.
    */
   public constructor(private readonly transformers: Transformer[]) {
     super();
@@ -78,12 +82,11 @@ export class GroupTransformer extends Transformer {
   }
 
   /**
-   * Restores the value using the first transformer that can restore it.
+   * This transformer does not support restoring values.
    *
-   * @param value - The value to restore.
-   * @returns The restored value.
+   * @throws
    */
-  protected override restoreValue(): unknown {
+  protected override restoreValue(): never {
     throw new Error('GroupTransformer does not support restoring values');
   }
 

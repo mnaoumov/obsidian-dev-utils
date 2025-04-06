@@ -1,4 +1,10 @@
 /**
+ * @packageDocumentation
+ *
+ * Type utilities.
+ */
+
+/**
  * A type that represents a return value that may be `void`.
  *
  * @typeParam T - The type of the value that may be returned.
