@@ -101,8 +101,8 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T>
    * @returns The component.
    */
   public override setDisabled(disabled: boolean): this {
+    super.setDisabled(disabled);
     this.textComponent.setDisabled(disabled);
-    this.disabled = disabled;
     return this;
   }
 
