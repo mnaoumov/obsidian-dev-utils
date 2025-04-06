@@ -192,7 +192,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     const newJson = JSON.stringify(await this.prepareRecordToSave());
 
     if (newJson !== originalJson) {
-      await this.saveToFile();
+      await this.saveToFileImpl();
     }
   }
 
@@ -214,7 +214,7 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
       return;
     }
 
-    await this.plugin.saveData(await this.prepareRecordToSave());
+    await this.saveToFileImpl();
     await this.plugin.onSaveSettings(this.getSavedSettings(), oldSettings);
   }
 
@@ -262,6 +262,10 @@ export abstract class PluginSettingsManagerBase<PluginSettings extends object> {
     await this.onSavingRecord(settings);
 
     return this.getTransformer().transformObjectRecursively(settings);
+  }
+
+  private async saveToFileImpl(): Promise<void> {
+    await this.plugin.saveData(await this.prepareRecordToSave());
   }
 }
 
