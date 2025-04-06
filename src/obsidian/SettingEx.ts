@@ -45,7 +45,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addComponent<T extends BaseComponent>(componentClass: new (controlEl: HTMLElement) => T, cb: (component: T) => void): this {
+  public addComponent<T extends BaseComponent>(componentClass: new (containerEl: HTMLElement) => T, cb: (component: T) => void): this {
     const component = new componentClass(this.controlEl);
     this.components.push(component);
     cb(component);
