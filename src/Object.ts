@@ -263,7 +263,7 @@ export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
 
     current = Object.getPrototypeOf(current) as null | object;
   }
-  return keys;
+  return keys.sort();
 }
 
 /**
