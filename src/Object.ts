@@ -256,6 +256,7 @@ export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
       if (key === '__proto__') {
         continue;
       }
+
       if (typeof descriptor.value === 'function') {
         continue;
       }
