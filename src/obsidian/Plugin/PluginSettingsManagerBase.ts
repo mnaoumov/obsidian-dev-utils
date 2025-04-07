@@ -113,7 +113,6 @@ class SafeSettingsProxyHandler<PluginSettings extends object> extends ProxyHandl
  *
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
-
 export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesBase> {
   public readonly app: App;
   public readonly safeSettings: ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
