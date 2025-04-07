@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 23.0.5
+
+- Fix padding
+
 ## 23.0.4
 
 - More detailed warning of possible wrong type. Still continue as it might be an union type
