@@ -54,7 +54,6 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
   public constructor(containerEl: HTMLElement) {
     super();
     this.dropdownComponent = new DropdownComponent(containerEl);
-    this.dropdownComponent.selectEl.multiple = true;
     containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.TypedDropdownComponent);
   }
 
