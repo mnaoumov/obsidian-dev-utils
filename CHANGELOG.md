@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 23.0.1
+
+- Update libs
+
 ## 23.0.0
 
 - Rename registerValidators
