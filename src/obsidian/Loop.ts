@@ -31,7 +31,7 @@ export interface LoopOptions<T> {
   /**
    * The minimum timeout for the notice.
    */
-  noticeMinTimeoutInMs?: number;
+  noticeMinTimeoutInMilliseconds?: number;
   /**
    * The function to process each item.
    */
@@ -59,8 +59,8 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   const items = options.items;
   let iterationCount = 0;
   const notice = new Notice('', 0);
-  const DEFAULT_NOTICE_MIN_TIMEOUT_IN_MS = 2000;
-  const noticeMinTimeoutPromise = sleep(options.noticeMinTimeoutInMs ?? DEFAULT_NOTICE_MIN_TIMEOUT_IN_MS);
+  const DEFAULT_NOTICE_MIN_TIMEOUT_IN_MILLISECONDS = 2000;
+  const noticeMinTimeoutPromise = sleep(options.noticeMinTimeoutInMilliseconds ?? DEFAULT_NOTICE_MIN_TIMEOUT_IN_MILLISECONDS);
   const progressBarEl = createEl('progress');
   progressBarEl.max = items.length;
   if (options.shouldShowProgressBar) {
