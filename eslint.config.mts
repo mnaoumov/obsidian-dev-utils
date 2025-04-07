@@ -79,7 +79,14 @@ const configs: Linter.Config[] = [
       'jsdoc/require-jsdoc': [
         'error',
         {
-          publicOnly: true
+          publicOnly: true,
+          require: {
+            ArrowFunctionExpression: true,
+            ClassDeclaration: true,
+            ClassExpression: true,
+            FunctionDeclaration: true,
+            MethodDefinition: true
+          }
         }
       ],
       'jsdoc/tag-lines': [
