@@ -10,7 +10,8 @@ import {
   DropdownComponent,
   SliderComponent,
   TextAreaComponent,
-  TextComponent
+  TextComponent,
+  ToggleComponent
 } from 'obsidian';
 
 import type { ValidatorElement } from '../../HTMLElement.ts';
@@ -66,6 +67,14 @@ export function getValidatorComponent(baseComponent: BaseComponent): null | Vali
     return {
       get validatorEl(): ValidatorElement {
         return baseComponent.inputEl;
+      }
+    };
+  }
+
+  if (baseComponent instanceof ToggleComponent) {
+    return {
+      get validatorEl(): ValidatorElement {
+        return baseComponent.toggleEl.find('input[type=checkbox]') as HTMLInputElement;
       }
     };
   }
