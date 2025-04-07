@@ -85,7 +85,6 @@ export interface BindOptionsExtended<
  *
  * @typeParam TPlugin - The type of the plugin that extends PluginBase.
  */
-
 export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase> extends PluginSettingTab {
   public constructor(public override plugin: ExtractPlugin<PluginTypes>) {
     super(plugin.app, plugin);

@@ -6,6 +6,9 @@
  * of errors due to hardcoded strings.
  */
 
+/**
+ * Enumeration of common file paths and patterns used in the Obsidian development utilities repository.
+ */
 export enum ObsidianDevUtilsRepoPaths {
   /** Any file or directory. */
   Any = '*',
