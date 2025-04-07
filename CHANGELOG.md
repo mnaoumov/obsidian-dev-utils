@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 23.0.2
+
+- Init settings tab
+
 ## 23.0.1
 
 - Update libs
