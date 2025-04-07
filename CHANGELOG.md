@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 23.0.4
+
+- More detailed warning of possible wrong type. Still continue as it might be an union type
+- Reuse MultipleDropdownComponent
+- Remove invalid multiple from TypedDropdownComponent
+
 ## 23.0.3
 
 - Make tri-state visual
