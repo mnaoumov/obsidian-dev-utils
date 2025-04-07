@@ -75,7 +75,7 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
     }
 
     property.setValue(value);
-    this.validationPromise = this.validationPromise.then(() => property.setValueAndValidate(value));
+    this.validationPromise = this.validationPromise.then(() => property.validate());
     return true;
   }
 
@@ -207,7 +207,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     }
 
     for (const property of propertiesToSave) {
-      await property.setValueAndValidate(property.currentValue);
+      await property.validate();
       property.save();
     }
 
@@ -362,18 +362,17 @@ export class PluginSettingsProperty<T> {
     this._currentValue = value;
   }
 
-  public async setValueAndValidate(value: T): Promise<void> {
-    this.setValue(value);
+  public async validate(): Promise<void> {
     try {
       this._validationMessage = (await this.validator(this._currentValue) as string | undefined) ?? '';
     } catch (error) {
       console.error('Validation failed', {
         propertyName: this.propertyName,
-        value
+        value: this._currentValue
       }, error);
       this._validationMessage = 'Validation failed';
     }
-    this.showWarning(value);
+    this.showWarning(this._currentValue);
   }
 
   private showWarning(value?: T): void {

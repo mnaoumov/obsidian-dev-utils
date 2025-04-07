@@ -187,7 +187,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       if (isValidationMessageHolder(convertedValue)) {
         property.setValidationMessage(convertedValue.validationMessage);
       } else {
-        await property.setValueAndValidate(convertedValue);
+        property.setValue(convertedValue);
+        await property.validate();
       }
       updateValidatorElement();
       const newValue = isValidationMessageHolder(convertedValue) ? undefined : convertedValue;
