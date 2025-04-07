@@ -173,6 +173,16 @@ export function invokeAsyncSafely(asyncFn: () => Promise<unknown>): void {
 }
 
 /**
+ * Invokes an asynchronous function after a delay.
+ *
+ * @param asyncFn - The asynchronous function to invoke.
+ * @param delayInMs - The delay in milliseconds.
+ */
+export function invokeAsyncSafelyAfterDelay(asyncFn: () => Promisable<unknown>, delayInMs = 0): void {
+  setTimeout(convertAsyncToSync(async () => await asyncFn()), delayInMs);
+}
+
+/**
  * Marks an error to terminate retry logic.
  *
  * @param error - The error to mark to terminate retry logic.
