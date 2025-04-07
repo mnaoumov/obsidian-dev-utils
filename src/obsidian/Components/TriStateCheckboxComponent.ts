@@ -33,12 +33,22 @@ export class TriStateCheckboxComponent extends ValueComponent<boolean | null> im
    * The input element of the checkbox.
    */
   public readonly inputEl: HTMLInputElement;
+  /**
+   * The validator element of the checkbox.
+   *
+   * @returns The validator element.
+   */
   public get validatorEl(): ValidatorElement {
     return this.inputEl;
   }
 
   private changeCallback?: (newValue: boolean | null) => Promisable<void>;
 
+  /**
+   * Creates a new tri-state checkbox component.
+   *
+   * @param containerEl - The container element.
+   */
   public constructor(containerEl: HTMLElement) {
     super();
     containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.TriStateCheckboxComponent);

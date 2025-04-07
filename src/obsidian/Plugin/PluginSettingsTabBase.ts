@@ -86,6 +86,11 @@ export interface BindOptionsExtended<
  * @typeParam PluginTypes - Plugin-specific types.
  */
 export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase> extends PluginSettingTab {
+  /**
+   * Creates a new plugin settings tab.
+   *
+   * @param plugin - The plugin.
+   */
   public constructor(public override plugin: ExtractPlugin<PluginTypes>) {
     super(plugin.app, plugin);
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
@@ -220,11 +225,17 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     }
   }
 
+  /**
+   * Hides the plugin settings tab.
+   */
   public override hide(): void {
     super.hide();
     invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile());
   }
 
+  /**
+   * Shows the plugin settings tab.
+   */
   public show(): void {
     this.app.setting.openTab(this);
   }

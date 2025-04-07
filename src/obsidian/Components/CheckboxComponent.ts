@@ -33,12 +33,22 @@ export class CheckboxComponent extends ValueComponent<boolean> implements Valida
    * The input element of the checkbox.
    */
   public readonly inputEl: HTMLInputElement;
+  /**
+   * The validator element of the checkbox.
+   *
+   * @returns The validator element.
+   */
   public get validatorEl(): ValidatorElement {
     return this.inputEl;
   }
 
   private changeCallback?: (newValue: boolean) => Promisable<void>;
 
+  /**
+   * Creates a new checkbox component.
+   *
+   * @param containerEl - The container element.
+   */
   public constructor(containerEl: HTMLElement) {
     super();
     containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.CheckboxComponent);

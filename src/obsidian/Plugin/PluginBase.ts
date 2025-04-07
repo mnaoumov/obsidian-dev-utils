@@ -62,6 +62,11 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     return this.settingsManager.safeSettings as ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
   }
 
+  /**
+   * Gets the plugin settings manager.
+   *
+   * @returns The plugin settings manager.
+   */
   public get settingsManager(): ExtractPluginSettingsManager<PluginTypes> {
     if (!this._settingsManager) {
       throw new Error('Settings manager not defined');
@@ -70,6 +75,11 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     return this._settingsManager;
   }
 
+  /**
+   * Gets the plugin settings tab.
+   *
+   * @returns The plugin settings tab.
+   */
   public get settingsTab(): ExtractPluginSettingsTab<PluginTypes> {
     if (!this._settingsTab) {
       throw new Error('Settings tab not defined');
@@ -145,6 +155,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     await noopAsync();
   }
 
+  /** */
   public override onunload(): void {
     super.onunload();
     invokeAsyncSafely(async () => {

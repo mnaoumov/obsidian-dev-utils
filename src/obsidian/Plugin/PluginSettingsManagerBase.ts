@@ -125,6 +125,11 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private readonly validators: Map<string, Validator<any>> = new Map<string, Validator<any>>();
 
+  /**
+   * Creates a new plugin settings manager.
+   *
+   * @param plugin - The plugin.
+   */
   public constructor(public readonly plugin: ExtractPlugin<PluginTypes>) {
     this.app = plugin.app;
     this.currentSettings = this.createDefaultSettings();
@@ -153,6 +158,13 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     >;
   }
 
+  /**
+   * Edits the plugin settings and saves them.
+   *
+   * @param editor - The editor.
+   * @param context - The context.
+   * @returns A {@link Promise} that resolves when the settings are saved.
+   */
   public async editAndSave(editor: (settings: ExtractPluginSettings<PluginTypes>) => Promisable<void>, context?: unknown): Promise<void> {
     const editableSettings = new Proxy(this.currentSettings, new EditableSettingsProxyHandler<ExtractPluginSettings<PluginTypes>>(this.properties)) as {
       validationPromise: Promise<void>;
@@ -162,12 +174,24 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     await this.saveToFile(context);
   }
 
+  /**
+   * Gets a property of the plugin settings.
+   *
+   * @param propertyName - The name of the property.
+   * @returns The property.
+   */
   public getProperty<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
     propertyName: PropertyName
   ): PluginSettingsProperty<ExtractPluginSettings<PluginTypes>[PropertyName]> {
     return this.properties.getTyped(propertyName);
   }
 
+  /**
+   * Loads the plugin settings from the file.
+   *
+   * @param isInitialLoad - Whether the settings are being loaded for the first time.
+   * @returns A {@link Promise} that resolves when the settings are loaded.
+   */
   public async loadFromFile(isInitialLoad: boolean): Promise<void> {
     for (const property of this.properties.values()) {
       property.reset();
@@ -321,18 +345,38 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
  * @typeParam T - The type of the property.
  */
 export class PluginSettingsProperty<T> {
+  /**
+   * The current value of the property.
+   *
+   * @returns The current value.
+   */
   public get currentValue(): T {
     return this._currentValue;
   }
 
+  /**
+   * The last saved value of the property.
+   *
+   * @returns The last saved value.
+   */
   public get lastSavedValue(): T {
     return this._lastSavedValue;
   }
 
+  /**
+   * The safe value of the property.
+   *
+   * @returns The safe value.
+   */
   public get safeValue(): T {
     return this._validationMessage ? this.defaultValue : this._currentValue;
   }
 
+  /**
+   * The validation message of the property.
+   *
+   * @returns The validation message.
+   */
   public get validationMessage(): string {
     return this._validationMessage;
   }
@@ -343,6 +387,14 @@ export class PluginSettingsProperty<T> {
 
   private _validationMessage = '';
 
+  /**
+   * Creates a new plugin settings property.
+   *
+   * @param propertyName - The name of the property.
+   * @param defaultValue - The default value of the property.
+   * @param validator - The validator of the property.
+   * @param propertySetter - The property setter of the property.
+   */
   public constructor(
     private readonly propertyName: string,
     public readonly defaultValue: T,
@@ -353,11 +405,19 @@ export class PluginSettingsProperty<T> {
     this._currentValue = defaultValue;
   }
 
+  /**
+   * Resets the current value of the property to the default value.
+   */
   public reset(): void {
     this._currentValue = this.defaultValue;
     this._validationMessage = '';
   }
 
+  /**
+   * Saves the current value of the property.
+   *
+   * @returns `true` if the value was changed, `false` otherwise.
+   */
   public save(): boolean {
     if (this._lastSavedValue === this._currentValue) {
       return false;
@@ -367,16 +427,31 @@ export class PluginSettingsProperty<T> {
     return true;
   }
 
+  /**
+   * Sets the validation message of the property.
+   *
+   * @param validationMessage - The validation message.
+   */
   public setValidationMessage(validationMessage: string): void {
     this._validationMessage = validationMessage;
     this.showWarning();
   }
 
+  /**
+   * Sets the current value of the property.
+   *
+   * @param value - The value to set.
+   */
   public setValue(value: T): void {
     this._currentValue = value;
     this.propertySetter(value);
   }
 
+  /**
+   * Validates the current value of the property.
+   *
+   * @returns A {@link Promise} that resolves when the validation is complete.
+   */
   public async validate(): Promise<void> {
     try {
       this._validationMessage = (await this.validator(this._currentValue) as string | undefined) ?? '';

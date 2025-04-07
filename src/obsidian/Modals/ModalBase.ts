@@ -32,6 +32,13 @@ export interface ModalOptionsBase {
  * A base class for displaying modals in Obsidian.
  */
 export abstract class ModalBase<Value, Options extends ModalOptionsBase> extends Modal {
+  /**
+   * Creates a new modal.
+   *
+   * @param options - The options.
+   * @param resolve - The resolve function.
+   * @param modalCssClass - The modal CSS class.
+   */
   public constructor(options: Options, protected resolve: PromiseResolve<Value>, modalCssClass: string) {
     super(options.app);
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), modalCssClass);
