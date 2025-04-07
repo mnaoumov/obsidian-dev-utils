@@ -6,10 +6,7 @@
 
 import type { Promisable } from 'type-fest';
 
-import {
-  DropdownComponent,
-  ValueComponent
-} from 'obsidian';
+import { ValueComponent } from 'obsidian';
 
 import type { ValidatorElement } from '../../HTMLElement.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -21,6 +18,7 @@ import type { ValueComponentWithChangeTracking } from './ValueComponentWithChang
 
 import { CssClass } from '../../CssClass.ts';
 import { getPluginId } from '../Plugin/PluginId.ts';
+import { MultipleDropdownComponent } from './MultipleDropdownComponent.ts';
 
 /**
  * A multi-select dropdown component.
@@ -40,10 +38,10 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
    * @returns The validator element.
    */
   public get validatorEl(): ValidatorElement {
-    return this.dropdownComponent.selectEl;
+    return this.multipleDropdownComponent.validatorEl;
   }
 
-  private readonly dropdownComponent: DropdownComponent;
+  private readonly multipleDropdownComponent: MultipleDropdownComponent;
   private values: T[] = [];
 
   /**
@@ -53,8 +51,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
    */
   public constructor(containerEl: HTMLElement) {
     super();
-    this.dropdownComponent = new DropdownComponent(containerEl);
-    this.dropdownComponent.selectEl.multiple = true;
+    this.multipleDropdownComponent = new MultipleDropdownComponent(containerEl);
     containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.TypedMultipleDropdownComponent);
   }
 
@@ -71,7 +68,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
       this.values.push(value);
       index = this.values.length - 1;
     }
-    this.dropdownComponent.addOption(index.toString(), display);
+    this.multipleDropdownComponent.addOption(index.toString(), display);
     return this;
   }
 
@@ -94,9 +91,8 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
    * @returns The value of the component.
    */
   public getValue(): T[] {
-    return Array.from(this.dropdownComponent.selectEl.selectedOptions)
-      .map((o) => this.values[o.index])
-      .filter((value): value is T => value !== undefined);
+    const indices = this.multipleDropdownComponent.getValue().map((str) => parseInt(str, 10));
+    return indices.map((index) => this.values[index]).filter((value): value is T => value !== undefined);
   }
 
   /**
@@ -106,7 +102,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
    * @returns The component.
    */
   public onChange(callback: (value: T[]) => Promisable<void>): this {
-    this.dropdownComponent.onChange(() => callback(this.getValue()));
+    this.multipleDropdownComponent.onChange(() => callback(this.getValue()));
     return this;
   }
 
@@ -118,7 +114,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
    */
   public override setDisabled(disabled: boolean): this {
     super.setDisabled(disabled);
-    this.dropdownComponent.setDisabled(disabled);
+    this.multipleDropdownComponent.setDisabled(disabled);
     return this;
   }
 
@@ -129,11 +125,8 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
    * @returns The component.
    */
   public setValue(value: T[]): this {
-    const selectedIndices = value.map((v) => this.values.indexOf(v)).filter((index) => index !== -1);
-    for (const option of Array.from(this.dropdownComponent.selectEl.options)) {
-      option.selected = selectedIndices.includes(option.index);
-    }
-
+    const indices = value.map((v) => this.values.indexOf(v)).filter((index) => index !== -1);
+    this.multipleDropdownComponent.setValue(indices.map((index) => index.toString()));
     return this;
   }
 }
