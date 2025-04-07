@@ -37,8 +37,9 @@ const defaultTransformer = new GroupTransformer([
   new DurationTransformer()
 ]);
 
-type Validator<T> = (value: T) => Promisable<MaybeReturn<string>>;
 type PropertySetter = (value: unknown) => void;
+
+type Validator<T> = (value: T) => Promisable<MaybeReturn<string>>;
 
 abstract class ProxyHandlerBase<PluginSettings extends object> implements ProxyHandler<PluginSettings> {
   public constructor(protected readonly properties: PropertiesMap<PluginSettings>) {}
@@ -342,7 +343,12 @@ export class PluginSettingsProperty<T> {
 
   private _validationMessage = '';
 
-  public constructor(private readonly propertyName: string, public readonly defaultValue: T, private readonly validator: Validator<T>, private readonly propertySetter: PropertySetter) {
+  public constructor(
+    private readonly propertyName: string,
+    public readonly defaultValue: T,
+    private readonly validator: Validator<T>,
+    private readonly propertySetter: PropertySetter
+  ) {
     this._lastSavedValue = defaultValue;
     this._currentValue = defaultValue;
   }
