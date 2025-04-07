@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 24.0.2-beta.1
+
+- Ensure original setter is called
+
 ## 24.0.1
 
 - Ensure validation updated
