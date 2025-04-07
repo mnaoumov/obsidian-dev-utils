@@ -49,13 +49,15 @@ export interface PluginTypesBase {
   /**
    * The plugin settings.
    */
-  pluginSettings: Record<string, unknown>;
+  pluginSettings: object;
   /**
    * The plugin settings manager.
    */
-  pluginSettingsManager: PluginSettingsManagerBase<PluginTypesBase>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pluginSettingsManager: PluginSettingsManagerBase<any>;
   /**
    * The plugin settings tab.
    */
-  pluginSettingsTab: PluginSettingsTabBase<PluginTypesBase>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pluginSettingsTab: PluginSettingsTabBase<any>;
 }
