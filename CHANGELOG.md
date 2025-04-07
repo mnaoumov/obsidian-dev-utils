@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 22.1.1-beta.28
+
+- Show tab
+- Expose settingsTab
+- Fix warnings
+- Fix tsdocs
+- Use concrete types
+
 ## 22.1.1-beta.27
 
 - Rename hook methods
