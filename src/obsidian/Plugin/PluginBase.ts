@@ -135,8 +135,13 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    *
    * @param _newSettings - The new settings.
    * @param _oldSettings - The old settings.
+   * @param _context - The context.
    */
-  public async onSaveSettings(_newSettings: ExtractPluginSettings<PluginTypes>, _oldSettings: ExtractPluginSettings<PluginTypes>): Promise<void> {
+  public async onSaveSettings(
+    _newSettings: ExtractPluginSettings<PluginTypes>,
+    _oldSettings: ExtractPluginSettings<PluginTypes>,
+    _context: unknown
+  ): Promise<void> {
     await noopAsync();
   }
 
