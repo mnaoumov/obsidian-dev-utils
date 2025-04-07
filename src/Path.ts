@@ -121,7 +121,7 @@ export function getDirname(importMetaUrl: string): string {
  * @returns The POSIX-style filename.
  */
 export function getFilename(importMetaUrl: string): string {
-  return resolve(new URL(importMetaUrl).pathname);
+  return resolve(decodeURI(new URL(importMetaUrl).pathname));
 }
 
 /**
