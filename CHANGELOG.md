@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 22.1.1-beta.29
+
+- Don't fail on load if settingsManager is not defined
+- Add missing eslint comment
+
 ## 22.1.1-beta.28
 
 - Show tab
