@@ -4,6 +4,7 @@
     select:focus,
     .dropdown {
       height: auto;
+      padding-top: 3px;
 
       option:checked {
         background-color: #1967d2;
