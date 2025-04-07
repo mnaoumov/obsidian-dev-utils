@@ -39,7 +39,14 @@ export function copyToObsidianPluginsFolderPlugin(
     name: 'copy-to-obsidian-plugins-folder',
     setup(build): void {
       build.onEnd(async () => {
-        if (isProductionBuild || !obsidianConfigFolder) {
+        if (isProductionBuild) {
+          return;
+        }
+
+        if (!obsidianConfigFolder) {
+          console.warn(
+            'No Obsidian config folder configured. `OBSIDIAN_CONFIG_FOLDER` environment variable is not set in system or in `.env` file. The compiled plugin will not be copied into Obsidian plugins folder.'
+          );
           return;
         }
 
