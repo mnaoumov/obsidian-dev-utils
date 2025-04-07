@@ -222,4 +222,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     super.hide();
     invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile());
   }
+
+  public show(): void {
+    this.app.setting.openTab(this);
+  }
 }
