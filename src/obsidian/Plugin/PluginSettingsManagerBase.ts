@@ -63,21 +63,19 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
   private validationPromise = Promise.resolve();
   public set(target: PluginSettings, prop: string | symbol, value: unknown): boolean {
     const record = target as Record<string | symbol, unknown>;
+    record[prop] = value;
 
     if (typeof prop !== 'string') {
-      record[prop] = value;
       return true;
     }
 
     const property = this.properties.get(prop);
     if (!property) {
-      record[prop] = value;
       return true;
     }
 
     property.setValue(value);
     this.validationPromise = this.validationPromise.then(() => property.setValueAndValidate(value));
-
     return true;
   }
 
@@ -120,35 +118,35 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   public readonly app: App;
   public readonly safeSettings: ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
 
-  private defaultSettings: ExtractPluginSettings<PluginTypes>;
+  private currentSettings: ExtractPluginSettings<PluginTypes>;
   private properties: PropertiesMap<ExtractPluginSettings<PluginTypes>>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private validators: Map<string, Validator<any>> = new Map<string, Validator<any>>();
 
   public constructor(public readonly plugin: ExtractPlugin<PluginTypes>) {
     this.app = plugin.app;
-    this.defaultSettings = this.createDefaultSettings();
+    this.currentSettings = this.createDefaultSettings();
 
     this.registerValidators();
 
     this.properties = new PropertiesMap<ExtractPluginSettings<PluginTypes>>();
 
-    for (const propertyName of getAllKeys(this.defaultSettings)) {
+    for (const propertyName of getAllKeys(this.currentSettings)) {
       this.properties.set(
         propertyName,
-        new PluginSettingsProperty(propertyName, this.defaultSettings[propertyName], this.validators.get(propertyName) ?? noop)
+        new PluginSettingsProperty(propertyName, this.currentSettings[propertyName], this.validators.get(propertyName) ?? noop)
       );
     }
 
     this.validators.clear();
 
-    this.safeSettings = new Proxy(this.defaultSettings, new SafeSettingsProxyHandler<ExtractPluginSettings<PluginTypes>>(this.properties)) as ReadonlyDeep<
+    this.safeSettings = new Proxy(this.currentSettings, new SafeSettingsProxyHandler<ExtractPluginSettings<PluginTypes>>(this.properties)) as ReadonlyDeep<
       ExtractPluginSettings<PluginTypes>
     >;
   }
 
   public async editAndSave(editor: (settings: ExtractPluginSettings<PluginTypes>) => Promisable<void>): Promise<void> {
-    const editableSettings = new Proxy(this.defaultSettings, new EditableSettingsProxyHandler<ExtractPluginSettings<PluginTypes>>(this.properties)) as {
+    const editableSettings = new Proxy(this.currentSettings, new EditableSettingsProxyHandler<ExtractPluginSettings<PluginTypes>>(this.properties)) as {
       validationPromise: Promise<void>;
     } & ExtractPluginSettings<PluginTypes>;
     await editor(editableSettings);
@@ -286,7 +284,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
         | ExtractPluginSettings<PluginTypes>[StringKeys<ExtractPluginSettings<PluginTypes>>]
         | undefined;
     }
-    const proto = Object.getPrototypeOf(this.defaultSettings) as object;
+    const proto = Object.getPrototypeOf(this.currentSettings) as object;
     Object.setPrototypeOf(savedSettings, proto);
 
     return savedSettings as ExtractPluginSettings<PluginTypes>;
