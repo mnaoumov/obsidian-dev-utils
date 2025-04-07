@@ -114,7 +114,7 @@ class SafeSettingsProxyHandler<PluginSettings extends object> extends ProxyHandl
 /**
  * Base class for managing plugin settings.
  *
- * @typeParam PluginSettings - The type representing the plugin settings object.
+ * @typeParam PluginTypes - Plugin-specific types.
  */
 export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesBase> {
   public readonly app: App;
