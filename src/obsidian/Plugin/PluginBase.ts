@@ -39,7 +39,7 @@ type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
  *
- * @typeParam PluginSettings - The type representing the plugin settings object.
+ * @typeParam PluginTypes - Plugin-specific types.
  */
 export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends ObsidianPlugin {
   public readonly events = new AsyncEvents();

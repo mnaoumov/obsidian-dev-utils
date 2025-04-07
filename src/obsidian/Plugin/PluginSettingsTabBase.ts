@@ -83,7 +83,7 @@ export interface BindOptionsExtended<
  * Base class for creating plugin settings tabs in Obsidian.
  * Provides a method for binding value components to plugin settings and handling changes.
  *
- * @typeParam TPlugin - The type of the plugin that extends PluginBase.
+ * @typeParam PluginTypes - Plugin-specific types.
  */
 export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase> extends PluginSettingTab {
   public constructor(public override plugin: ExtractPlugin<PluginTypes>) {
