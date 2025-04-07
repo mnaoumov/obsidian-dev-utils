@@ -220,9 +220,9 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     this._settingsManager = this.createSettingsManager();
 
     await this.onExternalSettingsChange();
-    const pluginSettingsTab = this.createPluginSettingsTab();
-    if (pluginSettingsTab) {
-      this.addSettingTab(pluginSettingsTab);
+    this._settingsTab = this.createPluginSettingsTab();
+    if (this._settingsTab) {
+      this.addSettingTab(this._settingsTab);
     }
 
     const abortController = new AbortController();
