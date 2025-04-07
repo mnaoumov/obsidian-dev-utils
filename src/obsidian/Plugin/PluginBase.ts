@@ -16,7 +16,7 @@ import type {
 
 import {
   Notice,
-  Plugin
+  Plugin as ObsidianPlugin
 } from 'obsidian';
 
 import type { AsyncEventRef } from '../../AsyncEvents.ts';
@@ -32,6 +32,15 @@ import { noop } from '../../Function.ts';
 import { initPluginContext } from './PluginContext.ts';
 import { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 
+/**
+ * Extracts the plugin settings type from the plugin base class.
+ *
+ * @typeParam Plugin - The plugin class.
+ * @returns The plugin settings type.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ExtractPluginSettings<Plugin extends PluginBase<any>> = Plugin['__pluginSettingsType'];
+
 type LifecycleEventName = 'layoutReady' | 'loadComplete' | 'unload';
 
 /**
@@ -39,7 +48,7 @@ type LifecycleEventName = 'layoutReady' | 'loadComplete' | 'unload';
  *
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
-export abstract class PluginBase<PluginSettings extends object = object> extends Plugin {
+export abstract class PluginBase<PluginSettings extends object = object> extends ObsidianPlugin {
   /**
    * @deprecated Used only for type inference. Don't use it directly.
    */
@@ -65,7 +74,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
     return this.settingsManager.safeSettings;
   }
 
-  public get settingsManager(): PluginSettingsManagerBase<PluginSettings> {
+  public get settingsManager(): PluginSettingsManagerBase<this> {
     if (!this._settingsManager) {
       throw new Error('Settings manager not defined');
     }
@@ -74,7 +83,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   private _abortSignal!: AbortSignal;
-  private _settingsManager: null | PluginSettingsManagerBase<PluginSettings> = null;
+  private _settingsManager: null | PluginSettingsManagerBase<this> = null;
   private lifecycleEventNames = new Set<LifecycleEventName>();
   private notice?: Notice;
 
@@ -208,7 +217,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    *
    * @returns The plugin settings manager.
    */
-  protected createSettingsManager(): null | PluginSettingsManagerBase<PluginSettings> {
+  protected createSettingsManager(): null | PluginSettingsManagerBase<this> {
     return null;
   }
 
