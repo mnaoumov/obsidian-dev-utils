@@ -129,7 +129,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     this.app = plugin.app;
     this.defaultSettings = this.createDefaultSettings();
 
-    this.addValidators();
+    this.registerValidators();
 
     this.properties = new PropertiesMap<ExtractPluginSettings<PluginTypes>>();
 
@@ -242,17 +242,6 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     await this.plugin.onSaveSettings(this.getSavedSettings(), oldSettings);
   }
 
-  protected addValidator<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
-    propertyName: PropertyName,
-    validator: Validator<ExtractPluginSettings<PluginTypes>[PropertyName]>
-  ): void {
-    this.validators.set(propertyName, validator);
-  }
-
-  protected addValidators(): void {
-    noop();
-  }
-
   protected abstract createDefaultSettings(): ExtractPluginSettings<PluginTypes>;
 
   protected getTransformer(): Transformer {
@@ -275,6 +264,17 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    */
   protected async onSavingRecord(_record: Record<string, unknown>): Promise<void> {
     await noopAsync();
+  }
+
+  protected registerValidator<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
+    propertyName: PropertyName,
+    validator: Validator<ExtractPluginSettings<PluginTypes>[PropertyName]>
+  ): void {
+    this.validators.set(propertyName, validator);
+  }
+
+  protected registerValidators(): void {
+    noop();
   }
 
   private getSavedSettings(): ExtractPluginSettings<PluginTypes> {
