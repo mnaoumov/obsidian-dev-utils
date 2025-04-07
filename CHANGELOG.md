@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 24.0.0
+
+- Add OBSIDIAN_CONFIG_FOLDER warning
+- Fix tsdocs
+- Rename milliseconds arg
+- Replace directory with folder
+
 ## 23.0.5
 
 - Fix padding
