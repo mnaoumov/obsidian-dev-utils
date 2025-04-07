@@ -92,10 +92,12 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
   }
 
   public override onClose(): void {
+    super.onClose();
     this.resolve(this.isOkClicked ? this.value : null);
   }
 
   public override onOpen(): void {
+    super.onOpen();
     this.titleEl.setText(this.options.title);
     const textComponent = new TextComponent(this.contentEl);
     const inputEl = textComponent.inputEl;
