@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 22.1.1-beta.27
+
+- Rename hook methods
+- Super calls
+- invokeAsyncSafelyAfterDelay
+- Make PluginSettingsManagerBase knowing full Plugin type
+
 ## 22.1.1-beta.26
 
 - Decode paths with %20 instead of spaces
