@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 22.1.1-beta.26
+
+- Decode paths with %20 instead of spaces
+- Use wrappers
+- Add checkbox validation
+- Don't show warning Notice
+
 ## 22.1.1-beta.25
 
 - Unify @packageDocumentation
