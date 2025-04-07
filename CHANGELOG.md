@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 24.0.1
+
+- Ensure validation updated
+
 ## 24.0.0
 
 - Add OBSIDIAN_CONFIG_FOLDER warning
