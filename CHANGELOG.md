@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 23.0.3
+
+- Make tri-state visual
+
 ## 23.0.2
 
 - Init settings tab
