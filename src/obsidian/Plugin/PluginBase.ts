@@ -108,7 +108,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    */
   public override async onExternalSettingsChange(): Promise<void> {
     await super.onExternalSettingsChange?.();
-    await this._settingsManager?.loadFromFile();
+    await this._settingsManager?.loadFromFile(false);
   }
 
   /**
@@ -124,8 +124,9 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    * Called when the plugin settings are loaded or reloaded.
    *
    * @param _settings - The settings.
+   * @param _isInitialLoad - Whether the settings are being loaded for the first time.
    */
-  public async onLoadSettings(_settings: ExtractPluginSettings<PluginTypes>): Promise<void> {
+  public async onLoadSettings(_settings: ExtractPluginSettings<PluginTypes>, _isInitialLoad: boolean): Promise<void> {
     await noopAsync();
   }
 
@@ -219,7 +220,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
 
     this._settingsManager = this.createSettingsManager();
 
-    await this.onExternalSettingsChange();
+    await this._settingsManager?.loadFromFile(true);
     this._settingsTab = this.createPluginSettingsTab();
     if (this._settingsTab) {
       this.addSettingTab(this._settingsTab);

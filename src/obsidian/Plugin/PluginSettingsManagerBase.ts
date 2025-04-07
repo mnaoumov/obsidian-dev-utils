@@ -167,7 +167,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     return this.properties.getTyped(propertyName);
   }
 
-  public async loadFromFile(): Promise<void> {
+  public async loadFromFile(isInitialLoad: boolean): Promise<void> {
     for (const property of this.properties.values()) {
       property.reset();
     }
@@ -224,7 +224,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
       await this.saveToFileImpl();
     }
 
-    await this.plugin.onLoadSettings(this.getSavedSettings());
+    await this.plugin.onLoadSettings(this.getSavedSettings(), isInitialLoad);
   }
 
   /**
