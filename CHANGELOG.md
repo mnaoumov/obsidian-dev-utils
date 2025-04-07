@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 23.0.0
+
+- Rename registerValidators
+- Make all virtual Promisable just Promise
+
 ## 22.1.1-beta.29
 
 - Don't fail on load if settingsManager is not defined
