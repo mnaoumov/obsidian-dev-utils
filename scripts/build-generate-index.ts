@@ -23,17 +23,17 @@ await wrapCliTask(async () => {
   await generateIndex(ObsidianDevUtilsRepoPaths.Src);
 });
 
-async function generateIndex(dir: string): Promise<void> {
-  const dirents = await readdirPosix(dir, { withFileTypes: true });
-  const lines = (await asyncMap(dirents, (dirent) => handleDirent(dir, dirent)))
+async function generateIndex(folder: string): Promise<void> {
+  const dirents = await readdirPosix(folder, { withFileTypes: true });
+  const lines = (await asyncMap(dirents, (dirent) => handleDirent(folder, dirent)))
     .filter((line) => line !== undefined);
 
   if (lines.length > 0) {
-    await generate(join(dir, ObsidianDevUtilsRepoPaths.IndexTs), lines);
+    await generate(join(folder, ObsidianDevUtilsRepoPaths.IndexTs), lines);
   }
 }
 
-async function handleDirent(dir: string, dirent: Dirent): Promise<string | undefined> {
+async function handleDirent(folder: string, dirent: Dirent): Promise<string | undefined> {
   if (dirent.name === ObsidianDevUtilsRepoPaths.IndexTs as string) {
     return;
   }
@@ -42,7 +42,7 @@ async function handleDirent(dir: string, dirent: Dirent): Promise<string | undef
     return;
   }
 
-  if (dirent.name === ObsidianDevUtilsRepoPaths.Types as string || dir.split('/').includes(ObsidianDevUtilsRepoPaths.Types)) {
+  if (dirent.name === ObsidianDevUtilsRepoPaths.Types as string || folder.split('/').includes(ObsidianDevUtilsRepoPaths.Types)) {
     return;
   }
 
@@ -57,7 +57,7 @@ async function handleDirent(dir: string, dirent: Dirent): Promise<string | undef
   let sourceFile: string;
   let name: string;
   if (dirent.isDirectory()) {
-    await generateIndex(join(dir, dirent.name));
+    await generateIndex(join(folder, dirent.name));
     sourceFile = normalizeIfRelative(join(dirent.name, ObsidianDevUtilsRepoPaths.IndexTs));
     name = dirent.name;
   } else {

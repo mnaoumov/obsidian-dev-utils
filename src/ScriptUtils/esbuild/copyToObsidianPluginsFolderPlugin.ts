@@ -4,7 +4,7 @@
  * This module defines an esbuild plugin that automatically copies the build output
  * to the Obsidian plugins folder during development. This plugin helps streamline
  * the development workflow by ensuring that the latest build is always available
- * in the correct Obsidian directory for testing and use.
+ * in the correct Obsidian folder for testing and use.
  */
 
 import type { Plugin } from 'esbuild';
@@ -24,44 +24,44 @@ import {
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
  *
  * @param isProductionBuild - A boolean indicating whether the build is a production build.
- * @param distDir - The directory where the built files are located.
- * @param obsidianConfigDir - The directory of the Obsidian configuration. If not provided, the plugin will not copy files.
+ * @param distFolder - The folder where the built files are located.
+ * @param obsidianConfigFolder - The folder of the Obsidian configuration. If not provided, the plugin will not copy files.
  * @param pluginName - The name of the Obsidian plugin.
  * @returns An esbuild `Plugin` object.
  */
 export function copyToObsidianPluginsFolderPlugin(
   isProductionBuild: boolean,
-  distDir: string,
-  obsidianConfigDir: string,
+  distFolder: string,
+  obsidianConfigFolder: string,
   pluginName: string
 ): Plugin {
   return {
     name: 'copy-to-obsidian-plugins-folder',
     setup(build): void {
       build.onEnd(async () => {
-        if (isProductionBuild || !obsidianConfigDir) {
+        if (isProductionBuild || !obsidianConfigFolder) {
           return;
         }
 
-        obsidianConfigDir = toPosixPath(obsidianConfigDir);
+        obsidianConfigFolder = toPosixPath(obsidianConfigFolder);
 
-        const pluginDir = join(obsidianConfigDir, 'plugins', pluginName);
+        const pluginFolder = join(obsidianConfigFolder, 'plugins', pluginName);
 
-        if (!existsSync(pluginDir)) {
-          await mkdir(pluginDir, { recursive: true });
+        if (!existsSync(pluginFolder)) {
+          await mkdir(pluginFolder, { recursive: true });
         }
 
-        await cp(distDir, pluginDir, { recursive: true });
+        await cp(distFolder, pluginFolder, { recursive: true });
 
-        const hotReloadDir = join(obsidianConfigDir, 'plugins/hot-reload');
-        if (!existsSync(hotReloadDir)) {
-          await mkdir(hotReloadDir, { recursive: true });
+        const hotReloadFolder = join(obsidianConfigFolder, 'plugins/hot-reload');
+        if (!existsSync(hotReloadFolder)) {
+          await mkdir(hotReloadFolder, { recursive: true });
           const hotReloadRepoUrl = 'https://raw.githubusercontent.com/pjeby/hot-reload/master/';
           for (const fileName of ['main.js', 'manifest.json']) {
             const fileUrl = hotReloadRepoUrl + fileName;
             const response = await fetch(fileUrl);
             const text = await response.text();
-            await writeFile(join(hotReloadDir, fileName), text);
+            await writeFile(join(hotReloadFolder, fileName), text);
           }
         }
       });

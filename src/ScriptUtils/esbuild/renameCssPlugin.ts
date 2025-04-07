@@ -16,16 +16,16 @@ import {
 /**
  * Plugin that renames the CSS file to the correct name.
  *
- * @param distDir - The directory to rename the CSS file in.
+ * @param distFolder - The folder to rename the CSS file in.
  * @returns The plugin.
  */
-export function renameCssPlugin(distDir: string): Plugin {
+export function renameCssPlugin(distFolder: string): Plugin {
   return {
     name: 'rename-css',
     setup(build): void {
       build.onEnd(async () => {
-        const mainCssPath = join(distDir, ObsidianPluginRepoPaths.MainCss);
-        const stylesCssPath = join(distDir, ObsidianPluginRepoPaths.StylesCss);
+        const mainCssPath = join(distFolder, ObsidianPluginRepoPaths.MainCss);
+        const stylesCssPath = join(distFolder, ObsidianPluginRepoPaths.StylesCss);
         if (existsSync(mainCssPath)) {
           await rename(mainCssPath, stylesCssPath);
         }

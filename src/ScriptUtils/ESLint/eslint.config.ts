@@ -25,7 +25,7 @@ import tseslint from 'typescript-eslint';
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
-import { getRootDir } from '../Root.ts';
+import { getRootFolder } from '../Root.ts';
 
 /**
  * The ESLint configurations for TypeScript projects.
@@ -352,7 +352,7 @@ function getTseslintConfigs(): InfiniteDepthConfigWithExtends[] {
             jsx: true
           },
           projectService: true,
-          tsconfigRootDir: getRootDir() ?? ''
+          tsconfigRootDir: getRootFolder() ?? ''
         }
       }
     },

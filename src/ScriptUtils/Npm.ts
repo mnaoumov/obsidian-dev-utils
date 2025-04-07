@@ -29,7 +29,7 @@ import { resolvePathFromRoot } from './Root.ts';
  */
 export interface EditPackageJsonOptions {
   /**
-   * The current working directory where `package.json` is located.
+   * The current working folder where `package.json` is located.
    */
   cwd?: string;
 
@@ -143,9 +143,9 @@ export function editPackageLockJsonSync(
 }
 
 /**
- * Resolves the path to the `npm-shrinkwrap.json` file in the specified directory or in the root if no directory is specified.
+ * Resolves the path to the `npm-shrinkwrap.json` file in the specified folder or in the root if no folder is specified.
  *
- * @param cwd - The current working directory where `npm-shrinkwrap.json` is located.
+ * @param cwd - The current working folder where `npm-shrinkwrap.json` is located.
  * @returns The resolved path to the `npm-shrinkwrap.json` file.
  */
 export function getNpmShrinkWrapJsonPath(cwd?: string): string {
@@ -153,9 +153,9 @@ export function getNpmShrinkWrapJsonPath(cwd?: string): string {
 }
 
 /**
- * Resolves the path to the `package.json` file in the specified directory or in the root if no directory is specified.
+ * Resolves the path to the `package.json` file in the specified folder or in the root if no folder is specified.
  *
- * @param cwd - The current working directory where `package.json` is located.
+ * @param cwd - The current working folder where `package.json` is located.
  * @returns The resolved path to the `package.json` file.
  */
 export function getPackageJsonPath(cwd?: string): string {
@@ -163,9 +163,9 @@ export function getPackageJsonPath(cwd?: string): string {
 }
 
 /**
- * Resolves the path to the `package-lock.json` file in the specified directory or in the root if no directory is specified.
+ * Resolves the path to the `package-lock.json` file in the specified folder or in the root if no folder is specified.
  *
- * @param cwd - The current working directory where `package-lock.json` is located.
+ * @param cwd - The current working folder where `package-lock.json` is located.
  * @returns The resolved path to the `package-lock.json` file.
  */
 export function getPackageLockJsonPath(cwd?: string): string {
@@ -173,9 +173,9 @@ export function getPackageLockJsonPath(cwd?: string): string {
 }
 
 /**
- * Reads the `package.json` file from the specified directory or from the root if no directory is specified.
+ * Reads the `package.json` file from the specified folder or from the root if no folder is specified.
  *
- * @param cwd - The current working directory where `package.json` is located.
+ * @param cwd - The current working folder where `package.json` is located.
  * @returns A {@link Promise} that resolves with the parsed `PackageJson` object.
  */
 export async function readPackageJson(cwd?: string): Promise<PackageJson> {
@@ -183,9 +183,9 @@ export async function readPackageJson(cwd?: string): Promise<PackageJson> {
 }
 
 /**
- * Reads the `package.json` file from the specified directory or from the root if no directory is specified.
+ * Reads the `package.json` file from the specified folder or from the root if no folder is specified.
  *
- * @param cwd - The current working directory where `package.json` is located.
+ * @param cwd - The current working folder where `package.json` is located.
  * @returns The parsed `PackageJson` object.
  */
 export function readPackageJsonSync(cwd?: string): PackageJson {
@@ -193,9 +193,9 @@ export function readPackageJsonSync(cwd?: string): PackageJson {
 }
 
 /**
- * Reads the `package-lock.json` file from the specified directory or from the root if no directory is specified.
+ * Reads the `package-lock.json` file from the specified folder or from the root if no folder is specified.
  *
- * @param cwd - The current working directory where `package-lock.json` is located.
+ * @param cwd - The current working folder where `package-lock.json` is located.
  * @returns A {@link Promise} that resolves with the parsed `PackageJson` object.
  */
 export async function readPackageLockJson(cwd?: string): Promise<PackageLockJson> {
@@ -203,9 +203,9 @@ export async function readPackageLockJson(cwd?: string): Promise<PackageLockJson
 }
 
 /**
- * Reads the `package-lock.json` file from the specified directory or from the root if no directory is specified.
+ * Reads the `package-lock.json` file from the specified folder or from the root if no folder is specified.
  *
- * @param cwd - The current working directory where `package-lock.json` is located.
+ * @param cwd - The current working folder where `package-lock.json` is located.
  * @returns The parsed `PackageLockJson` object.
  */
 export function readPackageLockJsonSync(cwd?: string): PackageLockJson {
@@ -213,10 +213,10 @@ export function readPackageLockJsonSync(cwd?: string): PackageLockJson {
 }
 
 /**
- * Writes the provided `PackageJson` object to the `package.json` file in the specified directory or in the root.
+ * Writes the provided `PackageJson` object to the `package.json` file in the specified folder or in the root.
  *
  * @param packageJson - The `PackageJson` object to write.
- * @param cwd - The current working directory where `package.json` is located.
+ * @param cwd - The current working folder where `package.json` is located.
  * @returns A {@link Promise} that resolves when the file has been written.
  */
 export async function writePackageJson(packageJson: PackageJson, cwd?: string): Promise<void> {
@@ -224,20 +224,20 @@ export async function writePackageJson(packageJson: PackageJson, cwd?: string): 
 }
 
 /**
- * Writes the provided `PackageJson` object to the `package.json` file in the specified directory or in the root.
+ * Writes the provided `PackageJson` object to the `package.json` file in the specified folder or in the root.
  *
  * @param packageJson - The `PackageJson` object to write.
- * @param cwd - The current working directory where `package.json` is located.
+ * @param cwd - The current working folder where `package.json` is located.
  */
 export function writePackageJsonSync(packageJson: PackageJson, cwd?: string): void {
   writeJsonSync(getPackageJsonPath(cwd), packageJson);
 }
 
 /**
- * Writes the provided `PackageJson` object to the `package-lock.json` file in the specified directory or in the root.
+ * Writes the provided `PackageJson` object to the `package-lock.json` file in the specified folder or in the root.
  *
  * @param packageLockJson - The `PackageLockJson` object to write.
- * @param cwd - The current working directory where `package-lock.json` is located.
+ * @param cwd - The current working folder where `package-lock.json` is located.
  * @returns A {@link Promise} that resolves when the file has been written.
  */
 export async function writePackageLockJson(packageLockJson: PackageLockJson, cwd?: string): Promise<void> {
@@ -245,10 +245,10 @@ export async function writePackageLockJson(packageLockJson: PackageLockJson, cwd
 }
 
 /**
- * Writes the provided `PackageLockJson` object to the `package-lock.json` file in the specified directory or in the root.
+ * Writes the provided `PackageLockJson` object to the `package-lock.json` file in the specified folder or in the root.
  *
  * @param packageLockJson - The `PackageLockJson` object to write.
- * @param cwd - The current working directory where `package-lock.json` is located.
+ * @param cwd - The current working folder where `package-lock.json` is located.
  */
 export function writePackageLockJsonSync(packageLockJson: PackageLockJson, cwd?: string): void {
   writeJsonSync(getPackageLockJsonPath(cwd), packageLockJson);

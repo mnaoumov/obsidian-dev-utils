@@ -682,8 +682,8 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
   const targetFile = getFile(app, targetPathOrFile, true);
   const newSourcePath = getPath(app, newSourcePathOrFile);
   const oldSourcePath = getPath(app, oldSourcePathOrFile ?? newSourcePathOrFile);
-  const newSourceDir = dirname(newSourcePath);
-  const oldSourceDir = dirname(oldSourcePath);
+  const newSourceFolder = dirname(newSourcePath);
+  const oldSourceFolder = dirname(oldSourcePath);
   const aliasesToReset = new Set<string>();
 
   for (const pathOrFile of [targetFile.path, oldTargetPath]) {
@@ -694,8 +694,8 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     const path = getPath(app, pathOrFile);
     aliasesToReset.add(path);
     aliasesToReset.add(basename(path));
-    aliasesToReset.add(relative(newSourceDir, path));
-    aliasesToReset.add(relative(oldSourceDir, path));
+    aliasesToReset.add(relative(newSourceFolder, path));
+    aliasesToReset.add(relative(oldSourceFolder, path));
   }
 
   for (const sourcePath of [oldSourcePath, newSourcePath]) {
@@ -709,9 +709,9 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
       return true;
     }
 
-    const dir = dirname(alias);
+    const folder = dirname(alias);
     const base = basename(alias, extname(alias));
-    if (join(dir, base).toLowerCase() === cleanDisplayText) {
+    if (join(folder, base).toLowerCase() === cleanDisplayText) {
       return true;
     }
   }

@@ -1,8 +1,8 @@
-import { getDirname } from 'obsidian-dev-utils/Path';
+import { getFolderName } from 'obsidian-dev-utils/Path';
 import { existsSync } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
 import {
   execFromRoot,
-  getRootDir,
+  getRootFolder,
   resolvePathFromRootSafe
 } from 'obsidian-dev-utils/ScriptUtils/Root';
 
@@ -14,9 +14,9 @@ export async function formatWithPrettier(rewrite: boolean): Promise<void> {
   const PRETTIER_CONFIG_FILE_NAME = '.prettierrc.json';
   const prettierJsonPath = resolvePathFromRootSafe(PRETTIER_CONFIG_FILE_NAME);
   if (!existsSync(prettierJsonPath)) {
-    const packageDirectory = getRootDir(getDirname(import.meta.url));
-    if (!packageDirectory) {
-      throw new Error('Could not find package directory.');
+    const packageFolder = getRootFolder(getFolderName(import.meta.url));
+    if (!packageFolder) {
+      throw new Error('Could not find package folder.');
     }
     throw new Error(`${PRETTIER_CONFIG_FILE_NAME} not found`);
   }

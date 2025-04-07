@@ -18,6 +18,8 @@ import { readdir } from './NodeModules.ts';
 
 /**
  * Options for controlling the format of the result when returning buffers.
+ *
+ * `directory` is used instead of `folder` to preserve compatibility with `node:fs` module.
  */
 export type BufferResultOptions = 'buffer' | {
   /**

@@ -235,11 +235,11 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
       continue;
     }
     const relativePath = relative(oldAttachmentFolderPath, oldAttachmentFile.path);
-    const newDir = join(newAttachmentFolderPath, dirname(relativePath));
+    const newFolder = join(newAttachmentFolderPath, dirname(relativePath));
     const newChildBasename = settings.shouldRenameAttachmentFiles
       ? replaceAll(oldAttachmentFile.basename, oldBasename, newBasename)
       : oldAttachmentFile.basename;
-    let newChildPath = join(newDir, makeFileName(newChildBasename, oldAttachmentFile.extension));
+    let newChildPath = join(newFolder, makeFileName(newChildBasename, oldAttachmentFile.extension));
 
     if (oldAttachmentFile.path === newChildPath) {
       continue;
@@ -251,7 +251,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
         await app.fileManager.trashFile(newChildFile);
       }
     } else {
-      newChildPath = app.vault.getAvailablePath(join(newDir, newChildBasename), oldAttachmentFile.extension);
+      newChildPath = app.vault.getAvailablePath(join(newFolder, newChildBasename), oldAttachmentFile.extension);
     }
     renameMap.set(oldAttachmentFile.path, newChildPath);
   }

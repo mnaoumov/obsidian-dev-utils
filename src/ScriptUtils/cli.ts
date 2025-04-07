@@ -16,7 +16,7 @@ import type { MaybeReturn } from '../Type.ts';
 
 import { invokeAsyncSafely } from '../Async.ts';
 import {
-  getDirname,
+  getFolderName,
   join,
   relative
 } from '../Path.ts';
@@ -88,7 +88,7 @@ interface OverrideModule<Args extends unknown[]> {
 export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_COUNT)): void {
   invokeAsyncSafely(() =>
     wrapCliTask(async () => {
-      const packageJson = await readPackageJson(getDirname(import.meta.url));
+      const packageJson = await readPackageJson(getFolderName(import.meta.url));
       const program = new Command();
 
       program
@@ -140,8 +140,8 @@ function addCommand<Args extends unknown[]>(
       wrapCliTask(async () => {
         const scriptPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Scripts, `${name.replace(':', '-')}.ts`));
         if (existsSync(scriptPath)) {
-          const dir = getDirname(import.meta.url);
-          const relativeScriptPath = relative(dir, scriptPath);
+          const folder = getFolderName(import.meta.url);
+          const relativeScriptPath = relative(folder, scriptPath);
           const module = await tsImport(relativeScriptPath, { parentURL: import.meta.url }) as Partial<OverrideModule<Args>>;
           if (typeof module.invoke !== 'function') {
             throw new Error(`${relativeScriptPath} does not export an invoke function`);

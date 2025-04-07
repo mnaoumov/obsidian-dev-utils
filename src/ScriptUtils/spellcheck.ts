@@ -10,7 +10,7 @@ import { execFromRoot } from './Root.ts';
 /**
  * Runs a spellcheck on the entire codebase using `cspell`.
  *
- * The function checks all files in the current directory and its subdirectories for spelling issues.
+ * The function checks all files in the current folder and its subfolders for spelling issues.
  * If issues are found, they are logged to the console with their file path, line, and column number.
  *
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult}, indicating the success or failure of the spellcheck.

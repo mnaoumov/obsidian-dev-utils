@@ -9,7 +9,7 @@
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
-  getDirname,
+  getFolderName,
   join
 } from '../../Path.ts';
 import {
@@ -18,7 +18,7 @@ import {
 } from '../NodeModules.ts';
 import {
   execFromRoot,
-  getRootDir,
+  getRootFolder,
   resolvePathFromRootSafe
 } from '../Root.ts';
 
@@ -44,12 +44,12 @@ export async function lint(shouldFix?: boolean): Promise<void> {
 
   if (!configFileExist) {
     console.warn('ESLint configuration file not found. Creating default config...');
-    const packageDir = getRootDir(getDirname(import.meta.url));
-    if (!packageDir) {
-      throw new Error('Package directory not found');
+    const packageFolder = getRootFolder(getFolderName(import.meta.url));
+    if (!packageFolder) {
+      throw new Error('Package folder not found');
     }
-    await cp(join(packageDir, ObsidianPluginRepoPaths.EslintConfigMts), resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMts));
+    await cp(join(packageFolder, ObsidianPluginRepoPaths.EslintConfigMts), resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMts));
   }
 
-  await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentDir]);
+  await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentFolder]);
 }
