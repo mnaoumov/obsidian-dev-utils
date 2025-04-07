@@ -111,7 +111,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    */
   public override async onExternalSettingsChange(): Promise<void> {
     await super.onExternalSettingsChange?.();
-    await this.settingsManager.loadFromFile();
+    await this._settingsManager?.loadFromFile();
   }
 
   /**
