@@ -73,8 +73,17 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     return this._settingsManager;
   }
 
+  public get settingsTab(): ExtractPluginSettingsTab<PluginTypes> {
+    if (!this._settingsTab) {
+      throw new Error('Settings tab not defined');
+    }
+
+    return this._settingsTab;
+  }
+
   private _abortSignal!: AbortSignal;
   private _settingsManager: ExtractPluginSettingsManager<PluginTypes> | null = null;
+  private _settingsTab: ExtractPluginSettingsTab<PluginTypes> | null = null;
   private lifecycleEventNames = new Set<LifecycleEventName>();
   private notice?: Notice;
 
