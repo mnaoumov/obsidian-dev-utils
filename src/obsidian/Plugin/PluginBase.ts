@@ -8,10 +8,7 @@
  * loading tasks.
  */
 
-import type {
-  Promisable,
-  ReadonlyDeep
-} from 'type-fest';
+import type { ReadonlyDeep } from 'type-fest';
 
 import {
   Notice,
@@ -34,7 +31,7 @@ import {
 import { AsyncEvents } from '../../AsyncEvents.ts';
 import { getDebugger } from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
-import { noop } from '../../Function.ts';
+import { noopAsync } from '../../Function.ts';
 import { initPluginContext } from './PluginContext.ts';
 
 type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
@@ -128,8 +125,8 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    *
    * @param _settings - The settings.
    */
-  public onLoadSettings(_settings: ExtractPluginSettings<PluginTypes>): Promisable<void> {
-    noop();
+  public async onLoadSettings(_settings: ExtractPluginSettings<PluginTypes>): Promise<void> {
+    await noopAsync();
   }
 
   /**
@@ -138,8 +135,8 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    * @param _newSettings - The new settings.
    * @param _oldSettings - The old settings.
    */
-  public onSaveSettings(_newSettings: ExtractPluginSettings<PluginTypes>, _oldSettings: ExtractPluginSettings<PluginTypes>): Promisable<void> {
-    noop();
+  public async onSaveSettings(_newSettings: ExtractPluginSettings<PluginTypes>, _oldSettings: ExtractPluginSettings<PluginTypes>): Promise<void> {
+    await noopAsync();
   }
 
   public override onunload(): void {
@@ -209,8 +206,8 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
    * the layout is ready.
    */
-  protected onLayoutReady(): Promisable<void> {
-    noop();
+  protected async onLayoutReady(): Promise<void> {
+    await noopAsync();
   }
 
   protected async onloadImpl(): Promise<void> {
@@ -238,8 +235,8 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   /**
    * Called when the plugin is unloaded.
    */
-  protected onunloadImpl(): Promisable<void> {
-    noop();
+  protected async onunloadImpl(): Promise<void> {
+    await noopAsync();
   }
 
   /**

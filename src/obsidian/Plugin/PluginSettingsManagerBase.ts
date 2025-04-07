@@ -21,7 +21,10 @@ import type {
   PluginTypesBase
 } from './PluginTypesBase.ts';
 
-import { noop } from '../../Function.ts';
+import {
+  noop,
+  noopAsync
+} from '../../Function.ts';
 import { getAllKeys } from '../../Object.ts';
 import { DateTransformer } from '../../Transformers/DateTransformer.ts';
 import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
@@ -261,8 +264,8 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    *
    * @param _record - The record.
    */
-  protected onLoadRecord(_record: Record<string, unknown>): Promisable<void> {
-    noop();
+  protected async onLoadRecord(_record: Record<string, unknown>): Promise<void> {
+    await noopAsync();
   }
 
   /**
@@ -270,8 +273,8 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    *
    * @param _record - The record.
    */
-  protected onSavingRecord(_record: Record<string, unknown>): Promisable<void> {
-    noop();
+  protected async onSavingRecord(_record: Record<string, unknown>): Promise<void> {
+    await noopAsync();
   }
 
   private getSavedSettings(): ExtractPluginSettings<PluginTypes> {
