@@ -64,10 +64,12 @@ class AlertModal extends ModalBase<void, AlertOptions> {
   }
 
   public override onClose(): void {
+    super.onClose();
     this.resolve();
   }
 
   public override onOpen(): void {
+    super.onOpen();
     this.titleEl.setText(this.options.title);
     this.contentEl.createEl('p', { text: this.options.message });
     const okButton = new ButtonComponent(this.contentEl);

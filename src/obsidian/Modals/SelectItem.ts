@@ -77,6 +77,7 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   }
 
   public override onClose(): void {
+    super.onClose();
     if (!this.isSelected) {
       this.resolve(null);
     }
