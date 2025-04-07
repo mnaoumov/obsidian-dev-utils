@@ -4,8 +4,6 @@
  * Contains a component that has a validator element.
  */
 
-import type { BaseComponent } from 'obsidian';
-
 import {
   DropdownComponent,
   SliderComponent,
@@ -26,58 +24,44 @@ export interface ValidatorComponent {
   readonly validatorEl: ValidatorElement;
 }
 
+class ValidatorElementWrapper implements ValidatorComponent {
+  public constructor(public readonly validatorEl: ValidatorElement) {}
+}
+
 /**
- * Gets a validator component related to the base component
+ * Gets a validator component related to the given object.
  *
- * @param baseComponent - A base component
- * @returns related validator component or `null` if no related validator component is found
+ * @param obj - Any object.
+ * @returns The related validator component or `null` if no related validator component is found.
  */
-export function getValidatorComponent(baseComponent: BaseComponent): null | ValidatorComponent {
-  const validatorComponent = baseComponent as Partial<ValidatorComponent>;
-
-  if (validatorComponent.validatorEl) {
-    return validatorComponent as ValidatorComponent;
+export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
+  if (isValidatorComponent(obj)) {
+    return obj;
   }
 
-  if (baseComponent instanceof DropdownComponent) {
-    return {
-      get validatorEl(): ValidatorElement {
-        return baseComponent.selectEl;
-      }
-    };
+  if (obj instanceof DropdownComponent) {
+    return new ValidatorElementWrapper(obj.selectEl);
   }
 
-  if (baseComponent instanceof SliderComponent) {
-    return {
-      get validatorEl(): ValidatorElement {
-        return baseComponent.sliderEl;
-      }
-    };
+  if (obj instanceof SliderComponent) {
+    return new ValidatorElementWrapper(obj.sliderEl);
   }
 
-  if (baseComponent instanceof TextAreaComponent) {
-    return {
-      get validatorEl(): ValidatorElement {
-        return baseComponent.inputEl;
-      }
-    };
+  if (obj instanceof TextAreaComponent) {
+    return new ValidatorElementWrapper(obj.inputEl);
   }
 
-  if (baseComponent instanceof TextComponent) {
-    return {
-      get validatorEl(): ValidatorElement {
-        return baseComponent.inputEl;
-      }
-    };
+  if (obj instanceof TextComponent) {
+    return new ValidatorElementWrapper(obj.inputEl);
   }
 
-  if (baseComponent instanceof ToggleComponent) {
-    return {
-      get validatorEl(): ValidatorElement {
-        return baseComponent.toggleEl.find('input[type=checkbox]') as HTMLInputElement;
-      }
-    };
+  if (obj instanceof ToggleComponent) {
+    return new ValidatorElementWrapper(obj.toggleEl.find('input[type=checkbox]') as HTMLInputElement);
   }
 
   return null;
+}
+
+function isValidatorComponent(obj: unknown): obj is ValidatorComponent {
+  return !!(obj as Partial<ValidatorComponent>).validatorEl;
 }

@@ -4,8 +4,6 @@
  * Text based component utilities.
  */
 
-import type { BaseComponent } from 'obsidian';
-
 import { AbstractTextComponent } from 'obsidian';
 
 /**
@@ -35,31 +33,38 @@ export interface TextBasedComponent<T> {
   setPlaceholderValue(placeholderValue: T): this;
 }
 
+class AbstractTextComponentWrapper<T> implements TextBasedComponent<T> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public constructor(private readonly abstractTextComponent: AbstractTextComponent<any>) {}
+
+  public empty(): void {
+    this.abstractTextComponent.setValue('');
+  }
+
+  public isEmpty(): boolean {
+    return this.abstractTextComponent.getValue() === '';
+  }
+
+  public setPlaceholderValue(placeholderValue: T): this {
+    this.abstractTextComponent.setPlaceholder(placeholderValue as string);
+    return this;
+  }
+}
+
 /**
  * Gets the text based component value of the component.
  *
  * @typeParam T - The type of the value to get.
- * @param component - The component to get the text based component value of.
+ * @param obj - Any object.
  * @returns The text based component value of the component or `null` if the component is not a text based component.
  */
-export function getTextBasedComponentValue<T>(component: BaseComponent): null | TextBasedComponent<T> {
-  if (isTextBasedComponent(component)) {
-    return component;
+export function getTextBasedComponentValue<T>(obj: unknown): null | TextBasedComponent<T> {
+  if (isTextBasedComponent(obj)) {
+    return obj;
   }
 
-  if (component instanceof AbstractTextComponent) {
-    return {
-      empty(): void {
-        component.setValue('');
-      },
-      isEmpty(): boolean {
-        return component.getValue() === '';
-      },
-      setPlaceholderValue(placeholderValue: T): TextBasedComponent<T> {
-        component.setPlaceholder(placeholderValue as string);
-        return this;
-      }
-    };
+  if (obj instanceof AbstractTextComponent) {
+    return new AbstractTextComponentWrapper<T>(obj);
   }
 
   return null;
