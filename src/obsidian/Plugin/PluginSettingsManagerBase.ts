@@ -194,12 +194,14 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
       }
 
       if (typeof value !== typeof property.defaultValue) {
-        console.warn('Invalid value type', {
-          propertyName,
-          propertyType: typeof property.defaultValue,
-          value
-        });
-        continue;
+        console.warn(
+          'Possible invalid value type read from config file. It might lead to an unexpected behavior of the plugin. There is also a chance it is a false-negative warning, as we are unable to determine the exact type of the value in runtime.',
+          {
+            defaultValue: property.defaultValue as unknown,
+            propertyName,
+            value
+          }
+        );
       }
 
       property.setValue(value);
