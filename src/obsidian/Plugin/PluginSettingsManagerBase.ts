@@ -38,6 +38,7 @@ const defaultTransformer = new GroupTransformer([
 ]);
 
 type Validator<T> = (value: T) => Promisable<MaybeReturn<string>>;
+type PropertySetter = (value: unknown) => void;
 
 abstract class ProxyHandlerBase<PluginSettings extends object> implements ProxyHandler<PluginSettings> {
   public constructor(protected readonly properties: PropertiesMap<PluginSettings>) {}
@@ -118,10 +119,10 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   public readonly app: App;
   public readonly safeSettings: ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
 
-  private currentSettings: ExtractPluginSettings<PluginTypes>;
-  private properties: PropertiesMap<ExtractPluginSettings<PluginTypes>>;
+  private readonly currentSettings: ExtractPluginSettings<PluginTypes>;
+  private readonly properties: PropertiesMap<ExtractPluginSettings<PluginTypes>>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private validators: Map<string, Validator<any>> = new Map<string, Validator<any>>();
+  private readonly validators: Map<string, Validator<any>> = new Map<string, Validator<any>>();
 
   public constructor(public readonly plugin: ExtractPlugin<PluginTypes>) {
     this.app = plugin.app;
@@ -131,10 +132,16 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
 
     this.properties = new PropertiesMap<ExtractPluginSettings<PluginTypes>>();
 
+    const record = this.currentSettings as Record<string, unknown>;
+
     for (const propertyName of getAllKeys(this.currentSettings)) {
+      function propertySetter(value: unknown): void {
+        record[propertyName] = value;
+      }
+
       this.properties.set(
         propertyName,
-        new PluginSettingsProperty(propertyName, this.currentSettings[propertyName], this.validators.get(propertyName) ?? noop)
+        new PluginSettingsProperty(propertyName, this.currentSettings[propertyName], this.validators.get(propertyName) ?? noop, propertySetter)
       );
     }
 
@@ -334,7 +341,7 @@ export class PluginSettingsProperty<T> {
 
   private _validationMessage = '';
 
-  public constructor(private readonly propertyName: string, public readonly defaultValue: T, private readonly validator: Validator<T>) {
+  public constructor(private readonly propertyName: string, public readonly defaultValue: T, private readonly validator: Validator<T>, private readonly propertySetter: PropertySetter) {
     this._lastSavedValue = defaultValue;
     this._currentValue = defaultValue;
   }
@@ -360,6 +367,7 @@ export class PluginSettingsProperty<T> {
 
   public setValue(value: T): void {
     this._currentValue = value;
+    this.propertySetter(value);
   }
 
   public async validate(): Promise<void> {
