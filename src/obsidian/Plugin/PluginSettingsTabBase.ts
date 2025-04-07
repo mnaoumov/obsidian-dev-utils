@@ -189,17 +189,18 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       } else {
         await property.setValueAndValidate(convertedValue);
       }
+      updateValidatorElement();
       const newValue = isValidationMessageHolder(convertedValue) ? undefined : convertedValue;
       await optionsExt.onChanged(newValue, oldValue);
     });
 
-    validatorElement?.addEventListener('focus', validate);
-    validatorElement?.addEventListener('blur', validate);
+    validatorElement?.addEventListener('focus', updateValidatorElement);
+    validatorElement?.addEventListener('blur', updateValidatorElement);
 
-    validate();
+    updateValidatorElement();
     return valueComponent;
 
-    function validate(): void {
+    function updateValidatorElement(): void {
       if (!validatorElement) {
         return;
       }
