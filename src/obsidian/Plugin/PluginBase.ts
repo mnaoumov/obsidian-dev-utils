@@ -8,7 +8,6 @@
  * loading tasks.
  */
 
-import type { PluginSettingTab } from 'obsidian';
 import type {
   Promisable,
   ReadonlyDeep
@@ -20,6 +19,12 @@ import {
 } from 'obsidian';
 
 import type { AsyncEventRef } from '../../AsyncEvents.ts';
+import type {
+  ExtractPluginSettings,
+  ExtractPluginSettingsManager,
+  ExtractPluginSettingsTab,
+  PluginTypesBase
+} from './PluginTypesBase.ts';
 
 import {
   convertAsyncToSync,
@@ -31,16 +36,6 @@ import { getDebugger } from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noop } from '../../Function.ts';
 import { initPluginContext } from './PluginContext.ts';
-import { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
-
-/**
- * Extracts the plugin settings type from the plugin base class.
- *
- * @typeParam Plugin - The plugin class.
- * @returns The plugin settings type.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ExtractPluginSettings<Plugin extends PluginBase<any>> = Plugin['__pluginSettingsType'];
 
 type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
 
@@ -49,12 +44,7 @@ type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
  *
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
-export abstract class PluginBase<PluginSettings extends object = object> extends ObsidianPlugin {
-  /**
-   * @deprecated Used only for type inference. Don't use it directly.
-   */
-  declare public __pluginSettingsType: PluginSettings;
-
+export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends ObsidianPlugin {
   public readonly events = new AsyncEvents();
 
   /**
@@ -71,11 +61,11 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    *
    * @returns The readonly plugin settings.
    */
-  public get settings(): ReadonlyDeep<PluginSettings> {
-    return this.settingsManager.safeSettings;
+  public get settings(): ReadonlyDeep<ExtractPluginSettings<PluginTypes>> {
+    return this.settingsManager.safeSettings as ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
   }
 
-  public get settingsManager(): PluginSettingsManagerBase<this> {
+  public get settingsManager(): ExtractPluginSettingsManager<PluginTypes> {
     if (!this._settingsManager) {
       throw new Error('Settings manager not defined');
     }
@@ -84,7 +74,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   private _abortSignal!: AbortSignal;
-  private _settingsManager: null | PluginSettingsManagerBase<this> = null;
+  private _settingsManager: ExtractPluginSettingsManager<PluginTypes> | null = null;
   private lifecycleEventNames = new Set<LifecycleEventName>();
   private notice?: Notice;
 
@@ -129,7 +119,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    *
    * @param _settings - The settings.
    */
-  public onLoadSettings(_settings: PluginSettings): Promisable<void> {
+  public onLoadSettings(_settings: ExtractPluginSettings<PluginTypes>): Promisable<void> {
     noop();
   }
 
@@ -139,7 +129,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * @param _newSettings - The new settings.
    * @param _oldSettings - The old settings.
    */
-  public onSaveSettings(_newSettings: PluginSettings, _oldSettings: PluginSettings): Promisable<void> {
+  public onSaveSettings(_newSettings: ExtractPluginSettings<PluginTypes>, _oldSettings: ExtractPluginSettings<PluginTypes>): Promisable<void> {
     noop();
   }
 
@@ -193,7 +183,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    *
    * @returns The settings tab or null if not applicable.
    */
-  protected createPluginSettingsTab(): null | PluginSettingTab {
+  protected createPluginSettingsTab(): ExtractPluginSettingsTab<PluginTypes> | null {
     return null;
   }
 
@@ -202,7 +192,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    *
    * @returns The plugin settings manager.
    */
-  protected createSettingsManager(): null | PluginSettingsManagerBase<this> {
+  protected createSettingsManager(): ExtractPluginSettingsManager<PluginTypes> | null {
     return null;
   }
 
