@@ -1,0 +1,7 @@
+.obsidian-dev-utils {
+  &.tri-state-checkbox-component {
+    input[type='checkbox']:indeterminate {
+      appearance: checkbox;
+    }
+  }
+}
