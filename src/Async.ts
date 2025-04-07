@@ -176,10 +176,10 @@ export function invokeAsyncSafely(asyncFn: () => Promise<unknown>): void {
  * Invokes an asynchronous function after a delay.
  *
  * @param asyncFn - The asynchronous function to invoke.
- * @param delayInMs - The delay in milliseconds.
+ * @param delayInMilliseconds - The delay in milliseconds.
  */
-export function invokeAsyncSafelyAfterDelay(asyncFn: () => Promisable<unknown>, delayInMs = 0): void {
-  setTimeout(convertAsyncToSync(async () => await asyncFn()), delayInMs);
+export function invokeAsyncSafelyAfterDelay(asyncFn: () => Promisable<unknown>, delayInMilliseconds = 0): void {
+  setTimeout(convertAsyncToSync(async () => await asyncFn()), delayInMilliseconds);
 }
 
 /**
