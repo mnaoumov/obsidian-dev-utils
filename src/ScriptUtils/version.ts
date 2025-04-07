@@ -149,7 +149,7 @@ export async function checkGitRepoClean(): Promise<void> {
 }
 
 /**
- * Copies the updated manifest file to the distribution build directory.
+ * Copies the updated manifest file to the distribution build folder.
  *
  * @returns A {@link Promise} that resolves when the copy operation is complete.
  */
@@ -294,9 +294,9 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
   let filePaths: string[];
 
   if (isObsidianPlugin) {
-    const buildDir = resolvePathFromRootSafe(ObsidianPluginRepoPaths.DistBuild);
-    const fileNames = await readdirPosix(buildDir);
-    filePaths = fileNames.map((fileName) => join(buildDir, fileName));
+    const buildFolder = resolvePathFromRootSafe(ObsidianPluginRepoPaths.DistBuild);
+    const fileNames = await readdirPosix(buildFolder);
+    filePaths = fileNames.map((fileName) => join(buildFolder, fileName));
   } else {
     const resultJson = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json'], { isQuiet: true });
     const result = JSON.parse(resultJson) as [{ filename: string }];

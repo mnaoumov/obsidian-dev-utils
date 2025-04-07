@@ -10,7 +10,7 @@
  * Enumeration of common file paths and patterns used in the Obsidian development utilities repository.
  */
 export enum ObsidianDevUtilsRepoPaths {
-  /** Any file or directory. */
+  /** Any file or folder. */
   Any = '*',
 
   /** CommonJS file. */
@@ -34,14 +34,14 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Any TypeScript file. */
   AnyTs = '*.ts',
 
-  /** CommonJS directory. */
+  /** CommonJS folder. */
   Cjs = 'cjs',
 
   /** CommonJS file extension. */
   CjsExtension = '.cjs',
 
-  /** Current directory. */
-  CurrentDir = '.',
+  /** Current folder. */
+  CurrentFolder = '.',
 
   /** Dataview types. */
   DataviewTypes = 'src/obsidian/@types/Dataview/**',
@@ -49,10 +49,10 @@ export enum ObsidianDevUtilsRepoPaths {
   /** CommonJS TypeScript declaration file extension. */
   DctsExtension = '.d.cts',
 
-  /** Distribution directory. */
+  /** Distribution folder. */
   Dist = 'dist',
 
-  /** The path to the `lib` directory within the {@link Dist} directory. */
+  /** The path to the `lib` folder within the {@link Dist} folder. */
   DistLib = 'dist/lib',
 
   /** Transpiled TypeScript declaration file extension. */
@@ -67,7 +67,7 @@ export enum ObsidianDevUtilsRepoPaths {
   /** TypeScript declaration file extension. */
   DtsExtension = '.d.ts',
 
-  /** ESM JavaScript directory. */
+  /** ESM JavaScript folder. */
   Esm = 'esm',
 
   /** CommonJS JavaScript index file. */
@@ -97,25 +97,25 @@ export enum ObsidianDevUtilsRepoPaths {
   /** ESM JavaScript file extension. */
   MjsExtension = '.mjs',
 
-  /** Node modules directory. */
+  /** Node modules folder. */
   NodeModules = 'node_modules',
 
   /** Package JSON file. */
   PackageJson = 'package.json',
 
-  /** Root directory. */
-  RootDir = '/',
+  /** Root folder. */
+  RootFolder = '/',
 
-  /** Scripts directory. */
+  /** Scripts folder. */
   Scripts = 'scripts',
 
-  /** Source directory. */
+  /** Source folder. */
   Src = 'src',
 
-  /** Static directory. */
+  /** Static folder. */
   Static = 'static',
 
-  /** Styles directory. */
+  /** Styles folder. */
   Styles = 'styles',
 
   /** Styles CSS file. */
@@ -127,6 +127,6 @@ export enum ObsidianDevUtilsRepoPaths {
   /** TypeScript file extension. */
   TsExtension = '.ts',
 
-  /** Types directory. */
+  /** Types folder. */
   Types = '@types'
 }

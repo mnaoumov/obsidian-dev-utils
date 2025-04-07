@@ -1,7 +1,7 @@
 /**
  * @packageDocumentation
  *
- * Contains utility functions for executing commands from the root directory of a project,
+ * Contains utility functions for executing commands from the root folder of a project,
  * resolving paths relative to the root.
  */
 
@@ -22,7 +22,7 @@ import { existsSync } from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 
 /**
- * Executes a command from the root directory of the project.
+ * Executes a command from the root folder of the project.
  *
  * @param command - The command to execute. It can be a string or an array of strings.
  * @param options - The options for the execution.
@@ -35,7 +35,7 @@ import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 export async function execFromRoot(command: string | string[], options?: { withDetails?: false } & ExecOption): Promise<string>;
 
 /**
- * Executes a command from the root directory of the project.
+ * Executes a command from the root folder of the project.
  *
  * @param command - The command to execute. It can be a string or an array of strings.
  * @param options - The options for the execution.
@@ -49,7 +49,7 @@ export async function execFromRoot(command: string | string[], options?: { withD
 export function execFromRoot(command: string | string[], options: { withDetails: true } & ExecOption): Promise<ExecResult>;
 
 /**
- * Executes a command from the root directory of the project.
+ * Executes a command from the root folder of the project.
  *
  * @param command - The command to execute. It can be a string or an array of strings.
  * @param options - The options for the execution.
@@ -61,11 +61,11 @@ export function execFromRoot(command: string | string[], options: { withDetails:
  *         the error is resolved with the stdout and stderr.
  */
 export function execFromRoot(command: string | string[], options: ExecOption = {}): Promise<ExecResult | string> {
-  let root = getRootDir(options.cwd);
+  let root = getRootFolder(options.cwd);
 
   if (!root) {
     if (options.shouldFailIfCalledFromOutsideRoot ?? true) {
-      throw new Error('Could not find root directory');
+      throw new Error('Could not find root folder');
     }
 
     root = options.cwd ?? process.cwd();
@@ -79,45 +79,45 @@ export function execFromRoot(command: string | string[], options: ExecOption = {
 }
 
 /**
- * Retrieves the root directory of the project.
+ * Retrieves the root folder of the project.
  *
- * @param cwd - The current working directory to resolve from.
- * @returns The path to the root directory.
- * @throws If the root directory cannot be found.
+ * @param cwd - The current working folder to resolve from.
+ * @returns The path to the root folder.
+ * @throws If the root folder cannot be found.
  */
-export function getRootDir(cwd?: string): null | string {
-  let currentDir = toPosixPath(cwd ?? process.cwd());
-  while (currentDir !== ObsidianDevUtilsRepoPaths.CurrentDir as string && currentDir !== ObsidianDevUtilsRepoPaths.RootDir as string) {
-    if (existsSync(join(currentDir, ObsidianDevUtilsRepoPaths.PackageJson))) {
-      return toPosixPath(currentDir);
+export function getRootFolder(cwd?: string): null | string {
+  let currentFolder = toPosixPath(cwd ?? process.cwd());
+  while (currentFolder !== ObsidianDevUtilsRepoPaths.CurrentFolder as string && currentFolder !== ObsidianDevUtilsRepoPaths.RootFolder as string) {
+    if (existsSync(join(currentFolder, ObsidianDevUtilsRepoPaths.PackageJson))) {
+      return toPosixPath(currentFolder);
     }
-    currentDir = dirname(currentDir);
+    currentFolder = dirname(currentFolder);
   }
 
   return null;
 }
 
 /**
- * Resolves a path relative to the root directory of the project.
+ * Resolves a path relative to the root folder of the project.
  *
  * @param path - The path to resolve.
- * @param cwd - The current working directory to resolve from.
+ * @param cwd - The current working folder to resolve from.
  * @returns The resolved absolute path.
  */
 export function resolvePathFromRoot(path: string, cwd?: string): null | string {
-  const rootDir = getRootDir(cwd);
-  if (!rootDir) {
+  const rootFolder = getRootFolder(cwd);
+  if (!rootFolder) {
     return null;
   }
 
-  return resolve(rootDir, path);
+  return resolve(rootFolder, path);
 }
 
 /**
- * Resolves a path relative to the root directory, returning the resolved path or the original path if it does not exist.
+ * Resolves a path relative to the root folder, returning the resolved path or the original path if it does not exist.
  *
  * @param path - The path to resolve.
- * @param cwd - The current working directory to resolve from.
+ * @param cwd - The current working folder to resolve from.
  * @returns The resolved path or the original path if it does not exist.
  */
 export function resolvePathFromRootSafe(path: string, cwd?: string): string {
@@ -125,18 +125,18 @@ export function resolvePathFromRootSafe(path: string, cwd?: string): string {
 }
 
 /**
- * Converts an absolute path to a relative path from the root directory of the project.
+ * Converts an absolute path to a relative path from the root folder of the project.
  *
  * @param path - The absolute path to convert.
- * @param cwd - The current working directory to resolve from.
- * @returns The relative path from the root directory.
+ * @param cwd - The current working folder to resolve from.
+ * @returns The relative path from the root folder.
  */
 export function toRelativeFromRoot(path: string, cwd?: string): null | string {
-  const rootDir = getRootDir(cwd);
-  if (!rootDir) {
+  const rootFolder = getRootFolder(cwd);
+  if (!rootFolder) {
     return null;
   }
 
   path = toPosixPath(path);
-  return relative(rootDir, path);
+  return relative(rootFolder, path);
 }

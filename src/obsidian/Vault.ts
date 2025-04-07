@@ -145,8 +145,8 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
     return noopAsync;
   }
 
-  const dirPath = parentFolderPath(path);
-  await createTempFolder(app, dirPath);
+  const folderPath = parentFolderPath(path);
+  await createTempFolder(app, folderPath);
 
   const folderCleanup = await createTempFolder(app, parentFolderPath(path));
 

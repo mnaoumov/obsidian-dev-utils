@@ -29,13 +29,13 @@ await wrapCliTask(async () => {
       continue;
     }
 
-    const dir = dirname(file);
+    const folder = dirname(file);
     const name = basename(file, ObsidianDevUtilsRepoPaths.DtsExtension);
     const fullSourcePath = join(ObsidianDevUtilsRepoPaths.Src, file);
     const content = await readFile(fullSourcePath, 'utf-8');
 
-    const ctsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, dir, name + ObsidianDevUtilsRepoPaths.DctsExtension);
-    const mtsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, dir, name + ObsidianDevUtilsRepoPaths.DmtsExtension);
+    const ctsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, folder, name + ObsidianDevUtilsRepoPaths.DctsExtension);
+    const mtsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, folder, name + ObsidianDevUtilsRepoPaths.DmtsExtension);
 
     await mkdir(dirname(ctsPath), { recursive: true });
     await mkdir(dirname(mtsPath), { recursive: true });

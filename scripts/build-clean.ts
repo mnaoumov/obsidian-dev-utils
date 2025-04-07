@@ -26,7 +26,7 @@ await wrapCliTask(async () => {
     }
   }
 
-  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.CurrentDir, { recursive: true })) {
+  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.CurrentFolder, { recursive: true })) {
     if (basename(file) !== ObsidianDevUtilsRepoPaths.PackageJson as string) {
       continue;
     }

@@ -5,14 +5,14 @@
  */
 
 import {
-  getDirname,
+  getFolderName,
   join
 } from '../Path.ts';
 import { existsSync } from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 import {
   execFromRoot,
-  getRootDir,
+  getRootFolder,
   resolvePathFromRootSafe
 } from './Root.ts';
 
@@ -23,17 +23,17 @@ import {
  * @returns A {@link Promise} that resolves when the source code has been formatted.
  */
 export async function format(rewrite = true): Promise<void> {
-  const rootDir = getRootDir();
-  if (!rootDir) {
-    throw new Error('Root directory not found');
+  const rootFolder = getRootFolder();
+  if (!rootFolder) {
+    throw new Error('Root folder not found');
   }
   let dprintJsonPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.DprintJson);
   if (!existsSync(dprintJsonPath)) {
-    const packageDir = getRootDir(getDirname(import.meta.url));
-    if (!packageDir) {
-      throw new Error('Could not find package directory.');
+    const packageFolder = getRootFolder(getFolderName(import.meta.url));
+    if (!packageFolder) {
+      throw new Error('Could not find package folder.');
     }
-    dprintJsonPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.DprintJson), packageDir);
+    dprintJsonPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.DprintJson), packageFolder);
   }
 
   if (!existsSync(dprintJsonPath)) {

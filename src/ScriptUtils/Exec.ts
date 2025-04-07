@@ -17,7 +17,7 @@ import {
  */
 export interface ExecOption {
   /**
-   * The current working directory for the command execution.
+   * The current working folder for the command execution.
    */
   cwd?: string;
 

@@ -2,7 +2,7 @@
  * @packageDocumentation
  *
  * This module provides utility functions to handle the build process for static assets and cleaning
- * the build output directory. It includes functions to copy static files to the distribution directory
+ * the build output folder. It includes functions to copy static files to the distribution folder
  * and to remove the existing build output.
  */
 
@@ -27,11 +27,11 @@ import {
 } from './Root.ts';
 
 /**
- * Removes the distribution directory and its contents.
+ * Removes the distribution folder and its contents.
  *
- * This function deletes the entire distribution directory to ensure a clean build environment.
+ * This function deletes the entire distribution folder to ensure a clean build environment.
  *
- * @returns A {@link Promise} that resolves when the directory has been removed.
+ * @returns A {@link Promise} that resolves when the folder has been removed.
  */
 export async function buildClean(): Promise<void> {
   await rm(ObsidianDevUtilsRepoPaths.Dist, { force: true, recursive: true });
@@ -76,10 +76,10 @@ export async function buildCompileTypeScript(): Promise<void> {
 }
 
 /**
- * Copies all static files from the static assets directory to the distribution directory.
+ * Copies all static files from the static assets folder to the distribution folder.
  *
- * This function recursively reads the contents of the static assets directory and copies
- * each file to the corresponding path in the distribution directory.
+ * This function recursively reads the contents of the static assets folder and copies
+ * each file to the corresponding path in the distribution folder.
  *
  * @returns A {@link Promise} that resolves when all files have been copied.
  */

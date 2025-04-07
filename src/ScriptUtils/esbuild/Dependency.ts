@@ -15,7 +15,7 @@ import { context } from 'esbuild';
 
 import { throwExpression } from '../../Error.ts';
 import {
-  getDirname,
+  getFolderName,
   join
 } from '../../Path.ts';
 import { trimStart } from '../../String.ts';
@@ -77,7 +77,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
  * @returns A {@link Promise} that resolves to a {@link Set} of dependency names to skip.
  */
 export async function getDependenciesToSkip(): Promise<Set<string>> {
-  const packageJson = await readPackageJson(getDirname(import.meta.url));
+  const packageJson = await readPackageJson(getFolderName(import.meta.url));
   const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(packageJson.dependencies ?? {}).filter(canSkipFromBundling)]);
   return dependenciesToSkip;
 }

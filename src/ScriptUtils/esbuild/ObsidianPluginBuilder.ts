@@ -82,17 +82,17 @@ export interface BuildObsidianPluginOptions {
   mode: BuildMode;
 
   /**
-   * The directory for Obsidian configuration. Defaults to the `OBSIDIAN_CONFIG_DIR` environment variable.
+   * The folder for Obsidian configuration. Defaults to the `OBSIDIAN_CONFIG_FOLDER` environment variable.
    */
-  obsidianConfigDir?: string;
+  obsidianConfigFolder?: string;
 }
 
 interface ObsidianPluginBuilderEnv {
-  OBSIDIAN_CONFIG_DIR: string;
+  OBSIDIAN_CONFIG_FOLDER: string;
 }
 
 /**
- * Builds the Obsidian plugin based on the specified mode and configuration directory.
+ * Builds the Obsidian plugin based on the specified mode and configuration folder.
  *
  * @param options - The parameters for building the plugin.
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult} indicating the success or failure of the build.
@@ -102,24 +102,24 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
   config();
   const obsidianPluginBuilderEnv = process.env as Partial<ObsidianPluginBuilderEnv>;
 
-  const obsidianConfigDir = options.obsidianConfigDir ?? obsidianPluginBuilderEnv.OBSIDIAN_CONFIG_DIR ?? '';
+  const obsidianConfigFolder = options.obsidianConfigFolder ?? obsidianPluginBuilderEnv.OBSIDIAN_CONFIG_FOLDER ?? '';
   const isProductionBuild = options.mode === BuildMode.Production;
 
-  const distDir = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);
-  if (!distDir) {
-    throw new Error('Could not determine the dist directory');
+  const distFolder = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);
+  if (!distFolder) {
+    throw new Error('Could not determine the dist folder');
   }
 
-  if (existsSync(distDir)) {
-    await rm(distDir, { recursive: true });
+  if (existsSync(distFolder)) {
+    await rm(distFolder, { recursive: true });
   }
-  await mkdir(distDir, { recursive: true });
+  await mkdir(distFolder, { recursive: true });
 
   const distFileNames = [
     ObsidianPluginRepoPaths.ManifestJson
   ];
   if (!isProductionBuild) {
-    await writeFile(join(distDir, ObsidianPluginRepoPaths.HotReload), '', 'utf-8');
+    await writeFile(join(distFolder, ObsidianPluginRepoPaths.HotReload), '', 'utf-8');
   }
 
   for (const fileName of distFileNames) {
@@ -127,15 +127,15 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     if (!localFile) {
       throw new Error(`Could not determine the local file for ${fileName}`);
     }
-    const distFile = join(distDir, fileName);
+    const distFile = join(distFolder, fileName);
 
     if (existsSync(localFile)) {
       await cp(localFile, distFile);
     }
   }
 
-  const distPath = join(distDir, ObsidianPluginRepoPaths.MainJs);
-  const cssPath = join(distDir, ObsidianPluginRepoPaths.StylesCss);
+  const distPath = join(distFolder, ObsidianPluginRepoPaths.MainJs);
+  const cssPath = join(distFolder, ObsidianPluginRepoPaths.StylesCss);
 
   const packageJson = await readPackageJson();
   const pluginName = packageJson.name ?? '(unknown)';
@@ -179,12 +179,12 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       sassPlugin({
         sourceMap: !isProductionBuild
       }),
-      renameCssPlugin(distDir),
+      renameCssPlugin(distFolder),
       preprocessPlugin(),
       fixEsmPlugin(),
       fixSourceMapsPlugin(isProductionBuild, [distPath, cssPath], pluginName),
       ...options.customEsbuildPlugins ?? [],
-      copyToObsidianPluginsFolderPlugin(isProductionBuild, distDir, obsidianConfigDir, pluginName)
+      copyToObsidianPluginsFolderPlugin(isProductionBuild, distFolder, obsidianConfigFolder, pluginName)
     ],
     sourcemap: isProductionBuild ? false : 'inline',
     target: 'esnext',

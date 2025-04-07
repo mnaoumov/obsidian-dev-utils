@@ -1,11 +1,11 @@
 /**
  * @packageDocumentation
  *
- * This file defines an enumeration for common file and directory paths used in Obsidian plugin development.
+ * This file defines an enumeration for common file and folder paths used in Obsidian plugin development.
  */
 
 /**
- * Enumeration of commonly used file and directory paths in Obsidian plugin development.
+ * Enumeration of commonly used file and folder paths in Obsidian plugin development.
  */
 export enum ObsidianPluginRepoPaths {
   /** CommonJS file. */
@@ -29,16 +29,16 @@ export enum ObsidianPluginRepoPaths {
   /** Changelog file. */
   ChangelogMd = 'CHANGELOG.md',
 
-  /** Current directory. */
-  CurrentDir = '.',
+  /** Current folder. */
+  CurrentFolder = '.',
 
-  /** Distribution directory. */
+  /** Distribution folder. */
   Dist = 'dist',
 
-  /** Build directory within the {@link Dist} directory. */
+  /** Build folder within the {@link Dist} folder. */
   DistBuild = 'dist/build',
 
-  /** Development directory within the {@link Dist} directory. */
+  /** Development folder within the {@link Dist} folder. */
   DistDev = 'dist/dev',
 
   /** CommonJS ESLint configuration file. */
@@ -86,10 +86,10 @@ export enum ObsidianPluginRepoPaths {
   /** Package-lock JSON file. */
   PackageLockJson = 'package-lock.json',
 
-  /** Scripts directory. */
+  /** Scripts folder. */
   Scripts = 'scripts',
 
-  /** Source directory. */
+  /** Source folder. */
   Src = 'src',
 
   /** Styles CSS file. */
