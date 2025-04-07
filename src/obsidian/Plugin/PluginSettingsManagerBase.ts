@@ -152,13 +152,13 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     >;
   }
 
-  public async editAndSave(editor: (settings: ExtractPluginSettings<PluginTypes>) => Promisable<void>): Promise<void> {
+  public async editAndSave(editor: (settings: ExtractPluginSettings<PluginTypes>) => Promisable<void>, context?: unknown): Promise<void> {
     const editableSettings = new Proxy(this.currentSettings, new EditableSettingsProxyHandler<ExtractPluginSettings<PluginTypes>>(this.properties)) as {
       validationPromise: Promise<void>;
     } & ExtractPluginSettings<PluginTypes>;
     await editor(editableSettings);
     await editableSettings.validationPromise;
-    await this.saveToFile();
+    await this.saveToFile(context);
   }
 
   public getProperty<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
@@ -230,9 +230,10 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   /**
    * Saves the new plugin settings.
    *
+   * @param context - The context of the save to file operation.
    * @returns A {@link Promise} that resolves when the settings are saved.
    */
-  public async saveToFile(): Promise<void> {
+  public async saveToFile(context?: unknown): Promise<void> {
     const oldSettings = this.getSavedSettings();
 
     let hasChanges = false;
@@ -246,7 +247,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     }
 
     await this.saveToFileImpl();
-    await this.plugin.onSaveSettings(this.getSavedSettings(), oldSettings);
+    await this.plugin.onSaveSettings(this.getSavedSettings(), oldSettings, context);
   }
 
   protected abstract createDefaultSettings(): ExtractPluginSettings<PluginTypes>;
