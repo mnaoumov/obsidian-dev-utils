@@ -16,9 +16,10 @@ import type {
   StringKeys
 } from '../../Type.ts';
 import type {
+  ExtractPlugin,
   ExtractPluginSettings,
-  PluginBase
-} from './PluginBase.ts';
+  PluginTypesBase
+} from './PluginTypesBase.ts';
 
 import { noop } from '../../Function.ts';
 import { getAllKeys } from '../../Object.ts';
@@ -112,23 +113,23 @@ class SafeSettingsProxyHandler<PluginSettings extends object> extends ProxyHandl
  *
  * @typeParam PluginSettings - The type representing the plugin settings object.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export abstract class PluginSettingsManagerBase<Plugin extends PluginBase<any>> {
-  public readonly app: App;
-  public readonly safeSettings: ReadonlyDeep<ExtractPluginSettings<Plugin>>;
 
-  private defaultSettings: ExtractPluginSettings<Plugin>;
-  private properties: PropertiesMap<ExtractPluginSettings<Plugin>>;
+export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesBase> {
+  public readonly app: App;
+  public readonly safeSettings: ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
+
+  private defaultSettings: ExtractPluginSettings<PluginTypes>;
+  private properties: PropertiesMap<ExtractPluginSettings<PluginTypes>>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private validators: Map<string, Validator<any>> = new Map<string, Validator<any>>();
 
-  public constructor(public readonly plugin: Plugin) {
+  public constructor(public readonly plugin: ExtractPlugin<PluginTypes>) {
     this.app = plugin.app;
     this.defaultSettings = this.createDefaultSettings();
 
     this.addValidators();
 
-    this.properties = new PropertiesMap<ExtractPluginSettings<Plugin>>();
+    this.properties = new PropertiesMap<ExtractPluginSettings<PluginTypes>>();
 
     for (const propertyName of getAllKeys(this.defaultSettings)) {
       this.properties.set(
@@ -139,23 +140,23 @@ export abstract class PluginSettingsManagerBase<Plugin extends PluginBase<any>> 
 
     this.validators.clear();
 
-    this.safeSettings = new Proxy(this.defaultSettings, new SafeSettingsProxyHandler<ExtractPluginSettings<Plugin>>(this.properties)) as ReadonlyDeep<
-      ExtractPluginSettings<Plugin>
+    this.safeSettings = new Proxy(this.defaultSettings, new SafeSettingsProxyHandler<ExtractPluginSettings<PluginTypes>>(this.properties)) as ReadonlyDeep<
+      ExtractPluginSettings<PluginTypes>
     >;
   }
 
-  public async editAndSave(editor: (settings: ExtractPluginSettings<Plugin>) => Promisable<void>): Promise<void> {
-    const editableSettings = new Proxy(this.defaultSettings, new EditableSettingsProxyHandler<ExtractPluginSettings<Plugin>>(this.properties)) as {
+  public async editAndSave(editor: (settings: ExtractPluginSettings<PluginTypes>) => Promisable<void>): Promise<void> {
+    const editableSettings = new Proxy(this.defaultSettings, new EditableSettingsProxyHandler<ExtractPluginSettings<PluginTypes>>(this.properties)) as {
       validationPromise: Promise<void>;
-    } & ExtractPluginSettings<Plugin>;
+    } & ExtractPluginSettings<PluginTypes>;
     await editor(editableSettings);
     await editableSettings.validationPromise;
     await this.saveToFile();
   }
 
-  public getProperty<PropertyName extends StringKeys<ExtractPluginSettings<Plugin>>>(
+  public getProperty<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
     propertyName: PropertyName
-  ): PluginSettingsProperty<ExtractPluginSettings<Plugin>[PropertyName]> {
+  ): PluginSettingsProperty<ExtractPluginSettings<PluginTypes>[PropertyName]> {
     return this.properties.getTyped(propertyName);
   }
 
@@ -239,9 +240,9 @@ export abstract class PluginSettingsManagerBase<Plugin extends PluginBase<any>> 
     await this.plugin.onSaveSettings(this.getSavedSettings(), oldSettings);
   }
 
-  protected addValidator<PropertyName extends StringKeys<ExtractPluginSettings<Plugin>>>(
+  protected addValidator<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
     propertyName: PropertyName,
-    validator: Validator<ExtractPluginSettings<Plugin>[PropertyName]>
+    validator: Validator<ExtractPluginSettings<PluginTypes>[PropertyName]>
   ): void {
     this.validators.set(propertyName, validator);
   }
@@ -250,7 +251,7 @@ export abstract class PluginSettingsManagerBase<Plugin extends PluginBase<any>> 
     noop();
   }
 
-  protected abstract createDefaultSettings(): ExtractPluginSettings<Plugin>;
+  protected abstract createDefaultSettings(): ExtractPluginSettings<PluginTypes>;
 
   protected getTransformer(): Transformer {
     return defaultTransformer;
@@ -274,23 +275,23 @@ export abstract class PluginSettingsManagerBase<Plugin extends PluginBase<any>> 
     noop();
   }
 
-  private getSavedSettings(): ExtractPluginSettings<Plugin> {
-    const savedSettings: Partial<ExtractPluginSettings<Plugin>> = {};
+  private getSavedSettings(): ExtractPluginSettings<PluginTypes> {
+    const savedSettings: Record<string, unknown> = {};
     for (const [propertyName, property] of this.properties.entries()) {
-      savedSettings[propertyName as StringKeys<ExtractPluginSettings<Plugin>>] = property.lastSavedValue as
-        | ExtractPluginSettings<Plugin>[StringKeys<ExtractPluginSettings<Plugin>>]
+      savedSettings[propertyName] = property.lastSavedValue as
+        | ExtractPluginSettings<PluginTypes>[StringKeys<ExtractPluginSettings<PluginTypes>>]
         | undefined;
     }
     const proto = Object.getPrototypeOf(this.defaultSettings) as object;
     Object.setPrototypeOf(savedSettings, proto);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return savedSettings as ExtractPluginSettings<Plugin>;
+
+    return savedSettings as ExtractPluginSettings<PluginTypes>;
   }
 
-  private async prepareRecordToSave(): Promise<Record<StringKeys<ExtractPluginSettings<Plugin>>, unknown>> {
-    const settings: Record<StringKeys<ExtractPluginSettings<Plugin>>, unknown> = {} as Record<StringKeys<ExtractPluginSettings<Plugin>>, unknown>;
+  private async prepareRecordToSave(): Promise<Record<string, unknown>> {
+    const settings: Record<string, unknown> = {};
     for (const [propertyName, property] of this.properties.entries()) {
-      settings[propertyName as StringKeys<ExtractPluginSettings<Plugin>>] = property.currentValue as unknown;
+      settings[propertyName] = property.currentValue as unknown;
     }
 
     await this.onSavingRecord(settings);
