@@ -23,7 +23,8 @@ import type { AsyncEventRef } from '../../AsyncEvents.ts';
 
 import {
   convertAsyncToSync,
-  invokeAsyncSafely
+  invokeAsyncSafely,
+  invokeAsyncSafelyAfterDelay
 } from '../../Async.ts';
 import { AsyncEvents } from '../../AsyncEvents.ts';
 import { getDebugger } from '../../Debug.ts';
@@ -41,7 +42,7 @@ import { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ExtractPluginSettings<Plugin extends PluginBase<any>> = Plugin['__pluginSettingsType'];
 
-type LifecycleEventName = 'layoutReady' | 'loadComplete' | 'unload';
+type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
 
 /**
  * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
@@ -110,6 +111,7 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * Called when the external settings change.
    */
   public override async onExternalSettingsChange(): Promise<void> {
+    await super.onExternalSettingsChange?.();
     await this.settingsManager.loadFromFile();
   }
 
@@ -117,33 +119,9 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
    * Called when the plugin is loaded
    */
   public override async onload(): Promise<void> {
-    initPluginContext(this.app, this.manifest.id);
-
-    this.register(registerAsyncErrorEventHandler(() => {
-      this.showNotice('An unhandled error occurred. Please check the console for more information.');
-    }));
-
-    this._settingsManager = this.createSettingsManager();
-
-    await this.onExternalSettingsChange();
-    const pluginSettingsTab = this.createPluginSettingsTab();
-    if (pluginSettingsTab) {
-      this.addSettingTab(pluginSettingsTab);
-    }
-
-    const abortController = new AbortController();
-    this._abortSignal = abortController.signal;
-    this.register(() => {
-      abortController.abort();
-    });
-    await this.onloadComplete();
-    await this.triggerLifecycleEvent('loadComplete');
-    setTimeout(() => {
-      this.app.workspace.onLayoutReady(convertAsyncToSync(async () => {
-        await this.onLayoutReady();
-        await this.triggerLifecycleEvent('layoutReady');
-      }));
-    }, 0);
+    await super.onload();
+    await this.onloadImpl();
+    invokeAsyncSafelyAfterDelay(this.afterLoad.bind(this));
   }
 
   /**
@@ -166,7 +144,14 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
   }
 
   public override onunload(): void {
-    invokeAsyncSafely(() => this.triggerLifecycleEvent('unload'));
+    super.onunload();
+    invokeAsyncSafely(async () => {
+      try {
+        await this.onunloadImpl();
+      } finally {
+        await this.triggerLifecycleEvent('unload');
+      }
+    });
   }
 
   /**
@@ -229,11 +214,32 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
     noop();
   }
 
+  protected async onloadImpl(): Promise<void> {
+    initPluginContext(this.app, this.manifest.id);
+
+    this.register(registerAsyncErrorEventHandler(() => {
+      this.showNotice('An unhandled error occurred. Please check the console for more information.');
+    }));
+
+    this._settingsManager = this.createSettingsManager();
+
+    await this.onExternalSettingsChange();
+    const pluginSettingsTab = this.createPluginSettingsTab();
+    if (pluginSettingsTab) {
+      this.addSettingTab(pluginSettingsTab);
+    }
+
+    const abortController = new AbortController();
+    this._abortSignal = abortController.signal;
+    this.register(() => {
+      abortController.abort();
+    });
+  }
+
   /**
-   * Called when the plugin loading is complete. This method must be implemented by subclasses to perform
-   * any additional setup required after loading is complete.
+   * Called when the plugin is unloaded.
    */
-  protected onloadComplete(): Promisable<void> {
+  protected onunloadImpl(): Promisable<void> {
     noop();
   }
 
@@ -248,6 +254,19 @@ export abstract class PluginBase<PluginSettings extends object = object> extends
     }
 
     this.notice = new Notice(`${this.manifest.name}\n${message}`);
+  }
+
+  private async afterLoad(): Promise<void> {
+    await this.triggerLifecycleEvent('load');
+    this.app.workspace.onLayoutReady(convertAsyncToSync(this.onLayoutReadyBase.bind(this)));
+  }
+
+  private async onLayoutReadyBase(): Promise<void> {
+    try {
+      await this.onLayoutReady();
+    } finally {
+      await this.triggerLifecycleEvent('layoutReady');
+    }
   }
 
   private async triggerLifecycleEvent(name: LifecycleEventName): Promise<void> {
