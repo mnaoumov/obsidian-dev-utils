@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 24.1.0
+
+- Release
+
 ## 24.0.2-beta.2
 
 - Save on quit
