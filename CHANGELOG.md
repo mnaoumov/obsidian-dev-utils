@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 24.0.2-beta.2
+
+- Save on quit
+- Force tsdocs for protected methods
+- Force tsdocs for class methods
+- Format
+- Pass save context
+- Add isInitialLoad
+- Set to original object
+- Prevent double set
+
 ## 24.0.2-beta.1
 
 - Ensure original setter is called
