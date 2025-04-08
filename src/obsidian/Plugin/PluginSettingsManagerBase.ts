@@ -37,9 +37,10 @@ const defaultTransformer = new GroupTransformer([
   new DurationTransformer()
 ]);
 
-type PropertySetter = (value: unknown) => void;
-
-type Validator<T> = (value: T) => Promisable<MaybeReturn<string>>;
+type Validator<PluginSettings extends object, PropertyName extends StringKeys<PluginSettings> = StringKeys<PluginSettings>> = (
+  value: PluginSettings[PropertyName],
+  settings: PluginSettings
+) => Promisable<MaybeReturn<string>>;
 
 abstract class ProxyHandlerBase<PluginSettings extends object> implements ProxyHandler<PluginSettings> {
   public constructor(protected readonly properties: PropertiesMap<PluginSettings>) {}
@@ -58,7 +59,7 @@ abstract class ProxyHandlerBase<PluginSettings extends object> implements ProxyH
     return this.getPropertyValue(property);
   }
 
-  protected abstract getPropertyValue(property: PluginSettingsProperty<unknown>): unknown;
+  protected abstract getPropertyValue(property: PluginSettingsProperty<PluginSettings>): unknown;
 }
 
 class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyHandlerBase<PluginSettings> {
@@ -76,37 +77,38 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
       return true;
     }
 
-    property.setValue(value);
-    this.validationPromise = this.validationPromise.then(() => property.validate());
+    property.setValue(value as PluginSettings[StringKeys<PluginSettings>]);
+    this.validationPromise = this.validationPromise.then(async () => {
+      await property.validate();
+    });
     return true;
   }
 
-  protected override getPropertyValue(property: PluginSettingsProperty<unknown>): unknown {
+  protected override getPropertyValue(property: PluginSettingsProperty<PluginSettings>): unknown {
     return property.currentValue;
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-class PropertiesMap<PluginSettings extends object> extends Map<string, PluginSettingsProperty<any>> {
-  public getTyped<PropertyName extends StringKeys<PluginSettings>>(propertyName: PropertyName): PluginSettingsProperty<PluginSettings[PropertyName]> {
+class PropertiesMap<PluginSettings extends object> extends Map<string, PluginSettingsProperty<PluginSettings, StringKeys<PluginSettings>>> {
+  public getTyped<PropertyName extends StringKeys<PluginSettings>>(propertyName: PropertyName): PluginSettingsProperty<PluginSettings, PropertyName> {
     const property = super.get(propertyName);
     if (!property) {
       throw new Error(`Property ${String(propertyName)} not found`);
     }
 
-    return property as PluginSettingsProperty<PluginSettings[PropertyName]>;
+    return property as unknown as PluginSettingsProperty<PluginSettings, PropertyName>;
   }
 
   public setTyped<PropertyName extends StringKeys<PluginSettings>>(
     propertyName: PropertyName,
-    value: PluginSettingsProperty<PluginSettings[PropertyName]>
+    value: PluginSettingsProperty<PluginSettings, PropertyName>
   ): this {
-    return super.set(propertyName, value);
+    return super.set(propertyName, value as unknown as PluginSettingsProperty<PluginSettings, StringKeys<PluginSettings>>);
   }
 }
 
 class SafeSettingsProxyHandler<PluginSettings extends object> extends ProxyHandlerBase<PluginSettings> {
-  protected override getPropertyValue(property: PluginSettingsProperty<unknown>): unknown {
+  protected override getPropertyValue(property: PluginSettingsProperty<PluginSettings>): unknown {
     return property.safeValue;
   }
 }
@@ -122,8 +124,10 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
 
   private readonly currentSettings: ExtractPluginSettings<PluginTypes>;
   private readonly properties: PropertiesMap<ExtractPluginSettings<PluginTypes>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private readonly validators: Map<string, Validator<any>> = new Map<string, Validator<any>>();
+  private readonly validators: Map<string, Validator<ExtractPluginSettings<PluginTypes>>> = new Map<
+    string,
+    Validator<ExtractPluginSettings<PluginTypes>>
+  >();
 
   /**
    * Creates a new plugin settings manager.
@@ -138,16 +142,10 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
 
     this.properties = new PropertiesMap<ExtractPluginSettings<PluginTypes>>();
 
-    const record = this.currentSettings as Record<string, unknown>;
-
     for (const propertyName of getAllKeys(this.currentSettings)) {
-      function propertySetter(value: unknown): void {
-        record[propertyName] = value;
-      }
-
       this.properties.set(
         propertyName,
-        new PluginSettingsProperty(propertyName, this.currentSettings[propertyName], this.validators.get(propertyName) ?? noop, propertySetter)
+        new PluginSettingsProperty(propertyName, this.currentSettings, this.validators.get(propertyName) ?? noop)
       );
     }
 
@@ -175,6 +173,25 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   }
 
   /**
+   * Ensures the settings are safe.
+   *
+   * It runs validation for each property and sets the default value if the validation fails.
+   *
+   * @param settings - The settings.
+   * @returns A {@link Promise} that resolves when the settings are safe.
+   */
+  public async ensureSafe(settings: ExtractPluginSettings<PluginTypes>): Promise<void> {
+    const record = settings as Record<string, unknown>;
+    for (const propertyName of getAllKeys(settings)) {
+      const property = this.getProperty(propertyName);
+      const validationMessage = await property.validate(settings);
+      if (validationMessage) {
+        record[propertyName] = property.defaultValue;
+      }
+    }
+  }
+
+  /**
    * Gets a property of the plugin settings.
    *
    * @param propertyName - The name of the property.
@@ -182,7 +199,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    */
   public getProperty<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
     propertyName: PropertyName
-  ): PluginSettingsProperty<ExtractPluginSettings<PluginTypes>[PropertyName]> {
+  ): PluginSettingsProperty<ExtractPluginSettings<PluginTypes>, PropertyName> {
     return this.properties.getTyped(propertyName);
   }
 
@@ -193,6 +210,8 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    * @returns A {@link Promise} that resolves when the settings are loaded.
    */
   public async loadFromFile(isInitialLoad: boolean): Promise<void> {
+    type PluginSettings = ExtractPluginSettings<PluginTypes>;
+
     for (const property of this.properties.values()) {
       property.reset();
     }
@@ -214,7 +233,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     record = this.getTransformer().transformObjectRecursively(record);
     await this.onLoadRecord(record);
 
-    const propertiesToSave: PluginSettingsProperty<unknown>[] = [];
+    const propertiesToSave: PluginSettingsProperty<PluginSettings>[] = [];
 
     for (const [propertyName, value] of Object.entries(record)) {
       const property = this.properties.get(propertyName);
@@ -227,14 +246,14 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
         console.warn(
           'Possible invalid value type read from config file. It might lead to an unexpected behavior of the plugin. There is also a chance it is a false-negative warning, as we are unable to determine the exact type of the value in runtime.',
           {
-            defaultValue: property.defaultValue as unknown,
+            defaultValue: property.defaultValue,
             propertyName,
             value
           }
         );
       }
 
-      property.setValue(value);
+      property.setValue(value as PluginSettings[StringKeys<PluginSettings>]);
       propertiesToSave.push(property);
     }
 
@@ -312,9 +331,9 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    */
   protected registerValidator<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
     propertyName: PropertyName,
-    validator: Validator<ExtractPluginSettings<PluginTypes>[PropertyName]>
+    validator: Validator<ExtractPluginSettings<PluginTypes>, PropertyName>
   ): void {
-    this.validators.set(propertyName, validator);
+    this.validators.set(propertyName, validator as Validator<ExtractPluginSettings<PluginTypes>>);
   }
 
   /**
@@ -342,7 +361,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   private async prepareRecordToSave(): Promise<Record<string, unknown>> {
     const settings: Record<string, unknown> = {};
     for (const [propertyName, property] of this.properties.entries()) {
-      settings[propertyName] = property.currentValue as unknown;
+      settings[propertyName] = property.currentValue;
     }
 
     await this.onSavingRecord(settings);
@@ -360,13 +379,15 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
  *
  * @typeParam T - The type of the property.
  */
-export class PluginSettingsProperty<T> {
+export class PluginSettingsProperty<PluginSettings extends object, PropertyName extends StringKeys<PluginSettings> = StringKeys<PluginSettings>> {
+  public readonly defaultValue: typeof this.PropertyType;
+
   /**
    * The current value of the property.
    *
    * @returns The current value.
    */
-  public get currentValue(): T {
+  public get currentValue(): typeof this.PropertyType {
     return this._currentValue;
   }
 
@@ -375,7 +396,7 @@ export class PluginSettingsProperty<T> {
    *
    * @returns The last saved value.
    */
-  public get lastSavedValue(): T {
+  public get lastSavedValue(): typeof this.PropertyType {
     return this._lastSavedValue;
   }
 
@@ -384,7 +405,7 @@ export class PluginSettingsProperty<T> {
    *
    * @returns The safe value.
    */
-  public get safeValue(): T {
+  public get safeValue(): typeof this.PropertyType {
     return this._validationMessage ? this.defaultValue : this._currentValue;
   }
 
@@ -397,28 +418,34 @@ export class PluginSettingsProperty<T> {
     return this._validationMessage;
   }
 
-  private _currentValue: T;
+  private _currentValue: typeof this.PropertyType;
 
-  private _lastSavedValue: T;
+  private _lastSavedValue: typeof this.PropertyType;
 
   private _validationMessage = '';
+
+  declare private PropertyType: PluginSettings[PropertyName];
+
+  private get currentSettingsRecord(): Record<string, unknown> {
+    return this.currentSettings as Record<string, unknown>;
+  }
 
   /**
    * Creates a new plugin settings property.
    *
    * @param propertyName - The name of the property.
-   * @param defaultValue - The default value of the property.
+   * @param currentSettings - The current settings.
    * @param validator - The validator of the property.
-   * @param propertySetter - The property setter of the property.
    */
   public constructor(
-    private readonly propertyName: string,
-    public readonly defaultValue: T,
-    private readonly validator: Validator<T>,
-    private readonly propertySetter: PropertySetter
+    private readonly propertyName: StringKeys<PluginSettings>,
+    private readonly currentSettings: PluginSettings,
+    private readonly validator: Validator<PluginSettings, PropertyName>
   ) {
-    this._lastSavedValue = defaultValue;
-    this._currentValue = defaultValue;
+    const record = currentSettings as Record<string, unknown>;
+    this.defaultValue = record[propertyName] as typeof this.PropertyType;
+    this._lastSavedValue = this.defaultValue;
+    this._currentValue = this.defaultValue;
   }
 
   /**
@@ -458,30 +485,42 @@ export class PluginSettingsProperty<T> {
    *
    * @param value - The value to set.
    */
-  public setValue(value: T): void {
+  public setValue(value: typeof this.PropertyType): void {
     this._currentValue = value;
-    this.propertySetter(value);
+    this.currentSettingsRecord[this.propertyName] = value;
   }
 
   /**
    * Validates the current value of the property.
    *
-   * @returns A {@link Promise} that resolves when the validation is complete.
+   * @param settings - The settings to validate. If not provided, the current settings will be used.
+   * @returns A {@link Promise} that resolves to the validation message.
    */
-  public async validate(): Promise<void> {
+  public async validate(settings?: PluginSettings): Promise<string> {
+    const isCurrent = settings === undefined;
+    settings ??= this.currentSettings;
+    const value = isCurrent ? this._currentValue : settings[this.propertyName] as typeof this.PropertyType;
+
+    let validationMessage: string;
     try {
-      this._validationMessage = (await this.validator(this._currentValue) as string | undefined) ?? '';
+      validationMessage = (await this.validator(value, settings) as string | undefined) ?? '';
     } catch (error) {
       console.error('Validation failed', {
         propertyName: this.propertyName,
-        value: this._currentValue
+        value
       }, error);
-      this._validationMessage = 'Validation failed';
+      validationMessage = 'Validation failed';
     }
-    this.showWarning(this._currentValue);
+
+    if (isCurrent) {
+      this._validationMessage = validationMessage;
+      this.showWarning(this._currentValue);
+    }
+
+    return validationMessage;
   }
 
-  private showWarning(value?: T): void {
+  private showWarning(value?: typeof this.PropertyType): void {
     if (!this._validationMessage) {
       return;
     }

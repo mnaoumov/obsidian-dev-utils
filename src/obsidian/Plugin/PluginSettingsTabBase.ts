@@ -197,7 +197,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
     const validatorElement = getValidatorComponent(valueComponent)?.validatorEl;
 
-    const property = this.plugin.settingsManager.getProperty(propertyName) as PluginSettingsProperty<PropertyType>;
+    const property = this.plugin.settingsManager.getProperty(propertyName) as PluginSettingsProperty<PluginSettings, PropertyName>;
 
     const value = property.currentValue;
 
