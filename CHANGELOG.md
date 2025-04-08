@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 24.2.0
+
+- Update libs
+- Refactor to GenericObject
+- More type helpers
+- ensureSafe
+
 ## 24.1.1
 
 - Switch to debouncing as quit doesn't work well on MacOS
