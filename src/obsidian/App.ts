@@ -6,6 +6,8 @@
 
 import type { App } from 'obsidian';
 
+import type { GenericObject } from '../Object.ts';
+
 import { throwExpression } from '../Error.ts';
 import { noop } from '../Function.ts';
 
@@ -20,7 +22,7 @@ interface AppWrapper {
 }
 
 interface ObsidianDevUtilsStateWrapper {
-  obsidianDevUtilsState: Record<string, unknown>;
+  obsidianDevUtilsState: GenericObject;
 }
 
 /**

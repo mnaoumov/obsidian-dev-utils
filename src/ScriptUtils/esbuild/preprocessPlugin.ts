@@ -12,6 +12,8 @@
 
 import type { Plugin } from 'esbuild';
 
+import type { GenericObject } from '../../Object.ts';
+
 import {
   FunctionHandlingMode,
   toJson
@@ -109,7 +111,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 }
 
 function initCjs(): void {
-  const globalThisRecord = globalThis as unknown as Record<string, unknown>;
+  const globalThisRecord = globalThis as unknown as GenericObject;
   globalThisRecord['__name'] ??= name;
   const originalRequire = require as (NodeJS.Require & Partial<RequirePatched> | undefined);
   if (originalRequire && !originalRequire.__isPatched) {

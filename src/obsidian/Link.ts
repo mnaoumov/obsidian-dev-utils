@@ -27,6 +27,7 @@ import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
 
+import type { GenericObject } from '../Object.ts';
 import type { MaybeReturn } from '../Type.ts';
 import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
@@ -959,7 +960,7 @@ function _fixFrontmatterMarkdownLinks(value: unknown, key: string, cache: Cached
 
   let hasFrontmatterLinks = false;
 
-  for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
+  for (const [childKey, childValue] of Object.entries(value as GenericObject)) {
     const hasChildFrontmatterLinks = _fixFrontmatterMarkdownLinks(childValue, key ? `${key}.${childKey}` : childKey, cache);
     hasFrontmatterLinks ||= hasChildFrontmatterLinks;
   }

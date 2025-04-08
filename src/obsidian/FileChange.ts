@@ -10,6 +10,7 @@ import type {
 } from 'obsidian';
 import type { CanvasData } from 'obsidian/Canvas.d.ts';
 
+import type { GenericObject } from '../Object.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { ProcessOptions } from './Vault.ts';
@@ -375,7 +376,7 @@ async function applyCanvasChanges(content: string, path: string, changesProvider
   return JSON.stringify(canvasData, null, '\t');
 }
 
-function parseJsonSafe(content: string): Record<string, unknown> {
+function parseJsonSafe(content: string): GenericObject {
   let parsed: unknown;
   try {
     parsed = JSON.parse(content);
@@ -387,5 +388,5 @@ function parseJsonSafe(content: string): Record<string, unknown> {
     parsed = {};
   }
 
-  return parsed as Record<string, unknown>;
+  return parsed as GenericObject;
 }
