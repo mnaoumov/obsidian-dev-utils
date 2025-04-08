@@ -5,13 +5,14 @@
  * It provides a utility method to bind value components to plugin settings and handle changes.
  */
 
-import type { Tasks } from 'obsidian';
+import type { Debouncer } from 'obsidian';
 import type {
   ConditionalKeys,
   Promisable
 } from 'type-fest';
 
 import {
+  debounce,
   PluginSettingTab,
   setTooltip
 } from 'obsidian';
@@ -26,7 +27,10 @@ import type {
   PluginTypesBase
 } from './PluginTypesBase.ts';
 
-import { invokeAsyncSafely } from '../../Async.ts';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
 import { getTextBasedComponentValue } from '../Components/TextBasedComponent.ts';
@@ -96,7 +100,19 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     return this._isOpen;
   }
 
+  /**
+   * The debounce timeout for saving settings.
+   *
+   * @returns The debounce timeout for saving settings.
+   */
+  protected get saveSettingsDebounceTimeoutInMilliseconds(): number {
+    const DEFAULT = 2_000;
+    return DEFAULT;
+  }
+
   private _isOpen = false;
+
+  private saveSettingsDebounced: Debouncer<[], void>;
 
   /**
    * Creates a new plugin settings tab.
@@ -106,7 +122,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   public constructor(public override plugin: ExtractPlugin<PluginTypes>) {
     super(plugin.app, plugin);
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
-    this.plugin.registerEvent(this.app.workspace.on('quit', this.handleQuit.bind(this)));
+    this.saveSettingsDebounced = debounce(convertAsyncToSync(() => this.plugin.settingsManager.saveToFile()), this.saveSettingsDebounceTimeoutInMilliseconds);
   }
 
   /**
@@ -214,6 +230,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       if (newValue !== undefined) {
         await optionsExt.onChanged(newValue, oldValue);
       }
+      this.saveSettingsDebounced();
     });
 
     validatorElement?.addEventListener('focus', updateValidatorElement);
@@ -254,6 +271,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   public override hide(): void {
     super.hide();
     this._isOpen = false;
+    this.saveSettingsDebounced.cancel();
     invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile());
   }
 
@@ -262,14 +280,5 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    */
   public show(): void {
     this.app.setting.openTab(this);
-  }
-
-  private handleQuit(tasks: Tasks): void {
-    tasks.add(async () => {
-      if (!this.isOpen) {
-        return;
-      }
-      await this.plugin.settingsManager.saveToFile();
-    });
   }
 }
