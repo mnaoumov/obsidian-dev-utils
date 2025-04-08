@@ -195,22 +195,25 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     }
 
     valueComponent.onChange(async (uiValue) => {
+      const oldValue = property.currentValue;
+      let newValue: PropertyType | undefined = undefined;
       if (textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
         property.reset();
-        return;
-      }
-
-      const oldValue = property.currentValue;
-      const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
-      if (isValidationMessageHolder(convertedValue)) {
-        property.setValidationMessage(convertedValue.validationMessage);
+        newValue = property.defaultValue;
       } else {
-        property.setValue(convertedValue);
-        await property.validate();
+        const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
+        if (isValidationMessageHolder(convertedValue)) {
+          property.setValidationMessage(convertedValue.validationMessage);
+        } else {
+          property.setValue(convertedValue);
+          await property.validate();
+          newValue = convertedValue;
+        }
       }
       updateValidatorElement();
-      const newValue = isValidationMessageHolder(convertedValue) ? undefined : convertedValue;
-      await optionsExt.onChanged(newValue, oldValue);
+      if (newValue !== undefined) {
+        await optionsExt.onChanged(newValue, oldValue);
+      }
     });
 
     validatorElement?.addEventListener('focus', updateValidatorElement);
