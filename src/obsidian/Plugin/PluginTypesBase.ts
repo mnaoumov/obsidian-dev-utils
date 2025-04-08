@@ -4,6 +4,10 @@
  * Types helpers for plugin types.
  */
 
+import type {
+  PropertyValues,
+  StringKeys
+} from '../../Type.ts';
 import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 import type { PluginSettingsTabBase } from './PluginSettingsTabBase.ts';
@@ -28,6 +32,20 @@ export type ExtractPluginSettings<PluginTypes extends PluginTypesBase> = PluginT
  * @typeParam PluginTypes - The plugin types.
  */
 export type ExtractPluginSettingsManager<PluginTypes extends PluginTypesBase> = PluginTypes['pluginSettingsManager'];
+
+/**
+ * Extracts the plugin settings property names from the plugin types.
+ *
+ * @typeParam PluginTypes - The plugin types.
+ */
+export type ExtractPluginSettingsPropertyNames<PluginTypes extends PluginTypesBase> = StringKeys<ExtractPluginSettings<PluginTypes>>;
+
+/**
+ * Extracts the plugin settings property values from the plugin types.
+ *
+ * @typeParam PluginTypes - The plugin types.
+ */
+export type ExtractPluginSettingsPropertyValues<PluginTypes extends PluginTypesBase> = PropertyValues<ExtractPluginSettings<PluginTypes>>;
 
 /**
  * Extracts the plugin settings tab from the plugin types.

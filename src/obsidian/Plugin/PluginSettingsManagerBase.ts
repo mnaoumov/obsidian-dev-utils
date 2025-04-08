@@ -13,11 +13,14 @@ import type {
 import type { Transformer } from '../../Transformers/Transformer.ts';
 import type {
   MaybeReturn,
+  PropertyValues,
   StringKeys
 } from '../../Type.ts';
 import type {
   ExtractPlugin,
   ExtractPluginSettings,
+  ExtractPluginSettingsPropertyNames,
+  ExtractPluginSettingsPropertyValues,
   PluginTypesBase
 } from './PluginTypesBase.ts';
 
@@ -77,7 +80,7 @@ class EditableSettingsProxyHandler<PluginSettings extends object> extends ProxyH
       return true;
     }
 
-    property.setValue(value as PluginSettings[StringKeys<PluginSettings>]);
+    property.setValue(value as PropertyValues<PluginSettings>);
     this.validationPromise = this.validationPromise.then(async () => {
       await property.validate();
     });
@@ -197,7 +200,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    * @param propertyName - The name of the property.
    * @returns The property.
    */
-  public getProperty<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
+  public getProperty<PropertyName extends ExtractPluginSettingsPropertyNames<PluginTypes>>(
     propertyName: PropertyName
   ): PluginSettingsProperty<ExtractPluginSettings<PluginTypes>, PropertyName> {
     return this.properties.getTyped(propertyName);
@@ -253,7 +256,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
         );
       }
 
-      property.setValue(value as PluginSettings[StringKeys<PluginSettings>]);
+      property.setValue(value as PropertyValues<PluginSettings>);
       propertiesToSave.push(property);
     }
 
@@ -329,7 +332,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    * @param propertyName - The name of the property.
    * @param validator - The validator.
    */
-  protected registerValidator<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
+  protected registerValidator<PropertyName extends ExtractPluginSettingsPropertyNames<PluginTypes>>(
     propertyName: PropertyName,
     validator: Validator<ExtractPluginSettings<PluginTypes>, PropertyName>
   ): void {
@@ -349,7 +352,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     const savedSettings: Record<string, unknown> = {};
     for (const [propertyName, property] of this.properties.entries()) {
       savedSettings[propertyName] = property.lastSavedValue as
-        | ExtractPluginSettings<PluginTypes>[StringKeys<ExtractPluginSettings<PluginTypes>>]
+        | ExtractPluginSettingsPropertyValues<PluginTypes>
         | undefined;
     }
     const proto = Object.getPrototypeOf(this.currentSettings) as object;
