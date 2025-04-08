@@ -13,6 +13,13 @@
 export type MaybeReturn<T> = T | void;
 
 /**
+ * A type that represents the values of an object.
+ *
+ * @typeParam T - The type of the object.
+ */
+export type PropertyValues<T extends object> = T[StringKeys<T>];
+
+/**
  * A type that represents the keys of an object as strings.
  *
  * @typeParam T - The type of the object.
