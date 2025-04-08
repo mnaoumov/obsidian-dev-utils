@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 24.1.1
+
+- Switch to debouncing as quit doesn't work well on MacOS
+- Update validator and onChanged events even for reset
+
 ## 24.1.0
 
 - Release
