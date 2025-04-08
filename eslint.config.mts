@@ -79,13 +79,33 @@ const configs: Linter.Config[] = [
       'jsdoc/require-jsdoc': [
         'error',
         {
-          publicOnly: true,
+          contexts: [
+            {
+              context: 'ExportNamedDeclaration > FunctionDeclaration'
+            },
+            {
+              context: 'ExportDefaultDeclaration > FunctionDeclaration'
+            },
+            {
+              context: 'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression'
+            },
+            {
+              context: 'ExportDefaultDeclaration > ArrowFunctionExpression'
+            },
+            {
+              context: 'ExportNamedDeclaration MethodDefinition:not([accessibility="private"])'
+            },
+            {
+              context: 'ExportDefaultDeclaration MethodDefinition:not([accessibility="private"])'
+            }
+          ],
+          publicOnly: false,
           require: {
-            ArrowFunctionExpression: true,
-            ClassDeclaration: true,
-            ClassExpression: true,
-            FunctionDeclaration: true,
-            MethodDefinition: true
+            ArrowFunctionExpression: false,
+            ClassDeclaration: false,
+            ClassExpression: false,
+            FunctionDeclaration: false,
+            MethodDefinition: false
           }
         }
       ],

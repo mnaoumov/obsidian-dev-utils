@@ -277,6 +277,11 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
 
   protected abstract createDefaultSettings(): ExtractPluginSettings<PluginTypes>;
 
+  /**
+   * Gets the transformer.
+   *
+   * @returns The transformer.
+   */
   protected getTransformer(): Transformer {
     return defaultTransformer;
   }
@@ -299,6 +304,12 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     await noopAsync();
   }
 
+  /**
+   * Registers a validator for a property.
+   *
+   * @param propertyName - The name of the property.
+   * @param validator - The validator.
+   */
   protected registerValidator<PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>>(
     propertyName: PropertyName,
     validator: Validator<ExtractPluginSettings<PluginTypes>[PropertyName]>
@@ -306,6 +317,11 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     this.validators.set(propertyName, validator);
   }
 
+  /**
+   * Registers the validators.
+   *
+   * This method can be overridden by subclasses to register validators for properties.
+   */
   protected registerValidators(): void {
     noop();
   }

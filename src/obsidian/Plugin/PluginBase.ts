@@ -227,6 +227,11 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     await noopAsync();
   }
 
+  /**
+   * Executed when the plugin is loaded.
+   *
+   * This method can be overridden by subclasses to perform actions once the plugin is loaded.
+   */
   protected async onloadImpl(): Promise<void> {
     initPluginContext(this.app, this.manifest.id);
 
