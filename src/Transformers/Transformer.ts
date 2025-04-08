@@ -4,6 +4,8 @@
  * A base class for transformers.
  */
 
+import type { GenericObject } from '../Object.ts';
+
 import { getAllKeys } from '../Object.ts';
 
 /**
@@ -59,8 +61,8 @@ export abstract class Transformer {
    * @param value - The value to transform.
    * @returns The transformed value.
    */
-  public transformObjectRecursively(value: object): Record<string, unknown> {
-    return this.transformValueRecursively(value, '') as Record<string, unknown>;
+  public transformObjectRecursively(value: object): GenericObject {
+    return this.transformValueRecursively(value, '') as GenericObject;
   }
 
   /**
@@ -136,7 +138,7 @@ export abstract class Transformer {
       return this.getTransformer(transformedValueWrapper.__transformerId).restoreValue(transformedValueWrapper.transformedValue, key);
     }
 
-    const record: Record<string, unknown> = {};
+    const record: GenericObject = {};
 
     for (const childKey of getAllKeys(value)) {
       const childValue = value[childKey];

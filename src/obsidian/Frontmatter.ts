@@ -10,6 +10,8 @@ import {
   stringifyYaml
 } from 'obsidian';
 
+import type { GenericObject } from '../Object.ts';
+
 import { insertAt } from '../String.ts';
 
 /**
@@ -18,7 +20,7 @@ import { insertAt } from '../String.ts';
  *
  * @typeParam CustomFrontmatter - The type of custom front matter.
  */
-export type CombinedFrontmatter<CustomFrontmatter> = CustomFrontmatter & ObsidianFrontmatter & Record<string, unknown>;
+export type CombinedFrontmatter<CustomFrontmatter> = CustomFrontmatter & GenericObject & ObsidianFrontmatter;
 
 /**
  * Represents the front matter of an Obsidian file.

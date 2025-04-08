@@ -113,6 +113,11 @@ interface TokenSubstitutions {
 const KEY_SEPARATOR = '.';
 
 /**
+ * A type that represents a generic object.
+ */
+export type GenericObject = Record<string, unknown>;
+
+/**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
  *
  * @param target - The target object to assign properties to.
@@ -184,8 +189,8 @@ export function deepEqual(a: unknown, b: unknown): boolean {
     return false;
   }
 
-  const aRecord = a as Record<string, unknown>;
-  const bRecord = b as Record<string, unknown>;
+  const aRecord = a as GenericObject;
+  const bRecord = b as GenericObject;
 
   for (const key of keysA) {
     if (!keysB.includes(key) || !deepEqual(aRecord[key], bRecord[key])) {
@@ -288,14 +293,14 @@ export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
  * @param path - The path to the nested property.
  * @returns The value of the nested property.
  */
-export function getNestedPropertyValue(obj: Record<string, unknown>, path: string): unknown {
-  let node: Record<string, unknown> | undefined = obj;
+export function getNestedPropertyValue(obj: GenericObject, path: string): unknown {
+  let node: GenericObject | undefined = obj;
   const keys = path.split(KEY_SEPARATOR);
   for (const key of keys) {
     if (node === undefined) {
       return undefined;
     }
-    node = node[key] as Record<string, unknown> | undefined;
+    node = node[key] as GenericObject | undefined;
   }
 
   return node;
@@ -357,15 +362,15 @@ export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): 
  * @param path - The path to the nested property.
  * @param value - The value to set.
  */
-export function setNestedPropertyValue(obj: Record<string, unknown>, path: string, value: unknown): void {
+export function setNestedPropertyValue(obj: GenericObject, path: string, value: unknown): void {
   const error = new Error(`Property path ${path} not found`);
-  let node: Record<string, unknown> | undefined = obj;
+  let node: GenericObject | undefined = obj;
   const keys = path.split(KEY_SEPARATOR);
   for (const key of keys.slice(0, -1)) {
     if (node === undefined) {
       throw error;
     }
-    node = node[key] as Record<string, unknown> | undefined;
+    node = node[key] as GenericObject | undefined;
   }
 
   const lastKey = keys.at(-1);

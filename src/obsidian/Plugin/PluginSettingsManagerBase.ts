@@ -10,6 +10,7 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
+import type { GenericObject } from '../../Object.ts';
 import type { Transformer } from '../../Transformers/Transformer.ts';
 import type {
   MaybeReturn,
@@ -184,7 +185,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    * @returns A {@link Promise} that resolves when the settings are safe.
    */
   public async ensureSafe(settings: ExtractPluginSettings<PluginTypes>): Promise<void> {
-    const record = settings as Record<string, unknown>;
+    const record = settings as GenericObject;
     for (const propertyName of getAllKeys(settings)) {
       const property = this.getProperty(propertyName);
       const validationMessage = await property.validate(settings);
@@ -231,7 +232,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
       return;
     }
 
-    let record = data as Record<string, unknown>;
+    let record = data as GenericObject;
     const originalJson = JSON.stringify(record);
     record = this.getTransformer().transformObjectRecursively(record);
     await this.onLoadRecord(record);
@@ -313,7 +314,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    *
    * @param _record - The record.
    */
-  protected async onLoadRecord(_record: Record<string, unknown>): Promise<void> {
+  protected async onLoadRecord(_record: GenericObject): Promise<void> {
     await noopAsync();
   }
 
@@ -322,7 +323,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    *
    * @param _record - The record.
    */
-  protected async onSavingRecord(_record: Record<string, unknown>): Promise<void> {
+  protected async onSavingRecord(_record: GenericObject): Promise<void> {
     await noopAsync();
   }
 
@@ -349,7 +350,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   }
 
   private getSavedSettings(): ExtractPluginSettings<PluginTypes> {
-    const savedSettings: Record<string, unknown> = {};
+    const savedSettings: GenericObject = {};
     for (const [propertyName, property] of this.properties.entries()) {
       savedSettings[propertyName] = property.lastSavedValue as
         | ExtractPluginSettingsPropertyValues<PluginTypes>
@@ -361,8 +362,8 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     return savedSettings as ExtractPluginSettings<PluginTypes>;
   }
 
-  private async prepareRecordToSave(): Promise<Record<string, unknown>> {
-    const settings: Record<string, unknown> = {};
+  private async prepareRecordToSave(): Promise<GenericObject> {
+    const settings: GenericObject = {};
     for (const [propertyName, property] of this.properties.entries()) {
       settings[propertyName] = property.currentValue;
     }
@@ -429,8 +430,8 @@ export class PluginSettingsProperty<PluginSettings extends object, PropertyName 
 
   declare private PropertyType: PluginSettings[PropertyName];
 
-  private get currentSettingsRecord(): Record<string, unknown> {
-    return this.currentSettings as Record<string, unknown>;
+  private get currentSettingsRecord(): GenericObject {
+    return this.currentSettings as GenericObject;
   }
 
   /**
@@ -445,7 +446,7 @@ export class PluginSettingsProperty<PluginSettings extends object, PropertyName 
     private readonly currentSettings: PluginSettings,
     private readonly validator: Validator<PluginSettings, PropertyName>
   ) {
-    const record = currentSettings as Record<string, unknown>;
+    const record = currentSettings as GenericObject;
     this.defaultValue = record[propertyName] as typeof this.PropertyType;
     this._lastSavedValue = this.defaultValue;
     this._currentValue = this.defaultValue;

@@ -9,6 +9,8 @@ import type { ConditionalKeys } from 'type-fest';
 
 import { around as originalAround } from 'monkey-around';
 
+import type { GenericObject } from '../Object.ts';
+
 /**
  * The type of the factories to apply to the object.
  *
@@ -21,7 +23,7 @@ export type Factories<Obj extends object> = Partial<
   }
 >;
 
-type OriginalFactories<Obj extends Record<string, unknown>> = Parameters<typeof originalAround<Obj>>[1];
+type OriginalFactories<Obj extends GenericObject> = Parameters<typeof originalAround<Obj>>[1];
 
 type Uninstaller = () => void;
 
@@ -38,7 +40,7 @@ type WrapperFactory<T extends Function | undefined> = (next: T) => T;
  * @returns The uninstaller that removes the patch when called.
  */
 export function around<Obj extends object>(obj: Obj, factories: Factories<Obj>): Uninstaller {
-  return originalAround(obj as Record<string, unknown>, factories as OriginalFactories<Record<string, unknown>>);
+  return originalAround(obj as GenericObject, factories as OriginalFactories<GenericObject>);
 }
 
 /**
