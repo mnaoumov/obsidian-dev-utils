@@ -5,6 +5,7 @@
  * It provides a utility method to bind value components to plugin settings and handle changes.
  */
 
+import type { Tasks } from 'obsidian';
 import type {
   ConditionalKeys,
   Promisable
@@ -87,6 +88,17 @@ export interface BindOptionsExtended<
  */
 export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase> extends PluginSettingTab {
   /**
+   * Whether the plugin settings tab is open.
+   *
+   * @returns Whether the plugin settings tab is open.
+   */
+  public get isOpen(): boolean {
+    return this._isOpen;
+  }
+
+  private _isOpen = false;
+
+  /**
    * Creates a new plugin settings tab.
    *
    * @param plugin - The plugin.
@@ -94,6 +106,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   public constructor(public override plugin: ExtractPlugin<PluginTypes>) {
     super(plugin.app, plugin);
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
+    this.plugin.registerEvent(this.app.workspace.on('quit', this.handleQuit.bind(this)));
   }
 
   /**
@@ -226,10 +239,18 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   }
 
   /**
+   * Renders the plugin settings tab.
+   */
+  public override display(): void {
+    this._isOpen = true;
+  }
+
+  /**
    * Hides the plugin settings tab.
    */
   public override hide(): void {
     super.hide();
+    this._isOpen = false;
     invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile());
   }
 
@@ -238,5 +259,14 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    */
   public show(): void {
     this.app.setting.openTab(this);
+  }
+
+  private handleQuit(tasks: Tasks): void {
+    tasks.add(async () => {
+      if (!this.isOpen) {
+        return;
+      }
+      await this.plugin.settingsManager.saveToFile();
+    });
   }
 }
