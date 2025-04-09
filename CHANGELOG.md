@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 24.2.1-beta.4
+
+- Fix saving
+
 ## 24.2.1-beta.3
 
 - Add missing awaits
