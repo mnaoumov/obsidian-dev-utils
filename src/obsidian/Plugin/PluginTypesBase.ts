@@ -4,6 +4,8 @@
  * Types helpers for plugin types.
  */
 
+import type { ReadonlyDeep } from 'type-fest';
+
 import type {
   PropertyValues,
   StringKeys
@@ -11,6 +13,7 @@ import type {
 import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 import type { PluginSettingsTabBase } from './PluginSettingsTabBase.ts';
+import type { PluginSettingsWrapper } from './PluginSettingsWrapper.ts';
 
 /**
  * Extracts the plugin from the plugin types.
@@ -53,6 +56,20 @@ export type ExtractPluginSettingsPropertyValues<PluginTypes extends PluginTypesB
  * @typeParam PluginTypes - The plugin types.
  */
 export type ExtractPluginSettingsTab<PluginTypes extends PluginTypesBase> = PluginTypes['pluginSettingsTab'];
+
+/**
+ * Extracts the plugin settings wrapper from the plugin types.
+ *
+ * @typeParam PluginTypes - The plugin types.
+ */
+export type ExtractPluginSettingsWrapper<PluginTypes extends PluginTypesBase> = PluginSettingsWrapper<ExtractPluginSettings<PluginTypes>>;
+
+/**
+ * Extracts the readonly plugin settings wrapper from the plugin types.
+ *
+ * @typeParam PluginTypes - The plugin types.
+ */
+export type ExtractReadonlyPluginSettingsWrapper<PluginTypes extends PluginTypesBase> = ReadonlyDeep<ExtractPluginSettingsWrapper<PluginTypes>>;
 
 /**
  * The base type for plugin types.

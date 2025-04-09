@@ -20,6 +20,7 @@ import type {
   ExtractPluginSettings,
   ExtractPluginSettingsManager,
   ExtractPluginSettingsTab,
+  ExtractReadonlyPluginSettingsWrapper,
   PluginTypesBase
 } from './PluginTypesBase.ts';
 
@@ -59,7 +60,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    * @returns The readonly plugin settings.
    */
   public get settings(): ReadonlyDeep<ExtractPluginSettings<PluginTypes>> {
-    return this.settingsManager.safeSettings as ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
+    return this.settingsManager.settingsWrapper.safeSettings as ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
   }
 
   /**
@@ -133,10 +134,10 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   /**
    * Called when the plugin settings are loaded or reloaded.
    *
-   * @param _settings - The settings.
+   * @param _loadedSettings - The loaded settings wrapper.
    * @param _isInitialLoad - Whether the settings are being loaded for the first time.
    */
-  public async onLoadSettings(_settings: ExtractPluginSettings<PluginTypes>, _isInitialLoad: boolean): Promise<void> {
+  public async onLoadSettings(_loadedSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>, _isInitialLoad: boolean): Promise<void> {
     await noopAsync();
   }
 
@@ -148,8 +149,8 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    * @param _context - The context.
    */
   public async onSaveSettings(
-    _newSettings: ExtractPluginSettings<PluginTypes>,
-    _oldSettings: ExtractPluginSettings<PluginTypes>,
+    _newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+    _oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
     _context: unknown
   ): Promise<void> {
     await noopAsync();
