@@ -20,7 +20,6 @@ import {
 import type { StringKeys } from '../../Type.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
 import type { ValidationMessageHolder } from '../ValidationMessage.ts';
-import type { PluginSettingsProperty } from './PluginSettingsManagerBase.ts';
 import type {
   ExtractPlugin,
   ExtractPluginSettings,
@@ -197,61 +196,68 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
     const validatorElement = getValidatorComponent(valueComponent)?.validatorEl;
 
-    const property = this.plugin.settingsManager.getProperty(propertyName) as PluginSettingsProperty<PluginSettings, PropertyName>;
-
-    const value = property.currentValue;
-
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
-    textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(property.defaultValue));
 
-    if (property.currentValue === property.defaultValue && textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
+    let pluginSettings = this.plugin.settings as PluginSettings;
+    const value = pluginSettings[propertyName] as PropertyType;
+    const defaultValue = (this.plugin.settingsManager.defaultSettings as PluginSettings)[propertyName] as PropertyType;
+    textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(value));
+
+    if (value === defaultValue && textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
       textBasedComponent.empty();
     } else {
       valueComponent.setValue(optionsExt.pluginSettingsToComponentValueConverter(value));
     }
 
     valueComponent.onChange(async (uiValue) => {
-      const oldValue = property.currentValue;
+      pluginSettings = this.plugin.settings as PluginSettings;
+      const oldValue = pluginSettings[propertyName];
       let newValue: PropertyType | undefined = undefined;
+      let validationMessage: string;
       if (textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
-        property.reset();
-        newValue = property.defaultValue;
+        newValue = defaultValue;
+        validationMessage = '';
       } else {
         const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
         if (isValidationMessageHolder(convertedValue)) {
-          property.setValidationMessage(convertedValue.validationMessage);
+          validationMessage = convertedValue.validationMessage;
         } else {
-          property.setValue(convertedValue);
-          await property.validate();
           newValue = convertedValue;
+          validationMessage = await this.plugin.settingsManager.setProperty(propertyName, newValue);
         }
       }
-      updateValidatorElement();
+      updateValidatorElement(validationMessage);
       if (newValue !== undefined) {
         await optionsExt.onChanged(newValue, oldValue);
       }
       this.saveSettingsDebounced();
     });
 
-    validatorElement?.addEventListener('focus', updateValidatorElement);
-    validatorElement?.addEventListener('blur', updateValidatorElement);
+    validatorElement?.addEventListener('focus', () => {
+      updateValidatorElement();
+    });
+    validatorElement?.addEventListener('blur', () => {
+      updateValidatorElement();
+    });
 
     updateValidatorElement();
     return valueComponent;
 
-    function updateValidatorElement(): void {
+    function updateValidatorElement(validationMessage?: string): void {
       if (!validatorElement) {
         return;
       }
 
-      if (!property.validationMessage) {
+      if (validationMessage === '') {
         validatorElement.setCustomValidity('');
         validatorElement.checkValidity();
-        property.setValidationMessage(validatorElement.validationMessage);
+        validationMessage = validatorElement.validationMessage;
       }
 
-      validatorElement.setCustomValidity(property.validationMessage);
-      setTooltip(validatorElement, property.validationMessage);
+      if (validationMessage !== undefined) {
+        validatorElement.setCustomValidity(validationMessage);
+        setTooltip(validatorElement, validationMessage);
+      }
       if (validatorElement.isActiveElement() && optionsExt.shouldShowValidationMessage) {
         validatorElement.reportValidity();
       }
