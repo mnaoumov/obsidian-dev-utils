@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 24.2.1-beta.3
+
+- Add missing awaits
+
 ## 24.2.1-beta.2
 
 - Use current settings in UI
