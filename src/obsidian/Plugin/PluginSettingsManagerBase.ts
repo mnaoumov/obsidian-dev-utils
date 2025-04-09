@@ -351,7 +351,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   }
 
   private async saveToFileImpl(): Promise<void> {
-    await this.plugin.saveData(await this.settingsToRawRecord(this.currentSettingsWrapper));
+    await this.plugin.saveData(await this.settingsToRawRecord(this.currentSettingsWrapper.settings));
   }
 
   private setPropertyImpl(
