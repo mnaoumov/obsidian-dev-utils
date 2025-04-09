@@ -227,32 +227,3 @@ export class AsyncEvents {
     }
   }
 }
-
-/*
-
-Var fs = (function () {
-        return (
-          (e.prototype.offref = function (e) {
-          }),
-          (e.prototype.trigger = function (e) {
-            for (var t = [], n = 1; n < arguments.length; n++)
-              t[n - 1] = arguments[n];
-            var r = this._[e];
-            if (r) {
-              r = r.slice();
-              for (var a = 0; a < r.length; a++) this.tryTrigger(r[a], t);
-            }
-          }),
-          (e.prototype.tryTrigger = function (e, t) {
-            try {
-              e.fn.apply(e.ctx, t);
-            } catch (e) {
-              setTimeout(function () {
-                throw e;
-              }, 0);
-            }
-          }),
-          e
-        );
-      })();
-*/
