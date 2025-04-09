@@ -19,7 +19,7 @@ import {
 } from 'obsidian';
 
 import type { StringKeys } from '../../Type.ts';
-import type { ValueComponentWithChangeTracking } from '../Components/ValueComponentWithChangeTracking.ts';
+import type { ValueComponentWithChangeTracking } from '../Components/SettingComponents/ValueComponentWithChangeTracking.ts';
 import type { ValidationMessageHolder } from '../ValidationMessage.ts';
 import type {
   ExtractPlugin,
@@ -33,8 +33,8 @@ import {
 } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
-import { getTextBasedComponentValue } from '../Components/TextBasedComponent.ts';
-import { getValidatorComponent } from '../Components/ValidatorComponent.ts';
+import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
+import { getValidatorComponent } from '../Components/SettingComponents/ValidatorComponent.ts';
 import { isValidationMessageHolder } from '../ValidationMessage.ts';
 import { getPluginId } from './PluginId.ts';
 
@@ -279,6 +279,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    */
   public override hide(): void {
     super.hide();
+    this.containerEl.empty();
     this._isOpen = false;
     this.saveSettingsDebounced.cancel();
     invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile());

@@ -12,7 +12,7 @@ import {
   ToggleComponent
 } from 'obsidian';
 
-import type { ValidatorElement } from '../../HTMLElement.ts';
+import type { ValidatorElement } from '../../../HTMLElement.ts';
 
 /**
  * A component that has a validator element.

@@ -1,34 +1,35 @@
 /**
  * @packageDocumentation
  *
- * Contains a component that displays and edits a file.
+ * Contains a component that displays and edits multiple files.
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { initPluginContext } from '../Plugin/PluginContext.ts';
+import type { initPluginContext } from '../../Plugin/PluginContext.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { SettingEx } from '../SettingEx.ts';
+import type { SettingEx } from '../../SettingEx.ts';
 
-import { CssClass } from '../../CssClass.ts';
+import { CssClass } from '../../../CssClass.ts';
 import { TypedTextComponent } from './TypedTextComponent.ts';
 
 /**
- * A component that displays and edits a file.
+ * A component that displays and edits multiple files.
  *
- * You can add this component using {@link SettingEx.addFile}.
+ * You can add this component using {@link SettingEx.addMultipleFile}.
  *
  * In order to add the styles for the component, use {@link initPluginContext} in your plugin's `onload()` function.
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class FileComponent extends TypedTextComponent<File | null> {
+export class MultipleFileComponent extends TypedTextComponent<readonly File[]> {
   /**
-   * Creates a new file component.
+   * Creates a new multiple file component.
    *
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'file', CssClass.FileComponent);
+    super(containerEl, 'file', CssClass.MultipleFileComponent);
+    this.inputEl.multiple = true;
   }
 
   /**
@@ -36,8 +37,8 @@ export class FileComponent extends TypedTextComponent<File | null> {
    *
    * @returns The value of the component.
    */
-  public override getValue(): File | null {
-    return this.inputEl.files?.[0] ?? null;
+  public override getValue(): readonly File[] {
+    return Array.from(this.inputEl.files ?? []);
   }
 
   /**
@@ -45,7 +46,7 @@ export class FileComponent extends TypedTextComponent<File | null> {
    *
    * @returns The file.
    */
-  public override valueFromString(): File | null {
+  public override valueFromString(): readonly File[] {
     return this.getValue();
   }
 
@@ -55,7 +56,7 @@ export class FileComponent extends TypedTextComponent<File | null> {
    * @param value - The file to convert.
    * @returns The string.
    */
-  public override valueToString(value: File | null): string {
-    return value?.name ?? '';
+  public override valueToString(value: readonly File[]): string {
+    return value[0]?.name ?? '';
   }
 }
