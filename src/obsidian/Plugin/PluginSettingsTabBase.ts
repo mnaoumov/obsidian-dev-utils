@@ -204,7 +204,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
     const value = this.pluginSettings[propertyName] as PropertyType;
     const defaultValue = (this.plugin.settingsManager.defaultSettings as PluginSettings)[propertyName] as PropertyType;
-    textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(value));
+    textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(defaultValue));
 
     if (value === defaultValue && textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
       textBasedComponent.empty();
