@@ -21,7 +21,7 @@ import { TypedTextComponent } from './TypedTextComponent.ts';
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class MultipleFileComponent extends TypedTextComponent<File[]> {
+export class MultipleFileComponent extends TypedTextComponent<readonly File[]> {
   /**
    * Creates a new multiple file component.
    *
@@ -37,7 +37,7 @@ export class MultipleFileComponent extends TypedTextComponent<File[]> {
    *
    * @returns The value of the component.
    */
-  public override getValue(): File[] {
+  public override getValue(): readonly File[] {
     return Array.from(this.inputEl.files ?? []);
   }
 
@@ -46,7 +46,7 @@ export class MultipleFileComponent extends TypedTextComponent<File[]> {
    *
    * @returns The file.
    */
-  public override valueFromString(): File[] {
+  public override valueFromString(): readonly File[] {
     return this.getValue();
   }
 
@@ -56,7 +56,7 @@ export class MultipleFileComponent extends TypedTextComponent<File[]> {
    * @param value - The file to convert.
    * @returns The string.
    */
-  public override valueToString(value: File[]): string {
+  public override valueToString(value: readonly File[]): string {
     return value[0]?.name ?? '';
   }
 }

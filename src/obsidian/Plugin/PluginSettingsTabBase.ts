@@ -8,7 +8,8 @@
 import type { Debouncer } from 'obsidian';
 import type {
   ConditionalKeys,
-  Promisable
+  Promisable,
+  ReadonlyDeep
 } from 'type-fest';
 
 import {
@@ -80,7 +81,7 @@ export interface BindOptionsExtended<
    * @param pluginSettingsValue - The value of the property in the plugin settings.
    * @returns The value to set on the UI component.
    */
-  pluginSettingsToComponentValueConverter: (pluginSettingsValue: PluginSettings[PropertyName]) => UIValue;
+  pluginSettingsToComponentValueConverter: (pluginSettingsValue: ReadonlyDeep<PluginSettings[PropertyName]>) => UIValue;
 }
 
 /**
@@ -191,7 +192,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     const DEFAULT_OPTIONS: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = {
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
       onChanged: noop,
-      pluginSettingsToComponentValueConverter: (value: PropertyType): UIValue => value as UIValue,
+      pluginSettingsToComponentValueConverter: (value: ReadonlyDeep<PropertyType>): UIValue => value as UIValue,
       shouldResetSettingWhenComponentIsEmpty: true,
       shouldShowValidationMessage: true
     };
@@ -202,14 +203,14 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
 
-    const value = this.pluginSettings[propertyName] as PropertyType;
+    const readonlyValue = this.pluginSettings[propertyName] as ReadonlyDeep<PropertyType>;
     const defaultValue = (this.plugin.settingsManager.defaultSettings as PluginSettings)[propertyName] as PropertyType;
-    textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(defaultValue));
+    textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>));
 
-    if (value === defaultValue && textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
+    if (readonlyValue === defaultValue && textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
       textBasedComponent.empty();
     } else {
-      valueComponent.setValue(optionsExt.pluginSettingsToComponentValueConverter(value));
+      valueComponent.setValue(optionsExt.pluginSettingsToComponentValueConverter(readonlyValue));
     }
 
     valueComponent.onChange(async (uiValue) => {

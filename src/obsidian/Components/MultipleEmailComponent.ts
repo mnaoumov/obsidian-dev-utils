@@ -21,7 +21,7 @@ import { TypedTextComponent } from './TypedTextComponent.ts';
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class MultipleEmailComponent extends TypedTextComponent<string[]> {
+export class MultipleEmailComponent extends TypedTextComponent<readonly string[]> {
   /**
    * Creates a new multiple emails component.
    *
@@ -38,7 +38,7 @@ export class MultipleEmailComponent extends TypedTextComponent<string[]> {
    * @param str - The string to convert.
    * @returns The email address.
    */
-  public override valueFromString(str: string): string[] {
+  public override valueFromString(str: string): readonly string[] {
     return str.split(',').map((email) => email.trim());
   }
 
@@ -48,7 +48,7 @@ export class MultipleEmailComponent extends TypedTextComponent<string[]> {
    * @param value - The email address to convert.
    * @returns The string.
    */
-  public override valueToString(value: string[]): string {
+  public override valueToString(value: readonly string[]): string {
     return value.join(', ');
   }
 }

@@ -32,8 +32,8 @@ import { getPluginId } from '../Plugin/PluginId.ts';
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class MultipleTextComponent extends ValueComponent<string[]>
-  implements TextBasedComponent<string[]>, ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
+export class MultipleTextComponent extends ValueComponent<readonly string[]>
+  implements TextBasedComponent<readonly string[]>, ValidatorComponent, ValueComponentWithChangeTracking<readonly string[]> {
   /**
    * Gets the validator element of the component.
    *
@@ -68,7 +68,7 @@ export class MultipleTextComponent extends ValueComponent<string[]>
    *
    * @returns The value of the component.
    */
-  public override getValue(): string[] {
+  public override getValue(): readonly string[] {
     return this.textAreaComponent.getValue().split('\n');
   }
 
@@ -87,7 +87,7 @@ export class MultipleTextComponent extends ValueComponent<string[]>
    * @param callback - The callback to call when the value changes.
    * @returns The component.
    */
-  public onChange(callback: (newValue: string[]) => Promisable<void>): this {
+  public onChange(callback: (newValue: readonly string[]) => Promisable<void>): this {
     this.textAreaComponent.onChange(() => callback(this.getValue()));
     return this;
   }
@@ -121,7 +121,7 @@ export class MultipleTextComponent extends ValueComponent<string[]>
    * @param placeholderValue - The placeholder value to set.
    * @returns The component.
    */
-  public setPlaceholderValue(placeholderValue: string[]): this {
+  public setPlaceholderValue(placeholderValue: readonly string[]): this {
     this.setPlaceholder(this.valueToString(placeholderValue));
     return this;
   }
@@ -132,12 +132,12 @@ export class MultipleTextComponent extends ValueComponent<string[]>
    * @param value - The value to set.
    * @returns The component.
    */
-  public override setValue(value: string[]): this {
+  public override setValue(value: readonly string[]): this {
     this.textAreaComponent.setValue(this.valueToString(value));
     return this;
   }
 
-  private valueToString(value: string[]): string {
+  private valueToString(value: readonly string[]): string {
     return value.join('\n');
   }
 }
