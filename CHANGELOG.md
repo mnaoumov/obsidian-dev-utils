@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 24.2.1-beta.1
+
+- Refactor settings manager
+
 ## 24.2.0
 
 - Update libs
