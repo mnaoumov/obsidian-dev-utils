@@ -127,7 +127,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    * @returns A {@link Promise} that resolves to the safe copy of the settings.
    */
   public async getSafeCopy(settings: ExtractPluginSettings<PluginTypes>): Promise<ExtractPluginSettings<PluginTypes>> {
-    const safeSettings = this.cloneSettings(settings);
+    const safeSettings = await this.cloneSettings(settings);
     await this.ensureSafe(safeSettings);
     return safeSettings;
   }
@@ -160,7 +160,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
       this.setPropertyImpl(propertyName, parsedSettings[propertyName], validationResult[propertyName]);
     }
 
-    this.lastSavedSettingsWrapper = this.cloneSettingsWrapper(this.currentSettingsWrapper);
+    this.lastSavedSettingsWrapper = await this.cloneSettingsWrapper(this.currentSettingsWrapper);
 
     const newRecord = await this.settingsToRawRecord(this.currentSettingsWrapper.settings);
 
@@ -184,7 +184,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
 
     await this.saveToFileImpl();
     await this.plugin.onSaveSettings(this.currentSettingsWrapper, this.lastSavedSettingsWrapper, context);
-    this.lastSavedSettingsWrapper = this.cloneSettingsWrapper(this.currentSettingsWrapper);
+    this.lastSavedSettingsWrapper = await this.cloneSettingsWrapper(this.currentSettingsWrapper);
   }
 
   /**
@@ -274,19 +274,19 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     noop();
   }
 
-  private cloneSettings(settings: ExtractPluginSettings<PluginTypes>): ExtractPluginSettings<PluginTypes> {
-    const record = this.settingsToRawRecord(settings);
+  private async cloneSettings(settings: ExtractPluginSettings<PluginTypes>): Promise<ExtractPluginSettings<PluginTypes>> {
+    const record = await this.settingsToRawRecord(settings);
     const json = JSON.stringify(record);
     const cloneRecord = JSON.parse(json) as GenericObject;
-    return this.rawRecordToSettings(cloneRecord);
+    return await this.rawRecordToSettings(cloneRecord);
   }
 
-  private cloneSettingsWrapper(
+  private async cloneSettingsWrapper(
     settingsWrapper: PluginSettingsWrapper<ExtractPluginSettings<PluginTypes>>
-  ): PluginSettingsWrapper<ExtractPluginSettings<PluginTypes>> {
+  ): Promise<PluginSettingsWrapper<ExtractPluginSettings<PluginTypes>>> {
     return {
-      safeSettings: this.cloneSettings(settingsWrapper.safeSettings),
-      settings: this.cloneSettings(settingsWrapper.settings),
+      safeSettings: await this.cloneSettings(settingsWrapper.safeSettings),
+      settings: await this.cloneSettings(settingsWrapper.settings),
       validationMessages: { ...settingsWrapper.validationMessages }
     };
   }
