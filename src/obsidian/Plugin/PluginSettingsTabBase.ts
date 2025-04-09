@@ -113,6 +113,10 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
   private saveSettingsDebounced: Debouncer<[], void>;
 
+  private get pluginSettings(): ExtractPluginSettings<PluginTypes> {
+    return this.plugin.settingsManager.settingsWrapper.settings as ExtractPluginSettings<PluginTypes>;
+  }
+
   /**
    * Creates a new plugin settings tab.
    *
@@ -198,8 +202,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
 
-    let pluginSettings = this.plugin.settings as PluginSettings;
-    const value = pluginSettings[propertyName] as PropertyType;
+    const value = this.pluginSettings[propertyName] as PropertyType;
     const defaultValue = (this.plugin.settingsManager.defaultSettings as PluginSettings)[propertyName] as PropertyType;
     textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(value));
 
@@ -210,8 +213,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     }
 
     valueComponent.onChange(async (uiValue) => {
-      pluginSettings = this.plugin.settings as PluginSettings;
-      const oldValue = pluginSettings[propertyName];
+      const oldValue = this.pluginSettings[propertyName];
       let newValue: PropertyType | undefined = undefined;
       let validationMessage: string;
       if (textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
