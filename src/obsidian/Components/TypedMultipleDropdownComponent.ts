@@ -31,7 +31,8 @@ import { MultipleDropdownComponent } from './MultipleDropdownComponent.ts';
  *
  * @typeParam T - The type of the value to select.
  */
-export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> implements ValidatorComponent, ValueComponentWithChangeTracking<T[]> {
+export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T[]>
+  implements ValidatorComponent, ValueComponentWithChangeTracking<readonly T[]> {
   /**
    * The validator element of the component.
    *
@@ -90,7 +91,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
    *
    * @returns The value of the component.
    */
-  public getValue(): T[] {
+  public getValue(): readonly T[] {
     const indices = this.multipleDropdownComponent.getValue().map((str) => parseInt(str, 10));
     return indices.map((index) => this.values[index]).filter((value): value is T => value !== undefined);
   }
@@ -101,7 +102,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
    * @param callback - The callback function to be called when the component is changed.
    * @returns The component.
    */
-  public onChange(callback: (value: T[]) => Promisable<void>): this {
+  public onChange(callback: (value: readonly T[]) => Promisable<void>): this {
     this.multipleDropdownComponent.onChange(() => callback(this.getValue()));
     return this;
   }
@@ -124,7 +125,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<T[]> imple
    * @param value - The value to set.
    * @returns The component.
    */
-  public setValue(value: T[]): this {
+  public setValue(value: readonly T[]): this {
     const indices = value.map((v) => this.values.indexOf(v)).filter((index) => index !== -1);
     this.multipleDropdownComponent.setValue(indices.map((index) => index.toString()));
     return this;

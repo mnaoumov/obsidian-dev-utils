@@ -31,7 +31,8 @@ import { getPluginId } from '../Plugin/PluginId.ts';
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class MultipleDropdownComponent extends ValueComponent<string[]> implements ValidatorComponent, ValueComponentWithChangeTracking<string[]> {
+export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
+  implements ValidatorComponent, ValueComponentWithChangeTracking<readonly string[]> {
   /**
    * The validator element of the component.
    *
@@ -83,7 +84,7 @@ export class MultipleDropdownComponent extends ValueComponent<string[]> implemen
    *
    * @returns The value of the component.
    */
-  public getValue(): string[] {
+  public getValue(): readonly string[] {
     return Array.from(this.dropdownComponent.selectEl.selectedOptions).map((o) => o.value);
   }
 
@@ -93,7 +94,7 @@ export class MultipleDropdownComponent extends ValueComponent<string[]> implemen
    * @param callback - The callback function to be called when the component is changed.
    * @returns The component.
    */
-  public onChange(callback: (value: string[]) => Promisable<void>): this {
+  public onChange(callback: (value: readonly string[]) => Promisable<void>): this {
     this.dropdownComponent.onChange(() => callback(this.getValue()));
     return this;
   }
@@ -116,7 +117,7 @@ export class MultipleDropdownComponent extends ValueComponent<string[]> implemen
    * @param value - The value to set.
    * @returns The component.
    */
-  public setValue(value: string[]): this {
+  public setValue(value: readonly string[]): this {
     for (const option of Array.from(this.dropdownComponent.selectEl.options)) {
       option.selected = value.includes(option.value);
     }
