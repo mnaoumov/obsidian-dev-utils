@@ -15,7 +15,6 @@ import {
   Plugin as ObsidianPlugin
 } from 'obsidian';
 
-import type { AsyncEventRef } from '../../AsyncEvents.ts';
 import type {
   ExtractPluginSettings,
   ExtractPluginSettingsManager,
@@ -165,18 +164,6 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
       } finally {
         await this.triggerLifecycleEvent('unload');
       }
-    });
-  }
-
-  /**
-   * Registers an async event.
-   * Unregisters the event when the plugin is unloaded.
-   *
-   * @param eventRef - The event reference.
-   */
-  public registerAsyncEvent(eventRef: AsyncEventRef): void {
-    this.register(() => {
-      eventRef.asyncEvents.offref(eventRef);
     });
   }
 
