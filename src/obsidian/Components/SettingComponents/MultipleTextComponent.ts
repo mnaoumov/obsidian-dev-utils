@@ -11,17 +11,17 @@ import {
   ValueComponent
 } from 'obsidian';
 
-import type { ValidatorElement } from '../../HTMLElement.ts';
+import type { ValidatorElement } from '../../../HTMLElement.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { initPluginContext } from '../Plugin/PluginContext.ts';
+import type { initPluginContext } from '../../Plugin/PluginContext.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { SettingEx } from '../SettingEx.ts';
+import type { SettingEx } from '../../SettingEx.ts';
 import type { TextBasedComponent } from './TextBasedComponent.ts';
 import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
-import { CssClass } from '../../CssClass.ts';
-import { getPluginId } from '../Plugin/PluginId.ts';
+import { CssClass } from '../../../CssClass.ts';
+import { getPluginId } from '../../Plugin/PluginId.ts';
 
 /**
  * A component that displays and edits multiple text values.

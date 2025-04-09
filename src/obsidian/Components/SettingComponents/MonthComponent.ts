@@ -7,11 +7,11 @@
 import moment from 'moment';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { initPluginContext } from '../Plugin/PluginContext.ts';
+import type { initPluginContext } from '../../Plugin/PluginContext.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { SettingEx } from '../SettingEx.ts';
+import type { SettingEx } from '../../SettingEx.ts';
 
-import { CssClass } from '../../CssClass.ts';
+import { CssClass } from '../../../CssClass.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 
 const DATE_FORMAT = 'YYYY-MM';

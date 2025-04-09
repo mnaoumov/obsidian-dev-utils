@@ -269,11 +269,11 @@ You can override those styles in your plugin's `styles.css` file via adding your
 }
 ```
 
-## Components
+## Setting Components
 
-The library provides some components that you can use in your plugin.
+The library provides some setting components that you can use in your plugin.
 
-See all available components in the [Components](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/Components) folder.
+See all available components in the [Components](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/Components/SettingComponents) folder.
 
 In order for components to look properly, their styles has to be initialized. See [Styling](#styling) for more details.
 

@@ -1,7 +1,7 @@
 /**
  * @packageDocumentation
  *
- * Contains a component that displays and edits a multi-select dropdown.
+ * Typed dropdown component.
  */
 
 import type { Promisable } from 'type-fest';
@@ -11,28 +11,28 @@ import {
   ValueComponent
 } from 'obsidian';
 
-import type { ValidatorElement } from '../../HTMLElement.ts';
+import type { ValidatorElement } from '../../../HTMLElement.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { initPluginContext } from '../Plugin/PluginContext.ts';
+import type { initPluginContext } from '../../Plugin/PluginContext.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { SettingEx } from '../SettingEx.ts';
-import type { ValidatorComponent } from './ValidatorComponent.ts';
+import type { SettingEx } from '../../SettingEx.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
-import { CssClass } from '../../CssClass.ts';
-import { getPluginId } from '../Plugin/PluginId.ts';
+import { CssClass } from '../../../CssClass.ts';
+import { getPluginId } from '../../Plugin/PluginId.ts';
 
 /**
- * A multi-select dropdown component.
+ * A dropdown component that can be used to select a value from a list.
  *
- * You can add this component using {@link SettingEx.addMultipleDropdown}.
+ * You can add this component using {@link SettingEx.addTypedDropdown}.
  *
  * In order to add the styles for the component, use {@link initPluginContext} in your plugin's `onload()` function.
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
+ *
+ * @typeParam T - The type of the value to select.
  */
-export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
-  implements ValidatorComponent, ValueComponentWithChangeTracking<readonly string[]> {
+export class TypedDropdownComponent<T> extends ValueComponent<null | T> implements ValueComponentWithChangeTracking<null | T> {
   /**
    * The validator element of the component.
    *
@@ -44,6 +44,8 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
 
   private readonly dropdownComponent: DropdownComponent;
 
+  private values: T[] = [];
+
   /**
    * Creates a new multiple dropdown component.
    *
@@ -52,8 +54,7 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
   public constructor(containerEl: HTMLElement) {
     super();
     this.dropdownComponent = new DropdownComponent(containerEl);
-    this.dropdownComponent.selectEl.multiple = true;
-    containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.MultipleDropdownComponent);
+    containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.TypedDropdownComponent);
   }
 
   /**
@@ -63,8 +64,13 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    * @param display - The display text of the option.
    * @returns The component.
    */
-  public addOption(value: string, display: string): this {
-    this.dropdownComponent.addOption(value, display);
+  public addOption(value: T, display: string): this {
+    let index = this.values.indexOf(value);
+    if (index === -1) {
+      this.values.push(value);
+      index = this.values.length - 1;
+    }
+    this.dropdownComponent.addOption(index.toString(), display);
     return this;
   }
 
@@ -74,8 +80,10 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    * @param options - The options to add.
    * @returns The component.
    */
-  public addOptions(options: Record<string, string>): this {
-    this.dropdownComponent.addOptions(options);
+  public addOptions(options: Map<T, string>): this {
+    for (const [value, display] of options.entries()) {
+      this.addOption(value, display);
+    }
     return this;
   }
 
@@ -84,8 +92,8 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    *
    * @returns The value of the component.
    */
-  public getValue(): readonly string[] {
-    return Array.from(this.dropdownComponent.selectEl.selectedOptions).map((o) => o.value);
+  public getValue(): null | T {
+    return this.values[this.dropdownComponent.selectEl.selectedIndex] ?? null;
   }
 
   /**
@@ -94,7 +102,7 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    * @param callback - The callback function to be called when the component is changed.
    * @returns The component.
    */
-  public onChange(callback: (value: readonly string[]) => Promisable<void>): this {
+  public onChange(callback: (value: null | T) => Promisable<void>): this {
     this.dropdownComponent.onChange(() => callback(this.getValue()));
     return this;
   }
@@ -117,11 +125,9 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    * @param value - The value to set.
    * @returns The component.
    */
-  public setValue(value: readonly string[]): this {
-    for (const option of Array.from(this.dropdownComponent.selectEl.options)) {
-      option.selected = value.includes(option.value);
-    }
-
+  public setValue(value: null | T): this {
+    const index = value === null ? -1 : this.values.indexOf(value);
+    this.dropdownComponent.selectEl.selectedIndex = index;
     return this;
   }
 }
