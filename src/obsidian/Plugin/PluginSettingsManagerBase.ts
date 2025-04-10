@@ -375,6 +375,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   }
 
   private async rawRecordToSettings(rawRecord: GenericObject): Promise<ExtractPluginSettings<PluginTypes>> {
+    rawRecord = this.getTransformer().transformObjectRecursively(rawRecord);
     await this.onLoadRecord(rawRecord);
 
     const settings = this.createDefaultSettings();
