@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 25.1.0
+
+- Expose SAVE_TO_FILE_CONTEXT
+
 ## 25.0.1
 
 - Restore transformers on load settings
