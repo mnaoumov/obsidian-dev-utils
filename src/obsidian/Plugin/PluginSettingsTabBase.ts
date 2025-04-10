@@ -22,6 +22,8 @@ import type { AsyncEventRef } from '../../AsyncEvents.ts';
 import type { StringKeys } from '../../Type.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/SettingComponents/ValueComponentWithChangeTracking.ts';
 import type { ValidationMessageHolder } from '../ValidationMessage.ts';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 import type {
   ExtractPlugin,
   ExtractPluginSettings,
@@ -45,7 +47,10 @@ import { getValidatorComponent } from '../Components/SettingComponents/Validator
 import { isValidationMessageHolder } from '../ValidationMessage.ts';
 import { getPluginId } from './PluginId.ts';
 
-const PLUGIN_SETTINGS_TAB_SYMBOL = Symbol('pluginSettingsTab');
+/**
+ * The context passed to the {@link PluginSettingsManagerBase.saveToFile} method.
+ */
+export const SAVE_TO_FILE_CONTEXT = 'PluginSettingsTab';
 
 /**
  * Options for binding a value component to a plugin setting.
@@ -137,7 +142,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     super(plugin.app, plugin);
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
     this.saveSettingsDebounced = debounce(
-      convertAsyncToSync(() => this.plugin.settingsManager.saveToFile(PLUGIN_SETTINGS_TAB_SYMBOL)),
+      convertAsyncToSync(() => this.plugin.settingsManager.saveToFile(SAVE_TO_FILE_CONTEXT)),
       this.saveSettingsDebounceTimeoutInMilliseconds
     );
     this.asyncEventsComponent = new AsyncEventsComponent();
@@ -310,7 +315,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     this._isOpen = false;
     this.asyncEventsComponent.unload();
     this.asyncEventsComponent.load();
-    invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile(PLUGIN_SETTINGS_TAB_SYMBOL));
+    invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile(SAVE_TO_FILE_CONTEXT));
   }
 
   /**
@@ -353,7 +358,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     _oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
     context: unknown
   ): Promise<void> {
-    if (context === PLUGIN_SETTINGS_TAB_SYMBOL) {
+    if (context === SAVE_TO_FILE_CONTEXT) {
       for (const [propertyName, validationMessage] of Object.entries(newSettings.validationMessages as Record<string, string>)) {
         await this.asyncEvents.triggerAsync('validationMessageChanged', propertyName, validationMessage);
       }
