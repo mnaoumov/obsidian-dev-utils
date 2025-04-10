@@ -32,6 +32,7 @@ import { AsyncEvents } from '../../AsyncEvents.ts';
 import { getDebugger } from '../../Debug.ts';
 import { registerAsyncErrorEventHandler } from '../../Error.ts';
 import { noopAsync } from '../../Function.ts';
+import { registerAsyncEvent } from '../Components/AsyncEventsComponent.ts';
 import { initPluginContext } from './PluginContext.ts';
 
 type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
@@ -130,31 +131,6 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     invokeAsyncSafelyAfterDelay(this.afterLoad.bind(this));
   }
 
-  /**
-   * Called when the plugin settings are loaded or reloaded.
-   *
-   * @param _loadedSettings - The loaded settings wrapper.
-   * @param _isInitialLoad - Whether the settings are being loaded for the first time.
-   */
-  public async onLoadSettings(_loadedSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>, _isInitialLoad: boolean): Promise<void> {
-    await noopAsync();
-  }
-
-  /**
-   * Called when the plugin settings are saved.
-   *
-   * @param _newSettings - The new settings.
-   * @param _oldSettings - The old settings.
-   * @param _context - The context.
-   */
-  public async onSaveSettings(
-    _newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
-    _oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
-    _context: unknown
-  ): Promise<void> {
-    await noopAsync();
-  }
-
   /** */
   public override onunload(): void {
     super.onunload();
@@ -228,6 +204,10 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     }));
 
     this._settingsManager = this.createSettingsManager();
+    if (this._settingsManager) {
+      registerAsyncEvent(this, this._settingsManager.on('loadSettings', this.onLoadSettings.bind(this)));
+      registerAsyncEvent(this, this._settingsManager.on('saveSettings', this.onSaveSettings.bind(this)));
+    }
 
     await this._settingsManager?.loadFromFile(true);
     this._settingsTab = this.createPluginSettingsTab();
@@ -240,6 +220,31 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     this.register(() => {
       abortController.abort();
     });
+  }
+
+  /**
+   * Called when the plugin settings are loaded or reloaded.
+   *
+   * @param _loadedSettings - The loaded settings wrapper.
+   * @param _isInitialLoad - Whether the settings are being loaded for the first time.
+   */
+  protected async onLoadSettings(_loadedSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>, _isInitialLoad: boolean): Promise<void> {
+    await noopAsync();
+  }
+
+  /**
+   * Called when the plugin settings are saved.
+   *
+   * @param _newSettings - The new settings.
+   * @param _oldSettings - The old settings.
+   * @param _context - The context.
+   */
+  protected async onSaveSettings(
+    _newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+    _oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+    _context: unknown
+  ): Promise<void> {
+    await noopAsync();
   }
 
   /**
