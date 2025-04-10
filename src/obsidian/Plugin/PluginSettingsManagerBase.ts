@@ -10,6 +10,7 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
+import type { AsyncEventRef } from '../../AsyncEvents.ts';
 import type { GenericObject } from '../../Object.ts';
 import type { Transformer } from '../../Transformers/Transformer.ts';
 import type {
@@ -27,6 +28,7 @@ import type {
   PluginTypesBase
 } from './PluginTypesBase.ts';
 
+import { AsyncEvents } from '../../AsyncEvents.ts';
 import {
   noop,
   noopAsync
@@ -58,7 +60,7 @@ type Validator<PluginSettings extends object, PropertyName extends StringKeys<Pl
  *
  * @typeParam PluginTypes - Plugin-specific types.
  */
-export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesBase> {
+export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesBase> extends AsyncEvents {
   public readonly app: App;
 
   public readonly defaultSettings: ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
@@ -83,6 +85,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    * @param plugin - The plugin.
    */
   public constructor(public readonly plugin: ExtractPlugin<PluginTypes>) {
+    super();
     this.app = plugin.app;
     this.defaultSettings = this.createDefaultSettings() as ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
     this.currentSettingsWrapper = this.createDefaultSettingsWrapper();
@@ -168,7 +171,56 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
       await this.saveToFileImpl();
     }
 
-    await this.plugin.onLoadSettings(this.currentSettingsWrapper, isInitialLoad);
+    await this.triggerAsync('loadSettings', this.currentSettingsWrapper, isInitialLoad);
+  }
+
+  /**
+   * Subscribes to the `loadSettings` event.
+   *
+   * @param name - Always `loadSettings`.
+   * @param callback - The callback to call when the event is triggered.
+   * @param thisArg - The context passed as `this` to the `callback`.
+   * @returns A reference to the event listener.
+   */
+  public override on(
+    name: 'loadSettings',
+    callback: (
+      loadedSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+      isInitialLoad: boolean
+    ) => Promise<void>,
+    thisArg?: unknown
+  ): AsyncEventRef;
+  /**
+   * Subscribes to the `saveSettings` event.
+   *
+   * @param name - Always `saveSettings`.
+   * @param callback - The callback to call when the event is triggered.
+   * @param thisArg - The context passed as `this` to the `callback`.
+   * @returns A reference to the event listener.
+   */
+  public override on(
+    name: 'saveSettings',
+    callback: (
+      newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+      oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+      context: unknown
+    ) => Promise<void>,
+    thisArg?: unknown
+  ): AsyncEventRef;
+  /**
+   * Subscribes to an event.
+   *
+   * @param name - The name of the event.
+   * @param callback - The callback to call when the event is triggered.
+   * @param thisArg - The context passed as `this` to the `callback`.
+   * @returns A reference to the event listener.
+   */
+  public override on<Args extends unknown[]>(
+    name: string,
+    callback: (...args: Args) => Promisable<void>,
+    thisArg?: unknown
+  ): AsyncEventRef {
+    return super.on(name, callback, thisArg);
   }
 
   /**
@@ -183,7 +235,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     }
 
     await this.saveToFileImpl();
-    await this.plugin.onSaveSettings(this.currentSettingsWrapper, this.lastSavedSettingsWrapper, context);
+    await this.triggerAsync('saveSettings', this.currentSettingsWrapper, this.lastSavedSettingsWrapper, context);
     this.lastSavedSettingsWrapper = await this.cloneSettingsWrapper(this.currentSettingsWrapper);
   }
 
