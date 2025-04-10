@@ -266,7 +266,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       updateValidatorElement();
     });
 
-    updateValidatorElement();
+    updateValidatorElement(this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName]);
     return valueComponent;
 
     function updateValidatorElement(validationMessage?: string): void {
