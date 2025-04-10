@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 25.0.1
+
+- Restore transformers on load settings
+
 ## 25.0.0
 
 - Release
