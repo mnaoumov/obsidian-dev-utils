@@ -187,7 +187,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     callback: (
       loadedSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
       isInitialLoad: boolean
-    ) => Promise<void>,
+    ) => Promisable<void>,
     thisArg?: unknown
   ): AsyncEventRef;
   /**
@@ -204,7 +204,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
       newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
       oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
       context: unknown
-    ) => Promise<void>,
+    ) => Promisable<void>,
     thisArg?: unknown
   ): AsyncEventRef;
   /**
