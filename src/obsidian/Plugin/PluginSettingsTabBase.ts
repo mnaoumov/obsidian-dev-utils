@@ -24,6 +24,7 @@ import type { ValidationMessageHolder } from '../ValidationMessage.ts';
 import type {
   ExtractPlugin,
   ExtractPluginSettings,
+  ExtractReadonlyPluginSettingsWrapper,
   PluginTypesBase
 } from './PluginTypesBase.ts';
 
@@ -32,11 +33,16 @@ import {
   invokeAsyncSafely
 } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
-import { noop } from '../../Function.ts';
+import {
+  noop,
+  noopAsync
+} from '../../Function.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
 import { getValidatorComponent } from '../Components/SettingComponents/ValidatorComponent.ts';
 import { isValidationMessageHolder } from '../ValidationMessage.ts';
 import { getPluginId } from './PluginId.ts';
+
+const PLUGIN_SETTINGS_TAB_SYMBOL = Symbol('pluginSettingsTab');
 
 /**
  * Options for binding a value component to a plugin setting.
@@ -126,7 +132,12 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   public constructor(public override plugin: ExtractPlugin<PluginTypes>) {
     super(plugin.app, plugin);
     this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
-    this.saveSettingsDebounced = debounce(convertAsyncToSync(() => this.plugin.settingsManager.saveToFile()), this.saveSettingsDebounceTimeoutInMilliseconds);
+    this.saveSettingsDebounced = debounce(
+      convertAsyncToSync(() => this.plugin.settingsManager.saveToFile(PLUGIN_SETTINGS_TAB_SYMBOL)),
+      this.saveSettingsDebounceTimeoutInMilliseconds
+    );
+    this.plugin.settingsManager.on('loadSettings', this.onLoadSettings.bind(this));
+    this.plugin.settingsManager.on('saveSettings', this.onSaveSettings.bind(this));
   }
 
   /**
@@ -282,7 +293,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     this.containerEl.empty();
     this._isOpen = false;
     this.saveSettingsDebounced.cancel();
-    invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile());
+    invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile(PLUGIN_SETTINGS_TAB_SYMBOL));
   }
 
   /**
@@ -290,5 +301,47 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    */
   public show(): void {
     this.app.setting.openTab(this);
+  }
+
+  /**
+   * Called when the plugin settings are loaded.
+   *
+   * @param _loadedSettings - The loaded settings.
+   * @param _isInitialLoad - Whether the settings are being loaded for the first time.
+   * @returns A {@link Promise} that resolves when the settings are loaded.
+   */
+  protected async onLoadSettings(_loadedSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>, _isInitialLoad: boolean): Promise<void> {
+    this.refresh();
+    await noopAsync();
+  }
+
+  /**
+   * Called when the plugin settings are saved.
+   *
+   * @param _newSettings - The new settings.
+   * @param _oldSettings - The old settings.
+   * @param context - The context.
+   * @returns A {@link Promise} that resolves when the settings are saved.
+   */
+  protected async onSaveSettings(
+    _newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+    _oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+    context: unknown
+  ): Promise<void> {
+    if (context === PLUGIN_SETTINGS_TAB_SYMBOL) {
+      return;
+    }
+
+    this.refresh();
+    await noopAsync();
+  }
+
+  private refresh(): void {
+    if (!this.isOpen) {
+      return;
+    }
+
+    this.containerEl.empty();
+    this.display();
   }
 }
