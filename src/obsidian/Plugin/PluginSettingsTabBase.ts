@@ -18,6 +18,7 @@ import {
   setTooltip
 } from 'obsidian';
 
+import type { AsyncEventRef } from '../../AsyncEvents.ts';
 import type { StringKeys } from '../../Type.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/SettingComponents/ValueComponentWithChangeTracking.ts';
 import type { ValidationMessageHolder } from '../ValidationMessage.ts';
@@ -32,11 +33,13 @@ import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from '../../Async.ts';
+import { AsyncEvents } from '../../AsyncEvents.ts';
 import { CssClass } from '../../CssClass.ts';
 import {
   noop,
   noopAsync
 } from '../../Function.ts';
+import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
 import { getValidatorComponent } from '../Components/SettingComponents/ValidatorComponent.ts';
 import { isValidationMessageHolder } from '../ValidationMessage.ts';
@@ -117,7 +120,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   }
 
   private _isOpen = false;
-
+  private readonly asyncEvents: AsyncEvents;
+  private readonly asyncEventsComponent: AsyncEventsComponent;
   private saveSettingsDebounced: Debouncer<[], void>;
 
   private get pluginSettings(): ExtractPluginSettings<PluginTypes> {
@@ -136,8 +140,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       convertAsyncToSync(() => this.plugin.settingsManager.saveToFile(PLUGIN_SETTINGS_TAB_SYMBOL)),
       this.saveSettingsDebounceTimeoutInMilliseconds
     );
-    this.plugin.settingsManager.on('loadSettings', this.onLoadSettings.bind(this));
-    this.plugin.settingsManager.on('saveSettings', this.onSaveSettings.bind(this));
+    this.asyncEventsComponent = new AsyncEventsComponent();
+    this.asyncEvents = new AsyncEvents();
   }
 
   /**
@@ -218,6 +222,14 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     const defaultValue = (this.plugin.settingsManager.defaultSettings as PluginSettings)[propertyName] as PropertyType;
     textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>));
 
+    this.asyncEventsComponent.registerAsyncEvent(this.on('validationMessageChanged', (anotherPropertyName, validationMessage) => {
+      if (propertyName !== anotherPropertyName) {
+        return;
+      }
+
+      updateValidatorElement(validationMessage);
+    }));
+
     if (readonlyValue === defaultValue && textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
       textBasedComponent.empty();
     } else {
@@ -283,6 +295,9 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    */
   public override display(): void {
     this._isOpen = true;
+    this.asyncEventsComponent.load();
+    this.asyncEventsComponent.registerAsyncEvent(this.plugin.settingsManager.on('loadSettings', this.onLoadSettings.bind(this)));
+    this.asyncEventsComponent.registerAsyncEvent(this.plugin.settingsManager.on('saveSettings', this.onSaveSettings.bind(this)));
   }
 
   /**
@@ -290,9 +305,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    */
   public override hide(): void {
     super.hide();
+    this.saveSettingsDebounced.cancel();
     this.containerEl.empty();
     this._isOpen = false;
-    this.saveSettingsDebounced.cancel();
+    this.asyncEventsComponent.unload();
+    this.asyncEventsComponent.load();
     invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile(PLUGIN_SETTINGS_TAB_SYMBOL));
   }
 
@@ -315,32 +332,38 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     await noopAsync();
   }
 
-  /**
-   * Called when the plugin settings are saved.
-   *
-   * @param _newSettings - The new settings.
-   * @param _oldSettings - The old settings.
-   * @param context - The context.
-   * @returns A {@link Promise} that resolves when the settings are saved.
-   */
-  protected async onSaveSettings(
-    _newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+  private on(
+    name: 'validationMessageChanged',
+    callback: (
+      propertyName: string,
+      validationMessage: string
+    ) => Promisable<void>,
+    thisArg?: unknown
+  ): AsyncEventRef;
+  private on<Args extends unknown[]>(
+    name: string,
+    callback: (...args: Args) => Promisable<void>,
+    thisArg?: unknown
+  ): AsyncEventRef {
+    return this.asyncEvents.on(name, callback, thisArg);
+  }
+
+  private async onSaveSettings(
+    newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
     _oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
     context: unknown
   ): Promise<void> {
     if (context === PLUGIN_SETTINGS_TAB_SYMBOL) {
+      for (const [propertyName, validationMessage] of Object.entries(newSettings.validationMessages as Record<string, string>)) {
+        await this.asyncEvents.triggerAsync('validationMessageChanged', propertyName, validationMessage);
+      }
       return;
     }
 
     this.refresh();
-    await noopAsync();
   }
 
   private refresh(): void {
-    if (!this.isOpen) {
-      return;
-    }
-
     this.containerEl.empty();
     this.display();
   }
