@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 24.2.1-beta.5
+
+- Update exports
+- Revalidate UI components after save
+- Use promisable events
+- Use readonly onChanged
+- Refresh settings tab when settings load/save
+- Use load/save settings events
+- Generic methods in AsyncEvents
+- Remove old comment
+- AsyncEventsComponent
+- Move SettingComponents
+- Use readonly property settings
+- Add default value to placeholder
+
 ## 24.2.1-beta.4
 
 - Fix saving
