@@ -329,6 +329,26 @@
         "default": "./dist/lib/cjs/obsidian/Components/*.cjs"
       }
     },
+    "./obsidian/Components/SettingComponents": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/Components/SettingComponents/index.d.mts",
+        "default": "./dist/lib/esm/obsidian/Components/SettingComponents/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/Components/SettingComponents/index.d.cts",
+        "default": "./dist/lib/cjs/obsidian/Components/SettingComponents/index.cjs"
+      }
+    },
+    "./obsidian/Components/SettingComponents/*": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/Components/SettingComponents/*.d.mts",
+        "default": "./dist/lib/esm/obsidian/Components/SettingComponents/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/Components/SettingComponents/*.d.cts",
+        "default": "./dist/lib/cjs/obsidian/Components/SettingComponents/*.cjs"
+      }
+    },
     "./obsidian/Modals": {
       "import": {
         "types": "./dist/lib/esm/obsidian/Modals/index.d.mts",
