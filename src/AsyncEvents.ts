@@ -20,7 +20,7 @@ export interface AsyncEventRef {
   /**
    * The callback to call when the event is triggered.
    */
-  callback: (...args: unknown[]) => Promisable<unknown>;
+  callback: GenericCallback;
 
   /**
    * The name of the event.
@@ -32,6 +32,8 @@ export interface AsyncEventRef {
    */
   thisArg: unknown;
 }
+
+type GenericCallback = (...args: unknown[]) => Promisable<void>;
 
 /**
  * Async event emitter implementation
@@ -52,7 +54,8 @@ export class AsyncEvents {
    *
    * @public
    */
-  public off(name: string, callback: (...args: unknown[]) => Promisable<unknown>): void {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public off<Args extends unknown[]>(name: string, callback: (...args: Args) => Promisable<void>): void {
     const eventRefs = this.eventRefsMap.get(name);
     if (!eventRefs) {
       return;
@@ -106,7 +109,8 @@ export class AsyncEvents {
    *
    * @public
    */
-  public on(name: string, callback: (...args: unknown[]) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public on<Args extends unknown[]>(name: string, callback: (...args: Args) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
     let eventRefs = this.eventRefsMap.get(name);
     if (!eventRefs) {
       eventRefs = [];
@@ -115,7 +119,7 @@ export class AsyncEvents {
 
     const eventRef: AsyncEventRef = {
       asyncEvents: this,
-      callback,
+      callback: callback as GenericCallback,
       name,
       thisArg
     };
@@ -141,7 +145,8 @@ export class AsyncEvents {
    *
    * @public
    */
-  public once(name: string, callback: (...args: unknown[]) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public once<Args extends unknown[]>(name: string, callback: (...args: Args) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
     const originalEventRef = this.on(name, callback, thisArg);
     const cleanupEventRef = this.on(name, () => {
       this.offref(originalEventRef);
@@ -163,7 +168,8 @@ export class AsyncEvents {
    *
    * @public
    */
-  public trigger(name: string, ...args: unknown[]): void {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public trigger<Args extends unknown[]>(name: string, ...args: Args): void {
     const eventRefs = this.eventRefsMap.get(name) ?? [];
     for (const eventRef of eventRefs.slice()) {
       this.tryTrigger(eventRef, args);
@@ -178,7 +184,8 @@ export class AsyncEvents {
    *
    * @public
    */
-  public async triggerAsync(name: string, ...args: unknown[]): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public async triggerAsync<Args extends unknown[]>(name: string, ...args: Args): Promise<void> {
     const eventRefs = this.eventRefsMap.get(name) ?? [];
     for (const eventRef of eventRefs.slice()) {
       await this.tryTriggerAsync(eventRef, args);
@@ -198,7 +205,8 @@ export class AsyncEvents {
    *
    * @public
    */
-  public tryTrigger(eventRef: AsyncEventRef, args: unknown[]): void {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void {
     try {
       eventRef.callback.apply(eventRef.thisArg, args);
     } catch (e) {
@@ -216,7 +224,8 @@ export class AsyncEvents {
    *
    * @public
    */
-  public async tryTriggerAsync(eventRef: AsyncEventRef, args: unknown[]): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public async tryTriggerAsync<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): Promise<void> {
     try {
       const result = eventRef.callback.call(eventRef.thisArg, ...args);
       await (result as Promise<void>);
