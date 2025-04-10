@@ -51,7 +51,7 @@ export interface BindOptions<T> {
   /**
    * A callback function that is called when the value of the component changes.
    */
-  onChanged?(newValue: T | undefined, oldValue: T): Promisable<void>;
+  onChanged?(newValue: ReadonlyDeep<T>, oldValue: ReadonlyDeep<T>): Promisable<void>;
 
   /**
    * Whether to reset the setting when the component value is empty. Default is `true`.
@@ -242,7 +242,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       }
       updateValidatorElement(validationMessage);
       if (newValue !== undefined) {
-        await optionsExt.onChanged(newValue, oldValue);
+        await optionsExt.onChanged(newValue as ReadonlyDeep<PropertyType>, oldValue as ReadonlyDeep<PropertyType>);
       }
       this.saveSettingsDebounced();
     });
