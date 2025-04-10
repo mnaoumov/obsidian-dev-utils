@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 25.0.0
+
+- Release
+
 ## 24.2.1-beta.6
 
 - Update validation on initial bind
