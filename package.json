@@ -1,6 +1,6 @@
 {
   "name": "obsidian-dev-utils",
-  "version": "24.2.1-beta.5",
+  "version": "24.2.1-beta.6",
   "description": "This is the collection of useful functions that you can use for your Obsidian plugin development",
   "keywords": [
     "obsidian"

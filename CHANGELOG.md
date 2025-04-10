@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 24.2.1-beta.6
+
+- Update validation on initial bind
+
 ## 24.2.1-beta.5
 
 - Update exports
