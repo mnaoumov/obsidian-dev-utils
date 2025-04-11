@@ -166,20 +166,20 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   /**
-   * Creates a plugin settings tab.
-   *
-   * @returns The settings tab or null if not applicable.
-   */
-  protected createPluginSettingsTab(): ExtractPluginSettingsTab<PluginTypes> | null {
-    return null;
-  }
-
-  /**
    * Creates the plugin settings manager. This method must be implemented by subclasses.
    *
    * @returns The plugin settings manager.
    */
   protected createSettingsManager(): ExtractPluginSettingsManager<PluginTypes> | null {
+    return null;
+  }
+
+  /**
+   * Creates a plugin settings tab.
+   *
+   * @returns The settings tab or null if not applicable.
+   */
+  protected createSettingsTab(): ExtractPluginSettingsTab<PluginTypes> | null {
     return null;
   }
 
@@ -210,7 +210,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     }
 
     await this._settingsManager?.loadFromFile(true);
-    this._settingsTab = this.createPluginSettingsTab();
+    this._settingsTab = this.createSettingsTab();
     if (this._settingsTab) {
       this.addSettingTab(this._settingsTab);
     }
