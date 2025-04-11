@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.0.0
+
+- Rename createSettingsManager
+- Update libs
+
 ## 25.1.0
 
 - Expose SAVE_TO_FILE_CONTEXT
