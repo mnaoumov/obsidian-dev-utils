@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 26.1.0
+
+- deepEqual settings
+- Update libs
+- Change default `shouldResetSettingWhenComponentIsEmpty`
+- Remove Error stack
+
 ## 26.0.0
 
 - Rename createSettingsManager
