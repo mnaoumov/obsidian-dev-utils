@@ -213,7 +213,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
       onChanged: noop,
       pluginSettingsToComponentValueConverter: (value: ReadonlyDeep<PropertyType>): UIValue => value as UIValue,
-      shouldResetSettingWhenComponentIsEmpty: true,
+      shouldResetSettingWhenComponentIsEmpty: false,
       shouldShowValidationMessage: true
     };
 
