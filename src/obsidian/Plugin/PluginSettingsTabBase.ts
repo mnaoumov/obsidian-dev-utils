@@ -41,6 +41,7 @@ import {
   noop,
   noopAsync
 } from '../../Function.ts';
+import { deepEqual } from '../../Object.ts';
 import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
 import { getValidatorComponent } from '../Components/SettingComponents/ValidatorComponent.ts';
@@ -235,7 +236,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       updateValidatorElement(validationMessage);
     }));
 
-    if (readonlyValue === defaultValue && textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
+    if (textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty && deepEqual(readonlyValue, defaultValue)) {
       textBasedComponent.empty();
     } else {
       valueComponent.setValue(optionsExt.pluginSettingsToComponentValueConverter(readonlyValue));
