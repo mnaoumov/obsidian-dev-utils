@@ -139,7 +139,7 @@ function parseErrorEntries(error: unknown, level = 0, entries: ErrorEntry[] = []
 
   if (error.stack) {
     const restStack = error.stack.startsWith(title) ? error.stack.slice(title.length + 1) : error.stack;
-    entries.push({ level, message: `Error stack:\n${restStack}` });
+    entries.push({ level, message: restStack });
   }
 
   if (error.cause !== undefined) {
