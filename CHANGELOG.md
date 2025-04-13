@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.1.3-beta.1
+
+- Refactor default settings validation
+- Update libs
+
 ## 26.1.2
 
 - Don't fail on wrong frontmatter
