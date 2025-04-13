@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.1.3-beta.7
+
+- Add tooltip
+- Add context
+
 ## 26.1.3-beta.6
 
 - Patch checkValidity as `valid` event doesn't exist
