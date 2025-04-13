@@ -8,6 +8,8 @@ import { AsyncEvents } from './AsyncEvents.ts';
 
 const ASYNC_ERROR_EVENT = 'asyncError';
 
+const ERROR_STACK_PREFIX = 'Error stack:\n';
+
 /**
  * The message of the error wrapper that is used to wrap an actual error that occurred during an async operation.
  */
@@ -38,7 +40,9 @@ export function emitAsyncErrorEvent(asyncError: unknown): void {
  * @returns The string representation of the error.
  */
 export function errorToString(error: unknown): string {
-  return parseErrorEntries(error).map((entry) => '  '.repeat(entry.level) + entry.message).join('\n');
+  return parseErrorEntries(error)
+    .map((entry) => '  '.repeat(entry.level) + (entry.message.startsWith(ERROR_STACK_PREFIX) ? entry.message.slice(ERROR_STACK_PREFIX.length) : entry.message))
+    .join('\n');
 }
 
 /**
@@ -139,7 +143,7 @@ function parseErrorEntries(error: unknown, level = 0, entries: ErrorEntry[] = []
 
   if (error.stack) {
     const restStack = error.stack.startsWith(title) ? error.stack.slice(title.length + 1) : error.stack;
-    entries.push({ level, message: restStack });
+    entries.push({ level, message: `${ERROR_STACK_PREFIX}${restStack}` });
   }
 
   if (error.cause !== undefined) {
