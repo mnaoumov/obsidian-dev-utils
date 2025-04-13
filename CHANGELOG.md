@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.3
+
+- Fix shouldEmptyOnBlur
+
 ## 26.1.3-beta.2
 
 - Empty in display
