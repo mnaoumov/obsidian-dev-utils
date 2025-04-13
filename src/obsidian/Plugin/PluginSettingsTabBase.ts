@@ -243,6 +243,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       updateValidatorElement(validationMessage);
     }));
 
+    let shouldEmptyOnBlur = false;
+
     if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && deepEqual(readonlyValue, defaultValue)) {
       textBasedComponent.empty();
     } else {
@@ -271,9 +273,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
           newValue = convertedValue;
           validationMessage = await this.plugin.settingsManager.setProperty(propertyName, newValue);
           if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && deepEqual(newValue, defaultValue)) {
-            // eslint-disable-next-line require-atomic-updates
-            shouldSkipOnChange = true;
-            textBasedComponent.empty();
+            shouldEmptyOnBlur = true;
           }
         }
       }
@@ -295,6 +295,14 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     return valueComponent;
 
     function updateValidatorElement(validationMessage?: string): void {
+      if (shouldEmptyOnBlur) {
+        shouldEmptyOnBlur = false;
+        if (!textBasedComponent?.isEmpty() && !validatorElement?.isActiveElement()) {
+          shouldSkipOnChange = true;
+          textBasedComponent?.empty();
+        }
+      }
+
       if (!validatorElement) {
         return;
       }
