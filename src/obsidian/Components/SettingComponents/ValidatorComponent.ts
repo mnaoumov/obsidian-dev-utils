@@ -62,10 +62,12 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
   if (obj instanceof ToggleComponent) {
     const hiddenCheckbox = obj.toggleEl.find('input[type=checkbox]') as HTMLInputElement;
     around(hiddenCheckbox, {
-      checkValidity: (next: CheckValidityFn): CheckValidityFn => () => {
-        const isValid = next();
-        obj.toggleEl.toggleClass('invalid', !isValid);
-        return isValid;
+      checkValidity: (next: CheckValidityFn): CheckValidityFn => {
+        return function checkValidity(this: HTMLInputElement) {
+          const isValid = next.call(this);
+          obj.toggleEl.toggleClass('invalid', !isValid);
+          return isValid;
+        };
       }
     });
 
