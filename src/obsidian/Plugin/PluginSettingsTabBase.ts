@@ -69,6 +69,12 @@ export interface BindOptions<T> {
   shouldResetSettingWhenComponentIsEmpty?: boolean;
 
   /**
+   * Whether to show the placeholder for default values. Default is `true`.
+   * Applicable only to text-based components.
+   */
+  shouldShowPlaceholderForDefaultValues?: boolean;
+
+  /**
    * Whether to show the validation message when the component value is invalid. Default is `true`.
    */
   shouldShowValidationMessage?: boolean;
@@ -214,7 +220,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
       onChanged: noop,
       pluginSettingsToComponentValueConverter: (value: ReadonlyDeep<PropertyType>): UIValue => value as UIValue,
-      shouldResetSettingWhenComponentIsEmpty: false,
+      shouldResetSettingWhenComponentIsEmpty: true,
+      shouldShowPlaceholderForDefaultValues: true,
       shouldShowValidationMessage: true
     };
 
@@ -236,13 +243,20 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       updateValidatorElement(validationMessage);
     }));
 
-    if (textBasedComponent && optionsExt.shouldResetSettingWhenComponentIsEmpty && deepEqual(readonlyValue, defaultValue)) {
+    if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && deepEqual(readonlyValue, defaultValue)) {
       textBasedComponent.empty();
     } else {
       valueComponent.setValue(optionsExt.pluginSettingsToComponentValueConverter(readonlyValue));
     }
 
+    let shouldSkipOnChange = false;
+
     valueComponent.onChange(async (uiValue) => {
+      if (shouldSkipOnChange) {
+        shouldSkipOnChange = false;
+        return;
+      }
+
       const oldValue = this.pluginSettings[propertyName];
       let newValue: PropertyType | undefined = undefined;
       let validationMessage: string;
@@ -256,6 +270,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
         } else {
           newValue = convertedValue;
           validationMessage = await this.plugin.settingsManager.setProperty(propertyName, newValue);
+          if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && deepEqual(newValue, defaultValue)) {
+            // eslint-disable-next-line require-atomic-updates
+            shouldSkipOnChange = true;
+            textBasedComponent.empty();
+          }
         }
       }
       updateValidatorElement(validationMessage);
