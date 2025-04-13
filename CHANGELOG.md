@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.8
+
+- Patch setCustomValidity
+
 ## 26.1.3-beta.7
 
 - Add tooltip
