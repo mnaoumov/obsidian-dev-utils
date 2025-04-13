@@ -13,6 +13,7 @@ import type { CanvasData } from 'obsidian/Canvas.d.ts';
 import type { GenericObject } from '../Object.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { PathOrFile } from './FileSystem.ts';
+import type { CombinedFrontmatter } from './Frontmatter.ts';
 import type { ProcessOptions } from './Vault.ts';
 
 import {
@@ -127,7 +128,14 @@ export interface FrontmatterChange extends FileChange {
  */
 export async function applyContentChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
   let changes = await resolveValue(changesProvider);
-  const frontmatter = parseFrontmatter(content);
+  let frontmatter: CombinedFrontmatter<unknown> = {};
+  let hasFrontmatterError = false;
+  try {
+    frontmatter = parseFrontmatter(content);
+  } catch (error) {
+    console.error(new Error(`Frontmatter parsing failed in ${path}`, { cause: error }));
+    hasFrontmatterError = true;
+  }
 
   for (const change of changes) {
     if (isContentChange(change)) {
@@ -213,8 +221,14 @@ export async function applyContentChanges(content: string, path: string, changes
       newContent += change.newContent;
       lastIndex = change.endIndex;
     } else if (isFrontmatterChange(change)) {
-      setNestedPropertyValue(frontmatter, change.frontmatterKey, change.newContent);
-      frontmatterChanged = true;
+      if (hasFrontmatterError) {
+        console.error(`Cannot apply frontmatter change in ${path}, because frontmatter parsing failed`, {
+          change
+        });
+      } else {
+        setNestedPropertyValue(frontmatter, change.frontmatterKey, change.newContent);
+        frontmatterChanged = true;
+      }
     }
   }
 
