@@ -327,6 +327,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    * Renders the plugin settings tab.
    */
   public override display(): void {
+    this.containerEl.empty();
     this._isOpen = true;
     this.asyncEventsComponent.load();
     this.asyncEventsComponent.registerAsyncEvent(this.plugin.settingsManager.on('loadSettings', this.onLoadSettings.bind(this)));
@@ -339,7 +340,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   public override hide(): void {
     super.hide();
     this.saveSettingsDebounced.cancel();
-    this.containerEl.empty();
     this._isOpen = false;
     this.asyncEventsComponent.unload();
     this.asyncEventsComponent.load();
