@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.6
+
+- Patch checkValidity as `valid` event doesn't exist
+
 ## 26.1.3-beta.5
 
 - Reuse existing checkbox
