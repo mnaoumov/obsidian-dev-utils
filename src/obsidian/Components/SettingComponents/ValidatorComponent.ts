@@ -56,7 +56,7 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
   }
 
   if (obj instanceof ToggleComponent) {
-    return new ValidatorElementWrapper(obj.toggleEl.find('input[type=checkbox]') as HTMLInputElement);
+    return new ValidatorElementWrapper(makeValidatorElement(obj.toggleEl));
   }
 
   return null;
@@ -64,4 +64,28 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
 
 function isValidatorComponent(obj: unknown): obj is ValidatorComponent {
   return !!(obj as Partial<ValidatorComponent>).validatorEl;
+}
+
+function makeValidatorElement(toggleEl: HTMLElement): ValidatorElement {
+  let validationMessage = '';
+
+  return Object.assign(toggleEl, {
+    checkValidity(): boolean {
+      return validationMessage === '';
+    },
+
+    reportValidity(): boolean {
+      const isValid = this.checkValidity();
+      toggleEl.toggleClass('invalid', !isValid);
+      return isValid;
+    },
+
+    setCustomValidity(error: string) {
+      validationMessage = error;
+    },
+
+    get validationMessage(): string {
+      return validationMessage;
+    }
+  });
 }
