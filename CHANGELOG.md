@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.1
+
+- Add ERROR_STACK_PREFIX to make links clickable
+
 ## 26.1.0
 
 - deepEqual settings
