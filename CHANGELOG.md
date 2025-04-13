@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.1.3-beta.2
+
+- Empty in display
+- Empty only on blur
+
 ## 26.1.3-beta.1
 
 - Refactor default settings validation
