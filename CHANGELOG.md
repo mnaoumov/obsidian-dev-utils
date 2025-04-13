@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.2
+
+- Don't fail on wrong frontmatter
+
 ## 26.1.1
 
 - Add ERROR_STACK_PREFIX to make links clickable
