@@ -1,5 +1,5 @@
 .obsidian-dev-utils {
-  :invalid {
+  :invalid, .invalid {
     box-shadow: 0 0 0 2px var(--text-error);
   }
 }
