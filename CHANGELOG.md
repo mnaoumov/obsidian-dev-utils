@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.4
+
+- Add validation to toggle
+
 ## 26.1.3-beta.3
 
 - Fix shouldEmptyOnBlur
