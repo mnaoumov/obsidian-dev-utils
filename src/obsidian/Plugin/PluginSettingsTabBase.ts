@@ -259,6 +259,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
         return;
       }
 
+      shouldEmptyOnBlur = false;
+
       const oldValue = this.pluginSettings[propertyName];
       let newValue: PropertyType | undefined = undefined;
       let validationMessage: string;
@@ -295,9 +297,9 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     return valueComponent;
 
     function updateValidatorElement(validationMessage?: string): void {
-      if (shouldEmptyOnBlur) {
+      if (shouldEmptyOnBlur && !validatorElement?.isActiveElement()) {
         shouldEmptyOnBlur = false;
-        if (!textBasedComponent?.isEmpty() && !validatorElement?.isActiveElement()) {
+        if (!textBasedComponent?.isEmpty()) {
           shouldSkipOnChange = true;
           textBasedComponent?.empty();
         }
