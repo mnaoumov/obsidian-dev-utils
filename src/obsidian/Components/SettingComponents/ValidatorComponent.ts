@@ -14,6 +14,8 @@ import {
 
 import type { ValidatorElement } from '../../../HTMLElement.ts';
 
+import { around } from '../../MonkeyAround.ts';
+
 /**
  * A component that has a validator element.
  */
@@ -23,6 +25,8 @@ export interface ValidatorComponent {
    */
   readonly validatorEl: ValidatorElement;
 }
+
+type CheckValidityFn = HTMLInputElement['checkValidity'];
 
 class ValidatorElementWrapper implements ValidatorComponent {
   public constructor(public readonly validatorEl: ValidatorElement) {}
@@ -57,12 +61,12 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
 
   if (obj instanceof ToggleComponent) {
     const hiddenCheckbox = obj.toggleEl.find('input[type=checkbox]') as HTMLInputElement;
-    hiddenCheckbox.addEventListener('invalid', () => {
-      obj.toggleEl.addClass('invalid');
-    });
-
-    hiddenCheckbox.addEventListener('valid', () => {
-      obj.toggleEl.removeClass('invalid');
+    around(hiddenCheckbox, {
+      checkValidity: (next: CheckValidityFn): CheckValidityFn => () => {
+        const isValid = next();
+        obj.toggleEl.toggleClass('invalid', !isValid);
+        return isValid;
+      }
     });
 
     return new ValidatorElementWrapper(hiddenCheckbox);
