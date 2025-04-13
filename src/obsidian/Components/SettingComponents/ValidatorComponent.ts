@@ -6,6 +6,7 @@
 
 import {
   DropdownComponent,
+  setTooltip,
   SliderComponent,
   TextAreaComponent,
   TextComponent,
@@ -66,6 +67,7 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
         return function checkValidity(this: HTMLInputElement) {
           const isValid = next.call(this);
           obj.toggleEl.toggleClass('invalid', !isValid);
+          setTooltip(obj.toggleEl, this.validationMessage);
           return isValid;
         };
       }
