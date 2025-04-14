@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 26.1.3-beta.17
+
+- Pass-through focus/blur to overlay
+- Stop checking other mutations
+- Restore pointer-events
+
 ## 26.1.3-beta.16
 
 - Add passive event for smoothness
