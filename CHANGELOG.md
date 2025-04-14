@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.25
+
+- Don't show tooltips for off-screen
+
 ## 26.1.3-beta.24
 
 - Reattach tooltips on scroll
