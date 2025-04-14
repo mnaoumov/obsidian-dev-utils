@@ -29,6 +29,8 @@ export interface ValidatorComponent {
   readonly validatorEl: ValidatorElement;
 }
 
+type EventConstructor = new (eventName: string, evt: Event) => Event;
+
 class OverlayValidatorComponent implements ValidatorComponent {
   public get validatorEl(): ValidatorElement {
     return this._validatorEl;
@@ -62,18 +64,29 @@ class OverlayValidatorComponent implements ValidatorComponent {
       'wheel'
     ];
 
-    for (const eventName of MOUSE_POINTER_EVENT_NAMES) {
-      this._validatorEl.addEventListener(eventName, (): void => {
-        this.el.trigger(eventName);
-      });
-    }
+    const ALL_EVENT_NAMES = [
+      ...MOUSE_POINTER_EVENT_NAMES,
+      'beforeinput',
+      'compositionend',
+      'compositionstart',
+      'compositionupdate',
+      'copy',
+      'cut',
+      'input',
+      'keydown',
+      'keypress',
+      'keyup',
+      'paste'
+    ];
 
-    const KEYBOARD_EVENT_NAMES = ['keydown', 'keyup', 'keypress'];
-
-    for (const eventName of KEYBOARD_EVENT_NAMES) {
+    for (const eventName of ALL_EVENT_NAMES) {
       this._validatorEl.addEventListener(eventName, (evt): void => {
-        evt.preventDefault();
-        this.el.dispatchEvent(new KeyboardEvent(eventName, evt));
+        if (!MOUSE_POINTER_EVENT_NAMES.includes(eventName)) {
+          evt.preventDefault();
+        }
+
+        const eventConstructor = evt.constructor as EventConstructor;
+        this.el.dispatchEvent(new eventConstructor(eventName, evt));
       });
     }
 
