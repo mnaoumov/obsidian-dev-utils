@@ -26,6 +26,8 @@
   }
 
   &.overlay-validator {
+    caret-color: transparent;
+    cursor: default;
     position: fixed;
     background-color: transparent;
     border: none;
