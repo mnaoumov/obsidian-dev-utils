@@ -45,6 +45,29 @@ class OverlayValidatorComponent implements ValidatorComponent {
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
 
+    const MOUSE_POINTER_EVENT_NAMES = [
+      'click',
+      'mousedown',
+      'mouseup',
+      'dblclick',
+      'mouseenter',
+      'mouseleave',
+      'mouseover',
+      'mouseout',
+      'mousemove',
+      'contextmenu',
+      'wheel',
+      'touchstart',
+      'touchmove',
+      'touchend'
+    ];
+
+    for (const eventName of MOUSE_POINTER_EVENT_NAMES) {
+      this._validatorEl.addEventListener(eventName, (): void => {
+        this.el.trigger(eventName);
+      });
+    }
+
     let isUpdatingPosition = false;
     const that = this;
 
