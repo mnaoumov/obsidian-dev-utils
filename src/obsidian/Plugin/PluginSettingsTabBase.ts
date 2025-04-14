@@ -42,7 +42,10 @@ import {
   noop,
   noopAsync
 } from '../../Function.ts';
-import { onAncestorScrollOrResize } from '../../HTMLElement.ts';
+import {
+  isElementVisibleInOffsetParent,
+  onAncestorScrollOrResize
+} from '../../HTMLElement.ts';
 import { deepEqual } from '../../Object.ts';
 import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
@@ -328,7 +331,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       validatorElement.setCustomValidity(validationMessage);
       setTooltip(validatorElement, validationMessage);
       if (optionsExt.shouldShowValidationMessage) {
-        displayTooltip(validatorElement, validationMessage);
+        if (isElementVisibleInOffsetParent(validatorElement)) {
+          displayTooltip(validatorElement, validationMessage);
+        } else {
+          displayTooltip(validatorElement, '');
+        }
       }
     }
   }

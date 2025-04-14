@@ -76,6 +76,36 @@ export async function ensureLoaded(el: Element): Promise<void> {
 }
 
 /**
+ * Checks if the element is visible in the offset parent.
+ *
+ * @param el - The element to check.
+ * @returns True if the element is visible in the offset parent, false otherwise.
+ */
+export function isElementVisibleInOffsetParent(el: HTMLElement): boolean {
+  const parentEl = el.offsetParent;
+  if (!parentEl) {
+    return false;
+  }
+
+  const visibleTop = parentEl.scrollTop;
+  const visibleLeft = parentEl.scrollLeft;
+  const visibleBottom = visibleTop + parentEl.clientHeight;
+  const visibleRight = visibleLeft + parentEl.clientWidth;
+
+  const elTop = el.offsetTop;
+  const elLeft = el.offsetLeft;
+  const elBottom = elTop + el.offsetHeight;
+  const elRight = elLeft + el.offsetWidth;
+
+  return (
+    visibleTop <= elTop
+    && elBottom <= visibleBottom
+    && visibleLeft <= elLeft
+    && elRight <= visibleRight
+  );
+}
+
+/**
  * Checks if the element is loaded.
  *
  * @param el - The element to check.
