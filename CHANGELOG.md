@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.32
+
+- Other delay
+
 ## 26.1.3-beta.31
 
 - Show tooltip after delay
