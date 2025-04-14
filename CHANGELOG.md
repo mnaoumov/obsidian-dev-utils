@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.31
+
+- Show tooltip after delay
+
 ## 26.1.3-beta.30
 
 - Remove tooltip properly
