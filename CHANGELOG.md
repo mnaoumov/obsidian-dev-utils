@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.38
+
+- Handle click event for overlay
+
 ## 26.1.3-beta.37
 
 - Debounce validator
