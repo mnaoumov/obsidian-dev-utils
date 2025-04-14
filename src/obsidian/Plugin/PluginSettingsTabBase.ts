@@ -330,12 +330,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       validationMessage ??= validatorElement.validationMessage;
       validatorElement.setCustomValidity(validationMessage);
       setTooltip(validatorElement, validationMessage);
-      if (optionsExt.shouldShowValidationMessage) {
-        if (isElementVisibleInOffsetParent(validatorElement)) {
-          displayTooltip(validatorElement, validationMessage);
-        } else {
-          displayTooltip(validatorElement, '');
-        }
+      if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement()) {
+        displayTooltip(validatorElement, isElementVisibleInOffsetParent(validatorElement) ? validationMessage : '');
       }
     }
   }
