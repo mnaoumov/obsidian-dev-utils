@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.33
+
+- Increase delay
+
 ## 26.1.3-beta.32
 
 - Other delay
