@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.9
+
+- Add validation to all ValueComponents
+
 ## 26.1.3-beta.8
 
 - Patch setCustomValidity
