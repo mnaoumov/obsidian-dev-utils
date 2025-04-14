@@ -331,10 +331,10 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       validatorElement.setCustomValidity(validationMessage);
       if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement() && isElementVisibleInOffsetParent(validatorElement)) {
         validatorElement.removeAttribute('aria-label');
-        const TOOLTIP_DELAY_IN_MILLISECONDS = 500;
-        displayTooltip(validatorElement, validationMessage, {
-          delay: TOOLTIP_DELAY_IN_MILLISECONDS
-        });
+        const TOOLTIP_DELAY_IN_MILLISECONDS = 100;
+        setTimeout(() => {
+          displayTooltip(validatorElement, validationMessage);
+        }, TOOLTIP_DELAY_IN_MILLISECONDS);
       } else {
         setTooltip(validatorElement, validationMessage);
       }
