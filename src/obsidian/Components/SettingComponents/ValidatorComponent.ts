@@ -4,11 +4,8 @@
  * Contains a component that has a validator element.
  */
 
-import type { Debouncer } from 'obsidian';
-
 import {
   ColorComponent,
-  debounce,
   DropdownComponent,
   ProgressBarComponent,
   SearchComponent,
@@ -39,8 +36,6 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
   private readonly _validatorEl: ValidatorElement;
 
-  private readonly updatePositionDebounced: Debouncer<[], void>;
-
   public constructor(private readonly el: HTMLElement) {
     if (!el.parentElement) {
       throw new Error('Element must be attached to the DOM');
@@ -50,10 +45,7 @@ class OverlayValidatorComponent implements ValidatorComponent {
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
 
-    const UPDATE_POSITION_DEBOUNCE_TIMEOUT_IN_MILLISECONDS = 100;
-    this.updatePositionDebounced = debounce(this.updatePosition.bind(this), UPDATE_POSITION_DEBOUNCE_TIMEOUT_IN_MILLISECONDS);
-
-    this.updatePositionDebounced();
+    updatePositionSmooth();
 
     const eventTargets = new Set<EventTarget>();
     eventTargets.add(document);
@@ -66,8 +58,8 @@ class OverlayValidatorComponent implements ValidatorComponent {
     }
 
     for (const element of eventTargets) {
-      element.addEventListener('scroll', this.updatePositionDebounced);
-      element.addEventListener('resize', this.updatePositionDebounced);
+      element.addEventListener('scroll', updatePositionSmooth);
+      element.addEventListener('resize', updatePositionSmooth);
     }
 
     const observer = new MutationObserver((mutations) => {
@@ -75,8 +67,8 @@ class OverlayValidatorComponent implements ValidatorComponent {
         for (const removedNode of Array.from(mutation.removedNodes)) {
           if (removedNode === this._validatorEl) {
             for (const element of eventTargets) {
-              element.removeEventListener('scroll', this.updatePositionDebounced);
-              element.removeEventListener('resize', this.updatePositionDebounced);
+              element.removeEventListener('scroll', updatePositionSmooth);
+              element.removeEventListener('resize', updatePositionSmooth);
             }
 
             observer.disconnect();
@@ -90,6 +82,20 @@ class OverlayValidatorComponent implements ValidatorComponent {
       childList: true,
       subtree: true
     });
+
+    let isUpdatingPosition = false;
+    const that = this;
+    function updatePositionSmooth(): void {
+      if (isUpdatingPosition) {
+        return;
+      }
+
+      isUpdatingPosition = true;
+      requestAnimationFrame((): void => {
+        that.updatePosition();
+        isUpdatingPosition = false;
+      });
+    }
   }
 
   private updatePosition(): void {
