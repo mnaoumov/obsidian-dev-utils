@@ -42,7 +42,14 @@ class OverlayValidatorComponent implements ValidatorComponent {
     }
 
     this._validatorEl = el.parentElement.createEl('input', {
+      attr: {
+        tabindex: -1
+      },
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
+    });
+
+    this._validatorEl.addEventListener('focus', () => {
+      this.el.focus();
     });
 
     this._validatorEl.isActiveElement = this.isElementOrDescendantActive.bind(this);
