@@ -329,9 +329,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
       validationMessage ??= validatorElement.validationMessage;
       validatorElement.setCustomValidity(validationMessage);
-      if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement()) {
-        validatorElement.removeAttribute('aria-label');
-        displayTooltip(validatorElement, isElementVisibleInOffsetParent(validatorElement) ? validationMessage : '');
+      if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement() && isElementVisibleInOffsetParent(validatorElement)) {
+        setTimeout(() => {
+          validatorElement.removeAttribute('aria-label');
+          displayTooltip(validatorElement, validationMessage);
+        }, 0);
       } else {
         setTooltip(validatorElement, validationMessage);
       }
