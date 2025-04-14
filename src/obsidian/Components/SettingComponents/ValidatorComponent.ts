@@ -5,8 +5,10 @@
  */
 
 import {
+  ColorComponent,
   DropdownComponent,
-  setTooltip,
+  ProgressBarComponent,
+  SearchComponent,
   SliderComponent,
   TextAreaComponent,
   TextComponent,
@@ -15,7 +17,7 @@ import {
 
 import type { ValidatorElement } from '../../../HTMLElement.ts';
 
-import { around } from '../../MonkeyAround.ts';
+import { CssClass } from '../../../CssClass.ts';
 
 /**
  * A component that has a validator element.
@@ -27,7 +29,28 @@ export interface ValidatorComponent {
   readonly validatorEl: ValidatorElement;
 }
 
-type SetCustomValidityFn = HTMLInputElement['setCustomValidity'];
+class OverlayValidatorComponent implements ValidatorComponent {
+  public get validatorEl(): ValidatorElement {
+    return this._validatorEl;
+  }
+
+  private readonly _validatorEl: ValidatorElement;
+
+  public constructor(el: HTMLElement) {
+    const rect = el.getBoundingClientRect();
+
+    this._validatorEl = document.body.createEl('input', {
+      cls: [CssClass.LibraryName, CssClass.OverlayValidator]
+    });
+
+    this._validatorEl.setCssStyles({
+      height: `${rect.height.toString()}px`,
+      left: `${(rect.left + window.scrollX).toString()}px`,
+      top: `${(rect.top + window.scrollY).toString()}px`,
+      width: `${rect.width.toString()}px`
+    });
+  }
+}
 
 class ValidatorElementWrapper implements ValidatorComponent {
   public constructor(public readonly validatorEl: ValidatorElement) {}
@@ -44,8 +67,20 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
     return obj;
   }
 
+  if (obj instanceof ColorComponent) {
+    return new ValidatorElementWrapper(obj.colorPickerEl);
+  }
+
   if (obj instanceof DropdownComponent) {
     return new ValidatorElementWrapper(obj.selectEl);
+  }
+
+  if (obj instanceof ProgressBarComponent) {
+    return new OverlayValidatorComponent(obj.progressBar);
+  }
+
+  if (obj instanceof SearchComponent) {
+    return new ValidatorElementWrapper(obj.inputEl);
   }
 
   if (obj instanceof SliderComponent) {
@@ -61,19 +96,7 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
   }
 
   if (obj instanceof ToggleComponent) {
-    const hiddenCheckbox = obj.toggleEl.find('input[type=checkbox]') as HTMLInputElement;
-    around(hiddenCheckbox, {
-      setCustomValidity: (next: SetCustomValidityFn): SetCustomValidityFn => {
-        return function setCustomValidity(this: HTMLInputElement, error: string) {
-          next.call(this, error);
-          const isValid = this.checkValidity();
-          obj.toggleEl.toggleClass('invalid', !isValid);
-          setTooltip(obj.toggleEl, this.validationMessage);
-        };
-      }
-    });
-
-    return new ValidatorElementWrapper(hiddenCheckbox);
+    return new OverlayValidatorComponent(obj.toggleEl);
   }
 
   return null;

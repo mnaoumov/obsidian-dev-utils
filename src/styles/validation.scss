@@ -1,5 +1,14 @@
 .obsidian-dev-utils {
-  :invalid, .invalid {
+  :invalid {
     box-shadow: 0 0 0 2px var(--text-error);
+  }
+
+  &.overlay-validator {
+    position: absolute;
+    background-color: transparent;
+    border: none;
+    outline: none;
+    pointer-events: none;
+    z-index: 9999;
   }
 }

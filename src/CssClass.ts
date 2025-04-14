@@ -89,6 +89,11 @@ export enum CssClass {
   OkButton = 'ok-button',
 
   /**
+   * The CSS class for the overlay validator.
+   */
+  OverlayValidator = 'overlay-validator',
+
+  /**
    * The CSS class for the plugin settings tab.
    */
   PluginSettingsTab = 'plugin-settings-tab',
