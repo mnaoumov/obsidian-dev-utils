@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.1.3-beta.15
+
+- Handle keyboard differently. As validation of readonly inputs doesn't work
+- Sort event names
+
 ## 26.1.3-beta.14
 
 - Make input readonly
