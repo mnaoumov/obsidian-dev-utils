@@ -29,8 +29,6 @@ export interface ValidatorComponent {
   readonly validatorEl: ValidatorElement;
 }
 
-type EventConstructor = new (eventName: string, evt: Event) => Event;
-
 class OverlayValidatorComponent implements ValidatorComponent {
   public get validatorEl(): ValidatorElement {
     return this._validatorEl;
