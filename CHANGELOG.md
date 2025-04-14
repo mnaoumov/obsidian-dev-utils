@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.34
+
+- Move setTimeout
+
 ## 26.1.3-beta.33
 
 - Increase delay
