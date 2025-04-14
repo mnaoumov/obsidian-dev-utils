@@ -14,7 +14,6 @@ import type {
 
 import {
   debounce,
-  displayTooltip,
   PluginSettingTab,
   setTooltip
 } from 'obsidian';
@@ -42,7 +41,6 @@ import {
   noop,
   noopAsync
 } from '../../Function.ts';
-import { isElementVisibleInOffsetParent } from '../../HTMLElement.ts';
 import { deepEqual } from '../../Object.ts';
 import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
@@ -333,17 +331,10 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       }
 
       validatorElement.setCustomValidity(validationMessage);
-      if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement() && isElementVisibleInOffsetParent(validatorElement)) {
-        validatorElement.removeAttribute('aria-label');
-        if (validationMessage) {
-          displayTooltip(validatorElement, validationMessage);
-        } else {
-          document.body.querySelector('.tooltip')?.detach();
-        }
+      if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement()) {
+        validatorElement.reportValidity();
       } else if (validationMessage) {
         setTooltip(validatorElement, validationMessage);
-      } else {
-        validatorElement.removeAttribute('aria-label');
       }
     }
   }
