@@ -122,6 +122,38 @@ export function isLoaded(el: Element): boolean {
   return getLoadableElements(el).every(isLoaded);
 }
 
+/**
+ * Adds an event listener to the ancestor nodes of the given node.
+ *
+ * @param node - The node to add the event listener to.
+ * @param callback - The callback to call when the event is triggered.
+ * @returns A function to remove the event listener.
+ */
+export function onAncestorScrollOrResize(node: Node, callback: () => void): () => void {
+  const ancestors: EventTarget[] = [];
+  ancestors.push(document);
+  ancestors.push(window);
+
+  let currentNode: Node | null = node;
+
+  while (currentNode) {
+    ancestors.push(currentNode);
+    currentNode = currentNode.parentNode;
+  }
+
+  for (const ancestor of ancestors) {
+    ancestor.addEventListener('scroll', callback, { capture: true });
+    ancestor.addEventListener('resize', callback, { capture: true });
+  }
+
+  return () => {
+    for (const ancestor of ancestors) {
+      ancestor.removeEventListener('scroll', callback, { capture: true });
+      ancestor.removeEventListener('resize', callback, { capture: true });
+    }
+  };
+}
+
 function getLoadableElements(el: Element): Element[] {
   return Array.from(el.querySelectorAll('body, img, iframe, embed, link, object, script, style, track'));
 }

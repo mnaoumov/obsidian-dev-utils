@@ -18,6 +18,7 @@ import {
 import type { ValidatorElement } from '../../../HTMLElement.ts';
 
 import { CssClass } from '../../../CssClass.ts';
+import { onAncestorScrollOrResize } from '../../../HTMLElement.ts';
 
 /**
  * A component that has a validator element.
@@ -70,30 +71,13 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
     updatePositionSmooth();
 
-    const eventTargets = new Set<EventTarget>();
-    eventTargets.add(document);
-    eventTargets.add(window);
-
-    let scrollEl: HTMLElement | null = this.el;
-    while (scrollEl) {
-      eventTargets.add(scrollEl);
-      scrollEl = scrollEl.parentElement;
-    }
-
-    for (const element of eventTargets) {
-      element.addEventListener('scroll', updatePositionSmooth, { passive: true });
-      element.addEventListener('resize', updatePositionSmooth, { passive: true });
-    }
+    const unregisterScrollOrResizeHandlers = onAncestorScrollOrResize(this.el, updatePositionSmooth);
 
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const removedNode of Array.from(mutation.removedNodes)) {
           if (removedNode === this._validatorEl) {
-            for (const element of eventTargets) {
-              element.removeEventListener('scroll', updatePositionSmooth);
-              element.removeEventListener('resize', updatePositionSmooth);
-            }
-
+            unregisterScrollOrResizeHandlers();
             observer.disconnect();
             return;
           }
