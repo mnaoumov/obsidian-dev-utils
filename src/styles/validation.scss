@@ -1,6 +1,28 @@
+@mixin invalid {
+  box-shadow: 0 0 0 2px var(--text-error);
+}
+
 .obsidian-dev-utils {
   :invalid {
-    box-shadow: 0 0 0 2px var(--text-error);
+    @include invalid;
+  }
+
+  input.metadata-input-text,
+  input[type='date'],
+  input[type='datetime-local'],
+  input[type='email'],
+  input[type='number'],
+  input[type='password'],
+  input[type='search'],
+  input[type='text'],
+  textarea {
+    &:active,
+    &:focus-visible,
+    &:focus {
+      &:invalid {
+        @include invalid;
+      }
+    }
   }
 
   &.overlay-validator {
