@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.28
+
+- Display tooltip only for active element
+
 ## 26.1.3-beta.27
 
 - Extract smooth scroll logic
