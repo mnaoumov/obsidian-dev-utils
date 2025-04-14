@@ -50,19 +50,19 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
     const MOUSE_POINTER_EVENT_NAMES = [
       'click',
-      'mousedown',
-      'mouseup',
+      'contextmenu',
       'dblclick',
+      'mousedown',
       'mouseenter',
       'mouseleave',
-      'mouseover',
-      'mouseout',
       'mousemove',
-      'contextmenu',
-      'wheel',
-      'touchstart',
+      'mouseout',
+      'mouseover',
+      'mouseup',
+      'touchend',
       'touchmove',
-      'touchend'
+      'touchstart',
+      'wheel'
     ];
 
     for (const eventName of MOUSE_POINTER_EVENT_NAMES) {
