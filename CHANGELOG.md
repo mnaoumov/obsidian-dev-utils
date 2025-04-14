@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.20
+
+- isElementOrDescendantActive
+
 ## 26.1.3-beta.19
 
 - Switch to focusin/focusout
