@@ -42,6 +42,9 @@ class OverlayValidatorComponent implements ValidatorComponent {
     }
 
     this._validatorEl = el.parentElement.createEl('input', {
+      attr: {
+        readonly: ''
+      },
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
 
