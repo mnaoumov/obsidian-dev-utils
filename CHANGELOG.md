@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.12
+
+- Fix initialization
+
 ## 26.1.3-beta.11
 
 - Make smooth update
