@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.23
+
+- Switch to position: absolute. To fix off-screen overlays
+
 ## 26.1.3-beta.22
 
 - Show tooltip instead of HTML5 validation
