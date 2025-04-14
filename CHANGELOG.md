@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.39
+
+- Add temp logging for all events
+
 ## 26.1.3-beta.38
 
 - Handle click event for overlay
