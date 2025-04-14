@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.22
+
+- Show tooltip instead of HTML5 validation
+
 ## 26.1.3-beta.21
 
 - Ensure overlay doesn't steal focus
