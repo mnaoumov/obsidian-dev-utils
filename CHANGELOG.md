@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.1.3-beta.11
+
+- Make smooth update
+- Fix position
+
 ## 26.1.3-beta.10
 
 - Recalculate on scroll
