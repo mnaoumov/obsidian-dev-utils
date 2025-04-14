@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.27
+
+- Extract smooth scroll logic
+
 ## 26.1.3-beta.26
 
 - Fix isElementVisibleInOffsetParent
