@@ -42,6 +42,7 @@ import {
   noop,
   noopAsync
 } from '../../Function.ts';
+import { onAncestorScrollOrResize } from '../../HTMLElement.ts';
 import { deepEqual } from '../../Object.ts';
 import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
@@ -295,6 +296,13 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     });
 
     updateValidatorElement(this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName]);
+
+    if (validatorElement) {
+      this.asyncEventsComponent.register(onAncestorScrollOrResize(validatorElement, () => {
+        updateValidatorElement();
+      }));
+    }
+
     return valueComponent;
 
     function updateValidatorElement(validationMessage?: string): void {
@@ -310,16 +318,13 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
         return;
       }
 
-      if (validationMessage === undefined) {
-        return;
-      }
-
       if (validationMessage === '') {
         validatorElement.setCustomValidity('');
         validatorElement.checkValidity();
         validationMessage = validatorElement.validationMessage;
       }
 
+      validationMessage ??= validatorElement.validationMessage;
       validatorElement.setCustomValidity(validationMessage);
       setTooltip(validatorElement, validationMessage);
       if (optionsExt.shouldShowValidationMessage) {
