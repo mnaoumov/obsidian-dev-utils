@@ -42,9 +42,6 @@ class OverlayValidatorComponent implements ValidatorComponent {
     }
 
     this._validatorEl = el.parentElement.createEl('input', {
-      attr: {
-        readonly: ''
-      },
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
 
@@ -68,6 +65,15 @@ class OverlayValidatorComponent implements ValidatorComponent {
     for (const eventName of MOUSE_POINTER_EVENT_NAMES) {
       this._validatorEl.addEventListener(eventName, (): void => {
         this.el.trigger(eventName);
+      });
+    }
+
+    const KEYBOARD_EVENT_NAMES = ['keydown', 'keyup', 'keypress'];
+
+    for (const eventName of KEYBOARD_EVENT_NAMES) {
+      this._validatorEl.addEventListener(eventName, (evt): void => {
+        evt.preventDefault();
+        this.el.dispatchEvent(new KeyboardEvent(eventName, evt));
       });
     }
 
