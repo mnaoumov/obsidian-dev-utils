@@ -164,17 +164,35 @@ export function onAncestorScrollOrResize(node: Node, callback: () => void): () =
     currentNode = currentNode.parentNode;
   }
 
+  let isEventTriggered = false;
+
   for (const ancestor of ancestors) {
-    ancestor.addEventListener('scroll', callback, { capture: true });
-    ancestor.addEventListener('resize', callback, { capture: true });
+    ancestor.addEventListener('scroll', callbackSmooth, { capture: true });
+    ancestor.addEventListener('resize', callbackSmooth, { capture: true });
   }
 
   return () => {
     for (const ancestor of ancestors) {
-      ancestor.removeEventListener('scroll', callback, { capture: true });
-      ancestor.removeEventListener('resize', callback, { capture: true });
+      ancestor.removeEventListener('scroll', callbackSmooth, { capture: true });
+      ancestor.removeEventListener('resize', callbackSmooth, { capture: true });
     }
   };
+
+  function callbackSmooth(): void {
+    if (isEventTriggered) {
+      return;
+    }
+
+    isEventTriggered = true;
+
+    requestAnimationFrame(() => {
+      try {
+        callback();
+      } finally {
+        isEventTriggered = false;
+      }
+    });
+  }
 }
 
 function getLoadableElements(el: Element): Element[] {
