@@ -297,6 +297,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     validatorElement?.addEventListener('blur', () => {
       updateValidatorElement();
     });
+    validatorElement?.addEventListener('click', () => {
+      requestAnimationFrame(() => {
+        updateValidatorElement();
+      });
+    });
 
     updateValidatorElement(this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName]);
 
@@ -331,10 +336,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       validatorElement.setCustomValidity(validationMessage);
       if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement() && isElementVisibleInOffsetParent(validatorElement)) {
         validatorElement.removeAttribute('aria-label');
-        const TOOLTIP_DELAY_IN_MILLISECONDS = 1000;
-        setTimeout(() => {
-          displayTooltip(validatorElement, validationMessage);
-        }, TOOLTIP_DELAY_IN_MILLISECONDS);
+        displayTooltip(validatorElement, validationMessage);
       } else {
         setTooltip(validatorElement, validationMessage);
       }
