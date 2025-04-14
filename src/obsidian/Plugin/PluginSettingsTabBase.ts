@@ -331,7 +331,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       validatorElement.setCustomValidity(validationMessage);
       if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement() && isElementVisibleInOffsetParent(validatorElement)) {
         validatorElement.removeAttribute('aria-label');
-        const TOOLTIP_DELAY_IN_MILLISECONDS = 100;
+        const TOOLTIP_DELAY_IN_MILLISECONDS = 1000;
         setTimeout(() => {
           displayTooltip(validatorElement, validationMessage);
         }, TOOLTIP_DELAY_IN_MILLISECONDS);
