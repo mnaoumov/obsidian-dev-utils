@@ -340,8 +340,10 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
         } else {
           document.body.querySelector('.tooltip')?.detach();
         }
-      } else {
+      } else if (validationMessage) {
         setTooltip(validatorElement, validationMessage);
+      } else {
+        validatorElement.removeAttribute('aria-label');
       }
     }
   }
