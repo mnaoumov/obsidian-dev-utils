@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.30
+
+- Remove tooltip properly
+
 ## 26.1.3-beta.29
 
 - Remove tooltip for active element
