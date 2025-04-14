@@ -45,6 +45,9 @@ class OverlayValidatorComponent implements ValidatorComponent {
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
 
+    let isUpdatingPosition = false;
+    const that = this;
+
     updatePositionSmooth();
 
     const eventTargets = new Set<EventTarget>();
@@ -83,8 +86,6 @@ class OverlayValidatorComponent implements ValidatorComponent {
       subtree: true
     });
 
-    let isUpdatingPosition = false;
-    const that = this;
     function updatePositionSmooth(): void {
       if (isUpdatingPosition) {
         return;
