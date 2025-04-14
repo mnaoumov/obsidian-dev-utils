@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.41
+
+- Detach tooltip if no error
+
 ## 26.1.3-beta.40
 
 - Focus tabIndexEl
