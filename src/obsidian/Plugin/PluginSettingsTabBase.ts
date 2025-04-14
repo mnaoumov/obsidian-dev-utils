@@ -14,6 +14,7 @@ import type {
 
 import {
   debounce,
+  displayTooltip,
   PluginSettingTab,
   setTooltip
 } from 'obsidian';
@@ -309,18 +310,20 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
         return;
       }
 
+      if (validationMessage === undefined) {
+        return;
+      }
+
       if (validationMessage === '') {
         validatorElement.setCustomValidity('');
         validatorElement.checkValidity();
         validationMessage = validatorElement.validationMessage;
       }
 
-      if (validationMessage !== undefined) {
-        validatorElement.setCustomValidity(validationMessage);
-        setTooltip(validatorElement, validationMessage);
-      }
-      if (validatorElement.isActiveElement() && optionsExt.shouldShowValidationMessage) {
-        validatorElement.reportValidity();
+      validatorElement.setCustomValidity(validationMessage);
+      setTooltip(validatorElement, validationMessage);
+      if (optionsExt.shouldShowValidationMessage) {
+        displayTooltip(validatorElement, validationMessage);
       }
     }
   }
