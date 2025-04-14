@@ -77,7 +77,7 @@ class OverlayValidatorComponent implements ValidatorComponent {
             }
 
             observer.disconnect();
-            break;
+            return;
           }
         }
       }
