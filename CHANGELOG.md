@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.1.3-beta.42
+
+- Don't use displayTooltip as it doesn't work well with multiple validations
+- Remove empty label
+
 ## 26.1.3-beta.41
 
 - Detach tooltip if no error
