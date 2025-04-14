@@ -4,8 +4,11 @@
  * Contains a component that has a validator element.
  */
 
+import type { Debouncer } from 'obsidian';
+
 import {
   ColorComponent,
+  debounce,
   DropdownComponent,
   ProgressBarComponent,
   SearchComponent,
@@ -36,12 +39,61 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
   private readonly _validatorEl: ValidatorElement;
 
-  public constructor(el: HTMLElement) {
-    const rect = el.getBoundingClientRect();
+  private readonly updatePositionDebounced: Debouncer<[], void>;
 
-    this._validatorEl = document.body.createEl('input', {
+  public constructor(private readonly el: HTMLElement) {
+    if (!el.parentElement) {
+      throw new Error('Element must be attached to the DOM');
+    }
+
+    this._validatorEl = el.parentElement.createEl('input', {
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
+
+    const UPDATE_POSITION_DEBOUNCE_TIMEOUT_IN_MILLISECONDS = 100;
+    this.updatePositionDebounced = debounce(this.updatePosition.bind(this), UPDATE_POSITION_DEBOUNCE_TIMEOUT_IN_MILLISECONDS);
+
+    this.updatePositionDebounced();
+
+    const eventTargets = new Set<EventTarget>();
+    eventTargets.add(document);
+    eventTargets.add(window);
+
+    let scrollEl: HTMLElement | null = this.el;
+    while (scrollEl) {
+      eventTargets.add(scrollEl);
+      scrollEl = scrollEl.parentElement;
+    }
+
+    for (const element of eventTargets) {
+      element.addEventListener('scroll', this.updatePositionDebounced);
+      element.addEventListener('resize', this.updatePositionDebounced);
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const removedNode of Array.from(mutation.removedNodes)) {
+          if (removedNode === this._validatorEl) {
+            for (const element of eventTargets) {
+              element.removeEventListener('scroll', this.updatePositionDebounced);
+              element.removeEventListener('resize', this.updatePositionDebounced);
+            }
+
+            observer.disconnect();
+            break;
+          }
+        }
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  private updatePosition(): void {
+    const rect = this.el.getBoundingClientRect();
 
     this._validatorEl.setCssStyles({
       height: `${rect.height.toString()}px`,
