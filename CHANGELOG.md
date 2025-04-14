@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.13
+
+- Ensure error shadow is shown on active control
+
 ## 26.1.3-beta.12
 
 - Fix initialization
