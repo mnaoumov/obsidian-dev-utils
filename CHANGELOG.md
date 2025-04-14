@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.21
+
+- Ensure overlay doesn't steal focus
+
 ## 26.1.3-beta.20
 
 - isElementOrDescendantActive
