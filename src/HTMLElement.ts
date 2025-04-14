@@ -87,21 +87,14 @@ export function isElementVisibleInOffsetParent(el: HTMLElement): boolean {
     return false;
   }
 
-  const visibleTop = parentEl.scrollTop;
-  const visibleLeft = parentEl.scrollLeft;
-  const visibleBottom = visibleTop + parentEl.clientHeight;
-  const visibleRight = visibleLeft + parentEl.clientWidth;
-
-  const elTop = el.offsetTop;
-  const elLeft = el.offsetLeft;
-  const elBottom = elTop + el.offsetHeight;
-  const elRight = elLeft + el.offsetWidth;
+  const elRect = el.getBoundingClientRect();
+  const parentElRect = parentEl.getBoundingClientRect();
 
   return (
-    visibleTop <= elTop
-    && elBottom <= visibleBottom
-    && visibleLeft <= elLeft
-    && elRight <= visibleRight
+    parentElRect.top <= elRect.top
+    && elRect.bottom <= parentElRect.bottom
+    && parentElRect.left <= elRect.left
+    && elRect.right <= parentElRect.right
   );
 }
 
