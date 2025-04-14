@@ -106,8 +106,8 @@ class OverlayValidatorComponent implements ValidatorComponent {
     }
 
     for (const element of eventTargets) {
-      element.addEventListener('scroll', updatePositionSmooth);
-      element.addEventListener('resize', updatePositionSmooth);
+      element.addEventListener('scroll', updatePositionSmooth, { passive: true });
+      element.addEventListener('resize', updatePositionSmooth, { passive: true });
     }
 
     const observer = new MutationObserver((mutations) => {
