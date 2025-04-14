@@ -47,8 +47,8 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
     this._validatorEl.isActiveElement = this.el.isActiveElement.bind(this.el);
 
-    this.el.addEventListener('focus', this.forceBlurValidatorEl.bind(this), { capture: true });
-    this.el.addEventListener('blur', () => {
+    this.el.addEventListener('focusin', this.forceBlurValidatorEl.bind(this));
+    this.el.addEventListener('focusout', () => {
       setTimeout(() => {
         if (this.el.contains(document.activeElement)) {
           return;
@@ -56,7 +56,7 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
         this.forceBlurValidatorEl();
       }, 0);
-    }, { capture: true });
+    });
 
     let isUpdatingPosition = false;
     const that = this;
