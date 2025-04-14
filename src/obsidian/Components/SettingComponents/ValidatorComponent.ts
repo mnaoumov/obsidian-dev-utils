@@ -55,16 +55,21 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
     this._validatorEl.isActiveElement = this.isElementOrDescendantActive.bind(this);
 
-    this.el.addEventListener('focusin', (evt) => {
-      console.warn('focusin', evt.target);
+    let tabIndexEl = this.el.querySelector<HTMLElement>('[tabindex]');
+    if (!tabIndexEl) {
+      if (this.el.getAttr('tabindex') === null) {
+        this.el.tabIndex = -1;
+      }
+      tabIndexEl = this.el;
+    }
+
+    this.el.addEventListener('focusin', () => {
       this.forceBlurValidatorEl();
     });
-    this.el.addEventListener('click', (evt) => {
-      console.warn('click', evt.target);
-      this.forceBlurValidatorEl();
+    this.el.addEventListener('click', () => {
+      tabIndexEl.focus();
     });
-    this.el.addEventListener('focusout', (evt) => {
-      console.warn('focusout', evt.target);
+    this.el.addEventListener('focusout', () => {
       setTimeout(() => {
         if (this.isElementOrDescendantActive()) {
           return;
