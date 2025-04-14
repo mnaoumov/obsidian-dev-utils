@@ -66,12 +66,7 @@ class OverlayValidatorComponent implements ValidatorComponent {
       }, 0);
     });
 
-    let isUpdatingPosition = false;
-    const that = this;
-
-    updatePositionSmooth();
-
-    const unregisterScrollOrResizeHandlers = onAncestorScrollOrResize(this.el, updatePositionSmooth);
+    const unregisterScrollOrResizeHandlers = onAncestorScrollOrResize(this.el, this.updatePosition.bind(this));
 
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
@@ -89,18 +84,6 @@ class OverlayValidatorComponent implements ValidatorComponent {
       childList: true,
       subtree: true
     });
-
-    function updatePositionSmooth(): void {
-      if (isUpdatingPosition) {
-        return;
-      }
-
-      isUpdatingPosition = true;
-      requestAnimationFrame((): void => {
-        that.updatePosition();
-        isUpdatingPosition = false;
-      });
-    }
   }
 
   private forceBlurValidatorEl(): void {
