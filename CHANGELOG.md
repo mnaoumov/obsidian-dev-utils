@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.24
+
+- Reattach tooltips on scroll
+
 ## 26.1.3-beta.23
 
 - Switch to position: absolute. To fix off-screen overlays
