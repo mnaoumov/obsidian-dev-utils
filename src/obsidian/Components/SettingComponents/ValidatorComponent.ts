@@ -45,12 +45,12 @@ class OverlayValidatorComponent implements ValidatorComponent {
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
 
-    this._validatorEl.isActiveElement = this.el.isActiveElement.bind(this.el);
+    this._validatorEl.isActiveElement = this.isElementOrDescendantActive.bind(this);
 
     this.el.addEventListener('focusin', this.forceBlurValidatorEl.bind(this));
     this.el.addEventListener('focusout', () => {
       setTimeout(() => {
-        if (this.el.contains(document.activeElement)) {
+        if (this.isElementOrDescendantActive()) {
           return;
         }
 
@@ -114,6 +114,10 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
   private forceBlurValidatorEl(): void {
     this._validatorEl.dispatchEvent(new Event('blur'));
+  }
+
+  private isElementOrDescendantActive(): boolean {
+    return this.el.contains(document.activeElement);
   }
 
   private updatePosition(): void {
