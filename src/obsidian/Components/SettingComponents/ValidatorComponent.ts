@@ -128,13 +128,17 @@ class OverlayValidatorComponent implements ValidatorComponent {
   }
 
   private updatePosition(): void {
+    if (!this.el.offsetParent) {
+      return;
+    }
     const rect = this.el.getBoundingClientRect();
+    const parentRect = this.el.offsetParent.getBoundingClientRect();
 
     this._validatorEl.setCssStyles({
-      height: `${rect.height.toString()}px`,
-      left: `${(rect.left + window.scrollX).toString()}px`,
-      top: `${(rect.top + window.scrollY).toString()}px`,
-      width: `${rect.width.toString()}px`
+      height: toPx(rect.height),
+      left: toPx(rect.left - parentRect.left + this.el.offsetParent.scrollLeft),
+      top: toPx(rect.top - parentRect.top + this.el.offsetParent.scrollTop),
+      width: toPx(rect.width)
     });
   }
 }
@@ -191,4 +195,8 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
 
 function isValidatorComponent(obj: unknown): obj is ValidatorComponent {
   return !!(obj as Partial<ValidatorComponent>).validatorEl;
+}
+
+function toPx(value: number): string {
+  return `${value.toString()}px`;
 }
