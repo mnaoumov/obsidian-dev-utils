@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.35
+
+- Try bigger timeout
+
 ## 26.1.3-beta.34
 
 - Move setTimeout
