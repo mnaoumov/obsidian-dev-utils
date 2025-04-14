@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.40
+
+- Focus tabIndexEl
+
 ## 26.1.3-beta.39
 
 - Add temp logging for all events
