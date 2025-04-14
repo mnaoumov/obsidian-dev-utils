@@ -42,6 +42,8 @@
     "etags",
     "fdefault",
     "fileoverview",
+    "focusin",
+    "focusout",
     "Frontmatter",
     "hotreload",
     "icontains",
