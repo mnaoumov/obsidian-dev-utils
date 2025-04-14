@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.36
+
+- Move to click handler
+
 ## 26.1.3-beta.35
 
 - Try bigger timeout
