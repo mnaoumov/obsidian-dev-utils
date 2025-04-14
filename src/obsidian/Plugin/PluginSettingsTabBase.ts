@@ -335,7 +335,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       validatorElement.setCustomValidity(validationMessage);
       if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement() && isElementVisibleInOffsetParent(validatorElement)) {
         validatorElement.removeAttribute('aria-label');
-        displayTooltip(validatorElement, validationMessage);
+        if (validationMessage) {
+          displayTooltip(validatorElement, validationMessage);
+        } else {
+          document.body.querySelector('.tooltip')?.detach();
+        }
       } else {
         setTooltip(validatorElement, validationMessage);
       }
