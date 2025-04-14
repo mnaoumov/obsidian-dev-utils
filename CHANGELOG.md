@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.18
+
+- Handle child events
+
 ## 26.1.3-beta.17
 
 - Pass-through focus/blur to overlay
