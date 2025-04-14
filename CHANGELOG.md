@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.1.3-beta.14
+
+- Make input readonly
+- Forward mouse events
+
 ## 26.1.3-beta.13
 
 - Ensure error shadow is shown on active control
