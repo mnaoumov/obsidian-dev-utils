@@ -45,6 +45,11 @@ class OverlayValidatorComponent implements ValidatorComponent {
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
 
+    this._validatorEl.isActiveElement = this.el.isActiveElement.bind(this.el);
+
+    this.el.addEventListener('focus', this.forceBlurValidatorEl.bind(this));
+    this.el.addEventListener('blur', this.forceBlurValidatorEl.bind(this));
+
     let isUpdatingPosition = false;
     const that = this;
 
@@ -97,6 +102,10 @@ class OverlayValidatorComponent implements ValidatorComponent {
         isUpdatingPosition = false;
       });
     }
+  }
+
+  private forceBlurValidatorEl(): void {
+    this._validatorEl.dispatchEvent(new Event('blur'));
   }
 
   private updatePosition(): void {
