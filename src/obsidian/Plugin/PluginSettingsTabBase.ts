@@ -42,10 +42,7 @@ import {
   noop,
   noopAsync
 } from '../../Function.ts';
-import {
-  isElementVisibleInOffsetParent,
-  onAncestorScrollOrResize
-} from '../../HTMLElement.ts';
+import { isElementVisibleInOffsetParent } from '../../HTMLElement.ts';
 import { deepEqual } from '../../Object.ts';
 import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
@@ -240,12 +237,14 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     const defaultValue = (this.plugin.settingsManager.defaultSettings as PluginSettings)[propertyName] as PropertyType;
     textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>));
 
-    this.asyncEventsComponent.registerAsyncEvent(this.on('validationMessageChanged', (anotherPropertyName, validationMessage) => {
+    let validationMessage: string;
+    this.asyncEventsComponent.registerAsyncEvent(this.on('validationMessageChanged', (anotherPropertyName, anotherValidationMessage) => {
       if (propertyName !== anotherPropertyName) {
         return;
       }
 
-      updateValidatorElement(validationMessage);
+      validationMessage = anotherValidationMessage;
+      updateValidatorElement();
     }));
 
     let shouldEmptyOnBlur = false;
@@ -257,6 +256,12 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     }
 
     let shouldSkipOnChange = false;
+    const UPDATE_VALIDATOR_ELEMENT_TIMEOUT_IN_MILLISECONDS = 100;
+    const updateValidatorElementDebounced = debounce(() => {
+      requestAnimationFrame(() => {
+        updateValidatorElement();
+      });
+    }, UPDATE_VALIDATOR_ELEMENT_TIMEOUT_IN_MILLISECONDS);
 
     valueComponent.onChange(async (uiValue) => {
       if (shouldSkipOnChange) {
@@ -268,7 +273,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
       const oldValue = this.pluginSettings[propertyName];
       let newValue: PropertyType | undefined = undefined;
-      let validationMessage: string;
       if (textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
         newValue = defaultValue;
         validationMessage = '';
@@ -284,7 +288,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
           }
         }
       }
-      updateValidatorElement(validationMessage);
+
+      updateValidatorElementDebounced();
       if (newValue !== undefined) {
         await optionsExt.onChanged(newValue as ReadonlyDeep<PropertyType>, oldValue as ReadonlyDeep<PropertyType>);
       }
@@ -292,28 +297,23 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     });
 
     validatorElement?.addEventListener('focus', () => {
-      updateValidatorElement();
+      updateValidatorElementDebounced();
     });
     validatorElement?.addEventListener('blur', () => {
-      updateValidatorElement();
+      updateValidatorElementDebounced();
     });
     validatorElement?.addEventListener('click', () => {
       requestAnimationFrame(() => {
-        updateValidatorElement();
+        updateValidatorElementDebounced();
       });
     });
 
-    updateValidatorElement(this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName]);
-
-    if (validatorElement) {
-      this.asyncEventsComponent.register(onAncestorScrollOrResize(validatorElement, () => {
-        updateValidatorElement();
-      }));
-    }
+    validationMessage = this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName] ?? '';
+    updateValidatorElement();
 
     return valueComponent;
 
-    function updateValidatorElement(validationMessage?: string): void {
+    function updateValidatorElement(): void {
       if (shouldEmptyOnBlur && !validatorElement?.isActiveElement()) {
         shouldEmptyOnBlur = false;
         if (!textBasedComponent?.isEmpty()) {
@@ -332,7 +332,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
         validationMessage = validatorElement.validationMessage;
       }
 
-      validationMessage ??= validatorElement.validationMessage;
       validatorElement.setCustomValidity(validationMessage);
       if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement() && isElementVisibleInOffsetParent(validatorElement)) {
         validatorElement.removeAttribute('aria-label');
