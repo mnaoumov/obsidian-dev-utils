@@ -119,6 +119,21 @@ export enum CssClass {
   TimeComponent = 'time-component',
 
   /**
+   * The CSS class for the tooltip.
+   */
+  Tooltip = 'tooltip',
+
+  /**
+   * The CSS class for the tooltip arrow.
+   */
+  TooltipArrow = 'tooltip-arrow',
+
+  /**
+   * The CSS class for the tooltip validator.
+   */
+  TooltipValidator = 'tooltip-validator',
+
+  /**
    * The CSS class for the tri-state checkbox component.
    */
   TriStateCheckboxComponent = 'tri-state-checkbox-component',

@@ -319,9 +319,9 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     updateValidatorEl();
 
     if (validatorEl?.parentElement) {
-      tooltipEl = validatorEl.parentElement.createDiv({ cls: 'tooltip2' });
+      tooltipEl = validatorEl.parentElement.createDiv({ cls: [CssClass.LibraryName, CssClass.Tooltip, CssClass.TooltipValidator] });
       tooltipContentEl = tooltipEl.createSpan();
-      tooltipEl.createDiv({ cls: 'tooltip-arrow2' });
+      tooltipEl.createDiv({ cls: [CssClass.LibraryName, CssClass.TooltipArrow] });
       tooltipEl.hide();
 
       autoUpdate(
