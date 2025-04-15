@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.49
+
+- Fix initial tooltip
+
 ## 26.1.3-beta.48
 
 - Modify TooltipValidator styles
