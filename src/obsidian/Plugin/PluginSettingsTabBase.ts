@@ -13,6 +13,10 @@ import type {
 } from 'type-fest';
 
 import {
+  autoUpdate,
+  computePosition
+} from '@floating-ui/dom';
+import {
   debounce,
   PluginSettingTab,
   setTooltip
@@ -41,6 +45,7 @@ import {
   noop,
   noopAsync
 } from '../../Function.ts';
+import { toPx } from '../../HTMLElement.ts';
 import { deepEqual } from '../../Object.ts';
 import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
@@ -227,7 +232,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
     const optionsExt: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = { ...DEFAULT_OPTIONS, ...options };
 
-    const validatorElement = getValidatorComponent(valueComponent)?.validatorEl;
+    const validatorEl = getValidatorComponent(valueComponent)?.validatorEl;
 
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
 
@@ -242,7 +247,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       }
 
       validationMessage = anotherValidationMessage;
-      updateValidatorElement();
+      updateValidatorEl();
     }));
 
     let shouldEmptyOnBlur = false;
@@ -254,12 +259,12 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     }
 
     let shouldSkipOnChange = false;
-    const UPDATE_VALIDATOR_ELEMENT_TIMEOUT_IN_MILLISECONDS = 100;
-    const updateValidatorElementDebounced = debounce(() => {
+    const UPDATE_VALIDATOR_EL_TIMEOUT_IN_MILLISECONDS = 100;
+    const updateValidatorElDebounced = debounce(() => {
       requestAnimationFrame(() => {
-        updateValidatorElement();
+        updateValidatorEl();
       });
-    }, UPDATE_VALIDATOR_ELEMENT_TIMEOUT_IN_MILLISECONDS);
+    }, UPDATE_VALIDATOR_EL_TIMEOUT_IN_MILLISECONDS);
 
     valueComponent.onChange(async (uiValue) => {
       if (shouldSkipOnChange) {
@@ -287,32 +292,57 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
         }
       }
 
-      updateValidatorElementDebounced();
+      updateValidatorElDebounced();
       if (newValue !== undefined) {
         await optionsExt.onChanged(newValue as ReadonlyDeep<PropertyType>, oldValue as ReadonlyDeep<PropertyType>);
       }
       this.saveSettingsDebounced();
     });
 
-    validatorElement?.addEventListener('focus', () => {
-      updateValidatorElementDebounced();
+    validatorEl?.addEventListener('focus', () => {
+      updateValidatorElDebounced();
     });
-    validatorElement?.addEventListener('blur', () => {
-      updateValidatorElementDebounced();
+    validatorEl?.addEventListener('blur', () => {
+      updateValidatorElDebounced();
     });
-    validatorElement?.addEventListener('click', () => {
+    validatorEl?.addEventListener('click', () => {
       requestAnimationFrame(() => {
-        updateValidatorElementDebounced();
+        updateValidatorElDebounced();
       });
     });
 
     validationMessage = this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName] ?? '';
-    updateValidatorElement();
+    updateValidatorEl();
+
+    let tooltipEl: HTMLElement | null = null;
+    let tooltipContentEl: HTMLElement | null = null;
+    if (validatorEl?.parentElement) {
+      tooltipEl = validatorEl.parentElement.createDiv({ cls: 'tooltip' });
+      tooltipContentEl = tooltipEl.createSpan();
+      tooltipEl.createDiv({ cls: 'tooltip-arrow' });
+      tooltipEl.hide();
+
+      autoUpdate(
+        validatorEl,
+        tooltipEl,
+        convertAsyncToSync(async () => {
+          if (!tooltipEl) {
+            return;
+          }
+
+          const { x, y } = await computePosition(validatorEl, tooltipEl);
+          tooltipEl.setCssProps({
+            left: toPx(x),
+            top: toPx(y)
+          });
+        })
+      );
+    }
 
     return valueComponent;
 
-    function updateValidatorElement(): void {
-      if (shouldEmptyOnBlur && !validatorElement?.isActiveElement()) {
+    function updateValidatorEl(): void {
+      if (shouldEmptyOnBlur && !validatorEl?.isActiveElement()) {
         shouldEmptyOnBlur = false;
         if (!textBasedComponent?.isEmpty()) {
           shouldSkipOnChange = true;
@@ -320,21 +350,24 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
         }
       }
 
-      if (!validatorElement) {
+      if (!validatorEl) {
         return;
       }
 
       if (validationMessage === '') {
-        validatorElement.setCustomValidity('');
-        validatorElement.checkValidity();
-        validationMessage = validatorElement.validationMessage;
+        validatorEl.setCustomValidity('');
+        validatorEl.checkValidity();
+        validationMessage = validatorEl.validationMessage;
       }
 
-      validatorElement.setCustomValidity(validationMessage);
-      if (optionsExt.shouldShowValidationMessage && validatorElement.isActiveElement()) {
-        validatorElement.reportValidity();
+      validatorEl.setCustomValidity(validationMessage);
+      if (optionsExt.shouldShowValidationMessage) {
+        tooltipEl?.toggle(!!validationMessage);
+        if (tooltipContentEl) {
+          tooltipContentEl.textContent = validationMessage;
+        }
       } else if (validationMessage) {
-        setTooltip(validatorElement, validationMessage);
+        setTooltip(validatorEl, validationMessage);
       }
     }
   }
