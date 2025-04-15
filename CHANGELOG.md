@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.2.1
+
+- Ensure property saved
+- Update libs
+
 ## 26.2.0
 
 - Add validation to all ValueComponents
