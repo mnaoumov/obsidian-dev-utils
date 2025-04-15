@@ -241,6 +241,9 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>));
 
     let validationMessage: string;
+    let tooltipEl: HTMLElement | null = null;
+    let tooltipContentEl: HTMLElement | null = null;
+
     this.asyncEventsComponent.registerAsyncEvent(this.on('validationMessageChanged', (anotherPropertyName, anotherValidationMessage) => {
       if (propertyName !== anotherPropertyName) {
         return;
@@ -314,8 +317,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     validationMessage = this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName] ?? '';
     updateValidatorEl();
 
-    let tooltipEl: HTMLElement | null = null;
-    let tooltipContentEl: HTMLElement | null = null;
     if (validatorEl?.parentElement) {
       tooltipEl = validatorEl.parentElement.createDiv({ cls: 'tooltip' });
       tooltipContentEl = tooltipEl.createSpan();
