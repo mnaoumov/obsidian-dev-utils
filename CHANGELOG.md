@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.43
+
+- Attach tooltips to each element
+
 ## 26.1.3-beta.42
 
 - Don't use displayTooltip as it doesn't work well with multiple validations
