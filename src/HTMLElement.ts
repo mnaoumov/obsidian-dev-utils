@@ -195,6 +195,16 @@ export function onAncestorScrollOrResize(node: Node, callback: () => void): () =
   }
 }
 
+/**
+ * Converts a number to a string with 'px' appended.
+ *
+ * @param value - The number to convert.
+ * @returns The number as a string with 'px' appended.
+ */
+export function toPx(value: number): string {
+  return `${value.toString()}px`;
+}
+
 function getLoadableElements(el: Element): Element[] {
   return Array.from(el.querySelectorAll('body, img, iframe, embed, link, object, script, style, track'));
 }

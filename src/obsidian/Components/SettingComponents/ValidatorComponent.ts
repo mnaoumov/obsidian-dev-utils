@@ -18,7 +18,10 @@ import {
 import type { ValidatorElement } from '../../../HTMLElement.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import { onAncestorScrollOrResize } from '../../../HTMLElement.ts';
+import {
+  onAncestorScrollOrResize,
+  toPx
+} from '../../../HTMLElement.ts';
 
 /**
  * A component that has a validator element.
@@ -175,8 +178,4 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
 
 function isValidatorComponent(obj: unknown): obj is ValidatorComponent {
   return !!(obj as Partial<ValidatorComponent>).validatorEl;
-}
-
-function toPx(value: number): string {
-  return `${value.toString()}px`;
 }
