@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.46
+
+- Test without class
+
 ## 26.1.3-beta.45
 
 - Try bottom-end
