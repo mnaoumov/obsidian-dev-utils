@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.1.3-beta.47
+
+- try offset
+
 ## 26.1.3-beta.46
 
 - Test without class
