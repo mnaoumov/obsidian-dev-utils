@@ -35,4 +35,10 @@
     pointer-events: none;
     z-index: 9999;
   }
+
+  &.tooltip.tooltip-validator {
+    position: absolute;
+    animation: none;
+    transform: none;
+  }
 }
