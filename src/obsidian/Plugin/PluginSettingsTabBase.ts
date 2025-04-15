@@ -14,7 +14,8 @@ import type {
 
 import {
   autoUpdate,
-  computePosition
+  computePosition,
+  offset
 } from '@floating-ui/dom';
 import {
   debounce,
@@ -331,8 +332,12 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
             return;
           }
 
+          const OFFSET = 8;
           const { x, y } = await computePosition(validatorEl, tooltipEl, {
-            placement: 'bottom-end'
+            middleware: [
+              offset(OFFSET)
+            ],
+            placement: 'bottom'
           });
           tooltipEl.setCssProps({
             left: toPx(x),
