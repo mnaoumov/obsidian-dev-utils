@@ -244,6 +244,34 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     let validationMessage: string;
     let tooltipEl: HTMLElement | null = null;
     let tooltipContentEl: HTMLElement | null = null;
+    if (validatorEl?.parentElement) {
+      tooltipEl = validatorEl.parentElement.createDiv({ cls: [CssClass.LibraryName, CssClass.Tooltip, CssClass.TooltipValidator] });
+      tooltipContentEl = tooltipEl.createSpan();
+      tooltipEl.createDiv({ cls: [CssClass.LibraryName, CssClass.TooltipArrow] });
+      tooltipEl.hide();
+
+      autoUpdate(
+        validatorEl,
+        tooltipEl,
+        convertAsyncToSync(async () => {
+          if (!tooltipEl) {
+            return;
+          }
+
+          const OFFSET = 8;
+          const { x, y } = await computePosition(validatorEl, tooltipEl, {
+            middleware: [
+              offset(OFFSET)
+            ],
+            placement: 'bottom'
+          });
+          tooltipEl.setCssProps({
+            left: toPx(x),
+            top: toPx(y)
+          });
+        })
+      );
+    }
 
     this.asyncEventsComponent.registerAsyncEvent(this.on('validationMessageChanged', (anotherPropertyName, anotherValidationMessage) => {
       if (propertyName !== anotherPropertyName) {
@@ -317,35 +345,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
     validationMessage = this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName] ?? '';
     updateValidatorEl();
-
-    if (validatorEl?.parentElement) {
-      tooltipEl = validatorEl.parentElement.createDiv({ cls: [CssClass.LibraryName, CssClass.Tooltip, CssClass.TooltipValidator] });
-      tooltipContentEl = tooltipEl.createSpan();
-      tooltipEl.createDiv({ cls: [CssClass.LibraryName, CssClass.TooltipArrow] });
-      tooltipEl.hide();
-
-      autoUpdate(
-        validatorEl,
-        tooltipEl,
-        convertAsyncToSync(async () => {
-          if (!tooltipEl) {
-            return;
-          }
-
-          const OFFSET = 8;
-          const { x, y } = await computePosition(validatorEl, tooltipEl, {
-            middleware: [
-              offset(OFFSET)
-            ],
-            placement: 'bottom'
-          });
-          tooltipEl.setCssProps({
-            left: toPx(x),
-            top: toPx(y)
-          });
-        })
-      );
-    }
 
     return valueComponent;
 
