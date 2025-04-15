@@ -308,19 +308,23 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
       const oldValue = this.pluginSettings[propertyName];
       let newValue: PropertyType | undefined = undefined;
+      let shouldSetProperty = true;
       if (textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
         newValue = defaultValue;
-        validationMessage = '';
       } else {
         const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
         if (isValidationMessageHolder(convertedValue)) {
           validationMessage = convertedValue.validationMessage;
+          shouldSetProperty = false;
         } else {
           newValue = convertedValue;
-          validationMessage = await this.plugin.settingsManager.setProperty(propertyName, newValue);
-          if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && deepEqual(newValue, defaultValue)) {
-            shouldEmptyOnBlur = true;
-          }
+        }
+      }
+
+      if (shouldSetProperty) {
+        validationMessage = await this.plugin.settingsManager.setProperty(propertyName, newValue);
+        if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && deepEqual(newValue, defaultValue)) {
+          shouldEmptyOnBlur = true;
         }
       }
 
