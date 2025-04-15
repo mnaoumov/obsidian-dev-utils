@@ -331,7 +331,9 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
             return;
           }
 
-          const { x, y } = await computePosition(validatorEl, tooltipEl);
+          const { x, y } = await computePosition(validatorEl, tooltipEl, {
+            placement: 'bottom-end'
+          });
           tooltipEl.setCssProps({
             left: toPx(x),
             top: toPx(y)
