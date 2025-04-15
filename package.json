@@ -458,10 +458,10 @@
     "@types/path-browserify": "^1.0.3",
     "@types/picomatch": "^4.0.0",
     "@types/pug": "^2.0.10",
-    "@types/react": "^19.1.1",
+    "@types/react": "^19.1.2",
     "@types/shell-quote": "^1.7.5",
-    "@typescript-eslint/eslint-plugin": "^8.29.1",
-    "@typescript-eslint/parser": "^8.29.1",
+    "@typescript-eslint/eslint-plugin": "^8.30.1",
+    "@typescript-eslint/parser": "^8.30.1",
     "better-typescript-lib": "^2.11.0",
     "commander": "^13.1.0",
     "compare-versions": "^6.1.1",
@@ -504,7 +504,7 @@
     "tsx": "^4.19.3",
     "type-fest": "^4.39.1",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.29.1"
+    "typescript-eslint": "^8.30.1"
   },
   "overrides": {
     "esbuild": "$esbuild"
