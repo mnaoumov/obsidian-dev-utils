@@ -106,6 +106,7 @@ class OverlayValidatorComponent implements ValidatorComponent {
     const rect = this.el.getBoundingClientRect();
     const parentRect = this.el.offsetParent.getBoundingClientRect();
 
+    this._validatorEl.hide();
     this._validatorEl.setCssStyles({
       height: toPx(rect.height),
       left: toPx(rect.left - parentRect.left + this.el.offsetParent.scrollLeft),
