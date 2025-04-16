@@ -4,6 +4,7 @@
  * Contains a component that has a validator element.
  */
 
+import { autoUpdate } from '@floating-ui/dom';
 import {
   ColorComponent,
   DropdownComponent,
@@ -18,10 +19,7 @@ import {
 import type { ValidatorElement } from '../../../HTMLElement.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import {
-  onAncestorScrollOrResize,
-  toPx
-} from '../../../HTMLElement.ts';
+import { toPx } from '../../../HTMLElement.ts';
 
 /**
  * A component that has a validator element.
@@ -52,6 +50,12 @@ class OverlayValidatorComponent implements ValidatorComponent {
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
 
+    autoUpdate(
+      this.el,
+      this._validatorEl,
+      () => requestAnimationFrame(this.updatePosition.bind(this))
+    );
+
     this._validatorEl.addEventListener('focus', () => {
       this.el.focus();
     });
@@ -80,25 +84,6 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
         this.forceBlurValidatorEl();
       }, 0);
-    });
-
-    const unregisterScrollOrResizeHandlers = onAncestorScrollOrResize(this.el, this.updatePosition.bind(this));
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const removedNode of Array.from(mutation.removedNodes)) {
-          if (removedNode === this._validatorEl) {
-            unregisterScrollOrResizeHandlers();
-            observer.disconnect();
-            return;
-          }
-        }
-      }
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
     });
   }
 
