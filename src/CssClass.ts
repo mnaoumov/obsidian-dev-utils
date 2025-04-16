@@ -94,6 +94,11 @@ export enum CssClass {
   OverlayValidator = 'overlay-validator',
 
   /**
+   * The CSS class for the password component.
+   */
+  PasswordComponent = 'password-component',
+
+  /**
    * The CSS class for the plugin settings tab.
    */
   PluginSettingsTab = 'plugin-settings-tab',
