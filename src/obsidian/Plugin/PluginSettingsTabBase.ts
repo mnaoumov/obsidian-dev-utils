@@ -259,22 +259,23 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
         autoUpdate(
           validatorEl,
           tooltipEl,
-          () => requestAnimationFrame(convertAsyncToSync(async () => {
-            if (!tooltipEl) {
-              return;
-            }
+          () =>
+            requestAnimationFrame(convertAsyncToSync(async () => {
+              if (!tooltipEl) {
+                return;
+              }
 
-            const OFFSET = 8;
-            const { x, y } = await computePosition(validatorEl, tooltipEl, {
-              middleware: [
-                offset(OFFSET)
-              ]
-            });
-            tooltipEl.setCssProps({
-              left: toPx(x),
-              top: toPx(y)
-            });
-          }))
+              const OFFSET = 8;
+              const { x, y } = await computePosition(validatorEl, tooltipEl, {
+                middleware: [
+                  offset(OFFSET)
+                ]
+              });
+              tooltipEl.setCssProps({
+                left: toPx(x),
+                top: toPx(y)
+              });
+            }))
         );
       });
     }
