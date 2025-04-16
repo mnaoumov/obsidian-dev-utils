@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.3.0
+
+- Fixed [Issue #31: [BUG] Toggles animate when opening the settings tab](https://github.com/mnaoumov/obsidian-dev-utils/issues/31)
+
 ## 26.2.1
 
 - Ensure property saved
