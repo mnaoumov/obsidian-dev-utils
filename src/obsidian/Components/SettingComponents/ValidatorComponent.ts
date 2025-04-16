@@ -43,18 +43,22 @@ class OverlayValidatorComponent implements ValidatorComponent {
       throw new Error('Element must be attached to the DOM');
     }
 
-    this._validatorEl = el.parentElement.createEl('input', {
+    this._validatorEl = createEl('input', {
       attr: {
         tabindex: -1
       },
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
     });
+    this._validatorEl.hide();
+    el.parentElement.appendChild(this._validatorEl);
 
-    autoUpdate(
-      this.el,
-      this._validatorEl,
-      () => requestAnimationFrame(this.updatePosition.bind(this))
-    );
+    requestAnimationFrame(() => {
+      autoUpdate(
+        this.el,
+        this._validatorEl,
+        () => requestAnimationFrame(this.updatePosition.bind(this))
+      );
+    });
 
     this._validatorEl.addEventListener('focus', () => {
       this.el.focus();
@@ -108,6 +112,7 @@ class OverlayValidatorComponent implements ValidatorComponent {
       top: toPx(rect.top - parentRect.top + this.el.offsetParent.scrollTop),
       width: toPx(rect.width)
     });
+    this._validatorEl.show();
   }
 }
 

@@ -245,16 +245,21 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     let tooltipEl: HTMLElement | null = null;
     let tooltipContentEl: HTMLElement | null = null;
     if (validatorEl?.parentElement) {
-      tooltipEl = validatorEl.parentElement.createDiv({ cls: [CssClass.LibraryName, CssClass.Tooltip, CssClass.TooltipValidator] });
+      tooltipEl = createDiv({ cls: [CssClass.LibraryName, CssClass.Tooltip, CssClass.TooltipValidator] });
       tooltipContentEl = tooltipEl.createSpan();
       tooltipEl.createDiv({ cls: [CssClass.LibraryName, CssClass.TooltipArrow] });
       tooltipEl.hide();
+      validatorEl.parentElement.appendChild(tooltipEl);
 
-      autoUpdate(
-        validatorEl,
-        tooltipEl,
-        () =>
-          requestAnimationFrame(convertAsyncToSync(async () => {
+      requestAnimationFrame(() => {
+        if (!tooltipEl) {
+          return;
+        }
+
+        autoUpdate(
+          validatorEl,
+          tooltipEl,
+          () => requestAnimationFrame(convertAsyncToSync(async () => {
             if (!tooltipEl) {
               return;
             }
@@ -263,15 +268,15 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
             const { x, y } = await computePosition(validatorEl, tooltipEl, {
               middleware: [
                 offset(OFFSET)
-              ],
-              placement: 'bottom'
+              ]
             });
             tooltipEl.setCssProps({
               left: toPx(x),
               top: toPx(y)
             });
           }))
-      );
+        );
+      });
     }
 
     this.asyncEventsComponent.registerAsyncEvent(this.on('validationMessageChanged', (anotherPropertyName, anotherValidationMessage) => {
