@@ -285,7 +285,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       }
 
       validationMessage = anotherValidationMessage;
-      updateValidatorEl();
+      updateValidatorElDebounced();
     }));
 
     let shouldEmptyOnBlur = false;
@@ -354,7 +354,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     });
 
     validationMessage = this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName] ?? '';
-    updateValidatorEl();
+    updateValidatorElDebounced();
 
     return valueComponent;
 
