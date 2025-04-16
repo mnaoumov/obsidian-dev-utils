@@ -8,6 +8,7 @@
 import type { initPluginContext } from '../../Plugin/PluginContext.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SettingEx } from '../../SettingEx.ts';
+import type { TextBasedComponent } from './TextBasedComponent.ts';
 
 import { CssClass } from '../../../CssClass.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
@@ -21,7 +22,7 @@ import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class NumberComponent extends TypedRangeTextComponent<number> {
+export class NumberComponent extends TypedRangeTextComponent<number> implements TextBasedComponent<number> {
   /**
    * Creates a new number component.
    *
@@ -29,6 +30,33 @@ export class NumberComponent extends TypedRangeTextComponent<number> {
    */
   public constructor(containerEl: HTMLElement) {
     super(containerEl, 'number', CssClass.NumberComponent);
+  }
+
+  /**
+   * Empties the component.
+   */
+  public empty(): void {
+    this.textComponent.setValue('');
+  }
+
+  /**
+   * Checks if the component is empty.
+   *
+   * @returns `true` if the component is empty, `false` otherwise.
+   */
+  public isEmpty(): boolean {
+    return this.textComponent.getValue() === '';
+  }
+
+  /**
+   * Sets the placeholder value of the component.
+   *
+   * @param placeholderValue - The placeholder value to set.
+   * @returns The component.
+   */
+  public setPlaceholderValue(placeholderValue: number): this {
+    this.textComponent.setPlaceholder(this.valueToString(placeholderValue));
+    return this;
   }
 
   /**

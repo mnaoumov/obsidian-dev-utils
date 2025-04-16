@@ -8,6 +8,7 @@
 import type { initPluginContext } from '../../Plugin/PluginContext.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SettingEx } from '../../SettingEx.ts';
+import type { TextBasedComponent } from './TextBasedComponent.ts';
 
 import { CssClass } from '../../../CssClass.ts';
 import { TypedTextComponent } from './TypedTextComponent.ts';
@@ -21,7 +22,7 @@ import { TypedTextComponent } from './TypedTextComponent.ts';
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class EmailComponent extends TypedTextComponent<string> {
+export class EmailComponent extends TypedTextComponent<string> implements TextBasedComponent<string> {
   /**
    * Creates a new email component.
    *
@@ -29,6 +30,33 @@ export class EmailComponent extends TypedTextComponent<string> {
    */
   public constructor(containerEl: HTMLElement) {
     super(containerEl, 'email', CssClass.EmailComponent);
+  }
+
+  /**
+   * Empties the component.
+   */
+  public empty(): void {
+    this.setValue('');
+  }
+
+  /**
+   * Checks if the component is empty.
+   *
+   * @returns `true` if the component is empty, `false` otherwise.
+   */
+  public isEmpty(): boolean {
+    return this.getValue() === '';
+  }
+
+  /**
+   * Sets the placeholder value of the component.
+   *
+   * @param placeholderValue - The placeholder value to set.
+   * @returns The component.
+   */
+  public setPlaceholderValue(placeholderValue: string): this {
+    this.textComponent.setPlaceholder(placeholderValue);
+    return this;
   }
 
   /**
