@@ -49,6 +49,17 @@ export class NumberComponent extends TypedRangeTextComponent<number> implements 
   }
 
   /**
+   * Sets the placeholder of the component.
+   *
+   * @param placeholder - The placeholder to set.
+   * @returns The component.
+   */
+  public setPlaceholder(placeholder: string): this {
+    this.textComponent.setPlaceholder(placeholder);
+    return this;
+  }
+
+  /**
    * Sets the placeholder value of the component.
    *
    * @param placeholderValue - The placeholder value to set.
