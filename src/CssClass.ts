@@ -114,6 +114,11 @@ export enum CssClass {
   SelectItemModal = 'select-item-modal',
 
   /**
+   * The CSS class for the telephone component.
+   */
+  TelephoneComponent = 'telephone-component',
+
+  /**
    * The CSS class for the text box.
    */
   TextBox = 'text-box',
