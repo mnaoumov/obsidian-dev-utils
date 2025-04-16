@@ -12,7 +12,6 @@ import {
 } from 'obsidian';
 
 import type { ValidatorElement } from '../../../HTMLElement.ts';
-import type { TextBasedComponent } from './TextBasedComponent.ts';
 import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
@@ -24,8 +23,7 @@ import { getPluginId } from '../../Plugin/PluginId.ts';
  *
  * @typeParam T - The type of the value to set.
  */
-export abstract class TypedTextComponent<T> extends ValueComponent<T>
-  implements TextBasedComponent<T>, ValidatorComponent, ValueComponentWithChangeTracking<T> {
+export abstract class TypedTextComponent<T> extends ValueComponent<T> implements ValidatorComponent, ValueComponentWithChangeTracking<T> {
   /**
    * The input element of the component.
    */
@@ -39,7 +37,7 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T>
     return this.inputEl;
   }
 
-  private readonly textComponent: TextComponent;
+  protected readonly textComponent: TextComponent;
 
   /**
    * Creates a new typed text component.
@@ -57,28 +55,12 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T>
   }
 
   /**
-   * Empties the component.
-   */
-  public empty(): void {
-    this.textComponent.setValue('');
-  }
-
-  /**
    * Gets the value of the component.
    *
    * @returns The value of the component.
    */
   public override getValue(): T {
     return this.valueFromString(this.textComponent.getValue());
-  }
-
-  /**
-   * Checks if the component is empty.
-   *
-   * @returns `true` if the component is empty, `false` otherwise.
-   */
-  public isEmpty(): boolean {
-    return this.textComponent.getValue() === '';
   }
 
   /**
@@ -108,28 +90,6 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T>
   public override setDisabled(disabled: boolean): this {
     super.setDisabled(disabled);
     this.textComponent.setDisabled(disabled);
-    return this;
-  }
-
-  /**
-   * Sets the placeholder of the component.
-   *
-   * @param placeholder - The placeholder to set.
-   * @returns The component.
-   */
-  public setPlaceholder(placeholder: string): this {
-    this.textComponent.setPlaceholder(placeholder);
-    return this;
-  }
-
-  /**
-   * Sets the placeholder value of the component.
-   *
-   * @param placeholderValue - The placeholder value to set.
-   * @returns The component.
-   */
-  public setPlaceholderValue(placeholderValue: T): this {
-    this.setPlaceholder(this.valueToString(placeholderValue));
     return this;
   }
 
