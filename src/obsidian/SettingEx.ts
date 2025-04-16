@@ -19,6 +19,8 @@ import { MultipleEmailComponent } from './Components/SettingComponents/MultipleE
 import { MultipleFileComponent } from './Components/SettingComponents/MultipleFileComponent.ts';
 import { MultipleTextComponent } from './Components/SettingComponents/MultipleTextComponent.ts';
 import { NumberComponent } from './Components/SettingComponents/NumberComponent.ts';
+import { PasswordComponent } from './Components/SettingComponents/PasswordComponent.ts';
+import { TelephoneComponent } from './Components/SettingComponents/TelephoneComponent.ts';
 import { TimeComponent } from './Components/SettingComponents/TimeComponent.ts';
 import { TriStateCheckboxComponent } from './Components/SettingComponents/TriStateCheckboxComponent.ts';
 import { TypedDropdownComponent } from './Components/SettingComponents/TypedDropdownComponent.ts';
@@ -153,6 +155,26 @@ export class SettingEx extends Setting {
    */
   public addNumber(cb: (component: NumberComponent) => void): this {
     return this.addComponent(NumberComponent, cb);
+  }
+
+  /**
+   * Adds a {@link PasswordComponent} to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addPassword(cb: (component: PasswordComponent) => void): this {
+    return this.addComponent(PasswordComponent, cb);
+  }
+
+  /**
+   * Adds a {@link TelephoneComponent} to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addTelephone(cb: (component: TelephoneComponent) => void): this {
+    return this.addComponent(TelephoneComponent, cb);
   }
 
   /**
