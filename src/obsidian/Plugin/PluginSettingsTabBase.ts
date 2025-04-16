@@ -379,10 +379,10 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
       validatorEl.setCustomValidity(validationMessage);
       if (optionsExt.shouldShowValidationMessage) {
-        tooltipEl?.toggle(!!validationMessage);
         if (tooltipContentEl) {
           tooltipContentEl.textContent = validationMessage;
         }
+        tooltipEl?.toggle(!!validationMessage);
       } else if (validationMessage) {
         setTooltip(validatorEl, validationMessage);
       }
