@@ -1,9 +1,9 @@
 # CHANGELOG
 
-## 26.4.1-beta.1
+## 26.5.0
 
-- Update libs
 - Switch to static wrappers
+- Update libs
 
 ## 26.4.0
 
