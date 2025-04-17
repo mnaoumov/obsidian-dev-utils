@@ -1,8 +1,14 @@
 # CHANGELOG
 
+## 26.4.0
+
+- Add TelephoneComponent.
+- Add PasswordComponent.
+- Fixed [Issue #32: [BUG] Time input and shouldShowPlaceholderForDefaultValues](https://github.com/mnaoumov/obsidian-dev-utils/issues/32).
+
 ## 26.3.0
 
-- Fixed [Issue #31: [BUG] Toggles animate when opening the settings tab](https://github.com/mnaoumov/obsidian-dev-utils/issues/31)
+- Fixed [Issue #31: [BUG] Toggles animate when opening the settings tab](https://github.com/mnaoumov/obsidian-dev-utils/issues/31).
 
 ## 26.2.1
 
