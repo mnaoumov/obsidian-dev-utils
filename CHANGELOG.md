@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.5.1
+
+- Fix flickering
+
 ## 26.5.0
 
 - Switch to static wrappers
