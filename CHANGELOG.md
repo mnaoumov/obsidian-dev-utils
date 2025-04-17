@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.4.1-beta.1
+
+- Update libs
+- Switch to static wrappers
+
 ## 26.4.0
 
 - Add TelephoneComponent.
