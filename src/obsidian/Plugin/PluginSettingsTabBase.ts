@@ -13,11 +13,6 @@ import type {
 } from 'type-fest';
 
 import {
-  autoUpdate,
-  computePosition,
-  offset
-} from '@floating-ui/dom';
-import {
   debounce,
   PluginSettingTab,
   setTooltip
@@ -46,9 +41,9 @@ import {
   noop,
   noopAsync
 } from '../../Function.ts';
-import { toPx } from '../../HTMLElement.ts';
 import { deepEqual } from '../../Object.ts';
 import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
+import { ensureWrapped } from '../Components/SettingComponents/SettingComponentWrapper.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
 import { getValidatorComponent } from '../Components/SettingComponents/ValidatorComponent.ts';
 import { isValidationMessageHolder } from '../ValidationMessage.ts';
@@ -244,40 +239,13 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     let validationMessage: string;
     let tooltipEl: HTMLElement | null = null;
     let tooltipContentEl: HTMLElement | null = null;
-    if (validatorEl?.parentElement) {
-      tooltipEl = createDiv({ cls: [CssClass.LibraryName, CssClass.Tooltip, CssClass.TooltipValidator] });
+    if (validatorEl) {
+      const wrapper = ensureWrapped(validatorEl);
+      tooltipEl = wrapper.createEl('div', { cls: [CssClass.LibraryName, CssClass.Tooltip, CssClass.TooltipValidator] });
       tooltipContentEl = tooltipEl.createSpan();
-      tooltipEl.createDiv({ cls: [CssClass.LibraryName, CssClass.TooltipArrow] });
+      tooltipEl.createEl('div', { cls: [CssClass.LibraryName, CssClass.TooltipArrow] });
       tooltipEl.hide();
-      validatorEl.parentElement.appendChild(tooltipEl);
-
-      requestAnimationFrame(() => {
-        if (!tooltipEl) {
-          return;
-        }
-
-        autoUpdate(
-          validatorEl,
-          tooltipEl,
-          () =>
-            requestAnimationFrame(convertAsyncToSync(async () => {
-              if (!tooltipEl) {
-                return;
-              }
-
-              const OFFSET = 8;
-              const { x, y } = await computePosition(validatorEl, tooltipEl, {
-                middleware: [
-                  offset(OFFSET)
-                ]
-              });
-              tooltipEl.setCssProps({
-                left: toPx(x),
-                top: toPx(y)
-              });
-            }))
-        );
-      });
+      wrapper.appendChild(tooltipEl);
     }
 
     this.asyncEventsComponent.registerAsyncEvent(this.on('validationMessageChanged', (anotherPropertyName, anotherValidationMessage) => {

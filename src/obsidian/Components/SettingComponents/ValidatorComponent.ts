@@ -4,7 +4,6 @@
  * Contains a component that has a validator element.
  */
 
-import { autoUpdate } from '@floating-ui/dom';
 import {
   ColorComponent,
   DropdownComponent,
@@ -19,7 +18,7 @@ import {
 import type { ValidatorElement } from '../../../HTMLElement.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import { toPx } from '../../../HTMLElement.ts';
+import { ensureWrapped } from './SettingComponentWrapper.ts';
 
 /**
  * A component that has a validator element.
@@ -39,25 +38,13 @@ class OverlayValidatorComponent implements ValidatorComponent {
   private readonly _validatorEl: ValidatorElement;
 
   public constructor(private readonly el: HTMLElement) {
-    if (!el.parentElement) {
-      throw new Error('Element must be attached to the DOM');
-    }
+    const wrapper = ensureWrapped(el);
 
-    this._validatorEl = createEl('input', {
+    this._validatorEl = wrapper.createEl('input', {
       attr: {
         tabindex: -1
       },
       cls: [CssClass.LibraryName, CssClass.OverlayValidator]
-    });
-    this._validatorEl.hide();
-    el.parentElement.appendChild(this._validatorEl);
-
-    requestAnimationFrame(() => {
-      autoUpdate(
-        this.el,
-        this._validatorEl,
-        () => requestAnimationFrame(this.updatePosition.bind(this))
-      );
     });
 
     this._validatorEl.addEventListener('focus', () => {
@@ -97,23 +84,6 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
   private isElementOrDescendantActive(): boolean {
     return this.el.contains(document.activeElement);
-  }
-
-  private updatePosition(): void {
-    if (!this.el.offsetParent) {
-      return;
-    }
-    const rect = this.el.getBoundingClientRect();
-    const parentRect = this.el.offsetParent.getBoundingClientRect();
-
-    this._validatorEl.hide();
-    this._validatorEl.setCssStyles({
-      height: toPx(rect.height),
-      left: toPx(rect.left - parentRect.left + this.el.offsetParent.scrollLeft),
-      top: toPx(rect.top - parentRect.top + this.el.offsetParent.scrollTop),
-      width: toPx(rect.width)
-    });
-    this._validatorEl.show();
   }
 }
 

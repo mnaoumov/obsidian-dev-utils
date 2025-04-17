@@ -25,6 +25,10 @@
     }
   }
 
+  &.setting-component-wrapper {
+    position: relative;
+  }
+
   &.overlay-validator {
     caret-color: transparent;
     cursor: default;
@@ -34,11 +38,14 @@
     outline: none;
     pointer-events: none;
     z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
   }
 
   &.tooltip.tooltip-validator {
     position: absolute;
-    animation: none;
-    transform: none;
+    top: calc(100% + 8px);
   }
 }
