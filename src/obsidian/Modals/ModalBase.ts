@@ -10,8 +10,7 @@ import { Modal } from 'obsidian';
 
 import type { PromiseResolve } from '../../Async.ts';
 
-import { CssClass } from '../../CssClass.ts';
-import { getPluginId } from '../Plugin/PluginId.ts';
+import { addPluginCssClasses } from '../Plugin/PluginContext.ts';
 
 /**
  * The base options for a modal.
@@ -41,7 +40,7 @@ export abstract class ModalBase<Value, Options extends ModalOptionsBase> extends
    */
   public constructor(options: Options, protected resolve: PromiseResolve<Value>, modalCssClass: string) {
     super(options.app);
-    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), modalCssClass);
+    addPluginCssClasses(this.containerEl, modalCssClass);
     if (options.cssClass) {
       this.containerEl.addClass(options.cssClass);
     }

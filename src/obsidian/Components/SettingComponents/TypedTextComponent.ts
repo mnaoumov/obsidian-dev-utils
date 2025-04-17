@@ -16,7 +16,7 @@ import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import { getPluginId } from '../../Plugin/PluginId.ts';
+import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 
 /**
  * A component that displays and edits a text-based value.
@@ -51,7 +51,7 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
     this.textComponent = new TextComponent(containerEl);
     this.inputEl = this.textComponent.inputEl;
     this.inputEl.type = type;
-    containerEl.addClass(CssClass.LibraryName, getPluginId(), cssClass);
+    addPluginCssClasses(containerEl, cssClass);
   }
 
   /**

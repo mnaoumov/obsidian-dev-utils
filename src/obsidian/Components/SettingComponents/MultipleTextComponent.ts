@@ -21,7 +21,7 @@ import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import { getPluginId } from '../../Plugin/PluginId.ts';
+import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 
 /**
  * A component that displays and edits multiple text values.
@@ -53,7 +53,7 @@ export class MultipleTextComponent extends ValueComponent<readonly string[]>
   public constructor(containerEl: HTMLElement) {
     super();
     this.textAreaComponent = new TextAreaComponent(containerEl);
-    containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.MultipleTextComponent);
+    addPluginCssClasses(containerEl, CssClass.MultipleTextComponent);
   }
 
   /**

@@ -18,6 +18,7 @@ import {
 import type { ValidatorElement } from '../../../HTMLElement.ts';
 
 import { CssClass } from '../../../CssClass.ts';
+import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 import { ensureWrapped } from './SettingComponentWrapper.ts';
 
 /**
@@ -43,9 +44,9 @@ class OverlayValidatorComponent implements ValidatorComponent {
     this._validatorEl = wrapper.createEl('input', {
       attr: {
         tabindex: -1
-      },
-      cls: [CssClass.LibraryName, CssClass.OverlayValidator]
+      }
     });
+    addPluginCssClasses(this._validatorEl, CssClass.OverlayValidator);
 
     this._validatorEl.addEventListener('focus', () => {
       this.el.focus();
