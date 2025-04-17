@@ -27,7 +27,9 @@ export function ensureWrapped(el: HTMLElement): HTMLDivElement {
   el.replaceWith(wrapper);
   wrapper.appendChild(el);
 
-  updateWrapperSize(wrapper, el.getBoundingClientRect());
+  requestAnimationFrame(() => {
+    updateWrapperSize(wrapper, el.getBoundingClientRect());
+  });
 
   const resizeObserver = new ResizeObserver((entries) => {
     for (const entry of entries) {
