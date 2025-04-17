@@ -47,5 +47,6 @@
   &.tooltip.tooltip-validator {
     position: absolute;
     top: calc(100% + 8px);
+    width: max-content;
   }
 }
