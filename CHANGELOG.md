@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.5.2
+
+- Fix layout. Static size
+
 ## 26.5.1
 
 - Fix flickering
