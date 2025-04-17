@@ -17,7 +17,7 @@ import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import { getPluginId } from '../../Plugin/PluginId.ts';
+import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 
 /**
  * A component that displays a tri-state checkbox.
@@ -51,7 +51,7 @@ export class TriStateCheckboxComponent extends ValueComponent<boolean | null> im
    */
   public constructor(containerEl: HTMLElement) {
     super();
-    containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.TriStateCheckboxComponent);
+    addPluginCssClasses(containerEl, CssClass.TriStateCheckboxComponent);
     this.inputEl = containerEl.createEl('input', { type: 'checkbox' });
     this.inputEl.addEventListener('change', this.onChanged.bind(this));
   }

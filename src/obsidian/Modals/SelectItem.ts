@@ -16,7 +16,7 @@ import { FuzzySuggestModal } from 'obsidian';
 import type { PromiseResolve } from '../../Async.ts';
 
 import { CssClass } from '../../CssClass.ts';
-import { getPluginId } from '../Plugin/PluginId.ts';
+import { addPluginCssClasses } from '../Plugin/PluginContext.ts';
 import { showModal } from './ModalBase.ts';
 
 /**
@@ -58,7 +58,7 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   public constructor(private options: SelectItemOptions<T>, private resolve: PromiseResolve<null | T>) {
     super(options.app);
     this.setPlaceholder(options.placeholder ?? '');
-    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.SelectItemModal);
+    addPluginCssClasses(this.containerEl, CssClass.SelectItemModal);
     if (options.cssClass) {
       this.containerEl.addClass(options.cssClass);
     }

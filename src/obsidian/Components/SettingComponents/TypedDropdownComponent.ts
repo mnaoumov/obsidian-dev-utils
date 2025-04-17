@@ -19,7 +19,7 @@ import type { SettingEx } from '../../SettingEx.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import { getPluginId } from '../../Plugin/PluginId.ts';
+import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 
 /**
  * A dropdown component that can be used to select a value from a list.
@@ -54,7 +54,7 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
   public constructor(containerEl: HTMLElement) {
     super();
     this.dropdownComponent = new DropdownComponent(containerEl);
-    containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.TypedDropdownComponent);
+    addPluginCssClasses(containerEl, CssClass.TypedDropdownComponent);
   }
 
   /**

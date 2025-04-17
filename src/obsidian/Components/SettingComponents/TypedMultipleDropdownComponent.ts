@@ -17,7 +17,7 @@ import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import { getPluginId } from '../../Plugin/PluginId.ts';
+import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 import { MultipleDropdownComponent } from './MultipleDropdownComponent.ts';
 
 /**
@@ -53,7 +53,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
   public constructor(containerEl: HTMLElement) {
     super();
     this.multipleDropdownComponent = new MultipleDropdownComponent(containerEl);
-    containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.TypedMultipleDropdownComponent);
+    addPluginCssClasses(containerEl, CssClass.TypedMultipleDropdownComponent);
   }
 
   /**

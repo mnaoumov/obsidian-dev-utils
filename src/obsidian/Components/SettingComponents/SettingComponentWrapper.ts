@@ -5,6 +5,7 @@
  */
 
 import { CssClass } from '../../../CssClass.ts';
+import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 
 /**
  * Ensures that the element is wrapped in a setting component wrapper.
@@ -23,9 +24,8 @@ export function ensureWrapped(el: HTMLElement): HTMLDivElement {
   }
 
   const children = Array.from(parent.children);
-  const wrapper = createDiv({
-    cls: [CssClass.LibraryName, CssClass.SettingComponentWrapper]
-  });
+  const wrapper = createDiv();
+  addPluginCssClasses(wrapper, CssClass.SettingComponentWrapper);
   for (const child of children) {
     wrapper.appendChild(child);
   }

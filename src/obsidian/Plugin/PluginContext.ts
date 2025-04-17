@@ -10,6 +10,7 @@ import { compareVersions } from 'compare-versions';
 
 import type { DebugController } from '../../DebugController.ts';
 
+import { CssClass } from '../../CssClass.ts';
 import {
   getDebugController,
   showInitialDebugMessage
@@ -20,13 +21,26 @@ import {
   LIBRARY_VERSION
 } from '../../Library.ts';
 import { getObsidianDevUtilsState } from '../App.ts';
-import { setPluginId } from './PluginId.ts';
+import {
+  getPluginId,
+  setPluginId
+} from './PluginId.ts';
 
 interface PluginContextWindow {
   DEBUG: DebugController;
 }
 
 const STYLES_ID = `${LIBRARY_NAME}-styles`;
+
+/**
+ * Sets the CSS class of an element.
+ *
+ * @param el - The element to set the CSS class of.
+ * @param cssClasses - The CSS classes to set.
+ */
+export function addPluginCssClasses(el: HTMLElement, ...cssClasses: string[]): void {
+  el.addClass(CssClass.LibraryName, getPluginId(), ...cssClasses);
+}
 
 /**
  * Initializes the plugin context.

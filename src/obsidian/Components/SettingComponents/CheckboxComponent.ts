@@ -17,8 +17,7 @@ import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import { getPluginId } from '../../Plugin/PluginId.ts';
-
+import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 /**
  * A component that displays a checkbox.
  *
@@ -51,7 +50,7 @@ export class CheckboxComponent extends ValueComponent<boolean> implements Valida
    */
   public constructor(containerEl: HTMLElement) {
     super();
-    containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.CheckboxComponent);
+    addPluginCssClasses(containerEl, CssClass.CheckboxComponent);
     this.inputEl = containerEl.createEl('input', { type: 'checkbox' });
     this.inputEl.addEventListener('change', this.onChanged.bind(this));
   }

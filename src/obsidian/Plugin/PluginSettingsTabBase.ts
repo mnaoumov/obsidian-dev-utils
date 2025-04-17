@@ -47,7 +47,7 @@ import { ensureWrapped } from '../Components/SettingComponents/SettingComponentW
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
 import { getValidatorComponent } from '../Components/SettingComponents/ValidatorComponent.ts';
 import { isValidationMessageHolder } from '../ValidationMessage.ts';
-import { getPluginId } from './PluginId.ts';
+import { addPluginCssClasses } from './PluginContext.ts';
 
 /**
  * The context passed to the {@link PluginSettingsManagerBase.saveToFile} method.
@@ -148,7 +148,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    */
   public constructor(public override plugin: ExtractPlugin<PluginTypes>) {
     super(plugin.app, plugin);
-    this.containerEl.addClass(CssClass.LibraryName, getPluginId(), CssClass.PluginSettingsTab);
+    addPluginCssClasses(this.containerEl, CssClass.PluginSettingsTab);
     this.saveSettingsDebounced = debounce(
       convertAsyncToSync(() => this.plugin.settingsManager.saveToFile(SAVE_TO_FILE_CONTEXT)),
       this.saveSettingsDebounceTimeoutInMilliseconds
@@ -241,9 +241,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     let tooltipContentEl: HTMLElement | null = null;
     if (validatorEl) {
       const wrapper = ensureWrapped(validatorEl);
-      tooltipEl = wrapper.createEl('div', { cls: [CssClass.LibraryName, CssClass.Tooltip, CssClass.TooltipValidator] });
+      tooltipEl = wrapper.createDiv();
+      addPluginCssClasses(tooltipEl, CssClass.Tooltip, CssClass.TooltipValidator);
       tooltipContentEl = tooltipEl.createSpan();
-      tooltipEl.createEl('div', { cls: [CssClass.LibraryName, CssClass.TooltipArrow] });
+      const tooltipArrowEl = tooltipEl.createDiv();
+      addPluginCssClasses(tooltipArrowEl, CssClass.TooltipArrow);
       tooltipEl.hide();
       wrapper.appendChild(tooltipEl);
     }
