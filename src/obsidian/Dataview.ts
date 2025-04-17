@@ -398,14 +398,14 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
   await renderPage(1);
 
   function createPaginationControls(pageNumber: number): void {
-    const paginationDiv = container.createEl('div', { cls: 'pagination' });
+    const paginationDiv = container.createDiv({ cls: 'pagination' });
     const paginationRow1Div = paginationDiv.createDiv();
 
     createPageLink('First', 1, pageNumber === 1);
     createPageLink('Prev', pageNumber - 1, pageNumber === 1);
 
     if (pageNumber > MORE_PAGE_NUMBER) {
-      paginationRow1Div.createEl('span', { text: '...' });
+      paginationRow1Div.createSpan({ text: '...' });
     }
 
     for (let i = Math.max(1, pageNumber - SECOND_PAGE_NUMBER); i <= Math.min(totalPages, pageNumber + SECOND_PAGE_NUMBER); i++) {
@@ -416,7 +416,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     }
 
     if (pageNumber < totalPages - SECOND_PAGE_NUMBER) {
-      paginationRow1Div.createEl('span', { text: '...' });
+      paginationRow1Div.createSpan({ text: '...' });
     }
 
     createPageLink('Next', pageNumber + 1, pageNumber === totalPages);
@@ -424,7 +424,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
 
     const paginationRow2Div = paginationDiv.createDiv();
 
-    paginationRow2Div.createEl('span', { text: ' Items per page: ' });
+    paginationRow2Div.createSpan({ text: ' Items per page: ' });
 
     const itemsPerPageSelect = paginationRow2Div.createEl('select');
     itemsPerPageOptions.forEach((option: number): void => {
@@ -440,7 +440,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
       })
     );
 
-    paginationRow2Div.createEl('span', { text: '  Jump to page: ' });
+    paginationRow2Div.createSpan({ text: '  Jump to page: ' });
 
     const jumpToPageInput = paginationRow2Div.createEl('input', { attr: { max: totalPages, min: 1 }, type: 'number' });
     jumpToPageInput.addEventListener(
@@ -455,7 +455,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
       })
     );
 
-    paginationRow2Div.createEl('span', { text: `  Page ${pageNumber.toString()} of ${totalPages.toString()}, Total items: ${rows.length.toString()}` });
+    paginationRow2Div.createSpan({ text: `  Page ${pageNumber.toString()} of ${totalPages.toString()}, Total items: ${rows.length.toString()}` });
 
     function createPageLink(text: string, currentPageNumber: number, disabled = false): HTMLAnchorElement {
       const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${currentPageNumber.toString()}`, text });
