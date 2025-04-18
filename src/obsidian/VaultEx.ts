@@ -8,6 +8,8 @@
 
 import type { App } from 'obsidian';
 
+import { Notice } from 'obsidian';
+
 import type {
   PathOrAbstractFile,
   PathOrFolder
