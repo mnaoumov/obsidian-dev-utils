@@ -115,13 +115,10 @@ In order for models to look properly, their styles has to be initialized. See [S
 
 Example of all modals:
 
-![Alert](./images/alert.png)
-
-![Confirm](./images/confirm.png)
-
-![Prompt](./images/prompt.png)
-
-![Select Item](./images/select-item.png)
+- [Alert](./images/modals/alert.png)
+- [Confirm](./images/modals/confirm.png)
+- [Prompt](./images/modals/prompt.png)
+- [Select Item](./images/modals/select-item.png)
 
 ## Debugging
 
