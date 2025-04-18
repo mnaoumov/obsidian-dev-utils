@@ -6,6 +6,8 @@
 
 import type { Promisable } from 'type-fest';
 
+import { Notice } from 'obsidian';
+
 import { getLibDebugger } from '../Debug.ts';
 import {
   ASYNC_ERROR_WRAPPER_MESSAGE,

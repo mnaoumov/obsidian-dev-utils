@@ -54,8 +54,8 @@ export async function printToPdf(el: HTMLElement, options: Partial<PrintToPdfOpt
 
   try {
     await new Promise((resolve) => {
-      electron.ipcRenderer.once(ELECTRON_PRINT_TO_PDF_CHANNEL, resolve);
-      electron.ipcRenderer.send(ELECTRON_PRINT_TO_PDF_CHANNEL, fullOptions);
+      window.electron.ipcRenderer.once(ELECTRON_PRINT_TO_PDF_CHANNEL, resolve);
+      window.electron.ipcRenderer.send(ELECTRON_PRINT_TO_PDF_CHANNEL, fullOptions);
     });
   } finally {
     printDiv.remove();
