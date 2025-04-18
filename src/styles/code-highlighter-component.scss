@@ -1,0 +1,36 @@
+.obsidian-dev-utils {
+  &.code-highlighter-component {
+    textarea, pre, code {
+      font-family: var(--font-monospace);
+      line-height: var(--line-height-normal);
+      margin: 0;
+    }
+
+    textarea, code {
+      font-size: var(--code-size);
+    }
+
+    textarea {
+      background: transparent;
+      color: transparent;
+      z-index: 2;
+      width: 20em;
+      height: 10em;
+    }
+
+    pre {
+      position: absolute;
+      pointer-events: none;
+      border: var(--input-border-width) solid transparent;
+      overflow: auto;
+      inset: 0;
+      padding: var(--size-4-1) var(--size-4-2);
+      z-index: 1;
+    }
+
+    code {
+      display: block;
+      padding: 0;
+    }
+  }
+}
