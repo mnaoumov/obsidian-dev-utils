@@ -24,6 +24,11 @@ export enum CssClass {
   CheckboxComponent = 'checkbox-component',
 
   /**
+   * The CSS class for the code highlighter component.
+   */
+  CodeHighlighterComponent = 'code-highlighter-component',
+
+  /**
    * The CSS class for the confirm modal.
    */
   ConfirmModal = 'confirm-modal',

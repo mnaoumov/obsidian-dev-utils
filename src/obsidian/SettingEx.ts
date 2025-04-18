@@ -9,6 +9,7 @@ import type { BaseComponent } from 'obsidian';
 import { Setting } from 'obsidian';
 
 import { CheckboxComponent } from './Components/SettingComponents/CheckboxComponent.ts';
+import { CodeHighlighterComponent } from './Components/SettingComponents/CodeHighlighterComponent.ts';
 import { DateComponent } from './Components/SettingComponents/DateComponent.ts';
 import { DateTimeComponent } from './Components/SettingComponents/DateTimeComponent.ts';
 import { EmailComponent } from './Components/SettingComponents/EmailComponent.ts';
@@ -40,6 +41,16 @@ export class SettingEx extends Setting {
    */
   public addCheckbox(cb: (component: CheckboxComponent) => void): this {
     return this.addComponent(CheckboxComponent, cb);
+  }
+
+  /**
+   * Adds a {@link CodeHighlighterComponent} to the setting.
+   *
+   * @param cb - The callback to call with the component.
+   * @returns The setting instance.
+   */
+  public addCodeHighlighter(cb: (component: CodeHighlighterComponent) => void): this {
+    return this.addComponent(CodeHighlighterComponent, cb);
   }
 
   /**
