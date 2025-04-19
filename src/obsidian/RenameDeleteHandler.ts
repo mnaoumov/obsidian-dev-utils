@@ -193,6 +193,8 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
     ? await getAttachmentFolderPath(app, newPath)
     : oldAttachmentFolderPath;
 
+  const isOldAttachmentFolderAtRoot = oldAttachmentFolderPath === '/';
+
   const oldAttachmentFolder = getFolderOrNull(app, oldAttachmentFolderPath);
 
   if (!oldAttachmentFolder) {
@@ -218,7 +220,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
         continue;
       }
 
-      if (oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
+      if (isOldAttachmentFolderAtRoot || oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
         const oldAttachmentBacklinks = await getBacklinksForFileSafe(app, oldAttachmentFile);
         if (oldAttachmentBacklinks.keys().length === 1) {
           oldAttachmentFiles.push(oldAttachmentFile);
@@ -234,7 +236,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
     if (isNote(app, oldAttachmentFile)) {
       continue;
     }
-    const relativePath = relative(oldAttachmentFolderPath, oldAttachmentFile.path);
+    const relativePath = isOldAttachmentFolderAtRoot ? oldAttachmentFile.path : relative(oldAttachmentFolderPath, oldAttachmentFile.path);
     const newFolder = join(newAttachmentFolderPath, dirname(relativePath));
     const newChildBasename = settings.shouldRenameAttachmentFiles
       ? replaceAll(oldAttachmentFile.basename, oldBasename, newBasename)
