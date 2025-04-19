@@ -80,6 +80,11 @@ const interruptedRenamesMap = new Map<string, InterruptedRename[]>();
  */
 export interface RenameDeleteHandlerSettings {
   /**
+   * Whether the path is a note.
+   */
+  isNote(path: string): boolean;
+
+  /**
    * Whether to ignore the path.
    */
   isPathIgnored(path: string): boolean;
@@ -182,7 +187,7 @@ async function continueInterruptedRenames(
 async function fillRenameMap(app: App, oldPath: string, newPath: string, renameMap: Map<string, string>, oldPathLinks: Reference[]): Promise<void> {
   renameMap.set(oldPath, newPath);
 
-  if (!isNote(app, oldPath)) {
+  if (!isNoteEx(app, oldPath)) {
     return;
   }
 
@@ -233,7 +238,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
   const newBasename = basename(newPath, extname(newPath));
 
   for (const oldAttachmentFile of oldAttachmentFiles) {
-    if (isNote(app, oldAttachmentFile)) {
+    if (isNoteEx(app, oldAttachmentFile.path)) {
       continue;
     }
     const relativePath = isOldAttachmentFolderAtRoot ? oldAttachmentFile.path : relative(oldAttachmentFolderPath, oldAttachmentFile.path);
@@ -279,6 +284,8 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
     settings.shouldUpdateFilenameAliases ||= newSettings.shouldUpdateFilenameAliases ?? false;
     const isPathIgnored = settings.isPathIgnored;
     settings.isPathIgnored = (path: string): boolean => isPathIgnored?.(path) ?? newSettings.isPathIgnored?.(path) ?? false;
+    const currentIsNote = settings.isNote;
+    settings.isNote = (path: string): boolean => currentIsNote?.(path) ?? newSettings.isNote?.(path) ?? isNote(app, path);
   }
 
   return settings;
@@ -304,7 +311,7 @@ async function handleCaseCollision(
 
 async function handleDelete(app: App, path: string): Promise<void> {
   getLibDebugger('RenameDeleteHandler:handleDelete')(`Handle Delete ${path}`);
-  if (!isNote(app, path)) {
+  if (!isNoteEx(app, path)) {
     return;
   }
 
@@ -328,7 +335,7 @@ async function handleDelete(app: App, path: string): Promise<void> {
         continue;
       }
 
-      if (isNote(app, attachmentFile)) {
+      if (isNoteEx(app, attachmentFile.path)) {
         continue;
       }
 
@@ -478,7 +485,7 @@ async function handleRenameAsync(
         });
       }
 
-      if (isNote(app, newPath)) {
+      if (isNoteEx(app, newPath)) {
         await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileOptions>({
           app,
           newSourcePathOrFile: newPath,
@@ -535,6 +542,11 @@ function initBacklinksMap(
       linkJsonToPathMap.set(toJson(link), path);
     }
   }
+}
+
+function isNoteEx(app: App, path: string): boolean {
+  const settings = getSettings(app);
+  return settings.isNote?.(path) ?? false;
 }
 
 function logRegisteredHandlers(app: App): void {
