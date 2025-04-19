@@ -39,7 +39,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addCheckbox(cb: (component: CheckboxComponent) => void): this {
+  public addCheckbox(cb: (checkbox: CheckboxComponent) => void): this {
     return this.addComponent(CheckboxComponent, cb);
   }
 
@@ -49,7 +49,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addCodeHighlighter(cb: (component: CodeHighlighterComponent) => void): this {
+  public addCodeHighlighter(cb: (codeHighlighter: CodeHighlighterComponent) => void): this {
     return this.addComponent(CodeHighlighterComponent, cb);
   }
 
@@ -74,7 +74,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addDate(cb: (component: DateComponent) => void): this {
+  public addDate(cb: (date: DateComponent) => void): this {
     return this.addComponent(DateComponent, cb);
   }
 
@@ -84,7 +84,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addDateTime(cb: (component: DateTimeComponent) => void): this {
+  public addDateTime(cb: (dateTime: DateTimeComponent) => void): this {
     return this.addComponent(DateTimeComponent, cb);
   }
 
@@ -94,7 +94,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addEmail(cb: (component: EmailComponent) => void): this {
+  public addEmail(cb: (email: EmailComponent) => void): this {
     return this.addComponent(EmailComponent, cb);
   }
 
@@ -104,7 +104,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addFile(cb: (component: FileComponent) => void): this {
+  public addFile(cb: (file: FileComponent) => void): this {
     return this.addComponent(FileComponent, cb);
   }
 
@@ -114,7 +114,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMonth(cb: (component: MonthComponent) => void): this {
+  public addMonth(cb: (month: MonthComponent) => void): this {
     return this.addComponent(MonthComponent, cb);
   }
 
@@ -124,7 +124,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMultipleDropdown(cb: (component: MultipleDropdownComponent) => void): this {
+  public addMultipleDropdown(cb: (multipleDropdown: MultipleDropdownComponent) => void): this {
     return this.addComponent(MultipleDropdownComponent, cb);
   }
 
@@ -134,7 +134,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMultipleEmail(cb: (component: MultipleEmailComponent) => void): this {
+  public addMultipleEmail(cb: (multipleEmail: MultipleEmailComponent) => void): this {
     return this.addComponent(MultipleEmailComponent, cb);
   }
 
@@ -144,7 +144,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMultipleFile(cb: (component: MultipleFileComponent) => void): this {
+  public addMultipleFile(cb: (multipleFile: MultipleFileComponent) => void): this {
     return this.addComponent(MultipleFileComponent, cb);
   }
 
@@ -154,7 +154,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMultipleText(cb: (component: MultipleTextComponent) => void): this {
+  public addMultipleText(cb: (multipleText: MultipleTextComponent) => void): this {
     return this.addComponent(MultipleTextComponent, cb);
   }
 
@@ -164,7 +164,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addNumber(cb: (component: NumberComponent) => void): this {
+  public addNumber(cb: (number: NumberComponent) => void): this {
     return this.addComponent(NumberComponent, cb);
   }
 
@@ -174,7 +174,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addPassword(cb: (component: PasswordComponent) => void): this {
+  public addPassword(cb: (password: PasswordComponent) => void): this {
     return this.addComponent(PasswordComponent, cb);
   }
 
@@ -184,7 +184,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTelephone(cb: (component: TelephoneComponent) => void): this {
+  public addTelephone(cb: (telephone: TelephoneComponent) => void): this {
     return this.addComponent(TelephoneComponent, cb);
   }
 
@@ -194,7 +194,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTime(cb: (component: TimeComponent) => void): this {
+  public addTime(cb: (time: TimeComponent) => void): this {
     return this.addComponent(TimeComponent, cb);
   }
 
@@ -204,7 +204,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTriStateCheckbox(cb: (component: TriStateCheckboxComponent) => void): this {
+  public addTriStateCheckbox(cb: (triStateCheckbox: TriStateCheckboxComponent) => void): this {
     return this.addComponent(TriStateCheckboxComponent, cb);
   }
 
@@ -214,7 +214,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTypedDropdown<T>(cb: (component: TypedDropdownComponent<T>) => void): this {
+  public addTypedDropdown<T>(cb: (typedDropdown: TypedDropdownComponent<T>) => void): this {
     return this.addComponent(TypedDropdownComponent<T>, cb);
   }
 
@@ -224,7 +224,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTypedMultipleDropdown<T>(cb: (component: TypedMultipleDropdownComponent<T>) => void): this {
+  public addTypedMultipleDropdown<T>(cb: (typedMultipleDropdown: TypedMultipleDropdownComponent<T>) => void): this {
     return this.addComponent(TypedMultipleDropdownComponent<T>, cb);
   }
 
@@ -234,7 +234,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addUrl(cb: (component: UrlComponent) => void): this {
+  public addUrl(cb: (url: UrlComponent) => void): this {
     return this.addComponent(UrlComponent, cb);
   }
 
@@ -244,7 +244,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addWeek(cb: (component: WeekComponent) => void): this {
+  public addWeek(cb: (week: WeekComponent) => void): this {
     return this.addComponent(WeekComponent, cb);
   }
 }
