@@ -1,6 +1,6 @@
 # CLI Commands
 
-The package offers several CLI commands to facilitate common development tasks:
+`Obsidian Dev Utils` offers several CLI commands to facilitate common development tasks:
 
 ## Build Production Version
 
