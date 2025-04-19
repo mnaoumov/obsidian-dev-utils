@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.9.0
+
+- Allow modify isNote
+- Fix root relative
+
 ## 26.8.0
 
 - Expose main elements
