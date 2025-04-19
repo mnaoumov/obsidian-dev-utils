@@ -58,6 +58,7 @@ export class CodeHighlighterComponent extends ValueComponent<string>
   }
 
   private readonly codeEl: HTMLElement;
+  private placeholder = '';
   private readonly preEl: HTMLElement;
   private tabSize: number;
   private readonly textAreaComponent: TextAreaComponent;
@@ -89,7 +90,7 @@ export class CodeHighlighterComponent extends ValueComponent<string>
    * Empties the component.
    */
   public empty(): void {
-    this.textAreaComponent.setValue('');
+    this.setValue('');
   }
 
   /**
@@ -159,8 +160,7 @@ export class CodeHighlighterComponent extends ValueComponent<string>
    * @returns The component.
    */
   public setPlaceholder(placeholder: string): this {
-    this.textAreaComponent.setPlaceholder(placeholder);
-    this.codeEl.dataset['placeholder'] = placeholder;
+    this.placeholder = placeholder;
     return this;
   }
 
@@ -233,8 +233,9 @@ export class CodeHighlighterComponent extends ValueComponent<string>
   }
 
   private async updateHighlightedCode(): Promise<void> {
-    this.codeEl.textContent = this.inputEl.value;
+    this.codeEl.textContent = this.inputEl.value || this.placeholder;
     const prism = await loadPrism();
     prism.highlightElement(this.codeEl);
+    this.preEl.toggleClass(CssClass.IsPlaceholder, this.isEmpty());
   }
 }
