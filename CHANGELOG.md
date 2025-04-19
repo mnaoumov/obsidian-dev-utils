@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.7.0
+
+- Style placeholder
+
 ## 26.6.0
 
 - Rewrite docs
