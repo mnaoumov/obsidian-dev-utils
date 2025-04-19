@@ -34,12 +34,21 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
   implements ValidatorComponent, ValueComponentWithChangeTracking<readonly string[]> {
   /**
+   * The select element of the component.
+   *
+   * @returns The select element.
+   */
+  public get selectEl(): HTMLSelectElement {
+    return this.dropdownComponent.selectEl;
+  }
+
+  /**
    * The validator element of the component.
    *
    * @returns The validator element.
    */
   public get validatorEl(): ValidatorElement {
-    return this.dropdownComponent.selectEl;
+    return this.selectEl;
   }
 
   private readonly dropdownComponent: DropdownComponent;

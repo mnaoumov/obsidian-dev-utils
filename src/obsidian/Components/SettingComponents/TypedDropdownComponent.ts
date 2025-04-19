@@ -34,12 +34,21 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
  */
 export class TypedDropdownComponent<T> extends ValueComponent<null | T> implements ValueComponentWithChangeTracking<null | T> {
   /**
+   * The select element of the component.
+   *
+   * @returns The select element.
+   */
+  public get selectEl(): HTMLSelectElement {
+    return this.dropdownComponent.selectEl;
+  }
+
+  /**
    * The validator element of the component.
    *
    * @returns The validator element.
    */
   public get validatorEl(): ValidatorElement {
-    return this.dropdownComponent.selectEl;
+    return this.selectEl;
   }
 
   private readonly dropdownComponent: DropdownComponent;

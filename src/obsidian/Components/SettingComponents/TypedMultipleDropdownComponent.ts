@@ -34,12 +34,21 @@ import { MultipleDropdownComponent } from './MultipleDropdownComponent.ts';
 export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T[]>
   implements ValidatorComponent, ValueComponentWithChangeTracking<readonly T[]> {
   /**
+   * The select element of the component.
+   *
+   * @returns The select element.
+   */
+  public get selectEl(): HTMLSelectElement {
+    return this.multipleDropdownComponent.selectEl;
+  }
+
+  /**
    * The validator element of the component.
    *
    * @returns The validator element.
    */
   public get validatorEl(): ValidatorElement {
-    return this.multipleDropdownComponent.validatorEl;
+    return this.selectEl;
   }
 
   private readonly multipleDropdownComponent: MultipleDropdownComponent;
