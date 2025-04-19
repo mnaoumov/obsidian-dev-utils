@@ -54,6 +54,11 @@ export enum CssClass {
   FileComponent = 'file-component',
 
   /**
+   * The CSS class for the placeholder.
+   */
+  IsPlaceholder = 'is-placeholder',
+
+  /**
    * The CSS class for the library name.
    */
   LibraryName = 'obsidian-dev-utils',

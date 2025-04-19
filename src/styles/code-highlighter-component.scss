@@ -28,6 +28,10 @@
       z-index: 1;
     }
 
+    pre.is-placeholder {
+      opacity: 0.6;
+    }
+
     code {
       display: block;
       padding: 0;
