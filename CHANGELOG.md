@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 26.6.0
+
+- Rewrite docs
+- Add CodeHighlighterComponent
+- Update libs
+
 ## 26.5.2
 
 - Fix layout. Static size
