@@ -15,12 +15,12 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
+    "skipLibCheck": false,
     "target": "ES2024",
     "types": [
       "node",
       "obsidian-typings"
     ],
-    "skipLibCheck": false,
     "verbatimModuleSyntax": true
   },
   "include": [
