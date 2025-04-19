@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.8.0
+
+- Expose main elements
+
 ## 26.7.0
 
 - Style placeholder
