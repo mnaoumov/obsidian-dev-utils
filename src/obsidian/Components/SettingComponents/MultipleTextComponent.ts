@@ -35,12 +35,21 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 export class MultipleTextComponent extends ValueComponent<readonly string[]>
   implements TextBasedComponent<readonly string[]>, ValidatorComponent, ValueComponentWithChangeTracking<readonly string[]> {
   /**
+   * The input element of the component.
+   *
+   * @returns The input element of the component.
+   */
+  public get inputEl(): HTMLTextAreaElement {
+    return this.textAreaComponent.inputEl;
+  }
+
+  /**
    * Gets the validator element of the component.
    *
    * @returns The validator element of the component.
    */
   public get validatorEl(): ValidatorElement {
-    return this.textAreaComponent.inputEl;
+    return this.inputEl;
   }
 
   private readonly textAreaComponent: TextAreaComponent;
