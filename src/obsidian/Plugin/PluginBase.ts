@@ -102,7 +102,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    *
    * Those messages are not shown by default, but they can be shown by enabling `your-plugin-id` debugger namespace.
    *
-   * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging} for more information.
+   * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md} for more information.
    *
    * @param message - The message to log.
    * @param args - The arguments to log.

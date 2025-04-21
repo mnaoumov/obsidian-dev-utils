@@ -289,7 +289,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     const _debugger = getLibDebugger('Async:runWithTimeout:timeout');
     if (_debugger.enabled) {
       _debugger(
-        `The execution is not terminated because debugger ${_debugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging for more information`
+        `The execution is not terminated because debugger ${_debugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md for more information`
       );
       await innerTimeout();
     }

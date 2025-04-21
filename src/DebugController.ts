@@ -14,7 +14,7 @@
  * - Namespaces prefixed with '-' are explicitly disabled
  * - Multiple namespaces can be combined with commas: `lorem,-lorem:ipsum,dolor:*`
  *
- * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging}
+ * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md}
  */
 
 /**
