@@ -63,8 +63,17 @@ export function getApp(): App {
  * @param defaultValue - The default value to use if the shared state does not exist.
  * @returns The ValueWrapper object that stores the shared state.
  */
-export function getObsidianDevUtilsState<T>(app: App, key: string, defaultValue: T): ValueWrapper<T> {
-  const sharedStateWrapper = app as Partial<ObsidianDevUtilsStateWrapper>;
+export function getObsidianDevUtilsState<T>(app: App | null, key: string, defaultValue: T): ValueWrapper<T> {
+  const holder = app ?? getAppOrNull() ?? globalThis;
+  const sharedStateWrapper = holder as Partial<ObsidianDevUtilsStateWrapper>;
   sharedStateWrapper.obsidianDevUtilsState ??= {};
   return (sharedStateWrapper.obsidianDevUtilsState[key] ??= new ValueWrapper<T>(defaultValue)) as ValueWrapper<T>;
+}
+
+function getAppOrNull(): App | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return getApp();
 }
