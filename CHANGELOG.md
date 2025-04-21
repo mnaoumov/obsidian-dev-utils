@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.10.0
+
+- Cache debuggers to keep timestamps
+- Update libs
+
 ## 26.9.0
 
 - Allow modify isNote
