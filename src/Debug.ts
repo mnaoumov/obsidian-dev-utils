@@ -90,7 +90,7 @@ export function showInitialDebugMessage(pluginId: string): void {
   const namespaces = getNamespaces();
   setNamespaces(pluginId);
   getDebugger(pluginId)(
-    `Debug messages for plugin ${pluginId} are ${state}. See https://github.com/mnaoumov/obsidian-dev-utils/?tab=readme-ov-file#debugging how to ${changeAction} them.`
+    `Debug messages for plugin ${pluginId} are ${state}. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md how to ${changeAction} them.`
   );
   setNamespaces(namespaces);
 }
