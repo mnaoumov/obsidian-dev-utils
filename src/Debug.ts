@@ -11,10 +11,7 @@ import debug from 'debug';
 import type { DebugController } from './DebugController.ts';
 
 import { LIBRARY_NAME } from './Library.ts';
-import {
-  getApp,
-  getObsidianDevUtilsState
-} from './obsidian/App.ts';
+import { getObsidianDevUtilsState } from './obsidian/App.ts';
 import {
   getPluginId,
   NO_PLUGIN_ID_INITIALIZED
@@ -56,14 +53,22 @@ export function getDebugController(): DebugController {
  * @returns A debugger instance with a log function that includes the caller's file name and line number.
  */
 export function getDebugger(namespace: string, framesToSkip = 0): DebuggerEx {
-  const debugInstance = getSharedDebugLibInstance()(namespace) as DebuggerEx;
-  debugInstance.log = (message: string, ...args: unknown[]): void => {
-    logWithCaller(namespace, framesToSkip, message, ...args);
-  };
-  debugInstance.printStackTrace = (stackTrace, title): void => {
-    printStackTrace(namespace, stackTrace, title);
-  };
-  return debugInstance;
+  const key = `${namespace}:${framesToSkip.toString()}`;
+  const debuggersMap = getObsidianDevUtilsState(null, 'debuggers', new Map<string, DebuggerEx>()).value;
+  let _debugger = debuggersMap.get(key);
+  if (!_debugger) {
+    _debugger = getSharedDebugLibInstance()(namespace) as DebuggerEx;
+    _debugger.log = (message: string, ...args: unknown[]): void => {
+      logWithCaller(namespace, framesToSkip, message, ...args);
+    };
+    _debugger.printStackTrace = (stackTrace, title): void => {
+      printStackTrace(namespace, stackTrace, title);
+    };
+
+    debuggersMap.set(key, _debugger);
+  }
+
+  return _debugger;
 }
 
 /**
@@ -132,8 +137,7 @@ function getSharedDebugLibInstance(): typeof debug {
   if (typeof window === 'undefined') {
     return debug;
   }
-  const app = getApp();
-  return getObsidianDevUtilsState(app, 'debug', debug).value;
+  return getObsidianDevUtilsState(null, 'debug', debug).value;
 }
 
 function isInObsidian(): boolean {
