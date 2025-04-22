@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.11.0
+
+- Patch fileManager to avoid link updates
+- Update libs
+
 ## 26.10.0
 
 - Cache debuggers to keep timestamps
