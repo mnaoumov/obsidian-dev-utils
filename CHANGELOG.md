@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.12.0
+
+- Refactor getCacheSafe
+- Update libs
+
 ## 26.11.0
 
 - Patch fileManager to avoid link updates
