@@ -16,7 +16,8 @@ import { MarkdownView } from 'obsidian';
 import {
   isFrontmatterLinkCache,
   isReferenceCache,
-  parentFolderPath
+  parentFolderPath,
+  ViewType
 } from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';
@@ -24,7 +25,6 @@ import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { retryWithTimeout } from '../Async.ts';
-import { getLibDebugger } from '../Debug.ts';
 import { noop } from '../Function.ts';
 import { getNestedPropertyValue } from '../Object.ts';
 import {
@@ -59,17 +59,9 @@ export interface GetBacklinksForFileSafeWrapper {
  * @returns A {@link Promise} that resolves when the metadata cache is ready.
  */
 export async function ensureMetadataCacheReady(app: App): Promise<void> {
-  for (const [path, cache] of Object.entries(app.metadataCache.fileCache)) {
-    if (!cache.hash) {
-      continue;
-    }
-
-    if (app.metadataCache.metadataCache[cache.hash]) {
-      continue;
-    }
-
-    await getCacheSafe(app, path);
-  }
+  await new Promise((resolve) => {
+    app.metadataCache.onCleanCache(resolve);
+  });
 }
 
 /**
@@ -199,61 +191,18 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
  *
  * @param app - The Obsidian app instance.
  * @param fileOrPath - The file or path to retrieve the metadata for.
- * @param retryOptions - Optional retry options for the retrieval process.
  * @returns The cached metadata for the file, or null if it doesn't exist.
  */
-export async function getCacheSafe(app: App, fileOrPath: PathOrFile, retryOptions: RetryOptions = {}): Promise<CachedMetadata | null> {
-  const _debugger = getLibDebugger('MetadataCache:getCacheSafe');
+export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<CachedMetadata | null> {
+  const file = getFileOrNull(app, fileOrPath);
+  if (!file || file.deleted) {
+    return null;
+  }
 
-  let cache: CachedMetadata | null = null;
-
-  await retryWithTimeout(async () => {
-    const file = getFileOrNull(app, fileOrPath);
-
-    if (!file || file.deleted) {
-      cache = null;
-      return true;
-    }
-
-    await saveNote(app, file);
-
-    const fileInfo = app.metadataCache.getFileInfo(file.path);
-    const stat = await app.vault.adapter.stat(file.path);
-
-    if (!fileInfo) {
-      _debugger(`File cache info for ${file.path} is missing`);
-      return false;
-    }
-    if (!stat) {
-      _debugger(`File stat for ${file.path} is missing`);
-      return false;
-    }
-    if (file.stat.mtime < stat.mtime) {
-      app.vault.onChange('modified', file.path, undefined, stat);
-      _debugger(
-        `Cached timestamp for ${file.path} is from ${new Date(file.stat.mtime).toString()} which is older than the file system modification timestamp ${
-          new Date(stat.mtime).toString()
-        }`
-      );
-      return false;
-    }
-    if (fileInfo.mtime < stat.mtime) {
-      _debugger(
-        `File cache info for ${file.path} is from ${new Date(fileInfo.mtime).toString()} which is older than the file modification timestamp ${
-          new Date(stat.mtime).toString()
-        }`
-      );
-      return false;
-    }
-    cache = app.metadataCache.getFileCache(file);
-    if (!cache) {
-      _debugger(`File cache for ${file.path} is missing`);
-      return false;
-    }
-    return true;
-  }, retryOptions);
-
-  return cache;
+  await saveNote(app, file);
+  await app.metadataCache.computeFileMetadataAsync(file);
+  await ensureMetadataCacheReady(app);
+  return app.metadataCache.getFileCache(file);
 }
 
 /**
@@ -372,7 +321,7 @@ async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
 
   const path = getPath(app, pathOrFile);
 
-  for (const leaf of app.workspace.getLeavesOfType('markdown')) {
+  for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
     if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
       await leaf.view.save();
     }
