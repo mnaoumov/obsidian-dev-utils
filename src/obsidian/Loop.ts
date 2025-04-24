@@ -8,6 +8,7 @@ import type { Promisable } from 'type-fest';
 
 import { Notice } from 'obsidian';
 
+import { requestAnimationFrameAsync } from '../Async.ts';
 import { getLibDebugger } from '../Debug.ts';
 import {
   ASYNC_ERROR_WRAPPER_MESSAGE,
@@ -88,6 +89,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
 
     const asyncErrorWrapper = new Error(ASYNC_ERROR_WRAPPER_MESSAGE);
     try {
+      await requestAnimationFrameAsync();
       await options.processItem(item);
     } catch (error) {
       console.error('Error processing item', item);
