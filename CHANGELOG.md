@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.14.0
+
+- Ensure loop has animationFrame
+
 ## 26.13.0
 
 - Avoid unnecessary checks
