@@ -200,8 +200,16 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<Ca
   }
 
   await saveNote(app, file);
-  await app.metadataCache.computeFileMetadataAsync(file);
-  await ensureMetadataCacheReady(app);
+
+  const fileCacheEntry = app.metadataCache.fileCache[file.path];
+  const isUpToDate = fileCacheEntry
+    && fileCacheEntry.mtime === file.stat.mtime
+    && fileCacheEntry.size === file.stat.size
+    && app.metadataCache.metadataCache[fileCacheEntry.hash];
+  if (!isUpToDate) {
+    await app.metadataCache.computeFileMetadataAsync(file);
+    await ensureMetadataCacheReady(app);
+  }
   return app.metadataCache.getFileCache(file);
 }
 
