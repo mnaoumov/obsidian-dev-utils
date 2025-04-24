@@ -14,6 +14,7 @@ import {
   ASYNC_ERROR_WRAPPER_MESSAGE,
   emitAsyncErrorEvent
 } from '../Error.ts';
+import { noop } from '../Function.ts';
 
 /**
  * Options for the loop function.
@@ -51,6 +52,10 @@ export interface LoopOptions<T> {
    * Whether to show a progress bar.
    */
   shouldShowProgressBar?: boolean;
+  /**
+   * The threshold for the UI update.
+   */
+  uiUpdateThresholdInMilliseconds?: number;
 }
 
 /**
@@ -59,41 +64,66 @@ export interface LoopOptions<T> {
  * @param options - The options for the loop.
  */
 export async function loop<T>(options: LoopOptions<T>): Promise<void> {
-  const items = options.items;
+  const DEFAULT_OPTIONS: Required<LoopOptions<T>> = {
+    abortSignal: new AbortSignal(),
+    buildNoticeMessage() {
+      throw new Error('buildNoticeMessage is required');
+    },
+    items: [],
+    // eslint-disable-next-line no-magic-number
+    noticeMinTimeoutInMilliseconds: 2000,
+    processItem: noop,
+    progressBarTitle: '',
+    shouldContinueOnError: true,
+    shouldShowProgressBar: true,
+    // eslint-disable-next-line no-magic-number
+    uiUpdateThresholdInMilliseconds: 100
+  };
+
+  const fullOptions: Required<LoopOptions<T>> = {
+    ...DEFAULT_OPTIONS,
+    ...options
+  };
+
+  const items = fullOptions.items;
   let iterationCount = 0;
   const notice = new Notice('', 0);
-  const DEFAULT_NOTICE_MIN_TIMEOUT_IN_MILLISECONDS = 2000;
-  const noticeMinTimeoutPromise = sleep(options.noticeMinTimeoutInMilliseconds ?? DEFAULT_NOTICE_MIN_TIMEOUT_IN_MILLISECONDS);
+  const noticeMinTimeoutPromise = sleep(fullOptions.noticeMinTimeoutInMilliseconds);
   const progressBarEl = createEl('progress');
   progressBarEl.max = items.length;
-  if (options.shouldShowProgressBar) {
+  if (fullOptions.shouldShowProgressBar) {
     const fragment = createFragment();
-    if (options.progressBarTitle) {
-      fragment.appendText(options.progressBarTitle);
+    if (fullOptions.progressBarTitle) {
+      fragment.appendText(fullOptions.progressBarTitle);
     }
     fragment.appendChild(progressBarEl);
     notice.setMessage(fragment);
   }
   for (const item of items) {
-    if (options.abortSignal?.aborted) {
+    if (fullOptions.abortSignal.aborted) {
       notice.hide();
       return;
     }
     iterationCount++;
     const iterationStr = `# ${iterationCount.toString()} / ${items.length.toString()}`;
-    const message = options.buildNoticeMessage(item, iterationStr);
-    if (!options.shouldShowProgressBar) {
+    const message = fullOptions.buildNoticeMessage(item, iterationStr);
+    if (!fullOptions.shouldShowProgressBar) {
       notice.setMessage(message);
     }
     getLibDebugger('Loop')(message);
 
+    let lastUIUpdateTimestamp = performance.now();
+
     const asyncErrorWrapper = new Error(ASYNC_ERROR_WRAPPER_MESSAGE);
     try {
-      await requestAnimationFrameAsync();
-      await options.processItem(item);
+      if (performance.now() - lastUIUpdateTimestamp > fullOptions.uiUpdateThresholdInMilliseconds) {
+        await requestAnimationFrameAsync();
+        lastUIUpdateTimestamp = performance.now();
+      }
+      await fullOptions.processItem(item);
     } catch (error) {
       console.error('Error processing item', item);
-      if (!options.shouldContinueOnError) {
+      if (!fullOptions.shouldContinueOnError) {
         notice.hide();
         throw error;
       }
