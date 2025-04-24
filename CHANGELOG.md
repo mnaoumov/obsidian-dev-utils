@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.15.0
+
+- Update libs
+- requestAnimationFrameAsync only after some threshold
+
 ## 26.14.0
 
 - Ensure loop has animationFrame
