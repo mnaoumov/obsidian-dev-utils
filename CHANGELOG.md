@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.15.1
+
+- Fix AbortSignal
+
 ## 26.15.0
 
 - Update libs
