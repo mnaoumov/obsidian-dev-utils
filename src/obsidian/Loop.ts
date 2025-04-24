@@ -70,13 +70,13 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
       throw new Error('buildNoticeMessage is required');
     },
     items: [],
-    // eslint-disable-next-line no-magic-number
+    // eslint-disable-next-line no-magic-numbers
     noticeMinTimeoutInMilliseconds: 2000,
     processItem: noop,
     progressBarTitle: '',
     shouldContinueOnError: true,
     shouldShowProgressBar: true,
-    // eslint-disable-next-line no-magic-number
+    // eslint-disable-next-line no-magic-numbers
     uiUpdateThresholdInMilliseconds: 100
   };
 
