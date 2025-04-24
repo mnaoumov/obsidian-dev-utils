@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.13.0
+
+- Avoid unnecessary checks
+
 ## 26.12.0
 
 - Refactor getCacheSafe
