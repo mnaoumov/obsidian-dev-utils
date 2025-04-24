@@ -193,6 +193,19 @@ export function marksAsTerminateRetry<TError extends Error>(error: TError): Term
 }
 
 /**
+ * Gets the next request animation frame.
+ *
+ * @returns A promise that resolves when the next request animation frame is available.
+ */
+export async function requestAnimationFrameAsync(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      resolve();
+    });
+  });
+}
+
+/**
  * Retries the provided function until it returns true or the timeout is reached.
  *
  * @param fn - The function to retry.
