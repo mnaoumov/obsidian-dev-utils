@@ -65,7 +65,7 @@ export interface LoopOptions<T> {
  */
 export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   const DEFAULT_OPTIONS: Required<LoopOptions<T>> = {
-    abortSignal: new AbortSignal(),
+    abortSignal: AbortSignal.any([]),
     buildNoticeMessage() {
       throw new Error('buildNoticeMessage is required');
     },
