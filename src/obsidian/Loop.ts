@@ -99,6 +99,9 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     fragment.appendChild(progressBarEl);
     notice.setMessage(fragment);
   }
+
+  let lastUIUpdateTimestamp = performance.now();
+
   for (const item of items) {
     if (fullOptions.abortSignal.aborted) {
       notice.hide();
@@ -111,8 +114,6 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
       notice.setMessage(message);
     }
     getLibDebugger('Loop')(message);
-
-    let lastUIUpdateTimestamp = performance.now();
 
     const asyncErrorWrapper = new Error(ASYNC_ERROR_WRAPPER_MESSAGE);
     try {
