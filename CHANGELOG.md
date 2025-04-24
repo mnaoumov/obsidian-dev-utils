@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.15.2
+
+- Fix timestamp init logic
+
 ## 26.15.1
 
 - Fix AbortSignal
