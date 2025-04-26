@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 26.15.3-beta.1
+## 26.16.0
 
 - Skip async link updates after rename
 - Update libs
