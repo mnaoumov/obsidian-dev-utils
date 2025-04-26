@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.17.0
+
+- Add Map/Set transformers
+
 ## 26.16.0
 
 - Skip async link updates after rename
