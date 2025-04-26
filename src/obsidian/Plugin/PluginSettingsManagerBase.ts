@@ -40,12 +40,16 @@ import {
 import { DateTransformer } from '../../Transformers/DateTransformer.ts';
 import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
 import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';
+import { MapTransformer } from '../../Transformers/MapTransformer.ts';
+import { SetTransformer } from '../../Transformers/SetTransformer.ts';
 import { SkipPrivatePropertyTransformer } from '../../Transformers/SkipPrivatePropertyTransformer.ts';
 
 const defaultTransformer = new GroupTransformer([
   new SkipPrivatePropertyTransformer(),
   new DateTransformer(),
-  new DurationTransformer()
+  new DurationTransformer(),
+  new MapTransformer(),
+  new SetTransformer()
 ]);
 
 type ValidationResult<PluginSettings extends object> = Partial<Record<StringKeys<PluginSettings>, string>>;
