@@ -13,6 +13,10 @@ import type {
   TAbstractFile,
   TFile
 } from 'obsidian';
+import type {
+  LinkUpdate,
+  LinkUpdatesHandler
+} from 'obsidian-typings';
 
 import { Vault } from 'obsidian';
 
@@ -130,6 +134,8 @@ interface InterruptedRename {
   oldPath: string;
 }
 
+type RunAsyncLinkUpdateFn = FileManager['runAsyncLinkUpdate'];
+
 /**
  * Registers the rename/delete handlers.
  *
@@ -167,11 +173,9 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
     })
   );
 
-  type RenameFileFn = FileManager['renameFile'];
-
   registerPatch(plugin, app.fileManager, {
-    renameFile: (): RenameFileFn => {
-      return (file, newPath) => renameFile(app, file, newPath);
+    runAsyncLinkUpdate: (next: RunAsyncLinkUpdateFn): RunAsyncLinkUpdateFn => {
+      return (linkUpdatesHandler) => runAsyncLinkUpdate(app, next, linkUpdatesHandler);
     }
   });
 }
@@ -602,10 +606,6 @@ async function refreshLinks(
   }
 }
 
-async function renameFile(app: App, file: TAbstractFile, newPath: string): Promise<void> {
-  await app.vault.rename(file, newPath);
-}
-
 async function renameHandled(app: App, oldPath: string, newPath: string): Promise<string> {
   newPath = getSafeRenamePath(app, oldPath, newPath);
   if (oldPath === newPath) {
@@ -615,6 +615,26 @@ async function renameHandled(app: App, oldPath: string, newPath: string): Promis
   handledRenames.add(key);
   newPath = await renameSafe(app, oldPath, newPath);
   return newPath;
+}
+
+async function runAsyncLinkUpdate(app: App, next: RunAsyncLinkUpdateFn, linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
+  await next.call(app.fileManager, wrappedHandler);
+
+  async function wrappedHandler(linkUpdates: LinkUpdate[]): Promise<void> {
+    let isRenameCalled = false;
+    const eventRef = app.vault.on('rename', () => {
+      isRenameCalled = true;
+    });
+    try {
+      await linkUpdatesHandler(linkUpdates);
+    } finally {
+      app.vault.offref(eventRef);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (isRenameCalled) {
+      linkUpdates.splice(0);
+    }
+  }
 }
 
 function shouldInvokeHandler(plugin: Plugin): boolean {
