@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.19.0
+
+- Add hasKey/hasValue
+- Update libs
+
 ## 26.18.0
 
 - Add TwoWayMap
