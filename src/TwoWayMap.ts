@@ -97,6 +97,26 @@ export class TwoWayMap<Key, Value> {
   }
 
   /**
+   * Checks if the map has a key.
+   *
+   * @param key - The key.
+   * @returns `true` if the map has the key, `false` otherwise.
+   */
+  public hasKey(key: Key): boolean {
+    return this.keyValueMap.has(key);
+  }
+
+  /**
+   * Checks if the map has a value.
+   *
+   * @param value - The value.
+   * @returns `true` if the map has the value, `false` otherwise.
+   */
+  public hasValue(value: Value): boolean {
+    return this.valueKeyMap.has(value);
+  }
+
+  /**
    * Gets all keys in the map.
    *
    * @returns An iterator over all keys in the map.
