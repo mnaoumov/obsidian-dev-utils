@@ -464,7 +464,7 @@
     "better-typescript-lib": "^2.11.0",
     "commander": "^13.1.0",
     "compare-versions": "^6.1.1",
-    "cspell": "^8.19.2",
+    "cspell": "^8.19.3",
     "debug": "^4.4.0",
     "dotenv": "^16.5.0",
     "dprint": "^0.49.1",
