@@ -4,7 +4,10 @@
  * Contains utility functions for Objects.
  */
 
-import type { UndefinedOnPartialDeep } from 'type-fest';
+import type {
+  Constructor,
+  UndefinedOnPartialDeep
+} from 'type-fest';
 
 import type {
   MaybeReturn,
@@ -100,6 +103,11 @@ interface ApplySubstitutionsOptions {
   substitutions: TokenSubstitutions;
 }
 
+interface EqualityComparerEntry<T> {
+  constructor: Constructor<T>;
+  equalityComparer: (a: T, b: T) => boolean;
+}
+
 interface JSONSerializable {
   toJSON(...args: unknown[]): unknown;
 }
@@ -111,6 +119,15 @@ interface TokenSubstitutions {
 }
 
 const KEY_SEPARATOR = '.';
+const equalityComparerEntries = createEqualityComparerEntries(
+  [
+    { constructor: ArrayBuffer, equalityComparer: deepEqualArrayBuffer },
+    { constructor: Date, equalityComparer: deepEqualDate },
+    { constructor: RegExp, equalityComparer: deepEqualRegExp },
+    { constructor: Map, equalityComparer: deepEqualMap },
+    { constructor: Set, equalityComparer: deepEqualSet }
+  ] as const
+);
 
 /**
  * A type that represents a generic object.
@@ -180,6 +197,20 @@ export function deepEqual(a: unknown, b: unknown): boolean {
 
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
     return false;
+  }
+
+  const aConstructor = a.constructor;
+  const bConstructor = b.constructor;
+
+  if (aConstructor !== bConstructor) {
+    return false;
+  }
+
+  if (aConstructor !== Object) {
+    const result = deepEqualTyped(a, b);
+    if (result !== undefined) {
+      return result;
+    }
   }
 
   const keysA = getAllKeys(a);
@@ -490,6 +521,76 @@ function applySubstitutions(options: ApplySubstitutionsOptions): MaybeReturn<str
     default:
       break;
   }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function createEqualityComparerEntries<const T extends readonly EqualityComparerEntry<any>[]>(entries: T): T {
+  return entries;
+}
+
+function deepEqualArrayBuffer(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  if (a.byteLength !== b.byteLength) {
+    return false;
+  }
+
+  const viewA = new Uint8Array(a);
+  const viewB = new Uint8Array(b);
+  return deepEqual(viewA, viewB);
+}
+
+function deepEqualDate(a: Date, b: Date): boolean {
+  return a.getTime() === b.getTime();
+}
+
+function deepEqualMap(a: Map<unknown, unknown>, b: Map<unknown, unknown>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+
+  for (const [key, value] of a.entries()) {
+    if (!b.has(key) || !deepEqual(value, b.get(key))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function deepEqualRegExp(a: RegExp, b: RegExp): boolean {
+  return a.source === b.source && a.flags === b.flags;
+}
+
+function deepEqualSet(a: Set<unknown>, b: Set<unknown>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+
+  for (const valueA of a) {
+    if (b.has(valueA)) {
+      continue;
+    }
+    let found = false;
+    for (const valueB of b) {
+      if (deepEqual(valueA, valueB)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function deepEqualTyped(a: unknown, b: unknown): boolean | undefined {
+  for (const { constructor, equalityComparer } of equalityComparerEntries) {
+    if (a instanceof constructor && b instanceof constructor) {
+      return equalityComparer(a as never, b as never);
+    }
+  }
+  return undefined;
 }
 
 function handleArray(
