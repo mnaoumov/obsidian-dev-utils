@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.18.0
+
+- Add TwoWayMap
+
 ## 26.17.0
 
 - Add Map/Set transformers
