@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.20.0
+
+- Add more deep equal checks
+
 ## 26.19.0
 
 - Add hasKey/hasValue
