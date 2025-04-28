@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.22.0
+
+- cleanupParentFolders on deletion
+
 ## 26.21.0
 
 - Switch to EmptyAttachmentFolderBehavior
