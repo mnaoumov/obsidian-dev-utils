@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 26.21.0
+
+- Switch to EmptyAttachmentFolderBehavior
+- Combine settings properly
+- Update libs
+
 ## 26.20.0
 
 - Add more deep equal checks
