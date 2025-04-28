@@ -452,7 +452,7 @@
     "@types/doctrine": "^0.0.9",
     "@types/eslint": "^9.6.1",
     "@types/luxon": "^3.6.2",
-    "@types/node": "^22.15.2",
+    "@types/node": "^22.15.3",
     "@types/parsimmon": "^1.10.9",
     "@types/path-browserify": "^1.0.3",
     "@types/picomatch": "^4.0.0",
