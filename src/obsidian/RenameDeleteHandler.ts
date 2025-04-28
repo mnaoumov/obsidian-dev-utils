@@ -285,6 +285,9 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
   const settingsBuilders = Array.from(renameDeleteHandlersMap.values()).reverse();
 
   const settings: Partial<RenameDeleteHandlerSettings> = {};
+  settings.isNote = (path: string): boolean => isNote(app, path);
+  settings.isPathIgnored = (): boolean => false;
+
   for (const settingsBuilder of settingsBuilders) {
     const newSettings = settingsBuilder();
     settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
@@ -295,9 +298,9 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
     settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
     settings.shouldUpdateFilenameAliases ||= newSettings.shouldUpdateFilenameAliases ?? false;
     const isPathIgnored = settings.isPathIgnored;
-    settings.isPathIgnored = (path: string): boolean => isPathIgnored?.(path) ?? newSettings.isPathIgnored?.(path) ?? false;
+    settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
     const currentIsNote = settings.isNote;
-    settings.isNote = (path: string): boolean => currentIsNote?.(path) ?? newSettings.isNote?.(path) ?? isNote(app, path);
+    settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
   }
 
   return settings;
