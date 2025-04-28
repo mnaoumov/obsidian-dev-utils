@@ -200,6 +200,25 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
   });
 }
 
+async function cleanupParentFolders(app: App, parentFolderPaths: string[], notePath: string): Promise<void> {
+  const settings = getSettings(app);
+  if (settings.emptyAttachmentFolderBehavior === EmptyAttachmentFolderBehavior.Keep) {
+    return;
+  }
+  for (const parentFolderPath of parentFolderPaths) {
+    switch (settings.emptyAttachmentFolderBehavior) {
+      case EmptyAttachmentFolderBehavior.Delete:
+        await deleteSafe(app, parentFolderPath, notePath, undefined, true);
+        break;
+      case EmptyAttachmentFolderBehavior.DeleteWithEmptyParents:
+        await deleteEmptyFolderHierarchy(app, parentFolderPath);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
 async function continueInterruptedRenames(
   app: App,
   oldPath: string,
@@ -364,6 +383,7 @@ async function handleDelete(app: App, path: string): Promise<void> {
 
   const cache = deletedMetadataCacheMap.get(path);
   deletedMetadataCacheMap.delete(path);
+  const parentFolderPaths = new Set<string>();
   if (cache) {
     const links = getAllLinks(cache);
 
@@ -377,9 +397,12 @@ async function handleDelete(app: App, path: string): Promise<void> {
         continue;
       }
 
+      parentFolderPaths.add(attachmentFile.parent?.path ?? '');
       await deleteSafe(app, attachmentFile, path, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
     }
   }
+
+  await cleanupParentFolders(app, Array.from(parentFolderPaths), path);
 
   const attachmentFolderPath = await getAttachmentFolderPath(app, path);
   const attachmentFolder = getFolderOrNull(app, attachmentFolderPath);
@@ -473,7 +496,7 @@ async function handleRenameAsync(
       initBacklinksMap(attachmentOldPathBacklinksMap, renameMap, combinedBacklinksMap, attachmentOldPath);
     }
 
-    const parentFolders = new Set<string>();
+    const parentFolderPaths = new Set<string>();
 
     for (const [oldAttachmentPath, newAttachmentPath] of renameMap.entries()) {
       if (oldAttachmentPath === oldPath) {
@@ -481,22 +504,11 @@ async function handleRenameAsync(
       }
       const fixedNewAttachmentPath = await renameHandled(app, oldAttachmentPath, newAttachmentPath);
       renameMap.set(oldAttachmentPath, fixedNewAttachmentPath);
-      parentFolders.add(dirname(oldAttachmentPath));
+      parentFolderPaths.add(dirname(oldAttachmentPath));
     }
 
+    await cleanupParentFolders(app, Array.from(parentFolderPaths), oldPath);
     const settings = getSettings(app);
-    for (const parentFolder of parentFolders) {
-      switch (settings.emptyAttachmentFolderBehavior) {
-        case EmptyAttachmentFolderBehavior.Delete:
-          await deleteSafe(app, parentFolder, undefined, undefined, true);
-          break;
-        case EmptyAttachmentFolderBehavior.DeleteWithEmptyParents:
-          await deleteEmptyFolderHierarchy(app, parentFolder);
-          break;
-        default:
-          break;
-      }
-    }
 
     for (
       const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(
