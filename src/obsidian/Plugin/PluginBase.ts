@@ -116,6 +116,10 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
 
   /**
    * Called when the external settings change.
+   *
+   * Usually, you don't need to override this method. Consider using {@link onLoadSettings} instead.
+   *
+   * If you still need to override this method, make sure to call `await super.onExternalSettingsChange()` first.
    */
   public override async onExternalSettingsChange(): Promise<void> {
     await super.onExternalSettingsChange?.();
@@ -124,6 +128,10 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
 
   /**
    * Called when the plugin is loaded
+   *
+   * Usually, you don't need to override this method. Consider using {@link onloadImpl} instead.
+   *
+   * If you still need to override this method, make sure to call `await super.onload()` first.
    */
   public override async onload(): Promise<void> {
     await super.onload();
@@ -131,7 +139,13 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     invokeAsyncSafelyAfterDelay(this.afterLoad.bind(this));
   }
 
-  /** */
+  /**
+   * Called when the plugin is unloaded.
+   *
+   * Usually, you don't need to override this method. Consider using {@link onunloadImpl} instead.
+   *
+   * If you still need to override this method, make sure to call `super.onunload()` first.
+   */
   public override onunload(): void {
     super.onunload();
     invokeAsyncSafely(async () => {
@@ -184,8 +198,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   /**
-   * Called when the layout is ready. This method can be overridden by subclasses to perform actions once
-   * the layout is ready.
+   * Called when the layout is ready.
    */
   protected async onLayoutReady(): Promise<void> {
     await noopAsync();
@@ -194,7 +207,9 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   /**
    * Executed when the plugin is loaded.
    *
-   * This method can be overridden by subclasses to perform actions once the plugin is loaded.
+   * If this method fails, the plugin will be automatically unloaded.
+   *
+   * @remarks It is important to call `super.onloadImpl()` in overridden method.
    */
   protected async onloadImpl(): Promise<void> {
     initPluginContext(this.app, this.manifest.id);

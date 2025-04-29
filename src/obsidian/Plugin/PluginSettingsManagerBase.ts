@@ -67,8 +67,18 @@ type Validator<PluginSettings extends object, PropertyName extends StringKeys<Pl
  * @typeParam PluginTypes - Plugin-specific types.
  */
 export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesBase> extends AsyncEvents {
+  /**
+   * Gets the app.
+   *
+   * @returns The app.
+   */
   public readonly app: App;
 
+  /**
+   * Gets the readonly default settings.
+   *
+   * @returns The default settings (as a readonly object).
+   */
   public readonly defaultSettings: ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
 
   /**
@@ -85,6 +95,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   private lastSavedSettingsWrapper: ExtractPluginSettingsWrapper<PluginTypes>;
   private readonly propertyNames: ExtractPluginSettingsPropertyNames<PluginTypes>[];
   private readonly validators = new Map<ExtractPluginSettingsPropertyNames<PluginTypes>, Validator<ExtractPluginSettings<PluginTypes>>>();
+
   /**
    * Creates a new plugin settings manager.
    *
