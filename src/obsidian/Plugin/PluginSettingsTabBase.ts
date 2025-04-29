@@ -398,7 +398,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    * @returns A {@link Promise} that resolves when the settings are loaded.
    */
   protected async onLoadSettings(_loadedSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>, _isInitialLoad: boolean): Promise<void> {
-    this.refresh();
+    this.display();
     await noopAsync();
   }
 
@@ -430,11 +430,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       return;
     }
 
-    this.refresh();
-  }
-
-  private refresh(): void {
-    this.containerEl.empty();
     this.display();
   }
 }
