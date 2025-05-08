@@ -4,9 +4,9 @@ const configs = [
   ...devUtilsConfigs,
   {
     rules: {
-      '@typescript-eslint/explicit-function-return-type': 'off',
-    },
-  },
+      '@typescript-eslint/explicit-function-return-type': 'off'
+    }
+  }
 ];
 
 // eslint-disable-next-line import-x/no-default-export
