@@ -163,32 +163,35 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     this.lastSavedSettingsWrapper = this.createDefaultSettingsWrapper();
     this.currentSettingsWrapper = this.createDefaultSettingsWrapper();
 
-    if (data === undefined || data === null) {
-      return;
+    try {
+      if (data === undefined || data === null) {
+        return;
+      }
+
+      if (typeof data !== 'object') {
+        console.error(`Invalid settings from data.json. Expected Object, got: ${typeof data}`);
+        return;
+      }
+
+      const rawRecord = data as GenericObject;
+      const parsedSettings = await this.rawRecordToSettings(rawRecord);
+      const validationResult = await this.validate(parsedSettings);
+
+      for (const propertyName of this.propertyNames) {
+        this.setPropertyImpl(propertyName, parsedSettings[propertyName], validationResult[propertyName]);
+      }
+
+      this.lastSavedSettingsWrapper = await this.cloneSettingsWrapper(this.currentSettingsWrapper);
+
+      const newRecord = await this.settingsToRawRecord(this.currentSettingsWrapper.settings);
+
+      if (!deepEqual(newRecord, data)) {
+        await this.saveToFileImpl();
+      }
     }
-
-    if (typeof data !== 'object') {
-      console.error(`Invalid settings from data.json. Expected Object, got: ${typeof data}`);
-      return;
+    finally {
+      await this.triggerAsync('loadSettings', this.currentSettingsWrapper, isInitialLoad);
     }
-
-    const rawRecord = data as GenericObject;
-    const parsedSettings = await this.rawRecordToSettings(rawRecord);
-    const validationResult = await this.validate(parsedSettings);
-
-    for (const propertyName of this.propertyNames) {
-      this.setPropertyImpl(propertyName, parsedSettings[propertyName], validationResult[propertyName]);
-    }
-
-    this.lastSavedSettingsWrapper = await this.cloneSettingsWrapper(this.currentSettingsWrapper);
-
-    const newRecord = await this.settingsToRawRecord(this.currentSettingsWrapper.settings);
-
-    if (!deepEqual(newRecord, data)) {
-      await this.saveToFileImpl();
-    }
-
-    await this.triggerAsync('loadSettings', this.currentSettingsWrapper, isInitialLoad);
   }
 
   /**
