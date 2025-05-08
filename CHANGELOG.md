@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.23.0
+
+- Trigger loadSettings even settings were missing
+- Update libs
+
 ## 26.22.0
 
 - cleanupParentFolders on deletion
