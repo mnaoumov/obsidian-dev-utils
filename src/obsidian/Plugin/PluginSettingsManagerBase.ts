@@ -188,8 +188,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
       if (!deepEqual(newRecord, data)) {
         await this.saveToFileImpl();
       }
-    }
-    finally {
+    } finally {
       await this.triggerAsync('loadSettings', this.currentSettingsWrapper, isInitialLoad);
     }
   }
