@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.24.0
+
+- hideAsync
+
 ## 26.23.0
 
 - Trigger loadSettings even settings were missing
