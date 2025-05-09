@@ -380,7 +380,16 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     this._isOpen = false;
     this.asyncEventsComponent.unload();
     this.asyncEventsComponent.load();
-    invokeAsyncSafely(() => this.plugin.settingsManager.saveToFile(SAVE_TO_FILE_CONTEXT));
+    invokeAsyncSafely(() => this.hideAsync());
+  }
+
+  /**
+   * Async actions to perform when the settings tab is being hidden.
+   *
+   * @returns A {@link Promise} that resolves when the settings tab is hidden.
+   */
+  public async hideAsync(): Promise<void> {
+    await this.plugin.settingsManager.saveToFile(SAVE_TO_FILE_CONTEXT);
   }
 
   /**
