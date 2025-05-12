@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.25.0
+
+- Ensure placeholder shown
+- Update libs
+
 ## 26.24.0
 
 - hideAsync
