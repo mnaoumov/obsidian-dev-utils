@@ -398,7 +398,7 @@ async function handleDelete(app: App, path: string): Promise<void> {
       }
 
       parentFolderPaths.add(attachmentFile.parent?.path ?? '');
-      await deleteSafe(app, attachmentFile, path, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
+      await deleteSafe(app, attachmentFile, path, false, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
     }
   }
 
