@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.26.0
+
+- Don't report left attachments
+
 ## 26.25.0
 
 - Ensure placeholder shown
