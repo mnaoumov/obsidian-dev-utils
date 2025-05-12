@@ -161,6 +161,7 @@ export class CodeHighlighterComponent extends ValueComponent<string>
    */
   public setPlaceholder(placeholder: string): this {
     this.placeholder = placeholder;
+    invokeAsyncSafely(this.updateHighlightedCode.bind(this));
     return this;
   }
 
