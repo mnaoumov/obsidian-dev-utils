@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.27.2
+
+- Add missing encoding
+
 ## 26.27.1
 
 - Add encodedUrl
