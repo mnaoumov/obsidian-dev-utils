@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.27.0
+
+- encodeUrl
+- Update libs
+
 ## 26.26.0
 
 - Don't report left attachments
