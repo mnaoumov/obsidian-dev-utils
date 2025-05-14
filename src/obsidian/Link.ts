@@ -1119,6 +1119,7 @@ function parseLinkNode(node: Link, str: string, isEmbed: boolean): ParseLinkResu
   }
   return normalizeOptionalProperties<ParseLinkResult>({
     alias: aliasNode?.value,
+    encodedUrl: isExternal ? encodeUrl(url) : undefined,
     hasAngleBrackets,
     isEmbed,
     isExternal,
