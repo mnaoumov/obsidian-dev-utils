@@ -555,6 +555,16 @@ export async function editLinksInContent(
 }
 
 /**
+ * Encodes a URL.
+ *
+ * @param url - The URL to encode.
+ * @returns The encoded URL.
+ */
+export function encodeUrl(url: string): string {
+  return replaceAll(url, SPECIAL_LINK_SYMBOLS_REGEXP, ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol));
+}
+
+/**
  * Extracts the file associated with a link.
  *
  * @param app - The Obsidian application instance.
@@ -1006,7 +1016,7 @@ function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options:
 
   const processedLinkText = config.shouldUseAngleBrackets
     ? `<${linkText}>`
-    : replaceAll(linkText, SPECIAL_LINK_SYMBOLS_REGEXP, ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol));
+    : encodeUrl(linkText);
 
   let alias = options.alias ?? '';
   if (!alias && (!config.isEmbed || !options.isEmptyEmbedAliasAllowed)) {
@@ -1122,7 +1132,7 @@ function parseLinkUrl(str: string): null | ParseLinkResult {
     isEmbed: false,
     isExternal: true,
     isWikilink: false,
-    url: str
+    url: encodeUrl(str)
   };
 }
 
