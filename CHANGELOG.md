@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.27.3
+
+- Parse <url>
+
 ## 26.27.2
 
 - Add missing encoding
