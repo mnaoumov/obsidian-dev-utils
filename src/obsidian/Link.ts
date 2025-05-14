@@ -1130,12 +1130,18 @@ function parseLinkNode(node: Link, str: string, isEmbed: boolean): ParseLinkResu
 }
 
 function parseLinkUrl(str: string): null | ParseLinkResult {
+  const hasAngleBrackets = str.startsWith('<') && str.endsWith('>');
+  if (hasAngleBrackets) {
+    str = str.slice(1, -1);
+  }
+
   if (!isUrl(str)) {
     return null;
   }
 
   return {
     encodedUrl: encodeUrl(str),
+    hasAngleBrackets,
     isEmbed: false,
     isExternal: true,
     isWikilink: false,
