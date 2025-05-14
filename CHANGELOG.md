@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 26.27.1
+
+- Add encodedUrl
+
 ## 26.27.0
 
 - encodeUrl
