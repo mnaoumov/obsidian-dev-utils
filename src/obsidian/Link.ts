@@ -230,6 +230,11 @@ export interface ParseLinkResult {
   alias?: string;
 
   /**
+   * The encoded URL of the link.
+   */
+  encodedUrl?: string;
+
+  /**
    * Indicates if the link has angle brackets.
    */
   hasAngleBrackets?: boolean;
@@ -1129,10 +1134,11 @@ function parseLinkUrl(str: string): null | ParseLinkResult {
   }
 
   return {
+    encodedUrl: encodeUrl(str),
     isEmbed: false,
     isExternal: true,
     isWikilink: false,
-    url: encodeUrl(str)
+    url: str
   };
 }
 
