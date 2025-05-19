@@ -81,6 +81,8 @@ async function processNextQueueItem(app: App): Promise<void> {
     return;
   }
 
-  await addErrorHandler(() => runWithTimeout(item.timeoutInMilliseconds, () => invokeAsyncAndLog(processNextQueueItem.name, item.fn, item.stackTrace), { queuedFn: item.fn }));
+  await addErrorHandler(() =>
+    runWithTimeout(item.timeoutInMilliseconds, () => invokeAsyncAndLog(processNextQueueItem.name, item.fn, item.stackTrace), { queuedFn: item.fn })
+  );
   queue.items.shift();
 }
