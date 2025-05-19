@@ -268,6 +268,7 @@ export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptio
  * @typeParam R - The type of the result from the asynchronous function.
  * @param timeoutInMilliseconds - The maximum time to wait in milliseconds.
  * @param fn - The function to execute.
+ * @param context - The context of the function.
  * @returns A {@link Promise} that resolves with the result of the asynchronous function or rejects if it times out.
  */
 export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => Promisable<R>, context?: unknown): Promise<R> {
@@ -285,7 +286,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     result = await fn();
     isTimedOut = false;
     const duration = performance.now() - startTime;
-    getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { fn, context });
+    getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { context, fn });
   }
 
   async function innerTimeout(): Promise<void> {
@@ -298,7 +299,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
       return;
     }
     const duration = performance.now() - startTime;
-    console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn, context });
+    console.warn(`Timed out in ${duration.toString()} milliseconds`, { context, fn });
     const _debugger = getLibDebugger('Async:runWithTimeout:timeout');
     if (_debugger.enabled) {
       _debugger(
