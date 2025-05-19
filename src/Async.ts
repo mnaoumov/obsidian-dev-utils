@@ -257,7 +257,7 @@ export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptio
       retryWithTimeoutDebugger.printStackTrace(stackTrace);
       await sleep(fullOptions.retryDelayInMilliseconds);
     }
-  });
+  }, { retryFn: fn });
 }
 
 /**
@@ -270,7 +270,7 @@ export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptio
  * @param fn - The function to execute.
  * @returns A {@link Promise} that resolves with the result of the asynchronous function or rejects if it times out.
  */
-export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => Promisable<R>): Promise<R> {
+export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => Promisable<R>, context?: unknown): Promise<R> {
   let isTimedOut = true;
   let result: R = null as R;
   const startTime = performance.now();
@@ -285,7 +285,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     result = await fn();
     isTimedOut = false;
     const duration = performance.now() - startTime;
-    getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { fn });
+    getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { fn, context });
   }
 
   async function innerTimeout(): Promise<void> {
@@ -298,7 +298,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
       return;
     }
     const duration = performance.now() - startTime;
-    console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn });
+    console.warn(`Timed out in ${duration.toString()} milliseconds`, { fn, context });
     const _debugger = getLibDebugger('Async:runWithTimeout:timeout');
     if (_debugger.enabled) {
       _debugger(
