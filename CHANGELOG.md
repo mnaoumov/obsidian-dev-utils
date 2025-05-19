@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.28.0
+
+- Log context fn on timeout
+- Update libs
+
 ## 26.27.3
 
 - Parse <url>
