@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.29.0
+
+- Ensure isTimedOut flag is reset
+- Update libs
+
 ## 26.28.0
 
 - Log context fn on timeout
