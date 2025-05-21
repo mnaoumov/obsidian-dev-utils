@@ -287,8 +287,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
       result = await fn();
       const duration = performance.now() - startTime;
       getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { context, fn });
-    }
-    finally {
+    } finally {
       isTimedOut = false;
     }
   }
