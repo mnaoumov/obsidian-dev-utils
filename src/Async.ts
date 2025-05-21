@@ -283,10 +283,14 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
   return result;
 
   async function run(): Promise<void> {
-    result = await fn();
-    isTimedOut = false;
-    const duration = performance.now() - startTime;
-    getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { context, fn });
+    try {
+      result = await fn();
+      const duration = performance.now() - startTime;
+      getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { context, fn });
+    }
+    finally {
+      isTimedOut = false;
+    }
   }
 
   async function innerTimeout(): Promise<void> {
