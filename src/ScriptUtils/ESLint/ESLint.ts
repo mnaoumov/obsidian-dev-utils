@@ -16,6 +16,7 @@ import {
   cp,
   existsSync
 } from '../NodeModules.ts';
+import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
 import {
   execFromRoot,
   getRootFolder,
@@ -48,7 +49,10 @@ export async function lint(shouldFix?: boolean): Promise<void> {
     if (!packageFolder) {
       throw new Error('Package folder not found');
     }
-    await cp(join(packageFolder, ObsidianPluginRepoPaths.EslintConfigMts), resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMts));
+    await cp(
+      join(packageFolder, ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.EslintConfigMts),
+      resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMts)
+    );
   }
 
   await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentFolder]);
