@@ -67,6 +67,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** TypeScript declaration file extension. */
   DtsExtension = '.d.ts',
 
+  /** ESM TypeScript ESLint configuration file. */
+  EslintConfigMts = 'eslint.config.mts',
+
   /** ESM JavaScript folder. */
   Esm = 'esm',
 
