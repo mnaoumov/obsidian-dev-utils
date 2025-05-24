@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.29.1
+
+- Fix init eslint
+- Update libs
+
 ## 26.29.0
 
 - Ensure isTimedOut flag is reset
