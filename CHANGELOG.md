@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 26.29.2
+
+- Save only changed leaves
+- Update libs
+
 ## 26.29.1
 
 - Fix init eslint
