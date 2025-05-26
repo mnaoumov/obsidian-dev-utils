@@ -330,7 +330,7 @@ async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
   const path = getPath(app, pathOrFile);
 
   for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
-    if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
+    if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path && leaf.view.dirty) {
       await leaf.view.save();
     }
   }
