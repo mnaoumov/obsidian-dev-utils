@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 27.0.0
+
+- Refactor eslint config naming
+- More node modules
+- Update libs
+
 ## 26.29.2
 
 - Save only changed leaves
