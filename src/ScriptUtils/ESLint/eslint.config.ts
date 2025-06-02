@@ -30,7 +30,7 @@ import { getRootFolder } from '../Root.ts';
 /**
  * The ESLint configurations for TypeScript projects.
  */
-export const configs: Linter.Config[] = tseslint.config(
+export const obsidianDevUtilsConfigs: Linter.Config[] = tseslint.config(
   {
     files: [
       join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),

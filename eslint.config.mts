@@ -16,13 +16,13 @@ import jsdoc from 'eslint-plugin-jsdoc';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
 
 import { join } from './src/Path.ts';
-import { configs as defaultConfigs } from './src/ScriptUtils/ESLint/eslint.config.ts';
+import { obsidianDevUtilsConfigs } from './src/ScriptUtils/ESLint/eslint.config.ts';
 import { ObsidianDevUtilsRepoPaths } from './src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 
 const eslintPluginTsdocRequired = eslintPluginTsdocRequired_ as ESLint.Plugin;
 
 const configs: Linter.Config[] = [
-  ...defaultConfigs,
+  ...obsidianDevUtilsConfigs,
   {
     ignores: [
       join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
