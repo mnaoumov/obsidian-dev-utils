@@ -8,6 +8,12 @@
 import process from 'node:process';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
+export {
+  createHook,
+  executionAsyncId
+} from 'node:async_hooks';
+
+// eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
 export { spawn } from 'node:child_process';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
@@ -15,6 +21,7 @@ export {
   existsSync,
   readFileSync,
   statSync,
+  unlinkSync,
   watch,
   writeFileSync
 } from 'node:fs';
@@ -41,6 +48,7 @@ export {
   rename,
   rm,
   stat,
+  unlink,
   writeFile
 } from 'node:fs/promises';
 
