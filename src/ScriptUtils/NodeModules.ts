@@ -4,8 +4,8 @@
  * Contains utility functions for Node.js modules.
  */
 
-// eslint-disable-next-line import-x/no-nodejs-modules
-import process from 'node:process';
+// eslint-disable-next-line import-x/no-nodejs-modules, import-x/no-namespace
+import * as process from 'node:process';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required
 export {
