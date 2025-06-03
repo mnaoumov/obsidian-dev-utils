@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.0.1
+
+- Fix import of process variable
+
 ## 27.0.0
 
 - Refactor eslint config naming
