@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 27.1.0
+
+- Don't show notice if not needed
+- Ensure title is wrapped in div
+
 ## 27.0.2
 
 - Update libs
