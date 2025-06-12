@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.0.2
+
+- Update libs
+
 ## 27.0.1
 
 - Fix import of process variable
