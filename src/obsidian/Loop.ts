@@ -96,9 +96,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   progressBarEl.max = items.length;
   if (fullOptions.shouldShowProgressBar) {
     const fragment = createFragment();
-    if (fullOptions.progressBarTitle) {
-      fragment.createDiv({ text: fullOptions.progressBarTitle });
-    }
+    fragment.createDiv({ text: fullOptions.progressBarTitle });
     fragment.appendChild(progressBarEl);
     notice?.setMessage(fragment);
   }
