@@ -87,7 +87,10 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
 
   const items = fullOptions.items;
   let iterationCount = 0;
-  const notice = new Notice('', 0);
+  let notice: Notice | null = null;;
+  if (fullOptions.shouldShowProgressBar) {
+    notice = new Notice('', 0);
+  }
   const noticeMinTimeoutPromise = sleep(fullOptions.noticeMinTimeoutInMilliseconds);
   const progressBarEl = createEl('progress');
   progressBarEl.max = items.length;
@@ -97,21 +100,21 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
       fragment.createDiv({ text: fullOptions.progressBarTitle });
     }
     fragment.appendChild(progressBarEl);
-    notice.setMessage(fragment);
+    notice?.setMessage(fragment);
   }
 
   let lastUIUpdateTimestamp = performance.now();
 
   for (const item of items) {
     if (fullOptions.abortSignal.aborted) {
-      notice.hide();
+      notice?.hide();
       return;
     }
     iterationCount++;
     const iterationStr = `# ${iterationCount.toString()} / ${items.length.toString()}`;
     const message = fullOptions.buildNoticeMessage(item, iterationStr);
     if (!fullOptions.shouldShowProgressBar) {
-      notice.setMessage(message);
+      notice?.setMessage(message);
     }
     getLibDebugger('Loop')(message);
 
@@ -125,7 +128,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     } catch (error) {
       console.error('Error processing item', item);
       if (!fullOptions.shouldContinueOnError) {
-        notice.hide();
+        notice?.hide();
         throw error;
       }
       asyncErrorWrapper.cause = error;
@@ -134,5 +137,5 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     progressBarEl.value++;
   }
   await noticeMinTimeoutPromise;
-  notice.hide();
+  notice?.hide();
 }
