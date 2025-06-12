@@ -87,7 +87,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
 
   const items = fullOptions.items;
   let iterationCount = 0;
-  let notice: Notice | null = null;;
+  let notice: Notice | null = null;
   if (fullOptions.shouldShowProgressBar) {
     notice = new Notice('', 0);
   }
