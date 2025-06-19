@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 27.2.0
+
+- Recognize urls such mailto:foo@bar.com (For https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9)
+- Update libs
+
 ## 27.1.0
 
 - Don't show notice if not needed
