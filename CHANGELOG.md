@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.2.1
+
+- Add stricter scheme reg exp
+
 ## 27.2.0
 
 - Recognize urls such mailto:foo@bar.com (For https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9)
