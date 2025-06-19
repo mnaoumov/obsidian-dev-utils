@@ -38,7 +38,7 @@ declare global {
   /**
    * The DataviewAPI object represents the API for interacting with Dataview in Obsidian.
    */
-  // eslint-disable-next-line no-var, vars-on-top
+  // eslint-disable-next-line vars-on-top
   var DataviewAPI: DataviewApi | undefined;
 }
 
