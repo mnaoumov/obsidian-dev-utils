@@ -4,16 +4,7 @@
  * Contains a utility function for validating URLs.
  */
 
-const SPECIAL_SCHEMES = [
-  'geo:',
-  'mailto:',
-  'skype:',
-  'slack:',
-  'sms:',
-  'tel:',
-  'tg:',
-  'whatsapp:'
-];
+const SCHEME_REG_EXP = /^\S+:\S+$/;
 
 /**
  * Determines whether a given string is a valid URL
@@ -22,7 +13,7 @@ const SPECIAL_SCHEMES = [
  * @returns `true` if the string is a valid URL, otherwise `false`.
  */
 export function isUrl(str: string): boolean {
-  if (str.trim() !== str) {
+  if (/\s/.test(str)) {
     return false;
   }
   if (str.includes('://')) {
@@ -34,6 +25,5 @@ export function isUrl(str: string): boolean {
     }
   }
 
-  const lowerStr = str.toLowerCase();
-  return SPECIAL_SCHEMES.some((scheme) => lowerStr.startsWith(scheme));
+  return SCHEME_REG_EXP.test(str);
 }
