@@ -4,7 +4,7 @@
  * Contains a utility function for validating URLs.
  */
 
-const SCHEME_REG_EXP = /^\S+:\S+$/;
+const SCHEME_REG_EXP = /^[A-Za-z][A-Za-z0-9+\-.]*:\S+$/;
 
 /**
  * Determines whether a given string is a valid URL
