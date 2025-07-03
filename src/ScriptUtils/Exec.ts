@@ -125,9 +125,8 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
 
   return new Promise((resolve, reject) => {
     getLibDebugger('Exec')(`Executing command: ${command}`);
-    const [cmd = '', ...args] = command.split(' ');
 
-    const child = spawn(cmd, args, {
+    const child = spawn(command, [], {
       cwd,
       env: {
         DEBUG_COLORS: '1',
