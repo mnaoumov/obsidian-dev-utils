@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.4.0
+
+- Ensure no `undefined` in replaceAll. Collect missing group indices
+
 ## 27.3.1
 
 - Treat base as note
