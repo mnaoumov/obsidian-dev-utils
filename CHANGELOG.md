@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.3.1
+
+- Treat base as note
+
 ## 27.3.0
 
 - isBaseFile
