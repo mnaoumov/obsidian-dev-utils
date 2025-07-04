@@ -367,7 +367,7 @@ export function isMarkdownFile(app: App, pathOrFile: null | PathOrAbstractFile):
  * @returns A boolean indicating whether the file is a note.
  */
 export function isNote(app: App, pathOrFile: null | PathOrAbstractFile): boolean {
-  return isMarkdownFile(app, pathOrFile) || isCanvasFile(app, pathOrFile);
+  return isMarkdownFile(app, pathOrFile) || isCanvasFile(app, pathOrFile) || isBaseFile(app, pathOrFile);
 }
 
 /**
