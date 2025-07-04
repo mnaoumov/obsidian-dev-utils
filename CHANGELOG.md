@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 27.3.0
+
+- isBaseFile
+- Fix exec warning
+- Lock version to be patched by obsidian-typings
+- Update libs
+
 ## 27.2.1
 
 - Add stricter scheme reg exp
