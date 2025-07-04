@@ -26,6 +26,11 @@ export interface ReplaceCommonArgs {
   groups: Record<string, string | undefined> | undefined;
 
   /**
+   * The indices of the groups that were not found in the match.
+   */
+  missingGroupIndices: number[];
+
+  /**
    * The offset of the match.
    */
   offset: number;
@@ -181,12 +186,25 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
 
     const commonArgs: ReplaceCommonArgs = {
       groups: hasGroupsArg ? args.at(-1) as Record<string, string | undefined> : undefined,
+      missingGroupIndices: [],
       offset: args.at(sourceIndex - 1) as number,
       source: args.at(sourceIndex) as string,
       substring
     };
 
-    const groupArgs = args.slice(0, sourceIndex - 1) as ReplaceGroupArgs;
+    const groupArgs = args.slice(0, sourceIndex - 1).map((arg, index) => {
+      if (typeof arg === 'string') {
+        return arg;
+      }
+
+      if (typeof arg === 'undefined') {
+        commonArgs.missingGroupIndices.push(index);
+        return '';
+      }
+
+      throw new Error(`Unexpected argument type: ${typeof arg}`);
+    }) as ReplaceGroupArgs;
+
     return (replacer(commonArgs, ...groupArgs) as string | undefined) ?? commonArgs.substring;
   });
 }
