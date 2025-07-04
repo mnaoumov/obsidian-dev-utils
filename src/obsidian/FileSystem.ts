@@ -26,14 +26,19 @@ import {
 import { trimEnd } from '../String.ts';
 
 /**
- * The file extension for Markdown files.
+ * Represents the file extension for base files.
  */
-export const MARKDOWN_FILE_EXTENSION = 'md';
+export const BASE_FILE_EXTENSION = 'base';
 
 /**
  * Represents the file extension for canvas files.
  */
 export const CANVAS_FILE_EXTENSION = 'canvas';
+
+/**
+ * The file extension for Markdown files.
+ */
+export const MARKDOWN_FILE_EXTENSION = 'md';
 
 /**
  * Represents a path or an instance of TAbstractFile.
@@ -299,6 +304,17 @@ export function getPath(app: App, pathOrFile: PathOrAbstractFile): string {
  */
 export function isAbstractFile(file: unknown): file is TAbstractFile {
   return file instanceof TAbstractFile;
+}
+
+/**
+ *   Checks if the given file is a base file.
+ *
+ * @param app - The Obsidian App instance.
+ * @param pathOrFile - The path or file to check.
+ * @returns A boolean indicating whether the file is a base file.
+ */
+export function isBaseFile(app: App, pathOrFile: null | PathOrAbstractFile): boolean {
+  return checkExtension(app, pathOrFile, BASE_FILE_EXTENSION);
 }
 
 /**
