@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.5.1
+
+- Keep updating links to ignored files
+
 ## 27.5.0
 
 - Don't disable link updates if rename is disabled (https://github.com/mnaoumov/obsidian-better-markdown-links/issues/17)
