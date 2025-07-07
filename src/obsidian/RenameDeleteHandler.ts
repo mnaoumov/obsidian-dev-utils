@@ -25,6 +25,7 @@ import type {
   UpdateLinksInFileOptions
 } from './Link.ts';
 
+import { filterInPlace } from '../Array.ts';
 import { getLibDebugger } from '../Debug.ts';
 import {
   normalizeOptionalProperties,
@@ -675,9 +676,13 @@ async function runAsyncLinkUpdate(app: App, next: RunAsyncLinkUpdateFn, linkUpda
     } finally {
       app.vault.offref(eventRef);
     }
+    const settings = getSettings(app);
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (isRenameCalled && getSettings(app).shouldHandleRenames) {
-      linkUpdates.splice(0);
+    if (isRenameCalled && settings.shouldHandleRenames) {
+      filterInPlace(
+        linkUpdates,
+        (linkUpdate) => (settings.isPathIgnored?.(linkUpdate.sourceFile.path) ?? false) || (settings.isPathIgnored?.(linkUpdate.resolvedFile.path) ?? false)
+      );
     }
   }
 }
