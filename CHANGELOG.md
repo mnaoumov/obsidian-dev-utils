@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 27.5.0
+
+- Don't disable link updates if rename is disabled (https://github.com/mnaoumov/obsidian-better-markdown-links/issues/17)
+- Update libs
+
 ## 27.4.0
 
 - Ensure no `undefined` in replaceAll. Collect missing group indices
