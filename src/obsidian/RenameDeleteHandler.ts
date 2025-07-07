@@ -676,7 +676,7 @@ async function runAsyncLinkUpdate(app: App, next: RunAsyncLinkUpdateFn, linkUpda
       app.vault.offref(eventRef);
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (isRenameCalled) {
+    if (isRenameCalled && getSettings(app).shouldHandleRenames) {
       linkUpdates.splice(0);
     }
   }
