@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 27.7.0
+
+- Add support for non-existing link files
+- Update libs
+
 ## 27.6.1
 
 - Switch to window.setTimeout
