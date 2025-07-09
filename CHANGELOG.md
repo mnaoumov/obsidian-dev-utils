@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.6.1
+
+- Switch to window.setTimeout
+
 ## 27.6.0
 
 - Register multiple temp files
