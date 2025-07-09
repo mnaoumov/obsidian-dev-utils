@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.5.3
+
+- Get updated backlinks map
+
 ## 27.5.2
 
 - Recalculate backlinks for all files
