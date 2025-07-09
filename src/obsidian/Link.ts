@@ -575,11 +575,32 @@ export function encodeUrl(url: string): string {
  * @param app - The Obsidian application instance.
  * @param link - The reference cache for the link.
  * @param sourcePathOrFile - The source path or file.
+ * @param shouldAllowNonExistingFile - Whether to allow non-existing files. Defaults to `false`.
  * @returns The file associated with the link, or null if not found.
  */
-export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: PathOrFile): null | TFile {
+export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: PathOrFile, shouldAllowNonExistingFile = false): null | TFile {
   const { linkPath } = splitSubpath(link.link);
-  return app.metadataCache.getFirstLinkpathDest(linkPath, getPath(app, sourcePathOrFile));
+  const sourcePath = getPath(app, sourcePathOrFile);
+  const file = app.metadataCache.getFirstLinkpathDest(linkPath, sourcePath);
+  if (file) {
+    return file;
+  }
+
+  if (!shouldAllowNonExistingFile) {
+    return null;
+  }
+
+  if (linkPath.startsWith('/')) {
+    return getFile(app, linkPath, true);
+  }
+
+  const fullLinkPath = join(dirname(sourcePath), `./${linkPath}`);
+
+  if (fullLinkPath.startsWith('../')) {
+    return null;
+  }
+
+  return getFile(app, fullLinkPath, true);
 }
 
 /**
