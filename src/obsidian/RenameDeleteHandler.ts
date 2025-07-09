@@ -63,7 +63,7 @@ import {
   getAllLinks,
   getBacklinksForFileOrPath,
   getBacklinksForFileSafe,
-  tempRegisterFileAndRun
+  tempRegisterFilesAndRun
 } from './MetadataCache.ts';
 import { registerPatch } from './MonkeyAround.ts';
 import { addToQueue } from './Queue.ts';
@@ -625,7 +625,7 @@ async function refreshLinks(
   const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
   const fakeOldFile = getFile(app, oldPath, true);
   let oldPathBacklinksMapRefreshed = new Map<string, Reference[]>();
-  await tempRegisterFileAndRun(app, fakeOldFile, async () => {
+  await tempRegisterFilesAndRun(app, [fakeOldFile], async () => {
     oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe(app, fakeOldFile)).data;
   });
 

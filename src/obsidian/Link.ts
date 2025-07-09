@@ -68,7 +68,7 @@ import {
   getBacklinksForFileSafe,
   getCacheSafe,
   parseMetadata,
-  tempRegisterFileAndRun
+  tempRegisterFilesAndRun
 } from './MetadataCache.ts';
 import {
   shouldUseRelativeLinks,
@@ -613,7 +613,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
 
   const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
 
-  return tempRegisterFileAndRun(app, targetFile, () => generateMarkdownLinkImpl(options));
+  return tempRegisterFilesAndRun(app, [targetFile], () => generateMarkdownLinkImpl(options));
 }
 
 /**

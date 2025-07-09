@@ -25,7 +25,6 @@ import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { retryWithTimeout } from '../Async.ts';
-import { noop } from '../Function.ts';
 import { getNestedPropertyValue } from '../Object.ts';
 import {
   getFile,
@@ -122,7 +121,7 @@ export function getAllLinks(cache: CachedMetadata): Reference[] {
  */
 export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<Reference> {
   const file = getFile(app, pathOrFile, true);
-  return tempRegisterFileAndRun(app, file, () => app.metadataCache.getBacklinksForFile(file));
+  return tempRegisterFilesAndRun(app, [file], () => app.metadataCache.getBacklinksForFile(file));
 }
 
 /**
@@ -240,29 +239,31 @@ export async function parseMetadata(app: App, str: string): Promise<CachedMetada
 }
 
 /**
- * Registers a file in the Obsidian app.
+ * Registers files in the Obsidian app.
  *
  * @param app - The Obsidian app instance.
- * @param file - The file to register.
- * @returns A function that unregisters the file.
+ * @param files - The files to register.
+ * @returns A function that unregisters the files.
  */
-export function registerFile(app: App, file: TAbstractFile): () => void {
-  if (!file.deleted) {
-    return noop;
-  }
+export function registerFiles(app: App, files: TAbstractFile[]): () => void {
+  const deletedPaths = new Set<string>();
 
-  const deletedPaths: string[] = [];
+  for (const file of files) {
+    if (!file.deleted) {
+      continue;
+    }
 
-  let deletedFile: TAbstractFile = file;
+    let deletedFile: TAbstractFile = file;
 
-  while (deletedFile.deleted) {
-    deletedPaths.push(deletedFile.path);
-    app.vault.fileMap[deletedFile.path] = deletedFile;
-    deletedFile = deletedFile.parent ?? getFolder(app, parentFolderPath(deletedFile.path), true);
-  }
+    while (deletedFile.deleted) {
+      deletedPaths.add(deletedFile.path);
+      app.vault.fileMap[deletedFile.path] = deletedFile;
+      deletedFile = deletedFile.parent ?? getFolder(app, parentFolderPath(deletedFile.path), true);
+    }
 
-  if (isFile(file)) {
-    app.metadataCache.uniqueFileLookup.add(file.name.toLowerCase(), file);
+    if (isFile(file)) {
+      app.metadataCache.uniqueFileLookup.add(file.name.toLowerCase(), file);
+    }
   }
 
   return () => {
@@ -271,23 +272,25 @@ export function registerFile(app: App, file: TAbstractFile): () => void {
       delete app.vault.fileMap[path];
     }
 
-    if (isFile(file)) {
-      app.metadataCache.uniqueFileLookup.remove(file.name.toLowerCase(), file);
+    for (const file of files) {
+      if (file.deleted && isFile(file)) {
+        app.metadataCache.uniqueFileLookup.remove(file.name.toLowerCase(), file);
+      }
     }
   };
 }
 
 /**
- * Temporarily registers a file and runs a function.
+ * Temporarily registers files and runs a function.
  *
  * @typeParam T - The type of the result of the function.
  * @param app - The Obsidian app instance.
- * @param file - The file to temporarily register.
+ * @param files - The files to temporarily register.
  * @param fn - The function to run.
  * @returns The result of the function.
  */
-export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () => T): T {
-  const unregister = registerFile(app, file);
+export function tempRegisterFilesAndRun<T>(app: App, files: TAbstractFile[], fn: () => T): T {
+  const unregister = registerFiles(app, files);
 
   try {
     return fn();
@@ -297,16 +300,16 @@ export function tempRegisterFileAndRun<T>(app: App, file: TAbstractFile, fn: () 
 }
 
 /**
- * Temporarily registers a file and runs an async function.
+ * Temporarily registers files and runs an async function.
  *
  * @typeParam T - The type of the result of the function.
  * @param app - The Obsidian app instance.
- * @param file - The file to temporarily register.
+ * @param files - The files to temporarily register.
  * @param fn - The function to run.
  * @returns The result of the function.
  */
-export async function tempRegisterFileAndRunAsync<T>(app: App, file: TAbstractFile, fn: () => Promise<T>): Promise<T> {
-  const unregister = registerFile(app, file);
+export async function tempRegisterFilesAndRunAsync<T>(app: App, files: TAbstractFile[], fn: () => Promise<T>): Promise<T> {
+  const unregister = registerFiles(app, files);
 
   try {
     return await fn();
