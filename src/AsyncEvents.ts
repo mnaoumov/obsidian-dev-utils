@@ -210,7 +210,7 @@ export class AsyncEvents {
     try {
       eventRef.callback.apply(eventRef.thisArg, args);
     } catch (e) {
-      setTimeout(() => {
+      window.setTimeout(() => {
         throw e;
       }, 0);
     }
@@ -230,7 +230,7 @@ export class AsyncEvents {
       const result = eventRef.callback.call(eventRef.thisArg, ...args);
       await (result as Promise<void>);
     } catch (e) {
-      setTimeout(() => {
+      window.setTimeout(() => {
         throw e;
       }, 0);
     }
