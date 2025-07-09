@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.5.4
+
+- Revert useless changes (back to 27.5.1)
+
 ## 27.5.3
 
 - Get updated backlinks map
