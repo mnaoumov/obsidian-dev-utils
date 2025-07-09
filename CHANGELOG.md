@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.5.2
+
+- Recalculate backlinks for all files
+
 ## 27.5.1
 
 - Keep updating links to ignored files
