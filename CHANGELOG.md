@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 27.6.0
+
+- Register multiple temp files
+
 ## 27.5.4
 
 - Revert useless changes (back to 27.5.1)
