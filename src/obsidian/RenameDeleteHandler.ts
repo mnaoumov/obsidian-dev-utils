@@ -489,9 +489,6 @@ async function handleRenameAsync(
     const combinedBacklinksMap = new Map<string, Map<string, string>>();
     initBacklinksMap(oldPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
 
-    const newPathBacklinksMap = (await getBacklinksForFileSafe(app, newPath)).data;
-    initBacklinksMap(newPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
-
     for (const attachmentOldPath of renameMap.keys()) {
       if (attachmentOldPath === oldPath) {
         continue;
