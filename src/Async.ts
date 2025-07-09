@@ -179,7 +179,7 @@ export function invokeAsyncSafely(asyncFn: () => Promise<unknown>): void {
  * @param delayInMilliseconds - The delay in milliseconds.
  */
 export function invokeAsyncSafelyAfterDelay(asyncFn: () => Promisable<unknown>, delayInMilliseconds = 0): void {
-  setTimeout(convertAsyncToSync(async () => await asyncFn()), delayInMilliseconds);
+  window.setTimeout(convertAsyncToSync(async () => await asyncFn()), delayInMilliseconds);
 }
 
 /**
@@ -321,7 +321,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
  */
 export async function sleep(milliseconds: number): Promise<void> {
   await new Promise((resolve) => {
-    setTimeout(resolve, milliseconds);
+    window.setTimeout(resolve, milliseconds);
   });
 }
 
