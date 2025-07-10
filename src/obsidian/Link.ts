@@ -1005,6 +1005,10 @@ function _fixFrontmatterMarkdownLinks(value: unknown, key: string, cache: Cached
 }
 
 function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpath: string, config: LinkConfig): string {
+  if (sourcePath === '/') {
+    sourcePath = '';
+  }
+
   let linkText: string;
 
   if (targetFile.path === sourcePath && subpath) {
