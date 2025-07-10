@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 27.7.1
+
+- Handle sourcePath /
+- Update libs
+
 ## 27.7.0
 
 - Add support for non-existing link files
