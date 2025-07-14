@@ -91,8 +91,8 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   }
 
   private currentSettingsWrapper: ExtractPluginSettingsWrapper<PluginTypes>;
-
   private lastSavedSettingsWrapper: ExtractPluginSettingsWrapper<PluginTypes>;
+  private readonly legacySettingsConverters: ((record: GenericObject) => void)[] = [];
   private readonly propertyNames: ExtractPluginSettingsPropertyNames<PluginTypes>[];
   private readonly validators = new Map<ExtractPluginSettingsPropertyNames<PluginTypes>, Validator<ExtractPluginSettings<PluginTypes>>>();
 
@@ -109,6 +109,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     this.lastSavedSettingsWrapper = this.createDefaultSettingsWrapper();
     this.propertyNames = getAllKeys(this.currentSettingsWrapper.settings);
     this.registerValidators();
+    this.registerLegacySettingsConverters();
   }
 
   /**
@@ -308,10 +309,13 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   /**
    * Called when the plugin settings are loaded.
    *
-   * @param _record - The record.
+   * @param record - The record.
    */
-  protected async onLoadRecord(_record: GenericObject): Promise<void> {
-    await noopAsync();
+  protected async onLoadRecord(record: GenericObject): Promise<void> {
+    for (const converter of this.legacySettingsConverters) {
+      converter(record);
+    }
+    await Promise.resolve();
   }
 
   /**
@@ -321,6 +325,49 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
    */
   protected async onSavingRecord(_record: GenericObject): Promise<void> {
     await noopAsync();
+  }
+
+  /**
+   * Registers a legacy settings converter.
+   *
+   * @typeParam LegacySettings - The legacy settings class.
+   * @param legacySettingsClass - The legacy settings class.
+   * @param converter - The converter.
+   */
+  protected registerLegacySettingsConverter<LegacySettings extends object>(
+    legacySettingsClass: new () => LegacySettings,
+    converter: (legacySettings: Partial<ExtractPluginSettings<PluginTypes>> & Partial<LegacySettings>) => void
+  ): void {
+    const that = this;
+    this.legacySettingsConverters.push(legacySettingsConverter);
+
+    function legacySettingsConverter(record: GenericObject): void {
+      const legacySettingsKeys = new Set<string>(Object.keys(new legacySettingsClass()));
+      const pluginSettingKeys = new Set<string>(that.propertyNames);
+      const legacySettings = record as Partial<ExtractPluginSettings<PluginTypes>> & Partial<LegacySettings>;
+      converter(legacySettings);
+      for (const key of Object.keys(legacySettings)) {
+        if (pluginSettingKeys.has(key)) {
+          continue;
+        }
+
+        if (!legacySettingsKeys.has(key)) {
+          continue;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete record[key];
+      }
+    }
+  }
+
+  /**
+   * Registers the legacy settings converters.
+   *
+   * This method can be overridden by subclasses to register legacy settings converters.
+   */
+  protected registerLegacySettingsConverters(): void {
+    noop();
   }
 
   /**
