@@ -107,12 +107,12 @@ export const parse = posix.parse;
 export const relative = posix.relative;
 
 /**
- * Gets the filename from the `import(dot)meta(dot)url`, converting it to a POSIX-style path.
+ * Gets the file name from the `import(dot)meta(dot)url`, converting it to a POSIX-style path.
  *
- * @param importMetaUrl - The `import(dot)meta(dot)url` from which to extract the filename.
- * @returns The POSIX-style filename.
+ * @param importMetaUrl - The `import(dot)meta(dot)url` from which to extract the file name.
+ * @returns The POSIX-style file name.
  */
-export function getFilename(importMetaUrl: string): string {
+export function getFileName(importMetaUrl: string): string {
   return resolve(decodeURI(new URL(importMetaUrl).pathname));
 }
 
@@ -123,16 +123,16 @@ export function getFilename(importMetaUrl: string): string {
  * @returns The POSIX-style folder name.
  */
 export function getFolderName(importMetaUrl: string): string {
-  return dirname(getFilename(importMetaUrl));
+  return dirname(getFileName(importMetaUrl));
 }
 
 /**
- * Makes a filename by appending an extension to a given filename.
- * If the extension is empty, the filename is returned as is.
+ * Makes a file name by appending an extension to a given file name.
+ * If the extension is empty, the file name is returned as is.
  *
- * @param fileName - The filename to append the extension to.
- * @param extension - The extension to append to the filename.
- * @returns The filename with the extension appended.
+ * @param fileName - The file name to append the extension to.
+ * @param extension - The extension to append to the file name.
+ * @returns The file name with the extension appended.
  */
 export function makeFileName(fileName: string, extension: string): string {
   return extension ? `${fileName}.${extension}` : fileName;

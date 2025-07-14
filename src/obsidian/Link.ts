@@ -129,9 +129,9 @@ export interface ConvertLinkOptions {
   shouldForceMarkdownLinks?: boolean;
 
   /**
-   * Whether to update filename alias. Defaults to `true`.
+   * Whether to update file name alias. Defaults to `true`.
    */
-  shouldUpdateFilenameAlias?: boolean;
+  shouldUpdateFileNameAlias?: boolean;
 }
 
 /**
@@ -360,9 +360,9 @@ export interface UpdateLinkOptions {
   shouldForceMarkdownLinks?: boolean;
 
   /**
-   * Whether to update filename alias. Defaults to `true`.
+   * Whether to update file name alias. Defaults to `true`.
    */
-  shouldUpdateFilenameAlias?: boolean;
+  shouldUpdateFileNameAlias?: boolean;
 }
 
 /**
@@ -395,9 +395,9 @@ export interface UpdateLinksInFileOptions extends ProcessOptions {
   shouldUpdateEmbedOnlyLinks?: boolean;
 
   /**
-   * Whether to update filename alias. Defaults to `true`.
+   * Whether to update file name alias. Defaults to `true`.
    */
-  shouldUpdateFilenameAlias?: boolean;
+  shouldUpdateFileNameAlias?: boolean;
 }
 
 interface LinkConfig {
@@ -448,9 +448,9 @@ interface UpdateLinksInContentOptions {
   shouldUpdateEmbedOnlyLinks?: boolean;
 
   /**
-   * Whether to update filename alias.
+   * Whether to update file name alias.
    */
-  shouldUpdateFilenameAlias?: boolean;
+  shouldUpdateFileNameAlias?: boolean;
 }
 
 interface WikiLinkNode {
@@ -479,7 +479,7 @@ export function convertLink(options: ConvertLinkOptions): string {
     newTargetPathOrFile: targetFile,
     oldSourcePathOrFile: options.oldSourcePathOrFile,
     shouldForceMarkdownLinks: options.shouldForceMarkdownLinks,
-    shouldUpdateFilenameAlias: options.shouldUpdateFilenameAlias
+    shouldUpdateFileNameAlias: options.shouldUpdateFileNameAlias
   }));
 }
 
@@ -834,7 +834,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     oldSourcePathOrFile,
     oldTargetPathOrFile,
     shouldForceMarkdownLinks,
-    shouldUpdateFilenameAlias
+    shouldUpdateFileNameAlias
   } = options;
   if (!newTargetPathOrFile) {
     return link.original;
@@ -843,7 +843,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   const oldTargetPath = getPath(app, oldTargetPathOrFile ?? newTargetPathOrFile);
   const isWikilink = testWikilink(link.original) && shouldForceMarkdownLinks !== true;
   const { subpath } = splitSubpath(link.link);
-  let shouldKeepAlias = !shouldUpdateFilenameAlias;
+  let shouldKeepAlias = !shouldUpdateFileNameAlias;
 
   if (isCanvasFile(app, newSourcePathOrFile)) {
     if (isCanvasFileNodeReference(link)) {
@@ -907,7 +907,7 @@ export async function updateLinksInContent(options: UpdateLinksInContentOptions)
     oldSourcePathOrFile,
     shouldForceMarkdownLinks,
     shouldUpdateEmbedOnlyLinks,
-    shouldUpdateFilenameAlias
+    shouldUpdateFileNameAlias
   } = options;
 
   return await editLinksInContent(app, content, (link) => {
@@ -921,7 +921,7 @@ export async function updateLinksInContent(options: UpdateLinksInContentOptions)
       newSourcePathOrFile,
       oldSourcePathOrFile,
       shouldForceMarkdownLinks,
-      shouldUpdateFilenameAlias
+      shouldUpdateFileNameAlias
     }));
   });
 }
@@ -939,7 +939,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     oldSourcePathOrFile,
     shouldForceMarkdownLinks,
     shouldUpdateEmbedOnlyLinks,
-    shouldUpdateFilenameAlias
+    shouldUpdateFileNameAlias
   } = options;
 
   if (isCanvasFile(app, newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
@@ -957,7 +957,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
       newSourcePathOrFile,
       oldSourcePathOrFile,
       shouldForceMarkdownLinks,
-      shouldUpdateFilenameAlias
+      shouldUpdateFileNameAlias
     }));
   }, options);
 }

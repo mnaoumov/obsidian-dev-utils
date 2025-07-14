@@ -145,9 +145,9 @@ export interface RenameDeleteHandlerSettings {
   shouldRenameAttachmentFolder: boolean;
 
   /**
-   * Whether to update filename aliases when a note is renamed.
+   * Whether to update file name aliases when a note is renamed.
    */
-  shouldUpdateFilenameAliases: boolean;
+  shouldUpdateFileNameAliases: boolean;
 }
 
 interface InterruptedRename {
@@ -338,7 +338,7 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
     settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
     settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
     settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
-    settings.shouldUpdateFilenameAliases ||= newSettings.shouldUpdateFilenameAliases ?? false;
+    settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
     const isPathIgnored = settings.isPathIgnored;
     settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
     const currentIsNote = settings.isNote;
@@ -533,7 +533,7 @@ async function handleRenameAsync(
           newSourcePathOrFile: newBacklinkPath,
           newTargetPathOrFile: newAttachmentPath,
           oldTargetPathOrFile: oldAttachmentPath,
-          shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
+          shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
         }));
       }, {
         shouldFailOnMissingFile: false
@@ -546,7 +546,7 @@ async function handleRenameAsync(
         newSourcePathOrFile: newPath,
         oldSourcePathOrFile: oldPath,
         shouldFailOnMissingFile: false,
-        shouldUpdateFilenameAlias: settings.shouldUpdateFilenameAliases
+        shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
       }));
     }
 
