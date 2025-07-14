@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 28.1.0
+
+- registerLegacySettingsConverters
+
 ## 28.0.0
 
 - Rename file name
