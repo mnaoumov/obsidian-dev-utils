@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 28.0.0
+
+- Rename file name
+- Update libs
+
 ## 27.7.1
 
 - Handle sourcePath /
