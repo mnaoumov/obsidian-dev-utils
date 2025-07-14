@@ -45,10 +45,10 @@ export interface ExtendedWrapper {
  * Get available path for attachments function.
  */
 export type GetAvailablePathForAttachmentsExtendedFn = (
-  filename: string,
-  extension: string,
-  file: null | TFile,
-  shouldSkipFolderCreation?: boolean
+  attachmentFileName: string,
+  attachmentExtension: string,
+  noteFile: null | TFile,
+  shouldSkipMissingAttachmentFolderCreation?: boolean
 ) => Promise<string>;
 
 /**
@@ -90,18 +90,18 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
  * Retrieves the available path for attachments.
  *
  * @param app - The Obsidian application instance.
- * @param filename - Name of the file.
- * @param extension - Extension of the file.
- * @param file - The file to attach to.
- * @param shouldSkipFolderCreation - Should folder creation be skipped?
+ * @param attachmentFileName - File name of the attachment.
+ * @param attachmentExtension - Extension of the attachment.
+ * @param noteFile - The file to attach to.
+ * @param shouldSkipMissingAttachmentFolderCreation - Should missing attachment folder creation be skipped?
  * @returns A {@link Promise} that resolves to the available path for attachments.
  */
 export async function getAvailablePathForAttachments(
   app: App,
-  filename: string,
-  extension: string,
-  file: null | TFile,
-  shouldSkipFolderCreation: boolean
+  attachmentFileName: string,
+  attachmentExtension: string,
+  noteFile: null | TFile,
+  shouldSkipMissingAttachmentFolderCreation: boolean
 ): Promise<string> {
   let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
   const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
@@ -112,18 +112,18 @@ export async function getAvailablePathForAttachments(
   }
 
   if (isCurrentFolder) {
-    attachmentFolderPath = file ? file.parent?.path ?? '' : '';
+    attachmentFolderPath = noteFile ? noteFile.parent?.path ?? '' : '';
   } else if (relativePath) {
-    attachmentFolderPath = (file ? file.parent?.getParentPrefix() ?? '' : '') + relativePath;
+    attachmentFolderPath = (noteFile ? noteFile.parent?.getParentPrefix() ?? '' : '') + relativePath;
   }
 
   attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
-  filename = normalize(normalizeSlashes(filename));
+  attachmentFileName = normalize(normalizeSlashes(attachmentFileName));
 
   let folder = getFolderOrNull(app, attachmentFolderPath, true);
 
   if (!folder && relativePath) {
-    if (shouldSkipFolderCreation) {
+    if (shouldSkipMissingAttachmentFolderCreation) {
       folder = getFolder(app, attachmentFolderPath, true);
     } else {
       folder = await app.vault.createFolder(attachmentFolderPath);
@@ -131,7 +131,7 @@ export async function getAvailablePathForAttachments(
   }
 
   const prefix = folder?.getParentPrefix() ?? '';
-  return app.vault.getAvailablePath(prefix + filename, extension);
+  return app.vault.getAvailablePath(prefix + attachmentFileName, attachmentExtension);
 }
 
 /**
