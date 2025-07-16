@@ -19,6 +19,7 @@ import type {
 } from 'obsidian-typings';
 
 import { Vault } from 'obsidian';
+import { InternalPluginName } from 'obsidian-typings/implementations';
 
 import type {
   UpdateLinkOptions,
@@ -75,7 +76,6 @@ import {
   deleteEmptyFolderHierarchy,
   deleteSafe
 } from './VaultEx.ts';
-import { InternalPluginName } from 'obsidian-typings/implementations';
 
 const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
 const handledRenames = new Set<string>();
@@ -691,7 +691,7 @@ async function runAsyncLinkUpdate(app: App, next: RunAsyncLinkUpdateFn, linkUpda
             return true;
           }
 
-          if (!app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)){
+          if (!app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
             return false;
           }
 
