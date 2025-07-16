@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 28.2.0
+
+- Update deprecated eslint rule
+- For canvas links rely on backlink-cache plugin or built-in canvas
+- Update libs
+
 ## 28.1.0
 
 - registerLegacySettingsConverters
