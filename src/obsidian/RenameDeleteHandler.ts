@@ -75,6 +75,7 @@ import {
   deleteEmptyFolderHierarchy,
   deleteSafe
 } from './VaultEx.ts';
+import { InternalPluginName } from 'obsidian-typings/implementations';
 
 const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
 const handledRenames = new Set<string>();
@@ -681,7 +682,33 @@ async function runAsyncLinkUpdate(app: App, next: RunAsyncLinkUpdateFn, linkUpda
     if (isRenameCalled && settings.shouldHandleRenames) {
       filterInPlace(
         linkUpdates,
-        (linkUpdate) => (settings.isPathIgnored?.(linkUpdate.sourceFile.path) ?? false) || (settings.isPathIgnored?.(linkUpdate.resolvedFile.path) ?? false)
+        (linkUpdate) => {
+          if (settings.isPathIgnored?.(linkUpdate.sourceFile.path)) {
+            return true;
+          }
+
+          if (settings.isPathIgnored?.(linkUpdate.resolvedFile.path)) {
+            return true;
+          }
+
+          if (!app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)){
+            return false;
+          }
+
+          if (app.plugins.getPlugin('backlink-cache')) {
+            return false;
+          }
+
+          if (linkUpdate.sourceFile.extension === 'canvas') {
+            return true;
+          }
+
+          if (linkUpdate.resolvedFile.extension === 'canvas') {
+            return true;
+          }
+
+          return false;
+        }
       );
     }
   }
