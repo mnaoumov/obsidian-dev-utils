@@ -329,7 +329,7 @@ function getStylisticConfigs(): InfiniteDepthConfigWithExtends[] {
           'error',
           'single',
           {
-            allowTemplateLiterals: false
+            allowTemplateLiterals: 'never'
           }
         ]
       }
