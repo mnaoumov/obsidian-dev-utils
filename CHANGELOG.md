@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 28.2.2
+
+- Add more logging
+
 ## 28.2.1
 
 - Update libs
