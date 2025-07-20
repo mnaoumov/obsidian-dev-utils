@@ -308,6 +308,7 @@ async function fillRenameMap(app: App, oldPath: string, newPath: string, renameM
     if (settings.shouldDeleteConflictingAttachments) {
       const newChildFile = getFileOrNull(app, newChildPath);
       if (newChildFile) {
+        console.warn(`Removing conflicting attachment ${newChildFile.path}.`);
         await app.fileManager.trashFile(newChildFile);
       }
     } else {
@@ -380,6 +381,7 @@ async function handleDelete(app: App, path: string): Promise<void> {
   }
 
   if (settings.isPathIgnored?.(path)) {
+    console.warn(`Skipping delete handler of ${path} as the path is ignored.`);
     return;
   }
 
@@ -432,6 +434,7 @@ function handleDeleteIfEnabled(plugin: Plugin, file: TAbstractFile): void {
 function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
   const settings = getSettings(app);
   if (settings.isPathIgnored?.(file.path)) {
+    console.warn(`Skipping metadata delete handler of ${file.path} as the path is ignored.`);
     return;
   }
 
@@ -459,7 +462,17 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
   }
 
   const settings = getSettings(app);
-  if (!settings.shouldHandleRenames || settings.isPathIgnored?.(oldPath) || settings.isPathIgnored?.(newPath)) {
+  if (!settings.shouldHandleRenames) {
+    return;
+  }
+
+  if (settings.isPathIgnored?.(oldPath)) {
+    console.warn(`Skipping rename handler of old path ${oldPath} as the path is ignored.`);
+    return;
+  }
+
+  if (settings.isPathIgnored?.(newPath)) {
+    console.warn(`Skipping rename handler of new path ${newPath} as the path is ignored.`);
     return;
   }
 
@@ -684,10 +697,12 @@ async function runAsyncLinkUpdate(app: App, next: RunAsyncLinkUpdateFn, linkUpda
         linkUpdates,
         (linkUpdate) => {
           if (settings.isPathIgnored?.(linkUpdate.sourceFile.path)) {
+            console.warn(`Roll back to default link update of source file ${linkUpdate.sourceFile.path} as the path is ignored.`);
             return true;
           }
 
           if (settings.isPathIgnored?.(linkUpdate.resolvedFile.path)) {
+            console.warn(`Roll back to default link update of resolved file ${linkUpdate.resolvedFile.path} as the path is ignored.`);
             return true;
           }
 
