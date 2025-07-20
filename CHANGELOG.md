@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 28.2.1
+
+- Update libs
+
 ## 28.2.0
 
 - Update deprecated eslint rule
