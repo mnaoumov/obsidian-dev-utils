@@ -283,6 +283,9 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   private async afterLoad(): Promise<void> {
+    if (this._abortSignal.aborted) {
+      return;
+    }
     await this.triggerLifecycleEvent('load');
     this.app.workspace.onLayoutReady(convertAsyncToSync(this.onLayoutReadyBase.bind(this)));
   }
