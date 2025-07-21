@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 28.3.0
+
+- Check if load was aborted
+- Update libs
+
 ## 28.2.2
 
 - Add more logging
