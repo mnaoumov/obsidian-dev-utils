@@ -23,6 +23,11 @@ export type PromiseResolve<T> = undefined extends T ? (value?: PromiseLike<T> | 
   : (value: PromiseLike<T> | T) => void;
 
 /**
+ * A constant representing an infinite timeout.
+ */
+export const INFINITE_TIMEOUT = Number.POSITIVE_INFINITY;
+
+/**
  * Options for configuring the retry behavior.
  */
 export interface RetryOptions {
@@ -275,6 +280,12 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
   let isTimedOut = true;
   let result: R = null as R;
   const startTime = performance.now();
+
+  if (timeoutInMilliseconds === INFINITE_TIMEOUT) {
+    await run();
+    return result;
+  }
+
   await Promise.race([run(), innerTimeout()]);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (isTimedOut) {
