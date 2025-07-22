@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 28.4.0
+
+- Add INFINITE_TIMEOUT
+- Update libs
+
 ## 28.3.0
 
 - Check if load was aborted
