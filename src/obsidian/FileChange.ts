@@ -21,6 +21,7 @@ import type { GenericObject } from '../Object.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
+import type { FrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
 import type {
   CanvasFileNodeReference,
   CanvasReference,
@@ -42,6 +43,7 @@ import {
   parseFrontmatter,
   setFrontmatter
 } from './Frontmatter.ts';
+import { isFrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
 import {
   isCanvasReference,
   referenceToFileChange
@@ -72,6 +74,7 @@ type CanvasFileNodeChange = { reference: CanvasFileNodeReference } & FileChange;
 type CanvasTextNodeChange = { reference: CanvasTextNodeReference } & FileChange;
 type ContentChange = { reference: ReferenceCache } & FileChange;
 type FrontmatterChange = { reference: FrontmatterLinkCache } & FileChange;
+type FrontmatterChangeWithOffsets = { reference: FrontmatterLinkCacheWithOffsets } & FileChange;
 
 /**
  * Applies a series of content changes to the specified content.
@@ -108,6 +111,29 @@ export async function applyContentChanges(content: string, path: string, changes
 
         return null;
       }
+    } else if (isFrontmatterChangeWithOffsets(change)) {
+      const propertyValue = getNestedPropertyValue(frontmatter, change.reference.cleanKey);
+      if (typeof propertyValue !== 'string') {
+        console.warn('Property value is not a string', {
+          frontmatterKey: change.reference.cleanKey,
+          path,
+          propertyValue
+        });
+        return null;
+      }
+
+      const actualContent = propertyValue.slice(change.reference.startOffset, change.reference.endOffset);
+      if (actualContent !== change.oldContent) {
+        console.warn('Content mismatch', {
+          actualContent,
+          expectedContent: change.oldContent,
+          frontmatterKey: change.reference.cleanKey,
+          path,
+          startOffset: change.reference.startOffset
+        });
+
+        return null;
+      }
     } else if (isFrontmatterChange(change)) {
       const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
       if (actualContent !== change.oldContent) {
@@ -126,6 +152,10 @@ export async function applyContentChanges(content: string, path: string, changes
   changes.sort((a, b) => {
     if (isContentChange(a) && isContentChange(b)) {
       return a.reference.position.start.offset - b.reference.position.start.offset;
+    }
+
+    if (isFrontmatterChangeWithOffsets(a) && isFrontmatterChangeWithOffsets(b)) {
+      return a.reference.cleanKey.localeCompare(b.reference.cleanKey) || a.reference.startOffset - b.reference.startOffset;
     }
 
     if (isFrontmatterChange(a) && isFrontmatterChange(b)) {
@@ -172,11 +202,27 @@ export async function applyContentChanges(content: string, path: string, changes
   let lastIndex = 0;
   let frontmatterChanged = false;
 
+  const frontmatterChangesWithOffsetMap = new Map<string, FrontmatterChangeWithOffsets[]>();
+
   for (const change of changes) {
     if (isContentChange(change)) {
       newContent += content.slice(lastIndex, change.reference.position.start.offset);
       newContent += change.newContent;
       lastIndex = change.reference.position.end.offset;
+    } else if (isFrontmatterChangeWithOffsets(change)) {
+      if (hasFrontmatterError) {
+        console.error(`Cannot apply frontmatter change in ${path}, because frontmatter parsing failed`, {
+          change
+        });
+      } else {
+        let frontmatterChangesWithOffsets = frontmatterChangesWithOffsetMap.get(change.reference.cleanKey);
+        if (!frontmatterChangesWithOffsets) {
+          frontmatterChangesWithOffsets = [];
+          frontmatterChangesWithOffsetMap.set(change.reference.cleanKey, frontmatterChangesWithOffsets);
+        }
+        frontmatterChangesWithOffsets.push(change);
+        frontmatterChanged = true;
+      }
     } else if (isFrontmatterChange(change)) {
       if (hasFrontmatterError) {
         console.error(`Cannot apply frontmatter change in ${path}, because frontmatter parsing failed`, {
@@ -187,6 +233,47 @@ export async function applyContentChanges(content: string, path: string, changes
         frontmatterChanged = true;
       }
     }
+  }
+
+  for (const [key, frontmatterChangesWithOffsets] of frontmatterChangesWithOffsetMap.entries()) {
+    const propertyValue = getNestedPropertyValue(frontmatter, key);
+    if (typeof propertyValue !== 'string') {
+      console.warn('Property value is not a string', {
+        frontmatterKey: key,
+        path,
+        propertyValue
+      });
+
+      return null;
+    }
+
+    const contentChanges: ContentChange[] = frontmatterChangesWithOffsets.map((change) => ({
+      newContent: change.newContent,
+      oldContent: change.oldContent,
+      reference: {
+        link: '',
+        original: '',
+        position: {
+          end: {
+            col: change.reference.endOffset,
+            line: 0,
+            offset: change.reference.endOffset
+          },
+          start: {
+            col: change.reference.startOffset,
+            line: 0,
+            offset: change.reference.startOffset
+          }
+        }
+      }
+    } as ContentChange));
+
+    const newPropertyValue = await applyContentChanges(propertyValue, `${path}.frontmatter.${key}.VIRTUAL_FILE.md`, contentChanges);
+    if (newPropertyValue === null) {
+      return null;
+    }
+
+    setNestedPropertyValue(frontmatter, key, newPropertyValue);
   }
 
   newContent += content.slice(lastIndex);
@@ -270,6 +357,16 @@ export function isContentChange(fileChange: FileChange): fileChange is ContentCh
  */
 export function isFrontmatterChange(fileChange: FileChange): fileChange is FrontmatterChange {
   return isFrontmatterLinkCache(fileChange.reference);
+}
+
+/**
+ * Checks if a file change is a frontmatter change with offsets.
+ *
+ * @param fileChange - The file change to check.
+ * @returns A boolean indicating whether the file change is a frontmatter change with offsets.
+ */
+export function isFrontmatterChangeWithOffsets(fileChange: FileChange): fileChange is FrontmatterChangeWithOffsets {
+  return isFrontmatterLinkCacheWithOffsets(fileChange.reference);
 }
 
 async function applyCanvasChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
