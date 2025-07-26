@@ -14,13 +14,7 @@ import {
   isReferenceCache
 } from 'obsidian-typings/implementations';
 
-import type {
-  CanvasFileNodeChange,
-  CanvasTextNodeChange,
-  ContentChange,
-  FileChange,
-  FrontmatterChange
-} from './FileChange.ts';
+import type { FileChange } from './FileChange.ts';
 
 /**
  * Represents a reference within a file node in a canvas.
@@ -105,47 +99,11 @@ export function isCanvasTextNodeReference(reference: Reference): reference is Ca
  * @returns The file change.
  */
 export function referenceToFileChange(reference: Reference, newContent: string): FileChange {
-  if (isReferenceCache(reference)) {
-    return {
-      endIndex: reference.position.end.offset,
-      newContent,
-      oldContent: reference.original,
-      startIndex: reference.position.start.offset
-    } as ContentChange;
-  }
-
-  if (isCanvasFileNodeReference(reference)) {
-    const canvasFileNodeChange: CanvasFileNodeChange = {
-      isCanvas: true,
-      newContent,
-      nodeIndex: reference.nodeIndex,
-      oldContent: reference.original,
-      type: 'file'
-    };
-    return canvasFileNodeChange;
-  }
-
-  if (isCanvasTextNodeReference(reference)) {
-    const canvasTextNodeChange: CanvasTextNodeChange = {
-      isCanvas: true,
-      newContent,
-      nodeIndex: reference.nodeIndex,
-      oldContent: reference.original,
-      originalReference: reference.originalReference,
-      type: 'text'
-    };
-    return canvasTextNodeChange;
-  }
-
-  if (isFrontmatterLinkCache(reference)) {
-    return {
-      frontmatterKey: reference.key,
-      newContent,
-      oldContent: reference.original
-    } as FrontmatterChange;
-  }
-
-  throw new Error('Unknown link type');
+  return {
+    newContent,
+    oldContent: reference.original,
+    reference
+  };
 }
 
 /**

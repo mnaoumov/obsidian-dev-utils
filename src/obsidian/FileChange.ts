@@ -6,14 +6,26 @@
 
 import type {
   App,
-  Reference
+  FrontmatterLinkCache,
+  Reference,
+  ReferenceCache
 } from 'obsidian';
 import type { CanvasData } from 'obsidian/Canvas.d.ts';
+
+import {
+  isFrontmatterLinkCache,
+  isReferenceCache
+} from 'obsidian-typings/implementations';
 
 import type { GenericObject } from '../Object.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
+import type {
+  CanvasFileNodeReference,
+  CanvasReference,
+  CanvasTextNodeReference
+} from './Reference.ts';
 import type { ProcessOptions } from './Vault.ts';
 
 import {
@@ -30,68 +42,11 @@ import {
   parseFrontmatter,
   setFrontmatter
 } from './Frontmatter.ts';
-import { referenceToFileChange } from './Reference.ts';
+import {
+  isCanvasReference,
+  referenceToFileChange
+} from './Reference.ts';
 import { process } from './Vault.ts';
-
-/**
- * Represents a canvas change in the Vault.
- */
-export interface CanvasChange extends FileChange {
-  /**
-   * Whether the change is a canvas change.
-   */
-  isCanvas: true;
-
-  /**
-   * The index of the node in the canvas.
-   */
-  nodeIndex: number;
-
-  /**
-   * The type of link.
-   */
-  type: 'file' | 'text';
-}
-
-/**
- * Represents a change in a file node in a canvas.
- */
-export interface CanvasFileNodeChange extends CanvasChange {
-  /**
-   * The type of link.
-   */
-  type: 'file';
-}
-
-/**
- * Represents a change in a text node in a canvas.
- */
-export interface CanvasTextNodeChange extends CanvasChange {
-  /**
-   * The original reference.
-   */
-  originalReference: Reference;
-
-  /**
-   * The type of link.
-   */
-  type: 'text';
-}
-
-/**
- * Represents a content body change in the Vault.
- */
-export interface ContentChange extends FileChange {
-  /**
-   * The end index of the change in the file content.
-   */
-  endIndex: number;
-
-  /**
-   * The start index of the change in the file content.
-   */
-  startIndex: number;
-}
 
 /**
  * Represents a file change in the Vault.
@@ -106,17 +61,17 @@ export interface FileChange {
    * The old content that will be replaced.
    */
   oldContent: string;
-}
 
-/**
- * Represents a frontmatter change in the Vault.
- */
-export interface FrontmatterChange extends FileChange {
   /**
-   * The key in the frontmatter to use for the link.
+   * The reference that caused the change.
    */
-  frontmatterKey: string;
+  reference: Reference;
 }
+type CanvasChange = { reference: CanvasReference } & FileChange;
+type CanvasFileNodeChange = { reference: CanvasFileNodeReference } & FileChange;
+type CanvasTextNodeChange = { reference: CanvasTextNodeReference } & FileChange;
+type ContentChange = { reference: ReferenceCache } & FileChange;
+type FrontmatterChange = { reference: FrontmatterLinkCache } & FileChange;
 
 /**
  * Applies a series of content changes to the specified content.
@@ -139,25 +94,27 @@ export async function applyContentChanges(content: string, path: string, changes
 
   for (const change of changes) {
     if (isContentChange(change)) {
-      const actualContent = content.slice(change.startIndex, change.endIndex);
+      const startOffset = change.reference.position.start.offset;
+      const endOffset = change.reference.position.end.offset;
+      const actualContent = content.slice(startOffset, endOffset);
       if (actualContent !== change.oldContent) {
         console.warn('Content mismatch', {
           actualContent,
-          endIndex: change.endIndex,
+          endOffset,
           expectedContent: change.oldContent,
           path,
-          startIndex: change.startIndex
+          startOffset
         });
 
         return null;
       }
     } else if (isFrontmatterChange(change)) {
-      const actualContent = getNestedPropertyValue(frontmatter, change.frontmatterKey);
+      const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
       if (actualContent !== change.oldContent) {
         console.warn('Content mismatch', {
           actualContent,
           expectedContent: change.oldContent,
-          frontmatterKey: change.frontmatterKey,
+          frontmatterKey: change.reference.key,
           path
         });
 
@@ -168,11 +125,11 @@ export async function applyContentChanges(content: string, path: string, changes
 
   changes.sort((a, b) => {
     if (isContentChange(a) && isContentChange(b)) {
-      return a.startIndex - b.startIndex;
+      return a.reference.position.start.offset - b.reference.position.start.offset;
     }
 
     if (isFrontmatterChange(a) && isFrontmatterChange(b)) {
-      return a.frontmatterKey.localeCompare(b.frontmatterKey);
+      return a.reference.key.localeCompare(b.reference.key);
     }
 
     return isContentChange(a) ? -1 : 1;
@@ -200,8 +157,8 @@ export async function applyContentChanges(content: string, path: string, changes
     }
 
     if (
-      isContentChange(previousChange) && isContentChange(change) && previousChange.endIndex && change.startIndex
-      && previousChange.endIndex > change.startIndex
+      isContentChange(previousChange) && isContentChange(change) && previousChange.reference.position.end.offset
+      && previousChange.reference.position.end.offset > change.reference.position.start.offset
     ) {
       console.warn('Overlapping changes', {
         change,
@@ -217,16 +174,16 @@ export async function applyContentChanges(content: string, path: string, changes
 
   for (const change of changes) {
     if (isContentChange(change)) {
-      newContent += content.slice(lastIndex, change.startIndex);
+      newContent += content.slice(lastIndex, change.reference.position.start.offset);
       newContent += change.newContent;
-      lastIndex = change.endIndex;
+      lastIndex = change.reference.position.end.offset;
     } else if (isFrontmatterChange(change)) {
       if (hasFrontmatterError) {
         console.error(`Cannot apply frontmatter change in ${path}, because frontmatter parsing failed`, {
           change
         });
       } else {
-        setNestedPropertyValue(frontmatter, change.frontmatterKey, change.newContent);
+        setNestedPropertyValue(frontmatter, change.reference.key, change.newContent);
         frontmatterChanged = true;
       }
     }
@@ -272,7 +229,7 @@ export async function applyFileChanges(
  * @returns Whether the file change is a canvas change.
  */
 export function isCanvasChange(change: FileChange): change is CanvasChange {
-  return !!(change as Partial<CanvasChange>).isCanvas;
+  return isCanvasReference(change.reference);
 }
 
 /**
@@ -282,7 +239,7 @@ export function isCanvasChange(change: FileChange): change is CanvasChange {
  * @returns Whether the file change is a canvas file node change.
  */
 export function isCanvasFileNodeChange(change: FileChange): change is CanvasFileNodeChange {
-  return isCanvasChange(change) && change.type === 'file';
+  return isCanvasChange(change) && change.reference.type === 'file';
 }
 
 /**
@@ -292,7 +249,7 @@ export function isCanvasFileNodeChange(change: FileChange): change is CanvasFile
  * @returns Whether the file change is a canvas text node change.
  */
 export function isCanvasTextNodeChange(change: FileChange): change is CanvasTextNodeChange {
-  return isCanvasChange(change) && change.type === 'text';
+  return isCanvasChange(change) && change.reference.type === 'text';
 }
 
 /**
@@ -302,7 +259,7 @@ export function isCanvasTextNodeChange(change: FileChange): change is CanvasText
  * @returns A boolean indicating whether the file change is a content change.
  */
 export function isContentChange(fileChange: FileChange): fileChange is ContentChange {
-  return (fileChange as Partial<ContentChange>).startIndex !== undefined;
+  return isReferenceCache(fileChange.reference);
 }
 
 /**
@@ -312,7 +269,7 @@ export function isContentChange(fileChange: FileChange): fileChange is ContentCh
  * @returns A boolean indicating whether the file change is a frontmatter change.
  */
 export function isFrontmatterChange(fileChange: FileChange): fileChange is FrontmatterChange {
-  return (fileChange as Partial<FrontmatterChange>).frontmatterKey !== undefined;
+  return isFrontmatterLinkCache(fileChange.reference);
 }
 
 async function applyCanvasChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
@@ -330,10 +287,10 @@ async function applyCanvasChanges(content: string, path: string, changesProvider
       return null;
     }
 
-    const node = canvasData.nodes[change.nodeIndex];
+    const node = canvasData.nodes[change.reference.nodeIndex];
     if (!node) {
       console.warn('Node not found', {
-        nodeIndex: change.nodeIndex,
+        nodeIndex: change.reference.nodeIndex,
         path
       });
       return null;
@@ -344,7 +301,7 @@ async function applyCanvasChanges(content: string, path: string, changesProvider
         console.warn('Content mismatch', {
           actualContent: node.file as string | undefined,
           expectedContent: change.oldContent,
-          nodeIndex: change.nodeIndex,
+          nodeIndex: change.reference.nodeIndex,
           path,
           type: 'file'
         });
@@ -353,10 +310,10 @@ async function applyCanvasChanges(content: string, path: string, changesProvider
       }
       node.file = change.newContent;
     } else if (isCanvasTextNodeChange(change)) {
-      let canvasTextChangesForNode = canvasTextChanges.get(change.nodeIndex);
+      let canvasTextChangesForNode = canvasTextChanges.get(change.reference.nodeIndex);
       if (!canvasTextChangesForNode) {
         canvasTextChangesForNode = [];
-        canvasTextChanges.set(change.nodeIndex, canvasTextChangesForNode);
+        canvasTextChanges.set(change.reference.nodeIndex, canvasTextChangesForNode);
       }
 
       canvasTextChangesForNode.push(change);
@@ -383,7 +340,7 @@ async function applyCanvasChanges(content: string, path: string, changesProvider
       return null;
     }
 
-    const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.originalReference, change.newContent));
+    const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.reference.originalReference, change.newContent));
     node.text = await applyContentChanges(node.text, `${path}.node${nodeIndex.toString()}.VIRTUAL_FILE.md`, contentChanges);
   }
 
