@@ -17,6 +17,7 @@ import type {
   TFile
 } from 'obsidian';
 import type { Promisable } from 'type-fest';
+import type { Node } from 'unist';
 
 import {
   normalizePath,
@@ -26,6 +27,7 @@ import { InternalPluginName } from 'obsidian-typings/implementations';
 import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
+import { visit } from 'unist-util-visit';
 
 import type { GenericObject } from '../Object.ts';
 import type { MaybeReturn } from '../Type.ts';
@@ -46,8 +48,7 @@ import {
 } from '../Path.ts';
 import {
   normalize,
-  replaceAll,
-  trimStart
+  replaceAll
 } from '../String.ts';
 import { isUrl } from '../url.ts';
 import {
@@ -235,6 +236,11 @@ export interface ParseLinkResult {
   encodedUrl?: string;
 
   /**
+   * The end offset of the link in the original text.
+   */
+  endOffset: number;
+
+  /**
    * Indicates if the link has angle brackets.
    */
   hasAngleBrackets?: boolean;
@@ -255,10 +261,19 @@ export interface ParseLinkResult {
   isWikilink: boolean;
 
   /**
+   * The raw link text.
+   */
+  raw: string;
+
+  /**
+   * The start offset of the link in the original text.
+   */
+  startOffset: number;
+
+  /**
    * The title of the link.
    */
   title?: string;
-
   /**
    * The URL of the link.
    */
@@ -453,7 +468,7 @@ interface UpdateLinksInContentOptions {
   shouldUpdateFileNameAlias?: boolean;
 }
 
-interface WikiLinkNode {
+interface WikiLinkNode extends Node {
   data: {
     alias: string;
   };
@@ -644,52 +659,69 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
  * @returns The parsed link.
  */
 export function parseLink(str: string): null | ParseLinkResult {
-  const result = parseLinkUrl(str);
-  if (result) {
-    return result;
-  }
+  const links = parseLinks(str);
+  return links[0]?.raw === str ? links[0] : null;
+}
 
-  const EMBED_PREFIX = '!';
+/**
+ * Parses all links in a string.
+ *
+ * @param str - The string to parse the links in.
+ * @returns The parsed links.
+ */
+export function parseLinks(str: string): ParseLinkResult[] {
+  const embedSymbolOffsets = new Set<number>();
 
-  const isEmbed = str.startsWith(EMBED_PREFIX);
-  if (isEmbed) {
-    str = trimStart(str, EMBED_PREFIX);
-  }
+  const EMBED_LINK_PREFIX = '![';
+  const NO_EMBED_LINK_PREFIX = ' [';
+
+  const noEmbedStr = replaceAll(str, EMBED_LINK_PREFIX, (args) => {
+    embedSymbolOffsets.add(args.offset);
+    return NO_EMBED_LINK_PREFIX;
+  });
+
   const processor = remark().use(remarkParse).use(wikiLinkPlugin, { aliasDivider: WIKILINK_DIVIDER });
-  const root = processor.parse(str);
+  const root = processor.parse(noEmbedStr);
 
-  if (root.children.length !== 1) {
-    return null;
+  const links: ParseLinkResult[] = [];
+  const textLinks: ParseLinkResult[] = [];
+
+  visit(root, (node: Node) => {
+    let link: ParseLinkResult;
+    switch (node.type) {
+      case 'link':
+        link = parseLinkNode(node as Link, str);
+        break;
+      case 'wikiLink':
+        link = parseWikilinkNode(node as WikiLinkNode, str);
+        break;
+      default:
+        return;
+    }
+
+    if (embedSymbolOffsets.has(link.startOffset - 1)) {
+      link.isEmbed = true;
+      link.startOffset--;
+      link.raw = `!${link.raw}`;
+    }
+    links.push(link);
+  });
+
+  links.sort((a, b) => a.startOffset - b.startOffset);
+
+  let textStartOffset = 0;
+
+  for (const link of links) {
+    extractTextLinks(str, textStartOffset, link.startOffset - 1, textLinks);
+    textStartOffset = link.endOffset + 1;
   }
 
-  const paragraph = root.children[0];
+  extractTextLinks(str, textStartOffset, str.length - 1, textLinks);
 
-  if (paragraph?.type !== 'paragraph') {
-    return null;
-  }
+  links.push(...textLinks);
+  links.sort((a, b) => a.startOffset - b.startOffset);
 
-  if (paragraph.children.length !== 1) {
-    return null;
-  }
-
-  const node = paragraph.children[0];
-
-  if (node?.position?.start.offset !== 0) {
-    return null;
-  }
-
-  if (node.position.end.offset !== str.length) {
-    return null;
-  }
-
-  switch (node.type as string) {
-    case 'link':
-      return parseLinkNode(node as Link, str, isEmbed);
-    case 'wikiLink':
-      return parseWikilinkNode(node as unknown as WikiLinkNode, str, isEmbed);
-    default:
-      return null;
-  }
+  return links;
 }
 
 /**
@@ -1004,6 +1036,31 @@ function _fixFrontmatterMarkdownLinks(value: unknown, key: string, cache: Cached
   return hasFrontmatterLinks;
 }
 
+function extractTextLinks(str: string, startOffset: number, endOffset: number, textLinks: ParseLinkResult[]): void {
+  if (startOffset > endOffset) {
+    return;
+  }
+
+  const textPart = str.slice(startOffset, endOffset + 1);
+  replaceAll(textPart, /(?<Url>\S+)/g, (args, url) => {
+    if (!isUrl(url)) {
+      return;
+    }
+
+    textLinks.push({
+      encodedUrl: encodeUrl(url),
+      endOffset: startOffset + args.offset + url.length,
+      hasAngleBrackets: false,
+      isEmbed: false,
+      isExternal: true,
+      isWikilink: false,
+      raw: url,
+      startOffset: startOffset + args.offset,
+      url
+    });
+  });
+}
+
 function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpath: string, config: LinkConfig): string {
   if (sourcePath === '/') {
     sourcePath = '';
@@ -1123,63 +1180,51 @@ function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile):
   };
 }
 
-function parseLinkNode(node: Link, str: string, isEmbed: boolean): ParseLinkResult {
+function getRawLink(node: Node, str: string): string {
+  return str.slice(node.position?.start.offset ?? 0, node.position?.end.offset ?? 0);
+}
+
+function parseLinkNode(node: Link, str: string): ParseLinkResult {
   const OPEN_ANGLE_BRACKET = '<';
   const LINK_ALIAS_SUFFIX = '](';
   const LINK_SUFFIX = ')';
-
+  const raw = getRawLink(node, str);
   const aliasNode = node.children[0] as Text | undefined;
   const rawUrl = str.slice((aliasNode?.position?.end.offset ?? 1) + LINK_ALIAS_SUFFIX.length, (node.position?.end.offset ?? 0) - LINK_SUFFIX.length);
-  const hasAngleBrackets = str.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
+  const hasAngleBrackets = raw.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
   const isExternal = isUrl(node.url);
   let url = node.url;
-  if (!isExternal) {
-    if (!hasAngleBrackets) {
-      try {
-        url = decodeURIComponent(url);
-      } catch (error) {
-        console.error(`Failed to decode URL ${url}`, error);
-      }
+  if (!isExternal && !hasAngleBrackets) {
+    try {
+      url = decodeURIComponent(url);
+    } catch (error) {
+      console.error(`Failed to decode URL ${url}`, error);
     }
   }
   return normalizeOptionalProperties<ParseLinkResult>({
     alias: aliasNode?.value,
     encodedUrl: isExternal ? encodeUrl(url) : undefined,
+    endOffset: node.position?.end.offset ?? 0,
     hasAngleBrackets,
-    isEmbed,
+    isEmbed: false,
     isExternal,
     isWikilink: false,
+    raw,
+    startOffset: node.position?.start.offset ?? 0,
     title: node.title ?? undefined,
     url
   });
 }
 
-function parseLinkUrl(str: string): null | ParseLinkResult {
-  const hasAngleBrackets = str.startsWith('<') && str.endsWith('>');
-  if (hasAngleBrackets) {
-    str = str.slice(1, -1);
-  }
-
-  if (!isUrl(str)) {
-    return null;
-  }
-
-  return {
-    encodedUrl: encodeUrl(str),
-    hasAngleBrackets,
-    isEmbed: false,
-    isExternal: true,
-    isWikilink: false,
-    url: str
-  };
-}
-
-function parseWikilinkNode(node: WikiLinkNode, str: string, isEmbed: boolean): ParseLinkResult {
+function parseWikilinkNode(node: WikiLinkNode, str: string): ParseLinkResult {
   return normalizeOptionalProperties<ParseLinkResult>({
     alias: str.includes(WIKILINK_DIVIDER) ? node.data.alias : undefined,
-    isEmbed,
+    endOffset: node.position?.end.offset ?? 0,
+    isEmbed: false,
     isExternal: false,
     isWikilink: true,
+    raw: getRawLink(node, str),
+    startOffset: node.position?.start.offset ?? 0,
     url: node.value
   });
 }
