@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 28.5.0
+
+- parseLinks
+
 ## 28.4.0
 
 - Add INFINITE_TIMEOUT
