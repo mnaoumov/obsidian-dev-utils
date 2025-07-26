@@ -95,58 +95,8 @@ export async function applyContentChanges(content: string, path: string, changes
     hasFrontmatterError = true;
   }
 
-  for (const change of changes) {
-    if (isContentChange(change)) {
-      const startOffset = change.reference.position.start.offset;
-      const endOffset = change.reference.position.end.offset;
-      const actualContent = content.slice(startOffset, endOffset);
-      if (actualContent !== change.oldContent) {
-        console.warn('Content mismatch', {
-          actualContent,
-          endOffset,
-          expectedContent: change.oldContent,
-          path,
-          startOffset
-        });
-
-        return null;
-      }
-    } else if (isFrontmatterChangeWithOffsets(change)) {
-      const propertyValue = getNestedPropertyValue(frontmatter, change.reference.cleanKey);
-      if (typeof propertyValue !== 'string') {
-        console.warn('Property value is not a string', {
-          frontmatterKey: change.reference.cleanKey,
-          path,
-          propertyValue
-        });
-        return null;
-      }
-
-      const actualContent = propertyValue.slice(change.reference.startOffset, change.reference.endOffset);
-      if (actualContent !== change.oldContent) {
-        console.warn('Content mismatch', {
-          actualContent,
-          expectedContent: change.oldContent,
-          frontmatterKey: change.reference.cleanKey,
-          path,
-          startOffset: change.reference.startOffset
-        });
-
-        return null;
-      }
-    } else if (isFrontmatterChange(change)) {
-      const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
-      if (actualContent !== change.oldContent) {
-        console.warn('Content mismatch', {
-          actualContent,
-          expectedContent: change.oldContent,
-          frontmatterKey: change.reference.key,
-          path
-        });
-
-        return null;
-      }
-    }
+  if (!validateChanges(changes, content, frontmatter, path)) {
+    return null;
   }
 
   changes.sort((a, b) => {
@@ -235,46 +185,7 @@ export async function applyContentChanges(content: string, path: string, changes
     }
   }
 
-  for (const [key, frontmatterChangesWithOffsets] of frontmatterChangesWithOffsetMap.entries()) {
-    const propertyValue = getNestedPropertyValue(frontmatter, key);
-    if (typeof propertyValue !== 'string') {
-      console.warn('Property value is not a string', {
-        frontmatterKey: key,
-        path,
-        propertyValue
-      });
-
-      return null;
-    }
-
-    const contentChanges: ContentChange[] = frontmatterChangesWithOffsets.map((change) => ({
-      newContent: change.newContent,
-      oldContent: change.oldContent,
-      reference: {
-        link: '',
-        original: '',
-        position: {
-          end: {
-            col: change.reference.endOffset,
-            line: 0,
-            offset: change.reference.endOffset
-          },
-          start: {
-            col: change.reference.startOffset,
-            line: 0,
-            offset: change.reference.startOffset
-          }
-        }
-      }
-    } as ContentChange));
-
-    const newPropertyValue = await applyContentChanges(propertyValue, `${path}.frontmatter.${key}.VIRTUAL_FILE.md`, contentChanges);
-    if (newPropertyValue === null) {
-      return null;
-    }
-
-    setNestedPropertyValue(frontmatter, key, newPropertyValue);
-  }
+  await applyFrontmatterChangesWithOffsets(frontmatter, frontmatterChangesWithOffsetMap, path);
 
   newContent += content.slice(lastIndex);
   if (frontmatterChanged) {
@@ -444,6 +355,47 @@ async function applyCanvasChanges(content: string, path: string, changesProvider
   return JSON.stringify(canvasData, null, '\t');
 }
 
+async function applyFrontmatterChangesWithOffsets(
+  frontmatter: CombinedFrontmatter<unknown>,
+  frontmatterChangesWithOffsetMap: Map<string, FrontmatterChangeWithOffsets[]>,
+  path: string
+): Promise<void> {
+  for (const [key, frontmatterChangesWithOffsets] of frontmatterChangesWithOffsetMap.entries()) {
+    const propertyValue = getNestedPropertyValue(frontmatter, key);
+    if (typeof propertyValue !== 'string') {
+      return;
+    }
+
+    const contentChanges: ContentChange[] = frontmatterChangesWithOffsets.map((change) => ({
+      newContent: change.newContent,
+      oldContent: change.oldContent,
+      reference: {
+        link: '',
+        original: '',
+        position: {
+          end: {
+            col: change.reference.endOffset,
+            line: 0,
+            offset: change.reference.endOffset
+          },
+          start: {
+            col: change.reference.startOffset,
+            line: 0,
+            offset: change.reference.startOffset
+          }
+        }
+      }
+    } as ContentChange));
+
+    const newPropertyValue = await applyContentChanges(propertyValue, `${path}.frontmatter.${key}.VIRTUAL_FILE.md`, contentChanges);
+    if (newPropertyValue === null) {
+      return;
+    }
+
+    setNestedPropertyValue(frontmatter, key, newPropertyValue);
+  }
+}
+
 function parseJsonSafe(content: string): GenericObject {
   let parsed: unknown;
   try {
@@ -457,4 +409,62 @@ function parseJsonSafe(content: string): GenericObject {
   }
 
   return parsed as GenericObject;
+}
+
+function validateChanges(changes: FileChange[], content: string, frontmatter: CombinedFrontmatter<unknown>, path: string): boolean {
+  for (const change of changes) {
+    if (isContentChange(change)) {
+      const startOffset = change.reference.position.start.offset;
+      const endOffset = change.reference.position.end.offset;
+      const actualContent = content.slice(startOffset, endOffset);
+      if (actualContent !== change.oldContent) {
+        console.warn('Content mismatch', {
+          actualContent,
+          endOffset,
+          expectedContent: change.oldContent,
+          path,
+          startOffset
+        });
+
+        return false;
+      }
+    } else if (isFrontmatterChangeWithOffsets(change)) {
+      const propertyValue = getNestedPropertyValue(frontmatter, change.reference.cleanKey);
+      if (typeof propertyValue !== 'string') {
+        console.warn('Property value is not a string', {
+          frontmatterKey: change.reference.cleanKey,
+          path,
+          propertyValue
+        });
+        return false;
+      }
+
+      const actualContent = propertyValue.slice(change.reference.startOffset, change.reference.endOffset);
+      if (actualContent !== change.oldContent) {
+        console.warn('Content mismatch', {
+          actualContent,
+          expectedContent: change.oldContent,
+          frontmatterKey: change.reference.cleanKey,
+          path,
+          startOffset: change.reference.startOffset
+        });
+
+        return false;
+      }
+    } else if (isFrontmatterChange(change)) {
+      const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
+      if (actualContent !== change.oldContent) {
+        console.warn('Content mismatch', {
+          actualContent,
+          expectedContent: change.oldContent,
+          frontmatterKey: change.reference.key,
+          path
+        });
+
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
