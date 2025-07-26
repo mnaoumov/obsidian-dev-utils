@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 28.6.0
+
+- FrontmatterLinkCacheWithOffsets
+- Update libs
+
 ## 28.5.0
 
 - parseLinks
