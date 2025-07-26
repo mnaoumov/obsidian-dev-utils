@@ -35,6 +35,7 @@ import {
   isMarkdownFile
 } from './FileSystem.ts';
 import { parseFrontmatter } from './Frontmatter.ts';
+import { isFrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
 import { sortReferences } from './Reference.ts';
 import { readSafe } from './Vault.ts';
 
@@ -164,6 +165,12 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
         let actualLink: string;
         if (isReferenceCache(link)) {
           actualLink = content.slice(link.position.start.offset, link.position.end.offset);
+        } else if (isFrontmatterLinkCacheWithOffsets(link)) {
+          const linkValue = getNestedPropertyValue(frontmatter, link.key);
+          if (typeof linkValue !== 'string') {
+            return false;
+          }
+          actualLink = linkValue.slice(link.startOffset, link.endOffset);
         } else if (isFrontmatterLinkCache(link)) {
           const linkValue = getNestedPropertyValue(frontmatter, link.key);
           if (typeof linkValue !== 'string') {
