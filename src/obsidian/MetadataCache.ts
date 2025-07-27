@@ -103,7 +103,10 @@ export function getAllLinks(cache: CachedMetadata): Reference[] {
     }
 
     if (isFrontmatterLinkCache(link) && isFrontmatterLinkCache(previousLink)) {
-      return link.key !== previousLink.key;
+      const linkStartOffset = isFrontmatterLinkCacheWithOffsets(link) ? link.startOffset : 0;
+      const previousLinkStartOffset = isFrontmatterLinkCacheWithOffsets(previousLink) ? previousLink.startOffset : 0;
+      return link.key !== previousLink.key || isFrontmatterLinkCacheWithOffsets(link) !== isFrontmatterLinkCacheWithOffsets(previousLink)
+        || linkStartOffset !== previousLinkStartOffset;
     }
 
     return true;

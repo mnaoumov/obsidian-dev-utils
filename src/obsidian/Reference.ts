@@ -16,6 +16,8 @@ import {
 
 import type { FileChange } from './FileChange.ts';
 
+import { isFrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
+
 /**
  * Represents a reference within a file node in a canvas.
  */
@@ -115,7 +117,10 @@ export function referenceToFileChange(reference: Reference, newContent: string):
 export function sortReferences(references: Reference[]): Reference[] {
   return references.sort((a, b) => {
     if (isFrontmatterLinkCache(a) && isFrontmatterLinkCache(b)) {
-      return a.key.localeCompare(b.key);
+      const aStartOffset = isFrontmatterLinkCacheWithOffsets(a) ? a.startOffset : 0;
+      const bStartOffset = isFrontmatterLinkCacheWithOffsets(b) ? b.startOffset : 0;
+      return a.key.localeCompare(b.key) || Number(isFrontmatterLinkCacheWithOffsets(b)) - Number(isFrontmatterLinkCacheWithOffsets(a))
+        || aStartOffset - bStartOffset;
     }
 
     if (isReferenceCache(a) && isReferenceCache(b)) {
