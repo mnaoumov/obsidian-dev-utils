@@ -29,6 +29,7 @@ import type {
 } from './Reference.ts';
 import type { ProcessOptions } from './Vault.ts';
 
+import { getDebugger } from '../Debug.ts';
 import {
   deepEqual,
   getNestedPropertyValue,
@@ -82,9 +83,15 @@ type FrontmatterChangeWithOffsets = { reference: FrontmatterLinkCacheWithOffsets
  * @param content - The content to which the changes should be applied.
  * @param path - The path to which the changes should be applied.
  * @param changesProvider - A provider that returns an array of content changes to apply.
+ * @param shouldRetryOnInvalidChanges - Whether to retry the operation if the changes are invalid.
  * @returns A {@link Promise} that resolves to the updated content or to `null` if update didn't succeed.
  */
-export async function applyContentChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
+export async function applyContentChanges(
+  content: string,
+  path: string,
+  changesProvider: ValueProvider<FileChange[]>,
+  shouldRetryOnInvalidChanges = true
+): Promise<null | string> {
   let changes = await resolveValue(changesProvider);
   let frontmatter: CombinedFrontmatter<unknown> = {};
   let hasFrontmatterError = false;
@@ -95,8 +102,8 @@ export async function applyContentChanges(content: string, path: string, changes
     hasFrontmatterError = true;
   }
 
-  if (!validateChanges(changes, content, frontmatter, path)) {
-    return null;
+  if (!validateChanges(changes, content, frontmatter, path, shouldRetryOnInvalidChanges)) {
+    return shouldRetryOnInvalidChanges ? null : content;
   }
 
   changes.sort((a, b) => {
@@ -202,6 +209,7 @@ export async function applyContentChanges(content: string, path: string, changes
  * @param pathOrFile - The path or file to which the changes should be applied.
  * @param changesProvider - A provider that returns an array of file changes to apply.
  * @param processOptions - Optional options for processing/retrying the operation.
+ * @param shouldRetryOnInvalidChanges - Whether to retry the operation if the changes are invalid.
  *
  * @returns A {@link Promise} that resolves when the file changes have been successfully applied.
  */
@@ -209,14 +217,15 @@ export async function applyFileChanges(
   app: App,
   pathOrFile: PathOrFile,
   changesProvider: ValueProvider<FileChange[]>,
-  processOptions: ProcessOptions = {}
+  processOptions: ProcessOptions = {},
+  shouldRetryOnInvalidChanges = true
 ): Promise<void> {
   await process(app, pathOrFile, async (content) => {
     if (isCanvasFile(app, pathOrFile)) {
-      return applyCanvasChanges(content, getPath(app, pathOrFile), changesProvider);
+      return applyCanvasChanges(content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
     }
 
-    return await applyContentChanges(content, getPath(app, pathOrFile), changesProvider);
+    return await applyContentChanges(content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
   }, processOptions);
 }
 
@@ -280,7 +289,12 @@ export function isFrontmatterChangeWithOffsets(fileChange: FileChange): fileChan
   return isFrontmatterLinkCacheWithOffsets(fileChange.reference);
 }
 
-async function applyCanvasChanges(content: string, path: string, changesProvider: ValueProvider<FileChange[]>): Promise<null | string> {
+async function applyCanvasChanges(
+  content: string,
+  path: string,
+  changesProvider: ValueProvider<FileChange[]>,
+  shouldRetryOnInvalidChanges = true
+): Promise<null | string> {
   const changes = await resolveValue(changesProvider);
   const canvasData = parseJsonSafe(content) as CanvasData;
 
@@ -349,7 +363,7 @@ async function applyCanvasChanges(content: string, path: string, changesProvider
     }
 
     const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.reference.originalReference, change.newContent));
-    node.text = await applyContentChanges(node.text, `${path}.node${nodeIndex.toString()}.VIRTUAL_FILE.md`, contentChanges);
+    node.text = await applyContentChanges(node.text, `${path}.node${nodeIndex.toString()}.VIRTUAL_FILE.md`, contentChanges, shouldRetryOnInvalidChanges);
   }
 
   return JSON.stringify(canvasData, null, '\t');
@@ -411,14 +425,16 @@ function parseJsonSafe(content: string): GenericObject {
   return parsed as GenericObject;
 }
 
-function validateChanges(changes: FileChange[], content: string, frontmatter: CombinedFrontmatter<unknown>, path: string): boolean {
+function validateChanges(changes: FileChange[], content: string, frontmatter: CombinedFrontmatter<unknown>, path: string, shouldShowWarning: boolean): boolean {
+  const _debugger = getDebugger('validateChanges');
+  const logger = shouldShowWarning ? console.warn.bind(console) : _debugger;
   for (const change of changes) {
     if (isContentChange(change)) {
       const startOffset = change.reference.position.start.offset;
       const endOffset = change.reference.position.end.offset;
       const actualContent = content.slice(startOffset, endOffset);
       if (actualContent !== change.oldContent) {
-        console.warn('Content mismatch', {
+        logger('Content mismatch', {
           actualContent,
           endOffset,
           expectedContent: change.oldContent,
@@ -431,7 +447,7 @@ function validateChanges(changes: FileChange[], content: string, frontmatter: Co
     } else if (isFrontmatterChangeWithOffsets(change)) {
       const propertyValue = getNestedPropertyValue(frontmatter, change.reference.cleanKey);
       if (typeof propertyValue !== 'string') {
-        console.warn('Property value is not a string', {
+        logger('Property value is not a string', {
           frontmatterKey: change.reference.cleanKey,
           path,
           propertyValue
@@ -441,7 +457,7 @@ function validateChanges(changes: FileChange[], content: string, frontmatter: Co
 
       const actualContent = propertyValue.slice(change.reference.startOffset, change.reference.endOffset);
       if (actualContent !== change.oldContent) {
-        console.warn('Content mismatch', {
+        logger('Content mismatch', {
           actualContent,
           expectedContent: change.oldContent,
           frontmatterKey: change.reference.cleanKey,
@@ -454,7 +470,7 @@ function validateChanges(changes: FileChange[], content: string, frontmatter: Co
     } else if (isFrontmatterChange(change)) {
       const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
       if (actualContent !== change.oldContent) {
-        console.warn('Content mismatch', {
+        logger('Content mismatch', {
           actualContent,
           expectedContent: change.oldContent,
           frontmatterKey: change.reference.key,
