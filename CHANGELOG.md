@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 29.0.2
+
+- Don't treat FrontmatterLinkCacheWithOffsets as duplicate links
+
 ## 29.0.1
 
 - Remove cleanKey
