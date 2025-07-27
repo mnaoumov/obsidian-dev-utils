@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 29.0.1
+
+- Remove cleanKey
+
 ## 29.0.0
 
 - shouldRetryOnInvalidChanges
