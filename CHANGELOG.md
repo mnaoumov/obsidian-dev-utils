@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 29.0.0
+
+- shouldRetryOnInvalidChanges
+- Update libs
+
 ## 28.6.0
 
 - FrontmatterLinkCacheWithOffsets
