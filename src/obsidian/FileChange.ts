@@ -112,7 +112,7 @@ export async function applyContentChanges(
     }
 
     if (isFrontmatterChangeWithOffsets(a) && isFrontmatterChangeWithOffsets(b)) {
-      return a.reference.cleanKey.localeCompare(b.reference.cleanKey) || a.reference.startOffset - b.reference.startOffset;
+      return a.reference.key.localeCompare(b.reference.key) || a.reference.startOffset - b.reference.startOffset;
     }
 
     if (isFrontmatterChange(a) && isFrontmatterChange(b)) {
@@ -172,10 +172,10 @@ export async function applyContentChanges(
           change
         });
       } else {
-        let frontmatterChangesWithOffsets = frontmatterChangesWithOffsetMap.get(change.reference.cleanKey);
+        let frontmatterChangesWithOffsets = frontmatterChangesWithOffsetMap.get(change.reference.key);
         if (!frontmatterChangesWithOffsets) {
           frontmatterChangesWithOffsets = [];
-          frontmatterChangesWithOffsetMap.set(change.reference.cleanKey, frontmatterChangesWithOffsets);
+          frontmatterChangesWithOffsetMap.set(change.reference.key, frontmatterChangesWithOffsets);
         }
         frontmatterChangesWithOffsets.push(change);
         frontmatterChanged = true;
@@ -445,10 +445,10 @@ function validateChanges(changes: FileChange[], content: string, frontmatter: Co
         return false;
       }
     } else if (isFrontmatterChangeWithOffsets(change)) {
-      const propertyValue = getNestedPropertyValue(frontmatter, change.reference.cleanKey);
+      const propertyValue = getNestedPropertyValue(frontmatter, change.reference.key);
       if (typeof propertyValue !== 'string') {
         logger('Property value is not a string', {
-          frontmatterKey: change.reference.cleanKey,
+          frontmatterKey: change.reference.key,
           path,
           propertyValue
         });
@@ -460,7 +460,7 @@ function validateChanges(changes: FileChange[], content: string, frontmatter: Co
         logger('Content mismatch', {
           actualContent,
           expectedContent: change.oldContent,
-          frontmatterKey: change.reference.cleanKey,
+          frontmatterKey: change.reference.key,
           path,
           startOffset: change.reference.startOffset
         });
