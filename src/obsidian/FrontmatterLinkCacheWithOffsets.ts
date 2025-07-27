@@ -16,11 +16,6 @@ import { isFrontmatterLinkCache } from 'obsidian-typings/implementations';
  */
 export interface FrontmatterLinkCacheWithOffsets extends FrontmatterLinkCache {
   /**
-   * The frontmatter key without offsets.
-   */
-  cleanKey: string;
-
-  /**
    * The end offset of the link in the property value.
    */
   endOffset: number;
@@ -43,5 +38,5 @@ export function isFrontmatterLinkCacheWithOffsets(reference: Reference): referen
   }
 
   const frontmatterLinkCacheEx = reference as Partial<FrontmatterLinkCacheWithOffsets>;
-  return frontmatterLinkCacheEx.cleanKey !== undefined && frontmatterLinkCacheEx.startOffset !== undefined && frontmatterLinkCacheEx.endOffset !== undefined;
+  return frontmatterLinkCacheEx.startOffset !== undefined && frontmatterLinkCacheEx.endOffset !== undefined;
 }
