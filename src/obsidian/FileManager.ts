@@ -12,7 +12,7 @@ import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 import type { ProcessOptions } from './Vault.ts';
 
-import { deepEqual } from '../Object.ts';
+import { deepEqual } from '../ObjectUtils.ts';
 import { getFile } from './FileSystem.ts';
 import {
   parseFrontmatter,

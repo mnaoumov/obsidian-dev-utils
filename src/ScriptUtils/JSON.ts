@@ -6,7 +6,7 @@
 
 import type { Promisable } from 'type-fest';
 
-import { toJson } from '../Object.ts';
+import { toJson } from '../ObjectUtils.ts';
 import {
   existsSync,
   readFile,

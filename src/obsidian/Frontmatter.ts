@@ -10,7 +10,7 @@ import {
   stringifyYaml
 } from 'obsidian';
 
-import type { GenericObject } from '../Object.ts';
+import type { GenericObject } from '../ObjectUtils.ts';
 
 import { insertAt } from '../String.ts';
 

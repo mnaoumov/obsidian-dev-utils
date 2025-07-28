@@ -6,7 +6,7 @@
 
 import type { PackageJson } from '../src/ScriptUtils/Npm.ts';
 
-import { deepEqual } from '../src/Object.ts';
+import { deepEqual } from '../src/ObjectUtils.ts';
 import {
   basename,
   dirname,

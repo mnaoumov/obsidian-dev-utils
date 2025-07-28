@@ -41,7 +41,7 @@ import {
   noop,
   noopAsync
 } from '../../Function.ts';
-import { deepEqual } from '../../Object.ts';
+import { deepEqual } from '../../ObjectUtils.ts';
 import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
 import { ensureWrapped } from '../Components/SettingComponents/SettingComponentWrapper.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';

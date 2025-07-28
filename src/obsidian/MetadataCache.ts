@@ -25,7 +25,7 @@ import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { retryWithTimeout } from '../Async.ts';
-import { getNestedPropertyValue } from '../Object.ts';
+import { getNestedPropertyValue } from '../ObjectUtils.ts';
 import {
   getFile,
   getFileOrNull,
