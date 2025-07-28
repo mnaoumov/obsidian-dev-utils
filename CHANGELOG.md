@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 30.1.0
+
+- Add fake default property
+- Update libs
+
 ## 30.0.0
 
 - Rename Object -> ObjectUtils to fix internal conflict of variable Object
