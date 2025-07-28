@@ -12,7 +12,7 @@ import type {
 import type { EditJsonOptions } from './JSON.ts';
 
 import { throwExpression } from '../Error.ts';
-import { normalizeOptionalProperties } from '../Object.ts';
+import { normalizeOptionalProperties } from '../ObjectUtils.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   editJson,

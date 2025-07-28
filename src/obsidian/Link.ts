@@ -29,7 +29,7 @@ import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
 import { visit } from 'unist-util-visit';
 
-import type { GenericObject } from '../Object.ts';
+import type { GenericObject } from '../ObjectUtils.ts';
 import type { MaybeReturn } from '../Type.ts';
 import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
@@ -38,7 +38,7 @@ import type { ProcessOptions } from './Vault.ts';
 import {
   normalizeOptionalProperties,
   toJson
-} from '../Object.ts';
+} from '../ObjectUtils.ts';
 import {
   basename,
   dirname,

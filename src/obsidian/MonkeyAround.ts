@@ -9,7 +9,7 @@ import type { ConditionalKeys } from 'type-fest';
 
 import { around as originalAround } from 'monkey-around';
 
-import type { GenericObject } from '../Object.ts';
+import type { GenericObject } from '../ObjectUtils.ts';
 
 /**
  * The type of the factories to apply to the object.

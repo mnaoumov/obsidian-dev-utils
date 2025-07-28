@@ -11,7 +11,7 @@ import type {
 } from 'type-fest';
 
 import type { AsyncEventRef } from '../../AsyncEvents.ts';
-import type { GenericObject } from '../../Object.ts';
+import type { GenericObject } from '../../ObjectUtils.ts';
 import type { Transformer } from '../../Transformers/Transformer.ts';
 import type {
   MaybeReturn,
@@ -36,7 +36,7 @@ import {
 import {
   deepEqual,
   getAllKeys
-} from '../../Object.ts';
+} from '../../ObjectUtils.ts';
 import { DateTransformer } from '../../Transformers/DateTransformer.ts';
 import { DurationTransformer } from '../../Transformers/DurationTransformer.ts';
 import { GroupTransformer } from '../../Transformers/GroupTransformer.ts';

@@ -17,7 +17,7 @@ import {
   isReferenceCache
 } from 'obsidian-typings/implementations';
 
-import type { GenericObject } from '../Object.ts';
+import type { GenericObject } from '../ObjectUtils.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
@@ -34,7 +34,7 @@ import {
   deepEqual,
   getNestedPropertyValue,
   setNestedPropertyValue
-} from '../Object.ts';
+} from '../ObjectUtils.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import {
   getPath,

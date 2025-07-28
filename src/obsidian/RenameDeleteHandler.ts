@@ -31,7 +31,7 @@ import { getLibDebugger } from '../Debug.ts';
 import {
   normalizeOptionalProperties,
   toJson
-} from '../Object.ts';
+} from '../ObjectUtils.ts';
 import {
   basename,
   dirname,

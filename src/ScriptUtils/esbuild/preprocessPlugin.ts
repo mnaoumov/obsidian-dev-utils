@@ -12,12 +12,12 @@
 
 import type { Plugin } from 'esbuild';
 
-import type { GenericObject } from '../../Object.ts';
+import type { GenericObject } from '../../ObjectUtils.ts';
 
 import {
   FunctionHandlingMode,
   toJson
-} from '../../Object.ts';
+} from '../../ObjectUtils.ts';
 import {
   makeValidVariableName,
   replaceAll
