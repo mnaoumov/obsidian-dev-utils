@@ -151,9 +151,9 @@ function initCjs(): void {
       const defaultExport = module.default;
       if (typeof defaultExport === 'object' && defaultExport !== null) {
         Object.defineProperty(defaultExport, DEFAULT_PROPERTY_NAME, {
-          value: defaultExport,
+          configurable: false,
           enumerable: false,
-          configurable: false
+          value: defaultExport
         });
       }
 
