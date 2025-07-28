@@ -146,20 +146,7 @@ function initCjs(): void {
   }
 
   function extractDefault(module: Partial<EsmModule> | undefined): unknown {
-    const DEFAULT_PROPERTY_NAME = 'default';
-    if (module?.__esModule && DEFAULT_PROPERTY_NAME in module) {
-      const defaultExport = module.default;
-      if (typeof defaultExport === 'object' && defaultExport !== null) {
-        Object.defineProperty(defaultExport, DEFAULT_PROPERTY_NAME, {
-          configurable: false,
-          enumerable: false,
-          value: defaultExport
-        });
-      }
-
-      return defaultExport;
-    }
-    return module;
+    return module && module.__esModule && 'default' in module ? module.default : module;
   }
 
   function requirePatched(id: string): unknown {
