@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 30.0.0
+
+- Rename Object -> ObjectUtils to fix internal conflict of variable Object
+
 ## 29.0.2
 
 - Don't treat FrontmatterLinkCacheWithOffsets as duplicate links
