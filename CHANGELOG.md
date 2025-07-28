@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 30.1.1
+
+- Revert "Add fake default property"
+
 ## 30.1.0
 
 - Add fake default property
