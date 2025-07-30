@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 30.2.1
+
+- Improve error message
+- Update libs
+
 ## 30.2.0
 
 - assertAllTypeKeys
