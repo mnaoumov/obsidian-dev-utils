@@ -26,9 +26,19 @@ export type PropertyValues<T extends object> = T[StringKeys<T>];
  */
 export type StringKeys<T extends object> = Extract<keyof T, string>;
 
-type ExactKeys<Type extends object, Keys extends readonly string[]> = keyof Type extends Keys[number] ? Keys[number] extends keyof Type ? Keys
-  : `ERROR: Extra keys: ${Exclude<Keys[number], keyof Type> & string}`
-  : `ERROR: Missing keys: ${Exclude<keyof Type, Keys[number]> & string}`;
+type ExactKeys<Type extends object, Keys extends readonly string[]> = Exclude<Keys[number], keyof Type> extends never
+  ? Exclude<keyof Type, Keys[number]> extends never ? Keys
+  : `ERROR: Missing keys: ${TupleToString<UnionToTuple<Exclude<keyof Type, Keys[number]> & string>>}`
+  : `ERROR: Invalid keys: ${TupleToString<UnionToTuple<Exclude<Keys[number], keyof Type> & string>>}`;
+type LastInUnion<Union> = UnionToIntersection<Union extends unknown ? () => Union : never> extends () => infer Last ? Last : never;
+type TupleToString<Tuple extends readonly unknown[]> = Tuple extends readonly [infer First, ...infer Rest]
+  ? First extends string ? Rest extends readonly unknown[] ? Rest['length'] extends 0 ? First
+      : `${First},${TupleToString<Rest>}`
+    : never
+  : never
+  : '';
+type UnionToIntersection<Union> = (Union extends unknown ? (key: Union) => void : never) extends (key: infer Intersection) => void ? Intersection : never;
+type UnionToTuple<Union, Last = LastInUnion<Union>> = [Union] extends [never] ? [] : [...UnionToTuple<Exclude<Union, Last>>, Last];
 
 const DUMMY_PROXY = new Proxy(dummyThrow, {
   apply: dummyThrow,
