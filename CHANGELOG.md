@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 30.3.0
+
+- extractDefaultExportInterop
+- Update libs
+
 ## 30.2.1
 
 - Improve error message
