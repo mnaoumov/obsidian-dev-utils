@@ -14,6 +14,7 @@ import type { CustomArrayDict } from 'obsidian-typings';
 
 import { MarkdownView } from 'obsidian';
 import {
+  CustomArrayDictImpl,
   isFrontmatterLinkCache,
   isReferenceCache,
   parentFolderPath,
@@ -141,7 +142,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
   if (safeOverload) {
     return safeOverload(pathOrFile);
   }
-  let backlinks: CustomArrayDict<Reference> = null as unknown as CustomArrayDict<Reference>;
+  let backlinks: CustomArrayDict<Reference> = new CustomArrayDictImpl<Reference>();
   await retryWithTimeout(async () => {
     const file = getFile(app, pathOrFile);
     await ensureMetadataCacheReady(app);
