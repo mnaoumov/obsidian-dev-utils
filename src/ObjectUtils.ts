@@ -112,6 +112,10 @@ interface JSONSerializable {
   toJSON(...args: unknown[]): unknown;
 }
 
+interface ModuleWithDefaultExport<T> {
+  default: T;
+}
+
 interface TokenSubstitutions {
   circularReference: string;
   maxDepthLimitReached: string;
@@ -265,6 +269,27 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
   // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
   delete obj[propertyName];
   return true;
+}
+
+/**
+ * Extracts the default export from a module.
+ *
+ * Useful to handle incorrect default export interop between ESM and CJS.
+ *
+ * @param module - The module to extract the default export from.
+ * @returns The default export.
+ */
+export function extractDefaultExportInterop<T>(module: ModuleWithDefaultExport<T>): T {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (typeof module !== 'object' || module === null) {
+    return module;
+  }
+
+  if ('default' in module) {
+    return module.default;
+  }
+
+  return module;
 }
 
 /**
