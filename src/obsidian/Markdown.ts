@@ -5,7 +5,7 @@
  */
 
 import type { App } from 'obsidian';
-import type { EmbeddableConstructor } from 'obsidian-typings';
+import type { EmbedCreator } from 'obsidian-typings';
 
 import {
   Component,
@@ -25,7 +25,7 @@ import { invokeWithPatchAsync } from './MonkeyAround.ts';
  */
 export async function fullRender(app: App, markdown: string, el: HTMLElement, sourcePath: string, component: Component): Promise<void> {
   await invokeWithPatchAsync(app.embedRegistry.embedByExtension, {
-    md: (next: EmbeddableConstructor): EmbeddableConstructor => (context, file, path) => {
+    md: (next: EmbedCreator): EmbedCreator => (context, file, path) => {
       context.displayMode = false;
       return next(context, file, path);
     }
