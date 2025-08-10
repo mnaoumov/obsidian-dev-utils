@@ -25,9 +25,9 @@ import { invokeWithPatchAsync } from './MonkeyAround.ts';
  */
 export async function fullRender(app: App, markdown: string, el: HTMLElement, sourcePath: string, component: Component): Promise<void> {
   await invokeWithPatchAsync(app.embedRegistry.embedByExtension, {
-    md: (next: EmbedCreator): EmbedCreator => (context, file, path) => {
+    md: (next: EmbedCreator): EmbedCreator => (context, file, subpath) => {
       context.displayMode = false;
-      return next(context, file, path);
+      return next(context, file, subpath);
     }
   }, async () => {
     await MarkdownRenderer.render(app, markdown, el, sourcePath, component);
