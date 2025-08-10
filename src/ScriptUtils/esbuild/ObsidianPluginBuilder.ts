@@ -18,6 +18,7 @@ import { context } from 'esbuild';
 import sassPlugin_ from 'esbuild-sass-plugin';
 
 import { throwExpression } from '../../Error.ts';
+import { extractDefaultExportInterop } from '../../ObjectUtils.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
 import { buildCompile } from '../build.ts';
@@ -41,7 +42,7 @@ import { preprocessPlugin } from './preprocessPlugin.ts';
 import { renameCssPlugin } from './renameCssPlugin.ts';
 import { svelteWrapperPlugin } from './svelteWrapperPlugin.ts';
 
-const sassPlugin = ('default' in sassPlugin_ ? sassPlugin_.default : sassPlugin_) as unknown as typeof sassPlugin_.default;
+const sassPlugin = extractDefaultExportInterop(sassPlugin_);
 
 /**
  * Enumeration representing the build modes.
