@@ -169,18 +169,21 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
         let actualLink: string;
         if (isReferenceCache(link)) {
           actualLink = content.slice(link.position.start.offset, link.position.end.offset);
-        } else if (isFrontmatterLinkCacheWithOffsets(link)) {
-          const linkValue = getNestedPropertyValue(frontmatter, link.key);
-          if (typeof linkValue !== 'string') {
-            return false;
-          }
-          actualLink = linkValue.slice(link.startOffset, link.endOffset);
         } else if (isFrontmatterLinkCache(link)) {
           const linkValue = getNestedPropertyValue(frontmatter, link.key);
           if (typeof linkValue !== 'string') {
             return false;
           }
-          actualLink = linkValue;
+
+          let startOffset = 0;
+          let endOffset = linkValue.length;
+
+          if (isFrontmatterLinkCacheWithOffsets(link)) {
+            startOffset = link.startOffset;
+            endOffset = link.endOffset;
+          }
+
+          actualLink = linkValue.slice(startOffset, endOffset);
         } else {
           return true;
         }

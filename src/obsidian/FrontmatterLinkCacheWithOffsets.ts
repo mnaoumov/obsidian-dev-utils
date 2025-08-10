@@ -37,6 +37,6 @@ export function isFrontmatterLinkCacheWithOffsets(reference: Reference): referen
     return false;
   }
 
-  const frontmatterLinkCacheEx = reference as Partial<FrontmatterLinkCacheWithOffsets>;
-  return frontmatterLinkCacheEx.startOffset !== undefined && frontmatterLinkCacheEx.endOffset !== undefined;
+  const frontmatterLinkCacheWithOffsets = reference as Partial<FrontmatterLinkCacheWithOffsets>;
+  return frontmatterLinkCacheWithOffsets.startOffset !== undefined && frontmatterLinkCacheWithOffsets.endOffset !== undefined;
 }
