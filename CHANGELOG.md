@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 30.4.1
+
+- Fix scrolling gap
+
 ## 30.4.0
 
 - Ensure replaceAll execution order
