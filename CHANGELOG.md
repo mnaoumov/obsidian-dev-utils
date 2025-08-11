@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 30.5.0
+
+- Add revalidate
+
 ## 30.4.1
 
 - Fix scrolling gap
