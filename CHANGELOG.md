@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 30.6.0
+
+- removeUndefinedProperties
+
 ## 30.5.1
 
 - Polyfill `AbortSignal.any()`. Needed for https://github.com/mnaoumov/obsidian-backlink-cache/issues/9
