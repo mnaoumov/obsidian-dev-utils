@@ -238,5 +238,12 @@ export class CodeHighlighterComponent extends ValueComponent<string>
     const prism = await loadPrism();
     prism.highlightElement(this.codeEl);
     this.preEl.toggleClass(CssClass.IsPlaceholder, this.isEmpty());
+    requestAnimationFrame(() => {
+      const gap = Math.max(0, this.inputEl.scrollHeight - this.preEl.scrollHeight);
+      this.preEl.setCssProps({
+        '--bottom-gap': `${gap}px`
+      });
+      this.handleScroll();
+    });
   }
 }
