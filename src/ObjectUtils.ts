@@ -412,6 +412,24 @@ export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): 
 }
 
 /**
+ * Removes all undefined properties from an object.
+ *
+ * @param obj - The object to remove undefined properties from.
+ * @param keysToKeep - The keys to keep.
+ * @returns The object with all undefined properties removed.
+ */
+export function removeUndefinedProperties<T extends object>(obj: T, keysToKeep?: StringKeys<T>[]): T {
+  keysToKeep ??= [];
+  for (const [key, value] of Object.entries(obj) as [StringKeys<T>, unknown][]) {
+    if (value === undefined && !keysToKeep.includes(key)) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete obj[key];
+    }
+  }
+  return obj;
+}
+
+/**
  * Sets the value of a nested property in an object.
  *
  * @param obj - The object to set the nested property value in.
