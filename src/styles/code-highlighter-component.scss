@@ -28,6 +28,12 @@
       z-index: 1;
     }
 
+    pre::after {
+      content: "";
+      display: block;
+      height: var(--bottom-gap, 0);
+    }
+
     pre.is-placeholder {
       opacity: 0.6;
     }
