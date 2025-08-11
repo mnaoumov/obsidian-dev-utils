@@ -26,8 +26,8 @@ import {
   invokeAsyncSafely
 } from '../../../Async.ts';
 import { CssClass } from '../../../CssClass.ts';
-import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 import { toPx } from '../../../HTMLElement.ts';
+import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 
 /**
  * A component that displays and edits code.
