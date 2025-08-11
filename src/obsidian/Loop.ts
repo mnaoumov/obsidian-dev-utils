@@ -109,7 +109,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
       return;
     }
     iterationCount++;
-    const iterationStr = `# ${iterationCount.toString()} / ${items.length.toString()}`;
+    const iterationStr = `# ${String(iterationCount)} / ${String(items.length)}`;
     const message = fullOptions.buildNoticeMessage(item, iterationStr);
     if (!fullOptions.shouldShowProgressBar) {
       notice?.setMessage(message);

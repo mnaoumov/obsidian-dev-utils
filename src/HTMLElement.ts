@@ -202,7 +202,7 @@ export function onAncestorScrollOrResize(node: Node, callback: () => void): () =
  * @returns The number as a string with 'px' appended.
  */
 export function toPx(value: number): string {
-  return `${value.toString()}px`;
+  return `${String(value)}px`;
 }
 
 function getLoadableElements(el: Element): Element[] {

@@ -41,7 +41,7 @@ export abstract class TypedRangeTextComponent<T> extends TypedTextComponent<T> {
    * @returns The component.
    */
   public setStep(step: number): this {
-    this.inputEl.step = step.toString();
+    this.inputEl.step = String(step);
     return this;
   }
 }

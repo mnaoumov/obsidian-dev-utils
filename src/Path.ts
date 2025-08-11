@@ -172,7 +172,7 @@ export function resolve(...pathSegments: string[]): string {
  * @returns A new buffer containing the POSIX-style path.
  */
 export function toPosixBuffer(buffer: Buffer): Buffer {
-  return Buffer.from(toPosixPath(buffer.toString()));
+  return Buffer.from(toPosixPath(String(buffer)));
 }
 
 /**

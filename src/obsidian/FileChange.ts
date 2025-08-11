@@ -363,7 +363,7 @@ async function applyCanvasChanges(
     }
 
     const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.reference.originalReference, change.newContent));
-    node.text = await applyContentChanges(node.text, `${path}.node${nodeIndex.toString()}.VIRTUAL_FILE.md`, contentChanges, shouldRetryOnInvalidChanges);
+    node.text = await applyContentChanges(node.text, `${path}.node${String(nodeIndex)}.VIRTUAL_FILE.md`, contentChanges, shouldRetryOnInvalidChanges);
   }
 
   return JSON.stringify(canvasData, null, '\t');

@@ -283,7 +283,7 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
  */
 export function insertCodeBlock(dv: DataviewInlineApi, language: string, code: string): void {
   const MIN_FENCE_LENGTH = 3;
-  const fenceRegExp = new RegExp(`^\`{${MIN_FENCE_LENGTH.toString()},}`, 'gm');
+  const fenceRegExp = new RegExp(`^\`{${String(MIN_FENCE_LENGTH)},}`, 'gm');
   const fenceMatches = code.matchAll(fenceRegExp);
   const fenceLengths = Array.from(fenceMatches).map((fenceMatch) => fenceMatch[0].length);
   const maxFenceLength = Math.max(0, ...fenceLengths);
@@ -409,7 +409,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     }
 
     for (let i = Math.max(1, pageNumber - SECOND_PAGE_NUMBER); i <= Math.min(totalPages, pageNumber + SECOND_PAGE_NUMBER); i++) {
-      const pageLink = createPageLink(i.toString(), i, i === pageNumber);
+      const pageLink = createPageLink(String(i), i, i === pageNumber);
       if (i === pageNumber) {
         pageLink.addClass('current');
       }
@@ -428,9 +428,9 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
 
     const itemsPerPageSelect = paginationRow2Div.createEl('select');
     itemsPerPageOptions.forEach((option: number): void => {
-      itemsPerPageSelect.createEl('option', { text: option.toString(), value: option.toString() });
+      itemsPerPageSelect.createEl('option', { text: String(option), value: String(option) });
     });
-    itemsPerPageSelect.value = itemsPerPage.toString();
+    itemsPerPageSelect.value = String(itemsPerPage);
     itemsPerPageSelect.addEventListener(
       'change',
       convertAsyncToSync(async (): Promise<void> => {
@@ -455,10 +455,10 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
       })
     );
 
-    paginationRow2Div.createSpan({ text: `  Page ${pageNumber.toString()} of ${totalPages.toString()}, Total items: ${rows.length.toString()}` });
+    paginationRow2Div.createSpan({ text: `  Page ${String(pageNumber)} of ${String(totalPages)}, Total items: ${String(rows.length)}` });
 
     function createPageLink(text: string, currentPageNumber: number, disabled = false): HTMLAnchorElement {
-      const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${currentPageNumber.toString()}`, text });
+      const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${String(currentPageNumber)}`, text });
       if (disabled) {
         link.addClass('disabled');
         link.onclick = (event: MouseEvent): void => {

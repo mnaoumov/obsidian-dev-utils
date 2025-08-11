@@ -130,7 +130,7 @@ export abstract class Transformer {
     }
 
     if (Array.isArray(value)) {
-      return value.map((childValue, index) => this.transformValueRecursively(childValue, index.toString()));
+      return value.map((childValue, index) => this.transformValueRecursively(childValue, String(index)));
     }
 
     const transformedValueWrapper = value as Partial<TransformedValueWrapper>;

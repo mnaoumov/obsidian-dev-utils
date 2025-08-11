@@ -534,11 +534,11 @@ function applySubstitutions(options: ApplySubstitutionsOptions): MaybeReturn<str
     case TokenSubstitutionKey.CircularReference:
       return options.substitutions.circularReference;
     case TokenSubstitutionKey.Function:
-      return options.functionTexts[options.index] ?? throwExpression(new Error(`Function with index ${options.index.toString()} not found`));
+      return options.functionTexts[options.index] ?? throwExpression(new Error(`Function with index ${String(options.index)} not found`));
     case TokenSubstitutionKey.MaxDepthLimitReached:
       return options.substitutions.maxDepthLimitReached;
     case TokenSubstitutionKey.MaxDepthLimitReachedArray:
-      return `Array(${options.index.toString()})`;
+      return `Array(${String(options.index)})`;
     case TokenSubstitutionKey.ToJSONFailed:
       return options.substitutions.toJSONFailed;
     case TokenSubstitutionKey.Undefined:
@@ -630,7 +630,7 @@ function handleArray(
     return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length);
   }
 
-  return value.map((item, index) => toPlainObject(item, index.toString(), depth + 1, canUseToJSON, fullOptions, functionTexts, usedObjects));
+  return value.map((item, index) => toPlainObject(item, String(index), depth + 1, canUseToJSON, fullOptions, functionTexts, usedObjects));
 }
 
 function handleCircularReference(value: object, key: string, fullOptions: ToJsonOptions): unknown {
@@ -650,7 +650,7 @@ function handleFunction(value: Function, functionTexts: string[], fullOptions: T
   }
   const index = functionTexts.length;
   const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full
-    ? value.toString()
+    ? String(value)
     : `function ${value.name || 'anonymous'}() { /* ... */ }`;
   functionTexts.push(functionText);
   return makePlaceholder(TokenSubstitutionKey.Function, index);
@@ -719,7 +719,7 @@ function makeObjectTokenSubstitution(key: TokenSubstitutionKey): string {
 }
 
 function makePlaceholder(key: TokenSubstitutionKey, index?: number): string {
-  return `[[${key}${index?.toString() ?? ''}]]`;
+  return `[[${key}${index ? String(index) : ''}]]`;
 }
 
 function toPlainObject(
