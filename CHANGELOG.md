@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 30.4.0
+
+- Ensure replaceAll execution order
+
 ## 30.3.0
 
 - extractDefaultExportInterop
