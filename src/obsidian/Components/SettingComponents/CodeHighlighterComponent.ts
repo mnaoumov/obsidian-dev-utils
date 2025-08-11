@@ -27,6 +27,7 @@ import {
 } from '../../../Async.ts';
 import { CssClass } from '../../../CssClass.ts';
 import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
+import { toPx } from '../../../HTMLElement.ts';
 
 /**
  * A component that displays and edits code.
@@ -241,7 +242,7 @@ export class CodeHighlighterComponent extends ValueComponent<string>
     requestAnimationFrame(() => {
       const gap = Math.max(0, this.inputEl.scrollHeight - this.preEl.scrollHeight);
       this.preEl.setCssProps({
-        '--bottom-gap': `${gap}px`
+        '--bottom-gap': toPx(gap)
       });
       this.handleScroll();
     });
