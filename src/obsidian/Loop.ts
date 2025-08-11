@@ -8,6 +8,7 @@ import type { Promisable } from 'type-fest';
 
 import { Notice } from 'obsidian';
 
+import { abortSignalNever } from '../AbortController.ts';
 import { requestAnimationFrameAsync } from '../Async.ts';
 import { getLibDebugger } from '../Debug.ts';
 import {
@@ -65,7 +66,7 @@ export interface LoopOptions<T> {
  */
 export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   const DEFAULT_OPTIONS: Required<LoopOptions<T>> = {
-    abortSignal: AbortSignal.any([]),
+    abortSignal: abortSignalNever,
     buildNoticeMessage() {
       throw new Error('buildNoticeMessage is required');
     },
