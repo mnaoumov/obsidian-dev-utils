@@ -216,7 +216,7 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
       throw new Error(`Invalid version update type: ${versionType}`);
   }
 
-  return `${major.toString()}.${minor.toString()}.${patch.toString()}${beta > 0 ? `-beta.${beta.toString()}` : ''}`;
+  return `${String(major)}.${String(minor)}.${String(patch)}${beta > 0 ? `-beta.${String(beta)}` : ''}`;
 }
 
 /**

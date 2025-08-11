@@ -22,5 +22,5 @@ export function relativePathToResourceUrl(app: App, relativePath: string, notePa
   const noteFullPath = toPosixPath(app.vault.adapter.getFullRealPath(notePath));
   const noteUrl = `${Platform.resourcePathPrefix}${noteFullPath}`;
   const relativeUrl = new URL(relativePath, noteUrl);
-  return relativeUrl.toString();
+  return String(relativeUrl);
 }

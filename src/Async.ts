@@ -247,14 +247,14 @@ export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptio
       }
       if (isSuccess) {
         if (attempt > 1) {
-          retryWithTimeoutDebugger(`Retry completed successfully after ${attempt.toString()} attempts`);
+          retryWithTimeoutDebugger(`Retry completed successfully after ${String(attempt)} attempts`);
           retryWithTimeoutDebugger.printStackTrace(stackTrace);
         }
         return;
       }
 
       retryWithTimeoutDebugger(
-        `Retry attempt ${attempt.toString()} completed unsuccessfully. Trying again in ${fullOptions.retryDelayInMilliseconds.toString()} milliseconds`,
+        `Retry attempt ${String(attempt)} completed unsuccessfully. Trying again in ${String(fullOptions.retryDelayInMilliseconds)} milliseconds`,
         {
           fn
         }
@@ -297,7 +297,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
     try {
       result = await fn();
       const duration = performance.now() - startTime;
-      getLibDebugger('Async:runWithTimeout')(`Execution time: ${duration.toString()} milliseconds`, { context, fn });
+      getLibDebugger('Async:runWithTimeout')(`Execution time: ${String(duration)} milliseconds`, { context, fn });
     } finally {
       isTimedOut = false;
     }
@@ -313,7 +313,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
       return;
     }
     const duration = performance.now() - startTime;
-    console.warn(`Timed out in ${duration.toString()} milliseconds`, { context, fn });
+    console.warn(`Timed out in ${String(duration)} milliseconds`, { context, fn });
     const _debugger = getLibDebugger('Async:runWithTimeout:timeout');
     if (_debugger.enabled) {
       _debugger(
@@ -369,7 +369,7 @@ export function throwOnAbort(abortSignal: AbortSignal): Promise<void> {
  */
 export async function timeout(timeoutInMilliseconds: number): Promise<never> {
   await sleep(timeoutInMilliseconds);
-  throw new Error(`Timed out in ${timeoutInMilliseconds.toString()} milliseconds`);
+  throw new Error(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`);
 }
 
 /**

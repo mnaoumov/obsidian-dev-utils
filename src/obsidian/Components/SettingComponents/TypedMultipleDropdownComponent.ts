@@ -78,7 +78,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
       this.values.push(value);
       index = this.values.length - 1;
     }
-    this.multipleDropdownComponent.addOption(index.toString(), display);
+    this.multipleDropdownComponent.addOption(String(index), display);
     return this;
   }
 
@@ -136,7 +136,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    */
   public setValue(value: readonly T[]): this {
     const indices = value.map((v) => this.values.indexOf(v)).filter((index) => index !== -1);
-    this.multipleDropdownComponent.setValue(indices.map((index) => index.toString()));
+    this.multipleDropdownComponent.setValue(indices.map((index) => String(index)));
     return this;
   }
 }

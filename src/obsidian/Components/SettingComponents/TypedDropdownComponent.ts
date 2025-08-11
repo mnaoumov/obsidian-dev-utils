@@ -79,7 +79,7 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
       this.values.push(value);
       index = this.values.length - 1;
     }
-    this.dropdownComponent.addOption(index.toString(), display);
+    this.dropdownComponent.addOption(String(index), display);
     return this;
   }
 

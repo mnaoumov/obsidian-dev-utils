@@ -79,7 +79,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 
       build.initialOptions.banner ??= {};
       build.initialOptions.banner['js'] ??= '';
-      build.initialOptions.banner['js'] += `\n(${(isEsm ? initEsm : initCjs).toString()})();\n`;
+      build.initialOptions.banner['js'] += `\n(${String((isEsm ? initEsm : initCjs))})();\n`;
 
       build.onLoad({ filter: /\.(?:js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
         let contents = await readFile(args.path, 'utf-8');
@@ -89,7 +89,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
           if (!contents.includes(key)) {
             continue;
           }
-          const valueStr = typeof value === 'function' ? `(${value.toString()})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });
+          const valueStr = typeof value === 'function' ? `(${String(value)})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });
           if (contents.includes(`var ${variable}`)) {
             continue;
           }

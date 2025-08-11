@@ -40,5 +40,5 @@ export function fixTitle(dv: DataviewInlineApi, pathOrFile: PathOrFile, isFolder
  * @returns A string representing the link in the format: "linkText (linkPath)".
  */
 export function makeLinkWithPath(link: Link): string {
-  return `${link.toString()} (${link.path})`;
+  return `${String(link)} (${link.path})`;
 }

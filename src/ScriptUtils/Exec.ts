@@ -166,7 +166,7 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
 
     child.on('close', (exitCode, exitSignal) => {
       if (exitCode !== 0 && !ignoreExitCode) {
-        reject(new Error(`Command failed with exit code ${exitCode?.toString() ?? '(null)'}\n${stderr}`));
+        reject(new Error(`Command failed with exit code ${exitCode ? String(exitCode) : '(null)'}\n${stderr}`));
         return;
       }
 

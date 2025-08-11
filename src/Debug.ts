@@ -53,7 +53,7 @@ export function getDebugController(): DebugController {
  * @returns A debugger instance with a log function that includes the caller's file name and line number.
  */
 export function getDebugger(namespace: string, framesToSkip = 0): DebuggerEx {
-  const key = `${namespace}:${framesToSkip.toString()}`;
+  const key = `${namespace}:${String(framesToSkip)}`;
   const debuggersMap = getObsidianDevUtilsState(null, 'debuggers', new Map<string, DebuggerEx>()).value;
   let _debugger = debuggersMap.get(key);
   if (!_debugger) {
