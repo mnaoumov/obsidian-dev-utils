@@ -227,14 +227,19 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
     return replaceAll(str, searchValue, replacer);
   }
 
-  const replacementPromises: Promise<StringReplacement>[] = [];
+  const replacementAsyncFns: (() => Promise<StringReplacement>)[] = [];
 
   replaceAll<ReplaceGroupArgs>(str, searchValue, (commonArgs, ...groupArgs) => {
-    replacementPromises.push(resolveValue(replacer, commonArgs, ...groupArgs));
+    replacementAsyncFns.push(() => resolveValue(replacer, commonArgs, ...groupArgs));
     return '';
   });
 
-  const replacements = await Promise.all(replacementPromises);
+  const replacements: StringReplacement[] = [];
+
+  for (const asyncFn of replacementAsyncFns) {
+    replacements.push(await asyncFn());
+  }
+
   return replaceAll(str, searchValue, (args): string => replacements.shift() ?? args.substring);
 }
 
