@@ -27,6 +27,7 @@ import type { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 import type {
   ExtractPlugin,
   ExtractPluginSettings,
+  ExtractPluginSettingsPropertyNames,
   ExtractReadonlyPluginSettingsWrapper,
   PluginTypesBase
 } from './PluginTypesBase.ts';
@@ -411,6 +412,16 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     await noopAsync();
   }
 
+  /**
+   * Revalidates the settings.
+   *
+   * @returns A {@link Promise} that resolves when the settings are revalidated.
+   */
+  protected async revalidate(): Promise<void> {
+    const validationMessages = await this.plugin.settingsManager.revalidate();
+    await this.updateValidations(validationMessages);
+  }
+
   private on(
     name: 'validationMessageChanged',
     callback: (
@@ -433,12 +444,16 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     context: unknown
   ): Promise<void> {
     if (context === SAVE_TO_FILE_CONTEXT) {
-      for (const [propertyName, validationMessage] of Object.entries(newSettings.validationMessages as Record<string, string>)) {
-        await this.asyncEvents.triggerAsync('validationMessageChanged', propertyName, validationMessage);
-      }
+      await this.updateValidations(newSettings.validationMessages as Record<ExtractPluginSettingsPropertyNames<PluginTypes>, string>);
       return;
     }
 
     this.display();
+  }
+
+  private async updateValidations(validationMessages: Record<ExtractPluginSettingsPropertyNames<PluginTypes>, string>): Promise<void> {
+    for (const [propertyName, validationMessage] of Object.entries(validationMessages)) {
+      await this.asyncEvents.triggerAsync('validationMessageChanged', propertyName, validationMessage);
+    }
   }
 }

@@ -244,6 +244,16 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
   }
 
   /**
+   * Revalidates the settings.
+   *
+   * @returns The validation messages.
+   */
+  public async revalidate(): Promise<Record<ExtractPluginSettingsPropertyNames<PluginTypes>, string>> {
+    await this.edit(noop);
+    return this.currentSettingsWrapper.validationMessages;
+  }
+
+  /**
    * Saves the new plugin settings.
    *
    * @param context - The context of the save to file operation.
