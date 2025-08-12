@@ -13,9 +13,16 @@ import { getStackTrace } from '../Error.ts';
  *
  * @param title - The title of the log.
  * @param fn - The function to invoke.
+ * @param abortSignal - The abort signal to control the execution of the function.
  * @param stackTrace - Optional stack trace.
  */
-export async function invokeAsyncAndLog(title: string, fn: () => Promisable<void>, stackTrace?: string): Promise<void> {
+export async function invokeAsyncAndLog(
+  title: string,
+  fn: (abortSignal: AbortSignal) => Promisable<void>,
+  abortSignal: AbortSignal,
+  stackTrace?: string
+): Promise<void> {
+  abortSignal.throwIfAborted();
   const _debugger = getLibDebugger('Logger:invokeAsyncAndLog');
   const timestampStart = performance.now();
   stackTrace ??= getStackTrace(1);
@@ -25,7 +32,8 @@ export async function invokeAsyncAndLog(title: string, fn: () => Promisable<void
   });
   _debugger.printStackTrace(stackTrace);
   try {
-    await fn();
+    await fn(abortSignal);
+    abortSignal.throwIfAborted();
     const timestampEnd = performance.now();
     _debugger(`${title}:end`, {
       duration: timestampEnd - timestampStart,

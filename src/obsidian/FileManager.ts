@@ -86,15 +86,19 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
 export async function processFrontmatter<CustomFrontmatter = unknown>(
   app: App,
   pathOrFile: PathOrFile,
-  frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>) => Promisable<MaybeReturn<null>>,
+  frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal) => Promisable<MaybeReturn<null>>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
   const file = getFile(app, pathOrFile);
 
-  await process(app, file, async (content) => {
+  await process(app, file, async (abortSignal, content) => {
+    abortSignal.throwIfAborted();
+
     const oldFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
     const newFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
-    const result = await frontmatterFn(newFrontmatter);
+    const result = await frontmatterFn(newFrontmatter, abortSignal);
+    abortSignal.throwIfAborted();
+
     if (result === null) {
       return null;
     }

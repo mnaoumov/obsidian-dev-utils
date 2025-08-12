@@ -289,21 +289,28 @@ export async function process(
   };
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...options };
 
-  await retryWithTimeout(async () => {
+  await retryWithTimeout(async (abortSignal) => {
+    abortSignal.throwIfAborted();
+
     const oldContent = await readSafe(app, pathOrFile);
+    abortSignal.throwIfAborted();
 
     if (oldContent === null) {
       return handleMissingFile();
     }
 
-    const newContent = await resolveValue(newContentProvider, oldContent);
+    const newContent = await resolveValue(newContentProvider, abortSignal, oldContent);
+    abortSignal.throwIfAborted();
+
     if (newContent === null) {
       return false;
     }
 
     let isSuccess = true;
     const doesFileExist = await invokeFileActionSafe(app, pathOrFile, async (file) => {
+      abortSignal.throwIfAborted();
       await app.vault.process(file, (content) => {
+        abortSignal.throwIfAborted();
         if (content !== oldContent) {
           console.warn('Content has changed since it was read. Retrying...', {
             actualContent: content,
@@ -316,6 +323,8 @@ export async function process(
 
         return newContent;
       });
+
+      abortSignal.throwIfAborted();
     });
 
     if (!doesFileExist) {

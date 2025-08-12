@@ -143,19 +143,24 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
     return safeOverload(pathOrFile);
   }
   let backlinks: CustomArrayDict<Reference> = new CustomArrayDictImpl<Reference>();
-  await retryWithTimeout(async () => {
+  await retryWithTimeout(async (abortSignal) => {
+    abortSignal.throwIfAborted();
     const file = getFile(app, pathOrFile);
     await ensureMetadataCacheReady(app);
+    abortSignal.throwIfAborted();
     backlinks = getBacklinksForFileOrPath(app, file);
     for (const notePath of backlinks.keys()) {
+      abortSignal.throwIfAborted();
       const note = getFileOrNull(app, notePath);
       if (!note) {
         return false;
       }
 
       await saveNote(app, note);
+      abortSignal.throwIfAborted();
 
       const content = await readSafe(app, note);
+      abortSignal.throwIfAborted();
       if (!content) {
         return false;
       }
