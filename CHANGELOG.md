@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 30.7.0
+
+- Interrupt aborted operations
+
 ## 30.6.0
 
 - removeUndefinedProperties
