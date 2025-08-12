@@ -5,13 +5,15 @@
  */
 
 import type { Promisable } from 'type-fest';
+
+import { abortSignalNever } from './AbortController.ts';
 /**
  * Represents a value provider that can either be a direct value of type `Value` or a function that returns a value of type `Value`.
  *
  * @typeParam Value - The type of the value provided.
  * @typeParam Args - The types of arguments passed to the function if the provider is a function.
  */
-export type ValueProvider<Value, Args extends unknown[] = []> = ((...args: Args) => Promisable<Value>) | Value;
+export type ValueProvider<Value, Args extends unknown[] = []> = ((abortSignal: AbortSignal, ...args: Args) => Promisable<Value>) | Value;
 
 /**
  * Resolves a value from a value provider, which can be either a direct value or a function that returns a value.
@@ -19,12 +21,19 @@ export type ValueProvider<Value, Args extends unknown[] = []> = ((...args: Args)
  * @typeParam Args - The types of arguments passed to the function if the provider is a function.
  * @typeParam Value - The type of the value provided.
  * @param provider - The value provider to resolve.
+ * @param abortSignal - The abort signal to control the execution of the function.
  * @param args - The arguments to pass to the function if the provider is a function.
  * @returns A {@link Promise} that resolves with the value provided by the value provider.
  */
-export async function resolveValue<Value, Args extends unknown[]>(provider: ValueProvider<Value, Args>, ...args: Args): Promise<Value> {
+export async function resolveValue<Value, Args extends unknown[]>(
+  provider: ValueProvider<Value, Args>,
+  abortSignal?: AbortSignal,
+  ...args: Args
+): Promise<Value> {
+  abortSignal ??= abortSignalNever;
+  abortSignal.throwIfAborted();
   if (isFunction(provider)) {
-    return await provider(...args);
+    return await provider(abortSignal, ...args);
   }
   return provider;
 }
@@ -37,6 +46,6 @@ export async function resolveValue<Value, Args extends unknown[]>(provider: Valu
  * @param value - The value provider to check.
  * @returns `true` if the value provider is a function, otherwise `false`.
  */
-function isFunction<Value, Args extends unknown[]>(value: ValueProvider<Value, Args>): value is (...args: Args) => Promisable<Value> {
+function isFunction<Value, Args extends unknown[]>(value: ValueProvider<Value, Args>): value is (abortSignal: AbortSignal, ...args: Args) => Promisable<Value> {
   return typeof value === 'function';
 }

@@ -7,6 +7,7 @@
 import type { MaybeReturn } from './Type.ts';
 import type { ValueProvider } from './ValueProvider.ts';
 
+import { abortSignalNever } from './AbortController.ts';
 import { throwExpression } from './Error.ts';
 import { escapeRegExp } from './RegExp.ts';
 import { resolveValue } from './ValueProvider.ts';
@@ -216,13 +217,17 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
  * @param str - The string in which to perform replacements.
  * @param searchValue - The string or regular expression to search for.
  * @param replacer - A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
+ * @param abortSignal - The abort signal to control the execution of the function.
  * @returns A {@link Promise} that resolves to the string with all replacements made.
  */
 export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
   str: string,
   searchValue: RegExp | string,
-  replacer: AsyncReplacer<ReplaceGroupArgs>
+  replacer: AsyncReplacer<ReplaceGroupArgs>,
+  abortSignal?: AbortSignal
 ): Promise<string> {
+  abortSignal ??= abortSignalNever;
+  abortSignal.throwIfAborted();
   if (typeof replacer === 'string') {
     return replaceAll(str, searchValue, replacer);
   }
@@ -230,16 +235,18 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
   const replacementAsyncFns: (() => Promise<StringReplacement>)[] = [];
 
   replaceAll<ReplaceGroupArgs>(str, searchValue, (commonArgs, ...groupArgs) => {
-    replacementAsyncFns.push(() => resolveValue(replacer, commonArgs, ...groupArgs));
+    replacementAsyncFns.push(() => resolveValue(replacer, abortSignal, commonArgs, ...groupArgs));
     return '';
   });
 
   const replacements: StringReplacement[] = [];
 
   for (const asyncFn of replacementAsyncFns) {
+    abortSignal.throwIfAborted();
     replacements.push(await asyncFn());
   }
 
+  abortSignal.throwIfAborted();
   return replaceAll(str, searchValue, (args): string => replacements.shift() ?? args.substring);
 }
 

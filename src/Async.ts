@@ -6,6 +6,10 @@
 
 import type { Promisable } from 'type-fest';
 
+import {
+  abortSignalAny,
+  abortSignalNever
+} from './AbortController.ts';
 import { getLibDebugger } from './Debug.ts';
 import {
   ASYNC_ERROR_WRAPPER_MESSAGE,
@@ -218,10 +222,11 @@ export async function requestAnimationFrameAsync(): Promise<void> {
  * @param stackTrace - Optional stack trace.
  * @returns A {@link Promise} that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptions?: RetryOptions, stackTrace?: string): Promise<void> {
+export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisable<boolean>, retryOptions?: RetryOptions, stackTrace?: string): Promise<void> {
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
   stackTrace ??= getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
+    abortSignal: abortSignalNever,
     // eslint-disable-next-line no-magic-numbers
     retryDelayInMilliseconds: 100,
     shouldRetryOnError: false,
@@ -229,17 +234,20 @@ export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptio
     timeoutInMilliseconds: 5000
   };
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  await runWithTimeout(fullOptions.timeoutInMilliseconds, async () => {
+  fullOptions.abortSignal.throwIfAborted();
+
+  await runWithTimeout(fullOptions.timeoutInMilliseconds, async (abortSignal: AbortSignal) => {
+    const combinedAbortSignal = abortSignalAny([fullOptions.abortSignal, abortSignal]);
     let attempt = 0;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
-      fullOptions.abortSignal?.throwIfAborted();
+      combinedAbortSignal.throwIfAborted();
       attempt++;
       let isSuccess: boolean;
       try {
-        isSuccess = await fn();
+        isSuccess = await fn(combinedAbortSignal);
       } catch (error) {
-        if (!fullOptions.shouldRetryOnError || (error as Partial<TerminateRetry>).__terminateRetry) {
+        if (combinedAbortSignal.aborted || !fullOptions.shouldRetryOnError || (error as Partial<TerminateRetry>).__terminateRetry) {
           throw error;
         }
         printError(error);
@@ -276,10 +284,12 @@ export async function retryWithTimeout(fn: () => Promisable<boolean>, retryOptio
  * @param context - The context of the function.
  * @returns A {@link Promise} that resolves with the result of the asynchronous function or rejects if it times out.
  */
-export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () => Promisable<R>, context?: unknown): Promise<R> {
+export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: (abortSignal: AbortSignal) => Promisable<R>, context?: unknown): Promise<R> {
   let isTimedOut = true;
   let result: R = null as R;
   const startTime = performance.now();
+
+  const abortController = new AbortController();
 
   if (timeoutInMilliseconds === INFINITE_TIMEOUT) {
     await run();
@@ -295,7 +305,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
 
   async function run(): Promise<void> {
     try {
-      result = await fn();
+      result = await fn(abortController.signal);
       const duration = performance.now() - startTime;
       getLibDebugger('Async:runWithTimeout')(`Execution time: ${String(duration)} milliseconds`, { context, fn });
     } finally {
@@ -321,6 +331,7 @@ export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: () =>
       );
       await innerTimeout();
     }
+    abortController.abort();
   }
 }
 

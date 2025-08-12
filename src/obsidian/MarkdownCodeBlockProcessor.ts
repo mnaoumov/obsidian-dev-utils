@@ -13,6 +13,7 @@ import { parse } from 'shell-quote';
 
 import type { ValueProvider } from '../ValueProvider.ts';
 
+import { abortSignalNever } from '../AbortController.ts';
 import { throwExpression } from '../Error.ts';
 import { replaceAll } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
@@ -46,13 +47,18 @@ export function getCodeBlockArguments(ctx: MarkdownPostProcessorContext, el: HTM
  * @param ctx - The MarkdownPostProcessorContext object.
  * @param el - The HTMLElement representing the code block.
  * @param codeBlockProvider - The ValueProvider that provides the new code block.
+ * @param abortSignal - The abort signal to control the execution of the function.
  */
 export async function replaceCodeBlock(
   app: App,
   ctx: MarkdownPostProcessorContext,
   el: HTMLElement,
-  codeBlockProvider: ValueProvider<string, [string]>
+  codeBlockProvider: ValueProvider<string, [string]>,
+  abortSignal?: AbortSignal
 ): Promise<void> {
+  abortSignal ??= abortSignalNever;
+  abortSignal.throwIfAborted();
+
   const sectionInfo = ctx.getSectionInfo(el);
   if (!sectionInfo) {
     return;
@@ -61,7 +67,8 @@ export async function replaceCodeBlock(
   const prefix = lines.slice(0, sectionInfo.lineStart).join('\n');
   const oldCodeBlock = lines.slice(sectionInfo.lineStart, sectionInfo.lineEnd + 1).join('\n');
   const suffix = lines.slice(sectionInfo.lineEnd + 1).join('\n');
-  const newCodeBlock = await resolveValue(codeBlockProvider, oldCodeBlock);
+  const newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
+  abortSignal.throwIfAborted();
   const newSectionText = `${prefix}\n${newCodeBlock}${newCodeBlock ? '\n' : ''}${suffix}`;
-  await process(app, ctx.sourcePath, (content) => replaceAll(content, sectionInfo.text, newSectionText));
+  await process(app, ctx.sourcePath, (_abortSignal, content) => replaceAll(content, sectionInfo.text, newSectionText));
 }

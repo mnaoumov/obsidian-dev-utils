@@ -35,6 +35,7 @@ import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { ProcessOptions } from './Vault.ts';
 
+import { abortSignalNever } from '../AbortController.ts';
 import {
   normalizeOptionalProperties,
   toJson
@@ -555,17 +556,26 @@ export async function editLinks(
  * @param app - The Obsidian application instance.
  * @param content - The content to edit the links in.
  * @param linkConverter - The function that converts each link.
+ * @param abortSignal - The abort signal to control the execution of the function.
  * @returns The promise that resolves to the updated content.
  */
 export async function editLinksInContent(
   app: App,
   content: string,
-  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>
+  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
+  abortSignal?: AbortSignal
 ): Promise<string> {
-  const newContent = await applyContentChanges(content, '', async () => {
+  abortSignal ??= abortSignalNever;
+  abortSignal.throwIfAborted();
+
+  const newContent = await applyContentChanges(abortSignal, content, '', async () => {
     const cache = await parseMetadata(app, content);
-    return await getFileChanges(cache, false, linkConverter);
+    abortSignal.throwIfAborted();
+    const changes = await getFileChanges(cache, false, linkConverter, abortSignal);
+    abortSignal.throwIfAborted();
+    return changes;
   });
+  abortSignal.throwIfAborted();
 
   if (newContent === null) {
     throw new Error('Failed to update links in content');
@@ -1131,8 +1141,12 @@ function generateWikiLink(linkText: string, alias: string | undefined, isEmbed: 
 async function getFileChanges(
   cache: CachedMetadata | null,
   isCanvasFileCache: boolean,
-  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>
+  linkConverter: (link: Reference, abortSignal: AbortSignal) => Promisable<MaybeReturn<string>>,
+  abortSignal?: AbortSignal
 ): Promise<FileChange[]> {
+  abortSignal ??= abortSignalNever;
+  abortSignal.throwIfAborted();
+
   if (!cache) {
     return [];
   }
@@ -1145,7 +1159,9 @@ async function getFileChanges(
   }));
 
   for (const link of getAllLinks(cache)) {
-    const newContent = await linkConverter(link);
+    abortSignal.throwIfAborted();
+    const newContent = await linkConverter(link, abortSignal);
+    abortSignal.throwIfAborted();
     if (newContent === undefined) {
       continue;
     }

@@ -80,6 +80,7 @@ type FrontmatterChangeWithOffsets = { reference: FrontmatterLinkCacheWithOffsets
 /**
  * Applies a series of content changes to the specified content.
  *
+ * @param abortSignal - The abort signal to control the execution of the function.
  * @param content - The content to which the changes should be applied.
  * @param path - The path to which the changes should be applied.
  * @param changesProvider - A provider that returns an array of content changes to apply.
@@ -87,12 +88,14 @@ type FrontmatterChangeWithOffsets = { reference: FrontmatterLinkCacheWithOffsets
  * @returns A {@link Promise} that resolves to the updated content or to `null` if update didn't succeed.
  */
 export async function applyContentChanges(
+  abortSignal: AbortSignal,
   content: string,
   path: string,
   changesProvider: ValueProvider<FileChange[]>,
   shouldRetryOnInvalidChanges = true
 ): Promise<null | string> {
-  let changes = await resolveValue(changesProvider);
+  abortSignal.throwIfAborted();
+  let changes = await resolveValue(changesProvider, abortSignal);
   let frontmatter: CombinedFrontmatter<unknown> = {};
   let hasFrontmatterError = false;
   try {
@@ -192,7 +195,8 @@ export async function applyContentChanges(
     }
   }
 
-  await applyFrontmatterChangesWithOffsets(frontmatter, frontmatterChangesWithOffsetMap, path);
+  await applyFrontmatterChangesWithOffsets(abortSignal, frontmatter, frontmatterChangesWithOffsetMap, path);
+  abortSignal.throwIfAborted();
 
   newContent += content.slice(lastIndex);
   if (frontmatterChanged) {
@@ -220,12 +224,12 @@ export async function applyFileChanges(
   processOptions: ProcessOptions = {},
   shouldRetryOnInvalidChanges = true
 ): Promise<void> {
-  await process(app, pathOrFile, async (content) => {
+  await process(app, pathOrFile, async (abortSignal, content) => {
     if (isCanvasFile(app, pathOrFile)) {
-      return applyCanvasChanges(content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
+      return await applyCanvasChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
     }
 
-    return await applyContentChanges(content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
+    return await applyContentChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
   }, processOptions);
 }
 
@@ -290,12 +294,13 @@ export function isFrontmatterChangeWithOffsets(fileChange: FileChange): fileChan
 }
 
 async function applyCanvasChanges(
+  abortSignal: AbortSignal,
   content: string,
   path: string,
   changesProvider: ValueProvider<FileChange[]>,
   shouldRetryOnInvalidChanges = true
 ): Promise<null | string> {
-  const changes = await resolveValue(changesProvider);
+  const changes = await resolveValue(changesProvider, abortSignal);
   const canvasData = parseJsonSafe(content) as CanvasData;
 
   const canvasTextChanges = new Map<number, CanvasTextNodeChange[]>();
@@ -363,13 +368,20 @@ async function applyCanvasChanges(
     }
 
     const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.reference.originalReference, change.newContent));
-    node.text = await applyContentChanges(node.text, `${path}.node${String(nodeIndex)}.VIRTUAL_FILE.md`, contentChanges, shouldRetryOnInvalidChanges);
+    node.text = await applyContentChanges(
+      abortSignal,
+      node.text,
+      `${path}.node${String(nodeIndex)}.VIRTUAL_FILE.md`,
+      contentChanges,
+      shouldRetryOnInvalidChanges
+    );
   }
 
   return JSON.stringify(canvasData, null, '\t');
 }
 
 async function applyFrontmatterChangesWithOffsets(
+  abortSignal: AbortSignal,
   frontmatter: CombinedFrontmatter<unknown>,
   frontmatterChangesWithOffsetMap: Map<string, FrontmatterChangeWithOffsets[]>,
   path: string
@@ -401,7 +413,7 @@ async function applyFrontmatterChangesWithOffsets(
       }
     } as ContentChange));
 
-    const newPropertyValue = await applyContentChanges(propertyValue, `${path}.frontmatter.${key}.VIRTUAL_FILE.md`, contentChanges);
+    const newPropertyValue = await applyContentChanges(abortSignal, propertyValue, `${path}.frontmatter.${key}.VIRTUAL_FILE.md`, contentChanges);
     if (newPropertyValue === null) {
       return;
     }
