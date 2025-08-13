@@ -32,6 +32,11 @@ export enum CalloutMode {
  */
 export interface RenderCalloutOptions {
   /**
+   * The abort signal.
+   */
+  abortSignal?: AbortSignal;
+
+  /**
    * An optional provider for the content, which can be either a string or a Node.
    */
   contentProvider?: ValueProvider<MaybeReturn<Node | string>>;
@@ -79,18 +84,21 @@ export function renderCallout(options: RenderCalloutOptions): void {
     for (const entry of entries) {
       if (entry.isIntersecting) {
         observer.unobserve(entry.target);
-        addToQueue(dv.app, loadContent);
+        addToQueue(dv.app, loadContent, options.abortSignal);
       }
     }
   });
   observer.observe(contentDiv);
 
-  async function loadContent(): Promise<void> {
+  async function loadContent(abortSignal: AbortSignal): Promise<void> {
+    abortSignal.throwIfAborted();
     let content: MaybeReturn<Node | string | undefined>;
 
     const paragraph = await getRenderedContainer(dv, async () => {
-      content = await resolveValue(contentProvider);
+      content = await resolveValue(contentProvider, abortSignal);
+      abortSignal.throwIfAborted();
     });
+    abortSignal.throwIfAborted();
 
     content ??= paragraph;
 
