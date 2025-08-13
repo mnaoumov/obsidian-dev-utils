@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 31.0.0
+
+- Ensure removeUndefinedProperties forces exclusions
+- Assert no duplicate keys
+- Unique array
+- Update libs
+
 ## 30.7.0
 
 - Interrupt aborted operations
