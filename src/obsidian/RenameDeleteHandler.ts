@@ -369,7 +369,8 @@ async function handleCaseCollision(
   return true;
 }
 
-async function handleDelete(app: App, path: string): Promise<void> {
+async function handleDelete(app: App, path: string, abortSignal: AbortSignal): Promise<void> {
+  abortSignal.throwIfAborted();
   getLibDebugger('RenameDeleteHandler:handleDelete')(`Handle Delete ${path}`);
   if (!isNoteEx(app, path)) {
     return;
@@ -403,10 +404,12 @@ async function handleDelete(app: App, path: string): Promise<void> {
 
       parentFolderPaths.add(attachmentFile.parent?.path ?? '');
       await deleteSafe(app, attachmentFile, path, false, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
+      abortSignal.throwIfAborted();
     }
   }
 
   await cleanupParentFolders(app, Array.from(parentFolderPaths), path);
+  abortSignal.throwIfAborted();
 
   const attachmentFolderPath = await getAttachmentFolderPath(app, path);
   const attachmentFolder = getFolderOrNull(app, attachmentFolderPath);
@@ -419,7 +422,10 @@ async function handleDelete(app: App, path: string): Promise<void> {
     return;
   }
 
+  abortSignal.throwIfAborted();
+
   await deleteSafe(app, attachmentFolder, path, false, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
+  abortSignal.throwIfAborted();
 }
 
 function handleDeleteIfEnabled(plugin: Plugin, file: TAbstractFile): void {
@@ -428,7 +434,7 @@ function handleDeleteIfEnabled(plugin: Plugin, file: TAbstractFile): void {
     return;
   }
   const path = file.path;
-  addToQueue(app, () => handleDelete(app, path));
+  addToQueue(app, (abortSignal) => handleDelete(app, path, abortSignal));
 }
 
 function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
@@ -479,7 +485,7 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
   const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
   const oldPathLinks = cache ? getAllLinks(cache) : [];
   const oldPathBacklinksMap = getBacklinksForFileOrPath(app, oldPath).data;
-  addToQueue(app, () => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks));
+  addToQueue(app, (abortSignal) => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, abortSignal));
 }
 
 async function handleRenameAsync(
@@ -488,17 +494,25 @@ async function handleRenameAsync(
   newPath: string,
   oldPathBacklinksMap: Map<string, Reference[]>,
   oldPathLinks: Reference[],
-  interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>
+  interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>,
+  abortSignal?: AbortSignal
 ): Promise<void> {
+  abortSignal ??= abortSignalNever;
+  abortSignal.throwIfAborted();
   await continueInterruptedRenames(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
+  abortSignal.throwIfAborted();
   await refreshLinks(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
+  abortSignal.throwIfAborted();
   if (await handleCaseCollision(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks)) {
     return;
   }
 
+  abortSignal.throwIfAborted();
+
   try {
     const renameMap = new Map<string, string>();
     await fillRenameMap(app, oldPath, newPath, renameMap, oldPathLinks);
+    abortSignal.throwIfAborted();
 
     const combinedBacklinksMap = new Map<string, Map<string, string>>();
     initBacklinksMap(oldPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
@@ -523,6 +537,7 @@ async function handleRenameAsync(
     }
 
     await cleanupParentFolders(app, Array.from(parentFolderPaths), oldPath);
+    abortSignal.throwIfAborted();
     const settings = getSettings(app);
 
     for (
@@ -552,6 +567,7 @@ async function handleRenameAsync(
       }, {
         shouldFailOnMissingFile: false
       });
+      abortSignal.throwIfAborted();
     }
 
     if (isNoteEx(app, newPath)) {
@@ -562,6 +578,7 @@ async function handleRenameAsync(
         shouldFailOnMissingFile: false,
         shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
       }));
+      abortSignal.throwIfAborted();
     }
 
     if (!getFileOrNull(app, newPath)) {
@@ -581,7 +598,7 @@ async function handleRenameAsync(
       for (const key of orphanKeys) {
         handledRenames.delete(key);
       }
-    });
+    }, abortSignal);
   }
 }
 
