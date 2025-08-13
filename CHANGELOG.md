@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 32.0.0
+
+- Rename validation variables
+- oneOf regExp
+
 ## 31.3.0
 
 - Get file name validation reg exps
