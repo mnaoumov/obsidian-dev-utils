@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 32.0.1
+
+- Remove old fn
+
 ## 32.0.0
 
 - Rename validation variables
