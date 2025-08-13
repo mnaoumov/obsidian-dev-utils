@@ -1,7 +1,7 @@
 /**
  * @packageDocumentation
  *
- * Validation message utilities.
+ * Validation utilities.
  */
 
 import { Platform } from 'obsidian';
