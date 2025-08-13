@@ -10,6 +10,10 @@ import type { Promisable } from 'type-fest';
 import type { ValueWrapper } from './App.ts';
 
 import {
+  abortSignalAny,
+  abortSignalNever
+} from '../AbortController.ts';
+import {
   addErrorHandler,
   invokeAsyncSafely,
   runWithTimeout
@@ -25,6 +29,7 @@ interface Queue {
 }
 
 interface QueueItem {
+  abortSignal: AbortSignal;
   fn(this: void, abortSignal: AbortSignal): Promisable<void>;
   stackTrace: string;
   timeoutInMilliseconds: number;
@@ -35,12 +40,19 @@ interface QueueItem {
  *
  * @param app - The Obsidian application instance.
  * @param fn - The function to add.
+ * @param abortSignal - Optional abort signal.
  * @param timeoutInMilliseconds - The timeout in milliseconds.
  * @param stackTrace - Optional stack trace.
  */
-export function addToQueue(app: App, fn: (abortSignal: AbortSignal) => Promisable<void>, timeoutInMilliseconds?: number, stackTrace?: string): void {
+export function addToQueue(
+  app: App,
+  fn: (abortSignal: AbortSignal) => Promisable<void>,
+  abortSignal?: AbortSignal,
+  timeoutInMilliseconds?: number,
+  stackTrace?: string
+): void {
   stackTrace ??= getStackTrace(1);
-  invokeAsyncSafely(() => addToQueueAndWait(app, fn, timeoutInMilliseconds, stackTrace));
+  invokeAsyncSafely(() => addToQueueAndWait(app, fn, abortSignal, timeoutInMilliseconds, stackTrace));
 }
 
 /**
@@ -48,20 +60,23 @@ export function addToQueue(app: App, fn: (abortSignal: AbortSignal) => Promisabl
  *
  * @param app - The Obsidian application instance.
  * @param fn - The function to add.
+ * @param abortSignal - Optional abort signal.
  * @param timeoutInMilliseconds - The timeout in milliseconds.
  * @param stackTrace - Optional stack trace.
  */
 export async function addToQueueAndWait(
   app: App,
   fn: (abortSignal: AbortSignal) => Promisable<void>,
+  abortSignal?: AbortSignal,
   timeoutInMilliseconds?: number,
   stackTrace?: string
 ): Promise<void> {
+  abortSignal ??= abortSignalNever;
   const DEFAULT_TIMEOUT_IN_MILLISECONDS = 60000;
   timeoutInMilliseconds ??= DEFAULT_TIMEOUT_IN_MILLISECONDS;
   stackTrace ??= getStackTrace(1);
   const queue = getQueue(app).value;
-  queue.items.push({ fn, stackTrace, timeoutInMilliseconds });
+  queue.items.push({ abortSignal, fn, stackTrace, timeoutInMilliseconds });
   queue.promise = queue.promise.then(() => processNextQueueItem(app));
   await queue.promise;
 }
@@ -89,7 +104,7 @@ async function processNextQueueItem(app: App): Promise<void> {
   await addErrorHandler(() =>
     runWithTimeout(
       item.timeoutInMilliseconds,
-      (abortSignal: AbortSignal) => invokeAsyncAndLog(processNextQueueItem.name, item.fn, abortSignal, item.stackTrace),
+      (abortSignal: AbortSignal) => invokeAsyncAndLog(processNextQueueItem.name, item.fn, abortSignalAny([abortSignal, item.abortSignal]), item.stackTrace),
       { queuedFn: item.fn }
     )
   );
