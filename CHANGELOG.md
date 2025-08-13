@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 31.2.0
+
+- Pass custom abortSignal to queue
+
 ## 31.1.0
 
 - Add abortSignal parameter
