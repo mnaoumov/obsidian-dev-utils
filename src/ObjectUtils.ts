@@ -6,10 +6,12 @@
 
 import type {
   Constructor,
+  RequiredKeysOf,
   UndefinedOnPartialDeep
 } from 'type-fest';
 
 import type {
+  ExactMembers,
   MaybeReturn,
   StringKeys
 } from './Type.ts';
@@ -137,6 +139,17 @@ const equalityComparerEntries = createEqualityComparerEntries(
  * A type that represents a generic object.
  */
 export type GenericObject = Record<string, unknown>;
+
+type KeysWithUndefined<T> = {
+  [K in keyof T]-?: undefined extends T[K] ? K : never;
+}[keyof T];
+
+type MandatoryKeysWithUndefined<T extends object> = Extract<RequiredKeysOf<T> & StringKeys<T>, KeysWithUndefined<T>>;
+
+type RemoveUndefinedOverload<T extends object> = MandatoryKeysWithUndefined<T> extends never ? [obj: T]
+  : never;
+
+type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string[]> = [obj: T, keysToKeep: ExactMembers<MandatoryKeysWithUndefined<T>, K>];
 
 /**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
@@ -412,16 +425,40 @@ export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): 
 }
 
 /**
+ * Removes all undefined properties from an object when there are no mandatory keys with undefined values.
+ *
+ * @typeParam Type - The type of the object.
+ * @param args - The arguments to the function.
+ * @returns The object with all undefined properties removed.
+ */
+export function removeUndefinedProperties<Type extends object>(
+  ...args: RemoveUndefinedOverload<Type>
+): Type;
+
+/**
+ * Removes all undefined properties from an object when there are mandatory keys with undefined values.
+ *
+ * @typeParam Type - The type of the object.
+ * @typeParam KeysToKeep - The keys to keep.
+ * @param args - The arguments to the function.
+ * @returns The object with all undefined properties removed.
+ */
+export function removeUndefinedProperties<Type extends object, const KeysToKeep extends readonly string[]>(
+  ...args: RemoveUndefinedWithKeysOverload<Type, KeysToKeep>
+): Type;
+
+/**
  * Removes all undefined properties from an object.
  *
+ * @typeParam Type - The type of the object.
+ * @typeParam KeysToKeep - The keys to keep.
  * @param obj - The object to remove undefined properties from.
  * @param keysToKeep - The keys to keep.
  * @returns The object with all undefined properties removed.
  */
-export function removeUndefinedProperties<T extends object>(obj: T, keysToKeep?: StringKeys<T>[]): T {
-  keysToKeep ??= [];
-  for (const [key, value] of Object.entries(obj) as [StringKeys<T>, unknown][]) {
-    if (value === undefined && !keysToKeep.includes(key)) {
+export function removeUndefinedProperties<Type extends object>(obj: Type, keysToKeep?: readonly string[]): Type {
+  for (const [key, value] of Object.entries(obj) as [StringKeys<Type>, unknown][]) {
+    if (value === undefined && !keysToKeep?.includes(key as string)) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete obj[key];
     }
