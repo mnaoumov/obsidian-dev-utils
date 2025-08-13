@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 31.3.0
+
+- Get file name validation reg exps
+- Handle delete/rename with abort signal
+
 ## 31.2.0
 
 - Pass custom abortSignal to queue
