@@ -24,3 +24,36 @@ export function filterInPlace<T>(arr: T[], predicate: (value: T, index: number, 
   }
   arr.length = writeIndex;
 }
+
+/**
+ * Remove duplicates from an array.
+ *
+ * @param arr - The array to remove duplicates from.
+ * @returns The array with duplicates removed.
+ */
+export function unique<T>(arr: readonly T[]): T[] {
+  const set = new Set<T>();
+  return arr.filter((value) => {
+    if (set.has(value)) {
+      return false;
+    }
+    set.add(value);
+    return true;
+  });
+}
+
+/**
+ * Remove duplicates from an array in place.
+ *
+ * @param arr - The array to remove duplicates from.
+ */
+export function uniqueInPlace(arr: unknown[]): void {
+  const set = new Set<unknown>();
+  filterInPlace(arr, (value) => {
+    if (set.has(value)) {
+      return false;
+    }
+    set.add(value);
+    return true;
+  });
+}
