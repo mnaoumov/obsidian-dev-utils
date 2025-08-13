@@ -26,6 +26,7 @@ import type {
   UpdateLinksInFileOptions
 } from './Link.ts';
 
+import { abortSignalNever } from '../AbortController.ts';
 import { filterInPlace } from '../Array.ts';
 import { getLibDebugger } from '../Debug.ts';
 import {
@@ -151,6 +152,10 @@ export interface RenameDeleteHandlerSettings {
   shouldUpdateFileNameAliases: boolean;
 }
 
+interface AbortablePlugin extends Plugin {
+  abortSignal?: AbortSignal;
+}
+
 interface InterruptedRename {
   combinedBacklinksMap: Map<string, Map<string, string>>;
   oldPath: string;
@@ -164,7 +169,7 @@ type RunAsyncLinkUpdateFn = FileManager['runAsyncLinkUpdate'];
  * @param plugin - The plugin instance.
  * @param settingsBuilder - A function that returns the settings for the rename delete handler.
  */
-export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: () => Partial<RenameDeleteHandlerSettings>): void {
+export function registerRenameDeleteHandlers(plugin: AbortablePlugin, settingsBuilder: () => Partial<RenameDeleteHandlerSettings>): void {
   const renameDeleteHandlersMap = getRenameDeleteHandlersMap(plugin.app);
   const pluginId = plugin.manifest.id;
 
@@ -177,15 +182,17 @@ export function registerRenameDeleteHandlers(plugin: Plugin, settingsBuilder: ()
   });
 
   const app = plugin.app;
+  const abortSignal = plugin.abortSignal ?? abortSignalNever;
+
   plugin.registerEvent(
     app.vault.on('delete', (file) => {
-      handleDeleteIfEnabled(plugin, file);
+      handleDeleteIfEnabled(plugin, file, abortSignal);
     })
   );
 
   plugin.registerEvent(
     app.vault.on('rename', (file, oldPath) => {
-      handleRenameIfEnabled(plugin, file, oldPath);
+      handleRenameIfEnabled(plugin, file, oldPath, abortSignal);
     })
   );
 
@@ -428,13 +435,13 @@ async function handleDelete(app: App, path: string, abortSignal: AbortSignal): P
   abortSignal.throwIfAborted();
 }
 
-function handleDeleteIfEnabled(plugin: Plugin, file: TAbstractFile): void {
+function handleDeleteIfEnabled(plugin: AbortablePlugin, file: TAbstractFile, abortSignal: AbortSignal): void {
   const app = plugin.app;
   if (!shouldInvokeHandler(plugin)) {
     return;
   }
   const path = file.path;
-  addToQueue(app, (abortSignal) => handleDelete(app, path, abortSignal));
+  addToQueue(app, (abortSignal2) => handleDelete(app, path, abortSignal2), abortSignal);
 }
 
 function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
@@ -459,7 +466,7 @@ function handleMetadataDeletedIfEnabled(plugin: Plugin, file: TAbstractFile, pre
   handleMetadataDeleted(plugin.app, file, prevCache);
 }
 
-function handleRename(app: App, oldPath: string, newPath: string): void {
+function handleRename(app: App, oldPath: string, newPath: string, abortSignal: AbortSignal): void {
   const key = makeKey(oldPath, newPath);
   getLibDebugger('RenameDeleteHandler:handleRename')(`Handle Rename ${key}`);
   if (handledRenames.has(key)) {
@@ -485,7 +492,7 @@ function handleRename(app: App, oldPath: string, newPath: string): void {
   const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
   const oldPathLinks = cache ? getAllLinks(cache) : [];
   const oldPathBacklinksMap = getBacklinksForFileOrPath(app, oldPath).data;
-  addToQueue(app, (abortSignal) => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, abortSignal));
+  addToQueue(app, (abortSignal2) => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, undefined, abortSignal2), abortSignal);
 }
 
 async function handleRenameAsync(
@@ -602,7 +609,7 @@ async function handleRenameAsync(
   }
 }
 
-function handleRenameIfEnabled(plugin: Plugin, file: TAbstractFile, oldPath: string): void {
+function handleRenameIfEnabled(plugin: Plugin, file: TAbstractFile, oldPath: string, abortSignal: AbortSignal): void {
   if (!shouldInvokeHandler(plugin)) {
     return;
   }
@@ -610,7 +617,7 @@ function handleRenameIfEnabled(plugin: Plugin, file: TAbstractFile, oldPath: str
     return;
   }
   const newPath = file.path;
-  handleRename(plugin.app, oldPath, newPath);
+  handleRename(plugin.app, oldPath, newPath, abortSignal);
 }
 
 function initBacklinksMap(
