@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 31.1.0
+
+- Add abortSignal parameter
+
 ## 31.0.0
 
 - Ensure removeUndefinedProperties forces exclusions
