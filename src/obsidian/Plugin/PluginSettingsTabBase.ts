@@ -21,7 +21,7 @@ import {
 import type { AsyncEventRef } from '../../AsyncEvents.ts';
 import type { StringKeys } from '../../Type.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/SettingComponents/ValueComponentWithChangeTracking.ts';
-import type { ValidationMessageHolder } from '../ValidationMessage.ts';
+import type { ValidationMessageHolder } from '../Validation.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 import type {
@@ -47,7 +47,7 @@ import { AsyncEventsComponent } from '../Components/AsyncEventsComponent.ts';
 import { ensureWrapped } from '../Components/SettingComponents/SettingComponentWrapper.ts';
 import { getTextBasedComponentValue } from '../Components/SettingComponents/TextBasedComponent.ts';
 import { getValidatorComponent } from '../Components/SettingComponents/ValidatorComponent.ts';
-import { isValidationMessageHolder } from '../ValidationMessage.ts';
+import { isValidationMessageHolder } from '../Validation.ts';
 import { addPluginCssClasses } from './PluginContext.ts';
 
 /**
