@@ -162,11 +162,11 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   const CALLER_LINE_INDEX = 4;
 
   const stackLines = new Error().stack?.split('\n') ?? [];
-  const callerLine = stackLines[CALLER_LINE_INDEX + framesToSkip] ?? '';
+  stackLines.splice(0, CALLER_LINE_INDEX + framesToSkip);
   // eslint-disable-next-line no-console
   console.debug(message, ...args);
   if (isInObsidian()) {
-    printStackTrace(namespace, callerLine, 'Debug message caller');
+    printStackTrace(namespace, stackLines.join('\n'), 'Debug message caller');
   }
 }
 
