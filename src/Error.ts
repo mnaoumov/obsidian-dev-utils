@@ -10,11 +10,6 @@ const ASYNC_ERROR_EVENT = 'asyncError';
 
 const ERROR_STACK_PREFIX = 'Error stack:\n';
 
-/**
- * The message of the error wrapper that is used to wrap an actual error that occurred during an async operation.
- */
-export const ASYNC_ERROR_WRAPPER_MESSAGE = 'An unhandled error occurred executing async operation';
-
 const asyncErrorEventEmitter = new AsyncEvents();
 asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
 
@@ -22,6 +17,48 @@ interface ErrorEntry {
   level: number;
   message: string;
   shouldClearAnsiSequence?: boolean;
+}
+
+/**
+ * The message of the AsyncWrapperError.
+ */
+export const ASYNC_WRAPPER_ERROR_MESSAGE = 'An unhandled error occurred executing async operation';
+
+/**
+ * An error that wraps an error with a custom stack trace.
+ */
+export class CustomStackTraceError extends Error {
+  /**
+   * Creates a new CustomStackTraceError.
+   *
+   * @param message - The message of the error.
+   * @param stackTrace - The stack trace of the error.
+   * @param cause - The cause of the error.
+   */
+  public constructor(message: string, stackTrace: string, cause: unknown) {
+    super(message, { cause });
+    this.name = 'CustomStackTraceError';
+    Error.captureStackTrace(this, CustomStackTraceError);
+
+    let rootCause = cause;
+    const parentCauses = new Set<CustomStackTraceError>();
+    while (rootCause instanceof CustomStackTraceError) {
+      if (parentCauses.has(rootCause)) {
+        throw new Error('Circular cause detected');
+      }
+      parentCauses.add(rootCause);
+      rootCause = rootCause.cause;
+    }
+
+    const originalStackLines = (this.stack ?? '').split('\n');
+    const stackLines = stackTrace.split('\n');
+    const ERROR_HEADER_REG_EXP = /^\w*Error(?:: |$)/;
+    if (ERROR_HEADER_REG_EXP.test(stackLines[0] ?? '')) {
+      stackLines.splice(0, 1);
+    }
+    originalStackLines.splice(1, originalStackLines.length - 1, ...stackLines);
+    this.stack = originalStackLines.join('\n');
+  }
 }
 
 /**

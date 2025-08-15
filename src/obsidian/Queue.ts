@@ -52,7 +52,7 @@ export function addToQueue(
   stackTrace?: string
 ): void {
   stackTrace ??= getStackTrace(1);
-  invokeAsyncSafely(() => addToQueueAndWait(app, fn, abortSignal, timeoutInMilliseconds, stackTrace));
+  invokeAsyncSafely(() => addToQueueAndWait(app, fn, abortSignal, timeoutInMilliseconds, stackTrace), stackTrace);
 }
 
 /**
@@ -71,7 +71,9 @@ export async function addToQueueAndWait(
   timeoutInMilliseconds?: number,
   stackTrace?: string
 ): Promise<void> {
-  abortSignal ??= abortSignalNever;
+  abortSignal ??= abortSignalNever();
+  abortSignal.throwIfAborted();
+
   const DEFAULT_TIMEOUT_IN_MILLISECONDS = 60000;
   timeoutInMilliseconds ??= DEFAULT_TIMEOUT_IN_MILLISECONDS;
   stackTrace ??= getStackTrace(1);
@@ -106,7 +108,6 @@ async function processNextQueueItem(app: App): Promise<void> {
       item.timeoutInMilliseconds,
       (abortSignal: AbortSignal) => invokeAsyncAndLog(processNextQueueItem.name, item.fn, abortSignalAny([abortSignal, item.abortSignal]), item.stackTrace),
       { queuedFn: item.fn }
-    )
-  );
+    ), item.stackTrace);
   queue.items.shift();
 }

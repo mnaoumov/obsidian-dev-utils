@@ -110,8 +110,8 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   public consoleDebug(message: string, ...args: unknown[]): void {
     // Skip the `consoleDebug()` call itself
     const FRAMES_TO_SKIP = 1;
-    const _debugger = getDebugger(this.manifest.id, FRAMES_TO_SKIP);
-    _debugger(message, ...args);
+    const pluginDebugger = getDebugger(this.manifest.id, FRAMES_TO_SKIP);
+    pluginDebugger(message, ...args);
   }
 
   /**
@@ -154,6 +154,19 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
       } finally {
         await this.triggerLifecycleEvent('unload');
       }
+    });
+  }
+
+  /**
+   * Registers a callback to be executed when a lifecycle event is triggered.
+   *
+   * @param name - The name of the event.
+   * @param callback - The callback to execute.
+   */
+  public registerForLifecycleEvent(name: LifecycleEventName, callback: () => Promise<void>): void {
+    invokeAsyncSafely(async () => {
+      await this.waitForLifecycleEvent(name);
+      await callback();
     });
   }
 
@@ -233,7 +246,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     const abortController = new AbortController();
     this._abortSignal = abortController.signal;
     this.register(() => {
-      abortController.abort();
+      abortController.abort(new Error(`Plugin ${this.manifest.id} had been unloaded`));
     });
   }
 

@@ -56,7 +56,7 @@ export async function replaceCodeBlock(
   codeBlockProvider: ValueProvider<string, [string]>,
   abortSignal?: AbortSignal
 ): Promise<void> {
-  abortSignal ??= abortSignalNever;
+  abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
 
   const sectionInfo = ctx.getSectionInfo(el);

@@ -10,6 +10,7 @@ import debug from 'debug';
 
 import type { DebugController } from './DebugController.ts';
 
+import { CustomStackTraceError } from './Error.ts';
 import { LIBRARY_NAME } from './Library.ts';
 import { getObsidianDevUtilsState } from './obsidian/App.ts';
 import {
@@ -55,20 +56,20 @@ export function getDebugController(): DebugController {
 export function getDebugger(namespace: string, framesToSkip = 0): DebuggerEx {
   const key = `${namespace}:${String(framesToSkip)}`;
   const debuggersMap = getObsidianDevUtilsState(null, 'debuggers', new Map<string, DebuggerEx>()).value;
-  let _debugger = debuggersMap.get(key);
-  if (!_debugger) {
-    _debugger = getSharedDebugLibInstance()(namespace) as DebuggerEx;
-    _debugger.log = (message: string, ...args: unknown[]): void => {
+  let debuggerEx = debuggersMap.get(key);
+  if (!debuggerEx) {
+    debuggerEx = getSharedDebugLibInstance()(namespace) as DebuggerEx;
+    debuggerEx.log = (message: string, ...args: unknown[]): void => {
       logWithCaller(namespace, framesToSkip, message, ...args);
     };
-    _debugger.printStackTrace = (stackTrace, title): void => {
+    debuggerEx.printStackTrace = (stackTrace, title): void => {
       printStackTrace(namespace, stackTrace, title);
     };
 
-    debuggersMap.set(key, _debugger);
+    debuggersMap.set(key, debuggerEx);
   }
 
-  return _debugger;
+  return debuggerEx;
 }
 
 /**
@@ -170,23 +171,30 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
 }
 
 function printStackTrace(namespace: string, stackTrace: string, title?: string): void {
-  const _debugger = getSharedDebugLibInstance()(namespace);
+  const internalDebugger = getSharedDebugLibInstance()(namespace);
 
-  if (!_debugger.enabled) {
+  if (!internalDebugger.enabled) {
     return;
   }
 
   if (!stackTrace) {
     stackTrace = '(unavailable)';
   }
-  if (!(title ?? '')) {
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+  if (!title) {
     title = 'Caller stack trace';
   }
 
-  _debugger(title);
-  const prefix = isInObsidian() ? 'StackTraceFakeError\n' : '';
+  internalDebugger(title);
+
+  if (!isInObsidian()) {
+    // eslint-disable-next-line no-console
+    console.debug(stackTrace);
+    return;
+  }
+
   // eslint-disable-next-line no-console
-  console.debug(`${prefix}${stackTrace}`);
+  console.debug(new CustomStackTraceError('This is not an actual error. It\'s just a workaround to make stack trace links clickable', stackTrace, undefined));
 }
 
 /**

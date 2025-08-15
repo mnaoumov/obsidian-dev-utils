@@ -24,7 +24,7 @@ See full documentation of [`window.DEBUG`](https://github.com/mnaoumov/obsidian-
 
 > [!NOTE]
 >
-> You will see `StackTraceFakeError` in the debug messages. They are not actual errors. It's just a workaround to make stack trace links clickable.
+> You will see `CustomStackTraceError` in the debug messages. They are not actual errors. It's just a workaround to make stack trace links clickable.
 >
 > Do not add `window.DEBUG` calls in your plugin code. This is designed to be run only from the console.
 

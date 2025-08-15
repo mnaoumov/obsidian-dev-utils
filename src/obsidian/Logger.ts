@@ -23,35 +23,46 @@ export async function invokeAsyncAndLog(
   stackTrace?: string
 ): Promise<void> {
   abortSignal.throwIfAborted();
-  const _debugger = getLibDebugger('Logger:invokeAsyncAndLog');
+  const invokeAsyncAndLogDebugger = getLibDebugger('Logger:invokeAsyncAndLog');
   const timestampStart = performance.now();
   stackTrace ??= getStackTrace(1);
-  _debugger(`${title}:start`, {
+  invokeAsyncAndLogDebugger(`${title}:start`, {
     fn,
     timestampStart
   });
-  _debugger.printStackTrace(stackTrace);
+  invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
   try {
     await fn(abortSignal);
-    abortSignal.throwIfAborted();
     const timestampEnd = performance.now();
-    _debugger(`${title}:end`, {
-      duration: timestampEnd - timestampStart,
+    const duration = timestampEnd - timestampStart;
+    if (abortSignal.aborted) {
+      invokeAsyncAndLogDebugger(`${title}:aborted`, {
+        abortReason: abortSignal.reason as unknown,
+        duration,
+        fn,
+        timestampEnd,
+        timestampStart
+      });
+      invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
+      abortSignal.throwIfAborted();
+    }
+    invokeAsyncAndLogDebugger(`${title}:end`, {
+      duration,
       fn,
       timestampEnd,
       timestampStart
     });
-    _debugger.printStackTrace(stackTrace);
+    invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
   } catch (error) {
     const timestampEnd = performance.now();
-    _debugger(`${title}:error`, {
+    invokeAsyncAndLogDebugger(`${title}:error`, {
       duration: timestampEnd - timestampStart,
       error,
       fn,
       timestampEnd,
       timestampStart
     });
-    _debugger.printStackTrace(stackTrace);
+    invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
 
     throw error;
   }

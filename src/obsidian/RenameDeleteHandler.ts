@@ -182,7 +182,7 @@ export function registerRenameDeleteHandlers(plugin: AbortablePlugin, settingsBu
   });
 
   const app = plugin.app;
-  const abortSignal = plugin.abortSignal ?? abortSignalNever;
+  const abortSignal = plugin.abortSignal ?? abortSignalNever();
 
   plugin.registerEvent(
     app.vault.on('delete', (file) => {
@@ -504,7 +504,7 @@ async function handleRenameAsync(
   interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>,
   abortSignal?: AbortSignal
 ): Promise<void> {
-  abortSignal ??= abortSignalNever;
+  abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
   await continueInterruptedRenames(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
   abortSignal.throwIfAborted();
