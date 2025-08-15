@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 32.0.2-beta.2
+
+- Add full caller call stack
+
 ## 32.0.2-beta.1
 
 - Refactor Async/AbortController
