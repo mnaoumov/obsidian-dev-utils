@@ -226,7 +226,7 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
   replacer: AsyncReplacer<ReplaceGroupArgs>,
   abortSignal?: AbortSignal
 ): Promise<string> {
-  abortSignal ??= abortSignalNever;
+  abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
   if (typeof replacer === 'string') {
     return replaceAll(str, searchValue, replacer);

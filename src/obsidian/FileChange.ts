@@ -438,8 +438,8 @@ function parseJsonSafe(content: string): GenericObject {
 }
 
 function validateChanges(changes: FileChange[], content: string, frontmatter: CombinedFrontmatter<unknown>, path: string, shouldShowWarning: boolean): boolean {
-  const _debugger = getDebugger('validateChanges');
-  const logger = shouldShowWarning ? console.warn.bind(console) : _debugger;
+  const validateChangesDebugger = getDebugger('FileChange:validateChanges');
+  const logger = shouldShowWarning ? console.warn.bind(console) : validateChangesDebugger;
   for (const change of changes) {
     if (isContentChange(change)) {
       const startOffset = change.reference.position.start.offset;

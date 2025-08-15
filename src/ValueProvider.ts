@@ -30,7 +30,7 @@ export async function resolveValue<Value, Args extends unknown[]>(
   abortSignal?: AbortSignal,
   ...args: Args
 ): Promise<Value> {
-  abortSignal ??= abortSignalNever;
+  abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
   if (isFunction(provider)) {
     return await provider(abortSignal, ...args);

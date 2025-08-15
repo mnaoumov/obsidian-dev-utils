@@ -12,8 +12,10 @@ import { abortSignalNever } from '../AbortController.ts';
 import { requestAnimationFrameAsync } from '../Async.ts';
 import { getLibDebugger } from '../Debug.ts';
 import {
-  ASYNC_ERROR_WRAPPER_MESSAGE,
-  emitAsyncErrorEvent
+  ASYNC_WRAPPER_ERROR_MESSAGE,
+  CustomStackTraceError,
+  emitAsyncErrorEvent,
+  getStackTrace
 } from '../Error.ts';
 import { noop } from '../Function.ts';
 
@@ -66,7 +68,7 @@ export interface LoopOptions<T> {
  */
 export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   const DEFAULT_OPTIONS: Required<LoopOptions<T>> = {
-    abortSignal: abortSignalNever,
+    abortSignal: abortSignalNever(),
     buildNoticeMessage() {
       throw new Error('buildNoticeMessage is required');
     },
@@ -85,6 +87,8 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     ...DEFAULT_OPTIONS,
     ...options
   };
+
+  const stackTrace = getStackTrace(1);
 
   const items = fullOptions.items;
   let iterationCount = 0;
@@ -117,7 +121,6 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     }
     getLibDebugger('Loop')(message);
 
-    const asyncErrorWrapper = new Error(ASYNC_ERROR_WRAPPER_MESSAGE);
     try {
       if (performance.now() - lastUIUpdateTimestamp > fullOptions.uiUpdateThresholdInMilliseconds) {
         await requestAnimationFrameAsync();
@@ -128,10 +131,10 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
       console.error('Error processing item', item);
       if (!fullOptions.shouldContinueOnError) {
         notice?.hide();
-        throw error;
+        throw new CustomStackTraceError('loop failed', stackTrace, error);
       }
-      asyncErrorWrapper.cause = error;
-      emitAsyncErrorEvent(asyncErrorWrapper);
+
+      emitAsyncErrorEvent(new CustomStackTraceError(ASYNC_WRAPPER_ERROR_MESSAGE, stackTrace, error));
     }
     progressBarEl.value++;
   }

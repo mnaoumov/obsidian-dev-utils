@@ -565,7 +565,7 @@ export async function editLinksInContent(
   linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
   abortSignal?: AbortSignal
 ): Promise<string> {
-  abortSignal ??= abortSignalNever;
+  abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
 
   const newContent = await applyContentChanges(abortSignal, content, '', async () => {
@@ -1144,7 +1144,7 @@ async function getFileChanges(
   linkConverter: (link: Reference, abortSignal: AbortSignal) => Promisable<MaybeReturn<string>>,
   abortSignal?: AbortSignal
 ): Promise<FileChange[]> {
-  abortSignal ??= abortSignalNever;
+  abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
 
   if (!cache) {

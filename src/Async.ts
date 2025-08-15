@@ -8,15 +8,19 @@ import type { Promisable } from 'type-fest';
 
 import {
   abortSignalAny,
-  abortSignalNever
+  abortSignalNever,
+  abortSignalTimeout,
+  waitForAbort
 } from './AbortController.ts';
 import { getLibDebugger } from './Debug.ts';
 import {
-  ASYNC_ERROR_WRAPPER_MESSAGE,
+  ASYNC_WRAPPER_ERROR_MESSAGE,
+  CustomStackTraceError,
   emitAsyncErrorEvent,
   getStackTrace,
   printError
 } from './Error.ts';
+import { noop } from './Function.ts';
 
 /**
  * A type representing a function that resolves a {@link Promise}.
@@ -25,11 +29,6 @@ import {
  */
 export type PromiseResolve<T> = undefined extends T ? (value?: PromiseLike<T> | T) => void
   : (value: PromiseLike<T> | T) => void;
-
-/**
- * A constant representing an infinite timeout.
- */
-export const INFINITE_TIMEOUT = Number.POSITIVE_INFINITY;
 
 /**
  * Options for configuring the retry behavior.
@@ -57,28 +56,18 @@ export interface RetryOptions {
 }
 
 /**
- * A marker interface to indicate that an error should terminate retry logic.
- */
-export interface TerminateRetry {
-  /**
-   * A marker property to indicate that an error should terminate retry logic.
-   */
-  __terminateRetry: true;
-}
-
-/**
  * Adds an error handler to a {@link Promise} that catches any errors and emits an async error event.
  *
  * @param asyncFn - The asynchronous function to add an error handler to.
+ * @param stackTrace - The stack trace of the source function.
  * @returns A {@link Promise} that resolves when the asynchronous function completes or emits async error event.
  */
-export async function addErrorHandler(asyncFn: () => Promise<unknown>): Promise<void> {
-  const asyncErrorWrapper = new Error(ASYNC_ERROR_WRAPPER_MESSAGE);
+export async function addErrorHandler(asyncFn: () => Promise<unknown>, stackTrace?: string): Promise<void> {
+  stackTrace ??= getStackTrace(1);
   try {
     await asyncFn();
   } catch (asyncError) {
-    asyncErrorWrapper.cause = asyncError;
-    emitAsyncErrorEvent(asyncErrorWrapper);
+    emitAsyncErrorEvent(new CustomStackTraceError(ASYNC_WRAPPER_ERROR_MESSAGE, stackTrace, asyncError));
   }
 }
 
@@ -91,8 +80,46 @@ export async function addErrorHandler(asyncFn: () => Promise<unknown>): Promise<
  * @returns A {@link Promise} that resolves with an array of elements that satisfy the predicate function.
  */
 export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: number, array: T[]) => Promisable<boolean>): Promise<T[]> {
-  const predicateResults = await asyncMap(arr, predicate);
-  return arr.filter((_, index) => predicateResults[index] ?? false);
+  const ans: T[] = [];
+
+  const length = arr.length;
+  for (let i = 0; i < length; i++) {
+    if (!Object.hasOwn(arr, i)) {
+      continue;
+    }
+
+    const item = arr[i] as T;
+    if (await predicate(item, i, arr)) {
+      ans.push(item);
+    }
+  }
+
+  return ans;
+}
+
+/**
+ * Filters an array asynchronously in place, keeping only the elements that satisfy the provided predicate function.
+ *
+ * @typeParam T - The type of elements in the input array.
+ * @param arr - The array to filter.
+ * @param predicate - The predicate function to test each element.
+ * @returns A {@link Promise} that resolves when the array is filtered.
+ */
+export async function asyncFilterInPlace<T>(arr: T[], predicate: (value: T, index: number, array: T[]) => Promisable<boolean>): Promise<void> {
+  const length = arr.length;
+  let writeIndex = 0;
+  for (let readIndex = 0; readIndex < length; readIndex++) {
+    if (!Object.hasOwn(arr, readIndex)) {
+      continue;
+    }
+
+    const current = arr[readIndex] as T;
+    if (await predicate(current, readIndex, arr)) {
+      // eslint-disable-next-line require-atomic-updates
+      arr[writeIndex++] = current;
+    }
+  }
+  arr.length = writeIndex;
 }
 
 /**
@@ -118,7 +145,7 @@ export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: n
  * @returns A {@link Promise} that resolves with an array of the results of the callback function.
  */
 export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => Promisable<U>): Promise<U[]> {
-  return await Promise.all(arr.map(callback));
+  return await promiseAllSequentially(arr.map(callback));
 }
 
 /**
@@ -126,11 +153,15 @@ export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: numbe
  *
  * @typeParam Args - The types of the arguments the function accepts.
  * @param asyncFunc - The asynchronous function to convert.
+ * @param stackTrace - The stack trace of the source function.
  * @returns A function that wraps the asynchronous function in a synchronous interface.
  */
-export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: Args) => Promise<unknown>): (...args: Args) => void {
+export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: Args) => Promise<unknown>, stackTrace?: string): (...args: Args) => void {
+  stackTrace ??= getStackTrace(1);
   return (...args: Args): void => {
-    invokeAsyncSafely(() => asyncFunc(...args));
+    const innerStackTrace = getStackTrace(1);
+    stackTrace = `${stackTrace ?? ''}\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
+    invokeAsyncSafely(() => asyncFunc(...args), stackTrace);
   };
 }
 
@@ -143,7 +174,10 @@ export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: 
  * @returns A function that wraps the synchronous function in an asynchronous interface.
  */
 export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: (...args: Args) => Result): (...args: Args) => Promise<Result> {
-  return (...args: Args): Promise<Result> => Promise.resolve().then(() => syncFn(...args));
+  return async (...args: Args): Promise<Result> => {
+    await Promise.resolve();
+    return syncFn(...args);
+  };
 }
 
 /**
@@ -164,9 +198,12 @@ export async function ignoreError(promise: Promise<unknown>, fallbackValue?: und
  * @returns A {@link Promise} that resolves with the value returned by the asynchronous function or the fallback value if an error is thrown.
  */
 export async function ignoreError<T>(promise: Promise<T>, fallbackValue: T): Promise<T> {
+  const ignoreErrorDebugger = getLibDebugger('Async:ignoreError');
+  const stackTrace = getStackTrace(1);
   try {
     return await promise;
-  } catch {
+  } catch (e) {
+    ignoreErrorDebugger('Ignored error', new CustomStackTraceError('Ignored error', stackTrace, e));
     return fallbackValue;
   }
 }
@@ -175,10 +212,12 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue: T): Pro
  * Invokes a {@link Promise} and safely handles any errors by catching them and emitting an async error event.
  *
  * @param asyncFn - The asynchronous function to invoke safely.
+ * @param stackTrace - The stack trace of the source function.
  */
-export function invokeAsyncSafely(asyncFn: () => Promise<unknown>): void {
+export function invokeAsyncSafely(asyncFn: () => Promise<unknown>, stackTrace?: string): void {
+  stackTrace ??= getStackTrace(1);
   // eslint-disable-next-line no-void
-  void addErrorHandler(asyncFn);
+  void addErrorHandler(asyncFn, stackTrace);
 }
 
 /**
@@ -186,19 +225,101 @@ export function invokeAsyncSafely(asyncFn: () => Promise<unknown>): void {
  *
  * @param asyncFn - The asynchronous function to invoke.
  * @param delayInMilliseconds - The delay in milliseconds.
+ * @param stackTrace - The stack trace of the source function.
+ * @param abortSignal - The abort signal to listen to.
  */
-export function invokeAsyncSafelyAfterDelay(asyncFn: () => Promisable<unknown>, delayInMilliseconds = 0): void {
-  window.setTimeout(convertAsyncToSync(async () => await asyncFn()), delayInMilliseconds);
+export function invokeAsyncSafelyAfterDelay(
+  asyncFn: (abortSignal: AbortSignal) => Promisable<void>,
+  delayInMilliseconds = 0,
+  stackTrace?: string,
+  abortSignal?: AbortSignal
+): void {
+  abortSignal ??= abortSignalNever();
+  abortSignal.throwIfAborted();
+  stackTrace ??= getStackTrace(1);
+  invokeAsyncSafely(async () => {
+    await sleep(delayInMilliseconds, abortSignal, true);
+    await asyncFn(abortSignal);
+  }, stackTrace);
+}
+
+/**
+ * Executes async functions sequentially.
+ *
+ * @typeParam T - The type of the value.
+ * @param asyncFns - The async functions to execute sequentially.
+ * @returns A {@link Promise} that resolves with an array of the results of the async functions.
+ */
+export async function promiseAllAsyncFnsSequentially<T>(asyncFns: (() => Promisable<T>)[]): Promise<T[]> {
+  const results: T[] = [];
+  for (const asyncFn of asyncFns) {
+    results.push(await asyncFn());
+  }
+  return results;
+}
+
+/**
+ * Executes promises sequentially.
+ *
+ * @typeParam T - The type of the value.
+ * @param promises - The promises to execute sequentially.
+ * @returns A {@link Promise} that resolves with an array of the results of the promises.
+ */
+export async function promiseAllSequentially<T>(promises: Promisable<T>[]): Promise<T[]> {
+  return await promiseAllAsyncFnsSequentially(promises.map((promise) => () => promise));
+}
+
+const terminateRetryErrors = new WeakSet<Error>();
+
+class Result<R> {
+  public constructor(public readonly result: R) {}
 }
 
 /**
  * Marks an error to terminate retry logic.
  *
  * @param error - The error to mark to terminate retry logic.
- * @returns An error that should terminate retry logic.
  */
-export function marksAsTerminateRetry<TError extends Error>(error: TError): TerminateRetry & TError {
-  return Object.assign(error, { __terminateRetry: true }) as TerminateRetry & TError;
+export function marksAsTerminateRetry(error: Error): void {
+  terminateRetryErrors.add(error);
+}
+
+/**
+ * An async function that never ends.
+ *
+ * @returns A {@link Promise} that never resolves.
+ */
+export async function neverEnds(): Promise<never> {
+  await new Promise(() => {
+    noop();
+  });
+  throw new Error('Should never happen');
+}
+
+/**
+ * Gets the next tick.
+ *
+ * @returns A promise that resolves when the next tick is available.
+ */
+export async function nextTickAsync(): Promise<void> {
+  return new Promise((resolve) => {
+    process.nextTick(() => {
+      resolve();
+    });
+  });
+}
+
+/**
+ * Gets the next queue microtask.
+ *
+ * @returns A promise that resolves when the next queue microtask is available.
+ */
+export async function queueMicrotaskAsync(): Promise<void> {
+  return new Promise((resolve) => {
+    queueMicrotask(() => {
+      resolve();
+    });
+  });
 }
 
 /**
@@ -226,7 +347,7 @@ export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisa
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
   stackTrace ??= getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
-    abortSignal: abortSignalNever,
+    abortSignal: abortSignalNever(),
     // eslint-disable-next-line no-magic-numbers
     retryDelayInMilliseconds: 100,
     shouldRetryOnError: false,
@@ -236,41 +357,46 @@ export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisa
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
   fullOptions.abortSignal.throwIfAborted();
 
-  await runWithTimeout(fullOptions.timeoutInMilliseconds, async (abortSignal: AbortSignal) => {
-    const combinedAbortSignal = abortSignalAny([fullOptions.abortSignal, abortSignal]);
-    let attempt = 0;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    while (true) {
+  await runWithTimeout(
+    fullOptions.timeoutInMilliseconds,
+    async (abortSignal: AbortSignal) => {
+      const combinedAbortSignal = abortSignalAny([fullOptions.abortSignal, abortSignal]);
       combinedAbortSignal.throwIfAborted();
-      attempt++;
-      let isSuccess: boolean;
-      try {
-        isSuccess = await fn(combinedAbortSignal);
-      } catch (error) {
-        if (combinedAbortSignal.aborted || !fullOptions.shouldRetryOnError || (error as Partial<TerminateRetry>).__terminateRetry) {
-          throw error;
+      let attempt = 0;
+      while (!combinedAbortSignal.aborted) {
+        attempt++;
+        let isSuccess: boolean;
+        try {
+          isSuccess = await fn(combinedAbortSignal);
+        } catch (error) {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (combinedAbortSignal.aborted || !fullOptions.shouldRetryOnError || terminateRetryErrors.has(error as Error)) {
+            throw new CustomStackTraceError('retryWithTimeout failed', stackTrace, error);
+          }
+          printError(error);
+          isSuccess = false;
         }
-        printError(error);
-        isSuccess = false;
-      }
-      if (isSuccess) {
-        if (attempt > 1) {
-          retryWithTimeoutDebugger(`Retry completed successfully after ${String(attempt)} attempts`);
+        if (isSuccess) {
+          retryWithTimeoutDebugger(`Retry completed successfully after ${String(attempt)} attempts`, {
+            fn
+          });
           retryWithTimeoutDebugger.printStackTrace(stackTrace);
+          return;
         }
-        return;
-      }
 
-      retryWithTimeoutDebugger(
-        `Retry attempt ${String(attempt)} completed unsuccessfully. Trying again in ${String(fullOptions.retryDelayInMilliseconds)} milliseconds`,
-        {
-          fn
-        }
-      );
-      retryWithTimeoutDebugger.printStackTrace(stackTrace);
-      await sleep(fullOptions.retryDelayInMilliseconds);
-    }
-  }, { retryFn: fn });
+        retryWithTimeoutDebugger(
+          `Retry attempt ${String(attempt)} completed unsuccessfully. Trying again in ${String(fullOptions.retryDelayInMilliseconds)} milliseconds`,
+          {
+            fn
+          }
+        );
+        retryWithTimeoutDebugger.printStackTrace(stackTrace);
+        await sleep(fullOptions.retryDelayInMilliseconds);
+      }
+    },
+    { retryFn: fn },
+    stackTrace
+  );
 }
 
 /**
@@ -282,104 +408,112 @@ export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisa
  * @param timeoutInMilliseconds - The maximum time to wait in milliseconds.
  * @param fn - The function to execute.
  * @param context - The context of the function.
+ * @param stackTrace - The stack trace of the source function.
  * @returns A {@link Promise} that resolves with the result of the asynchronous function or rejects if it times out.
  */
-export async function runWithTimeout<R>(timeoutInMilliseconds: number, fn: (abortSignal: AbortSignal) => Promisable<R>, context?: unknown): Promise<R> {
-  let isTimedOut = true;
-  let result: R = null as R;
+export async function runWithTimeout<R>(
+  timeoutInMilliseconds: number,
+  fn: (abortSignal: AbortSignal) => Promisable<R>,
+  context?: unknown,
+  stackTrace?: string
+): Promise<R> {
+  stackTrace ??= getStackTrace(1);
   const startTime = performance.now();
 
   const abortController = new AbortController();
 
-  if (timeoutInMilliseconds === INFINITE_TIMEOUT) {
-    await run();
-    return result;
+  await Promise.race([run(), innerTimeout()]);
+  if (abortController.signal.reason instanceof Result) {
+    return abortController.signal.reason.result as R;
   }
 
-  await Promise.race([run(), innerTimeout()]);
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (isTimedOut) {
-    throw new Error('Timed out');
-  }
-  return result;
+  throw new CustomStackTraceError('Run with timeout failed', stackTrace, abortController.signal.reason as unknown);
 
   async function run(): Promise<void> {
     try {
-      result = await fn(abortController.signal);
+      const result = await fn(abortController.signal);
       const duration = performance.now() - startTime;
-      getLibDebugger('Async:runWithTimeout')(`Execution time: ${String(duration)} milliseconds`, { context, fn });
-    } finally {
-      isTimedOut = false;
+      const runWithTimeoutDebugger = getLibDebugger('Async:runWithTimeout');
+      runWithTimeoutDebugger(`Execution time: ${String(duration)} milliseconds`, { context, fn });
+      runWithTimeoutDebugger.printStackTrace(stackTrace ?? '');
+      abortController.abort(new Result(result));
+    } catch (e) {
+      abortController.abort(e);
     }
   }
 
   async function innerTimeout(): Promise<void> {
-    if (!isTimedOut) {
-      return;
-    }
-    await sleep(timeoutInMilliseconds);
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!isTimedOut) {
-      return;
-    }
-    const duration = performance.now() - startTime;
-    console.warn(`Timed out in ${String(duration)} milliseconds`, { context, fn });
-    const _debugger = getLibDebugger('Async:runWithTimeout:timeout');
-    if (_debugger.enabled) {
-      _debugger(
-        `The execution is not terminated because debugger ${_debugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md for more information`
+    while (!abortController.signal.aborted) {
+      await sleep(timeoutInMilliseconds, abortController.signal);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (abortController.signal.aborted) {
+        return;
+      }
+      const duration = performance.now() - startTime;
+      console.warn(`Timed out after ${String(duration)} milliseconds`, { context, fn });
+      const timeoutDebugger = getLibDebugger('Async:runWithTimeout:timeout');
+      if (!timeoutDebugger.enabled) {
+        abortController.abort(new Error(`Timed out after ${String(duration)} milliseconds`));
+        return;
+      }
+
+      timeoutDebugger(
+        `The execution is not terminated because debugger ${timeoutDebugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md for more information`
       );
-      await innerTimeout();
     }
-    abortController.abort();
   }
+}
+
+/**
+ * Gets the next set immediate.
+ *
+ * @returns A promise that resolves when the next set immediate is available.
+ */
+export async function setImmediateAsync(): Promise<void> {
+  return new Promise((resolve) => {
+    setImmediate(() => {
+      resolve();
+    });
+  });
+}
+
+/**
+ * Delays execution for a specified number of milliseconds.
+ *
+ * @param delay - The time to wait in milliseconds.
+ * @returns A {@link Promise} that resolves after the specified delay.
+ */
+export async function setTimeoutAsync(delay?: number): Promise<void> {
+  await new Promise((resolve) => {
+    setTimeout(resolve, delay);
+  });
 }
 
 /**
  * Delays execution for a specified number of milliseconds.
  *
  * @param milliseconds - The time to wait in milliseconds.
+ * @param abortSignal - The abort signal to listen to.
+ * @param shouldThrowOnAbort - Whether to throw an error if the abort signal is aborted.
  * @returns A {@link Promise} that resolves after the specified delay.
  */
-export async function sleep(milliseconds: number): Promise<void> {
-  await new Promise((resolve) => {
-    window.setTimeout(resolve, milliseconds);
-  });
-}
-
-/**
- * Returns a {@link Promise} that rejects when the abort signal is aborted.
- *
- * @param abortSignal - The abort signal to listen to.
- * @returns A {@link Promise} that rejects when the abort signal is aborted.
- */
-export function throwOnAbort(abortSignal: AbortSignal): Promise<void> {
-  return new Promise((_resolve, reject) => {
-    if (handleAbort()) {
-      return;
-    }
-    abortSignal.addEventListener('abort', handleAbort, { once: true });
-
-    function handleAbort(): boolean {
-      try {
-        abortSignal.throwIfAborted();
-        return false;
-      } catch (e) {
-        reject(e as Error);
-        return true;
-      }
-    }
-  });
+export async function sleep(milliseconds: number, abortSignal?: AbortSignal, shouldThrowOnAbort?: boolean): Promise<void> {
+  await waitForAbort(abortSignalAny([abortSignal ?? abortSignalNever(), abortSignalTimeout(milliseconds)]));
+  if (shouldThrowOnAbort) {
+    abortSignal?.throwIfAborted();
+  }
 }
 
 /**
  * Returns a {@link Promise} that rejects after the specified timeout period.
  *
  * @param timeoutInMilliseconds - The timeout period in milliseconds.
+ * @param abortSignal - The abort signal to listen to.
+ * @param shouldThrowOnAbort - Whether to throw an error if the abort signal is aborted.
  * @returns A {@link Promise} that always rejects with a timeout error.
  */
-export async function timeout(timeoutInMilliseconds: number): Promise<never> {
-  await sleep(timeoutInMilliseconds);
+export async function timeout(timeoutInMilliseconds: number, abortSignal?: AbortSignal, shouldThrowOnAbort?: boolean): Promise<never> {
+  await sleep(timeoutInMilliseconds, abortSignal, shouldThrowOnAbort);
   throw new Error(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`);
 }
 
