@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 32.0.2-beta.1
+
+- Refactor Async/AbortController
+
 ## 32.0.1
 
 - Remove old fn
