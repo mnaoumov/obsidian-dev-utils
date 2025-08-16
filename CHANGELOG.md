@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 33.1.0
+
+- Improve nameof return type
+
 ## 33.0.0
 
 - Refactor debug log with stack traces
