@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 32.0.2-beta.3
+
+- Refactor debug log with stack traces
+
 ## 32.0.2-beta.2
 
 - Add full caller call stack
