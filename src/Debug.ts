@@ -18,10 +18,6 @@ import {
   NO_PLUGIN_ID_INITIALIZED
 } from './obsidian/Plugin/PluginId.ts';
 
-interface DebuggerEx extends Debugger {
-  printStackTrace(stackTrace: string, title?: string): void;
-}
-
 const NAMESPACE_SEPARATOR = ',';
 const NEGATED_NAMESPACE_PREFIX = '-';
 
@@ -53,17 +49,14 @@ export function getDebugController(): DebugController {
  * @param framesToSkip - The number of frames to skip in the stack trace.
  * @returns A debugger instance with a log function that includes the caller's file name and line number.
  */
-export function getDebugger(namespace: string, framesToSkip = 0): DebuggerEx {
+export function getDebugger(namespace: string, framesToSkip = 0): Debugger {
   const key = `${namespace}:${String(framesToSkip)}`;
-  const debuggersMap = getObsidianDevUtilsState(null, 'debuggers', new Map<string, DebuggerEx>()).value;
+  const debuggersMap = getObsidianDevUtilsState(null, 'debuggers', new Map<string, Debugger>()).value;
   let debuggerEx = debuggersMap.get(key);
   if (!debuggerEx) {
-    debuggerEx = getSharedDebugLibInstance()(namespace) as DebuggerEx;
+    debuggerEx = getSharedDebugLibInstance()(namespace);
     debuggerEx.log = (message: string, ...args: unknown[]): void => {
       logWithCaller(namespace, framesToSkip, message, ...args);
-    };
-    debuggerEx.printStackTrace = (stackTrace, title): void => {
-      printStackTrace(namespace, stackTrace, title);
     };
 
     debuggersMap.set(key, debuggerEx);
@@ -78,10 +71,27 @@ export function getDebugger(namespace: string, framesToSkip = 0): DebuggerEx {
  * @param namespace - The namespace for the debugger instance.
  * @returns A debugger instance for the `obsidian-dev-utils` library.
  */
-export function getLibDebugger(namespace: string): DebuggerEx {
+export function getLibDebugger(namespace: string): Debugger {
   const pluginId = getPluginId();
   const prefix = pluginId === NO_PLUGIN_ID_INITIALIZED ? '' : `${pluginId}:`;
   return getDebugger(`${prefix}${LIBRARY_NAME}:${namespace}`);
+}
+
+/**
+ * Prints a message with a stack trace.
+ *
+ * @param debuggerInstance - The debugger instance.
+ * @param stackTrace - The stack trace to print.
+ * @param message - The message to print.
+ * @param args - The arguments to print.
+ */
+export function printWithStackTrace(debuggerInstance: Debugger, stackTrace: string, message: string, ...args: unknown[]): void {
+  if (!isInObsidian()) {
+    debuggerInstance.log(message, ...args);
+    return;
+  }
+
+  debuggerInstance.log(message, ...args, '\n\n---\nContext stack trace:', makeStackTraceError(stackTrace));
 }
 
 /**
@@ -150,6 +160,12 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
     return;
   }
 
+  if (!isInObsidian()) {
+    // eslint-disable-next-line no-console
+    console.debug(message, ...args);
+    return;
+  }
+
   /**
    * The caller line index is 4 because the call stack is as follows:
    *
@@ -163,38 +179,17 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
 
   const stackLines = new Error().stack?.split('\n') ?? [];
   stackLines.splice(0, CALLER_LINE_INDEX + framesToSkip);
+
   // eslint-disable-next-line no-console
-  console.debug(message, ...args);
-  if (isInObsidian()) {
-    printStackTrace(namespace, stackLines.join('\n'), 'Debug message caller');
-  }
+  console.debug(message, ...args, '\n\n---\nLogger stack trace:', makeStackTraceError(stackLines.join('\n')));
 }
 
-function printStackTrace(namespace: string, stackTrace: string, title?: string): void {
-  const internalDebugger = getSharedDebugLibInstance()(namespace);
-
-  if (!internalDebugger.enabled) {
-    return;
-  }
-
-  if (!stackTrace) {
-    stackTrace = '(unavailable)';
-  }
-  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-  if (!title) {
-    title = 'Caller stack trace';
-  }
-
-  internalDebugger(title);
-
-  if (!isInObsidian()) {
-    // eslint-disable-next-line no-console
-    console.debug(stackTrace);
-    return;
-  }
-
-  // eslint-disable-next-line no-console
-  console.debug(new CustomStackTraceError('This is not an actual error. It\'s just a workaround to make stack trace links clickable', stackTrace, undefined));
+function makeStackTraceError(stackTrace: string): CustomStackTraceError {
+  return new CustomStackTraceError(
+    'Debug mode: intentional placeholder error. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md.',
+    stackTrace,
+    undefined
+  );
 }
 
 /**

@@ -12,7 +12,10 @@ import {
   abortSignalTimeout,
   waitForAbort
 } from './AbortController.ts';
-import { getLibDebugger } from './Debug.ts';
+import {
+  getLibDebugger,
+  printWithStackTrace
+} from './Debug.ts';
 import {
   ASYNC_WRAPPER_ERROR_MESSAGE,
   CustomStackTraceError,
@@ -377,21 +380,22 @@ export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisa
           isSuccess = false;
         }
         if (isSuccess) {
-          retryWithTimeoutDebugger(`Retry completed successfully after ${String(attempt)} attempts`, {
+          printWithStackTrace(retryWithTimeoutDebugger, stackTrace, `Retry completed successfully after ${String(attempt)} attempts`, {
             fn
           });
-          retryWithTimeoutDebugger.printStackTrace(stackTrace);
           return;
         }
 
-        retryWithTimeoutDebugger(
+        printWithStackTrace(
+          retryWithTimeoutDebugger,
+          stackTrace,
           `Retry attempt ${String(attempt)} completed unsuccessfully. Trying again in ${String(fullOptions.retryDelayInMilliseconds)} milliseconds`,
           {
             fn
           }
         );
-        retryWithTimeoutDebugger.printStackTrace(stackTrace);
-        await sleep(fullOptions.retryDelayInMilliseconds);
+
+        await sleep(fullOptions.retryDelayInMilliseconds, abortSignal);
       }
     },
     { retryFn: fn },
@@ -434,8 +438,7 @@ export async function runWithTimeout<R>(
       const result = await fn(abortController.signal);
       const duration = performance.now() - startTime;
       const runWithTimeoutDebugger = getLibDebugger('Async:runWithTimeout');
-      runWithTimeoutDebugger(`Execution time: ${String(duration)} milliseconds`, { context, fn });
-      runWithTimeoutDebugger.printStackTrace(stackTrace ?? '');
+      printWithStackTrace(runWithTimeoutDebugger, stackTrace ?? '', `Execution time: ${String(duration)} milliseconds`, { context, fn });
       abortController.abort(new Result(result));
     } catch (e) {
       abortController.abort(e);
@@ -458,7 +461,7 @@ export async function runWithTimeout<R>(
       }
 
       timeoutDebugger(
-        `The execution is not terminated because debugger ${timeoutDebugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md for more information`
+        `The execution is not terminated because debugger ${timeoutDebugger.namespace} is enabled. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md for more information.`
       );
     }
   }
