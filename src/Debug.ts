@@ -87,11 +87,11 @@ export function getLibDebugger(namespace: string): Debugger {
  */
 export function printWithStackTrace(debuggerInstance: Debugger, stackTrace: string, message: string, ...args: unknown[]): void {
   if (!isInObsidian()) {
-    debuggerInstance.log(message, ...args);
+    debuggerInstance(message, ...args);
     return;
   }
 
-  debuggerInstance.log(message, ...args, '\n\n---\nContext stack trace:', makeStackTraceError(stackTrace));
+  debuggerInstance(message, ...args, '\n\n---\nContext stack trace:\n', makeStackTraceError(stackTrace));
 }
 
 /**
@@ -181,7 +181,7 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   stackLines.splice(0, CALLER_LINE_INDEX + framesToSkip);
 
   // eslint-disable-next-line no-console
-  console.debug(message, ...args, '\n\n---\nLogger stack trace:', makeStackTraceError(stackLines.join('\n')));
+  console.debug(message, ...args, '\n\n---\nLogger stack trace:\n', makeStackTraceError(stackLines.join('\n')));
 }
 
 function makeStackTraceError(stackTrace: string): CustomStackTraceError {
