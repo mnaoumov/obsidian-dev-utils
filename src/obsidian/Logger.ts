@@ -6,7 +6,10 @@
 
 import type { Promisable } from 'type-fest';
 
-import { getLibDebugger } from '../Debug.ts';
+import {
+  getLibDebugger,
+  printWithStackTrace
+} from '../Debug.ts';
 import { getStackTrace } from '../Error.ts';
 /**
  * Invokes a function and logs the start, end, and duration of the invocation.
@@ -26,44 +29,39 @@ export async function invokeAsyncAndLog(
   const invokeAsyncAndLogDebugger = getLibDebugger('Logger:invokeAsyncAndLog');
   const timestampStart = performance.now();
   stackTrace ??= getStackTrace(1);
-  invokeAsyncAndLogDebugger(`${title}:start`, {
+  printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:start`, {
     fn,
     timestampStart
   });
-  invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
   try {
     await fn(abortSignal);
     const timestampEnd = performance.now();
     const duration = timestampEnd - timestampStart;
     if (abortSignal.aborted) {
-      invokeAsyncAndLogDebugger(`${title}:aborted`, {
+      printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:aborted`, {
         abortReason: abortSignal.reason as unknown,
         duration,
         fn,
         timestampEnd,
         timestampStart
       });
-      invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
       abortSignal.throwIfAborted();
     }
-    invokeAsyncAndLogDebugger(`${title}:end`, {
+    printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:end`, {
       duration,
       fn,
       timestampEnd,
       timestampStart
     });
-    invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
   } catch (error) {
     const timestampEnd = performance.now();
-    invokeAsyncAndLogDebugger(`${title}:error`, {
+    printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:error`, {
       duration: timestampEnd - timestampStart,
       error,
       fn,
       timestampEnd,
       timestampStart
     });
-    invokeAsyncAndLogDebugger.printStackTrace(stackTrace);
-
     throw error;
   }
 }
