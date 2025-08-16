@@ -396,7 +396,7 @@ export function getPrototypeOf<T>(instance: T): T {
  * @param name - The name of the property as a string.
  * @returns The name of the property.
  */
-export function nameof<T>(name: Extract<keyof T, string>): string {
+export function nameof<T extends object>(name: StringKeys<T>): StringKeys<T> {
   return name;
 }
 
