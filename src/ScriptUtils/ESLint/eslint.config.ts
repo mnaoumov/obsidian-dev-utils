@@ -59,8 +59,9 @@ export const obsidianDevUtilsConfigs: Linter.Config[] = tseslint.config(
   ...getEslintImportResolverTypescriptConfigs()
 ) as Linter.Config[];
 
-function excludeFilesProperty<Config extends { files?: unknown }>(config: Config): Config {
-  const newConfig = { ...config };
+function excludeFilesProperty<Config>(config: Config): Config {
+  type ConfigWithFiles = { files?: unknown } & Config;
+  const newConfig = { ...config } as ConfigWithFiles;
   delete newConfig.files;
   return newConfig;
 }
