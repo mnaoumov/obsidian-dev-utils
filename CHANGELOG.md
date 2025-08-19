@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 33.1.1
+
+- Fix build
+- Update libs
+
 ## 33.1.0
 
 - Improve nameof return type
