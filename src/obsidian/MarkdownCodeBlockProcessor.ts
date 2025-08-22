@@ -17,6 +17,7 @@ import type { ValueProvider } from '../ValueProvider.ts';
 import { abortSignalNever } from '../AbortController.ts';
 import {
   hasSingleOccurrence,
+  indent,
   replaceAll
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
@@ -85,6 +86,11 @@ export interface InsertCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
    * The number of lines to offset the insertion by. Default is `0`.
    */
   lineOffset?: number;
+
+  /**
+   * Whether to preserve the line prefix of the code block. Default is `false`.
+   */
+  shouldPreserveLinePrefix?: boolean;
 
   /**
    * The text to insert after the code block.
@@ -169,14 +175,11 @@ export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Pro
       throw new Error('Multiple suitable code blocks found.');
     }
 
-    const lines = content.split('\n');
     const index = content.indexOf(sectionInfo.text);
     const textBeforeSection = content.slice(0, index);
     const linesBeforeSection = textBeforeSection.split('\n');
-    const insertLineIndex = Math.min(lines.length, linesBeforeSection.length + sectionInfo.lineEnd + lineOffset);
-    const newLines = lines.slice();
-    newLines.splice(insertLineIndex, 0, text);
-    return newLines.join('\n');
+    const insertLineIndex = linesBeforeSection.length + sectionInfo.lineEnd + lineOffset;
+    return insertText(content, insertLineIndex, text, options.shouldPreserveLinePrefix);
   });
 }
 
@@ -194,14 +197,11 @@ export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Pr
       throw new Error('Multiple suitable code blocks found.');
     }
 
-    const lines = content.split('\n');
     const index = content.indexOf(sectionInfo.text);
     const textBeforeSection = content.slice(0, index);
     const linesBeforeSection = textBeforeSection.split('\n');
-    const insertLineIndex = Math.max(0, linesBeforeSection.length + sectionInfo.lineStart - lineOffset - 1);
-    const newLines = lines.slice();
-    newLines.splice(insertLineIndex, 0, text);
-    return newLines.join('\n');
+    const insertLineIndex = linesBeforeSection.length + sectionInfo.lineStart - lineOffset - 1;
+    return insertText(content, insertLineIndex, text, options.shouldPreserveLinePrefix);
   });
 }
 
@@ -281,6 +281,25 @@ function createSectionInfoFromMatch(
 function getLanguageFromElement(el: HTMLElement): string {
   const BLOCK_LANGUAGE_PREFIX = 'block-language-';
   return Array.from(el.classList).find((cls) => cls.startsWith(BLOCK_LANGUAGE_PREFIX))?.slice(BLOCK_LANGUAGE_PREFIX.length) ?? '';
+}
+
+function insertText(content: string, insertLineIndex: number, text: string, shouldPreserveLinePrefix?: boolean): string {
+  const lines = content.split('\n');
+  const newLines = lines.slice();
+  const textLines = text.split('\n');
+
+  if (insertLineIndex < 0) {
+    insertLineIndex = 0;
+  }
+  if (insertLineIndex > lines.length) {
+    insertLineIndex = lines.length;
+  }
+
+  const PREFIX_LINE_REG_EXP = /^ {0,3}(?:> {1,3})*/g;
+  const match = (lines[insertLineIndex] ?? '').match(PREFIX_LINE_REG_EXP);
+  const linePrefix = match?.[0] ?? '';
+  newLines.splice(insertLineIndex, 0, ...(shouldPreserveLinePrefix ? textLines.map((line) => indent(line, linePrefix)) : textLines));
+  return newLines.join('\n');
 }
 
 function isSuitableCodeBlock(
