@@ -16,9 +16,8 @@ import type { ValueProvider } from '../ValueProvider.ts';
 
 import { abortSignalNever } from '../AbortController.ts';
 import {
-  indent,
-  replaceAll,
-  unindent
+  hasSingleOccurrence,
+  replaceAll
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { process } from './Vault.ts';
@@ -54,32 +53,91 @@ export interface CodeBlockMarkdownSectionInformation extends MarkdownSectionInfo
 }
 
 /**
+ * Represents the options for getting the information about a code block in a Markdown section.
+ */
+export interface GetCodeBlockSectionInfoOptions {
+  /**
+   * The Obsidian App object.
+   */
+  app: App;
+
+  /**
+   * The MarkdownPostProcessorContext object.
+   */
+  ctx: MarkdownPostProcessorContext;
+
+  /**
+   * The HTMLElement representing the code block.
+   */
+  el: HTMLElement;
+
+  /**
+   * The source of the code block.
+   */
+  source: string;
+}
+
+/**
+ * Represents the options for inserting text after a code block.
+ */
+export interface InsertCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
+  /**
+   * The number of lines to offset the insertion by. Default is `0`.
+   */
+  lineOffset?: number;
+
+  /**
+   * The text to insert after the code block.
+   */
+  text: string;
+}
+
+/**
+ * Represents the options for replacing a code block.
+ */
+export interface ReplaceCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
+  /**
+   * The abort signal to control the execution of the function.
+   */
+  abortSignal?: AbortSignal;
+
+  /**
+   * The provider that provides the new code block.
+   */
+  codeBlockProvider: ValueProvider<string, [string]>;
+}
+
+/**
  * Gets the information about a code block in a Markdown section.
  *
- * @param app - The Obsidian App object.
- * @param source - The source of the code block.
- * @param el - The HTMLElement representing the code block.
- * @param ctx - The MarkdownPostProcessorContext object.
+ * @param options - The options for the function.
  * @returns The information about the code block in the Markdown section.
+ *
+ * @throws If no suitable code block is found.
+ * @throws If multiple suitable code blocks are found. Happens when the code block is in a callout. Caused by the bug in Obsidian: {@link https://forum.obsidian.md/t/bug-getsectioninfo-is-inaccurate-inside-callouts/104289}
  */
-export async function getCodeBlockSectionInfo(
-  app: App,
-  source: string,
-  el: HTMLElement,
-  ctx: MarkdownPostProcessorContext
-): Promise<CodeBlockMarkdownSectionInformation> {
-  const parentSectionInfo = ctx.getSectionInfo(el) ?? await createParentSectionInfo(app, ctx);
+export async function getCodeBlockSectionInfo(options: GetCodeBlockSectionInfoOptions): Promise<CodeBlockMarkdownSectionInformation> {
+  const { app, ctx, el, source } = options;
+
+  const approximateSectionInfo = ctx.getSectionInfo(el) ?? await createApproximateSectionInfo(app, ctx);
+  const isInCallout = !!el.parentElement?.classList.contains('callout-content');
 
   const language = getLanguageFromElement(el);
   const sourceLines = source.split('\n');
 
+  const textLines = approximateSectionInfo.text.split('\n');
+  const potentialCodeBlockTextLines = textLines.map((line, index) =>
+    approximateSectionInfo.lineStart <= index && index <= approximateSectionInfo.lineEnd ? line : ''
+  );
+  const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
+
   const REG_EXP =
-    /(?:^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t]+(?<CodeBlockArgs>.*?)[ \t]+)?\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?)\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?:\n|$)/g;
+    /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t]+(?<CodeBlockArgs>.*?)[ \t]+)?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?:\n|$)/g;
 
   let sectionInfo: CodeBlockMarkdownSectionInformation | null = null;
 
-  for (const match of parentSectionInfo.text.matchAll(REG_EXP)) {
-    if (!isSuitableCodeBlock(match, language, source)) {
+  for (const match of potentialCodeBlockText.matchAll(REG_EXP)) {
+    if (!isSuitableCodeBlock(match, language, source, isInCallout)) {
       continue;
     }
 
@@ -87,7 +145,7 @@ export async function getCodeBlockSectionInfo(
       throw new Error('Multiple suitable code blocks found.');
     }
 
-    sectionInfo = createSectionInfoFromMatch(match, parentSectionInfo, sourceLines);
+    sectionInfo = createSectionInfoFromMatch(potentialCodeBlockText, match, approximateSectionInfo, sourceLines);
   }
 
   if (!sectionInfo) {
@@ -98,42 +156,85 @@ export async function getCodeBlockSectionInfo(
 }
 
 /**
+ * Inserts text after the code block.
+ *
+ * @param options - The options for the function.
+ */
+export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Promise<void> {
+  const { app, ctx, lineOffset = 0, text } = options;
+
+  const sectionInfo = await getCodeBlockSectionInfo(options);
+  await process(app, ctx.sourcePath, (_abortSignal, content) => {
+    if (!hasSingleOccurrence(content, sectionInfo.text)) {
+      throw new Error('Multiple suitable code blocks found.');
+    }
+
+    const lines = content.split('\n');
+    const index = content.indexOf(sectionInfo.text);
+    const textBeforeSection = content.slice(0, index);
+    const linesBeforeSection = textBeforeSection.split('\n');
+    const insertLineIndex = Math.min(lines.length, linesBeforeSection.length + sectionInfo.lineEnd + lineOffset);
+    const newLines = lines.slice();
+    newLines.splice(insertLineIndex, 0, text);
+    return newLines.join('\n');
+  });
+}
+
+/**
+ * Inserts text before the code block.
+ *
+ * @param options - The options for the function.
+ */
+export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Promise<void> {
+  const { app, ctx, lineOffset = 0, text } = options;
+
+  const sectionInfo = await getCodeBlockSectionInfo(options);
+  await process(app, ctx.sourcePath, (_abortSignal, content) => {
+    if (!hasSingleOccurrence(content, sectionInfo.text)) {
+      throw new Error('Multiple suitable code blocks found.');
+    }
+
+    const lines = content.split('\n');
+    const index = content.indexOf(sectionInfo.text);
+    const textBeforeSection = content.slice(0, index);
+    const linesBeforeSection = textBeforeSection.split('\n');
+    const insertLineIndex = Math.max(0, linesBeforeSection.length + sectionInfo.lineStart - lineOffset - 1);
+    const newLines = lines.slice();
+    newLines.splice(insertLineIndex, 0, text);
+    return newLines.join('\n');
+  });
+}
+
+/**
  * Replaces the code block.
  *
- * @param app - The Obsidian App object.
- * @param source - The source of the code block.
- * @param ctx - The MarkdownPostProcessorContext object.
- * @param el - The HTMLElement representing the code block.
- * @param codeBlockProvider - The ValueProvider that provides the new code block.
- * @param abortSignal - The abort signal to control the execution of the function.
+ * @param options - The options for the function.
  */
-export async function replaceCodeBlock(
-  app: App,
-  source: string,
-  ctx: MarkdownPostProcessorContext,
-  el: HTMLElement,
-  codeBlockProvider: ValueProvider<string, [string]>,
-  abortSignal?: AbortSignal
-): Promise<void> {
-  abortSignal ??= abortSignalNever();
+export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promise<void> {
+  const { app, codeBlockProvider, ctx } = options;
+
+  const abortSignal = options.abortSignal ?? abortSignalNever();
   abortSignal.throwIfAborted();
 
-  const sectionInfo = await getCodeBlockSectionInfo(app, source, el, ctx);
+  const sectionInfo = await getCodeBlockSectionInfo(options);
 
   const lines = sectionInfo.text.split('\n');
   const textBeforeCodeBlock = lines.slice(0, sectionInfo.lineStart).join('\n');
-  const oldCodeBlockPrefixed = lines.slice(sectionInfo.lineStart, sectionInfo.lineEnd + 1).join('\n');
-  const oldCodeBlock = unindent(oldCodeBlockPrefixed, sectionInfo.prefix, true);
+  const oldCodeBlock = lines.slice(sectionInfo.lineStart, sectionInfo.lineEnd + 1).join('\n');
   const textAfterCodeBlock = lines.slice(sectionInfo.lineEnd + 1).join('\n');
   const newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
   abortSignal.throwIfAborted();
-  const newCodeBlockWithPrefix = indent(newCodeBlock, sectionInfo.prefix);
 
-  const newSectionText = `${textBeforeCodeBlock}\n${newCodeBlockWithPrefix}${newCodeBlockWithPrefix ? '\n' : ''}${textAfterCodeBlock}`;
-  await process(app, ctx.sourcePath, (_abortSignal, content) => replaceAll(content, sectionInfo.text, newSectionText));
+  const newSectionText = `${textBeforeCodeBlock}\n${newCodeBlock}${textAfterCodeBlock}`;
+  await process(app, ctx.sourcePath, (_abortSignal, content) => {
+    if (!hasSingleOccurrence(content, sectionInfo.text)) {
+      throw new Error('Multiple suitable code blocks found.');
+    }
+    return replaceAll(content, sectionInfo.text, newSectionText);
+  });
 }
 
-async function createParentSectionInfo(app: App, ctx: MarkdownPostProcessorContext): Promise<MarkdownSectionInformation> {
+async function createApproximateSectionInfo(app: App, ctx: MarkdownPostProcessorContext): Promise<MarkdownSectionInformation> {
   const sourceFile = app.vault.getFileByPath(ctx.sourcePath);
   if (!sourceFile) {
     throw new Error(`Source file ${ctx.sourcePath} not found.`);
@@ -151,8 +252,9 @@ async function createParentSectionInfo(app: App, ctx: MarkdownPostProcessorConte
 }
 
 function createSectionInfoFromMatch(
+  potentialCodeBlockText: string,
   match: RegExpMatchArray,
-  parentSectionInfo: MarkdownSectionInformation,
+  approximateSectionInfo: MarkdownSectionInformation,
   sourceLines: string[]
 ): CodeBlockMarkdownSectionInformation {
   const linePrefix = match.groups?.['LinePrefix'] ?? '';
@@ -161,19 +263,18 @@ function createSectionInfoFromMatch(
   const codeBlockArgs = match.groups?.['CodeBlockArgs'] ?? '';
   const language = match.groups?.['CodeBlockLanguage'] ?? '';
 
-  const previousText = parentSectionInfo.text.slice(0, match.index);
+  const previousText = potentialCodeBlockText.slice(0, match.index);
   const previousTextLines = previousText.split('\n');
 
   return {
-    ...parentSectionInfo,
     args: codeBlockArgs,
     endDelimiter: codeBlockEndDelimiter,
     language,
-    lineEnd: parentSectionInfo.lineStart + previousTextLines.length + sourceLines.length + 1,
-    lineStart: parentSectionInfo.lineStart + previousTextLines.length,
+    lineEnd: previousTextLines.length + sourceLines.length,
+    lineStart: previousTextLines.length - 1,
     prefix: linePrefix,
     startDelimiter: codeBlockStartDelimiter,
-    text: match[0]
+    text: approximateSectionInfo.text
   };
 }
 
@@ -185,7 +286,8 @@ function getLanguageFromElement(el: HTMLElement): string {
 function isSuitableCodeBlock(
   match: RegExpMatchArray,
   language: string,
-  source: string
+  source: string,
+  isInCallout: boolean
 ): boolean {
   const codeBlockLanguage = match.groups?.['CodeBlockLanguage'] ?? '';
   if (codeBlockLanguage !== language) {
@@ -193,6 +295,11 @@ function isSuitableCodeBlock(
   }
 
   const linePrefix = match.groups?.['LinePrefix'] ?? '';
+
+  if (isInCallout && !linePrefix.includes('> ')) {
+    return false;
+  }
+
   const codeBlockContent = match.groups?.['CodeBlockContent'] ?? '';
   const cleanCodeBlockContent = codeBlockContent.split('\n').map((line) => line.slice(linePrefix.length)).join('\n');
 
