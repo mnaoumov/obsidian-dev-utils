@@ -109,6 +109,17 @@ export function escape(str: string): string {
 }
 
 /**
+ * Indents a string by adding a prefix to each line.
+ *
+ * @param text - The string to indent.
+ * @param prefix - The prefix to add to each line.
+ * @returns The indented string.
+ */
+export function indent(text: string, prefix: string): string {
+  return text.split('\n').map((line) => `${prefix}${line}`).join('\n');
+}
+
+/**
  * Inserts a substring at a specified position in a string.
  *
  * @param str - The string to insert the substring into.
@@ -300,4 +311,24 @@ export function trimStart(str: string, prefix: string, validate?: boolean): stri
  */
 export function unescape(str: string): string {
   return replace(str, UNESCAPE_MAP);
+}
+
+/**
+ * Unindents a string by removing a prefix from each line.
+ *
+ * @param text - The string to unindent.
+ * @param prefix - The prefix to remove from each line.
+ * @param shouldThrowIfNotIndented - If `true`, throws an error if a line is not indented with the prefix.
+ * @returns The unindented string.
+ */
+export function unindent(text: string, prefix: string, shouldThrowIfNotIndented = false): string {
+  return text.split('\n').map((line) => {
+    if (line.startsWith(prefix)) {
+      return line.slice(prefix.length);
+    }
+    if (shouldThrowIfNotIndented) {
+      throw new Error(`Line "${line}" is not indented with "${prefix}"`);
+    }
+    return line;
+  }).join('\n');
 }
