@@ -74,11 +74,21 @@ export function emitAsyncErrorEvent(asyncError: unknown): void {
  * Converts an error to a string representation, including nested causes with indentation.
  *
  * @param error - The error to convert to a string.
+ * @param shouldEnsureAnsiSequencesCleared - Whether to ensure ANSI sequences in the error message are cleared.
  * @returns The string representation of the error.
  */
-export function errorToString(error: unknown): string {
+export function errorToString(error: unknown, shouldEnsureAnsiSequencesCleared = false): string {
+  const ANSI_CLEAR_SEQUENCE = '\x1b[0m';
   return parseErrorEntries(error)
-    .map((entry) => '  '.repeat(entry.level) + (entry.message.startsWith(ERROR_STACK_PREFIX) ? entry.message.slice(ERROR_STACK_PREFIX.length) : entry.message))
+    .map((entry) => {
+      const prefix = '  '.repeat(entry.level);
+      // NOTE: Cannot use `String.trimStart()` function here because of the circular dependency.
+      let message = entry.message.startsWith(ERROR_STACK_PREFIX) ? entry.message.slice(ERROR_STACK_PREFIX.length) : entry.message;
+      if (entry.shouldClearAnsiSequence && shouldEnsureAnsiSequencesCleared) {
+        message = `${ANSI_CLEAR_SEQUENCE}${message}${ANSI_CLEAR_SEQUENCE}`;
+      }
+      return prefix + message;
+    })
     .join('\n');
 }
 
@@ -104,15 +114,7 @@ export function getStackTrace(framesToSkip = 0): string {
  */
 export function printError(error: unknown, console?: Console): void {
   console ??= globalThis.console;
-  const entries = parseErrorEntries(error);
-
-  for (const entry of entries) {
-    if (entry.shouldClearAnsiSequence) {
-      console.error(`\x1b[0m${entry.message}\x1b[0m`);
-    } else {
-      console.error(entry.message);
-    }
-  }
+  console.error(errorToString(error, true));
 }
 
 /**
