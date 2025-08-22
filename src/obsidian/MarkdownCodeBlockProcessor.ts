@@ -18,7 +18,8 @@ import { abortSignalNever } from '../AbortController.ts';
 import {
   hasSingleOccurrence,
   indent,
-  replaceAll
+  replaceAll,
+  unindent
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { process } from './Vault.ts';
@@ -111,6 +112,11 @@ export interface ReplaceCodeBlockOptions extends GetCodeBlockSectionInfoOptions 
    * The provider that provides the new code block.
    */
   codeBlockProvider: ValueProvider<string, [string]>;
+
+  /**
+   * Whether to preserve the line prefix of the code block. Default is `false`.
+   */
+  shouldPreserveLinePrefix?: boolean;
 }
 
 /**
@@ -219,13 +225,26 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promis
   const sectionInfo = await getCodeBlockSectionInfo(options);
 
   const lines = sectionInfo.text.split('\n');
-  const textBeforeCodeBlock = lines.slice(0, sectionInfo.lineStart).join('\n');
-  const oldCodeBlock = lines.slice(sectionInfo.lineStart, sectionInfo.lineEnd + 1).join('\n');
-  const textAfterCodeBlock = lines.slice(sectionInfo.lineEnd + 1).join('\n');
-  const newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
+  let textBeforeCodeBlock = lines.slice(0, sectionInfo.lineStart).join('\n');
+  if (textBeforeCodeBlock !== '') {
+    textBeforeCodeBlock += '\n';
+  }
+  let oldCodeBlock = lines.slice(sectionInfo.lineStart, sectionInfo.lineEnd + 1).join('\n');
+  if (options.shouldPreserveLinePrefix) {
+    oldCodeBlock = unindent(oldCodeBlock, sectionInfo.prefix);
+  }
+  let textAfterCodeBlock = lines.slice(sectionInfo.lineEnd + 1).join('\n');
+  if (textAfterCodeBlock !== '') {
+    textAfterCodeBlock = `\n${textAfterCodeBlock}`;
+  }
+  let newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
   abortSignal.throwIfAborted();
 
-  const newSectionText = `${textBeforeCodeBlock}\n${newCodeBlock}${textAfterCodeBlock}`;
+  if (options.shouldPreserveLinePrefix) {
+    newCodeBlock = indent(newCodeBlock, sectionInfo.prefix);
+  }
+
+  const newSectionText = `${textBeforeCodeBlock}${newCodeBlock}${textAfterCodeBlock}`;
   await process(app, ctx.sourcePath, (_abortSignal, content) => {
     if (!hasSingleOccurrence(content, sectionInfo.text)) {
       throw new Error('Multiple suitable code blocks found.');
