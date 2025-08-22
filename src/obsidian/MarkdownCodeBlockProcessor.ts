@@ -124,11 +124,8 @@ export interface ReplaceCodeBlockOptions extends GetCodeBlockSectionInfoOptions 
  *
  * @param options - The options for the function.
  * @returns The information about the code block in the Markdown section.
- *
- * @throws If no suitable code block is found.
- * @throws If multiple suitable code blocks are found. Happens when the code block is in a callout. Caused by the bug in Obsidian: {@link https://forum.obsidian.md/t/bug-getsectioninfo-is-inaccurate-inside-callouts/104289}
  */
-export async function getCodeBlockSectionInfo(options: GetCodeBlockSectionInfoOptions): Promise<CodeBlockMarkdownSectionInformation> {
+export async function getCodeBlockSectionInfo(options: GetCodeBlockSectionInfoOptions): Promise<CodeBlockMarkdownSectionInformation | null> {
   const { app, ctx, el, source } = options;
 
   const approximateSectionInfo = ctx.getSectionInfo(el) ?? await createApproximateSectionInfo(app, ctx);
@@ -154,14 +151,14 @@ export async function getCodeBlockSectionInfo(options: GetCodeBlockSectionInfoOp
     }
 
     if (sectionInfo) {
-      throw new Error('Multiple suitable code blocks found.');
+      return null;
     }
 
     sectionInfo = createSectionInfoFromMatch(potentialCodeBlockText, match, approximateSectionInfo, sourceLines);
   }
 
   if (!sectionInfo) {
-    throw new Error('No suitable code block found.');
+    return null;
   }
 
   return sectionInfo;
@@ -176,6 +173,10 @@ export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Pro
   const { app, ctx, lineOffset = 0, text } = options;
 
   const sectionInfo = await getCodeBlockSectionInfo(options);
+  if (!sectionInfo) {
+    throw new Error('Could not uniquely identify the code block.');
+  }
+
   await process(app, ctx.sourcePath, (_abortSignal, content) => {
     if (!hasSingleOccurrence(content, sectionInfo.text)) {
       throw new Error('Multiple suitable code blocks found.');
@@ -198,6 +199,10 @@ export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Pr
   const { app, ctx, lineOffset = 0, text } = options;
 
   const sectionInfo = await getCodeBlockSectionInfo(options);
+  if (!sectionInfo) {
+    throw new Error('Could not uniquely identify the code block.');
+  }
+
   await process(app, ctx.sourcePath, (_abortSignal, content) => {
     if (!hasSingleOccurrence(content, sectionInfo.text)) {
       throw new Error('Multiple suitable code blocks found.');
@@ -235,6 +240,9 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promis
   abortSignal.throwIfAborted();
 
   const sectionInfo = await getCodeBlockSectionInfo(options);
+  if (!sectionInfo) {
+    throw new Error('Could not uniquely identify the code block.');
+  }
 
   const lines = sectionInfo.text.split('\n');
   const textBeforeCodeBlock = lines.slice(0, sectionInfo.lineStart).join('\n');
