@@ -109,6 +109,19 @@ export function escape(str: string): string {
 }
 
 /**
+ * Checks if a string has a single occurrence of a search value.
+ *
+ * @param str - The string to check.
+ * @param searchValue - The search value to check for.
+ * @returns `true` if the string has a single occurrence of the search value, `false` otherwise.
+ */
+export function hasSingleOccurrence(str: string, searchValue: string): boolean {
+  const firstIndex = str.indexOf(searchValue);
+  const lastIndex = str.lastIndexOf(searchValue);
+  return firstIndex !== -1 && firstIndex === lastIndex;
+}
+
+/**
  * Indents a string by adding a prefix to each line.
  *
  * @param text - The string to indent.
