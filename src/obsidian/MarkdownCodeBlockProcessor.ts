@@ -212,6 +212,18 @@ export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Pr
 }
 
 /**
+ * Removes the code block.
+ *
+ * @param options - The options for the function.
+ */
+export async function removeCodeBlock(options: GetCodeBlockSectionInfoOptions): Promise<void> {
+  await replaceCodeBlock({
+    ...options,
+    codeBlockProvider: ''
+  });
+}
+
+/**
  * Replaces the code block.
  *
  * @param options - The options for the function.
@@ -225,32 +237,30 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promis
   const sectionInfo = await getCodeBlockSectionInfo(options);
 
   const lines = sectionInfo.text.split('\n');
-  let textBeforeCodeBlock = lines.slice(0, sectionInfo.lineStart).join('\n');
-  if (textBeforeCodeBlock !== '') {
-    textBeforeCodeBlock += '\n';
-  }
+  const textBeforeCodeBlock = lines.slice(0, sectionInfo.lineStart).join('\n');
   let oldCodeBlock = lines.slice(sectionInfo.lineStart, sectionInfo.lineEnd + 1).join('\n');
   if (options.shouldPreserveLinePrefix) {
     oldCodeBlock = unindent(oldCodeBlock, sectionInfo.prefix);
   }
-  let textAfterCodeBlock = lines.slice(sectionInfo.lineEnd + 1).join('\n');
-  if (textAfterCodeBlock !== '') {
-    textAfterCodeBlock = `\n${textAfterCodeBlock}`;
-  }
+  const textAfterCodeBlock = lines.slice(sectionInfo.lineEnd + 1).join('\n');
   let newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
   abortSignal.throwIfAborted();
 
-  if (options.shouldPreserveLinePrefix) {
+  if (newCodeBlock && options.shouldPreserveLinePrefix) {
     newCodeBlock = indent(newCodeBlock, sectionInfo.prefix);
   }
 
-  const newSectionText = `${textBeforeCodeBlock}${newCodeBlock}${textAfterCodeBlock}`;
+  const newSectionText = `${appendNewLine(textBeforeCodeBlock)}${appendNewLine(newCodeBlock)}${textAfterCodeBlock}`;
   await process(app, ctx.sourcePath, (_abortSignal, content) => {
     if (!hasSingleOccurrence(content, sectionInfo.text)) {
       throw new Error('Multiple suitable code blocks found.');
     }
     return replaceAll(content, sectionInfo.text, newSectionText);
   });
+}
+
+function appendNewLine(text: string): string {
+  return text === '' ? '' : `${text}\n`;
 }
 
 async function createApproximateSectionInfo(app: App, ctx: MarkdownPostProcessorContext): Promise<MarkdownSectionInformation> {
