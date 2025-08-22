@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 34.0.0
+
+- printError all in one message
+- removeCodeBlock
+- replaceCodeBlock
+- shouldPreserveLinePrefix
+- insert before/after code block
+- hasSingleOccurrence
+- getCodeBlockSectionInfo
+- Update libs
+
 ## 33.1.1
 
 - Fix build
