@@ -141,7 +141,7 @@ export async function getCodeBlockSectionInfo(options: GetCodeBlockSectionInfoOp
   const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
 
   const REG_EXP =
-    /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t]+(?<CodeBlockArgs>.*?)[ \t]+)?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?:\n|$)/g;
+    /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t]+(?<CodeBlockArgs>.*?)[ \t]*?)?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?:\n|$)/g;
 
   let sectionInfo: CodeBlockMarkdownSectionInformation | null = null;
 
