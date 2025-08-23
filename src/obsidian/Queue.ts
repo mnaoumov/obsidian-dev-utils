@@ -106,7 +106,7 @@ async function processNextQueueItem(app: App): Promise<void> {
   await addErrorHandler(() =>
     runWithTimeout(
       item.timeoutInMilliseconds,
-      (abortSignal: AbortSignal) => invokeAsyncAndLog(processNextQueueItem.name, item.fn, abortSignalAny([abortSignal, item.abortSignal]), item.stackTrace),
+      (abortSignal: AbortSignal) => invokeAsyncAndLog(processNextQueueItem.name, item.fn, abortSignalAny(abortSignal, item.abortSignal), item.stackTrace),
       { queuedFn: item.fn }
     ), item.stackTrace);
   queue.items.shift();
