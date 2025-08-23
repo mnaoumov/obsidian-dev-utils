@@ -7,18 +7,19 @@
 import type {
   App,
   MarkdownPostProcessorContext,
-  MarkdownSectionInformation
+  MarkdownSectionInformation,
+  Pos,
+  TFile
 } from 'obsidian';
 
 import { getFrontMatterInfo } from 'obsidian';
 
 import type { ValueProvider } from '../ValueProvider.ts';
 
-import { abortSignalNever } from '../AbortController.ts';
+import { abortSignalAny } from '../AbortController.ts';
 import {
   hasSingleOccurrence,
   indent,
-  replaceAll,
   unindent
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
@@ -27,7 +28,7 @@ import { process } from './Vault.ts';
 /**
  * Represents the information about a code block in a Markdown section.
  */
-export interface CodeBlockMarkdownSectionInformation extends MarkdownSectionInformation {
+export interface CodeBlockMarkdownInformation {
   /**
    * The arguments of the code block.
    */
@@ -44,9 +45,19 @@ export interface CodeBlockMarkdownSectionInformation extends MarkdownSectionInfo
   language: string;
 
   /**
-   * The prefix of the code block.
+   * The line prefix of each line of the code block.
    */
-  prefix: string;
+  linePrefix: string;
+
+  /**
+   * The position of the code block in the note.
+   */
+  notePos: Pos;
+
+  /**
+   * The section information of the code block.
+   */
+  sectionInfo: MarkdownSectionInformation;
 
   /**
    * The start delimiter of the code block.
@@ -72,6 +83,11 @@ export interface GetCodeBlockSectionInfoOptions {
    * The HTMLElement representing the code block.
    */
   el: HTMLElement;
+
+  /**
+   * The content of the note.
+   */
+  noteContent?: string;
 
   /**
    * The source of the code block.
@@ -125,10 +141,24 @@ export interface ReplaceCodeBlockOptions extends GetCodeBlockSectionInfoOptions 
  * @param options - The options for the function.
  * @returns The information about the code block in the Markdown section.
  */
-export async function getCodeBlockSectionInfo(options: GetCodeBlockSectionInfoOptions): Promise<CodeBlockMarkdownSectionInformation | null> {
+export async function getCodeBlockMarkdownInfo(options: GetCodeBlockSectionInfoOptions): Promise<CodeBlockMarkdownInformation | null> {
   const { app, ctx, el, source } = options;
 
-  const approximateSectionInfo = ctx.getSectionInfo(el) ?? await createApproximateSectionInfo(app, ctx);
+  const sourceFile = app.vault.getFileByPath(ctx.sourcePath);
+  if (!sourceFile) {
+    throw new Error(`Source file ${ctx.sourcePath} not found.`);
+  }
+  const content = options.noteContent ?? await app.vault.cachedRead(sourceFile);
+
+  const approximateSectionInfo = ctx.getSectionInfo(el) ?? createApproximateSectionInfo(app, sourceFile, content);
+
+  if (!hasSingleOccurrence(content, approximateSectionInfo.text)) {
+    return null;
+  }
+
+  const sectionInfoOffset = content.indexOf(approximateSectionInfo.text);
+  const linesBeforeSectionCount = content.slice(0, sectionInfoOffset).split('\n').length - 1;
+
   const isInCallout = !!el.parentElement?.classList.contains('callout-content');
 
   const language = getLanguageFromElement(el);
@@ -141,27 +171,27 @@ export async function getCodeBlockSectionInfo(options: GetCodeBlockSectionInfoOp
   const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
 
   const REG_EXP =
-    /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t]+(?<CodeBlockArgs>.*?)[ \t]*?)?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?:\n|$)/g;
+    /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t]+(?<CodeBlockArgs>.*?)[ \t]*?)?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
 
-  let sectionInfo: CodeBlockMarkdownSectionInformation | null = null;
+  let markdownInfo: CodeBlockMarkdownInformation | null = null;
 
   for (const match of potentialCodeBlockText.matchAll(REG_EXP)) {
     if (!isSuitableCodeBlock(match, language, source, isInCallout)) {
       continue;
     }
 
-    if (sectionInfo) {
+    if (markdownInfo) {
       return null;
     }
 
-    sectionInfo = createSectionInfoFromMatch(potentialCodeBlockText, match, approximateSectionInfo, sourceLines);
+    markdownInfo = createSectionInfoFromMatch(potentialCodeBlockText, match, approximateSectionInfo, sourceLines, sectionInfoOffset, linesBeforeSectionCount);
   }
 
-  if (!sectionInfo) {
+  if (!markdownInfo) {
     return null;
   }
 
-  return sectionInfo;
+  return markdownInfo;
 }
 
 /**
@@ -172,20 +202,16 @@ export async function getCodeBlockSectionInfo(options: GetCodeBlockSectionInfoOp
 export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Promise<void> {
   const { app, ctx, lineOffset = 0, text } = options;
 
-  const sectionInfo = await getCodeBlockSectionInfo(options);
-  if (!sectionInfo) {
-    throw new Error('Could not uniquely identify the code block.');
-  }
-
-  await process(app, ctx.sourcePath, (_abortSignal, content) => {
-    if (!hasSingleOccurrence(content, sectionInfo.text)) {
-      throw new Error('Multiple suitable code blocks found.');
+  await process(app, ctx.sourcePath, async (_abortSignal, content) => {
+    const markdownInfo = await getCodeBlockMarkdownInfo({
+      ...options,
+      noteContent: content
+    });
+    if (!markdownInfo) {
+      throw new Error('Could not uniquely identify the code block.');
     }
 
-    const index = content.indexOf(sectionInfo.text);
-    const textBeforeSection = content.slice(0, index);
-    const linesBeforeSection = textBeforeSection.split('\n');
-    const insertLineIndex = linesBeforeSection.length + sectionInfo.lineEnd + lineOffset;
+    const insertLineIndex = markdownInfo.notePos.end.line + lineOffset + 1;
     return insertText(content, insertLineIndex, text, options.shouldPreserveLinePrefix);
   });
 }
@@ -198,20 +224,16 @@ export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Pro
 export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Promise<void> {
   const { app, ctx, lineOffset = 0, text } = options;
 
-  const sectionInfo = await getCodeBlockSectionInfo(options);
-  if (!sectionInfo) {
-    throw new Error('Could not uniquely identify the code block.');
-  }
-
-  await process(app, ctx.sourcePath, (_abortSignal, content) => {
-    if (!hasSingleOccurrence(content, sectionInfo.text)) {
-      throw new Error('Multiple suitable code blocks found.');
+  await process(app, ctx.sourcePath, async (_abortSignal, content) => {
+    const markdownInfo = await getCodeBlockMarkdownInfo({
+      ...options,
+      noteContent: content
+    });
+    if (!markdownInfo) {
+      throw new Error('Could not uniquely identify the code block.');
     }
 
-    const index = content.indexOf(sectionInfo.text);
-    const textBeforeSection = content.slice(0, index);
-    const linesBeforeSection = textBeforeSection.split('\n');
-    const insertLineIndex = linesBeforeSection.length + sectionInfo.lineStart - lineOffset - 1;
+    const insertLineIndex = markdownInfo.notePos.start.line - lineOffset;
     return insertText(content, insertLineIndex, text, options.shouldPreserveLinePrefix);
   });
 }
@@ -235,35 +257,33 @@ export async function removeCodeBlock(options: GetCodeBlockSectionInfoOptions): 
  */
 export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promise<void> {
   const { app, codeBlockProvider, ctx } = options;
+  options.abortSignal?.throwIfAborted();
 
-  const abortSignal = options.abortSignal ?? abortSignalNever();
-  abortSignal.throwIfAborted();
-
-  const sectionInfo = await getCodeBlockSectionInfo(options);
-  if (!sectionInfo) {
-    throw new Error('Could not uniquely identify the code block.');
-  }
-
-  const lines = sectionInfo.text.split('\n');
-  const textBeforeCodeBlock = lines.slice(0, sectionInfo.lineStart).join('\n');
-  let oldCodeBlock = lines.slice(sectionInfo.lineStart, sectionInfo.lineEnd + 1).join('\n');
-  if (options.shouldPreserveLinePrefix) {
-    oldCodeBlock = unindent(oldCodeBlock, sectionInfo.prefix);
-  }
-  const textAfterCodeBlock = lines.slice(sectionInfo.lineEnd + 1).join('\n');
-  let newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
-  abortSignal.throwIfAborted();
-
-  if (newCodeBlock && options.shouldPreserveLinePrefix) {
-    newCodeBlock = indent(newCodeBlock, sectionInfo.prefix);
-  }
-
-  const newSectionText = `${appendNewLine(textBeforeCodeBlock)}${appendNewLine(newCodeBlock)}${textAfterCodeBlock}`;
-  await process(app, ctx.sourcePath, (_abortSignal, content) => {
-    if (!hasSingleOccurrence(content, sectionInfo.text)) {
-      throw new Error('Multiple suitable code blocks found.');
+  await process(app, ctx.sourcePath, async (abortSignal, content) => {
+    abortSignal = abortSignalAny(abortSignal, options.abortSignal);
+    abortSignal.throwIfAborted();
+    const markdownInfo = await getCodeBlockMarkdownInfo({
+      ...options,
+      noteContent: content
+    });
+    if (!markdownInfo) {
+      throw new Error('Could not uniquely identify the code block.');
     }
-    return replaceAll(content, sectionInfo.text, newSectionText);
+
+    let oldCodeBlock = content.slice(markdownInfo.notePos.start.offset, markdownInfo.notePos.end.offset);
+    if (options.shouldPreserveLinePrefix) {
+      oldCodeBlock = unindent(oldCodeBlock, markdownInfo.linePrefix);
+    }
+
+    let newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
+    if (newCodeBlock && options.shouldPreserveLinePrefix) {
+      newCodeBlock = indent(newCodeBlock, markdownInfo.linePrefix);
+    }
+
+    const textBeforeCodeBlock = content.slice(0, markdownInfo.notePos.start.offset);
+    const textAfterCodeBlock = content.slice(markdownInfo.notePos.end.offset);
+
+    return `${appendNewLine(textBeforeCodeBlock)}${appendNewLine(newCodeBlock)}${textAfterCodeBlock}`;
   });
 }
 
@@ -271,14 +291,9 @@ function appendNewLine(text: string): string {
   return text === '' ? '' : `${text}\n`;
 }
 
-async function createApproximateSectionInfo(app: App, ctx: MarkdownPostProcessorContext): Promise<MarkdownSectionInformation> {
-  const sourceFile = app.vault.getFileByPath(ctx.sourcePath);
-  if (!sourceFile) {
-    throw new Error(`Source file ${ctx.sourcePath} not found.`);
-  }
+function createApproximateSectionInfo(app: App, sourceFile: TFile, content: string): MarkdownSectionInformation {
   const cache = app.metadataCache.getFileCache(sourceFile);
   const frontmatterEndOffset = cache?.frontmatterPosition?.end.offset;
-  const content = await app.vault.cachedRead(sourceFile);
   const contentStartOffset = frontmatterEndOffset === undefined ? getFrontMatterInfo(content).contentStart : frontmatterEndOffset + 1;
   const text = content.slice(contentStartOffset);
   return {
@@ -292,8 +307,10 @@ function createSectionInfoFromMatch(
   potentialCodeBlockText: string,
   match: RegExpMatchArray,
   approximateSectionInfo: MarkdownSectionInformation,
-  sourceLines: string[]
-): CodeBlockMarkdownSectionInformation {
+  sourceLines: string[],
+  sectionInfoOffset: number,
+  linesBeforeSectionCount: number
+): CodeBlockMarkdownInformation {
   const linePrefix = match.groups?.['LinePrefix'] ?? '';
   const codeBlockStartDelimiter = match.groups?.['CodeBlockStartDelimiter'] ?? '';
   const codeBlockEndDelimiter = match.groups?.['CodeBlockEndDelimiter'] ?? '';
@@ -301,17 +318,32 @@ function createSectionInfoFromMatch(
   const language = match.groups?.['CodeBlockLanguage'] ?? '';
 
   const previousText = potentialCodeBlockText.slice(0, match.index);
-  const previousTextLines = previousText.split('\n');
+  const previousTextLinesCount = previousText.split('\n').length - 1;
+  const matchLastLine = match[0].split('\n').at(-1) ?? '';
 
   return {
     args: codeBlockArgs,
     endDelimiter: codeBlockEndDelimiter,
     language,
-    lineEnd: previousTextLines.length + sourceLines.length,
-    lineStart: previousTextLines.length - 1,
-    prefix: linePrefix,
-    startDelimiter: codeBlockStartDelimiter,
-    text: approximateSectionInfo.text
+    linePrefix,
+    notePos: {
+      end: {
+        col: matchLastLine.length,
+        line: linesBeforeSectionCount + previousTextLinesCount + sourceLines.length - 1,
+        offset: sectionInfoOffset + (match.index ?? 0) + match[0].length
+      },
+      start: {
+        col: 0,
+        line: linesBeforeSectionCount + previousTextLinesCount,
+        offset: sectionInfoOffset + (match.index ?? 0)
+      }
+    },
+    sectionInfo: {
+      lineEnd: previousTextLinesCount + sourceLines.length - 1,
+      lineStart: previousTextLinesCount,
+      text: approximateSectionInfo.text
+    },
+    startDelimiter: codeBlockStartDelimiter
   };
 }
 
