@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 34.0.2-beta.1
+
+- Include more context in CodeBlockMarkdownInformation
+- Refactor abortSignalAny
+- Optional args whitespace
+
 ## 34.0.1
 
 - Don't throw if no unique code block found
