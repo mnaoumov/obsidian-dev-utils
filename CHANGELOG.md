@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 34.0.1
+
+- Don't throw if no unique code block found
+- Update libs
+
 ## 34.0.0
 
 - printError all in one message
