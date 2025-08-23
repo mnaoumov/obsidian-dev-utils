@@ -14,10 +14,12 @@ export const INFINITE_TIMEOUT = Number.POSITIVE_INFINITY;
 /**
  * An abort signal that aborts when any of the given abort signals abort.
  *
- * @param abortSignals - The abort signals to abort when any of them abort.
+ * @param maybeAbortSignals - The abort signals to abort when any of them abort.
  * @returns The abort signal that aborts when any of the given abort signals abort.
  */
-export function abortSignalAny(abortSignals: AbortSignal[]): AbortSignal {
+export function abortSignalAny(...maybeAbortSignals: (AbortSignal | undefined)[]): AbortSignal {
+  const abortSignals = maybeAbortSignals.filter((abortSignal) => !!abortSignal);
+
   if (typeof AbortSignal.any === 'function') {
     return AbortSignal.any(abortSignals);
   }

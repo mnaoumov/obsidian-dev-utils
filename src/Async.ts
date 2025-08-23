@@ -350,7 +350,6 @@ export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisa
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
   stackTrace ??= getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
-    abortSignal: abortSignalNever(),
     // eslint-disable-next-line no-magic-numbers
     retryDelayInMilliseconds: 100,
     shouldRetryOnError: false,
@@ -358,12 +357,12 @@ export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisa
     timeoutInMilliseconds: 5000
   };
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  fullOptions.abortSignal.throwIfAborted();
+  fullOptions.abortSignal?.throwIfAborted();
 
   await runWithTimeout(
     fullOptions.timeoutInMilliseconds,
     async (abortSignal: AbortSignal) => {
-      const combinedAbortSignal = abortSignalAny([fullOptions.abortSignal, abortSignal]);
+      const combinedAbortSignal = abortSignalAny(fullOptions.abortSignal, abortSignal);
       combinedAbortSignal.throwIfAborted();
       let attempt = 0;
       while (!combinedAbortSignal.aborted) {
@@ -501,7 +500,7 @@ export async function setTimeoutAsync(delay?: number): Promise<void> {
  * @returns A {@link Promise} that resolves after the specified delay.
  */
 export async function sleep(milliseconds: number, abortSignal?: AbortSignal, shouldThrowOnAbort?: boolean): Promise<void> {
-  await waitForAbort(abortSignalAny([abortSignal ?? abortSignalNever(), abortSignalTimeout(milliseconds)]));
+  await waitForAbort(abortSignalAny(abortSignal, abortSignalTimeout(milliseconds)));
   if (shouldThrowOnAbort) {
     abortSignal?.throwIfAborted();
   }
