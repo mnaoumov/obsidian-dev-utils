@@ -20,7 +20,10 @@ import {
   unindent
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
-import { process } from './Vault.ts';
+import {
+  process,
+  saveNote
+} from './Vault.ts';
 
 /**
  * Represents the options for getting the information about a code block in a Markdown section.
@@ -105,7 +108,14 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockSectionInfoO
   if (!sourceFile) {
     throw new Error(`Source file ${ctx.sourcePath} not found.`);
   }
-  const content = options.noteContent ?? await app.vault.cachedRead(sourceFile);
+
+  let content: string;
+  if (options.noteContent) {
+    content = options.noteContent;
+  } else {
+    await saveNote(app, sourceFile);
+    content = await app.vault.read(sourceFile);
+  }
 
   const approximateSectionInfo = ctx.getSectionInfo(el) ?? {
     lineEnd: content.split('\n').length - 1,
