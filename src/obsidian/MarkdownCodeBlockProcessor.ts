@@ -161,8 +161,8 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockSectionInfoO
     return null;
   }
 
-  const sectionInfoOffset = content.indexOf(approximateSectionInfo.text);
-  const linesBeforeSectionCount = content.slice(0, sectionInfoOffset).split('\n').length - 1;
+  const sectionOffset = content.indexOf(approximateSectionInfo.text);
+  const linesBeforeSectionCount = content.slice(0, sectionOffset).split('\n').length - 1;
 
   const isInCallout = !!el.parentElement?.classList.contains('callout-content');
 
@@ -170,6 +170,18 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockSectionInfoO
   const sourceLines = source.split('\n');
 
   const textLines = approximateSectionInfo.text.split('\n');
+  const textLineOffsets = new Map<number, number>();
+  textLineOffsets.set(linesBeforeSectionCount, sectionOffset);
+
+  let lastTextLineOffset = sectionOffset;
+  for (let i = 0; i < textLines.length; i++) {
+    const textLine = textLines[i];
+    const line = textLine ?? '';
+    const lineOffset = lastTextLineOffset + line.length + 1;
+    textLineOffsets.set(linesBeforeSectionCount + i + 1, lineOffset);
+    lastTextLineOffset = lineOffset;
+  }
+
   const potentialCodeBlockTextLines = textLines.map((line, index) =>
     approximateSectionInfo.lineStart <= index && index <= approximateSectionInfo.lineEnd ? line : ''
   );
@@ -308,12 +320,12 @@ function createApproximateSectionInfo(app: App, sourceFile: TFile, content: stri
   };
 }
 
-function createSectionInfoFromMatch(
+function createMarkdownInfoFromMatch(
   potentialCodeBlockText: string,
   match: RegExpMatchArray,
   approximateSectionInfo: MarkdownSectionInformation,
   sourceLines: string[],
-  sectionInfoOffset: number,
+  textLineOffsets: Map<number, number>,
   linesBeforeSectionCount: number
 ): CodeBlockMarkdownInformation {
   const linePrefix = match.groups?.['LinePrefix'] ?? '';
@@ -324,7 +336,9 @@ function createSectionInfoFromMatch(
 
   const previousText = potentialCodeBlockText.slice(0, match.index);
   const previousTextLinesCount = previousText.split('\n').length - 1;
-  const matchLastLine = match[0].split('\n').at(-1) ?? '';
+
+  const startLine = linesBeforeSectionCount + previousTextLinesCount;
+  const endLine = startLine + sourceLines.length + 1;
 
   return {
     args: codeBlockArgsStr.split(/\s+/).filter(Boolean),
@@ -333,19 +347,19 @@ function createSectionInfoFromMatch(
     linePrefix,
     notePos: {
       end: {
-        col: matchLastLine.length,
-        line: linesBeforeSectionCount + previousTextLinesCount + sourceLines.length - 1,
-        offset: sectionInfoOffset + (match.index ?? 0) + match[0].length
+        col: (textLineOffsets.get(endLine + 1) ?? 0) - (textLineOffsets.get(endLine) ?? 0) - 1,
+        line: endLine,
+        offset: (textLineOffsets.get(endLine + 1) ?? 0) - 1
       },
       start: {
         col: 0,
-        line: linesBeforeSectionCount + previousTextLinesCount,
-        offset: sectionInfoOffset + (match.index ?? 0)
+        line: startLine,
+        offset: textLineOffsets.get(startLine) ?? 0
       }
     },
     rawArgsStr: codeBlockArgsStr,
     sectionInfo: {
-      lineEnd: previousTextLinesCount + sourceLines.length - 1,
+      lineEnd: previousTextLinesCount + sourceLines.length + 1,
       lineStart: previousTextLinesCount,
       text: approximateSectionInfo.text
     },
