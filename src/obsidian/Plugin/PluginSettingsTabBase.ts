@@ -176,7 +176,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     propertyName: ConditionalKeys<ExtractPluginSettings<PluginTypes>, UIValue>,
     options?: BindOptions<UIValue>
   ): TValueComponent;
-
   /**
    * Binds a value component to a plugin setting.
    *
@@ -197,7 +196,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     propertyName: PropertyName,
     options: BindOptionsExtended<ExtractPluginSettings<PluginTypes>, UIValue, PropertyName>
   ): TValueComponent;
-
   /**
    * Binds a value component to a plugin setting.
    *

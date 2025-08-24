@@ -30,8 +30,7 @@ import { noop } from './Function.ts';
  *
  * @typeParam T - The type of the value.
  */
-export type PromiseResolve<T> = undefined extends T
-  ? (value?: PromiseLike<T> | T) => void
+export type PromiseResolve<T> = undefined extends T ? (value?: PromiseLike<T> | T) => void
   : (value: PromiseLike<T> | T) => void;
 
 /**
