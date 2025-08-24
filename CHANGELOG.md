@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 36.1.0
+
+- Ensure note saved
+- Reformat. Use a/an article in docs
+
 ## 36.0.0
 
 - Extract CodeBlockMarkdownInformation
