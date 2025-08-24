@@ -76,7 +76,17 @@ export interface InsertCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
 }
 
 /**
- * Represents the options for replacing a code block.
+ * Options for {@link removeCodeBlock}.
+ */
+export interface RemoveCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
+  /**
+   * Whether to keep the gap when the new code block is empty. Default is `false`.
+   */
+  shouldKeepGapWhenEmpty?: boolean;
+}
+
+/**
+ * Options for {@link replaceCodeBlock}.
  */
 export interface ReplaceCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
   /**
@@ -88,6 +98,11 @@ export interface ReplaceCodeBlockOptions extends GetCodeBlockSectionInfoOptions 
    * Provides a new code block.
    */
   codeBlockProvider: ValueProvider<string, [string]>;
+
+  /**
+   * Whether to keep the gap when the new code block is empty. Default is `false`.
+   */
+  shouldKeepGapWhenEmpty?: boolean;
 
   /**
    * Whether to preserve the line prefix of the code block. Default is `false`.
@@ -226,7 +241,7 @@ export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Pr
  *
  * @param options - The options for the function.
  */
-export async function removeCodeBlock(options: GetCodeBlockSectionInfoOptions): Promise<void> {
+export async function removeCodeBlock(options: RemoveCodeBlockOptions): Promise<void> {
   await replaceCodeBlock({
     ...options,
     codeBlockProvider: ''
@@ -259,19 +274,27 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promis
     }
 
     let newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
-    if (newCodeBlock && options.shouldPreserveLinePrefix) {
+    if ((newCodeBlock || options.shouldKeepGapWhenEmpty) && options.shouldPreserveLinePrefix) {
       newCodeBlock = indent(newCodeBlock, markdownInfo.linePrefix);
     }
 
     const textBeforeCodeBlock = content.slice(0, markdownInfo.positionInNote.start.offset);
     const textAfterCodeBlock = content.slice(markdownInfo.positionInNote.end.offset);
 
-    return `${appendNewLine(textBeforeCodeBlock)}${appendNewLine(newCodeBlock)}${textAfterCodeBlock}`;
-  });
-}
+    if (newCodeBlock || options.shouldKeepGapWhenEmpty) {
+      return `${textBeforeCodeBlock}${newCodeBlock}${textAfterCodeBlock}`;
+    }
 
-function appendNewLine(text: string): string {
-  return text === '' ? '' : `${text}\n`;
+    if (!textBeforeCodeBlock && !textAfterCodeBlock) {
+      return '';
+    }
+
+    if (textBeforeCodeBlock) {
+      return `${textBeforeCodeBlock.slice(0, -1)}${textAfterCodeBlock}`;
+    }
+
+    return `${textBeforeCodeBlock}${textAfterCodeBlock.slice(1)}`;
+  });
 }
 
 function createMarkdownInfoFromMatch(
