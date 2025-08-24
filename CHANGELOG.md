@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 37.0.0
+
+- Rename shouldKeepGap
+
 ## 36.2.0
 
 - Change tsdocs for FunctionOptions interfaces
