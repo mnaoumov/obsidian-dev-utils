@@ -7,11 +7,11 @@
 import type {
   App,
   MarkdownPostProcessorContext,
-  MarkdownSectionInformation,
-  Pos
+  MarkdownSectionInformation
 } from 'obsidian';
 
 import type { ValueProvider } from '../ValueProvider.ts';
+import type { CodeBlockMarkdownInformation } from './CodeBlockMarkdownInformation.ts';
 
 import { abortSignalAny } from '../AbortController.ts';
 import {
@@ -21,51 +21,6 @@ import {
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { process } from './Vault.ts';
-
-/**
- * Represents the information about a code block in a Markdown section.
- */
-export interface CodeBlockMarkdownInformation {
-  /**
-   * The arguments of the code block.
-   */
-  args: string[];
-
-  /**
-   * The end delimiter of the code block.
-   */
-  endDelimiter: string;
-
-  /**
-   * The language of the code block.
-   */
-  language: string;
-
-  /**
-   * The line prefix of each line of the code block.
-   */
-  linePrefix: string;
-
-  /**
-   * The position of the code block in the note.
-   */
-  notePos: Pos;
-
-  /**
-   * The raw arguments string of the code block.
-   */
-  rawArgsStr: string;
-
-  /**
-   * The section information of the code block.
-   */
-  sectionInfo: MarkdownSectionInformation;
-
-  /**
-   * The start delimiter of the code block.
-   */
-  startDelimiter: string;
-}
 
 /**
  * Represents the options for getting the information about a code block in a Markdown section.
@@ -229,7 +184,7 @@ export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Pro
       throw new Error('Could not uniquely identify the code block.');
     }
 
-    const insertLineIndex = markdownInfo.notePos.end.line + lineOffset + 1;
+    const insertLineIndex = markdownInfo.positionInNote.end.line + lineOffset + 1;
     return insertText(content, insertLineIndex, text, options.shouldPreserveLinePrefix);
   });
 }
@@ -251,7 +206,7 @@ export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Pr
       throw new Error('Could not uniquely identify the code block.');
     }
 
-    const insertLineIndex = markdownInfo.notePos.start.line - lineOffset;
+    const insertLineIndex = markdownInfo.positionInNote.start.line - lineOffset;
     return insertText(content, insertLineIndex, text, options.shouldPreserveLinePrefix);
   });
 }
@@ -288,7 +243,7 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promis
       throw new Error('Could not uniquely identify the code block.');
     }
 
-    let oldCodeBlock = content.slice(markdownInfo.notePos.start.offset, markdownInfo.notePos.end.offset);
+    let oldCodeBlock = content.slice(markdownInfo.positionInNote.start.offset, markdownInfo.positionInNote.end.offset);
     if (options.shouldPreserveLinePrefix) {
       oldCodeBlock = unindent(oldCodeBlock, markdownInfo.linePrefix);
     }
@@ -298,8 +253,8 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promis
       newCodeBlock = indent(newCodeBlock, markdownInfo.linePrefix);
     }
 
-    const textBeforeCodeBlock = content.slice(0, markdownInfo.notePos.start.offset);
-    const textAfterCodeBlock = content.slice(markdownInfo.notePos.end.offset);
+    const textBeforeCodeBlock = content.slice(0, markdownInfo.positionInNote.start.offset);
+    const textAfterCodeBlock = content.slice(markdownInfo.positionInNote.end.offset);
 
     return `${appendNewLine(textBeforeCodeBlock)}${appendNewLine(newCodeBlock)}${textAfterCodeBlock}`;
   });
@@ -334,7 +289,7 @@ function createMarkdownInfoFromMatch(
     endDelimiter: codeBlockEndDelimiter,
     language,
     linePrefix,
-    notePos: {
+    positionInNote: {
       end: {
         col: (textLineOffsets.get(endLine + 1) ?? 0) - (textLineOffsets.get(endLine) ?? 0) - 1,
         line: endLine,
