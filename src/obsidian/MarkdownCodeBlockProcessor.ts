@@ -8,11 +8,8 @@ import type {
   App,
   MarkdownPostProcessorContext,
   MarkdownSectionInformation,
-  Pos,
-  TFile
+  Pos
 } from 'obsidian';
-
-import { getFrontMatterInfo } from 'obsidian';
 
 import type { ValueProvider } from '../ValueProvider.ts';
 
@@ -155,7 +152,11 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockSectionInfoO
   }
   const content = options.noteContent ?? await app.vault.cachedRead(sourceFile);
 
-  const approximateSectionInfo = ctx.getSectionInfo(el) ?? createApproximateSectionInfo(app, sourceFile, content);
+  const approximateSectionInfo = ctx.getSectionInfo(el) ?? {
+    lineEnd: content.split('\n').length - 1,
+    lineStart: 0,
+    text: content
+  };
 
   if (!hasSingleOccurrence(content, approximateSectionInfo.text)) {
     return null;
@@ -306,18 +307,6 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promis
 
 function appendNewLine(text: string): string {
   return text === '' ? '' : `${text}\n`;
-}
-
-function createApproximateSectionInfo(app: App, sourceFile: TFile, content: string): MarkdownSectionInformation {
-  const cache = app.metadataCache.getFileCache(sourceFile);
-  const frontmatterEndOffset = cache?.frontmatterPosition?.end.offset;
-  const contentStartOffset = frontmatterEndOffset === undefined ? getFrontMatterInfo(content).contentStart : frontmatterEndOffset + 1;
-  const text = content.slice(contentStartOffset);
-  return {
-    lineEnd: text.split('\n').length - 1,
-    lineStart: 0,
-    text
-  };
 }
 
 function createMarkdownInfoFromMatch(
