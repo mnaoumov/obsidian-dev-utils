@@ -35,17 +35,17 @@ import { getBacklinksForFileSafe } from './MetadataCache.ts';
  */
 export interface RenderDelayedBacklinksForFolderOptions {
   /**
-   * The DataviewInlineApi instance.
+   * A {@link DataviewInlineApi} instance.
    */
   dv: DataviewInlineApi;
 
   /**
-   * The folder path. If not provided, the current file's folder will be used.
+   * A folder path. If not provided, the current file's folder will be used.
    */
   folder?: string;
 
   /**
-   * The title for the rendered backlinks. Defaults to "Folder Backlinks".
+   * A title for the rendered backlinks. Defaults to "Folder Backlinks".
    */
   title?: string;
 }
@@ -55,7 +55,7 @@ export interface RenderDelayedBacklinksForFolderOptions {
  */
 export interface RenderDelayedBacklinksOptions {
   /**
-   * The DataviewInlineApi instance.
+   * A {@link DataviewInlineApi} instance.
    */
   dv: DataviewInlineApi;
 
@@ -65,7 +65,7 @@ export interface RenderDelayedBacklinksOptions {
   files: PathOrFile[];
 
   /**
-   * The title for the rendered backlinks. Defaults to "Backlinks".
+   * A title for the rendered backlinks. Defaults to "Backlinks".
    */
   title?: string;
 }

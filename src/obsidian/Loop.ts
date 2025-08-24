@@ -27,36 +27,50 @@ export interface LoopOptions<T> {
    * An optional abort signal to cancel the loop.
    */
   abortSignal?: AbortSignal;
+
   /**
-   * The function to build the notice message for each item.
+   * Build a notice message for each item.
+   *
+   * @param item - The current item.
+   * @param iterationStr - A string representing the current iteration.
+   * @returns A string to display in the notice.
    */
   buildNoticeMessage(item: T, iterationStr: string): string;
+
   /**
-   * The items to loop over.
+   * Items to loop over.
    */
   items: T[];
+
   /**
-   * The minimum timeout for the notice.
+   * A minimum timeout for the notice.
    */
   noticeMinTimeoutInMilliseconds?: number;
+
   /**
-   * The function to process each item.
+   * Process each item.
+   *
+   * @param item - The current item.
    */
   processItem(item: T): Promisable<void>;
+
   /**
-   * The title of the progress bar.
+   * A title of the progress bar.
    */
   progressBarTitle?: string;
+
   /**
    * Whether to continue the loop on error.
    */
   shouldContinueOnError?: boolean;
+
   /**
    * Whether to show a progress bar.
    */
   shouldShowProgressBar?: boolean;
+
   /**
-   * The threshold for the UI update.
+   * A threshold for the UI update.
    */
   uiUpdateThresholdInMilliseconds?: number;
 }

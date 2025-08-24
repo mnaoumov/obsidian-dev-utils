@@ -26,7 +26,7 @@ import { ensureWrapped } from './SettingComponentWrapper.ts';
  */
 export interface ValidatorComponent {
   /**
-   * The validator element of the component.
+   * A validator element of the component.
    */
   readonly validatorEl: ValidatorElement;
 }

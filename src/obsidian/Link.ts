@@ -3,7 +3,6 @@
  *
  * This module provides utilities for handling and updating links within Obsidian vaults. It includes
  * functions to split paths, update links in files, and generate markdown links with various options.
- * The functions integrate with Obsidian's API to ensure that links are managed correctly within the vault.
  */
 
 import type {
@@ -106,22 +105,22 @@ const WIKILINK_DIVIDER = '|';
  */
 export interface ConvertLinkOptions {
   /**
-   * The Obsidian app instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The reference for the link.
+   * A reference for the link.
    */
   link: Reference;
 
   /**
-   * The source file containing the link.
+   * A source file containing the link.
    */
   newSourcePathOrFile: PathOrFile;
 
   /**
-   * The old path of the link.
+   * An old path of the link.
    */
   oldSourcePathOrFile?: PathOrFile;
 
@@ -141,9 +140,11 @@ export interface ConvertLinkOptions {
  */
 export interface GenerateMarkdownLinkDefaultOptionsWrapper {
   /**
-   * The default options for generating markdown links.
+   * A default options for generating markdown links.
+   *
+   * @returns A default options for generating markdown links.
    */
-  defaultOptionsFn: () => Partial<GenerateMarkdownLinkOptions>;
+  defaultOptionsFn(): Partial<GenerateMarkdownLinkOptions>;
 }
 
 /**
@@ -151,12 +152,12 @@ export interface GenerateMarkdownLinkDefaultOptionsWrapper {
  */
 export interface GenerateMarkdownLinkOptions {
   /**
-   * The alias for the link.
+   * An alias for the link.
    */
   alias?: string;
 
   /**
-   * The Obsidian app instance.
+   * An Obsidian app instance.
    */
   app: App;
 
@@ -181,7 +182,7 @@ export interface GenerateMarkdownLinkOptions {
   isWikilink?: boolean;
 
   /**
-   * The original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
+   * An original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
    * These inferred values will be overridden by corresponding settings if specified.
    */
   originalLink?: string;
@@ -207,37 +208,37 @@ export interface GenerateMarkdownLinkOptions {
   shouldUseLeadingDot?: boolean;
 
   /**
-   * The source path of the link.
+   * A source path of the link.
    */
   sourcePathOrFile: PathOrFile;
 
   /**
-   * The subpath of the link.
+   * A subpath of the link.
    */
   subpath?: string;
 
   /**
-   * The target path or file.
+   * A target path or file.
    */
   targetPathOrFile: PathOrFile;
 }
 
 /**
- * The result of parsing a link.
+ * A result of parsing a link.
  */
 export interface ParseLinkResult {
   /**
-   * The alias of the link.
+   * An alias of the link.
    */
   alias?: string;
 
   /**
-   * The encoded URL of the link.
+   * An encoded URL of the link.
    */
   encodedUrl?: string;
 
   /**
-   * The end offset of the link in the original text.
+   * An end offset of the link in the original text.
    */
   endOffset: number;
 
@@ -262,21 +263,22 @@ export interface ParseLinkResult {
   isWikilink: boolean;
 
   /**
-   * The raw link text.
+   * A raw link text.
    */
   raw: string;
 
   /**
-   * The start offset of the link in the original text.
+   * A start offset of the link in the original text.
    */
   startOffset: number;
 
   /**
-   * The title of the link.
+   * A title of the link.
    */
   title?: string;
+
   /**
-   * The URL of the link.
+   * An URL of the link.
    */
   url: string;
 }
@@ -286,12 +288,12 @@ export interface ParseLinkResult {
  */
 export interface ShouldResetAliasOptions {
   /**
-   * The Obsidian app instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The display text of the link.
+   * A display text of the link.
    */
   displayText: string | undefined;
 
@@ -301,22 +303,22 @@ export interface ShouldResetAliasOptions {
   isWikilink?: boolean;
 
   /**
-   * The source path of the link.
+   * A source path of the link.
    */
   newSourcePathOrFile: PathOrFile;
 
   /**
-   * The old source file containing the link.
+   * An old source file containing the link.
    */
   oldSourcePathOrFile?: PathOrFile;
 
   /**
-   * The old target path of the link.
+   * An old target path of the link.
    */
   oldTargetPath: PathOrFile;
 
   /**
-   * The target path or file.
+   * A target path or file.
    */
   targetPathOrFile: PathOrFile;
 }
@@ -326,12 +328,12 @@ export interface ShouldResetAliasOptions {
  */
 export interface SplitSubpathResult {
   /**
-   * The link path.
+   * A link path.
    */
   linkPath: string;
 
   /**
-   * The subpath.
+   * A subpath.
    */
   subpath: string;
 }
@@ -341,32 +343,32 @@ export interface SplitSubpathResult {
  */
 export interface UpdateLinkOptions {
   /**
-   * The Obsidian app instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The reference for the link.
+   * A reference for the link.
    */
   link: Reference;
 
   /**
-   * The source file containing the link.
+   * A source file containing the link.
    */
   newSourcePathOrFile: PathOrFile;
 
   /**
-   * The file associated with the link.
+   * A file associated with the link.
    */
   newTargetPathOrFile: PathOrFile;
 
   /**
-   * The old source file containing the link.
+   * An old source file containing the link.
    */
   oldSourcePathOrFile?: PathOrFile;
 
   /**
-   * The old path of the file.
+   * An old path of the file.
    */
   oldTargetPathOrFile?: PathOrFile;
 
@@ -386,17 +388,17 @@ export interface UpdateLinkOptions {
  */
 export interface UpdateLinksInFileOptions extends ProcessOptions {
   /**
-   * The obsidian app instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The file to update the links in.
+   * A file to update the links in.
    */
   newSourcePathOrFile: PathOrFile;
 
   /**
-   * The old path of the file.
+   * An old path of the file.
    */
   oldSourcePathOrFile?: PathOrFile;
 
@@ -430,26 +432,26 @@ interface TablePosition {
 }
 
 /**
- * The options for updating the links in a content string.
+ * Options for updating the links in a content string.
  */
 interface UpdateLinksInContentOptions {
   /**
-   * The Obsidian application instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The content to update the links in.
+   * A content to update the links in.
    */
   content: string;
 
   /**
-   * The new source path or file.
+   * A new source path or file.
    */
   newSourcePathOrFile: PathOrFile;
 
   /**
-   * The old source path or file.
+   * An old source path or file.
    */
   oldSourcePathOrFile?: PathOrFile;
 

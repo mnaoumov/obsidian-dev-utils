@@ -19,31 +19,31 @@ import {
 } from './ModalBase.ts';
 
 /**
- * The options for the alert modal.
+ * Options for the alert modal.
  */
 export interface AlertOptions {
   /**
-   * The Obsidian app instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The CSS class to apply to the modal.
+   * A CSS class to apply to the modal.
    */
   cssClass?: string;
 
   /**
-   * The message to display in the modal.
+   * A message to display in the modal.
    */
   message: DocumentFragment | string;
 
   /**
-   * The text for the "OK" button.
+   * A text for the "OK" button.
    */
   okButtonText?: string;
 
   /**
-   * The title of the modal.
+   * A title of the modal.
    */
   title?: DocumentFragment | string;
 }

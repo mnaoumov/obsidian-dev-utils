@@ -33,7 +33,7 @@ export interface StateFieldSpec<Value> {
    * @param state - The state to create the value for.
    * @returns The initial value for the field.
    */
-  create: (state: EditorState) => Value;
+  create(state: EditorState): Value;
 
   /**
    * A function that deserializes the JSON representation of this
@@ -77,5 +77,5 @@ export interface StateFieldSpec<Value> {
    * @param transaction - The transaction to compute the new value from.
    * @returns The new value of the field.
    */
-  update: (value: Value, transaction: Transaction) => Value;
+  update(value: Value, transaction: Transaction): Value;
 }

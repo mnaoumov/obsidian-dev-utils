@@ -13,7 +13,7 @@ type MapEntry = readonly [key: unknown, value: unknown];
  */
 export class MapTransformer extends TypedTransformer<Map<unknown, unknown>, MapEntry[]> {
   /**
-   * The ID of the transformer.
+   * An id of the transformer.
    *
    * @returns The ID of the transformer.
    */

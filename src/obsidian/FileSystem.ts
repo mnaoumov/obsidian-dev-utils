@@ -36,7 +36,7 @@ export const BASE_FILE_EXTENSION = 'base';
 export const CANVAS_FILE_EXTENSION = 'canvas';
 
 /**
- * The file extension for Markdown files.
+ * A file extension for Markdown files.
  */
 export const MARKDOWN_FILE_EXTENSION = 'md';
 

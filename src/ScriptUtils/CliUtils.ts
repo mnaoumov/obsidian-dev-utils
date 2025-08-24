@@ -179,7 +179,7 @@ export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskRe
 
 /**
  * Safely executes a task function and returns a {@link CliTaskResult}. If the task function throws an error,
- * the error is caught, and a failure {@link CliTaskResult} is returned.
+ * An error is caught, and a failure {@link CliTaskResult} is returned.
  *
  * @param taskFn - The task function to execute.
  * @returns A {@link Promise} that resolves with a {@link CliTaskResult} representing the outcome of the task.

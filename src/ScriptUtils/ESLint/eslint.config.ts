@@ -28,7 +28,7 @@ import { join } from '../../Path.ts';
 import { getRootFolder } from '../Root.ts';
 
 /**
- * The ESLint configurations for TypeScript projects.
+ * ESLint configurations for TypeScript projects.
  */
 export const obsidianDevUtilsConfigs: Linter.Config[] = tseslint.config(
   {

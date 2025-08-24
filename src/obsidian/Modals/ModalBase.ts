@@ -13,16 +13,16 @@ import type { PromiseResolve } from '../../Async.ts';
 import { addPluginCssClasses } from '../Plugin/PluginContext.ts';
 
 /**
- * The base options for a modal.
+ * Base options for a modal.
  */
 export interface ModalOptionsBase {
   /**
-   * The application instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The CSS class to apply to the modal.
+   * A CSS class to apply to the modal.
    */
   cssClass?: string;
 }

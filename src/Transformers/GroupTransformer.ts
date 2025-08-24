@@ -12,7 +12,7 @@ import { Transformer } from './Transformer.ts';
  */
 export class GroupTransformer extends Transformer {
   /**
-   * The id of the transformer.
+   * An id of the transformer.
    *
    * @returns `group`.
    */
@@ -21,7 +21,7 @@ export class GroupTransformer extends Transformer {
   }
 
   /**
-   * The transformers to combine.
+   * Transformers to combine.
    *
    * @param transformers - The transformers to combine.
    */

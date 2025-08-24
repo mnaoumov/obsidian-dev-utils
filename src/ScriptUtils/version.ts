@@ -5,11 +5,6 @@
  * It includes tasks such as validating version update types, checking the state
  * of Git and GitHub CLI, updating version numbers in files, and performing
  * Git operations such as tagging and pushing.
- *
- * The main function, `updateVersion`, coordinates these tasks to ensure that
- * version updates are handled consistently and correctly. It also integrates
- * with Obsidian plugins, if applicable, by updating relevant files and releasing
- * new versions on GitHub.
  */
 
 import type { PackageLockJson } from './Npm.ts';
@@ -59,12 +54,12 @@ export enum VersionUpdateType {
  */
 export interface Manifest {
   /**
-   * The minimum Obsidian version required for the plugin.
+   * A minimum Obsidian version required for the plugin.
    */
   minAppVersion: string;
 
   /**
-   * The version of the plugin.
+   * A version of the plugin.
    */
   version: string;
 }
@@ -74,7 +69,7 @@ export interface Manifest {
  */
 export interface ObsidianReleasesJson {
   /**
-   * The name of the Obsidian release.
+   * A name of the Obsidian release.
    */
   name: string;
 }

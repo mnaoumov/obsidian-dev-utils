@@ -41,7 +41,7 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 export class CodeHighlighterComponent extends ValueComponent<string>
   implements TextBasedComponent<string>, ValidatorComponent, ValueComponentWithChangeTracking<string> {
   /**
-   * The input element of the component.
+   * An input element of the component.
    *
    * @returns The input element of the component.
    */

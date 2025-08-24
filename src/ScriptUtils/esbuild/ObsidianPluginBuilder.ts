@@ -73,17 +73,17 @@ export interface BuildObsidianPluginOptions {
   customEsbuildPlugins?: Plugin[];
 
   /**
-   * Customizes the esbuild options.
+   * Customizes the `esbuild` options.
    */
   customizeEsbuildOptions?(options: BuildOptions): void;
 
   /**
-   * The build mode, either Development or Production
+   * A build mode, either `Development` or `Production`
    */
   mode: BuildMode;
 
   /**
-   * The folder for Obsidian configuration. Defaults to the `OBSIDIAN_CONFIG_FOLDER` environment variable.
+   * A folder for Obsidian configuration. Defaults to the `OBSIDIAN_CONFIG_FOLDER` environment variable.
    */
   obsidianConfigFolder?: string;
 }

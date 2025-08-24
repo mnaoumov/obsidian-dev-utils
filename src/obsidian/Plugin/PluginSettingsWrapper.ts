@@ -13,17 +13,17 @@ import type { StringKeys } from '../../Type.ts';
  */
 export interface PluginSettingsWrapper<PluginSettings extends object> {
   /**
-   * The safe settings.
+   * Safe settings.
    */
   safeSettings: PluginSettings;
 
   /**
-   * The settings.
+   * Possibly unsafe settings.
    */
   settings: PluginSettings;
 
   /**
-   * The validation messages.
+   * A validation messages.
    */
   validationMessages: Record<StringKeys<PluginSettings>, string>;
 }

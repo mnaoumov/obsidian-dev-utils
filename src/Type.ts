@@ -158,7 +158,7 @@ export function assertAllUnionMembers<
  *
  * This helper function is useful when we need to get type inference when we cannot use generic type parameters.
  *
- * The example below shows such scenario.
+ * An example below shows such a scenario.
  *
  * @typeParam T - The type to convert.
  * @returns A dummy parameter of the type.

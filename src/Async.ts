@@ -30,7 +30,8 @@ import { noop } from './Function.ts';
  *
  * @typeParam T - The type of the value.
  */
-export type PromiseResolve<T> = undefined extends T ? (value?: PromiseLike<T> | T) => void
+export type PromiseResolve<T> = undefined extends T
+  ? (value?: PromiseLike<T> | T) => void
   : (value: PromiseLike<T> | T) => void;
 
 /**
@@ -38,12 +39,12 @@ export type PromiseResolve<T> = undefined extends T ? (value?: PromiseLike<T> | 
  */
 export interface RetryOptions {
   /**
-   * The abort signal to cancel the retry operation.
+   * A abort signal to cancel the retry operation.
    */
   abortSignal?: AbortSignal;
 
   /**
-   * The delay in milliseconds between retry attempts.
+   * A delay in milliseconds between retry attempts.
    */
   retryDelayInMilliseconds?: number;
 
@@ -53,7 +54,7 @@ export interface RetryOptions {
   shouldRetryOnError?: boolean;
 
   /**
-   * The maximum time in milliseconds to wait before giving up on retrying.
+   * A maximum time in milliseconds to wait before giving up on retrying.
    */
   timeoutInMilliseconds?: number;
 }

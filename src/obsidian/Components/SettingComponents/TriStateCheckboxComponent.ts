@@ -30,11 +30,12 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
  */
 export class TriStateCheckboxComponent extends ValueComponent<boolean | null> implements ValidatorComponent, ValueComponentWithChangeTracking<boolean | null> {
   /**
-   * The input element of the checkbox.
+   * An input element of the checkbox.
    */
   public readonly inputEl: HTMLInputElement;
+
   /**
-   * The validator element of the checkbox.
+   * A validator element of the checkbox.
    *
    * @returns The validator element.
    */

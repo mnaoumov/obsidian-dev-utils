@@ -20,7 +20,7 @@ interface ErrorEntry {
 }
 
 /**
- * The message of the AsyncWrapperError.
+ * A message of the AsyncWrapperError.
  */
 export const ASYNC_WRAPPER_ERROR_MESSAGE = 'An unhandled error occurred executing async operation';
 

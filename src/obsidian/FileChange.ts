@@ -56,17 +56,17 @@ import { process } from './Vault.ts';
  */
 export interface FileChange {
   /**
-   * The new content to replace the old content.
+   * A new content to replace the old content.
    */
   newContent: string;
 
   /**
-   * The old content that will be replaced.
+   * An old content that will be replaced.
    */
   oldContent: string;
 
   /**
-   * The reference that caused the change.
+   * A reference that caused the change.
    */
   reference: Reference;
 }

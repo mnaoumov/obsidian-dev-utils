@@ -167,7 +167,7 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   }
 
   /**
-   * The caller line index is 4 because the call stack is as follows:
+   * A caller line index is 4 because the call stack is as follows:
    *
    * 0: Error
    * 1:     at logWithCaller (?:?:?)

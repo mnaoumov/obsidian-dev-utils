@@ -29,36 +29,36 @@ import {
 } from './ModalBase.ts';
 
 /**
- * The options for the prompt modal.
+ * Options for the prompt modal.
  */
 export interface PromptOptions {
   /**
-   * The Obsidian app instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The text for the "Cancel" button.
+   * A text for the "Cancel" button.
    */
   cancelButtonText?: string;
 
   /**
-   * The default value to pre-fill the input field.
+   * A default value to pre-fill the input field.
    */
   defaultValue?: string;
 
   /**
-   * The text for the "OK" button.
+   * A text for the "OK" button.
    */
   okButtonText?: string;
 
   /**
-   * The placeholder text for the input field.
+   * A placeholder text for the input field.
    */
   placeholder?: string;
 
   /**
-   * The title of the modal.
+   * A title of the modal.
    */
   title?: DocumentFragment | string;
 

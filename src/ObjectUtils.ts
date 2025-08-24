@@ -57,41 +57,49 @@ export interface ToJsonOptions {
    * Specifies how functions should be handled in the JSON output (default: `exclude`).
    */
   functionHandlingMode: FunctionHandlingMode;
+
   /**
    * Specifies the maximum depth of nested objects to include in the JSON output.
    * Use `-1` for no limit.
    * Defaults to `-1`.
    */
   maxDepth: number;
+
   /**
    * Specifies whether to catch errors in `toJSON()` and replace them with a placeholder.
    * Defaults to `false`.
    */
   shouldCatchToJSONErrors: boolean;
+
   /**
    * Specifies whether to handle circular references in the JSON output.
    * Defaults to `false`.
    */
   shouldHandleCircularReferences: boolean;
+
   /**
    * Specifies whether to handle errors in the JSON output.
    * Defaults to `false`.
    */
   shouldHandleErrors: boolean;
+
   /**
    * Specifies whether to handle undefined values in the JSON output.
    * Defaults to `false`.
    */
   shouldHandleUndefined: boolean;
+
   /**
    * Specifies whether to sort the keys of the JSON output.
    * Defaults to `false`.
    */
   shouldSortKeys: boolean;
+
   /**
    * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
    */
   space: number | string;
+
   /**
    * Specifies the substitutions to use in the JSON output.
    */
@@ -107,7 +115,7 @@ interface ApplySubstitutionsOptions {
 
 interface EqualityComparerEntry<T> {
   constructor: Constructor<T>;
-  equalityComparer: (a: T, b: T) => boolean;
+  equalityComparer(a: T, b: T): boolean;
 }
 
 interface JSONSerializable {

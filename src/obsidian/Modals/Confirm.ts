@@ -19,36 +19,36 @@ import {
 } from './ModalBase.ts';
 
 /**
- * The options for the confirm modal.
+ * Options for the confirm modal.
  */
 export interface ConfirmOptions {
   /**
-   * The Obsidian app instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The text for the "Cancel" button.
+   * A text for the "Cancel" button.
    */
   cancelButtonText?: string;
 
   /**
-   * The CSS class to apply to the modal.
+   * A CSS class to apply to the modal.
    */
   cssClass?: string;
 
   /**
-   * The message to display in the modal.
+   * A message to display in the modal.
    */
   message: DocumentFragment | string;
 
   /**
-   * The text for the "OK" button.
+   * A text for the "OK" button.
    */
   okButtonText?: string;
 
   /**
-   * The title of the modal.
+   * A title of the modal.
    */
   title?: DocumentFragment | string;
 }

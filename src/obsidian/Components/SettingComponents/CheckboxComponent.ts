@@ -18,6 +18,7 @@ import type { ValueComponentWithChangeTracking } from './ValueComponentWithChang
 
 import { CssClass } from '../../../CssClass.ts';
 import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
+
 /**
  * A component that displays a checkbox.
  *
@@ -29,11 +30,12 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
  */
 export class CheckboxComponent extends ValueComponent<boolean> implements ValidatorComponent, ValueComponentWithChangeTracking<boolean> {
   /**
-   * The input element of the checkbox.
+   * An input element of the checkbox.
    */
   public readonly inputEl: HTMLInputElement;
+
   /**
-   * The validator element of the checkbox.
+   * A validator element of the checkbox.
    *
    * @returns The validator element.
    */

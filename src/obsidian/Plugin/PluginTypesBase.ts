@@ -72,26 +72,29 @@ export type ExtractPluginSettingsWrapper<PluginTypes extends PluginTypesBase> = 
 export type ExtractReadonlyPluginSettingsWrapper<PluginTypes extends PluginTypesBase> = ReadonlyDeep<ExtractPluginSettingsWrapper<PluginTypes>>;
 
 /**
- * The base type for plugin types.
+ * A base type for plugin types.
  *
- * The interface is used only for type inference.
+ * An interface is used only for type inference.
  */
 export interface PluginTypesBase {
   /**
-   * The plugin.
+   * A plugin.
    */
   plugin: PluginBase<PluginTypesBase>;
+
   /**
-   * The plugin settings.
+   * A plugin settings.
    */
   pluginSettings: object;
+
   /**
-   * The plugin settings manager.
+   * A plugin settings manager.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pluginSettingsManager: PluginSettingsManagerBase<any>;
+
   /**
-   * The plugin settings tab.
+   * A plugin settings tab.
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pluginSettingsTab: PluginSettingsTabBase<any>;

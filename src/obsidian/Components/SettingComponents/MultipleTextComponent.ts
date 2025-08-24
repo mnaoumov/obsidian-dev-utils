@@ -35,7 +35,7 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 export class MultipleTextComponent extends ValueComponent<readonly string[]>
   implements TextBasedComponent<readonly string[]>, ValidatorComponent, ValueComponentWithChangeTracking<readonly string[]> {
   /**
-   * The input element of the component.
+   * An input element of the component.
    *
    * @returns The input element of the component.
    */

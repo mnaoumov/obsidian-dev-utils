@@ -11,6 +11,7 @@ import {
   printWithStackTrace
 } from '../Debug.ts';
 import { getStackTrace } from '../Error.ts';
+
 /**
  * Invokes a function and logs the start, end, and duration of the invocation.
  *

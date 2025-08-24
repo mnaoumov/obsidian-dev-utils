@@ -32,7 +32,7 @@ export enum CalloutMode {
  */
 export interface RenderCalloutOptions {
   /**
-   * The abort signal.
+   * An abort signal.
    */
   abortSignal?: AbortSignal;
 
@@ -42,22 +42,22 @@ export interface RenderCalloutOptions {
   contentProvider?: ValueProvider<MaybeReturn<Node | string>>;
 
   /**
-   * The DataviewInlineApi instance.
+   * A {@link DataviewInlineApi} instance.
    */
   dv: DataviewInlineApi;
 
   /**
-   * The header text of the callout, default is an empty string.
+   * A header text of the callout, default is an empty string.
    */
   header?: string;
 
   /**
-   * The callout mode, default is `CalloutMode.FoldableCollapsed`.
+   * A callout mode, default is `CalloutMode.FoldableCollapsed`.
    */
   mode?: CalloutMode;
 
   /**
-   * The type of the callout, default is `"NOTE"`.
+   * A type of the callout, default is `"NOTE"`.
    */
   type?: string;
 }

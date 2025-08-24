@@ -5,7 +5,7 @@
  */
 
 /**
- * The plugin ID for no plugin.
+ * A plugin ID for no plugin.
  */
 export const NO_PLUGIN_ID_INITIALIZED = '__no-plugin-id-initialized__';
 

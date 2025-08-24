@@ -83,7 +83,7 @@ const handledRenames = new Set<string>();
 const interruptedRenamesMap = new Map<string, InterruptedRename[]>();
 
 /**
- * The behavior of the rename/delete handler when deleting empty attachment folders.
+ * A behavior of the rename/delete handler when deleting empty attachment folders.
  */
 export enum EmptyAttachmentFolderBehavior {
   /**
@@ -107,7 +107,7 @@ export enum EmptyAttachmentFolderBehavior {
  */
 export interface RenameDeleteHandlerSettings {
   /**
-   * The behavior of the rename/delete handler when deleting empty attachment folders.
+   * A behavior of the rename/delete handler when deleting empty attachment folders.
    */
   emptyAttachmentFolderBehavior: EmptyAttachmentFolderBehavior;
 

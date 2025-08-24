@@ -21,11 +21,12 @@ const DATE_FORMAT = 'YYYY-[W]WW';
  */
 export interface IsoWeek {
   /**
-   * The ISO 8601 week number (1-53).
+   * An ISO 8601 week number (1-53).
    */
   weekNumber: number;
+
   /**
-   * The year (1-9999).
+   * A year (1-9999).
    */
   year: number;
 }

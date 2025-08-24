@@ -52,7 +52,7 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Distribution folder. */
   Dist = 'dist',
 
-  /** The path to the `lib` folder within the {@link Dist} folder. */
+  /** A path to the `lib` folder within the {@link Dist} folder. */
   DistLib = 'dist/lib',
 
   /** Transpiled TypeScript declaration file extension. */

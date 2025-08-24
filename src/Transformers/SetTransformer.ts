@@ -11,7 +11,7 @@ import { TypedTransformer } from './TypedTransformer.ts';
  */
 export class SetTransformer extends TypedTransformer<Set<unknown>, unknown[]> {
   /**
-   * The ID of the transformer.
+   * An id of the transformer.
    *
    * @returns The ID of the transformer.
    */

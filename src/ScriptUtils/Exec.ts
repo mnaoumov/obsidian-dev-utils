@@ -17,7 +17,7 @@ import {
  */
 export interface ExecOption {
   /**
-   * The current working folder for the command execution.
+   * A current working folder for the command execution.
    */
   cwd?: string;
 
@@ -42,7 +42,7 @@ export interface ExecOption {
   shouldIncludeDetails?: boolean;
 
   /**
-   * The input to be passed to the command.
+   * An input to be passed to the command.
    */
   stdin?: string;
 }
@@ -52,22 +52,22 @@ export interface ExecOption {
  */
 export interface ExecResult {
   /**
-   * The exit code of the command. A value of `null` indicates that the process did not exit normally.
+   * An exit code of the command. A value of `null` indicates that the process did not exit normally.
    */
   exitCode: null | number;
 
   /**
-   * The signal that caused the process to be terminated. A value of `null` indicates that no signal was received.
+   * A signal that caused the process to be terminated. A value of `null` indicates that no signal was received.
    */
   exitSignal: NodeJS.Signals | null;
 
   /**
-   * The standard error output from the command.
+   * A standard error output from the command.
    */
   stderr: string;
 
   /**
-   * The standard output from the command.
+   * A standard output from the command.
    */
   stdout: string;
 }
@@ -78,9 +78,9 @@ export interface ExecResult {
  * @param command - The command to execute. It can be a string or an array of strings.
  * @param options - The options for the execution.
  * @returns A {@link Promise} that resolves with the output of the command.
- * @throws If the command fails with a non-zero exit code and ignoreExitCode is false.
+ * @throws If the command fails with a non-zero exit code and `ignoreExitCode` is `false`.
  *         The error message includes the exit code and stderr.
- *         If an error occurs during the execution and ignoreExitCode is true,
+ *         If an error occurs during the execution and `ignoreExitCode` is `true`,
  *         the error is resolved with the stdout and stderr.
  */
 export async function exec(command: string | string[], options?: { withDetails?: false } & ExecOption): Promise<string>;
