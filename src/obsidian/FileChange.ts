@@ -52,7 +52,7 @@ import {
 import { process } from './Vault.ts';
 
 /**
- * Represents a file change in the Vault.
+ * A file change in the vault.
  */
 export interface FileChange {
   /**

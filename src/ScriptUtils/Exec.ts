@@ -48,7 +48,7 @@ export interface ExecOption {
 }
 
 /**
- * Represents the result of executing a command.
+ * A result of {@link exec}.
  */
 export interface ExecResult {
   /**

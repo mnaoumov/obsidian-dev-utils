@@ -7,7 +7,7 @@
 import type { StringKeys } from '../../Type.ts';
 
 /**
- * Represents a wrapper for plugin settings.
+ * A wrapper for plugin settings.
  *
  * @typeParam PluginSettings - The type of the plugin settings.
  */

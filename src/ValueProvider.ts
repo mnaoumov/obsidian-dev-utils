@@ -9,7 +9,7 @@ import type { Promisable } from 'type-fest';
 import { abortSignalNever } from './AbortController.ts';
 
 /**
- * Represents a value provider that can either be a direct value of type `Value` or a function that returns a value of type `Value`.
+ * Value provider that can either be a direct value of type {@link Value} or a function that returns a value of type {@link Value}.
  *
  * @typeParam Value - The type of the value provided.
  * @typeParam Args - The types of arguments passed to the function if the provider is a function.
