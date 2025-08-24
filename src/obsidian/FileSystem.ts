@@ -26,32 +26,32 @@ import {
 import { trimEnd } from '../String.ts';
 
 /**
- * Represents the file extension for base files.
+ * A file extension for `base` files.
  */
 export const BASE_FILE_EXTENSION = 'base';
 
 /**
- * Represents the file extension for canvas files.
+ * A file extension for `canvas` files.
  */
 export const CANVAS_FILE_EXTENSION = 'canvas';
 
 /**
- * A file extension for Markdown files.
+ * A file extension for `markdown` files.
  */
 export const MARKDOWN_FILE_EXTENSION = 'md';
 
 /**
- * Represents a path or an instance of TAbstractFile.
+ * A path or an instance of {@link TAbstractFile}.
  */
 export type PathOrAbstractFile = string | TAbstractFile;
 
 /**
- * Represents a path or a file.
+ * A path or a {@link TFile}.
  */
 export type PathOrFile = string | TFile;
 
 /**
- * Represents a path or an instance of TFolder.
+ * A path or a {@link TFolder}.
  */
 export type PathOrFolder = string | TFolder;
 

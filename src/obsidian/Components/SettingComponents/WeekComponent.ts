@@ -17,7 +17,7 @@ import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
 const DATE_FORMAT = 'YYYY-[W]WW';
 
 /**
- * Represents an ISO 8601 week date.
+ * An ISO 8601 week date.
  */
 export interface IsoWeek {
   /**

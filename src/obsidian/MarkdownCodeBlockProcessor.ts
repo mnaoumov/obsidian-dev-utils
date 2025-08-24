@@ -26,9 +26,9 @@ import {
 } from './Vault.ts';
 
 /**
- * Represents the options for getting the information about a code block in a Markdown section.
+ * Options for {@link getCodeBlockMarkdownInfo}.
  */
-export interface GetCodeBlockSectionInfoOptions {
+export interface GetCodeBlockMarkdownInfoOptions {
   /**
    * An Obsidian app instance.
    */
@@ -56,9 +56,9 @@ export interface GetCodeBlockSectionInfoOptions {
 }
 
 /**
- * Represents the options for inserting text after a code block.
+ * Options for {@link insertAfterCodeBlock} / {@link insertBeforeCodeBlock}.
  */
-export interface InsertCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
+export interface InsertCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions {
   /**
    * A number of lines to offset the insertion by. Default is `0`.
    */
@@ -78,7 +78,7 @@ export interface InsertCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
 /**
  * Options for {@link removeCodeBlock}.
  */
-export interface RemoveCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
+export interface RemoveCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions {
   /**
    * Whether to keep the gap when the new code block is empty. Default is `false`.
    */
@@ -88,7 +88,7 @@ export interface RemoveCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
 /**
  * Options for {@link replaceCodeBlock}.
  */
-export interface ReplaceCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
+export interface ReplaceCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions {
   /**
    * An abort signal to control the execution of the function.
    */
@@ -116,7 +116,7 @@ export interface ReplaceCodeBlockOptions extends GetCodeBlockSectionInfoOptions 
  * @param options - The options for the function.
  * @returns The information about the code block in the Markdown section.
  */
-export async function getCodeBlockMarkdownInfo(options: GetCodeBlockSectionInfoOptions): Promise<CodeBlockMarkdownInformation | null> {
+export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfoOptions): Promise<CodeBlockMarkdownInformation | null> {
   const { app, ctx, el, source } = options;
 
   const sourceFile = app.vault.getFileByPath(ctx.sourcePath);

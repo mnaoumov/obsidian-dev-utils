@@ -15,7 +15,7 @@ import type { GenericObject } from '../ObjectUtils.ts';
 import { insertAt } from '../String.ts';
 
 /**
- * Represents the combined front matter of a document.
+ * A combined front matter of a document.
  * It is a union of custom front matter, Obsidian front matter, and additional properties.
  *
  * @typeParam CustomFrontmatter - The type of custom front matter.
@@ -23,7 +23,7 @@ import { insertAt } from '../String.ts';
 export type CombinedFrontmatter<CustomFrontmatter> = CustomFrontmatter & GenericObject & ObsidianFrontmatter;
 
 /**
- * Represents the front matter of an Obsidian file.
+ * A front matter of an Obsidian file.
  *
  * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Default+properties}
  */
@@ -45,7 +45,7 @@ export interface ObsidianFrontmatter {
 }
 
 /**
- * Represents the front matter for publishing in Obsidian.
+ * A front matter for publishing in Obsidian.
  *
  * @see {@link https://help.obsidian.md/Editing+and+formatting/Properties#Properties+for+Obsidian+Publish}
  */

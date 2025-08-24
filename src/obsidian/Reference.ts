@@ -19,7 +19,7 @@ import type { FileChange } from './FileChange.ts';
 import { isFrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
 
 /**
- * Represents a reference within a file node in a canvas.
+ * A reference within a file node in a canvas.
  */
 export interface CanvasFileNodeReference extends CanvasReference {
   /**
@@ -29,7 +29,7 @@ export interface CanvasFileNodeReference extends CanvasReference {
 }
 
 /**
- * Represents a reference within a canvas.
+ * A reference within a canvas.
  */
 export interface CanvasReference extends FrontmatterLinkCache {
   /**
@@ -49,7 +49,7 @@ export interface CanvasReference extends FrontmatterLinkCache {
 }
 
 /**
- * Represents a reference within a text node in a canvas.
+ * A reference within a text node in a canvas.
  */
 export interface CanvasTextNodeReference extends CanvasReference {
   /**

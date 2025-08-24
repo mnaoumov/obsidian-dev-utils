@@ -47,7 +47,7 @@ export abstract class CliTaskResult {
   }
 
   /**
-   * Represents a failure result of a CLI task.
+   * A failure result of a CLI task.
    *
    * @returns The failure result.
    */
@@ -89,7 +89,7 @@ export abstract class CliTaskResult {
 }
 
 /**
- * Represents a task result that does not exit the process.
+ * A task result that does not exit the process.
  */
 class DoNotExitTaskResult extends CliTaskResult {
   /**
@@ -105,7 +105,7 @@ class DoNotExitTaskResult extends CliTaskResult {
 }
 
 /**
- * Represents a task result based on an exit code.
+ * A task result based on an exit code.
  */
 class ExitCodeTaskResult extends CliTaskResult {
   public constructor(private readonly exitCode: number) {
@@ -125,7 +125,7 @@ class ExitCodeTaskResult extends CliTaskResult {
 }
 
 /**
- * Represents a task result based on success or failure.
+ * A task result based on success or failure.
  */
 class SuccessTaskResult extends CliTaskResult {
   public constructor(private readonly _isSuccessful: boolean) {
