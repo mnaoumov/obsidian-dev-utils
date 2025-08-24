@@ -11,7 +11,11 @@ import type {
   TFolder
 } from 'obsidian';
 
-import { parentFolderPath } from 'obsidian-typings/implementations';
+import { MarkdownView } from 'obsidian';
+import {
+  parentFolderPath,
+  ViewType
+} from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
@@ -36,6 +40,7 @@ import {
   getFolderOrNull,
   getPath,
   isFile,
+  isMarkdownFile,
   isNote
 } from './FileSystem.ts';
 
@@ -393,6 +398,27 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
   }
 
   return newAvailablePath;
+}
+
+/**
+ * Saves the specified note in the Obsidian app.
+ *
+ * @param app - The Obsidian app instance.
+ * @param pathOrFile - The note to be saved.
+ * @returns A {@link Promise} that resolves when the note is saved.
+ */
+export async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
+  if (!isMarkdownFile(app, pathOrFile)) {
+    return;
+  }
+
+  const path = getPath(app, pathOrFile);
+
+  for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
+    if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path && leaf.view.dirty) {
+      await leaf.view.save();
+    }
+  }
 }
 
 async function invokeFileActionSafe(app: App, pathOrFile: PathOrFile, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {

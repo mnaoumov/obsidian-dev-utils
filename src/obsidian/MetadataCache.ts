@@ -12,13 +12,11 @@ import type {
 } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
 
-import { MarkdownView } from 'obsidian';
 import {
   CustomArrayDictImpl,
   isFrontmatterLinkCache,
   isReferenceCache,
-  parentFolderPath,
-  ViewType
+  parentFolderPath
 } from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../Async.ts';
@@ -31,14 +29,15 @@ import {
   getFile,
   getFileOrNull,
   getFolder,
-  getPath,
-  isFile,
-  isMarkdownFile
+  isFile
 } from './FileSystem.ts';
 import { parseFrontmatter } from './Frontmatter.ts';
 import { isFrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
 import { sortReferences } from './Reference.ts';
-import { readSafe } from './Vault.ts';
+import {
+  readSafe,
+  saveNote
+} from './Vault.ts';
 
 /**
  * Wrapper for the getBacklinksForFile method that provides a safe overload.
@@ -334,26 +333,5 @@ export async function tempRegisterFilesAndRunAsync<T>(app: App, files: TAbstract
     return await fn();
   } finally {
     unregister();
-  }
-}
-
-/**
- * Saves the specified note in the Obsidian app.
- *
- * @param app - The Obsidian app instance.
- * @param pathOrFile - The note to be saved.
- * @returns A {@link Promise} that resolves when the note is saved.
- */
-async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
-  if (!isMarkdownFile(app, pathOrFile)) {
-    return;
-  }
-
-  const path = getPath(app, pathOrFile);
-
-  for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
-    if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path && leaf.view.dirty) {
-      await leaf.view.save();
-    }
   }
 }
