@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 34.0.2-beta.2
+
+- Calculate offsets properly
+- Preserve raw args
+
 ## 34.0.2-beta.1
 
 - Include more context in CodeBlockMarkdownInformation
