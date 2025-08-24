@@ -15,8 +15,10 @@ import type { CodeBlockMarkdownInformation } from './CodeBlockMarkdownInformatio
 
 import { abortSignalAny } from '../AbortController.ts';
 import {
+  ensureLfEndings,
   hasSingleOccurrence,
   indent,
+  indexOfIgnoringLineEndings,
   unindent
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
@@ -138,11 +140,11 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfo
     text: content
   };
 
-  if (!hasSingleOccurrence(content, approximateSectionInfo.text)) {
+  if (!hasSingleOccurrence(ensureLfEndings(content), ensureLfEndings(approximateSectionInfo.text))) {
     return null;
   }
 
-  const sectionOffset = content.indexOf(approximateSectionInfo.text);
+  const sectionOffset = indexOfIgnoringLineEndings(content, approximateSectionInfo.text);
   const linesBeforeSectionCount = content.slice(0, sectionOffset).split('\n').length - 1;
 
   const isInCallout = !!el.parentElement?.classList.contains('callout-content');

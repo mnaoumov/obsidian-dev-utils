@@ -88,6 +88,18 @@ export function ensureEndsWith(str: string, suffix: string): string {
 }
 
 /**
+ * Ensures that a string has `LF` line endings.
+ *
+ * It replaces `CRLF` line endings with `LF`.
+ *
+ * @param str - The string.
+ * @returns The string with `LF` line endings.
+ */
+export function ensureLfEndings(str: string): string {
+  return str.replaceAll(/\r\n?/g, '\n');
+}
+
+/**
  * Ensures that a string starts with the specified prefix, adding it if necessary.
  *
  * @param str - The string to check.
@@ -130,6 +142,45 @@ export function hasSingleOccurrence(str: string, searchValue: string): boolean {
  */
 export function indent(text: string, prefix: string): string {
   return text.split('\n').map((line) => `${prefix}${line}`).join('\n');
+}
+
+/**
+ * Returns the index of the first occurrence of a substring in a string, ignoring line endings.
+ *
+ * @param str - The string to search in.
+ * @param substr - The substring to search for.
+ * @returns The index of the first occurrence of the substring, or `-1` if the substring is not found.
+ */
+export function indexOfIgnoringLineEndings(str: string, substr: string): number {
+  const CR = '\r';
+  const LF = '\n';
+  const CRLF_LENGTH = 2;
+  const NOT_FOUND_INDEX = -1;
+
+  const strLf = ensureLfEndings(str);
+  const substrLf = ensureLfEndings(substr);
+
+  const offsetLf = strLf.indexOf(substrLf);
+  if (offsetLf === NOT_FOUND_INDEX) {
+    return NOT_FOUND_INDEX;
+  }
+
+  // Count how many `CR` were removed before this normalized index
+  let removedCrCount = 0;
+  let strLfIndex = 0;
+
+  let strIndex = 0;
+  while (strIndex < str.length && strLfIndex < offsetLf) {
+    if (str[strIndex] === CR && str[strIndex + 1] === LF) {
+      removedCrCount++;
+      strIndex += CRLF_LENGTH;
+    } else {
+      strIndex++;
+    }
+    strLfIndex++;
+  }
+
+  return offsetLf + removedCrCount;
 }
 
 /**
