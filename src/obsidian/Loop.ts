@@ -20,7 +20,7 @@ import {
 import { noop } from '../Function.ts';
 
 /**
- * Options for the loop function.
+ * Options for {@link loop}.
  */
 export interface LoopOptions<T> {
   /**

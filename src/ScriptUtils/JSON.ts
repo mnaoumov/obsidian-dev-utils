@@ -16,7 +16,7 @@ import {
 } from './NodeModules.ts';
 
 /**
- * Options for editing JSON.
+ * Options for {@link editJson}.
  */
 export interface EditJsonOptions {
   /**

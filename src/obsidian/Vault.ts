@@ -45,7 +45,7 @@ import {
 } from './FileSystem.ts';
 
 /**
- * Options for the `process` function.
+ * Options for {@link process}.
  */
 export interface ProcessOptions extends RetryOptions {
   /**

@@ -29,7 +29,7 @@ import {
 } from './ModalBase.ts';
 
 /**
- * Options for the prompt modal.
+ * Options for {@link prompt}.
  */
 export interface PromptOptions {
   /**

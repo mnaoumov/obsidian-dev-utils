@@ -34,7 +34,7 @@ export type PromiseResolve<T> = undefined extends T ? (value?: PromiseLike<T> | 
   : (value: PromiseLike<T> | T) => void;
 
 /**
- * Options for configuring the retry behavior.
+ * Options for {@link retryWithTimeout}.
  */
 export interface RetryOptions {
   /**

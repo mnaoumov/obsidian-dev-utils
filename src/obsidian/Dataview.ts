@@ -150,7 +150,7 @@ const paginationCss = `
 export type ArrayOrDataArray<T> = DataArray<T> | T[];
 
 /**
- * Options for rendering an iframe in the Dataview container.
+ * Options for {@link renderIframe}.
  */
 export interface RenderIframeOptions {
   /**
@@ -175,7 +175,7 @@ export interface RenderIframeOptions {
 }
 
 /**
- * Options for rendering a paginated list using the Dataview API.
+ * Options for {@link renderPaginatedList}.
  */
 export interface RenderPaginatedListOptions<T> {
   /**
@@ -195,7 +195,7 @@ export interface RenderPaginatedListOptions<T> {
 }
 
 /**
- * Options for rendering a paginated element using the Dataview API.
+ * Options for {@link renderPaginated}.
  */
 export interface RenderPaginatedOptions<T> {
   /**
@@ -223,7 +223,7 @@ export interface RenderPaginatedOptions<T> {
 }
 
 /**
- * Options for rendering a paginated table using the Dataview API.
+ * Options for {@link renderPaginatedTable}.
  */
 export interface RenderPaginatedTableOptions<T> {
   /**

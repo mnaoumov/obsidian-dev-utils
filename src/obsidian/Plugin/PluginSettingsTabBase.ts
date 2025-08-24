@@ -56,7 +56,7 @@ import { addPluginCssClasses } from './PluginContext.ts';
 export const SAVE_TO_FILE_CONTEXT = 'PluginSettingsTab';
 
 /**
- * Options for binding a value component to a plugin setting.
+ * Options for `PluginSettingsTabBase.bind`.
  */
 export interface BindOptions<T> {
   /**
@@ -83,7 +83,7 @@ export interface BindOptions<T> {
 }
 
 /**
- * Extended options for binding a value component to a plugin setting.
+ * Extended options for `PluginSettingsTabBase.bind`.
  */
 export interface BindOptionsExtended<
   PluginSettings extends object,

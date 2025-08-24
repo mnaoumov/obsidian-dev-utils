@@ -101,7 +101,7 @@ const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
 const WIKILINK_DIVIDER = '|';
 
 /**
- * Options for converting a link.
+ * Options for {@link convertLink}.
  */
 export interface ConvertLinkOptions {
   /**
@@ -136,7 +136,7 @@ export interface ConvertLinkOptions {
 }
 
 /**
- * Wrapper for default options for generating markdown links.
+ * Wrapper for default options for {@link GenerateMarkdownLinkOptions}.
  */
 export interface GenerateMarkdownLinkDefaultOptionsWrapper {
   /**
@@ -148,7 +148,7 @@ export interface GenerateMarkdownLinkDefaultOptionsWrapper {
 }
 
 /**
- * Options for generating a markdown link.
+ * Options for {@link generateMarkdownLink}.
  */
 export interface GenerateMarkdownLinkOptions {
   /**
@@ -284,7 +284,7 @@ export interface ParseLinkResult {
 }
 
 /**
- * Options for determining if the alias of a link should be reset.
+ * Options for {@link shouldResetAlias}.
  */
 export interface ShouldResetAliasOptions {
   /**
@@ -339,7 +339,7 @@ export interface SplitSubpathResult {
 }
 
 /**
- * Options for updating a link.
+ * Options for {@link updateLink}.
  */
 export interface UpdateLinkOptions {
   /**
@@ -384,7 +384,7 @@ export interface UpdateLinkOptions {
 }
 
 /**
- * Options for updating links in a file.
+ * Options for {@link updateLinksInFile}.
  */
 export interface UpdateLinksInFileOptions extends ProcessOptions {
   /**
@@ -432,7 +432,7 @@ interface TablePosition {
 }
 
 /**
- * Options for updating the links in a content string.
+ * Options for {@link updateLinksInContent}.
  */
 interface UpdateLinksInContentOptions {
   /**
