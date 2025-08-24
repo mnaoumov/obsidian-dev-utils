@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 35.0.1
+
+- Update libs
+
 ## 35.0.0
 
 - Don't trim frontmatter
