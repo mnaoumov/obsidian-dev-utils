@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 37.1.0
+
+- Ensure editor changes are reflected in the view
+
 ## 37.0.0
 
 - Rename shouldKeepGap
