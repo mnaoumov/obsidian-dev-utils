@@ -29,7 +29,7 @@ import { resolvePathFromRoot } from './Root.ts';
  */
 export interface EditPackageJsonOptions {
   /**
-   * The current working folder where `package.json` is located.
+   * A current working folder where `package.json` is located.
    */
   cwd?: string;
 
@@ -40,16 +40,16 @@ export interface EditPackageJsonOptions {
 }
 
 /**
- * The type of the `package.json` file.
+ * A type of the `package.json` file.
  */
 export type { PackageJson };
 
 /**
- * The type of the `package-lock.json` file.
+ * A type of the `package-lock.json` file.
  */
 export interface PackageLockJson extends Partial<PackageJson> {
   /**
-   * The packages in the `package-lock.json` file.
+   * Packages in the `package-lock.json` file.
    */
   packages?: Record<string, PackageJson>;
 }

@@ -27,27 +27,27 @@ import { process } from './Vault.ts';
  */
 export interface GetCodeBlockSectionInfoOptions {
   /**
-   * The Obsidian App object.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The MarkdownPostProcessorContext object.
+   * A {@link MarkdownPostProcessorContext} object.
    */
   ctx: MarkdownPostProcessorContext;
 
   /**
-   * The HTMLElement representing the code block.
+   * A {@link HTMLElement} representing the code block.
    */
   el: HTMLElement;
 
   /**
-   * The content of the note.
+   * A content of the note.
    */
   noteContent?: string;
 
   /**
-   * The source of the code block.
+   * A source of the code block.
    */
   source: string;
 }
@@ -57,7 +57,7 @@ export interface GetCodeBlockSectionInfoOptions {
  */
 export interface InsertCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
   /**
-   * The number of lines to offset the insertion by. Default is `0`.
+   * A number of lines to offset the insertion by. Default is `0`.
    */
   lineOffset?: number;
 
@@ -67,7 +67,7 @@ export interface InsertCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
   shouldPreserveLinePrefix?: boolean;
 
   /**
-   * The text to insert after the code block.
+   * A text to insert after the code block.
    */
   text: string;
 }
@@ -77,12 +77,12 @@ export interface InsertCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
  */
 export interface ReplaceCodeBlockOptions extends GetCodeBlockSectionInfoOptions {
   /**
-   * The abort signal to control the execution of the function.
+   * An abort signal to control the execution of the function.
    */
   abortSignal?: AbortSignal;
 
   /**
-   * The provider that provides the new code block.
+   * Provides a new code block.
    */
   codeBlockProvider: ValueProvider<string, [string]>;
 

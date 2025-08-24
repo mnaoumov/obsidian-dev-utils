@@ -210,6 +210,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     ) => Promisable<void>,
     thisArg?: unknown
   ): AsyncEventRef;
+
   /**
    * Subscribes to the `saveSettings` event.
    *
@@ -227,6 +228,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     ) => Promisable<void>,
     thisArg?: unknown
   ): AsyncEventRef;
+
   /**
    * Subscribes to an event.
    *

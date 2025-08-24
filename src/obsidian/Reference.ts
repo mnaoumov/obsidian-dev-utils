@@ -23,7 +23,7 @@ import { isFrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOff
  */
 export interface CanvasFileNodeReference extends CanvasReference {
   /**
-   * The type of reference.
+   * A type of reference.
    */
   type: 'file';
 }
@@ -38,12 +38,12 @@ export interface CanvasReference extends FrontmatterLinkCache {
   isCanvas: true;
 
   /**
-   * The index of the node in the canvas.
+   * An index of the node in the canvas.
    */
   nodeIndex: number;
 
   /**
-   * The type of reference.
+   * A type of reference.
    */
   type: 'file' | 'text';
 }
@@ -53,12 +53,12 @@ export interface CanvasReference extends FrontmatterLinkCache {
  */
 export interface CanvasTextNodeReference extends CanvasReference {
   /**
-   * The original reference.
+   * An original reference.
    */
   originalReference: Reference;
 
   /**
-   * The type of reference.
+   * A type of reference.
    */
   type: 'text';
 }

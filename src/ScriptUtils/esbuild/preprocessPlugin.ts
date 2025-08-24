@@ -2,9 +2,6 @@
  * @packageDocumentation
  *
  * This module defines a custom esbuild plugin that preprocesses JavaScript and TypeScript files.
- * The preprocessing includes replacing `import(dot)meta(dot)url` with a Node.js-compatible alternative,
- * ensuring compatibility with Obsidian's plugin system, and adding a basic `process` object for environments
- * where `process` is not available (like mobile or web environments).
  *
  * @remarks
  * We cannot use `.` instead of `(dot)` in the above description because the file itself is preprocessed with the same rule.
@@ -125,11 +122,15 @@ function initCjs(): void {
   }
 
   const newFuncs: Record<string, () => unknown> = {
-    __extractDefault: () => extractDefault,
-    process: () => {
+    __extractDefault() {
+      return extractDefault;
+    },
+    process() {
       const browserProcess: BrowserProcess = {
         browser: true,
-        cwd: () => '/',
+        cwd() {
+          return '/';
+        },
         env: {},
         platform: 'android'
       };
@@ -172,7 +173,9 @@ function initEsm(): void {
 
   const browserProcess: BrowserProcess = {
     browser: true,
-    cwd: () => '/',
+    cwd() {
+      return '/';
+    },
     env: {},
     platform: 'android'
   };

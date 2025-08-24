@@ -36,14 +36,14 @@ export type {
 
 declare global {
   /**
-   * The DataviewAPI object represents the API for interacting with Dataview in Obsidian.
+   * A {@link DataviewApi} object represents the API for interacting with Dataview in Obsidian.
    */
   // eslint-disable-next-line vars-on-top
   var DataviewAPI: DataviewApi | undefined;
 }
 
 /**
- * The combined page type, which includes the front matter and the SMarkdownPage.
+ * A combined page type, which includes the front matter and the SMarkdownPage.
  */
 export type CombinedPage<CustomFrontmatter = unknown> = CombinedFrontmatter<CustomFrontmatter> & SMarkdownPage;
 
@@ -98,7 +98,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
 export type DomElementInfoWithContainer = { container?: HTMLElement } & DomElementInfo;
 
 /**
- * The combined file type, which includes the front matter and the SMarkdownFile.
+ * A combined file type, which includes the front matter and the SMarkdownFile.
  */
 export type PageFile = SMarkdownPage['file'];
 
@@ -154,22 +154,22 @@ export type ArrayOrDataArray<T> = DataArray<T> | T[];
  */
 export interface RenderIframeOptions {
   /**
-   * The DataviewInlineApi instance.
+   * A {@link DataviewInlineApi} instance.
    */
   dv: DataviewInlineApi;
 
   /**
-   * The height of the iframe.
+   * A height of the iframe.
    */
   height: string;
 
   /**
-   * The relative path to the resource to be displayed in the iframe.
+   * A relative path to the resource to be displayed in the iframe.
    */
   relativePathOrFile: PathOrFile;
 
   /**
-   * The width of the iframe.
+   * A width of the iframe.
    */
   width: string;
 }
@@ -179,7 +179,7 @@ export interface RenderIframeOptions {
  */
 export interface RenderPaginatedListOptions<T> {
   /**
-   * The DataviewInlineApi instance.
+   * A {@link DataviewInlineApi} instance.
    */
   dv: DataviewInlineApi;
 
@@ -189,7 +189,7 @@ export interface RenderPaginatedListOptions<T> {
   itemsPerPageOptions?: number[];
 
   /**
-   * The list of items to paginate.
+   * A list of items to paginate.
    */
   rows: ArrayOrDataArray<T>;
 }
@@ -199,7 +199,7 @@ export interface RenderPaginatedListOptions<T> {
  */
 export interface RenderPaginatedOptions<T> {
   /**
-   * The DataviewInlineApi instance.
+   * A {@link DataviewInlineApi} instance.
    */
   dv: DataviewInlineApi;
 
@@ -209,15 +209,15 @@ export interface RenderPaginatedOptions<T> {
   itemsPerPageOptions: number[];
 
   /**
-   * The renderer function to display the paginated content.
+   * Display the paginated content.
    *
    * @param rowsForOnePage - The rows to render.
    * @returns A {@link Promise} that resolves when the content is rendered.
    */
-  renderer: (rowsForOnePage: ArrayOrDataArray<T>) => Promisable<void>;
+  renderer(rowsForOnePage: ArrayOrDataArray<T>): Promisable<void>;
 
   /**
-   * The rows to paginate.
+   * Rows to paginate.
    */
   rows: ArrayOrDataArray<T>;
 }
@@ -227,12 +227,12 @@ export interface RenderPaginatedOptions<T> {
  */
 export interface RenderPaginatedTableOptions<T> {
   /**
-   * The DataviewInlineApi instance.
+   * A {@link DataviewInlineApi} instance.
    */
   dv: DataviewInlineApi;
 
   /**
-   * The headers of the table.
+   * A headers of the table.
    */
   headers: string[];
 
@@ -242,7 +242,7 @@ export interface RenderPaginatedTableOptions<T> {
   itemsPerPageOptions?: number[];
 
   /**
-   * The rows of the table to paginate.
+   * Rows of the table to paginate.
    */
   rows: ArrayOrDataArray<T>;
 }

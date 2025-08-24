@@ -25,11 +25,12 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
  */
 export abstract class TypedTextComponent<T> extends ValueComponent<T> implements ValidatorComponent, ValueComponentWithChangeTracking<T> {
   /**
-   * The input element of the component.
+   * An input element of the component.
    */
   public readonly inputEl: HTMLInputElement;
+
   /**
-   * The validator element of the component.
+   * A validator element of the component.
    *
    * @returns The validator element.
    */

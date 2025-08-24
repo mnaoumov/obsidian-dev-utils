@@ -13,7 +13,7 @@ import { oneOf } from '../RegExp.ts';
  */
 export interface ValidationMessageHolder {
   /**
-   * The validation message.
+   * A validation message.
    */
   validationMessage: string;
 }

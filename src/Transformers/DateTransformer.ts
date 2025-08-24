@@ -11,7 +11,7 @@ import { TypedTransformer } from './TypedTransformer.ts';
  */
 export class DateTransformer extends TypedTransformer<Date, string> {
   /**
-   * The id of the transformer.
+   * An id of the transformer.
    *
    * @returns `date`.
    */

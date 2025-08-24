@@ -11,7 +11,7 @@ import {
 } from 'react';
 
 /**
- * The context for the app.
+ * A context for the app.
  *
  * Usage:
  * ```tsx
@@ -23,7 +23,7 @@ import {
 export const AppContext = createContext<App | undefined>(undefined);
 
 /**
- * The hook to use the app context.
+ * A hook to use the app context.
  *
  * @returns The app instance.
  */

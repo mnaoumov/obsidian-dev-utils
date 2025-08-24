@@ -16,12 +16,12 @@ import { isFrontmatterLinkCache } from 'obsidian-typings/implementations';
  */
 export interface FrontmatterLinkCacheWithOffsets extends FrontmatterLinkCache {
   /**
-   * The end offset of the link in the property value.
+   * An end offset of the link in the property value.
    */
   endOffset: number;
 
   /**
-   * The start offset of the link in the property value.
+   * A start offset of the link in the property value.
    */
   startOffset: number;
 }

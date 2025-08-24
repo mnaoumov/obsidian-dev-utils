@@ -20,34 +20,34 @@ import { addPluginCssClasses } from '../Plugin/PluginContext.ts';
 import { showModal } from './ModalBase.ts';
 
 /**
- * The parameters for the selection modal.
+ * Parameters for the selection modal.
  */
 export interface SelectItemOptions<T> {
   /**
-   * The Obsidian app instance.
+   * An Obsidian app instance.
    */
   app: App;
 
   /**
-   * The CSS class to apply to the modal.
+   * A CSS class to apply to the modal.
    */
   cssClass?: string;
 
   /**
-   * The list of items to choose from.
+   * A list of items to choose from.
    */
   items: T[];
 
   /**
-   * A function to get the display text for each item
+   * Get the display text for each item
    *
    * @param item - The item to get the display text for.
    * @returns The display text for the item.
    */
-  itemTextFunc: (item: T) => string;
+  itemTextFunc(item: T): string;
 
   /**
-   * The placeholder text for the input field.
+   * A placeholder text for the input field.
    */
   placeholder?: string;
 }

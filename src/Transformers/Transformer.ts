@@ -13,11 +13,12 @@ import { getAllKeys } from '../ObjectUtils.ts';
  */
 interface TransformedValueWrapper {
   /**
-   * The id of the transformer that transformed the value.
+   * An id of the transformer that transformed the value.
    */
   __transformerId: string;
+
   /**
-   * The transformed value.
+   * A transformed value.
    */
   transformedValue: unknown;
 }
@@ -27,7 +28,7 @@ interface TransformedValueWrapper {
  */
 export abstract class Transformer {
   /**
-   * The id of the transformer.
+   * An id of the transformer.
    */
   public abstract get id(): string;
 

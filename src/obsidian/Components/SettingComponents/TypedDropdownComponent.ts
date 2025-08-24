@@ -34,7 +34,7 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
  */
 export class TypedDropdownComponent<T> extends ValueComponent<null | T> implements ValueComponentWithChangeTracking<null | T> {
   /**
-   * The select element of the component.
+   * A select element of the component.
    *
    * @returns The select element.
    */
@@ -43,7 +43,7 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
   }
 
   /**
-   * The validator element of the component.
+   * A validator element of the component.
    *
    * @returns The validator element.
    */

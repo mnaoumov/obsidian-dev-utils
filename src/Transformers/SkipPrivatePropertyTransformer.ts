@@ -13,7 +13,7 @@ const PRIVATE_PROPERTY_PREFIX = '_';
  */
 export class SkipPrivatePropertyTransformer extends Transformer {
   /**
-   * The id of the transformer.
+   * An id of the transformer.
    *
    * @returns `skip-private-property`.
    */

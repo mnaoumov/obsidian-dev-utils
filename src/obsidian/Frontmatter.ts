@@ -51,22 +51,22 @@ export interface ObsidianFrontmatter {
  */
 export interface ObsidianPublishFrontmatter {
   /**
-   * The cover image for the note.
+   * A cover image for the note.
    */
   cover?: string;
 
   /**
-   * The description for the note.
+   * A description for the note.
    */
   description?: string;
 
   /**
-   * The image for the note.
+   * An image for the note.
    */
   image?: string;
 
   /**
-   * The permanent link for the note.
+   * A permanent link for the note.
    */
   permalink?: string;
 

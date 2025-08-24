@@ -51,7 +51,7 @@ import { isValidationMessageHolder } from '../Validation.ts';
 import { addPluginCssClasses } from './PluginContext.ts';
 
 /**
- * The context passed to the {@link PluginSettingsManagerBase.saveToFile} method.
+ * A context passed to the {@link PluginSettingsManagerBase.saveToFile} method.
  */
 export const SAVE_TO_FILE_CONTEXT = 'PluginSettingsTab';
 
@@ -96,7 +96,7 @@ export interface BindOptionsExtended<
    * @param uiValue - The value of the UI component.
    * @returns The value to set on the plugin settings.
    */
-  componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[PropertyName] | ValidationMessageHolder;
+  componentToPluginSettingsValueConverter(uiValue: UIValue): PluginSettings[PropertyName] | ValidationMessageHolder;
 
   /**
    * Converts the plugin settings value to the value used by the UI component.
@@ -104,7 +104,7 @@ export interface BindOptionsExtended<
    * @param pluginSettingsValue - The value of the property in the plugin settings.
    * @returns The value to set on the UI component.
    */
-  pluginSettingsToComponentValueConverter: (pluginSettingsValue: ReadonlyDeep<PluginSettings[PropertyName]>) => UIValue;
+  pluginSettingsToComponentValueConverter(pluginSettingsValue: ReadonlyDeep<PluginSettings[PropertyName]>): UIValue;
 }
 
 /**
@@ -124,7 +124,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   }
 
   /**
-   * The debounce timeout for saving settings.
+   * A debounce timeout for saving settings.
    *
    * @returns The debounce timeout for saving settings.
    */
@@ -176,6 +176,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     propertyName: ConditionalKeys<ExtractPluginSettings<PluginTypes>, UIValue>,
     options?: BindOptions<UIValue>
   ): TValueComponent;
+
   /**
    * Binds a value component to a plugin setting.
    *
@@ -196,6 +197,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     propertyName: PropertyName,
     options: BindOptionsExtended<ExtractPluginSettings<PluginTypes>, UIValue, PropertyName>
   ): TValueComponent;
+
   /**
    * Binds a value component to a plugin setting.
    *

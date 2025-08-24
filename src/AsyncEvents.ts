@@ -13,22 +13,22 @@ import { filterInPlace } from './Array.ts';
  */
 export interface AsyncEventRef {
   /**
-   * The event emitter.
+   * An event emitter.
    */
   asyncEvents: AsyncEvents;
 
   /**
-   * The callback to call when the event is triggered.
+   * A callback to call when the event is triggered.
    */
   callback: GenericCallback;
 
   /**
-   * The name of the event.
+   * A name of the event.
    */
   name: string;
 
   /**
-   * The context passed as `this` to the `callback`.
+   * A context passed as `this` to the `callback`.
    */
   thisArg: unknown;
 }

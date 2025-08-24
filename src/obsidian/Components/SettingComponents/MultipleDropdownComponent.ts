@@ -34,7 +34,7 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
   implements ValidatorComponent, ValueComponentWithChangeTracking<readonly string[]> {
   /**
-   * The select element of the component.
+   * A select element of the component.
    *
    * @returns The select element.
    */
@@ -43,7 +43,7 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
   }
 
   /**
-   * The validator element of the component.
+   * A validator element of the component.
    *
    * @returns The validator element.
    */

@@ -22,27 +22,27 @@ export type AsyncReplacer<ReplaceGroupArgs extends string[]> = ValueProvider<Str
  */
 export interface ReplaceCommonArgs {
   /**
-   * The groups of the match.
+   * Groups of the match.
    */
   groups: Record<string, string | undefined> | undefined;
 
   /**
-   * The indices of the groups that were not found in the match.
+   * Indices of the groups that were not found in the match.
    */
   missingGroupIndices: number[];
 
   /**
-   * The offset of the match.
+   * An offset of the match.
    */
   offset: number;
 
   /**
-   * The source of the match.
+   * A source of the match.
    */
   source: string;
 
   /**
-   * The substring of the match.
+   * A substring of the match.
    */
   substring: string;
 }

@@ -5,7 +5,7 @@
  */
 
 /**
- * The strategy to use when merging multiple regex flags into one alternation.
+ * A strategy to use when merging multiple regex flags into one alternation.
  */
 export enum RegExpMergeFlagsConflictStrategy {
   /**
@@ -73,12 +73,12 @@ function shouldPickFlag(regExps: RegExp[], flag: string, strategy: RegExpMergeFl
 }
 
 /**
- * The regex that always matches.
+ * A regular expression that always matches.
  */
 export const ALWAYS_MATCH_REG_EXP = /(?:)/;
 
 /**
- * The regex that never matches.
+ * A regular expression that never matches.
  */
 export const NEVER_MATCH_REG_EXP = /.^/;
 

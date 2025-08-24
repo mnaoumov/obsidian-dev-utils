@@ -21,11 +21,12 @@ const DATE_FORMAT = 'YYYY-MM';
  */
 export interface IsoMonth {
   /**
-   * The month (1-12).
+   * A month (1-12).
    */
   month: number;
+
   /**
-   * The year (1-9999).
+   * A year (1-9999).
    */
   year: number;
 }

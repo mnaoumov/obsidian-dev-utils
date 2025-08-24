@@ -34,7 +34,7 @@ import { MultipleDropdownComponent } from './MultipleDropdownComponent.ts';
 export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T[]>
   implements ValidatorComponent, ValueComponentWithChangeTracking<readonly T[]> {
   /**
-   * The select element of the component.
+   * A select element of the component.
    *
    * @returns The select element.
    */
@@ -43,7 +43,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
   }
 
   /**
-   * The validator element of the component.
+   * A validator element of the component.
    *
    * @returns The validator element.
    */

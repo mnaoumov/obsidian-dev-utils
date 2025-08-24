@@ -19,12 +19,12 @@ const WINDOWS_POSIX_LIKE_PATH_REG_EXP = /[a-zA-Z]:\/[^:]*$/;
 export const posix = pathBrowserify.posix;
 
 /**
- * The POSIX path delimiter.
+ * A POSIX path delimiter.
  */
 export const delimiter = posix.delimiter;
 
 /**
- * The POSIX segment separator.
+ * A POSIX segment separator.
  */
 export const sep = pathBrowserify.posix.sep;
 

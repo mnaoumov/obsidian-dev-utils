@@ -15,9 +15,9 @@ import { TypedTransformer } from './TypedTransformer.ts';
  */
 export class DurationTransformer extends TypedTransformer<Duration, string> {
   /**
-   * The ID of the transformer.
+   * An id of the transformer.
    *
-   * @returns The ID of the transformer.
+   * @returns The id of the transformer.
    */
   public override get id(): string {
     return 'duration';

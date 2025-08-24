@@ -49,8 +49,8 @@ import { spellcheck } from './spellcheck.ts';
 import { updateVersion } from './version.ts';
 
 /**
- * The number of leading arguments to skip when parsing command-line arguments.
- * The first two elements typically represent the Node.js executable and the script path:
+ * A number of leading arguments to skip when parsing command-line arguments.
+ * First two elements typically represent the Node.js executable and the script path:
  * `["node", "path/to/cli.cjs", ...actualArgs]`
  */
 const NODE_SCRIPT_ARGV_SKIP_COUNT = 2;

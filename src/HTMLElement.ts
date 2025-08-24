@@ -28,7 +28,7 @@ export interface ValidatorElement extends HTMLElement {
   setCustomValidity(error: string): void;
 
   /**
-   * The error message of the element.
+   * An error message of the element.
    */
   readonly validationMessage: string;
 }

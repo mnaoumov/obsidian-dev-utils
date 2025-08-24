@@ -12,7 +12,7 @@ import { around as originalAround } from 'monkey-around';
 import type { GenericObject } from '../ObjectUtils.ts';
 
 /**
- * The type of the factories to apply to the object.
+ * A type of the factories to apply to the object.
  *
  * @typeParam Obj - The object to patch.
  */
@@ -45,7 +45,7 @@ export function around<Obj extends object>(obj: Obj, factories: Factories<Obj>):
 
 /**
  * Invokes a function with a patch applied to the object.
- * The patch is automatically removed when the function returns.
+ * A patch is automatically removed when the function returns.
  *
  * @typeParam Obj - The object to patch.
  * @typeParam Result - The type of the result of the function.
@@ -65,7 +65,7 @@ export function invokeWithPatch<Obj extends object, Result>(obj: Obj, factories:
 
 /**
  * Invokes an async function with a patch applied to the object.
- * The patch is automatically removed when the function returns.
+ * A patch is automatically removed when the function returns.
  *
  * @typeParam Obj - The object to patch.
  * @typeParam Result - The type of the result of the function.
