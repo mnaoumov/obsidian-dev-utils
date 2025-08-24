@@ -385,7 +385,6 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     dv,
     // eslint-disable-next-line no-magic-numbers
     itemsPerPageOptions = [10, 20, 50, 100],
-    renderer,
     rows
   } = options;
   if (rows.length === 0) {
@@ -489,7 +488,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
 
     dv.container = container;
     try {
-      await renderer(rowsForCurrentPage);
+      await options.renderer(rowsForCurrentPage);
     } catch (e) {
       dv.paragraph(`❌${errorToString(e)}`);
     } finally {
