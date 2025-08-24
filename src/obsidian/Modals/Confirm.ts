@@ -19,7 +19,7 @@ import {
 } from './ModalBase.ts';
 
 /**
- * Options for the confirm modal.
+ * Options for {@link confirm}.
  */
 export interface ConfirmOptions {
   /**

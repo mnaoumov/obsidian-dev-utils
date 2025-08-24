@@ -25,7 +25,7 @@ import {
 import { resolvePathFromRoot } from './Root.ts';
 
 /**
- * Options for editing a package.json file.
+ * Options for {@link editPackageJson}.
  */
 export interface EditPackageJsonOptions {
   /**

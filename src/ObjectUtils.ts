@@ -50,7 +50,7 @@ enum TokenSubstitutionKey {
 }
 
 /**
- * Options for converting an object to JSON.
+ * Options for {@link toJson}.
  */
 export interface ToJsonOptions {
   /**

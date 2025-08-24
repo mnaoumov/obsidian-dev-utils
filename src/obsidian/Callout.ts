@@ -28,7 +28,7 @@ export enum CalloutMode {
 }
 
 /**
- * Options for rendering a callout block in Dataview.
+ * Options for {@link renderCallout}.
  */
 export interface RenderCalloutOptions {
   /**

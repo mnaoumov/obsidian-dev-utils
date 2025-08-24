@@ -31,7 +31,7 @@ import { generateMarkdownLink } from './Link.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
 
 /**
- * Options for rendering delayed backlinks for a folder.
+ * Options for {@link renderDelayedBacklinksForFolder}.
  */
 export interface RenderDelayedBacklinksForFolderOptions {
   /**
@@ -51,7 +51,7 @@ export interface RenderDelayedBacklinksForFolderOptions {
 }
 
 /**
- * Options for rendering delayed backlinks.
+ * Options for {@link renderDelayedBacklinks}.
  */
 export interface RenderDelayedBacklinksOptions {
   /**

@@ -19,7 +19,7 @@ import {
 } from './ModalBase.ts';
 
 /**
- * Options for the alert modal.
+ * Options for {@link alert}.
  */
 export interface AlertOptions {
   /**

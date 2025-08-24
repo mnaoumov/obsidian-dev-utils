@@ -20,7 +20,7 @@ import { addPluginCssClasses } from '../Plugin/PluginContext.ts';
 import { showModal } from './ModalBase.ts';
 
 /**
- * Parameters for the selection modal.
+ * Options for {@link selectItem}.
  */
 export interface SelectItemOptions<T> {
   /**
