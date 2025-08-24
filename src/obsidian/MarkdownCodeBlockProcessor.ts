@@ -32,7 +32,7 @@ export interface CodeBlockMarkdownInformation {
   /**
    * The arguments of the code block.
    */
-  args: string;
+  args: string[];
 
   /**
    * The end delimiter of the code block.
@@ -53,6 +53,11 @@ export interface CodeBlockMarkdownInformation {
    * The position of the code block in the note.
    */
   notePos: Pos;
+
+  /**
+   * The raw arguments string of the code block.
+   */
+  rawArgsStr: string;
 
   /**
    * The section information of the code block.
@@ -171,7 +176,7 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockSectionInfoO
   const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
 
   const REG_EXP =
-    /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t]+(?<CodeBlockArgs>.*?)[ \t]*?)?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
+    /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t](?<CodeBlockArgs>.*?))?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
 
   let markdownInfo: CodeBlockMarkdownInformation | null = null;
 
@@ -184,7 +189,7 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockSectionInfoO
       return null;
     }
 
-    markdownInfo = createSectionInfoFromMatch(potentialCodeBlockText, match, approximateSectionInfo, sourceLines, sectionInfoOffset, linesBeforeSectionCount);
+    markdownInfo = createMarkdownInfoFromMatch(potentialCodeBlockText, match, approximateSectionInfo, sourceLines, textLineOffsets, linesBeforeSectionCount);
   }
 
   if (!markdownInfo) {
@@ -314,7 +319,7 @@ function createSectionInfoFromMatch(
   const linePrefix = match.groups?.['LinePrefix'] ?? '';
   const codeBlockStartDelimiter = match.groups?.['CodeBlockStartDelimiter'] ?? '';
   const codeBlockEndDelimiter = match.groups?.['CodeBlockEndDelimiter'] ?? '';
-  const codeBlockArgs = match.groups?.['CodeBlockArgs'] ?? '';
+  const codeBlockArgsStr = match.groups?.['CodeBlockArgs'] ?? '';
   const language = match.groups?.['CodeBlockLanguage'] ?? '';
 
   const previousText = potentialCodeBlockText.slice(0, match.index);
@@ -322,7 +327,7 @@ function createSectionInfoFromMatch(
   const matchLastLine = match[0].split('\n').at(-1) ?? '';
 
   return {
-    args: codeBlockArgs,
+    args: codeBlockArgsStr.split(/\s+/).filter(Boolean),
     endDelimiter: codeBlockEndDelimiter,
     language,
     linePrefix,
@@ -338,6 +343,7 @@ function createSectionInfoFromMatch(
         offset: sectionInfoOffset + (match.index ?? 0)
       }
     },
+    rawArgsStr: codeBlockArgsStr,
     sectionInfo: {
       lineEnd: previousTextLinesCount + sourceLines.length - 1,
       lineStart: previousTextLinesCount,
