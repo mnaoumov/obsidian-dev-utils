@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 36.2.0
+
+- Change tsdocs for FunctionOptions interfaces
+- Remove word Represents
+- shouldKeepGapWhenEmpty
+
 ## 36.1.0
 
 - Ensure note saved
