@@ -80,9 +80,9 @@ export interface InsertCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions 
  */
 export interface RemoveCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions {
   /**
-   * Whether to keep the gap when the new code block is empty. Default is `false`.
+   * Whether to keep the gap after removing the code block. Default is `false`.
    */
-  shouldKeepGapWhenEmpty?: boolean;
+  shouldKeepGap?: boolean;
 }
 
 /**
@@ -244,7 +244,8 @@ export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Pr
 export async function removeCodeBlock(options: RemoveCodeBlockOptions): Promise<void> {
   await replaceCodeBlock({
     ...options,
-    codeBlockProvider: ''
+    codeBlockProvider: '',
+    shouldKeepGapWhenEmpty: options.shouldKeepGap ?? false
   });
 }
 
