@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 36.0.0
+
+- Extract CodeBlockMarkdownInformation
+
 ## 35.0.1
 
 - Update libs
