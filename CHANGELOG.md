@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 37.2.0
+
+- SilentError
+
 ## 37.1.2
 
 - Improve LF handling
