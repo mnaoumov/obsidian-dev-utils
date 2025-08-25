@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 37.3.0
+
+- Lock file while looking for CodeBlockMarkdownInfo
+- invokeWithFileSystemLock
+- Simplify errorToString. Ensure links are clickable
+- Configure LinkStyle
+
 ## 37.2.0
 
 - SilentError
