@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 37.1.2
+
+- Improve LF handling
+- Update libs
+
 ## 37.1.1
 
 - Ignore line endings
