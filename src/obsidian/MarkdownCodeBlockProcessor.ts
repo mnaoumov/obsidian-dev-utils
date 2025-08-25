@@ -16,9 +16,9 @@ import type { CodeBlockMarkdownInformation } from './CodeBlockMarkdownInformatio
 import { abortSignalAny } from '../AbortController.ts';
 import {
   ensureLfEndings,
+  getLfNormalizedOffsetToOriginalOffsetMapper,
   hasSingleOccurrence,
   indent,
-  indexOfIgnoringLineEndings,
   unindent
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
@@ -134,17 +134,35 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfo
     content = await app.vault.read(sourceFile);
   }
 
+  const contentLf = ensureLfEndings(content);
+  if (contentLf !== content) {
+    const infoLf = await getCodeBlockMarkdownInfo({
+      ...options,
+      noteContent: contentLf
+    });
+    if (!infoLf) {
+      return null;
+    }
+
+    const lfOffsetMapper = getLfNormalizedOffsetToOriginalOffsetMapper(content);
+    infoLf.positionInNote.start.offset = lfOffsetMapper(infoLf.positionInNote.start.offset);
+    infoLf.positionInNote.end.offset = lfOffsetMapper(infoLf.positionInNote.end.offset);
+    return infoLf;
+  }
+
   const approximateSectionInfo = ctx.getSectionInfo(el) ?? {
     lineEnd: content.split('\n').length - 1,
     lineStart: 0,
     text: content
   };
 
-  if (!hasSingleOccurrence(ensureLfEndings(content), ensureLfEndings(approximateSectionInfo.text))) {
+  approximateSectionInfo.text = ensureLfEndings(approximateSectionInfo.text);
+
+  if (!hasSingleOccurrence(content, approximateSectionInfo.text)) {
     return null;
   }
 
-  const sectionOffset = indexOfIgnoringLineEndings(content, approximateSectionInfo.text);
+  const sectionOffset = content.indexOf(approximateSectionInfo.text);
   const linesBeforeSectionCount = content.slice(0, sectionOffset).split('\n').length - 1;
 
   const isInCallout = !!el.parentElement?.classList.contains('callout-content');
