@@ -68,6 +68,10 @@ const ESCAPE_MAP: Record<string, string> = {
   '\\': '\\\\'
 } as const;
 
+const CR = '\r';
+const LF = '\n';
+const NOT_FOUND_INDEX = -1;
+
 /**
  * Mapping of escaped special characters to their unescaped counterparts.
  */
@@ -121,6 +125,46 @@ export function escape(str: string): string {
 }
 
 /**
+ * Returns a function that maps LF-normalized offsets to original offsets.
+ *
+ * @param str - The string to get the LF-normalized indices from.
+ * @returns A function that maps LF-normalized offsets to original offsets.
+ */
+export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOffset: number) => number {
+  const lfStr = ensureLfEndings(str);
+  const lfOffsetToOriginalOffsetMap: number[] = [];
+
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === CR && str[i + 1] === LF) {
+      lfOffsetToOriginalOffsetMap.push(i + 1);
+      i++;
+    } else {
+      lfOffsetToOriginalOffsetMap.push(i);
+    }
+  }
+
+  return (lfOffset: number): number => {
+    if (lfOffset < 0) {
+      return lfOffset;
+    }
+    if (lfOffset >= lfOffsetToOriginalOffsetMap.length) {
+      return lfOffset - lfOffsetToOriginalOffsetMap.length + str.length;
+    }
+
+    if (lfOffsetToOriginalOffsetMap[lfOffset] === undefined) {
+      console.error('Could not map offset', {
+        lfOffset,
+        lfStr,
+        str
+      });
+      throw new Error('Could not map offset.');
+    }
+
+    return lfOffsetToOriginalOffsetMap[lfOffset];
+  };
+}
+
+/**
  * Checks if a string has a single occurrence of a search value.
  *
  * @param str - The string to check.
@@ -130,7 +174,7 @@ export function escape(str: string): string {
 export function hasSingleOccurrence(str: string, searchValue: string): boolean {
   const firstIndex = str.indexOf(searchValue);
   const lastIndex = str.lastIndexOf(searchValue);
-  return firstIndex !== -1 && firstIndex === lastIndex;
+  return firstIndex !== NOT_FOUND_INDEX && firstIndex === lastIndex;
 }
 
 /**
@@ -142,45 +186,6 @@ export function hasSingleOccurrence(str: string, searchValue: string): boolean {
  */
 export function indent(text: string, prefix: string): string {
   return text.split('\n').map((line) => `${prefix}${line}`).join('\n');
-}
-
-/**
- * Returns the index of the first occurrence of a substring in a string, ignoring line endings.
- *
- * @param str - The string to search in.
- * @param substr - The substring to search for.
- * @returns The index of the first occurrence of the substring, or `-1` if the substring is not found.
- */
-export function indexOfIgnoringLineEndings(str: string, substr: string): number {
-  const CR = '\r';
-  const LF = '\n';
-  const CRLF_LENGTH = 2;
-  const NOT_FOUND_INDEX = -1;
-
-  const strLf = ensureLfEndings(str);
-  const substrLf = ensureLfEndings(substr);
-
-  const offsetLf = strLf.indexOf(substrLf);
-  if (offsetLf === NOT_FOUND_INDEX) {
-    return NOT_FOUND_INDEX;
-  }
-
-  // Count how many `CR` were removed before this normalized index
-  let removedCrCount = 0;
-  let strLfIndex = 0;
-
-  let strIndex = 0;
-  while (strIndex < str.length && strLfIndex < offsetLf) {
-    if (str[strIndex] === CR && str[strIndex + 1] === LF) {
-      removedCrCount++;
-      strIndex += CRLF_LENGTH;
-    } else {
-      strIndex++;
-    }
-    strLfIndex++;
-  }
-
-  return offsetLf + removedCrCount;
 }
 
 /**
