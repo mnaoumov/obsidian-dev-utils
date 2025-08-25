@@ -236,6 +236,21 @@ export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: 
 }
 
 /**
+ * Invokes a function with the file system lock.
+ *
+ * @param app - The application instance.
+ * @param pathOrFile - The path or file to execute the function with the file system lock of.
+ * @param fn - The function to execute.
+ */
+export async function invokeWithFileSystemLock(app: App, pathOrFile: PathOrFile, fn: (content: string) => void): Promise<void> {
+  const file = getFile(app, pathOrFile);
+  await app.vault.process(file, (content) => {
+    fn(content);
+    return content;
+  });
+}
+
+/**
  * Checks if a folder is empty.
  *
  * @param app - The application instance.
