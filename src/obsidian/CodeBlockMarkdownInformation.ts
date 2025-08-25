@@ -34,6 +34,11 @@ export interface CodeBlockMarkdownInformation {
   linePrefix: string;
 
   /**
+   * A content of the note.
+   */
+  noteContent: string;
+
+  /**
    * A position of the code block in the note.
    */
   positionInNote: Pos;
