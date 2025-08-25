@@ -8,16 +8,8 @@ import { AsyncEvents } from './AsyncEvents.ts';
 
 const ASYNC_ERROR_EVENT = 'asyncError';
 
-const ERROR_STACK_PREFIX = 'Error stack:\n';
-
 const asyncErrorEventEmitter = new AsyncEvents();
 asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
-
-interface ErrorEntry {
-  level: number;
-  message: string;
-  shouldClearAnsiSequence?: boolean;
-}
 
 /**
  * A message of the AsyncWrapperError.
@@ -90,22 +82,18 @@ export function emitAsyncErrorEvent(asyncError: unknown): void {
  * Converts an error to a string representation, including nested causes with indentation.
  *
  * @param error - The error to convert to a string.
- * @param shouldEnsureAnsiSequencesCleared - Whether to ensure ANSI sequences in the error message are cleared.
  * @returns The string representation of the error.
  */
-export function errorToString(error: unknown, shouldEnsureAnsiSequencesCleared = false): string {
-  const ANSI_CLEAR_SEQUENCE = '\x1b[0m';
-  return parseErrorEntries(error)
-    .map((entry) => {
-      const prefix = '  '.repeat(entry.level);
-      // NOTE: Cannot use `String.trimStart()` function here because of the circular dependency.
-      let message = entry.message.startsWith(ERROR_STACK_PREFIX) ? entry.message.slice(ERROR_STACK_PREFIX.length) : entry.message;
-      if (entry.shouldClearAnsiSequence && shouldEnsureAnsiSequencesCleared) {
-        message = `${ANSI_CLEAR_SEQUENCE}${message}${ANSI_CLEAR_SEQUENCE}`;
-      }
-      return prefix + message;
-    })
-    .join('\n');
+export function errorToString(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return String(error);
+  }
+
+  let message = error.stack ?? `${error.name}: ${error.message}`;
+  if (error.cause !== undefined) {
+    message += `\nCaused by: ${errorToString(error.cause)}`;
+  }
+  return message;
 }
 
 /**
@@ -130,7 +118,7 @@ export function getStackTrace(framesToSkip = 0): string {
  */
 export function printError(error: unknown, console?: Console): void {
   console ??= globalThis.console;
-  console.error(errorToString(error, true));
+  console.error(errorToString(error));
 }
 
 /**
@@ -163,48 +151,4 @@ export function throwExpression(error: unknown): never {
  */
 function handleAsyncError(asyncError: unknown): void {
   printError(asyncError);
-}
-
-/**
- * Parses an error into an array of ErrorEntry objects, including nested causes.
- *
- * @param error - The error to parse.
- * @param level - The current indentation level for nested causes.
- * @param entries - The array of ErrorEntry objects to populate.
- * @returns An array of ErrorEntry objects representing the error and its causes.
- */
-function parseErrorEntries(error: unknown, level = 0, entries: ErrorEntry[] = []): ErrorEntry[] {
-  if (error === undefined) {
-    return entries;
-  }
-
-  if (!(error instanceof Error)) {
-    let str: string;
-
-    if (error === null) {
-      str = '(null)';
-    } else if (typeof error === 'string') {
-      str = error;
-    } else {
-      str = JSON.stringify(error) ?? 'undefined';
-    }
-
-    entries.push({ level, message: str });
-    return entries;
-  }
-
-  const title = `${error.name}: ${error.message}`;
-  entries.push({ level, message: title, shouldClearAnsiSequence: true });
-
-  if (error.stack) {
-    const restStack = error.stack.startsWith(title) ? error.stack.slice(title.length + 1) : error.stack;
-    entries.push({ level, message: `${ERROR_STACK_PREFIX}${restStack}` });
-  }
-
-  if (error.cause !== undefined) {
-    entries.push({ level, message: 'Caused by:' });
-    parseErrorEntries(error.cause, level + 1, entries);
-  }
-
-  return entries;
 }
