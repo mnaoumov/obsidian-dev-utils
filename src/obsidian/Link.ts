@@ -101,6 +101,31 @@ const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
 const WIKILINK_DIVIDER = '|';
 
 /**
+ * A style of the link.
+ */
+export enum LinkStyle {
+  /**
+   * Force the link to be in markdown format.
+   */
+  Markdown = 'Markdown',
+
+  /**
+   * Use the default link style defined in Obsidian settings.
+   */
+  ObsidianSettingsDefault = 'ObsidianSettingsDefault',
+
+  /**
+   * Preserve the existing link style.
+   */
+  PreserveExisting = 'PreserveExisting',
+
+  /**
+   * Force the link to be in wikilink format.
+   */
+  Wikilink = 'Wikilink'
+}
+
+/**
  * Options for {@link convertLink}.
  */
 export interface ConvertLinkOptions {
@@ -115,6 +140,11 @@ export interface ConvertLinkOptions {
   link: Reference;
 
   /**
+   * A style of the link.
+   */
+  linkStyle?: LinkStyle;
+
+  /**
    * A source file containing the link.
    */
   newSourcePathOrFile: PathOrFile;
@@ -123,11 +153,6 @@ export interface ConvertLinkOptions {
    * An old path of the link.
    */
   oldSourcePathOrFile?: PathOrFile;
-
-  /**
-   * Whether to force markdown links.
-   */
-  shouldForceMarkdownLinks?: boolean;
 
   /**
    * Whether to update file name alias. Defaults to `true`.
@@ -177,9 +202,9 @@ export interface GenerateMarkdownLinkOptions {
   isNonExistingFileAllowed?: boolean;
 
   /**
-   * Indicates if the link should be a wikilink. If not provided, it will be inferred based on the Obsidian settings.
+   * A style of the link.
    */
-  isWikilink?: boolean;
+  linkStyle?: LinkStyle;
 
   /**
    * An original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
@@ -353,6 +378,11 @@ export interface UpdateLinkOptions {
   link: Reference;
 
   /**
+   * Whether to force markdown links.
+   */
+  linkStyle?: LinkStyle;
+
+  /**
    * A source file containing the link.
    */
   newSourcePathOrFile: PathOrFile;
@@ -373,11 +403,6 @@ export interface UpdateLinkOptions {
   oldTargetPathOrFile?: PathOrFile;
 
   /**
-   * Whether to force markdown links.
-   */
-  shouldForceMarkdownLinks?: boolean;
-
-  /**
    * Whether to update file name alias. Defaults to `true`.
    */
   shouldUpdateFileNameAlias?: boolean;
@@ -393,6 +418,11 @@ export interface UpdateLinksInFileOptions extends ProcessOptions {
   app: App;
 
   /**
+   * A style of the link.
+   */
+  linkStyle?: LinkStyle;
+
+  /**
    * A file to update the links in.
    */
   newSourcePathOrFile: PathOrFile;
@@ -401,11 +431,6 @@ export interface UpdateLinksInFileOptions extends ProcessOptions {
    * An old path of the file.
    */
   oldSourcePathOrFile?: PathOrFile;
-
-  /**
-   * Whether to force the links to be in Markdown format.
-   */
-  shouldForceMarkdownLinks?: boolean;
 
   /**
    * Whether to update only embedded links.
@@ -446,6 +471,11 @@ interface UpdateLinksInContentOptions {
   content: string;
 
   /**
+   * A style of the link.
+   */
+  linkStyle?: LinkStyle;
+
+  /**
    * A new source path or file.
    */
   newSourcePathOrFile: PathOrFile;
@@ -454,11 +484,6 @@ interface UpdateLinksInContentOptions {
    * An old source path or file.
    */
   oldSourcePathOrFile?: PathOrFile;
-
-  /**
-   * Whether to force markdown links.
-   */
-  shouldForceMarkdownLinks?: boolean;
 
   /**
    * Whether to update only embedded links.
@@ -493,10 +518,10 @@ export function convertLink(options: ConvertLinkOptions): string {
   return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
     app: options.app,
     link: options.link,
+    linkStyle: options.linkStyle,
     newSourcePathOrFile: options.newSourcePathOrFile,
     newTargetPathOrFile: targetFile,
     oldSourcePathOrFile: options.oldSourcePathOrFile,
-    shouldForceMarkdownLinks: options.shouldForceMarkdownLinks,
     shouldUpdateFileNameAlias: options.shouldUpdateFileNameAlias
   }));
 }
@@ -873,11 +898,11 @@ export function updateLink(options: UpdateLinkOptions): string {
   const {
     app,
     link,
+    linkStyle,
     newSourcePathOrFile,
     newTargetPathOrFile,
     oldSourcePathOrFile,
     oldTargetPathOrFile,
-    shouldForceMarkdownLinks,
     shouldUpdateFileNameAlias
   } = options;
   if (!newTargetPathOrFile) {
@@ -885,7 +910,8 @@ export function updateLink(options: UpdateLinkOptions): string {
   }
   const targetFile = getFile(app, newTargetPathOrFile, true);
   const oldTargetPath = getPath(app, oldTargetPathOrFile ?? newTargetPathOrFile);
-  const isWikilink = testWikilink(link.original) && shouldForceMarkdownLinks !== true;
+  const isWikilink = shouldUseWikilinkStyle(app, link.original, linkStyle);
+
   const { subpath } = splitSubpath(link.link);
   let shouldKeepAlias = !shouldUpdateFileNameAlias;
 
@@ -928,7 +954,7 @@ export function updateLink(options: UpdateLinkOptions): string {
   const newLink = generateMarkdownLink(normalizeOptionalProperties<GenerateMarkdownLinkOptions>({
     alias,
     app,
-    isWikilink: shouldForceMarkdownLinks ? false : undefined,
+    linkStyle,
     originalLink: link.original,
     sourcePathOrFile: newSourcePathOrFile,
     subpath,
@@ -947,9 +973,9 @@ export async function updateLinksInContent(options: UpdateLinksInContentOptions)
   const {
     app,
     content,
+    linkStyle,
     newSourcePathOrFile,
     oldSourcePathOrFile,
-    shouldForceMarkdownLinks,
     shouldUpdateEmbedOnlyLinks,
     shouldUpdateFileNameAlias
   } = options;
@@ -962,9 +988,9 @@ export async function updateLinksInContent(options: UpdateLinksInContentOptions)
     return convertLink(normalizeOptionalProperties<ConvertLinkOptions>({
       app,
       link,
+      linkStyle,
       newSourcePathOrFile,
       oldSourcePathOrFile,
-      shouldForceMarkdownLinks,
       shouldUpdateFileNameAlias
     }));
   });
@@ -979,9 +1005,9 @@ export async function updateLinksInContent(options: UpdateLinksInContentOptions)
 export async function updateLinksInFile(options: UpdateLinksInFileOptions): Promise<void> {
   const {
     app,
+    linkStyle,
     newSourcePathOrFile,
     oldSourcePathOrFile,
-    shouldForceMarkdownLinks,
     shouldUpdateEmbedOnlyLinks,
     shouldUpdateFileNameAlias
   } = options;
@@ -998,9 +1024,9 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     return convertLink(normalizeOptionalProperties<ConvertLinkOptions>({
       app,
       link,
+      linkStyle,
       newSourcePathOrFile,
       oldSourcePathOrFile,
-      shouldForceMarkdownLinks,
       shouldUpdateFileNameAlias
     }));
   }, options);
@@ -1191,7 +1217,7 @@ function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile):
   const { app } = options;
   return {
     isEmbed: options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(app, targetFile),
-    isWikilink: options.isWikilink ?? (options.originalLink ? testWikilink(options.originalLink) : undefined) ?? shouldUseWikilinks(app),
+    isWikilink: shouldUseWikilinkStyle(app, options.originalLink, options.linkStyle),
     shouldForceRelativePath: options.shouldForceRelativePath ?? shouldUseRelativeLinks(app),
     shouldUseAngleBrackets: options.shouldUseAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false,
     shouldUseLeadingDot: options.shouldUseLeadingDot ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false
@@ -1259,4 +1285,19 @@ function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: Tab
   return tablePositions.some((tablePosition) =>
     tablePosition.start <= fileChange.reference.position.start.offset && fileChange.reference.position.end.offset <= tablePosition.end
   );
+}
+
+function shouldUseWikilinkStyle(app: App, originalLink?: string, linkStyle?: LinkStyle): boolean {
+  switch (linkStyle ?? LinkStyle.PreserveExisting) {
+    case LinkStyle.Markdown:
+      return false;
+    case LinkStyle.ObsidianSettingsDefault:
+      return shouldUseWikilinks(app);
+    case LinkStyle.PreserveExisting:
+      return originalLink === undefined ? shouldUseWikilinks(app) : testWikilink(originalLink);
+    case LinkStyle.Wikilink:
+      return true;
+    default:
+      throw new Error(`Invalid link style: ${linkStyle as string}.`);
+  }
 }
