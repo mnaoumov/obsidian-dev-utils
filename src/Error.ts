@@ -62,6 +62,22 @@ export class CustomStackTraceError extends Error {
 }
 
 /**
+ * An error that is not printed to the console.
+ */
+export class SilentError extends Error {
+  /**
+   * Creates a new SilentError.
+   *
+   * @param message - The message of the error.
+   */
+  public constructor(message: string) {
+    super(message);
+    this.name = 'SilentError';
+    Error.captureStackTrace(this, SilentError);
+  }
+}
+
+/**
  * Emits an asynchronous error event.
  *
  * @param asyncError - The error to emit as an asynchronous error event.
