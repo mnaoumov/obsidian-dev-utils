@@ -21,7 +21,8 @@ import {
   CustomStackTraceError,
   emitAsyncErrorEvent,
   getStackTrace,
-  printError
+  printError,
+  SilentError
 } from './Error.ts';
 import { noop } from './Function.ts';
 
@@ -70,6 +71,10 @@ export async function addErrorHandler(asyncFn: () => Promise<unknown>, stackTrac
   try {
     await asyncFn();
   } catch (asyncError) {
+    if (asyncError instanceof SilentError) {
+      printSilentError(asyncError, stackTrace);
+      return;
+    }
     emitAsyncErrorEvent(new CustomStackTraceError(ASYNC_WRAPPER_ERROR_MESSAGE, stackTrace, asyncError));
   }
 }
@@ -270,6 +275,13 @@ export async function promiseAllAsyncFnsSequentially<T>(asyncFns: (() => Promisa
  */
 export async function promiseAllSequentially<T>(promises: Promisable<T>[]): Promise<T[]> {
   return await promiseAllAsyncFnsSequentially(promises.map((promise) => () => promise));
+}
+
+function printSilentError(error: SilentError, stackTrace: string): void {
+  getLibDebugger('Async:printSilentError')('Silent error', {
+    error,
+    stackTrace
+  });
 }
 
 const terminateRetryErrors = new WeakSet<Error>();

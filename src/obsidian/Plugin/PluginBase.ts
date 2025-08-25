@@ -30,7 +30,10 @@ import {
 } from '../../Async.ts';
 import { AsyncEvents } from '../../AsyncEvents.ts';
 import { getDebugger } from '../../Debug.ts';
-import { registerAsyncErrorEventHandler } from '../../Error.ts';
+import {
+  registerAsyncErrorEventHandler,
+  SilentError
+} from '../../Error.ts';
 import { noopAsync } from '../../Function.ts';
 import { registerAsyncEvent } from '../Components/AsyncEventsComponent.ts';
 import { initPluginContext } from './PluginContext.ts';
@@ -246,7 +249,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     const abortController = new AbortController();
     this._abortSignal = abortController.signal;
     this.register(() => {
-      abortController.abort(new Error(`Plugin ${this.manifest.id} had been unloaded`));
+      abortController.abort(new SilentError(`Plugin ${this.manifest.id} had been unloaded`));
     });
   }
 
