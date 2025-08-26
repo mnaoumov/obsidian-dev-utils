@@ -96,6 +96,9 @@ export function errorToString(error: unknown): string {
     const causeStrLines = errorToString(error.cause).split('\n');
     message += `\n${generateStackTraceLine('Caused by:')}`;
     for (const line of causeStrLines) {
+      if (!line.trim()) {
+        continue;
+      }
       message += line.startsWith(STACK_TRACE_PREFIX)
         ? `\n${line}`
         : `\n${generateStackTraceLine(line)}`;
