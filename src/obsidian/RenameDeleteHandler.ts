@@ -18,6 +18,7 @@ import type {
   LinkUpdatesHandler
 } from 'obsidian-typings';
 
+import { Vault } from 'obsidian';
 import { InternalPluginName } from 'obsidian-typings/implementations';
 
 import type {
@@ -35,7 +36,9 @@ import {
 import {
   basename,
   dirname,
-  join
+  extname,
+  join,
+  relative
 } from '../Path.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import {
@@ -133,9 +136,14 @@ export interface RenameDeleteHandlerSettings {
   shouldHandleRenames: boolean;
 
   /**
-   * Whether to rename attachments when a note is renamed.
+   * Whether to rename attachment files when a note is renamed.
    */
-  shouldRenameAttachments: boolean;
+  shouldRenameAttachmentFiles: boolean;
+
+  /**
+   * Whether to rename attachment folder when a note is renamed.
+   */
+  shouldRenameAttachmentFolder: boolean;
 
   /**
    * Whether to update file name aliases when a note is renamed.
@@ -252,11 +260,11 @@ async function fillRenameMap(
 
   const settings = getSettings(app);
 
-  if (!settings.shouldRenameAttachments) {
-    return;
-  }
-
   const oldAttachmentFolderPath = await getAttachmentFolderPath(app, oldPath);
+  const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
+    ? await getAttachmentFolderPath(app, newPath)
+    : oldAttachmentFolderPath;
+
   const isOldAttachmentFolderAtRoot = oldAttachmentFolderPath === '/';
 
   const oldAttachmentFolder = getFolderOrNull(app, oldAttachmentFolderPath);
@@ -265,47 +273,70 @@ async function fillRenameMap(
     return;
   }
 
+  if (oldAttachmentFolderPath === newAttachmentFolderPath && !settings.shouldRenameAttachmentFiles) {
+    return;
+  }
+
   const oldAttachmentFiles: TFile[] = [];
 
-  for (const oldPathLink of oldPathLinks) {
-    abortSignal.throwIfAborted();
-    const oldAttachmentFile = extractLinkFile(app, oldPathLink, oldPath);
-    if (!oldAttachmentFile) {
-      continue;
-    }
-
-    if (isNoteEx(app, oldAttachmentFile.path)) {
-      continue;
-    }
-
-    if (isOldAttachmentFolderAtRoot || oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
-      const oldAttachmentBacklinks = await getBacklinksForFileSafe(app, oldAttachmentFile);
+  if (await hasOwnAttachmentFolder(app, oldPath)) {
+    Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
       abortSignal.throwIfAborted();
-      if (oldAttachmentBacklinks.keys().length === 1) {
+      if (isFile(oldAttachmentFile)) {
         oldAttachmentFiles.push(oldAttachmentFile);
+      }
+    });
+  } else {
+    for (const oldPathLink of oldPathLinks) {
+      abortSignal.throwIfAborted();
+      const oldAttachmentFile = extractLinkFile(app, oldPathLink, oldPath);
+      if (!oldAttachmentFile) {
+        continue;
+      }
+
+      if (isOldAttachmentFolderAtRoot || oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
+        const oldAttachmentBacklinks = await getBacklinksForFileSafe(app, oldAttachmentFile);
+        abortSignal.throwIfAborted();
+        if (oldAttachmentBacklinks.keys().length === 1) {
+          oldAttachmentFiles.push(oldAttachmentFile);
+        }
       }
     }
   }
 
   for (const oldAttachmentFile of oldAttachmentFiles) {
-    let newAttachmentPath = await getAttachmentFilePath(app, oldAttachmentFile, newPath, true);
     abortSignal.throwIfAborted();
-    if (oldAttachmentFile.path === newAttachmentPath) {
+    if (isNoteEx(app, oldAttachmentFile.path)) {
       continue;
     }
 
+    let newAttachmentFilePath: string;
+    if (settings.shouldRenameAttachmentFiles) {
+      newAttachmentFilePath = await getAttachmentFilePath(app, oldAttachmentFile, newPath, true);
+      abortSignal.throwIfAborted();
+    } else {
+      const relativePath = isOldAttachmentFolderAtRoot ? oldAttachmentFile.path : relative(oldAttachmentFolderPath, oldAttachmentFile.path);
+      const newFolder = join(newAttachmentFolderPath, dirname(relativePath));
+      newAttachmentFilePath = join(newFolder, oldAttachmentFile.name);
+    }
+
+    if (oldAttachmentFile.path === newAttachmentFilePath) {
+      continue;
+    }
     if (settings.shouldDeleteConflictingAttachments) {
-      const newAttachmentFile = getFileOrNull(app, newAttachmentPath);
+      const newAttachmentFile = getFileOrNull(app, newAttachmentFilePath);
       if (newAttachmentFile) {
         console.warn(`Removing conflicting attachment ${newAttachmentFile.path}.`);
         await app.fileManager.trashFile(newAttachmentFile);
+        abortSignal.throwIfAborted();
       }
     } else {
-      const newDir = dirname(newAttachmentPath);
-      const newBaseName = basename(newAttachmentPath, oldAttachmentFile.extension ? `.${oldAttachmentFile.extension}` : '');
-      newAttachmentPath = app.vault.getAvailablePath(join(newDir, newBaseName), oldAttachmentFile.extension);
+      const dir = dirname(newAttachmentFilePath);
+      const ext = extname(newAttachmentFilePath);
+      const baseName = basename(newAttachmentFilePath, ext);
+      newAttachmentFilePath = app.vault.getAvailablePath(join(dir, baseName), ext.slice(1));
     }
-    renameMap.set(oldAttachmentFile.path, newAttachmentPath);
+    renameMap.set(oldAttachmentFile.path, newAttachmentFilePath);
   }
 }
 
@@ -329,7 +360,8 @@ function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
     }
     settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
     settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
-    settings.shouldRenameAttachments ||= newSettings.shouldRenameAttachments ?? false;
+    settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
+    settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
     settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
     const isPathIgnored = settings.isPathIgnored;
     settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
