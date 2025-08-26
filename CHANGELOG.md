@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.1.0
+
+- DUMMY_PATH
+
 ## 38.0.0
 
 - Regenerate attachment names on note rename
