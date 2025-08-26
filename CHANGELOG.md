@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.0.0
+
+- Regenerate attachment names on note rename
+
 ## 37.3.0
 
 - Lock file while looking for CodeBlockMarkdownInfo
