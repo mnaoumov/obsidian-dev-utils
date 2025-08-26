@@ -43,10 +43,16 @@ export interface ExtendedWrapper {
 
 /**
  * Get available path for attachments function.
+ *
+ * @param attachmentFileBaseName - File base name of the attachment.
+ * @param attachmentFileExtension - File extension of the attachment.
+ * @param noteFile - The note file to attach to.
+ * @param shouldSkipMissingAttachmentFolderCreation - Should missing attachment folder creation be skipped.
+ * @returns A {@link Promise} that resolves to the available path for attachments.
  */
 export type GetAvailablePathForAttachmentsExtendedFn = (
-  attachmentFileName: string,
-  attachmentExtension: string,
+  attachmentFileBaseName: string,
+  attachmentFileExtension: string,
   noteFile: null | TFile,
   shouldSkipMissingAttachmentFolderCreation?: boolean
 ) => Promise<string>;
@@ -69,15 +75,15 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
   const notePath = getPath(app, notePathOrFile);
   const note = getFile(app, notePath, true);
   const ext = extname(attachmentPath);
-  const fileName = basename(attachmentPath, ext);
+  const fileBaseName = basename(attachmentPath, ext);
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const internalFn = app.vault.getAvailablePathForAttachments;
   if ((internalFn as Partial<ExtendedWrapper>).isExtended) {
-    return (internalFn as GetAvailablePathForAttachmentsExtendedFn)(fileName, ext.slice(1), note, true);
+    return (internalFn as GetAvailablePathForAttachmentsExtendedFn)(fileBaseName, ext.slice(1), note, true);
   }
 
-  return await getAvailablePathForAttachments(app, fileName, ext.slice(1), note, true);
+  return await getAvailablePathForAttachments(app, fileBaseName, ext.slice(1), note, true);
 }
 
 /**
@@ -95,16 +101,16 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
  * Retrieves the available path for attachments.
  *
  * @param app - The Obsidian application instance.
- * @param attachmentFileName - File name of the attachment.
- * @param attachmentExtension - Extension of the attachment.
+ * @param attachmentFileBaseName - File name of the attachment.
+ * @param attachmentFileExtension - Extension of the attachment.
  * @param noteFile - The file to attach to.
  * @param shouldSkipMissingAttachmentFolderCreation - Should missing attachment folder creation be skipped?
  * @returns A {@link Promise} that resolves to the available path for attachments.
  */
 export async function getAvailablePathForAttachments(
   app: App,
-  attachmentFileName: string,
-  attachmentExtension: string,
+  attachmentFileBaseName: string,
+  attachmentFileExtension: string,
   noteFile: null | TFile,
   shouldSkipMissingAttachmentFolderCreation: boolean
 ): Promise<string> {
@@ -123,7 +129,7 @@ export async function getAvailablePathForAttachments(
   }
 
   attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
-  attachmentFileName = normalize(normalizeSlashes(attachmentFileName));
+  attachmentFileBaseName = normalize(normalizeSlashes(attachmentFileBaseName));
 
   let folder = getFolderOrNull(app, attachmentFolderPath, true);
 

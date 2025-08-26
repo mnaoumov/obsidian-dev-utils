@@ -130,12 +130,12 @@ export function getFolderName(importMetaUrl: string): string {
  * Makes a file name by appending an extension to a given file name.
  * If the extension is empty, the file name is returned as is.
  *
- * @param fileName - The file name to append the extension to.
- * @param extension - The extension to append to the file name.
+ * @param fileBaseName - The file name to append the extension to.
+ * @param fileExtension - The extension to append to the file name.
  * @returns The file name with the extension appended.
  */
-export function makeFileName(fileName: string, extension: string): string {
-  return extension ? `${fileName}.${extension}` : fileName;
+export function makeFileName(fileBaseName: string, fileExtension: string): string {
+  return fileExtension ? `${fileBaseName}.${fileExtension}` : fileBaseName;
 }
 
 /**
