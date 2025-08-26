@@ -17,7 +17,8 @@ import {
   basename,
   dirname,
   extname,
-  join
+  join,
+  makeFileName
 } from '../Path.ts';
 import {
   normalize,
@@ -48,13 +49,15 @@ export interface ExtendedWrapper {
  * @param attachmentFileExtension - File extension of the attachment.
  * @param noteFile - The note file to attach to.
  * @param shouldSkipMissingAttachmentFolderCreation - Should missing attachment folder creation be skipped.
+ * @param shouldSkipDuplicateCheck - Should the duplicate check be skipped.
  * @returns A {@link Promise} that resolves to the available path for attachments.
  */
 export type GetAvailablePathForAttachmentsExtendedFn = (
   attachmentFileBaseName: string,
   attachmentFileExtension: string,
   noteFile: null | TFile,
-  shouldSkipMissingAttachmentFolderCreation?: boolean
+  shouldSkipMissingAttachmentFolderCreation?: boolean,
+  shouldSkipDuplicateCheck?: boolean
 ) => Promise<string>;
 
 /**
@@ -68,9 +71,15 @@ export const DUMMY_PATH = '__DUMMY__';
  * @param app - The Obsidian application instance.
  * @param attachmentPathOrFile - The path of the attachment.
  * @param notePathOrFile - The path of the note.
+ * @param shouldSkipDuplicateCheck - Should the duplicate check be skipped.
  * @returns A {@link Promise} that resolves to the file path of the attachment.
  */
-export async function getAttachmentFilePath(app: App, attachmentPathOrFile: PathOrFile, notePathOrFile: PathOrFile): Promise<string> {
+export async function getAttachmentFilePath(
+  app: App,
+  attachmentPathOrFile: PathOrFile,
+  notePathOrFile: PathOrFile,
+  shouldSkipDuplicateCheck: boolean
+): Promise<string> {
   const attachmentPath = getPath(app, attachmentPathOrFile);
   const notePath = getPath(app, notePathOrFile);
   const note = getFile(app, notePath, true);
@@ -80,10 +89,10 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const internalFn = app.vault.getAvailablePathForAttachments;
   if ((internalFn as Partial<ExtendedWrapper>).isExtended) {
-    return (internalFn as GetAvailablePathForAttachmentsExtendedFn)(fileBaseName, ext.slice(1), note, true);
+    return (internalFn as GetAvailablePathForAttachmentsExtendedFn)(fileBaseName, ext.slice(1), note, true, shouldSkipDuplicateCheck);
   }
 
-  return await getAvailablePathForAttachments(app, fileBaseName, ext.slice(1), note, true);
+  return await getAvailablePathForAttachments(app, fileBaseName, ext.slice(1), note, true, shouldSkipDuplicateCheck);
 }
 
 /**
@@ -94,7 +103,7 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
  * @returns A {@link Promise} that resolves to the attachment folder path.
  */
 export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
-  return parentFolderPath(await getAttachmentFilePath(app, DUMMY_PATH, notePathOrFile));
+  return parentFolderPath(await getAttachmentFilePath(app, DUMMY_PATH, notePathOrFile, true));
 }
 
 /**
@@ -104,7 +113,8 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
  * @param attachmentFileBaseName - File name of the attachment.
  * @param attachmentFileExtension - Extension of the attachment.
  * @param noteFile - The file to attach to.
- * @param shouldSkipMissingAttachmentFolderCreation - Should missing attachment folder creation be skipped?
+ * @param shouldSkipMissingAttachmentFolderCreation - Should missing attachment folder creation be skipped.
+ * @param shouldSkipDuplicateCheck - Should the duplicate check be skipped.
  * @returns A {@link Promise} that resolves to the available path for attachments.
  */
 export async function getAvailablePathForAttachments(
@@ -112,7 +122,8 @@ export async function getAvailablePathForAttachments(
   attachmentFileBaseName: string,
   attachmentFileExtension: string,
   noteFile: null | TFile,
-  shouldSkipMissingAttachmentFolderCreation: boolean
+  shouldSkipMissingAttachmentFolderCreation: boolean,
+  shouldSkipDuplicateCheck: boolean
 ): Promise<string> {
   let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
   const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
@@ -142,7 +153,9 @@ export async function getAvailablePathForAttachments(
   }
 
   const prefix = folder?.getParentPrefix() ?? '';
-  return app.vault.getAvailablePath(prefix + attachmentFileName, attachmentExtension);
+  return shouldSkipDuplicateCheck
+    ? makeFileName(prefix + attachmentFileBaseName, attachmentFileExtension)
+    : app.vault.getAvailablePath(prefix + attachmentFileBaseName, attachmentFileExtension);
 }
 
 /**
