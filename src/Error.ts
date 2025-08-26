@@ -16,6 +16,8 @@ asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
  */
 export const ASYNC_WRAPPER_ERROR_MESSAGE = 'An unhandled error occurred executing async operation';
 
+const STACK_TRACE_PREFIX = '    at';
+
 /**
  * An error that wraps an error with a custom stack trace.
  */
@@ -91,7 +93,13 @@ export function errorToString(error: unknown): string {
 
   let message = error.stack ?? `${error.name}: ${error.message}`;
   if (error.cause !== undefined) {
-    message += `\nCaused by: ${errorToString(error.cause)}`;
+    const causeStrLines = errorToString(error.cause).split('\n');
+    message += `\n${generateStackTraceLine('Caused by:')}`;
+    for (const line of causeStrLines) {
+      message += line.startsWith(STACK_TRACE_PREFIX)
+        ? `\n${line}`
+        : `\n${generateStackTraceLine(line)}`;
+    }
   }
   return message;
 }
@@ -142,6 +150,10 @@ export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) =>
  */
 export function throwExpression(error: unknown): never {
   throw error;
+}
+
+function generateStackTraceLine(title: string): string {
+  return `${STACK_TRACE_PREFIX} --- ${title} --- (0)`;
 }
 
 /**
