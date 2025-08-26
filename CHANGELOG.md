@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 38.3.0
+
+- Skip empty error line
+- Add shouldSkipDuplicateCheck
+- Update libs
+
 ## 38.2.0
 
 - Fix for error links not clickable
