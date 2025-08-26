@@ -52,6 +52,11 @@ export type GetAvailablePathForAttachmentsExtendedFn = (
 ) => Promise<string>;
 
 /**
+ * Dummy path.
+ */
+export const DUMMY_PATH = '__DUMMY__';
+
+/**
  * Retrieves the file path for an attachment within a note.
  *
  * @param app - The Obsidian application instance.
@@ -83,7 +88,7 @@ export async function getAttachmentFilePath(app: App, attachmentPathOrFile: Path
  * @returns A {@link Promise} that resolves to the attachment folder path.
  */
 export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
-  return parentFolderPath(await getAttachmentFilePath(app, 'DUMMY_FILE.pdf', notePathOrFile));
+  return parentFolderPath(await getAttachmentFilePath(app, DUMMY_PATH, notePathOrFile));
 }
 
 /**
