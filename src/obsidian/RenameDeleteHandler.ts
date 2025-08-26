@@ -288,7 +288,7 @@ async function fillRenameMap(
   }
 
   for (const oldAttachmentFile of oldAttachmentFiles) {
-    let newAttachmentPath = await getAttachmentFilePath(app, oldAttachmentFile, newPath);
+    let newAttachmentPath = await getAttachmentFilePath(app, oldAttachmentFile, newPath, true);
     abortSignal.throwIfAborted();
     if (oldAttachmentFile.path === newAttachmentPath) {
       continue;
