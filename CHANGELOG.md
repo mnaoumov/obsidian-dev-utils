@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.4.0
+
+- Don't rename files by default
+
 ## 38.3.0
 
 - Skip empty error line
