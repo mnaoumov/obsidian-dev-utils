@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.2.0
+
+- Fix for error links not clickable
+
 ## 38.1.0
 
 - DUMMY_PATH
