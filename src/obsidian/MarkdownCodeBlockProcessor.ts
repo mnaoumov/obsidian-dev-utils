@@ -22,7 +22,6 @@ import {
   unindent
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
-import { ensureMetadataCacheReady } from './MetadataCache.ts';
 import {
   invokeWithFileSystemLock,
   process,
@@ -134,14 +133,13 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfo
   }
 
   await saveNote(app, sourceFile);
-  await ensureMetadataCacheReady(app);
 
   let markdownInfo: CodeBlockMarkdownInformation | null = null;
 
   await invokeWithFileSystemLock(app, sourceFile, (noteContent) => {
     const noteContentLf = ensureLfEndings(noteContent);
 
-    const approximateSectionInfo = ctx.getSectionInfo(el) ?? {
+    const approximateSectionInfo: MarkdownSectionInformation = {
       lineEnd: noteContentLf.split('\n').length - 1,
       lineStart: 0,
       text: noteContentLf
