@@ -22,6 +22,7 @@ import {
   unindent
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
+import { ensureMetadataCacheReady } from './MetadataCache.ts';
 import {
   invokeWithFileSystemLock,
   process,
@@ -133,6 +134,7 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfo
   }
 
   await saveNote(app, sourceFile);
+  await ensureMetadataCacheReady(app);
 
   let markdownInfo: CodeBlockMarkdownInformation | null = null;
 
