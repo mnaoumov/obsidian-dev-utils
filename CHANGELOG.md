@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 38.4.1
+
+- Ensure MetadataCache is ready before checking CodeBlockMarkdownInformation
+- Update libs
+
 ## 38.4.0
 
 - Don't rename files by default
