@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.4.2
+
+- Stop using ctx.getSectionInfo(el) as it is not reliable with live changes
+
 ## 38.4.1
 
 - Ensure MetadataCache is ready before checking CodeBlockMarkdownInformation
