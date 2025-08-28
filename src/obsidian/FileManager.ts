@@ -13,7 +13,11 @@ import type { CombinedFrontmatter } from './Frontmatter.ts';
 import type { ProcessOptions } from './Vault.ts';
 
 import { deepEqual } from '../ObjectUtils.ts';
-import { getFile } from './FileSystem.ts';
+import {
+  getFile,
+  getPath,
+  isMarkdownFile
+} from './FileSystem.ts';
 import {
   parseFrontmatter,
   setFrontmatter
@@ -34,7 +38,12 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
   }
 
   const file = getFile(app, pathOrFile);
-  if (alias === file.basename) {
+
+  if (!isMarkdownFile(app, file)) {
+    throw new Error(`File ${file.path} is not a markdown file.`);
+  }
+
+  if (alias === file.basename || alias === file.name) {
     return;
   }
 
@@ -58,6 +67,10 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
 export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: string): Promise<void> {
   if (!alias) {
     return;
+  }
+
+  if (!isMarkdownFile(app, pathOrFile)) {
+    throw new Error(`File ${getPath(app, pathOrFile)} is not a markdown file.`);
   }
 
   await processFrontmatter(app, pathOrFile, (frontmatter) => {
@@ -89,9 +102,11 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(
   frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal) => Promisable<MaybeReturn<null>>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
-  const file = getFile(app, pathOrFile);
+  if (!isMarkdownFile(app, pathOrFile)) {
+    throw new Error(`File ${getPath(app, pathOrFile)} is not a markdown file.`);
+  }
 
-  await process(app, file, async (abortSignal, content) => {
+  await process(app, pathOrFile, async (abortSignal, content) => {
     abortSignal.throwIfAborted();
 
     const oldFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
