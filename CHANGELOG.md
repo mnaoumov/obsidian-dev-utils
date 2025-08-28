@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 38.4.3
+
+- Reuse parsed alias (Fixes https://github.com/mnaoumov/obsidian-better-markdown-links/issues/21#issuecomment-3225879039)
+- Update libs
+
 ## 38.4.2
 
 - Stop using ctx.getSectionInfo(el) as it is not reliable with live changes
