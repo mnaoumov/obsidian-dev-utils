@@ -921,14 +921,12 @@ export function updateLink(options: UpdateLinkOptions): string {
     }
   }
 
+  const parseLinkResult = parseLink(link.original);
   let alias: string | undefined;
 
-  if (isWikilink) {
-    const parseLinkResult = parseLink(link.original);
-    if (parseLinkResult?.alias) {
-      alias = parseLinkResult.alias;
-      shouldKeepAlias = true;
-    }
+  if (isWikilink && parseLinkResult?.alias) {
+    alias = parseLinkResult.alias;
+    shouldKeepAlias = true;
   }
 
   alias ??= shouldResetAlias(normalizeOptionalProperties<ShouldResetAliasOptions>({
@@ -941,7 +939,7 @@ export function updateLink(options: UpdateLinkOptions): string {
       targetPathOrFile: targetFile
     }))
     ? undefined
-    : link.displayText;
+    : parseLinkResult?.alias;
 
   if (!shouldKeepAlias) {
     if (alias === basename(oldTargetPath, extname(oldTargetPath))) {
