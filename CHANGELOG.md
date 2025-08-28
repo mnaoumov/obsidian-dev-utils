@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.5.0
+
+- Check for extension
+
 ## 38.4.3
 
 - Reuse parsed alias (Fixes https://github.com/mnaoumov/obsidian-better-markdown-links/issues/21#issuecomment-3225879039)
