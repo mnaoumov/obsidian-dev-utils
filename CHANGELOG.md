@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.5.1
+
+- Don't wait for every save. Fixes performance (https://github.com/mnaoumov/obsidian-backlink-cache/issues/10)
+
 ## 38.5.0
 
 - Check for extension
@@ -7,7 +11,6 @@
 ## 38.4.3
 
 - Reuse parsed alias (Fixes https://github.com/mnaoumov/obsidian-better-markdown-links/issues/21#issuecomment-3225879039)
-- Update libs
 
 ## 38.4.2
 
@@ -16,7 +19,6 @@
 ## 38.4.1
 
 - Ensure MetadataCache is ready before checking CodeBlockMarkdownInformation
-- Update libs
 
 ## 38.4.0
 
@@ -26,7 +28,6 @@
 
 - Skip empty error line
 - Add shouldSkipDuplicateCheck
-- Update libs
 
 ## 38.2.0
 
@@ -54,7 +55,6 @@
 ## 37.1.2
 
 - Improve LF handling
-- Update libs
 
 ## 37.1.1
 
@@ -85,7 +85,6 @@
 
 ## 35.0.1
 
-- Update libs
 
 ## 35.0.0
 
@@ -99,7 +98,6 @@
 ## 34.0.1
 
 - Don't throw if no unique code block found
-- Update libs
 
 ## 34.0.0
 
@@ -110,12 +108,10 @@
 - insert before/after code block
 - hasSingleOccurrence
 - getCodeBlockSectionInfo
-- Update libs
 
 ## 33.1.1
 
 - Fix build
-- Update libs
 
 ## 33.1.0
 
@@ -154,7 +150,6 @@
 - Ensure removeUndefinedProperties forces exclusions
 - Assert no duplicate keys
 - Unique array
-- Update libs
 
 ## 30.7.0
 
@@ -183,12 +178,10 @@
 ## 30.3.0
 
 - extractDefaultExportInterop
-- Update libs
 
 ## 30.2.1
 
 - Improve error message
-- Update libs
 
 ## 30.2.0
 
@@ -201,7 +194,6 @@
 ## 30.1.0
 
 - Add fake default property
-- Update libs
 
 ## 30.0.0
 
@@ -218,12 +210,10 @@
 ## 29.0.0
 
 - shouldRetryOnInvalidChanges
-- Update libs
 
 ## 28.6.0
 
 - FrontmatterLinkCacheWithOffsets
-- Update libs
 
 ## 28.5.0
 
@@ -232,12 +222,10 @@
 ## 28.4.0
 
 - Add INFINITE_TIMEOUT
-- Update libs
 
 ## 28.3.0
 
 - Check if load was aborted
-- Update libs
 
 ## 28.2.2
 
@@ -245,13 +233,11 @@
 
 ## 28.2.1
 
-- Update libs
 
 ## 28.2.0
 
 - Update deprecated eslint rule
 - For canvas links rely on backlink-cache plugin or built-in canvas
-- Update libs
 
 ## 28.1.0
 
@@ -260,17 +246,14 @@
 ## 28.0.0
 
 - Rename file name
-- Update libs
 
 ## 27.7.1
 
 - Handle sourcePath /
-- Update libs
 
 ## 27.7.0
 
 - Add support for non-existing link files
-- Update libs
 
 ## 27.6.1
 
@@ -299,7 +282,6 @@
 ## 27.5.0
 
 - Don't disable link updates if rename is disabled (https://github.com/mnaoumov/obsidian-better-markdown-links/issues/17)
-- Update libs
 
 ## 27.4.0
 
@@ -314,7 +296,6 @@
 - isBaseFile
 - Fix exec warning
 - Lock version to be patched by obsidian-typings
-- Update libs
 
 ## 27.2.1
 
@@ -323,7 +304,6 @@
 ## 27.2.0
 
 - Recognize urls such mailto:foo@bar.com (For https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9)
-- Update libs
 
 ## 27.1.0
 
@@ -332,7 +312,6 @@
 
 ## 27.0.2
 
-- Update libs
 
 ## 27.0.1
 
@@ -342,27 +321,22 @@
 
 - Refactor eslint config naming
 - More node modules
-- Update libs
 
 ## 26.29.2
 
 - Save only changed leaves
-- Update libs
 
 ## 26.29.1
 
 - Fix init eslint
-- Update libs
 
 ## 26.29.0
 
 - Ensure isTimedOut flag is reset
-- Update libs
 
 ## 26.28.0
 
 - Log context fn on timeout
-- Update libs
 
 ## 26.27.3
 
@@ -379,7 +353,6 @@
 ## 26.27.0
 
 - encodeUrl
-- Update libs
 
 ## 26.26.0
 
@@ -388,7 +361,6 @@
 ## 26.25.0
 
 - Ensure placeholder shown
-- Update libs
 
 ## 26.24.0
 
@@ -397,7 +369,6 @@
 ## 26.23.0
 
 - Trigger loadSettings even settings were missing
-- Update libs
 
 ## 26.22.0
 
@@ -407,7 +378,6 @@
 
 - Switch to EmptyAttachmentFolderBehavior
 - Combine settings properly
-- Update libs
 
 ## 26.20.0
 
@@ -416,7 +386,6 @@
 ## 26.19.0
 
 - Add hasKey/hasValue
-- Update libs
 
 ## 26.18.0
 
@@ -429,7 +398,6 @@
 ## 26.16.0
 
 - Skip async link updates after rename
-- Update libs
 
 ## 26.15.2
 
@@ -441,7 +409,6 @@
 
 ## 26.15.0
 
-- Update libs
 - requestAnimationFrameAsync only after some threshold
 
 ## 26.14.0
@@ -455,17 +422,14 @@
 ## 26.12.0
 
 - Refactor getCacheSafe
-- Update libs
 
 ## 26.11.0
 
 - Patch fileManager to avoid link updates
-- Update libs
 
 ## 26.10.0
 
 - Cache debuggers to keep timestamps
-- Update libs
 
 ## 26.9.0
 
@@ -484,7 +448,6 @@
 
 - Rewrite docs
 - Add CodeHighlighterComponent
-- Update libs
 
 ## 26.5.2
 
@@ -497,7 +460,6 @@
 ## 26.5.0
 
 - Switch to static wrappers
-- Update libs
 
 ## 26.4.0
 
@@ -512,7 +474,6 @@
 ## 26.2.1
 
 - Ensure property saved
-- Update libs
 
 ## 26.2.0
 
@@ -520,7 +481,6 @@
 - Empty in display
 - Empty only on blur
 - Refactor default settings validation
-- Update libs
 
 ## 26.1.2
 
@@ -533,14 +493,12 @@
 ## 26.1.0
 
 - deepEqual settings
-- Update libs
 - Change default `shouldResetSettingWhenComponentIsEmpty`
 - Remove Error stack
 
 ## 26.0.0
 
 - Rename createSettingsManager
-- Update libs
 
 ## 25.1.0
 
@@ -591,7 +549,6 @@
 
 ## 24.2.0
 
-- Update libs
 - Refactor to GenericObject
 - More type helpers
 - ensureSafe
@@ -651,7 +608,6 @@
 
 ## 23.0.1
 
-- Update libs
 
 ## 23.0.0
 
@@ -784,7 +740,6 @@
 
 - Move helpers to Type
 - Add access to plugin and app
-- Update libs
 
 ## 22.1.1-beta.11
 
@@ -847,7 +802,6 @@
 ## 22.1.1-beta.1
 
 - Refactor plugin settings
-- Update libs
 
 ## 22.1.0
 
@@ -855,12 +809,10 @@
 
 ## 22.0.0
 
-- Update libs
 - customizeEsbuildOptions
 
 ## 21.1.0
 
-- Update libs
 - Add progress bar
 - Add script examples
 
@@ -874,12 +826,10 @@
 - ignoreError
 - Refactor to Promisable
 - throwOnAbort
-- Update libs
 
 ## 20.3.0
 
 - Remove unreliable `clearPendingQueueItems`
-- Update libs
 
 ## 20.2.1
 
@@ -888,7 +838,6 @@
 ## 20.2.0
 
 - Extract `editLinksInContent`
-- Update libs
 
 ## 20.1.0
 
@@ -897,13 +846,11 @@
 ## 20.0.0
 
 - Reuse type-fest
-- Update libs
 - MonkeyAround wrapper
 
 ## 19.24.0
 
 - Allow this: void
-- Update libs
 
 ## 19.23.0
 
@@ -911,7 +858,6 @@
 
 ## 19.22.0
 
-- Update libs
 - Support ~ fenced code blocks
 
 ## 19.21.1
@@ -921,12 +867,10 @@
 ## 19.21.0
 
 - Allow aliasing `this` to `that`
-- Update libs
 
 ## 19.20.0
 
 - Add tmpdir to NodeModules
-- Update libs
 
 ## 19.19.1
 
@@ -942,7 +886,6 @@
 
 ## 19.17.6
 
-- Update libs
 - Fix transformer check for DurationTransformer
 
 ## 19.17.5
@@ -961,7 +904,6 @@
 ## 19.17.2
 
 - Fix build
-- Update libs
 
 ## 19.17.1
 
@@ -1035,12 +977,10 @@
 
 ## 19.9.0
 
-- Update libs
 - Lint tsx
 
 ## 19.8.2
 
-- Update libs
 
 ## 19.8.1
 
@@ -1069,13 +1009,11 @@
 ## 19.7.1-beta.2
 
 - Extract canvas key parsing
-- Update libs
 - Fix sourcemaps regex
 
 ## 19.7.1-beta.1
 
 - Handle canvas text changes
-- Update libs
 
 ## 19.7.0
 
@@ -1091,19 +1029,16 @@
 
 ## 19.4.0
 
-- Update libs
 - Ensure isExternal is always set
 
 ## 19.3.0
 
 - Remove deprecated rules
-- Update libs
 - Keep wikilinks explicit alias
 
 ## 19.2.2
 
 - Fix audit
-- Update libs
 
 ## 19.2.1
 
@@ -1139,7 +1074,6 @@
 ## 19.1.2-beta.1
 
 - Separate esm/cjs folders
-- Update libs
 
 ## 19.1.1
 
@@ -1147,7 +1081,6 @@
 
 ## 19.1.0
 
-- Update libs
 
 ## 19.0.1
 
@@ -1182,7 +1115,6 @@
 
 - Fix style
 - Refactor to async Prompt
-- Update libs
 
 ## 18.1.0
 
@@ -1214,7 +1146,6 @@
 ## 18.0.0
 
 - Add static eslint config
-- Update libs
 - Fix eslint warning
 - Use 1-based month
 
@@ -1307,7 +1238,6 @@
 ## 17.7.0
 
 - Lint
-- Update libs
 - Ensure proper debugger in CLI
 
 ## 17.6.0
@@ -1321,7 +1251,6 @@
 ## 17.4.0
 
 - Add svelte-wrapper
-- Update libs
 
 ## 17.3.0
 
@@ -1337,7 +1266,6 @@
 
 ## 17.2.0
 
-- Update libs
 - More lint rules
 
 ## 17.1.1
@@ -1359,7 +1287,6 @@
 ## 17.0.0
 
 - Remove allowJs setting
-- Update libs
 - Add support for sass
 - Add svelte compile
 - Ensure onLayoutReady is called after onload completed
@@ -1511,7 +1438,6 @@
 
 ## 13.10.1
 
-- Update libs
 - Don't show `consoleDebug()` in call stack
 
 ## 13.10.0
@@ -1520,7 +1446,6 @@
 
 ## 13.9.0
 
-- Update libs
 - Make printError working in node.js
 
 ## 13.8.0
@@ -1562,7 +1487,6 @@
 
 ## 13.4.0
 
-- Update libs
 - Add key sorting
 
 ## 13.3.2
@@ -1585,7 +1509,6 @@
 
 ## 13.2.0
 
-- Update libs
 - Update targets
 
 ## 13.1.0
@@ -1617,7 +1540,6 @@
 
 ## 11.5.0
 
-- Update libs
 - Fix double require transform
 
 ## 11.4.0
@@ -1653,7 +1575,6 @@
 
 ## 9.0.1
 
-- Update libs
 - cspell
 
 ## 9.0.0
@@ -1707,7 +1628,6 @@
 
 ## 6.1.0
 
-- Update libs
 - Add more node types
 - Allow call Root methods if no roots
 - Use full definition for PackageJson
@@ -1763,7 +1683,6 @@
 
 ## 4.18.0
 
-- Update libs
 - Extract url
 
 ## 4.17.0
@@ -1806,7 +1725,6 @@
 ## 4.11.0
 
 - Lint
-- Update libs
 - Refactor to Queue
 - Log timeout
 
@@ -1827,7 +1745,6 @@
 ## 4.8.1
 
 - Lint
-- Update libs
 
 ## 4.8.0
 
