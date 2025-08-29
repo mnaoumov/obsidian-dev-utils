@@ -24,10 +24,7 @@ import type {
   PathOrFolder
 } from './FileSystem.ts';
 
-import {
-  requestAnimationFrameAsync,
-  retryWithTimeout
-} from '../Async.ts';
+import { retryWithTimeout } from '../Async.ts';
 import { noopAsync } from '../Function.ts';
 import {
   basename,
@@ -430,7 +427,6 @@ export async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> 
     return;
   }
 
-  await requestAnimationFrameAsync();
   const path = getPath(app, pathOrFile);
 
   for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
