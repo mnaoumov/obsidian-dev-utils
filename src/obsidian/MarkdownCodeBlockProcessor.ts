@@ -27,6 +27,7 @@ import {
   process,
   saveNote
 } from './Vault.ts';
+import { requestAnimationFrameAsync } from '../Async.ts';
 
 /**
  * Options for {@link getCodeBlockMarkdownInfo}.
@@ -132,6 +133,7 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfo
     throw new Error(`Source file ${ctx.sourcePath} not found.`);
   }
 
+  await requestAnimationFrameAsync();
   await saveNote(app, sourceFile);
 
   let markdownInfo: CodeBlockMarkdownInformation | null = null;
