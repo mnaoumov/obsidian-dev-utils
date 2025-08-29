@@ -14,6 +14,7 @@ import type { ValueProvider } from '../ValueProvider.ts';
 import type { CodeBlockMarkdownInformation } from './CodeBlockMarkdownInformation.ts';
 
 import { abortSignalAny } from '../AbortController.ts';
+import { requestAnimationFrameAsync } from '../Async.ts';
 import {
   ensureLfEndings,
   getLfNormalizedOffsetToOriginalOffsetMapper,
@@ -27,7 +28,6 @@ import {
   process,
   saveNote
 } from './Vault.ts';
-import { requestAnimationFrameAsync } from '../Async.ts';
 
 /**
  * Options for {@link getCodeBlockMarkdownInfo}.
