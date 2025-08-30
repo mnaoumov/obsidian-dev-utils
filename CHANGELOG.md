@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.6.0
+
+- registerPopupDocumentDomEvent / registerPopupWindowDomEvent
+
 ## 38.5.1
 
 - Don't wait for every save. Fixes performance (https://github.com/mnaoumov/obsidian-backlink-cache/issues/10)
