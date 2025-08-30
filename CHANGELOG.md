@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.6.1
+
+- Fix typo
+
 ## 38.6.0
 
 - registerPopupDocumentDomEvent / registerPopupWindowDomEvent
