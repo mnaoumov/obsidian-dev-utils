@@ -183,7 +183,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    */
   public registerPopupDocumentDomEvent<DocumentEventType extends keyof DocumentEventMap>(
     type: DocumentEventType,
-    callback: (this: HTMLElement, ev: DocumentEventMap[DocumentEventType]) => unknown,
+    callback: (this: HTMLElement, evt: DocumentEventMap[DocumentEventType]) => unknown,
     options?: AddEventListenerOptions | boolean
   ): void {
     this.registerPopupDomEvent((window) => {
