@@ -212,22 +212,31 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
  */
 export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<CachedMetadata | null> {
   const file = getFileOrNull(app, fileOrPath);
-  if (!file || file.deleted) {
-    return null;
-  }
 
-  await saveNote(app, file);
+  try {
+    if (!file || file.deleted) {
+      return null;
+    }
 
-  const fileCacheEntry = app.metadataCache.fileCache[file.path];
-  const isUpToDate = fileCacheEntry
-    && fileCacheEntry.mtime === file.stat.mtime
-    && fileCacheEntry.size === file.stat.size
-    && app.metadataCache.metadataCache[fileCacheEntry.hash];
-  if (!isUpToDate) {
-    await app.metadataCache.computeFileMetadataAsync(file);
-    await ensureMetadataCacheReady(app);
+    await saveNote(app, file);
+
+    const fileCacheEntry = app.metadataCache.fileCache[file.path];
+    const isUpToDate = fileCacheEntry
+      && fileCacheEntry.mtime === file.stat.mtime
+      && fileCacheEntry.size === file.stat.size
+      && app.metadataCache.metadataCache[fileCacheEntry.hash];
+    if (!isUpToDate) {
+      await app.metadataCache.computeFileMetadataAsync(file);
+      await ensureMetadataCacheReady(app);
+    }
+    return app.metadataCache.getFileCache(file);
+  } catch (error) {
+    if (!file || file.deleted) {
+      return null;
+    }
+
+    throw error;
   }
-  return app.metadataCache.getFileCache(file);
 }
 
 /**
