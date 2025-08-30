@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.7.0
+
+- Handle case of file removed during getCacheSafe
+
 ## 38.6.1
 
 - Fix typo
