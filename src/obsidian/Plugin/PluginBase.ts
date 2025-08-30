@@ -174,6 +174,42 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   /**
+   * Registers a DOM event for all popup window documents.
+   *
+   * @typeParam DocumentEventType - The type of the event.
+   * @param type - The type of the event.
+   * @param callback - The callback to execute.
+   * @param options - The options for the event.
+   */
+  public registerPopupDocumentDomEvent<DocumentEventType extends keyof DocumentEventMap>(
+    type: DocumentEventType,
+    callback: (this: HTMLElement, ev: DocumentEventMap[DocumentEventType]) => unknown,
+    options?: AddEventListenerOptions | boolean
+  ): void {
+    this.registerPopupDomEvent((window) => {
+      this.registerDomEvent(window.document, type, callback, options);
+    });
+  }
+
+  /**
+   * Registers a DOM event for all popup windows.
+   *
+   * @typeParam WindowEventType - The type of the event.
+   * @param type - The type of the event.
+   * @param callback - The callback to execute.
+   * @param options - The options for the event.
+   */
+  public registerPopupWindowDomEvent<WindowEventType extends keyof WindowEventMap>(
+    type: WindowEventType,
+    callback: (this: HTMLElement, evt: WindowEventMap[WindowEventType]) => unknown,
+    options?: AddEventListenerOptions | boolean
+  ): void {
+    this.registerPopupDomEvent((window) => {
+      this.registerDomEvent(window, type, callback, options);
+    });
+  }
+
+  /**
    * Waits for a lifecycle event to be triggered.
    *
    * If you `await` this method during lifecycle event, it might cause a deadlock.
@@ -312,6 +348,16 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     } finally {
       await this.triggerLifecycleEvent('layoutReady');
     }
+  }
+
+  private registerPopupDomEvent(callback: (window: Window) => void): void {
+    this.app.workspace.iterateRootLeaves((leaf) => {
+      callback(leaf.view.containerEl.win);
+    });
+
+    this.registerEvent(this.app.workspace.on('window-open', (workspaceWindow) => {
+      callback(workspaceWindow.win);
+    }));
   }
 
   private async triggerLifecycleEvent(name: LifecycleEventName): Promise<void> {
