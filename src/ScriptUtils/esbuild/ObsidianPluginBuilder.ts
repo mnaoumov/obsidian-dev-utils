@@ -170,6 +170,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
       ...builtinModules
     ],
     format: 'cjs',
+    keepNames: true,
     logLevel: 'info',
     minify: isProductionBuild,
     outfile: distPath,
