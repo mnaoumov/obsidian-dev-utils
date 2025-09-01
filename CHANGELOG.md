@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.8.1
+
+- Fix for iOS < 17.2
+
 ## 38.8.0
 
 - Keep names to have better stack traces
