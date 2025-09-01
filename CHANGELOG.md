@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.8.0
+
+- Keep names to have better stack traces
+
 ## 38.7.0
 
 - Handle case of file removed during getCacheSafe
