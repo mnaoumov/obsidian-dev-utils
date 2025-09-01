@@ -32,7 +32,10 @@ export class CustomStackTraceError extends Error {
   public constructor(message: string, stackTrace: string, cause: unknown) {
     super(message, { cause });
     this.name = 'CustomStackTraceError';
-    Error.captureStackTrace(this, CustomStackTraceError);
+
+    // NOTE: `?.` is used to support iOS before 17.2
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    Error.captureStackTrace?.(this, CustomStackTraceError);
 
     let rootCause = cause;
     const parentCauses = new Set<CustomStackTraceError>();
@@ -67,7 +70,10 @@ export class SilentError extends Error {
   public constructor(message: string) {
     super(message);
     this.name = 'SilentError';
-    Error.captureStackTrace(this, SilentError);
+
+    // NOTE: `?.` is used to support iOS before 17.2
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    Error.captureStackTrace?.(this, SilentError);
   }
 }
 
