@@ -312,7 +312,12 @@ async function fillRenameMap(
 
     let newAttachmentFilePath: string;
     if (settings.shouldRenameAttachmentFiles) {
-      newAttachmentFilePath = await getAttachmentFilePath(app, oldAttachmentFile, newPath, true);
+      newAttachmentFilePath = await getAttachmentFilePath({
+        app,
+        attachmentPathOrFile: oldAttachmentFile,
+        notePathOrFile: newPath,
+        shouldSkipDuplicateCheck: true
+      });
       abortSignal.throwIfAborted();
     } else {
       const relativePath = isOldAttachmentFolderAtRoot ? oldAttachmentFile.path : relative(oldAttachmentFolderPath, oldAttachmentFile.path);

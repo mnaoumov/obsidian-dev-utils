@@ -6,7 +6,7 @@
 
 import type {
   App,
-  TFile
+  FileStats
 } from 'obsidian';
 
 import { parentFolderPath } from 'obsidian-typings/implementations';
@@ -26,39 +26,74 @@ import {
   trimStart
 } from '../String.ts';
 import {
-  getFile,
+  getFileOrNull,
   getFolder,
   getFolderOrNull,
   getPath
 } from './FileSystem.ts';
 
 /**
- * Is overridden wrapper.
+ * An overridden wrapper.
  */
 export interface ExtendedWrapper {
   /**
-   * Is extended.
+   * An extended function.
    */
-  isExtended: true;
+  extended: GetAvailablePathForAttachmentsExtendedFn;
 }
 
 /**
- * Get available path for attachments function.
+ * Get available path for attachments extended function.
  *
- * @param attachmentFileBaseName - File base name of the attachment.
- * @param attachmentFileExtension - File extension of the attachment.
- * @param noteFile - The note file to attach to.
- * @param shouldSkipMissingAttachmentFolderCreation - Should missing attachment folder creation be skipped.
- * @param shouldSkipDuplicateCheck - Should the duplicate check be skipped.
+ * @param options - Options for the get available path for attachments extended function.
  * @returns A {@link Promise} that resolves to the available path for attachments.
  */
-export type GetAvailablePathForAttachmentsExtendedFn = (
-  attachmentFileBaseName: string,
-  attachmentFileExtension: string,
-  noteFile: null | TFile,
-  shouldSkipMissingAttachmentFolderCreation?: boolean,
-  shouldSkipDuplicateCheck?: boolean
-) => Promise<string>;
+export type GetAvailablePathForAttachmentsExtendedFn = (options: GetAvailablePathForAttachmentsExtendedFnOptions) => Promise<string>;
+
+/**
+ * Options for the get available path for attachments extended function.
+ */
+export interface GetAvailablePathForAttachmentsExtendedFnOptions {
+  /**
+   * A base name of the attachment.
+   */
+  attachmentFileBaseName: string;
+
+  /**
+   * A content of the attachment file.
+   */
+  attachmentFileContent?: ArrayBuffer | undefined;
+
+  /**
+   * An extension of the attachment.
+   */
+  attachmentFileExtension: string;
+
+  /**
+   * A stats of the attachment file.
+   */
+  attachmentFileStat?: FileStats | undefined;
+
+  /**
+   * A path or file of the note.
+   */
+  notePathOrFile: null | PathOrFile;
+
+  /**
+   * Should the duplicate check be skipped.
+   */
+  shouldSkipDuplicateCheck?: boolean;
+
+  /**
+   * Should the generated attachment file name be skipped.
+   */
+  shouldSkipGeneratedAttachmentFileName?: boolean;
+
+  /**
+   * Should missing attachment folder creation be skipped.
+   */
+  shouldSkipMissingAttachmentFolderCreation: boolean | undefined;
+}
 
 /**
  * Dummy path.
@@ -66,33 +101,98 @@ export type GetAvailablePathForAttachmentsExtendedFn = (
 export const DUMMY_PATH = '__DUMMY__';
 
 /**
+ * Options for the getAttachmentFilePath function.
+ */
+export interface GetAttachmentFilePathOptions {
+  /**
+   * An Obsidian application instance.
+   */
+  app: App;
+  /**
+   * A path of the attachment.
+   */
+  attachmentPathOrFile: PathOrFile;
+  /**
+   * A path of the note.
+   */
+  notePathOrFile: PathOrFile;
+  /**
+   * Should the duplicate check be skipped.
+   */
+  shouldSkipDuplicateCheck: boolean;
+}
+
+/**
+ * Options for the getAvailablePathForAttachments function.
+ */
+export interface GetAvailablePathForAttachmentsOptions {
+  /**
+   * An Obsidian application instance.
+   */
+  app: App;
+  /**
+   * A base name of the attachment.
+   */
+  attachmentFileBaseName: string;
+  /**
+   * An extension of the attachment.
+   */
+  attachmentFileExtension: string;
+  /**
+   * A file to attach to.
+   */
+  notePathOrFile: null | PathOrFile;
+  /**
+   * Should the duplicate check be skipped.
+   */
+  shouldSkipDuplicateCheck?: boolean;
+  /**
+   * Should missing attachment folder creation be skipped.
+   */
+  shouldSkipMissingAttachmentFolderCreation?: boolean;
+}
+
+/**
  * Retrieves the file path for an attachment within a note.
  *
- * @param app - The Obsidian application instance.
- * @param attachmentPathOrFile - The path of the attachment.
- * @param notePathOrFile - The path of the note.
- * @param shouldSkipDuplicateCheck - Should the duplicate check be skipped.
+ * @param options - Options for the get attachment file path function.
  * @returns A {@link Promise} that resolves to the file path of the attachment.
  */
-export async function getAttachmentFilePath(
-  app: App,
-  attachmentPathOrFile: PathOrFile,
-  notePathOrFile: PathOrFile,
-  shouldSkipDuplicateCheck: boolean
-): Promise<string> {
+export async function getAttachmentFilePath(options: GetAttachmentFilePathOptions): Promise<string> {
+  const {
+    app,
+    attachmentPathOrFile,
+    notePathOrFile,
+    shouldSkipDuplicateCheck
+  } = options;
   const attachmentPath = getPath(app, attachmentPathOrFile);
-  const notePath = getPath(app, notePathOrFile);
-  const note = getFile(app, notePath, true);
-  const ext = extname(attachmentPath);
-  const fileBaseName = basename(attachmentPath, ext);
+  const attachmentFileExtension = extname(attachmentPath);
+  const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
+  const attachmentFile = getFileOrNull(app, attachmentPath);
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const internalFn = app.vault.getAvailablePathForAttachments;
-  if ((internalFn as Partial<ExtendedWrapper>).isExtended) {
-    return (internalFn as GetAvailablePathForAttachmentsExtendedFn)(fileBaseName, ext.slice(1), note, true, shouldSkipDuplicateCheck);
+  const extendedFn = (internalFn as Partial<ExtendedWrapper>).extended;
+  if (extendedFn) {
+    return extendedFn({
+      attachmentFileBaseName,
+      attachmentFileContent: attachmentFile ? await app.vault.readBinary(attachmentFile) : undefined,
+      attachmentFileExtension: attachmentFileExtension.slice(1),
+      attachmentFileStat: attachmentFile?.stat,
+      notePathOrFile,
+      shouldSkipDuplicateCheck,
+      shouldSkipMissingAttachmentFolderCreation: true
+    });
   }
 
-  return await getAvailablePathForAttachments(app, fileBaseName, ext.slice(1), note, true, shouldSkipDuplicateCheck);
+  return await getAvailablePathForAttachments({
+    app,
+    attachmentFileBaseName,
+    attachmentFileExtension: attachmentFileExtension.slice(1),
+    notePathOrFile,
+    shouldSkipDuplicateCheck,
+    shouldSkipMissingAttachmentFolderCreation: true
+  });
 }
 
 /**
@@ -103,53 +203,51 @@ export async function getAttachmentFilePath(
  * @returns A {@link Promise} that resolves to the attachment folder path.
  */
 export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
-  return parentFolderPath(await getAttachmentFilePath(app, DUMMY_PATH, notePathOrFile, true));
+  return parentFolderPath(
+    await getAttachmentFilePath({
+      app,
+      attachmentPathOrFile: DUMMY_PATH,
+      notePathOrFile,
+      shouldSkipDuplicateCheck: true
+    })
+  );
 }
 
 /**
  * Retrieves the available path for attachments.
  *
- * @param app - The Obsidian application instance.
- * @param attachmentFileBaseName - File name of the attachment.
- * @param attachmentFileExtension - Extension of the attachment.
- * @param noteFile - The file to attach to.
- * @param shouldSkipMissingAttachmentFolderCreation - Should missing attachment folder creation be skipped.
- * @param shouldSkipDuplicateCheck - Should the duplicate check be skipped.
+ * @param options - Options for the get available path for attachments function.
  * @returns A {@link Promise} that resolves to the available path for attachments.
  */
-export async function getAvailablePathForAttachments(
-  app: App,
-  attachmentFileBaseName: string,
-  attachmentFileExtension: string,
-  noteFile: null | TFile,
-  shouldSkipMissingAttachmentFolderCreation: boolean,
-  shouldSkipDuplicateCheck: boolean
-): Promise<string> {
+export async function getAvailablePathForAttachments(options: GetAvailablePathForAttachmentsOptions): Promise<string> {
+  const {
+    app,
+    attachmentFileExtension,
+    notePathOrFile,
+    shouldSkipDuplicateCheck,
+    shouldSkipMissingAttachmentFolderCreation
+  } = options;
   let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
   const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
-  let relativePath = null;
+  const relativePath = attachmentFolderPath.startsWith('./') ? trimStart(attachmentFolderPath, './') : null;
 
-  if (attachmentFolderPath.startsWith('./')) {
-    relativePath = trimStart(attachmentFolderPath, './');
-  }
+  const noteFileOrNull = getFileOrNull(app, notePathOrFile);
 
   if (isCurrentFolder) {
-    attachmentFolderPath = noteFile ? noteFile.parent?.path ?? '' : '';
+    attachmentFolderPath = noteFileOrNull ? noteFileOrNull.parent?.path ?? '' : '';
   } else if (relativePath) {
-    attachmentFolderPath = (noteFile ? noteFile.parent?.getParentPrefix() ?? '' : '') + relativePath;
+    attachmentFolderPath = (noteFileOrNull ? noteFileOrNull.parent?.getParentPrefix() ?? '' : '') + relativePath;
   }
 
   attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
-  attachmentFileBaseName = normalize(normalizeSlashes(attachmentFileBaseName));
+  const attachmentFileBaseName = normalize(normalizeSlashes(options.attachmentFileBaseName));
 
   let folder = getFolderOrNull(app, attachmentFolderPath, true);
 
   if (!folder && relativePath) {
-    if (shouldSkipMissingAttachmentFolderCreation) {
-      folder = getFolder(app, attachmentFolderPath, true);
-    } else {
-      folder = await app.vault.createFolder(attachmentFolderPath);
-    }
+    folder = shouldSkipMissingAttachmentFolderCreation
+      ? getFolder(app, attachmentFolderPath, true)
+      : await app.vault.createFolder(attachmentFolderPath);
   }
 
   const prefix = folder?.getParentPrefix() ?? '';
