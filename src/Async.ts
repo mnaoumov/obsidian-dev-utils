@@ -435,51 +435,49 @@ export async function runWithTimeout<Result>(
   context?: unknown,
   stackTrace?: string
 ): Promise<Result> {
-  class Wrapper {
-    /**
-     * Creates a new wrapper.
-     *
-     * @param value - The value to wrap.
-     */
-    public constructor(public readonly value: Result) {}
-  }
-
   stackTrace ??= getStackTrace(1);
   const startTime = performance.now();
 
-  const abortController = new AbortController();
+  const runAbortController = new AbortController();
+  const timeoutAbortController = new AbortController();
+
+  let result: null | Result = null;
+  let hasResult = false;
 
   await Promise.race([run(), innerTimeout()]);
-  if (abortController.signal.reason instanceof Wrapper) {
-    return (abortController.signal.reason as Wrapper).value;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (hasResult) {
+    return result as Result;
   }
 
-  throw new CustomStackTraceError('Run with timeout failed', stackTrace, abortController.signal.reason as unknown);
+  throw new CustomStackTraceError('Run with timeout failed', stackTrace, runAbortController.signal.reason);
 
   async function run(): Promise<void> {
     try {
-      const result = await fn(abortController.signal);
+      result = await fn(runAbortController.signal);
       const duration = performance.now() - startTime;
       const runWithTimeoutDebugger = getLibDebugger('Async:runWithTimeout');
       printWithStackTrace(runWithTimeoutDebugger, stackTrace ?? '', `Execution time: ${String(duration)} milliseconds`, { context, fn });
-      abortController.abort(new Wrapper(result));
+      timeoutAbortController.abort(new Error('Run with timeout completed successfully'));
+      hasResult = true;
     } catch (e) {
-      abortController.abort(e);
+      runAbortController.abort(e);
     }
   }
 
   async function innerTimeout(): Promise<void> {
-    while (!abortController.signal.aborted) {
-      await sleep(timeoutInMilliseconds, abortController.signal);
+    // eslint-disable-next-line no-unmodified-loop-condition
+    while (!hasResult) {
+      await sleep(timeoutInMilliseconds, timeoutAbortController.signal);
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (abortController.signal.aborted) {
+      if (hasResult) {
         return;
       }
       const duration = performance.now() - startTime;
       console.warn(`Timed out after ${String(duration)} milliseconds`, { context, fn });
       const timeoutDebugger = getLibDebugger('Async:runWithTimeout:timeout');
       if (!timeoutDebugger.enabled) {
-        abortController.abort(new Error(`Timed out after ${String(duration)} milliseconds`));
+        runAbortController.abort(new Error(`Timed out after ${String(duration)} milliseconds`));
         return;
       }
 
