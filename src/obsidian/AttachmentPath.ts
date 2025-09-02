@@ -34,14 +34,6 @@ import {
 } from './FileSystem.ts';
 
 /**
- * Get available path for attachments extended function.
- *
- * @param options - Options for the get available path for attachments extended function.
- * @returns A {@link Promise} that resolves to the available path for attachments.
- */
-export type GetAvailablePathForAttachmentsExtendedFn = (options: GetAvailablePathForAttachmentsExtendedFnOptions) => Promise<string>;
-
-/**
  * Options for the get available path for attachments extended function.
  */
 export interface GetAvailablePathForAttachmentsExtendedFnOptions {
@@ -89,11 +81,14 @@ export interface GetAvailablePathForAttachmentsExtendedFnOptions {
 /**
  * {@link Vault.getAvailablePathForAttachments} extended wrapper.
  */
-export interface GetAvailablePathForAttachmentsFnExtendedWrapper extends GetAvailablePathForAttachmentsFn {
+export interface GetAvailablePathForAttachmentsFnExtended extends GetAvailablePathForAttachmentsFn {
   /**
-   * An extended function.
+   * Get available path for attachments with additional options.
+   *
+   * @param options - Options for the get available path for attachments.
+   * @returns A {@link Promise} that resolves to the available path for attachments.
    */
-  extended: GetAvailablePathForAttachmentsExtendedFn;
+  extended(options: GetAvailablePathForAttachmentsExtendedFnOptions): Promise<string>;
 }
 
 type GetAvailablePathForAttachmentsFn = Vault['getAvailablePathForAttachments'];
@@ -175,7 +170,7 @@ export async function getAttachmentFilePath(options: GetAttachmentFilePathOption
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const internalFn = app.vault.getAvailablePathForAttachments;
-  const extendedFn = (internalFn as Partial<GetAvailablePathForAttachmentsFnExtendedWrapper>).extended;
+  const extendedFn = (internalFn as Partial<GetAvailablePathForAttachmentsFnExtended>).extended;
   if (extendedFn) {
     return extendedFn({
       attachmentFileBaseName,
