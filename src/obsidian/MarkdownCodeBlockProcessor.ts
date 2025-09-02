@@ -304,6 +304,7 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promis
     }
 
     let newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
+    abortSignal.throwIfAborted();
     if ((newCodeBlock || options.shouldKeepGapWhenEmpty) && options.shouldPreserveLinePrefix) {
       newCodeBlock = indent(newCodeBlock, markdownInfo.linePrefix);
     }
