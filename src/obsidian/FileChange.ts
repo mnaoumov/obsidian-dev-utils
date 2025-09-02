@@ -96,6 +96,7 @@ export async function applyContentChanges(
 ): Promise<null | string> {
   abortSignal.throwIfAborted();
   let changes = await resolveValue(changesProvider, abortSignal);
+  abortSignal.throwIfAborted();
   let frontmatter: CombinedFrontmatter<unknown> = {};
   let hasFrontmatterError = false;
   try {
@@ -301,6 +302,7 @@ async function applyCanvasChanges(
   shouldRetryOnInvalidChanges = true
 ): Promise<null | string> {
   const changes = await resolveValue(changesProvider, abortSignal);
+  abortSignal.throwIfAborted();
   const canvasData = parseJsonSafe(content) as CanvasData;
 
   const canvasTextChanges = new Map<number, CanvasTextNodeChange[]>();
