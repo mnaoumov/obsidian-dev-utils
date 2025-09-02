@@ -293,10 +293,6 @@ function handleSilentError(error: unknown): boolean {
 
 const terminateRetryErrors = new WeakSet<Error>();
 
-class Result<R> {
-  public constructor(public readonly result: R) {}
-}
-
 /**
  * Marks an error to terminate retry logic.
  *
@@ -433,20 +429,29 @@ export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisa
  * @param stackTrace - The stack trace of the source function.
  * @returns A {@link Promise} that resolves with the result of the asynchronous function or rejects if it times out.
  */
-export async function runWithTimeout<R>(
+export async function runWithTimeout<Result>(
   timeoutInMilliseconds: number,
-  fn: (abortSignal: AbortSignal) => Promisable<R>,
+  fn: (abortSignal: AbortSignal) => Promisable<Result>,
   context?: unknown,
   stackTrace?: string
-): Promise<R> {
+): Promise<Result> {
+  class Wrapper {
+    /**
+     * Creates a new wrapper.
+     *
+     * @param value - The value to wrap.
+     */
+    public constructor(public readonly value: Result) {}
+  }
+
   stackTrace ??= getStackTrace(1);
   const startTime = performance.now();
 
   const abortController = new AbortController();
 
   await Promise.race([run(), innerTimeout()]);
-  if (abortController.signal.reason instanceof Result) {
-    return abortController.signal.reason.result as R;
+  if (abortController.signal.reason instanceof Wrapper) {
+    return (abortController.signal.reason as Wrapper).value;
   }
 
   throw new CustomStackTraceError('Run with timeout failed', stackTrace, abortController.signal.reason as unknown);
@@ -457,7 +462,7 @@ export async function runWithTimeout<R>(
       const duration = performance.now() - startTime;
       const runWithTimeoutDebugger = getLibDebugger('Async:runWithTimeout');
       printWithStackTrace(runWithTimeoutDebugger, stackTrace ?? '', `Execution time: ${String(duration)} milliseconds`, { context, fn });
-      abortController.abort(new Result(result));
+      abortController.abort(new Wrapper(result));
     } catch (e) {
       abortController.abort(e);
     }
