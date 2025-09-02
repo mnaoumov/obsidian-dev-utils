@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 38.9.0
+
+- Refactor Result
+- Handle inner silent errors
+
 ## 38.8.1
 
 - Fix for iOS < 17.2
