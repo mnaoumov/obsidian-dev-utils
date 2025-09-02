@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.0.0
+
+- Refactor GetAvailablePathForAttachments
+
 ## 39.0.1
 
 - Upgrade linter config
