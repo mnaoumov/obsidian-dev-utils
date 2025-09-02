@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.0.2
+
+- Refactor GetAvailablePathForAttachmentsFnExtended
+
 ## 40.0.1
 
 - Refactor GetAvailablePathForAttachmentsFnExtendedWrapper
