@@ -71,11 +71,11 @@ export async function addErrorHandler(asyncFn: () => Promise<unknown>, stackTrac
   try {
     await asyncFn();
   } catch (asyncError) {
-    if (asyncError instanceof SilentError) {
-      printSilentError(asyncError, stackTrace);
+    const wrappedError = new CustomStackTraceError(ASYNC_WRAPPER_ERROR_MESSAGE, stackTrace, asyncError);
+    if (handleSilentError(wrappedError)) {
       return;
     }
-    emitAsyncErrorEvent(new CustomStackTraceError(ASYNC_WRAPPER_ERROR_MESSAGE, stackTrace, asyncError));
+    emitAsyncErrorEvent(wrappedError);
   }
 }
 
@@ -277,11 +277,18 @@ export async function promiseAllSequentially<T>(promises: Promisable<T>[]): Prom
   return await promiseAllAsyncFnsSequentially(promises.map((promise) => () => promise));
 }
 
-function printSilentError(error: SilentError, stackTrace: string): void {
-  getLibDebugger('Async:printSilentError')('Silent error', {
-    error,
-    stackTrace
-  });
+function handleSilentError(error: unknown): boolean {
+  let cause = error;
+  while (!(cause instanceof SilentError)) {
+    if (!(cause instanceof Error)) {
+      return false;
+    }
+
+    cause = cause.cause;
+  }
+
+  getLibDebugger('Async:handleSilentError')(error);
+  return true;
 }
 
 const terminateRetryErrors = new WeakSet<Error>();
