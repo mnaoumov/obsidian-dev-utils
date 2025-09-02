@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 38.10.0
+
+- Add more checks for throwIfAborted
+
 ## 38.9.0
 
 - Refactor Result
