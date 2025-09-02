@@ -571,9 +571,17 @@ export async function editLinks(
   linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
-  await applyFileChanges(app, pathOrFile, async () => {
+  await applyFileChanges(app, pathOrFile, async (abortSignal, content) => {
     const cache = await getCacheSafe(app, pathOrFile);
-    return await getFileChanges(cache, isCanvasFile(app, pathOrFile), linkConverter);
+    abortSignal.throwIfAborted();
+    const file = getFile(app, pathOrFile);
+    const cachedContent = await app.vault.cachedRead(file);
+    abortSignal.throwIfAborted();
+    if (content !== cachedContent) {
+      return null;
+    }
+
+    return await getFileChanges(cache, isCanvasFile(app, pathOrFile), linkConverter, abortSignal);
   }, processOptions);
 }
 
