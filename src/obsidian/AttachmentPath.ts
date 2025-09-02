@@ -6,7 +6,8 @@
 
 import type {
   App,
-  FileStats
+  FileStats,
+  Vault
 } from 'obsidian';
 
 import { parentFolderPath } from 'obsidian-typings/implementations';
@@ -31,16 +32,6 @@ import {
   getFolderOrNull,
   getPath
 } from './FileSystem.ts';
-
-/**
- * An overridden wrapper.
- */
-export interface ExtendedWrapper {
-  /**
-   * An extended function.
-   */
-  extended: GetAvailablePathForAttachmentsExtendedFn;
-}
 
 /**
  * Get available path for attachments extended function.
@@ -94,6 +85,18 @@ export interface GetAvailablePathForAttachmentsExtendedFnOptions {
    */
   shouldSkipMissingAttachmentFolderCreation: boolean | undefined;
 }
+
+/**
+ * {@link Vault.getAvailablePathForAttachments} extended wrapper.
+ */
+export interface GetAvailablePathForAttachmentsFnExtendedWrapper extends GetAvailablePathForAttachmentsFn {
+  /**
+   * An extended function.
+   */
+  extended: GetAvailablePathForAttachmentsExtendedFn;
+}
+
+type GetAvailablePathForAttachmentsFn = Vault['getAvailablePathForAttachments'];
 
 /**
  * Dummy path.
@@ -172,7 +175,7 @@ export async function getAttachmentFilePath(options: GetAttachmentFilePathOption
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const internalFn = app.vault.getAvailablePathForAttachments;
-  const extendedFn = (internalFn as Partial<ExtendedWrapper>).extended;
+  const extendedFn = (internalFn as Partial<GetAvailablePathForAttachmentsFnExtendedWrapper>).extended;
   if (extendedFn) {
     return extendedFn({
       attachmentFileBaseName,
