@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 39.0.0
+
+- Validate content when preparing file changes
+
 ## 38.10.0
 
 - Add more checks for throwIfAborted
