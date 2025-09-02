@@ -12,7 +12,6 @@
 /* eslint-disable no-magic-numbers */
 
 import type { Linter } from 'eslint';
-import type { InfiniteDepthConfigWithExtends } from 'typescript-eslint';
 
 import eslint from '@eslint/js';
 // eslint-disable-next-line import-x/no-rename-default
@@ -20,6 +19,7 @@ import stylistic from '@stylistic/eslint-plugin';
 import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-import-x';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 import perfectionist from 'eslint-plugin-perfectionist';
+import { defineConfig } from 'eslint/config';
 // eslint-disable-next-line import-x/no-rename-default
 import tseslint from 'typescript-eslint';
 
@@ -30,7 +30,7 @@ import { getRootFolder } from '../Root.ts';
 /**
  * ESLint configurations for TypeScript projects.
  */
-export const obsidianDevUtilsConfigs: Linter.Config[] = tseslint.config(
+export const obsidianDevUtilsConfigs: Linter.Config[] = defineConfig(
   {
     files: [
       join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
@@ -57,7 +57,7 @@ export const obsidianDevUtilsConfigs: Linter.Config[] = tseslint.config(
   ...getModulesNewlinesConfigs(),
   ...getModulesNewlinesConfigs(),
   ...getEslintImportResolverTypescriptConfigs()
-) as Linter.Config[];
+);
 
 function excludeFilesProperty<Config>(config: Config): Config {
   type ConfigWithFiles = { files?: unknown } & Config;
@@ -66,7 +66,7 @@ function excludeFilesProperty<Config>(config: Config): Config {
   return newConfig;
 }
 
-function getEslintConfigs(): InfiniteDepthConfigWithExtends[] {
+function getEslintConfigs(): Linter.Config[] {
   return [
     eslint.configs.recommended,
     {
@@ -205,7 +205,7 @@ function getEslintConfigs(): InfiniteDepthConfigWithExtends[] {
   ];
 }
 
-function getEslintImportResolverTypescriptConfigs(): InfiniteDepthConfigWithExtends[] {
+function getEslintImportResolverTypescriptConfigs(): Linter.Config[] {
   return [
     {
       settings: {
@@ -219,12 +219,12 @@ function getEslintImportResolverTypescriptConfigs(): InfiniteDepthConfigWithExte
   ];
 }
 
-function getImportXConfigs(): InfiniteDepthConfigWithExtends[] {
+function getImportXConfigs(): Linter.Config[] {
   return [
-    eslintPluginImportXFlatConfigs.recommended,
-    eslintPluginImportXFlatConfigs.typescript,
-    eslintPluginImportXFlatConfigs.errors,
-    eslintPluginImportXFlatConfigs.warnings,
+    eslintPluginImportXFlatConfigs.recommended as Linter.Config,
+    eslintPluginImportXFlatConfigs.typescript as Linter.Config,
+    eslintPluginImportXFlatConfigs.errors as Linter.Config,
+    eslintPluginImportXFlatConfigs.warnings as Linter.Config,
     {
       rules: {
         'import-x/consistent-type-specifier-style': 'error',
@@ -269,7 +269,7 @@ function getImportXConfigs(): InfiniteDepthConfigWithExtends[] {
   ];
 }
 
-function getModulesNewlinesConfigs(): InfiniteDepthConfigWithExtends[] {
+function getModulesNewlinesConfigs(): Linter.Config[] {
   return [
     {
       plugins: {
@@ -283,13 +283,13 @@ function getModulesNewlinesConfigs(): InfiniteDepthConfigWithExtends[] {
   ];
 }
 
-function getPerfectionistConfigs(): InfiniteDepthConfigWithExtends[] {
+function getPerfectionistConfigs(): Linter.Config[] {
   return [
     perfectionist.configs['recommended-alphabetical']
   ];
 }
 
-function getStylisticConfigs(): InfiniteDepthConfigWithExtends[] {
+function getStylisticConfigs(): Linter.Config[] {
   return [
     stylistic.configs.recommended,
     stylistic.configs.customize({
@@ -338,7 +338,7 @@ function getStylisticConfigs(): InfiniteDepthConfigWithExtends[] {
   ];
 }
 
-function getTseslintConfigs(): InfiniteDepthConfigWithExtends[] {
+function getTseslintConfigs(): Linter.Config[] {
   return [
     // eslint-disable-next-line import-x/no-named-as-default-member
     ...tseslint.configs.strictTypeChecked.map(excludeFilesProperty),
