@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 39.0.1
+
+- Upgrade linter config
+- Fix runWithTimeout flow
+- Update libs
+
 ## 39.0.0
 
 - Validate content when preparing file changes
