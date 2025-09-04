@@ -5,10 +5,7 @@
  * functions to split paths, update links in files, and generate markdown links with various options.
  */
 
-import type {
-  Link,
-  Text
-} from 'mdast';
+import type { Link } from 'mdast';
 import type {
   App,
   CachedMetadata,
@@ -1244,8 +1241,9 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
   const LINK_ALIAS_SUFFIX = '](';
   const LINK_SUFFIX = ')';
   const raw = getRawLink(node, str);
-  const aliasNode = node.children[0] as Text | undefined;
-  const rawUrl = str.slice((aliasNode?.position?.end.offset ?? 1) + LINK_ALIAS_SUFFIX.length, (node.position?.end.offset ?? 0) - LINK_SUFFIX.length);
+  const aliasNodeStartOffset = node.children[0]?.position?.start.offset ?? 1;
+  const aliasNodeEndOffset = node.children.at(-1)?.position?.end.offset ?? 1;
+  const rawUrl = str.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, (node.position?.end.offset ?? 0) - LINK_SUFFIX.length);
   const hasAngleBrackets = raw.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
   const isExternal = isUrl(node.url);
   let url = node.url;
@@ -1257,7 +1255,7 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
     }
   }
   return normalizeOptionalProperties<ParseLinkResult>({
-    alias: aliasNode?.value,
+    alias: aliasNodeStartOffset < aliasNodeEndOffset ? str.slice(aliasNodeStartOffset, aliasNodeEndOffset) : undefined,
     encodedUrl: isExternal ? encodeUrl(url) : undefined,
     endOffset: node.position?.end.offset ?? 0,
     hasAngleBrackets,
