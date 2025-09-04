@@ -443,6 +443,7 @@ export async function runWithTimeout<Result>(
 
   let result: null | Result = null;
   let hasResult = false;
+  let isCompleted = false;
 
   await Promise.race([run(), innerTimeout()]);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -458,19 +459,21 @@ export async function runWithTimeout<Result>(
       const duration = performance.now() - startTime;
       const runWithTimeoutDebugger = getLibDebugger('Async:runWithTimeout');
       printWithStackTrace(runWithTimeoutDebugger, stackTrace ?? '', `Execution time: ${String(duration)} milliseconds`, { context, fn });
-      timeoutAbortController.abort(new Error('Run with timeout completed successfully'));
       hasResult = true;
     } catch (e) {
       runAbortController.abort(e);
+    } finally {
+      isCompleted = true;
+      timeoutAbortController.abort(new Error('Completed'));
     }
   }
 
   async function innerTimeout(): Promise<void> {
     // eslint-disable-next-line no-unmodified-loop-condition
-    while (!hasResult) {
+    while (!isCompleted) {
       await sleep(timeoutInMilliseconds, timeoutAbortController.signal);
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (hasResult) {
+      if (isCompleted) {
         return;
       }
       const duration = performance.now() - startTime;
