@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.1.1
+
+- Parse alias
+
 ## 40.1.0
 
 - shouldEscapeAlias (https://github.com/mnaoumov/obsidian-better-markdown-links/issues/22)
