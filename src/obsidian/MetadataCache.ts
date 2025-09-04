@@ -32,7 +32,10 @@ import {
   isFile
 } from './FileSystem.ts';
 import { parseFrontmatter } from './Frontmatter.ts';
-import { isFrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
+import {
+  isFrontmatterLinkCacheWithOffsets,
+  toFrontmatterLinkCacheWithOffsets
+} from './FrontmatterLinkCacheWithOffsets.ts';
 import { sortReferences } from './Reference.ts';
 import {
   readSafe,
@@ -174,20 +177,13 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
         if (isReferenceCache(link)) {
           actualLink = content.slice(link.position.start.offset, link.position.end.offset);
         } else if (isFrontmatterLinkCache(link)) {
-          const linkValue = getNestedPropertyValue(frontmatter, link.key);
-          if (typeof linkValue !== 'string') {
+          const propertyValue = getNestedPropertyValue(frontmatter, link.key);
+          if (typeof propertyValue !== 'string') {
             return false;
           }
 
-          let startOffset = 0;
-          let endOffset = linkValue.length;
-
-          if (isFrontmatterLinkCacheWithOffsets(link)) {
-            startOffset = link.startOffset;
-            endOffset = link.endOffset;
-          }
-
-          actualLink = linkValue.slice(startOffset, endOffset);
+          const linkWithOffsets = toFrontmatterLinkCacheWithOffsets(link);
+          actualLink = propertyValue.slice(linkWithOffsets.startOffset, linkWithOffsets.endOffset);
         } else {
           return true;
         }

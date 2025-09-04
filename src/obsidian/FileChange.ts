@@ -44,7 +44,10 @@ import {
   parseFrontmatter,
   setFrontmatter
 } from './Frontmatter.ts';
-import { isFrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
+import {
+  isFrontmatterLinkCacheWithOffsets,
+  toFrontmatterLinkCacheWithOffsets
+} from './FrontmatterLinkCacheWithOffsets.ts';
 import {
   isCanvasReference,
   referenceToFileChange
@@ -113,7 +116,7 @@ export async function applyContentChanges(
     return null;
   }
 
-  const { frontmatterChanged, newContent } = applyContentChangesToText(changes, content, frontmatter, hasFrontmatterError, path);
+  const { frontmatterChanged, newContent } = applyContentChangesToText(changes, content, hasFrontmatterError, path);
 
   await applyFrontmatterChangesWithOffsets(abortSignal, frontmatter, frontmatterChanged, path);
   abortSignal.throwIfAborted();
@@ -206,6 +209,23 @@ export function isFrontmatterChange(fileChange: FileChange): fileChange is Front
  */
 export function isFrontmatterChangeWithOffsets(fileChange: FileChange): fileChange is FrontmatterChangeWithOffsets {
   return isFrontmatterLinkCacheWithOffsets(fileChange.reference);
+}
+
+/**
+ * Converts a frontmatter change to a frontmatter change with offsets.
+ *
+ * @param fileChange - The file change to convert.
+ * @returns The converted file change.
+ */
+export function toFrontmatterChangeWithOffsets(fileChange: FrontmatterChange): FrontmatterChangeWithOffsets {
+  if (isFrontmatterChangeWithOffsets(fileChange)) {
+    return fileChange;
+  }
+
+  return {
+    ...fileChange,
+    reference: toFrontmatterLinkCacheWithOffsets(fileChange.reference)
+  };
 }
 
 async function applyCanvasChanges(
@@ -303,7 +323,6 @@ async function applyCanvasChanges(
 function applyContentChangesToText(
   changes: FileChange[],
   content: string,
-  frontmatter: CombinedFrontmatter<unknown>,
   hasFrontmatterError: boolean,
   path: string
 ): { frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>; newContent: string } {
@@ -316,7 +335,7 @@ function applyContentChangesToText(
       newContent += content.slice(lastIndex, change.reference.position.start.offset);
       newContent += change.newContent;
       lastIndex = change.reference.position.end.offset;
-    } else if (isFrontmatterChangeWithOffsets(change)) {
+    } else if (isFrontmatterChange(change)) {
       if (hasFrontmatterError) {
         console.error(`Cannot apply frontmatter change in ${path}, because frontmatter parsing failed`, { change });
       } else {
@@ -325,13 +344,7 @@ function applyContentChangesToText(
           frontmatterChangesWithOffsets = [];
           frontmatterChangesWithOffsetMap.set(change.reference.key, frontmatterChangesWithOffsets);
         }
-        frontmatterChangesWithOffsets.push(change);
-      }
-    } else if (isFrontmatterChange(change)) {
-      if (hasFrontmatterError) {
-        console.error(`Cannot apply frontmatter change in ${path}, because frontmatter parsing failed`, { change });
-      } else {
-        setNestedPropertyValue(frontmatter, change.reference.key, change.newContent);
+        frontmatterChangesWithOffsets.push(toFrontmatterChangeWithOffsets(change));
       }
     }
   }

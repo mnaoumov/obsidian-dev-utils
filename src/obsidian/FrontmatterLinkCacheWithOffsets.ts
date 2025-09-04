@@ -40,3 +40,21 @@ export function isFrontmatterLinkCacheWithOffsets(reference: Reference): referen
   const frontmatterLinkCacheWithOffsets = reference as Partial<FrontmatterLinkCacheWithOffsets>;
   return frontmatterLinkCacheWithOffsets.startOffset !== undefined && frontmatterLinkCacheWithOffsets.endOffset !== undefined;
 }
+
+/**
+ * Converts a frontmatter link cache to a frontmatter link cache with offsets.
+ *
+ * @param reference - The reference to convert.
+ * @returns The converted reference.
+ */
+export function toFrontmatterLinkCacheWithOffsets(reference: FrontmatterLinkCache): FrontmatterLinkCacheWithOffsets {
+  if (isFrontmatterLinkCacheWithOffsets(reference)) {
+    return reference;
+  }
+
+  return {
+    ...reference,
+    endOffset: reference.original.length,
+    startOffset: 0
+  };
+}
