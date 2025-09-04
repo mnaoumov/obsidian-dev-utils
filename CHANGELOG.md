@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.1.2
+
+- Prevent timeout warning if run completed with an error
+
 ## 40.1.1
 
 - Parse alias
