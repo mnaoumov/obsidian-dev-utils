@@ -213,6 +213,11 @@ export interface GenerateMarkdownLinkOptions {
   originalLink?: string;
 
   /**
+   * Whether to escape the alias. Applicable only if the result link style is {@link LinkStyle.Markdown}. Defaults to `false`.
+   */
+  shouldEscapeAlias?: boolean;
+
+  /**
    * Indicates if the link should be relative. If not provided or `false`, it will be inferred based on the Obsidian settings.
    */
   shouldForceRelativePath?: boolean;
@@ -1156,7 +1161,7 @@ function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options:
       : targetFile.name;
   }
 
-  const escapedAlias = replaceAll(alias, SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
+  const escapedAlias = options.shouldEscapeAlias ? replaceAll(alias, SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&') : alias;
   return `${embedPrefix}[${escapedAlias}](${processedLinkText})`;
 }
 
