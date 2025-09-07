@@ -257,7 +257,7 @@ export async function getFrontmatterSafe<CustomFrontmatter = unknown>(app: App, 
  */
 export async function parseMetadata(app: App, str: string): Promise<CachedMetadata> {
   const encoder = new TextEncoder();
-  const buffer = encoder.encode(str).buffer as ArrayBuffer;
+  const buffer = encoder.encode(str).buffer;
   return await app.metadataCache.computeMetadataAsync(buffer) ?? {};
 }
 
