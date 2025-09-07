@@ -257,6 +257,7 @@ export interface RenderPaginatedTableOptions<T> {
  * that was used as the temporary container.
  */
 export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () => Promisable<void>): Promise<HTMLParagraphElement> {
+  const oldContainer = dv.container;
   const tempContainer = dv.paragraph('');
   dv.container = tempContainer;
   dv.container.empty();
@@ -267,7 +268,7 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
     dv.paragraph(`❌${errorToString(e)}`);
   } finally {
     // eslint-disable-next-line require-atomic-updates
-    dv.container = tempContainer.parentElement ?? throwExpression(new Error('Container parent not found'));
+    dv.container = oldContainer;
     tempContainer.remove();
   }
 
