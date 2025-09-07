@@ -250,6 +250,15 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   /**
+   * Called when an async error occurs.
+   *
+   * @param _asyncError - The async error.
+   */
+  protected handleAsyncError(_asyncError: unknown): void {
+    this.showNotice('An unhandled error occurred. Please check the console for more information.');
+  }
+
+  /**
    * Called when the layout is ready.
    */
   protected async onLayoutReady(): Promise<void> {
@@ -266,9 +275,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   protected async onloadImpl(): Promise<void> {
     initPluginContext(this.app, this.manifest.id);
 
-    this.register(registerAsyncErrorEventHandler(() => {
-      this.showNotice('An unhandled error occurred. Please check the console for more information.');
-    }));
+    this.register(registerAsyncErrorEventHandler(this.handleAsyncError.bind(this)));
 
     this._settingsManager = this.createSettingsManager();
     if (this._settingsManager) {
