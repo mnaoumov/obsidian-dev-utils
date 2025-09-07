@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.2.0
+
+- Extract handleAsyncError
+
 ## 40.1.3
 
 - Handle frontmatter changes properly (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/206)
