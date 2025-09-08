@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.3.1
+
+- Add TranslationKeyMap
+
 ## 40.3.0
 
 - Add i18n
