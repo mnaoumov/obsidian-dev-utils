@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.3.0
+
+- Add i18n
+
 ## 40.2.0
 
 - Extract handleAsyncError
