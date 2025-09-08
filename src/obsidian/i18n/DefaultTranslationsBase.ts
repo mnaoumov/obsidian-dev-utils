@@ -22,4 +22,8 @@ export interface DefaultPluginTypes extends PluginTypesBase {
 /**
  * A default translations base for `i18next`.
  */
-export type DefaultTranslationsBase = Translations<DefaultPluginTypes>;
+export type DefaultTranslationsBase = TranslationKeyMap & Translations<DefaultPluginTypes>;
+
+type TranslationKey = string | TranslationKeyMap;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface TranslationKeyMap extends Record<string, TranslationKey> {}
