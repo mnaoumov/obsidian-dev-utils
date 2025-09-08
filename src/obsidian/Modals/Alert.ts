@@ -17,6 +17,7 @@ import {
   ModalBase,
   showModal
 } from './ModalBase.ts';
+import { t } from 'i18next';
 
 /**
  * Options for {@link alert}.
@@ -57,7 +58,7 @@ class AlertModal extends ModalBase<void, AlertOptions> {
       app: options.app,
       cssClass: '',
       message: options.message,
-      okButtonText: 'OK',
+      okButtonText: t(($) => $.buttons.ok),
       title: ''
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
