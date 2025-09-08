@@ -480,6 +480,7 @@
     "eslint-plugin-perfectionist": "^4.15.0",
     "eslint-plugin-tsdoc": "^0.4.0",
     "glob": "^11.0.3",
+    "i18next": "^25.5.2",
     "jiti": "^2.5.1",
     "localforage": "^1.10.0",
     "lru-cache": "^11.1.0",

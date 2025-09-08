@@ -27,6 +27,7 @@ import {
   ModalBase,
   showModal
 } from './ModalBase.ts';
+import { t } from '../i18n/i18n.ts';
 
 /**
  * Options for {@link prompt}.
@@ -80,9 +81,9 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
     super(options, resolve, CssClass.PromptModal);
     const DEFAULT_OPTIONS: Required<PromptOptions> = {
       app: options.app,
-      cancelButtonText: 'Cancel',
+      cancelButtonText: t(($) => $.buttons.cancel),
       defaultValue: '',
-      okButtonText: 'OK',
+      okButtonText: t(($) => $.buttons.ok),
       placeholder: '',
       title: '',
       valueValidator: noop

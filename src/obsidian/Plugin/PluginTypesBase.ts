@@ -10,6 +10,7 @@ import type {
   PropertyValues,
   StringKeys
 } from '../../Type.ts';
+import type { DefaultTranslationsBase } from '../i18n/DefaultTranslationsBase.ts';
 import type { PluginBase } from './PluginBase.ts';
 import type { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 import type { PluginSettingsTabBase } from './PluginSettingsTabBase.ts';
@@ -77,6 +78,11 @@ export type ExtractReadonlyPluginSettingsWrapper<PluginTypes extends PluginTypes
  * An interface is used only for type inference.
  */
 export interface PluginTypesBase {
+  /**
+   * Default translations.
+   */
+  defaultTranslations: DefaultTranslationsBase;
+
   /**
    * A plugin.
    */

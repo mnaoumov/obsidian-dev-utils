@@ -22,6 +22,7 @@ import {
   isFile,
   isFolder
 } from './FileSystem.ts';
+import { t } from './i18n/i18n.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
 import {
   isEmptyFolder,
@@ -80,7 +81,7 @@ export async function deleteSafe(
     }
     if (backlinks.count() !== 0) {
       if (shouldReportUsedAttachments) {
-        new Notice(`Attachment ${file.path} is still used by other notes. It will not be deleted.`);
+        new Notice(t(($) => $.notices.attachmentIsStillUsed, { attachmentPath: file.path }));
       }
       canDelete = false;
     }

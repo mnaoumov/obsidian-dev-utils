@@ -15,6 +15,7 @@ import {
   Plugin as ObsidianPlugin
 } from 'obsidian';
 
+import type { TranslationsMap } from '../i18n/i18n.ts';
 import type {
   ExtractPluginSettings,
   ExtractPluginSettingsManager,
@@ -36,6 +37,11 @@ import {
 } from '../../Error.ts';
 import { noopAsync } from '../../Function.ts';
 import { registerAsyncEvent } from '../Components/AsyncEventsComponent.ts';
+import {
+  initI18N,
+  t
+} from '../i18n/i18n.ts';
+import { defaultTranslationsMap } from '../i18n/locales/translationsMap.ts';
 import { initPluginContext } from './PluginContext.ts';
 
 type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
@@ -250,12 +256,21 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   /**
+   * Creates a translations map.
+   *
+   * @returns The translations map.
+   */
+  protected createTranslationsMap(): TranslationsMap<PluginTypes> {
+    return defaultTranslationsMap;
+  }
+
+  /**
    * Called when an async error occurs.
    *
    * @param _asyncError - The async error.
    */
   protected handleAsyncError(_asyncError: unknown): void {
-    this.showNotice('An unhandled error occurred. Please check the console for more information.');
+    this.showNotice(t(($) => $.notices.unhandledError));
   }
 
   /**
@@ -274,6 +289,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    */
   protected async onloadImpl(): Promise<void> {
     initPluginContext(this.app, this.manifest.id);
+    await initI18N<PluginTypes>(this.createTranslationsMap());
 
     this.register(registerAsyncErrorEventHandler(this.handleAsyncError.bind(this)));
 
