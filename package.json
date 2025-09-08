@@ -408,6 +408,46 @@
         "types": "./dist/lib/cjs/obsidian/React/*.d.cts",
         "default": "./dist/lib/cjs/obsidian/React/*.cjs"
       }
+    },
+    "./obsidian/i18n": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/i18n/index.d.mts",
+        "default": "./dist/lib/esm/obsidian/i18n/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/i18n/index.d.cts",
+        "default": "./dist/lib/cjs/obsidian/i18n/index.cjs"
+      }
+    },
+    "./obsidian/i18n/*": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/i18n/*.d.mts",
+        "default": "./dist/lib/esm/obsidian/i18n/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/i18n/*.d.cts",
+        "default": "./dist/lib/cjs/obsidian/i18n/*.cjs"
+      }
+    },
+    "./obsidian/i18n/locales": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/i18n/locales/index.d.mts",
+        "default": "./dist/lib/esm/obsidian/i18n/locales/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/i18n/locales/index.d.cts",
+        "default": "./dist/lib/cjs/obsidian/i18n/locales/index.cjs"
+      }
+    },
+    "./obsidian/i18n/locales/*": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/i18n/locales/*.d.mts",
+        "default": "./dist/lib/esm/obsidian/i18n/locales/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/i18n/locales/*.d.cts",
+        "default": "./dist/lib/cjs/obsidian/i18n/locales/*.cjs"
+      }
     }
   },
   "main": "./dist/lib/cjs/index.cjs",
