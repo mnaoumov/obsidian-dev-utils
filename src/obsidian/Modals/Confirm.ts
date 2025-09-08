@@ -13,6 +13,7 @@ import { ButtonComponent } from 'obsidian';
 import type { PromiseResolve } from '../../Async.ts';
 
 import { CssClass } from '../../CssClass.ts';
+import { t } from '../i18n/i18n.ts';
 import {
   ModalBase,
   showModal
@@ -61,10 +62,10 @@ class ConfirmModal extends ModalBase<boolean, ConfirmOptions> {
     super(options, resolve, CssClass.ConfirmModal);
     const DEFAULT_OPTIONS: Required<ConfirmOptions> = {
       app: options.app,
-      cancelButtonText: 'Cancel',
+      cancelButtonText: t(($) => $.obsidianDevUtils.buttons.cancel),
       cssClass: '',
       message: options.message,
-      okButtonText: 'OK',
+      okButtonText: t(($) => $.obsidianDevUtils.buttons.ok),
       title: ''
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };
