@@ -23,6 +23,7 @@ import {
 } from '../../Async.ts';
 import { CssClass } from '../../CssClass.ts';
 import { noop } from '../../Function.ts';
+import { t } from '../i18n/i18n.ts';
 import {
   ModalBase,
   showModal
@@ -80,9 +81,9 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
     super(options, resolve, CssClass.PromptModal);
     const DEFAULT_OPTIONS: Required<PromptOptions> = {
       app: options.app,
-      cancelButtonText: 'Cancel',
+      cancelButtonText: t(($) => $.obsidianDevUtils.buttons.cancel),
       defaultValue: '',
-      okButtonText: 'OK',
+      okButtonText: t(($) => $.obsidianDevUtils.buttons.ok),
       placeholder: '',
       title: '',
       valueValidator: noop

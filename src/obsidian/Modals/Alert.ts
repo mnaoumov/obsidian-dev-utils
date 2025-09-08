@@ -8,6 +8,7 @@
 
 import type { App } from 'obsidian';
 
+import { t } from 'i18next';
 import { ButtonComponent } from 'obsidian';
 
 import type { PromiseResolve } from '../../Async.ts';
@@ -57,7 +58,7 @@ class AlertModal extends ModalBase<void, AlertOptions> {
       app: options.app,
       cssClass: '',
       message: options.message,
-      okButtonText: 'OK',
+      okButtonText: t(($) => $.obsidianDevUtils.buttons.ok),
       title: ''
     };
     this.options = { ...DEFAULT_OPTIONS, ...options };

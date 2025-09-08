@@ -24,6 +24,7 @@ import {
   getFile,
   getPath
 } from './FileSystem.ts';
+import { t } from './i18n/i18n.ts';
 import { relativePathToResourceUrl } from './ResourceUrl.ts';
 
 /**
@@ -424,7 +425,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
 
     const paginationRow2Div = paginationDiv.createDiv();
 
-    paginationRow2Div.createSpan({ text: ' Items per page: ' });
+    paginationRow2Div.createSpan({ text: ` ${t(($) => $.obsidianDevUtils.dataview.itemsPerPage)} ` });
 
     const itemsPerPageSelect = paginationRow2Div.createEl('select');
     itemsPerPageOptions.forEach((option: number): void => {
@@ -440,7 +441,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
       })
     );
 
-    paginationRow2Div.createSpan({ text: '  Jump to page: ' });
+    paginationRow2Div.createSpan({ text: ` ${t(($) => $.obsidianDevUtils.dataview.jumpToPage)} ` });
 
     const jumpToPageInput = paginationRow2Div.createEl('input', { attr: { max: totalPages, min: 1 }, type: 'number' });
     jumpToPageInput.addEventListener(
