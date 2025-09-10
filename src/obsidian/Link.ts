@@ -207,6 +207,13 @@ export interface GenerateMarkdownLinkOptions {
   isEmptyEmbedAliasAllowed?: boolean;
 
   /**
+   * Whether to allow non-existing files. Defaults to `false`.
+   *
+   * If `false` and {@link targetPathOrFile} is a non-existing file, an error will be thrown.
+   */
+  isNonExistingFileAllowed?: boolean;
+
+  /**
    * Whether to allow a single subpath. Defaults to `true`.
    *
    * Applicable only if {@link targetPathOrFile} and {@link sourcePathOrFile} are the same file.
@@ -216,13 +223,6 @@ export interface GenerateMarkdownLinkOptions {
    * If `false`: `[[source#subpath]]`
    */
   isSingleSubpathAllowed?: boolean;
-
-  /**
-   * Whether to allow non-existing files. Defaults to `false`.
-   *
-   * If `false` and {@link targetPathOrFile} is a non-existing file, an error will be thrown.
-   */
-  isNonExistingFileAllowed?: boolean;
 
   /**
    * A style of the link.
@@ -515,6 +515,7 @@ export interface UpdateLinksInFileOptions extends ProcessOptions {
 
 interface LinkConfig {
   isEmbed: boolean;
+  isSingleSubpathAllowed: boolean;
   isWikilink: boolean;
   shouldForceRelativePath: boolean;
   shouldUseAngleBrackets: boolean;
@@ -986,7 +987,8 @@ export function updateLink(options: UpdateLinkOptions): string {
   if (!newTargetPathOrFile) {
     return link.original;
   }
-  const targetFile = getFile(app, newTargetPathOrFile, true);
+  const newTargetFile = getFile(app, newTargetPathOrFile, true);
+  const oldSourcePath = getPath(app, oldSourcePathOrFile ?? newSourcePathOrFile);
   const oldTargetPath = getPath(app, oldTargetPathOrFile ?? newTargetPathOrFile);
   const isWikilink = shouldUseWikilinkStyle(app, link.original, linkStyle);
 
@@ -995,7 +997,7 @@ export function updateLink(options: UpdateLinkOptions): string {
 
   if (isCanvasFile(app, newSourcePathOrFile)) {
     if (isCanvasFileNodeReference(link)) {
-      return targetFile.path + subpath;
+      return newTargetFile.path + subpath;
     }
   }
 
@@ -1014,27 +1016,28 @@ export function updateLink(options: UpdateLinkOptions): string {
       newSourcePathOrFile,
       oldSourcePathOrFile,
       oldTargetPath,
-      targetPathOrFile: targetFile
+      targetPathOrFile: newTargetFile
     }))
     ? undefined
     : parseLinkResult?.alias;
 
   if (!shouldKeepAlias) {
     if (alias === basename(oldTargetPath, extname(oldTargetPath))) {
-      alias = targetFile.basename;
+      alias = newTargetFile.basename;
     } else if (alias === basename(oldTargetPath)) {
-      alias = targetFile.name;
+      alias = newTargetFile.name;
     }
   }
 
   const newLink = generateMarkdownLink(normalizeOptionalProperties<GenerateMarkdownLinkOptions>({
     alias,
     app,
+    isSingleSubpathAllowed: oldSourcePath === oldTargetPath && !!parseLinkResult?.alias,
     linkStyle,
     originalLink: link.original,
     sourcePathOrFile: newSourcePathOrFile,
     subpath,
-    targetPathOrFile: targetFile
+    targetPathOrFile: newTargetFile
   }));
   return newLink;
 }
@@ -1182,7 +1185,7 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
 
   let linkText: string;
 
-  if (targetFile.path === sourcePath && subpath) {
+  if (targetFile.path === sourcePath && subpath && config.isSingleSubpathAllowed) {
     linkText = subpath;
   } else if (config.shouldForceRelativePath) {
     linkText = relative(dirname(sourcePath), config.isWikilink ? trimMarkdownExtension(app, targetFile) : targetFile.path) + subpath;
@@ -1293,6 +1296,7 @@ function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile):
   const { app } = options;
   return {
     isEmbed: options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(app, targetFile),
+    isSingleSubpathAllowed: options.isSingleSubpathAllowed ?? true,
     isWikilink: shouldUseWikilinkStyle(app, options.originalLink, options.linkStyle),
     shouldForceRelativePath: options.shouldForceRelativePath ?? shouldUseRelativeLinks(app),
     shouldUseAngleBrackets: options.shouldUseAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false,
