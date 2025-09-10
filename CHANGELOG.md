@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.4.0
+
+- Add isSingleSubpathAllowed
+
 ## 40.3.1
 
 - Add TranslationKeyMap
