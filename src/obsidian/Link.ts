@@ -175,6 +175,9 @@ export interface GenerateMarkdownLinkDefaultOptionsWrapper {
 export interface GenerateMarkdownLinkOptions {
   /**
    * An alias for the link.
+   *
+   * @example `[[alias|link]]`
+   * @example `[alias](link.md)`
    */
   alias?: string;
 
@@ -185,16 +188,28 @@ export interface GenerateMarkdownLinkOptions {
 
   /**
    * Indicates if the link should be embedded. If not provided, it will be inferred based on the file type.
+   *
+   * If `true`: `![[link]]`.
+   *
+   * If `false`: `[[link]]`.
    */
   isEmbed?: boolean;
 
   /**
    * Whether to allow an empty alias for embeds. Defaults to `true`.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `![](foo.png)`.
+   *
+   * If `false`: `![foo](foo.png)`.
    */
   isEmptyEmbedAliasAllowed?: boolean;
 
   /**
-   * Whether to allow non-existing files. If `false` and `pathOrFile` is a non-existing file, an error will be thrown. Defaults to `false`.
+   * Whether to allow non-existing files. Defaults to `false`.
+   *
+   * If `false` and {@link targetPathOrFile} is a non-existing file, an error will be thrown.
    */
   isNonExistingFileAllowed?: boolean;
 
@@ -204,33 +219,69 @@ export interface GenerateMarkdownLinkOptions {
   linkStyle?: LinkStyle;
 
   /**
-   * An original link text. If provided, it will be used to infer the values of `isEmbed`, `isWikilink`, `useLeadingDot`, and `useAngleBrackets`.
+   * An original link text.
+   *
+   * If provided, it will be used to infer the values of
+   *
+   * - {@link isEmbed}
+   * - {@link linkStyle}
+   * - {@link shouldUseAngleBrackets}
+   * - {@link shouldUseLeadingDot}
+   *
    * These inferred values will be overridden by corresponding settings if specified.
    */
   originalLink?: string;
 
   /**
-   * Whether to escape the alias. Applicable only if the result link style is {@link LinkStyle.Markdown}. Defaults to `false`.
+   * Whether to escape the alias. Defaults to `false`.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[\*\*alias\*\*](link.md)`.
+   *
+   * If `false`: `[**alias**](link.md)`.
    */
   shouldEscapeAlias?: boolean;
 
   /**
-   * Indicates if the link should be relative. If not provided or `false`, it will be inferred based on the Obsidian settings.
+   * Indicates if the link should be relative. Defaults to `false`.
+   *
+   * If `true`: `[[relative/path/to/target]]`.
+   *
+   * If `false`, it will be inferred based on the Obsidian settings
    */
   shouldForceRelativePath?: boolean;
 
   /**
-   * Whether to include the attachment extension in the embed alias. Has no effect if `allowEmptyEmbedAlias` is `true`. Defaults to `false`.
+   * Whether to include the attachment extension in the embed alias. Defaults to `false`.
+   *
+   * Applicable only if {@link isEmptyEmbedAliasAllowed} is `false`.
+   *
+   * If `true`: `[foo.png](foo.png)`.
+   *
+   * If `false`: `[foo](foo.png)`.
    */
   shouldIncludeAttachmentExtensionToEmbedAlias?: boolean;
 
   /**
-   * Indicates if the link should use angle brackets. Defaults to `false`. Has no effect if `isWikilink` is `true`
+   * Indicates if the link should use angle brackets. Defaults to `false`.
+   *
+   * Applicable only if {@link linkStyle} is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[alias](<path with spaces.md>)`.
+   *
+   * If `false`: `[alias](path%20with%20spaces.md)`.
    */
   shouldUseAngleBrackets?: boolean;
 
   /**
-   * Indicates if the link should use a leading dot. Defaults to `false`. Has no effect if `isWikilink` is `true` or `isRelative` is `false`.
+   * Indicates if the link should use a leading dot. Defaults to `false`.
+   *
+   * Applicable only if {@link linkStyle} is {@link LinkStyle.Markdown} and {@link shouldForceRelativePath} is `true`.
+   *
+   * If `true`: `[alias](./relative/path/to/target.md)`.
+   *
+   * If `false`: `[alias](relative/path/to/target.md)`.
    */
   shouldUseLeadingDot?: boolean;
 
@@ -241,6 +292,12 @@ export interface GenerateMarkdownLinkOptions {
 
   /**
    * A subpath of the link.
+   *
+   * Should be empty or start with `#`.
+   *
+   * @example `[[link-without-subpath]]`
+   * @example `[[link-with-subpath#subpath]]`
+   * @example `[[link-with-subpath#subpath#nested-subpath]]`
    */
   subpath?: string;
 
