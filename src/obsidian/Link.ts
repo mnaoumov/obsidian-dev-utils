@@ -207,6 +207,17 @@ export interface GenerateMarkdownLinkOptions {
   isEmptyEmbedAliasAllowed?: boolean;
 
   /**
+   * Whether to allow a single subpath. Defaults to `true`.
+   *
+   * Applicable only if {@link targetPathOrFile} and {@link sourcePathOrFile} are the same file.
+   *
+   * If `true`: `[[#subpath]]`.
+   *
+   * If `false`: `[[source#subpath]]`
+   */
+  isSingleSubpathAllowed?: boolean;
+
+  /**
    * Whether to allow non-existing files. Defaults to `false`.
    *
    * If `false` and {@link targetPathOrFile} is a non-existing file, an error will be thrown.
