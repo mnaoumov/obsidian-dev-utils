@@ -81,7 +81,7 @@ export interface GetAvailablePathForAttachmentsExtendedFnOptions {
   /**
    * A context.
    */
-  context: string;
+  context: AttachmentPathContext;
 
   /**
    * A path or file of the note.
@@ -140,7 +140,7 @@ export interface GetAttachmentFilePathOptions {
   /**
    * A context.
    */
-  context: string;
+  context: AttachmentPathContext;
 
   /**
    * A path of the note.
