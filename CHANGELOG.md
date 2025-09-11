@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.5.0
+
+- Pass context
+
 ## 40.4.0
 
 - Add isSingleSubpathAllowed
