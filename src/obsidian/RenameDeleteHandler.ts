@@ -318,6 +318,7 @@ async function fillRenameMap(
         attachmentPathOrFile: oldAttachmentFile,
         context: AttachmentPathContext.RenameNote,
         notePathOrFile: newPath,
+        oldNotePathOrFile: oldPath,
         shouldSkipDuplicateCheck: true
       });
       abortSignal.throwIfAborted();
