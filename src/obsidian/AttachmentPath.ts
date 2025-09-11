@@ -89,6 +89,11 @@ export interface GetAvailablePathForAttachmentsExtendedFnOptions {
   notePathOrFile: null | PathOrFile;
 
   /**
+   * A path or file of the old note.
+   */
+  oldNotePathOrFile?: PathOrFile | undefined;
+
+  /**
    * Should the duplicate check be skipped.
    */
   shouldSkipDuplicateCheck?: boolean;
@@ -146,6 +151,12 @@ export interface GetAttachmentFilePathOptions {
    * A path of the note.
    */
   notePathOrFile: PathOrFile;
+
+  /**
+   * A path of the old note.
+   */
+  oldNotePathOrFile?: PathOrFile | undefined;
+
   /**
    * Should the duplicate check be skipped.
    */
@@ -211,6 +222,7 @@ export async function getAttachmentFilePath(options: GetAttachmentFilePathOption
       attachmentFileStat: attachmentFile?.stat,
       context: options.context,
       notePathOrFile,
+      oldNotePathOrFile: options.oldNotePathOrFile,
       shouldSkipDuplicateCheck,
       shouldSkipMissingAttachmentFolderCreation: true
     });
