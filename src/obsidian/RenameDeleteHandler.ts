@@ -42,8 +42,7 @@ import {
 } from '../Path.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import {
-  ATTACHMENT_PATH_CONTEXT_DELETE_NOTE,
-  ATTACHMENT_PATH_CONTEXT_RENAME_NOTE,
+  AttachmentPathContext,
   getAttachmentFilePath,
   getAttachmentFolderPath,
   hasOwnAttachmentFolder
@@ -262,9 +261,9 @@ async function fillRenameMap(
 
   const settings = getSettings(app);
 
-  const oldAttachmentFolderPath = await getAttachmentFolderPath(app, oldPath, ATTACHMENT_PATH_CONTEXT_RENAME_NOTE);
+  const oldAttachmentFolderPath = await getAttachmentFolderPath(app, oldPath, AttachmentPathContext.RenameNote);
   const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
-    ? await getAttachmentFolderPath(app, newPath, ATTACHMENT_PATH_CONTEXT_RENAME_NOTE)
+    ? await getAttachmentFolderPath(app, newPath, AttachmentPathContext.RenameNote)
     : oldAttachmentFolderPath;
 
   const isOldAttachmentFolderAtRoot = oldAttachmentFolderPath === '/';
@@ -281,7 +280,7 @@ async function fillRenameMap(
 
   const oldAttachmentFiles: TFile[] = [];
 
-  if (await hasOwnAttachmentFolder(app, oldPath, ATTACHMENT_PATH_CONTEXT_RENAME_NOTE)) {
+  if (await hasOwnAttachmentFolder(app, oldPath, AttachmentPathContext.RenameNote)) {
     Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
       abortSignal.throwIfAborted();
       if (isFile(oldAttachmentFile)) {
@@ -317,7 +316,7 @@ async function fillRenameMap(
       newAttachmentFilePath = await getAttachmentFilePath({
         app,
         attachmentPathOrFile: oldAttachmentFile,
-        context: ATTACHMENT_PATH_CONTEXT_RENAME_NOTE,
+        context: AttachmentPathContext.RenameNote,
         notePathOrFile: newPath,
         shouldSkipDuplicateCheck: true
       });
@@ -441,14 +440,14 @@ async function handleDelete(app: App, path: string, abortSignal: AbortSignal): P
   await cleanupParentFolders(app, Array.from(parentFolderPaths), path);
   abortSignal.throwIfAborted();
 
-  const attachmentFolderPath = await getAttachmentFolderPath(app, path, ATTACHMENT_PATH_CONTEXT_DELETE_NOTE);
+  const attachmentFolderPath = await getAttachmentFolderPath(app, path, AttachmentPathContext.DeleteNote);
   const attachmentFolder = getFolderOrNull(app, attachmentFolderPath);
 
   if (!attachmentFolder) {
     return;
   }
 
-  if (!(await hasOwnAttachmentFolder(app, path, ATTACHMENT_PATH_CONTEXT_DELETE_NOTE))) {
+  if (!(await hasOwnAttachmentFolder(app, path, AttachmentPathContext.DeleteNote))) {
     return;
   }
 
