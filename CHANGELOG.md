@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.6.0
+
+- Pass oldNotePathOrFile
+
 ## 40.5.2
 
 - Switch to enum
