@@ -30,7 +30,8 @@ import {
   getFileOrNull,
   getFolder,
   getFolderOrNull,
-  getPath
+  getPath,
+  MARKDOWN_FILE_EXTENSION
 } from './FileSystem.ts';
 
 /**
@@ -56,6 +57,11 @@ export interface GetAvailablePathForAttachmentsExtendedFnOptions {
    * A stats of the attachment file.
    */
   attachmentFileStat?: FileStats | undefined;
+
+  /**
+   * A context.
+   */
+  context: string;
 
   /**
    * A path or file of the note.
@@ -94,6 +100,21 @@ export interface GetAvailablePathForAttachmentsFnExtended extends GetAvailablePa
 type GetAvailablePathForAttachmentsFn = Vault['getAvailablePathForAttachments'];
 
 /**
+ * The context for a delete note.
+ */
+export const ATTACHMENT_PATH_CONTEXT_DELETE_NOTE = 'DeleteNote';
+
+/**
+ * The context for a rename note.
+ */
+export const ATTACHMENT_PATH_CONTEXT_RENAME_NOTE = 'RenameNote';
+
+/**
+ * The context for an unknown action.
+ */
+export const ATTACHMENT_PATH_CONTEXT_UNKNOWN = 'Unknown';
+
+/**
  * Dummy path.
  */
 export const DUMMY_PATH = '__DUMMY__';
@@ -110,6 +131,12 @@ export interface GetAttachmentFilePathOptions {
    * A path of the attachment.
    */
   attachmentPathOrFile: PathOrFile;
+
+  /**
+   * A context.
+   */
+  context: string;
+
   /**
    * A path of the note.
    */
@@ -177,6 +204,7 @@ export async function getAttachmentFilePath(options: GetAttachmentFilePathOption
       attachmentFileContent: attachmentFile ? await app.vault.readBinary(attachmentFile) : undefined,
       attachmentFileExtension: attachmentFileExtension.slice(1),
       attachmentFileStat: attachmentFile?.stat,
+      context: options.context,
       notePathOrFile,
       shouldSkipDuplicateCheck,
       shouldSkipMissingAttachmentFolderCreation: true
@@ -198,13 +226,15 @@ export async function getAttachmentFilePath(options: GetAttachmentFilePathOption
  *
  * @param app - The Obsidian application instance.
  * @param notePathOrFile - The path of the note.
+ * @param context - The context.
  * @returns A {@link Promise} that resolves to the attachment folder path.
  */
-export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile): Promise<string> {
+export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile, context = ATTACHMENT_PATH_CONTEXT_UNKNOWN): Promise<string> {
   return parentFolderPath(
     await getAttachmentFilePath({
       app,
       attachmentPathOrFile: DUMMY_PATH,
+      context,
       notePathOrFile,
       shouldSkipDuplicateCheck: true
     })
@@ -259,11 +289,12 @@ export async function getAvailablePathForAttachments(options: GetAvailablePathFo
  *
  * @param app - The Obsidian application instance.
  * @param path - The path of the note.
+ * @param context - The context.
  * @returns A {@link Promise} that resolves to a boolean indicating whether the note has its own attachment folder.
  */
-export async function hasOwnAttachmentFolder(app: App, path: string): Promise<boolean> {
-  const attachmentFolderPath = await getAttachmentFolderPath(app, path);
-  const dummyAttachmentFolderPath = await getAttachmentFolderPath(app, join(dirname(path), 'DUMMY_FILE.md'));
+export async function hasOwnAttachmentFolder(app: App, path: string, context = ATTACHMENT_PATH_CONTEXT_UNKNOWN): Promise<boolean> {
+  const attachmentFolderPath = await getAttachmentFolderPath(app, path, context);
+  const dummyAttachmentFolderPath = await getAttachmentFolderPath(app, join(dirname(path), `${DUMMY_PATH}.${MARKDOWN_FILE_EXTENSION}`), context);
   return attachmentFolderPath !== dummyAttachmentFolderPath;
 }
 
