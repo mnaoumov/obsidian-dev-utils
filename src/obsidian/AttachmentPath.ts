@@ -35,6 +35,26 @@ import {
 } from './FileSystem.ts';
 
 /**
+ * A context for an attachment path.
+ */
+export enum AttachmentPathContext {
+  /**
+   * A context for a delete note.
+   */
+  DeleteNote = 'DeleteNote',
+
+  /**
+   * A context for a rename note.
+   */
+  RenameNote = 'RenameNote',
+
+  /**
+   * An unknown context.
+   */
+  Unknown = 'Unknown'
+}
+
+/**
  * Options for the get available path for attachments extended function.
  */
 export interface GetAvailablePathForAttachmentsExtendedFnOptions {
@@ -98,21 +118,6 @@ export interface GetAvailablePathForAttachmentsFnExtended extends GetAvailablePa
 }
 
 type GetAvailablePathForAttachmentsFn = Vault['getAvailablePathForAttachments'];
-
-/**
- * The context for a delete note.
- */
-export const ATTACHMENT_PATH_CONTEXT_DELETE_NOTE = 'DeleteNote';
-
-/**
- * The context for a rename note.
- */
-export const ATTACHMENT_PATH_CONTEXT_RENAME_NOTE = 'RenameNote';
-
-/**
- * The context for an unknown action.
- */
-export const ATTACHMENT_PATH_CONTEXT_UNKNOWN = 'Unknown';
 
 /**
  * Dummy path.
@@ -229,7 +234,7 @@ export async function getAttachmentFilePath(options: GetAttachmentFilePathOption
  * @param context - The context.
  * @returns A {@link Promise} that resolves to the attachment folder path.
  */
-export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile, context = ATTACHMENT_PATH_CONTEXT_UNKNOWN): Promise<string> {
+export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile, context = AttachmentPathContext.Unknown): Promise<string> {
   return parentFolderPath(
     await getAttachmentFilePath({
       app,
@@ -292,7 +297,7 @@ export async function getAvailablePathForAttachments(options: GetAvailablePathFo
  * @param context - The context.
  * @returns A {@link Promise} that resolves to a boolean indicating whether the note has its own attachment folder.
  */
-export async function hasOwnAttachmentFolder(app: App, path: string, context = ATTACHMENT_PATH_CONTEXT_UNKNOWN): Promise<boolean> {
+export async function hasOwnAttachmentFolder(app: App, path: string, context = AttachmentPathContext.Unknown): Promise<boolean> {
   const attachmentFolderPath = await getAttachmentFolderPath(app, path, context);
   const dummyAttachmentFolderPath = await getAttachmentFolderPath(app, join(dirname(path), `${DUMMY_PATH}.${MARKDOWN_FILE_EXTENSION}`), context);
   return attachmentFolderPath !== dummyAttachmentFolderPath;
