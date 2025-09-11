@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.5.2
+
+- Switch to enum
+
 ## 40.5.1
 
 - Switch to enum
