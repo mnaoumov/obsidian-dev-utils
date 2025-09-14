@@ -112,7 +112,7 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
   }
 
   if (isAbstractFile(pathOrFile)) {
-    return pathOrFile;
+    return app.vault.fileMap[pathOrFile.path] ?? pathOrFile;
   }
 
   const file = getFileInternal(app, pathOrFile, isCaseInsensitive);
