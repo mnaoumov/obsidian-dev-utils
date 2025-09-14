@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 40.8.0
+
+- Ensure fileMap instance
+- Unregister files
+
 ## 40.7.0
 
 - Move warnings to debug
