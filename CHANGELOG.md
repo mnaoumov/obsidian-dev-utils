@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.7.0
+
+- Move warnings to debug
+
 ## 40.6.0
 
 - Pass oldNotePathOrFile
