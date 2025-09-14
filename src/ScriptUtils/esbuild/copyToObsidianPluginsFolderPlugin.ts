@@ -9,6 +9,7 @@
 
 import type { Plugin } from 'esbuild';
 
+import { getLibDebugger } from '../../Debug.ts';
 import {
   join,
   toPosixPath
@@ -44,7 +45,7 @@ export function copyToObsidianPluginsFolderPlugin(
         }
 
         if (!obsidianConfigFolder) {
-          console.warn(
+          getLibDebugger('copyToObsidianPluginsFolderPlugin')(
             'No Obsidian config folder configured. `OBSIDIAN_CONFIG_FOLDER` environment variable is not set in system or in `.env` file. The compiled plugin will not be copied into Obsidian plugins folder.'
           );
           return;

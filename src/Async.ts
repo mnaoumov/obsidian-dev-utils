@@ -444,6 +444,7 @@ export async function runWithTimeout<Result>(
   let result: null | Result = null;
   let hasResult = false;
   let isCompleted = false;
+  const runWithTimeoutDebugger = getLibDebugger('Async:runWithTimeout');
 
   await Promise.race([run(), innerTimeout()]);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -457,7 +458,6 @@ export async function runWithTimeout<Result>(
     try {
       result = await fn(runAbortController.signal);
       const duration = performance.now() - startTime;
-      const runWithTimeoutDebugger = getLibDebugger('Async:runWithTimeout');
       printWithStackTrace(runWithTimeoutDebugger, stackTrace ?? '', `Execution time: ${String(duration)} milliseconds`, { context, fn });
       hasResult = true;
     } catch (e) {
@@ -477,7 +477,7 @@ export async function runWithTimeout<Result>(
         return;
       }
       const duration = performance.now() - startTime;
-      console.warn(`Timed out after ${String(duration)} milliseconds`, { context, fn });
+      printWithStackTrace(runWithTimeoutDebugger, stackTrace ?? '', `Timed out after ${String(duration)} milliseconds`, { context, fn });
       const timeoutDebugger = getLibDebugger('Async:runWithTimeout:timeout');
       if (!timeoutDebugger.enabled) {
         runAbortController.abort(new Error(`Timed out after ${String(duration)} milliseconds`));

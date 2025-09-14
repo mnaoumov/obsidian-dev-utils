@@ -7,6 +7,7 @@
  * It can automatically fix linting issues if specified, and logs results to the console.
  */
 
+import { getLibDebugger } from '../../Debug.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   getFolderName,
@@ -44,7 +45,7 @@ export async function lint(shouldFix?: boolean): Promise<void> {
   });
 
   if (!configFileExist) {
-    console.warn('ESLint configuration file not found. Creating default config...');
+    getLibDebugger('ESLint:lint')('ESLint configuration file not found. Creating default config...');
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
     if (!packageFolder) {
       throw new Error('Package folder not found');

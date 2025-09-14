@@ -29,6 +29,7 @@ import type {
 } from './PluginTypesBase.ts';
 
 import { AsyncEvents } from '../../AsyncEvents.ts';
+import { getLibDebugger } from '../../Debug.ts';
 import {
   noop,
   noopAsync
@@ -458,12 +459,12 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
 
     for (const [propertyName, value] of Object.entries(rawRecord)) {
       if (!this.isValidPropertyName(propertyName)) {
-        console.warn(`Unknown property: ${propertyName}`);
+        getLibDebugger('PluginSettingsManagerBase:rawRecordToSettings')(`Unknown property: ${propertyName}`);
         continue;
       }
 
       if (typeof value !== typeof this.defaultSettings[propertyName]) {
-        console.warn(
+        getLibDebugger('PluginSettingsManagerBase:rawRecordToSettings')(
           'Possible invalid value type. It might lead to an unexpected behavior of the plugin. There is also a chance it is a false-negative warning, as we are unable to determine the exact type of the value in runtime.',
           {
             defaultValue: this.defaultSettings[propertyName],

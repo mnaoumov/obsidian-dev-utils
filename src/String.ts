@@ -152,12 +152,13 @@ export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOff
     }
 
     if (lfOffsetToOriginalOffsetMap[lfOffset] === undefined) {
-      console.error('Could not map offset', {
+      const message = 'Could not map offset';
+      console.error(message, {
         lfOffset,
         lfStr,
         str
       });
-      throw new Error('Could not map offset.');
+      throw new Error(message);
     }
 
     return lfOffsetToOriginalOffsetMap[lfOffset];
