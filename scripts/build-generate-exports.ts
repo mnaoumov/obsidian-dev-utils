@@ -61,10 +61,10 @@ await wrapCliTask(async () => {
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (isChanged) {
-    console.error('Package exports have changed. Please review the changes and commit them.');
+    throw new Error('Package exports have changed. Please review the changes and commit them.');
   }
 
-  return CliTaskResult.Success(!isChanged);
+  return CliTaskResult.Success();
 });
 
 async function setExport(exportConditions: PackageJson.ExportConditions, srcFolder: string, isWildcard: boolean): Promise<void> {

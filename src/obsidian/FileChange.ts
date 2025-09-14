@@ -29,7 +29,8 @@ import type {
 } from './Reference.ts';
 import type { ProcessOptions } from './Vault.ts';
 
-import { getDebugger } from '../Debug.ts';
+import { getLibDebugger } from '../Debug.ts';
+import { printError } from '../Error.ts';
 import {
   deepEqual,
   getNestedPropertyValue,
@@ -106,7 +107,7 @@ export async function applyContentChanges(
 
   const { frontmatter, hasFrontmatterError } = parseFrontmatterSafely(content, path);
 
-  if (!validateChanges(changes, content, frontmatter, path, shouldRetryOnInvalidChanges)) {
+  if (!validateChanges(changes, content, frontmatter, path)) {
     return shouldRetryOnInvalidChanges ? null : content;
   }
 
@@ -247,25 +248,27 @@ async function applyCanvasChanges(
 
   for (const change of changes) {
     if (!isCanvasChange(change)) {
-      console.warn('Only canvas changes are supported for canvas files', {
+      const message = 'Only canvas changes are supported for canvas files';
+      console.error(message, {
         change,
         path
       });
-      return null;
+      throw new Error(message);
     }
 
     const node = canvasData.nodes[change.reference.nodeIndex];
     if (!node) {
-      console.warn('Node not found', {
+      const message = 'Node not found';
+      console.error(message, {
         nodeIndex: change.reference.nodeIndex,
         path
       });
-      return null;
+      throw new Error(message);
     }
 
     if (isCanvasFileNodeChange(change)) {
       if (node.file !== change.oldContent) {
-        console.warn('Content mismatch', {
+        getLibDebugger('FileChange:applyCanvasChanges')('Content mismatch', {
           actualContent: node.file as string | undefined,
           expectedContent: change.oldContent,
           nodeIndex: change.reference.nodeIndex,
@@ -290,21 +293,23 @@ async function applyCanvasChanges(
   for (const [nodeIndex, canvasTextChangesForNode] of canvasTextChanges.entries()) {
     const node = canvasData.nodes[nodeIndex];
     if (!node) {
-      console.warn('Node not found', {
+      const message = 'Node not found';
+      console.error(message, {
         nodeIndex,
         path
       });
 
-      return null;
+      throw new Error(message);
     }
 
     if (typeof node.text !== 'string') {
-      console.warn('Node text is not a string', {
+      const message = 'Node text is not a string';
+      console.error(message, {
         nodeIndex,
         path
       });
 
-      return null;
+      throw new Error(message);
     }
 
     const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.reference.originalReference, change.newContent));
@@ -414,7 +419,7 @@ function parseFrontmatterSafely(content: string, path: string): { frontmatter: C
   try {
     frontmatter = parseFrontmatter(content);
   } catch (error) {
-    console.error(new Error(`Frontmatter parsing failed in ${path}`, { cause: error }));
+    printError(new Error(`Frontmatter parsing failed in ${path}`, { cause: error }));
     hasFrontmatterError = true;
   }
 
@@ -484,23 +489,23 @@ function validateChangeOverlaps(changes: FileChange[]): boolean {
       && previousChange.reference.position.end.offset
       && previousChange.reference.position.end.offset > change.reference.position.start.offset
     ) {
-      console.warn('Overlapping changes', { change, previousChange });
-      return false;
+      const message = 'Overlapping changes';
+      console.error(message, { change, previousChange });
+      throw new Error(message);
     }
   }
   return true;
 }
 
-function validateChanges(changes: FileChange[], content: string, frontmatter: CombinedFrontmatter<unknown>, path: string, shouldShowWarning: boolean): boolean {
-  const validateChangesDebugger = getDebugger('FileChange:validateChanges');
-  const logger = shouldShowWarning ? console.warn.bind(console) : validateChangesDebugger;
+function validateChanges(changes: FileChange[], content: string, frontmatter: CombinedFrontmatter<unknown>, path: string): boolean {
+  const validateChangesDebugger = getLibDebugger('FileChange:validateChanges');
   for (const change of changes) {
     if (isContentChange(change)) {
       const startOffset = change.reference.position.start.offset;
       const endOffset = change.reference.position.end.offset;
       const actualContent = content.slice(startOffset, endOffset);
       if (actualContent !== change.oldContent) {
-        logger('Content mismatch', {
+        validateChangesDebugger('Content mismatch', {
           actualContent,
           endOffset,
           expectedContent: change.oldContent,
@@ -513,7 +518,7 @@ function validateChanges(changes: FileChange[], content: string, frontmatter: Co
     } else if (isFrontmatterChangeWithOffsets(change)) {
       const propertyValue = getNestedPropertyValue(frontmatter, change.reference.key);
       if (typeof propertyValue !== 'string') {
-        logger('Property value is not a string', {
+        validateChangesDebugger('Property value is not a string', {
           frontmatterKey: change.reference.key,
           path,
           propertyValue
@@ -523,7 +528,7 @@ function validateChanges(changes: FileChange[], content: string, frontmatter: Co
 
       const actualContent = propertyValue.slice(change.reference.startOffset, change.reference.endOffset);
       if (actualContent !== change.oldContent) {
-        logger('Content mismatch', {
+        validateChangesDebugger('Content mismatch', {
           actualContent,
           expectedContent: change.oldContent,
           frontmatterKey: change.reference.key,
@@ -536,7 +541,7 @@ function validateChanges(changes: FileChange[], content: string, frontmatter: Co
     } else if (isFrontmatterChange(change)) {
       const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
       if (actualContent !== change.oldContent) {
-        logger('Content mismatch', {
+        validateChangesDebugger('Content mismatch', {
           actualContent,
           expectedContent: change.oldContent,
           frontmatterKey: change.reference.key,

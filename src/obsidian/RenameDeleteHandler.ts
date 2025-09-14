@@ -334,7 +334,7 @@ async function fillRenameMap(
     if (settings.shouldDeleteConflictingAttachments) {
       const newAttachmentFile = getFileOrNull(app, newAttachmentFilePath);
       if (newAttachmentFile) {
-        console.warn(`Removing conflicting attachment ${newAttachmentFile.path}.`);
+        getLibDebugger('RenameDeleteHandler:fillRenameMap')(`Removing conflicting attachment ${newAttachmentFile.path}.`);
         await app.fileManager.trashFile(newAttachmentFile);
         abortSignal.throwIfAborted();
       }
@@ -412,7 +412,7 @@ async function handleDelete(app: App, path: string, abortSignal: AbortSignal): P
   }
 
   if (settings.isPathIgnored?.(path)) {
-    console.warn(`Skipping delete handler of ${path} as the path is ignored.`);
+    getLibDebugger('RenameDeleteHandler:handleDelete')(`Skipping delete handler of ${path} as the path is ignored.`);
     return;
   }
 
@@ -470,7 +470,7 @@ function handleDeleteIfEnabled(plugin: AbortablePlugin, file: TAbstractFile, abo
 function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
   const settings = getSettings(app);
   if (settings.isPathIgnored?.(file.path)) {
-    console.warn(`Skipping metadata delete handler of ${file.path} as the path is ignored.`);
+    getLibDebugger('RenameDeleteHandler:handleMetadataDeleted')(`Skipping metadata delete handler of ${file.path} as the path is ignored.`);
     return;
   }
 
@@ -503,12 +503,12 @@ function handleRename(app: App, oldPath: string, newPath: string, abortSignal: A
   }
 
   if (settings.isPathIgnored?.(oldPath)) {
-    console.warn(`Skipping rename handler of old path ${oldPath} as the path is ignored.`);
+    getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of old path ${oldPath} as the path is ignored.`);
     return;
   }
 
   if (settings.isPathIgnored?.(newPath)) {
-    console.warn(`Skipping rename handler of new path ${newPath} as the path is ignored.`);
+    getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of new path ${newPath} as the path is ignored.`);
     return;
   }
 
@@ -744,12 +744,16 @@ async function runAsyncLinkUpdate(app: App, next: RunAsyncLinkUpdateFn, linkUpda
         linkUpdates,
         (linkUpdate) => {
           if (settings.isPathIgnored?.(linkUpdate.sourceFile.path)) {
-            console.warn(`Roll back to default link update of source file ${linkUpdate.sourceFile.path} as the path is ignored.`);
+            getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
+              `Roll back to default link update of source file ${linkUpdate.sourceFile.path} as the path is ignored.`
+            );
             return true;
           }
 
           if (settings.isPathIgnored?.(linkUpdate.resolvedFile.path)) {
-            console.warn(`Roll back to default link update of resolved file ${linkUpdate.resolvedFile.path} as the path is ignored.`);
+            getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
+              `Roll back to default link update of resolved file ${linkUpdate.resolvedFile.path} as the path is ignored.`
+            );
             return true;
           }
 

@@ -25,6 +25,7 @@ import type {
 } from './FileSystem.ts';
 
 import { retryWithTimeout } from '../Async.ts';
+import { getLibDebugger } from '../Debug.ts';
 import { noopAsync } from '../Function.ts';
 import {
   basename,
@@ -332,7 +333,7 @@ export async function process(
       await app.vault.process(file, (content) => {
         abortSignal.throwIfAborted();
         if (content !== oldContent) {
-          console.warn('Content has changed since it was read. Retrying...', {
+          getLibDebugger('Vault:process')('Content has changed since it was read. Retrying...', {
             actualContent: content,
             expectedContent: oldContent,
             path: file.path
