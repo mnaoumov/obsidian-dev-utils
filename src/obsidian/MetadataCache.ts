@@ -25,6 +25,7 @@ import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { retryWithTimeout } from '../Async.ts';
 import { getNestedPropertyValue } from '../ObjectUtils.ts';
+import { getObsidianDevUtilsState } from './App.ts';
 import {
   getFile,
   getFileOrNull,
@@ -266,41 +267,25 @@ export async function parseMetadata(app: App, str: string): Promise<CachedMetada
  *
  * @param app - The Obsidian app instance.
  * @param files - The files to register.
- * @returns A function that unregisters the files.
  */
-export function registerFiles(app: App, files: TAbstractFile[]): () => void {
-  const deletedPaths = new Set<string>();
+export function registerFiles(app: App, files: TAbstractFile[]): void {
+  const registeredFilesCounts = getRegisteredFilesCounts(app);
 
-  for (const file of files) {
-    if (!file.deleted) {
-      continue;
-    }
+  for (let file of files) {
+    while (file.deleted) {
+      let count = registeredFilesCounts.get(file.path) ?? 0;
+      count++;
+      registeredFilesCounts.set(file.path, count);
 
-    let deletedFile: TAbstractFile = file;
+      app.vault.fileMap[file.path] = file;
 
-    while (deletedFile.deleted) {
-      deletedPaths.add(deletedFile.path);
-      app.vault.fileMap[deletedFile.path] = deletedFile;
-      deletedFile = deletedFile.parent ?? getFolder(app, parentFolderPath(deletedFile.path), true);
-    }
+      if (isFile(file)) {
+        app.metadataCache.uniqueFileLookup.add(file.name.toLowerCase(), file);
+      }
 
-    if (isFile(file)) {
-      app.metadataCache.uniqueFileLookup.add(file.name.toLowerCase(), file);
+      file = getFolder(app, parentFolderPath(file.path), true);
     }
   }
-
-  return () => {
-    for (const path of deletedPaths) {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-      delete app.vault.fileMap[path];
-    }
-
-    for (const file of files) {
-      if (file.deleted && isFile(file)) {
-        app.metadataCache.uniqueFileLookup.remove(file.name.toLowerCase(), file);
-      }
-    }
-  };
 }
 
 /**
@@ -313,12 +298,11 @@ export function registerFiles(app: App, files: TAbstractFile[]): () => void {
  * @returns The result of the function.
  */
 export function tempRegisterFilesAndRun<T>(app: App, files: TAbstractFile[], fn: () => T): T {
-  const unregister = registerFiles(app, files);
-
   try {
+    registerFiles(app, files);
     return fn();
   } finally {
-    unregister();
+    unregisterFiles(app, files);
   }
 }
 
@@ -332,11 +316,43 @@ export function tempRegisterFilesAndRun<T>(app: App, files: TAbstractFile[], fn:
  * @returns The result of the function.
  */
 export async function tempRegisterFilesAndRunAsync<T>(app: App, files: TAbstractFile[], fn: () => Promise<T>): Promise<T> {
-  const unregister = registerFiles(app, files);
-
   try {
+    registerFiles(app, files);
     return await fn();
   } finally {
-    unregister();
+    unregisterFiles(app, files);
   }
+}
+
+/**
+ * Unregisters files from the Obsidian app.
+ *
+ * @param app - The Obsidian app instance.
+ * @param files - The files to unregister.
+ */
+export function unregisterFiles(app: App, files: TAbstractFile[]): void {
+  const registeredFilesCounts = getRegisteredFilesCounts(app);
+
+  for (let file of files) {
+    while (file.deleted) {
+      let count = registeredFilesCounts.get(file.path) ?? 1;
+      count--;
+      registeredFilesCounts.set(file.path, count);
+      if (count === 0) {
+        registeredFilesCounts.delete(file.path);
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete app.vault.fileMap[file.path];
+
+        if (isFile(file)) {
+          app.metadataCache.uniqueFileLookup.remove(file.name.toLowerCase(), file);
+        }
+      }
+
+      file = getFolder(app, parentFolderPath(file.path), true);
+    }
+  }
+}
+
+function getRegisteredFilesCounts(app: App): Map<string, number> {
+  return getObsidianDevUtilsState(app, 'registeredFilesCounts', new Map<string, number>()).value;
 }
