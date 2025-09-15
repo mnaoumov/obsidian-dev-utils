@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.9.0
+
+- getAllDomWindows
+
 ## 40.8.0
 
 - Ensure fileMap instance
