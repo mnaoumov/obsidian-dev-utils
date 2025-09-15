@@ -43,6 +43,16 @@ export function addPluginCssClasses(el: HTMLElement, ...cssClasses: string[]): v
 }
 
 /**
+ * Initializes the debug controller.
+ *
+ * @param win - The window to initialize the debug controller for.
+ */
+export function initDebugController(win: Window): void {
+  const pluginContextWindow = win as Partial<PluginContextWindow>;
+  pluginContextWindow.DEBUG = getDebugController();
+}
+
+/**
  * Initializes the plugin context.
  *
  * @param app - The Obsidian app instance.
@@ -59,9 +69,6 @@ export function initPluginContext(app: App, pluginId: string): void {
 
   lastLibraryVersionWrapper.value = LIBRARY_VERSION;
 
-  const pluginContextWindow = getPluginContextWindow();
-  pluginContextWindow.DEBUG = getDebugController();
-
   document.head.querySelector(`#${STYLES_ID}`)?.remove();
   document.head.createEl('style', {
     attr: {
@@ -69,8 +76,4 @@ export function initPluginContext(app: App, pluginId: string): void {
     },
     text: LIBRARY_STYLES
   });
-}
-
-function getPluginContextWindow(): Partial<PluginContextWindow> {
-  return window as Partial<PluginContextWindow>;
 }
