@@ -42,7 +42,11 @@ import {
   t
 } from '../i18n/i18n.ts';
 import { defaultTranslationsMap } from '../i18n/locales/translationsMap.ts';
-import { initPluginContext } from './PluginContext.ts';
+import { getAllDomWindows } from '../Workspace.ts';
+import {
+  initDebugController,
+  initPluginContext
+} from './PluginContext.ts';
 
 type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
 
@@ -167,6 +171,21 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   /**
+   * Registers a DOM window handler.
+   *
+   * @param domWindowHandler - The DOM window handler.
+   */
+  public registerDomWindowHandler(domWindowHandler: (win: Window) => void): void {
+    for (const win of getAllDomWindows(this.app)) {
+      domWindowHandler(win);
+    }
+
+    this.registerEvent(this.app.workspace.on('window-open', (workspaceWindow) => {
+      domWindowHandler(workspaceWindow.win);
+    }));
+  }
+
+  /**
    * Registers a callback to be executed when a lifecycle event is triggered.
    *
    * @param name - The name of the event.
@@ -192,8 +211,8 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     callback: (this: HTMLElement, evt: DocumentEventMap[DocumentEventType]) => unknown,
     options?: AddEventListenerOptions | boolean
   ): void {
-    this.registerPopupDomEvent((window) => {
-      this.registerDomEvent(window.document, type, callback, options);
+    this.registerDomWindowHandler((win) => {
+      this.registerDomEvent(win.document, type, callback, options);
     });
   }
 
@@ -210,8 +229,8 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     callback: (this: HTMLElement, evt: WindowEventMap[WindowEventType]) => unknown,
     options?: AddEventListenerOptions | boolean
   ): void {
-    this.registerPopupDomEvent((window) => {
-      this.registerDomEvent(window, type, callback, options);
+    this.registerDomWindowHandler((win) => {
+      this.registerDomEvent(win, type, callback, options);
     });
   }
 
@@ -289,6 +308,9 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    */
   protected async onloadImpl(): Promise<void> {
     initPluginContext(this.app, this.manifest.id);
+    this.registerDomWindowHandler((win) => {
+      initDebugController(win);
+    });
     await initI18N<PluginTypes>(this.createTranslationsMap());
 
     this.register(registerAsyncErrorEventHandler(this.handleAsyncError.bind(this)));
@@ -371,16 +393,6 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     } finally {
       await this.triggerLifecycleEvent('layoutReady');
     }
-  }
-
-  private registerPopupDomEvent(callback: (window: Window) => void): void {
-    this.app.workspace.iterateRootLeaves((leaf) => {
-      callback(leaf.view.containerEl.win);
-    });
-
-    this.registerEvent(this.app.workspace.on('window-open', (workspaceWindow) => {
-      callback(workspaceWindow.win);
-    }));
   }
 
   private async triggerLifecycleEvent(name: LifecycleEventName): Promise<void> {
