@@ -176,13 +176,22 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    * @param domWindowHandler - The DOM window handler.
    */
   public registerDomWindowHandler(domWindowHandler: (win: Window) => void): void {
-    for (const win of getAllDomWindows(this.app)) {
-      domWindowHandler(win);
-    }
+    const mainWindow = window;
+    domWindowHandler(mainWindow);
 
-    this.registerEvent(this.app.workspace.on('window-open', (workspaceWindow) => {
-      domWindowHandler(workspaceWindow.win);
-    }));
+    this.app.workspace.onLayoutReady(() => {
+      for (const win of getAllDomWindows(this.app)) {
+        if (win === mainWindow) {
+          continue;
+        }
+
+        domWindowHandler(win);
+      }
+
+      this.registerEvent(this.app.workspace.on('window-open', (workspaceWindow) => {
+        domWindowHandler(workspaceWindow.win);
+      }));
+    });
   }
 
   /**
