@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.9.1
+
+- Wait for layout ready
+
 ## 40.9.0
 
 - getAllDomWindows
