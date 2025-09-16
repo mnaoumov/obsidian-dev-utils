@@ -65,7 +65,10 @@ import {
   getAllLinks,
   getBacklinksForFileOrPath,
   getBacklinksForFileSafe,
-  tempRegisterFilesAndRun
+  registerFileCacheForNonExistingFile,
+  tempRegisterFilesAndRun,
+  tempRegisterFilesAndRunAsync,
+  unregisterFileCacheForNonExistingFile
 } from './MetadataCache.ts';
 import { registerPatch } from './MonkeyAround.ts';
 import { addToQueue } from './Queue.ts';
@@ -233,13 +236,14 @@ async function continueInterruptedRenames(
   oldPath: string,
   newPath: string,
   oldPathBacklinksMap: Map<string, Reference[]>,
-  oldPathLinks: Reference[]
+  oldPathLinks: Reference[],
+  oldCache: CachedMetadata | null
 ): Promise<void> {
   const interruptedRenames = interruptedRenamesMap.get(oldPath);
   if (interruptedRenames) {
     interruptedRenamesMap.delete(oldPath);
     for (const interruptedRename of interruptedRenames) {
-      await handleRenameAsync(app, interruptedRename.oldPath, newPath, oldPathBacklinksMap, oldPathLinks, interruptedRename.combinedBacklinksMap);
+      await handleRenameAsync(app, interruptedRename.oldPath, newPath, oldPathBacklinksMap, oldPathLinks, oldCache, interruptedRename.combinedBacklinksMap);
     }
   }
 }
@@ -250,6 +254,7 @@ async function fillRenameMap(
   newPath: string,
   renameMap: Map<string, string>,
   oldPathLinks: Reference[],
+  oldCache: CachedMetadata | null,
   abortSignal: AbortSignal
 ): Promise<void> {
   abortSignal.throwIfAborted();
@@ -261,7 +266,23 @@ async function fillRenameMap(
 
   const settings = getSettings(app);
 
-  const oldAttachmentFolderPath = await getAttachmentFolderPath(app, oldPath, AttachmentPathContext.RenameNote);
+  const oldFile = getFile(app, oldPath, true);
+  let oldAttachmentFolderPath = '';
+  await tempRegisterFilesAndRunAsync(app, [oldFile], async () => {
+    const shouldFakeOldPathCache = oldCache && oldFile.deleted;
+    if (shouldFakeOldPathCache) {
+      registerFileCacheForNonExistingFile(app, oldFile, oldCache);
+    }
+
+    try {
+      oldAttachmentFolderPath = await getAttachmentFolderPath(app, oldPath, AttachmentPathContext.RenameNote);
+    } finally {
+      if (shouldFakeOldPathCache) {
+        unregisterFileCacheForNonExistingFile(app, oldFile);
+      }
+    }
+  });
+
   const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
     ? await getAttachmentFolderPath(app, newPath, AttachmentPathContext.RenameNote)
     : oldAttachmentFolderPath;
@@ -386,7 +407,8 @@ async function handleCaseCollision(
   oldPath: string,
   newPath: string,
   oldPathBacklinksMap: Map<string, Reference[]>,
-  oldPathLinks: Reference[]
+  oldPathLinks: Reference[],
+  oldCache: CachedMetadata | null
 ): Promise<boolean> {
   if (!app.vault.adapter.insensitive || oldPath.toLowerCase() !== newPath.toLowerCase()) {
     return false;
@@ -394,7 +416,7 @@ async function handleCaseCollision(
 
   const tempPath = join(dirname(newPath), `__temp__${basename(newPath)}`);
   await renameHandled(app, newPath, tempPath);
-  await handleRenameAsync(app, oldPath, tempPath, oldPathBacklinksMap, oldPathLinks);
+  await handleRenameAsync(app, oldPath, tempPath, oldPathBacklinksMap, oldPathLinks, oldCache);
   await app.vault.rename(getFile(app, tempPath), newPath);
   return true;
 }
@@ -515,7 +537,7 @@ function handleRename(app: App, oldPath: string, newPath: string, abortSignal: A
   const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
   const oldPathLinks = cache ? getAllLinks(cache) : [];
   const oldPathBacklinksMap = getBacklinksForFileOrPath(app, oldPath).data;
-  addToQueue(app, (abortSignal2) => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, undefined, abortSignal2), abortSignal);
+  addToQueue(app, (abortSignal2) => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, cache, undefined, abortSignal2), abortSignal);
 }
 
 async function handleRenameAsync(
@@ -524,16 +546,17 @@ async function handleRenameAsync(
   newPath: string,
   oldPathBacklinksMap: Map<string, Reference[]>,
   oldPathLinks: Reference[],
+  oldCache: CachedMetadata | null,
   interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>,
   abortSignal?: AbortSignal
 ): Promise<void> {
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
-  await continueInterruptedRenames(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
+  await continueInterruptedRenames(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, oldCache);
   abortSignal.throwIfAborted();
   await refreshLinks(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
   abortSignal.throwIfAborted();
-  if (await handleCaseCollision(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks)) {
+  if (await handleCaseCollision(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, oldCache)) {
     return;
   }
 
@@ -541,7 +564,7 @@ async function handleRenameAsync(
 
   try {
     const renameMap = new Map<string, string>();
-    await fillRenameMap(app, oldPath, newPath, renameMap, oldPathLinks, abortSignal);
+    await fillRenameMap(app, oldPath, newPath, renameMap, oldPathLinks, oldCache, abortSignal);
     abortSignal.throwIfAborted();
 
     const combinedBacklinksMap = new Map<string, Map<string, string>>();
