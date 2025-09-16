@@ -211,8 +211,12 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<Ca
   const file = getFileOrNull(app, fileOrPath);
 
   try {
-    if (!file || file.deleted) {
+    if (!file) {
       return null;
+    }
+
+    if (file.deleted) {
+      return app.metadataCache.getFileCache(file);
     }
 
     await saveNote(app, file);
@@ -260,6 +264,28 @@ export async function parseMetadata(app: App, str: string): Promise<CachedMetada
   const encoder = new TextEncoder();
   const buffer = encoder.encode(str).buffer;
   return await app.metadataCache.computeMetadataAsync(buffer) ?? {};
+}
+
+/**
+ * Registers the file cache for a non-existing file.
+ *
+ * @param app - The Obsidian app instance.
+ * @param pathOrFile - The path or file to register the file cache for.
+ * @param cache - The file cache to register.
+ */
+export function registerFileCacheForNonExistingFile(app: App, pathOrFile: PathOrFile, cache: CachedMetadata): void {
+  const file = getFile(app, pathOrFile, true);
+  if (!file.deleted) {
+    throw new Error('File is existing');
+  }
+
+  app.metadataCache.fileCache[file.path] = {
+    hash: file.path,
+    mtime: 0,
+    size: 0
+  };
+
+  app.metadataCache.metadataCache[file.path] = cache;
 }
 
 /**
@@ -322,6 +348,23 @@ export async function tempRegisterFilesAndRunAsync<T>(app: App, files: TAbstract
   } finally {
     unregisterFiles(app, files);
   }
+}
+
+/**
+ * Unregisters the file cache for a non-existing file.
+ *
+ * @param app - The Obsidian app instance.
+ * @param pathOrFile - The path or file to unregister the file cache for.
+ */
+export function unregisterFileCacheForNonExistingFile(app: App, pathOrFile: PathOrFile): void {
+  const file = getFile(app, pathOrFile, true);
+  if (!file.deleted) {
+    throw new Error('File is existing');
+  }
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  delete app.metadataCache.fileCache[file.path];
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  delete app.metadataCache.metadataCache[file.path];
 }
 
 /**
