@@ -235,7 +235,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
     const readonlyValue = this.pluginSettings[propertyName] as ReadonlyDeep<PropertyType>;
     const defaultValue = (this.plugin.settingsManager.defaultSettings as PluginSettings)[propertyName] as PropertyType;
-    textBasedComponent?.setPlaceholderValue(optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>));
+    const defaultComponentValue = optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>);
+    textBasedComponent?.setPlaceholderValue(defaultComponentValue);
 
     let validationMessage: string;
     let tooltipEl: HTMLElement | null = null;
@@ -261,6 +262,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     }));
 
     let shouldEmptyOnBlur = false;
+    let shouldRevertToDefaultValueOnBlur = false;
 
     if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && deepEqual(readonlyValue, defaultValue)) {
       textBasedComponent.empty();
@@ -287,7 +289,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       const oldValue = this.pluginSettings[propertyName];
       let newValue: PropertyType | undefined = undefined;
       let shouldSetProperty = true;
-      if (textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty) {
+      shouldRevertToDefaultValueOnBlur = !!textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty;
+      if (shouldRevertToDefaultValueOnBlur) {
         newValue = defaultValue;
       } else {
         const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
@@ -307,7 +310,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       }
 
       updateValidatorElDebounced();
-      if (newValue !== undefined) {
+      if (shouldSetProperty) {
         await optionsExt.onChanged(newValue as ReadonlyDeep<PropertyType>, oldValue as ReadonlyDeep<PropertyType>);
       }
       this.saveSettingsDebounced();
@@ -331,11 +334,21 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     return valueComponent;
 
     function updateValidatorEl(): void {
-      if (shouldEmptyOnBlur && !validatorEl?.isActiveElement()) {
-        shouldEmptyOnBlur = false;
-        if (!textBasedComponent?.isEmpty()) {
-          shouldSkipOnChange = true;
-          textBasedComponent?.empty();
+      if (!validatorEl?.isActiveElement()) {
+        if (shouldEmptyOnBlur) {
+          shouldEmptyOnBlur = false;
+
+          if (!textBasedComponent?.isEmpty()) {
+            shouldSkipOnChange = true;
+            textBasedComponent?.empty();
+          }
+        } else if (shouldRevertToDefaultValueOnBlur) {
+          shouldRevertToDefaultValueOnBlur = false;
+
+          if (textBasedComponent?.isEmpty()) {
+            shouldSkipOnChange = true;
+            valueComponent.setValue(defaultComponentValue);
+          }
         }
       }
 
