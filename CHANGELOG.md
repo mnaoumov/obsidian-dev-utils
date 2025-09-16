@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.12.0
+
+- Improve performance of getting global App
+
 ## 40.11.0
 
 - shouldRevertToDefaultValueOnBlur
