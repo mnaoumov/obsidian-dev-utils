@@ -48,6 +48,7 @@ import {
   hasOwnAttachmentFolder
 } from './AttachmentPath.ts';
 import {
+  CANVAS_FILE_EXTENSION,
   getFile,
   getFileOrNull,
   getFolderOrNull,
@@ -80,10 +81,6 @@ import {
   deleteEmptyFolderHierarchy,
   deleteSafe
 } from './VaultEx.ts';
-
-const deletedMetadataCacheMap = new Map<string, CachedMetadata>();
-const handledRenames = new Set<string>();
-const interruptedRenamesMap = new Map<string, InterruptedRename[]>();
 
 /**
  * A behavior of the rename/delete handler when deleting empty attachment folders.
@@ -159,12 +156,782 @@ interface AbortablePlugin extends Plugin {
   abortSignal?: AbortSignal;
 }
 
+interface HandledRenameKey {
+  newPath: string;
+  oldPath: string;
+}
+
 interface InterruptedRename {
   combinedBacklinksMap: Map<string, Map<string, string>>;
   oldPath: string;
 }
 
-type RunAsyncLinkUpdateFn = FileManager['runAsyncLinkUpdate'];
+interface RenameHandlerOptions {
+  abortSignal: AbortSignal;
+  app: App;
+  handledRenames: HandledRenames;
+  interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>;
+  interruptedRenamesMap: Map<string, InterruptedRename[]>;
+  newPath: string;
+  oldCache: CachedMetadata | null;
+  oldPath: string;
+  oldPathBacklinksMap: Map<string, Reference[]>;
+  settingsManager: SettingsManager;
+}
+
+interface RenameMapOptions {
+  abortSignal: AbortSignal;
+  app: App;
+  newPath: string;
+  oldCache: CachedMetadata | null;
+  oldPath: string;
+  settingsManager: SettingsManager;
+}
+
+type RunAsyncLinkUpdateFn = { renameDeleteHandlerPatched?: boolean } & FileManager['runAsyncLinkUpdate'];
+
+class DeleteHandler {
+  public constructor(
+    private readonly app: App,
+    private readonly file: TAbstractFile,
+    private readonly abortSignal: AbortSignal,
+    private readonly settingsManager: SettingsManager,
+    private readonly deletedMetadataCacheMap: Map<string, CachedMetadata>
+  ) {
+  }
+
+  public async handle(): Promise<void> {
+    this.abortSignal.throwIfAborted();
+    getLibDebugger('RenameDeleteHandler:handleDelete')(`Handle Delete ${this.file.path}`);
+    if (!this.settingsManager.isNoteEx(this.file.path)) {
+      return;
+    }
+
+    const settings = this.settingsManager.getSettings();
+    if (!settings.shouldHandleDeletions) {
+      return;
+    }
+
+    if (settings.isPathIgnored?.(this.file.path)) {
+      getLibDebugger('RenameDeleteHandler:handleDelete')(`Skipping delete handler of ${this.file.path} as the path is ignored.`);
+      return;
+    }
+
+    const cache = this.deletedMetadataCacheMap.get(this.file.path);
+    this.deletedMetadataCacheMap.delete(this.file.path);
+    const parentFolderPaths = new Set<string>();
+    if (cache) {
+      const links = getAllLinks(cache);
+
+      for (const link of links) {
+        const attachmentFile = extractLinkFile(this.app, link, this.file.path);
+        if (!attachmentFile) {
+          continue;
+        }
+
+        if (this.settingsManager.isNoteEx(attachmentFile.path)) {
+          continue;
+        }
+
+        parentFolderPaths.add(attachmentFile.parent?.path ?? '');
+        await deleteSafe(this.app, attachmentFile, this.file.path, false, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
+      }
+    }
+
+    await cleanupParentFolders(this.app, this.settingsManager.getSettings(), Array.from(parentFolderPaths), this.file.path);
+    this.abortSignal.throwIfAborted();
+
+    const attachmentFolderPath = await getAttachmentFolderPath(this.app, this.file.path, AttachmentPathContext.DeleteNote);
+    const attachmentFolder = getFolderOrNull(this.app, attachmentFolderPath);
+
+    if (!attachmentFolder) {
+      return;
+    }
+
+    if (!(await hasOwnAttachmentFolder(this.app, this.file.path, AttachmentPathContext.DeleteNote))) {
+      return;
+    }
+
+    this.abortSignal.throwIfAborted();
+
+    await deleteSafe(this.app, attachmentFolder, this.file.path, false, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
+    this.abortSignal.throwIfAborted();
+  }
+}
+
+class HandledRenames {
+  private readonly map = new Map<string, HandledRenameKey>();
+
+  public add(oldPath: string, newPath: string): void {
+    this.map.set(this.keyToString(oldPath, newPath), { newPath, oldPath });
+  }
+
+  public delete(oldPath: string, newPath: string): void {
+    this.map.delete(this.keyToString(oldPath, newPath));
+  }
+
+  public has(oldPath: string, newPath: string): boolean {
+    return this.map.has(this.keyToString(oldPath, newPath));
+  }
+
+  public keys(): IterableIterator<HandledRenameKey> {
+    return this.map.values();
+  }
+
+  private keyToString(oldPath: string, newPath: string): string {
+    return `${oldPath} -> ${newPath}`;
+  }
+}
+
+class MetadataDeletedHandler {
+  public constructor(
+    private readonly app: App,
+    private readonly file: TAbstractFile,
+    private readonly prevCache: CachedMetadata | null,
+    private readonly settingsManager: SettingsManager,
+    private readonly deletedMetadataCacheMap: Map<string, CachedMetadata>
+  ) {
+  }
+
+  public handle(): void {
+    const settings = this.settingsManager.getSettings();
+
+    if (!settings.shouldHandleDeletions) {
+      return;
+    }
+
+    if (settings.isPathIgnored?.(this.file.path)) {
+      getLibDebugger('RenameDeleteHandler:handleMetadataDeleted')(`Skipping metadata delete handler of ${this.file.path} as the path is ignored.`);
+      return;
+    }
+
+    if (isMarkdownFile(this.app, this.file) && this.prevCache) {
+      this.deletedMetadataCacheMap.set(this.file.path, this.prevCache);
+    }
+  }
+}
+
+class Registry {
+  private readonly abortSignal: AbortSignal;
+  private readonly app: App;
+  private readonly deletedMetadataCacheMap = new Map<string, CachedMetadata>();
+  private readonly handledRenames = new HandledRenames();
+  private readonly interruptedRenamesMap = new Map<string, InterruptedRename[]>();
+  private readonly pluginId: string;
+
+  public constructor(
+    private readonly plugin: AbortablePlugin,
+    private readonly settingsBuilder: () => Partial<RenameDeleteHandlerSettings>,
+    private readonly settingsManager: SettingsManager
+  ) {
+    this.app = plugin.app;
+    this.pluginId = plugin.manifest.id;
+    this.abortSignal = plugin.abortSignal ?? abortSignalNever();
+  }
+
+  public register(): void {
+    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
+
+    renameDeleteHandlersMap.set(this.pluginId, this.settingsBuilder);
+    this.logRegisteredHandlers();
+
+    this.plugin.register(() => {
+      renameDeleteHandlersMap.delete(this.pluginId);
+      this.logRegisteredHandlers();
+    });
+
+    this.plugin.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
+    this.plugin.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
+    this.plugin.registerEvent(this.app.metadataCache.on('deleted', this.handleMetadataDeleted.bind(this)));
+
+    registerPatch(this.plugin, this.app.fileManager, {
+      runAsyncLinkUpdate: (next: RunAsyncLinkUpdateFn): RunAsyncLinkUpdateFn => {
+        return Object.assign((linkUpdatesHandler) => this.runAsyncLinkUpdate(next, linkUpdatesHandler), { renameDeleteHandlerPatched: true });
+      }
+    });
+  }
+
+  private handleDelete(file: TAbstractFile): void {
+    if (!this.shouldInvokeHandler()) {
+      return;
+    }
+    addToQueue(
+      this.app,
+      (abortSignal) => new DeleteHandler(this.app, file, abortSignal, this.settingsManager, this.deletedMetadataCacheMap).handle(),
+      this.abortSignal
+    );
+  }
+
+  private handleMetadataDeleted(file: TAbstractFile, prevCache: CachedMetadata | null): void {
+    if (!this.shouldInvokeHandler()) {
+      return;
+    }
+    addToQueue(this.app, () => {
+      new MetadataDeletedHandler(this.app, file, prevCache, this.settingsManager, this.deletedMetadataCacheMap).handle();
+    }, this.abortSignal);
+  }
+
+  private handleRename(file: TAbstractFile, oldPath: string): void {
+    if (!this.shouldInvokeHandler()) {
+      return;
+    }
+
+    if (!isFile(file)) {
+      return;
+    }
+
+    const newPath = file.path;
+
+    getLibDebugger('RenameDeleteHandler:handleRename')(`Handle Rename ${oldPath} -> ${newPath}`);
+    if (this.handledRenames.has(oldPath, newPath)) {
+      this.handledRenames.delete(oldPath, newPath);
+      return;
+    }
+
+    const settings = this.settingsManager.getSettings();
+    if (!settings.shouldHandleRenames) {
+      return;
+    }
+
+    if (settings.isPathIgnored?.(oldPath)) {
+      getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of old path ${oldPath} as the path is ignored.`);
+      return;
+    }
+
+    if (settings.isPathIgnored?.(newPath)) {
+      getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of new path ${newPath} as the path is ignored.`);
+      return;
+    }
+
+    const oldCache = this.app.metadataCache.getCache(oldPath) ?? this.app.metadataCache.getCache(newPath);
+    const oldPathBacklinksMap = getBacklinksForFileOrPath(this.app, oldPath).data;
+    addToQueue(this.app, (abortSignal) =>
+      new RenameHandler({
+        abortSignal,
+        app: this.app,
+        handledRenames: this.handledRenames,
+        interruptedRenamesMap: this.interruptedRenamesMap,
+        newPath,
+        oldCache,
+        oldPath,
+        oldPathBacklinksMap,
+        settingsManager: this.settingsManager
+      }).handle(), this.abortSignal);
+  }
+
+  private logRegisteredHandlers(): void {
+    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
+    getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
+      `Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`
+    );
+  }
+
+  private async runAsyncLinkUpdate(next: RunAsyncLinkUpdateFn, linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
+    if (next.renameDeleteHandlerPatched) {
+      await next.call(this.app.fileManager, linkUpdatesHandler);
+      return;
+    }
+    await next.call(this.app.fileManager, (linkUpdates) => this.wrapLinkUpdatesHandler(linkUpdates, linkUpdatesHandler));
+  }
+
+  private shouldInvokeHandler(): boolean {
+    const pluginId = this.plugin.manifest.id;
+
+    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
+    const mainPluginId = Array.from(renameDeleteHandlersMap.keys())[0];
+    return mainPluginId === pluginId;
+  }
+
+  private async wrapLinkUpdatesHandler(linkUpdates: LinkUpdate[], linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
+    let isRenameCalled = false;
+    const eventRef = this.app.vault.on('rename', () => {
+      isRenameCalled = true;
+    });
+    try {
+      await linkUpdatesHandler(linkUpdates);
+    } finally {
+      this.app.vault.offref(eventRef);
+    }
+    const settings = this.settingsManager.getSettings();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!isRenameCalled || !settings.shouldHandleRenames) {
+      return;
+    }
+
+    filterInPlace(
+      linkUpdates,
+      (linkUpdate) => {
+        if (settings.isPathIgnored?.(linkUpdate.sourceFile.path)) {
+          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
+            `Roll back to default link update of source file ${linkUpdate.sourceFile.path} as the path is ignored.`
+          );
+          return true;
+        }
+
+        if (settings.isPathIgnored?.(linkUpdate.resolvedFile.path)) {
+          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
+            `Roll back to default link update of resolved file ${linkUpdate.resolvedFile.path} as the path is ignored.`
+          );
+          return true;
+        }
+
+        if (!this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
+          return false;
+        }
+
+        if (this.app.plugins.getPlugin('backlink-cache')) {
+          return false;
+        }
+
+        if (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) {
+          return true;
+        }
+
+        if (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION) {
+          return true;
+        }
+
+        return false;
+      }
+    );
+  }
+}
+
+class RenameHandler {
+  private readonly abortSignal: AbortSignal;
+  private readonly app: App;
+  private readonly handledRenames: HandledRenames;
+  private readonly interruptedCombinedBacklinksMap: Map<string, Map<string, string>>;
+  private readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
+  private readonly newPath: string;
+  private readonly oldCache: CachedMetadata | null;
+  private readonly oldPath: string;
+  private readonly oldPathBacklinksMap: Map<string, Reference[]>;
+  private readonly oldPathLinks: Reference[];
+  private readonly settingsManager: SettingsManager;
+
+  public constructor(options: RenameHandlerOptions) {
+    this.app = options.app;
+    this.oldPath = options.oldPath;
+    this.newPath = options.newPath;
+    this.oldPathBacklinksMap = options.oldPathBacklinksMap;
+    this.oldCache = options.oldCache;
+    this.abortSignal = options.abortSignal;
+    this.settingsManager = options.settingsManager;
+    this.interruptedRenamesMap = options.interruptedRenamesMap;
+    this.oldPathLinks = this.oldCache ? getAllLinks(this.oldCache) : [];
+    this.handledRenames = options.handledRenames;
+    this.interruptedCombinedBacklinksMap = options.interruptedCombinedBacklinksMap ?? new Map<string, Map<string, string>>();
+  }
+
+  public async handle(): Promise<void> {
+    this.abortSignal.throwIfAborted();
+    await this.continueInterruptedRenames();
+    this.abortSignal.throwIfAborted();
+    await this.refreshLinks();
+    this.abortSignal.throwIfAborted();
+    if (await this.handleCaseCollision()) {
+      return;
+    }
+
+    this.abortSignal.throwIfAborted();
+
+    try {
+      const renameMap = new RenameMap({
+        abortSignal: this.abortSignal,
+        app: this.app,
+        newPath: this.newPath,
+        oldCache: this.oldCache,
+        oldPath: this.oldPath,
+        settingsManager: this.settingsManager
+      });
+      await renameMap.fill();
+      this.abortSignal.throwIfAborted();
+
+      const combinedBacklinksMap = new Map<string, Map<string, string>>();
+      renameMap.initBacklinksMap(this.oldPathBacklinksMap, combinedBacklinksMap, this.oldPath);
+
+      for (const attachmentOldPath of renameMap.keys()) {
+        if (attachmentOldPath === this.oldPath) {
+          continue;
+        }
+        const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe(this.app, attachmentOldPath)).data;
+        this.abortSignal.throwIfAborted();
+        renameMap.initBacklinksMap(attachmentOldPathBacklinksMap, combinedBacklinksMap, attachmentOldPath);
+      }
+
+      const parentFolderPaths = new Set<string>();
+
+      for (const [oldAttachmentPath, newAttachmentPath] of renameMap.entries()) {
+        if (oldAttachmentPath === this.oldPath) {
+          continue;
+        }
+        const fixedNewAttachmentPath = await this.renameHandled(oldAttachmentPath, newAttachmentPath);
+        this.abortSignal.throwIfAborted();
+        renameMap.set(oldAttachmentPath, fixedNewAttachmentPath);
+        parentFolderPaths.add(dirname(oldAttachmentPath));
+      }
+
+      await cleanupParentFolders(this.app, this.settingsManager.getSettings(), Array.from(parentFolderPaths), this.oldPath);
+      this.abortSignal.throwIfAborted();
+      const settings = this.settingsManager.getSettings();
+
+      for (
+        const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(
+          Array.from(this.interruptedCombinedBacklinksMap.entries())
+        )
+      ) {
+        await editLinks(this.app, newBacklinkPath, (link) => {
+          const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
+          if (!oldAttachmentPath) {
+            return;
+          }
+
+          const newAttachmentPath = renameMap.get(oldAttachmentPath);
+          if (!newAttachmentPath) {
+            return;
+          }
+
+          return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
+            app: this.app,
+            link,
+            newSourcePathOrFile: newBacklinkPath,
+            newTargetPathOrFile: newAttachmentPath,
+            oldTargetPathOrFile: oldAttachmentPath,
+            shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
+          }));
+        }, {
+          shouldFailOnMissingFile: false
+        });
+        this.abortSignal.throwIfAborted();
+      }
+
+      if (this.settingsManager.isNoteEx(this.newPath)) {
+        await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileOptions>({
+          app: this.app,
+          newSourcePathOrFile: this.newPath,
+          oldSourcePathOrFile: this.oldPath,
+          shouldFailOnMissingFile: false,
+          shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
+        }));
+        this.abortSignal.throwIfAborted();
+      }
+
+      if (!getFileOrNull(this.app, this.newPath)) {
+        let interruptedRenames = this.interruptedRenamesMap.get(this.newPath);
+        if (!interruptedRenames) {
+          interruptedRenames = [];
+          this.interruptedRenamesMap.set(this.newPath, interruptedRenames);
+        }
+        interruptedRenames.push({
+          combinedBacklinksMap,
+          oldPath: this.oldPath
+        });
+      }
+    } finally {
+      const orphanKeys = Array.from(this.handledRenames.keys());
+      addToQueue(this.app, () => {
+        for (const orphanKey of orphanKeys) {
+          this.handledRenames.delete(orphanKey.oldPath, orphanKey.newPath);
+        }
+      }, this.abortSignal);
+    }
+  }
+
+  private async continueInterruptedRenames(): Promise<void> {
+    const interruptedRenames = this.interruptedRenamesMap.get(this.oldPath);
+    if (interruptedRenames) {
+      this.interruptedRenamesMap.delete(this.oldPath);
+      for (const interruptedRename of interruptedRenames) {
+        await new RenameHandler({
+          abortSignal: this.abortSignal,
+          app: this.app,
+          handledRenames: this.handledRenames,
+          interruptedCombinedBacklinksMap: interruptedRename.combinedBacklinksMap,
+          interruptedRenamesMap: this.interruptedRenamesMap,
+          newPath: this.newPath,
+          oldCache: this.oldCache,
+          oldPath: interruptedRename.oldPath,
+          oldPathBacklinksMap: this.oldPathBacklinksMap,
+          settingsManager: this.settingsManager
+        }).handle();
+      }
+    }
+  }
+
+  private async handleCaseCollision(): Promise<boolean> {
+    if (!this.app.vault.adapter.insensitive || this.oldPath.toLowerCase() !== this.newPath.toLowerCase()) {
+      return false;
+    }
+
+    const tempPath = join(dirname(this.newPath), `__temp__${basename(this.newPath)}`);
+    await this.renameHandled(this.newPath, tempPath);
+
+    await new RenameHandler({
+      abortSignal: this.abortSignal,
+      app: this.app,
+      handledRenames: this.handledRenames,
+      interruptedRenamesMap: this.interruptedRenamesMap,
+      newPath: tempPath,
+      oldCache: this.oldCache,
+      oldPath: this.oldPath,
+      oldPathBacklinksMap: this.oldPathBacklinksMap,
+      settingsManager: this.settingsManager
+    }).handle();
+
+    await this.app.vault.rename(getFile(this.app, tempPath), this.newPath);
+    return true;
+  }
+
+  private async refreshLinks(): Promise<void> {
+    const cache = this.app.metadataCache.getCache(this.oldPath) ?? this.app.metadataCache.getCache(this.newPath);
+    const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
+    const fakeOldFile = getFile(this.app, this.oldPath, true);
+    let oldPathBacklinksMapRefreshed = new Map<string, Reference[]>();
+    await tempRegisterFilesAndRun(this.app, [fakeOldFile], async () => {
+      oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe(this.app, fakeOldFile)).data;
+    });
+
+    for (const link of oldPathLinksRefreshed) {
+      if (this.oldPathLinks.includes(link)) {
+        continue;
+      }
+      this.oldPathLinks.push(link);
+    }
+
+    for (const [backlinkPath, refreshedLinks] of oldPathBacklinksMapRefreshed.entries()) {
+      let oldLinks = this.oldPathBacklinksMap.get(backlinkPath);
+      if (!oldLinks) {
+        oldLinks = [];
+        this.oldPathBacklinksMap.set(backlinkPath, oldLinks);
+      }
+
+      for (const link of refreshedLinks) {
+        if (oldLinks.includes(link)) {
+          continue;
+        }
+        oldLinks.push(link);
+      }
+    }
+  }
+
+  private async renameHandled(oldPath: string, newPath: string): Promise<string> {
+    newPath = getSafeRenamePath(this.app, oldPath, newPath);
+    if (oldPath === newPath) {
+      return newPath;
+    }
+    this.handledRenames.add(oldPath, newPath);
+    newPath = await renameSafe(this.app, oldPath, newPath);
+    return newPath;
+  }
+}
+
+class RenameMap {
+  private readonly abortSignal: AbortSignal;
+  private readonly app: App;
+  private readonly map = new Map<string, string>();
+  private readonly newPath: string;
+  private readonly oldCache: CachedMetadata | null;
+  private readonly oldPath: string;
+  private readonly oldPathLinks: Reference[];
+  private readonly settingsManager: SettingsManager;
+
+  public constructor(options: RenameMapOptions) {
+    this.abortSignal = options.abortSignal;
+    this.app = options.app;
+    this.settingsManager = options.settingsManager;
+    this.oldCache = options.oldCache;
+    this.oldPath = options.oldPath;
+    this.newPath = options.newPath;
+    this.oldPathLinks = this.oldCache ? getAllLinks(this.oldCache) : [];
+  }
+
+  public entries(): IterableIterator<[string, string]> {
+    return this.map.entries();
+  }
+
+  public async fill(): Promise<void> {
+    this.abortSignal.throwIfAborted();
+    this.map.set(this.oldPath, this.newPath);
+
+    if (!this.settingsManager.isNoteEx(this.oldPath)) {
+      return;
+    }
+
+    const settings = this.settingsManager.getSettings();
+
+    const oldFile = getFile(this.app, this.oldPath, true);
+    let oldAttachmentFolderPath = '';
+    await tempRegisterFilesAndRunAsync(this.app, [oldFile], async () => {
+      const shouldFakeOldPathCache = this.oldCache && oldFile.deleted;
+      if (shouldFakeOldPathCache) {
+        registerFileCacheForNonExistingFile(this.app, oldFile, this.oldCache);
+      }
+
+      try {
+        oldAttachmentFolderPath = await getAttachmentFolderPath(this.app, this.oldPath, AttachmentPathContext.RenameNote);
+      } finally {
+        if (shouldFakeOldPathCache) {
+          unregisterFileCacheForNonExistingFile(this.app, oldFile);
+        }
+      }
+    });
+
+    const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
+      ? await getAttachmentFolderPath(this.app, this.newPath, AttachmentPathContext.RenameNote)
+      : oldAttachmentFolderPath;
+
+    const isOldAttachmentFolderAtRoot = oldAttachmentFolderPath === '/';
+
+    const oldAttachmentFolder = getFolderOrNull(this.app, oldAttachmentFolderPath);
+
+    if (!oldAttachmentFolder) {
+      return;
+    }
+
+    if (oldAttachmentFolderPath === newAttachmentFolderPath && !settings.shouldRenameAttachmentFiles) {
+      return;
+    }
+
+    const oldAttachmentFiles: TFile[] = [];
+
+    if (await hasOwnAttachmentFolder(this.app, this.oldPath, AttachmentPathContext.RenameNote)) {
+      Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
+        this.abortSignal.throwIfAborted();
+        if (isFile(oldAttachmentFile)) {
+          oldAttachmentFiles.push(oldAttachmentFile);
+        }
+      });
+    } else {
+      for (const oldPathLink of this.oldPathLinks) {
+        this.abortSignal.throwIfAborted();
+        const oldAttachmentFile = extractLinkFile(this.app, oldPathLink, this.oldPath);
+        if (!oldAttachmentFile) {
+          continue;
+        }
+
+        if (isOldAttachmentFolderAtRoot || oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
+          const oldAttachmentBacklinks = await getBacklinksForFileSafe(this.app, oldAttachmentFile);
+          this.abortSignal.throwIfAborted();
+          if (oldAttachmentBacklinks.keys().length === 1) {
+            oldAttachmentFiles.push(oldAttachmentFile);
+          }
+        }
+      }
+    }
+
+    for (const oldAttachmentFile of oldAttachmentFiles) {
+      this.abortSignal.throwIfAborted();
+      if (this.settingsManager.isNoteEx(oldAttachmentFile.path)) {
+        continue;
+      }
+
+      let newAttachmentFilePath: string;
+      if (settings.shouldRenameAttachmentFiles) {
+        newAttachmentFilePath = await getAttachmentFilePath({
+          app: this.app,
+          attachmentPathOrFile: oldAttachmentFile,
+          context: AttachmentPathContext.RenameNote,
+          notePathOrFile: this.newPath,
+          oldNotePathOrFile: this.oldPath,
+          shouldSkipDuplicateCheck: true
+        });
+        this.abortSignal.throwIfAborted();
+      } else {
+        const relativePath = isOldAttachmentFolderAtRoot ? oldAttachmentFile.path : relative(oldAttachmentFolderPath, oldAttachmentFile.path);
+        const newFolder = join(newAttachmentFolderPath, dirname(relativePath));
+        newAttachmentFilePath = join(newFolder, oldAttachmentFile.name);
+      }
+
+      if (oldAttachmentFile.path === newAttachmentFilePath) {
+        continue;
+      }
+      if (settings.shouldDeleteConflictingAttachments) {
+        const newAttachmentFile = getFileOrNull(this.app, newAttachmentFilePath);
+        if (newAttachmentFile) {
+          getLibDebugger('RenameDeleteHandler:fillRenameMap')(`Removing conflicting attachment ${newAttachmentFile.path}.`);
+          await this.app.fileManager.trashFile(newAttachmentFile);
+          this.abortSignal.throwIfAborted();
+        }
+      } else {
+        const dir = dirname(newAttachmentFilePath);
+        const ext = extname(newAttachmentFilePath);
+        const baseName = basename(newAttachmentFilePath, ext);
+        newAttachmentFilePath = this.app.vault.getAvailablePath(join(dir, baseName), ext.slice(1));
+      }
+      this.map.set(oldAttachmentFile.path, newAttachmentFilePath);
+    }
+  }
+
+  public get(oldPath: string): string | undefined {
+    return this.map.get(oldPath);
+  }
+
+  public initBacklinksMap(
+    singleBacklinksMap: Map<string, Reference[]>,
+    combinedBacklinksMap: Map<string, Map<string, string>>,
+    path: string
+  ): void {
+    for (const [backlinkPath, links] of singleBacklinksMap.entries()) {
+      const newBacklinkPath = this.map.get(backlinkPath) ?? backlinkPath;
+      const linkJsonToPathMap = combinedBacklinksMap.get(newBacklinkPath) ?? new Map<string, string>();
+      combinedBacklinksMap.set(newBacklinkPath, linkJsonToPathMap);
+      for (const link of links) {
+        linkJsonToPathMap.set(toJson(link), path);
+      }
+    }
+  }
+
+  public keys(): IterableIterator<string> {
+    return this.map.keys();
+  }
+
+  public set(oldPath: string, newPath: string): void {
+    this.map.set(oldPath, newPath);
+  }
+}
+
+class SettingsManager {
+  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
+
+  public constructor(private readonly app: App) {
+    this.renameDeleteHandlersMap =
+      getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
+  }
+
+  public getSettings(): Partial<RenameDeleteHandlerSettings> {
+    const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
+
+    const settings: Partial<RenameDeleteHandlerSettings> = {};
+    settings.isNote = (path: string): boolean => isNote(this.app, path);
+    settings.isPathIgnored = (): boolean => false;
+
+    for (const settingsBuilder of settingsBuilders) {
+      const newSettings = settingsBuilder();
+      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
+      if (newSettings.emptyAttachmentFolderBehavior) {
+        settings.emptyAttachmentFolderBehavior ??= newSettings.emptyAttachmentFolderBehavior;
+      }
+      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
+      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
+      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
+      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
+      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
+      const isPathIgnored = settings.isPathIgnored;
+      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
+      const currentIsNote = settings.isNote;
+      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
+    }
+
+    settings.emptyAttachmentFolderBehavior ??= EmptyAttachmentFolderBehavior.Keep;
+    return settings;
+  }
+
+  public isNoteEx(path: string): boolean {
+    const settings = this.getSettings();
+    return settings.isNote?.(path) ?? false;
+  }
+}
 
 /**
  * Registers the rename/delete handlers.
@@ -173,47 +940,10 @@ type RunAsyncLinkUpdateFn = FileManager['runAsyncLinkUpdate'];
  * @param settingsBuilder - A function that returns the settings for the rename delete handler.
  */
 export function registerRenameDeleteHandlers(plugin: AbortablePlugin, settingsBuilder: () => Partial<RenameDeleteHandlerSettings>): void {
-  const renameDeleteHandlersMap = getRenameDeleteHandlersMap(plugin.app);
-  const pluginId = plugin.manifest.id;
-
-  renameDeleteHandlersMap.set(pluginId, settingsBuilder);
-  logRegisteredHandlers(plugin.app);
-
-  plugin.register(() => {
-    renameDeleteHandlersMap.delete(pluginId);
-    logRegisteredHandlers(plugin.app);
-  });
-
-  const app = plugin.app;
-  const abortSignal = plugin.abortSignal ?? abortSignalNever();
-
-  plugin.registerEvent(
-    app.vault.on('delete', (file) => {
-      handleDeleteIfEnabled(plugin, file, abortSignal);
-    })
-  );
-
-  plugin.registerEvent(
-    app.vault.on('rename', (file, oldPath) => {
-      handleRenameIfEnabled(plugin, file, oldPath, abortSignal);
-    })
-  );
-
-  plugin.registerEvent(
-    app.metadataCache.on('deleted', (file, prevCache) => {
-      handleMetadataDeletedIfEnabled(plugin, file, prevCache);
-    })
-  );
-
-  registerPatch(plugin, app.fileManager, {
-    runAsyncLinkUpdate: (next: RunAsyncLinkUpdateFn): RunAsyncLinkUpdateFn => {
-      return (linkUpdatesHandler) => runAsyncLinkUpdate(app, next, linkUpdatesHandler);
-    }
-  });
+  new Registry(plugin, settingsBuilder, new SettingsManager(plugin.app)).register();
 }
 
-async function cleanupParentFolders(app: App, parentFolderPaths: string[], notePath: string): Promise<void> {
-  const settings = getSettings(app);
+async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHandlerSettings>, parentFolderPaths: string[], notePath: string): Promise<void> {
   if (settings.emptyAttachmentFolderBehavior === EmptyAttachmentFolderBehavior.Keep) {
     return;
   }
@@ -229,588 +959,4 @@ async function cleanupParentFolders(app: App, parentFolderPaths: string[], noteP
         break;
     }
   }
-}
-
-async function continueInterruptedRenames(
-  app: App,
-  oldPath: string,
-  newPath: string,
-  oldPathBacklinksMap: Map<string, Reference[]>,
-  oldPathLinks: Reference[],
-  oldCache: CachedMetadata | null
-): Promise<void> {
-  const interruptedRenames = interruptedRenamesMap.get(oldPath);
-  if (interruptedRenames) {
-    interruptedRenamesMap.delete(oldPath);
-    for (const interruptedRename of interruptedRenames) {
-      await handleRenameAsync(app, interruptedRename.oldPath, newPath, oldPathBacklinksMap, oldPathLinks, oldCache, interruptedRename.combinedBacklinksMap);
-    }
-  }
-}
-
-async function fillRenameMap(
-  app: App,
-  oldPath: string,
-  newPath: string,
-  renameMap: Map<string, string>,
-  oldPathLinks: Reference[],
-  oldCache: CachedMetadata | null,
-  abortSignal: AbortSignal
-): Promise<void> {
-  abortSignal.throwIfAborted();
-  renameMap.set(oldPath, newPath);
-
-  if (!isNoteEx(app, oldPath)) {
-    return;
-  }
-
-  const settings = getSettings(app);
-
-  const oldFile = getFile(app, oldPath, true);
-  let oldAttachmentFolderPath = '';
-  await tempRegisterFilesAndRunAsync(app, [oldFile], async () => {
-    const shouldFakeOldPathCache = oldCache && oldFile.deleted;
-    if (shouldFakeOldPathCache) {
-      registerFileCacheForNonExistingFile(app, oldFile, oldCache);
-    }
-
-    try {
-      oldAttachmentFolderPath = await getAttachmentFolderPath(app, oldPath, AttachmentPathContext.RenameNote);
-    } finally {
-      if (shouldFakeOldPathCache) {
-        unregisterFileCacheForNonExistingFile(app, oldFile);
-      }
-    }
-  });
-
-  const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
-    ? await getAttachmentFolderPath(app, newPath, AttachmentPathContext.RenameNote)
-    : oldAttachmentFolderPath;
-
-  const isOldAttachmentFolderAtRoot = oldAttachmentFolderPath === '/';
-
-  const oldAttachmentFolder = getFolderOrNull(app, oldAttachmentFolderPath);
-
-  if (!oldAttachmentFolder) {
-    return;
-  }
-
-  if (oldAttachmentFolderPath === newAttachmentFolderPath && !settings.shouldRenameAttachmentFiles) {
-    return;
-  }
-
-  const oldAttachmentFiles: TFile[] = [];
-
-  if (await hasOwnAttachmentFolder(app, oldPath, AttachmentPathContext.RenameNote)) {
-    Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
-      abortSignal.throwIfAborted();
-      if (isFile(oldAttachmentFile)) {
-        oldAttachmentFiles.push(oldAttachmentFile);
-      }
-    });
-  } else {
-    for (const oldPathLink of oldPathLinks) {
-      abortSignal.throwIfAborted();
-      const oldAttachmentFile = extractLinkFile(app, oldPathLink, oldPath);
-      if (!oldAttachmentFile) {
-        continue;
-      }
-
-      if (isOldAttachmentFolderAtRoot || oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
-        const oldAttachmentBacklinks = await getBacklinksForFileSafe(app, oldAttachmentFile);
-        abortSignal.throwIfAborted();
-        if (oldAttachmentBacklinks.keys().length === 1) {
-          oldAttachmentFiles.push(oldAttachmentFile);
-        }
-      }
-    }
-  }
-
-  for (const oldAttachmentFile of oldAttachmentFiles) {
-    abortSignal.throwIfAborted();
-    if (isNoteEx(app, oldAttachmentFile.path)) {
-      continue;
-    }
-
-    let newAttachmentFilePath: string;
-    if (settings.shouldRenameAttachmentFiles) {
-      newAttachmentFilePath = await getAttachmentFilePath({
-        app,
-        attachmentPathOrFile: oldAttachmentFile,
-        context: AttachmentPathContext.RenameNote,
-        notePathOrFile: newPath,
-        oldNotePathOrFile: oldPath,
-        shouldSkipDuplicateCheck: true
-      });
-      abortSignal.throwIfAborted();
-    } else {
-      const relativePath = isOldAttachmentFolderAtRoot ? oldAttachmentFile.path : relative(oldAttachmentFolderPath, oldAttachmentFile.path);
-      const newFolder = join(newAttachmentFolderPath, dirname(relativePath));
-      newAttachmentFilePath = join(newFolder, oldAttachmentFile.name);
-    }
-
-    if (oldAttachmentFile.path === newAttachmentFilePath) {
-      continue;
-    }
-    if (settings.shouldDeleteConflictingAttachments) {
-      const newAttachmentFile = getFileOrNull(app, newAttachmentFilePath);
-      if (newAttachmentFile) {
-        getLibDebugger('RenameDeleteHandler:fillRenameMap')(`Removing conflicting attachment ${newAttachmentFile.path}.`);
-        await app.fileManager.trashFile(newAttachmentFile);
-        abortSignal.throwIfAborted();
-      }
-    } else {
-      const dir = dirname(newAttachmentFilePath);
-      const ext = extname(newAttachmentFilePath);
-      const baseName = basename(newAttachmentFilePath, ext);
-      newAttachmentFilePath = app.vault.getAvailablePath(join(dir, baseName), ext.slice(1));
-    }
-    renameMap.set(oldAttachmentFile.path, newAttachmentFilePath);
-  }
-}
-
-function getRenameDeleteHandlersMap(app: App): Map<string, () => Partial<RenameDeleteHandlerSettings>> {
-  return getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
-}
-
-function getSettings(app: App): Partial<RenameDeleteHandlerSettings> {
-  const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
-  const settingsBuilders = Array.from(renameDeleteHandlersMap.values()).reverse();
-
-  const settings: Partial<RenameDeleteHandlerSettings> = {};
-  settings.isNote = (path: string): boolean => isNote(app, path);
-  settings.isPathIgnored = (): boolean => false;
-
-  for (const settingsBuilder of settingsBuilders) {
-    const newSettings = settingsBuilder();
-    settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
-    if (newSettings.emptyAttachmentFolderBehavior) {
-      settings.emptyAttachmentFolderBehavior ??= newSettings.emptyAttachmentFolderBehavior;
-    }
-    settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
-    settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
-    settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
-    settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
-    settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
-    const isPathIgnored = settings.isPathIgnored;
-    settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
-    const currentIsNote = settings.isNote;
-    settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
-  }
-
-  settings.emptyAttachmentFolderBehavior ??= EmptyAttachmentFolderBehavior.Keep;
-  return settings;
-}
-
-async function handleCaseCollision(
-  app: App,
-  oldPath: string,
-  newPath: string,
-  oldPathBacklinksMap: Map<string, Reference[]>,
-  oldPathLinks: Reference[],
-  oldCache: CachedMetadata | null
-): Promise<boolean> {
-  if (!app.vault.adapter.insensitive || oldPath.toLowerCase() !== newPath.toLowerCase()) {
-    return false;
-  }
-
-  const tempPath = join(dirname(newPath), `__temp__${basename(newPath)}`);
-  await renameHandled(app, newPath, tempPath);
-  await handleRenameAsync(app, oldPath, tempPath, oldPathBacklinksMap, oldPathLinks, oldCache);
-  await app.vault.rename(getFile(app, tempPath), newPath);
-  return true;
-}
-
-async function handleDelete(app: App, path: string, abortSignal: AbortSignal): Promise<void> {
-  abortSignal.throwIfAborted();
-  getLibDebugger('RenameDeleteHandler:handleDelete')(`Handle Delete ${path}`);
-  if (!isNoteEx(app, path)) {
-    return;
-  }
-
-  const settings = getSettings(app);
-  if (!settings.shouldHandleDeletions) {
-    return;
-  }
-
-  if (settings.isPathIgnored?.(path)) {
-    getLibDebugger('RenameDeleteHandler:handleDelete')(`Skipping delete handler of ${path} as the path is ignored.`);
-    return;
-  }
-
-  const cache = deletedMetadataCacheMap.get(path);
-  deletedMetadataCacheMap.delete(path);
-  const parentFolderPaths = new Set<string>();
-  if (cache) {
-    const links = getAllLinks(cache);
-
-    for (const link of links) {
-      const attachmentFile = extractLinkFile(app, link, path);
-      if (!attachmentFile) {
-        continue;
-      }
-
-      if (isNoteEx(app, attachmentFile.path)) {
-        continue;
-      }
-
-      parentFolderPaths.add(attachmentFile.parent?.path ?? '');
-      await deleteSafe(app, attachmentFile, path, false, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
-      abortSignal.throwIfAborted();
-    }
-  }
-
-  await cleanupParentFolders(app, Array.from(parentFolderPaths), path);
-  abortSignal.throwIfAborted();
-
-  const attachmentFolderPath = await getAttachmentFolderPath(app, path, AttachmentPathContext.DeleteNote);
-  const attachmentFolder = getFolderOrNull(app, attachmentFolderPath);
-
-  if (!attachmentFolder) {
-    return;
-  }
-
-  if (!(await hasOwnAttachmentFolder(app, path, AttachmentPathContext.DeleteNote))) {
-    return;
-  }
-
-  abortSignal.throwIfAborted();
-
-  await deleteSafe(app, attachmentFolder, path, false, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
-  abortSignal.throwIfAborted();
-}
-
-function handleDeleteIfEnabled(plugin: AbortablePlugin, file: TAbstractFile, abortSignal: AbortSignal): void {
-  const app = plugin.app;
-  if (!shouldInvokeHandler(plugin)) {
-    return;
-  }
-  const path = file.path;
-  addToQueue(app, (abortSignal2) => handleDelete(app, path, abortSignal2), abortSignal);
-}
-
-function handleMetadataDeleted(app: App, file: TAbstractFile, prevCache: CachedMetadata | null): void {
-  const settings = getSettings(app);
-  if (settings.isPathIgnored?.(file.path)) {
-    getLibDebugger('RenameDeleteHandler:handleMetadataDeleted')(`Skipping metadata delete handler of ${file.path} as the path is ignored.`);
-    return;
-  }
-
-  if (!settings.shouldHandleDeletions) {
-    return;
-  }
-  if (isMarkdownFile(app, file) && prevCache) {
-    deletedMetadataCacheMap.set(file.path, prevCache);
-  }
-}
-
-function handleMetadataDeletedIfEnabled(plugin: Plugin, file: TAbstractFile, prevCache: CachedMetadata | null): void {
-  if (!shouldInvokeHandler(plugin)) {
-    return;
-  }
-  handleMetadataDeleted(plugin.app, file, prevCache);
-}
-
-function handleRename(app: App, oldPath: string, newPath: string, abortSignal: AbortSignal): void {
-  const key = makeKey(oldPath, newPath);
-  getLibDebugger('RenameDeleteHandler:handleRename')(`Handle Rename ${key}`);
-  if (handledRenames.has(key)) {
-    handledRenames.delete(key);
-    return;
-  }
-
-  const settings = getSettings(app);
-  if (!settings.shouldHandleRenames) {
-    return;
-  }
-
-  if (settings.isPathIgnored?.(oldPath)) {
-    getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of old path ${oldPath} as the path is ignored.`);
-    return;
-  }
-
-  if (settings.isPathIgnored?.(newPath)) {
-    getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of new path ${newPath} as the path is ignored.`);
-    return;
-  }
-
-  const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
-  const oldPathLinks = cache ? getAllLinks(cache) : [];
-  const oldPathBacklinksMap = getBacklinksForFileOrPath(app, oldPath).data;
-  addToQueue(app, (abortSignal2) => handleRenameAsync(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, cache, undefined, abortSignal2), abortSignal);
-}
-
-async function handleRenameAsync(
-  app: App,
-  oldPath: string,
-  newPath: string,
-  oldPathBacklinksMap: Map<string, Reference[]>,
-  oldPathLinks: Reference[],
-  oldCache: CachedMetadata | null,
-  interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>,
-  abortSignal?: AbortSignal
-): Promise<void> {
-  abortSignal ??= abortSignalNever();
-  abortSignal.throwIfAborted();
-  await continueInterruptedRenames(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, oldCache);
-  abortSignal.throwIfAborted();
-  await refreshLinks(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks);
-  abortSignal.throwIfAborted();
-  if (await handleCaseCollision(app, oldPath, newPath, oldPathBacklinksMap, oldPathLinks, oldCache)) {
-    return;
-  }
-
-  abortSignal.throwIfAborted();
-
-  try {
-    const renameMap = new Map<string, string>();
-    await fillRenameMap(app, oldPath, newPath, renameMap, oldPathLinks, oldCache, abortSignal);
-    abortSignal.throwIfAborted();
-
-    const combinedBacklinksMap = new Map<string, Map<string, string>>();
-    initBacklinksMap(oldPathBacklinksMap, renameMap, combinedBacklinksMap, oldPath);
-
-    for (const attachmentOldPath of renameMap.keys()) {
-      if (attachmentOldPath === oldPath) {
-        continue;
-      }
-      const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe(app, attachmentOldPath)).data;
-      initBacklinksMap(attachmentOldPathBacklinksMap, renameMap, combinedBacklinksMap, attachmentOldPath);
-    }
-
-    const parentFolderPaths = new Set<string>();
-
-    for (const [oldAttachmentPath, newAttachmentPath] of renameMap.entries()) {
-      if (oldAttachmentPath === oldPath) {
-        continue;
-      }
-      const fixedNewAttachmentPath = await renameHandled(app, oldAttachmentPath, newAttachmentPath);
-      renameMap.set(oldAttachmentPath, fixedNewAttachmentPath);
-      parentFolderPaths.add(dirname(oldAttachmentPath));
-    }
-
-    await cleanupParentFolders(app, Array.from(parentFolderPaths), oldPath);
-    abortSignal.throwIfAborted();
-    const settings = getSettings(app);
-
-    for (
-      const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(
-        Array.from(interruptedCombinedBacklinksMap?.entries() ?? [])
-      )
-    ) {
-      await editLinks(app, newBacklinkPath, (link) => {
-        const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
-        if (!oldAttachmentPath) {
-          return;
-        }
-
-        const newAttachmentPath = renameMap.get(oldAttachmentPath);
-        if (!newAttachmentPath) {
-          return;
-        }
-
-        return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
-          app,
-          link,
-          newSourcePathOrFile: newBacklinkPath,
-          newTargetPathOrFile: newAttachmentPath,
-          oldTargetPathOrFile: oldAttachmentPath,
-          shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
-        }));
-      }, {
-        shouldFailOnMissingFile: false
-      });
-      abortSignal.throwIfAborted();
-    }
-
-    if (isNoteEx(app, newPath)) {
-      await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileOptions>({
-        app,
-        newSourcePathOrFile: newPath,
-        oldSourcePathOrFile: oldPath,
-        shouldFailOnMissingFile: false,
-        shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
-      }));
-      abortSignal.throwIfAborted();
-    }
-
-    if (!getFileOrNull(app, newPath)) {
-      let interruptedRenames = interruptedRenamesMap.get(newPath);
-      if (!interruptedRenames) {
-        interruptedRenames = [];
-        interruptedRenamesMap.set(newPath, interruptedRenames);
-      }
-      interruptedRenames.push({
-        combinedBacklinksMap,
-        oldPath
-      });
-    }
-  } finally {
-    const orphanKeys = Array.from(handledRenames);
-    addToQueue(app, () => {
-      for (const key of orphanKeys) {
-        handledRenames.delete(key);
-      }
-    }, abortSignal);
-  }
-}
-
-function handleRenameIfEnabled(plugin: Plugin, file: TAbstractFile, oldPath: string, abortSignal: AbortSignal): void {
-  if (!shouldInvokeHandler(plugin)) {
-    return;
-  }
-  if (!isFile(file)) {
-    return;
-  }
-  const newPath = file.path;
-  handleRename(plugin.app, oldPath, newPath, abortSignal);
-}
-
-function initBacklinksMap(
-  singleBacklinksMap: Map<string, Reference[]>,
-  renameMap: Map<string, string>,
-  combinedBacklinksMap: Map<string, Map<string, string>>,
-  path: string
-): void {
-  for (const [backlinkPath, links] of singleBacklinksMap.entries()) {
-    const newBacklinkPath = renameMap.get(backlinkPath) ?? backlinkPath;
-    const linkJsonToPathMap = combinedBacklinksMap.get(newBacklinkPath) ?? new Map<string, string>();
-    combinedBacklinksMap.set(newBacklinkPath, linkJsonToPathMap);
-    for (const link of links) {
-      linkJsonToPathMap.set(toJson(link), path);
-    }
-  }
-}
-
-function isNoteEx(app: App, path: string): boolean {
-  const settings = getSettings(app);
-  return settings.isNote?.(path) ?? false;
-}
-
-function logRegisteredHandlers(app: App): void {
-  const renameDeleteHandlersMap = getRenameDeleteHandlersMap(app);
-  getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
-    `Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`
-  );
-}
-
-function makeKey(oldPath: string, newPath: string): string {
-  return `${oldPath} -> ${newPath}`;
-}
-
-async function refreshLinks(
-  app: App,
-  oldPath: string,
-  newPath: string,
-  oldPathBacklinksMap: Map<string, Reference[]>,
-  oldPathLinks: Reference[]
-): Promise<void> {
-  const cache = app.metadataCache.getCache(oldPath) ?? app.metadataCache.getCache(newPath);
-  const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
-  const fakeOldFile = getFile(app, oldPath, true);
-  let oldPathBacklinksMapRefreshed = new Map<string, Reference[]>();
-  await tempRegisterFilesAndRun(app, [fakeOldFile], async () => {
-    oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe(app, fakeOldFile)).data;
-  });
-
-  for (const link of oldPathLinksRefreshed) {
-    if (oldPathLinks.includes(link)) {
-      continue;
-    }
-    oldPathLinks.push(link);
-  }
-
-  for (const [backlinkPath, refreshedLinks] of oldPathBacklinksMapRefreshed.entries()) {
-    let oldLinks = oldPathBacklinksMap.get(backlinkPath);
-    if (!oldLinks) {
-      oldLinks = [];
-      oldPathBacklinksMap.set(backlinkPath, oldLinks);
-    }
-
-    for (const link of refreshedLinks) {
-      if (oldLinks.includes(link)) {
-        continue;
-      }
-      oldLinks.push(link);
-    }
-  }
-}
-
-async function renameHandled(app: App, oldPath: string, newPath: string): Promise<string> {
-  newPath = getSafeRenamePath(app, oldPath, newPath);
-  if (oldPath === newPath) {
-    return newPath;
-  }
-  const key = makeKey(oldPath, newPath);
-  handledRenames.add(key);
-  newPath = await renameSafe(app, oldPath, newPath);
-  return newPath;
-}
-
-async function runAsyncLinkUpdate(app: App, next: RunAsyncLinkUpdateFn, linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
-  await next.call(app.fileManager, wrappedHandler);
-
-  async function wrappedHandler(linkUpdates: LinkUpdate[]): Promise<void> {
-    let isRenameCalled = false;
-    const eventRef = app.vault.on('rename', () => {
-      isRenameCalled = true;
-    });
-    try {
-      await linkUpdatesHandler(linkUpdates);
-    } finally {
-      app.vault.offref(eventRef);
-    }
-    const settings = getSettings(app);
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (isRenameCalled && settings.shouldHandleRenames) {
-      filterInPlace(
-        linkUpdates,
-        (linkUpdate) => {
-          if (settings.isPathIgnored?.(linkUpdate.sourceFile.path)) {
-            getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
-              `Roll back to default link update of source file ${linkUpdate.sourceFile.path} as the path is ignored.`
-            );
-            return true;
-          }
-
-          if (settings.isPathIgnored?.(linkUpdate.resolvedFile.path)) {
-            getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
-              `Roll back to default link update of resolved file ${linkUpdate.resolvedFile.path} as the path is ignored.`
-            );
-            return true;
-          }
-
-          if (!app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
-            return false;
-          }
-
-          if (app.plugins.getPlugin('backlink-cache')) {
-            return false;
-          }
-
-          if (linkUpdate.sourceFile.extension === 'canvas') {
-            return true;
-          }
-
-          if (linkUpdate.resolvedFile.extension === 'canvas') {
-            return true;
-          }
-
-          return false;
-        }
-      );
-    }
-  }
-}
-
-function shouldInvokeHandler(plugin: Plugin): boolean {
-  const app = plugin.app;
-  const pluginId = plugin.manifest.id;
-
-  const renameDeleteHandlerPluginIds = getRenameDeleteHandlersMap(app);
-  const mainPluginId = Array.from(renameDeleteHandlerPluginIds.keys())[0];
-  if (mainPluginId !== pluginId) {
-    return false;
-  }
-  return true;
 }
