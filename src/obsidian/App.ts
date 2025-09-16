@@ -8,7 +8,6 @@ import type { App } from 'obsidian';
 
 import type { GenericObject } from '../ObjectUtils.ts';
 
-import { throwExpression } from '../Error.ts';
 import { noop } from '../Function.ts';
 
 /**
@@ -46,12 +45,19 @@ export class ValueWrapper<T> {
  * @throws Will throw an error if the `App` instance cannot be found.
  *
  * @see {@link https://github.com/mnaoumov/obsidian-codescript-toolkit?tab=readme-ov-file#obsidianapp-module}
+ * @deprecated Usage of this function is not recommended. Pass the {@link App} instance to the function instead when possible.
  */
 export function getApp(): App {
+  const app = (globalThis as Partial<AppWrapper>).app;
+
+  if (app) {
+    return app;
+  }
+
   try {
     return globalThis.require('obsidian/app') as App;
   } catch {
-    return (globalThis as Partial<AppWrapper>).app ?? throwExpression(new Error('Obsidian app not found'));
+    throw new Error('Obsidian App global instance not found');
   }
 }
 
@@ -75,5 +81,6 @@ function getAppOrNull(): App | null {
     return null;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   return getApp();
 }
