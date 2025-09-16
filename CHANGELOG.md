@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 40.10.0
+
+- Refactor into classes
+- Register old cache
+- Allow cache of non-existing files
+
 ## 40.9.1
 
 - Wait for layout ready
