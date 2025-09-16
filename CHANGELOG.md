@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.11.0
+
+- shouldRevertToDefaultValueOnBlur
+
 ## 40.10.0
 
 - Refactor into classes
