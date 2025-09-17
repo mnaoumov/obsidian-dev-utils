@@ -561,12 +561,11 @@ class RenameHandler {
       const parentFolderPaths = new Set<string>();
 
       for (const [oldAttachmentPath, newAttachmentPath] of renameMap.entries()) {
-        if (oldAttachmentPath === this.oldPath) {
-          continue;
+        if (oldAttachmentPath !== this.oldPath) {
+          const fixedNewAttachmentPath = await this.renameHandled(oldAttachmentPath, newAttachmentPath);
+          this.abortSignal.throwIfAborted();
+          renameMap.set(oldAttachmentPath, fixedNewAttachmentPath);
         }
-        const fixedNewAttachmentPath = await this.renameHandled(oldAttachmentPath, newAttachmentPath);
-        this.abortSignal.throwIfAborted();
-        renameMap.set(oldAttachmentPath, fixedNewAttachmentPath);
         parentFolderPaths.add(dirname(oldAttachmentPath));
       }
 
