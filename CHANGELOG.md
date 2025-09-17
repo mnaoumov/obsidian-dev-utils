@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.12.1
+
+- Ensure MetadataDeleted processed before queue (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/220)
+
 ## 40.12.0
 
 - Improve performance of getting global App
