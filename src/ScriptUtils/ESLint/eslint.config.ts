@@ -378,7 +378,8 @@ function getTseslintConfigs(): Linter.Config[] {
             ignoreRestSiblings: true,
             varsIgnorePattern: '^_'
           }
-        ]
+        ],
+        '@typescript-eslint/prefer-readonly': 'error'
       }
     },
     {

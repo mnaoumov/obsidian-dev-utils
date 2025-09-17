@@ -52,7 +52,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
   }
 
   private readonly multipleDropdownComponent: MultipleDropdownComponent;
-  private values: T[] = [];
+  private readonly values: T[] = [];
 
   /**
    * Creates a new multiple dropdown component.

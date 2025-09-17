@@ -39,7 +39,7 @@ type GenericCallback = (...args: unknown[]) => Promisable<void>;
  * Async event emitter implementation
  */
 export class AsyncEvents {
-  private eventRefsMap = new Map<string, AsyncEventRef[]>();
+  private readonly eventRefsMap = new Map<string, AsyncEventRef[]>();
 
   /**
    * Remove an event listener.
