@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 40.13.0
+
+- @typescript-eslint/prefer-readonly
+- Remove empty folder after attachment moved (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/222)
+
 ## 40.12.1
 
 - Ensure MetadataDeleted processed before queue (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/220)
