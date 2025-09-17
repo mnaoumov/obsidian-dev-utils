@@ -366,9 +366,7 @@ class Registry {
     if (!this.shouldInvokeHandler()) {
       return;
     }
-    addToQueue(this.app, () => {
-      new MetadataDeletedHandler(this.app, file, prevCache, this.settingsManager, this.deletedMetadataCacheMap).handle();
-    }, this.abortSignal);
+    new MetadataDeletedHandler(this.app, file, prevCache, this.settingsManager, this.deletedMetadataCacheMap).handle();
   }
 
   private handleRename(file: TAbstractFile, oldPath: string): void {
