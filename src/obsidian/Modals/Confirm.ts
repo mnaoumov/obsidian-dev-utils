@@ -56,7 +56,7 @@ export interface ConfirmOptions {
 
 class ConfirmModal extends ModalBase<boolean, ConfirmOptions> {
   private isConfirmed = false;
-  private options: Required<ConfirmOptions>;
+  private readonly options: Required<ConfirmOptions>;
 
   public constructor(options: ConfirmOptions, resolve: PromiseResolve<boolean>) {
     super(options, resolve, CssClass.ConfirmModal);

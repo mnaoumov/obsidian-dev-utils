@@ -136,7 +136,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   private _isOpen = false;
   private readonly asyncEvents: AsyncEvents;
   private readonly asyncEventsComponent: AsyncEventsComponent;
-  private saveSettingsDebounced: Debouncer<[], void>;
+  private readonly saveSettingsDebounced: Debouncer<[], void>;
 
   private get pluginSettings(): ExtractPluginSettings<PluginTypes> {
     return this.plugin.settingsManager.settingsWrapper.settings as ExtractPluginSettings<PluginTypes>;

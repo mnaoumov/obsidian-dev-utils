@@ -50,7 +50,7 @@ export interface AlertOptions {
 }
 
 class AlertModal extends ModalBase<void, AlertOptions> {
-  private options: Required<AlertOptions>;
+  private readonly options: Required<AlertOptions>;
 
   public constructor(options: AlertOptions, resolve: PromiseResolve<void>) {
     super(options, resolve, CssClass.AlertModal);

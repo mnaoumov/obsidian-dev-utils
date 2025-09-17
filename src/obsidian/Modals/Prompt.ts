@@ -74,7 +74,7 @@ export interface PromptOptions {
 
 class PromptModal extends ModalBase<null | string, PromptOptions> {
   private isOkClicked = false;
-  private options: Required<PromptOptions>;
+  private readonly options: Required<PromptOptions>;
   private value: string;
 
   public constructor(options: PromptOptions, resolve: PromiseResolve<null | string>) {

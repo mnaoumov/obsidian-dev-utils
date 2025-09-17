@@ -55,7 +55,7 @@ export interface SelectItemOptions<T> {
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   private isSelected = false;
 
-  public constructor(private options: SelectItemOptions<T>, private resolve: PromiseResolve<null | T>) {
+  public constructor(private readonly options: SelectItemOptions<T>, private readonly resolve: PromiseResolve<null | T>) {
     super(options.app);
     this.setPlaceholder(options.placeholder ?? '');
     addPluginCssClasses(this.containerEl, CssClass.SelectItemModal);

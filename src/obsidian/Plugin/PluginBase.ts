@@ -105,7 +105,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   private _abortSignal!: AbortSignal;
   private _settingsManager: ExtractPluginSettingsManager<PluginTypes> | null = null;
   private _settingsTab: ExtractPluginSettingsTab<PluginTypes> | null = null;
-  private lifecycleEventNames = new Set<LifecycleEventName>();
+  private readonly lifecycleEventNames = new Set<LifecycleEventName>();
   private notice?: Notice;
 
   /**
