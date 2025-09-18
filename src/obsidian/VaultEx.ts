@@ -30,6 +30,24 @@ import {
 } from './Vault.ts';
 
 /**
+ * Deletes an empty folder.
+ *
+ * @param app - The application instance.
+ * @param pathOrFolder - The folder to delete.
+ * @returns A {@link Promise} that resolves when the folder is deleted.
+ */
+export async function deleteEmptyFolder(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
+  const folder = getFolderOrNull(app, pathOrFolder);
+  if (!folder) {
+    return;
+  }
+  if (!await isEmptyFolder(app, folder)) {
+    return;
+  }
+  await deleteSafe(app, folder);
+}
+
+/**
  * Removes empty folder hierarchy starting from the given folder.
  *
  * @param app - The application instance.
@@ -44,7 +62,7 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | 
       return;
     }
     const parent = folder.parent;
-    await deleteSafe(app, folder.path);
+    await deleteEmptyFolder(app, folder);
     folder = parent;
   }
 }
