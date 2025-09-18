@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 40.13.1
+
+- Don't delete notes on rename (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/223)
+
 ## 40.13.0
 
 - @typescript-eslint/prefer-readonly
