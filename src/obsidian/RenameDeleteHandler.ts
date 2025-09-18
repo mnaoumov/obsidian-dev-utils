@@ -78,6 +78,7 @@ import {
   renameSafe
 } from './Vault.ts';
 import {
+  deleteEmptyFolder,
   deleteEmptyFolderHierarchy,
   deleteSafe
 } from './VaultEx.ts';
@@ -238,7 +239,7 @@ class DeleteHandler {
       }
     }
 
-    await cleanupParentFolders(this.app, this.settingsManager.getSettings(), Array.from(parentFolderPaths), this.file.path);
+    await cleanupParentFolders(this.app, this.settingsManager.getSettings(), Array.from(parentFolderPaths));
     this.abortSignal.throwIfAborted();
 
     const attachmentFolderPath = await getAttachmentFolderPath(this.app, this.file.path, AttachmentPathContext.DeleteNote);
@@ -566,10 +567,12 @@ class RenameHandler {
           this.abortSignal.throwIfAborted();
           renameMap.set(oldAttachmentPath, fixedNewAttachmentPath);
         }
-        parentFolderPaths.add(dirname(oldAttachmentPath));
+        if (!this.settingsManager.isNoteEx(oldAttachmentPath)) {
+          parentFolderPaths.add(dirname(oldAttachmentPath));
+        }
       }
 
-      await cleanupParentFolders(this.app, this.settingsManager.getSettings(), Array.from(parentFolderPaths), this.oldPath);
+      await cleanupParentFolders(this.app, this.settingsManager.getSettings(), Array.from(parentFolderPaths));
       this.abortSignal.throwIfAborted();
       const settings = this.settingsManager.getSettings();
 
@@ -940,14 +943,14 @@ export function registerRenameDeleteHandlers(plugin: AbortablePlugin, settingsBu
   new Registry(plugin, settingsBuilder, new SettingsManager(plugin.app)).register();
 }
 
-async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHandlerSettings>, parentFolderPaths: string[], notePath: string): Promise<void> {
+async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHandlerSettings>, parentFolderPaths: string[]): Promise<void> {
   if (settings.emptyAttachmentFolderBehavior === EmptyAttachmentFolderBehavior.Keep) {
     return;
   }
   for (const parentFolderPath of parentFolderPaths) {
     switch (settings.emptyAttachmentFolderBehavior) {
       case EmptyAttachmentFolderBehavior.Delete:
-        await deleteSafe(app, parentFolderPath, notePath, undefined, true);
+        await deleteEmptyFolder(app, parentFolderPath);
         break;
       case EmptyAttachmentFolderBehavior.DeleteWithEmptyParents:
         await deleteEmptyFolderHierarchy(app, parentFolderPath);
