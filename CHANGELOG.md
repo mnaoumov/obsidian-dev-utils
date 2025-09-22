@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 40.14.0
+
+- Init default I18N
+- Update libs
+
 ## 40.13.1
 
 - Don't delete notes on rename (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/223)
