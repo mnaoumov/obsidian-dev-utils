@@ -75,9 +75,11 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
     returnNull: false
   });
 
-  i18next.addResourceBundle(DEFAULT_LANGUAGE, DEFAULT_NS, en, true, false);
+  initDefault();
+}
 
-  // eslint-disable-next-line require-atomic-updates
+function initDefault(): void {
+  i18next.addResourceBundle(DEFAULT_LANGUAGE, DEFAULT_NS, en, true, false);
   isInitialized = true;
 }
 
@@ -86,7 +88,8 @@ function tImpl(
   options?: SelectorOptions<[typeof DEFAULT_NS]>
 ): string {
   if (!isInitialized) {
-    throw new Error('I18N is not initialized');
+    console.warn('I18N was not initialized, initializing default obsidian-dev-utils translations');
+    initDefault();
   }
 
   return tLib(selector, options);
