@@ -376,6 +376,7 @@ export async function process(
 export async function readSafe(app: App, pathOrFile: PathOrFile): Promise<null | string> {
   let content: null | string = null;
   await invokeFileActionSafe(app, pathOrFile, async (file) => {
+    await saveNote(app, file);
     content = await app.vault.read(file);
   });
   return content;
