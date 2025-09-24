@@ -23,8 +23,12 @@ import { getLanguage } from 'obsidian';
 
 import type { PluginTypesBase } from '../Plugin/PluginTypesBase.ts';
 
+import { invokeAsyncSafely } from '../../Async.ts';
 import { en } from './locales/en.ts';
-import { DEFAULT_LANGUAGE } from './locales/translationsMap.ts';
+import {
+  DEFAULT_LANGUAGE,
+  defaultTranslationsMap
+} from './locales/translationsMap.ts';
 
 /**
  * The default namespace.
@@ -53,15 +57,17 @@ let isInitialized = false;
  *
  * @typeParam PluginTypes - The plugin types.
  * @param translationsMap - The translations map.
+ * @param isAsync - Whether the initialization is asynchronous.
  * @returns A {@link Promise} that resolves when the `i18n` module is initialized.
  */
-export async function initI18N<PluginTypes extends PluginTypesBase>(translationsMap: TranslationsMap<PluginTypes>): Promise<void> {
+export async function initI18N<PluginTypes extends PluginTypesBase>(translationsMap: TranslationsMap<PluginTypes>, isAsync = true): Promise<void> {
   if (isInitialized) {
     return;
   }
 
   await init({
     fallbackLng: DEFAULT_LANGUAGE,
+    initAsync: isAsync,
     lng: getLanguage(),
     resources: Object.fromEntries(
       Object.entries(translationsMap).map(([language, translations]) => [
@@ -75,11 +81,8 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
     returnNull: false
   });
 
-  initDefault();
-}
-
-function initDefault(): void {
   i18next.addResourceBundle(DEFAULT_LANGUAGE, DEFAULT_NS, en, true, false);
+  // eslint-disable-next-line require-atomic-updates
   isInitialized = true;
 }
 
@@ -89,7 +92,7 @@ function tImpl(
 ): string {
   if (!isInitialized) {
     console.warn('I18N was not initialized, initializing default obsidian-dev-utils translations');
-    initDefault();
+    invokeAsyncSafely(() => initI18N(defaultTranslationsMap, false));
   }
 
   return tLib(selector, options);
