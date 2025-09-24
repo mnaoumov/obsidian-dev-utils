@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 40.15.0
+
+- Ensure I18N initialized fully synchronously
+- Ensure file saved before reading
+- Update libs
+
 ## 40.14.0
 
 - Init default I18N
