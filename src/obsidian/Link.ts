@@ -45,7 +45,8 @@ import {
 } from '../Path.ts';
 import {
   normalize,
-  replaceAll
+  replaceAll,
+  trimEnd
 } from '../String.ts';
 import { isUrl } from '../url.ts';
 import {
@@ -59,7 +60,7 @@ import {
   getPath,
   isCanvasFile,
   isMarkdownFile,
-  trimMarkdownExtension
+  MARKDOWN_FILE_EXTENSION
 } from './FileSystem.ts';
 import {
   getAllLinks,
@@ -69,7 +70,7 @@ import {
   tempRegisterFilesAndRun
 } from './MetadataCache.ts';
 import {
-  shouldUseRelativeLinks,
+  getNewLinkFormat,
   shouldUseWikilinks
 } from './ObsidianSettings.ts';
 import {
@@ -98,11 +99,44 @@ const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
 const WIKILINK_DIVIDER = '|';
 
 /**
+ * A style of the link path.
+ */
+export enum LinkPathStyle {
+  /**
+   * Use the absolute path in the vault.
+   *
+   * @example `[[path/from/the/vault/root/link]]`
+   */
+  AbsolutePathInVault = 'AbsolutePathInVault',
+
+  /**
+   * Use the default link path style defined in Obsidian settings.
+   */
+  ObsidianSettingsDefault = 'ObsidianSettingsDefault',
+
+  /**
+   * Use the relative path to the note.
+   *
+   * @example `[[../../relative/path/to/link]]`
+   */
+  RelativePathToTheNote = 'RelativePathToTheNote',
+
+  /**
+   * Use the shortest path when possible.
+   *
+   * @example `[[shortest-path-to-link]]`
+   */
+  ShortestPathWhenPossible = 'ShortestPathWhenPossible'
+}
+
+/**
  * A style of the link.
  */
 export enum LinkStyle {
   /**
    * Force the link to be in markdown format.
+   *
+   * @example `[alias](path/to/link.md)`
    */
   Markdown = 'Markdown',
 
@@ -118,8 +152,17 @@ export enum LinkStyle {
 
   /**
    * Force the link to be in wikilink format.
+   *
+   * @example `[[path/to/link]]`
+   * @example `[[path/to/link|alias]]`
    */
   Wikilink = 'Wikilink'
+}
+
+enum FinalLinkPathStyle {
+  AbsolutePathInVault = 'AbsolutePathInVault',
+  RelativePathToTheNote = 'RelativePathToTheNote',
+  ShortestPathWhenPossible = 'ShortestPathWhenPossible'
 }
 
 /**
@@ -225,6 +268,11 @@ export interface GenerateMarkdownLinkOptions {
   isSingleSubpathAllowed?: boolean;
 
   /**
+   * A style of the link path.
+   */
+  linkPathStyle?: LinkPathStyle;
+
+  /**
    * A style of the link.
    */
   linkStyle?: LinkStyle;
@@ -237,7 +285,8 @@ export interface GenerateMarkdownLinkOptions {
    * - {@link isEmbed}
    * - {@link linkStyle}
    * - {@link shouldUseAngleBrackets}
-   * - {@link shouldUseLeadingDot}
+   * - {@link shouldUseLeadingDotForRelativePaths}
+   * - {@link shouldUseLeadingSlashForAbsolutePaths}
    *
    * These inferred values will be overridden by corresponding settings if specified.
    */
@@ -253,15 +302,6 @@ export interface GenerateMarkdownLinkOptions {
    * If `false`: `[**alias**](link.md)`.
    */
   shouldEscapeAlias?: boolean;
-
-  /**
-   * Indicates if the link should be relative. Defaults to `false`.
-   *
-   * If `true`: `[[relative/path/to/target]]`.
-   *
-   * If `false`, it will be inferred based on the Obsidian settings
-   */
-  shouldForceRelativePath?: boolean;
 
   /**
    * Whether to include the attachment extension in the embed alias. Defaults to `false`.
@@ -288,13 +328,24 @@ export interface GenerateMarkdownLinkOptions {
   /**
    * Indicates if the link should use a leading dot. Defaults to `false`.
    *
-   * Applicable only if {@link linkStyle} is {@link LinkStyle.Markdown} and {@link shouldForceRelativePath} is `true`.
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToTheNote}.
    *
-   * If `true`: `[alias](./relative/path/to/target.md)`.
+   * If `true`: `[[./relative/path/to/target]]`
    *
-   * If `false`: `[alias](relative/path/to/target.md)`.
+   * If `false`: `[[relative/path/to/target]]`
    */
-  shouldUseLeadingDot?: boolean;
+  shouldUseLeadingDotForRelativePaths?: boolean;
+
+  /**
+   * Indicates if the link should use a leading slash. Defaults to `false`.
+   *
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.AbsolutePathInVault}.
+   *
+   * If `true`: `[[/absolute/path/to/target]]`
+   *
+   * If `false`: `[[absolute/path/to/target]]`
+   */
+  shouldUseLeadingSlashForAbsolutePaths?: boolean;
 
   /**
    * A source path of the link.
@@ -517,9 +568,10 @@ interface LinkConfig {
   isEmbed: boolean;
   isSingleSubpathAllowed: boolean;
   isWikilink: boolean;
-  shouldForceRelativePath: boolean;
+  linkPathStyle: FinalLinkPathStyle;
   shouldUseAngleBrackets: boolean;
-  shouldUseLeadingDot: boolean;
+  shouldUseLeadingDotForRelativePaths: boolean;
+  shouldUseLeadingSlashForAbsolutePaths: boolean;
 }
 
 interface TablePosition {
@@ -956,6 +1008,19 @@ export function testLeadingDot(link: string): boolean {
 }
 
 /**
+ * Tests whether a link has a leading slash, possibly embed:
+ * `[[/link]]`, `[title](/link)`, `[title](</link>)`,
+ * `![[/link]]`, `![title](/link)`, `![title](</link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link has a leading slash
+ */
+export function testLeadingSlash(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.url.startsWith('/') ?? false;
+}
+
+/**
  * Tests whether a link is a wikilink, possibly embed:
  * `[[link]]`, `![[link]]`.
  *
@@ -1186,16 +1251,34 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
   let linkText: string;
 
   if (targetFile.path === sourcePath && subpath && config.isSingleSubpathAllowed) {
-    linkText = subpath;
-  } else if (config.shouldForceRelativePath) {
-    linkText = relative(dirname(sourcePath), config.isWikilink ? trimMarkdownExtension(app, targetFile) : targetFile.path) + subpath;
+    linkText = '';
   } else {
-    linkText = app.metadataCache.fileToLinktext(targetFile, sourcePath, config.isWikilink) + subpath;
+    switch (config.linkPathStyle) {
+      case FinalLinkPathStyle.AbsolutePathInVault:
+        linkText = targetFile.path;
+        if (config.shouldUseLeadingSlashForAbsolutePaths && !linkText.startsWith('/')) {
+          linkText = `/${linkText}`;
+        }
+        break;
+      case FinalLinkPathStyle.RelativePathToTheNote:
+        linkText = relative(dirname(sourcePath), targetFile.path);
+        if (config.shouldUseLeadingDotForRelativePaths && !linkText.startsWith('.')) {
+          linkText = `./${linkText}`;
+        }
+        break;
+      case FinalLinkPathStyle.ShortestPathWhenPossible: {
+        const shortestName = isMarkdownFile(app, targetFile) ? targetFile.basename : targetFile.name;
+        const matchedFiles = app.metadataCache.getLinkpathDest(shortestName, sourcePath);
+        linkText = matchedFiles.length === 1 && matchedFiles[0] === targetFile ? targetFile.name : targetFile.path;
+        break;
+      }
+      default:
+        throw new Error(`Invalid link path style: ${config.linkPathStyle as string}.`);
+    }
   }
 
-  if (config.shouldForceRelativePath && config.shouldUseLeadingDot && !linkText.startsWith('.') && !linkText.startsWith('#')) {
-    linkText = `./${linkText}`;
-  }
+  linkText = config.isWikilink ? trimEnd(linkText, `.${MARKDOWN_FILE_EXTENSION}`) : linkText;
+  linkText += subpath;
 
   return linkText;
 }
@@ -1294,15 +1377,44 @@ async function getFileChanges(
   return changes;
 }
 
+function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLinkPathStyle {
+  switch (linkPathStyle ?? LinkPathStyle.ObsidianSettingsDefault) {
+    case LinkPathStyle.AbsolutePathInVault:
+      return FinalLinkPathStyle.AbsolutePathInVault;
+    case LinkPathStyle.RelativePathToTheNote:
+      return FinalLinkPathStyle.RelativePathToTheNote;
+    case LinkPathStyle.ShortestPathWhenPossible:
+      return FinalLinkPathStyle.ShortestPathWhenPossible;
+    case LinkPathStyle.ObsidianSettingsDefault: {
+      const newLinkFormat = getNewLinkFormat(app);
+      switch (newLinkFormat) {
+        case 'absolute':
+          return FinalLinkPathStyle.AbsolutePathInVault;
+        case 'relative':
+          return FinalLinkPathStyle.RelativePathToTheNote;
+        case 'shortest':
+          return FinalLinkPathStyle.ShortestPathWhenPossible;
+        default:
+          throw new Error(`Invalid link format: ${newLinkFormat as string}.`);
+      }
+    }
+    default:
+      throw new Error(`Invalid link path style: ${linkPathStyle as string}.`);
+  }
+}
+
 function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile): LinkConfig {
   const { app } = options;
   return {
     isEmbed: options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(app, targetFile),
     isSingleSubpathAllowed: options.isSingleSubpathAllowed ?? true,
     isWikilink: shouldUseWikilinkStyle(app, options.originalLink, options.linkStyle),
-    shouldForceRelativePath: options.shouldForceRelativePath ?? shouldUseRelativeLinks(app),
+    linkPathStyle: getFinalLinkPathStyle(app, options.linkPathStyle),
     shouldUseAngleBrackets: options.shouldUseAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false,
-    shouldUseLeadingDot: options.shouldUseLeadingDot ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false
+    shouldUseLeadingDotForRelativePaths: options.shouldUseLeadingDotForRelativePaths
+      ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false,
+    shouldUseLeadingSlashForAbsolutePaths: options.shouldUseLeadingSlashForAbsolutePaths
+      ?? (options.originalLink ? testLeadingSlash(options.originalLink) : undefined) ?? false
   };
 }
 
