@@ -474,6 +474,7 @@
     "build:styles": "sass src/styles/main.scss dist/styles.css --embed-sources --embed-source-map",
     "build:static": "tsx scripts/cli.ts build:static",
     "build:types": "tsx scripts/build-types.ts",
+    "commit": "cz",
     "format": "tsx scripts/cli.ts format",
     "format:check": "tsx scripts/cli.ts format:check",
     "lint": "tsx scripts/cli.ts lint",
