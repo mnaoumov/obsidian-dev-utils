@@ -18,6 +18,7 @@ import {
   getStackTrace
 } from '../Error.ts';
 import { noop } from '../Function.ts';
+import { addPluginCssClasses } from './Plugin/PluginContext.ts';
 
 /**
  * Options for {@link loop}.
@@ -112,6 +113,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   }
   const noticeMinTimeoutPromise = sleep(fullOptions.noticeMinTimeoutInMilliseconds);
   const progressBarEl = createEl('progress');
+  addPluginCssClasses(progressBarEl, 'loop');
   progressBarEl.max = items.length;
   if (fullOptions.shouldShowProgressBar) {
     const fragment = createFragment();
