@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 40.16.0
+
+- fix: syntax
+- feat: enable commitizen
+- feat: move to next element on Esc
+- feat: add LinkPathStyle
+- feat: ensure loop progress bar is visible
+- chore: lint
+- chore: switch to conventional commits
+- chore: update libs
+- chore: extract commitizen config
+
 ## 40.15.0
 
 - Ensure I18N initialized fully synchronously
