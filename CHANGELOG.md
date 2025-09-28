@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 42.0.0
+
+- docs: unify examples form
+- feat: rename RelativePathToTheSource BREAKING CHANGE: previous name RelativePathToTheNote was inconsistent
+
 ## 41.0.0
 
 - refactor: remove `GenerateMarkdownLinkDefaultOptionsWrapper`
