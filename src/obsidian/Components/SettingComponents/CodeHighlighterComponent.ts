@@ -201,6 +201,17 @@ export class CodeHighlighterComponent extends ValueComponent<string>
   }
 
   private handleKeyDown(evt: KeyboardEvent): void {
+    if (evt.key === 'Escape') {
+      evt.preventDefault();
+      const focusables = Array.from(document.querySelectorAll<HTMLElement>(
+        'a, button, input, select, textarea, [tabindex]:not([tabindex=-1])'
+      )).filter((el) => !el.hasAttribute('disabled'));
+      const i = focusables.indexOf(this.inputEl);
+      const next = focusables[(i + 1) % focusables.length];
+      next?.focus();
+      return;
+    }
+
     if (evt.key !== 'Tab') {
       return;
     }
