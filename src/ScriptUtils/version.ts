@@ -92,7 +92,7 @@ export async function addGitTag(newVersion: string): Promise<void> {
  */
 export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
   await execFromRoot(['git', 'add', '--all'], { isQuiet: true });
-  await execFromRoot(`git commit -m ${newVersion} --allow-empty`, { isQuiet: true });
+  await execFromRoot(['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty'], { isQuiet: true });
 }
 
 /**
