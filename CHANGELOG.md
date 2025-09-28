@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 41.0.0
+
+- refactor: remove `GenerateMarkdownLinkDefaultOptionsWrapper`
+
+BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options embedded. You should pass options explicitly
+
 ## 40.17.0
 
 - feat: add commands
