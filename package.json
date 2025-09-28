@@ -479,7 +479,8 @@
     "lint": "tsx scripts/cli.ts lint",
     "lint:fix": "tsx scripts/cli.ts lint:fix",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
-    "version": "tsx scripts/version.ts"
+    "version": "tsx scripts/version.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@eslint/js": "^9.33.0",
@@ -551,5 +552,11 @@
     "@antfu/utils": "9.2.0",
     "dompurify": "3.0.1",
     "esbuild": "$esbuild"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@commitlint/types": "^20.0.0",
+    "husky": "^9.1.7"
   }
 }
