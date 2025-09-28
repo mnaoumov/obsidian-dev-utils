@@ -201,18 +201,6 @@ export interface ConvertLinkOptions {
 }
 
 /**
- * Wrapper for default options for {@link GenerateMarkdownLinkOptions}.
- */
-export interface GenerateMarkdownLinkDefaultOptionsWrapper {
-  /**
-   * A default options for generating markdown links.
-   *
-   * @returns A default options for generating markdown links.
-   */
-  defaultOptionsFn(): Partial<GenerateMarkdownLinkOptions>;
-}
-
-/**
  * Options for {@link generateMarkdownLink}.
  */
 export interface GenerateMarkdownLinkOptions {
@@ -805,15 +793,11 @@ export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
 export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): string {
   const { app } = options;
 
-  const configurableDefaultOptionsFn = (app.fileManager.generateMarkdownLink as Partial<GenerateMarkdownLinkDefaultOptionsWrapper>).defaultOptionsFn
-    ?? ((): Partial<GenerateMarkdownLinkOptions> => ({}));
-  const configurableDefaultOptions = configurableDefaultOptionsFn();
-
   const DEFAULT_OPTIONS: Partial<GenerateMarkdownLinkOptions> = {
     isEmptyEmbedAliasAllowed: true
   };
 
-  options = { ...DEFAULT_OPTIONS, ...configurableDefaultOptions, ...options };
+  options = { ...DEFAULT_OPTIONS, ...options };
 
   const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
 
