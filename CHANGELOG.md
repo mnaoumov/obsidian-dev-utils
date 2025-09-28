@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 40.17.0
+
+- feat: add commands
+- chore: use chore: release prefix
+- chore: add `npm run commit`
+
 ## 40.16.0
 
 - fix: syntax
