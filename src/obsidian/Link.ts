@@ -115,11 +115,11 @@ export enum LinkPathStyle {
   ObsidianSettingsDefault = 'ObsidianSettingsDefault',
 
   /**
-   * Use the relative path to the note.
+   * Use the relative path to the source.
    *
    * @example `[[../../relative/path/to/link]]`
    */
-  RelativePathToTheNote = 'RelativePathToTheNote',
+  RelativePathToTheSource = 'RelativePathToTheSource',
 
   /**
    * Use the shortest path when possible.
@@ -161,7 +161,7 @@ export enum LinkStyle {
 
 enum FinalLinkPathStyle {
   AbsolutePathInVault = 'AbsolutePathInVault',
-  RelativePathToTheNote = 'RelativePathToTheNote',
+  RelativePathToTheSource = 'RelativePathToTheNote',
   ShortestPathWhenPossible = 'ShortestPathWhenPossible'
 }
 
@@ -316,7 +316,7 @@ export interface GenerateMarkdownLinkOptions {
   /**
    * Indicates if the link should use a leading dot. Defaults to `false`.
    *
-   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToTheNote}.
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToSource}.
    *
    * If `true`: `[[./relative/path/to/target]]`
    *
@@ -1244,7 +1244,7 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
           linkText = `/${linkText}`;
         }
         break;
-      case FinalLinkPathStyle.RelativePathToTheNote:
+      case FinalLinkPathStyle.RelativePathToTheSource:
         linkText = relative(dirname(sourcePath), targetFile.path);
         if (config.shouldUseLeadingDotForRelativePaths && !linkText.startsWith('.')) {
           linkText = `./${linkText}`;
@@ -1365,8 +1365,8 @@ function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLi
   switch (linkPathStyle ?? LinkPathStyle.ObsidianSettingsDefault) {
     case LinkPathStyle.AbsolutePathInVault:
       return FinalLinkPathStyle.AbsolutePathInVault;
-    case LinkPathStyle.RelativePathToTheNote:
-      return FinalLinkPathStyle.RelativePathToTheNote;
+    case LinkPathStyle.RelativePathToTheSource:
+      return FinalLinkPathStyle.RelativePathToTheSource;
     case LinkPathStyle.ShortestPathWhenPossible:
       return FinalLinkPathStyle.ShortestPathWhenPossible;
     case LinkPathStyle.ObsidianSettingsDefault: {
@@ -1375,7 +1375,7 @@ function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLi
         case 'absolute':
           return FinalLinkPathStyle.AbsolutePathInVault;
         case 'relative':
-          return FinalLinkPathStyle.RelativePathToTheNote;
+          return FinalLinkPathStyle.RelativePathToTheSource;
         case 'shortest':
           return FinalLinkPathStyle.ShortestPathWhenPossible;
         default:
