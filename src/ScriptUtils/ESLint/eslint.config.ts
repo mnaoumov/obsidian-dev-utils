@@ -13,6 +13,7 @@
 
 import type { Linter } from 'eslint';
 
+import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import eslint from '@eslint/js';
 // eslint-disable-next-line import-x/no-rename-default
 import stylistic from '@stylistic/eslint-plugin';
@@ -56,7 +57,8 @@ export const obsidianDevUtilsConfigs: Linter.Config[] = defineConfig(
   ...getPerfectionistConfigs(),
   ...getModulesNewlinesConfigs(),
   ...getModulesNewlinesConfigs(),
-  ...getEslintImportResolverTypescriptConfigs()
+  ...getEslintImportResolverTypescriptConfigs(),
+  ...getEslintCommentsConfigs()
 );
 
 function excludeFilesProperty<Config>(config: Config): Config {
@@ -64,6 +66,17 @@ function excludeFilesProperty<Config>(config: Config): Config {
   const newConfig = { ...config } as ConfigWithFiles;
   delete newConfig.files;
   return newConfig;
+}
+
+function getEslintCommentsConfigs(): Linter.Config[] {
+  return [
+    commentsConfigs.recommended,
+    {
+      rules: {
+        '@eslint-community/eslint-comments/require-description': 'error'
+      }
+    }
+  ];
 }
 
 function getEslintConfigs(): Linter.Config[] {
