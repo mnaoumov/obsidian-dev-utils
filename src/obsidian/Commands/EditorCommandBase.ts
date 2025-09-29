@@ -3,10 +3,9 @@ import type {
   MarkdownFileInfo,
   MarkdownView,
   Menu,
+  Plugin,
   TFile
 } from 'obsidian';
-
-import type { Plugin } from '../Plugin.ts';
 
 import {
   CommandBase,
