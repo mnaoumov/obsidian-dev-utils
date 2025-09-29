@@ -214,7 +214,7 @@ export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: 
     let folderPath = dirname(newPath);
     let nonExistingPath = basename(newPath);
     let folder: null | TFolder;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- There is no elegant way to perform infinite loops.
     while (true) {
       folder = getFolderOrNull(app, folderPath, true);
       if (folder) {

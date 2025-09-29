@@ -452,7 +452,7 @@ class Registry {
       this.app.vault.offref(eventRef);
     }
     const settings = this.settingsManager.getSettings();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed in `rename` event handler. ESLint mistakenly does not recognize it.
     if (!isRenameCalled || !settings.shouldHandleRenames) {
       return;
     }

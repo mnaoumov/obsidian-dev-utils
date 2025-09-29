@@ -4,9 +4,9 @@
  * Contains a component that allows the user to enter a telephone number.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
 import type { initPluginContext } from '../../Plugin/PluginContext.ts';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `SettingEx` to use it in the tsdocs.
 import type { SettingEx } from '../../SettingEx.ts';
 import type { TextBasedComponent } from './TextBasedComponent.ts';
 

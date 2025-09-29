@@ -10,6 +10,6 @@ declare module '@eslint-community/eslint-plugin-eslint-comments/configs' {
   const configs: {
     recommended: Linter.Config;
   };
-  // eslint-disable-next-line import-x/no-default-export
+  // eslint-disable-next-line import-x/no-default-export -- That is the way library exports.
   export default configs;
 }

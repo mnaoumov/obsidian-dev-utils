@@ -34,7 +34,7 @@ export interface EditJsonOptions {
  * @param options - Additional options for editing.
  * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
 export async function editJson<T>(
   path: string,
   editFn: (data: T) => Promisable<void>,
@@ -59,7 +59,7 @@ export async function editJson<T>(
  * @param editFn - The function to edit the parsed JSON data.
  * @param options - Additional options for editing.
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
 export function editJsonSync<T>(
   path: string,
   editFn: (data: T) => void,
@@ -94,7 +94,7 @@ export async function readJson<T>(path: string): Promise<T> {
  * @param path - The path to the JSON file.
  * @returns The parsed JSON object of type `T`.
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
 export function readJsonSync<T>(path: string): T {
   return JSON.parse(readFileSync(path, 'utf-8')) as T;
 }

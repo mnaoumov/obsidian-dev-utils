@@ -361,9 +361,9 @@ export function unregisterFileCacheForNonExistingFile(app: App, pathOrFile: Path
   if (!file.deleted) {
     throw new Error('File is existing');
   }
-  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
   delete app.metadataCache.fileCache[file.path];
-  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
   delete app.metadataCache.metadataCache[file.path];
 }
 
@@ -383,7 +383,7 @@ export function unregisterFiles(app: App, files: TAbstractFile[]): void {
       registeredFilesCounts.set(file.path, count);
       if (count === 0) {
         registeredFilesCounts.delete(file.path);
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
         delete app.vault.fileMap[file.path];
 
         if (isFile(file)) {

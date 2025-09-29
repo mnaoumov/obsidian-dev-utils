@@ -59,7 +59,7 @@ await wrapCliTask(async () => {
     isChanged = !deepEqual(oldExports, packageJson.exports);
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It changed in the `editPackageJson`, ESLint mistakenly does not recognize it.
   if (isChanged) {
     throw new Error('Package exports have changed. Please review the changes and commit them.');
   }
@@ -150,7 +150,7 @@ async function setExport(exportConditions: PackageJson.ExportConditions, srcFold
   );
 
   exportConditions[conditionPath] = {
-    /* eslint-disable perfectionist/sort-objects */
+    /* eslint-disable perfectionist/sort-objects -- Order matters once it is written to `package.json`. */
     import: {
       types: dmtsPath,
       default: mjsPath
@@ -159,7 +159,7 @@ async function setExport(exportConditions: PackageJson.ExportConditions, srcFold
       types: dctsPath,
       default: cjsPath
     }
-    /* eslint-enable perfectionist/sort-objects */
+    /* eslint-enable perfectionist/sort-objects -- Order matters once it is written to `package.json`. */
   };
 
   if (importPath !== ObsidianDevUtilsRepoPaths.CurrentFolder as string) {

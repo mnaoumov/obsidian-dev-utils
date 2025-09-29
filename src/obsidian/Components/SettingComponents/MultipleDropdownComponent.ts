@@ -12,9 +12,9 @@ import {
 } from 'obsidian';
 
 import type { ValidatorElement } from '../../../HTMLElement.ts';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
 import type { initPluginContext } from '../../Plugin/PluginContext.ts';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `SettingEx` to use it in the tsdocs.
 import type { SettingEx } from '../../SettingEx.ts';
 import type { ValidatorComponent } from './ValidatorComponent.ts';
 import type { ValueComponentWithChangeTracking } from './ValueComponentWithChangeTracking.ts';

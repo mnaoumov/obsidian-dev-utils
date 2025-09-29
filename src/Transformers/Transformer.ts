@@ -47,7 +47,7 @@ export abstract class Transformer {
    * @param transformerId - The id of the transformer to get.
    * @returns The transformer with the given id.
    */
-  // eslint-disable-next-line @typescript-eslint/prefer-return-this-type
+  // eslint-disable-next-line @typescript-eslint/prefer-return-this-type -- The overridden method might return a different type.
   public getTransformer(transformerId: string): Transformer {
     if (transformerId === this.id) {
       return this;

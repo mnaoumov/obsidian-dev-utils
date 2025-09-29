@@ -18,7 +18,7 @@ import type { GenericObject } from '../ObjectUtils.ts';
  */
 export type Factories<Obj extends object> = Partial<
   {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type as a generic restriction.
     [Key in ConditionalKeys<Obj, Function | undefined>]: WrapperFactory<Extract<Obj[Key], Function | undefined>>;
   }
 >;
@@ -27,7 +27,7 @@ type OriginalFactories<Obj extends GenericObject> = Parameters<typeof originalAr
 
 type Uninstaller = () => void;
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type as a generic restriction.
 type WrapperFactory<T extends Function | undefined> = (next: T) => T;
 
 /**

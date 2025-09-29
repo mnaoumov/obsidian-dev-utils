@@ -211,9 +211,7 @@ export async function getAttachmentFilePath(options: GetAttachmentFilePathOption
   const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
   const attachmentFile = getFileOrNull(app, attachmentPath);
 
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const internalFn = app.vault.getAvailablePathForAttachments;
-  const extendedFn = (internalFn as Partial<GetAvailablePathForAttachmentsFnExtended>).extended;
+  const extendedFn = (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFnExtended>).extended;
   if (extendedFn) {
     return extendedFn({
       attachmentFileBaseName,

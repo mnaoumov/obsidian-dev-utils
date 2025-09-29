@@ -39,7 +39,7 @@ declare global {
   /**
    * A {@link DataviewApi} object represents the API for interacting with Dataview in Obsidian.
    */
-  // eslint-disable-next-line vars-on-top
+  // eslint-disable-next-line vars-on-top -- It is a `var` in module declaration. ESLint mistakenly confuses it with `var` as a variable declaration.
   var DataviewAPI: DataviewApi | undefined;
 }
 
@@ -268,7 +268,7 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
   } catch (e) {
     dv.paragraph(`❌${errorToString(e)}`);
   } finally {
-    // eslint-disable-next-line require-atomic-updates
+    // eslint-disable-next-line require-atomic-updates -- Yes, it is a potential race condition, but I don't an elegant way to fix it.
     dv.container = oldContainer;
     tempContainer.remove();
   }
@@ -330,7 +330,7 @@ export function renderIframe(options: RenderIframeOptions): void {
 export async function renderPaginatedList<T>(options: RenderPaginatedListOptions<T>): Promise<void> {
   const {
     dv,
-    // eslint-disable-next-line no-magic-numbers
+    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     itemsPerPageOptions = [10, 20, 50, 100],
     rows
   } = options;
@@ -357,7 +357,7 @@ export async function renderPaginatedTable<T extends unknown[]>(options: RenderP
   const {
     dv,
     headers,
-    // eslint-disable-next-line no-magic-numbers
+    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     itemsPerPageOptions = [10, 20, 50, 100],
     rows
   } = options;
@@ -385,7 +385,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
   const MORE_PAGE_NUMBER = 3;
   const {
     dv,
-    // eslint-disable-next-line no-magic-numbers
+    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     itemsPerPageOptions = [10, 20, 50, 100],
     rows
   } = options;
@@ -494,7 +494,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     } catch (e) {
       dv.paragraph(`❌${errorToString(e)}`);
     } finally {
-      // eslint-disable-next-line require-atomic-updates
+      // eslint-disable-next-line require-atomic-updates -- Yes, it is a potential race condition, but I don't an elegant way to fix it.
       dv.container = oldContainer;
     }
 

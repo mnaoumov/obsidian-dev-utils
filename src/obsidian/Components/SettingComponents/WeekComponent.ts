@@ -6,9 +6,9 @@
 
 import moment from 'moment';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
 import type { initPluginContext } from '../../Plugin/PluginContext.ts';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `SettingEx` to use it in the tsdocs.
 import type { SettingEx } from '../../SettingEx.ts';
 
 import { CssClass } from '../../../CssClass.ts';

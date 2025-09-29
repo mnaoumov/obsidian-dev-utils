@@ -54,7 +54,7 @@ export class AsyncEvents {
    *
    * @public
    */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public off<Args extends unknown[]>(name: string, callback: (...args: Args) => Promisable<void>): void {
     const eventRefs = this.eventRefsMap.get(name);
     if (!eventRefs) {
@@ -109,7 +109,7 @@ export class AsyncEvents {
    *
    * @public
    */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public on<Args extends unknown[]>(name: string, callback: (...args: Args) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
     let eventRefs = this.eventRefsMap.get(name);
     if (!eventRefs) {
@@ -145,7 +145,7 @@ export class AsyncEvents {
    *
    * @public
    */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public once<Args extends unknown[]>(name: string, callback: (...args: Args) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
     const originalEventRef = this.on(name, callback, thisArg);
     const cleanupEventRef = this.on(name, () => {
@@ -168,7 +168,7 @@ export class AsyncEvents {
    *
    * @public
    */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public trigger<Args extends unknown[]>(name: string, ...args: Args): void {
     const eventRefs = this.eventRefsMap.get(name) ?? [];
     for (const eventRef of eventRefs.slice()) {
@@ -184,7 +184,7 @@ export class AsyncEvents {
    *
    * @public
    */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public async triggerAsync<Args extends unknown[]>(name: string, ...args: Args): Promise<void> {
     const eventRefs = this.eventRefsMap.get(name) ?? [];
     for (const eventRef of eventRefs.slice()) {
@@ -205,7 +205,7 @@ export class AsyncEvents {
    *
    * @public
    */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void {
     try {
       eventRef.callback.apply(eventRef.thisArg, args);
@@ -224,7 +224,7 @@ export class AsyncEvents {
    *
    * @public
    */
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public async tryTriggerAsync<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): Promise<void> {
     try {
       const result = eventRef.callback.call(eventRef.thisArg, ...args);

@@ -34,7 +34,7 @@ export interface TextBasedComponent<T> {
 }
 
 class AbstractTextComponentWrapper<T> implements TextBasedComponent<T> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown` doesn't work, getting compiler errors.
   public constructor(private readonly abstractTextComponent: AbstractTextComponent<any>) {}
 
   public empty(): void {
