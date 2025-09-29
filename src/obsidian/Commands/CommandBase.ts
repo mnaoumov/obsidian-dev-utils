@@ -46,10 +46,47 @@ export interface CommandBaseOptions<TPlugin extends Plugin> {
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class CommandBase<TPlugin extends Plugin> implements Command {
+  /**
+   * The icon of the command.
+   */
   public icon: IconName;
+
+  /**
+   * The ID of the command.
+   *
+   * Obsidian changes the passed ID by prepending the plugin's ID to it.
+   *
+   * @see {@link originalId}.
+   */
   public id: string;
+
+  /**
+   * The name of the command.
+   *
+   * Obsidian changes the passed name by prepending the plugin's name to it.
+   *
+   * @see {@link originalName}.
+   */
   public name: string;
+
+  /**
+   * The app that the command belongs to.
+   */
   protected readonly app: App;
+
+  /**
+   * The original ID of the command.
+   */
+  protected readonly originalId: string;
+
+  /**
+   * The original name of the command.
+   */
+  protected readonly originalName: string;
+
+  /**
+   * The plugin that the command belongs to.
+   */
   protected readonly plugin: TPlugin;
 
   /**
@@ -63,6 +100,8 @@ export abstract class CommandBase<TPlugin extends Plugin> implements Command {
     this.icon = options.icon;
     this.plugin = options.plugin;
     this.app = this.plugin.app;
+    this.originalId = this.id;
+    this.originalName = this.name;
   }
 
   /**

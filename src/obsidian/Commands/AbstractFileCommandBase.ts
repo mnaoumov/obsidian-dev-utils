@@ -62,7 +62,7 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
     }
 
     menu.addItem((item) => {
-      item.setTitle(this.fileMenuItemName ?? this.name)
+      item.setTitle(this.fileMenuItemName ?? this.originalName)
         .setIcon(this.icon)
         .onClick(() => this.createCommandInvocation().invoke(false, abstractFile));
 
@@ -84,7 +84,7 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
     }
 
     menu.addItem((item) => {
-      item.setTitle(this.filesMenuItemName ?? this.fileMenuItemName ?? this.name)
+      item.setTitle(this.filesMenuItemName ?? this.fileMenuItemName ?? this.originalName)
         .setIcon(this.icon)
         .onClick(() => {
           for (const abstractFile of abstractFiles) {
