@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 42.4.0
+
+- docs: force tsdocs for non-private properties
+- feat: preserve original name
+- feat: add separate filesMenuItemName
+
 ## 42.3.0
 
 - feat: add AbstractFileCommandBase, support multiple files menu
