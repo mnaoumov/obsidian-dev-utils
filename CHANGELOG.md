@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 42.1.0
+
+- fix: jsdoc require-throws-type
+- docs: add lint comments
+- feat: enable comments eslint rules
+- chore: update libs
+
 ## 42.0.0
 
 - docs: unify examples form
