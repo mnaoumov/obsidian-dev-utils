@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 42.2.0
+
+- feat: add multiple default options
+
 ## 42.1.1
 
 - docs: add missing tsdocs
