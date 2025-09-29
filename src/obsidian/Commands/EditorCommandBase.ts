@@ -24,7 +24,14 @@ import {
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandBase<TPlugin> {
+  /**
+   * The item name to use in the editor menu.
+   */
   protected readonly menuItemName?: string;
+
+  /**
+   * The section to use in the editor menu.
+   */
   protected readonly menuSection?: string;
 
   /**
@@ -92,7 +99,10 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export class EditorCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
-  protected activeFile!: TFile;
+  /**
+   * The file to invoke the command for.
+   */
+  protected file!: TFile;
 
   /**
    * Creates a new editor command invocation.
@@ -119,7 +129,7 @@ export class EditorCommandInvocationBase<TPlugin extends Plugin> extends Command
       return false;
     }
 
-    this.activeFile = this.ctx.file;
+    this.file = this.ctx.file;
     return true;
   }
 }

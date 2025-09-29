@@ -56,6 +56,9 @@ type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
  * @typeParam PluginTypes - Plugin-specific types.
  */
 export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends ObsidianPlugin {
+  /**
+   * The events of the plugin.
+   */
   public readonly events = new AsyncEvents();
 
   /**

@@ -96,6 +96,18 @@ const configs: Linter.Config[] = [
             },
             {
               context: 'ExportDefaultDeclaration MethodDefinition:not([accessibility="private"])'
+            },
+            {
+              context: 'ExportNamedDeclaration > ClassDeclaration > ClassBody > PropertyDefinition:not([accessibility=\'private\'])'
+            },
+            {
+              context: 'ExportDefaultDeclaration > ClassDeclaration > ClassBody > PropertyDefinition:not([accessibility=\'private\'])'
+            },
+            {
+              context: 'ExportNamedDeclaration > ClassDeclaration > ClassBody > TSAbstractPropertyDefinition:not([accessibility=\'private\'])'
+            },
+            {
+              context: 'ExportDefaultDeclaration > ClassDeclaration > ClassBody > TSAbstractPropertyDefinition:not([accessibility=\'private\'])'
             }
           ],
           publicOnly: false,
