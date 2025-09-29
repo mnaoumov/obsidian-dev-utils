@@ -78,7 +78,7 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
 
     menu.addItem((item) => {
       item
-        .setTitle(this.menuItemName ?? this.name)
+        .setTitle(this.menuItemName ?? this.originalName)
         .setIcon(this.icon)
         .setSection(this.menuSection ?? '')
         .onClick(() => this.createEditorCommandInvocation(editor, ctx).invoke(false));
