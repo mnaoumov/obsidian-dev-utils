@@ -11,7 +11,7 @@ import type {
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- Plugin is written for CommonJS.
 import eslintPluginTsdocRequired_ = require('@guardian/eslint-plugin-tsdoc-required');
-// eslint-disable-next-line import-x/no-rename-default -- The default export name `index` is too confusing.
+// eslint-disable-next-line import-x/no-rename-default, import-x/no-named-as-default -- The default export name `index` is too confusing.
 import jsdoc from 'eslint-plugin-jsdoc';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
 
@@ -108,6 +108,7 @@ const configs: Linter.Config[] = [
           }
         }
       ],
+      'jsdoc/require-throws-type': 'off',
       'jsdoc/tag-lines': [
         'error',
         'any',
