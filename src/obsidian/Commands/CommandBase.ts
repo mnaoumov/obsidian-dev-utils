@@ -11,6 +11,8 @@ import type {
   Plugin
 } from 'obsidian';
 
+import { invokeAsyncSafely } from '../../Async.ts';
+
 /**
  * Options for creating a command.
  *
@@ -98,7 +100,7 @@ export abstract class CommandInvocationBase<TPlugin extends Plugin = Plugin> {
   public invoke(checking: boolean): boolean {
     this.lastCanExecuteResult = this.canExecute();
     if (!checking && this.lastCanExecuteResult) {
-      this.execute();
+      invokeAsyncSafely(() => this.execute());
     }
 
     return this.lastCanExecuteResult;
@@ -116,12 +118,13 @@ export abstract class CommandInvocationBase<TPlugin extends Plugin = Plugin> {
   /**
    * Executes the command.
    */
-  protected execute(): void {
+  protected async execute(): Promise<void> {
     if (this.lastCanExecuteResult === undefined) {
       throw new Error('canExecute() must be called before execute()');
     }
     if (!this.lastCanExecuteResult) {
       throw new Error('canExecute() must return true before execute()');
     }
+    await Promise.resolve();
   }
 }
