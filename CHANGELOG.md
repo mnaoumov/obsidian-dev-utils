@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 42.1.1
+
+- docs: add missing tsdocs
+- chore: add Commands to package.json
+- fix: move Commands to source
+
 ## 42.1.0
 
 - fix: jsdoc require-throws-type
