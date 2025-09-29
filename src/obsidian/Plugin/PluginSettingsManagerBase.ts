@@ -366,7 +366,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
           continue;
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
         delete record[key];
       }
     }

@@ -25,5 +25,5 @@ export interface DefaultPluginTypes extends PluginTypesBase {
 export type DefaultTranslationsBase = TranslationKeyMap & Translations<DefaultPluginTypes>;
 
 type TranslationKey = string | TranslationKeyMap;
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- We cannot inline `TranslationKeyMap`, so we need to extract it even if it is empty.
 interface TranslationKeyMap extends Record<string, TranslationKey> {}

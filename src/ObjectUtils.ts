@@ -287,7 +287,7 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
   if (!Object.hasOwn(obj, propertyName)) {
     return false;
   }
-  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
   delete obj[propertyName];
   return true;
 }
@@ -300,8 +300,7 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
  * @param module - The module to extract the default export from.
  * @returns The default export.
  */
-export function extractDefaultExportInterop<T>(module: ModuleWithDefaultExport<T>): T {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+export function extractDefaultExportInterop<T>(module: ModuleWithDefaultExport<T> | T): T {
   if (typeof module !== 'object' || module === null) {
     return module;
   }
@@ -467,7 +466,7 @@ export function removeUndefinedProperties<Type extends object, const KeysToKeep 
 export function removeUndefinedProperties<Type extends object>(obj: Type, keysToKeep?: readonly string[]): Type {
   for (const [key, value] of Object.entries(obj) as [StringKeys<Type>, unknown][]) {
     if (value === undefined && !keysToKeep?.includes(key as string)) {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
       delete obj[key];
     }
   }
@@ -516,7 +515,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
     shouldHandleErrors: false,
     shouldHandleUndefined: false,
     shouldSortKeys: false,
-    // eslint-disable-next-line no-magic-numbers
+    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     space: 2,
     tokenSubstitutions: {
       circularReference: makeObjectTokenSubstitution(TokenSubstitutionKey.CircularReference),
@@ -611,7 +610,7 @@ function applySubstitutions(options: ApplySubstitutionsOptions): MaybeReturn<str
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown` doesn't work, getting compiler errors.
 function createEqualityComparerEntries<const T extends readonly EqualityComparerEntry<any>[]>(entries: T): T {
   return entries;
 }
@@ -706,7 +705,7 @@ function handleCircularReference(value: object, key: string, fullOptions: ToJson
 --- property '${key}' closes the circle`);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type to handle them separately.
 function handleFunction(value: Function, functionTexts: string[], fullOptions: ToJsonOptions): unknown {
   if (fullOptions.functionHandlingMode === FunctionHandlingMode.Exclude) {
     return undefined;

@@ -9,6 +9,6 @@ declare module '@guardian/eslint-plugin-tsdoc-required' {
 
   const plugin: ESLint.Plugin;
 
-  // eslint-disable-next-line import-x/no-default-export
+  // eslint-disable-next-line import-x/no-default-export -- That is the way library exports.
   export default plugin;
 }

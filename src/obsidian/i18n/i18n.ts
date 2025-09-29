@@ -65,6 +65,8 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
     return;
   }
 
+  isInitialized = true;
+
   await init({
     fallbackLng: DEFAULT_LANGUAGE,
     initAsync: isAsync,
@@ -82,8 +84,6 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
   });
 
   i18next.addResourceBundle(DEFAULT_LANGUAGE, DEFAULT_NS, en, true, false);
-  // eslint-disable-next-line require-atomic-updates
-  isInitialized = true;
 }
 
 function tImpl(

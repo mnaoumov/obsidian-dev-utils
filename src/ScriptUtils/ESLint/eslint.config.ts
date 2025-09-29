@@ -9,19 +9,19 @@
  * It sets up parsers, plugins, and rules for maintaining code quality and consistency.
  */
 
-/* eslint-disable no-magic-numbers */
+/* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
 
 import type { Linter } from 'eslint';
 
 import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import eslint from '@eslint/js';
-// eslint-disable-next-line import-x/no-rename-default
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import stylistic from '@stylistic/eslint-plugin';
 import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-import-x';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 import perfectionist from 'eslint-plugin-perfectionist';
 import { defineConfig } from 'eslint/config';
-// eslint-disable-next-line import-x/no-rename-default
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
 import tseslint from 'typescript-eslint';
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
@@ -353,9 +353,9 @@ function getStylisticConfigs(): Linter.Config[] {
 
 function getTseslintConfigs(): Linter.Config[] {
   return [
-    // eslint-disable-next-line import-x/no-named-as-default-member
+    // eslint-disable-next-line import-x/no-named-as-default-member -- The default export name `_default` is too confusing.
     ...tseslint.configs.strictTypeChecked.map(excludeFilesProperty),
-    // eslint-disable-next-line import-x/no-named-as-default-member
+    // eslint-disable-next-line import-x/no-named-as-default-member -- The default export name `_default` is too confusing.
     ...tseslint.configs.stylisticTypeChecked.map(excludeFilesProperty),
     {
       languageOptions: {
@@ -404,3 +404,5 @@ function getTseslintConfigs(): Linter.Config[] {
     }
   ];
 }
+
+/* eslint-enable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */

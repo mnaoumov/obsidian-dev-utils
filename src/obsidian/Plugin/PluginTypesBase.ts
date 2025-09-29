@@ -96,12 +96,12 @@ export interface PluginTypesBase {
   /**
    * A plugin settings manager.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown`, `PluginTypeBase` don't work, getting compiler errors.
   pluginSettingsManager: PluginSettingsManagerBase<any>;
 
   /**
    * A plugin settings tab.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown`, `PluginTypeBase` don't work, getting compiler errors.
   pluginSettingsTab: PluginSettingsTabBase<any>;
 }

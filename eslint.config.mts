@@ -9,9 +9,9 @@ import type {
   Linter
 } from 'eslint';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- Plugin is written for CommonJS.
 import eslintPluginTsdocRequired_ = require('@guardian/eslint-plugin-tsdoc-required');
-// eslint-disable-next-line import-x/no-rename-default
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `index` is too confusing.
 import jsdoc from 'eslint-plugin-jsdoc';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
 
@@ -119,5 +119,5 @@ const configs: Linter.Config[] = [
   }
 ];
 
-// eslint-disable-next-line import-x/no-default-export
+// eslint-disable-next-line import-x/no-default-export -- That is the way ESLint takes the config.
 export default configs;

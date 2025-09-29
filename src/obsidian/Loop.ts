@@ -88,13 +88,13 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
       throw new Error('buildNoticeMessage is required');
     },
     items: [],
-    // eslint-disable-next-line no-magic-numbers
+    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     noticeMinTimeoutInMilliseconds: 2000,
     processItem: noop,
     progressBarTitle: '',
     shouldContinueOnError: true,
     shouldShowProgressBar: true,
-    // eslint-disable-next-line no-magic-numbers
+    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     uiUpdateThresholdInMilliseconds: 100
   };
 

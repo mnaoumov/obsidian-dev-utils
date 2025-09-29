@@ -6,7 +6,7 @@
 
 import type {
   App,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `Workspace` to use it in the tsdocs.
   Workspace,
   WorkspaceContainer
 } from 'obsidian';

@@ -17,7 +17,7 @@ export type ExactKeys<Type extends object, Keys extends readonly string[]> = Exa
  *
  * @typeParam T - The type of the value that may be returned.
  */
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type -- We need to use the `void` return type.
 export type MaybeReturn<T> = T | void;
 
 /**
@@ -79,7 +79,7 @@ type Duplicates<
   : Duplicates<Rest, [...Seen, First], Added, Out>
   : Out;
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters,no-magic-numbers
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters,no-magic-numbers -- We need to use the dummy parameter to get type inference.
 type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends (<T>() => T extends Y ? 1 : 2) ? true : false;
 
 type Includes<Type extends readonly unknown[], Member> = Type extends readonly [infer First, ...infer Rest]
@@ -182,7 +182,7 @@ export function assertAllUnionMembers<
  * g2(typeToDummyParam<A>(), { d: 'foo' }); // We could use type inference for `T=A` and `U=B`.
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
 export function typeToDummyParam<T>(): T {
   return DUMMY_PROXY as unknown as T;
 }

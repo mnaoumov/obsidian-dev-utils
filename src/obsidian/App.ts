@@ -81,6 +81,6 @@ function getAppOrNull(): App | null {
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- We need to use the deprecated function to get the app instance.
   return getApp();
 }

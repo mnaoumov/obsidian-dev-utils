@@ -123,7 +123,7 @@ export async function asyncFilterInPlace<T>(arr: T[], predicate: (value: T, inde
 
     const current = arr[readIndex] as T;
     if (await predicate(current, readIndex, arr)) {
-      // eslint-disable-next-line require-atomic-updates
+      // eslint-disable-next-line require-atomic-updates -- Yes, it is a potential race condition, but I don't an elegant way to fix it.
       arr[writeIndex++] = current;
     }
   }
@@ -224,7 +224,7 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue: T): Pro
  */
 export function invokeAsyncSafely(asyncFn: () => Promise<unknown>, stackTrace?: string): void {
   stackTrace ??= getStackTrace(1);
-  // eslint-disable-next-line no-void
+  // eslint-disable-next-line no-void -- We need to fire-and-forget.
   void addErrorHandler(asyncFn, stackTrace);
 }
 
@@ -365,10 +365,10 @@ export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisa
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
   stackTrace ??= getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
-    // eslint-disable-next-line no-magic-numbers
+    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     retryDelayInMilliseconds: 100,
     shouldRetryOnError: false,
-    // eslint-disable-next-line no-magic-numbers
+    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     timeoutInMilliseconds: 5000
   };
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
@@ -386,7 +386,7 @@ export async function retryWithTimeout(fn: (abortSignal: AbortSignal) => Promisa
         try {
           isSuccess = await fn(combinedAbortSignal);
         } catch (error) {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed inside `fn()`. ESLint mistakenly does not recognize it.
           if (combinedAbortSignal.aborted || !fullOptions.shouldRetryOnError || terminateRetryErrors.has(error as Error)) {
             throw new CustomStackTraceError('retryWithTimeout failed', stackTrace, error);
           }
@@ -447,7 +447,7 @@ export async function runWithTimeout<Result>(
   const runWithTimeoutDebugger = getLibDebugger('Async:runWithTimeout');
 
   await Promise.race([run(), innerTimeout()]);
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed inside `run()`. ESLint mistakenly does not recognize it.
   if (hasResult) {
     return result as Result;
   }
@@ -469,10 +469,10 @@ export async function runWithTimeout<Result>(
   }
 
   async function innerTimeout(): Promise<void> {
-    // eslint-disable-next-line no-unmodified-loop-condition
+    // eslint-disable-next-line no-unmodified-loop-condition -- It might changed inside `run()`. ESLint mistakenly does not recognize it.
     while (!isCompleted) {
       await sleep(timeoutInMilliseconds, timeoutAbortController.signal);
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed while `sleep()`. ESLint mistakenly does not recognize it.
       if (isCompleted) {
         return;
       }

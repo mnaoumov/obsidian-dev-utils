@@ -83,7 +83,7 @@ const ESCAPED_WIKILINK_DIVIDER = '\\|';
 /**
  * Regular expression for special link symbols.
  */
-// eslint-disable-next-line no-control-regex
+// eslint-disable-next-line no-control-regex -- The regular expression is written to capture control characters.
 const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 
 /**

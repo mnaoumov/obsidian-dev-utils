@@ -95,7 +95,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 
         // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
         // Otherwise, it stops loading after the first line of the sourceMappingURL comment.
-        // eslint-disable-next-line no-template-curly-in-string
+        // eslint-disable-next-line no-template-curly-in-string -- It is intentional, the string looks like a template literal, but it is not.
         contents = replaceAll(contents, /`\r?\n\/\/# sourceMappingURL/g, '`\n//#${\'\'} sourceMappingURL');
 
         return {

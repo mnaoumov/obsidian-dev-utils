@@ -22,7 +22,7 @@ import type { AsyncEventRef } from '../../AsyncEvents.ts';
 import type { StringKeys } from '../../Type.ts';
 import type { ValueComponentWithChangeTracking } from '../Components/SettingComponents/ValueComponentWithChangeTracking.ts';
 import type { ValidationMessageHolder } from '../Validation.ts';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `PluginSettingsManagerBase` to use it in the tsdocs.
 import type { PluginSettingsManagerBase } from './PluginSettingsManagerBase.ts';
 import type {
   ExtractPlugin,
