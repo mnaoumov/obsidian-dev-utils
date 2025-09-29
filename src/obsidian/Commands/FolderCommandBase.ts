@@ -1,11 +1,10 @@
 /**
  * @packageDocumentation
  *
- * Base classes for file commands.
+ * Base classes for folder commands.
  */
 
 import type {
-  Menu,
   Plugin,
   TAbstractFile,
   WorkspaceLeaf
@@ -13,32 +12,38 @@ import type {
 
 import { TFolder } from 'obsidian';
 
-import { CommandInvocationBase } from './CommandBase.ts';
-import { NonEditorCommandBase } from './NonEditorCommandBase.ts';
+import {
+  AbstractFileCommandBase,
+  AbstractFileCommandInvocationBase
+} from './AbstractFileCommandBase.ts';
 
 /**
  * Base class for folder commands.
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
-export abstract class FolderCommandBase<TPlugin extends Plugin = Plugin> extends NonEditorCommandBase<TPlugin> {
-  protected readonly menuItemName?: string;
-  protected readonly menuSection?: string;
-
-  /**
-   * Registers the command.
-   */
-  public override register(): void {
-    super.register();
-    this.plugin.registerEvent(this.app.workspace.on('file-menu', this.handleFileMenu.bind(this)));
-  }
-
+export abstract class FolderCommandBase<TPlugin extends Plugin = Plugin> extends AbstractFileCommandBase<TPlugin> {
   /**
    * Creates a new file command invocation.
    *
    * @returns The command invocation.
    */
   protected abstract override createCommandInvocation(): FolderCommandInvocationBase<TPlugin>;
+
+  /**
+   * Checks if the command should be added to the abstract file menu.
+   *
+   * @param abstractFile - The abstract file to check.
+   * @param _source - The source of the abstract file.
+   * @param _leaf - The leaf to check.
+   * @returns Whether the command should be added to the abstract file menu.
+   */
+  protected override shouldAddToAbstractFileMenu(abstractFile: TAbstractFile, _source: string, _leaf?: WorkspaceLeaf): boolean {
+    if (!(abstractFile instanceof TFolder)) {
+      return false;
+    }
+    return this.shouldAddToFolderMenu(abstractFile, _source, _leaf);
+  }
 
   /**
    * Checks if the command should be added to the folder menu.
@@ -51,30 +56,6 @@ export abstract class FolderCommandBase<TPlugin extends Plugin = Plugin> extends
   protected shouldAddToFolderMenu(_folder: TFolder, _source: string, _leaf?: WorkspaceLeaf): boolean {
     return false;
   }
-
-  private handleFileMenu(menu: Menu, folder: TAbstractFile, source: string, leaf?: WorkspaceLeaf): void {
-    if (!(folder instanceof TFolder)) {
-      return;
-    }
-
-    if (!this.createCommandInvocation().invoke(true)) {
-      return;
-    }
-
-    if (!this.shouldAddToFolderMenu(folder, source, leaf)) {
-      return;
-    }
-
-    menu.addItem((item) => {
-      item.setTitle(this.menuItemName ?? this.name)
-        .setIcon(this.icon)
-        .onClick(() => this.createCommandInvocation().invoke(false, folder));
-
-      if (this.menuSection) {
-        item.setSection(this.menuSection);
-      }
-    });
-  }
 }
 
 /**
@@ -82,21 +63,23 @@ export abstract class FolderCommandBase<TPlugin extends Plugin = Plugin> extends
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
-export abstract class FolderCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
-  protected folder!: TFolder;
+export abstract class FolderCommandInvocationBase<TPlugin extends Plugin> extends AbstractFileCommandInvocationBase<TPlugin> {
+  /**
+   * Gets the folder that the command invocation belongs to.
+   *
+   * @returns The folder that the command invocation belongs to.
+   */
+  protected get folder(): TFolder {
+    return this.abstractFile as TFolder;
+  }
 
   /**
-   * Invokes the command.
+   * Sets the folder that the command invocation belongs to.
    *
-   * @param checking - Is checking mode only. If `true`, only the check if the command can execute is performed. If `false`, the command is executed.
-   * @param folder - The folder to invoke the command for.
-   * @returns Whether the command was executed.
+   * @param folder - The folder that the command invocation belongs to.
    */
-  public override invoke(checking: boolean, folder?: TFolder): boolean {
-    if (folder) {
-      this.folder = folder;
-    }
-    return super.invoke(checking);
+  protected set folder(folder: TFolder) {
+    this.abstractFile = folder;
   }
 
   /**
@@ -105,6 +88,9 @@ export abstract class FolderCommandInvocationBase<TPlugin extends Plugin> extend
    * @returns Whether the command can execute.
    */
   protected override canExecute(): boolean {
+    if (!super.canExecute()) {
+      return false;
+    }
     const folder = (this.folder as TFolder | undefined) ?? this.app.workspace.getActiveFile()?.parent;
     if (!folder) {
       return false;
