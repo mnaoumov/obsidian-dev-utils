@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 42.3.0
+
+- feat: add AbstractFileCommandBase, support multiple files menu
+- feat: add FolderCommandBase
+- feat: switch to async commands
+
 ## 42.2.0
 
 - feat: add multiple default options
