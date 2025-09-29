@@ -20,7 +20,8 @@ import { NonEditorCommandBase } from './NonEditorCommandBase.ts';
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> extends NonEditorCommandBase<TPlugin> {
-  protected readonly menuItemName?: string;
+  protected readonly fileMenuItemName?: string;
+  protected readonly filesMenuItemName?: string;
   protected readonly menuSection?: string;
 
   /**
@@ -61,7 +62,7 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
     }
 
     menu.addItem((item) => {
-      item.setTitle(this.menuItemName ?? this.name)
+      item.setTitle(this.fileMenuItemName ?? this.name)
         .setIcon(this.icon)
         .onClick(() => this.createCommandInvocation().invoke(false, abstractFile));
 
@@ -83,7 +84,7 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
     }
 
     menu.addItem((item) => {
-      item.setTitle(this.menuItemName ?? this.name)
+      item.setTitle(this.filesMenuItemName ?? this.fileMenuItemName ?? this.name)
         .setIcon(this.icon)
         .onClick(() => {
           for (const abstractFile of abstractFiles) {
