@@ -91,11 +91,15 @@ export abstract class FolderCommandInvocationBase<TPlugin extends Plugin> extend
     if (!super.canExecute()) {
       return false;
     }
-    const folder = (this.folder as TFolder | undefined) ?? this.app.workspace.getActiveFile()?.parent;
-    if (!folder) {
-      return false;
+
+    if (!(this.abstractFile instanceof TFolder)) {
+      const folder = this.app.workspace.getActiveFile()?.parent;
+      if (!folder) {
+        return false;
+      }
+      this.folder = folder;
     }
-    this.folder = folder;
+
     return true;
   }
 }

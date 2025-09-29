@@ -81,4 +81,25 @@ export abstract class FileCommandInvocationBase<TPlugin extends Plugin> extends 
   protected set file(file: TFile) {
     this.abstractFile = file;
   }
+
+  /**
+   * Checks if the command can execute.
+   *
+   * @returns Whether the command can execute.
+   */
+  protected override canExecute(): boolean {
+    if (!super.canExecute()) {
+      return false;
+    }
+
+    if (!(this.abstractFile instanceof TFile)) {
+      const file = this.app.workspace.getActiveFile();
+      if (!file) {
+        return false;
+      }
+      this.file = file;
+    }
+
+    return true;
+  }
 }
