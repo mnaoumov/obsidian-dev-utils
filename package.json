@@ -309,6 +309,26 @@
         "types": "./dist/lib/cjs/obsidian/@types/Dataview/util/*.d.cts"
       }
     },
+    "./obsidian/Commands": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/Commands/index.d.mts",
+        "default": "./dist/lib/esm/obsidian/Commands/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/Commands/index.d.cts",
+        "default": "./dist/lib/cjs/obsidian/Commands/index.cjs"
+      }
+    },
+    "./obsidian/Commands/*": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/Commands/*.d.mts",
+        "default": "./dist/lib/esm/obsidian/Commands/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/Commands/*.d.cts",
+        "default": "./dist/lib/cjs/obsidian/Commands/*.cjs"
+      }
+    },
     "./obsidian/Components": {
       "import": {
         "types": "./dist/lib/esm/obsidian/Components/index.d.mts",
