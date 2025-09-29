@@ -9,6 +9,7 @@ import type { Link } from 'mdast';
 import type {
   App,
   CachedMetadata,
+  Plugin,
   Reference,
   TFile
 } from 'obsidian';
@@ -49,6 +50,7 @@ import {
   trimEnd
 } from '../String.ts';
 import { isUrl } from '../url.ts';
+import { getObsidianDevUtilsState } from './App.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -797,8 +799,8 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
     isEmptyEmbedAliasAllowed: true
   };
 
-  options = { ...DEFAULT_OPTIONS, ...options };
-
+  const customDefaultOptions = getGenerateMarkdownLinkDefaultOptionsFns(app).map((defaultOptionsFn) => defaultOptionsFn());
+  options = Object.assign({}, DEFAULT_OPTIONS, ...customDefaultOptions, options);
   const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
 
   return tempRegisterFilesAndRun(app, [targetFile], () => generateMarkdownLinkImpl(options));
@@ -874,6 +876,20 @@ export function parseLinks(str: string): ParseLinkResult[] {
   links.sort((a, b) => a.startOffset - b.startOffset);
 
   return links;
+}
+
+/**
+ * Registers a function that returns default options for generating a markdown link.
+ *
+ * @param plugin - The plugin instance.
+ * @param fn - The function that returns the default options.
+ */
+export function registerGenerateMarkdownLinkDefaultOptionsFn(plugin: Plugin, fn: () => Partial<GenerateMarkdownLinkOptions>): void {
+  const generateMarkdownLinkDefaultOptionsFns = getGenerateMarkdownLinkDefaultOptionsFns(plugin.app);
+  generateMarkdownLinkDefaultOptionsFns.push(fn);
+  plugin.register(() => {
+    generateMarkdownLinkDefaultOptionsFns.remove(fn);
+  });
 }
 
 /**
@@ -1385,6 +1401,10 @@ function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLi
     default:
       throw new Error(`Invalid link path style: ${linkPathStyle as string}.`);
   }
+}
+
+function getGenerateMarkdownLinkDefaultOptionsFns(app: App): (() => Partial<GenerateMarkdownLinkOptions>)[] {
+  return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkOptions>)[]>(app, 'generateMarkdownLinkDefaultOptionsFns', []).value;
 }
 
 function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile): LinkConfig {
