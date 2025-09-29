@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 42.4.1
+
+- fix: init folder command current folder
+
 ## 42.4.0
 
 - docs: force tsdocs for non-private properties
