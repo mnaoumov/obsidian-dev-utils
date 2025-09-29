@@ -38,6 +38,9 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
     return this.inputEl;
   }
 
+  /**
+   * The inner text component.
+   */
   protected readonly textComponent: TextComponent;
 
   /**

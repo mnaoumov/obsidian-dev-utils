@@ -118,7 +118,11 @@ export abstract class CommandBase<TPlugin extends Plugin> implements Command {
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class CommandInvocationBase<TPlugin extends Plugin = Plugin> {
+  /**
+   * The app that the command invocation belongs to.
+   */
   protected readonly app: App;
+
   private lastCanExecuteResult?: boolean;
 
   /**

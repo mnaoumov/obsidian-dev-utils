@@ -20,8 +20,19 @@ import { NonEditorCommandBase } from './NonEditorCommandBase.ts';
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> extends NonEditorCommandBase<TPlugin> {
+  /**
+   * The item name to use in the file menu.
+   */
   protected readonly fileMenuItemName?: string;
+
+  /**
+   * The item name to use in the files menu.
+   */
   protected readonly filesMenuItemName?: string;
+
+  /**
+   * The section to use in the menu.
+   */
   protected readonly menuSection?: string;
 
   /**
@@ -105,6 +116,9 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class AbstractFileCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
+  /**
+   * The abstract file to invoke the command for.
+   */
   protected abstractFile!: TAbstractFile;
 
   /**
