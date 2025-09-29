@@ -5,7 +5,6 @@
  */
 
 import type {
-  Menu,
   Plugin,
   TAbstractFile,
   WorkspaceLeaf
@@ -13,32 +12,38 @@ import type {
 
 import { TFile } from 'obsidian';
 
-import { CommandInvocationBase } from './CommandBase.ts';
-import { NonEditorCommandBase } from './NonEditorCommandBase.ts';
+import {
+  AbstractFileCommandBase,
+  AbstractFileCommandInvocationBase
+} from './AbstractFileCommandBase.ts';
 
 /**
  * Base class for file commands.
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
-export abstract class FileCommandBase<TPlugin extends Plugin = Plugin> extends NonEditorCommandBase<TPlugin> {
-  protected readonly menuItemName?: string;
-  protected readonly menuSection?: string;
-
-  /**
-   * Registers the command.
-   */
-  public override register(): void {
-    super.register();
-    this.plugin.registerEvent(this.app.workspace.on('file-menu', this.handleFileMenu.bind(this)));
-  }
-
+export abstract class FileCommandBase<TPlugin extends Plugin = Plugin> extends AbstractFileCommandBase<TPlugin> {
   /**
    * Creates a new file command invocation.
    *
    * @returns The command invocation.
    */
   protected abstract override createCommandInvocation(): FileCommandInvocationBase<TPlugin>;
+
+  /**
+   * Checks if the command should be added to the abstract file menu.
+   *
+   * @param abstractFile - The abstract file to check.
+   * @param _source - The source of the abstract file.
+   * @param _leaf - The leaf to check.
+   * @returns Whether the command should be added to the abstract file menu.
+   */
+  protected override shouldAddToAbstractFileMenu(abstractFile: TAbstractFile, _source: string, _leaf?: WorkspaceLeaf): boolean {
+    if (!(abstractFile instanceof TFile)) {
+      return false;
+    }
+    return this.shouldAddToFileMenu(abstractFile, _source, _leaf);
+  }
 
   /**
    * Checks if the command should be added to the file menu.
@@ -51,30 +56,6 @@ export abstract class FileCommandBase<TPlugin extends Plugin = Plugin> extends N
   protected shouldAddToFileMenu(_file: TFile, _source: string, _leaf?: WorkspaceLeaf): boolean {
     return false;
   }
-
-  private handleFileMenu(menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf): void {
-    if (!(file instanceof TFile)) {
-      return;
-    }
-
-    if (!this.createCommandInvocation().invoke(true)) {
-      return;
-    }
-
-    if (!this.shouldAddToFileMenu(file, source, leaf)) {
-      return;
-    }
-
-    menu.addItem((item) => {
-      item.setTitle(this.menuItemName ?? this.name)
-        .setIcon(this.icon)
-        .onClick(() => this.createCommandInvocation().invoke(false, file));
-
-      if (this.menuSection) {
-        item.setSection(this.menuSection);
-      }
-    });
-  }
 }
 
 /**
@@ -82,34 +63,22 @@ export abstract class FileCommandBase<TPlugin extends Plugin = Plugin> extends N
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
-export abstract class FileCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
-  protected file!: TFile;
-
+export abstract class FileCommandInvocationBase<TPlugin extends Plugin> extends AbstractFileCommandInvocationBase<TPlugin> {
   /**
-   * Invokes the command.
+   * Gets the file that the command invocation belongs to.
    *
-   * @param checking - Is checking mode only. If `true`, only the check if the command can execute is performed. If `false`, the command is executed.
-   * @param file - The file to invoke the command for.
-   * @returns Whether the command was executed.
+   * @returns The file that the command invocation belongs to.
    */
-  public override invoke(checking: boolean, file?: TFile): boolean {
-    if (file) {
-      this.file = file;
-    }
-    return super.invoke(checking);
+  protected get file(): TFile {
+    return this.abstractFile as TFile;
   }
 
   /**
-   * Checks if the command can execute.
+   * Sets the file that the command invocation belongs to.
    *
-   * @returns Whether the command can execute.
+   * @param file - The file that the command invocation belongs to.
    */
-  protected override canExecute(): boolean {
-    const file = (this.file as TFile | undefined) ?? this.app.workspace.getActiveFile();
-    if (!file) {
-      return false;
-    }
-    this.file = file;
-    return true;
+  protected set file(file: TFile) {
+    this.abstractFile = file;
   }
 }
