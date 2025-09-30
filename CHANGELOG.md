@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 42.5.0
+
+- refactor: forbid non-null assertion
+- feat: rename menu section fields
+
 ## 42.4.1
 
 - fix: init folder command current folder
