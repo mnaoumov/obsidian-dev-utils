@@ -27,12 +27,12 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
   /**
    * The item name to use in the editor menu.
    */
-  protected readonly menuItemName?: string;
+  protected readonly editorMenuItemName?: string;
 
   /**
    * The section to use in the editor menu.
    */
-  protected readonly menuSection?: string;
+  protected readonly editorMenuSection?: string;
 
   /**
    * Checks if the command can execute.
@@ -85,9 +85,9 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
 
     menu.addItem((item) => {
       item
-        .setTitle(this.menuItemName ?? this.originalName)
+        .setTitle(this.editorMenuItemName ?? this.originalName)
         .setIcon(this.icon)
-        .setSection(this.menuSection ?? '')
+        .setSection(this.editorMenuSection ?? '')
         .onClick(() => this.createEditorCommandInvocation(editor, ctx).invoke(false));
     });
   }

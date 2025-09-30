@@ -26,14 +26,19 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
   protected readonly fileMenuItemName?: string;
 
   /**
+   * The section to use in the file menu.
+   */
+  protected readonly fileMenuSection?: string;
+
+  /**
    * The item name to use in the files menu.
    */
   protected readonly filesMenuItemName?: string;
 
   /**
-   * The section to use in the menu.
+   * The section to use in the files menu.
    */
-  protected readonly menuSection?: string;
+  protected readonly filesMenuSection?: string;
 
   /**
    * Registers the command.
@@ -73,13 +78,11 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
     }
 
     menu.addItem((item) => {
-      item.setTitle(this.fileMenuItemName ?? this.originalName)
+      item
+        .setTitle(this.fileMenuItemName ?? this.originalName)
         .setIcon(this.icon)
+        .setSection(this.fileMenuSection ?? '')
         .onClick(() => this.createCommandInvocation().invoke(false, abstractFile));
-
-      if (this.menuSection) {
-        item.setSection(this.menuSection);
-      }
     });
   }
 
@@ -95,17 +98,15 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
     }
 
     menu.addItem((item) => {
-      item.setTitle(this.filesMenuItemName ?? this.fileMenuItemName ?? this.originalName)
+      item
+        .setTitle(this.filesMenuItemName ?? this.fileMenuItemName ?? this.originalName)
         .setIcon(this.icon)
+        .setSection(this.filesMenuSection ?? this.fileMenuSection ?? '')
         .onClick(() => {
           for (const abstractFile of abstractFiles) {
             this.createCommandInvocation().invoke(false, abstractFile);
           }
         });
-
-      if (this.menuSection) {
-        item.setSection(this.menuSection);
-      }
     });
   }
 }
