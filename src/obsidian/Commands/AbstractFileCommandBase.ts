@@ -41,6 +41,19 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
   protected readonly filesMenuSection?: string;
 
   /**
+   * Checks if the command can execute or executes it.
+   *
+   * @param checking - Is checking mode only. If `true`, only the check if the command can execute is performed. If `false`, the command is executed.
+   * @returns Whether the command can execute.
+   */
+  public override checkCallback(checking: boolean): boolean {
+    if (!this.shouldAddToCommandPalette()) {
+      return false;
+    }
+    return super.checkCallback(checking);
+  }
+
+  /**
    * Registers the command.
    */
   public override register(): void {
@@ -66,6 +79,15 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
    */
   protected shouldAddToAbstractFileMenu(_abstractFile: TAbstractFile, _source: string, _leaf?: WorkspaceLeaf): boolean {
     return false;
+  }
+
+  /**
+   * Checks if the command should be added to the command palette.
+   *
+   * @returns Whether the command should be added to the command palette.
+   */
+  protected shouldAddToCommandPalette(): boolean {
+    return true;
   }
 
   private handleAbstractFileMenu(menu: Menu, abstractFile: TAbstractFile, source: string, leaf?: WorkspaceLeaf): void {

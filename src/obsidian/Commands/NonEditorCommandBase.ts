@@ -17,7 +17,7 @@ import { CommandBase } from './CommandBase.ts';
  */
 export abstract class NonEditorCommandBase<TPlugin extends Plugin> extends CommandBase<TPlugin> {
   /**
-   * Checks if the command can execute.
+   * Checks if the command can execute or executes it.
    *
    * @param checking - Is checking mode only. If `true`, only the check if the command can execute is performed. If `false`, the command is executed.
    * @returns Whether the command can execute.
