@@ -499,9 +499,9 @@
     "format:check": "tsx scripts/cli.ts format:check",
     "lint": "tsx scripts/cli.ts lint",
     "lint:fix": "tsx scripts/cli.ts lint:fix",
+    "prepare": "husky",
     "spellcheck": "tsx scripts/cli.ts spellcheck",
-    "version": "tsx scripts/version.ts",
-    "prepare": "husky"
+    "version": "tsx scripts/version.ts"
   },
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",
