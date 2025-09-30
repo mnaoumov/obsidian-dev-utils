@@ -101,8 +101,18 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
 export class EditorCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
   /**
    * The file to invoke the command for.
+   *
+   * @returns The file to invoke the command for.
+   * @throws If the file is not set.
    */
-  protected file!: TFile;
+  protected get file(): TFile {
+    if (!this._file) {
+      throw new Error('File not set');
+    }
+    return this._file;
+  }
+
+  private _file?: TFile;
 
   /**
    * Creates a new editor command invocation.
@@ -129,7 +139,7 @@ export class EditorCommandInvocationBase<TPlugin extends Plugin> extends Command
       return false;
     }
 
-    this.file = this.ctx.file;
+    this._file = this.ctx.file;
     return true;
   }
 }

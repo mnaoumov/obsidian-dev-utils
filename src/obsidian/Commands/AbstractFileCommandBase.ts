@@ -119,8 +119,27 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
 export abstract class AbstractFileCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
   /**
    * The abstract file to invoke the command for.
+   *
+   * @returns The abstract file to invoke the command for.
+   * @throws If the abstract file is not set.
    */
-  protected abstractFile!: TAbstractFile;
+  protected get abstractFile(): TAbstractFile {
+    if (!this._abstractFile) {
+      throw new Error('Abstract file not set');
+    }
+    return this._abstractFile;
+  }
+
+  /**
+   * Sets the abstract file to invoke the command for.
+   *
+   * @param abstractFile - The abstract file to invoke the command for.
+   */
+  protected set abstractFile(abstractFile: TAbstractFile) {
+    this._abstractFile = abstractFile;
+  }
+
+  private _abstractFile?: TAbstractFile;
 
   /**
    * Invokes the command.
@@ -131,7 +150,7 @@ export abstract class AbstractFileCommandInvocationBase<TPlugin extends Plugin> 
    */
   public override invoke(checking: boolean, abstractFile?: TAbstractFile): boolean {
     if (abstractFile) {
-      this.abstractFile = abstractFile;
+      this._abstractFile = abstractFile;
     }
     return super.invoke(checking);
   }
@@ -145,11 +164,11 @@ export abstract class AbstractFileCommandInvocationBase<TPlugin extends Plugin> 
     if (!super.canExecute()) {
       return false;
     }
-    const abstractFile = (this.abstractFile as TAbstractFile | undefined) ?? this.app.workspace.getActiveFile();
+    const abstractFile = this._abstractFile ?? this.app.workspace.getActiveFile();
     if (!abstractFile) {
       return false;
     }
-    this.abstractFile = abstractFile;
+    this._abstractFile = abstractFile;
     return true;
   }
 }
