@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 42.6.2
+
+- chore: reorder scripts
+
 ## 42.6.1
 
 - chore: clean empty hook
