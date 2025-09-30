@@ -35,7 +35,7 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
   protected readonly editorMenuSection?: string;
 
   /**
-   * Checks if the command can execute.
+   * Checks if the command can execute or executes it.
    *
    * @param checking - Is checking mode only. If `true`, only the check if the command can execute is performed. If `false`, the command is executed.
    * @param editor - The editor to check.
@@ -43,6 +43,9 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
    * @returns Whether the command can execute.
    */
   public editorCheckCallback(checking: boolean, editor: Editor, ctx: MarkdownFileInfo | MarkdownView): boolean {
+    if (!this.shouldAddToCommandPalette()) {
+      return false;
+    }
     return this.createEditorCommandInvocation(editor, ctx).invoke(checking);
   }
 
@@ -64,6 +67,15 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
   protected abstract createEditorCommandInvocation(editor: Editor, ctx: MarkdownFileInfo | MarkdownView): CommandInvocationBase;
 
   /**
+   * Checks if the command should be added to the command palette.
+   *
+   * @returns Whether the command should be added to the command palette.
+   */
+  protected shouldAddToCommandPalette(): boolean {
+    return true;
+  }
+
+  /**
    * Checks if the command should be added to the editor menu.
    *
    * @param _editor - The editor to check.
@@ -75,11 +87,11 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
   }
 
   private handleEditorMenu(menu: Menu, editor: Editor, ctx: MarkdownFileInfo | MarkdownView): void {
-    if (!this.createEditorCommandInvocation(editor, ctx).invoke(true)) {
+    if (!this.shouldAddToEditorMenu(editor, ctx)) {
       return;
     }
 
-    if (!this.shouldAddToEditorMenu(editor, ctx)) {
+    if (!this.createEditorCommandInvocation(editor, ctx).invoke(true)) {
       return;
     }
 
