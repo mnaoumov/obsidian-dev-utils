@@ -172,6 +172,17 @@ function getEslintConfigs(): Linter.Config[] {
         'no-octal-escape': 'error',
         'no-promise-executor-return': 'error',
         'no-proto': 'error',
+        'no-restricted-syntax': [
+          'error',
+          {
+            message: 'Do not use definite assignment assertions (!). Initialize the field or make it optional.',
+            selector: 'PropertyDefinition[definite=true]'
+          },
+          {
+            message: 'Do not use definite assignment assertions (!) on abstract fields.',
+            selector: 'TSAbstractPropertyDefinition[definite=true]'
+          }
+        ],
         'no-return-assign': 'error',
         'no-script-url': 'error',
         'no-self-compare': 'error',

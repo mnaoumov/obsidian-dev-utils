@@ -65,8 +65,12 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    * Gets the AbortSignal used for aborting long-running operations.
    *
    * @returns The abort signal.
+   * @throws If the abort signal is not defined.
    */
   public get abortSignal(): AbortSignal {
+    if (!this._abortSignal) {
+      throw new Error('Abort signal not defined');
+    }
     return this._abortSignal;
   }
 
@@ -105,7 +109,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     return this._settingsTab;
   }
 
-  private _abortSignal!: AbortSignal;
+  private _abortSignal?: AbortSignal;
   private _settingsManager: ExtractPluginSettingsManager<PluginTypes> | null = null;
   private _settingsTab: ExtractPluginSettingsTab<PluginTypes> | null = null;
   private readonly lifecycleEventNames = new Set<LifecycleEventName>();
@@ -392,7 +396,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   private async afterLoad(): Promise<void> {
-    if (this._abortSignal.aborted) {
+    if (this.abortSignal.aborted) {
       return;
     }
     await this.triggerLifecycleEvent('load');

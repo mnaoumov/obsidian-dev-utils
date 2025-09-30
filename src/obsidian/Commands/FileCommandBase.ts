@@ -68,9 +68,13 @@ export abstract class FileCommandInvocationBase<TPlugin extends Plugin> extends 
    * Gets the file that the command invocation belongs to.
    *
    * @returns The file that the command invocation belongs to.
+   * @throws If the abstract file is not a file.
    */
   protected get file(): TFile {
-    return this.abstractFile as TFile;
+    if (!(this.abstractFile instanceof TFile)) {
+      throw new Error('Abstract file is not a file');
+    }
+    return this.abstractFile;
   }
 
   /**

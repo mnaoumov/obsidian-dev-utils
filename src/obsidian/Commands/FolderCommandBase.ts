@@ -68,9 +68,13 @@ export abstract class FolderCommandInvocationBase<TPlugin extends Plugin> extend
    * Gets the folder that the command invocation belongs to.
    *
    * @returns The folder that the command invocation belongs to.
+   * @throws If the abstract file is not a folder.
    */
   protected get folder(): TFolder {
-    return this.abstractFile as TFolder;
+    if (!(this.abstractFile instanceof TFolder)) {
+      throw new Error('Abstract file is not a folder');
+    }
+    return this.abstractFile;
   }
 
   /**
