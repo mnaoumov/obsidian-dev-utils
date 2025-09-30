@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 42.6.1
+
+- chore: clean empty hook
+
 ## 42.6.0
 
 - feat: allow menu-only commands
