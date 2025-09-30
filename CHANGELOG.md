@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 42.6.0
+
+- feat: allow menu-only commands
+
 ## 42.5.0
 
 - refactor: forbid non-null assertion
