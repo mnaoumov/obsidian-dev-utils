@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 42.6.3
+
+- chore: update libs
+- fix: file changes for frontmatterLinkCacheWithOffsets
+
 ## 42.6.2
 
 - chore: reorder scripts
