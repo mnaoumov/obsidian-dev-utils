@@ -101,6 +101,14 @@ export function isCanvasTextNodeReference(reference: Reference): reference is Ca
  * @returns The file change.
  */
 export function referenceToFileChange(reference: Reference, newContent: string): FileChange {
+  if (isFrontmatterLinkCacheWithOffsets(reference)) {
+    return {
+      newContent,
+      oldContent: reference.original.slice(reference.startOffset, reference.endOffset),
+      reference
+    };
+  }
+
   return {
     newContent,
     oldContent: reference.original,
