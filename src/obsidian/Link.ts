@@ -18,7 +18,8 @@ import type { Node } from 'unist';
 
 import {
   normalizePath,
-  parseLinktext
+  parseLinktext,
+  requireApiVersion
 } from 'obsidian';
 import { InternalPluginName } from 'obsidian-typings/implementations';
 import { remark } from 'remark';
@@ -1410,7 +1411,7 @@ function getGenerateMarkdownLinkDefaultOptionsFns(app: App): (() => Partial<Gene
 function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile): LinkConfig {
   const { app } = options;
   return {
-    isEmbed: options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !isMarkdownFile(app, targetFile),
+    isEmbed: options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined) ?? !requireApiVersion('1.10.0') && !isMarkdownFile(app, targetFile),
     isSingleSubpathAllowed: options.isSingleSubpathAllowed ?? true,
     isWikilink: shouldUseWikilinkStyle(app, options.originalLink, options.linkStyle),
     linkPathStyle: getFinalLinkPathStyle(app, options.linkPathStyle),
