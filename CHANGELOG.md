@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 42.6.5
+
+- chore: lint
+- chore: update libs
+- chore: eslint comment
+- fix: don't add ! for non-md files links starting from 1.10.0
+
 ## 42.6.4
 
 - chore: update libs
