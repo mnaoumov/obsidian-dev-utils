@@ -289,6 +289,12 @@ function getImportXConfigs(): Linter.Config[] {
         'import-x/no-useless-path-segments': 'error',
         'import-x/no-webpack-loader-syntax': 'error'
       }
+    },
+    {
+      files: ['scripts/**/*.ts'],
+      rules: {
+        'import-x/no-nodejs-modules': 'off'
+      }
     }
   ];
 }
