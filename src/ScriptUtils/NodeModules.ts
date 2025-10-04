@@ -42,6 +42,7 @@ export { process };
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required -- This is the only file we encapsulate importing Node.js modules.
 export {
   cp,
+  glob,
   mkdir,
   readdir,
   readFile,

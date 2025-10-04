@@ -421,6 +421,7 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
   await checkGitHubCliInstalled();
   await npmRun('format:check');
   await npmRun('spellcheck');
+  await npmRun('lint:md');
   await npmRun('build');
   await npmRun('lint');
 

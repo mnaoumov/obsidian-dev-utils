@@ -24,6 +24,7 @@
     "verbatimModuleSyntax": true
   },
   "include": [
+    "./.markdownlint-cli2.mts",
     "./eslint.config.*ts",
     "./src/**/*.ts",
     "./scripts/**/*.ts"
