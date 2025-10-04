@@ -77,6 +77,39 @@ export enum ObsidianPluginRepoPaths {
   /** Manifest file. */
   ManifestJson = 'manifest.json',
 
+  /** CommonJS Markdownlint CLI2 configuration file. */
+  MarkdownlintCli2ConfigCjs = '.markdownlint-cli2.cjs',
+
+  /** JSONC Markdownlint CLI2 configuration file. */
+  MarkdownlintCli2ConfigJsonc = '.markdownlint-cli2.jsonc',
+
+  /** ESM Markdownlint CLI2 configuration file. */
+  MarkdownlintCli2ConfigMjs = '.markdownlint-cli2.mjs',
+
+  /** ESM TypeScript Markdownlint CLI2 configuration file. */
+  MarkdownlintCli2ConfigMts = '.markdownlint-cli2.mts',
+
+  /** YAML Markdownlint CLI2 configuration file. */
+  MarkdownlintCli2ConfigYaml = '.markdownlint-cli2.yaml',
+
+  /** CommonJS Markdownlint configuration file. */
+  MarkdownlintConfigCjs = '.markdownlint.cjs',
+
+  /** JSON Markdownlint configuration file. */
+  MarkdownlintConfigJson = '.markdownlint.json',
+
+  /** JSONC Markdownlint configuration file. */
+  MarkdownlintConfigJsonc = '.markdownlint.jsonc',
+
+  /** ESM Markdownlint configuration file. */
+  MarkdownlintConfigMjs = '.markdownlint.mjs',
+
+  /** YAML Markdownlint configuration file. */
+  MarkdownlintConfigYaml = '.markdownlint.yaml',
+
+  /** YAML Markdownlint configuration file. */
+  MarkdownlintConfigYml = '.markdownlint.yml',
+
   /** NPM shrinkwrap file. */
   NpmShrinkwrapJson = 'npm-shrinkwrap.json',
 

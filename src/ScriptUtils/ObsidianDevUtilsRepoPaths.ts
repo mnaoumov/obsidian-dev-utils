@@ -97,6 +97,12 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Library ESM JavaScript file. */
   LibraryMjs = 'Library.mjs',
 
+  /** ESM Markdownlint CLI2 configuration file. */
+  MarkdownlintCli2ConfigMjs = '.markdownlint-cli2.mjs',
+
+  /** ESM TypeScript Markdownlint CLI2 configuration file. */
+  MarkdownlintCli2ConfigMts = '.markdownlint-cli2.mts',
+
   /** ESM JavaScript file extension. */
   MjsExtension = '.mjs',
 

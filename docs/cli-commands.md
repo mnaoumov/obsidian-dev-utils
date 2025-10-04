@@ -80,9 +80,9 @@ Checks formatting of your code using [dprint](https://dprint.dev/).
 npx obsidian-dev-utils lint
 ```
 
-This command is looking for `eslint.config.js/mjs/cjs/ts/mts/cts` file in the root of your project and if it's not found, it creates it referencing the default configuration.
-
 Lints your code, enforcing a code convention to minimize common errors.
+
+This command is looking for `ESLint` config file in the root of your project and if it's not found, it creates it referencing the default configuration.
 
 ## Lint and Fix Code
 
@@ -92,7 +92,27 @@ npx obsidian-dev-utils lint:fix
 
 Lints your code and automatically applies fixes where possible.
 
-This command is looking for `eslint.config.mjs` file in the root of your project and if it's not found, it creates it referencing the default configuration.
+This command is looking for `ESLint` config file in the root of your project and if it's not found, it creates it referencing the default configuration.
+
+## Lint Markdown
+
+```bash
+npx obsidian-dev-utils lint:md
+```
+
+Lints your markdown documentation.
+
+This command is looking for existing `markdownlint-cli2` config file in the root of your project and if it's not found, it creates it referencing the default configuration.
+
+## Lint and Fix Markdown
+
+```bash
+npx obsidian-dev-utils lint:md:fix
+```
+
+Lints your markdown documentation and automatically applies fixes where possible.
+
+This command is looking for existing `markdownlint-cli2` config file in the root of your project and if it's not found, it creates it referencing the default configuration.
 
 ## Publish
 

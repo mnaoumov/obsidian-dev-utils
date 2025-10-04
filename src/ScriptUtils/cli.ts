@@ -37,6 +37,7 @@ import {
 } from './esbuild/ObsidianPluginBuilder.ts';
 import { lint } from './ESLint/ESLint.ts';
 import { format } from './format.ts';
+import { lintMarkdown } from './markdownlint/markdownlint.ts';
 import {
   existsSync,
   process
@@ -70,6 +71,8 @@ enum CommandNames {
   FormatCheck = 'format:check',
   Lint = 'lint',
   LintFix = 'lint:fix',
+  LintMarkdown = 'lint:md',
+  LintMarkdownFix = 'lint:md:fix',
   Publish = 'publish',
   Spellcheck = 'spellcheck',
   Version = 'version'
@@ -107,6 +110,8 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
       addCommand(program, CommandNames.FormatCheck, 'Check if the source code is formatted', () => format(false));
       addCommand(program, CommandNames.Lint, 'Lint the source code', () => lint());
       addCommand(program, CommandNames.LintFix, 'Lint the source code and apply automatic fixes', () => lint(true));
+      addCommand(program, CommandNames.LintMarkdown, 'Lint the markdown documentation', () => lintMarkdown());
+      addCommand(program, CommandNames.LintMarkdownFix, 'Lint the markdown documentation and apply automatic fixes', () => lintMarkdown(true));
       addCommand(program, CommandNames.Publish, 'Publish to NPM', (isBeta: boolean) => publish(isBeta))
         .argument('[isBeta]', 'Publish to NPM beta');
       addCommand(program, CommandNames.Spellcheck, 'Spellcheck the source code', () => spellcheck());
