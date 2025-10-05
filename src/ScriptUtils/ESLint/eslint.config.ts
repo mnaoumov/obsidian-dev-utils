@@ -39,7 +39,9 @@ export const obsidianDevUtilsConfigs: Linter.Config[] = defineConfig(
       join(ObsidianPluginRepoPaths.Scripts, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
       ObsidianPluginRepoPaths.EslintConfigCts,
       ObsidianPluginRepoPaths.EslintConfigTs,
-      ObsidianPluginRepoPaths.EslintConfigMts
+      ObsidianPluginRepoPaths.EslintConfigMts,
+      ObsidianPluginRepoPaths.MarkdownlintCli2ConfigMjs,
+      ObsidianPluginRepoPaths.MarkdownlintCli2ConfigMts
     ]
   },
   {
