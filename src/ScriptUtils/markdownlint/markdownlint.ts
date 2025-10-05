@@ -73,5 +73,15 @@ export async function lintMarkdown(shouldFix = false): Promise<void> {
       'node_modules/**'
     ]
   }));
-  await execFromRoot(['npx', 'linkinator', ...mdFiles, '--retry', '--retry-errors', '--url-rewrite-search', 'https://www\\.npmjs\\.com/package/', '--url-rewrite-replace', 'https://registry.npmjs.org/']);
+  await execFromRoot([
+    'npx',
+    'linkinator',
+    ...mdFiles,
+    '--retry',
+    '--retry-errors',
+    '--url-rewrite-search',
+    'https://www\\.npmjs\\.com/package/',
+    '--url-rewrite-replace',
+    'https://registry.npmjs.org/'
+  ]);
 }
