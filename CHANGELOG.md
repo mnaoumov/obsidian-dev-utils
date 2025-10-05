@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 42.7.0
+
+- feat: add ctrl+tab/ctrl+shift+tab for CodeHighlighterComponent
+- feat: strongly-typed settings
+- chore: update libs
+- feat: better error handling
+- feat: enable markdown lint
+- feat: allow node-js libs from scripts folder
+
 ## 42.6.5
 
 - chore: lint
