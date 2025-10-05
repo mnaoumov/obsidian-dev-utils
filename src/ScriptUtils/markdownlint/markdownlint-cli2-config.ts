@@ -15,10 +15,12 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigurationSchema = {
   config: {
     'MD013': false,
     'MD052': {
+      // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       ignored_labels: [
         '!note',
         '!warning'
       ],
+      // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       shortcut_syntax: true
     },
     'relative-links': true
