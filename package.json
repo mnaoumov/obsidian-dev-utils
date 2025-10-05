@@ -113,6 +113,34 @@
         "default": "./dist/lib/cjs/ScriptUtils/esbuild/*.cjs"
       }
     },
+    "./ScriptUtils/markdownlint": {
+      "import": {
+        "types": "./dist/lib/esm/ScriptUtils/markdownlint/index.d.mts",
+        "default": "./dist/lib/esm/ScriptUtils/markdownlint/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/ScriptUtils/markdownlint/index.d.cts",
+        "default": "./dist/lib/cjs/ScriptUtils/markdownlint/index.cjs"
+      }
+    },
+    "./ScriptUtils/markdownlint/*": {
+      "import": {
+        "types": "./dist/lib/esm/ScriptUtils/markdownlint/*.d.mts",
+        "default": "./dist/lib/esm/ScriptUtils/markdownlint/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/ScriptUtils/markdownlint/*.d.cts",
+        "default": "./dist/lib/cjs/ScriptUtils/markdownlint/*.cjs"
+      }
+    },
+    "./ScriptUtils/markdownlint/@types/*": {
+      "import": {
+        "types": "./dist/lib/esm/ScriptUtils/markdownlint/@types/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/ScriptUtils/markdownlint/@types/*.d.cts"
+      }
+    },
     "./Transformers": {
       "import": {
         "types": "./dist/lib/esm/Transformers/index.d.mts",
