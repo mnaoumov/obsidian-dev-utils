@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 42.8.0
+
+- feat: switch from tsx to jiti
+
 ## 42.7.0
 
 - feat: add ctrl+tab/ctrl+shift+tab for CodeHighlighterComponent
