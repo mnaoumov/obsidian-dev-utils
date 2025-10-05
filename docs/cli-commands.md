@@ -184,7 +184,7 @@ If you want to alter the way provided CLI commands work, you have two ways
 {
   "scripts": {
     "build": "node my-build.mjs",
-    "build:compile:typescript": "tsx my-build-compile-typescript.ts"
+    "build:compile:typescript": "jiti my-build-compile-typescript.ts"
   },
   "...": "..."
 }
