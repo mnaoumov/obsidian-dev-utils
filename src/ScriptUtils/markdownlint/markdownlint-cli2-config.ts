@@ -13,7 +13,14 @@ import type { MarkdownlintCli2ConfigurationSchema } from './@types/markdownlint-
  */
 export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigurationSchema = {
   config: {
-    'MD013': false,
+    MD013: false,
+    MD052: {
+      ignored_labels: [
+        '!note',
+        '!warning'
+      ],
+      shortcut_syntax: true
+    },
     'relative-links': true
   },
   customRules: [
