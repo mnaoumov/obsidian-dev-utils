@@ -10,7 +10,7 @@
 import type { Promisable } from 'type-fest';
 
 import { Command } from 'commander';
-import { tsImport } from 'tsx/esm/api';
+import { createJiti } from 'jiti';
 
 import type { MaybeReturn } from '../Type.ts';
 
@@ -48,6 +48,8 @@ import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 import { resolvePathFromRootSafe } from './Root.ts';
 import { spellcheck } from './spellcheck.ts';
 import { updateVersion } from './version.ts';
+
+const jiti = createJiti(import.meta.url);
 
 /**
  * A number of leading arguments to skip when parsing command-line arguments.
@@ -147,7 +149,7 @@ function addCommand<Args extends unknown[]>(
         if (existsSync(scriptPath)) {
           const folder = getFolderName(import.meta.url);
           const relativeScriptPath = relative(folder, scriptPath);
-          const module = await tsImport(relativeScriptPath, { parentURL: import.meta.url }) as Partial<OverrideModule<Args>>;
+          const module = await jiti.import<Partial<OverrideModule<Args>>>(relativeScriptPath);
           if (typeof module.invoke !== 'function') {
             throw new Error(`${relativeScriptPath} does not export an invoke function`);
           }
