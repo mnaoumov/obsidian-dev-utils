@@ -108,16 +108,19 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 40.13.1
 
-- Don't delete notes on rename (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/223)
+- Don't delete notes on rename
+  - fix: <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/223>
 
 ## 40.13.0
 
 - @typescript-eslint/prefer-readonly
-- Remove empty folder after attachment moved (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/222)
+- Remove empty folder after attachment moved
+  - fix: <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/222>
 
 ## 40.12.1
 
-- Ensure MetadataDeleted processed before queue (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/220)
+- Ensure MetadataDeleted processed before queue
+  - fix: <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/220>
 
 ## 40.12.0
 
@@ -184,7 +187,8 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 40.1.3
 
-- Handle frontmatter changes properly (https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/206)
+- Handle frontmatter changes properly
+  - fix: <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/206>
 
 ## 40.1.2
 
@@ -196,7 +200,8 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 40.1.0
 
-- shouldEscapeAlias (https://github.com/mnaoumov/obsidian-better-markdown-links/issues/22)
+- shouldEscapeAlias
+  - fix: <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/22>
 
 ## 40.0.2
 
@@ -251,7 +256,8 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 38.5.1
 
-- Don't wait for every save. Fixes performance (https://github.com/mnaoumov/obsidian-backlink-cache/issues/10)
+- Don't wait for every save
+  - fix\[perf\]: <https://github.com/mnaoumov/obsidian-backlink-cache/issues/10>
 
 ## 38.5.0
 
@@ -259,7 +265,8 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 38.4.3
 
-- Reuse parsed alias (Fixes https://github.com/mnaoumov/obsidian-better-markdown-links/issues/21#issuecomment-3225879039)
+- Reuse parsed alias
+  - fix: <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/21#issuecomment-3225879039>
 
 ## 38.4.2
 
@@ -334,6 +341,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 35.0.1
 
+- Minor changes
 
 ## 35.0.0
 
@@ -410,7 +418,8 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 30.5.1
 
-- Polyfill `AbortSignal.any()`. Needed for https://github.com/mnaoumov/obsidian-backlink-cache/issues/9
+- Polyfill `AbortSignal.any()`
+  - fix: <https://github.com/mnaoumov/obsidian-backlink-cache/issues/9>
 
 ## 30.5.0
 
@@ -482,6 +491,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 28.2.1
 
+- Minor changes
 
 ## 28.2.0
 
@@ -530,7 +540,8 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 27.5.0
 
-- Don't disable link updates if rename is disabled (https://github.com/mnaoumov/obsidian-better-markdown-links/issues/17)
+- Don't disable link updates if rename is disabled
+  - fix: <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/17>
 
 ## 27.4.0
 
@@ -552,7 +563,8 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 27.2.0
 
-- Recognize urls such mailto:foo@bar.com (For https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9)
+- Recognize urls such mailto:foo@bar.com
+  - fix: <https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9>
 
 ## 27.1.0
 
@@ -561,6 +573,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 27.0.2
 
+- Minor changes
 
 ## 27.0.1
 
@@ -589,7 +602,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 26.27.3
 
-- Parse <url>
+- Parse \<url\>
 
 ## 26.27.2
 
@@ -714,11 +727,11 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 - Add TelephoneComponent.
 - Add PasswordComponent.
-- Fixed [Issue #32: [BUG] Time input and shouldShowPlaceholderForDefaultValues](https://github.com/mnaoumov/obsidian-dev-utils/issues/32).
+- fix: #32
 
 ## 26.3.0
 
-- Fixed [Issue #31: [BUG] Toggles animate when opening the settings tab](https://github.com/mnaoumov/obsidian-dev-utils/issues/31).
+- fix: #1
 
 ## 26.2.1
 
@@ -857,6 +870,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 23.0.1
 
+- Minor changes
 
 ## 23.0.0
 
@@ -1230,6 +1244,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 19.8.2
 
+- Minor changes
 
 ## 19.8.1
 
@@ -1330,6 +1345,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 19.1.0
 
+- Minor changes
 
 ## 19.0.1
 
@@ -1338,7 +1354,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 19.0.0
 
-- Make compatible with https://arethetypeswrong.github.io/
+- Make compatible with [Are the types wrong?](https://arethetypeswrong.github.io/)
 
 ## 18.4.2
 

@@ -201,3 +201,5 @@ Hook scripts follow naming conventions:
 E.g., `scripts/build.ts`, `scripts/build-compile-typescript.ts`.
 
 [See the example of such hook scripts](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/static/scripts). You can copy them into your `scripts` folder and modify according to your needs.
+
+[Hot Reload]: https://github.com/pjeby/hot-reload

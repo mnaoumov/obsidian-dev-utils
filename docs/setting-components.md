@@ -2,7 +2,7 @@
 
 `Obsidian Dev Utils` provides some setting components that you can use in your plugin.
 
-In order for components to look properly, their styles has to be initialized. See [Styling](#styling) for more details.
+In order for components to look properly, their styles has to be initialized. See [Styling](./styling.md) for more details.
 
 ## CheckboxComponent
 
@@ -273,6 +273,7 @@ new SettingEx()
 ![NumberComponent](./images/setting-components/NumberComponent.png)
 
 ## PasswordComponent
+
 ```ts
 import { PasswordComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/PasswordComponent';
 

@@ -1,4 +1,4 @@
-# Obsidian Dev Utils [![](https://badge.fury.io/js/obsidian-dev-utils.svg)](https://npmjs.org/package/obsidian-dev-utils)
+# Obsidian Dev Utils [![obsidian-dev-utils](https://badge.fury.io/js/obsidian-dev-utils.svg)](https://www.npmjs.com/package/obsidian-dev-utils)
 
 `Obsidian Dev Utils` is a collection of essential functions and CLI tools designed to streamline your Obsidian plugin development process. Whether you're building a plugin from scratch or enhancing an existing one, these utilities are here to simplify your workflow.
 
@@ -34,10 +34,10 @@ npm install obsidian-dev-utils
 
 ## Support
 
-<a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;"></a>
+<!-- markdownlint-disable MD033 -->
+<a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="60" width="217"></a>
+<!-- markdownlint-enable MD033 -->
 
 ## License
 
 © [Michael Naumov](https://github.com/mnaoumov/)
-
-[Hot Reload]: https://github.com/pjeby/hot-reload
