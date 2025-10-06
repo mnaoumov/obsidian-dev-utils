@@ -25,7 +25,8 @@
   },
   "include": [
     "./.markdownlint-cli2.mts",
-    "./eslint.config.*ts",
+    "./commitlint.config.ts",
+    "./eslint.config.mts",
     "./src/**/*.ts",
     "./scripts/**/*.ts"
   ]

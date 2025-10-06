@@ -29,6 +29,9 @@ export enum ObsidianPluginRepoPaths {
   /** Changelog file. */
   ChangelogMd = 'CHANGELOG.md',
 
+  /** Commitlint configuration file. */
+  CommitlintConfigTs = 'commitlint.config.ts',
+
   /** Current folder. */
   CurrentFolder = '.',
 
