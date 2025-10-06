@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 43.1.0
+
+- feat: add oldAttachmentPathOrFile
+- Revert "refactor: getAttachmentFilePath" This reverts commit 55bfdb908f64801b8f5d663dcddd86bc0b4d850a.
+- chore: lint
+
 ## 43.0.0
 
 - chore: update libs
