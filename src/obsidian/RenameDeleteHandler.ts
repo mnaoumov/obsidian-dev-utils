@@ -830,9 +830,9 @@ class RenameMap {
       if (settings.shouldRenameAttachmentFiles) {
         newAttachmentFilePath = await getAttachmentFilePath({
           app: this.app,
-          attachmentPathOrFile: oldAttachmentFile,
           context: AttachmentPathContext.RenameNote,
           notePathOrFile: this.newPath,
+          oldAttachmentPathOrFile: oldAttachmentFile,
           oldNotePathOrFile: this.oldPath,
           shouldSkipDuplicateCheck: true
         });
