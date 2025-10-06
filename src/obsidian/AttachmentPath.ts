@@ -6,6 +6,7 @@
 
 import type {
   App,
+  FileStats,
   Vault
 } from 'obsidian';
 
@@ -58,6 +59,26 @@ export enum AttachmentPathContext {
  */
 export interface GetAvailablePathForAttachmentsExtendedFnOptions {
   /**
+   * A base name of the attachment.
+   */
+  attachmentFileBaseName: string;
+
+  /**
+   * A content of the attachment file.
+   */
+  attachmentFileContent?: ArrayBuffer | undefined;
+
+  /**
+   * An extension of the attachment.
+   */
+  attachmentFileExtension: string;
+
+  /**
+   * A stats of the attachment file.
+   */
+  attachmentFileStat?: FileStats | undefined;
+
+  /**
    * A context.
    */
   context: AttachmentPathContext;
@@ -66,11 +87,6 @@ export interface GetAvailablePathForAttachmentsExtendedFnOptions {
    * A path or file of the note.
    */
   notePathOrFile: null | PathOrFile;
-
-  /**
-   * A path of the attachment.
-   */
-  oldAttachmentPath: string;
 
   /**
    * A path or file of the old note.
@@ -122,6 +138,11 @@ export interface GetAttachmentFilePathOptions {
    */
   app: App;
   /**
+   * A path of the attachment.
+   */
+  attachmentPathOrFile: PathOrFile;
+
+  /**
    * A context.
    */
   context: AttachmentPathContext;
@@ -130,11 +151,6 @@ export interface GetAttachmentFilePathOptions {
    * A path of the note.
    */
   notePathOrFile: PathOrFile;
-
-  /**
-   * A path of the attachment.
-   */
-  oldAttachmentPathOrFile: PathOrFile;
 
   /**
    * A path of the old note.
@@ -186,26 +202,29 @@ export interface GetAvailablePathForAttachmentsOptions {
 export async function getAttachmentFilePath(options: GetAttachmentFilePathOptions): Promise<string> {
   const {
     app,
+    attachmentPathOrFile,
     notePathOrFile,
-    oldAttachmentPathOrFile,
     shouldSkipDuplicateCheck
   } = options;
-  const oldAttachmentPath = getPath(app, oldAttachmentPathOrFile);
+  const attachmentPath = getPath(app, attachmentPathOrFile);
+  const attachmentFileExtension = extname(attachmentPath);
+  const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
+  const attachmentFile = getFileOrNull(app, attachmentPath);
 
   const extendedFn = (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFnExtended>).extended;
   if (extendedFn) {
     return extendedFn({
+      attachmentFileBaseName,
+      attachmentFileContent: attachmentFile ? await app.vault.readBinary(attachmentFile) : undefined,
+      attachmentFileExtension: attachmentFileExtension.slice(1),
+      attachmentFileStat: attachmentFile?.stat,
       context: options.context,
       notePathOrFile,
-      oldAttachmentPath,
       oldNotePathOrFile: options.oldNotePathOrFile,
       shouldSkipDuplicateCheck,
       shouldSkipMissingAttachmentFolderCreation: true
     });
   }
-
-  const attachmentFileExtension = extname(oldAttachmentPath);
-  const attachmentFileBaseName = basename(oldAttachmentPath, attachmentFileExtension);
 
   return await getAvailablePathForAttachments({
     app,
@@ -229,9 +248,9 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
   return parentFolderPath(
     await getAttachmentFilePath({
       app,
+      attachmentPathOrFile: DUMMY_PATH,
       context,
       notePathOrFile,
-      oldAttachmentPathOrFile: DUMMY_PATH,
       shouldSkipDuplicateCheck: true
     })
   );
