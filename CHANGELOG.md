@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 43.0.0
+
+- chore: update libs
+- refactor: getAttachmentFilePath
+
 ## 42.8.1
 
 - chore: lint configs
