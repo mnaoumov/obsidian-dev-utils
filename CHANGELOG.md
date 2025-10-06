@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 42.8.1
+
+- chore: lint configs
+- feat: include MarkdownlintCli2Config files for linting
+- docs: switch from tsx to jiti
+
 ## 42.8.0
 
 - feat: switch from tsx to jiti
