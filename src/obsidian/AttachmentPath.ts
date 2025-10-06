@@ -89,6 +89,11 @@ export interface GetAvailablePathForAttachmentsExtendedFnOptions {
   notePathOrFile: null | PathOrFile;
 
   /**
+   * A path or file of the old attachment.
+   */
+  oldAttachmentPathOrFile: PathOrFile;
+
+  /**
    * A path or file of the old note.
    */
   oldNotePathOrFile?: PathOrFile | undefined;
@@ -137,10 +142,6 @@ export interface GetAttachmentFilePathOptions {
    * An Obsidian application instance.
    */
   app: App;
-  /**
-   * A path of the attachment.
-   */
-  attachmentPathOrFile: PathOrFile;
 
   /**
    * A context.
@@ -151,6 +152,11 @@ export interface GetAttachmentFilePathOptions {
    * A path of the note.
    */
   notePathOrFile: PathOrFile;
+
+  /**
+   * A path of the attachment.
+   */
+  oldAttachmentPathOrFile: PathOrFile;
 
   /**
    * A path of the old note.
@@ -202,11 +208,11 @@ export interface GetAvailablePathForAttachmentsOptions {
 export async function getAttachmentFilePath(options: GetAttachmentFilePathOptions): Promise<string> {
   const {
     app,
-    attachmentPathOrFile,
     notePathOrFile,
+    oldAttachmentPathOrFile,
     shouldSkipDuplicateCheck
   } = options;
-  const attachmentPath = getPath(app, attachmentPathOrFile);
+  const attachmentPath = getPath(app, oldAttachmentPathOrFile);
   const attachmentFileExtension = extname(attachmentPath);
   const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
   const attachmentFile = getFileOrNull(app, attachmentPath);
@@ -220,6 +226,7 @@ export async function getAttachmentFilePath(options: GetAttachmentFilePathOption
       attachmentFileStat: attachmentFile?.stat,
       context: options.context,
       notePathOrFile,
+      oldAttachmentPathOrFile: options.oldAttachmentPathOrFile,
       oldNotePathOrFile: options.oldNotePathOrFile,
       shouldSkipDuplicateCheck,
       shouldSkipMissingAttachmentFolderCreation: true
@@ -248,9 +255,9 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
   return parentFolderPath(
     await getAttachmentFilePath({
       app,
-      attachmentPathOrFile: DUMMY_PATH,
       context,
       notePathOrFile,
+      oldAttachmentPathOrFile: DUMMY_PATH,
       shouldSkipDuplicateCheck: true
     })
   );
