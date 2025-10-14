@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 43.1.1
+
+- fix: css query
+- chore: update libs
+
 ## 43.1.0
 
 - feat: add oldAttachmentPathOrFile
