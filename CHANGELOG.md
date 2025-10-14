@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.1.2
+
+- fix: tabIndex of code highlighter
+
 ## 43.1.1
 
 - fix: css query
