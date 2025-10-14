@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.1.3
+
+- fix: fix tabIndex
+
 ## 43.1.2
 
 - fix: tabIndex of code highlighter
