@@ -77,7 +77,12 @@ export class CodeHighlighterComponent extends ValueComponent<string>
     addPluginCssClasses(wrapper, CssClass.SettingComponentWrapper);
 
     this.textAreaComponent = new TextAreaComponent(wrapper);
-    this.preEl = wrapper.createEl('pre');
+    this.textAreaComponent.inputEl.setAttribute('tabindex', '-1');
+    this.preEl = wrapper.createEl('pre', {
+      attr: {
+        tabIndex: '-1'
+      }
+    });
     this.codeEl = this.preEl.createEl('code');
 
     this.inputEl.addEventListener('input', convertAsyncToSync(this.updateHighlightedCode.bind(this)));
