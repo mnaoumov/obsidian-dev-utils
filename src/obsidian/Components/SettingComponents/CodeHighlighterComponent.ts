@@ -209,7 +209,7 @@ export class CodeHighlighterComponent extends ValueComponent<string>
 
     if (evt.ctrlKey || evt.metaKey) {
       const focusables = Array.from(document.querySelectorAll<HTMLElement>(
-        'a, button, input, select, textarea, [tabindex]:not([tabindex=-1]):not(disabled)'
+        ':is(a, button, input, select, textarea, [tabindex]):not([tabindex="-1"]):not(:disabled):not([type="hidden"])'
       ));
       const index = focusables.indexOf(this.inputEl);
       const deltaIndex = evt.shiftKey ? -1 : 1;
