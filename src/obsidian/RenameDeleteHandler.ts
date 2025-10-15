@@ -813,7 +813,9 @@ class RenameMap {
         if (isOldAttachmentFolderAtRoot || oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
           const oldAttachmentBacklinks = await getBacklinksForFileSafe(this.app, oldAttachmentFile);
           this.abortSignal.throwIfAborted();
-          if (oldAttachmentBacklinks.keys().length === 1) {
+          const keys = new Set<string>(oldAttachmentBacklinks.keys());
+          keys.add(this.oldPath);
+          if (keys.size === 1) {
             oldAttachmentFiles.push(oldAttachmentFile);
           }
         }
