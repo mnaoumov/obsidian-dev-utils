@@ -186,7 +186,6 @@ interface RenameMapOptions {
   newPath: string;
   oldCache: CachedMetadata | null;
   oldPath: string;
-  renameHandler: RenameHandler;
   settingsManager: SettingsManager;
 }
 
@@ -524,21 +523,6 @@ class RenameHandler {
     this.interruptedCombinedBacklinksMap = options.interruptedCombinedBacklinksMap ?? new Map<string, Map<string, string>>();
   }
 
-  public async getBacklinks(path: string): Promise<Map<string, Reference[]>> {
-    const oldFile = getFile(this.app, this.oldPath, true);
-    const shouldRegisterOldCache = this.oldCache && oldFile.deleted;
-    if (shouldRegisterOldCache) {
-      registerFileCacheForNonExistingFile(this.app, oldFile, this.oldCache);
-    }
-    try {
-      return (await getBacklinksForFileSafe(this.app, path)).data;
-    } finally {
-      if (shouldRegisterOldCache) {
-        unregisterFileCacheForNonExistingFile(this.app, oldFile);
-      }
-    }
-  }
-
   public async handle(): Promise<void> {
     this.abortSignal.throwIfAborted();
     await this.continueInterruptedRenames();
@@ -558,7 +542,6 @@ class RenameHandler {
         newPath: this.newPath,
         oldCache: this.oldCache,
         oldPath: this.oldPath,
-        renameHandler: this,
         settingsManager: this.settingsManager
       });
       await renameMap.fill();
@@ -571,7 +554,7 @@ class RenameHandler {
         if (attachmentOldPath === this.oldPath) {
           continue;
         }
-        const attachmentOldPathBacklinksMap = await this.getBacklinks(attachmentOldPath);
+        const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe(this.app, attachmentOldPath)).data;
         this.abortSignal.throwIfAborted();
         renameMap.initBacklinksMap(attachmentOldPathBacklinksMap, combinedBacklinksMap, attachmentOldPath);
       }
@@ -706,7 +689,7 @@ class RenameHandler {
     const fakeOldFile = getFile(this.app, this.oldPath, true);
     let oldPathBacklinksMapRefreshed = new Map<string, Reference[]>();
     await tempRegisterFilesAndRun(this.app, [fakeOldFile], async () => {
-      oldPathBacklinksMapRefreshed = await this.getBacklinks(fakeOldFile.path);
+      oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe(this.app, fakeOldFile)).data;
     });
 
     for (const link of oldPathLinksRefreshed) {
@@ -751,11 +734,9 @@ class RenameMap {
   private readonly oldCache: CachedMetadata | null;
   private readonly oldPath: string;
   private readonly oldPathLinks: Reference[];
-  private readonly renameHandler: RenameHandler;
   private readonly settingsManager: SettingsManager;
 
   public constructor(options: RenameMapOptions) {
-    this.renameHandler = options.renameHandler;
     this.abortSignal = options.abortSignal;
     this.app = options.app;
     this.settingsManager = options.settingsManager;
@@ -830,9 +811,9 @@ class RenameMap {
         }
 
         if (isOldAttachmentFolderAtRoot || oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
-          const oldAttachmentBacklinks = await this.renameHandler.getBacklinks(oldAttachmentFile.path);
+          const oldAttachmentBacklinks = await getBacklinksForFileSafe(this.app, oldAttachmentFile);
           this.abortSignal.throwIfAborted();
-          if (Array.from(oldAttachmentBacklinks.keys()).length === 1) {
+          if (oldAttachmentBacklinks.keys().length === 1) {
             oldAttachmentFiles.push(oldAttachmentFile);
           }
         }
