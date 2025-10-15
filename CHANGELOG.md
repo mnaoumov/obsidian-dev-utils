@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 43.2.2
+
+- docs: update links
+- feat: initOriginalLinksMap
+- fix: carefully check for oldPath
+- Revert "fix: ensure backlinks work for old attachments"
+  - This reverts commit 4eb57b423413a3de5b2b499c6f195f4d950b321d.
+
 ## 43.2.1
 
 - fix: ensure backlinks work for old attachments
