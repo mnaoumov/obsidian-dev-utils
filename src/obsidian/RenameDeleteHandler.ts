@@ -548,6 +548,7 @@ class RenameHandler {
       this.abortSignal.throwIfAborted();
 
       const combinedBacklinksMap = new Map<string, Map<string, string>>();
+      renameMap.initOriginalLinksMap(combinedBacklinksMap);
       renameMap.initBacklinksMap(this.oldPathBacklinksMap, combinedBacklinksMap, this.oldPath);
 
       for (const attachmentOldPath of renameMap.keys()) {
@@ -881,6 +882,18 @@ class RenameMap {
       for (const link of links) {
         linkJsonToPathMap.set(toJson(link), path);
       }
+    }
+  }
+
+  public initOriginalLinksMap(combinedBacklinksMap: Map<string, Map<string, string>>): void {
+    for (const oldPathLink of this.oldPathLinks) {
+      const oldAttachmentFile = extractLinkFile(this.app, oldPathLink, this.oldPath);
+      if (!oldAttachmentFile) {
+        continue;
+      }
+      const backlinksMap = new Map<string, Reference[]>();
+      backlinksMap.set(this.newPath, [oldPathLink]);
+      this.initBacklinksMap(backlinksMap, combinedBacklinksMap, oldAttachmentFile.path);
     }
   }
 
