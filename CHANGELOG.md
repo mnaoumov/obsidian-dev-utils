@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.2.0
+
+- feat: highlight focused links
+
 ## 43.1.3
 
 - fix: fix tabIndex
