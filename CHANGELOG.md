@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 43.2.1
+
+- fix: ensure backlinks work for old attachments
+  - fix https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/231
+
 ## 43.2.0
 
 - feat: highlight focused links
