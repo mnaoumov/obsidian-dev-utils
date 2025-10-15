@@ -3,7 +3,7 @@
 ## 43.2.1
 
 - fix: ensure backlinks work for old attachments
-  - fix https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/231
+  - fix <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/231>
 
 ## 43.2.0
 
@@ -161,18 +161,18 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 ## 40.13.1
 
 - Don't delete notes on rename
-  - fix: <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/223>
+  - fix <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/223>
 
 ## 40.13.0
 
 - @typescript-eslint/prefer-readonly
 - Remove empty folder after attachment moved
-  - fix: <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/222>
+  - fix <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/222>
 
 ## 40.12.1
 
 - Ensure MetadataDeleted processed before queue
-  - fix: <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/220>
+  - fix <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/220>
 
 ## 40.12.0
 
@@ -240,7 +240,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 ## 40.1.3
 
 - Handle frontmatter changes properly
-  - fix: <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/206>
+  - fix <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/206>
 
 ## 40.1.2
 
@@ -253,7 +253,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 ## 40.1.0
 
 - shouldEscapeAlias
-  - fix: <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/22>
+  - fix <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/22>
 
 ## 40.0.2
 
@@ -318,7 +318,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 ## 38.4.3
 
 - Reuse parsed alias
-  - fix: <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/21#issuecomment-3225879039>
+  - fix <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/21#issuecomment-3225879039>
 
 ## 38.4.2
 
@@ -471,7 +471,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 ## 30.5.1
 
 - Polyfill `AbortSignal.any()`
-  - fix: <https://github.com/mnaoumov/obsidian-backlink-cache/issues/9>
+  - fix <https://github.com/mnaoumov/obsidian-backlink-cache/issues/9>
 
 ## 30.5.0
 
@@ -593,7 +593,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 ## 27.5.0
 
 - Don't disable link updates if rename is disabled
-  - fix: <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/17>
+  - fix <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/17>
 
 ## 27.4.0
 
@@ -616,7 +616,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 ## 27.2.0
 
 - Recognize urls such mailto:foo@bar.com
-  - fix: <https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9>
+  - fix <https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9>
 
 ## 27.1.0
 
