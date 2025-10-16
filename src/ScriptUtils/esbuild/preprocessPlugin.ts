@@ -157,11 +157,13 @@ function initCjs(): void {
     }
 
     if (id === 'process' || id === 'node:process') {
-      console.error(`Module not found: ${id}. Fake process object is returned instead.`);
+      // eslint-disable-next-line no-console -- Debug message is intentional here.
+      console.debug(`The most likely you can safely ignore this error. Module not found: ${id}. Fake process object is returned instead.`);
       return globalThis.process;
     }
 
-    console.error(`Module not found: ${id}. Empty object is returned instead.`);
+    // eslint-disable-next-line no-console -- Debug message is intentional here.
+    console.debug(`The most likely you can safely ignore this error. Module not found: ${id}. Empty object is returned instead.`);
     return {};
   }
 }
