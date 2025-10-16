@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 43.2.3
+
+- feat: hack for app.emulateMobile()
+- feat: don't show non-critical error by default
+- chore: update libs
+
 ## 43.2.2
 
 - docs: update links
