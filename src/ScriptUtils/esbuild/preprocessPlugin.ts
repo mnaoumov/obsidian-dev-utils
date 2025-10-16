@@ -53,7 +53,9 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
         if (typeof __filename === 'string') {
           const localRequire = require;
           const url = localRequire('node:url') as typeof import('node:url');
-          return url.pathToFileURL(__filename).href;
+          if (typeof url.pathToFileURL === 'function') {
+            return url.pathToFileURL(__filename).href;
+          }
         }
 
         if (typeof window !== 'undefined') {
