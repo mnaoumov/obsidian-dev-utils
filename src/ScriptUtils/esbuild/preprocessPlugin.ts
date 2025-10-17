@@ -154,7 +154,7 @@ function initCjs(): void {
 
   function requirePatched(id: string): unknown {
     // eslint-disable-next-line @typescript-eslint/no-deprecated, @typescript-eslint/no-unnecessary-condition -- We need access to app here which might not be available yet.
-    const module = window.app?.isMobile ? undefined : originalRequire?.(id) as (Partial<EsmModule> | undefined);
+    const module = window?.app?.isMobile ? undefined : originalRequire?.(id) as (Partial<EsmModule> | undefined);
     if (module) {
       return extractDefault(module);
     }
