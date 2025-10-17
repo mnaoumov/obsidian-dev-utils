@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.2.5
+
+- fix: window can be optional
+
 ## 43.2.4
 
 - fix: don't even try to call original require on mobile
