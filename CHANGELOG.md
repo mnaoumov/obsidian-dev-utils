@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.2.4
+
+- fix: don't even try to call original require on mobile
+
 ## 43.2.3
 
 - feat: hack for app.emulateMobile()
