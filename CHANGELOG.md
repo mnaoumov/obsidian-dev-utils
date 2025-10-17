@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.2.6
+
+- fix: better fix for missing window
+
 ## 43.2.5
 
 - fix: window can be optional
