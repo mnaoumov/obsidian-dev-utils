@@ -152,17 +152,54 @@ function initCjs(): void {
     return module && module.__esModule && 'default' in module ? module.default : module;
   }
 
+  const OBSIDIAN_BUILT_IN_MODULE_NAMES = [
+    'obsidian',
+    '@codemirror/autocomplete',
+    '@codemirror/collab',
+    '@codemirror/commands',
+    '@codemirror/language',
+    '@codemirror/lint',
+    '@codemirror/search',
+    '@codemirror/state',
+    '@codemirror/text',
+    '@codemirror/view',
+    '@lezer/common',
+    '@lezer/lr',
+    '@lezer/highlight'
+  ];
+
+  const DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES = [
+    '@codemirror/closebrackets',
+    '@codemirror/comment',
+    '@codemirror/fold',
+    '@codemirror/gutter',
+    '@codemirror/highlight',
+    '@codemirror/history',
+    '@codemirror/matchbrackets',
+    '@codemirror/panel',
+    '@codemirror/rangeset',
+    '@codemirror/rectangular-selection',
+    '@codemirror/stream-parser',
+    '@codemirror/tooltip'
+  ];
+
   function requirePatched(id: string): unknown {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated, @typescript-eslint/no-unnecessary-condition -- We need access to app here which might not be available yet.
-    const module = globalThis?.app?.isMobile ? undefined : originalRequire?.(id) as (Partial<EsmModule> | undefined);
-    if (module) {
-      return extractDefault(module);
+    if (OBSIDIAN_BUILT_IN_MODULE_NAMES.includes(id) || DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES.includes(id)) {
+      return originalRequire?.(id);
     }
 
-    if (id === 'process' || id === 'node:process') {
-      // eslint-disable-next-line no-console -- Debug message is intentional here.
-      console.debug(`The most likely you can safely ignore this error. Module not found: ${id}. Fake process object is returned instead.`);
-      return globalThis.process;
+    // eslint-disable-next-line @typescript-eslint/no-deprecated, @typescript-eslint/no-unnecessary-condition -- We need access to app here which might not be available yet.
+    if (globalThis?.app?.isMobile) {
+      if (id === 'process' || id === 'node:process') {
+        // eslint-disable-next-line no-console -- Debug message is intentional here.
+        console.debug(`The most likely you can safely ignore this error. Module not found: ${id}. Fake process object is returned instead.`);
+        return globalThis.process;
+      }
+    } else {
+      const module = originalRequire?.(id) as (Partial<EsmModule> | undefined);
+      if (module) {
+        return extractDefault(module);
+      }
     }
 
     // eslint-disable-next-line no-console -- Debug message is intentional here.
