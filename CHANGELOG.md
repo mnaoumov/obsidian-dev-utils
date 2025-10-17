@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.2.7
+
+- fix: call mobile require only when it makes sense
+
 ## 43.2.6
 
 - fix: better fix for missing window

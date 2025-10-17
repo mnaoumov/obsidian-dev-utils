@@ -1,6 +1,6 @@
 {
   "name": "obsidian-dev-utils",
-  "version": "43.2.6",
+  "version": "43.2.7",
   "description": "This is the collection of useful functions that you can use for your Obsidian plugin development",
   "keywords": [
     "obsidian"
