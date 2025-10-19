@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.4.0
+
+- feat: generateRawMarkdownLink
+
 ## 43.3.0
 
 - feat: escapeAlias
