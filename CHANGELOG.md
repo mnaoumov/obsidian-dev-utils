@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.3.0
+
+- feat: escapeAlias
+
 ## 43.2.7
 
 - fix: call mobile require only when it makes sense
