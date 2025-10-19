@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 43.5.0
+
+- chore: update libs
+- feat: select default value in prompt
+
 ## 43.4.0
 
 - feat: generateRawMarkdownLink
