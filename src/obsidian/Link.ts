@@ -744,6 +744,16 @@ export function encodeUrl(url: string): string {
 }
 
 /**
+ * Escapes the alias of a markdown link.
+ *
+ * @param alias - An alias of a markdown link.
+ * @returns An escaped alias.
+ */
+export function escapeAlias(alias: string): string {
+  return replaceAll(alias, SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
+}
+
+/**
  * Extracts the file associated with a link.
  *
  * @param app - The Obsidian application instance.
@@ -1313,7 +1323,7 @@ function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options:
       : targetFile.name;
   }
 
-  const escapedAlias = options.shouldEscapeAlias ? replaceAll(alias, SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&') : alias;
+  const escapedAlias = options.shouldEscapeAlias ? escapeAlias(alias) : alias;
   return `${embedPrefix}[${escapedAlias}](${processedLinkText})`;
 }
 
