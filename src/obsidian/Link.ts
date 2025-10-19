@@ -361,6 +361,46 @@ export interface GenerateMarkdownLinkOptions {
 }
 
 /**
+ * Options for {@link generateRawMarkdownLink}.
+ */
+export interface GenerateRawMarkdownLinkOptions {
+  /**
+   * An alias of the link. Defaults to `undefined`.
+   */
+  alias?: string | undefined;
+
+  /**
+   * Whether the link should be an embed link. Defaults to `false`.
+   */
+  isEmbed?: boolean;
+
+  /**
+   * Whether the link should be a wikilink.
+   */
+  isWikilink: boolean;
+
+  /**
+   * Whether to escape the alias. Applicable only if {@link isWikilink} is `false`. Defaults to `true`.
+   */
+  shouldEscapeAlias?: boolean;
+
+  /**
+   * Whether to use angle brackets. Applicable only if {@link isWikilink} is `false`. Defaults to `false`.
+   */
+  shouldUseAngleBrackets?: boolean;
+
+  /**
+   * A title of the link.
+   */
+  title?: string;
+
+  /**
+   * An URL of the link.
+   */
+  url: string;
+}
+
+/**
  * A result of parsing a link.
  */
 export interface ParseLinkResult {
@@ -815,6 +855,33 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
   const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
 
   return tempRegisterFilesAndRun(app, [targetFile], () => generateMarkdownLinkImpl(options));
+}
+
+/**
+ * Generates a raw markdown link based on the provided options.
+ *
+ * @param options - The options for generating a raw markdown link.
+ * @returns A raw markdown link.
+ */
+export function generateRawMarkdownLink(options: GenerateRawMarkdownLinkOptions): string {
+  const embedPrefix = options.isEmbed ? '!' : '';
+
+  if (options.isWikilink) {
+    const aliasPart = options.alias ? `|${options.alias}` : '';
+    return `${embedPrefix}[[${options.url}${aliasPart}]]`;
+  }
+
+  const alias = options.alias ?? '';
+  const shouldEscapeAlias = options.shouldEscapeAlias ?? true;
+  const escapedAlias = shouldEscapeAlias ? escapeAlias(alias) : alias;
+
+  const url = options.shouldUseAngleBrackets
+    ? `<${options.url}>`
+    : encodeUrl(options.url);
+
+  const titlePart = options.title ? ` ${JSON.stringify(options.title)}` : '';
+
+  return `${embedPrefix}[${escapedAlias}](${url}${titlePart})`;
 }
 
 /**
@@ -1310,11 +1377,6 @@ function generateMarkdownLinkImpl(options: GenerateMarkdownLinkOptions): string 
 
 function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options: GenerateMarkdownLinkOptions, config: LinkConfig): string {
   const { app } = options;
-  const embedPrefix = config.isEmbed ? '!' : '';
-
-  const processedLinkText = config.shouldUseAngleBrackets
-    ? `<${linkText}>`
-    : encodeUrl(linkText);
 
   let alias = options.alias ?? '';
   if (!alias && (!config.isEmbed || !options.isEmptyEmbedAliasAllowed)) {
@@ -1323,20 +1385,31 @@ function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options:
       : targetFile.name;
   }
 
-  const escapedAlias = options.shouldEscapeAlias ? escapeAlias(alias) : alias;
-  return `${embedPrefix}[${escapedAlias}](${processedLinkText})`;
+  return generateRawMarkdownLink({
+    alias,
+    isEmbed: config.isEmbed,
+    isWikilink: false,
+    shouldEscapeAlias: options.shouldEscapeAlias ?? true,
+    shouldUseAngleBrackets: config.shouldUseAngleBrackets,
+    url: linkText
+  });
 }
 
 function generateWikiLink(linkText: string, alias: string | undefined, isEmbed: boolean): string {
-  const embedPrefix = isEmbed ? '!' : '';
-  const normalizedAlias = alias ?? '';
-
-  if (normalizedAlias && normalizedAlias.toLowerCase() === linkText.toLowerCase()) {
-    return `${embedPrefix}[[${normalizedAlias}]]`;
+  if (alias?.toLowerCase() === linkText.toLowerCase()) {
+    return generateRawMarkdownLink({
+      isEmbed,
+      isWikilink: true,
+      url: alias
+    });
   }
 
-  const aliasPart = normalizedAlias ? `|${normalizedAlias}` : '';
-  return `${embedPrefix}[[${linkText}${aliasPart}]]`;
+  return generateRawMarkdownLink({
+    alias,
+    isEmbed,
+    isWikilink: true,
+    url: linkText
+  });
 }
 
 async function getFileChanges(
