@@ -110,6 +110,7 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
     };
 
     textComponent.setValue(this.value);
+    textComponent.inputEl.select();
     textComponent.setPlaceholder(this.options.placeholder);
     inputEl.addClass(CssClass.TextBox);
     textComponent.onChange((newValue) => {
