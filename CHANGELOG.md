@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 43.6.0
+
+- chore: sort package.json
+- feat: add lock editor and notice
+- chore: install codemirror
+- chore: update libs
+
 ## 43.5.0
 
 - chore: update libs
