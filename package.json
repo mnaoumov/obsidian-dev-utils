@@ -519,8 +519,8 @@
     "build:generate-exports": "jiti scripts/build-generate-exports.ts",
     "build:generate-index": "jiti scripts/build-generate-index.ts",
     "build:lib": "jiti scripts/build-lib.ts",
-    "build:styles": "sass src/styles/main.scss dist/styles.css --embed-sources --embed-source-map",
     "build:static": "jiti scripts/cli.ts build:static",
+    "build:styles": "sass src/styles/main.scss dist/styles.css --embed-sources --embed-source-map",
     "build:types": "jiti scripts/build-types.ts",
     "commit": "cz",
     "format": "jiti scripts/cli.ts format",
@@ -532,6 +532,11 @@
     "prepare": "husky",
     "spellcheck": "jiti scripts/cli.ts spellcheck",
     "version": "jiti scripts/version.ts"
+  },
+  "overrides": {
+    "@antfu/utils": "9.2.0",
+    "dompurify": "3.0.1",
+    "esbuild": "$esbuild"
   },
   "dependencies": {
     "@codemirror/state": "6.5.0",
@@ -604,11 +609,6 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
     "unist-util-visit": "^5.0.0"
-  },
-  "overrides": {
-    "@antfu/utils": "9.2.0",
-    "dompurify": "3.0.1",
-    "esbuild": "$esbuild"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
