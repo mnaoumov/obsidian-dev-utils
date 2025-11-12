@@ -815,8 +815,9 @@ class RenameMap {
           const oldAttachmentBacklinks = await getBacklinksForFileSafe(this.app, oldAttachmentFile);
           this.abortSignal.throwIfAborted();
           const keys = new Set<string>(oldAttachmentBacklinks.keys());
-          keys.add(this.oldPath);
-          if (keys.size === 1) {
+          keys.delete(this.oldPath);
+          keys.delete(this.newPath);
+          if (keys.size === 0) {
             oldAttachmentFiles.push(oldAttachmentFile);
           }
         }
