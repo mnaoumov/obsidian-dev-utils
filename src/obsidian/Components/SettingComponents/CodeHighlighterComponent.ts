@@ -7,10 +7,10 @@
 import type { Promisable } from 'type-fest';
 
 import {
-  loadPrism,
   TextAreaComponent,
   ValueComponent
 } from 'obsidian';
+import { loadPrism } from 'obsidian-typings/implementations';
 
 import type { ValidatorElement } from '../../../HTMLElement.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
