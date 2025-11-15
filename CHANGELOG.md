@@ -4,7 +4,7 @@
 
 - fix: compilation after moving loadPrism
 - fix: add check for old/new keys
-  - re https://github.com/dy-sh/obsidian-consistent-attachments-and-links/issues/143
+  - re <https://github.com/dy-sh/obsidian-consistent-attachments-and-links/issues/143>
 - chore: update libs
 
 ## 43.6.0
