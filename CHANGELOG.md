@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 43.7.0
+
+- chore: fix url
+- fix: unescape alias
+- chore: update libs
+
 ## 43.6.1
 
 - fix: compilation after moving loadPrism
