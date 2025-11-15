@@ -788,6 +788,11 @@ export function encodeUrl(url: string): string {
  *
  * @param alias - An alias of a markdown link.
  * @returns An escaped alias.
+ *
+ * @example
+ * ```ts
+ * escapeAlias('**alias**') // '\\*\\*alias\\*\\*'
+ * ```
  */
 export function escapeAlias(alias: string): string {
   return replaceAll(alias, SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
@@ -1108,6 +1113,26 @@ export function testLeadingSlash(link: string): boolean {
 export function testWikilink(link: string): boolean {
   const parseLinkResult = parseLink(link);
   return parseLinkResult?.isWikilink ?? false;
+}
+
+/**
+ * Unescapes the alias of a markdown link.
+ *
+ * @param escapedAlias - An escaped alias.
+ * @returns An unescaped alias.
+ *
+ * @example
+ * ```ts
+ * unescapeAlias('\\*\\*alias\\*\\*') // '**alias**'
+ * ```
+ */
+export function unescapeAlias(escapedAlias: string): string {
+  return replaceAll(escapedAlias, /(?<Backslashes>\\+)(?<SpecialCharacter>[!"#$%&'()*+,-./:;<=>?@[\\\]^_`{|}~])/g, (_, backslashes, specialChar) => {
+    const ESCAPED_BACKSLASH_LENGTH = 2;
+    const backslashCount = backslashes.length;
+    const keepCount = Math.floor(backslashCount / ESCAPED_BACKSLASH_LENGTH);
+    return '\\'.repeat(keepCount) + specialChar;
+  });
 }
 
 /**
@@ -1530,7 +1555,7 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
     }
   }
   return normalizeOptionalProperties<ParseLinkResult>({
-    alias: aliasNodeStartOffset < aliasNodeEndOffset ? str.slice(aliasNodeStartOffset, aliasNodeEndOffset) : undefined,
+    alias: aliasNodeStartOffset < aliasNodeEndOffset ? unescapeAlias(str.slice(aliasNodeStartOffset, aliasNodeEndOffset)) : undefined,
     encodedUrl: isExternal ? encodeUrl(url) : undefined,
     endOffset: node.position?.end.offset ?? 0,
     hasAngleBrackets,
