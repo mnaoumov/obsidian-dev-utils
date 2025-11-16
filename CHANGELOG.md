@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.9.0
+
+- feat: add links update notice
+
 ## 43.8.0
 
 - feat: expose handleSilentError
