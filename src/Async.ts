@@ -189,6 +189,26 @@ export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: (...a
 }
 
 /**
+ * Handles a silent error.
+ *
+ * @param error - The error to handle.
+ * @returns Whether the error is a silent error.
+ */
+export function handleSilentError(error: unknown): boolean {
+  let cause = error;
+  while (!(cause instanceof SilentError)) {
+    if (!(cause instanceof Error)) {
+      return false;
+    }
+
+    cause = cause.cause;
+  }
+
+  getLibDebugger('Async:handleSilentError')(error);
+  return true;
+}
+
+/**
  * Ignores an error that is thrown by an asynchronous function.
  *
  * @param promise - The promise to ignore the error of.
@@ -275,20 +295,6 @@ export async function promiseAllAsyncFnsSequentially<T>(asyncFns: (() => Promisa
  */
 export async function promiseAllSequentially<T>(promises: Promisable<T>[]): Promise<T[]> {
   return await promiseAllAsyncFnsSequentially(promises.map((promise) => () => promise));
-}
-
-function handleSilentError(error: unknown): boolean {
-  let cause = error;
-  while (!(cause instanceof SilentError)) {
-    if (!(cause instanceof Error)) {
-      return false;
-    }
-
-    cause = cause.cause;
-  }
-
-  getLibDebugger('Async:handleSilentError')(error);
-  return true;
 }
 
 const terminateRetryErrors = new WeakSet<Error>();
