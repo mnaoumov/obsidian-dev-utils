@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 43.7.1
+
+- fix: force alias only for markdown files
+  - re <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/27>
+- chore: update libs
+
 ## 43.7.0
 
 - chore: fix url
