@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.8.0
+
+- feat: expose handleSilentError
+
 ## 43.7.1
 
 - fix: force alias only for markdown files
