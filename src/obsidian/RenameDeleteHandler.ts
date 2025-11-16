@@ -18,7 +18,10 @@ import type {
   LinkUpdatesHandler
 } from 'obsidian-typings';
 
-import { Vault } from 'obsidian';
+import {
+  Notice,
+  Vault
+} from 'obsidian';
 import { InternalPluginName } from 'obsidian-typings/implementations';
 
 import type {
@@ -535,6 +538,9 @@ class RenameHandler {
 
     this.abortSignal.throwIfAborted();
 
+    const renamedFilePaths = getObsidianDevUtilsState(this.app, 'renamedFilePaths', new Set<string>()).value;
+    const renamedLinks = getObsidianDevUtilsState(this.app, 'renamedLinkPaths', new Set<string>()).value;
+
     try {
       const renameMap = new RenameMap({
         abortSignal: this.abortSignal,
@@ -582,7 +588,9 @@ class RenameHandler {
           Array.from(this.interruptedCombinedBacklinksMap.entries())
         )
       ) {
+        let linkIndex = 0;
         await editLinks(this.app, newBacklinkPath, (link) => {
+          linkIndex++;
           const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
           if (!oldAttachmentPath) {
             return;
@@ -592,6 +600,9 @@ class RenameHandler {
           if (!newAttachmentPath) {
             return;
           }
+
+          renamedFilePaths.add(newBacklinkPath);
+          renamedLinks.add(`${newBacklinkPath}//${String(linkIndex)}`);
 
           return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
             app: this.app,
@@ -635,6 +646,13 @@ class RenameHandler {
         for (const orphanKey of orphanKeys) {
           this.handledRenames.delete(orphanKey.oldPath, orphanKey.newPath);
         }
+
+        if (renamedLinks.size === 0) {
+          return;
+        }
+        new Notice(`Updated ${String(renamedLinks.size)} links in ${String(renamedFilePaths.size)} files.`);
+        renamedFilePaths.clear();
+        renamedLinks.clear();
       }, this.abortSignal);
     }
   }
