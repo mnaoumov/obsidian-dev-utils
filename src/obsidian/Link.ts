@@ -1404,7 +1404,7 @@ function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options:
   const { app } = options;
 
   let alias = options.alias ?? '';
-  if (!alias && (!config.isEmbed || !options.isEmptyEmbedAliasAllowed)) {
+  if (!alias && (isMarkdownFile(app, targetFile) || !options.isEmptyEmbedAliasAllowed)) {
     alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile)
       ? targetFile.basename
       : targetFile.name;
