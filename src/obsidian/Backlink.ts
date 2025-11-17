@@ -4,10 +4,9 @@
  * Provides utility functions for working with backlinks.
  */
 
-import type {
-  TFile,
-  TFolder
-} from 'obsidian';
+import type { TFile } from 'obsidian';
+
+import { TFolder } from 'obsidian';
 
 import type {
   DataviewInlineApi,
@@ -89,7 +88,11 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
       return [abstractFile];
     }
 
-    return getMarkdownFiles(dv.app, abstractFile as TFolder, true);
+    if (!(abstractFile instanceof TFolder)) {
+      throw new Error('Expected a folder');
+    }
+
+    return getMarkdownFiles(dv.app, abstractFile, true);
   });
 
   const backlinkRows: [Link, string[]][] = [];

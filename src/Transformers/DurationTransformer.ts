@@ -6,9 +6,12 @@
 
 import type { Duration } from 'moment';
 
-import { duration } from 'moment';
+import { moment as moment_ } from 'obsidian';
 
+import { extractDefaultExportInterop } from '../ObjectUtils.ts';
 import { TypedTransformer } from './TypedTransformer.ts';
+
+const moment = extractDefaultExportInterop(moment_);
 
 /**
  * A transformer that converts a Duration to an ISO string and back.
@@ -41,7 +44,7 @@ export class DurationTransformer extends TypedTransformer<Duration, string> {
    * @returns The restored value.
    */
   public override restoreValue(transformedValue: string): Duration {
-    return duration(transformedValue);
+    return moment.duration(transformedValue);
   }
 
   /**

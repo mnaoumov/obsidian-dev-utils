@@ -4,7 +4,7 @@
  * Contains a component that displays and edits a date and time.
  */
 
-import moment from 'moment';
+import { moment as moment_ } from 'obsidian';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
 import type { initPluginContext } from '../../Plugin/PluginContext.ts';
@@ -12,7 +12,10 @@ import type { initPluginContext } from '../../Plugin/PluginContext.ts';
 import type { SettingEx } from '../../SettingEx.ts';
 
 import { CssClass } from '../../../CssClass.ts';
+import { extractDefaultExportInterop } from '../../../ObjectUtils.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
+
+const moment = extractDefaultExportInterop(moment_);
 
 const DATE_TIME_FORMAT = 'YYYY-MM-DDTHH:mm';
 

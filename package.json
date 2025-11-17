@@ -617,6 +617,7 @@
     "@types/markdown-it": "^14.1.2",
     "commitizen": "^4.3.1",
     "cz-conventional-changelog": "^3.3.0",
+    "eslint-plugin-obsidianmd": "^0.1.9",
     "husky": "^9.1.7"
   }
 }

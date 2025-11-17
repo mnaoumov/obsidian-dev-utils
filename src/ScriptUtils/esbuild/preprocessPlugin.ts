@@ -114,6 +114,7 @@ function initCjs(): void {
   globalThisRecord['__name'] ??= name;
   const originalRequire = require as (NodeJS.Require & Partial<RequirePatched> | undefined);
   if (originalRequire && !originalRequire.__isPatched) {
+    // eslint-disable-next-line no-global-assign, no-implicit-globals -- We need to patch the `require()` function.
     require = Object.assign(
       (id: string) => requirePatched(id),
       originalRequire,
@@ -191,7 +192,6 @@ function initCjs(): void {
     // eslint-disable-next-line @typescript-eslint/no-deprecated, @typescript-eslint/no-unnecessary-condition -- We need access to app here which might not be available yet.
     if (globalThis?.app?.isMobile) {
       if (id === 'process' || id === 'node:process') {
-        // eslint-disable-next-line no-console -- Debug message is intentional here.
         console.debug(`The most likely you can safely ignore this error. Module not found: ${id}. Fake process object is returned instead.`);
         return globalThis.process;
       }
@@ -202,7 +202,6 @@ function initCjs(): void {
       }
     }
 
-    // eslint-disable-next-line no-console -- Debug message is intentional here.
     console.debug(`The most likely you can safely ignore this error. Module not found: ${id}. Empty object is returned instead.`);
     return {};
   }

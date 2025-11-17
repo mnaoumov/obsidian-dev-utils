@@ -482,6 +482,7 @@ export function validate(versionUpdateType: string): void {
  * @returns A {@link Promise} that resolves to the latest version of Obsidian.
  */
 async function getLatestObsidianVersion(): Promise<string> {
+  // eslint-disable-next-line no-restricted-globals -- We run this outside of Obsidian, so we don't have `requestUrl()`.
   const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');
   const obsidianReleasesJson = await response.json() as Partial<ObsidianReleasesJson>;
   return obsidianReleasesJson.name ?? throwExpression(new Error('Could not find the name of the latest Obsidian release'));
