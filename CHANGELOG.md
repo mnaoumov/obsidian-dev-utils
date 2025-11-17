@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 43.10.0
+
+- fix: determine obsidian-dev-utils
+- chore: add obsidianmd lint
+- fix: handle nested links re <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/28>
+
 ## 43.9.0
 
 - feat: add links update notice
