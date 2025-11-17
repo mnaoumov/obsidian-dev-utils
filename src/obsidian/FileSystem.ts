@@ -229,8 +229,8 @@ export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursi
 
   if (isRecursive) {
     Vault.recurseChildren(folder, (abstractFile) => {
-      if (isMarkdownFile(app, abstractFile)) {
-        markdownFiles.push(abstractFile as TFile);
+      if (isMarkdownFile(app, abstractFile) && abstractFile instanceof TFile) {
+        markdownFiles.push(abstractFile);
       }
     });
   } else {

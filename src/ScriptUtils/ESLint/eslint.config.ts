@@ -10,7 +10,6 @@
  */
 
 /* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
-
 import type { Linter } from 'eslint';
 
 import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
@@ -19,6 +18,8 @@ import eslint from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-import-x';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
+import obsidianmd from 'eslint-plugin-obsidianmd';
 import perfectionist from 'eslint-plugin-perfectionist';
 import { defineConfig } from 'eslint/config';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
@@ -58,7 +59,8 @@ export const obsidianDevUtilsConfigs: Linter.Config[] = defineConfig(
   ...getModulesNewlinesConfigs(),
   ...getModulesNewlinesConfigs(),
   ...getEslintImportResolverTypescriptConfigs(),
-  ...getEslintCommentsConfigs()
+  ...getEslintCommentsConfigs(),
+  ...getObsidianLintConfigs()
 );
 
 function excludeFilesProperty<Config>(config: Config): Config {
@@ -309,6 +311,15 @@ function getModulesNewlinesConfigs(): Linter.Config[] {
         'modules-newlines/export-declaration-newline': 'error',
         'modules-newlines/import-declaration-newline': 'error'
       }
+    }
+  ];
+}
+
+function getObsidianLintConfigs(): Linter.Config[] {
+  return [
+    ...(obsidianmd.configs?.['recommended'] as Linter.Config[]),
+    {
+      ignores: ['package.json']
     }
   ];
 }

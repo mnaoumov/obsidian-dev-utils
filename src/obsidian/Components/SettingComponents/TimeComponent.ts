@@ -6,10 +6,7 @@
 
 import type { Duration } from 'moment';
 
-import {
-  duration,
-  utc
-} from 'moment';
+import { moment as moment_ } from 'obsidian';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
 import type { initPluginContext } from '../../Plugin/PluginContext.ts';
@@ -17,7 +14,10 @@ import type { initPluginContext } from '../../Plugin/PluginContext.ts';
 import type { SettingEx } from '../../SettingEx.ts';
 
 import { CssClass } from '../../../CssClass.ts';
+import { extractDefaultExportInterop } from '../../../ObjectUtils.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
+
+const moment = extractDefaultExportInterop(moment_);
 
 /**
  * A component that displays and edits a time.
@@ -45,7 +45,7 @@ export class TimeComponent extends TypedRangeTextComponent<Duration> {
    * @returns The date.
    */
   public override valueFromString(str: string): Duration {
-    return duration(str);
+    return moment.duration(str);
   }
 
   /**
@@ -64,6 +64,6 @@ export class TimeComponent extends TypedRangeTextComponent<Duration> {
       format = 'HH:mm';
     }
 
-    return utc(value.asMilliseconds()).format(format);
+    return moment.utc(value.asMilliseconds()).format(format);
   }
 }

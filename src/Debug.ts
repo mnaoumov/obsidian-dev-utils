@@ -161,7 +161,6 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   }
 
   if (!isInObsidian()) {
-    // eslint-disable-next-line no-console -- We allow `console.debug()` outside of Obsidian.
     console.debug(message, ...args);
     return;
   }
@@ -180,7 +179,6 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   const stackLines = new Error().stack?.split('\n') ?? [];
   stackLines.splice(0, CALLER_LINE_INDEX + framesToSkip);
 
-  // eslint-disable-next-line no-console -- The only place we allow `console.debug()`.
   console.debug(message, ...args, '\n\n---\nLogger stack trace:\n', makeStackTraceError(stackLines.join('\n')));
 }
 

@@ -115,7 +115,7 @@ export type PageFiles = ArrayOrDataArray<PageFile>;
  * @returns A {@link Promise} that resolves when the cache is reloaded.
  */
 export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<void> {
-  await DataviewAPI?.index.reload(getFile(dv.app, dv.current().file.path));
+  await window.DataviewAPI?.index.reload(getFile(dv.app, dv.current().file.path));
 }
 
 const paginationCss = `
@@ -480,6 +480,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
 
   async function renderPage(pageNumber: number): Promise<void> {
     container.empty();
+    // eslint-disable-next-line obsidianmd/no-forbidden-elements -- We need to create a style element to apply the pagination CSS.
     container.createEl('style', { text: paginationCss });
 
     const startIndex = (pageNumber - 1) * itemsPerPage;

@@ -67,6 +67,7 @@ export function copyToObsidianPluginsFolderPlugin(
           const hotReloadRepoUrl = 'https://raw.githubusercontent.com/pjeby/hot-reload/master/';
           for (const fileName of ['main.js', 'manifest.json']) {
             const fileUrl = hotReloadRepoUrl + fileName;
+            // eslint-disable-next-line no-restricted-globals -- We run this outside of Obsidian, so we don't have `requestUrl()`.
             const response = await fetch(fileUrl);
             const text = await response.text();
             await writeFile(join(hotReloadFolder, fileName), text);

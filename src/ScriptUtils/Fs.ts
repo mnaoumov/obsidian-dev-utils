@@ -77,7 +77,7 @@ interface CommonOptions {
   /**
    * Encoding to use when returning strings.
    */
-  encoding?: 'buffer' | BufferEncoding;
+  encoding?: 'buffer' | NodeJS.BufferEncoding;
 
   /**
    * Set `true` to return Dirent objects or `false` to return strings or buffers.
