@@ -319,20 +319,20 @@ On mobile the keyboard for this component changes.
 ## TimeComponent
 
 ```ts
-import { duration } from 'moment';
+import { moment } from 'obsidian';
 import { TimeComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/TimeComponent';
 
 const time = new TimeComponent(containerEl);
-time.setValue(duration({ hours: 12, minutes: 34 }));
+time.setValue(moment.duration({ hours: 12, minutes: 34 }));
 
 // or
 
-import { duration } from 'moment';
+import { moment } from 'obsidian';
 import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
 
 new SettingEx()
   .addTime((time) => {
-    time.setValue(duration({ hours: 12, minutes: 34 }));
+    time.setValue(moment.duration({ hours: 12, minutes: 34 }));
   });
 ```
 
