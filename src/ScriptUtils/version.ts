@@ -413,7 +413,7 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
     throw new Error('No version update type provided');
   }
 
-  const isObsidianPlugin = existsSync(resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson));
+  const isObsidianPlugin = existsSync(resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson)) && (await readPackageJson()).name !== 'obsidian-dev-utils';
 
   validate(versionUpdateType);
   await checkGitInstalled();
