@@ -581,6 +581,7 @@
     "eslint-plugin-perfectionist": "^4.15.1",
     "eslint-plugin-tsdoc": "^0.5.0",
     "glob": "^11.0.3",
+    "globals": "^16.5.0",
     "i18next": "^25.6.2",
     "jiti": "^2.6.1",
     "linkinator": "^7.5.0",
