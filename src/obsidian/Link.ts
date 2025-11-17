@@ -910,7 +910,7 @@ export function parseLinks(str: string): ParseLinkResult[] {
   const embedSymbolOffsets = new Set<number>();
 
   const EMBED_LINK_PREFIX = '![';
-  const NO_EMBED_LINK_PREFIX = ' [';
+  const NO_EMBED_LINK_PREFIX = '@[';
 
   const noEmbedStr = replaceAll(str, EMBED_LINK_PREFIX, (args) => {
     embedSymbolOffsets.add(args.offset);
