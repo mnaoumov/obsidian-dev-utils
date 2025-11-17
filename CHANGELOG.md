@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.10.1
+
+- chore: move fully to obsidian moment
+
 ## 43.10.0
 
 - fix: determine obsidian-dev-utils
