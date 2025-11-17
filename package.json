@@ -577,6 +577,7 @@
     "eslint-plugin-import-x": "^4.16.1",
     "eslint-plugin-jsdoc": "^61.2.1",
     "eslint-plugin-modules-newlines": "^0.0.7",
+    "eslint-plugin-obsidianmd": "^0.1.9",
     "eslint-plugin-perfectionist": "^4.15.1",
     "eslint-plugin-tsdoc": "^0.5.0",
     "glob": "^11.0.3",
@@ -617,7 +618,6 @@
     "@types/markdown-it": "^14.1.2",
     "commitizen": "^4.3.1",
     "cz-conventional-changelog": "^3.3.0",
-    "eslint-plugin-obsidianmd": "^0.1.9",
     "husky": "^9.1.7"
   }
 }
