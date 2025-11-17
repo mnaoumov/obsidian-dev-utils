@@ -4,9 +4,7 @@
  * Contains a component that displays and edits a time.
  */
 
-import type { Duration } from 'moment';
-
-import { moment as moment_ } from 'obsidian';
+import { moment } from 'obsidian';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
 import type { initPluginContext } from '../../Plugin/PluginContext.ts';
@@ -14,10 +12,7 @@ import type { initPluginContext } from '../../Plugin/PluginContext.ts';
 import type { SettingEx } from '../../SettingEx.ts';
 
 import { CssClass } from '../../../CssClass.ts';
-import { extractDefaultExportInterop } from '../../../ObjectUtils.ts';
 import { TypedRangeTextComponent } from './TypedRangeTextComponent.ts';
-
-const moment = extractDefaultExportInterop(moment_);
 
 /**
  * A component that displays and edits a time.
@@ -28,7 +23,7 @@ const moment = extractDefaultExportInterop(moment_);
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class TimeComponent extends TypedRangeTextComponent<Duration> {
+export class TimeComponent extends TypedRangeTextComponent<moment.Duration> {
   /**
    * Creates a new time component.
    *
@@ -44,7 +39,7 @@ export class TimeComponent extends TypedRangeTextComponent<Duration> {
    * @param str - The string to convert.
    * @returns The date.
    */
-  public override valueFromString(str: string): Duration {
+  public override valueFromString(str: string): moment.Duration {
     return moment.duration(str);
   }
 
@@ -54,7 +49,7 @@ export class TimeComponent extends TypedRangeTextComponent<Duration> {
    * @param value - The time to convert.
    * @returns The string.
    */
-  public override valueToString(value: Duration): string {
+  public override valueToString(value: moment.Duration): string {
     let format: string;
     if (value.milliseconds() > 0) {
       format = 'HH:mm:ss.SSS';

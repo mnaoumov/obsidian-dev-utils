@@ -4,19 +4,14 @@
  * A transformer that can transform Duration to an ISO string and back.
  */
 
-import type { Duration } from 'moment';
+import { moment } from 'obsidian';
 
-import { moment as moment_ } from 'obsidian';
-
-import { extractDefaultExportInterop } from '../ObjectUtils.ts';
 import { TypedTransformer } from './TypedTransformer.ts';
-
-const moment = extractDefaultExportInterop(moment_);
 
 /**
  * A transformer that converts a Duration to an ISO string and back.
  */
-export class DurationTransformer extends TypedTransformer<Duration, string> {
+export class DurationTransformer extends TypedTransformer<moment.Duration, string> {
   /**
    * An id of the transformer.
    *
@@ -32,8 +27,8 @@ export class DurationTransformer extends TypedTransformer<Duration, string> {
    * @param value - The value to check.
    * @returns True if the value is a Duration, false otherwise.
    */
-  public override canTransform(value: unknown): value is Duration {
-    const maybeDuration = (value ?? {}) as Partial<Duration>;
+  public override canTransform(value: unknown): value is moment.Duration {
+    const maybeDuration = (value ?? {}) as Partial<moment.Duration>;
     return !!maybeDuration.asHours && !!maybeDuration.asMinutes && !!maybeDuration.asSeconds && !!maybeDuration.asMilliseconds;
   }
 
@@ -43,7 +38,7 @@ export class DurationTransformer extends TypedTransformer<Duration, string> {
    * @param transformedValue - The string to restore the value from.
    * @returns The restored value.
    */
-  public override restoreValue(transformedValue: string): Duration {
+  public override restoreValue(transformedValue: string): moment.Duration {
     return moment.duration(transformedValue);
   }
 
@@ -53,7 +48,7 @@ export class DurationTransformer extends TypedTransformer<Duration, string> {
    * @param value - The value to transform.
    * @returns The transformed value.
    */
-  public override transformValue(value: Duration): string {
+  public override transformValue(value: moment.Duration): string {
     return value.toISOString();
   }
 }
