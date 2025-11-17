@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.10.2
+
+- fix: move eslint-plugin-obsidianmd to runtime dependency
+
 ## 43.10.1
 
 - chore: move fully to obsidian moment
