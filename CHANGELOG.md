@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 43.10.4
+
+- chore: export obsidianmd plugin
+
 ## 43.10.3
 
 - fix: temporarily add globals until <https://github.com/obsidianmd/eslint-plugin/pull/73> is released
