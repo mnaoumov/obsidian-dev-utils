@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 43.10.3
+
+- fix: temporarily add globals until <https://github.com/obsidianmd/eslint-plugin/pull/73> is released
+- chore: fix package-lock
+
 ## 43.10.2
 
 - fix: move eslint-plugin-obsidianmd to runtime dependency
