@@ -10,7 +10,10 @@
  */
 
 /* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
-import type { Linter } from 'eslint';
+import type {
+  ESLint,
+  Linter
+} from 'eslint';
 
 import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import eslint from '@eslint/js';
@@ -321,6 +324,11 @@ function getObsidianLintConfigs(): Linter.Config[] {
     ...(obsidianmd.configs?.['recommended'] as Linter.Config[]),
     {
       ignores: ['package.json']
+    },
+    {
+      plugins: {
+        obsidianmd: obsidianmd as ESLint.Plugin
+      }
     },
     {
       languageOptions: {
