@@ -113,10 +113,6 @@ export async function applyContentChanges(
 
   changes = sortAndFilterChanges(changes);
 
-  if (!validateChangeOverlaps(changes)) {
-    return null;
-  }
-
   const { frontmatterChanged, newContent } = applyContentChangesToText(changes, content, hasFrontmatterError, path);
 
   await applyFrontmatterChangesWithOffsets(abortSignal, frontmatter, frontmatterChanged, path);
@@ -333,13 +329,41 @@ function applyContentChangesToText(
 ): { frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>; newContent: string } {
   let newContent = '';
   let lastIndex = 0;
+  let lastContentChange: ContentChange = {
+    newContent: '',
+    oldContent: '',
+    reference: {
+      link: '',
+      original: '',
+      position: {
+        end: { col: 0, line: 0, offset: 0 },
+        start: { col: 0, line: 0, offset: 0 }
+      }
+    }
+  };
   const frontmatterChangesWithOffsetMap = new Map<string, FrontmatterChangeWithOffsets[]>();
 
   for (const change of changes) {
     if (isContentChange(change)) {
-      newContent += content.slice(lastIndex, change.reference.position.start.offset);
-      newContent += change.newContent;
-      lastIndex = change.reference.position.end.offset;
+      if (lastIndex <= change.reference.position.start.offset) {
+        newContent += content.slice(lastIndex, change.reference.position.start.offset);
+        newContent += change.newContent;
+        lastIndex = change.reference.position.end.offset;
+        lastContentChange = change;
+      } else {
+        const overlappingStartOffset = change.reference.position.start.offset - lastContentChange.reference.position.start.offset;
+        const overlappingEndOffset = change.reference.position.end.offset - lastContentChange.reference.position.start.offset;
+        const overlappingContent = lastContentChange.newContent.slice(overlappingStartOffset, overlappingEndOffset);
+        if (overlappingContent !== change.oldContent) {
+          const message = 'Overlapping changes';
+          console.error(message, { change, lastContentChange });
+          throw new Error(message);
+        }
+        newContent = newContent.slice(0, newContent.length - lastContentChange.newContent.length)
+          + lastContentChange.newContent.slice(0, overlappingStartOffset)
+          + change.newContent
+          + lastContentChange.newContent.slice(overlappingEndOffset);
+      }
     } else if (isFrontmatterChange(change)) {
       if (hasFrontmatterError) {
         console.error(`Cannot apply frontmatter change in ${path}, because frontmatter parsing failed`, { change });
@@ -469,32 +493,6 @@ function sortAndFilterChanges(changes: FileChange[]): FileChange[] {
     }
     return !deepEqual(change, changes[index - 1]);
   });
-}
-
-function validateChangeOverlaps(changes: FileChange[]): boolean {
-  for (let i = 1; i < changes.length; i++) {
-    const change = changes[i];
-    if (!change) {
-      continue;
-    }
-
-    const previousChange = changes[i - 1];
-    if (!previousChange) {
-      continue;
-    }
-
-    if (
-      isContentChange(previousChange)
-      && isContentChange(change)
-      && previousChange.reference.position.end.offset
-      && previousChange.reference.position.end.offset > change.reference.position.start.offset
-    ) {
-      const message = 'Overlapping changes';
-      console.error(message, { change, previousChange });
-      throw new Error(message);
-    }
-  }
-  return true;
 }
 
 function validateChanges(changes: FileChange[], content: string, frontmatter: CombinedFrontmatter<unknown>, path: string): boolean {
