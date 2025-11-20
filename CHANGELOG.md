@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 44.1.0
+
+- fix: more support for overlapping changes re <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/28>
+
 ## 44.0.0
 
 - chore: lint
