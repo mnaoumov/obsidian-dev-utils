@@ -1387,6 +1387,25 @@ function _fixFrontmatterMarkdownLinks(value: unknown, key: string, cache: Cached
   return hasFrontmatterLinks;
 }
 
+function decodeUrlSafely(url: string, isExternal: boolean, hasAngleBrackets: boolean): string {
+  if (isExternal || hasAngleBrackets) {
+    return url;
+  }
+
+  try {
+    return decodeURIComponent(url);
+  } catch (error) {
+    console.error(`Failed to decode URL ${url}`, error);
+    return url;
+  }
+}
+
+function extractAlias(str: string, aliasStartOffset: number, aliasEndOffset: number): string | undefined {
+  return aliasStartOffset < aliasEndOffset
+    ? str.slice(aliasStartOffset, aliasEndOffset)
+    : undefined;
+}
+
 function extractTextLinks(str: string, startOffset: number, endOffset: number, textLinks: ParseLinkResult[]): void {
   if (startOffset > endOffset) {
     return;
@@ -1602,25 +1621,22 @@ function getRawLink(node: Node, str: string): string {
   return str.slice(node.position?.start.offset ?? 0, node.position?.end.offset ?? 0);
 }
 
-function parseLinkNode(node: Link, str: string): ParseLinkResult {
+function hasAngleBracketsInLink(raw: string, rawUrl: string): boolean {
   const OPEN_ANGLE_BRACKET = '<';
+  return raw.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
+}
+
+function parseLinkNode(node: Link, str: string): ParseLinkResult {
   const LINK_ALIAS_SUFFIX = '](';
   const LINK_SUFFIX = ')';
   const raw = getRawLink(node, str);
   const aliasNodeStartOffset = node.children[0]?.position?.start.offset ?? 1;
   const aliasNodeEndOffset = node.children.at(-1)?.position?.end.offset ?? 1;
   const rawUrl = str.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, (node.position?.end.offset ?? 0) - LINK_SUFFIX.length);
-  const hasAngleBrackets = raw.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
+  const hasAngleBrackets = hasAngleBracketsInLink(raw, rawUrl);
   const isExternal = isUrl(node.url);
-  let url = node.url;
-  if (!isExternal && !hasAngleBrackets) {
-    try {
-      url = decodeURIComponent(url);
-    } catch (error) {
-      console.error(`Failed to decode URL ${url}`, error);
-    }
-  }
-  const alias = aliasNodeStartOffset < aliasNodeEndOffset ? str.slice(aliasNodeStartOffset, aliasNodeEndOffset) : undefined;
+  const url = decodeUrlSafely(node.url, isExternal, hasAngleBrackets);
+  const alias = extractAlias(str, aliasNodeStartOffset, aliasNodeEndOffset);
   return normalizeOptionalProperties<ParseLinkResult>({
     alias,
     encodedUrl: isExternal ? encodeUrl(url) : undefined,
