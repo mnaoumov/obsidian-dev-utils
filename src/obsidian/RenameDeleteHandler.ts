@@ -207,7 +207,7 @@ class DeleteHandler {
   public async handle(): Promise<void> {
     this.abortSignal.throwIfAborted();
     getLibDebugger('RenameDeleteHandler:handleDelete')(`Handle Delete ${this.file.path}`);
-    if (!this.settingsManager.isNoteEx(this.file.path)) {
+    if (!isNote(this.app, this.file)) {
       return;
     }
 
@@ -618,7 +618,7 @@ class RenameHandler {
         this.abortSignal.throwIfAborted();
       }
 
-      if (this.settingsManager.isNoteEx(this.newPath)) {
+      if (isNote(this.app, this.newPath)) {
         await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileOptions>({
           app: this.app,
           newSourcePathOrFile: this.newPath,
@@ -773,7 +773,7 @@ class RenameMap {
     this.abortSignal.throwIfAborted();
     this.map.set(this.oldPath, this.newPath);
 
-    if (!this.settingsManager.isNoteEx(this.oldPath)) {
+    if (!isNote(this.app, this.oldPath)) {
       return;
     }
 
