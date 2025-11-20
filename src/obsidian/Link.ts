@@ -380,7 +380,7 @@ export interface GenerateRawMarkdownLinkOptions {
   isWikilink: boolean;
 
   /**
-   * Whether to escape the alias. Applicable only if {@link isWikilink} is `false`. Defaults to `true`.
+   * Whether to escape the alias. Applicable only if {@link isWikilink} is `false`. Defaults to `false`.
    */
   shouldEscapeAlias?: boolean;
 
@@ -877,7 +877,7 @@ export function generateRawMarkdownLink(options: GenerateRawMarkdownLinkOptions)
   }
 
   const alias = options.alias ?? '';
-  const shouldEscapeAlias = options.shouldEscapeAlias ?? true;
+  const shouldEscapeAlias = options.shouldEscapeAlias ?? false;
   const escapedAlias = shouldEscapeAlias ? escapeAlias(alias) : alias;
 
   const url = options.shouldUseAngleBrackets
@@ -1414,7 +1414,7 @@ function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options:
     alias,
     isEmbed: config.isEmbed,
     isWikilink: false,
-    shouldEscapeAlias: options.shouldEscapeAlias ?? true,
+    shouldEscapeAlias: options.shouldEscapeAlias ?? false,
     shouldUseAngleBrackets: config.shouldUseAngleBrackets,
     url: linkText
   });
