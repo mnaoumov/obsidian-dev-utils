@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 44.2.0
+
+- fix: handle attachments of md-attachments
+  - re <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/245>
+  - re <https://github.com/dy-sh/obsidian-consistent-attachments-and-links/issues/145>
+
 ## 44.1.0
 
 - fix: more support for overlapping changes re <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/28>
