@@ -970,8 +970,15 @@ export function parseLinks(str: string): ParseLinkResult[] {
 
   const EMBED_LINK_PREFIX = '![';
   const NO_EMBED_LINK_PREFIX = '@[';
+  const DUMMY_CHARACTER = '@';
 
-  const noEmbedStr = replaceAll(str, EMBED_LINK_PREFIX, (args) => {
+  const EMBED_INSIDE_LINK_REG_EXP = /\[(?<LinkAlias>!\[.*?\]\(.+?\))\]\((?<Link>.+?)\)/g;
+  const noInsideEmbedsLinksStr = replaceAll(str, EMBED_INSIDE_LINK_REG_EXP, (_, linkAlias, link) => {
+    const dummyAlias = DUMMY_CHARACTER.repeat(linkAlias.length);
+    return `[${dummyAlias}](${link})`;
+  });
+
+  const noEmbedStr = replaceAll(noInsideEmbedsLinksStr, EMBED_LINK_PREFIX, (args) => {
     embedSymbolOffsets.add(args.offset);
     return NO_EMBED_LINK_PREFIX;
   });
