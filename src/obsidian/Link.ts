@@ -455,6 +455,16 @@ export interface ParseLinkResult {
   title?: string;
 
   /**
+   * An unescaped alias of the link.
+   *
+   * @example
+   * ```
+   * [\*alias\*](link.md) -> *alias*
+   * ```
+   */
+  unescapedAlias?: string;
+
+  /**
    * An URL of the link.
    */
   url: string;
@@ -1554,8 +1564,9 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
       console.error(`Failed to decode URL ${url}`, error);
     }
   }
+  const alias = aliasNodeStartOffset < aliasNodeEndOffset ? str.slice(aliasNodeStartOffset, aliasNodeEndOffset) : undefined;
   return normalizeOptionalProperties<ParseLinkResult>({
-    alias: aliasNodeStartOffset < aliasNodeEndOffset ? unescapeAlias(str.slice(aliasNodeStartOffset, aliasNodeEndOffset)) : undefined,
+    alias,
     encodedUrl: isExternal ? encodeUrl(url) : undefined,
     endOffset: node.position?.end.offset ?? 0,
     hasAngleBrackets,
@@ -1565,6 +1576,7 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
     raw,
     startOffset: node.position?.start.offset ?? 0,
     title: node.title ?? undefined,
+    unescapedAlias: alias === undefined ? undefined : unescapeAlias(alias),
     url
   });
 }
