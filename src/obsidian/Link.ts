@@ -406,11 +406,21 @@ export interface GenerateRawMarkdownLinkOptions {
 export interface ParseLinkResult {
   /**
    * An alias of the link.
+   *
+   * @example
+   * ```
+   * [\*alias\*](link.md) -> \*alias\*
+   * ```
    */
   alias?: string;
 
   /**
    * An encoded URL of the link.
+   *
+   * @example
+   * ```
+   * [alias](<link with space.md>) -> link%20with%20space.md
+   * ```
    */
   encodedUrl?: string;
 
@@ -421,26 +431,55 @@ export interface ParseLinkResult {
 
   /**
    * Indicates if the link has angle brackets.
+   *
+   * @example
+   * ```
+   * [alias](<link.md>) -> true
+   * [alias](link.md) -> false
+   * ```
    */
   hasAngleBrackets?: boolean;
 
   /**
    * Indicates if the link is an embed link.
+   *
+   * @example
+   * ```
+   * ![[alias]] -> true
+   * [[alias]] -> false
+   * ```
    */
   isEmbed: boolean;
 
   /**
    * Indicates if the link is external.
+   *
+   * @example
+   * ```
+   * [alias](https://example.com) -> true
+   * [alias](file.md) -> false
+   * ```
    */
   isExternal: boolean;
 
   /**
    * Indicates if the link is a wikilink.
+   *
+   * @example
+   * ```
+   * [[alias]] -> true
+   * [alias](link.md) -> false
+   * ```
    */
   isWikilink: boolean;
 
   /**
    * A raw link text.
+   *
+   * @example
+   * ```
+   * [alias](link.md) -> [alias](link.md)
+   * ```
    */
   raw: string;
 
@@ -451,6 +490,11 @@ export interface ParseLinkResult {
 
   /**
    * A title of the link.
+   *
+   * @example
+   * ```
+   * [alias](link.md "title") -> title
+   * ```
    */
   title?: string;
 
@@ -466,6 +510,11 @@ export interface ParseLinkResult {
 
   /**
    * An URL of the link.
+   *
+   * @example
+   * ```
+   * [alias](link%20with%20space.md) -> link with space.md
+   * ```
    */
   url: string;
 }
