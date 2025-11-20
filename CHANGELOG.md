@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 44.0.0
+
+- chore: lint
+- fix: handle nested links re <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/28>
+- docs: add examples
+- feat: add unescaped alias
+- feat: disable escaping aliases by default
+
 ## 43.10.4
 
 - chore: export obsidianmd plugin
