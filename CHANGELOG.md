@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 44.2.1
+
+- chore: update libs
+
 ## 44.2.0
 
 - fix: handle attachments of md-attachments
