@@ -1493,6 +1493,7 @@ function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options:
     alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile)
       ? targetFile.basename
       : targetFile.name;
+    options.shouldEscapeAlias = true;
   }
 
   return generateRawMarkdownLink({
