@@ -129,6 +129,13 @@ const configs: Linter.Config[] = [
           startLines: 1
         }
       ]
+    },
+    settings: {
+      jsdoc: {
+        tagNamePreference: {
+          template: 'typeParam'
+        }
+      }
     }
   }
 ];
