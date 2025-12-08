@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 44.2.4
+
+- chore: fix eslint jsdoc
+- chore: update libs
+
 ## 44.2.3
 
 - chore: republish npm
