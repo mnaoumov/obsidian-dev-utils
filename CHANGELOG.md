@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 44.2.3
+
+- chore: republish npm
+
 ## 44.2.2
 
 - fix: escape alias from filename
