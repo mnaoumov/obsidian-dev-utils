@@ -65,9 +65,28 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
   /**
    * Creates a new file command invocation.
    *
+   * @param abstractFile - The abstract file to create the command invocation for.
    * @returns The command invocation.
    */
-  protected abstract override createCommandInvocation(): AbstractFileCommandInvocationBase<TPlugin>;
+  protected override createCommandInvocation(abstractFile?: TAbstractFile): AbstractFileCommandInvocationBase<TPlugin> {
+    return this.createCommandInvocationForAbstractFile(abstractFile ?? this.app.workspace.getActiveFile());
+  }
+
+  /**
+   * Creates a new command invocation for an abstract file.
+   *
+   * @param abstractFile - The abstract file to create the command invocation for.
+   * @returns The command invocation.
+   */
+  protected abstract createCommandInvocationForAbstractFile(abstractFile: null | TAbstractFile): AbstractFileCommandInvocationBase<TPlugin>;
+
+  /**
+   * Creates a new command invocation for abstract files.
+   *
+   * @param abstractFiles - The abstract files to create the command invocation for.
+   * @returns The command invocation.
+   */
+  protected abstract createCommandInvocationForAbstractFiles(abstractFiles: TAbstractFile[]): AbstractFilesCommandInvocationBase<TPlugin>;
 
   /**
    * Checks if the command should be added to the abstract file menu.
@@ -79,6 +98,24 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
    */
   protected shouldAddToAbstractFileMenu(_abstractFile: TAbstractFile, _source: string, _leaf?: WorkspaceLeaf): boolean {
     return false;
+  }
+
+  /**
+   * Checks if the command should be added to the abstract files menu.
+   *
+   * @param abstractFiles - The abstract files to check.
+   * @param source - The source of the abstract files.
+   * @param leaf - The leaf to check.
+   * @returns Whether the command should be added to the abstract files menu.
+   */
+  protected shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFile[], source: string, leaf?: WorkspaceLeaf): boolean {
+    for (const abstractFile of abstractFiles) {
+      if (!this.shouldAddToAbstractFileMenu(abstractFile, source, leaf)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
@@ -95,7 +132,7 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
       return;
     }
 
-    if (!this.createCommandInvocation().invoke(true, abstractFile)) {
+    if (!this.createCommandInvocation(abstractFile).invoke(true)) {
       return;
     }
 
@@ -104,19 +141,17 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
         .setTitle(this.fileMenuItemName ?? this.originalName)
         .setIcon(this.icon)
         .setSection(this.fileMenuSection ?? '')
-        .onClick(() => this.createCommandInvocation().invoke(false, abstractFile));
+        .onClick(() => this.createCommandInvocation(abstractFile).invoke(false));
     });
   }
 
   private handleAbstractFilesMenu(menu: Menu, abstractFiles: TAbstractFile[], source: string, leaf?: WorkspaceLeaf): void {
-    for (const abstractFile of abstractFiles) {
-      if (!this.shouldAddToAbstractFileMenu(abstractFile, source, leaf)) {
-        return;
-      }
+    if (!this.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf)) {
+      return;
+    }
 
-      if (!this.createCommandInvocation().invoke(true, abstractFile)) {
-        return;
-      }
+    if (!this.createCommandInvocationForAbstractFiles(abstractFiles).invoke(true)) {
+      return;
     }
 
     menu.addItem((item) => {
@@ -124,11 +159,7 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
         .setTitle(this.filesMenuItemName ?? this.fileMenuItemName ?? this.originalName)
         .setIcon(this.icon)
         .setSection(this.filesMenuSection ?? this.fileMenuSection ?? '')
-        .onClick(() => {
-          for (const abstractFile of abstractFiles) {
-            this.createCommandInvocation().invoke(false, abstractFile);
-          }
-        });
+        .onClick(() => this.createCommandInvocationForAbstractFiles(abstractFiles).invoke(false));
     });
   }
 }
@@ -139,6 +170,9 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class AbstractFileCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
+  /** */
+  protected readonly _abstractFile: null | TAbstractFile;
+
   /**
    * The abstract file to invoke the command for.
    *
@@ -153,28 +187,14 @@ export abstract class AbstractFileCommandInvocationBase<TPlugin extends Plugin> 
   }
 
   /**
-   * Sets the abstract file to invoke the command for.
+   * Creates a new abstract file command invocation.
    *
+   * @param plugin - The plugin that the command belongs to.
    * @param abstractFile - The abstract file to invoke the command for.
    */
-  protected set abstractFile(abstractFile: TAbstractFile) {
+  public constructor(plugin: TPlugin, abstractFile: null | TAbstractFile) {
+    super(plugin);
     this._abstractFile = abstractFile;
-  }
-
-  private _abstractFile?: TAbstractFile;
-
-  /**
-   * Invokes the command.
-   *
-   * @param checking - Is checking mode only. If `true`, only the check if the command can execute is performed. If `false`, the command is executed.
-   * @param abstractFile - The abstract file to invoke the command for.
-   * @returns Whether the command was executed.
-   */
-  public override invoke(checking: boolean, abstractFile?: TAbstractFile): boolean {
-    if (abstractFile) {
-      this._abstractFile = abstractFile;
-    }
-    return super.invoke(checking);
   }
 
   /**
@@ -183,14 +203,23 @@ export abstract class AbstractFileCommandInvocationBase<TPlugin extends Plugin> 
    * @returns Whether the command can execute.
    */
   protected override canExecute(): boolean {
-    if (!super.canExecute()) {
-      return false;
-    }
-    const abstractFile = this._abstractFile ?? this.app.workspace.getActiveFile();
-    if (!abstractFile) {
-      return false;
-    }
-    this._abstractFile = abstractFile;
-    return true;
+    return super.canExecute() && !!this._abstractFile;
+  }
+}
+
+/**
+ * Base class for abstract files command invocations.
+ *
+ * @typeParam TPlugin - The type of the plugin that the command belongs to.
+ */
+export abstract class AbstractFilesCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
+  /**
+   * Creates a new abstract files command invocation.
+   *
+   * @param plugin - The plugin that the command belongs to.
+   * @param abstractFiles - The abstract files to invoke the command for.
+   */
+  public constructor(plugin: TPlugin, public readonly abstractFiles: TAbstractFile[]) {
+    super(plugin);
   }
 }

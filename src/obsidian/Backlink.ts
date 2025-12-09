@@ -6,8 +6,6 @@
 
 import type { TFile } from 'obsidian';
 
-import { TFolder } from 'obsidian';
-
 import type {
   DataviewInlineApi,
   Link
@@ -24,7 +22,8 @@ import { fixTitle } from './DataviewLink.ts';
 import {
   getAbstractFileOrNull,
   getMarkdownFiles,
-  isFile
+  isFile,
+  isFolder
 } from './FileSystem.ts';
 import { generateMarkdownLink } from './Link.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
@@ -88,7 +87,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
       return [abstractFile];
     }
 
-    if (!(abstractFile instanceof TFolder)) {
+    if (!isFolder(abstractFile)) {
       throw new Error('Expected a folder');
     }
 
