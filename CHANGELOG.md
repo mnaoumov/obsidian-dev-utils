@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 44.3.0
+
+- feat: refactor commands
+
 ## 44.2.4
 
 - chore: fix eslint jsdoc
