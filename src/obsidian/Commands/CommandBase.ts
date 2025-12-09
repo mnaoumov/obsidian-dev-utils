@@ -150,6 +150,19 @@ export abstract class CommandInvocationBase<TPlugin extends Plugin = Plugin> {
   }
 
   /**
+   * Invokes the command asynchronously.
+   *
+   * @param checking - Is checking mode only. If `true`, only the check if the command can execute is performed. If `false`, the command is executed.
+   * @returns A promise that resolves when the command has been executed.
+   */
+  public async invokeAsync(checking: boolean): Promise<void> {
+    this.lastCanExecuteResult = this.canExecute();
+    if (!checking && this.lastCanExecuteResult) {
+      await this.execute();
+    }
+  }
+
+  /**
    * Checks if the command can execute.
    *
    * @returns Whether the command can execute.

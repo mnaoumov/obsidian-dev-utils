@@ -1,7 +1,7 @@
 /**
  * @packageDocumentation
  *
- * This module provides utility functions for working with TAbstractFile, TFile, and TFolder instances in Obsidian.
+ * This module provides utility functions for working with {@link TAbstractFile}, {@link TFile}, and {@link TFolder} instances in Obsidian.
  */
 
 import type { App } from 'obsidian';
@@ -19,6 +19,7 @@ import {
   parentFolderPath
 } from 'obsidian-typings/implementations';
 
+import { throwExpression } from '../Error.ts';
 import {
   extname,
   resolve
@@ -41,19 +42,97 @@ export const CANVAS_FILE_EXTENSION = 'canvas';
 export const MARKDOWN_FILE_EXTENSION = 'md';
 
 /**
- * A path or an instance of {@link TAbstractFile}.
+ * A path or an abstract file.
  */
 export type PathOrAbstractFile = string | TAbstractFile;
 
 /**
- * A path or a {@link TFile}.
+ * A path or a file.
  */
 export type PathOrFile = string | TFile;
 
 /**
- * A path or a {@link TFolder}.
+ * A path or a folder.
  */
 export type PathOrFolder = string | TFolder;
+
+/**
+ * Converts an array of abstract files to an array of files.
+ *
+ * @param abstractFiles - The abstract files to convert.
+ * @returns The array of files.
+ * @throws Error if any of the abstract files are not files.
+ */
+export function asArrayOfFiles(abstractFiles: TAbstractFile[]): TFile[] {
+  return abstractFiles.map((abstractFile) => asFile(abstractFile));
+}
+
+/**
+ * Converts an array of abstract files to an array of folders.
+ *
+ * @param abstractFiles - The abstract files to convert.
+ * @returns The array of folders.
+ * @throws Error if any of the abstract files are not folders.
+ */
+export function asArrayOfFolders(abstractFiles: TAbstractFile[]): TFolder[] {
+  return abstractFiles.map((abstractFile) => asFolder(abstractFile));
+}
+
+/**
+ * Converts an abstract file to a file.
+ *
+ * @param abstractFile - The abstract file to convert.
+ * @returns The file.
+ * @throws Error if the abstract file is not a file.
+ */
+export function asFile(abstractFile: null | TAbstractFile): TFile {
+  return asFileOrNull(abstractFile) ?? throwExpression(new Error('Abstract file is not a file'));
+}
+
+/**
+ * Converts an abstract file to a file or `null`.
+ *
+ * @param abstractFile - The abstract file to convert.
+ * @returns The file or `null`.
+ * @throws Error if the abstract file is not a file.
+ */
+export function asFileOrNull(abstractFile: null | TAbstractFile): null | TFile {
+  if (abstractFile === null) {
+    return null;
+  }
+  if (abstractFile instanceof TFile) {
+    return abstractFile;
+  }
+  throw new Error('Abstract file is not a file');
+}
+
+/**
+ * Converts an abstract file to a folder.
+ *
+ * @param abstractFile - The abstract file to convert.
+ * @returns The folder.
+ * @throws Error if the abstract file is not a folder.
+ */
+export function asFolder(abstractFile: null | TAbstractFile): TFolder {
+  return asFolderOrNull(abstractFile) ?? throwExpression(new Error('Abstract file is not a folder'));
+}
+
+/**
+ * Converts an abstract file to a folder or `null`.
+ *
+ * @param abstractFile - The abstract file to convert.
+ * @returns The folder or `null`.
+ * @throws Error if the abstract file is not a folder.
+ */
+export function asFolderOrNull(abstractFile: null | TAbstractFile): null | TFolder {
+  if (abstractFile === null) {
+    return null;
+  }
+  if (abstractFile instanceof TFolder) {
+    return abstractFile;
+  }
+  throw new Error('Abstract file is not a folder');
+}
 
 /**
  * Checks if the given path or file has the specified extension.
@@ -84,9 +163,9 @@ export function checkExtension(app: App, pathOrFile: null | PathOrAbstractFile, 
  * Retrieves the TAbstractFile object for the given path or abstract file.
  *
  * @param app - The App instance.
- * @param pathOrFile - The path or abstract file to retrieve the TAbstractFile for.
+ * @param pathOrFile - The path or abstract file to retrieve the abstract file for.
  * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
- * @returns The TAbstractFile object.
+ * @returns The abstract file.
  * @throws Error if the abstract file is not found.
  */
 export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, isCaseInsensitive?: boolean): TAbstractFile {
@@ -99,12 +178,12 @@ export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, isCase
 }
 
 /**
- * Retrieves an instance of TAbstractFile or null based on the provided path or abstract file.
+ * Retrieves an abstract file or `null` based on the provided path or abstract file.
  *
  * @param app - The application instance.
  * @param pathOrFile - The path or abstract file to retrieve.
  * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
- * @returns The instance of TAbstractFile if found, otherwise null.
+ * @returns The abstract file if found, otherwise `null`.
  */
 export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstractFile, isCaseInsensitive?: boolean): null | TAbstractFile {
   if (pathOrFile === null) {
@@ -131,15 +210,15 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
 }
 
 /**
- * Retrieves a TFile object based on the provided path or file.
+ * Retrieves a file based on the provided path or file.
  *
  * @param app - The Obsidian App instance.
- * @param pathOrFile - The path or file to retrieve the TFile object for.
+ * @param pathOrFile - The path or file to retrieve the file for.
  * @param shouldIncludeNonExisting - Whether to include a non-existing file.
- *  If `true`, a new TFile object is created for the provided path.
+ *  If `true`, a new file is created for the provided path.
  *  If `false`, an error is thrown if the file is not found.
  * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
- * @returns The TFile object corresponding to the provided path or file.
+ * @returns The file corresponding to the provided path or file.
  * @throws Error if the file is not found.
  */
 export function getFile(app: App, pathOrFile: PathOrFile, shouldIncludeNonExisting?: boolean, isCaseInsensitive?: boolean): TFile {
@@ -156,14 +235,14 @@ export function getFile(app: App, pathOrFile: PathOrFile, shouldIncludeNonExisti
 }
 
 /**
- * Retrieves a TFile object based on the provided path or file.
- * If the provided argument is already a TFile object, it is returned as is.
- * Otherwise, the function uses the app's vault to retrieve the TFile object by its path.
+ * Retrieves a file or `null` based on the provided path or file.
+ * If the provided argument is already a file, it is returned as is.
+ * Otherwise, the function uses the app's vault to retrieve the file by its path.
  *
  * @param app - The Obsidian App instance.
- * @param pathOrFile - The path or TFile object.
+ * @param pathOrFile - The path or file.
  * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
- * @returns The TFile object if found, otherwise null.
+ * @returns The file if found, otherwise `null`.
  */
 export function getFileOrNull(app: App, pathOrFile: null | PathOrFile, isCaseInsensitive?: boolean): null | TFile {
   const file = getAbstractFileOrNull(app, pathOrFile, isCaseInsensitive);
@@ -174,15 +253,15 @@ export function getFileOrNull(app: App, pathOrFile: null | PathOrFile, isCaseIns
 }
 
 /**
- * Retrieves a TFolder object based on the provided app and pathOrFolder.
+ * Retrieves a folder based on the provided app and pathOrFolder.
  *
  * @param app - The Obsidian app instance.
  * @param pathOrFolder - The path or folder identifier.
  * @param shouldIncludeNonExisting - Whether to allow the folder to not exist.
- *  If `true`, a new TFolder object is created for the provided path.
+ *  If `true`, a new folder is created for the provided path.
  *  If `false`, an error is thrown if the folder is not found.
  * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
- * @returns The retrieved TFolder object.
+ * @returns The retrieved folder.
  * @throws If the folder is not found.
  */
 export function getFolder(app: App, pathOrFolder: PathOrFolder, shouldIncludeNonExisting?: boolean, isCaseInsensitive?: boolean): TFolder {
@@ -199,12 +278,12 @@ export function getFolder(app: App, pathOrFolder: PathOrFolder, shouldIncludeNon
 }
 
 /**
- * Retrieves a TFolder object or null based on the provided path or folder.
+ * Retrieves a folder or `null` based on the provided path or folder.
  *
  * @param app - The Obsidian application instance.
- * @param pathOrFolder - The path or folder to retrieve the TFolder from.
+ * @param pathOrFolder - The path or folder to retrieve the folder from.
  * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `false`.
- * @returns The TFolder object if found, otherwise null.
+ * @returns The folder if found, otherwise `null`.
  */
 export function getFolderOrNull(app: App, pathOrFolder: null | PathOrFolder, isCaseInsensitive?: boolean): null | TFolder {
   const folder = getAbstractFileOrNull(app, pathOrFolder, isCaseInsensitive);
@@ -215,12 +294,12 @@ export function getFolderOrNull(app: App, pathOrFolder: null | PathOrFolder, isC
 }
 
 /**
- * Retrieves an array of TFile objects representing the markdown files within a specified folder or path.
+ * Retrieves an array of files representing the markdown files within a specified folder or path.
  *
  * @param app - The Obsidian App instance.
  * @param pathOrFolder - The path or folder to retrieve the markdown files from.
  * @param isRecursive - Optional. Specifies whether to recursively search for markdown files within subfolders. Default is false.
- * @returns An array of TFile objects representing the markdown files.
+ * @returns An array of files representing the markdown files.
  */
 export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursive?: boolean): TFile[] {
   const folder = getFolder(app, pathOrFolder);
@@ -242,11 +321,11 @@ export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursi
 }
 
 /**
- * Retrieves the TFile object for the given path or creates a new one if it does not exist.
+ * Retrieves the file for the given path or creates a new one if it does not exist.
  *
  * @param app - The Obsidian App instance.
  * @param path - The path of the file to retrieve or create.
- * @returns The TFile object representing the file
+ * @returns The file representing the file
  */
 export async function getOrCreateFile(app: App, path: string): Promise<TFile> {
   const file = getFileOrNull(app, path);
@@ -261,11 +340,11 @@ export async function getOrCreateFile(app: App, path: string): Promise<TFile> {
 }
 
 /**
- * Retrieves the TFolder object for the given path or creates a new one if it does not exist.
+ * Retrieves the folder for the given path or creates a new one if it does not exist.
  *
  * @param app - The Obsidian App instance.
  * @param path - The path of the folder to retrieve or create.
- * @returns The TFolder object representing the folder.
+ * @returns The folder representing the folder.
  */
 export async function getOrCreateFolder(app: App, path: string): Promise<TFolder> {
   const folder = getFolderOrNull(app, path);
@@ -297,10 +376,10 @@ export function getPath(app: App, pathOrFile: PathOrAbstractFile): string {
 }
 
 /**
- * Checks if the given file is an instance of TAbstractFile.
+ * Checks if the given file is an instance of abstract file.
  *
  * @param file - The file to check.
- * @returns A boolean indicating whether the file is an instance of TAbstractFile.
+ * @returns A boolean indicating whether the file is an instance of abstract file.
  */
 export function isAbstractFile(file: unknown): file is TAbstractFile {
   return file instanceof TAbstractFile;
@@ -329,10 +408,10 @@ export function isCanvasFile(app: App, pathOrFile: null | PathOrAbstractFile): b
 }
 
 /**
- * Checks if the given file is an instance of TFile.
+ * Checks if the given file is an instance of file.
  *
  * @param file - The file to check.
- * @returns A boolean indicating whether the file is an instance of TFile.
+ * @returns A boolean indicating whether the file is an instance of file.
  */
 export function isFile(file: unknown): file is TFile {
   return file instanceof TFile;

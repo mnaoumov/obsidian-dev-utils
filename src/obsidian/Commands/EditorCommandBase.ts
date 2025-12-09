@@ -7,7 +7,6 @@
 import type {
   Editor,
   MarkdownFileInfo,
-  MarkdownView,
   Menu,
   Plugin,
   TFile
@@ -42,7 +41,7 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
    * @param ctx - The context of the command.
    * @returns Whether the command can execute.
    */
-  public editorCheckCallback(checking: boolean, editor: Editor, ctx: MarkdownFileInfo | MarkdownView): boolean {
+  public editorCheckCallback(checking: boolean, editor: Editor, ctx: MarkdownFileInfo): boolean {
     if (!this.shouldAddToCommandPalette()) {
       return false;
     }
@@ -64,7 +63,7 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
    * @param ctx - The context of the command.
    * @returns The command invocation.
    */
-  protected abstract createEditorCommandInvocation(editor: Editor, ctx: MarkdownFileInfo | MarkdownView): CommandInvocationBase;
+  protected abstract createEditorCommandInvocation(editor: Editor, ctx: MarkdownFileInfo): CommandInvocationBase;
 
   /**
    * Checks if the command should be added to the command palette.
@@ -82,11 +81,11 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
    * @param _ctx - The context of the command.
    * @returns Whether the command should be added to the editor menu.
    */
-  protected shouldAddToEditorMenu(_editor: Editor, _ctx: MarkdownFileInfo | MarkdownView): boolean {
+  protected shouldAddToEditorMenu(_editor: Editor, _ctx: MarkdownFileInfo): boolean {
     return false;
   }
 
-  private handleEditorMenu(menu: Menu, editor: Editor, ctx: MarkdownFileInfo | MarkdownView): void {
+  private handleEditorMenu(menu: Menu, editor: Editor, ctx: MarkdownFileInfo): void {
     if (!this.shouldAddToEditorMenu(editor, ctx)) {
       return;
     }
@@ -124,7 +123,7 @@ export class EditorCommandInvocationBase<TPlugin extends Plugin> extends Command
     return this._file;
   }
 
-  private _file?: TFile;
+  private readonly _file: null | TFile;
 
   /**
    * Creates a new editor command invocation.
@@ -133,8 +132,9 @@ export class EditorCommandInvocationBase<TPlugin extends Plugin> extends Command
    * @param editor - The editor to create the command invocation for.
    * @param ctx - The context of the command.
    */
-  public constructor(plugin: TPlugin, protected readonly editor: Editor, protected readonly ctx: MarkdownFileInfo | MarkdownView) {
+  public constructor(plugin: TPlugin, protected readonly editor: Editor, protected readonly ctx: MarkdownFileInfo) {
     super(plugin);
+    this._file = ctx.file;
   }
 
   /**
@@ -143,15 +143,6 @@ export class EditorCommandInvocationBase<TPlugin extends Plugin> extends Command
    * @returns Whether the command can execute.
    */
   public override canExecute(): boolean {
-    if (!super.canExecute()) {
-      return false;
-    }
-
-    if (!this.ctx.file) {
-      return false;
-    }
-
-    this._file = this.ctx.file;
-    return true;
+    return super.canExecute() && !!this._file;
   }
 }
