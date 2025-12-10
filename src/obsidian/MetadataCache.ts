@@ -23,13 +23,14 @@ import type { RetryOptions } from '../Async.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 
-import { retryWithTimeout } from '../Async.ts';
 import { getNestedPropertyValue } from '../ObjectUtils.ts';
 import { getObsidianDevUtilsState } from './App.ts';
+import { retryWithTimeoutNotice } from './AsyncWithNotice.ts';
 import {
   getFile,
   getFileOrNull,
   getFolder,
+  getPath,
   isFile
 } from './FileSystem.ts';
 import { parseFrontmatter } from './Frontmatter.ts';
@@ -146,56 +147,60 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
     return safeOverload(pathOrFile);
   }
   let backlinks: CustomArrayDict<Reference> = new CustomArrayDictImpl<Reference>();
-  await retryWithTimeout(async (abortSignal) => {
-    abortSignal.throwIfAborted();
-    const file = getFile(app, pathOrFile);
-    await ensureMetadataCacheReady(app);
-    abortSignal.throwIfAborted();
-    backlinks = getBacklinksForFileOrPath(app, file);
-    for (const notePath of backlinks.keys()) {
+  await retryWithTimeoutNotice({
+    async operationFn(abortSignal) {
       abortSignal.throwIfAborted();
-      const note = getFileOrNull(app, notePath);
-      if (!note) {
-        return false;
-      }
-
-      await saveNote(app, note);
+      const file = getFile(app, pathOrFile);
+      await ensureMetadataCacheReady(app);
       abortSignal.throwIfAborted();
-
-      const content = await readSafe(app, note);
-      abortSignal.throwIfAborted();
-      if (!content) {
-        return false;
-      }
-      const frontmatter = parseFrontmatter(content);
-      const links = backlinks.get(notePath);
-      if (!links) {
-        return false;
-      }
-
-      for (const link of links) {
-        let actualLink: string;
-        if (isReferenceCache(link)) {
-          actualLink = content.slice(link.position.start.offset, link.position.end.offset);
-        } else if (isFrontmatterLinkCache(link)) {
-          const propertyValue = getNestedPropertyValue(frontmatter, link.key);
-          if (typeof propertyValue !== 'string') {
-            return false;
-          }
-
-          const linkWithOffsets = toFrontmatterLinkCacheWithOffsets(link);
-          actualLink = propertyValue.slice(linkWithOffsets.startOffset, linkWithOffsets.endOffset);
-        } else {
-          return true;
-        }
-        if (actualLink !== link.original) {
+      backlinks = getBacklinksForFileOrPath(app, file);
+      for (const notePath of backlinks.keys()) {
+        abortSignal.throwIfAborted();
+        const note = getFileOrNull(app, notePath);
+        if (!note) {
           return false;
         }
-      }
-    }
 
-    return true;
-  }, retryOptions);
+        await saveNote(app, note);
+        abortSignal.throwIfAborted();
+
+        const content = await readSafe(app, note);
+        abortSignal.throwIfAborted();
+        if (!content) {
+          return false;
+        }
+        const frontmatter = parseFrontmatter(content);
+        const links = backlinks.get(notePath);
+        if (!links) {
+          return false;
+        }
+
+        for (const link of links) {
+          let actualLink: string;
+          if (isReferenceCache(link)) {
+            actualLink = content.slice(link.position.start.offset, link.position.end.offset);
+          } else if (isFrontmatterLinkCache(link)) {
+            const propertyValue = getNestedPropertyValue(frontmatter, link.key);
+            if (typeof propertyValue !== 'string') {
+              return false;
+            }
+
+            const linkWithOffsets = toFrontmatterLinkCacheWithOffsets(link);
+            actualLink = propertyValue.slice(linkWithOffsets.startOffset, linkWithOffsets.endOffset);
+          } else {
+            return true;
+          }
+          if (actualLink !== link.original) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    },
+    operationName: `Get backlinks for ${getPath(app, pathOrFile)}`,
+    retryOptions
+  });
 
   return backlinks;
 }

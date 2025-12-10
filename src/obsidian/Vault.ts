@@ -12,10 +12,7 @@ import type {
   TFolder
 } from 'obsidian';
 
-import {
-  MarkdownView,
-  Notice
-} from 'obsidian';
+import { MarkdownView } from 'obsidian';
 import {
   parentFolderPath,
   ViewType
@@ -29,7 +26,6 @@ import type {
 } from './FileSystem.ts';
 
 import { abortSignalAny } from '../AbortController.ts';
-import { retryWithTimeout } from '../Async.ts';
 import { getLibDebugger } from '../Debug.ts';
 import { noopAsync } from '../Function.ts';
 import {
@@ -39,6 +35,7 @@ import {
   join
 } from '../Path.ts';
 import { resolveValue } from '../ValueProvider.ts';
+import { retryWithTimeoutNotice } from './AsyncWithNotice.ts';
 import {
   lockEditor,
   unlockEditor
@@ -59,11 +56,6 @@ import {
  */
 export interface ProcessOptions extends RetryOptions {
   /**
-   * The delay in milliseconds before showing the process notice. Applicable only if {@link shouldShowNoticeWhileProcessing} is `true`. Default is `200`.
-   */
-  noticeDelayInMilliseconds?: number;
-
-  /**
    * Whether to fail if the file is missing or deleted. Default is `true`.
    */
   shouldFailOnMissingFile?: boolean;
@@ -72,11 +64,6 @@ export interface ProcessOptions extends RetryOptions {
    * Whether to lock the editor while processing the file. Applicable only for markdown files. Default is `true`.
    */
   shouldLockEditorWhileProcessing?: boolean;
-
-  /**
-   * Whether to show a notice while processing the file. Default is `true`.
-   */
-  shouldShowNoticeWhileProcessing?: boolean;
 }
 
 /**
@@ -330,39 +317,15 @@ export async function process(
   options: ProcessOptions = {}
 ): Promise<void> {
   const DEFAULT_RETRY_OPTIONS = {
-    // eslint-disable-next-line no-magic-numbers -- Default values.
-    noticeDelayInMilliseconds: 200,
     shouldFailOnMissingFile: true,
     shouldLockEditorWhileProcessing: true,
-    shouldShowNoticeWhileProcessing: true
+    // eslint-disable-next-line no-magic-numbers -- Default value.
+    timeoutInMilliseconds: 500
   };
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...options };
   const abortController = new AbortController();
   fullOptions.abortSignal = abortSignalAny(fullOptions.abortSignal, abortController.signal);
-  let isProcessing = true;
-  let notice: Notice | null = null;
   const path = getPath(app, pathOrFile);
-
-  if (fullOptions.shouldShowNoticeWhileProcessing) {
-    window.setTimeout(() => {
-      if (!isProcessing) {
-        return;
-      }
-      notice = new Notice(
-        createFragment((f) => {
-          f.appendText(`Processing file ${path}...`);
-          f.createEl('br');
-          const button = f.createEl('button', {
-            text: 'Cancel'
-          });
-          button.addEventListener('click', () => {
-            abortController.abort();
-          });
-        }),
-        0
-      );
-    }, fullOptions.noticeDelayInMilliseconds);
-  }
 
   let activeLeafChangeEventRef: EventRef | null = null;
 
@@ -381,60 +344,62 @@ export async function process(
   }
 
   try {
-    await retryWithTimeout(async (abortSignal) => {
-      abortSignal.throwIfAborted();
-
-      const oldContent = await readSafe(app, pathOrFile);
-      abortSignal.throwIfAborted();
-
-      if (oldContent === null) {
-        return handleMissingFile();
-      }
-
-      const newContent = await resolveValue(newContentProvider, abortSignal, oldContent);
-      abortSignal.throwIfAborted();
-
-      if (newContent === null) {
-        return false;
-      }
-
-      let isSuccess = true;
-      const doesFileExist = await invokeFileActionSafe(app, pathOrFile, async (file) => {
+    await retryWithTimeoutNotice({
+      async operationFn(abortSignal) {
         abortSignal.throwIfAborted();
-        await app.vault.process(file, (content) => {
-          abortSignal.throwIfAborted();
-          if (content !== oldContent) {
-            getLibDebugger('Vault:process')('Content has changed since it was read. Retrying...', {
-              actualContent: content,
-              expectedContent: oldContent,
-              path: file.path
-            });
-            isSuccess = false;
-            return content;
-          }
 
-          return newContent;
+        const oldContent = await readSafe(app, pathOrFile);
+        abortSignal.throwIfAborted();
+
+        if (oldContent === null) {
+          return handleMissingFile();
+        }
+
+        const newContent = await resolveValue(newContentProvider, abortSignal, oldContent);
+        abortSignal.throwIfAborted();
+
+        if (newContent === null) {
+          return false;
+        }
+
+        let isSuccess = true;
+        const doesFileExist = await invokeFileActionSafe(app, pathOrFile, async (file) => {
+          abortSignal.throwIfAborted();
+          await app.vault.process(file, (content) => {
+            abortSignal.throwIfAborted();
+            if (content !== oldContent) {
+              getLibDebugger('Vault:process')('Content has changed since it was read. Retrying...', {
+                actualContent: content,
+                expectedContent: oldContent,
+                path: file.path
+              });
+              isSuccess = false;
+              return content;
+            }
+
+            return newContent;
+          });
+
+          abortSignal.throwIfAborted();
         });
 
-        abortSignal.throwIfAborted();
-      });
-
-      if (!doesFileExist) {
-        return handleMissingFile();
-      }
-
-      return isSuccess;
-
-      function handleMissingFile(): boolean {
-        if (fullOptions.shouldFailOnMissingFile) {
-          throw new Error(`File '${path}' not found`);
+        if (!doesFileExist) {
+          return handleMissingFile();
         }
-        return true;
-      }
-    }, fullOptions);
+
+        return isSuccess;
+
+        function handleMissingFile(): boolean {
+          if (fullOptions.shouldFailOnMissingFile) {
+            throw new Error(`File '${path}' not found`);
+          }
+          return true;
+        }
+      },
+      operationName: `Process file ${path}`,
+      retryOptions: fullOptions
+    });
   } finally {
-    isProcessing = false;
-    (notice as Notice | null)?.hide();
     activeLeafChangeEventRef?.e.offref(activeLeafChangeEventRef);
     for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
       if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {

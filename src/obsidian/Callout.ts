@@ -7,8 +7,10 @@
 import type { MaybeReturn } from '../Type.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { DataviewInlineApi } from './Dataview.ts';
+import type { AddToQueueOptions } from './Queue.ts';
 
 import { throwExpression } from '../Error.ts';
+import { normalizeOptionalProperties } from '../ObjectUtils.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { getRenderedContainer } from './Dataview.ts';
 import { addToQueue } from './Queue.ts';
@@ -84,7 +86,12 @@ export function renderCallout(options: RenderCalloutOptions): void {
     for (const entry of entries) {
       if (entry.isIntersecting) {
         observer.unobserve(entry.target);
-        addToQueue(dv.app, loadContent, options.abortSignal);
+        addToQueue(normalizeOptionalProperties<AddToQueueOptions>({
+          abortSignal: options.abortSignal,
+          app: dv.app,
+          operationFn: loadContent,
+          operationName: 'Load content for callout'
+        }));
       }
     }
   });
