@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 45.0.0
+
+- feat: don't break on timeout, just show notice
+
 ## 44.3.0
 
 - feat: refactor commands
