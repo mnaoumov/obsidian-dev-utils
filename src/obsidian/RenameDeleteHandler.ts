@@ -359,11 +359,11 @@ class Registry {
     if (!this.shouldInvokeHandler()) {
       return;
     }
-    addToQueue(
-      this.app,
-      (abortSignal) => new DeleteHandler(this.app, file, abortSignal, this.settingsManager, this.deletedMetadataCacheMap).handle(),
-      this.abortSignal
-    );
+    addToQueue({
+      app: this.app,
+      operationFn: (abortSignal) => new DeleteHandler(this.app, file, abortSignal, this.settingsManager, this.deletedMetadataCacheMap).handle(),
+      operationName: `Handle delete: ${file.path}`
+    });
   }
 
   private handleMetadataDeleted(file: TAbstractFile, prevCache: CachedMetadata | null): void {
@@ -407,18 +407,23 @@ class Registry {
 
     const oldCache = this.app.metadataCache.getCache(oldPath) ?? this.app.metadataCache.getCache(newPath);
     const oldPathBacklinksMap = getBacklinksForFileOrPath(this.app, oldPath).data;
-    addToQueue(this.app, (abortSignal) =>
-      new RenameHandler({
-        abortSignal,
-        app: this.app,
-        handledRenames: this.handledRenames,
-        interruptedRenamesMap: this.interruptedRenamesMap,
-        newPath,
-        oldCache,
-        oldPath,
-        oldPathBacklinksMap,
-        settingsManager: this.settingsManager
-      }).handle(), this.abortSignal);
+    addToQueue({
+      abortSignal: this.abortSignal,
+      app: this.app,
+      operationFn: (abortSignal) =>
+        new RenameHandler({
+          abortSignal,
+          app: this.app,
+          handledRenames: this.handledRenames,
+          interruptedRenamesMap: this.interruptedRenamesMap,
+          newPath,
+          oldCache,
+          oldPath,
+          oldPathBacklinksMap,
+          settingsManager: this.settingsManager
+        }).handle(),
+      operationName: `Handle rename: ${oldPath} -> ${newPath}`
+    });
   }
 
   private logRegisteredHandlers(): void {
@@ -642,18 +647,23 @@ class RenameHandler {
       }
     } finally {
       const orphanKeys = Array.from(this.handledRenames.keys());
-      addToQueue(this.app, () => {
-        for (const orphanKey of orphanKeys) {
-          this.handledRenames.delete(orphanKey.oldPath, orphanKey.newPath);
-        }
+      addToQueue({
+        abortSignal: this.abortSignal,
+        app: this.app,
+        operationFn: () => {
+          for (const orphanKey of orphanKeys) {
+            this.handledRenames.delete(orphanKey.oldPath, orphanKey.newPath);
+          }
 
-        if (renamedLinks.size === 0) {
-          return;
-        }
-        new Notice(`Updated ${String(renamedLinks.size)} links in ${String(renamedFilePaths.size)} files.`);
-        renamedFilePaths.clear();
-        renamedLinks.clear();
-      }, this.abortSignal);
+          if (renamedLinks.size === 0) {
+            return;
+          }
+          new Notice(`Updated ${String(renamedLinks.size)} links in ${String(renamedFilePaths.size)} files.`);
+          renamedFilePaths.clear();
+          renamedLinks.clear();
+        },
+        operationName: 'Handle orphaned renames'
+      });
     }
   }
 

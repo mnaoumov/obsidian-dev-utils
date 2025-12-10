@@ -15,13 +15,83 @@ import {
 } from '../AbortController.ts';
 import {
   addErrorHandler,
-  invokeAsyncSafely,
-  runWithTimeout
+  invokeAsyncSafely
 } from '../Async.ts';
 import { getStackTrace } from '../Error.ts';
 import { noop } from '../Function.ts';
 import { getObsidianDevUtilsState } from './App.ts';
+import { runWithTimeoutNotice } from './AsyncWithNotice.ts';
 import { invokeAsyncAndLog } from './Logger.ts';
+
+/**
+ * Options for the {@link addToQueueAndWait} function.
+ */
+export interface AddToQueueAndWaitOptions {
+  /**
+   * Optional abort signal.
+   */
+  abortSignal?: AbortSignal;
+
+  /**
+   * The Obsidian application instance.
+   */
+  app: App;
+
+  /**
+   * The function to add.
+   */
+  operationFn: (abortSignal: AbortSignal) => Promisable<void>;
+
+  /**
+   * Optional name of the operation.
+   */
+  operationName?: string;
+
+  /**
+   * Optional stack trace.
+   */
+  stackTrace?: string;
+
+  /**
+   * The timeout in milliseconds.
+   */
+  timeoutInMilliseconds?: number;
+}
+
+/**
+ * Options for the {@link addToQueue} function.
+ */
+export interface AddToQueueOptions {
+  /**
+   * Optional abort signal.
+   */
+  abortSignal?: AbortSignal;
+
+  /**
+   * The Obsidian application instance.
+   */
+  app: App;
+
+  /**
+   * The function to add.
+   */
+  operationFn: (abortSignal: AbortSignal) => Promisable<void>;
+
+  /**
+   * Optional name of the operation.
+   */
+  operationName?: string;
+
+  /**
+   * Optional stack trace.
+   */
+  stackTrace?: string;
+
+  /**
+   * The timeout in milliseconds.
+   */
+  timeoutInMilliseconds?: number;
+}
 
 interface Queue {
   items: QueueItem[];
@@ -30,7 +100,8 @@ interface Queue {
 
 interface QueueItem {
   abortSignal: AbortSignal;
-  fn(this: void, abortSignal: AbortSignal): Promisable<void>;
+  operationFn(this: void, abortSignal: AbortSignal): Promisable<void>;
+  operationName: string;
   stackTrace: string;
   timeoutInMilliseconds: number;
 }
@@ -38,48 +109,29 @@ interface QueueItem {
 /**
  * Adds an asynchronous function to be executed after the previous function completes.
  *
- * @param app - The Obsidian application instance.
- * @param fn - The function to add.
- * @param abortSignal - Optional abort signal.
- * @param timeoutInMilliseconds - The timeout in milliseconds.
- * @param stackTrace - Optional stack trace.
+ * @param options - The options for the function.
  */
-export function addToQueue(
-  app: App,
-  fn: (abortSignal: AbortSignal) => Promisable<void>,
-  abortSignal?: AbortSignal,
-  timeoutInMilliseconds?: number,
-  stackTrace?: string
-): void {
-  stackTrace ??= getStackTrace(1);
-  invokeAsyncSafely(() => addToQueueAndWait(app, fn, abortSignal, timeoutInMilliseconds, stackTrace), stackTrace);
+export function addToQueue(options: AddToQueueOptions): void {
+  const stackTrace = options.stackTrace ?? getStackTrace(1);
+  invokeAsyncSafely(() => addToQueueAndWait(options), stackTrace);
 }
 
 /**
  * Adds an asynchronous function to be executed after the previous function completes and returns a {@link Promise} that resolves when the function completes.
  *
- * @param app - The Obsidian application instance.
- * @param fn - The function to add.
- * @param abortSignal - Optional abort signal.
- * @param timeoutInMilliseconds - The timeout in milliseconds.
- * @param stackTrace - Optional stack trace.
+ * @param options - The options for the function.
  */
-export async function addToQueueAndWait(
-  app: App,
-  fn: (abortSignal: AbortSignal) => Promisable<void>,
-  abortSignal?: AbortSignal,
-  timeoutInMilliseconds?: number,
-  stackTrace?: string
-): Promise<void> {
-  abortSignal ??= abortSignalNever();
+export async function addToQueueAndWait(options: AddToQueueAndWaitOptions): Promise<void> {
+  const abortSignal = options.abortSignal ?? abortSignalNever();
   abortSignal.throwIfAborted();
 
   const DEFAULT_TIMEOUT_IN_MILLISECONDS = 60000;
-  timeoutInMilliseconds ??= DEFAULT_TIMEOUT_IN_MILLISECONDS;
-  stackTrace ??= getStackTrace(1);
-  const queue = getQueue(app).value;
-  queue.items.push({ abortSignal, fn, stackTrace, timeoutInMilliseconds });
-  queue.promise = queue.promise.then(() => processNextQueueItem(app));
+  const timeoutInMilliseconds = options.timeoutInMilliseconds ?? DEFAULT_TIMEOUT_IN_MILLISECONDS;
+  const stackTrace = options.stackTrace ?? getStackTrace(1);
+  const operationName = options.operationName ?? '';
+  const queue = getQueue(options.app).value;
+  queue.items.push({ abortSignal, operationFn: options.operationFn, operationName, stackTrace, timeoutInMilliseconds });
+  queue.promise = queue.promise.then(() => processNextQueueItem(options.app));
   await queue.promise;
 }
 
@@ -89,7 +141,11 @@ export async function addToQueueAndWait(
  * @param app - The Obsidian application instance.
  */
 export async function flushQueue(app: App): Promise<void> {
-  await addToQueueAndWait(app, noop);
+  await addToQueueAndWait({
+    app,
+    operationFn: noop,
+    operationName: 'Flush queue'
+  });
 }
 
 function getQueue(app: App): ValueWrapper<Queue> {
@@ -104,10 +160,20 @@ async function processNextQueueItem(app: App): Promise<void> {
   }
 
   await addErrorHandler(() =>
-    runWithTimeout(
-      item.timeoutInMilliseconds,
-      (abortSignal: AbortSignal) => invokeAsyncAndLog(processNextQueueItem.name, item.fn, abortSignalAny(abortSignal, item.abortSignal), item.stackTrace),
-      { queuedFn: item.fn }
-    ), item.stackTrace);
+    runWithTimeoutNotice({
+      context: { queuedFn: item.operationFn },
+      async operationFn(abortSignal: AbortSignal): Promise<void> {
+        await invokeAsyncAndLog(
+          item.operationName || processNextQueueItem.name,
+          item.operationFn,
+          abortSignalAny(abortSignal, item.abortSignal),
+          item.stackTrace
+        );
+      },
+      operationName: item.operationName,
+      stackTrace: item.stackTrace,
+      timeoutInMilliseconds: item.timeoutInMilliseconds
+    })
+  );
   queue.items.shift();
 }
