@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 45.0.1
+
+- feat: extract i18n
+- feat: round timestamps
+- feat: show total time
+
 ## 45.0.0
 
 - feat: don't break on timeout, just show notice
