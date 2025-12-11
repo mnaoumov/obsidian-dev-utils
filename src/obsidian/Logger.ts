@@ -37,7 +37,7 @@ export async function invokeAsyncAndLog(
   try {
     await fn(abortSignal);
     const timestampEnd = performance.now();
-    const duration = timestampEnd - timestampStart;
+    const duration = Math.trunc(timestampEnd - timestampStart);
     if (abortSignal.aborted) {
       printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:aborted`, {
         abortReason: abortSignal.reason as unknown,
@@ -57,7 +57,7 @@ export async function invokeAsyncAndLog(
   } catch (error) {
     const timestampEnd = performance.now();
     printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:error`, {
-      duration: timestampEnd - timestampStart,
+      duration: Math.trunc(timestampEnd - timestampStart),
       error,
       fn,
       timestampEnd,

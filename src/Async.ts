@@ -558,7 +558,7 @@ export async function runWithTimeout<Result>(options: RunWithTimeoutOptions<Resu
   async function run(): Promise<void> {
     try {
       result = await options.operationFn(runAbortController.signal);
-      const duration = performance.now() - startTime;
+      const duration = Math.trunc(performance.now() - startTime);
       printWithStackTrace(runWithTimeoutDebugger, stackTrace, `Execution time: ${String(duration)} milliseconds`, {
         context: options.context,
         operationFn: options.operationFn,
@@ -579,7 +579,7 @@ export async function runWithTimeout<Result>(options: RunWithTimeoutOptions<Resu
     if (isCompleted) {
       return;
     }
-    const duration = performance.now() - startTime;
+    const duration = Math.trunc(performance.now() - startTime);
     printWithStackTrace(runWithTimeoutDebugger, stackTrace, `Timed out after ${String(duration)} milliseconds`, {
       context: options.context,
       operationFn: options.operationFn,
