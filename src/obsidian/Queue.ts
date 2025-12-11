@@ -21,6 +21,7 @@ import { getStackTrace } from '../Error.ts';
 import { noop } from '../Function.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import { runWithTimeoutNotice } from './AsyncWithNotice.ts';
+import { t } from './i18n/i18n.ts';
 import { invokeAsyncAndLog } from './Logger.ts';
 
 /**
@@ -144,7 +145,7 @@ export async function flushQueue(app: App): Promise<void> {
   await addToQueueAndWait({
     app,
     operationFn: noop,
-    operationName: 'Flush queue'
+    operationName: t(($) => $.obsidianDevUtils.queue.flushQueue)
   });
 }
 

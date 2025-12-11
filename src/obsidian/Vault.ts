@@ -50,6 +50,7 @@ import {
   isMarkdownFile,
   isNote
 } from './FileSystem.ts';
+import { t } from './i18n/i18n.ts';
 
 /**
  * Options for {@link process}.
@@ -396,7 +397,7 @@ export async function process(
           return true;
         }
       },
-      operationName: `Process file ${path}`,
+      operationName: t(($) => $.obsidianDevUtils.vault.processFile, { filePath: path }),
       retryOptions: fullOptions
     });
   } finally {

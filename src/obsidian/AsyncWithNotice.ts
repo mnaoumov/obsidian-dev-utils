@@ -17,6 +17,7 @@ import {
   retryWithTimeout,
   runWithTimeout
 } from '../Async.ts';
+import { t } from './i18n/i18n.ts';
 
 /**
  * Options for {@link retryWithTimeoutNotice}.
@@ -110,19 +111,23 @@ function onTimeoutNotice(ctx: TimeoutContext): void {
 
   const notice = new Notice(createFragment((f) => {
     if (ctx.operationName) {
-      f.appendText(`Operation: ${ctx.operationName}`);
+      f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.operation));
+      f.appendText(': ');
+      f.appendText(ctx.operationName);
       f.createEl('br');
     }
-    f.appendText(`The operation timed out after ${String(ctx.duration)} milliseconds.`);
+    f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.timedOut, { duration: ctx.duration }));
     f.createEl('br');
-    f.appendText('Running for ');
+    f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.runningFor));
+    f.appendText(' ');
     runningTimeEl = f.createSpan();
-    f.appendText(' milliseconds...');
+    f.appendText(' ');
+    f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.milliseconds));
     f.createEl('br');
-    f.appendText('You can terminate the operation by clicking the button below, but be aware it might leave the vault in an inconsistent state.');
+    f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.terminateOperation));
     f.createEl('br');
     const button = f.createEl('button', {
-      text: 'Cancel'
+      text: t(($) => $.obsidianDevUtils.buttons.cancel)
     });
     button.addEventListener('click', () => {
       ctx.terminateOperation();
@@ -141,7 +146,7 @@ function onTimeoutNotice(ctx: TimeoutContext): void {
   });
 
   function updateRunningTime(): void {
-    const elapsed = Math.max(ctx.duration, Math.round((performance.now() - startTime) / SECOND_IN_MILLISECONDS) * SECOND_IN_MILLISECONDS);
-    runningTimeEl.textContent = String(elapsed);
+    const runningTimeInMilliseconds = Math.max(ctx.duration, Math.round((performance.now() - startTime) / SECOND_IN_MILLISECONDS) * SECOND_IN_MILLISECONDS);
+    runningTimeEl.textContent = String(runningTimeInMilliseconds);
   }
 }

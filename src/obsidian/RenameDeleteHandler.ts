@@ -18,6 +18,7 @@ import type {
   LinkUpdatesHandler
 } from 'obsidian-typings';
 
+import { t } from 'i18next';
 import {
   Notice,
   Vault
@@ -362,7 +363,7 @@ class Registry {
     addToQueue({
       app: this.app,
       operationFn: (abortSignal) => new DeleteHandler(this.app, file, abortSignal, this.settingsManager, this.deletedMetadataCacheMap).handle(),
-      operationName: `Handle delete: ${file.path}`
+      operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleDelete, { filePath: file.path })
     });
   }
 
@@ -422,7 +423,7 @@ class Registry {
           oldPathBacklinksMap,
           settingsManager: this.settingsManager
         }).handle(),
-      operationName: `Handle rename: ${oldPath} -> ${newPath}`
+      operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleRename, { newPath, oldPath })
     });
   }
 
@@ -658,11 +659,11 @@ class RenameHandler {
           if (renamedLinks.size === 0) {
             return;
           }
-          new Notice(`Updated ${String(renamedLinks.size)} links in ${String(renamedFilePaths.size)} files.`);
+          new Notice(t(($) => $.obsidianDevUtils.renameDeleteHandler.updatedLinks, { filesCount: renamedFilePaths.size, linksCount: renamedLinks.size }));
           renamedFilePaths.clear();
           renamedLinks.clear();
         },
-        operationName: 'Handle orphaned renames'
+        operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleOrphanedRenames)
       });
     }
   }
