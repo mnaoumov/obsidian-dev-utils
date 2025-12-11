@@ -13,6 +13,7 @@ import { throwExpression } from '../Error.ts';
 import { normalizeOptionalProperties } from '../ObjectUtils.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { getRenderedContainer } from './Dataview.ts';
+import { t } from './i18n/i18n.ts';
 import { addToQueue } from './Queue.ts';
 
 /**
@@ -90,7 +91,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
           abortSignal: options.abortSignal,
           app: dv.app,
           operationFn: loadContent,
-          operationName: 'Load content for callout'
+          operationName: t(($) => $.obsidianDevUtils.callout.loadContent)
         }));
       }
     }

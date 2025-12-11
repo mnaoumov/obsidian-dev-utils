@@ -38,6 +38,7 @@ import {
   isFrontmatterLinkCacheWithOffsets,
   toFrontmatterLinkCacheWithOffsets
 } from './FrontmatterLinkCacheWithOffsets.ts';
+import { t } from './i18n/i18n.ts';
 import { sortReferences } from './Reference.ts';
 import {
   readSafe,
@@ -198,7 +199,7 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
 
       return true;
     },
-    operationName: `Get backlinks for ${getPath(app, pathOrFile)}`,
+    operationName: t(($) => $.obsidianDevUtils.metadataCache.getBacklinksForFilePath, { filePath: getPath(app, pathOrFile) }),
     retryOptions
   });
 

@@ -456,7 +456,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
       })
     );
 
-    paginationRow2Div.createSpan({ text: `  Page ${String(pageNumber)} of ${String(totalPages)}, Total items: ${String(rows.length)}` });
+    paginationRow2Div.createSpan({ text: t(($) => $.obsidianDevUtils.dataview.pageHeader, { pageNumber, totalItems: rows.length, totalPages }) });
 
     function createPageLink(text: string, currentPageNumber: number, disabled = false): HTMLAnchorElement {
       const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${String(currentPageNumber)}`, text });
