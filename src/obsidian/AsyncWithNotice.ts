@@ -104,6 +104,10 @@ export async function runWithTimeoutNotice<Result>(options: RunWithTimeoutNotice
 }
 
 function onTimeoutNotice(ctx: TimeoutContext): void {
+  const startTime = Math.trunc(performance.now() - ctx.duration);
+  let runningTimeEl: HTMLSpanElement;
+  let intervalId: number;
+
   const notice = new Notice(createFragment((f) => {
     if (ctx.operationName) {
       f.appendText(`Operation: ${ctx.operationName}`);
@@ -111,16 +115,33 @@ function onTimeoutNotice(ctx: TimeoutContext): void {
     }
     f.appendText(`The operation timed out after ${String(ctx.duration)} milliseconds.`);
     f.createEl('br');
+    f.appendText('Running for ');
+    runningTimeEl = f.createSpan();
+    f.appendText(' milliseconds...');
+    f.createEl('br');
+    f.appendText('You can terminate the operation by clicking the button below, but be aware it might leave the vault in an inconsistent state.');
+    f.createEl('br');
     const button = f.createEl('button', {
       text: 'Cancel'
     });
     button.addEventListener('click', () => {
       ctx.terminateOperation();
+      clearInterval(intervalId);
       notice.hide();
     });
   }));
 
+  updateRunningTime();
+  const SECOND_IN_MILLISECONDS = 1000;
+  intervalId = window.setInterval(updateRunningTime, SECOND_IN_MILLISECONDS);
+
   ctx.onOperationCompleted(() => {
+    clearInterval(intervalId);
     notice.hide();
   });
+
+  function updateRunningTime(): void {
+    const elapsed = Math.max(ctx.duration, Math.round((performance.now() - startTime) / SECOND_IN_MILLISECONDS) * SECOND_IN_MILLISECONDS);
+    runningTimeEl.textContent = String(elapsed);
+  }
 }
