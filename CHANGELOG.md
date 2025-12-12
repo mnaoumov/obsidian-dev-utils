@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 45.0.2
+
+- chore: update libs
+
 ## 45.0.1
 
 - feat: extract i18n
