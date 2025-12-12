@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 45.0.4
+
+- fix: unescape interpolations
+
 ## 45.0.3
 
 - fix: constant initialization
