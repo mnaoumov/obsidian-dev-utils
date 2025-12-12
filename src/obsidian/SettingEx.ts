@@ -40,7 +40,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addCheckbox(cb: (checkbox: CheckboxComponent) => void): this {
-    return this.addComponent(CheckboxComponent, cb);
+    return this.addComponentClass(CheckboxComponent, cb);
   }
 
   /**
@@ -50,7 +50,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addCodeHighlighter(cb: (codeHighlighter: CodeHighlighterComponent) => void): this {
-    return this.addComponent(CodeHighlighterComponent, cb);
+    return this.addComponentClass(CodeHighlighterComponent, cb);
   }
 
   /**
@@ -61,11 +61,12 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addComponent<T extends BaseComponent>(componentClass: new (containerEl: HTMLElement) => T, cb: (component: T) => void): this {
-    const component = new componentClass(this.controlEl);
-    this.components.push(component);
-    cb(component);
-    return this;
+  public addComponentClass<T extends BaseComponent>(componentClass: new (containerEl: HTMLElement) => T, cb: (component: T) => void): this {
+    return this.addComponent<T>((el) => {
+      const component = new componentClass(el);
+      cb(component);
+      return component;
+    });
   }
 
   /**
@@ -75,7 +76,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addDate(cb: (date: DateComponent) => void): this {
-    return this.addComponent(DateComponent, cb);
+    return this.addComponentClass(DateComponent, cb);
   }
 
   /**
@@ -85,7 +86,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addDateTime(cb: (dateTime: DateTimeComponent) => void): this {
-    return this.addComponent(DateTimeComponent, cb);
+    return this.addComponentClass(DateTimeComponent, cb);
   }
 
   /**
@@ -95,7 +96,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addEmail(cb: (email: EmailComponent) => void): this {
-    return this.addComponent(EmailComponent, cb);
+    return this.addComponentClass(EmailComponent, cb);
   }
 
   /**
@@ -105,7 +106,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addFile(cb: (file: FileComponent) => void): this {
-    return this.addComponent(FileComponent, cb);
+    return this.addComponentClass(FileComponent, cb);
   }
 
   /**
@@ -115,7 +116,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addMonth(cb: (month: MonthComponent) => void): this {
-    return this.addComponent(MonthComponent, cb);
+    return this.addComponentClass(MonthComponent, cb);
   }
 
   /**
@@ -125,7 +126,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addMultipleDropdown(cb: (multipleDropdown: MultipleDropdownComponent) => void): this {
-    return this.addComponent(MultipleDropdownComponent, cb);
+    return this.addComponentClass(MultipleDropdownComponent, cb);
   }
 
   /**
@@ -135,7 +136,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addMultipleEmail(cb: (multipleEmail: MultipleEmailComponent) => void): this {
-    return this.addComponent(MultipleEmailComponent, cb);
+    return this.addComponentClass(MultipleEmailComponent, cb);
   }
 
   /**
@@ -145,7 +146,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addMultipleFile(cb: (multipleFile: MultipleFileComponent) => void): this {
-    return this.addComponent(MultipleFileComponent, cb);
+    return this.addComponentClass(MultipleFileComponent, cb);
   }
 
   /**
@@ -155,7 +156,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addMultipleText(cb: (multipleText: MultipleTextComponent) => void): this {
-    return this.addComponent(MultipleTextComponent, cb);
+    return this.addComponentClass(MultipleTextComponent, cb);
   }
 
   /**
@@ -165,7 +166,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addNumber(cb: (number: NumberComponent) => void): this {
-    return this.addComponent(NumberComponent, cb);
+    return this.addComponentClass(NumberComponent, cb);
   }
 
   /**
@@ -175,7 +176,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addPassword(cb: (password: PasswordComponent) => void): this {
-    return this.addComponent(PasswordComponent, cb);
+    return this.addComponentClass(PasswordComponent, cb);
   }
 
   /**
@@ -185,7 +186,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addTelephone(cb: (telephone: TelephoneComponent) => void): this {
-    return this.addComponent(TelephoneComponent, cb);
+    return this.addComponentClass(TelephoneComponent, cb);
   }
 
   /**
@@ -195,7 +196,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addTime(cb: (time: TimeComponent) => void): this {
-    return this.addComponent(TimeComponent, cb);
+    return this.addComponentClass(TimeComponent, cb);
   }
 
   /**
@@ -205,7 +206,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addTriStateCheckbox(cb: (triStateCheckbox: TriStateCheckboxComponent) => void): this {
-    return this.addComponent(TriStateCheckboxComponent, cb);
+    return this.addComponentClass(TriStateCheckboxComponent, cb);
   }
 
   /**
@@ -215,7 +216,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addTypedDropdown<T>(cb: (typedDropdown: TypedDropdownComponent<T>) => void): this {
-    return this.addComponent(TypedDropdownComponent<T>, cb);
+    return this.addComponentClass(TypedDropdownComponent<T>, cb);
   }
 
   /**
@@ -225,7 +226,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addTypedMultipleDropdown<T>(cb: (typedMultipleDropdown: TypedMultipleDropdownComponent<T>) => void): this {
-    return this.addComponent(TypedMultipleDropdownComponent<T>, cb);
+    return this.addComponentClass(TypedMultipleDropdownComponent<T>, cb);
   }
 
   /**
@@ -235,7 +236,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addUrl(cb: (url: UrlComponent) => void): this {
-    return this.addComponent(UrlComponent, cb);
+    return this.addComponentClass(UrlComponent, cb);
   }
 
   /**
@@ -245,6 +246,6 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addWeek(cb: (week: WeekComponent) => void): this {
-    return this.addComponent(WeekComponent, cb);
+    return this.addComponentClass(WeekComponent, cb);
   }
 }
