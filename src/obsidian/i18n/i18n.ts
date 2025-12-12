@@ -70,6 +70,9 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
   await init({
     fallbackLng: DEFAULT_LANGUAGE,
     initAsync: isAsync,
+    interpolation: {
+      escapeValue: false
+    },
     lng: getLanguage(),
     resources: Object.fromEntries(
       Object.entries(translationsMap).map(([language, translations]) => [
