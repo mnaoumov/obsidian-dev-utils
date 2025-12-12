@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 45.0.3
+
+- fix: constant initialization
+
 ## 45.0.2
 
 - chore: update libs
