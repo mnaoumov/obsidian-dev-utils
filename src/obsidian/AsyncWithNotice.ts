@@ -108,6 +108,7 @@ function onTimeoutNotice(ctx: TimeoutContext): void {
   const startTime = Math.trunc(performance.now() - ctx.duration);
   let runningTimeEl: HTMLSpanElement;
   let intervalId: number;
+  const SECOND_IN_MILLISECONDS = 1000;
 
   const notice = new Notice(createFragment((f) => {
     if (ctx.operationName) {
@@ -137,7 +138,6 @@ function onTimeoutNotice(ctx: TimeoutContext): void {
   }));
 
   updateRunningTime();
-  const SECOND_IN_MILLISECONDS = 1000;
   intervalId = window.setInterval(updateRunningTime, SECOND_IN_MILLISECONDS);
 
   ctx.onOperationCompleted(() => {
