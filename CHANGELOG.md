@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 45.1.0
+
+- chore: update libs
+- feat: add SequentialAbstractFilesCommandInvocationBase
+
 ## 45.0.4
 
 - fix: unescape interpolations
