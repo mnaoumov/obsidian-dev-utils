@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 45.2.0
+
+- feat: use SequentialAbstractFilesCommandInvocationBase
+
 ## 45.1.0
 
 - chore: update libs
