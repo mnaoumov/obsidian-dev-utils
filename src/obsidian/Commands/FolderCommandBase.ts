@@ -204,7 +204,7 @@ export class SequentialFoldersCommandInvocationBase<TPlugin extends Plugin> exte
    * @returns Whether the command can execute.
    */
   protected override canExecute(): boolean {
-    return super.canExecute() && this.folders.every((folder) => this.createCommandInvocationForFolder(folder).invoke(true));
+    return super.canExecute() && this.folders.length > 0 && this.folders.every((folder) => this.createCommandInvocationForFolder(folder).invoke(true));
   }
 
   /**

@@ -253,7 +253,7 @@ export class SequentialAbstractFilesCommandInvocationBase<TPlugin extends Plugin
    * @returns Whether the command can execute.
    */
   protected override canExecute(): boolean {
-    return super.canExecute() && this.abstractFiles.every((file) => this.createCommandInvocationForFile(file).invoke(true));
+    return super.canExecute() && this.abstractFiles.length > 0 && this.abstractFiles.every((file) => this.createCommandInvocationForFile(file).invoke(true));
   }
 
   /**
