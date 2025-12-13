@@ -227,6 +227,46 @@ export abstract class AbstractFilesCommandInvocationBase<TPlugin extends Plugin>
 }
 
 /**
+ * Base class for array-delegating abstract file command invocations.
+ *
+ * @typeParam TPlugin - The type of the plugin that the command belongs to.
+ */
+export class ArrayDelegatingAbstractFileCommandInvocation<TPlugin extends Plugin> extends AbstractFileCommandInvocationBase<TPlugin> {
+  /**
+   * Creates a new array-delegating abstract file command invocation.
+   *
+   * @param plugin - The plugin that the command invocation belongs to.
+   * @param abstractFile - The abstract file to invoke the command for.
+   * @param createCommandInvocationForFiles - The function to create a command invocation for files.
+   */
+  public constructor(
+    plugin: TPlugin,
+    abstractFile: null | TAbstractFile,
+    private readonly createCommandInvocationForFiles: (abstractFiles: TAbstractFile[]) => AbstractFilesCommandInvocationBase<TPlugin>
+  ) {
+    super(plugin, abstractFile);
+  }
+
+  /**
+   * Checks if the command can execute.
+   *
+   * @returns Whether the command can execute.
+   */
+  protected override canExecute(): boolean {
+    return super.canExecute() && this.createCommandInvocationForFiles([this.abstractFile]).invoke(true);
+  }
+
+  /**
+   * Executes the command.
+   *
+   * @returns A promise that resolves when the command has been executed.
+   */
+  protected override async execute(): Promise<void> {
+    await this.createCommandInvocationForFiles([this.abstractFile]).invokeAsync(false);
+  }
+}
+
+/**
  * Base class for sequential abstract files command invocations.
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
@@ -236,15 +276,15 @@ export class SequentialAbstractFilesCommandInvocationBase<TPlugin extends Plugin
    * Creates a new sequential files command invocation.
    *
    * @param plugin - The plugin that the command invocation belongs to.
-   * @param files - The files to invoke the command for.
+   * @param abstractFiles - The files to invoke the command for.
    * @param createCommandInvocationForFile - The function to create a command invocation for a file.
    */
   public constructor(
     plugin: TPlugin,
-    files: TAbstractFile[],
-    private readonly createCommandInvocationForFile: (file: TAbstractFile) => AbstractFileCommandInvocationBase<TPlugin>
+    abstractFiles: TAbstractFile[],
+    private readonly createCommandInvocationForFile: (abstractFile: TAbstractFile) => AbstractFileCommandInvocationBase<TPlugin>
   ) {
-    super(plugin, files);
+    super(plugin, abstractFiles);
   }
 
   /**
@@ -262,8 +302,8 @@ export class SequentialAbstractFilesCommandInvocationBase<TPlugin extends Plugin
    * @returns A promise that resolves when the command has been executed.
    */
   protected override async execute(): Promise<void> {
-    for (const file of this.abstractFiles) {
-      await this.createCommandInvocationForFile(file).invokeAsync(false);
+    for (const abstractFile of this.abstractFiles) {
+      await this.createCommandInvocationForFile(abstractFile).invokeAsync(false);
     }
   }
 }

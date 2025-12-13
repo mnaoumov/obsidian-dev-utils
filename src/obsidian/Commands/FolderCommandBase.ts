@@ -25,6 +25,72 @@ import {
 } from './AbstractFileCommandBase.ts';
 
 /**
+ * Base class for folder command invocations.
+ *
+ * @typeParam TPlugin - The type of the plugin that the command belongs to.
+ */
+export abstract class FolderCommandInvocationBase<TPlugin extends Plugin> extends AbstractFileCommandInvocationBase<TPlugin> {
+  /**
+   * Gets the folder that the command invocation belongs to.
+   *
+   * @returns The folder that the command invocation belongs to.
+   * @throws If the abstract file is not a folder.
+   */
+  protected get folder(): TFolder {
+    return asFolder(this._abstractFile);
+  }
+
+  /**
+   * Checks if the command can execute.
+   *
+   * @returns Whether the command can execute.
+   */
+  protected override canExecute(): boolean {
+    return super.canExecute() && !!this.folder;
+  }
+}
+
+/**
+ * Base class for array-delegating file command invocations.
+ *
+ * @typeParam TPlugin - The type of the plugin that the command belongs to.
+ */
+export class ArrayDelegatingFolderCommandInvocation<TPlugin extends Plugin> extends FolderCommandInvocationBase<TPlugin> {
+  /**
+   * Creates a new array-delegating folder command invocation.
+   *
+   * @param plugin - The plugin that the command invocation belongs to.
+   * @param folder - The file to invoke the command for.
+   * @param createCommandInvocationForFiles - The function to create a command invocation for files.
+   */
+  public constructor(
+    plugin: TPlugin,
+    folder: null | TFolder,
+    private readonly createCommandInvocationForFiles: (folders: TFolder[]) => FoldersCommandInvocationBase<TPlugin>
+  ) {
+    super(plugin, folder);
+  }
+
+  /**
+   * Checks if the command can execute.
+   *
+   * @returns Whether the command can execute.
+   */
+  protected override canExecute(): boolean {
+    return super.canExecute() && this.createCommandInvocationForFiles([this.folder]).invoke(true);
+  }
+
+  /**
+   * Executes the command.
+   *
+   * @returns A promise that resolves when the command has been executed.
+   */
+  protected override async execute(): Promise<void> {
+    await this.createCommandInvocationForFiles([this.folder]).invokeAsync(false);
+  }
+}
+
+/**
  * Base class for folder commands.
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
@@ -131,32 +197,6 @@ export abstract class FolderCommandBase<TPlugin extends Plugin = Plugin> extends
    */
   protected shouldAddToFoldersMenu(_folders: TFolder[], _source: string, _leaf?: WorkspaceLeaf): boolean {
     return false;
-  }
-}
-
-/**
- * Base class for folder command invocations.
- *
- * @typeParam TPlugin - The type of the plugin that the command belongs to.
- */
-export abstract class FolderCommandInvocationBase<TPlugin extends Plugin> extends AbstractFileCommandInvocationBase<TPlugin> {
-  /**
-   * Gets the folder that the command invocation belongs to.
-   *
-   * @returns The folder that the command invocation belongs to.
-   * @throws If the abstract file is not a folder.
-   */
-  protected get folder(): TFolder {
-    return asFolder(this._abstractFile);
-  }
-
-  /**
-   * Checks if the command can execute.
-   *
-   * @returns Whether the command can execute.
-   */
-  protected override canExecute(): boolean {
-    return super.canExecute() && !!this.folder;
   }
 }
 

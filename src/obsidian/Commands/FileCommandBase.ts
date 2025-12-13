@@ -25,6 +25,82 @@ import {
 } from './AbstractFileCommandBase.ts';
 
 /**
+ * Base class for file command invocations.
+ *
+ * @typeParam TPlugin - The type of the plugin that the command belongs to.
+ */
+export abstract class FileCommandInvocationBase<TPlugin extends Plugin> extends AbstractFileCommandInvocationBase<TPlugin> {
+  /**
+   * Gets the file that the command invocation belongs to.
+   *
+   * @returns The file that the command invocation belongs to.
+   * @throws If the abstract file is not a file.
+   */
+  protected get file(): TFile {
+    return asFile(this._abstractFile);
+  }
+
+  /**
+   * Creates a new file command invocation.
+   *
+   * @param plugin - The plugin that the command invocation belongs to.
+   * @param file - The file to invoke the command for.
+   */
+  public constructor(plugin: TPlugin, file: null | TFile) {
+    super(plugin, file);
+  }
+
+  /**
+   * Checks if the command can execute.
+   *
+   * @returns Whether the command can execute.
+   */
+  protected override canExecute(): boolean {
+    return super.canExecute() && !!this._abstractFile;
+  }
+}
+
+/**
+ * Base class for array-delegating file command invocations.
+ *
+ * @typeParam TPlugin - The type of the plugin that the command belongs to.
+ */
+export class ArrayDelegatingFileCommandInvocation<TPlugin extends Plugin> extends FileCommandInvocationBase<TPlugin> {
+  /**
+   * Creates a new array-delegating file command invocation.
+   *
+   * @param plugin - The plugin that the command invocation belongs to.
+   * @param file - The file to invoke the command for.
+   * @param createCommandInvocationForFiles - The function to create a command invocation for files.
+   */
+  public constructor(
+    plugin: TPlugin,
+    file: null | TFile,
+    private readonly createCommandInvocationForFiles: (files: TFile[]) => FilesCommandInvocationBase<TPlugin>
+  ) {
+    super(plugin, file);
+  }
+
+  /**
+   * Checks if the command can execute.
+   *
+   * @returns Whether the command can execute.
+   */
+  protected override canExecute(): boolean {
+    return super.canExecute() && this.createCommandInvocationForFiles([this.file]).invoke(true);
+  }
+
+  /**
+   * Executes the command.
+   *
+   * @returns A promise that resolves when the command has been executed.
+   */
+  protected override async execute(): Promise<void> {
+    await this.createCommandInvocationForFiles([this.file]).invokeAsync(false);
+  }
+}
+
+/**
  * Base class for file commands.
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
@@ -130,42 +206,6 @@ export abstract class FileCommandBase<TPlugin extends Plugin = Plugin> extends A
    */
   protected shouldAddToFilesMenu(_files: TFile[], _source: string, _leaf?: WorkspaceLeaf): boolean {
     return false;
-  }
-}
-
-/**
- * Base class for file command invocations.
- *
- * @typeParam TPlugin - The type of the plugin that the command belongs to.
- */
-export abstract class FileCommandInvocationBase<TPlugin extends Plugin> extends AbstractFileCommandInvocationBase<TPlugin> {
-  /**
-   * Gets the file that the command invocation belongs to.
-   *
-   * @returns The file that the command invocation belongs to.
-   * @throws If the abstract file is not a file.
-   */
-  protected get file(): TFile {
-    return asFile(this._abstractFile);
-  }
-
-  /**
-   * Creates a new file command invocation.
-   *
-   * @param plugin - The plugin that the command invocation belongs to.
-   * @param file - The file to invoke the command for.
-   */
-  public constructor(plugin: TPlugin, file: null | TFile) {
-    super(plugin, file);
-  }
-
-  /**
-   * Checks if the command can execute.
-   *
-   * @returns Whether the command can execute.
-   */
-  protected override canExecute(): boolean {
-    return super.canExecute() && !!this._abstractFile;
   }
 }
 
