@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 45.3.0
+
+- feat: add array-delegating command invocations
+- feat: don't execute when files are not selected
+
 ## 45.2.0
 
 - feat: use SequentialAbstractFilesCommandInvocationBase
