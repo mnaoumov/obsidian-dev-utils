@@ -86,7 +86,9 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
    * @param abstractFiles - The abstract files to create the command invocation for.
    * @returns The command invocation.
    */
-  protected abstract createCommandInvocationForAbstractFiles(abstractFiles: TAbstractFile[]): AbstractFilesCommandInvocationBase<TPlugin>;
+  protected createCommandInvocationForAbstractFiles(abstractFiles: TAbstractFile[]): AbstractFilesCommandInvocationBase<TPlugin> {
+    return new SequentialAbstractFilesCommandInvocationBase(this.plugin, abstractFiles, this.createCommandInvocationForAbstractFile.bind(this));
+  }
 
   /**
    * Checks if the command should be added to the abstract file menu.
