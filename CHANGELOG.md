@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 45.3.1
+
+- fix: addComponentSafe re https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/254
+- chore: update libs
+
 ## 45.3.0
 
 - feat: add array-delegating command invocations
