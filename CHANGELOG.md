@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 45.3.2
+
+- chore: update libs
+- docs: fix link
+- feat: don't copy file to itself
+
 ## 45.3.1
 
 - fix: addComponentSafe re <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/254>
