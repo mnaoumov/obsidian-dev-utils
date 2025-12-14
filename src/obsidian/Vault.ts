@@ -78,6 +78,10 @@ export interface ProcessOptions extends RetryOptions {
 export async function copySafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
   const file = getFile(app, oldPathOrFile);
 
+  if (file.path === newPath) {
+    return newPath;
+  }
+
   const newFolderPath = parentFolderPath(newPath);
   await createFolderSafe(app, newFolderPath);
 
