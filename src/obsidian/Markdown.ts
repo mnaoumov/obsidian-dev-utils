@@ -24,39 +24,76 @@ import { invokeWithPatchAsync } from './MonkeyAround.ts';
 
 let registerDomEventsHandlersConstructor: null | RegisterDomEventsHandlersConstructor = null;
 
+/**
+ * The options for the full render.
+ */
+export interface FullRenderOptions {
+  /**
+   * The Obsidian app instance.
+   */
+  app: App;
+
+  /**
+   * The Component instance to use for the render.
+   */
+  component?: Component;
+
+  /**
+   * The HTMLElement to render to.
+   */
+  el: HTMLElement;
+
+  /**
+   * The Markdown string to render.
+   */
+  markdown: string;
+
+  /**
+   * Whether to register link handlers for the rendered element.
+   */
+  shouldRegisterLinkHandlers?: boolean;
+
+  /**
+   * The source path to resolve relative links.
+   */
+  sourcePath?: string;
+}
+
 type RegisterDomEventsFn = typeof MarkdownPreviewRenderer.registerDomEvents;
 
 /**
  * Render the markdown and embeds.
  *
- * @param app - The Obsidian app instance.
- * @param markdown - The Markdown string to render.
- * @param el - The HTMLElement to render to.
- * @param sourcePath - The source path to resolve relative links.
- * @param component - The Component instance.
+ * @param options - The options for the full render.
+ * @returns The {@link Promise} that resolves when the full render is complete.
  */
-export async function fullRender(app: App, markdown: string, el: HTMLElement, sourcePath?: string, component?: Component): Promise<void> {
-  sourcePath ??= '/';
+export async function fullRender(options: FullRenderOptions): Promise<void> {
+  const sourcePath = options.sourcePath ?? '/';
   let shouldUnloadComponent = false;
-  if (!component) {
+  let component: Component;
+  if (options.component) {
+    component = options.component;
+  } else {
     component = new Component();
     component.load();
     shouldUnloadComponent = true;
   }
-  await invokeWithPatchAsync(app.embedRegistry.embedByExtension, {
+  await invokeWithPatchAsync(options.app.embedRegistry.embedByExtension, {
     md: (next: EmbedCreator): EmbedCreator => (context, file, subpath) => {
       context.displayMode = false;
       return next(context, file, subpath);
     }
   }, async () => {
-    await MarkdownRenderer.render(app, markdown, el, sourcePath, component);
+    await MarkdownRenderer.render(options.app, options.markdown, options.el, sourcePath, component);
   });
 
   if (shouldUnloadComponent) {
     component.unload();
   }
 
-  await registerLinkHandlers(app, el, sourcePath);
+  if (options.shouldRegisterLinkHandlers) {
+    await registerLinkHandlers(options.app, options.el, options.sourcePath);
+  }
 }
 
 /**
@@ -108,9 +145,13 @@ export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath
 export async function renderExternalLink(app: App, url: string, displayText?: string): Promise<HTMLAnchorElement> {
   displayText ??= url;
   const wrapperEl = createSpan();
-  await fullRender(app, `[${displayText}](${url})`, wrapperEl);
+  await fullRender({
+    app,
+    el: wrapperEl,
+    markdown: `[${displayText}](${url})`
+  });
   const aEl = wrapperEl.find('a') as HTMLAnchorElement;
-  await registerLinkHandlers(app, aEl, '/');
+  await registerLinkHandlers(app, aEl);
   return aEl;
 }
 
@@ -126,9 +167,13 @@ export async function renderInternalLink(app: App, pathOrFile: PathOrFile, displ
   const path = getPath(app, pathOrFile);
   displayText ??= path;
   const wrapperEl = createSpan();
-  await fullRender(app, `[[${path}|${displayText}]]`, wrapperEl);
+  await fullRender({
+    app,
+    el: wrapperEl,
+    markdown: `[[${path}|${displayText}]]`
+  });
   const aEl = wrapperEl.find('a') as HTMLAnchorElement;
-  await registerLinkHandlers(app, aEl, '/');
+  await registerLinkHandlers(app, aEl);
   return aEl;
 }
 
