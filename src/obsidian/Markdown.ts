@@ -34,7 +34,14 @@ type RegisterDomEventsFn = typeof MarkdownPreviewRenderer.registerDomEvents;
  * @param sourcePath - The source path to resolve relative links.
  * @param component - The Component instance.
  */
-export async function fullRender(app: App, markdown: string, el: HTMLElement, sourcePath: string, component: Component): Promise<void> {
+export async function fullRender(app: App, markdown: string, el: HTMLElement, sourcePath?: string, component?: Component): Promise<void> {
+  sourcePath ??= '/';
+  let shouldUnloadComponent = false;
+  if (!component) {
+    component = new Component();
+    component.load();
+    shouldUnloadComponent = true;
+  }
   await invokeWithPatchAsync(app.embedRegistry.embedByExtension, {
     md: (next: EmbedCreator): EmbedCreator => (context, file, subpath) => {
       context.displayMode = false;
@@ -43,6 +50,10 @@ export async function fullRender(app: App, markdown: string, el: HTMLElement, so
   }, async () => {
     await MarkdownRenderer.render(app, markdown, el, sourcePath, component);
   });
+
+  if (shouldUnloadComponent) {
+    component.unload();
+  }
 
   await registerLinkHandlers(app, el, sourcePath);
 }
@@ -96,9 +107,9 @@ export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath
 export async function renderExternalLink(app: App, url: string, displayText?: string): Promise<HTMLAnchorElement> {
   displayText ??= url;
   const wrapperEl = createSpan();
-  await MarkdownRenderer.render(app, `[${displayText}](${url})`, wrapperEl, '/', new Component());
+  await fullRender(app, `[${displayText}](${url})`, wrapperEl);
   const aEl = wrapperEl.find('a') as HTMLAnchorElement;
-  registerLinkHandlers(app, aEl, '/');
+  await registerLinkHandlers(app, aEl, '/');
   return aEl;
 }
 
@@ -114,9 +125,9 @@ export async function renderInternalLink(app: App, pathOrFile: PathOrFile, displ
   const path = getPath(app, pathOrFile);
   displayText ??= path;
   const wrapperEl = createSpan();
-  await MarkdownRenderer.render(app, `[[${path}|${displayText}]]`, wrapperEl, '/', new Component());
+  await fullRender(app, `[[${path}|${displayText}]]`, wrapperEl);
   const aEl = wrapperEl.find('a') as HTMLAnchorElement;
-  registerLinkHandlers(app, aEl, '/');
+  await registerLinkHandlers(app, aEl, '/');
   return aEl;
 }
 
