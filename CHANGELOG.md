@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 46.1.0
+
+- feat: add optional args
+- fix: link events
+
 ## 46.0.0
 
 - feat: extract HTMLAnchorElement
