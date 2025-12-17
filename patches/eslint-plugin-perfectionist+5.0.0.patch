@@ -1,0 +1,628 @@
+diff --git a/node_modules/eslint-plugin-perfectionist/Untitled b/node_modules/eslint-plugin-perfectionist/Untitled
+new file mode 100644
+index 0000000..52c82a4
+--- /dev/null
++++ b/node_modules/eslint-plugin-perfectionist/Untitled
+@@ -0,0 +1 @@
++eslint-plugin-perfectionist
+\ No newline at end of file
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/index.d.ts b/node_modules/eslint-plugin-perfectionist/dist/index.d.ts
+index 9dd5634..41ed504 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/index.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/index.d.ts
+@@ -46,8 +46,8 @@ export declare let rules: {
+     | 'extraSpacingBetweenVariableDeclarationsMembers'
+     | 'missedSpacingBetweenVariableDeclarationsMembers'
+     | 'unexpectedVariableDeclarationsDependencyOrder',
+-    import('./rules/sort-variable-declarations/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-variable-declarations/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-intersection-types': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -55,8 +55,8 @@ export declare let rules: {
+     | 'unexpectedIntersectionTypesGroupOrder'
+     | 'extraSpacingBetweenIntersectionTypes'
+     | 'missedSpacingBetweenIntersectionTypes',
+-    import('./rules/sort-union-types/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-union-types/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-import-attributes': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -64,8 +64,8 @@ export declare let rules: {
+     | 'unexpectedImportAttributesGroupOrder'
+     | 'extraSpacingBetweenImportAttributes'
+     | 'missedSpacingBetweenImportAttributes',
+-    import('./rules/sort-import-attributes/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-import-attributes/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-export-attributes': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -73,8 +73,8 @@ export declare let rules: {
+     | 'unexpectedExportAttributesGroupOrder'
+     | 'extraSpacingBetweenExportAttributes'
+     | 'missedSpacingBetweenExportAttributes',
+-    import('./rules/sort-export-attributes/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-export-attributes/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-heritage-clauses': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -82,8 +82,8 @@ export declare let rules: {
+     | 'unexpectedHeritageClausesGroupOrder'
+     | 'extraSpacingBetweenHeritageClauses'
+     | 'missedSpacingBetweenHeritageClauses',
+-    import('./rules/sort-heritage-clauses/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-heritage-clauses/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-array-includes': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -91,8 +91,8 @@ export declare let rules: {
+     | 'unexpectedArrayIncludesGroupOrder'
+     | 'extraSpacingBetweenArrayIncludesMembers'
+     | 'missedSpacingBetweenArrayIncludesMembers',
+-    import('./rules/sort-array-includes/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-array-includes/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-named-imports': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -100,8 +100,8 @@ export declare let rules: {
+     | 'unexpectedNamedImportsGroupOrder'
+     | 'extraSpacingBetweenNamedImports'
+     | 'missedSpacingBetweenNamedImports',
+-    import('./rules/sort-named-imports/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-named-imports/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-named-exports': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -109,8 +109,8 @@ export declare let rules: {
+     | 'unexpectedNamedExportsGroupOrder'
+     | 'extraSpacingBetweenNamedExports'
+     | 'missedSpacingBetweenNamedExports',
+-    import('./rules/sort-named-exports/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-named-exports/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-object-types': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -118,8 +118,8 @@ export declare let rules: {
+     | 'unexpectedObjectTypesGroupOrder'
+     | 'extraSpacingBetweenObjectTypeMembers'
+     | 'missedSpacingBetweenObjectTypeMembers',
+-    import('./rules/sort-object-types/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-object-types/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-union-types': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -127,20 +127,20 @@ export declare let rules: {
+     | 'unexpectedUnionTypesGroupOrder'
+     | 'extraSpacingBetweenUnionTypes'
+     | 'missedSpacingBetweenUnionTypes',
+-    import('./rules/sort-union-types/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-union-types/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-switch-case': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+     'unexpectedSwitchCaseOrder',
+     [
+       Partial<
+-        import('./types/common-options').CommonOptions<
+-          import('./types/common-options').TypeOption
++        import('./types/common-options.js').CommonOptions<
++          import('./types/common-options.js').TypeOption
+         >
+       >,
+     ],
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-decorators': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -148,8 +148,8 @@ export declare let rules: {
+     | 'unexpectedDecoratorsGroupOrder'
+     | 'extraSpacingBetweenDecorators'
+     | 'missedSpacingBetweenDecorators',
+-    import('./rules/sort-decorators/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-decorators/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-interfaces': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -157,8 +157,8 @@ export declare let rules: {
+     | 'unexpectedInterfacePropertiesGroupOrder'
+     | 'extraSpacingBetweenInterfaceMembers'
+     | 'missedSpacingBetweenInterfaceMembers',
+-    import('./rules/sort-object-types/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-object-types/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-jsx-props': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -166,8 +166,8 @@ export declare let rules: {
+     | 'unexpectedJSXPropsGroupOrder'
+     | 'extraSpacingBetweenJSXPropsMembers'
+     | 'missedSpacingBetweenJSXPropsMembers',
+-    import('./rules/sort-jsx-props/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-jsx-props/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-modules': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -176,8 +176,8 @@ export declare let rules: {
+     | 'extraSpacingBetweenModulesMembers'
+     | 'missedSpacingBetweenModulesMembers'
+     | 'unexpectedModulesDependencyOrder',
+-    import('./rules/sort-modules/types').SortModulesOptions,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-modules/types.js').SortModulesOptions,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-classes': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -186,14 +186,14 @@ export declare let rules: {
+     | 'extraSpacingBetweenClassMembers'
+     | 'missedSpacingBetweenClassMembers'
+     | 'unexpectedClassesDependencyOrder',
+-    import('./rules/sort-classes/types').SortClassesOptions,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-classes/types.js').SortClassesOptions,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-imports': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+-    import('./rules/sort-imports').MessageId,
+-    import('./rules/sort-imports/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-imports.js').MessageId,
++    import('./rules/sort-imports/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-exports': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -202,14 +202,14 @@ export declare let rules: {
+     | 'extraSpacingBetweenExports'
+     | 'missedSpacingBetweenExports'
+     | 'missedCommentAboveExport',
+-    import('./rules/sort-exports/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-exports/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-objects': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+-    import('./rules/sort-objects/types').MessageId,
+-    import('./rules/sort-objects/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-objects/types.js').MessageId,
++    import('./rules/sort-objects/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-enums': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -218,8 +218,8 @@ export declare let rules: {
+     | 'extraSpacingBetweenEnumsMembers'
+     | 'missedSpacingBetweenEnumsMembers'
+     | 'unexpectedEnumsDependencyOrder',
+-    import('./rules/sort-enums/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-enums/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-sets': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -227,8 +227,8 @@ export declare let rules: {
+     | 'unexpectedSetsGroupOrder'
+     | 'extraSpacingBetweenSetsMembers'
+     | 'missedSpacingBetweenSetsMembers',
+-    import('./rules/sort-array-includes/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-array-includes/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+   'sort-maps': import('@typescript-eslint/utils/ts-eslint').RuleModule<
+@@ -236,8 +236,8 @@ export declare let rules: {
+     | 'unexpectedMapElementsGroupOrder'
+     | 'extraSpacingBetweenMapElementsMembers'
+     | 'missedSpacingBetweenMapElementsMembers',
+-    import('./rules/sort-maps/types').Options,
+-    import('./utils/create-eslint-rule').ESLintPluginDocumentation,
++    import('./rules/sort-maps/types.js').Options,
++    import('./utils/create-eslint-rule.js').ESLintPluginDocumentation,
+     import('@typescript-eslint/utils/ts-eslint').RuleListener
+   >
+ }
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-array-includes/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-array-includes/types.d.ts
+index cf56c2e..b068f26 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-array-includes/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-array-includes/types.d.ts
+@@ -3,9 +3,9 @@ import {
+   CommonOptions,
+   RegexOption,
+   TypeOption,
+-} from '../../types/common-options'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
++} from '../../types/common-options.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
+ /**
+  * Configuration options for the sort-array-includes rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-classes/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-classes/types.d.ts
+index 2dcf2d7..a4eb03d 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-classes/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-classes/types.d.ts
+@@ -3,9 +3,9 @@ import {
+   CommonOptions,
+   RegexOption,
+   TypeOption,
+-} from '../../types/common-options'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
++} from '../../types/common-options.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
+ /**
+  * Configuration options for the sort-classes rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-decorators/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-decorators/types.d.ts
+index 33a65be..59ef939 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-decorators/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-decorators/types.d.ts
+@@ -1,8 +1,8 @@
+ import { TSESTree } from '@typescript-eslint/types'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { CommonOptions, TypeOption } from '../../types/common-options'
+-import { SortingNode } from '../../types/sorting-node'
++import { CommonOptions, TypeOption } from '../../types/common-options.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { SortingNode } from '../../types/sorting-node.js'
+ export type Options = Partial<
+   {
+     sortOnParameters: boolean
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-enums/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-enums/types.d.ts
+index f319adb..3b47792 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-enums/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-enums/types.d.ts
+@@ -4,10 +4,10 @@ import {
+   CommonOptions,
+   RegexOption,
+   TypeOption,
+-} from '../../types/common-options'
+-import { SortingNodeWithDependencies } from '../../utils/sort-nodes-by-dependencies'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
++} from '../../types/common-options.js'
++import { SortingNodeWithDependencies } from '../../utils/sort-nodes-by-dependencies.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
+ /**
+  * Configuration options for the sort-enums rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-export-attributes/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-export-attributes/types.d.ts
+index 0f9a871..84f0d62 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-export-attributes/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-export-attributes/types.d.ts
+@@ -1,8 +1,8 @@
+ import { TSESTree } from '@typescript-eslint/types'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { CommonOptions, TypeOption } from '../../types/common-options'
+-import { SortingNode } from '../../types/sorting-node'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { CommonOptions, TypeOption } from '../../types/common-options.js'
++import { SortingNode } from '../../types/sorting-node.js'
+ export type Options = Partial<
+   CommonGroupsOptions<SingleCustomGroup, Record<string, never>, TypeOption> &
+     CommonOptions<TypeOption> &
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-exports/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-exports/types.d.ts
+index 4e7ff37..812b356 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-exports/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-exports/types.d.ts
+@@ -1,7 +1,7 @@
+ import { JSONSchema4 } from '@typescript-eslint/utils/json-schema'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { CommonOptions, TypeOption } from '../../types/common-options'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { CommonOptions, TypeOption } from '../../types/common-options.js'
+ /**
+  * Configuration options for the sort-exports rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-heritage-clauses/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-heritage-clauses/types.d.ts
+index d3e8fac..53b2537 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-heritage-clauses/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-heritage-clauses/types.d.ts
+@@ -1,6 +1,6 @@
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { CommonOptions, TypeOption } from '../../types/common-options'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { CommonOptions, TypeOption } from '../../types/common-options.js'
+ export type Options = Partial<
+   CommonGroupsOptions<SingleCustomGroup, Record<string, never>, TypeOption> &
+     CommonOptions<TypeOption> &
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-import-attributes/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-import-attributes/types.d.ts
+index b151cd0..4f78291 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-import-attributes/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-import-attributes/types.d.ts
+@@ -1,8 +1,8 @@
+ import { TSESTree } from '@typescript-eslint/types'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { CommonOptions, TypeOption } from '../../types/common-options'
+-import { SortingNode } from '../../types/sorting-node'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { CommonOptions, TypeOption } from '../../types/common-options.js'
++import { SortingNode } from '../../types/sorting-node.js'
+ export type Options = Partial<
+   CommonGroupsOptions<SingleCustomGroup, Record<string, never>, TypeOption> &
+     CommonOptions<TypeOption> &
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-imports.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-imports.d.ts
+index ae8d8e5..e62277d 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-imports.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-imports.d.ts
+@@ -1,5 +1,5 @@
+ import { TSESLint } from '@typescript-eslint/utils'
+-import { Options } from './sort-imports/types'
++import { Options } from './sort-imports/types.js'
+ declare const ORDER_ERROR_ID = 'unexpectedImportsOrder'
+ declare const GROUP_ORDER_ERROR_ID = 'unexpectedImportsGroupOrder'
+ declare const EXTRA_SPACING_ERROR_ID = 'extraSpacingBetweenImports'
+@@ -16,7 +16,7 @@ export type MessageId =
+ declare const _default: TSESLint.RuleModule<
+   MessageId,
+   Options,
+-  import('../utils/create-eslint-rule').ESLintPluginDocumentation,
++  import('../utils/create-eslint-rule.js').ESLintPluginDocumentation,
+   TSESLint.RuleListener
+ >
+ export default _default
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-imports/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-imports/types.d.ts
+index 2d13247..0d4cc19 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-imports/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-imports/types.d.ts
+@@ -4,10 +4,10 @@ import {
+   CommonOptions,
+   RegexOption,
+   TypeOption,
+-} from '../../types/common-options'
+-import { SortingNodeWithDependencies } from '../../utils/sort-nodes-by-dependencies'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
++} from '../../types/common-options.js'
++import { SortingNodeWithDependencies } from '../../utils/sort-nodes-by-dependencies.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
+ /**
+  * Configuration options for the sort-imports rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-jsx-props/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-jsx-props/types.d.ts
+index cd681e3..fa8e0a1 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-jsx-props/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-jsx-props/types.d.ts
+@@ -3,9 +3,9 @@ import {
+   CommonOptions,
+   RegexOption,
+   TypeOption,
+-} from '../../types/common-options'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
++} from '../../types/common-options.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
+ /**
+  * Configuration options for the sort-jsx-props rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-maps/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-maps/types.d.ts
+index 566f84b..daadcb7 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-maps/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-maps/types.d.ts
+@@ -2,9 +2,9 @@ import {
+   CommonOptions,
+   RegexOption,
+   TypeOption,
+-} from '../../types/common-options'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
++} from '../../types/common-options.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
+ /**
+  * Configuration options for the sort-maps rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-modules/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-modules/types.d.ts
+index 1eea7b0..74bb4a6 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-modules/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-modules/types.d.ts
+@@ -3,9 +3,9 @@ import {
+   CommonOptions,
+   RegexOption,
+   TypeOption,
+-} from '../../types/common-options'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
++} from '../../types/common-options.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
+ /**
+  * Configuration options for the sort-modules rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-named-exports/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-named-exports/types.d.ts
+index aa9cd42..4177b29 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-named-exports/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-named-exports/types.d.ts
+@@ -1,9 +1,9 @@
+ import { JSONSchema4 } from '@typescript-eslint/utils/json-schema'
+ import { TSESTree } from '@typescript-eslint/types'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { CommonOptions, TypeOption } from '../../types/common-options'
+-import { SortingNode } from '../../types/sorting-node'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { CommonOptions, TypeOption } from '../../types/common-options.js'
++import { SortingNode } from '../../types/sorting-node.js'
+ /**
+  * Configuration options for the sort-named-exports rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-named-imports/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-named-imports/types.d.ts
+index 3a449b4..5d0f297 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-named-imports/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-named-imports/types.d.ts
+@@ -1,9 +1,9 @@
+ import { JSONSchema4 } from '@typescript-eslint/utils/json-schema'
+ import { TSESTree } from '@typescript-eslint/types'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { CommonOptions, TypeOption } from '../../types/common-options'
+-import { SortingNode } from '../../types/sorting-node'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { CommonOptions, TypeOption } from '../../types/common-options.js'
++import { SortingNode } from '../../types/sorting-node.js'
+ /**
+  * Configuration options for the sort-named-imports rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-object-types/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-object-types/types.d.ts
+index 6d6fb65..3a759cf 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-object-types/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-object-types/types.d.ts
+@@ -5,12 +5,12 @@ import {
+   CommonOptions,
+   RegexOption,
+   TypeOption,
+-} from '../../types/common-options'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { ScopedRegexOption } from '../../types/scoped-regex-option'
+-import { SortingNode } from '../../types/sorting-node'
+-import { NodeOfType } from '../../types/node-of-type'
++} from '../../types/common-options.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { ScopedRegexOption } from '../../types/scoped-regex-option.js'
++import { SortingNode } from '../../types/sorting-node.js'
++import { NodeOfType } from '../../types/node-of-type.js'
+ /**
+  * Configuration options for the sort-object-types rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-objects/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-objects/types.d.ts
+index 7224aad..5f69512 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-objects/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-objects/types.d.ts
+@@ -4,11 +4,11 @@ import {
+   CommonOptions,
+   RegexOption,
+   TypeOption,
+-} from '../../types/common-options'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { ScopedRegexOption } from '../../types/scoped-regex-option'
+-import { NodeOfType } from '../../types/node-of-type'
++} from '../../types/common-options.js'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { ScopedRegexOption } from '../../types/scoped-regex-option.js'
++import { NodeOfType } from '../../types/node-of-type.js'
+ export type MessageId =
+   | typeof DEPENDENCY_ORDER_ERROR_ID
+   | typeof MISSED_SPACING_ERROR_ID
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-union-types/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-union-types/types.d.ts
+index f58cdcd..130ce46 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-union-types/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-union-types/types.d.ts
+@@ -1,7 +1,7 @@
+ import { JSONSchema4 } from '@typescript-eslint/utils/json-schema'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { CommonOptions, TypeOption } from '../../types/common-options'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { CommonOptions, TypeOption } from '../../types/common-options.js'
+ /**
+  * Configuration options for the sort-union-types rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-variable-declarations/types.d.ts b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-variable-declarations/types.d.ts
+index 4960461..0d9ceb7 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/rules/sort-variable-declarations/types.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/rules/sort-variable-declarations/types.d.ts
+@@ -1,7 +1,7 @@
+ import { JSONSchema4 } from '@typescript-eslint/utils/json-schema'
+-import { CommonPartitionOptions } from '../../types/common-partition-options'
+-import { CommonGroupsOptions } from '../../types/common-groups-options'
+-import { CommonOptions, TypeOption } from '../../types/common-options'
++import { CommonPartitionOptions } from '../../types/common-partition-options.js'
++import { CommonGroupsOptions } from '../../types/common-groups-options.js'
++import { CommonOptions, TypeOption } from '../../types/common-options.js'
+ /**
+  * Configuration options for the sort-variable-declarations rule.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/types/common-groups-options.d.ts b/node_modules/eslint-plugin-perfectionist/dist/types/common-groups-options.d.ts
+index d6d65a3..649ff8a 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/types/common-groups-options.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/types/common-groups-options.d.ts
+@@ -1,4 +1,4 @@
+-import { FallbackSortOption, OrderOption, RegexOption } from './common-options'
++import { FallbackSortOption, OrderOption, RegexOption } from './common-options.js'
+ /**
+  * Configuration for custom groups with sorting and newline options.
+  *
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/types/common-partition-options.d.ts b/node_modules/eslint-plugin-perfectionist/dist/types/common-partition-options.d.ts
+index c8efb8d..9273781 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/types/common-partition-options.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/types/common-partition-options.d.ts
+@@ -1,4 +1,4 @@
+-import { RegexOption } from './common-options'
++import { RegexOption } from './common-options.js'
+ /**
+  * Configuration for partition comments that create independent sorting
+  * sections.
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/types/scoped-regex-option.d.ts b/node_modules/eslint-plugin-perfectionist/dist/types/scoped-regex-option.d.ts
+index 60d8133..6ae5a81 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/types/scoped-regex-option.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/types/scoped-regex-option.d.ts
+@@ -1,4 +1,4 @@
+-import { RegexOption } from './common-options'
++import { RegexOption } from './common-options.js'
+ export type ScopedRegexOption = RegexOption<{
+   scope?: Scope
+ }>
+diff --git a/node_modules/eslint-plugin-perfectionist/dist/utils/sort-nodes-by-dependencies.d.ts b/node_modules/eslint-plugin-perfectionist/dist/utils/sort-nodes-by-dependencies.d.ts
+index b9dfe68..26be3d5 100644
+--- a/node_modules/eslint-plugin-perfectionist/dist/utils/sort-nodes-by-dependencies.d.ts
++++ b/node_modules/eslint-plugin-perfectionist/dist/utils/sort-nodes-by-dependencies.d.ts
+@@ -1,5 +1,5 @@
+ import { TSESTree } from '@typescript-eslint/types'
+-import { SortingNode } from '../types/sorting-node'
++import { SortingNode } from '../types/sorting-node.js'
+ /**
+  * Sorting node enhanced with dependency information.
+  *

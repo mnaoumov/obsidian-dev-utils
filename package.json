@@ -529,6 +529,7 @@
     "lint:fix": "jiti scripts/cli.ts lint:fix",
     "lint:md": "jiti scripts/cli.ts lint:md",
     "lint:md:fix": "jiti scripts/cli.ts lint:md:fix",
+    "postinstall": "node scripts/postinstall.mjs",
     "prepare": "husky",
     "spellcheck": "jiti scripts/cli.ts spellcheck",
     "version": "jiti scripts/version.ts"
