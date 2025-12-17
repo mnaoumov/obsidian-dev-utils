@@ -162,7 +162,7 @@ export interface RenderIframeOptions {
   /**
    * A height of the iframe.
    */
-  height: string;
+  height?: string;
 
   /**
    * A relative path to the resource to be displayed in the iframe.
@@ -172,7 +172,7 @@ export interface RenderIframeOptions {
   /**
    * A width of the iframe.
    */
-  width: string;
+  width?: string;
 }
 
 /**
@@ -207,7 +207,7 @@ export interface RenderPaginatedOptions<T> {
   /**
    * Options for items per page.
    */
-  itemsPerPageOptions: number[];
+  itemsPerPageOptions?: number[];
 
   /**
    * Display the paginated content.
