@@ -95,9 +95,11 @@ export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath
  */
 export async function renderExternalLink(app: App, url: string, displayText?: string): Promise<HTMLAnchorElement> {
   displayText ??= url;
-  const el = createSpan();
-  await fullRender(app, `[${displayText}](${url})`, el, '/', new Component());
-  return el.find('a') as HTMLAnchorElement;
+  const wrapperEl = createSpan();
+  await MarkdownRenderer.render(app, `[${displayText}](${url})`, wrapperEl, '/', new Component());
+  const aEl = wrapperEl.find('a') as HTMLAnchorElement;
+  registerLinkHandlers(app, aEl, '/');
+  return aEl;
 }
 
 /**
@@ -111,9 +113,11 @@ export async function renderExternalLink(app: App, url: string, displayText?: st
 export async function renderInternalLink(app: App, pathOrFile: PathOrFile, displayText?: string): Promise<HTMLAnchorElement> {
   const path = getPath(app, pathOrFile);
   displayText ??= path;
-  const el = createSpan();
-  await fullRender(app, `[[${path}|${displayText}]]`, el, '/', new Component());
-  return el.find('a') as HTMLAnchorElement;
+  const wrapperEl = createSpan();
+  await MarkdownRenderer.render(app, `[[${path}|${displayText}]]`, wrapperEl, '/', new Component());
+  const aEl = wrapperEl.find('a') as HTMLAnchorElement;
+  registerLinkHandlers(app, aEl, '/');
+  return aEl;
 }
 
 async function getRegisterDomEventsHandlersConstructor(app: App): Promise<RegisterDomEventsHandlersConstructor> {
