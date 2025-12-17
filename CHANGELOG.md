@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.1.1-beta.1
+
+- feat: add popover
+
 ## 46.1.0
 
 - feat: add optional args
