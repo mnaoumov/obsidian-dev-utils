@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 45.6.0
+
+- fix: patch eslint-plugin-perfectionist re <https://github.com/azat-io/eslint-plugin-perfectionist/issues/642>
+- feat: add create*Async
+- chore: lint
+- chore: update libs
+
 ## 45.5.0
 
 - feat: render links methods
