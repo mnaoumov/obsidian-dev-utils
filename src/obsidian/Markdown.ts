@@ -82,6 +82,19 @@ export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath
   );
 }
 
+/**
+ * Renders an internal link.
+ *
+ * @param app - The Obsidian app instance.
+ * @param file - The file to render the internal link for.
+ * @returns The HTMLElement containing the rendered internal link.
+ */
+export async function renderInternalLink(app: App, file: TFile): Promise<HTMLElement> {
+  const el = createSpan();
+  fullRender(app, `[[${file.path}]]`, el, '/', new Component());
+  return el;
+}
+
 async function getRegisterDomEventsHandlersConstructor(app: App): Promise<RegisterDomEventsHandlersConstructor> {
   let mdFile = app.vault.getMarkdownFiles()[0];
   let shouldDelete = false;

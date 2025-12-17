@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 45.4.1
+
+- fix: detach temp open file
+
 ## 45.4.0
 
 - chore: lint
