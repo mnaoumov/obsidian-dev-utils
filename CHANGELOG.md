@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.1.1-beta.2
+
+- feat: refactor fullRender
+
 ## 46.1.1-beta.1
 
 - feat: add popover
