@@ -23,7 +23,7 @@ import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-imp
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import obsidianmd from 'eslint-plugin-obsidianmd';
-import perfectionist from 'eslint-plugin-perfectionist';
+import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
@@ -360,7 +360,7 @@ function getObsidianLintConfigs(): Linter.Config[] {
 
 function getPerfectionistConfigs(): Linter.Config[] {
   return [
-    perfectionist.configs['recommended-alphabetical']
+    perfectionistConfigs['recommended-alphabetical']
   ];
 }
 
