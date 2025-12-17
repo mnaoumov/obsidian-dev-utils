@@ -4,10 +4,7 @@
  * This module provides utility functions for processing Markdown content in Obsidian.
  */
 
-import type {
-  App,
-  TFile
-} from 'obsidian';
+import type { App } from 'obsidian';
 import type {
   EmbedCreator,
   RegisterDomEventsHandlersConstructor
@@ -19,6 +16,9 @@ import {
   MarkdownRenderer
 } from 'obsidian';
 
+import type { PathOrFile } from './FileSystem.ts';
+
+import { getPath } from './FileSystem.ts';
 import { invokeWithPatchAsync } from './MonkeyAround.ts';
 
 let registerDomEventsHandlersConstructor: null | RegisterDomEventsHandlersConstructor = null;
@@ -104,14 +104,15 @@ export async function renderExternalLink(app: App, url: string, displayText?: st
  * Renders an internal link.
  *
  * @param app - The Obsidian app instance.
- * @param file - The file to render the internal link for.
+ * @param pathOrFile - The path or file to render the internal link for.
  * @param displayText - The text to display for the internal link.
  * @returns The HTMLElement containing the rendered internal link.
  */
-export async function renderInternalLink(app: App, file: TFile, displayText?: string): Promise<HTMLElement> {
-  displayText ??= file.path;
+export async function renderInternalLink(app: App, pathOrFile: PathOrFile, displayText?: string): Promise<HTMLElement> {
+  const path = getPath(app, pathOrFile);
+  displayText ??= path;
   const el = createSpan();
-  await fullRender(app, `[[${file.path}|${displayText}]]`, el, '/', new Component());
+  await fullRender(app, `[[${path}|${displayText}]]`, el, '/', new Component());
   return el;
 }
 
