@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 45.5.0
+
+- feat: render links methods
+
 ## 45.4.1
 
 - fix: detach temp open file
