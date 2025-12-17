@@ -100,7 +100,9 @@ async function getRegisterDomEventsHandlersConstructor(app: App): Promise<Regist
         };
       }
     }, async () => {
-      await app.workspace.openLinkText(mdFile.path, '', true);
+      const leaf = app.workspace.getLeaf(true);
+      await leaf.openLinkText(mdFile.path, '');
+      leaf.detach();
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Check is required as TypeScript compiler cannot know that ctor is initialized.
