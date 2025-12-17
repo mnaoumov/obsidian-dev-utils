@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 45.6.1
+
+- chore: include postinstall.mjs
+
 ## 45.6.0
 
 - fix: patch eslint-plugin-perfectionist re <https://github.com/azat-io/eslint-plugin-perfectionist/issues/642>
