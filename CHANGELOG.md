@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 45.7.0
+
+- feat: allow path or file
+
 ## 45.6.1
 
 - chore: include postinstall.mjs
