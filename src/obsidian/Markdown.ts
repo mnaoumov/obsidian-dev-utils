@@ -12,6 +12,7 @@ import type {
 
 import {
   Component,
+  HoverPopover,
   MarkdownPreviewRenderer,
   MarkdownRenderer
 } from 'obsidian';
@@ -90,7 +91,7 @@ export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath
     el,
     new registerDomEventsHandlersConstructor({
       app,
-      hoverPopover: null,
+      hoverPopover: new HoverPopover({ hoverPopover: null }, el),
       path: sourcePath ?? ''
     })
   );
