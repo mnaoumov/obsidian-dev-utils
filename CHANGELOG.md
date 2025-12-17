@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 45.4.0
+
+- chore: lint
+- fix: optional default params
+- feat: registerLinkHandlers
+- chore: update libs
+
 ## 45.3.2
 
 - chore: update libs
