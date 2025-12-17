@@ -4,6 +4,8 @@
  * Helpers for working with HTML elements.
  */
 
+import type { Promisable } from 'type-fest';
+
 /**
  * A HTML element that can be validated.
  */
@@ -43,6 +45,87 @@ export function appendCodeBlock(el: DocumentFragment | HTMLElement, code: string
   el.createEl('strong', { cls: 'markdown-rendered code' }, (strong) => {
     strong.createEl('code', { text: code });
   });
+}
+
+/**
+ * Creates a div asynchronously.
+ *
+ * @param o - The element information.
+ * @param callback - The callback to call when the div is created.
+ * @returns A {@link Promise} that resolves to the div.
+ */
+export async function createDivAsync(
+  o?: DomElementInfo | string,
+  callback?: (el: HTMLDivElement) => Promisable<void>
+): Promise<HTMLDivElement> {
+  const div = createDiv(o);
+  await callback?.(div);
+  return div;
+}
+
+/**
+ * Creates an element asynchronously.
+ *
+ * @param tag - The tag name of the element to create.
+ * @param o - The element information.
+ * @param callback - The callback to call when the element is created.
+ * @returns A {@link Promise} that resolves to the element.
+ */
+export async function createElAsync<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  o?: DomElementInfo | string,
+  callback?: (el: HTMLElementTagNameMap[K]) => Promisable<void>
+): Promise<HTMLElementTagNameMap[K]> {
+  const el = createEl(tag, o);
+  await callback?.(el);
+  return el;
+}
+
+/**
+ * Creates a DocumentFragment asynchronously.
+ *
+ * @param callback - The callback to call when the DocumentFragment is created.
+ * @returns A {@link Promise} that resolves to the DocumentFragment.
+ */
+export async function createFragmentAsync(callback?: (el: DocumentFragment) => Promisable<void>): Promise<DocumentFragment> {
+  const fragment = createFragment();
+  await callback?.(fragment);
+  return fragment;
+}
+
+/**
+ * Creates a span asynchronously.
+ *
+ * @param o - The element information.
+ * @param callback - The callback to call when the span is created.
+ * @returns A {@link Promise} that resolves to the span.
+ */
+export async function createSpanAsync(
+  o?: DomElementInfo | string,
+  callback?: (el: HTMLSpanElement) => Promisable<void>
+): Promise<HTMLSpanElement> {
+  const span = createSpan(o);
+  await callback?.(span);
+  return span;
+}
+
+/**
+ * Creates a svg asynchronously.
+ *
+ * @param tag - The tag name of the svg to create.
+ * @param o - The svg information.
+ * @param callback - The callback to call when the svg is created.
+ * @returns A {@link Promise} that resolves to the svg.
+ */
+export async function createSvgAsync<K extends keyof SVGElementTagNameMap>(
+  tag: K,
+  // eslint-disable-next-line no-undef -- Workaround until https://github.com/obsidianmd/eslint-plugin/pull/89 is merged.
+  o?: string | SvgElementInfo,
+  callback?: (el: SVGElementTagNameMap[K]) => Promisable<void>
+): Promise<SVGElementTagNameMap[K]> {
+  const svg = createSvg(tag, o);
+  await callback?.(svg);
+  return svg;
 }
 
 /**
