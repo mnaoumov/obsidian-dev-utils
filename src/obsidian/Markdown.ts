@@ -103,6 +103,10 @@ async function getRegisterDomEventsHandlersConstructor(app: App): Promise<Regist
       await app.workspace.openLinkText(mdFile.path, '', true);
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Check is required as TypeScript compiler cannot know that ctor is initialized.
+    if (!ctor) {
+      throw new Error('Failed to get register dom events handlers constructor');
+    }
     return ctor;
   } finally {
     if (shouldDelete) {
