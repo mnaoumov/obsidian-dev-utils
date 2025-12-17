@@ -91,13 +91,13 @@ export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath
  * @param app - The Obsidian app instance.
  * @param url - The URL to render the external link for.
  * @param displayText - The text to display for the external link.
- * @returns The HTMLElement containing the rendered external link.
+ * @returns The HTMLAnchorElement containing the rendered external link.
  */
-export async function renderExternalLink(app: App, url: string, displayText?: string): Promise<HTMLElement> {
+export async function renderExternalLink(app: App, url: string, displayText?: string): Promise<HTMLAnchorElement> {
   displayText ??= url;
   const el = createSpan();
   await fullRender(app, `[${displayText}](${url})`, el, '/', new Component());
-  return el;
+  return el.find('a') as HTMLAnchorElement;
 }
 
 /**
@@ -106,14 +106,14 @@ export async function renderExternalLink(app: App, url: string, displayText?: st
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or file to render the internal link for.
  * @param displayText - The text to display for the internal link.
- * @returns The HTMLElement containing the rendered internal link.
+ * @returns The HTMLAnchorElement containing the rendered internal link.
  */
-export async function renderInternalLink(app: App, pathOrFile: PathOrFile, displayText?: string): Promise<HTMLElement> {
+export async function renderInternalLink(app: App, pathOrFile: PathOrFile, displayText?: string): Promise<HTMLAnchorElement> {
   const path = getPath(app, pathOrFile);
   displayText ??= path;
   const el = createSpan();
   await fullRender(app, `[[${path}|${displayText}]]`, el, '/', new Component());
-  return el;
+  return el.find('a') as HTMLAnchorElement;
 }
 
 async function getRegisterDomEventsHandlersConstructor(app: App): Promise<RegisterDomEventsHandlersConstructor> {
