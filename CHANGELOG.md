@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.0.0
+
+- feat: extract HTMLAnchorElement
+
 ## 45.7.0
 
 - feat: allow path or file
