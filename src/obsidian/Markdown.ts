@@ -19,6 +19,7 @@ import {
 
 import type { PathOrFile } from './FileSystem.ts';
 
+import { getZIndex } from '../HTMLElement.ts';
 import { getPath } from './FileSystem.ts';
 import { invokeWithPatchAsync } from './MonkeyAround.ts';
 
@@ -124,11 +125,15 @@ export async function markdownToHtml(app: App, markdown: string, sourcePath?: st
 export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath?: string): Promise<void> {
   // eslint-disable-next-line require-atomic-updates -- No race condition.
   registerDomEventsHandlersConstructor ??= await getRegisterDomEventsHandlersConstructor(app);
+  const hoverPopover = new HoverPopover({ hoverPopover: null }, el);
+  hoverPopover.hoverEl.setCssStyles({
+    zIndex: String(getZIndex(el) + 1)
+  });
   MarkdownPreviewRenderer.registerDomEvents(
     el,
     new registerDomEventsHandlersConstructor({
       app,
-      hoverPopover: new HoverPopover({ hoverPopover: null }, el),
+      hoverPopover,
       path: sourcePath ?? ''
     })
   );
