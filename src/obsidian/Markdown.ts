@@ -126,8 +126,10 @@ export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath
   // eslint-disable-next-line require-atomic-updates -- No race condition.
   registerDomEventsHandlersConstructor ??= await getRegisterDomEventsHandlersConstructor(app);
   const hoverPopover = new HoverPopover({ hoverPopover: null }, el);
-  hoverPopover.hoverEl.setCssStyles({
-    zIndex: String(getZIndex(el) + 1)
+  hoverPopover.hoverEl.onNodeInserted(() => {
+    hoverPopover.hoverEl.setCssStyles({
+      zIndex: String(getZIndex(el) + 1)
+    });
   });
   MarkdownPreviewRenderer.registerDomEvents(
     el,
