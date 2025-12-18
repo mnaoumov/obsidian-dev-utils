@@ -168,9 +168,10 @@ export function getZIndex(el: Element): number {
   let el2: Element | null = el;
 
   while (el2) {
-    const zIndex = getComputedStyle(el2).zIndex;
-    if (zIndex !== 'auto') {
-      return parseInt(zIndex, 10);
+    const zIndexStr = getComputedStyle(el2).zIndex;
+    const zIndex = Number.parseInt(zIndexStr, 10);
+    if (!Number.isNaN(zIndex)) {
+      return zIndex;
     }
     el2 = el2.parentElement;
   }
