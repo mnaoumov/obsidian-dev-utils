@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.1.1-beta.5
+
+- feat: switch to FixedZIndexDomEventsHandlersInfo
+
 ## 46.1.1-beta.4
 
 - fix: calculate zIndex when element attached
