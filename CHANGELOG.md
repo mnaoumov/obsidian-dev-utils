@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.1.1-beta.4
+
+- fix: calculate zIndex when element attached
+
 ## 46.1.1-beta.3
 
 - fix: zIndex for preview
