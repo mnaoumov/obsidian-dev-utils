@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.2.1
+
+- feat: remove :
+
 ## 46.2.0
 
 - feat: switch to FixedZIndexDomEventsHandlersInfo
