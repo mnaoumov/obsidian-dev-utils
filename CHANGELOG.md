@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.1.1-beta.3
+
+- fix: zIndex for preview
+
 ## 46.1.1-beta.2
 
 - feat: refactor fullRender
