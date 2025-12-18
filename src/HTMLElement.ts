@@ -159,6 +159,26 @@ export async function ensureLoaded(el: Element): Promise<void> {
 }
 
 /**
+ * Gets the z-index of the given element.
+ *
+ * @param el - The element to get the z-index of.
+ * @returns The z-index of the element.
+ */
+export function getZIndex(el: Element): number {
+  let el2: Element | null = el;
+
+  while (el2) {
+    const zIndex = getComputedStyle(el2).zIndex;
+    if (zIndex !== 'auto') {
+      return parseInt(zIndex, 10);
+    }
+    el2 = el2.parentElement;
+  }
+
+  return 0;
+}
+
+/**
  * Checks if the element is visible in the offset parent.
  *
  * @param el - The element to check.
