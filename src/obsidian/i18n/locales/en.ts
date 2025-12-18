@@ -11,7 +11,7 @@ export const en = {
   obsidianDevUtils: {
     asyncWithNotice: {
       milliseconds: 'milliseconds...',
-      operation: 'Operation:',
+      operation: 'Operation',
       runningFor: 'Running for',
       terminateOperation: 'You can terminate the operation by clicking the button below, but be aware it might leave the vault in an inconsistent state.',
       timedOut: 'The operation timed out after {{duration}} milliseconds.'
