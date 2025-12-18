@@ -6,8 +6,9 @@
 
 import type { App } from 'obsidian';
 import type {
-  EmbedCreator,
-  RegisterDomEventsHandlersConstructor
+  DomEventsHandlersConstructor,
+  DomEventsHandlersInfo,
+  EmbedCreator
 } from 'obsidian-typings';
 
 import {
@@ -23,7 +24,7 @@ import { getZIndex } from '../HTMLElement.ts';
 import { getPath } from './FileSystem.ts';
 import { invokeWithPatchAsync } from './MonkeyAround.ts';
 
-let registerDomEventsHandlersConstructor: null | RegisterDomEventsHandlersConstructor = null;
+let domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
 
 /**
  * The options for the full render.
@@ -61,6 +62,39 @@ export interface FullRenderOptions {
 }
 
 type RegisterDomEventsFn = typeof MarkdownPreviewRenderer.registerDomEvents;
+
+class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
+  public get hoverPopover(): HoverPopover | null {
+    return this._hoverPopover;
+  }
+
+  public set hoverPopover(hoverPopover: HoverPopover | null) {
+    this._hoverPopover = hoverPopover;
+    if (hoverPopover && this.zIndex !== undefined) {
+      hoverPopover.hoverEl.setCssStyles({
+        zIndex: String(this.zIndex)
+      });
+    }
+  }
+
+  private _hoverPopover: HoverPopover | null = null;
+
+  private zIndex?: number;
+
+  public constructor(public readonly app: App, public readonly path: string, el: HTMLElement) {
+    if (el.isConnected) {
+      this.updateZIndex(el);
+    } else {
+      el.onNodeInserted(() => {
+        this.updateZIndex(el);
+      });
+    }
+  }
+
+  private updateZIndex(el: HTMLElement): void {
+    this.zIndex = getZIndex(el) + 1;
+  }
+}
 
 /**
  * Render the markdown and embeds.
@@ -124,20 +158,10 @@ export async function markdownToHtml(app: App, markdown: string, sourcePath?: st
  */
 export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath?: string): Promise<void> {
   // eslint-disable-next-line require-atomic-updates -- No race condition.
-  registerDomEventsHandlersConstructor ??= await getRegisterDomEventsHandlersConstructor(app);
-  const hoverPopover = new HoverPopover({ hoverPopover: null }, el);
-  hoverPopover.hoverEl.onNodeInserted(() => {
-    hoverPopover.hoverEl.setCssStyles({
-      zIndex: String(getZIndex(el) + 1)
-    });
-  });
+  domEventsHandlersConstructor ??= await getDomEventsHandlersConstructor(app);
   MarkdownPreviewRenderer.registerDomEvents(
     el,
-    new registerDomEventsHandlersConstructor({
-      app,
-      hoverPopover,
-      path: sourcePath ?? ''
-    })
+    new domEventsHandlersConstructor(new FixedZIndexDomEventsHandlersInfo(app, sourcePath ?? '', el))
   );
 }
 
@@ -184,7 +208,7 @@ export async function renderInternalLink(app: App, pathOrFile: PathOrFile, displ
   return aEl;
 }
 
-async function getRegisterDomEventsHandlersConstructor(app: App): Promise<RegisterDomEventsHandlersConstructor> {
+async function getDomEventsHandlersConstructor(app: App): Promise<DomEventsHandlersConstructor> {
   let mdFile = app.vault.getMarkdownFiles()[0];
   let shouldDelete = false;
   if (!mdFile) {
@@ -192,12 +216,12 @@ async function getRegisterDomEventsHandlersConstructor(app: App): Promise<Regist
     mdFile = await app.vault.create('__temp.md', '');
     shouldDelete = true;
   }
-  let ctor: null | RegisterDomEventsHandlersConstructor = null;
+  let ctor: DomEventsHandlersConstructor | null = null;
   try {
     await invokeWithPatchAsync(MarkdownPreviewRenderer, {
       registerDomEvents: (next: RegisterDomEventsFn): RegisterDomEventsFn => {
         return (el, handlers, childElFn) => {
-          ctor = handlers.constructor as RegisterDomEventsHandlersConstructor;
+          ctor = handlers.constructor as DomEventsHandlersConstructor;
           next(el, handlers, childElFn);
         };
       }
