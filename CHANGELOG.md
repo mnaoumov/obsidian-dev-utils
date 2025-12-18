@@ -1,24 +1,9 @@
 # CHANGELOG
 
-## 46.1.1-beta.5
+## 46.2.0
 
 - feat: switch to FixedZIndexDomEventsHandlersInfo
-
-## 46.1.1-beta.4
-
-- fix: calculate zIndex when element attached
-
-## 46.1.1-beta.3
-
-- fix: zIndex for preview
-
-## 46.1.1-beta.2
-
 - feat: refactor fullRender
-
-## 46.1.1-beta.1
-
-- feat: add popover
 
 ## 46.1.0
 
