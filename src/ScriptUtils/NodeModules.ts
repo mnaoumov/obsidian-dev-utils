@@ -68,6 +68,9 @@ export {
 } from 'node:os';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required -- This is the only file we encapsulate importing Node.js modules.
+export { loadEnvFile } from 'node:process';
+
+// eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required -- This is the only file we encapsulate importing Node.js modules.
 export { createInterface } from 'node:readline/promises';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required -- This is the only file we encapsulate importing Node.js modules.

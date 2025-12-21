@@ -4,10 +4,15 @@
  * Contains utility functions for NPM publish.
  */
 
-import { config } from 'dotenv';
-
-import { process } from './NodeModules.ts';
-import { execFromRoot } from './Root.ts';
+import {
+  existsSync,
+  loadEnvFile,
+  process
+} from './NodeModules.ts';
+import {
+  execFromRoot,
+  resolvePathFromRoot
+} from './Root.ts';
 
 interface NpmEnv {
   NPM_TOKEN: string;
@@ -19,7 +24,10 @@ interface NpmEnv {
  * @param isBeta - Whether to publish to the beta NPM registry.
  */
 export async function publish(isBeta?: boolean): Promise<void> {
-  config();
+  const envPath = resolvePathFromRoot('.env');
+  if (envPath && existsSync(envPath)) {
+    loadEnvFile(envPath);
+  }
   const npmEnv = process.env as Partial<NpmEnv>;
   await execFromRoot(['npm', 'config', 'set', `//registry.npmjs.org/:_authToken=${npmEnv.NPM_TOKEN ?? ''}`]);
 
