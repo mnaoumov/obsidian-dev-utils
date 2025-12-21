@@ -14,25 +14,31 @@ import eslintPluginTsdocRequired_ = require('@guardian/eslint-plugin-tsdoc-requi
 // eslint-disable-next-line import-x/no-rename-default, import-x/no-named-as-default -- The default export name `index` is too confusing.
 import jsdoc from 'eslint-plugin-jsdoc';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
+import {
+  defineConfig,
+  globalIgnores
+} from 'eslint/config';
 
 import { join } from './src/Path.ts';
-import { obsidianDevUtilsConfigs } from './src/ScriptUtils/ESLint/eslint.config.ts';
+import {
+  obsidianDevUtilsConfigs,
+  typeScriptFiles
+} from './src/ScriptUtils/ESLint/eslint.config.ts';
 import { ObsidianDevUtilsRepoPaths } from './src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 
 const eslintPluginTsdocRequired = eslintPluginTsdocRequired_ as ESLint.Plugin;
 
-const configs: Linter.Config[] = [
+const configs: Linter.Config[] = defineConfig([
+  globalIgnores([
+    join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
+    ObsidianDevUtilsRepoPaths.DataviewTypes,
+    join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts),
+    `!${join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.Types, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts)}`,
+    ObsidianDevUtilsRepoPaths.Static
+  ]),
   ...obsidianDevUtilsConfigs,
   {
-    ignores: [
-      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
-      ObsidianDevUtilsRepoPaths.DataviewTypes,
-      join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts),
-      `!${join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.Types, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts)}`,
-      ObsidianDevUtilsRepoPaths.Static
-    ]
-  },
-  {
+    files: typeScriptFiles,
     plugins: {
       'eslint-plugin-tsdoc-required': eslintPluginTsdocRequired
     },
@@ -41,6 +47,7 @@ const configs: Linter.Config[] = [
     }
   },
   {
+    files: typeScriptFiles,
     plugins: {
       tsdoc: eslintPluginTsdoc
     },
@@ -48,8 +55,12 @@ const configs: Linter.Config[] = [
       'tsdoc/syntax': 'error'
     }
   },
-  jsdoc.configs['flat/recommended-typescript-error'],
   {
+    ...jsdoc.configs['flat/recommended-typescript-error'],
+    files: typeScriptFiles
+  },
+  {
+    files: typeScriptFiles,
     plugins: {
       jsdoc
     },
@@ -138,7 +149,7 @@ const configs: Linter.Config[] = [
       }
     }
   }
-];
+]);
 
 // eslint-disable-next-line import-x/no-default-export -- That is the way ESLint takes the config.
 export default configs;

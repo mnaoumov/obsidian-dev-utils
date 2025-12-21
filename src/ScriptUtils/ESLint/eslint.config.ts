@@ -10,10 +10,7 @@
  */
 
 /* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
-import type {
-  ESLint,
-  Linter
-} from 'eslint';
+import type { Linter } from 'eslint';
 
 import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import eslint from '@eslint/js';
@@ -24,7 +21,10 @@ import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
-import { defineConfig } from 'eslint/config';
+import {
+  defineConfig,
+  globalIgnores
+} from 'eslint/config';
 import globals from 'globals';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
 import tseslint from 'typescript-eslint';
@@ -34,61 +34,55 @@ import { join } from '../../Path.ts';
 import { getRootFolder } from '../Root.ts';
 
 /**
+ * The list of TypeScript files to lint.
+ */
+export const typeScriptFiles = [
+  join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
+  join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTsx),
+  join(ObsidianPluginRepoPaths.Scripts, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
+  ObsidianPluginRepoPaths.MarkdownlintCli2ConfigMts,
+  ObsidianPluginRepoPaths.CommitlintConfigTs,
+  ObsidianPluginRepoPaths.EslintConfigMts
+];
+
+/**
  * ESLint configurations for TypeScript projects.
  */
 export const obsidianDevUtilsConfigs: Linter.Config[] = defineConfig(
-  {
-    files: [
-      join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
-      join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTsx),
-      join(ObsidianPluginRepoPaths.Scripts, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
-      ObsidianPluginRepoPaths.MarkdownlintCli2ConfigMts,
-      ObsidianPluginRepoPaths.CommitlintConfigTs,
-      ObsidianPluginRepoPaths.EslintConfigMts
-    ]
-  },
-  {
-    ignores: [
-      join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyCjs),
-      join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyJs),
-      join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyMjs),
-      join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.AnyPath)
-    ]
-  },
+  globalIgnores([
+    join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyCjs),
+    join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyJs),
+    join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyMjs),
+    join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.AnyPath)
+  ]),
   ...getEslintConfigs(),
   ...getTseslintConfigs(),
   ...getStylisticConfigs(),
   ...getImportXConfigs(),
   ...getPerfectionistConfigs(),
   ...getModulesNewlinesConfigs(),
-  ...getModulesNewlinesConfigs(),
   ...getEslintImportResolverTypescriptConfigs(),
   ...getEslintCommentsConfigs(),
   ...getObsidianLintConfigs()
 );
 
-function excludeFilesProperty<Config>(config: Config): Config {
-  type ConfigWithFiles = { files?: unknown } & Config;
-  const newConfig = { ...config } as ConfigWithFiles;
-  delete newConfig.files;
-  return newConfig;
-}
-
 function getEslintCommentsConfigs(): Linter.Config[] {
-  return [
-    commentsConfigs.recommended,
+  return defineConfig([
     {
+      extends: [commentsConfigs.recommended],
+      files: typeScriptFiles,
       rules: {
         '@eslint-community/eslint-comments/require-description': 'error'
       }
     }
-  ];
+  ]);
 }
 
 function getEslintConfigs(): Linter.Config[] {
-  return [
-    eslint.configs.recommended,
+  return defineConfig([
     {
+      extends: [eslint.configs.recommended],
+      files: typeScriptFiles,
       rules: {
         'accessor-pairs': 'error',
         'array-callback-return': 'error',
@@ -232,11 +226,11 @@ function getEslintConfigs(): Linter.Config[] {
         'yoda': 'error'
       }
     }
-  ];
+  ]);
 }
 
 function getEslintImportResolverTypescriptConfigs(): Linter.Config[] {
-  return [
+  return defineConfig([
     {
       settings: {
         'import/resolver': {
@@ -246,16 +240,19 @@ function getEslintImportResolverTypescriptConfigs(): Linter.Config[] {
         }
       }
     }
-  ];
+  ]);
 }
 
 function getImportXConfigs(): Linter.Config[] {
-  return [
-    eslintPluginImportXFlatConfigs.recommended as Linter.Config,
-    eslintPluginImportXFlatConfigs.typescript as Linter.Config,
-    eslintPluginImportXFlatConfigs.errors as Linter.Config,
-    eslintPluginImportXFlatConfigs.warnings as Linter.Config,
+  return defineConfig([
     {
+      extends: [
+        eslintPluginImportXFlatConfigs.recommended as Linter.Config,
+        eslintPluginImportXFlatConfigs.typescript as Linter.Config,
+        eslintPluginImportXFlatConfigs.errors as Linter.Config,
+        eslintPluginImportXFlatConfigs.warnings as Linter.Config
+      ],
+      files: typeScriptFiles,
       rules: {
         'import-x/consistent-type-specifier-style': 'error',
         'import-x/extensions': ['error', 'ignorePackages'],
@@ -302,12 +299,13 @@ function getImportXConfigs(): Linter.Config[] {
         'import-x/no-nodejs-modules': 'off'
       }
     }
-  ];
+  ]);
 }
 
 function getModulesNewlinesConfigs(): Linter.Config[] {
-  return [
+  return defineConfig([
     {
+      files: typeScriptFiles,
       plugins: {
         'modules-newlines': eslintPluginModulesNewlines
       },
@@ -316,20 +314,25 @@ function getModulesNewlinesConfigs(): Linter.Config[] {
         'modules-newlines/import-declaration-newline': 'error'
       }
     }
-  ];
+  ]);
 }
 
 function getObsidianLintConfigs(): Linter.Config[] {
-  return [
-    ...(obsidianmd.configs?.['recommended'] as Linter.Config[]),
-    {
-      ignores: ['package.json']
-    },
-    {
-      plugins: {
-        obsidianmd: obsidianmd as ESLint.Plugin
-      }
-    },
+  const obsidianRecommendedConfigs = Array.from(obsidianmd.configs?.['recommended'] as Iterable<Linter.Config>);
+
+  const scopedObsidianRecommendedConfigs = obsidianRecommendedConfigs.map((config) => {
+    if (config.files?.includes('package.json')) {
+      return config;
+    }
+
+    return {
+      ...config,
+      files: typeScriptFiles
+    };
+  });
+
+  return defineConfig([
+    ...scopedObsidianRecommendedConfigs,
     {
       languageOptions: {
         globals: {
@@ -355,25 +358,29 @@ function getObsidianLintConfigs(): Linter.Config[] {
         }
       }
     }
-  ];
+  ]);
 }
 
 function getPerfectionistConfigs(): Linter.Config[] {
-  return [
-    perfectionistConfigs['recommended-alphabetical']
-  ];
+  return defineConfig([{
+    extends: [perfectionistConfigs['recommended-alphabetical']],
+    files: typeScriptFiles
+  }]);
 }
 
 function getStylisticConfigs(): Linter.Config[] {
-  return [
-    stylistic.configs.recommended,
-    stylistic.configs.customize({
-      arrowParens: true,
-      braceStyle: '1tbs',
-      commaDangle: 'never',
-      semi: true
-    }),
+  return defineConfig([
     {
+      extends: [
+        stylistic.configs.recommended,
+        stylistic.configs.customize({
+          arrowParens: true,
+          braceStyle: '1tbs',
+          commaDangle: 'never',
+          semi: true
+        })
+      ],
+      files: typeScriptFiles,
       rules: {
         '@stylistic/indent': 'off',
         '@stylistic/indent-binary-ops': 'off',
@@ -410,16 +417,19 @@ function getStylisticConfigs(): Linter.Config[] {
         ]
       }
     }
-  ];
+  ]);
 }
 
 function getTseslintConfigs(): Linter.Config[] {
-  return [
-    // eslint-disable-next-line import-x/no-named-as-default-member -- The default export name `_default` is too confusing.
-    ...tseslint.configs.strictTypeChecked.map(excludeFilesProperty),
-    // eslint-disable-next-line import-x/no-named-as-default-member -- The default export name `_default` is too confusing.
-    ...tseslint.configs.stylisticTypeChecked.map(excludeFilesProperty),
+  return defineConfig([
     {
+      extends: [
+        // eslint-disable-next-line import-x/no-named-as-default-member -- The default export name `_default` is too confusing.
+        ...tseslint.configs.strictTypeChecked,
+        // eslint-disable-next-line import-x/no-named-as-default-member -- The default export name `_default` is too confusing.
+        ...tseslint.configs.stylisticTypeChecked
+      ],
+      files: typeScriptFiles,
       languageOptions: {
         parserOptions: {
           ecmaFeatures: {
@@ -428,9 +438,7 @@ function getTseslintConfigs(): Linter.Config[] {
           projectService: true,
           tsconfigRootDir: getRootFolder() ?? ''
         }
-      }
-    },
-    {
+      },
       rules: {
         '@typescript-eslint/explicit-function-return-type': 'error',
         '@typescript-eslint/explicit-member-accessibility': 'error',
@@ -464,7 +472,7 @@ function getTseslintConfigs(): Linter.Config[] {
         }
       }
     }
-  ];
+  ]);
 }
 
 /* eslint-enable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
