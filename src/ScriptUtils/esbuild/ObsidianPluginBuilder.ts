@@ -12,7 +12,6 @@ import type {
   Plugin
 } from 'esbuild';
 
-import { config } from 'dotenv';
 import { context } from 'esbuild';
 // eslint-disable-next-line import-x/no-rename-default -- We need a temp variable to apply `extractDefaultExportInterop()` fix below.
 import sassPlugin_ from 'esbuild-sass-plugin';
@@ -27,6 +26,7 @@ import {
   builtinModules,
   cp,
   existsSync,
+  loadEnvFile,
   mkdir,
   process,
   rm,
@@ -100,7 +100,10 @@ interface ObsidianPluginBuilderEnv {
  */
 export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): Promise<CliTaskResult> {
   await buildCompile();
-  config();
+  const envPath = resolvePathFromRoot('.env');
+  if (envPath && existsSync(envPath)) {
+    loadEnvFile(envPath);
+  }
   const obsidianPluginBuilderEnv = process.env as Partial<ObsidianPluginBuilderEnv>;
 
   const obsidianConfigFolder = options.obsidianConfigFolder ?? obsidianPluginBuilderEnv.OBSIDIAN_CONFIG_FOLDER ?? '';

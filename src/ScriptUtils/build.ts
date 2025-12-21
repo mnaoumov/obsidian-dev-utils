@@ -8,8 +8,7 @@
 
 import type { TsConfigJson } from 'type-fest';
 
-import { glob } from 'glob';
-
+import { toArray } from '../Async.ts';
 import { getLibDebugger } from '../Debug.ts';
 import { join } from '../Path.ts';
 import { trimStart } from '../String.ts';
@@ -17,6 +16,7 @@ import { readdirPosix } from './Fs.ts';
 import { readJson } from './JSON.ts';
 import {
   cp,
+  glob,
   rm
 } from './NodeModules.ts';
 import { npmRun } from './NpmRun.ts';
@@ -55,7 +55,7 @@ export async function buildCompile(): Promise<void> {
 export async function buildCompileSvelte(): Promise<void> {
   const tsConfigPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.TsConfigJson);
   const tsConfig = await readJson<TsConfigJson>(tsConfigPath);
-  const allFiles = await glob(tsConfig.include ?? [], { ignore: tsConfig.exclude ?? [] });
+  const allFiles = await toArray(glob(tsConfig.include ?? [], { exclude: tsConfig.exclude ?? [] }));
   const svelteFiles = allFiles.filter((file) => file.endsWith('.svelte') || file.endsWith('.svelte.js') || file.endsWith('.svelte.ts'));
 
   if (svelteFiles.length === 0) {
