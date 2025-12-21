@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 46.2.2
+
+- chore: replace banned packages
+- chore: rewrite eslint configs
+- chore: update libs
+
 ## 46.2.1
 
 - feat: remove :
