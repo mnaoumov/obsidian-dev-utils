@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 46.3.0
+
+- chore: fix compilation
+- chore: update libs
+- feat: don't show loop notice for first 500ms re <https://github.com/dy-sh/obsidian-consistent-attachments-and-links/issues/149>
+- chore: update libs
+
 ## 46.2.2
 
 - chore: replace banned packages
