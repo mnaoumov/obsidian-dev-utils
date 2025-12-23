@@ -117,23 +117,14 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
 
   const items = fullOptions.items;
   let iterationCount = 0;
-  let notice: Notice | null = null;
+  let notice = null as Notice | null;
   let isDone = false;
   invokeAsyncSafely(() => showNotice());
 
-  if (fullOptions.shouldShowProgressBar) {
-    notice = new Notice('', 0);
-  }
   const noticeMinTimeoutPromise = sleep(fullOptions.noticeMinTimeoutInMilliseconds);
   const progressBarEl = createEl('progress');
   addPluginCssClasses(progressBarEl, 'loop');
   progressBarEl.max = items.length;
-  if (fullOptions.shouldShowProgressBar) {
-    const fragment = createFragment();
-    fragment.createDiv({ text: fullOptions.progressBarTitle });
-    fragment.appendChild(progressBarEl);
-    notice?.setMessage(fragment);
-  }
 
   let lastUIUpdateTimestamp = performance.now();
 
@@ -179,5 +170,12 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
       return;
     }
     notice = new Notice('', 0);
+    if (!fullOptions.shouldShowProgressBar) {
+      return;
+    }
+    const fragment = createFragment();
+    fragment.createDiv({ text: fullOptions.progressBarTitle });
+    fragment.appendChild(progressBarEl);
+    notice.setMessage(fragment);
   }
 }
