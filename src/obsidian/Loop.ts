@@ -9,7 +9,10 @@ import type { Promisable } from 'type-fest';
 import { Notice } from 'obsidian';
 
 import { abortSignalNever } from '../AbortController.ts';
-import { requestAnimationFrameAsync } from '../Async.ts';
+import {
+  invokeAsyncSafely,
+  requestAnimationFrameAsync
+} from '../Async.ts';
 import { getLibDebugger } from '../Debug.ts';
 import {
   ASYNC_WRAPPER_ERROR_MESSAGE,
@@ -42,6 +45,11 @@ export interface LoopOptions<T> {
    * Items to loop over.
    */
   items: T[];
+
+  /**
+   * A timeout for the notice before it is shown.
+   */
+  noticeBeforeShownTimeoutInMilliseconds?: number;
 
   /**
    * A minimum timeout for the notice.
@@ -89,6 +97,8 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     },
     items: [],
     // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
+    noticeBeforeShownTimeoutInMilliseconds: 500,
+    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     noticeMinTimeoutInMilliseconds: 2000,
     processItem: noop,
     progressBarTitle: '',
@@ -108,6 +118,9 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   const items = fullOptions.items;
   let iterationCount = 0;
   let notice: Notice | null = null;
+  let isDone = false;
+  invokeAsyncSafely(() => showNotice());
+
   if (fullOptions.shouldShowProgressBar) {
     notice = new Notice('', 0);
   }
@@ -154,6 +167,17 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     }
     progressBarEl.value++;
   }
-  await noticeMinTimeoutPromise;
+  if (notice) {
+    await noticeMinTimeoutPromise;
+  }
   notice?.hide();
+  isDone = true;
+
+  async function showNotice(): Promise<void> {
+    await sleep(fullOptions.noticeBeforeShownTimeoutInMilliseconds);
+    if (isDone) {
+      return;
+    }
+    notice = new Notice('', 0);
+  }
 }
