@@ -363,7 +363,7 @@ function getObsidianLintConfigs(): Linter.Config[] {
 
 function getPerfectionistConfigs(): Linter.Config[] {
   return defineConfig([{
-    extends: [perfectionistConfigs['recommended-alphabetical']],
+    extends: [perfectionistConfigs?.['recommended-alphabetical'] as Linter.Config],
     files: typeScriptFiles
   }]);
 }
