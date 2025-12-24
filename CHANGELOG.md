@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.3.1
+
+- fix: notice init
+
 ## 46.3.0
 
 - chore: fix compilation
