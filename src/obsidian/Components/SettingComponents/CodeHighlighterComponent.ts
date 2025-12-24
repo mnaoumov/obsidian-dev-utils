@@ -216,7 +216,7 @@ export class CodeHighlighterComponent extends ValueComponent<string>
     evt.preventDefault();
 
     if (evt.ctrlKey || evt.metaKey) {
-      const focusables = Array.from(document.querySelectorAll<HTMLElement>(
+      const focusables = Array.from(activeDocument.querySelectorAll<HTMLElement>(
         ':is(a, button, input, select, textarea, [tabindex]):not([tabindex="-1"]):not(:disabled):not([type="hidden"])'
       ));
       const index = focusables.indexOf(this.inputEl);
