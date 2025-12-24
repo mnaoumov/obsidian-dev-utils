@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.3.3
+
+- fix: handle multi windows
+
 ## 46.3.2
 
 - chore: expose obsidianmd plugin from config
