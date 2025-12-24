@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.3.2
+
+- chore: expose obsidianmd plugin from config
+
 ## 46.3.1
 
 - fix: notice init
