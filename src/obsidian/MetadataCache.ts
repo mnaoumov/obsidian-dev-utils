@@ -46,6 +46,16 @@ import {
 } from './Vault.ts';
 
 /**
+ * Options for {@link getBacklinksForFileSafe}.
+ */
+export interface GetBacklinksForFileSafeOptions extends RetryOptions {
+  /**
+   * Whether to show a timeout notice. Default is `true`.
+   */
+  shouldShowTimeoutNotice?: boolean;
+}
+
+/**
  * Wrapper for the getBacklinksForFile method that provides a safe overload.
  */
 export interface GetBacklinksForFileSafeWrapper {
@@ -139,10 +149,14 @@ export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): Cus
  *
  * @param app - The Obsidian application instance.
  * @param pathOrFile - The path or file object.
- * @param retryOptions - Optional retry options.
+ * @param options - Other options.
  * @returns A {@link Promise} that resolves to an array dictionary of backlinks.
  */
-export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, retryOptions: RetryOptions = {}): Promise<CustomArrayDict<Reference>> {
+export async function getBacklinksForFileSafe(
+  app: App,
+  pathOrFile: PathOrFile,
+  options: GetBacklinksForFileSafeOptions = {}
+): Promise<CustomArrayDict<Reference>> {
   const safeOverload = (app.metadataCache.getBacklinksForFile as Partial<GetBacklinksForFileSafeWrapper>).safe;
   if (safeOverload) {
     return safeOverload(pathOrFile);
@@ -200,7 +214,8 @@ export async function getBacklinksForFileSafe(app: App, pathOrFile: PathOrFile, 
       return true;
     },
     operationName: t(($) => $.obsidianDevUtils.metadataCache.getBacklinksForFilePath, { filePath: getPath(app, pathOrFile) }),
-    retryOptions
+    retryOptions: options,
+    shouldShowTimeoutNotice: options.shouldShowTimeoutNotice ?? true
   });
 
   return backlinks;

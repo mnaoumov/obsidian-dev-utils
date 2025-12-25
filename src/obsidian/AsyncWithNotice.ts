@@ -17,6 +17,7 @@ import {
   retryWithTimeout,
   runWithTimeout
 } from '../Async.ts';
+import { getDebugger } from '../Debug.ts';
 import { t } from './i18n/i18n.ts';
 
 /**
@@ -42,6 +43,11 @@ export interface RetryWithTimeoutNoticeOptions {
   retryOptions?: RetryOptions;
 
   /**
+   * Whether to show a timeout notice. Default is `true`.
+   */
+  shouldShowTimeoutNotice?: boolean;
+
+  /**
    * The stack trace of the source function.
    */
   stackTrace?: string;
@@ -55,6 +61,7 @@ export interface RunWithTimeoutNoticeOptions<Result> {
    * The context of the function.
    */
   context?: unknown;
+
   /**
    * The operation function to execute.
    *
@@ -62,10 +69,17 @@ export interface RunWithTimeoutNoticeOptions<Result> {
    * @returns The result of the function.
    */
   operationFn(abortSignal: AbortSignal): Promisable<Result>;
+
   /**
    * The name of the operation.
    */
   operationName?: string;
+
+  /**
+   * Whether to show a timeout notice. Default is `true`.
+   */
+  shouldShowTimeoutNotice?: boolean;
+
   /**
    * The stack trace of the source function.
    */
@@ -86,7 +100,7 @@ export interface RunWithTimeoutNoticeOptions<Result> {
 export async function retryWithTimeoutNotice(options: RetryWithTimeoutNoticeOptions): Promise<void> {
   return retryWithTimeout({
     ...options,
-    onTimeout: onTimeoutNotice
+    onTimeout: options.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice
   });
 }
 
@@ -100,7 +114,7 @@ export async function retryWithTimeoutNotice(options: RetryWithTimeoutNoticeOpti
 export async function runWithTimeoutNotice<Result>(options: RunWithTimeoutNoticeOptions<Result>): Promise<Result> {
   return runWithTimeout({
     ...options,
-    onTimeout: onTimeoutNotice
+    onTimeout: options.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice
   });
 }
 
@@ -149,4 +163,15 @@ function onTimeoutNotice(ctx: TimeoutContext): void {
     const runningTimeInMilliseconds = Math.max(ctx.duration, Math.round((performance.now() - startTime) / SECOND_IN_MILLISECONDS) * SECOND_IN_MILLISECONDS);
     runningTimeEl.textContent = String(runningTimeInMilliseconds);
   }
+}
+
+function onTimeoutWithoutNotice(ctx: TimeoutContext): void {
+  const startTime = Math.trunc(performance.now() - ctx.duration);
+
+  ctx.onOperationCompleted(() => {
+    getDebugger('AsyncWithNotice:onTimeoutWithoutNotice')('Operation completed after timeout', {
+      operationName: ctx.operationName,
+      totalDuration: Math.trunc(performance.now() - startTime)
+    });
+  });
 }
