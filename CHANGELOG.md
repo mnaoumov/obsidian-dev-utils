@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 46.4.0
+
+- feat: allow disabling notices re <https://github.com/mnaoumov/obsidian-backlink-cache/issues/11>
+- chore: update libs
+
 ## 46.3.3
 
 - fix: handle multi windows
