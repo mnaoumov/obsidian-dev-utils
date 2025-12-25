@@ -65,6 +65,11 @@ export interface ProcessOptions extends RetryOptions {
    * Whether to lock the editor while processing the file. Applicable only for markdown files. Default is `true`.
    */
   shouldLockEditorWhileProcessing?: boolean;
+
+  /**
+   * Whether to show a timeout notice. Default is `true`.
+   */
+  shouldShowTimeoutNotice?: boolean;
 }
 
 /**
@@ -324,6 +329,7 @@ export async function process(
   const DEFAULT_RETRY_OPTIONS = {
     shouldFailOnMissingFile: true,
     shouldLockEditorWhileProcessing: true,
+    shouldShowTimeoutNotice: true,
     // eslint-disable-next-line no-magic-numbers -- Default value.
     timeoutInMilliseconds: 500
   };
@@ -402,7 +408,8 @@ export async function process(
         }
       },
       operationName: t(($) => $.obsidianDevUtils.vault.processFile, { filePath: path }),
-      retryOptions: fullOptions
+      retryOptions: fullOptions,
+      shouldShowTimeoutNotice: fullOptions.shouldShowTimeoutNotice
     });
   } finally {
     activeLeafChangeEventRef?.e.offref(activeLeafChangeEventRef);

@@ -47,12 +47,12 @@ export interface LoopOptions<T> {
   items: T[];
 
   /**
-   * A timeout for the notice before it is shown.
+   * A timeout for the notice before it is shown. Default is `500`.
    */
   noticeBeforeShownTimeoutInMilliseconds?: number;
 
   /**
-   * A minimum timeout for the notice.
+   * A minimum timeout for the notice. Default is `2000`.
    */
   noticeMinTimeoutInMilliseconds?: number;
 
@@ -64,22 +64,27 @@ export interface LoopOptions<T> {
   processItem(item: T): Promisable<void>;
 
   /**
-   * A title of the progress bar.
+   * A title of the progress bar. Default is `''`.
    */
   progressBarTitle?: string;
 
   /**
-   * Whether to continue the loop on error.
+   * Whether to continue the loop on error. Default is `true`.
    */
   shouldContinueOnError?: boolean;
 
   /**
-   * Whether to show a progress bar.
+   * Whether to show a notice. Default is `true`.
+   */
+  shouldShowNotice?: boolean;
+
+  /**
+   * Whether to show a progress bar. Default is `true`.
    */
   shouldShowProgressBar?: boolean;
 
   /**
-   * A threshold for the UI update.
+   * A threshold for the UI update. Default is `100`.
    */
   uiUpdateThresholdInMilliseconds?: number;
 }
@@ -103,6 +108,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     processItem: noop,
     progressBarTitle: '',
     shouldContinueOnError: true,
+    shouldShowNotice: true,
     shouldShowProgressBar: true,
     // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     uiUpdateThresholdInMilliseconds: 100
@@ -165,6 +171,9 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   isDone = true;
 
   async function showNotice(): Promise<void> {
+    if (!fullOptions.shouldShowNotice) {
+      return;
+    }
     await sleep(fullOptions.noticeBeforeShownTimeoutInMilliseconds);
     if (isDone) {
       return;

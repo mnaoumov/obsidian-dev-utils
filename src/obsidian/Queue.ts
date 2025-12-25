@@ -49,6 +49,11 @@ export interface AddToQueueAndWaitOptions {
   operationName?: string;
 
   /**
+   * Whether to show a timeout notice. Default is `true`.
+   */
+  shouldShowTimeoutNotice?: boolean;
+
+  /**
    * Optional stack trace.
    */
   stackTrace?: string;
@@ -84,6 +89,11 @@ export interface AddToQueueOptions {
   operationName?: string;
 
   /**
+   * Whether to show a timeout notice. Default is `true`.
+   */
+  shouldShowTimeoutNotice?: boolean;
+
+  /**
    * Optional stack trace.
    */
   stackTrace?: string;
@@ -103,6 +113,7 @@ interface QueueItem {
   abortSignal: AbortSignal;
   operationFn(this: void, abortSignal: AbortSignal): Promisable<void>;
   operationName: string;
+  shouldShowTimeoutNotice: boolean;
   stackTrace: string;
   timeoutInMilliseconds: number;
 }
@@ -131,7 +142,14 @@ export async function addToQueueAndWait(options: AddToQueueAndWaitOptions): Prom
   const stackTrace = options.stackTrace ?? getStackTrace(1);
   const operationName = options.operationName ?? '';
   const queue = getQueue(options.app).value;
-  queue.items.push({ abortSignal, operationFn: options.operationFn, operationName, stackTrace, timeoutInMilliseconds });
+  queue.items.push({
+    abortSignal,
+    operationFn: options.operationFn,
+    operationName,
+    shouldShowTimeoutNotice: options.shouldShowTimeoutNotice ?? true,
+    stackTrace,
+    timeoutInMilliseconds
+  });
   queue.promise = queue.promise.then(() => processNextQueueItem(options.app));
   await queue.promise;
 }
@@ -172,6 +190,7 @@ async function processNextQueueItem(app: App): Promise<void> {
         );
       },
       operationName: item.operationName,
+      shouldShowTimeoutNotice: item.shouldShowTimeoutNotice,
       stackTrace: item.stackTrace,
       timeoutInMilliseconds: item.timeoutInMilliseconds
     })
