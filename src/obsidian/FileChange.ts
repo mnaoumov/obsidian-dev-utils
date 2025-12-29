@@ -273,6 +273,10 @@ export async function toCanvasChange(app: App, file: TFile, change: AdvancedCanv
   if (linkIndex === -1) {
     throw new Error(`Link ${change.reference.link} not found`);
   }
+  const link = links[linkIndex];
+  if (!link) {
+    throw new Error(`Link ${change.reference.link} not found`);
+  }
   return {
     ...change,
     reference: {
@@ -280,8 +284,9 @@ export async function toCanvasChange(app: App, file: TFile, change: AdvancedCanv
       isCanvas: true,
       key: `nodes.${String(nodeIndex)}.text.${String(linkIndex)}`,
       nodeIndex,
+      originalReference: link,
       type: 'text'
-    }
+    } as CanvasTextNodeReference
   };
 }
 
