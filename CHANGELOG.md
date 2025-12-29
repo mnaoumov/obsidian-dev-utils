@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.5.2
+
+- fix: canvas text link
+
 ## 46.5.1
 
 - feat: skip rename handling for the same path
