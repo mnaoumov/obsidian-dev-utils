@@ -1557,9 +1557,8 @@ async function getFileChanges(
       if (isCanvasChange(fileChange)) {
         changes.push(fileChange);
       } else {
-        const message = 'Unsupported file change';
-        console.error(message, fileChange);
-        throw new Error(message);
+        console.error('Unsupported file change', fileChange);
+        continue;
       }
     } else {
       if (shouldEscapeWikilinkDivider(fileChange, tablePositions)) {
