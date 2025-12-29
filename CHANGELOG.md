@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.5.3
+
+- fix: missing originalReference
+
 ## 46.5.2
 
 - fix: canvas text link
