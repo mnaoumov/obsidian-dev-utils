@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.6.1
+
+- fix: don't fail on incompatible canvas changes
+
 ## 46.6.0
 
 - fix: don't fail on incompatible canvas changes
