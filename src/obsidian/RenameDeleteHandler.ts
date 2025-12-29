@@ -605,10 +605,7 @@ class RenameHandler {
             return;
           }
 
-          const newAttachmentPath = renameMap.get(oldAttachmentPath);
-          if (!newAttachmentPath) {
-            return;
-          }
+          const newAttachmentPath = renameMap.get(oldAttachmentPath) ?? oldAttachmentPath;
 
           renamedFilePaths.add(newBacklinkPath);
           renamedLinks.add(`${newBacklinkPath}//${String(linkIndex)}`);
