@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.6.2
+
+- fix: renamed links
+
 ## 46.6.1
 
 - fix: don't fail on incompatible canvas changes
