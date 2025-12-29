@@ -19,21 +19,6 @@ import type { FileChange } from './FileChange.ts';
 import { isFrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
 
 /**
- * Reference from Advanced Canvas plugin.
- */
-export interface AdvancedCanvasReference extends Reference {
-  /**
-   * The position of the reference in the canvas.
-   */
-  position: {
-    /**
-     * The node ID.
-     */
-    nodeId: string;
-  };
-}
-
-/**
  * A reference within a file node in a canvas.
  */
 export interface CanvasFileNodeReference extends CanvasReference {
