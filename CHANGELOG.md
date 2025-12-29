@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 46.6.0
+
+- fix: don't fail on incompatible canvas changes
+- fix: undo Advanced Canvas plugin changes
+
 ## 46.5.3
 
 - fix: missing originalReference
