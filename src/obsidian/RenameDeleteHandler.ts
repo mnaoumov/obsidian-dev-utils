@@ -385,6 +385,10 @@ class Registry {
 
     const newPath = file.path;
 
+    if (oldPath === newPath) {
+      return;
+    }
+
     getLibDebugger('RenameDeleteHandler:handleRename')(`Handle Rename ${oldPath} -> ${newPath}`);
     if (this.handledRenames.has(oldPath, newPath)) {
       this.handledRenames.delete(oldPath, newPath);
