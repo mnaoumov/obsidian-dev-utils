@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 46.4.1
+
+- fix: add support for links from Advanced Canvas re <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/235>
+- chore: update libs
+
 ## 46.4.0
 
 - feat: allow disabling notices re <https://github.com/mnaoumov/obsidian-backlink-cache/issues/11>
