@@ -385,10 +385,6 @@ class Registry {
 
     const newPath = file.path;
 
-    if (oldPath === newPath) {
-      return;
-    }
-
     getLibDebugger('RenameDeleteHandler:handleRename')(`Handle Rename ${oldPath} -> ${newPath}`);
     if (this.handledRenames.has(oldPath, newPath)) {
       this.handledRenames.delete(oldPath, newPath);
@@ -537,6 +533,9 @@ class RenameHandler {
   }
 
   public async handle(): Promise<void> {
+    if (this.oldPath === this.newPath) {
+      return;
+    }
     this.abortSignal.throwIfAborted();
     await this.continueInterruptedRenames();
     this.abortSignal.throwIfAborted();
