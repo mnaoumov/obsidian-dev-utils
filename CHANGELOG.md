@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.5.0
+
+- feat: skip rename handling for the same path
+
 ## 46.4.1
 
 - fix: add support for links from Advanced Canvas re <https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/235>
