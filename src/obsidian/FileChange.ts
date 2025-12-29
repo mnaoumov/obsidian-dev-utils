@@ -249,7 +249,7 @@ async function applyCanvasChanges(
         change,
         path
       });
-      throw new Error(message);
+      continue;
     }
 
     const node = canvasData.nodes[change.reference.nodeIndex];
@@ -259,7 +259,7 @@ async function applyCanvasChanges(
         nodeIndex: change.reference.nodeIndex,
         path
       });
-      throw new Error(message);
+      return null;
     }
 
     if (isCanvasFileNodeChange(change)) {
@@ -295,7 +295,7 @@ async function applyCanvasChanges(
         path
       });
 
-      throw new Error(message);
+      return null;
     }
 
     if (typeof node.text !== 'string') {
@@ -305,7 +305,7 @@ async function applyCanvasChanges(
         path
       });
 
-      throw new Error(message);
+      return null;
     }
 
     const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.reference.originalReference, change.newContent));
