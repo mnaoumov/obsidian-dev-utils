@@ -55,8 +55,10 @@ import { getObsidianDevUtilsState } from './App.ts';
 import {
   applyContentChanges,
   applyFileChanges,
+  isAdvancedCanvasChange,
   isCanvasChange,
-  isContentChange
+  isContentChange,
+  toCanvasChange
 } from './FileChange.ts';
 import {
   getFile,
@@ -794,7 +796,7 @@ export async function editLinks(
       return null;
     }
 
-    return await getFileChanges(cache, isCanvasFile(app, pathOrFile), linkConverter, abortSignal);
+    return await getFileChanges(app, cache, isCanvasFile(app, pathOrFile), linkConverter, abortSignal, file);
   }, processOptions);
 }
 
@@ -819,7 +821,7 @@ export async function editLinksInContent(
   const newContent = await applyContentChanges(abortSignal, content, '', async () => {
     const cache = await parseMetadata(app, content);
     abortSignal.throwIfAborted();
-    const changes = await getFileChanges(cache, false, linkConverter, abortSignal);
+    const changes = await getFileChanges(app, cache, false, linkConverter, abortSignal);
     abortSignal.throwIfAborted();
     return changes;
   });
@@ -1524,10 +1526,12 @@ function generateWikiLink(linkText: string, alias: string | undefined, isEmbed: 
 }
 
 async function getFileChanges(
+  app: App,
   cache: CachedMetadata | null,
   isCanvasFileCache: boolean,
   linkConverter: (link: Reference, abortSignal: AbortSignal) => Promisable<MaybeReturn<string>>,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
+  file?: TFile
 ): Promise<FileChange[]> {
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
@@ -1556,6 +1560,11 @@ async function getFileChanges(
     if (isCanvasFileCache) {
       if (isCanvasChange(fileChange)) {
         changes.push(fileChange);
+      } else if (isAdvancedCanvasChange(fileChange)) {
+        if (!file) {
+          throw new Error('Advanced Canvas plugin changes are not supported for content changes.');
+        }
+        changes.push(await toCanvasChange(app, file, fileChange));
       } else {
         const message = 'Unsupported file change';
         console.error(message, fileChange);

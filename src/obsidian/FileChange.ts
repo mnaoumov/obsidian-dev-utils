@@ -8,7 +8,8 @@ import type {
   App,
   FrontmatterLinkCache,
   Reference,
-  ReferenceCache
+  ReferenceCache,
+  TFile
 } from 'obsidian';
 import type { CanvasData } from 'obsidian/Canvas.d.ts';
 
@@ -17,12 +18,12 @@ import {
   isReferenceCache
 } from 'obsidian-typings/implementations';
 
-import type { GenericObject } from '../ObjectUtils.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 import type { FrontmatterLinkCacheWithOffsets } from './FrontmatterLinkCacheWithOffsets.ts';
 import type {
+  AdvancedCanvasReference,
   CanvasFileNodeReference,
   CanvasReference,
   CanvasTextNodeReference
@@ -50,6 +51,10 @@ import {
   toFrontmatterLinkCacheWithOffsets
 } from './FrontmatterLinkCacheWithOffsets.ts';
 import {
+  getAllLinks,
+  parseMetadata
+} from './MetadataCache.ts';
+import {
   isCanvasReference,
   referenceToFileChange
 } from './Reference.ts';
@@ -74,6 +79,7 @@ export interface FileChange {
    */
   reference: Reference;
 }
+type AdvancedCanvasChange = { reference: AdvancedCanvasReference } & FileChange;
 type CanvasChange = { reference: CanvasReference } & FileChange;
 type CanvasFileNodeChange = { reference: CanvasFileNodeReference } & FileChange;
 type CanvasTextNodeChange = { reference: CanvasTextNodeReference } & FileChange;
@@ -149,6 +155,16 @@ export async function applyFileChanges(
 }
 
 /**
+ * Checks if a file change is a change from `Advanced Canvas` plugin.
+ *
+ * @param change - The file change to check.
+ * @returns Whether the file change is a change from `Advanced Canvas` plugin.
+ */
+export function isAdvancedCanvasChange(change: FileChange): change is AdvancedCanvasChange {
+  return isReferenceCache(change.reference) && 'nodeId' in change.reference.position;
+}
+
+/**
  * Checks if a file change is a canvas change.
  *
  * @param change - The file change to check.
@@ -209,6 +225,67 @@ export function isFrontmatterChangeWithOffsets(fileChange: FileChange): fileChan
 }
 
 /**
+ * Parses the canvas data from the content.
+ *
+ * @param content - The content to parse the canvas data from.
+ * @returns The parsed canvas data.
+ */
+export function parseCanvasData(content: string): CanvasData {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    parsed = null;
+  }
+
+  if (parsed === null || typeof parsed !== 'object') {
+    parsed = {};
+  }
+
+  return parsed as CanvasData;
+}
+
+/**
+ * Converts a change from `Advanced Canvas` plugin to a canvas change.
+ *
+ * @param app - The Obsidian app instance.
+ * @param file - The file to convert the change from.
+ * @param change - The change from `Advanced Canvas` plugin to convert.
+ * @returns The converted change.
+ */
+export async function toCanvasChange(app: App, file: TFile, change: AdvancedCanvasChange): Promise<CanvasChange> {
+  const content = await app.vault.cachedRead(file);
+  const canvasData = parseCanvasData(content);
+  const nodeIndex = canvasData.nodes.findIndex((node) => node.id === change.reference.position.nodeId);
+  if (nodeIndex === -1) {
+    throw new Error(`Node ${change.reference.position.nodeId} not found`);
+  }
+  const node = canvasData.nodes[nodeIndex];
+  if (!node) {
+    throw new Error(`Node ${change.reference.position.nodeId} not found`);
+  }
+  if (typeof node.text !== 'string') {
+    throw new Error(`Node ${change.reference.position.nodeId} is not a text node`);
+  }
+  const metadata = await parseMetadata(app, node.text);
+  const links = getAllLinks(metadata);
+  const linkIndex = links.findIndex((link) => link.original === change.reference.original);
+  if (linkIndex === -1) {
+    throw new Error(`Link ${change.reference.link} not found`);
+  }
+  return {
+    ...change,
+    reference: {
+      ...change.reference,
+      isCanvas: true,
+      key: `nodes.${String(nodeIndex)}.text.${String(linkIndex)}`,
+      nodeIndex,
+      type: 'file'
+    }
+  };
+}
+
+/**
  * Converts a frontmatter change to a frontmatter change with offsets.
  *
  * @param fileChange - The file change to convert.
@@ -238,7 +315,7 @@ async function applyCanvasChanges(
     return null;
   }
 
-  const canvasData = parseJsonSafe(content) as CanvasData;
+  const canvasData = parseCanvasData(content);
 
   const canvasTextChanges = new Map<number, CanvasTextNodeChange[]>();
 
@@ -448,21 +525,6 @@ function parseFrontmatterSafely(content: string, path: string): { frontmatter: C
   }
 
   return { frontmatter, hasFrontmatterError };
-}
-
-function parseJsonSafe(content: string): GenericObject {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    parsed = null;
-  }
-
-  if (parsed === null || typeof parsed !== 'object') {
-    parsed = {};
-  }
-
-  return parsed as GenericObject;
 }
 
 function sortAndFilterChanges(changes: FileChange[]): FileChange[] {
