@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.5.1
+
+- feat: skip rename handling for the same path
+
 ## 46.5.0
 
 - feat: skip rename handling for the same path
