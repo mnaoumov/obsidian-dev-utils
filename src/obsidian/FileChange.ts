@@ -280,7 +280,7 @@ export async function toCanvasChange(app: App, file: TFile, change: AdvancedCanv
       isCanvas: true,
       key: `nodes.${String(nodeIndex)}.text.${String(linkIndex)}`,
       nodeIndex,
-      type: 'file'
+      type: 'text'
     }
   };
 }
