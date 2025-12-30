@@ -263,12 +263,12 @@ export async function getOrCreateFolderSafe(app: App, path: string): Promise<TFo
  * Gets a safe rename path for a file.
  *
  * @param app - The application instance.
- * @param oldPathOrFile - The old path or file to rename.
- * @param newPath - The new path to rename the file to.
- * @returns The safe rename path for the file.
+ * @param oldPathOrAbstractFile - The old path or abstract file to rename.
+ * @param newPath - The new path to rename the abstract file to.
+ * @returns The safe rename path for the abstract file.
  */
-export function getSafeRenamePath(app: App, oldPathOrFile: PathOrFile, newPath: string): string {
-  const oldPath = getPath(app, oldPathOrFile);
+export function getSafeRenamePath(app: App, oldPathOrAbstractFile: PathOrAbstractFile, newPath: string): string {
+  const oldPath = getPath(app, oldPathOrAbstractFile);
 
   if (app.vault.adapter.insensitive) {
     let folderPath = dirname(newPath);
