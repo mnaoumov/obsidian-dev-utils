@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.11.1
+
+- feat: renameSafe for abstract files
+
 ## 46.11.0
 
 - feat: getSafeRenamePath
