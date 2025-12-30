@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.7.0
+
+- feat: getOrCreateFileSafe/getOrCreateFolderSafe
+
 ## 46.6.2
 
 - fix: renamed links
