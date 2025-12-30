@@ -17,11 +17,16 @@ import {
   MarkdownPreviewRenderer,
   MarkdownRenderer
 } from 'obsidian';
+import { InternalPluginName } from 'obsidian-typings/implementations';
 
-import type { PathOrFile } from './FileSystem.ts';
+import type { PathOrAbstractFile } from './FileSystem.ts';
 
 import { getZIndex } from '../HTMLElement.ts';
-import { getPath } from './FileSystem.ts';
+import {
+  getAbstractFileOrNull,
+  getPath,
+  isFolder
+} from './FileSystem.ts';
 import { invokeWithPatchAsync } from './MonkeyAround.ts';
 
 let domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
@@ -190,13 +195,23 @@ export async function renderExternalLink(app: App, url: string, displayText?: st
  * Renders an internal link.
  *
  * @param app - The Obsidian app instance.
- * @param pathOrFile - The path or file to render the internal link for.
+ * @param pathOrAbstractFile - The path or abstract file to render the internal link for.
  * @param displayText - The text to display for the internal link.
  * @returns The HTMLAnchorElement containing the rendered internal link.
  */
-export async function renderInternalLink(app: App, pathOrFile: PathOrFile, displayText?: string): Promise<HTMLAnchorElement> {
-  const path = getPath(app, pathOrFile);
+export async function renderInternalLink(app: App, pathOrAbstractFile: PathOrAbstractFile, displayText?: string): Promise<HTMLAnchorElement> {
+  const abstractFile = getAbstractFileOrNull(app, pathOrAbstractFile);
+  const path = getPath(app, pathOrAbstractFile);
   displayText ??= path;
+  if (isFolder(abstractFile)) {
+    return createEl('a', { text: displayText }, (aEl) => {
+      aEl.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        app.internalPlugins.getEnabledPluginById(InternalPluginName.FileExplorer)?.revealInFolder(abstractFile);
+      });
+    });
+  }
+
   const wrapperEl = createSpan();
   await fullRender({
     app,
