@@ -21,6 +21,7 @@ import {
 import type { RetryOptions } from '../Async.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type {
+  PathOrAbstractFile,
   PathOrFile,
   PathOrFolder
 } from './FileSystem.ts';
@@ -305,6 +306,34 @@ export async function invokeWithFileSystemLock(app: App, pathOrFile: PathOrFile,
     fn(content);
     return content;
   });
+}
+
+/**
+ * Checks if a path or file is a child of another path or file.
+ *
+ * @param app - The application instance.
+ * @param a - The first path or file.
+ * @param b - The second path or file.
+ * @returns A boolean indicating whether the first path or file is a child of the second path or file.
+ */
+export function isChild(app: App, a: PathOrAbstractFile, b: PathOrAbstractFile): boolean {
+  const aPath = getPath(app, a);
+  const bPath = getPath(app, b);
+  return aPath.startsWith(`${bPath}/`);
+}
+
+/**
+ * Checks if a path or file is a child or self of another path or file.
+ *
+ * @param app - The application instance.
+ * @param a - The first path or file.
+ * @param b - The second path or file.
+ * @returns A boolean indicating whether the first path or file is a child or self of the second path or file.
+ */
+export function isChildOrSelf(app: App, a: PathOrAbstractFile, b: PathOrAbstractFile): boolean {
+  const aPath = getPath(app, a);
+  const bPath = getPath(app, b);
+  return aPath === bPath || isChild(app, a, b);
 }
 
 /**
