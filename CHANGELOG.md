@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 46.11.0
+
+- feat: getSafeRenamePath
+- refactor: getFileOrNull
+- feat: reuse adapter.insensitive by default
+
 ## 46.10.0
 
 - fix: initialization re <https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/57>
