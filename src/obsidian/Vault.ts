@@ -42,6 +42,7 @@ import {
   unlockEditor
 } from './Editor.ts';
 import {
+  getAbstractFile,
   getAbstractFileOrNull,
   getFile,
   getFileOrNull,
@@ -511,18 +512,18 @@ export async function readSafe(app: App, pathOrFile: PathOrFile): Promise<null |
  * If the new path already exists, the file will be renamed to an available path.
  *
  * @param app - The application instance.
- * @param oldPathOrFile - The old path or file to rename.
+ * @param oldPathOrAbstractFile - The old path or file to rename.
  * @param newPath - The new path to rename the file to.
  * @returns A {@link Promise} that resolves to the new path of the file.
  */
-export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
-  const oldFile = getFile(app, oldPathOrFile);
+export async function renameSafe(app: App, oldPathOrAbstractFile: PathOrAbstractFile, newPath: string): Promise<string> {
+  const oldAbstractFile = getAbstractFile(app, oldPathOrAbstractFile);
 
-  const newAvailablePath = getSafeRenamePath(app, oldPathOrFile, newPath);
+  const newAvailablePath = getSafeRenamePath(app, oldPathOrAbstractFile, newPath);
 
-  if (oldFile.path.toLowerCase() === newAvailablePath.toLowerCase()) {
-    if (oldFile.path !== newPath) {
-      await app.fileManager.renameFile(oldFile, newAvailablePath);
+  if (oldAbstractFile.path.toLowerCase() === newAvailablePath.toLowerCase()) {
+    if (oldAbstractFile.path !== newPath) {
+      await app.fileManager.renameFile(oldAbstractFile, newAvailablePath);
     }
     return newAvailablePath;
   }
@@ -531,9 +532,9 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
   await createFolderSafe(app, newFolderPath);
 
   try {
-    await app.fileManager.renameFile(oldFile, newAvailablePath);
+    await app.fileManager.renameFile(oldAbstractFile, newAvailablePath);
   } catch (e) {
-    if (!await app.vault.exists(newAvailablePath) || await app.vault.exists(oldFile.path)) {
+    if (!await app.vault.exists(newAvailablePath) || await app.vault.exists(oldAbstractFile.path)) {
       throw e;
     }
   }
