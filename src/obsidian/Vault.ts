@@ -234,7 +234,7 @@ export function getNoteFilesSorted(app: App): TFile[] {
  * @returns A {@link Promise} that resolves to the file.
  */
 export async function getOrCreateFileSafe(app: App, path: string): Promise<TFile> {
-  const file = getAbstractFileOrNull(app, path, app.vault.adapter.insensitive);
+  const file = getAbstractFileOrNull(app, path);
   if (isFile(file)) {
     return file;
   }
@@ -252,7 +252,7 @@ export async function getOrCreateFileSafe(app: App, path: string): Promise<TFile
  * @returns A {@link Promise} that resolves to the folder.
  */
 export async function getOrCreateFolderSafe(app: App, path: string): Promise<TFolder> {
-  const folder = getAbstractFileOrNull(app, path, app.vault.adapter.insensitive);
+  const folder = getAbstractFileOrNull(app, path);
   if (isFolder(folder)) {
     return folder;
   }
@@ -516,7 +516,7 @@ export async function readSafe(app: App, pathOrFile: PathOrFile): Promise<null |
  * @returns A {@link Promise} that resolves to the new path of the file.
  */
 export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
-  const oldFile = getFile(app, oldPathOrFile, false, true);
+  const oldFile = getFile(app, oldPathOrFile);
 
   const newAvailablePath = getSafeRenamePath(app, oldPathOrFile, newPath);
 
