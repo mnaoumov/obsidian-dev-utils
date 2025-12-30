@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.9.0
+
+- feat: rename with update links
+
 ## 46.8.0
 
 - chore: lint
