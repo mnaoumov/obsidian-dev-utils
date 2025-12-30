@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.11.2
+
+- fix: isChild for root
+
 ## 46.11.1
 
 - feat: renameSafe for abstract files
