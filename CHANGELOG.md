@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 46.10.0
+
+- fix: initialization re <https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/57>
+- feat: renderInternalLink to folder
+
 ## 46.9.0
 
 - feat: rename with update links
