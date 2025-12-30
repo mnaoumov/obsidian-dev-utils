@@ -466,6 +466,7 @@ export function trimMarkdownExtension(app: App, file: TAbstractFile): string {
 }
 
 function getFileInternal(app: App, path: string, isCaseInsensitive?: boolean): null | TAbstractFile {
+  isCaseInsensitive ??= app.vault.adapter.insensitive;
   if (isCaseInsensitive) {
     return app.vault.getAbstractFileByPathInsensitive(path);
   }
