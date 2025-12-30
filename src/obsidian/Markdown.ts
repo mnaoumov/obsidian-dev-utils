@@ -21,6 +21,7 @@ import { InternalPluginName } from 'obsidian-typings/implementations';
 
 import type { PathOrAbstractFile } from './FileSystem.ts';
 
+import { requestAnimationFrameAsync } from '../Async.ts';
 import { getZIndex } from '../HTMLElement.ts';
 import {
   getAbstractFileOrNull,
@@ -242,7 +243,11 @@ async function getDomEventsHandlersConstructor(app: App): Promise<DomEventsHandl
       }
     }, async () => {
       const leaf = app.workspace.getLeaf(true);
-      await leaf.openLinkText(mdFile.path, '');
+      await leaf.openFile(mdFile, {
+        active: true,
+        state: { mode: 'preview' }
+      });
+      await requestAnimationFrameAsync();
       leaf.detach();
     });
 
