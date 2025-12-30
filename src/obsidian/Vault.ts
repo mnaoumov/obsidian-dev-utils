@@ -320,6 +320,15 @@ export async function invokeWithFileSystemLock(app: App, pathOrFile: PathOrFile,
 export function isChild(app: App, a: PathOrAbstractFile, b: PathOrAbstractFile): boolean {
   const aPath = getPath(app, a);
   const bPath = getPath(app, b);
+
+  if (aPath === bPath) {
+    return false;
+  }
+
+  if (bPath === '/') {
+    return true;
+  }
+
   return aPath.startsWith(`${bPath}/`);
 }
 
