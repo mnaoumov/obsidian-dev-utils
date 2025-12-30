@@ -522,7 +522,7 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
 
   if (oldFile.path.toLowerCase() === newAvailablePath.toLowerCase()) {
     if (oldFile.path !== newPath) {
-      await app.vault.rename(oldFile, newAvailablePath);
+      await app.fileManager.renameFile(oldFile, newAvailablePath);
     }
     return newAvailablePath;
   }
@@ -531,7 +531,7 @@ export async function renameSafe(app: App, oldPathOrFile: PathOrFile, newPath: s
   await createFolderSafe(app, newFolderPath);
 
   try {
-    await app.vault.rename(oldFile, newAvailablePath);
+    await app.fileManager.renameFile(oldFile, newAvailablePath);
   } catch (e) {
     if (!await app.vault.exists(newAvailablePath) || await app.vault.exists(oldFile.path)) {
       throw e;

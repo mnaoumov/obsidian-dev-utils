@@ -709,7 +709,7 @@ class RenameHandler {
       settingsManager: this.settingsManager
     }).handle();
 
-    await this.app.vault.rename(getFile(this.app, tempPath), this.newPath);
+    await this.app.fileManager.renameFile(getFile(this.app, tempPath), this.newPath);
     return true;
   }
 
