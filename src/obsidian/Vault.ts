@@ -41,12 +41,14 @@ import {
   unlockEditor
 } from './Editor.ts';
 import {
+  getAbstractFileOrNull,
   getFile,
   getFileOrNull,
   getFolder,
   getFolderOrNull,
   getPath,
   isFile,
+  isFolder,
   isMarkdownFile,
   isNote
 } from './FileSystem.ts';
@@ -218,6 +220,42 @@ export function getMarkdownFilesSorted(app: App): TFile[] {
  */
 export function getNoteFilesSorted(app: App): TFile[] {
   return app.vault.getAllLoadedFiles().filter((file) => isFile(file) && isNote(app, file)).sort((a, b) => a.path.localeCompare(b.path)) as TFile[];
+}
+
+/**
+ * Gets or creates a file safely in the specified path.
+ *
+ * If the file already exists, it will be returned.
+ * If the file does not exist, it will be created and returned.
+ *
+ * @param app - The application instance.
+ * @param path - The path of the file to get or create.
+ * @returns A {@link Promise} that resolves to the file.
+ */
+export async function getOrCreateFileSafe(app: App, path: string): Promise<TFile> {
+  const file = getAbstractFileOrNull(app, path, app.vault.adapter.insensitive);
+  if (isFile(file)) {
+    return file;
+  }
+  return await app.vault.create(getAvailablePath(app, path), '');
+}
+
+/**
+ * Gets or creates a folder safely in the specified path.
+ *
+ * If the folder already exists, it will be returned.
+ * If the folder does not exist, it will be created and returned.
+ *
+ * @param app - The application instance.
+ * @param path - The path of the folder to get or create.
+ * @returns A {@link Promise} that resolves to the folder.
+ */
+export async function getOrCreateFolderSafe(app: App, path: string): Promise<TFolder> {
+  const folder = getAbstractFileOrNull(app, path, app.vault.adapter.insensitive);
+  if (isFolder(folder)) {
+    return folder;
+  }
+  return await app.vault.createFolder(getAvailablePath(app, path));
 }
 
 /**
