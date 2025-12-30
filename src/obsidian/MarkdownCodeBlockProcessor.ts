@@ -23,6 +23,7 @@ import {
   unindent
 } from '../String.ts';
 import { resolveValue } from '../ValueProvider.ts';
+import { getFileOrNull } from './FileSystem.ts';
 import {
   invokeWithFileSystemLock,
   process,
@@ -128,7 +129,7 @@ interface CreateMarkdownInfoFromMatchOptions {
 export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfoOptions): Promise<CodeBlockMarkdownInformation | null> {
   const { app, ctx, el, source } = options;
 
-  const sourceFile = app.vault.getFileByPath(ctx.sourcePath);
+  const sourceFile = getFileOrNull(app, ctx.sourcePath);
   if (!sourceFile) {
     throw new Error(`Source file ${ctx.sourcePath} not found.`);
   }
