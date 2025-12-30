@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 46.8.0
+
+- chore: lint
+- chore: update libs
+- feat: isChild/isChildOrSelf
+
 ## 46.7.0
 
 - feat: getOrCreateFileSafe/getOrCreateFolderSafe
