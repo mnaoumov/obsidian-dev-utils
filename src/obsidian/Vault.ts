@@ -205,6 +205,36 @@ export function getAvailablePath(app: App, path: string): string {
 }
 
 /**
+ * Gets a safe file path for a file or folder.
+ *
+ * @param app - The application instance.
+ * @param path - The path of the file or folder to get a safe path for.
+ * @returns The safe path for the file or folder.
+ */
+export function getFilePathSafe(app: App, path: string): string {
+  const folder = getAbstractFileOrNull(app, path);
+  if (isFile(folder)) {
+    return path;
+  }
+  return getAvailablePath(app, path);
+}
+
+/**
+ * Gets a safe folder path for a file or folder.
+ *
+ * @param app - The application instance.
+ * @param path - The path of the file or folder to get a safe path for.
+ * @returns The safe path for the file or folder.
+ */
+export function getFolderPathSafe(app: App, path: string): string {
+  const folder = getAbstractFileOrNull(app, path);
+  if (isFolder(folder)) {
+    return path;
+  }
+  return getAvailablePath(app, path);
+}
+
+/**
  * Retrieves an array of Markdown files from the app's vault and sorts them alphabetically by their file path.
  *
  * @param app - The Obsidian app instance.
@@ -235,11 +265,12 @@ export function getNoteFilesSorted(app: App): TFile[] {
  * @returns A {@link Promise} that resolves to the file.
  */
 export async function getOrCreateFileSafe(app: App, path: string): Promise<TFile> {
-  const file = getAbstractFileOrNull(app, path);
-  if (isFile(file)) {
+  path = getFilePathSafe(app, path);
+  const file = getFileOrNull(app, path);
+  if (file) {
     return file;
   }
-  return await app.vault.create(getAvailablePath(app, path), '');
+  return await app.vault.create(path, '');
 }
 
 /**
@@ -253,11 +284,12 @@ export async function getOrCreateFileSafe(app: App, path: string): Promise<TFile
  * @returns A {@link Promise} that resolves to the folder.
  */
 export async function getOrCreateFolderSafe(app: App, path: string): Promise<TFolder> {
-  const folder = getAbstractFileOrNull(app, path);
-  if (isFolder(folder)) {
+  path = getFolderPathSafe(app, path);
+  const folder = getFolderOrNull(app, path);
+  if (folder) {
     return folder;
   }
-  return await app.vault.createFolder(getAvailablePath(app, path));
+  return await app.vault.createFolder(path);
 }
 
 /**
