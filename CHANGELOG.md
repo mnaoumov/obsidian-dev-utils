@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 46.13.0
+
+- chore: update libs
+- feat: getFilePathSafe/getFolderPathSafe
+
 ## 46.12.0
 
 - chore: lint
