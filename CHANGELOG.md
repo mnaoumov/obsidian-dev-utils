@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 46.12.0
+
+- chore: lint
+- chore: update libs
+- feat: configure [MD024](https://github.com/DavidAnson/markdownlint/blob/main/doc/md024.md)
+- chore: update libs
+
 ## 46.11.2
 
 - fix: isChild for root
