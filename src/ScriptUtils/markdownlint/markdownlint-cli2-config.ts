@@ -14,6 +14,9 @@ import type { MarkdownlintCli2ConfigurationSchema } from './@types/markdownlint-
 export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigurationSchema = {
   config: {
     'MD013': false,
+    'MD024': {
+      'siblings_only': true
+    },
     'MD052': {
       // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       ignored_labels: [
