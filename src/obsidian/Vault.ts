@@ -7,12 +7,15 @@
 import type {
   App,
   EventRef,
-  ListedFiles,
+  ListedFiles
+} from 'obsidian';
+
+import {
+  MarkdownView,
+  TAbstractFile,
   TFile,
   TFolder
 } from 'obsidian';
-
-import { MarkdownView } from 'obsidian';
 import {
   parentFolderPath,
   ViewType
@@ -42,15 +45,18 @@ import {
   unlockEditor
 } from './Editor.ts';
 import {
+  asFile,
+  asFolder,
+  FileSystemType,
   getAbstractFile,
   getAbstractFileOrNull,
   getFile,
   getFileOrNull,
+  getFileSystemType,
   getFolder,
   getFolderOrNull,
   getPath,
   isFile,
-  isFolder,
   isMarkdownFile,
   isNote
 } from './FileSystem.ts';
@@ -193,6 +199,24 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
 }
 
 /**
+ * Gets a safe path for a file or folder.
+ *
+ * @param app - The application instance.
+ * @param path - The path of the file or folder to get a safe path for.
+ * @param type - The type of the file system object.
+ * @returns The safe path for the file or folder.
+ */
+export function getAbstractFilePathSafe(app: App, path: string, type: FileSystemType): string {
+  const abstractFile = getAbstractFileOrNull(app, path);
+
+  if (abstractFile && getFileSystemType(abstractFile) === type) {
+    return path;
+  }
+
+  return getAvailablePath(app, path);
+}
+
+/**
  * Gets an available path for a file in the vault.
  *
  * @param app - The application instance.
@@ -212,11 +236,7 @@ export function getAvailablePath(app: App, path: string): string {
  * @returns The safe path for the file or folder.
  */
 export function getFilePathSafe(app: App, path: string): string {
-  const folder = getAbstractFileOrNull(app, path);
-  if (isFile(folder)) {
-    return path;
-  }
-  return getAvailablePath(app, path);
+  return getAbstractFilePathSafe(app, path, FileSystemType.File);
 }
 
 /**
@@ -227,11 +247,7 @@ export function getFilePathSafe(app: App, path: string): string {
  * @returns The safe path for the file or folder.
  */
 export function getFolderPathSafe(app: App, path: string): string {
-  const folder = getAbstractFileOrNull(app, path);
-  if (isFolder(folder)) {
-    return path;
-  }
-  return getAvailablePath(app, path);
+  return getAbstractFilePathSafe(app, path, FileSystemType.Folder);
 }
 
 /**
@@ -255,6 +271,34 @@ export function getNoteFilesSorted(app: App): TFile[] {
 }
 
 /**
+ * Gets or creates an abstract file safely in the specified path.
+ *
+ * If the file already exists, it will be returned.
+ * If the file does not exist, it will be created and returned.
+ *
+ * @param app - The application instance.
+ * @param path - The path of the abstract file to get or create.
+ * @param type - The type of the abstract file to get or create.
+ * @returns A {@link Promise} that resolves to the abstract file.
+ */
+export async function getOrCreateAbstractFileSafe(app: App, path: string, type: FileSystemType): Promise<TAbstractFile> {
+  path = getAbstractFilePathSafe(app, path, type);
+  const abstractFile = getAbstractFileOrNull(app, path);
+  if (abstractFile) {
+    return abstractFile;
+  }
+
+  switch (type) {
+    case FileSystemType.File:
+      return await app.vault.create(path, '');
+    case FileSystemType.Folder:
+      return await app.vault.createFolder(path);
+    default:
+      throw new Error(`Invalid file system type: ${type as string}`);
+  }
+}
+
+/**
  * Gets or creates a file safely in the specified path.
  *
  * If the file already exists, it will be returned.
@@ -265,12 +309,7 @@ export function getNoteFilesSorted(app: App): TFile[] {
  * @returns A {@link Promise} that resolves to the file.
  */
 export async function getOrCreateFileSafe(app: App, path: string): Promise<TFile> {
-  path = getFilePathSafe(app, path);
-  const file = getFileOrNull(app, path);
-  if (file) {
-    return file;
-  }
-  return await app.vault.create(path, '');
+  return asFile(await getOrCreateAbstractFileSafe(app, path, FileSystemType.File));
 }
 
 /**
@@ -284,12 +323,7 @@ export async function getOrCreateFileSafe(app: App, path: string): Promise<TFile
  * @returns A {@link Promise} that resolves to the folder.
  */
 export async function getOrCreateFolderSafe(app: App, path: string): Promise<TFolder> {
-  path = getFolderPathSafe(app, path);
-  const folder = getFolderOrNull(app, path);
-  if (folder) {
-    return folder;
-  }
-  return await app.vault.createFolder(path);
+  return asFolder(await getOrCreateAbstractFileSafe(app, path, FileSystemType.Folder));
 }
 
 /**

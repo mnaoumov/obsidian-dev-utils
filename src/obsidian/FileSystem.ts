@@ -42,6 +42,20 @@ export const CANVAS_FILE_EXTENSION = 'canvas';
 export const MARKDOWN_FILE_EXTENSION = 'md';
 
 /**
+ * A type of file system object.
+ */
+export enum FileSystemType {
+  /**
+   * A file.
+   */
+  File = 'file',
+  /**
+   * A folder.
+   */
+  Folder = 'folder'
+}
+
+/**
  * A path or an abstract file.
  */
 export type PathOrAbstractFile = string | TAbstractFile;
@@ -250,6 +264,23 @@ export function getFileOrNull(app: App, pathOrFile: null | PathOrFile, isCaseIns
     return file;
   }
   return null;
+}
+
+/**
+ * Gets the type of a file system object.
+ *
+ * @param abstractFile - The abstract file to get the type of.
+ * @returns The type of the abstract file.
+ * @throws Error if the abstract file is not a file or a folder.
+ */
+export function getFileSystemType(abstractFile: TAbstractFile): FileSystemType {
+  if (isFile(abstractFile)) {
+    return FileSystemType.File;
+  }
+  if (isFolder(abstractFile)) {
+    return FileSystemType.Folder;
+  }
+  throw new Error('Abstract file is not a file or a folder');
 }
 
 /**
