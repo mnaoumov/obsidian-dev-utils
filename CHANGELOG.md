@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.15.0
+
+- chore: exclude ScriptUtils from main export
+
 ## 46.14.0
 
 - chore: update libs
