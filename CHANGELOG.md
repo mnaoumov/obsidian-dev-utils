@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.16.0
+
+- chore: exclude @types from exports
+
 ## 46.15.0
 
 - chore: exclude ScriptUtils from main export
