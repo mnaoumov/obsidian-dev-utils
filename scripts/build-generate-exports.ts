@@ -40,7 +40,7 @@ await wrapCliTask(async () => {
       continue;
     }
 
-    if (dirent.name === ObsidianDevUtilsRepoPaths.Types as string) {
+    if (dirent.name === ObsidianDevUtilsRepoPaths.Types as string || dirent.parentPath.split('/').includes(ObsidianDevUtilsRepoPaths.Types as string)) {
       continue;
     }
 
