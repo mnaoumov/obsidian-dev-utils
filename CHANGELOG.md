@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.17.0
+
+- chore: exclude @types from exports
+
 ## 46.16.0
 
 - chore: exclude @types from exports
