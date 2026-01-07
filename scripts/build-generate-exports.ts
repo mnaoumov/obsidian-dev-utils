@@ -40,6 +40,10 @@ await wrapCliTask(async () => {
       continue;
     }
 
+    if (dirent.name === ObsidianDevUtilsRepoPaths.Types as string) {
+      continue;
+    }
+
     const path = join(dirent.parentPath, dirent.name);
     srcFolders.push(path);
   }
