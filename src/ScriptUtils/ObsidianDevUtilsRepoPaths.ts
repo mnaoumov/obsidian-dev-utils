@@ -118,6 +118,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Scripts folder. */
   Scripts = 'scripts',
 
+  /** ScriptUtils folder. */
+  ScriptUtils = 'ScriptUtils',
+
   /** Source folder. */
   Src = 'src',
 

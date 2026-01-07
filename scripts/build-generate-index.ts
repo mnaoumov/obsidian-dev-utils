@@ -66,5 +66,9 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
     sourceFile = normalizeIfRelative(dirent.name);
   }
 
+  if (name === ObsidianDevUtilsRepoPaths.ScriptUtils as string) {
+    return;
+  }
+
   return `export * as ${makeValidVariableName(name)} from '${sourceFile}';`;
 }
