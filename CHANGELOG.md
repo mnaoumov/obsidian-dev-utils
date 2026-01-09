@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.17.1
+
+- fix: restore types exports
+
 ## 46.17.0
 
 - chore: exclude @types from exports
