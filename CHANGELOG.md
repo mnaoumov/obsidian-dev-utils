@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 46.17.2
+
+- chore: update libs
+
 ## 46.17.1
 
 - fix: restore types exports
