@@ -88,21 +88,21 @@ import {
 } from './VaultEx.ts';
 
 /**
- * A behavior of the rename/delete handler when deleting empty attachment folders.
+ * A behavior of the rename/delete handler when deleting empty folders.
  */
-export enum EmptyAttachmentFolderBehavior {
+export enum EmptyFolderBehavior {
   /**
-   * Delete the empty attachment folder.
+   * Delete the empty folder.
    */
   Delete = 'Delete',
 
   /**
-   * Delete the empty attachment folder and all its empty parents.
+   * Delete the empty folder and all its empty parents.
    */
   DeleteWithEmptyParents = 'DeleteWithEmptyParents',
 
   /**
-   * Keep the empty attachment folder.
+   * Keep the empty folder.
    */
   Keep = 'Keep'
 }
@@ -112,9 +112,9 @@ export enum EmptyAttachmentFolderBehavior {
  */
 export interface RenameDeleteHandlerSettings {
   /**
-   * A behavior of the rename/delete handler when deleting empty attachment folders.
+   * A behavior of the rename/delete handler when deleting empty folders.
    */
-  emptyAttachmentFolderBehavior: EmptyAttachmentFolderBehavior;
+  emptyFolderBehavior: EmptyFolderBehavior;
 
   /**
    * Whether the path is a note.
@@ -239,7 +239,7 @@ class DeleteHandler {
         }
 
         parentFolderPaths.add(attachmentFile.parent?.path ?? '');
-        await deleteSafe(this.app, attachmentFile, this.file.path, false, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
+        await deleteSafe(this.app, attachmentFile, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
       }
     }
 
@@ -259,7 +259,7 @@ class DeleteHandler {
 
     this.abortSignal.throwIfAborted();
 
-    await deleteSafe(this.app, attachmentFolder, this.file.path, false, settings.emptyAttachmentFolderBehavior !== EmptyAttachmentFolderBehavior.Keep);
+    await deleteSafe(this.app, attachmentFolder, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
     this.abortSignal.throwIfAborted();
   }
 }
@@ -954,8 +954,8 @@ class SettingsManager {
     for (const settingsBuilder of settingsBuilders) {
       const newSettings = settingsBuilder();
       settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
-      if (newSettings.emptyAttachmentFolderBehavior) {
-        settings.emptyAttachmentFolderBehavior ??= newSettings.emptyAttachmentFolderBehavior;
+      if (newSettings.emptyFolderBehavior) {
+        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
       }
       settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
       settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
@@ -968,7 +968,7 @@ class SettingsManager {
       settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
     }
 
-    settings.emptyAttachmentFolderBehavior ??= EmptyAttachmentFolderBehavior.Keep;
+    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
     return settings;
   }
 
@@ -989,15 +989,15 @@ export function registerRenameDeleteHandlers(plugin: AbortablePlugin, settingsBu
 }
 
 async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHandlerSettings>, parentFolderPaths: string[]): Promise<void> {
-  if (settings.emptyAttachmentFolderBehavior === EmptyAttachmentFolderBehavior.Keep) {
+  if (settings.emptyFolderBehavior === EmptyFolderBehavior.Keep) {
     return;
   }
   for (const parentFolderPath of parentFolderPaths) {
-    switch (settings.emptyAttachmentFolderBehavior) {
-      case EmptyAttachmentFolderBehavior.Delete:
+    switch (settings.emptyFolderBehavior) {
+      case EmptyFolderBehavior.Delete:
         await deleteEmptyFolder(app, parentFolderPath);
         break;
-      case EmptyAttachmentFolderBehavior.DeleteWithEmptyParents:
+      case EmptyFolderBehavior.DeleteWithEmptyParents:
         await deleteEmptyFolderHierarchy(app, parentFolderPath);
         break;
       default:
