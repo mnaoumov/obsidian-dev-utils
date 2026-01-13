@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 47.0.0
+
+- chore: update libs
+- fix: rename EmptyFolderBehavior as it applies not only to attachment folders
+
 ## 46.17.2
 
 - chore: update libs
