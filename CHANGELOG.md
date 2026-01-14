@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 47.1.0
+
+- chore: lint
+- feat: add SettingGroupEx
+- chore: update libs
+
 ## 47.0.0
 
 - chore: update libs
