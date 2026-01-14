@@ -72,6 +72,7 @@ export const obsidianDevUtilsConfigs: Linter.Config[] = defineConfig(
 function getEslintCommentsConfigs(): Linter.Config[] {
   return defineConfig([
     {
+      // eslint-disable-next-line import-x/no-named-as-default-member -- The default export name `recommended` is too confusing.
       extends: [commentsConfigs.recommended],
       files: typeScriptFiles,
       rules: {
