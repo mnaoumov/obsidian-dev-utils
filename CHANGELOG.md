@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 47.2.0
+
+- feat: add submenu
+- chore: update libs
+
 ## 47.1.0
 
 - chore: lint
