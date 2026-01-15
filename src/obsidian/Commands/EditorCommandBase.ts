@@ -6,6 +6,7 @@
 
 import type {
   Editor,
+  IconName,
   MarkdownFileInfo,
   Menu,
   Plugin,
@@ -32,6 +33,11 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
    * The section to use in the editor menu.
    */
   protected readonly editorMenuSection?: string;
+
+  /**
+   * The icon to use in the editor menu submenu.
+   */
+  protected readonly editorMenuSubmenuIcon?: IconName;
 
   /**
    * Checks if the command can execute or executes it.
@@ -94,11 +100,21 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
       return;
     }
 
+    let editorMenuSection = this.editorMenuSection;
+    if (this.editorMenuSubmenuIcon === undefined) {
+      editorMenuSection ??= '';
+    } else {
+      editorMenuSection ??= this.plugin.manifest.name;
+      menu.setSectionSubmenu(editorMenuSection, {
+        icon: this.editorMenuSubmenuIcon,
+        title: editorMenuSection
+      });
+    }
     menu.addItem((item) => {
       item
         .setTitle(this.editorMenuItemName ?? this.originalName)
         .setIcon(this.icon)
-        .setSection(this.editorMenuSection ?? '')
+        .setSection(editorMenuSection)
         .onClick(() => this.createEditorCommandInvocation(editor, ctx).invoke(false));
     });
   }

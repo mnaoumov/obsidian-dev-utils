@@ -5,6 +5,7 @@
  */
 
 import type {
+  IconName,
   Menu,
   Plugin,
   TAbstractFile,
@@ -31,6 +32,11 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
   protected readonly fileMenuSection?: string;
 
   /**
+   * The icon to use in the file menu submenu.
+   */
+  protected readonly fileMenuSubmenuIcon?: IconName;
+
+  /**
    * The item name to use in the files menu.
    */
   protected readonly filesMenuItemName?: string;
@@ -39,6 +45,11 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
    * The section to use in the files menu.
    */
   protected readonly filesMenuSection?: string;
+
+  /**
+   * The icon to use in the files menu submenu.
+   */
+  protected readonly filesMenuSubmenuIcon?: IconName;
 
   /**
    * Checks if the command can execute or executes it.
@@ -138,11 +149,21 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
       return;
     }
 
+    let fileMenuSection = this.fileMenuSection;
+    if (this.fileMenuSubmenuIcon === undefined) {
+      fileMenuSection ??= '';
+    } else {
+      fileMenuSection ??= this.plugin.manifest.name;
+      menu.setSectionSubmenu(fileMenuSection, {
+        icon: this.fileMenuSubmenuIcon,
+        title: fileMenuSection
+      });
+    }
     menu.addItem((item) => {
       item
         .setTitle(this.fileMenuItemName ?? this.originalName)
         .setIcon(this.icon)
-        .setSection(this.fileMenuSection ?? '')
+        .setSection(fileMenuSection)
         .onClick(() => this.createCommandInvocation(abstractFile).invoke(false));
     });
   }
@@ -156,11 +177,23 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
       return;
     }
 
+    let filesMenuSection = this.filesMenuSection ?? this.fileMenuSection;
+    const filesMenuSubmenuIcon = this.filesMenuSubmenuIcon ?? this.fileMenuSubmenuIcon;
+    if (filesMenuSubmenuIcon === undefined) {
+      filesMenuSection ??= '';
+    } else {
+      filesMenuSection ??= this.plugin.manifest.name;
+      menu.setSectionSubmenu(filesMenuSection, {
+        icon: filesMenuSubmenuIcon,
+        title: filesMenuSection
+      });
+    }
+
     menu.addItem((item) => {
       item
         .setTitle(this.filesMenuItemName ?? this.fileMenuItemName ?? this.originalName)
         .setIcon(this.icon)
-        .setSection(this.filesMenuSection ?? this.fileMenuSection ?? '')
+        .setSection(filesMenuSection)
         .onClick(() => this.createCommandInvocationForAbstractFiles(abstractFiles).invoke(false));
     });
   }
