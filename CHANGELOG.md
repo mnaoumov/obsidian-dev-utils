@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 47.4.0
+
+- feat: add type arg
+
 ## 47.3.0
 
 - chore: update libs
