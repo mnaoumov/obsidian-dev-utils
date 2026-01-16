@@ -213,38 +213,44 @@ class DeleteHandler {
     }
 
     const settings = this.settingsManager.getSettings();
-    if (!settings.shouldHandleDeletions) {
-      return;
-    }
 
     if (settings.isPathIgnored?.(this.file.path)) {
       getLibDebugger('RenameDeleteHandler:handleDelete')(`Skipping delete handler of ${this.file.path} as the path is ignored.`);
       return;
     }
 
-    const cache = this.deletedMetadataCacheMap.get(this.file.path);
-    this.deletedMetadataCacheMap.delete(this.file.path);
-    const parentFolderPaths = new Set<string>();
-    if (cache) {
-      const links = getAllLinks(cache);
+    const parentFolderPaths = new Set<string>([this.file.parent?.path ?? '']);
 
-      for (const link of links) {
-        const attachmentFile = extractLinkFile(this.app, link, this.file.path);
-        if (!attachmentFile) {
-          continue;
+    if (settings.shouldHandleDeletions) {
+      const cache = this.deletedMetadataCacheMap.get(this.file.path);
+      this.deletedMetadataCacheMap.delete(this.file.path);
+      if (cache) {
+        const links = getAllLinks(cache);
+
+        for (const link of links) {
+          const attachmentFile = extractLinkFile(this.app, link, this.file.path);
+          if (!attachmentFile) {
+            continue;
+          }
+
+          if (this.settingsManager.isNoteEx(attachmentFile.path)) {
+            continue;
+          }
+
+          parentFolderPaths.add(attachmentFile.parent?.path ?? '');
+          await deleteSafe(this.app, attachmentFile, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
+          this.abortSignal.throwIfAborted();
         }
-
-        if (this.settingsManager.isNoteEx(attachmentFile.path)) {
-          continue;
-        }
-
-        parentFolderPaths.add(attachmentFile.parent?.path ?? '');
-        await deleteSafe(this.app, attachmentFile, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
       }
     }
 
+    parentFolderPaths.delete('');
     await cleanupParentFolders(this.app, this.settingsManager.getSettings(), Array.from(parentFolderPaths));
     this.abortSignal.throwIfAborted();
+
+    if (!settings.shouldHandleDeletions) {
+      return;
+    }
 
     const attachmentFolderPath = await getAttachmentFolderPath(this.app, this.file.path, AttachmentPathContext.DeleteNote);
     const attachmentFolder = getFolderOrNull(this.app, attachmentFolderPath);
@@ -253,7 +259,7 @@ class DeleteHandler {
       return;
     }
 
-    if (!(await hasOwnAttachmentFolder(this.app, this.file.path, AttachmentPathContext.DeleteNote))) {
+    if (!await hasOwnAttachmentFolder(this.app, this.file.path, AttachmentPathContext.DeleteNote)) {
       return;
     }
 
