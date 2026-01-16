@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 47.5.0
+
+- feat: add PathSettings
+
 ## 47.4.0
 
 - feat: add type arg
