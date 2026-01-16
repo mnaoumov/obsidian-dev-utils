@@ -178,11 +178,21 @@ export function checkExtension(app: App, pathOrFile: null | PathOrAbstractFile, 
  *
  * @param app - The Obsidian App instance.
  * @param path - The path to check.
+ * @param type - The type of the file system object to check. Default is `undefined`.
  * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `undefined`.
  * @returns `true` if the path exists, `false` otherwise.
  */
-export function exists(app: App, path: string, isCaseInsensitive?: boolean): boolean {
-  return getAbstractFileOrNull(app, path, isCaseInsensitive) !== null;
+export function exists(app: App, path: string, type?: FileSystemType, isCaseInsensitive?: boolean): boolean {
+  const abstractFile = getAbstractFileOrNull(app, path, isCaseInsensitive);
+  if (!abstractFile) {
+    return false;
+  }
+
+  if (type === undefined) {
+    return true;
+  }
+
+  return getFileSystemType(abstractFile) === type;
 }
 
 /**
