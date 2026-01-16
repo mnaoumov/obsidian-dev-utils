@@ -174,6 +174,18 @@ export function checkExtension(app: App, pathOrFile: null | PathOrAbstractFile, 
 }
 
 /**
+ * Checks if the given path exists.
+ *
+ * @param app - The Obsidian App instance.
+ * @param path - The path to check.
+ * @param isCaseInsensitive - Specifies whether to perform a case-insensitive search. Default is `undefined`.
+ * @returns `true` if the path exists, `false` otherwise.
+ */
+export function exists(app: App, path: string, isCaseInsensitive?: boolean): boolean {
+  return getAbstractFileOrNull(app, path, isCaseInsensitive) !== null;
+}
+
+/**
  * Retrieves the TAbstractFile object for the given path or abstract file.
  *
  * @param app - The App instance.
