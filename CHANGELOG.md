@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 47.3.0
+
+- chore: update libs
+- feat: add exists
+
 ## 47.2.0
 
 - feat: add submenu
