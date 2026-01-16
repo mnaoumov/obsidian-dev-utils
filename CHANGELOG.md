@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 47.6.0
+
+- feat: clean empty folders when deletions is not handled re <https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/11>
+
 ## 47.5.0
 
 - feat: add PathSettings
