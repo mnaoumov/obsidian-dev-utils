@@ -278,11 +278,11 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
       return;
     }
 
-    let filesMenuSection = this.fileMenuSection;
+    let filesMenuSection = this.filesMenuSection ?? this.fileMenuSection;
     if (this.shouldAddCommandToSubmenu) {
       filesMenuSection ??= this.plugin.manifest.name;
       menu.setSectionSubmenu(filesMenuSection, {
-        icon: this.filesMenuSubmenuIcon ?? '',
+        icon: this.filesMenuSubmenuIcon ?? this.fileMenuSubmenuIcon ?? '',
         title: filesMenuSection
       });
     } else {
