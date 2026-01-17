@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 48.0.0
+
+- feat: add overridable properties
+
 ## 47.7.0
 
 - chore: update libs
