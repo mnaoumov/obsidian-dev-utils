@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 48.0.2
+
+- fix: group commands by plugin name
+- fix: files menu section
+
 ## 48.0.1
 
 - fix: files menu icon
