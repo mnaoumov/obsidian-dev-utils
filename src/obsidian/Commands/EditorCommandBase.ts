@@ -105,6 +105,8 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
     this._editorMenuSection = options.editorMenuSection;
     this._editorMenuSubmenuIcon = options.editorMenuSubmenuIcon;
     this._shouldAddCommandToSubmenu = options.shouldAddCommandToSubmenu;
+
+    this.editorCheckCallback = this.editorCheckCallback.bind(this);
   }
 
   /**

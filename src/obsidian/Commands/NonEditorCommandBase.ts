@@ -26,6 +26,8 @@ export abstract class NonEditorCommandBase<TPlugin extends Plugin> extends Comma
    */
   public constructor(options: CommandBaseOptions<TPlugin>) {
     super(options);
+
+    this.checkCallback = this.checkCallback.bind(this);
   }
 
   /**
