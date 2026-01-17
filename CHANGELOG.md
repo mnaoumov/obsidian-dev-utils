@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 48.1.1
+
+- chore: update libs
+- fix: bind check callbacks re <https://github.com/mnaoumov/obsidian-codescript-toolkit/issues/46>
+
 ## 48.1.0
 
 - feat: expose original id/name
