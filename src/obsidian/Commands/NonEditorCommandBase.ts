@@ -6,7 +6,10 @@
 
 import type { Plugin } from 'obsidian';
 
-import type { CommandInvocationBase } from './CommandBase.ts';
+import type {
+  CommandBaseOptions,
+  CommandInvocationBase
+} from './CommandBase.ts';
 
 import { CommandBase } from './CommandBase.ts';
 
@@ -16,6 +19,15 @@ import { CommandBase } from './CommandBase.ts';
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class NonEditorCommandBase<TPlugin extends Plugin> extends CommandBase<TPlugin> {
+  /**
+   * Creates a new non-editor command.
+   *
+   * @param options - The options for the non-editor command.
+   */
+  public constructor(options: CommandBaseOptions<TPlugin>) {
+    super(options);
+  }
+
   /**
    * Checks if the command can execute or executes it.
    *

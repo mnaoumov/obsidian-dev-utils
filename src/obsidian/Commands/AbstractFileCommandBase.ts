@@ -12,8 +12,52 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
+import type { CommandBaseOptions } from './CommandBase.ts';
+
 import { CommandInvocationBase } from './CommandBase.ts';
 import { NonEditorCommandBase } from './NonEditorCommandBase.ts';
+
+/**
+ * Options for creating an abstract file command.
+ *
+ * @typeParam TPlugin - The type of the plugin that the command belongs to.
+ */
+export interface AbstractFileCommandBaseOptions<TPlugin extends Plugin> extends CommandBaseOptions<TPlugin> {
+  /**
+   * The item name to use in the file menu.
+   */
+  fileMenuItemName?: string | undefined;
+
+  /**
+   * The section to use in the file menu.
+   */
+  fileMenuSection?: string | undefined;
+
+  /**
+   * The icon to use in the file menu submenu.
+   */
+  fileMenuSubmenuIcon?: IconName | undefined;
+
+  /**
+   * The item name to use in the files menu.
+   */
+  filesMenuItemName?: string | undefined;
+
+  /**
+   * The section to use in the files menu.
+   */
+  filesMenuSection?: string | undefined;
+
+  /**
+   * The icon to use in the files menu submenu.
+   */
+  filesMenuSubmenuIcon?: IconName | undefined;
+
+  /**
+   * Whether to add the command to the submenu.
+   */
+  shouldAddCommandToSubmenu?: boolean | undefined;
+}
 
 /**
  * Base class for abstract file commands.
@@ -21,35 +65,29 @@ import { NonEditorCommandBase } from './NonEditorCommandBase.ts';
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> extends NonEditorCommandBase<TPlugin> {
-  /**
-   * The item name to use in the file menu.
-   */
-  protected readonly fileMenuItemName?: string;
+  private readonly fileMenuItemName?: string | undefined;
+  private readonly fileMenuSection?: string | undefined;
+  private readonly fileMenuSubmenuIcon?: IconName | undefined;
+  private readonly filesMenuItemName?: string | undefined;
+  private readonly filesMenuSection?: string | undefined;
+  private readonly filesMenuSubmenuIcon?: IconName | undefined;
+  private readonly shouldAddCommandToSubmenu?: boolean | undefined;
 
   /**
-   * The section to use in the file menu.
+   * Creates a new abstract file command.
+   *
+   * @param options - The options for the abstract file command.
    */
-  protected readonly fileMenuSection?: string;
-
-  /**
-   * The icon to use in the file menu submenu.
-   */
-  protected readonly fileMenuSubmenuIcon?: IconName;
-
-  /**
-   * The item name to use in the files menu.
-   */
-  protected readonly filesMenuItemName?: string;
-
-  /**
-   * The section to use in the files menu.
-   */
-  protected readonly filesMenuSection?: string;
-
-  /**
-   * The icon to use in the files menu submenu.
-   */
-  protected readonly filesMenuSubmenuIcon?: IconName;
+  public constructor(options: AbstractFileCommandBaseOptions<TPlugin>) {
+    super(options);
+    this.fileMenuItemName = options.fileMenuItemName;
+    this.fileMenuSection = options.fileMenuSection;
+    this.fileMenuSubmenuIcon = options.fileMenuSubmenuIcon;
+    this.filesMenuItemName = options.filesMenuItemName;
+    this.filesMenuSection = options.filesMenuSection;
+    this.filesMenuSubmenuIcon = options.filesMenuSubmenuIcon;
+    this.shouldAddCommandToSubmenu = options.shouldAddCommandToSubmenu;
+  }
 
   /**
    * Checks if the command can execute or executes it.
@@ -150,14 +188,14 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
     }
 
     let fileMenuSection = this.fileMenuSection;
-    if (this.fileMenuSubmenuIcon === undefined) {
-      fileMenuSection ??= '';
-    } else {
+    if (this.shouldAddCommandToSubmenu) {
       fileMenuSection ??= this.plugin.manifest.name;
       menu.setSectionSubmenu(fileMenuSection, {
-        icon: this.fileMenuSubmenuIcon,
+        icon: this.fileMenuSubmenuIcon ?? '',
         title: fileMenuSection
       });
+    } else {
+      fileMenuSection ??= '';
     }
     menu.addItem((item) => {
       item

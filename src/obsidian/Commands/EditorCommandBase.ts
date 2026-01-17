@@ -13,10 +13,39 @@ import type {
   TFile
 } from 'obsidian';
 
+import type { CommandBaseOptions } from './CommandBase.ts';
+
 import {
   CommandBase,
   CommandInvocationBase
 } from './CommandBase.ts';
+
+/**
+ * Options for creating an editor command.
+ *
+ * @typeParam TPlugin - The type of the plugin that the command belongs to.
+ */
+export interface EditorCommandBaseOptions<TPlugin extends Plugin> extends CommandBaseOptions<TPlugin> {
+  /**
+   * The item name to use in the editor menu.
+   */
+  editorMenuItemName?: string | undefined;
+
+  /**
+   * The section to use in the editor menu.
+   */
+  editorMenuSection?: string | undefined;
+
+  /**
+   * The icon to use in the editor menu submenu.
+   */
+  editorMenuSubmenuIcon?: IconName | undefined;
+
+  /**
+   * Whether to add the command to the submenu.
+   */
+  shouldAddCommandToSubmenu?: boolean | undefined;
+}
 
 /**
  * Base class for editor commands.
@@ -24,20 +53,23 @@ import {
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandBase<TPlugin> {
-  /**
-   * The item name to use in the editor menu.
-   */
-  protected readonly editorMenuItemName?: string;
+  private readonly editorMenuItemName?: string | undefined;
+  private readonly editorMenuSection?: string | undefined;
+  private readonly editorMenuSubmenuIcon?: IconName | undefined;
+  private readonly shouldAddCommandToSubmenu?: boolean | undefined;
 
   /**
-   * The section to use in the editor menu.
+   * Creates a new editor command.
+   *
+   * @param options - The options for the editor command.
    */
-  protected readonly editorMenuSection?: string;
-
-  /**
-   * The icon to use in the editor menu submenu.
-   */
-  protected readonly editorMenuSubmenuIcon?: IconName;
+  public constructor(options: EditorCommandBaseOptions<TPlugin>) {
+    super(options);
+    this.editorMenuItemName = options.editorMenuItemName;
+    this.editorMenuSection = options.editorMenuSection;
+    this.editorMenuSubmenuIcon = options.editorMenuSubmenuIcon;
+    this.shouldAddCommandToSubmenu = options.shouldAddCommandToSubmenu;
+  }
 
   /**
    * Checks if the command can execute or executes it.
@@ -101,14 +133,14 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
     }
 
     let editorMenuSection = this.editorMenuSection;
-    if (this.editorMenuSubmenuIcon === undefined) {
-      editorMenuSection ??= '';
-    } else {
+    if (this.shouldAddCommandToSubmenu) {
       editorMenuSection ??= this.plugin.manifest.name;
       menu.setSectionSubmenu(editorMenuSection, {
-        icon: this.editorMenuSubmenuIcon,
+        icon: this.editorMenuSubmenuIcon ?? '',
         title: editorMenuSection
       });
+    } else {
+      editorMenuSection ??= '';
     }
     menu.addItem((item) => {
       item
