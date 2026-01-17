@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 48.1.0
+
+- feat: expose original id/name
+
 ## 48.0.2
 
 - fix: group commands by plugin name
