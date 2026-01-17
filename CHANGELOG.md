@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 47.7.0
+
+- chore: update libs
+- feat: init commands props via ctor
+
 ## 47.6.0
 
 - feat: clean empty folders when deletions is not handled re <https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/11>
