@@ -168,16 +168,14 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
       return;
     }
 
-    let editorMenuSection = this.editorMenuSection;
+    const editorMenuSection = this.editorMenuSection ?? this.plugin.manifest.name;
     if (this.shouldAddCommandToSubmenu) {
-      editorMenuSection ??= this.plugin.manifest.name;
       menu.setSectionSubmenu(editorMenuSection, {
         icon: this.editorMenuSubmenuIcon ?? '',
         title: editorMenuSection
       });
-    } else {
-      editorMenuSection ??= '';
     }
+
     menu.addItem((item) => {
       item
         .setTitle(this.editorMenuItemName ?? this.originalName)

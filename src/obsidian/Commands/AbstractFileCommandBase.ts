@@ -250,16 +250,14 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
       return;
     }
 
-    let fileMenuSection = this.fileMenuSection;
+    const fileMenuSection = this.fileMenuSection ?? this.plugin.manifest.name;
     if (this.shouldAddCommandToSubmenu) {
-      fileMenuSection ??= this.plugin.manifest.name;
       menu.setSectionSubmenu(fileMenuSection, {
         icon: this.fileMenuSubmenuIcon ?? '',
         title: fileMenuSection
       });
-    } else {
-      fileMenuSection ??= '';
     }
+
     menu.addItem((item) => {
       item
         .setTitle(this.fileMenuItemName ?? this.originalName)
@@ -278,15 +276,12 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
       return;
     }
 
-    let filesMenuSection = this.filesMenuSection ?? this.fileMenuSection;
+    const filesMenuSection = this.filesMenuSection ?? this.fileMenuSection ?? this.plugin.manifest.name;
     if (this.shouldAddCommandToSubmenu) {
-      filesMenuSection ??= this.plugin.manifest.name;
       menu.setSectionSubmenu(filesMenuSection, {
         icon: this.filesMenuSubmenuIcon ?? this.fileMenuSubmenuIcon ?? '',
         title: filesMenuSection
       });
-    } else {
-      filesMenuSection ??= '';
     }
 
     menu.addItem((item) => {
