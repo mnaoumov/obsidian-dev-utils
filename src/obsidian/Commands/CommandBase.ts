@@ -70,19 +70,19 @@ export abstract class CommandBase<TPlugin extends Plugin> implements Command {
   public name: string;
 
   /**
-   * The app that the command belongs to.
-   */
-  protected readonly app: App;
-
-  /**
    * The original ID of the command.
    */
-  protected readonly originalId: string;
+  public readonly originalId: string;
 
   /**
    * The original name of the command.
    */
-  protected readonly originalName: string;
+  public readonly originalName: string;
+
+  /**
+   * The app that the command belongs to.
+   */
+  protected readonly app: App;
 
   /**
    * The plugin that the command belongs to.
