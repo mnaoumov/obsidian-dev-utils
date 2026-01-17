@@ -53,10 +53,46 @@ export interface EditorCommandBaseOptions<TPlugin extends Plugin> extends Comman
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandBase<TPlugin> {
-  private readonly editorMenuItemName?: string | undefined;
-  private readonly editorMenuSection?: string | undefined;
-  private readonly editorMenuSubmenuIcon?: IconName | undefined;
-  private readonly shouldAddCommandToSubmenu?: boolean | undefined;
+  /**
+   * Gets the item name to use in the editor menu.
+   *
+   * @returns The item name to use in the editor menu.
+   */
+  protected get editorMenuItemName(): string | undefined {
+    return this._editorMenuItemName;
+  }
+
+  /**
+   * Gets the section to use in the editor menu.
+   *
+   * @returns The section to use in the editor menu.
+   */
+  protected get editorMenuSection(): string | undefined {
+    return this._editorMenuSection;
+  }
+
+  /**
+   * Gets the icon to use in the editor menu submenu.
+   *
+   * @returns The icon to use in the editor menu submenu.
+   */
+  protected get editorMenuSubmenuIcon(): IconName | undefined {
+    return this._editorMenuSubmenuIcon;
+  }
+
+  /**
+   * Gets whether to add the command to the submenu.
+   *
+   * @returns Whether to add the command to the submenu.
+   */
+  protected get shouldAddCommandToSubmenu(): boolean | undefined {
+    return this._shouldAddCommandToSubmenu;
+  }
+
+  private readonly _editorMenuItemName?: string | undefined;
+  private readonly _editorMenuSection?: string | undefined;
+  private readonly _editorMenuSubmenuIcon?: IconName | undefined;
+  private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
 
   /**
    * Creates a new editor command.
@@ -65,10 +101,10 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
    */
   public constructor(options: EditorCommandBaseOptions<TPlugin>) {
     super(options);
-    this.editorMenuItemName = options.editorMenuItemName;
-    this.editorMenuSection = options.editorMenuSection;
-    this.editorMenuSubmenuIcon = options.editorMenuSubmenuIcon;
-    this.shouldAddCommandToSubmenu = options.shouldAddCommandToSubmenu;
+    this._editorMenuItemName = options.editorMenuItemName;
+    this._editorMenuSection = options.editorMenuSection;
+    this._editorMenuSubmenuIcon = options.editorMenuSubmenuIcon;
+    this._shouldAddCommandToSubmenu = options.shouldAddCommandToSubmenu;
   }
 
   /**

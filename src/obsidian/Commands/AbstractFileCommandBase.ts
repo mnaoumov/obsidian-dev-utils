@@ -65,13 +65,76 @@ export interface AbstractFileCommandBaseOptions<TPlugin extends Plugin> extends 
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
 export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> extends NonEditorCommandBase<TPlugin> {
-  private readonly fileMenuItemName?: string | undefined;
-  private readonly fileMenuSection?: string | undefined;
-  private readonly fileMenuSubmenuIcon?: IconName | undefined;
-  private readonly filesMenuItemName?: string | undefined;
-  private readonly filesMenuSection?: string | undefined;
-  private readonly filesMenuSubmenuIcon?: IconName | undefined;
-  private readonly shouldAddCommandToSubmenu?: boolean | undefined;
+  /**
+   * Gets the item name to use in the file menu.
+   *
+   * @returns The item name to use in the file menu.
+   */
+  protected get fileMenuItemName(): string | undefined {
+    return this._fileMenuItemName;
+  }
+
+  /**
+   * Gets the section to use in the file menu.
+   *
+   * @returns The section to use in the file menu.
+   */
+  protected get fileMenuSection(): string | undefined {
+    return this._fileMenuSection;
+  }
+
+  /**
+   * Gets the icon to use in the file menu submenu.
+   *
+   * @returns The icon to use in the file menu submenu.
+   */
+  protected get fileMenuSubmenuIcon(): IconName | undefined {
+    return this._fileMenuSubmenuIcon;
+  }
+
+  /**
+   * Gets the item name to use in the files menu.
+   *
+   * @returns The item name to use in the files menu.
+   */
+  protected get filesMenuItemName(): string | undefined {
+    return this._filesMenuItemName;
+  }
+
+  /**
+   * Gets the section to use in the files menu.
+   *
+   * @returns The section to use in the files menu.
+   */
+  protected get filesMenuSection(): string | undefined {
+    return this._filesMenuSection;
+  }
+
+  /**
+   * Gets the icon to use in the files menu submenu.
+   *
+   * @returns The icon to use in the files menu submenu.
+   */
+  protected get filesMenuSubmenuIcon(): IconName | undefined {
+    return this._filesMenuSubmenuIcon;
+  }
+
+  /**
+   * Gets whether to add the command to the submenu.
+   *
+   * @returns Whether to add the command to the submenu.
+   */
+  protected get shouldAddCommandToSubmenu(): boolean | undefined {
+    return this._shouldAddCommandToSubmenu;
+  }
+
+  private readonly _fileMenuItemName?: string | undefined;
+  private readonly _fileMenuSection?: string | undefined;
+  private readonly _fileMenuSubmenuIcon?: IconName | undefined;
+  private readonly _filesMenuItemName?: string | undefined;
+  private readonly _filesMenuSection?: string | undefined;
+  private readonly _filesMenuSubmenuIcon?: IconName | undefined;
+  private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
 
   /**
    * Creates a new abstract file command.
@@ -80,13 +143,13 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
    */
   public constructor(options: AbstractFileCommandBaseOptions<TPlugin>) {
     super(options);
-    this.fileMenuItemName = options.fileMenuItemName;
-    this.fileMenuSection = options.fileMenuSection;
-    this.fileMenuSubmenuIcon = options.fileMenuSubmenuIcon;
-    this.filesMenuItemName = options.filesMenuItemName;
-    this.filesMenuSection = options.filesMenuSection;
-    this.filesMenuSubmenuIcon = options.filesMenuSubmenuIcon;
-    this.shouldAddCommandToSubmenu = options.shouldAddCommandToSubmenu;
+    this._fileMenuItemName = options.fileMenuItemName;
+    this._fileMenuSection = options.fileMenuSection;
+    this._fileMenuSubmenuIcon = options.fileMenuSubmenuIcon;
+    this._filesMenuItemName = options.filesMenuItemName;
+    this._filesMenuSection = options.filesMenuSection;
+    this._filesMenuSubmenuIcon = options.filesMenuSubmenuIcon;
+    this._shouldAddCommandToSubmenu = options.shouldAddCommandToSubmenu;
   }
 
   /**
