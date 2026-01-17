@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 48.0.1
+
+- fix: files menu icon
+
 ## 48.0.0
 
 - feat: add overridable properties
