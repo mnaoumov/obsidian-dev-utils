@@ -33,7 +33,6 @@ import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
  *         the error is resolved with the stdout and stderr.
  */
 export async function execFromRoot(command: string | string[], options?: { withDetails?: false } & ExecOption): Promise<string>;
-
 /**
  * Executes a command from the root folder of the project.
  *
@@ -47,7 +46,6 @@ export async function execFromRoot(command: string | string[], options?: { withD
  *         the error is resolved with the stdout and stderr.
  */
 export function execFromRoot(command: string | string[], options: { withDetails: true } & ExecOption): Promise<ExecResult>;
-
 /**
  * Executes a command from the root folder of the project.
  *

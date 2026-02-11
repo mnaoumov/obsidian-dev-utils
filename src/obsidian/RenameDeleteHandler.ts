@@ -511,6 +511,48 @@ class Registry {
   }
 }
 
+class SettingsManager {
+  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
+
+  public constructor(private readonly app: App) {
+    this.renameDeleteHandlersMap =
+      getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
+  }
+
+  public getSettings(): Partial<RenameDeleteHandlerSettings> {
+    const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
+
+    const settings: Partial<RenameDeleteHandlerSettings> = {};
+    settings.isNote = (path: string): boolean => isNote(this.app, path);
+    settings.isPathIgnored = (): boolean => false;
+
+    for (const settingsBuilder of settingsBuilders) {
+      const newSettings = settingsBuilder();
+      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
+      if (newSettings.emptyFolderBehavior) {
+        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
+      }
+      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
+      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
+      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
+      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
+      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
+      const isPathIgnored = settings.isPathIgnored;
+      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
+      const currentIsNote = settings.isNote;
+      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
+    }
+
+    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
+    return settings;
+  }
+
+  public isNoteEx(path: string): boolean {
+    const settings = this.getSettings();
+    return settings.isNote?.(path) ?? false;
+  }
+}
+
 class RenameHandler {
   private readonly abortSignal: AbortSignal;
   private readonly app: App;
@@ -939,48 +981,6 @@ class RenameMap {
 
   public set(oldPath: string, newPath: string): void {
     this.map.set(oldPath, newPath);
-  }
-}
-
-class SettingsManager {
-  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
-
-  public constructor(private readonly app: App) {
-    this.renameDeleteHandlersMap =
-      getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
-  }
-
-  public getSettings(): Partial<RenameDeleteHandlerSettings> {
-    const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
-
-    const settings: Partial<RenameDeleteHandlerSettings> = {};
-    settings.isNote = (path: string): boolean => isNote(this.app, path);
-    settings.isPathIgnored = (): boolean => false;
-
-    for (const settingsBuilder of settingsBuilders) {
-      const newSettings = settingsBuilder();
-      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
-      if (newSettings.emptyFolderBehavior) {
-        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
-      }
-      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
-      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
-      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
-      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
-      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
-      const isPathIgnored = settings.isPathIgnored;
-      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
-      const currentIsNote = settings.isNote;
-      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
-    }
-
-    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
-    return settings;
-  }
-
-  public isNoteEx(path: string): boolean {
-    const settings = this.getSettings();
-    return settings.isNote?.(path) ?? false;
   }
 }
 

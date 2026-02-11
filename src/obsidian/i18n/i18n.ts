@@ -15,7 +15,8 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
-import i18next, {
+import {
+  i18next,
   init,
   t as tLib
 } from 'i18next';
@@ -91,7 +92,7 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
 
 function tImpl(
   selector: SelectorFn<ReadonlyDeep<Translations<PluginTypesBase>>, string, SelectorOptions<[typeof DEFAULT_NS]>>,
-  options?: SelectorOptions<[typeof DEFAULT_NS]> & { ns: [typeof DEFAULT_NS] }
+  options?: { ns: [typeof DEFAULT_NS] } & SelectorOptions<[typeof DEFAULT_NS]>
 ): string {
   if (!isInitialized) {
     console.warn('I18N was not initialized, initializing default obsidian-dev-utils translations');

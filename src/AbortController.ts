@@ -119,7 +119,6 @@ export function onAbort(abortSignal: AbortSignal, callback: (abortSignal: AbortS
  * @returns A {@link Promise} that resolves with the reason of the abort signal.
  */
 export function waitForAbort<T = unknown>(abortSignal: AbortSignal): Promise<T>;
-
 /**
  * Waits for an abort signal to abort and rejects with its reason.
  *
@@ -128,7 +127,6 @@ export function waitForAbort<T = unknown>(abortSignal: AbortSignal): Promise<T>;
  * @returns A {@link Promise} that rejects with the reason of the abort signal.
  */
 export function waitForAbort(abortSignal: AbortSignal, shouldRejectOnAbort: true): Promise<never>;
-
 /**
  * Waits for an abort signal to abort and resolves with its reason.
  *

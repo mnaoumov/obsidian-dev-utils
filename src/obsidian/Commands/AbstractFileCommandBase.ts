@@ -60,6 +60,49 @@ export interface AbstractFileCommandBaseOptions<TPlugin extends Plugin> extends 
 }
 
 /**
+ * Base class for abstract file command invocations.
+ *
+ * @typeParam TPlugin - The type of the plugin that the command belongs to.
+ */
+export abstract class AbstractFileCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
+  /** */
+  protected readonly _abstractFile: null | TAbstractFile;
+
+  /**
+   * The abstract file to invoke the command for.
+   *
+   * @returns The abstract file to invoke the command for.
+   * @throws If the abstract file is not set.
+   */
+  protected get abstractFile(): TAbstractFile {
+    if (!this._abstractFile) {
+      throw new Error('Abstract file not set');
+    }
+    return this._abstractFile;
+  }
+
+  /**
+   * Creates a new abstract file command invocation.
+   *
+   * @param plugin - The plugin that the command belongs to.
+   * @param abstractFile - The abstract file to invoke the command for.
+   */
+  public constructor(plugin: TPlugin, abstractFile: null | TAbstractFile) {
+    super(plugin);
+    this._abstractFile = abstractFile;
+  }
+
+  /**
+   * Checks if the command can execute.
+   *
+   * @returns Whether the command can execute.
+   */
+  protected override canExecute(): boolean {
+    return super.canExecute() && !!this._abstractFile;
+  }
+}
+
+/**
  * Base class for abstract file commands.
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
@@ -291,49 +334,6 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
         .setSection(filesMenuSection)
         .onClick(() => this.createCommandInvocationForAbstractFiles(abstractFiles).invoke(false));
     });
-  }
-}
-
-/**
- * Base class for abstract file command invocations.
- *
- * @typeParam TPlugin - The type of the plugin that the command belongs to.
- */
-export abstract class AbstractFileCommandInvocationBase<TPlugin extends Plugin> extends CommandInvocationBase<TPlugin> {
-  /** */
-  protected readonly _abstractFile: null | TAbstractFile;
-
-  /**
-   * The abstract file to invoke the command for.
-   *
-   * @returns The abstract file to invoke the command for.
-   * @throws If the abstract file is not set.
-   */
-  protected get abstractFile(): TAbstractFile {
-    if (!this._abstractFile) {
-      throw new Error('Abstract file not set');
-    }
-    return this._abstractFile;
-  }
-
-  /**
-   * Creates a new abstract file command invocation.
-   *
-   * @param plugin - The plugin that the command belongs to.
-   * @param abstractFile - The abstract file to invoke the command for.
-   */
-  public constructor(plugin: TPlugin, abstractFile: null | TAbstractFile) {
-    super(plugin);
-    this._abstractFile = abstractFile;
-  }
-
-  /**
-   * Checks if the command can execute.
-   *
-   * @returns Whether the command can execute.
-   */
-  protected override canExecute(): boolean {
-    return super.canExecute() && !!this._abstractFile;
   }
 }
 
