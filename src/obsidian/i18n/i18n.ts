@@ -91,11 +91,15 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
 
 function tImpl(
   selector: SelectorFn<ReadonlyDeep<Translations<PluginTypesBase>>, string, SelectorOptions<[typeof DEFAULT_NS]>>,
-  options?: SelectorOptions<[typeof DEFAULT_NS]>
+  options?: SelectorOptions<[typeof DEFAULT_NS]> & { ns: [typeof DEFAULT_NS] }
 ): string {
   if (!isInitialized) {
     console.warn('I18N was not initialized, initializing default obsidian-dev-utils translations');
     invokeAsyncSafely(() => initI18N(defaultTranslationsMap, false));
+  }
+
+  if (!options) {
+    return tLib(selector);
   }
 
   return tLib(selector, options);
