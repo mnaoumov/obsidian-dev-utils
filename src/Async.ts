@@ -217,7 +217,6 @@ export function handleSilentError(error: unknown): boolean {
  * @returns A {@link Promise} that resolves when the asynchronous function completes or fails.
  */
 export async function ignoreError(promise: Promise<unknown>, fallbackValue?: undefined): Promise<void>;
-
 /**
  * Invokes an asynchronous function and returns a fallback value if an error is thrown.
  *

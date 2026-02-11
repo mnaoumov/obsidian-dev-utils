@@ -167,7 +167,6 @@ type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string
  * @returns The target object with the assigned properties.
  */
 export function assignWithNonEnumerableProperties<T extends object, U>(target: T, source: U): T & U;
-
 /**
  * @param target - The target object to assign properties to.
  * @param source1 - The first source object to assign properties from.
@@ -175,7 +174,6 @@ export function assignWithNonEnumerableProperties<T extends object, U>(target: T
  * @returns The target object with the assigned properties.
  */
 export function assignWithNonEnumerableProperties<T extends object, U, V>(target: T, source1: U, source2: V): T & U & V;
-
 /**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
  *
@@ -186,7 +184,6 @@ export function assignWithNonEnumerableProperties<T extends object, U, V>(target
  * @returns The target object with the assigned properties.
  */
 export function assignWithNonEnumerableProperties<T extends object, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
-
 /**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
  *
@@ -441,7 +438,6 @@ export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): 
 export function removeUndefinedProperties<Type extends object>(
   ...args: RemoveUndefinedOverload<Type>
 ): Type;
-
 /**
  * Removes all undefined properties from an object when there are mandatory keys with undefined values.
  *
@@ -453,7 +449,6 @@ export function removeUndefinedProperties<Type extends object>(
 export function removeUndefinedProperties<Type extends object, const KeysToKeep extends readonly string[]>(
   ...args: RemoveUndefinedWithKeysOverload<Type, KeysToKeep>
 ): Type;
-
 /**
  * Removes all undefined properties from an object.
  *

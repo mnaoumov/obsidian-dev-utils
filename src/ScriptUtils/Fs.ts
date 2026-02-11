@@ -93,7 +93,6 @@ interface CommonOptions {
  * @returns A {@link Promise} that resolves with an array of POSIX-formatted file paths.
  */
 export async function readdirPosix(path: PathLike, options?: StringResultOptions): Promise<string[]>;
-
 /**
  * Reads the contents of a directory and returns an array of buffers with POSIX paths.
  *
@@ -102,7 +101,6 @@ export async function readdirPosix(path: PathLike, options?: StringResultOptions
  * @returns A {@link Promise} that resolves with an array of POSIX-formatted buffers.
  */
 export async function readdirPosix(path: PathLike, options: BufferResultOptions): Promise<Buffer[]>;
-
 /**
  * Reads the contents of a directory and returns an array of Dirent objects with POSIX paths.
  *
@@ -111,7 +109,6 @@ export async function readdirPosix(path: PathLike, options: BufferResultOptions)
  * @returns A {@link Promise} that resolves with an array of POSIX-formatted Dirent objects.
  */
 export async function readdirPosix(path: PathLike, options: DirentResultOptions): Promise<Dirent[]>;
-
 /**
  * Reads the contents of a directory and converts file paths or buffer results to POSIX format.
  *

@@ -84,7 +84,6 @@ export interface ExecResult {
  *         the error is resolved with the stdout and stderr.
  */
 export async function exec(command: string | string[], options?: { withDetails?: false } & ExecOption): Promise<string>;
-
 /**
  * Executes a command.
  *
@@ -98,7 +97,6 @@ export async function exec(command: string | string[], options?: { withDetails?:
  *         the error is resolved with the stdout and stderr.
  */
 export function exec(command: string | string[], options: { withDetails: true } & ExecOption): Promise<ExecResult>;
-
 /**
  * Executes a command.
  *
