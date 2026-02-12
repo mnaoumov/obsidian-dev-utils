@@ -6,12 +6,12 @@ import { TFile } from './TFile.ts';
 import { TFolder } from './TFolder.ts';
 
 export class Vault extends Events {
-  adapter: DataAdapter = new DataAdapter();
+  public adapter: DataAdapter = new DataAdapter();
   // eslint-disable-next-line obsidianmd/hardcoded-config-path -- Default value for testing.
-  configDir = '.obsidian';
-  fileMap: Record<string, TAbstractFile> = {};
+  public configDir = '.obsidian';
+  public fileMap: Record<string, TAbstractFile> = {};
 
-  static recurseChildren(folder: TFolder, cb: (f: TAbstractFile) => unknown): void {
+  public static recurseChildren(folder: TFolder, cb: (f: TAbstractFile) => unknown): void {
     for (const child of folder.children) {
       cb(child);
       if (child instanceof TFolder) {
@@ -20,99 +20,99 @@ export class Vault extends Events {
     }
   }
 
-  async append(_file: TFile, _data: string): Promise<void> {}
+  public async append(_file: TFile, _data: string): Promise<void> {}
 
-  async cachedRead(_file: TFile): Promise<string> {
+  public async cachedRead(_file: TFile): Promise<string> {
     return '';
   }
 
-  async copy<T extends TAbstractFile>(file: T, _newPath: string): Promise<T> {
+  public async copy<T extends TAbstractFile>(file: T, _newPath: string): Promise<T> {
     return file;
   }
 
-  async create(path: string, _data: string): Promise<TFile> {
+  public async create(path: string, _data: string): Promise<TFile> {
     const f = new TFile();
     f.path = path;
     return f;
   }
 
-  async createBinary(path: string, _data: ArrayBuffer): Promise<TFile> {
+  public async createBinary(path: string, _data: ArrayBuffer): Promise<TFile> {
     const f = new TFile();
     f.path = path;
     return f;
   }
 
-  async createFolder(path: string): Promise<TFolder> {
+  public async createFolder(path: string): Promise<TFolder> {
     const f = new TFolder();
     f.path = path;
     return f;
   }
 
-  async delete(_file: TAbstractFile, _force?: boolean): Promise<void> {}
+  public async delete(_file: TAbstractFile, _force?: boolean): Promise<void> {}
 
-  getAbstractFileByPath(path: string): null | TAbstractFile {
+  public getAbstractFileByPath(path: string): null | TAbstractFile {
     return this.fileMap[path] ?? null;
   }
 
-  getAllFolders(_includeRoot?: boolean): TFolder[] {
+  public getAllFolders(_includeRoot?: boolean): TFolder[] {
     return Object.values(this.fileMap).filter((f): f is TFolder => f instanceof TFolder);
   }
 
-  getAllLoadedFiles(): TAbstractFile[] {
+  public getAllLoadedFiles(): TAbstractFile[] {
     return Object.values(this.fileMap);
   }
 
-  getAvailablePath(base: string, _ext: string): string {
+  public getAvailablePath(base: string, _ext: string): string {
     return base;
   }
 
-  getFileByPath(path: string): null | TFile {
+  public getFileByPath(path: string): null | TFile {
     const f = this.fileMap[path];
     return f instanceof TFile ? f : null;
   }
 
-  getFiles(): TFile[] {
+  public getFiles(): TFile[] {
     return Object.values(this.fileMap).filter((f): f is TFile => f instanceof TFile);
   }
 
-  getFolderByPath(path: string): null | TFolder {
+  public getFolderByPath(path: string): null | TFolder {
     const f = this.fileMap[path];
     return f instanceof TFolder ? f : null;
   }
 
-  getMarkdownFiles(): TFile[] {
+  public getMarkdownFiles(): TFile[] {
     return Object.values(this.fileMap).filter((f): f is TFile => f instanceof TFile && f.extension === 'md');
   }
 
-  getName(): string {
+  public getName(): string {
     return '';
   }
 
-  getResourcePath(_file: TFile): string {
+  public getResourcePath(_file: TFile): string {
     return '';
   }
 
-  getRoot(): TFolder {
+  public getRoot(): TFolder {
     const root = new TFolder();
     root.path = '/';
     return root;
   }
 
-  async modify(_file: TFile, _data: string): Promise<void> {}
-  async modifyBinary(_file: TFile, _data: ArrayBuffer): Promise<void> {}
+  public async modify(_file: TFile, _data: string): Promise<void> {}
+  public async modifyBinary(_file: TFile, _data: ArrayBuffer): Promise<void> {}
 
-  async process(_file: TFile, fn: (data: string) => string): Promise<string> {
+  public async process(_file: TFile, fn: (data: string) => string): Promise<string> {
     return fn('');
   }
 
-  async read(_file: TFile): Promise<string> {
+  public async read(_file: TFile): Promise<string> {
     return '';
   }
 
-  async readBinary(_file: TFile): Promise<ArrayBuffer> {
+  public async readBinary(_file: TFile): Promise<ArrayBuffer> {
     return new ArrayBuffer(0);
   }
 
-  async rename(_file: TAbstractFile, _newPath: string): Promise<void> {}
-  async trash(_file: TAbstractFile, _system: boolean): Promise<void> {}
+  public async rename(_file: TAbstractFile, _newPath: string): Promise<void> {}
+  public async trash(_file: TAbstractFile, _system: boolean): Promise<void> {}
 }

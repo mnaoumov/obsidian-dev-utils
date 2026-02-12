@@ -1,23 +1,23 @@
 import type { EventRef } from 'obsidian';
 
 export class Component {
-  addChild<T extends Component>(component: T): T {
+  public addChild<T extends Component>(component: T): T {
     return component;
   }
 
-  load(): void {}
-  onload(): void {}
-  onunload(): void {}
-  register(_cb: () => unknown): void {}
-  registerDomEvent(_el: unknown, _type: string, _callback: unknown, _options?: unknown): void {}
-  registerEvent(_ref: EventRef): void {}
-  registerInterval(_id: number): number {
+  public load(): void {}
+  public onload(): void {}
+  public onunload(): void {}
+  public register(_cb: () => unknown): void {}
+  public registerDomEvent(_el: unknown, _type: string, _callback: unknown, _options?: unknown): void {}
+  public registerEvent(_ref: EventRef): void {}
+  public registerInterval(_id: number): number {
     return _id;
   }
 
-  removeChild<T extends Component>(component: T): T {
+  public removeChild<T extends Component>(component: T): T {
     return component;
   }
 
-  unload(): void {}
+  public unload(): void {}
 }

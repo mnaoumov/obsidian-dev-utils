@@ -3,109 +3,109 @@ import type { TFile } from './TFile.ts';
 import { Events } from './Events.ts';
 
 export class Workspace extends Events {
-  activeEditor: unknown = null;
-  activeLeaf: unknown = null;
-  containerEl: HTMLElement = null as unknown as HTMLElement;
-  layoutReady = false;
-  leftRibbon: unknown = null;
-  leftSplit: unknown = null;
-  requestSaveLayout: unknown = null;
-  rightRibbon: unknown = null;
-  rightSplit: unknown = null;
-  rootSplit: unknown = null;
+  public activeEditor: unknown = null;
+  public activeLeaf: unknown = null;
+  public containerEl: HTMLElement = null as unknown as HTMLElement;
+  public layoutReady = false;
+  public leftRibbon: unknown = null;
+  public leftSplit: unknown = null;
+  public requestSaveLayout: unknown = null;
+  public rightRibbon: unknown = null;
+  public rightSplit: unknown = null;
+  public rootSplit: unknown = null;
 
-  changeLayout(_workspace: unknown): Promise<void> {
+  public changeLayout(_workspace: unknown): Promise<void> {
     return Promise.resolve();
   }
 
-  createLeafBySplit(_leaf: unknown, _direction?: string, _before?: boolean): unknown {
+  public createLeafBySplit(_leaf: unknown, _direction?: string, _before?: boolean): unknown {
     return {};
   }
 
-  createLeafInParent(_parent: unknown, _index: number): unknown {
+  public createLeafInParent(_parent: unknown, _index: number): unknown {
     return {};
   }
 
-  detachLeavesOfType(_viewType: string): void {}
-  duplicateLeaf(_leaf: unknown, _leafType?: unknown, _direction?: string): Promise<unknown> {
+  public detachLeavesOfType(_viewType: string): void {}
+  public duplicateLeaf(_leaf: unknown, _leafType?: unknown, _direction?: string): Promise<unknown> {
     return Promise.resolve({});
   }
 
-  ensureSideLeaf(_type: string, _side: string, _options?: unknown): Promise<unknown> {
+  public ensureSideLeaf(_type: string, _side: string, _options?: unknown): Promise<unknown> {
     return Promise.resolve({});
   }
 
-  getActiveFile(): null | TFile {
+  public getActiveFile(): null | TFile {
     return null;
   }
 
-  getActiveViewOfType<T>(_type: new (...args: unknown[]) => T): null | T {
+  public getActiveViewOfType<T>(_type: new (...args: unknown[]) => T): null | T {
     return null;
   }
 
-  getGroupLeaves(_group: string): unknown[] {
+  public getGroupLeaves(_group: string): unknown[] {
     return [];
   }
 
-  getLastOpenFiles(): string[] {
+  public getLastOpenFiles(): string[] {
     return [];
   }
 
-  getLayout(): Record<string, unknown> {
+  public getLayout(): Record<string, unknown> {
     return {};
   }
 
-  getLeaf(_newLeaf?: unknown): unknown {
+  public getLeaf(_newLeaf?: unknown): unknown {
     return {};
   }
 
-  getLeafById(_id: string): unknown {
+  public getLeafById(_id: string): unknown {
     return null;
   }
 
-  getLeavesOfType(_viewType: string): unknown[] {
+  public getLeavesOfType(_viewType: string): unknown[] {
     return [];
   }
 
-  getLeftLeaf(_split: boolean): unknown {
+  public getLeftLeaf(_split: boolean): unknown {
     return null;
   }
 
-  getMostRecentLeaf(_root?: unknown): unknown {
+  public getMostRecentLeaf(_root?: unknown): unknown {
     return null;
   }
 
-  getRightLeaf(_split: boolean): unknown {
+  public getRightLeaf(_split: boolean): unknown {
     return null;
   }
 
-  getUnpinnedLeaf(): unknown {
+  public getUnpinnedLeaf(): unknown {
     return {};
   }
 
-  iterateAllLeaves(_callback: (leaf: unknown) => unknown): void {}
-  iterateRootLeaves(_callback: (leaf: unknown) => unknown): void {}
-  moveLeafToPopout(_leaf: unknown, _data?: unknown): unknown {
+  public iterateAllLeaves(_callback: (leaf: unknown) => unknown): void {}
+  public iterateRootLeaves(_callback: (leaf: unknown) => unknown): void {}
+  public moveLeafToPopout(_leaf: unknown, _data?: unknown): unknown {
     return {};
   }
 
-  onLayoutReady(_callback: () => unknown): void {}
-  openLinkText(_linktext: string, _sourcePath: string, _newLeaf?: unknown, _openViewState?: unknown): Promise<void> {
+  public onLayoutReady(_callback: () => unknown): void {}
+  public openLinkText(_linktext: string, _sourcePath: string, _newLeaf?: unknown, _openViewState?: unknown): Promise<void> {
     return Promise.resolve();
   }
 
-  openPopoutLeaf(_data?: unknown): unknown {
+  public openPopoutLeaf(_data?: unknown): unknown {
     return {};
   }
 
-  revealLeaf(_leaf: unknown): Promise<void> {
+  public revealLeaf(_leaf: unknown): Promise<void> {
     return Promise.resolve();
   }
 
-  setActiveLeaf(_leaf: unknown, _params?: unknown): void {}
-  splitActiveLeaf(_direction?: string): unknown {
+  public setActiveLeaf(_leaf: unknown, _params?: unknown): void {}
+  public splitActiveLeaf(_direction?: string): unknown {
     return {};
   }
 
-  updateOptions(): void {}
+  public updateOptions(): void {}
 }

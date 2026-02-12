@@ -3,82 +3,82 @@ import type { EventRef } from 'obsidian';
 import type { TFile } from './TFile.ts';
 
 export class MarkdownView {
-  allowNoFile = false;
-  app: unknown = null;
-  containerEl: HTMLElement = null as unknown as HTMLElement;
-  contentEl: HTMLElement = null as unknown as HTMLElement;
-  currentMode: unknown = null;
-  data = '';
-  editor: unknown = {};
-  file: null | TFile = null;
-  hoverPopover: unknown = null;
-  icon = '';
-  leaf: unknown = null;
-  navigation = true;
-  previewMode: unknown = null;
-  scope: unknown = null;
-  addAction(_icon: string, _title: string, _callback: (evt: MouseEvent) => unknown): HTMLElement {
+  public allowNoFile = false;
+  public app: unknown = null;
+  public containerEl: HTMLElement = null as unknown as HTMLElement;
+  public contentEl: HTMLElement = null as unknown as HTMLElement;
+  public currentMode: unknown = null;
+  public data = '';
+  public editor: unknown = {};
+  public file: null | TFile = null;
+  public hoverPopover: unknown = null;
+  public icon = '';
+  public leaf: unknown = null;
+  public navigation = true;
+  public previewMode: unknown = null;
+  public scope: unknown = null;
+  public addAction(_icon: string, _title: string, _callback: (evt: MouseEvent) => unknown): HTMLElement {
     return null as unknown as HTMLElement;
   }
 
-  addChild<T>(component: T): T {
+  public addChild<T>(component: T): T {
     return component;
   }
 
-  canAcceptExtension(_extension: string): boolean {
+  public canAcceptExtension(_extension: string): boolean {
     return false;
   }
 
-  clear(): void {}
-  getDisplayText(): string {
+  public clear(): void {}
+  public getDisplayText(): string {
     return '';
   }
 
-  getEphemeralState(): Record<string, unknown> {
+  public getEphemeralState(): Record<string, unknown> {
     return {};
   }
 
-  getIcon(): string {
+  public getIcon(): string {
     return this.icon;
   }
 
-  getMode(): string {
+  public getMode(): string {
     return 'source';
   }
 
-  getState(): Record<string, unknown> {
+  public getState(): Record<string, unknown> {
     return {};
   }
 
-  getViewData(): string {
+  public getViewData(): string {
     return this.data;
   }
 
-  getViewType(): string {
+  public getViewType(): string {
     return 'markdown';
   }
 
-  load(): void {}
-  onload(): void {}
-  onPaneMenu(_menu: unknown, _source: string): void {}
-  onResize(): void {}
-  onunload(): void {}
-  register(_cb: () => unknown): void {}
-  registerDomEvent(_el: unknown, _type: string, _callback: unknown, _options?: unknown): void {}
-  registerEvent(_ref: EventRef): void {}
-  registerInterval(_id: number): number {
+  public load(): void {}
+  public onload(): void {}
+  public onPaneMenu(_menu: unknown, _source: string): void {}
+  public onResize(): void {}
+  public onunload(): void {}
+  public register(_cb: () => unknown): void {}
+  public registerDomEvent(_el: unknown, _type: string, _callback: unknown, _options?: unknown): void {}
+  public registerEvent(_ref: EventRef): void {}
+  public registerInterval(_id: number): number {
     return _id;
   }
 
-  removeChild<T>(component: T): T {
+  public removeChild<T>(component: T): T {
     return component;
   }
 
-  requestSave: () => void = () => {};
-  async save(_clear?: boolean): Promise<void> {}
-  setEphemeralState(_state: unknown): void {}
-  async setState(_state: unknown, _result: unknown): Promise<void> {}
-  setViewData(_data: string, _clear: boolean): void {}
-  showSearch(_replace?: boolean): void {}
-  unload(): void {}
+  public requestSave: () => void = () => {};
+  public async save(_clear?: boolean): Promise<void> {}
+  public setEphemeralState(_state: unknown): void {}
+  public async setState(_state: unknown, _result: unknown): Promise<void> {}
+  public setViewData(_data: string, _clear: boolean): void {}
+  public showSearch(_replace?: boolean): void {}
+  public unload(): void {}
 }
