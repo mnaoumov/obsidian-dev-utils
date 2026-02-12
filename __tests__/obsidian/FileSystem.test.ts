@@ -1,15 +1,14 @@
+import {
+  TAbstractFile,
+  TFile,
+  TFolder
+} from 'obsidian';
 // @vitest-environment jsdom
 import {
   describe,
   expect,
   it
 } from 'vitest';
-
-import {
-  TAbstractFile,
-  TFile,
-  TFolder
-} from 'obsidian';
 
 import { createMockApp } from '../../__mocks__/createMockApp.ts';
 import {

@@ -10,9 +10,9 @@ import {
 } from '../src/Enum.ts';
 
 const TestEnum = {
-  Foo: 'foo',
   Bar: 'bar',
-  Baz: 'baz'
+  Baz: 'baz',
+  Foo: 'foo'
 } as const;
 
 describe('Enum', () => {

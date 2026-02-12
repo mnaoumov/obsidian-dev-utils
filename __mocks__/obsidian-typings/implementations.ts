@@ -3,7 +3,7 @@ import {
   TFolder
 } from '../obsidian.ts';
 
-export function createTFileInstance(vault: unknown, path: string): TFile {
+export function createTFileInstance(_vault: unknown, path: string): TFile {
   const file = new TFile();
   file.path = path;
   const parts = path.split('/');
@@ -11,16 +11,14 @@ export function createTFileInstance(vault: unknown, path: string): TFile {
   const dotIndex = file.name.lastIndexOf('.');
   file.extension = dotIndex >= 0 ? file.name.slice(dotIndex + 1) : '';
   file.basename = dotIndex >= 0 ? file.name.slice(0, dotIndex) : file.name;
-  void vault;
   return file;
 }
 
-export function createTFolderInstance(vault: unknown, path: string): TFolder {
+export function createTFolderInstance(_vault: unknown, path: string): TFolder {
   const folder = new TFolder();
   folder.path = path;
   const parts = path.split('/');
   folder.name = parts[parts.length - 1] ?? '';
-  void vault;
   return folder;
 }
 

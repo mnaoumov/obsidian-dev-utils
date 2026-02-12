@@ -102,7 +102,7 @@ describe('isLoaded', () => {
 
   it('should return false for HTMLIFrameElement without contentDocument', () => {
     const iframe = document.createElement('iframe');
-    Object.defineProperty(iframe, 'contentDocument', { value: null, configurable: true });
+    Object.defineProperty(iframe, 'contentDocument', { configurable: true, value: null });
     expect(isLoaded(iframe)).toBe(false);
   });
 
@@ -115,7 +115,7 @@ describe('isLoaded', () => {
   it('should return true for HTMLLinkElement with rel=stylesheet and sheet set', () => {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    Object.defineProperty(link, 'sheet', { value: {}, configurable: true });
+    Object.defineProperty(link, 'sheet', { configurable: true, value: {} });
     expect(isLoaded(link)).toBe(true);
   });
 
@@ -146,7 +146,9 @@ describe('onAncestorScrollOrResize', () => {
     const node = document.createElement('div');
     document.body.appendChild(node);
     const cleanup = onAncestorScrollOrResize(node, vi.fn());
-    expect(() => cleanup()).not.toThrow();
+    expect(() => {
+      cleanup();
+    }).not.toThrow();
     node.remove();
   });
 });

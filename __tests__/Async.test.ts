@@ -508,7 +508,9 @@ describe('Async', () => {
       // marksAsTerminateRetry is tested indirectly through retryWithTimeout
       // but we can verify it does not throw
       const error = new Error('test');
-      expect(() => marksAsTerminateRetry(error)).not.toThrow();
+      expect(() => {
+        marksAsTerminateRetry(error);
+      }).not.toThrow();
     });
   });
 
@@ -1119,7 +1121,9 @@ describe('Async', () => {
       };
       const syncFn = convertAsyncToSync(asyncFn);
 
-      expect(() => syncFn()).not.toThrow();
+      expect(() => {
+        syncFn();
+      }).not.toThrow();
     });
 
     it('should emit async error event when async function rejects', async () => {

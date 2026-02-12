@@ -18,7 +18,9 @@ describe('typeToDummyParam', () => {
 
   it('should throw when apply trap is triggered', () => {
     const dummy = typeToDummyParam<() => void>();
-    expect(() => (dummy as () => void)()).toThrow('Dummy parameter should not be accessed directly.');
+    expect(() => {
+      (dummy as () => void)();
+    }).toThrow('Dummy parameter should not be accessed directly.');
   });
 
   it('should throw when get trap is triggered', () => {
@@ -88,25 +90,38 @@ describe('typeToDummyParam', () => {
 
 describe('assertAllTypeKeys', () => {
   it('should return frozen array of keys for a matching type', () => {
-    type TestType = { a: number; b: string; c: boolean };
+    interface TestType {
+      a: number;
+      b: string;
+      c: boolean;
+    }
     const keys = assertAllTypeKeys(typeToDummyParam<TestType>(), ['a', 'b', 'c']);
     expect(keys).toEqual(['a', 'b', 'c']);
   });
 
   it('should return a frozen array', () => {
-    type TestType = { x: number; y: string };
+    interface TestType {
+      x: number;
+      y: string;
+    }
     const keys = assertAllTypeKeys(typeToDummyParam<TestType>(), ['x', 'y']);
     expect(Object.isFrozen(keys)).toBe(true);
   });
 
   it('should accept keys in any order', () => {
-    type TestType = { a: number; b: string; c: boolean };
+    interface TestType {
+      a: number;
+      b: string;
+      c: boolean;
+    }
     const keys = assertAllTypeKeys(typeToDummyParam<TestType>(), ['c', 'a', 'b']);
     expect(keys).toEqual(['c', 'a', 'b']);
   });
 
   it('should return a copy, not the original array', () => {
-    type TestType = { a: number };
+    interface TestType {
+      a: number;
+    }
     const original = ['a'] as const;
     const keys = assertAllTypeKeys(typeToDummyParam<TestType>(), original);
     expect(keys).not.toBe(original);
@@ -139,7 +154,7 @@ describe('assertAllUnionMembers', () => {
   });
 
   it('should handle mixed string and number union members', () => {
-    type MixedUnion = 1 | 'a';
+    type MixedUnion = 'a' | 1;
     const members = assertAllUnionMembers(typeToDummyParam<MixedUnion>(), [1, 'a']);
     expect(members).toEqual([1, 'a']);
   });

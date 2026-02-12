@@ -84,10 +84,10 @@ describe('Transformer (via DoubleTransformer)', () => {
     });
 
     it('should leave non-numeric values untouched', () => {
-      const result = transformer.transformObjectRecursively({ name: 'test', count: 3 });
+      const result = transformer.transformObjectRecursively({ count: 3, name: 'test' });
       expect(result).toEqual({
-        name: 'test',
-        count: { __transformerId: 'double', transformedValue: 6 }
+        count: { __transformerId: 'double', transformedValue: 6 },
+        name: 'test'
       });
     });
 

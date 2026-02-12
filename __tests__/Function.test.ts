@@ -44,7 +44,9 @@ describe('Function', () => {
         throw new Error('test');
       };
       const wrapped = omitReturnType(fn);
-      expect(() => wrapped()).toThrow('test');
+      expect(() => {
+        wrapped();
+      }).toThrow('test');
     });
   });
 

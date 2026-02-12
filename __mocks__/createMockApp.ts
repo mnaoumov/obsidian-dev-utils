@@ -1,21 +1,22 @@
 import type { App as ObsidianApp } from 'obsidian';
 
+import type { TAbstractFile } from './obsidian.ts';
+
 import {
   App,
-  type TAbstractFile,
   TFile,
   TFolder
 } from './obsidian.ts';
 
-export interface MockFileEntry {
-  path: string;
-  content?: string;
-  extension?: string;
-}
-
 export interface MockAppOptions {
   files?: MockFileEntry[];
   folders?: string[];
+}
+
+export interface MockFileEntry {
+  content?: string;
+  extension?: string;
+  path: string;
 }
 
 export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
@@ -50,7 +51,7 @@ export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
   }
 
   app.vault.fileMap = fileMap;
-  app.vault.getAbstractFileByPath = (path: string): TAbstractFile | null => {
+  app.vault.getAbstractFileByPath = (path: string): null | TAbstractFile => {
     return fileMap[path] ?? null;
   };
   app.vault.cachedRead = async (file: TFile): Promise<string> => {
@@ -60,12 +61,12 @@ export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
     return fileContents.get(file.path) ?? '';
   };
 
-  app.metadataCache.getFirstLinkpathDest = (linkpath: string, _sourcePath: string): TFile | null => {
+  app.metadataCache.getFirstLinkpathDest = (linkpath: string, _sourcePath: string): null | TFile => {
     const found = fileMap[linkpath];
     if (found instanceof TFile) {
       return found;
     }
-    const withMd = fileMap[linkpath + '.md'];
+    const withMd = fileMap[`${linkpath}.md`];
     if (withMd instanceof TFile) {
       return withMd;
     }

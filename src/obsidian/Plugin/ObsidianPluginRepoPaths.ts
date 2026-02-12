@@ -113,6 +113,9 @@ export enum ObsidianPluginRepoPaths {
   /** YAML Markdownlint configuration file. */
   MarkdownlintConfigYml = '.markdownlint.yml',
 
+  /** Mocks folder. */
+  Mocks = '__mocks__',
+
   /** NPM shrinkwrap file. */
   NpmShrinkwrapJson = 'npm-shrinkwrap.json',
 
@@ -130,6 +133,9 @@ export enum ObsidianPluginRepoPaths {
 
   /** Styles CSS file. */
   StylesCss = 'styles.css',
+
+  /** Tests folder. */
+  Tests = '__tests__',
 
   /** TypeScript configuration file. */
   TsConfigJson = 'tsconfig.json',

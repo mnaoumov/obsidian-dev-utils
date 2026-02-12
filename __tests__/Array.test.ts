@@ -76,7 +76,7 @@ describe('Array', () => {
       const arr = ['a', 'b', 'c'];
       const predicate = vi.fn(() => true);
       filterInPlace(arr, predicate);
-      expect(predicate).toHaveBeenNthCalledWith(callIndex, expectedValue, (callIndex as number) - 1, expect.any(Array));
+      expect(predicate).toHaveBeenNthCalledWith(callIndex, expectedValue, callIndex - 1, expect.any(Array));
     });
 
     it('should contain correct elements after filtering', () => {

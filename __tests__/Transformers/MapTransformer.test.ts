@@ -103,11 +103,11 @@ describe('MapTransformer', () => {
 
     describe('should preserve a map with various value types', () => {
       const original = new Map<string, unknown>([
-        ['str', 'hello'],
-        ['num', 42],
+        ['arr', [1, 2, 3]],
         ['bool', true],
         ['null', null],
-        ['arr', [1, 2, 3]]
+        ['num', 42],
+        ['str', 'hello']
       ]);
       const transformed = transformer.transformValue(original);
       const restored = transformer.restoreValue(transformed);

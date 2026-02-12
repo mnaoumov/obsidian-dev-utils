@@ -4,10 +4,11 @@ import {
   it
 } from 'vitest';
 
+import type { Transformer } from '../../src/Transformers/Transformer.ts';
+
 import { DateTransformer } from '../../src/Transformers/DateTransformer.ts';
 import { GroupTransformer } from '../../src/Transformers/GroupTransformer.ts';
 import { MapTransformer } from '../../src/Transformers/MapTransformer.ts';
-import type { Transformer } from '../../src/Transformers/Transformer.ts';
 
 /**
  * Exposes the protected restoreValue method for testing purposes.

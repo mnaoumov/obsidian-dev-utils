@@ -112,7 +112,7 @@ describe('SetTransformer', () => {
     });
 
     describe('should preserve a set with mixed types', () => {
-      const original = new Set<unknown>([1, 'two', true, null]);
+      const original = new Set<unknown>([1, null, true, 'two']);
       const transformed = transformer.transformValue(original);
       const restored = transformer.restoreValue(transformed);
 

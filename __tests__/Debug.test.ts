@@ -133,7 +133,6 @@ describe('Debug', () => {
   describe('printWithStackTrace', () => {
     it('should call the debugger with message and args in Node environment', () => {
       debug.enable('print-test');
-      const dbg = getDebugger('print-test');
       const spy = vi.fn() as unknown as Debugger;
       spy.enabled = true;
       printWithStackTrace(spy, 'fake-stack', 'hello %s', 'world');
@@ -143,7 +142,9 @@ describe('Debug', () => {
 
   describe('showInitialDebugMessage', () => {
     it('should not throw when called with a plugin ID', () => {
-      expect(() => showInitialDebugMessage('test-plugin-id')).not.toThrow();
+      expect(() => {
+        showInitialDebugMessage('test-plugin-id');
+      }).not.toThrow();
     });
   });
 });

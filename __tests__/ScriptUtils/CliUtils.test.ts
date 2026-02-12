@@ -45,7 +45,9 @@ describe('CliTaskResult', () => {
 
   describe('DoNotExit', () => {
     it('should not throw when exit is called', () => {
-      expect(() => CliTaskResult.DoNotExit().exit()).not.toThrow();
+      expect(() => {
+        CliTaskResult.DoNotExit().exit();
+      }).not.toThrow();
     });
   });
 

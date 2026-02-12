@@ -1,11 +1,11 @@
+import type { CachedMetadata } from 'obsidian';
+
 // @vitest-environment jsdom
 import {
   describe,
   expect,
   it
 } from 'vitest';
-
-import type { CachedMetadata } from 'obsidian';
 
 import {
   encodeUrl,

@@ -74,7 +74,7 @@ describe('abortSignalTimeout', () => {
 
     beforeEach(() => {
       originalTimeout = AbortSignal.timeout;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (AbortSignal as any).timeout = undefined;
     });
 
@@ -104,7 +104,7 @@ describe('abortSignalTimeout', () => {
       } finally {
         vi.useRealTimers();
         if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-dynamic-delete
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           delete (globalThis as any).window;
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -126,7 +126,7 @@ describe('abortSignalTimeout', () => {
       } finally {
         vi.useRealTimers();
         if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-dynamic-delete
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           delete (globalThis as any).window;
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,7 +148,7 @@ describe('abortSignalTimeout', () => {
       } finally {
         vi.useRealTimers();
         if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-dynamic-delete
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           delete (globalThis as any).window;
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,7 +170,7 @@ describe('abortSignalTimeout', () => {
       } finally {
         vi.useRealTimers();
         if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-dynamic-delete
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           delete (globalThis as any).window;
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -192,7 +192,7 @@ describe('abortSignalTimeout', () => {
       } finally {
         vi.useRealTimers();
         if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-dynamic-delete
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           delete (globalThis as any).window;
         } else {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -306,7 +306,7 @@ describe('abortSignalAny', () => {
 
     beforeEach(() => {
       originalAny = AbortSignal.any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (AbortSignal as any).any = undefined;
     });
 
@@ -460,7 +460,9 @@ describe('onAbort', () => {
     const remover = onAbort(controller.signal, callback);
 
     // Remover should be a noop (no error when called)
-    expect(() => remover()).not.toThrow();
+    expect(() => {
+      remover();
+    }).not.toThrow();
   });
 
   it('should not call callback before signal aborts', () => {
