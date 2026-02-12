@@ -321,15 +321,15 @@ describe('Async', () => {
     it('should collect results from sequential async functions', async () => {
       const order: number[] = [];
       const result = await promiseAllAsyncFnsSequentially([
-        async () => {
+        async (): Promise<string> => {
           order.push(1);
           return 'a';
         },
-        async () => {
+        async (): Promise<string> => {
           order.push(2);
           return 'b';
         },
-        async () => {
+        async (): Promise<string> => {
           order.push(3);
           return 'c';
         }
@@ -340,15 +340,15 @@ describe('Async', () => {
     it('should execute async functions in sequential order', async () => {
       const order: number[] = [];
       await promiseAllAsyncFnsSequentially([
-        async () => {
+        async (): Promise<string> => {
           order.push(1);
           return 'a';
         },
-        async () => {
+        async (): Promise<string> => {
           order.push(2);
           return 'b';
         },
-        async () => {
+        async (): Promise<string> => {
           order.push(3);
           return 'c';
         }
@@ -358,9 +358,9 @@ describe('Async', () => {
 
     it('should handle sync functions', async () => {
       const result = await promiseAllAsyncFnsSequentially([
-        () => 10,
-        () => 20,
-        () => 30
+        (): number => 10,
+        (): number => 20,
+        (): number => 30
       ]);
       expect(result).toEqual([10, 20, 30]);
     });
@@ -371,11 +371,11 @@ describe('Async', () => {
     });
 
     it('should stop execution on first error', async () => {
-      const fn3 = vi.fn(async () => 'c');
+      const fn3 = vi.fn(async (): Promise<string> => 'c');
       await expect(
         promiseAllAsyncFnsSequentially([
-          async () => 'a',
-          async () => {
+          async (): Promise<string> => 'a',
+          async (): Promise<never> => {
             throw new Error('seq fail');
           },
           fn3
@@ -421,7 +421,7 @@ describe('Async', () => {
 
   describe('toArray', () => {
     it('should convert an async iterable to an array', async () => {
-      async function* gen() {
+      async function* gen(): AsyncGenerator<number, void> {
         yield 1;
         yield 2;
         yield 3;
@@ -431,7 +431,7 @@ describe('Async', () => {
     });
 
     it('should handle an empty async iterable', async () => {
-      async function* gen() {
+      async function* gen(): AsyncGenerator<never, void> {
         // yields nothing
       }
       const result = await toArray(gen());
@@ -439,7 +439,7 @@ describe('Async', () => {
     });
 
     it('should handle a single-element async iterable', async () => {
-      async function* gen() {
+      async function* gen(): AsyncGenerator<string, void> {
         yield 'only';
       }
       const result = await toArray(gen());
@@ -447,7 +447,7 @@ describe('Async', () => {
     });
 
     it('should preserve element order', async () => {
-      async function* gen() {
+      async function* gen(): AsyncGenerator<string, void> {
         yield 'a';
         yield 'b';
         yield 'c';

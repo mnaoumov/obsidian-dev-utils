@@ -55,15 +55,15 @@ describe('CliTaskResult', () => {
     it('should return success when all tasks succeed', async () => {
       const results: string[] = [];
       await CliTaskResult.chain([
-        () => {
+        (): CliTaskResult => {
           results.push('first');
           return CliTaskResult.Success();
         },
-        () => {
+        (): CliTaskResult => {
           results.push('second');
           return CliTaskResult.Success();
         },
-        () => {
+        (): CliTaskResult => {
           results.push('third');
           return CliTaskResult.Success();
         }
@@ -75,11 +75,11 @@ describe('CliTaskResult', () => {
     it('should continue chain when Success is returned', async () => {
       const results: string[] = [];
       await CliTaskResult.chain([
-        () => {
+        (): CliTaskResult => {
           results.push('first');
           return CliTaskResult.Success();
         },
-        () => {
+        (): CliTaskResult => {
           results.push('second');
           return CliTaskResult.Success();
         }
@@ -91,15 +91,15 @@ describe('CliTaskResult', () => {
     it('should stop at first failure', async () => {
       const results: string[] = [];
       await CliTaskResult.chain([
-        () => {
+        (): CliTaskResult => {
           results.push('first');
           return CliTaskResult.Success();
         },
-        () => {
+        (): CliTaskResult => {
           results.push('second');
           return CliTaskResult.Failure();
         },
-        () => {
+        (): CliTaskResult => {
           results.push('third');
           return CliTaskResult.Success();
         }
@@ -111,11 +111,11 @@ describe('CliTaskResult', () => {
     it('should treat Failure as not successful via chain', async () => {
       const results: string[] = [];
       await CliTaskResult.chain([
-        () => {
+        (): CliTaskResult => {
           results.push('before');
           return CliTaskResult.Failure();
         },
-        () => {
+        (): CliTaskResult => {
           results.push('after');
           return CliTaskResult.Success();
         }
@@ -127,11 +127,11 @@ describe('CliTaskResult', () => {
     it('should treat FromExitCode(0) as successful via chain', async () => {
       const results: string[] = [];
       await CliTaskResult.chain([
-        () => {
+        (): CliTaskResult => {
           results.push('first');
           return CliTaskResult.FromExitCode(0);
         },
-        () => {
+        (): CliTaskResult => {
           results.push('second');
           return CliTaskResult.Success();
         }
@@ -143,11 +143,11 @@ describe('CliTaskResult', () => {
     it('should treat FromExitCode(1) as not successful via chain', async () => {
       const results: string[] = [];
       await CliTaskResult.chain([
-        () => {
+        (): CliTaskResult => {
           results.push('first');
           return CliTaskResult.FromExitCode(1);
         },
-        () => {
+        (): CliTaskResult => {
           results.push('second');
           return CliTaskResult.Success();
         }
@@ -160,11 +160,11 @@ describe('CliTaskResult', () => {
       const result = await CliTaskResult.chain([]);
       const results: string[] = [];
       await CliTaskResult.chain([
-        () => {
+        (): CliTaskResult => {
           results.push('after-empty');
           return result;
         },
-        () => {
+        (): CliTaskResult => {
           results.push('continued');
           return CliTaskResult.Success();
         }
