@@ -28,28 +28,36 @@ export class MarkdownView {
   canAcceptExtension(_extension: string): boolean {
     return false;
   }
+
   clear(): void {}
   getDisplayText(): string {
     return '';
   }
+
   getEphemeralState(): Record<string, unknown> {
     return {};
   }
+
   getIcon(): string {
     return this.icon;
   }
+
   getMode(): string {
     return 'source';
   }
+
   getState(): Record<string, unknown> {
     return {};
   }
+
   getViewData(): string {
     return this.data;
   }
+
   getViewType(): string {
     return 'markdown';
   }
+
   load(): void {}
   onload(): void {}
   onPaneMenu(_menu: unknown, _source: string): void {}
@@ -61,9 +69,11 @@ export class MarkdownView {
   registerInterval(_id: number): number {
     return _id;
   }
+
   removeChild<T>(component: T): T {
     return component;
   }
+
   requestSave: () => void = () => {};
   async save(_clear?: boolean): Promise<void> {}
   setEphemeralState(_state: unknown): void {}
