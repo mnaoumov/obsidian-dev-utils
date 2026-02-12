@@ -4,6 +4,7 @@ export class Component {
   addChild<T extends Component>(component: T): T {
     return component;
   }
+
   load(): void {}
   onload(): void {}
   onunload(): void {}
@@ -13,8 +14,10 @@ export class Component {
   registerInterval(_id: number): number {
     return _id;
   }
+
   removeChild<T extends Component>(component: T): T {
     return component;
   }
+
   unload(): void {}
 }

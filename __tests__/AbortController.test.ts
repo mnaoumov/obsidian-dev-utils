@@ -16,6 +16,8 @@ import {
   waitForAbort
 } from '../src/AbortController.ts';
 
+type WindowEx = typeof globalThis & Window;
+
 describe('INFINITE_TIMEOUT', () => {
   it('should equal Number.POSITIVE_INFINITY', () => {
     expect(INFINITE_TIMEOUT).toBe(Number.POSITIVE_INFINITY);
@@ -74,8 +76,7 @@ describe('abortSignalTimeout', () => {
 
     beforeEach(() => {
       originalTimeout = AbortSignal.timeout;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (AbortSignal as any).timeout = undefined;
+      AbortSignal.timeout = undefined as unknown as typeof AbortSignal.timeout;
     });
 
     afterEach(() => {
@@ -94,8 +95,7 @@ describe('abortSignalTimeout', () => {
 
     it('should not be aborted before timeout elapses (fallback)', () => {
       const originalWindow = globalThis.window;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (globalThis as any).window = globalThis;
+      globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
       try {
@@ -103,20 +103,13 @@ describe('abortSignalTimeout', () => {
         expect(signal.aborted).toBe(false);
       } finally {
         vi.useRealTimers();
-        if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          delete (globalThis as any).window;
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (globalThis as any).window = originalWindow;
-        }
+        restoreOriginalWindow(originalWindow);
       }
     });
 
     it('should abort after the specified timeout using window.setTimeout (fallback)', () => {
       const originalWindow = globalThis.window;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (globalThis as any).window = globalThis;
+      globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
       try {
@@ -125,20 +118,13 @@ describe('abortSignalTimeout', () => {
         expect(signal.aborted).toBe(true);
       } finally {
         vi.useRealTimers();
-        if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          delete (globalThis as any).window;
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (globalThis as any).window = originalWindow;
-        }
+        restoreOriginalWindow(originalWindow);
       }
     });
 
     it('should set reason to an Error instance after timeout (fallback)', () => {
       const originalWindow = globalThis.window;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (globalThis as any).window = globalThis;
+      globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
       try {
@@ -147,20 +133,13 @@ describe('abortSignalTimeout', () => {
         expect(signal.reason).toBeInstanceOf(Error);
       } finally {
         vi.useRealTimers();
-        if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          delete (globalThis as any).window;
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (globalThis as any).window = originalWindow;
-        }
+        restoreOriginalWindow(originalWindow);
       }
     });
 
     it('should set the correct timeout message after timeout (fallback)', () => {
       const originalWindow = globalThis.window;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (globalThis as any).window = globalThis;
+      globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
       try {
@@ -169,20 +148,13 @@ describe('abortSignalTimeout', () => {
         expect((signal.reason as Error).message).toBe('Timed out in 100 milliseconds');
       } finally {
         vi.useRealTimers();
-        if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          delete (globalThis as any).window;
-        } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (globalThis as any).window = originalWindow;
-        }
+        restoreOriginalWindow(originalWindow);
       }
     });
 
     it('should not abort before the timeout elapses (fallback)', () => {
       const originalWindow = globalThis.window;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (globalThis as any).window = globalThis;
+      globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
       try {
@@ -192,11 +164,9 @@ describe('abortSignalTimeout', () => {
       } finally {
         vi.useRealTimers();
         if (originalWindow === undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          delete (globalThis as any).window;
+          delete (globalThis as Partial<typeof globalThis>).window;
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (globalThis as any).window = originalWindow;
+          globalThis.window = originalWindow;
         }
       }
     });
@@ -306,8 +276,7 @@ describe('abortSignalAny', () => {
 
     beforeEach(() => {
       originalAny = AbortSignal.any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (AbortSignal as any).any = undefined;
+      AbortSignal.any = undefined as unknown as typeof AbortSignal.any;
     });
 
     afterEach(() => {
@@ -555,3 +524,11 @@ describe('waitForAbort', () => {
     await expect(waitForAbort(controller.signal, true)).rejects.toBe(reason);
   });
 });
+
+function restoreOriginalWindow(originalWindow?: WindowEx): void {
+  if (originalWindow === undefined) {
+    delete (globalThis as Partial<typeof globalThis>).window;
+  } else {
+    globalThis.window = originalWindow;
+  }
+}

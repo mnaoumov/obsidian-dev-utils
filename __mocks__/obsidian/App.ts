@@ -34,9 +34,11 @@ export class App {
   isDarkMode(): boolean {
     return false;
   }
+
   loadLocalStorage(_key: string): unknown {
     return null;
   }
+
   saveLocalStorage(_key: string, _data: unknown): void {}
 }
 
