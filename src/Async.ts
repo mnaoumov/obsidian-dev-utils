@@ -225,7 +225,16 @@ export async function ignoreError(promise: Promise<unknown>, fallbackValue?: und
  * @param fallbackValue - The value to return if an error is thrown.
  * @returns A {@link Promise} that resolves with the value returned by the asynchronous function or the fallback value if an error is thrown.
  */
-export async function ignoreError<T>(promise: Promise<T>, fallbackValue: T): Promise<T> {
+export async function ignoreError<T>(promise: Promise<T>, fallbackValue: T): Promise<T>;
+/**
+ * Ignores an error that is thrown by an asynchronous function.
+ *
+ * @typeParam T - The type of the value returned by the asynchronous function.
+ * @param promise - The promise to ignore the error of.
+ * @param fallbackValue - The value to return if an error is thrown.
+ * @returns A {@link Promise} that resolves with the value returned by the asynchronous function or the fallback value if an error is thrown.
+ */
+export async function ignoreError<T>(promise: Promise<T>, fallbackValue?: T): Promise<T | void> {
   const ignoreErrorDebugger = getLibDebugger('Async:ignoreError');
   const stackTrace = getStackTrace(1);
   try {
