@@ -62,7 +62,9 @@ describe('validate', () => {
     ['beta'],
     ['1.2.3']
   ])('should not throw for valid input %j', (input: string) => {
-    expect(() => validate(input)).not.toThrow();
+    expect(() => {
+      validate(input);
+    }).not.toThrow();
   });
 
   it.each([
@@ -70,6 +72,8 @@ describe('validate', () => {
     ['abc'],
     ['']
   ])('should throw for invalid input %j', (input: string) => {
-    expect(() => validate(input)).toThrow();
+    expect(() => {
+      validate(input);
+    }).toThrow();
   });
 });

@@ -164,7 +164,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should return sorted keys', () => {
-      const obj = { z: 1, a: 2, m: 3 };
+      const obj = { a: 2, m: 3, z: 1 };
       expect(getAllKeys(obj)).toEqual(['a', 'm', 'z']);
     });
 
@@ -218,7 +218,9 @@ describe('ObjectUtils', () => {
 
     it('should throw for missing intermediate path', () => {
       const obj: Record<string, unknown> = { a: 1 };
-      expect(() => setNestedPropertyValue(obj, 'x.y.z', 42)).toThrow('Property path x.y.z not found');
+      expect(() => {
+        setNestedPropertyValue(obj, 'x.y.z', 42);
+      }).toThrow('Property path x.y.z not found');
     });
   });
 
@@ -337,7 +339,7 @@ describe('ObjectUtils', () => {
 
     it('should clone non-enumerable properties', () => {
       const obj: Record<string, unknown> = {};
-      Object.defineProperty(obj, 'hidden', { value: 42, enumerable: false });
+      Object.defineProperty(obj, 'hidden', { enumerable: false, value: 42 });
       const clone = cloneWithNonEnumerableProperties(obj);
       expect(Object.getOwnPropertyDescriptor(clone, 'hidden')?.value).toBe(42);
     });
@@ -361,7 +363,7 @@ describe('ObjectUtils', () => {
     it('should assign non-enumerable properties', () => {
       const target: Record<string, unknown> = { a: 1 };
       const source: Record<string, unknown> = {};
-      Object.defineProperty(source, 'hidden', { value: 42, enumerable: false, writable: true, configurable: true });
+      Object.defineProperty(source, 'hidden', { configurable: true, enumerable: false, value: 42, writable: true });
       assignWithNonEnumerableProperties(target, source);
       expect(Object.getOwnPropertyDescriptor(target, 'hidden')?.value).toBe(42);
     });
@@ -446,7 +448,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should sort keys when enabled', () => {
-      const obj = { z: 1, a: 2, m: 3 };
+      const obj = { a: 2, m: 3, z: 1 };
       const json = toJson(obj, { shouldSortKeys: true });
       const keys = Object.keys(JSON.parse(json) as Record<string, unknown>);
       expect(keys).toEqual(['a', 'm', 'z']);
@@ -517,7 +519,7 @@ describe('ObjectUtils', () => {
         get prop(): number {
           return 1;
         },
-        set prop(_v: number) {/* noop */}
+        set prop(_v: number) {}
       };
       expect(getAllKeys(obj)).toContain('prop');
     });
@@ -533,7 +535,7 @@ describe('ObjectUtils', () => {
 
     it('should exclude non-enumerable, non-writable properties', () => {
       const obj: Record<string, unknown> = {};
-      Object.defineProperty(obj, 'locked', { value: 1, enumerable: true, writable: false });
+      Object.defineProperty(obj, 'locked', { enumerable: true, value: 1, writable: false });
       expect(getAllKeys(obj)).not.toContain('locked');
     });
   });

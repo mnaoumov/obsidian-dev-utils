@@ -24,7 +24,7 @@ describe('TwoWayMap', () => {
         ['b', 2],
         ['c', 3]
       ]);
-      expect(map.getValue(key as string)).toBe(value);
+      expect(map.getValue(key)).toBe(value);
     });
 
     it.each([[1, 'a'], [2, 'b'], [3, 'c']])('should initialize getKey(%j) to %j from entries', (value, key) => {
@@ -33,7 +33,7 @@ describe('TwoWayMap', () => {
         ['b', 2],
         ['c', 3]
       ]);
-      expect(map.getKey(value as number)).toBe(key);
+      expect(map.getKey(value)).toBe(key);
     });
   });
 

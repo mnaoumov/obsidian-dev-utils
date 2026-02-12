@@ -56,7 +56,9 @@ describe('AsyncEvents', () => {
     });
 
     it('should handle triggering an event with no listeners', () => {
-      expect(() => events.trigger('nonexistent')).not.toThrow();
+      expect(() => {
+        events.trigger('nonexistent');
+      }).not.toThrow();
     });
   });
 
@@ -83,7 +85,9 @@ describe('AsyncEvents', () => {
 
     it('should do nothing when removing a listener for nonexistent event', () => {
       const callback = vi.fn();
-      expect(() => events.off('nonexistent', callback)).not.toThrow();
+      expect(() => {
+        events.off('nonexistent', callback);
+      }).not.toThrow();
     });
 
     it('should do nothing when removing a callback that was never registered', () => {
@@ -137,7 +141,9 @@ describe('AsyncEvents', () => {
       const ref = events.on('test', vi.fn());
       events.offref(ref);
       // Removing again should not throw
-      expect(() => events.offref(ref)).not.toThrow();
+      expect(() => {
+        events.offref(ref);
+      }).not.toThrow();
     });
   });
 
@@ -208,7 +214,9 @@ describe('AsyncEvents', () => {
       events.trigger('test');
 
       const deferredFn = setTimeoutSpy.mock.calls[0]![0] as () => void;
-      expect(() => deferredFn()).toThrow(error);
+      expect(() => {
+        deferredFn();
+      }).toThrow(error);
     });
 
     it('should call all listeners even if one throws', () => {
@@ -276,7 +284,9 @@ describe('AsyncEvents', () => {
       });
       await events.triggerAsync('test');
       const deferredFn = setTimeoutSpy.mock.calls[0]![0] as () => void;
-      expect(() => deferredFn()).toThrow(error);
+      expect(() => {
+        deferredFn();
+      }).toThrow(error);
     });
 
     it('should continue calling remaining async listeners even if one throws', async () => {
@@ -330,7 +340,9 @@ describe('AsyncEvents', () => {
       });
       events.tryTrigger(ref, []);
       const deferredFn = setTimeoutSpy.mock.calls[0]![0] as () => void;
-      expect(() => deferredFn()).toThrow(error);
+      expect(() => {
+        deferredFn();
+      }).toThrow(error);
     });
   });
 
@@ -368,7 +380,9 @@ describe('AsyncEvents', () => {
       });
       await events.tryTriggerAsync(ref, []);
       const deferredFn = setTimeoutSpy.mock.calls[0]![0] as () => void;
-      expect(() => deferredFn()).toThrow(error);
+      expect(() => {
+        deferredFn();
+      }).toThrow(error);
     });
   });
 

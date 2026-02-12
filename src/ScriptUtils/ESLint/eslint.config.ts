@@ -40,6 +40,8 @@ import { getRootFolder } from '../Root.ts';
  * The list of TypeScript files to lint.
  */
 export const typeScriptFiles = [
+  join(ObsidianPluginRepoPaths.Tests, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
+  join(ObsidianPluginRepoPaths.Mocks, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
   join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
   join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTsx),
   join(ObsidianPluginRepoPaths.Scripts, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),

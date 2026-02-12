@@ -1,7 +1,83 @@
+export class App {
+  fileManager = {
+    renameFile(_file: TAbstractFile, _newPath: string): Promise<void> {
+      return Promise.resolve();
+    }
+  };
+
+  internalPlugins = {
+    getEnabledPluginById(_id: string): unknown {
+      return null;
+    }
+  };
+
+  metadataCache = {
+    fileToLinktext(file: TFile, _sourcePath: string, _omitMdExt?: boolean): string {
+      return file.basename;
+    },
+    getCache(_path: string): unknown {
+      return null;
+    },
+    getFirstLinkpathDest(_linkpath: string, _sourcePath: string): null | TFile {
+      return null;
+    }
+  };
+
+  vault = new Vault();
+  workspace = {
+    getLeaf(): unknown {
+      return {};
+    },
+    getLeavesOfType(_type: string): unknown[] {
+      return [];
+    },
+    on(_event: string, _cb: (...args: unknown[]) => void): unknown {
+      return {};
+    }
+  };
+}
+
+export class Component {
+  load(): void {}
+  register(_cb: () => void): void {}
+  registerEvent(_ref: unknown): void {}
+  unload(): void {}
+}
+
+export class MarkdownView {
+  editor = {};
+  file: null | TFile = null;
+  getViewType(): string {
+    return 'markdown';
+  }
+}
+
+export class Notice {
+  constructor(_message: string, _timeout?: number) {}
+}
+
+export class Plugin {
+  app: App = null as unknown as App;
+  manifest = { id: '', name: '', version: '' };
+  addCommand(_cmd: unknown): unknown {
+    return {};
+  }
+
+  loadData(): Promise<unknown> {
+    return Promise.resolve({});
+  }
+
+  register(_cb: () => void): void {}
+  registerEvent(_ref: unknown): void {}
+  saveData(_data: unknown): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
 export class TAbstractFile {
-  path = '';
   name = '';
-  parent: TFolder | null = null;
+  parent: null | TFolder = null;
+  path = '';
   vault: Vault = null as unknown as Vault;
 }
 
@@ -18,9 +94,22 @@ export class TFolder extends TAbstractFile {
   }
 }
 
+export class ValueComponent<T> {
+  inputEl: HTMLElement = null as unknown as HTMLElement;
+  protected value: T = undefined as unknown as T;
+  getValue(): T {
+    return this.value;
+  }
+
+  setValue(value: T): this {
+    this.value = value;
+    return this;
+  }
+}
+
 export class Vault {
-  fileMap: Record<string, TAbstractFile> = {};
   adapter = { insensitive: false };
+  fileMap: Record<string, TAbstractFile> = {};
 
   static recurseChildren(folder: TFolder, cb: (f: TAbstractFile) => void): void {
     for (const child of folder.children) {
@@ -31,15 +120,7 @@ export class Vault {
     }
   }
 
-  getAbstractFileByPath(path: string): TAbstractFile | null {
-    return this.fileMap[path] ?? null;
-  }
-
   async cachedRead(_file: TFile): Promise<string> {
-    return '';
-  }
-
-  async read(_file: TFile): Promise<string> {
     return '';
   }
 
@@ -55,6 +136,10 @@ export class Vault {
     return f;
   }
 
+  getAbstractFileByPath(path: string): null | TAbstractFile {
+    return this.fileMap[path] ?? null;
+  }
+
   getAvailablePath(base: string, _ext: string): string {
     return base;
   }
@@ -62,6 +147,36 @@ export class Vault {
   getMarkdownFiles(): TFile[] {
     return Object.values(this.fileMap).filter((f): f is TFile => f instanceof TFile && f.extension === 'md');
   }
+
+  async read(_file: TFile): Promise<string> {
+    return '';
+  }
+}
+
+export function getFrontMatterInfo(content: string): FrontMatterInfo {
+  const fmRegex = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/;
+  const match = fmRegex.exec(content);
+  if (match) {
+    const fullMatch = match[0];
+    const frontmatterBody = match[1]!;
+    const startDelimiterEnd = content.indexOf('\n') + 1;
+    const from = startDelimiterEnd;
+    const to = from + frontmatterBody.length;
+    return {
+      contentStart: fullMatch.length,
+      exists: true,
+      from,
+      frontmatter: frontmatterBody,
+      to
+    };
+  }
+  return {
+    contentStart: 0,
+    exists: false,
+    from: 0,
+    frontmatter: '',
+    to: 0
+  };
 }
 
 export function normalizePath(path: string): string {
@@ -74,142 +189,6 @@ export function parseLinktext(linktext: string): { path: string; subpath: string
     return { path: linktext, subpath: '' };
   }
   return { path: linktext.slice(0, hashIndex), subpath: linktext.slice(hashIndex) };
-}
-
-export function requireApiVersion(_version: string): boolean {
-  return true;
-}
-
-export class Plugin {
-  app: App = null as unknown as App;
-  manifest = { id: '', name: '', version: '' };
-  register(_cb: () => void): void {/* stub */}
-  registerEvent(_ref: unknown): void {/* stub */}
-  addCommand(_cmd: unknown): unknown {
-    return {};
-  }
-  loadData(): Promise<unknown> {
-    return Promise.resolve({});
-  }
-  saveData(_data: unknown): Promise<void> {
-    return Promise.resolve();
-  }
-}
-
-export class Component {
-  register(_cb: () => void): void {/* stub */}
-  registerEvent(_ref: unknown): void {/* stub */}
-  load(): void {/* stub */}
-  unload(): void {/* stub */}
-}
-
-export class Notice {
-  constructor(_message: string, _timeout?: number) {/* stub */}
-}
-
-export class MarkdownView {
-  file: TFile | null = null;
-  editor = {};
-  getViewType(): string {
-    return 'markdown';
-  }
-}
-
-export class App {
-  vault = new Vault();
-  metadataCache = {
-    getFirstLinkpathDest(_linkpath: string, _sourcePath: string): TFile | null {
-      return null;
-    },
-    fileToLinktext(file: TFile, _sourcePath: string, _omitMdExt?: boolean): string {
-      return file.basename;
-    },
-    getCache(_path: string): unknown {
-      return null;
-    }
-  };
-  workspace = {
-    getLeavesOfType(_type: string): unknown[] {
-      return [];
-    },
-    on(_event: string, _cb: (...args: unknown[]) => void): unknown {
-      return {};
-    },
-    getLeaf(): unknown {
-      return {};
-    }
-  };
-  internalPlugins = {
-    getEnabledPluginById(_id: string): unknown {
-      return null;
-    }
-  };
-  fileManager = {
-    renameFile(_file: TAbstractFile, _newPath: string): Promise<void> {
-      return Promise.resolve();
-    }
-  };
-}
-
-export class ValueComponent<T> {
-  inputEl: HTMLElement = null as unknown as HTMLElement;
-  protected value: T = undefined as unknown as T;
-  getValue(): T {
-    return this.value;
-  }
-  setValue(value: T): this {
-    this.value = value;
-    return this;
-  }
-}
-
-export const Platform = {
-  isDesktop: true,
-  isMobile: false,
-  isDesktopApp: true,
-  isMobileApp: false,
-  isIosApp: false,
-  isAndroidApp: false,
-  isPhone: false,
-  isTablet: false,
-  isMacOS: false,
-  isWin: true,
-  isLinux: false,
-  isSafari: false
-};
-
-export interface FrontMatterInfo {
-  exists: boolean;
-  frontmatter: string;
-  from: number;
-  to: number;
-  contentStart: number;
-}
-
-export function getFrontMatterInfo(content: string): FrontMatterInfo {
-  const fmRegex = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/;
-  const match = fmRegex.exec(content);
-  if (match) {
-    const fullMatch = match[0]!;
-    const frontmatterBody = match[1]!;
-    const startDelimiterEnd = content.indexOf('\n') + 1;
-    const from = startDelimiterEnd;
-    const to = from + frontmatterBody.length;
-    return {
-      exists: true,
-      frontmatter: frontmatterBody,
-      from,
-      to,
-      contentStart: fullMatch.length
-    };
-  }
-  return {
-    exists: false,
-    frontmatter: '',
-    from: 0,
-    to: 0,
-    contentStart: 0
-  };
 }
 
 export function parseYaml(yaml: string): unknown {
@@ -229,13 +208,22 @@ export function parseYaml(yaml: string): unknown {
     }
     const key = trimmed.slice(0, colonIndex).trim();
     let value: unknown = trimmed.slice(colonIndex + 1).trim();
-    if (value === 'true') value = true;
-    else if (value === 'false') value = false;
-    else if (value === '' || value === 'null') value = null;
-    else if (!isNaN(Number(value))) value = Number(value);
+    if (value === 'true') {
+      value = true;
+    } else if (value === 'false') {
+      value = false;
+    } else if (value === '' || value === 'null') {
+      value = null;
+    } else if (!isNaN(Number(value))) {
+      value = Number(value);
+    }
     result[key] = value;
   }
   return result;
+}
+
+export function requireApiVersion(_version: string): boolean {
+  return true;
 }
 
 export function stringifyYaml(obj: unknown): string {
@@ -254,15 +242,44 @@ export function stringifyYaml(obj: unknown): string {
       lines.push(`${key}: ${String(value)}`);
     }
   }
-  return lines.join('\n') + '\n';
+  return `${lines.join('\n')}\n`;
 }
 
-export type EventRef = object;
+export const Platform = {
+  isAndroidApp: false,
+  isDesktop: true,
+  isDesktopApp: true,
+  isIosApp: false,
+  isLinux: false,
+  isMacOS: false,
+  isMobile: false,
+  isMobileApp: false,
+  isPhone: false,
+  isSafari: false,
+  isTablet: false,
+  isWin: true
+};
+
 export type CachedMetadata = Record<string, unknown>;
-export type Reference = {
+
+export type EventRef = object;
+
+export interface FrontMatterInfo {
+  contentStart: number;
+  exists: boolean;
+  from: number;
+  frontmatter: string;
+  to: number;
+}
+
+export interface ListedFiles {
+  files: string[];
+  folders: string[];
+}
+
+export interface Reference {
+  displayText?: string;
   link: string;
   original: string;
-  displayText?: string;
-  position: { start: { line: number; ch: number; offset: number }; end: { line: number; ch: number; offset: number } };
-};
-export type ListedFiles = { files: string[]; folders: string[] };
+  position: { end: { ch: number; line: number; offset: number }; start: { ch: number; line: number; offset: number } };
+}
