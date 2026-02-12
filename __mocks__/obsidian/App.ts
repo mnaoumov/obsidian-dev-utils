@@ -23,23 +23,23 @@ export interface MockFileEntry {
 }
 
 export class App {
-  fileManager = new FileManager();
-  keymap = new Keymap();
-  lastEvent: unknown = null;
-  metadataCache = new MetadataCache();
-  scope = new Scope();
-  vault = new Vault();
-  workspace = new Workspace();
+  public fileManager = new FileManager();
+  public keymap = new Keymap();
+  public lastEvent: unknown = null;
+  public metadataCache = new MetadataCache();
+  public scope = new Scope();
+  public vault = new Vault();
+  public workspace = new Workspace();
 
-  isDarkMode(): boolean {
+  public isDarkMode(): boolean {
     return false;
   }
 
-  loadLocalStorage(_key: string): unknown {
+  public loadLocalStorage(_key: string): unknown {
     return null;
   }
 
-  saveLocalStorage(_key: string, _data: unknown): void {}
+  public saveLocalStorage(_key: string, _data: unknown): void {}
 }
 
 export function createMockApp(options: MockAppOptions = {}): ObsidianApp {

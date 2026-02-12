@@ -2,8 +2,8 @@ import type { TFolder } from './TFolder.ts';
 import type { Vault } from './Vault.ts';
 
 export class TAbstractFile {
-  name = '';
-  parent: null | TFolder = null;
-  path = '';
-  vault: Vault = null as unknown as Vault;
+  public name = '';
+  public parent: null | TFolder = null;
+  public path = '';
+  public vault: Vault = null as unknown as Vault;
 }

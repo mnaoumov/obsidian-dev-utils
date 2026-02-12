@@ -1,13 +1,13 @@
 export class Notice {
-  containerEl: HTMLElement = null as unknown as HTMLElement;
-  messageEl: HTMLElement = null as unknown as HTMLElement;
-  noticeEl: HTMLElement = null as unknown as HTMLElement;
+  public containerEl: HTMLElement = null as unknown as HTMLElement;
+  public messageEl: HTMLElement = null as unknown as HTMLElement;
+  public noticeEl: HTMLElement = null as unknown as HTMLElement;
 
-  constructor(_message: DocumentFragment | string, _duration?: number) {}
+  public constructor(_message: DocumentFragment | string, _duration?: number) {}
 
-  hide(): void {}
+  public hide(): void {}
 
-  setMessage(_message: DocumentFragment | string): this {
+  public setMessage(_message: DocumentFragment | string): this {
     return this;
   }
 }

@@ -1,8 +1,8 @@
 import { TAbstractFile } from './TAbstractFile.ts';
 
 export class TFolder extends TAbstractFile {
-  children: TAbstractFile[] = [];
-  isRoot(): boolean {
+  public children: TAbstractFile[] = [];
+  public isRoot(): boolean {
     return this.path === '' || this.path === '/';
   }
 }

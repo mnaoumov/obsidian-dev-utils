@@ -141,10 +141,10 @@ describe('ObjectUtils', () => {
 
     it('should return false for different constructors', () => {
       class A {
-        x = 1;
+        public x = 1;
       }
       class B {
-        x = 1;
+        public x = 1;
       }
       expect(deepEqual(new A(), new B())).toBe(false);
     });
