@@ -531,6 +531,9 @@
     "lint:md:fix": "jiti scripts/cli.ts lint:md:fix",
     "prepare": "husky",
     "spellcheck": "jiti scripts/cli.ts spellcheck",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
     "version": "jiti scripts/version.ts"
   },
   "overrides": {
@@ -614,8 +617,11 @@
     "@commitlint/config-conventional": "latest",
     "@commitlint/types": "latest",
     "@types/markdown-it": "latest",
+    "@vitest/coverage-v8": "latest",
     "commitizen": "latest",
     "cz-conventional-changelog": "latest",
-    "husky": "latest"
+    "husky": "latest",
+    "jsdom": "latest",
+    "vitest": "latest"
   }
 }

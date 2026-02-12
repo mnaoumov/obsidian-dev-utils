@@ -30,7 +30,10 @@ import {
   editPackageLockJson,
   readPackageJson
 } from './Npm.ts';
-import { npmRun } from './NpmRun.ts';
+import {
+  npmRun,
+  npmRunOptional
+} from './NpmRun.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 import {
   execFromRoot,
@@ -424,6 +427,7 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
   await npmRun('lint:md');
   await npmRun('build');
   await npmRun('lint');
+  await npmRunOptional('test');
 
   const newVersion = await getNewVersion(versionUpdateType);
   await updateVersionInFiles(newVersion);
