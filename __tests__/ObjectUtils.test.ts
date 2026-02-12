@@ -169,7 +169,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should skip function values', () => {
-      const obj = { a: 1, fn: () => {} };
+      const obj = { a: 1, fn: (): void => {} };
       expect(getAllKeys(obj)).toEqual(['a']);
     });
 
@@ -419,7 +419,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should exclude functions by default', () => {
-      const obj = { a: 1, fn: () => {} };
+      const obj = { a: 1, fn: (): void => {} };
       const json = toJson(obj);
       const parsed = JSON.parse(json);
       expect(parsed).toEqual({ a: 1 });
@@ -462,7 +462,7 @@ describe('ObjectUtils', () => {
 
     it('should handle toJSON failures when enabled', () => {
       const obj = {
-        toJSON() {
+        toJSON(): never {
           throw new Error('toJSON failed');
         }
       };
@@ -483,7 +483,7 @@ describe('ObjectUtils', () => {
 
     it('should throw on toJSON failure when shouldCatchToJSONErrors is false', () => {
       const obj = {
-        toJSON() {
+        toJSON(): never {
           throw new Error('toJSON exploded');
         }
       };
@@ -497,7 +497,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should handle arrow functions in NameOnly mode', () => {
-      const obj = { fn: () => {} };
+      const obj = { fn: (): void => {} };
       const json = toJson(obj, { functionHandlingMode: FunctionHandlingMode.NameOnly });
       expect(json).toContain('function fn()');
     });
