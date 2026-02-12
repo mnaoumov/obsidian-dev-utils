@@ -10,5 +10,6 @@ export const Platform = {
   isPhone: false,
   isSafari: false,
   isTablet: false,
-  isWin: true
+  isWin: true,
+  resourcePathPrefix: ''
 };

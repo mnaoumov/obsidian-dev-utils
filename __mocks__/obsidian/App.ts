@@ -1,8 +1,15 @@
+import type { App as ObsidianApp } from 'obsidian';
+
 import type { TAbstractFile } from './TAbstractFile.ts';
 
+import { FileManager } from './FileManager.ts';
+import { Keymap } from './Keymap.ts';
+import { MetadataCache } from './MetadataCache.ts';
+import { Scope } from './Scope.ts';
 import { TFile } from './TFile.ts';
 import { TFolder } from './TFolder.ts';
 import { Vault } from './Vault.ts';
+import { Workspace } from './Workspace.ts';
 
 export interface MockAppOptions {
   files?: MockFileEntry[];
@@ -16,45 +23,24 @@ export interface MockFileEntry {
 }
 
 export class App {
-  fileManager = {
-    renameFile(_file: TAbstractFile, _newPath: string): Promise<void> {
-      return Promise.resolve();
-    }
-  };
-
-  internalPlugins = {
-    getEnabledPluginById(_id: string): unknown {
-      return null;
-    }
-  };
-
-  metadataCache = {
-    fileToLinktext(file: TFile, _sourcePath: string, _omitMdExt?: boolean): string {
-      return file.basename;
-    },
-    getCache(_path: string): unknown {
-      return null;
-    },
-    getFirstLinkpathDest(_linkpath: string, _sourcePath: string): null | TFile {
-      return null;
-    }
-  };
-
+  fileManager = new FileManager();
+  keymap = new Keymap();
+  lastEvent: unknown = null;
+  metadataCache = new MetadataCache();
+  scope = new Scope();
   vault = new Vault();
-  workspace = {
-    getLeaf(): unknown {
-      return {};
-    },
-    getLeavesOfType(_type: string): unknown[] {
-      return [];
-    },
-    on(_event: string, _cb: (...args: unknown[]) => void): unknown {
-      return {};
-    }
-  };
+  workspace = new Workspace();
+
+  isDarkMode(): boolean {
+    return false;
+  }
+  loadLocalStorage(_key: string): unknown {
+    return null;
+  }
+  saveLocalStorage(_key: string, _data: unknown): void {}
 }
 
-export function createMockApp(options: MockAppOptions = {}): App {
+export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
   const app = new App();
   const fileMap: Record<string, TAbstractFile> = {};
   const fileContents = new Map<string, string>();
@@ -113,5 +99,5 @@ export function createMockApp(options: MockAppOptions = {}): App {
     return null;
   };
 
-  return app;
+  return app as unknown as ObsidianApp;
 }

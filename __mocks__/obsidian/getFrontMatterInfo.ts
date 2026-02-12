@@ -1,4 +1,4 @@
-import type { FrontMatterInfo } from './FrontMatterInfo.ts';
+import type { FrontMatterInfo } from 'obsidian';
 
 export function getFrontMatterInfo(content: string): FrontMatterInfo {
   const fmRegex = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/;
