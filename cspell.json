@@ -110,6 +110,8 @@
     "subsources",
     "subtags",
     "succ",
+    "tfile",
+    "tfolder",
     "tsbuildinfo",
     "tsdoc",
     "tsdocs",

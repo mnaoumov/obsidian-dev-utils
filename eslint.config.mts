@@ -189,6 +189,7 @@ const configs: Linter.Config[] = defineConfig([
       'no-void': 'off',
       'obsidianmd/no-forbidden-elements': 'off',
       'obsidianmd/no-tfile-tfolder-cast': 'off',
+      'perfectionist/sort-modules': 'off',
       'prefer-named-capture-group': 'off',
       'tsdoc/syntax': 'off'
     }

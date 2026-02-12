@@ -5,8 +5,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      'obsidian': fileURLToPath(new URL('./__mocks__/obsidian.ts', import.meta.url)),
-      'obsidian-typings/implementations': fileURLToPath(new URL('./__mocks__/obsidian-typings/implementations.ts', import.meta.url))
+      'obsidian': fileURLToPath(new URL('./__mocks__/obsidian/index.ts', import.meta.url)),
+      'obsidian-typings/implementations': fileURLToPath(new URL('./__mocks__/obsidian-typings/implementations/index.ts', import.meta.url))
     }
   },
   test: {
