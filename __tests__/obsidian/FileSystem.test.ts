@@ -10,7 +10,7 @@ import {
   it
 } from 'vitest';
 
-import { createMockApp } from '../../__mocks__/createMockApp.ts';
+import { createMockApp } from '../../__mocks__/obsidian/App.ts';
 import {
   asArrayOfFiles,
   asArrayOfFolders,
