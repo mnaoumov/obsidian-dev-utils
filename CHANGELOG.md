@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 48.1.2
+
+- chore: lint
+- chore: update libs
+
 ## 48.1.1
 
 - chore: update libs
