@@ -28,6 +28,8 @@ import { ObsidianDevUtilsRepoPaths } from './src/ScriptUtils/ObsidianDevUtilsRep
 
 const eslintPluginTsdocRequired = eslintPluginTsdocRequired_ as ESLint.Plugin;
 
+const testFiles = ['__tests__/**/*.ts', '__mocks__/**/*.ts'];
+
 const configs: Linter.Config[] = defineConfig([
   globalIgnores([
     join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
@@ -147,6 +149,21 @@ const configs: Linter.Config[] = defineConfig([
           template: 'typeParam'
         }
       }
+    }
+  },
+  {
+    files: testFiles,
+    rules: {
+      'capitalized-comments': 'off',
+      'eslint-plugin-tsdoc-required/tsdoc-required': 'off',
+      'jsdoc/require-file-overview': 'off',
+      'jsdoc/require-jsdoc': 'off',
+      'jsdoc/require-param': 'off',
+      'jsdoc/require-param-description': 'off',
+      'jsdoc/require-returns': 'off',
+      'jsdoc/require-returns-description': 'off',
+      'no-magic-numbers': 'off',
+      'tsdoc/syntax': 'off'
     }
   }
 ]);

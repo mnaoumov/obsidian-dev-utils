@@ -1,0 +1,1385 @@
+// @vitest-environment jsdom
+import {
+  describe,
+  expect,
+  it
+} from 'vitest';
+
+import type { CachedMetadata } from 'obsidian';
+
+import {
+  encodeUrl,
+  escapeAlias,
+  fixFrontmatterMarkdownLinks,
+  generateRawMarkdownLink,
+  parseLink,
+  parseLinks,
+  splitSubpath,
+  testAngleBrackets,
+  testEmbed,
+  testLeadingDot,
+  testLeadingSlash,
+  testWikilink,
+  unescapeAlias
+} from '../../src/obsidian/Link.ts';
+
+describe('splitSubpath', () => {
+  describe('should return the full link as linkPath when there is no subpath', () => {
+    const result = splitSubpath('folder/note');
+
+    it('should set linkPath to the full link', () => {
+      expect(result.linkPath).toBe('folder/note');
+    });
+
+    it('should set subpath to empty string', () => {
+      expect(result.subpath).toBe('');
+    });
+  });
+
+  describe('should split a link with a heading subpath', () => {
+    const result = splitSubpath('note#heading');
+
+    it('should set linkPath to "note"', () => {
+      expect(result.linkPath).toBe('note');
+    });
+
+    it('should set subpath to "#heading"', () => {
+      expect(result.subpath).toBe('#heading');
+    });
+  });
+
+  describe('should split a link with a nested heading subpath', () => {
+    const result = splitSubpath('folder/note#heading#subheading');
+
+    it('should set linkPath to "folder/note"', () => {
+      expect(result.linkPath).toBe('folder/note');
+    });
+
+    it('should set subpath to "#heading#subheading"', () => {
+      expect(result.subpath).toBe('#heading#subheading');
+    });
+  });
+
+  describe('should handle an empty link', () => {
+    const result = splitSubpath('');
+
+    it('should set linkPath to empty string', () => {
+      expect(result.linkPath).toBe('');
+    });
+
+    it('should set subpath to empty string', () => {
+      expect(result.subpath).toBe('');
+    });
+  });
+
+  describe('should handle a subpath-only link', () => {
+    const result = splitSubpath('#heading');
+
+    it('should set linkPath to empty string', () => {
+      expect(result.linkPath).toBe('');
+    });
+
+    it('should set subpath to "#heading"', () => {
+      expect(result.subpath).toBe('#heading');
+    });
+  });
+
+  describe('should handle a link with a block reference subpath', () => {
+    const result = splitSubpath('note#^block-id');
+
+    it('should set linkPath to "note"', () => {
+      expect(result.linkPath).toBe('note');
+    });
+
+    it('should set subpath to "#^block-id"', () => {
+      expect(result.subpath).toBe('#^block-id');
+    });
+  });
+});
+
+describe('encodeUrl', () => {
+  it.each([
+    { expected: 'path%20with%20spaces.md', input: 'path with spaces.md' },
+    { expected: 'path%5Cto%5Cfile.md', input: 'path\\to\\file.md' },
+    { expected: 'simple-path/file.md', input: 'simple-path/file.md' },
+    { expected: '', input: '' },
+    { expected: 'a%20b%20c', input: 'a b c' }
+  ])('should encode "$input" to "$expected"', ({ expected, input }) => {
+    expect(encodeUrl(input)).toBe(expected);
+  });
+});
+
+describe('escapeAlias', () => {
+  it.each([
+    { expected: '\\*\\*bold\\*\\*', input: '**bold**' },
+    { expected: '\\[link\\]', input: '[link]' },
+    { expected: 'back\\\\slash', input: 'back\\slash' },
+    { expected: '\\_italic\\_', input: '_italic_' },
+    { expected: '\\~\\~strikethrough\\~\\~', input: '~~strikethrough~~' },
+    { expected: '\\`code\\`', input: '`code`' },
+    { expected: '\\<tag\\>', input: '<tag>' },
+    { expected: '\\=\\=highlight\\=\\=', input: '==highlight==' },
+    { expected: '\\$math\\$', input: '$math$' },
+    { expected: 'plain text 123', input: 'plain text 123' },
+    { expected: '', input: '' }
+  ])('should escape "$input" to "$expected"', ({ expected, input }) => {
+    expect(escapeAlias(input)).toBe(expected);
+  });
+});
+
+describe('unescapeAlias', () => {
+  it.each([
+    { expected: '**bold**', input: '\\*\\*bold\\*\\*' },
+    { expected: '[link]', input: '\\[link\\]' },
+    { expected: 'back\\slash', input: 'back\\\\slash' },
+    { expected: 'plain text', input: 'plain text' },
+    { expected: '', input: '' }
+  ])('should unescape "$input" to "$expected"', ({ expected, input }) => {
+    expect(unescapeAlias(input)).toBe(expected);
+  });
+
+  it('should be the inverse of escapeAlias for basic strings', () => {
+    const original = '**bold** and [link] and _italic_';
+    expect(unescapeAlias(escapeAlias(original))).toBe(original);
+  });
+
+  it('should be the inverse of escapeAlias for strings with backticks and dollar signs', () => {
+    const original = '`code` and $math$';
+    expect(unescapeAlias(escapeAlias(original))).toBe(original);
+  });
+});
+
+describe('generateRawMarkdownLink', () => {
+  describe('wikilinks', () => {
+    it('should generate a simple wikilink', () => {
+      const result = generateRawMarkdownLink({
+        isWikilink: true,
+        url: 'My Note'
+      });
+      expect(result).toBe('[[My Note]]');
+    });
+
+    it('should generate a wikilink with an alias', () => {
+      const result = generateRawMarkdownLink({
+        alias: 'display text',
+        isWikilink: true,
+        url: 'My Note'
+      });
+      expect(result).toBe('[[My Note|display text]]');
+    });
+
+    it('should generate an embed wikilink', () => {
+      const result = generateRawMarkdownLink({
+        isEmbed: true,
+        isWikilink: true,
+        url: 'image.png'
+      });
+      expect(result).toBe('![[image.png]]');
+    });
+
+    it('should generate an embed wikilink with an alias', () => {
+      const result = generateRawMarkdownLink({
+        alias: 'my image',
+        isEmbed: true,
+        isWikilink: true,
+        url: 'image.png'
+      });
+      expect(result).toBe('![[image.png|my image]]');
+    });
+
+    it('should generate a wikilink with a subpath', () => {
+      const result = generateRawMarkdownLink({
+        isWikilink: true,
+        url: 'Note#Heading'
+      });
+      expect(result).toBe('[[Note#Heading]]');
+    });
+
+    it('should not include alias part when alias is undefined', () => {
+      const result = generateRawMarkdownLink({
+        isWikilink: true,
+        url: 'Note'
+      });
+      expect(result).not.toContain('|');
+    });
+  });
+
+  describe('markdown links', () => {
+    it('should generate a simple markdown link', () => {
+      const result = generateRawMarkdownLink({
+        alias: 'display',
+        isWikilink: false,
+        url: 'path/to/note.md'
+      });
+      expect(result).toBe('[display](path/to/note.md)');
+    });
+
+    it('should generate a markdown link with an empty alias', () => {
+      const result = generateRawMarkdownLink({
+        alias: '',
+        isWikilink: false,
+        url: 'note.md'
+      });
+      expect(result).toBe('[](note.md)');
+    });
+
+    it('should generate an embed markdown link', () => {
+      const result = generateRawMarkdownLink({
+        alias: '',
+        isEmbed: true,
+        isWikilink: false,
+        url: 'image.png'
+      });
+      expect(result).toBe('![](image.png)');
+    });
+
+    it('should encode spaces in the URL', () => {
+      const result = generateRawMarkdownLink({
+        alias: 'link',
+        isWikilink: false,
+        url: 'path with spaces.md'
+      });
+      expect(result).toBe('[link](path%20with%20spaces.md)');
+    });
+
+    it('should use angle brackets when shouldUseAngleBrackets is true', () => {
+      const result = generateRawMarkdownLink({
+        alias: 'link',
+        isWikilink: false,
+        shouldUseAngleBrackets: true,
+        url: 'path with spaces.md'
+      });
+      expect(result).toBe('[link](<path with spaces.md>)');
+    });
+
+    it('should escape alias when shouldEscapeAlias is true', () => {
+      const result = generateRawMarkdownLink({
+        alias: '**bold**',
+        isWikilink: false,
+        shouldEscapeAlias: true,
+        url: 'note.md'
+      });
+      expect(result).toBe('[\\*\\*bold\\*\\*](note.md)');
+    });
+
+    it('should not escape alias when shouldEscapeAlias is false', () => {
+      const result = generateRawMarkdownLink({
+        alias: '**bold**',
+        isWikilink: false,
+        shouldEscapeAlias: false,
+        url: 'note.md'
+      });
+      expect(result).toBe('[**bold**](note.md)');
+    });
+
+    it('should include title when provided', () => {
+      const result = generateRawMarkdownLink({
+        alias: 'link',
+        isWikilink: false,
+        title: 'hover text',
+        url: 'note.md'
+      });
+      expect(result).toBe('[link](note.md "hover text")');
+    });
+
+    it('should handle embed markdown link with alias', () => {
+      const result = generateRawMarkdownLink({
+        alias: 'my image',
+        isEmbed: true,
+        isWikilink: false,
+        url: 'image.png'
+      });
+      expect(result).toBe('![my image](image.png)');
+    });
+
+    it('should default alias to empty string for markdown links', () => {
+      const result = generateRawMarkdownLink({
+        isWikilink: false,
+        url: 'note.md'
+      });
+      expect(result).toBe('[](note.md)');
+    });
+  });
+});
+
+describe('parseLink', () => {
+  describe('wikilinks', () => {
+    describe('should parse a simple wikilink', () => {
+      const result = parseLink('[[note]]');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should be a wikilink', () => {
+        expect(result!.isWikilink).toBe(true);
+      });
+
+      it('should have url "note"', () => {
+        expect(result!.url).toBe('note');
+      });
+
+      it('should not be an embed', () => {
+        expect(result!.isEmbed).toBe(false);
+      });
+    });
+
+    describe('should parse a wikilink with an alias', () => {
+      const result = parseLink('[[note|display text]]');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should be a wikilink', () => {
+        expect(result!.isWikilink).toBe(true);
+      });
+
+      it('should have url "note"', () => {
+        expect(result!.url).toBe('note');
+      });
+
+      it('should have alias "display text"', () => {
+        expect(result!.alias).toBe('display text');
+      });
+    });
+
+    it('should parse a wikilink with a path', () => {
+      const result = parseLink('[[folder/note]]');
+      expect(result!.url).toBe('folder/note');
+    });
+
+    it('should parse a wikilink with a heading', () => {
+      const result = parseLink('[[note#heading]]');
+      expect(result!.url).toBe('note#heading');
+    });
+
+    describe('should parse an embed wikilink', () => {
+      const result = parseLink('![[image.png]]');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should be a wikilink', () => {
+        expect(result!.isWikilink).toBe(true);
+      });
+
+      it('should be an embed', () => {
+        expect(result!.isEmbed).toBe(true);
+      });
+
+      it('should have url "image.png"', () => {
+        expect(result!.url).toBe('image.png');
+      });
+    });
+
+    describe('should parse an embed wikilink with an alias', () => {
+      const result = parseLink('![[image.png|500]]');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should be an embed', () => {
+        expect(result!.isEmbed).toBe(true);
+      });
+
+      it('should have url "image.png"', () => {
+        expect(result!.url).toBe('image.png');
+      });
+
+      it('should have alias "500"', () => {
+        expect(result!.alias).toBe('500');
+      });
+    });
+
+    it('should not have alias when no pipe is present', () => {
+      const result = parseLink('[[note]]');
+      expect(result!.alias).toBeUndefined();
+    });
+  });
+
+  describe('markdown links', () => {
+    describe('should parse a simple markdown link', () => {
+      const result = parseLink('[display](note.md)');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should not be a wikilink', () => {
+        expect(result!.isWikilink).toBe(false);
+      });
+
+      it('should have url "note.md"', () => {
+        expect(result!.url).toBe('note.md');
+      });
+
+      it('should have alias "display"', () => {
+        expect(result!.alias).toBe('display');
+      });
+    });
+
+    describe('should parse a markdown link with an empty alias', () => {
+      const result = parseLink('[](note.md)');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should not be a wikilink', () => {
+        expect(result!.isWikilink).toBe(false);
+      });
+
+      it('should have url "note.md"', () => {
+        expect(result!.url).toBe('note.md');
+      });
+
+      it('should have undefined alias', () => {
+        expect(result!.alias).toBeUndefined();
+      });
+    });
+
+    describe('should parse an embed markdown link', () => {
+      const result = parseLink('![](image.png)');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should be an embed', () => {
+        expect(result!.isEmbed).toBe(true);
+      });
+
+      it('should not be a wikilink', () => {
+        expect(result!.isWikilink).toBe(false);
+      });
+
+      it('should have url "image.png"', () => {
+        expect(result!.url).toBe('image.png');
+      });
+    });
+
+    it('should parse a markdown link with spaces encoded in URL', () => {
+      const result = parseLink('[link](path%20with%20spaces.md)');
+      expect(result!.url).toBe('path with spaces.md');
+    });
+
+    describe('should parse a markdown link with angle brackets', () => {
+      const result = parseLink('[link](<path with spaces.md>)');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should have angle brackets', () => {
+        expect(result!.hasAngleBrackets).toBe(true);
+      });
+
+      it('should have the correct url', () => {
+        expect(result!.url).toBe('path with spaces.md');
+      });
+    });
+
+    describe('should parse an external URL', () => {
+      const result = parseLink('[example](https://example.com)');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should be external', () => {
+        expect(result!.isExternal).toBe(true);
+      });
+
+      it('should have the correct url', () => {
+        expect(result!.url).toBe('https://example.com');
+      });
+    });
+
+    it('should parse an internal link as not external', () => {
+      const result = parseLink('[link](note.md)');
+      expect(result!.isExternal).toBe(false);
+    });
+
+    describe('should parse an embed markdown link with alias', () => {
+      const result = parseLink('![my image](image.png)');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should be an embed', () => {
+        expect(result!.isEmbed).toBe(true);
+      });
+
+      it('should have alias "my image"', () => {
+        expect(result!.alias).toBe('my image');
+      });
+    });
+
+    describe('should parse a markdown link with a title', () => {
+      const result = parseLink('[display](note.md "hover text")');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should have url "note.md"', () => {
+        expect(result!.url).toBe('note.md');
+      });
+
+      it('should have title "hover text"', () => {
+        expect(result!.title).toBe('hover text');
+      });
+    });
+  });
+
+  describe('edge cases', () => {
+    it.each([
+      { description: 'plain text', input: 'just plain text' },
+      { description: 'partial wikilink syntax', input: '[[incomplete' },
+      { description: 'an empty string', input: '' },
+      { description: 'extra text surrounding a link', input: 'before [[note]] after' }
+    ])('should return null for $description', ({ input }) => {
+      expect(parseLink(input)).toBeNull();
+    });
+  });
+});
+
+describe('parseLinks', () => {
+  describe('should parse multiple wikilinks', () => {
+    const results = parseLinks('See [[note1]] and [[note2]]');
+    const wikilinks = results.filter((r) => r.isWikilink);
+
+    it('should find 2 wikilinks', () => {
+      expect(wikilinks.length).toBe(2);
+    });
+
+    it('should parse the first wikilink url', () => {
+      expect(wikilinks[0]!.url).toBe('note1');
+    });
+
+    it('should parse the second wikilink url', () => {
+      expect(wikilinks[1]!.url).toBe('note2');
+    });
+  });
+
+  describe('should parse mixed wikilinks and markdown links', () => {
+    const results = parseLinks('See [[wiki]] and [md](note.md)');
+    const wikilinks = results.filter((r) => r.isWikilink);
+    const mdLinks = results.filter((r) => !r.isWikilink && !r.isExternal);
+
+    it('should find 1 wikilink', () => {
+      expect(wikilinks.length).toBe(1);
+    });
+
+    it('should find 1 markdown link', () => {
+      expect(mdLinks.length).toBe(1);
+    });
+  });
+
+  it('should return an empty array for text with no links', () => {
+    const results = parseLinks('no links here');
+    const nonExternal = results.filter((r) => !r.isExternal);
+    expect(nonExternal.length).toBe(0);
+  });
+
+  describe('should parse embed wikilinks among text', () => {
+    const results = parseLinks('Here is ![[image.png]] embedded');
+    const embeds = results.filter((r) => r.isEmbed);
+
+    it('should find 1 embed', () => {
+      expect(embeds.length).toBe(1);
+    });
+
+    it('should have url "image.png"', () => {
+      expect(embeds[0]!.url).toBe('image.png');
+    });
+  });
+
+  describe('should preserve start and end offsets', () => {
+    const text = '[[note1]] [[note2]]';
+    const results = parseLinks(text);
+    const wikilinks = results.filter((r) => r.isWikilink);
+
+    it('should find 2 wikilinks', () => {
+      expect(wikilinks.length).toBe(2);
+    });
+
+    it('should have correct offset for first wikilink', () => {
+      expect(text.slice(wikilinks[0]!.startOffset, wikilinks[0]!.endOffset)).toBe('[[note1]]');
+    });
+
+    it('should have correct offset for second wikilink', () => {
+      expect(text.slice(wikilinks[1]!.startOffset, wikilinks[1]!.endOffset)).toBe('[[note2]]');
+    });
+  });
+
+  describe('should detect plain URL text links', () => {
+    const results = parseLinks('Visit https://example.com today');
+    const external = results.filter((r) => r.isExternal);
+
+    it('should find 1 external link', () => {
+      expect(external.length).toBe(1);
+    });
+
+    it('should have the correct url', () => {
+      expect(external[0]!.url).toBe('https://example.com');
+    });
+  });
+
+  describe('should parse wikilinks with aliases in a multi-link string', () => {
+    const results = parseLinks('[[note|alias1]] and [[other|alias2]]');
+    const wikilinks = results.filter((r) => r.isWikilink);
+
+    it('should find 2 wikilinks', () => {
+      expect(wikilinks.length).toBe(2);
+    });
+
+    it('should parse the first alias', () => {
+      expect(wikilinks[0]!.alias).toBe('alias1');
+    });
+
+    it('should parse the second alias', () => {
+      expect(wikilinks[1]!.alias).toBe('alias2');
+    });
+  });
+});
+
+describe('testWikilink', () => {
+  it.each([
+    { description: 'a wikilink', expected: true, input: '[[note]]' },
+    { description: 'an embed wikilink', expected: true, input: '![[note]]' },
+    { description: 'a wikilink with alias', expected: true, input: '[[note|alias]]' },
+    { description: 'a markdown link', expected: false, input: '[alias](note.md)' },
+    { description: 'an embed markdown link', expected: false, input: '![alt](image.png)' },
+    { description: 'plain text', expected: false, input: 'just text' }
+  ])('should return $expected for $description', ({ expected, input }) => {
+    expect(testWikilink(input)).toBe(expected);
+  });
+});
+
+describe('testEmbed', () => {
+  it.each([
+    { description: 'an embed wikilink', expected: true, input: '![[image.png]]' },
+    { description: 'an embed markdown link', expected: true, input: '![alt](image.png)' },
+    { description: 'a non-embed wikilink', expected: false, input: '[[note]]' },
+    { description: 'a non-embed markdown link', expected: false, input: '[alias](note.md)' },
+    { description: 'plain text', expected: false, input: 'just text' }
+  ])('should return $expected for $description', ({ expected, input }) => {
+    expect(testEmbed(input)).toBe(expected);
+  });
+});
+
+describe('testAngleBrackets', () => {
+  it.each([
+    { description: 'a markdown link with angle brackets', expected: true, input: '[link](<path with spaces.md>)' },
+    { description: 'an embed with angle brackets', expected: true, input: '![alt](<image file.png>)' },
+    { description: 'a markdown link without angle brackets', expected: false, input: '[link](path.md)' },
+    { description: 'a wikilink', expected: false, input: '[[note]]' },
+    { description: 'plain text', expected: false, input: 'just text' }
+  ])('should return $expected for $description', ({ expected, input }) => {
+    expect(testAngleBrackets(input)).toBe(expected);
+  });
+});
+
+describe('testLeadingDot', () => {
+  it.each([
+    { description: 'a wikilink with a leading dot', expected: true, input: '[[./note]]' },
+    { description: 'a markdown link with a leading dot', expected: true, input: '[link](./note.md)' },
+    { description: 'an embed with a leading dot', expected: true, input: '![[./image.png]]' },
+    { description: 'an angle bracket link with leading dot', expected: true, input: '[link](<./path with spaces.md>)' },
+    { description: 'an absolute path', expected: false, input: '[[note]]' },
+    { description: 'plain text', expected: false, input: 'just text' }
+  ])('should return $expected for $description', ({ expected, input }) => {
+    expect(testLeadingDot(input)).toBe(expected);
+  });
+});
+
+describe('testLeadingSlash', () => {
+  it.each([
+    { description: 'a wikilink with a leading slash', expected: true, input: '[[/note]]' },
+    { description: 'a markdown link with a leading slash', expected: true, input: '[link](/note.md)' },
+    { description: 'an embed with a leading slash', expected: true, input: '![[/image.png]]' },
+    { description: 'an angle bracket link with leading slash', expected: true, input: '[link](</path to note.md>)' },
+    { description: 'a relative path', expected: false, input: '[[note]]' },
+    { description: 'plain text', expected: false, input: 'just text' }
+  ])('should return $expected for $description', ({ expected, input }) => {
+    expect(testLeadingSlash(input)).toBe(expected);
+  });
+});
+
+describe('fixFrontmatterMarkdownLinks', () => {
+  describe('should detect a markdown link in frontmatter string and add it to frontmatterLinks', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        source: '[alias](note.md)'
+      }
+    } as unknown as CachedMetadata;
+    const result = fixFrontmatterMarkdownLinks(cache);
+
+    it('should return true', () => {
+      expect(result).toBe(true);
+    });
+
+    it('should define frontmatterLinks', () => {
+      expect(cache.frontmatterLinks).toBeDefined();
+    });
+
+    it('should have 1 frontmatter link', () => {
+      expect(cache.frontmatterLinks!.length).toBe(1);
+    });
+
+    it('should set the link property', () => {
+      expect(cache.frontmatterLinks![0]!.link).toBe('note.md');
+    });
+
+    it('should set the original property', () => {
+      expect(cache.frontmatterLinks![0]!.original).toBe('[alias](note.md)');
+    });
+
+    it('should set the displayText property', () => {
+      expect(cache.frontmatterLinks![0]!.displayText).toBe('alias');
+    });
+
+    it('should set the key property', () => {
+      expect(cache.frontmatterLinks![0]!.key).toBe('source');
+    });
+  });
+
+  describe('should return false when frontmatter contains no markdown links', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        title: 'plain text'
+      }
+    } as unknown as CachedMetadata;
+    const result = fixFrontmatterMarkdownLinks(cache);
+
+    it('should return false', () => {
+      expect(result).toBe(false);
+    });
+
+    it('should not define frontmatterLinks', () => {
+      expect(cache.frontmatterLinks).toBeUndefined();
+    });
+  });
+
+  it('should ignore wikilinks in frontmatter', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        source: '[[note]]'
+      }
+    } as unknown as CachedMetadata;
+
+    const result = fixFrontmatterMarkdownLinks(cache);
+    expect(result).toBe(false);
+  });
+
+  it('should ignore external URLs in frontmatter', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        source: '[example](https://example.com)'
+      }
+    } as unknown as CachedMetadata;
+
+    const result = fixFrontmatterMarkdownLinks(cache);
+    expect(result).toBe(false);
+  });
+
+  describe('should handle nested objects in frontmatter', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        meta: {
+          source: '[alias](note.md)'
+        }
+      }
+    } as unknown as CachedMetadata;
+    const result = fixFrontmatterMarkdownLinks(cache);
+
+    it('should return true', () => {
+      expect(result).toBe(true);
+    });
+
+    it('should define frontmatterLinks', () => {
+      expect(cache.frontmatterLinks).toBeDefined();
+    });
+
+    it('should have 1 frontmatter link', () => {
+      expect(cache.frontmatterLinks!.length).toBe(1);
+    });
+
+    it('should set the key to the nested path', () => {
+      expect(cache.frontmatterLinks![0]!.key).toBe('meta.source');
+    });
+  });
+
+  describe('should handle multiple links in different frontmatter properties', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        link1: '[a](file1.md)',
+        link2: '[b](file2.md)'
+      }
+    } as unknown as CachedMetadata;
+    const result = fixFrontmatterMarkdownLinks(cache);
+
+    it('should return true', () => {
+      expect(result).toBe(true);
+    });
+
+    it('should define frontmatterLinks', () => {
+      expect(cache.frontmatterLinks).toBeDefined();
+    });
+
+    it('should have 2 frontmatter links', () => {
+      expect(cache.frontmatterLinks!.length).toBe(2);
+    });
+  });
+
+  it('should handle null frontmatter values gracefully', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        nothing: null
+      }
+    } as unknown as CachedMetadata;
+
+    const result = fixFrontmatterMarkdownLinks(cache);
+    expect(result).toBe(false);
+  });
+
+  it('should handle numeric and boolean frontmatter values', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        count: 42,
+        enabled: true
+      }
+    } as unknown as CachedMetadata;
+
+    const result = fixFrontmatterMarkdownLinks(cache);
+    expect(result).toBe(false);
+  });
+
+  describe('should handle a markdown link without alias (empty alias)', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        source: '[](note.md)'
+      }
+    } as unknown as CachedMetadata;
+    const result = fixFrontmatterMarkdownLinks(cache);
+
+    it('should return true', () => {
+      expect(result).toBe(true);
+    });
+
+    it('should define frontmatterLinks', () => {
+      expect(cache.frontmatterLinks).toBeDefined();
+    });
+
+    it('should set the link property', () => {
+      expect(cache.frontmatterLinks![0]!.link).toBe('note.md');
+    });
+
+    it('should not set displayText when alias is undefined', () => {
+      expect(cache.frontmatterLinks![0]!.displayText).toBeUndefined();
+    });
+  });
+
+  describe('should update existing frontmatterLink entry if key already exists', () => {
+    const cache: CachedMetadata = {
+      frontmatter: {
+        source: '[new-alias](new-note.md)'
+      },
+      frontmatterLinks: [{
+        key: 'source',
+        link: 'old-note.md',
+        original: '[old](old-note.md)'
+      }]
+    } as unknown as CachedMetadata;
+    const result = fixFrontmatterMarkdownLinks(cache);
+
+    it('should return true', () => {
+      expect(result).toBe(true);
+    });
+
+    it('should have 1 frontmatter link', () => {
+      expect(cache.frontmatterLinks!.length).toBe(1);
+    });
+
+    it('should update the link property', () => {
+      expect(cache.frontmatterLinks![0]!.link).toBe('new-note.md');
+    });
+
+    it('should update the original property', () => {
+      expect(cache.frontmatterLinks![0]!.original).toBe('[new-alias](new-note.md)');
+    });
+
+    it('should update the displayText property', () => {
+      expect(cache.frontmatterLinks![0]!.displayText).toBe('new-alias');
+    });
+  });
+
+  it('should handle undefined frontmatter gracefully', () => {
+    const cache: CachedMetadata = {} as unknown as CachedMetadata;
+
+    const result = fixFrontmatterMarkdownLinks(cache);
+    expect(result).toBe(false);
+  });
+});
+
+describe('encodeUrl (additional edge cases)', () => {
+  it.each([
+    { description: 'vertical tab', expected: 'path%0Bfile.md', input: 'path\x0Bfile.md' },
+    { description: 'backspace', expected: 'path%08file.md', input: 'path\x08file.md' },
+    { description: 'form feed', expected: 'path%0Cfile.md', input: 'path\x0Cfile.md' },
+    { description: 'null character', expected: 'path%00file.md', input: 'path\x00file.md' },
+    { description: 'mixed safe and unsafe', expected: 'path/to%20the%5Cfile.md', input: 'path/to the\\file.md' }
+  ])('should encode $description correctly', ({ expected, input }) => {
+    expect(encodeUrl(input)).toBe(expected);
+  });
+});
+
+describe('escapeAlias (additional edge cases)', () => {
+  it('should escape multiple different special characters in one string', () => {
+    expect(escapeAlias('**[bold]** _italic_')).toBe('\\*\\*\\[bold\\]\\*\\* \\_italic\\_');
+  });
+
+  it('should escape pipe-like characters in complex markdown', () => {
+    expect(escapeAlias('a=b*c')).toBe('a\\=b\\*c');
+  });
+});
+
+describe('unescapeAlias (additional edge cases)', () => {
+  it.each([
+    { description: 'triple backslashes before a special character', expected: '\\*', input: '\\\\\\*' },
+    { description: 'quadruple backslashes before a special character', expected: '\\\\*', input: '\\\\\\\\\\*' },
+    { description: 'text without any escape sequences', expected: 'hello world 123', input: 'hello world 123' },
+    { description: 'exclamation marks', expected: '!', input: '\\!' },
+    { description: 'parentheses', expected: '(foo)', input: '\\(foo\\)' },
+    { description: 'curly braces', expected: '{foo}', input: '\\{foo\\}' },
+    { description: 'hash signs', expected: '#heading', input: '\\#heading' },
+    { description: 'tilde', expected: '~strikethrough~', input: '\\~strikethrough\\~' }
+  ])('should unescape $description', ({ expected, input }) => {
+    expect(unescapeAlias(input)).toBe(expected);
+  });
+});
+
+describe('parseLink (additional edge cases)', () => {
+  it('should correctly capture raw text of a wikilink', () => {
+    const result = parseLink('[[note]]');
+    expect(result!.raw).toBe('[[note]]');
+  });
+
+  it('should correctly capture raw text of a markdown link', () => {
+    const result = parseLink('[alias](note.md)');
+    expect(result!.raw).toBe('[alias](note.md)');
+  });
+
+  it('should correctly capture raw text of an embed wikilink', () => {
+    const result = parseLink('![[image.png]]');
+    expect(result!.raw).toBe('![[image.png]]');
+  });
+
+  it('should set isExternal to false for wikilinks', () => {
+    const result = parseLink('[[note]]');
+    expect(result!.isExternal).toBe(false);
+  });
+
+  it('should not have title for wikilinks', () => {
+    const result = parseLink('[[note]]');
+    expect(result!.title).toBeUndefined();
+  });
+
+  it('should not have hasAngleBrackets for wikilinks', () => {
+    const result = parseLink('[[note]]');
+    expect(result!.hasAngleBrackets).toBeUndefined();
+  });
+
+  it('should parse a markdown link with encoded special characters', () => {
+    const result = parseLink('[link](path%5Cto%5Cfile.md)');
+    expect(result!.url).toBe('path\\to\\file.md');
+  });
+
+  describe('should parse wikilink with block reference', () => {
+    const result = parseLink('[[note#^block-id]]');
+
+    it('should be a wikilink', () => {
+      expect(result!.isWikilink).toBe(true);
+    });
+
+    it('should have url "note#^block-id"', () => {
+      expect(result!.url).toBe('note#^block-id');
+    });
+  });
+
+  describe('should parse a markdown link with a title containing quotes', () => {
+    const result = parseLink('[link](note.md "a title")');
+
+    it('should have the correct title', () => {
+      expect(result!.title).toBe('a title');
+    });
+
+    it('should have the correct url', () => {
+      expect(result!.url).toBe('note.md');
+    });
+  });
+
+  describe('should parse a bare URL string as an external text link', () => {
+    const result = parseLink('https://example.com');
+
+    it('should not be null', () => {
+      expect(result).not.toBeNull();
+    });
+
+    it('should be external', () => {
+      expect(result!.isExternal).toBe(true);
+    });
+
+    it('should have the correct url', () => {
+      expect(result!.url).toBe('https://example.com');
+    });
+
+    it('should not be a wikilink', () => {
+      expect(result!.isWikilink).toBe(false);
+    });
+  });
+
+  describe('should parse an embed markdown link with angle brackets', () => {
+    const result = parseLink('![alt](<image file.png>)');
+
+    it('should not be null', () => {
+      expect(result).not.toBeNull();
+    });
+
+    it('should be an embed', () => {
+      expect(result!.isEmbed).toBe(true);
+    });
+
+    it('should have angle brackets', () => {
+      expect(result!.hasAngleBrackets).toBe(true);
+    });
+
+    it('should have the correct url', () => {
+      expect(result!.url).toBe('image file.png');
+    });
+  });
+
+  describe('should have unescapedAlias for markdown links with escaped alias', () => {
+    const result = parseLink('[\\*bold\\*](note.md)');
+
+    it('should not be null', () => {
+      expect(result).not.toBeNull();
+    });
+
+    it('should have the escaped alias', () => {
+      expect(result!.alias).toBe('\\*bold\\*');
+    });
+
+    it('should have the unescaped alias', () => {
+      expect(result!.unescapedAlias).toBe('*bold*');
+    });
+  });
+
+  describe('should have encodedUrl for external links', () => {
+    const result = parseLink('[example](https://example.com/path)');
+
+    it('should not be null', () => {
+      expect(result).not.toBeNull();
+    });
+
+    it('should be external', () => {
+      expect(result!.isExternal).toBe(true);
+    });
+
+    it('should have encodedUrl defined', () => {
+      expect(result!.encodedUrl).toBeDefined();
+    });
+  });
+
+  describe('should not have encodedUrl for internal links', () => {
+    const result = parseLink('[link](note.md)');
+
+    it('should not be null', () => {
+      expect(result).not.toBeNull();
+    });
+
+    it('should not be external', () => {
+      expect(result!.isExternal).toBe(false);
+    });
+
+    it('should have encodedUrl undefined', () => {
+      expect(result!.encodedUrl).toBeUndefined();
+    });
+  });
+
+  describe('should parse wikilink with nested heading subpath', () => {
+    const result = parseLink('[[note#heading#subheading]]');
+
+    it('should be a wikilink', () => {
+      expect(result!.isWikilink).toBe(true);
+    });
+
+    it('should have the correct url', () => {
+      expect(result!.url).toBe('note#heading#subheading');
+    });
+  });
+
+  describe('should parse wikilink with folder path and alias', () => {
+    const result = parseLink('[[folder/note|My Note]]');
+
+    it('should have the correct url', () => {
+      expect(result!.url).toBe('folder/note');
+    });
+
+    it('should have the correct alias', () => {
+      expect(result!.alias).toBe('My Note');
+    });
+  });
+
+  describe('should set startOffset and endOffset correctly for single wikilink', () => {
+    const result = parseLink('[[note]]');
+
+    it('should have startOffset 0', () => {
+      expect(result!.startOffset).toBe(0);
+    });
+
+    it('should have endOffset 8', () => {
+      expect(result!.endOffset).toBe(8);
+    });
+  });
+
+  describe('should set startOffset and endOffset correctly for markdown link', () => {
+    const result = parseLink('[alias](note.md)');
+
+    it('should have startOffset 0', () => {
+      expect(result!.startOffset).toBe(0);
+    });
+
+    it('should have endOffset 16', () => {
+      expect(result!.endOffset).toBe(16);
+    });
+  });
+});
+
+describe('parseLinks (additional edge cases)', () => {
+  it('should parse an empty string returning no links', () => {
+    const results = parseLinks('');
+    expect(results.length).toBe(0);
+  });
+
+  describe('should correctly handle multiple embed wikilinks', () => {
+    const results = parseLinks('![[img1.png]] and ![[img2.png]]');
+    const embeds = results.filter((r) => r.isEmbed && r.isWikilink);
+
+    it('should find 2 embeds', () => {
+      expect(embeds.length).toBe(2);
+    });
+
+    it('should parse first embed url', () => {
+      expect(embeds[0]!.url).toBe('img1.png');
+    });
+
+    it('should parse second embed url', () => {
+      expect(embeds[1]!.url).toBe('img2.png');
+    });
+  });
+
+  describe('should handle embed markdown links among regular markdown links', () => {
+    const results = parseLinks('[link](note.md) and ![img](image.png)');
+    const nonEmbed = results.filter((r) => !r.isEmbed && !r.isExternal);
+    const embed = results.filter((r) => r.isEmbed);
+
+    it('should find 1 non-embed link', () => {
+      expect(nonEmbed.length).toBe(1);
+    });
+
+    it('should find 1 embed link', () => {
+      expect(embed.length).toBe(1);
+    });
+
+    it('should have the correct embed url', () => {
+      expect(embed[0]!.url).toBe('image.png');
+    });
+  });
+
+  it('should parse multiple external URLs in text', () => {
+    const results = parseLinks('Visit https://example.com and https://other.com');
+    const external = results.filter((r) => r.isExternal);
+    expect(external.length).toBe(2);
+  });
+
+  describe('should correctly report offsets for markdown links', () => {
+    const text = '[a](b.md) [c](d.md)';
+    const results = parseLinks(text);
+    const mdLinks = results.filter((r) => !r.isWikilink && !r.isExternal);
+
+    it('should find 2 markdown links', () => {
+      expect(mdLinks.length).toBe(2);
+    });
+
+    it('should have correct offset for first markdown link', () => {
+      expect(text.slice(mdLinks[0]!.startOffset, mdLinks[0]!.endOffset)).toBe('[a](b.md)');
+    });
+
+    it('should have correct offset for second markdown link', () => {
+      expect(text.slice(mdLinks[1]!.startOffset, mdLinks[1]!.endOffset)).toBe('[c](d.md)');
+    });
+  });
+
+  describe('should handle markdown links with titles in multi-link string', () => {
+    const results = parseLinks('[a](b.md "title1") and [c](d.md "title2")');
+    const mdLinks = results.filter((r) => !r.isWikilink && !r.isExternal);
+
+    it('should find 2 markdown links', () => {
+      expect(mdLinks.length).toBe(2);
+    });
+
+    it('should parse first link title', () => {
+      expect(mdLinks[0]!.title).toBe('title1');
+    });
+
+    it('should parse second link title', () => {
+      expect(mdLinks[1]!.title).toBe('title2');
+    });
+  });
+
+  it('should handle a wikilink followed by a markdown link with no space', () => {
+    const results = parseLinks('[[wiki]][md](note.md)');
+    const wikilinks = results.filter((r) => r.isWikilink);
+    expect(wikilinks[0]!.url).toBe('wiki');
+  });
+
+  it('should sort all links by startOffset', () => {
+    const results = parseLinks('[[a]] [b](c.md) [[d]]');
+    for (let i = 1; i < results.length; i++) {
+      expect(results[i]!.startOffset).toBeGreaterThanOrEqual(results[i - 1]!.startOffset);
+    }
+  });
+});
+
+describe('generateRawMarkdownLink (additional edge cases)', () => {
+  describe('should generate a wikilink with isEmbed false explicitly', () => {
+    const result = generateRawMarkdownLink({
+      isEmbed: false,
+      isWikilink: true,
+      url: 'Note'
+    });
+
+    it('should generate the correct wikilink', () => {
+      expect(result).toBe('[[Note]]');
+    });
+
+    it('should not contain embed prefix', () => {
+      expect(result).not.toContain('!');
+    });
+  });
+
+  describe('should generate a markdown link with isEmbed false explicitly', () => {
+    const result = generateRawMarkdownLink({
+      alias: 'link',
+      isEmbed: false,
+      isWikilink: false,
+      url: 'note.md'
+    });
+
+    it('should generate the correct markdown link', () => {
+      expect(result).toBe('[link](note.md)');
+    });
+
+    it('should not contain embed prefix', () => {
+      expect(result).not.toContain('!');
+    });
+  });
+
+  it('should generate a markdown link with both title and angle brackets', () => {
+    const result = generateRawMarkdownLink({
+      alias: 'link',
+      isWikilink: false,
+      shouldUseAngleBrackets: true,
+      title: 'hover',
+      url: 'path with spaces.md'
+    });
+    expect(result).toBe('[link](<path with spaces.md> "hover")');
+  });
+
+  it('should generate a markdown link with title and escaped alias', () => {
+    const result = generateRawMarkdownLink({
+      alias: '**bold**',
+      isWikilink: false,
+      shouldEscapeAlias: true,
+      title: 'hover text',
+      url: 'note.md'
+    });
+    expect(result).toBe('[\\*\\*bold\\*\\*](note.md "hover text")');
+  });
+
+  it('should generate an embed markdown link with title', () => {
+    const result = generateRawMarkdownLink({
+      alias: 'img',
+      isEmbed: true,
+      isWikilink: false,
+      title: 'image title',
+      url: 'image.png'
+    });
+    expect(result).toBe('![img](image.png "image title")');
+  });
+
+  it('should handle a wikilink with empty string alias (no alias part)', () => {
+    const result = generateRawMarkdownLink({
+      alias: '',
+      isWikilink: true,
+      url: 'Note'
+    });
+    expect(result).toBe('[[Note]]');
+  });
+});
+
+describe('splitSubpath (additional edge cases)', () => {
+  describe('should handle a link with multiple hash symbols in subpath', () => {
+    const result = splitSubpath('note#a#b#c');
+
+    it('should set linkPath to "note"', () => {
+      expect(result.linkPath).toBe('note');
+    });
+
+    it('should set subpath to "#a#b#c"', () => {
+      expect(result.subpath).toBe('#a#b#c');
+    });
+  });
+
+  describe('should handle a link with a trailing hash', () => {
+    const result = splitSubpath('note#');
+
+    it('should set linkPath to "note"', () => {
+      expect(result.linkPath).toBe('note');
+    });
+
+    it('should set subpath to "#"', () => {
+      expect(result.subpath).toBe('#');
+    });
+  });
+
+  describe('should handle only a hash character', () => {
+    const result = splitSubpath('#');
+
+    it('should set linkPath to empty string', () => {
+      expect(result.linkPath).toBe('');
+    });
+
+    it('should set subpath to "#"', () => {
+      expect(result.subpath).toBe('#');
+    });
+  });
+
+  describe('should handle deeply nested folder paths without subpath', () => {
+    const result = splitSubpath('a/b/c/d/note');
+
+    it('should set linkPath to the full path', () => {
+      expect(result.linkPath).toBe('a/b/c/d/note');
+    });
+
+    it('should set subpath to empty string', () => {
+      expect(result.subpath).toBe('');
+    });
+  });
+});

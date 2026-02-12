@@ -24,10 +24,14 @@
     "verbatimModuleSyntax": true
   },
   "include": [
+    "./__mocks__/**/*.ts",
+    "./__tests__/**/*.ts",
     "./.markdownlint-cli2.mts",
     "./commitlint.config.ts",
     "./eslint.config.mts",
+    "./scripts/**/*.ts",
     "./src/**/*.ts",
-    "./scripts/**/*.ts"
+    "./src/**/*.ts",
+    "./vitest.config.ts"
   ]
 }
