@@ -622,6 +622,7 @@
     "cz-conventional-changelog": "latest",
     "husky": "latest",
     "jsdom": "latest",
-    "vitest": "latest"
+    "vitest": "latest",
+    "yaml": "latest"
   }
 }
