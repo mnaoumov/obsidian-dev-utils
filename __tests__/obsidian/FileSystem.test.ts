@@ -271,13 +271,14 @@ describe('getFileSystemType', () => {
 describe('checkExtension', () => {
   it('should return true when a TFile has the expected extension', () => {
     const app = createMockApp({ files: [{ path: 'note.md' }] });
-    const file = app.vault.getAbstractFileByPath('note.md') as TFile;
+    const file = app.vault.getFileByPath('note.md');
+    assertNotNullable(file);
     expect(checkExtension(app, file, 'md')).toBe(true);
   });
 
   it('should return false when a TFile has a different extension', () => {
     const app = createMockApp({ files: [{ path: 'note.md' }] });
-    const file = app.vault.getAbstractFileByPath('note.md') as TFile;
+    const file = app.vault.getFileByPath('note.md');
     expect(checkExtension(app, file, 'canvas')).toBe(false);
   });
 
@@ -298,7 +299,7 @@ describe('checkExtension', () => {
 
   it('should return false for a TFolder', () => {
     const app = createMockApp({ folders: ['my-folder'] });
-    const folder = app.vault.getAbstractFileByPath('my-folder');
+    const folder = app.vault.getFolderByPath('my-folder');
     expect(checkExtension(app, folder, 'md')).toBe(false);
   });
 });
@@ -306,13 +307,13 @@ describe('checkExtension', () => {
 describe('isMarkdownFile', () => {
   it('should return true for a markdown file', () => {
     const app = createMockApp({ files: [{ path: 'note.md' }] });
-    const file = app.vault.getAbstractFileByPath('note.md') as TFile;
+    const file = app.vault.getFileByPath('note.md');
     expect(isMarkdownFile(app, file)).toBe(true);
   });
 
   it('should return false for a canvas file', () => {
     const app = createMockApp({ files: [{ path: 'drawing.canvas' }] });
-    const file = app.vault.getAbstractFileByPath('drawing.canvas') as TFile;
+    const file = app.vault.getFileByPath('drawing.canvas');
     expect(isMarkdownFile(app, file)).toBe(false);
   });
 
@@ -330,13 +331,13 @@ describe('isMarkdownFile', () => {
 describe('isCanvasFile', () => {
   it('should return true for a canvas file', () => {
     const app = createMockApp({ files: [{ path: 'drawing.canvas' }] });
-    const file = app.vault.getAbstractFileByPath('drawing.canvas') as TFile;
+    const file = app.vault.getFileByPath('drawing.canvas');
     expect(isCanvasFile(app, file)).toBe(true);
   });
 
   it('should return false for a markdown file', () => {
     const app = createMockApp({ files: [{ path: 'note.md' }] });
-    const file = app.vault.getAbstractFileByPath('note.md') as TFile;
+    const file = app.vault.getFileByPath('note.md');
     expect(isCanvasFile(app, file)).toBe(false);
   });
 
@@ -349,13 +350,13 @@ describe('isCanvasFile', () => {
 describe('isBaseFile', () => {
   it('should return true for a base file', () => {
     const app = createMockApp({ files: [{ extension: 'base', path: 'config.base' }] });
-    const file = app.vault.getAbstractFileByPath('config.base') as TFile;
+    const file = app.vault.getFileByPath('config.base');
     expect(isBaseFile(app, file)).toBe(true);
   });
 
   it('should return false for a markdown file', () => {
     const app = createMockApp({ files: [{ path: 'note.md' }] });
-    const file = app.vault.getAbstractFileByPath('note.md') as TFile;
+    const file = app.vault.getFileByPath('note.md');
     expect(isBaseFile(app, file)).toBe(false);
   });
 });
@@ -363,25 +364,25 @@ describe('isBaseFile', () => {
 describe('isNote', () => {
   it('should return true for a markdown file', () => {
     const app = createMockApp({ files: [{ path: 'note.md' }] });
-    const file = app.vault.getAbstractFileByPath('note.md') as TFile;
+    const file = app.vault.getFileByPath('note.md');
     expect(isNote(app, file)).toBe(true);
   });
 
   it('should return true for a canvas file', () => {
     const app = createMockApp({ files: [{ path: 'drawing.canvas' }] });
-    const file = app.vault.getAbstractFileByPath('drawing.canvas') as TFile;
+    const file = app.vault.getFileByPath('drawing.canvas');
     expect(isNote(app, file)).toBe(true);
   });
 
   it('should return true for a base file', () => {
     const app = createMockApp({ files: [{ extension: 'base', path: 'config.base' }] });
-    const file = app.vault.getAbstractFileByPath('config.base') as TFile;
+    const file = app.vault.getFileByPath('config.base');
     expect(isNote(app, file)).toBe(true);
   });
 
   it('should return false for an image file', () => {
     const app = createMockApp({ files: [{ extension: 'png', path: 'image.png' }] });
-    const file = app.vault.getAbstractFileByPath('image.png') as TFile;
+    const file = app.vault.getFileByPath('image.png');
     expect(isNote(app, file)).toBe(false);
   });
 
@@ -604,19 +605,22 @@ describe('exists', () => {
 describe('trimMarkdownExtension', () => {
   it('should trim the .md extension from a markdown file', () => {
     const app = createMockApp({ files: [{ path: 'folder/note.md' }] });
-    const file = app.vault.getAbstractFileByPath('folder/note.md') as TFile;
+    const file = app.vault.getFileByPath('folder/note.md');
+    assertNotNullable(file);
     expect(trimMarkdownExtension(app, file)).toBe('folder/note');
   });
 
   it('should not trim the extension from a non-markdown file', () => {
     const app = createMockApp({ files: [{ extension: 'canvas', path: 'drawing.canvas' }] });
-    const file = app.vault.getAbstractFileByPath('drawing.canvas') as TFile;
+    const file = app.vault.getFileByPath('drawing.canvas');
+    assertNotNullable(file);
     expect(trimMarkdownExtension(app, file)).toBe('drawing.canvas');
   });
 
   it('should not trim from a folder', () => {
     const app = createMockApp({ folders: ['my-folder'] });
-    const folder = app.vault.getAbstractFileByPath('my-folder') as TFolder;
+    const folder = app.vault.getFolderByPath('my-folder');
+    assertNotNullable(folder);
     expect(trimMarkdownExtension(app, folder)).toBe('my-folder');
   });
 });
