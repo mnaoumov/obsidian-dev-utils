@@ -47,6 +47,7 @@ describe('ValueWrapper', () => {
 
 describe('getApp', () => {
   it('should throw when no global app exists and require fails', () => {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Testing `getApp()`.
     expect(() => getApp()).toThrow('Obsidian App global instance not found');
   });
 });
