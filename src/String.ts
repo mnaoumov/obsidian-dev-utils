@@ -151,6 +151,7 @@ export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOff
       return lfOffset - lfOffsetToOriginalOffsetMap.length + str.length;
     }
 
+    /* v8 ignore start -- Never happens. */
     if (lfOffsetToOriginalOffsetMap[lfOffset] === undefined) {
       const message = 'Could not map offset';
       console.error(message, {
@@ -160,6 +161,7 @@ export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOff
       });
       throw new Error(message);
     }
+    /* v8 ignore stop */
 
     return lfOffsetToOriginalOffsetMap[lfOffset];
   };
@@ -279,12 +281,16 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
         return arg;
       }
 
+      /* v8 ignore start -- It incorrectly reports this as uncovered, but it is covered by `should populate missingGroupIndices for undefined capture groups` test. */
       if (typeof arg === 'undefined') {
+      /* v8 ignore stop */
         commonArgs.missingGroupIndices.push(index);
         return '';
       }
 
+      /* v8 ignore start -- Never happens. */
       throw new Error(`Unexpected argument type: ${typeof arg}`);
+      /* v8 ignore stop */
     }) as ReplaceGroupArgs;
 
     return (replacer(commonArgs, ...groupArgs) as string | undefined) ?? commonArgs.substring;

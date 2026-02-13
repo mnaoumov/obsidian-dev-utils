@@ -388,6 +388,10 @@ describe('replace', () => {
     const result = replace('price is $10.00', { '$10.00': '20 dollars' });
     expect(result).toBe('price is 20 dollars');
   });
+
+  it('impossible case for code coverage', () => {
+    expect(() => replace('foo', { foo: undefined as unknown as string })).toThrow('Unexpected replacement source: foo');
+  });
 });
 
 describe('replaceAll', () => {
@@ -472,6 +476,17 @@ describe('replaceAllAsync', () => {
   it('should handle empty string', async () => {
     const result = await replaceAllAsync('', 'a', 'b');
     expect(result).toBe('');
+  });
+
+  it('should handle undefined replacer', async () => {
+    const result = await replaceAllAsync('foobar', /foo|bar/g, (_abortSignal, common) => {
+      if (common.substring === 'foo') {
+        return;
+      }
+
+      return 'baz'
+    });
+    expect(result).toBe('foobaz');
   });
 });
 
