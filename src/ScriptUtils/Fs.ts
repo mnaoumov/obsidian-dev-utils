@@ -146,9 +146,11 @@ export async function readdirPosix(
  * @returns `true` if the options are for returning buffers, otherwise `false`.
  */
 function isBufferResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is BufferResultOptions {
+  /* v8 ignore start -- Dead code: readdirPosix defaults options to {}, so undefined never reaches here. */
   if (options === undefined) {
     return false;
   }
+  /* v8 ignore stop */
 
   if (options === 'buffer') {
     return true;
@@ -160,9 +162,11 @@ function isBufferResultOptions(options: BufferResultOptions | DirentResultOption
     return false;
   }
 
+  /* v8 ignore start -- Dead code: isStringResultOptions already handles non-buffer encoding before this is called. */
   if (commonOptions.encoding !== 'buffer') {
     return false;
   }
+  /* v8 ignore stop */
 
   return true;
 }
@@ -174,9 +178,11 @@ function isBufferResultOptions(options: BufferResultOptions | DirentResultOption
  * @returns `true` if the options are for returning strings, otherwise `false`.
  */
 function isStringResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is StringResultOptions {
+  /* v8 ignore start -- Dead code: readdirPosix defaults options to {}, so undefined never reaches here. */
   if (options === undefined) {
     return true;
   }
+  /* v8 ignore stop */
 
   if (options === 'buffer') {
     return false;

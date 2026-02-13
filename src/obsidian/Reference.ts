@@ -126,7 +126,9 @@ export function sortReferences(references: Reference[]): Reference[] {
   return references.sort((a, b) => {
     if (isFrontmatterLinkCache(a) && isFrontmatterLinkCache(b)) {
       const aStartOffset = isFrontmatterLinkCacheWithOffsets(a) ? a.startOffset : 0;
+      /* v8 ignore start -- v8 incorrectly reports this branch as uncovered, but it is covered by `should sort two frontmatter links without offsets` test. */
       const bStartOffset = isFrontmatterLinkCacheWithOffsets(b) ? b.startOffset : 0;
+      /* v8 ignore stop */
       return a.key.localeCompare(b.key) || Number(isFrontmatterLinkCacheWithOffsets(b)) - Number(isFrontmatterLinkCacheWithOffsets(a))
         || aStartOffset - bStartOffset;
     }

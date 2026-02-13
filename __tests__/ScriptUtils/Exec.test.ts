@@ -30,14 +30,27 @@ function createMockChild(): MockChild {
   return child;
 }
 
-const { mockSpawn } = vi.hoisted(() => ({
-  mockSpawn: vi.fn()
+const {
+  mockSpawn,
+  mockStderrWrite,
+  mockStdoutWrite
+} = vi.hoisted(() => ({
+  mockSpawn: vi.fn(),
+  mockStderrWrite: vi.fn(),
+  mockStdoutWrite: vi.fn()
 }));
 
 vi.mock('../../src/ScriptUtils/NodeModules.ts', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../../src/ScriptUtils/NodeModules.ts')>();
   return {
     ...mod,
+    process: {
+      ...mod.process,
+      cwd: (): string => mod.process.cwd(),
+      env: mod.process.env,
+      stderr: { write: mockStderrWrite },
+      stdout: { write: mockStdoutWrite }
+    },
     spawn: mockSpawn
   };
 });
@@ -202,6 +215,23 @@ describe('exec', () => {
 
     await promise;
     expect(Buffer.concat(chunks).toString()).toBe('input data');
+  });
+
+  it('should write to process stdout and stderr when not quiet', async () => {
+    const child = createMockChild();
+    mockSpawn.mockReturnValue(child);
+
+    const promise = exec('echo hello', { isQuiet: false });
+
+    child.stdout.push(Buffer.from('out'));
+    child.stdout.push(null);
+    child.stderr.push(Buffer.from('err'));
+    child.stderr.push(null);
+    child.emit('close', 0, null);
+
+    await promise;
+    expect(mockStdoutWrite).toHaveBeenCalledWith(Buffer.from('out'));
+    expect(mockStderrWrite).toHaveBeenCalledWith(Buffer.from('err'));
   });
 
   it('should trim one trailing newline from stdout and stderr', async () => {
