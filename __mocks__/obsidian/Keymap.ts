@@ -1,5 +1,7 @@
 import type { Scope } from './Scope.ts';
 
+import { noop } from '../../src/Function.ts';
+
 export class Keymap {
   public static isModEvent(_evt?: unknown): boolean | string {
     return false;
@@ -9,7 +11,11 @@ export class Keymap {
     return false;
   }
 
-  public popScope(_scope: Scope): void {}
+  public popScope(_scope: Scope): void {
+    noop();
+  }
 
-  public pushScope(_scope: Scope): void {}
+  public pushScope(_scope: Scope): void {
+    noop();
+  }
 }

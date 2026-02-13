@@ -2,6 +2,7 @@ import type { App as ObsidianApp } from 'obsidian';
 
 import type { TAbstractFile } from './TAbstractFile.ts';
 
+import { noop } from '../../src/Function.ts';
 import { FileManager } from './FileManager.ts';
 import { Keymap } from './Keymap.ts';
 import { MetadataCache } from './MetadataCache.ts';
@@ -39,7 +40,9 @@ export class App {
     return null;
   }
 
-  public saveLocalStorage(_key: string, _data: unknown): void {}
+  public saveLocalStorage(_key: string, _data: unknown): void {
+    noop();
+  }
 }
 
 export function createMockApp(options: MockAppOptions = {}): ObsidianApp {

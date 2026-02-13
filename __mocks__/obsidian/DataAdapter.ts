@@ -1,11 +1,19 @@
 import type { ListedFiles } from 'obsidian';
 
+import { noopAsync } from '../../src/Function.ts';
+
 export class DataAdapter {
   public basePath = '';
   public insensitive = false;
 
-  public async append(_normalizedPath: string, _data: string): Promise<void> {}
-  public async copy(_normalizedPath: string, _normalizedNewPath: string): Promise<void> {}
+  public async append(_normalizedPath: string, _data: string): Promise<void> {
+    await noopAsync();
+  }
+
+  public async copy(_normalizedPath: string, _normalizedNewPath: string): Promise<void> {
+    await noopAsync();
+  }
+
   public async exists(_normalizedPath: string, _sensitive?: boolean): Promise<boolean> {
     return false;
   }
@@ -22,7 +30,10 @@ export class DataAdapter {
     return { files: [], folders: [] };
   }
 
-  public async mkdir(_normalizedPath: string): Promise<void> {}
+  public async mkdir(_normalizedPath: string): Promise<void> {
+    await noopAsync();
+  }
+
   public async process(_normalizedPath: string, fn: (data: string) => string): Promise<string> {
     return fn('');
   }
@@ -35,18 +46,35 @@ export class DataAdapter {
     return new ArrayBuffer(0);
   }
 
-  public async remove(_normalizedPath: string): Promise<void> {}
-  public async rename(_normalizedPath: string, _normalizedNewPath: string): Promise<void> {}
-  public async rmdir(_normalizedPath: string, _recursive: boolean): Promise<void> {}
+  public async remove(_normalizedPath: string): Promise<void> {
+    await noopAsync();
+  }
+
+  public async rename(_normalizedPath: string, _normalizedNewPath: string): Promise<void> {
+    await noopAsync();
+  }
+
+  public async rmdir(_normalizedPath: string, _recursive: boolean): Promise<void> {
+    await noopAsync();
+  }
+
   public async stat(_normalizedPath: string): Promise<{ ctime: number; mtime: number; size: number } | null> {
     return null;
   }
 
-  public async trashLocal(_normalizedPath: string): Promise<void> {}
+  public async trashLocal(_normalizedPath: string): Promise<void> {
+    await noopAsync();
+  }
+
   public async trashSystem(_normalizedPath: string): Promise<boolean> {
     return false;
   }
 
-  public async write(_normalizedPath: string, _data: string): Promise<void> {}
-  public async writeBinary(_normalizedPath: string, _data: ArrayBuffer): Promise<void> {}
+  public async write(_normalizedPath: string, _data: string): Promise<void> {
+    await noopAsync();
+  }
+
+  public async writeBinary(_normalizedPath: string, _data: ArrayBuffer): Promise<void> {
+    await noopAsync();
+  }
 }
