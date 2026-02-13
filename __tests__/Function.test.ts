@@ -15,6 +15,7 @@ import {
 describe('Function', () => {
   describe('noop', () => {
     it('should return undefined', () => {
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Need to test `void` as `undefined`.
       expect(noop()).toBeUndefined();
     });
   });
@@ -36,6 +37,7 @@ describe('Function', () => {
     it('should return undefined regardless of original return value', () => {
       const fn = (): number => 42;
       const wrapped = omitReturnType(fn);
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Need to test `void` as `undefined`.
       expect(wrapped()).toBeUndefined();
     });
 
