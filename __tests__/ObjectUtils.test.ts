@@ -176,6 +176,7 @@ describe('ObjectUtils', () => {
 
     it('should skip __proto__', () => {
       const obj = Object.create(null) as Record<string, unknown>;
+      // eslint-disable-next-line no-proto -- Testing `__proto__`.
       obj['__proto__'] = 'test';
       obj['a'] = 1;
       expect(getAllKeys(obj)).toContain('a');
