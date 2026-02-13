@@ -179,7 +179,7 @@ describe('AsyncEvents', () => {
     it('should pass the correct this context to the callback', () => {
       const context = { value: 42 };
       let receivedThis: unknown;
-      events.on('test', function (this: unknown) {
+      events.on('test', function fn(this: unknown): void {
         // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
@@ -190,7 +190,7 @@ describe('AsyncEvents', () => {
     it('should pass the correct this context for once callbacks', () => {
       const context = { id: 'once-context' };
       let receivedThis: unknown;
-      events.once('test', function (this: unknown) {
+      events.once('test', function fn(this: unknown): void {
         // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
@@ -325,7 +325,7 @@ describe('AsyncEvents', () => {
     it('should apply thisArg from the event ref', () => {
       const context = { name: 'ctx' };
       let receivedThis: unknown;
-      const ref = events.on('test', function (this: unknown) {
+      const ref = events.on('test', function fn(this: unknown): void {
         // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
@@ -368,7 +368,7 @@ describe('AsyncEvents', () => {
     it('should apply thisArg from the event ref', async () => {
       const context = { name: 'async-ctx' };
       let receivedThis: unknown;
-      const ref = events.on('test', async function (this: unknown) {
+      const ref = events.on('test', async function fn(this: unknown): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
