@@ -49,7 +49,7 @@ describe('Async', () => {
 
     it('should not resolve before the specified delay', async () => {
       const callback = vi.fn();
-      sleep(1000).then(callback);
+      sleep(1000).then(callback).catch(console.error);
       expect(callback).not.toHaveBeenCalled();
     });
 
