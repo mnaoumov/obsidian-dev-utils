@@ -675,7 +675,7 @@ describe('Async', () => {
       }
 
       assertNotNullable(capturedCtx);
-      expect(capturedCtx.operationName).toBe('myOperation');
+      expect((capturedCtx as { operationName: string }).operationName).toBe('myOperation');
     });
 
     it('should return the result when onTimeout does not terminate', async () => {
@@ -751,7 +751,7 @@ describe('Async', () => {
       }
 
       assertNotNullable(receivedSignal);
-      expect(receivedSignal.aborted).toBe(true);
+      expect((receivedSignal as AbortSignal).aborted).toBe(true);
     });
   });
 
