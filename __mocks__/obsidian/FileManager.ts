@@ -1,3 +1,4 @@
+import type { App } from './App.ts';
 import type { TAbstractFile } from './TAbstractFile.ts';
 import type { TFile } from './TFile.ts';
 import type { TFolder } from './TFolder.ts';
@@ -5,6 +6,12 @@ import type { TFolder } from './TFolder.ts';
 import { noopAsync } from '../../src/Function.ts';
 
 export class FileManager {
+  public app: App;
+
+  public constructor(app: App) {
+    this.app = app;
+  }
+
   public generateMarkdownLink(_file: TFile, _sourcePath: string, _subpath?: string, _alias?: string): string {
     return '';
   }
@@ -14,7 +21,7 @@ export class FileManager {
   }
 
   public getNewFileParent(_sourcePath: string, _newFilePath?: string): TFolder {
-    return null as unknown as TFolder;
+    return this.app.vault.getRoot();
   }
 
   public async processFrontMatter(_file: TFile, _fn: (frontmatter: unknown) => void): Promise<void> {
