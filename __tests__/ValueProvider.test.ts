@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { resolveValue } from '../src/ValueProvider.ts';
-import { assertNotNullable } from './__helpers.ts';
+import { assertNotNullable } from './TestHelpers.ts';
 
 describe('resolveValue', () => {
   describe('direct value provider', () => {

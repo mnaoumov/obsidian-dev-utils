@@ -38,7 +38,7 @@ import {
   registerAsyncErrorEventHandler,
   SilentError
 } from '../src/Error.ts';
-import { assertNotNullable } from './__helpers.ts';
+import { assertNotNullable } from './TestHelpers.ts';
 
 describe('Async', () => {
   describe('sleep', () => {
