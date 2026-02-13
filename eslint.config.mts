@@ -154,7 +154,6 @@ const configs: Linter.Config[] = defineConfig([
   {
     files: testFiles,
     rules: {
-      '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-this-alias': 'off',
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',

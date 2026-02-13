@@ -16,6 +16,7 @@ import {
   SilentError,
   throwExpression
 } from '../src/Error.ts';
+import { assertNotNullable } from './__helpers.ts';
 
 describe('ASYNC_WRAPPER_ERROR_MESSAGE', () => {
   it('should be the expected constant string', () => {
@@ -316,7 +317,9 @@ describe('printError', () => {
 
     printError(error, mockConsole);
 
-    const output = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
+    const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
+    assertNotNullable(firstCall);
+    const output = firstCall[0] as string;
     expect(output).toContain('print me');
   });
 
@@ -331,7 +334,9 @@ describe('printError', () => {
     const mockConsole = { error: vi.fn() } as unknown as Console;
     printError('just a string', mockConsole);
 
-    expect((mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toBe('just a string');
+    const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
+    assertNotNullable(firstCall);
+    expect(firstCall[0]).toBe('just a string');
   });
 
   it('should include the outer error message when printing nested causes', () => {
@@ -341,7 +346,9 @@ describe('printError', () => {
 
     printError(error, mockConsole);
 
-    const output = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
+    const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
+    assertNotNullable(firstCall);
+    const output = firstCall[0] as string;
     expect(output).toContain('outer');
   });
 
@@ -352,7 +359,9 @@ describe('printError', () => {
 
     printError(error, mockConsole);
 
-    const output = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
+    const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
+    assertNotNullable(firstCall);
+    const output = firstCall[0] as string;
     expect(output).toContain('Caused by:');
   });
 
@@ -363,7 +372,9 @@ describe('printError', () => {
 
     printError(error, mockConsole);
 
-    const output = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
+    const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
+    assertNotNullable(firstCall);
+    const output = firstCall[0] as string;
     expect(output).toContain('root');
   });
 });
