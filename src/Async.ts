@@ -169,7 +169,9 @@ export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: 
   stackTrace ??= getStackTrace(1);
   return (...args: Args): void => {
     const innerStackTrace = getStackTrace(1);
+    /* v8 ignore start -- stackTrace is always assigned on the line above. */
     stackTrace = `${stackTrace ?? ''}\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
+    /* v8 ignore stop */
     invokeAsyncSafely(() => asyncFunc(...args), stackTrace);
   };
 }
@@ -425,7 +427,9 @@ export async function neverEnds(): Promise<never> {
   await new Promise(() => {
     noop();
   });
+  /* v8 ignore start -- By design, this function never resolves. */
   throw new Error('Should never happen');
+  /* v8 ignore stop */
 }
 
 /**

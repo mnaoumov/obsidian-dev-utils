@@ -24,7 +24,7 @@ export interface MockFileEntry {
 }
 
 export class App {
-  public fileManager = new FileManager();
+  public fileManager = new FileManager(this);
   public keymap = new Keymap();
   public lastEvent: unknown = null;
   public metadataCache = new MetadataCache();

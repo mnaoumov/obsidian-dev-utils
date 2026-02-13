@@ -50,9 +50,11 @@ export class ValueWrapper<T> {
 export function getApp(): App {
   const app = (globalThis as Partial<AppWrapper>).app;
 
+  /* v8 ignore start -- Only reachable in Obsidian. */
   if (app) {
     return app;
   }
+  /* v8 ignore stop */
 
   try {
     return globalThis.require('obsidian/app') as App;
@@ -77,10 +79,12 @@ export function getObsidianDevUtilsState<T>(app: App | null, key: string, defaul
 }
 
 function getAppOrNull(): App | null {
+  /* v8 ignore start -- Only reachable in Obsidian (window defined). */
   if (typeof window === 'undefined') {
     return null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- We need to use the deprecated function to get the app instance.
   return getApp();
+  /* v8 ignore stop */
 }

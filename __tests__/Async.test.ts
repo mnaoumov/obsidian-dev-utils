@@ -22,6 +22,7 @@ import {
   invokeAsyncSafely,
   invokeAsyncSafelyAfterDelay,
   marksAsTerminateRetry,
+  neverEnds,
   nextTickAsync,
   promiseAllAsyncFnsSequentially,
   promiseAllSequentially,
@@ -38,7 +39,10 @@ import {
   registerAsyncErrorEventHandler,
   SilentError
 } from '../src/Error.ts';
-import { noopAsync } from '../src/Function.ts';
+import {
+  noop,
+  noopAsync
+} from '../src/Function.ts';
 import { assertNotNullable } from './TestHelpers.ts';
 
 describe('Async', () => {
@@ -53,7 +57,7 @@ describe('Async', () => {
 
     it('should not resolve before the specified delay', async () => {
       const callback = vi.fn();
-      sleep(1000).then(callback).catch(console.error);
+      sleep(1000).then(callback).catch(noop);
       expect(callback).not.toHaveBeenCalled();
     });
 
@@ -1344,6 +1348,22 @@ describe('Async', () => {
       const arr = [10, 20, 30];
       await asyncFilterInPlace(arr, predicate);
       expect(predicate).toHaveBeenNthCalledWith(callIndex, expectedValue, expectedIndex, arr);
+    });
+  });
+
+  describe('neverEnds', () => {
+    it('should never resolve', async () => {
+      const resolve = vi.fn();
+      neverEnds().then(resolve).catch(noop);
+      await sleep(100);
+      expect(resolve).not.toHaveBeenCalled();
+    });
+
+    it('should never reject', async () => {
+      const reject = vi.fn();
+      neverEnds().catch(reject).catch(noop);
+      await sleep(100);
+      expect(reject).not.toHaveBeenCalled();
     });
   });
 });

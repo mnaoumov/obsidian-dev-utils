@@ -484,7 +484,7 @@ describe('replaceAllAsync', () => {
         return;
       }
 
-      return 'baz'
+      return 'baz';
     });
     expect(result).toBe('foobaz');
   });
