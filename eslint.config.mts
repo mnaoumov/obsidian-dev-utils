@@ -162,7 +162,6 @@ const configs: Linter.Config[] = defineConfig([
       'jsdoc/require-returns': 'off',
       'jsdoc/require-returns-description': 'off',
       'no-magic-numbers': 'off',
-      'obsidianmd/no-forbidden-elements': 'off',
       'obsidianmd/no-tfile-tfolder-cast': 'off',
       'perfectionist/sort-modules': 'off',
       'prefer-named-capture-group': 'off',

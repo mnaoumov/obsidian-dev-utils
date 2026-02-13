@@ -107,12 +107,14 @@ describe('isLoaded', () => {
   });
 
   it('should return false for HTMLLinkElement with rel=stylesheet and sheet=null', () => {
+    // eslint-disable-next-line obsidianmd/no-forbidden-elements -- Testing `link.sheet`.
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     expect(isLoaded(link)).toBe(false);
   });
 
   it('should return true for HTMLLinkElement with rel=stylesheet and sheet set', () => {
+    // eslint-disable-next-line obsidianmd/no-forbidden-elements -- Testing `link.sheet`.
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     Object.defineProperty(link, 'sheet', { configurable: true, value: {} });
