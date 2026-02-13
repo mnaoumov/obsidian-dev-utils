@@ -154,8 +154,6 @@ const configs: Linter.Config[] = defineConfig([
   {
     files: testFiles,
     rules: {
-      '@typescript-eslint/no-useless-constructor': 'off',
-      '@typescript-eslint/restrict-template-expressions': 'off',
       '@typescript-eslint/unbound-method': 'off',
       'capitalized-comments': 'off',
       'consistent-this': 'off',
