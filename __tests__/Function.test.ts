@@ -35,16 +35,18 @@ describe('Function', () => {
     });
 
     it('should return undefined regardless of original return value', () => {
-      const fn = (): number => 42;
+      function fn(): number {
+        return 42;
+      }
       const wrapped = omitReturnType(fn);
       // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Need to test `void` as `undefined`.
       expect(wrapped()).toBeUndefined();
     });
 
     it('should propagate thrown errors', () => {
-      const fn = (): never => {
+      function fn(): never {
         throw new Error('test');
-      };
+      }
       const wrapped = omitReturnType(fn);
       expect(() => {
         wrapped();
@@ -61,15 +63,19 @@ describe('Function', () => {
     });
 
     it('should return a resolved promise with undefined', async () => {
-      const fn = async (): Promise<number> => 42;
+      async function fn(): Promise<number> {
+        await noopAsync();
+        return 42;
+      }
       const wrapped = omitAsyncReturnType(fn);
       await expect(wrapped()).resolves.toBeUndefined();
     });
 
     it('should propagate rejected promises', async () => {
-      const fn = async (): Promise<never> => {
+      async function fn(): Promise<never> {
+        await noopAsync();
         throw new Error('async error');
-      };
+      }
       const wrapped = omitAsyncReturnType(fn);
       await expect(wrapped()).rejects.toThrow('async error');
     });

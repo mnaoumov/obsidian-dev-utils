@@ -38,6 +38,7 @@ import {
   registerAsyncErrorEventHandler,
   SilentError
 } from '../src/Error.ts';
+import { noopAsync } from '../src/Function.ts';
 import { assertNotNullable } from './TestHelpers.ts';
 
 describe('Async', () => {
@@ -260,23 +261,27 @@ describe('Async', () => {
 
   describe('convertSyncToAsync', () => {
     it('should wrap a sync function into an async one', async () => {
-      const syncFn = (a: number, b: number): number => a + b;
+      function syncFn(a: number, b: number): number {
+        return a + b;
+      }
       const asyncFn = convertSyncToAsync(syncFn);
       const result = await asyncFn(3, 4);
       expect(result).toBe(7);
     });
 
     it('should return a promise', () => {
-      const syncFn = (): string => 'hello';
+      function syncFn(): string {
+        return 'hello';
+      }
       const asyncFn = convertSyncToAsync(syncFn);
       const result = asyncFn();
       expect(result).toBeInstanceOf(Promise);
     });
 
     it('should propagate thrown errors as rejected promises', async () => {
-      const syncFn = (): never => {
+      function syncFn(): never {
         throw new Error('sync boom');
-      };
+      }
       const asyncFn = convertSyncToAsync(syncFn);
       await expect(asyncFn()).rejects.toThrow('sync boom');
     });
@@ -390,12 +395,12 @@ describe('Async', () => {
     it('should execute functions one at a time, not in parallel', async () => {
       let concurrency = 0;
       let maxConcurrency = 0;
-      const fn = async (): Promise<void> => {
+      async function fn(): Promise<void> {
         concurrency++;
         maxConcurrency = Math.max(maxConcurrency, concurrency);
         await Promise.resolve();
         concurrency--;
-      };
+      }
       await promiseAllAsyncFnsSequentially([fn, fn, fn]);
       expect(maxConcurrency).toBe(1);
     });
@@ -1122,9 +1127,10 @@ describe('Async', () => {
     });
 
     it('should not throw synchronously when the async function rejects', () => {
-      const asyncFn = async (): Promise<never> => {
+      async function asyncFn(): Promise<never> {
+        await noopAsync();
         throw new Error('async boom');
-      };
+      }
       const syncFn = convertAsyncToSync(asyncFn);
 
       expect(() => {
@@ -1136,9 +1142,10 @@ describe('Async', () => {
       const handler = vi.fn();
       const unregister = registerAsyncErrorEventHandler(handler);
 
-      const asyncFn = async (): Promise<never> => {
+      async function asyncFn(): Promise<never> {
+        await noopAsync();
         throw new Error('async error');
-      };
+      }
       const syncFn = convertAsyncToSync(asyncFn);
 
       syncFn();
