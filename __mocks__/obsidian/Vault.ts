@@ -59,6 +59,16 @@ export class Vault extends Events {
     return this.fileMap[path] ?? null;
   }
 
+  public getAbstractFileByPathInsensitive(path: string): null | TAbstractFile {
+    const lower = path.toLowerCase();
+    for (const [key, value] of Object.entries(this.fileMap)) {
+      if (key.toLowerCase() === lower) {
+        return value;
+      }
+    }
+    return null;
+  }
+
   public getAllFolders(_includeRoot?: boolean): TFolder[] {
     return Object.values(this.fileMap).filter((f): f is TFolder => f instanceof TFolder);
   }
