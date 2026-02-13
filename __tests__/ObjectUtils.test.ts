@@ -502,7 +502,10 @@ describe('ObjectUtils', () => {
     });
 
     it('should handle arrow functions in NameOnly mode', () => {
-      const obj = { fn: noop };
+      function fn(): void {
+        noop();
+      }
+      const obj = { fn };
       const json = toJson(obj, { functionHandlingMode: FunctionHandlingMode.NameOnly });
       expect(json).toContain('function fn()');
     });

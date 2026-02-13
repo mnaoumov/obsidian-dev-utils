@@ -575,7 +575,7 @@ describe('replaceAll - missingGroupIndices and named groups', () => {
 
   it('should set groups to undefined when regex has no named groups', () => {
     const capturedGroups: (Record<string, string | undefined> | undefined)[] = [];
-    replaceAll('abc', /(?<Group1>.)/g, (common) => {
+    replaceAll('abc', /(?:.)/g, (common) => {
       capturedGroups.push(common.groups);
       return common.substring;
     });
