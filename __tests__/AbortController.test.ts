@@ -164,11 +164,7 @@ describe('abortSignalTimeout', () => {
         expect(signal.aborted).toBe(false);
       } finally {
         vi.useRealTimers();
-        if (originalWindow === undefined) {
-          delete (globalThis as Partial<typeof globalThis>).window;
-        } else {
-          globalThis.window = originalWindow;
-        }
+        restoreOriginalWindow(originalWindow);
       }
     });
   });
