@@ -154,7 +154,6 @@ const configs: Linter.Config[] = defineConfig([
   {
     files: testFiles,
     rules: {
-      'consistent-this': 'off',
       'eslint-plugin-tsdoc-required/tsdoc-required': 'off',
       'func-names': 'off',
       'func-style': 'off',

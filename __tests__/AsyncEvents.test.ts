@@ -180,7 +180,7 @@ describe('AsyncEvents', () => {
       const context = { value: 42 };
       let receivedThis: unknown;
       events.on('test', function (this: unknown) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias -- Need to capture `this` for testing.
+        // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
       events.trigger('test');
@@ -191,7 +191,7 @@ describe('AsyncEvents', () => {
       const context = { id: 'once-context' };
       let receivedThis: unknown;
       events.once('test', function (this: unknown) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias -- Need to capture `this` for testing.
+        // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
       events.trigger('test');
@@ -326,7 +326,7 @@ describe('AsyncEvents', () => {
       const context = { name: 'ctx' };
       let receivedThis: unknown;
       const ref = events.on('test', function (this: unknown) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias -- Need to capture `this` for testing.
+        // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
       events.tryTrigger(ref, []);
@@ -369,7 +369,7 @@ describe('AsyncEvents', () => {
       const context = { name: 'async-ctx' };
       let receivedThis: unknown;
       const ref = events.on('test', async function (this: unknown) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias -- Need to capture `this` for testing.
+        // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
       await events.tryTriggerAsync(ref, []);
