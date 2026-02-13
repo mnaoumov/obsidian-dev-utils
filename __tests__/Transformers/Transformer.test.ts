@@ -140,8 +140,8 @@ describe('Transformer (via DoubleTransformer)', () => {
 
     it('should restore and then potentially re-transform restored values if they are transformable', () => {
       // When transformObjectRecursively encounters a wrapper, it calls restoreValue
-      // which returns the raw restored value. The restored value is returned as-is
-      // because the recursive call happens at the wrapper level, not recursing into the result.
+      // Which returns the raw restored value. The restored value is returned as-is
+      // Because the recursive call happens at the wrapper level, not recursing into the result.
       const wrapped = {
         __transformerId: 'double',
         transformedValue: 100
