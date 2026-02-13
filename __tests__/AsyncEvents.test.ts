@@ -9,6 +9,7 @@ import {
 
 import { AsyncEvents } from '../src/AsyncEvents.ts';
 import { noopAsync } from '../src/Function.ts';
+import { assertNotNullable } from './__helpers.ts';
 
 describe('AsyncEvents', () => {
   let events: AsyncEvents;
@@ -214,7 +215,9 @@ describe('AsyncEvents', () => {
       });
       events.trigger('test');
 
-      const deferredFn = setTimeoutSpy.mock.calls[0]![0] as () => void;
+      const firstCall = setTimeoutSpy.mock.calls[0];
+      assertNotNullable(firstCall);
+      const deferredFn = firstCall[0] as () => void;
       expect(() => {
         deferredFn();
       }).toThrow(error);
@@ -284,7 +287,9 @@ describe('AsyncEvents', () => {
         throw error;
       });
       await events.triggerAsync('test');
-      const deferredFn = setTimeoutSpy.mock.calls[0]![0] as () => void;
+      const firstCall = setTimeoutSpy.mock.calls[0];
+      assertNotNullable(firstCall);
+      const deferredFn = firstCall[0] as () => void;
       expect(() => {
         deferredFn();
       }).toThrow(error);
@@ -340,7 +345,9 @@ describe('AsyncEvents', () => {
         throw error;
       });
       events.tryTrigger(ref, []);
-      const deferredFn = setTimeoutSpy.mock.calls[0]![0] as () => void;
+      const firstCall = setTimeoutSpy.mock.calls[0];
+      assertNotNullable(firstCall);
+      const deferredFn = firstCall[0] as () => void;
       expect(() => {
         deferredFn();
       }).toThrow(error);
@@ -380,7 +387,9 @@ describe('AsyncEvents', () => {
         throw error;
       });
       await events.tryTriggerAsync(ref, []);
-      const deferredFn = setTimeoutSpy.mock.calls[0]![0] as () => void;
+      const firstCall = setTimeoutSpy.mock.calls[0];
+      assertNotNullable(firstCall);
+      const deferredFn = firstCall[0] as () => void;
       expect(() => {
         deferredFn();
       }).toThrow(error);

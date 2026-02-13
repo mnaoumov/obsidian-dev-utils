@@ -15,6 +15,7 @@ import {
   onAbort,
   waitForAbort
 } from '../src/AbortController.ts';
+import { assertNotNullable } from './__helpers.ts';
 
 type WindowEx = typeof globalThis & Window;
 
@@ -458,7 +459,9 @@ describe('onAbort', () => {
     onAbort(controller.signal, callback);
     controller.abort(new Error('test'));
 
-    const receivedSignal = callback.mock.calls[0]![0] as AbortSignal;
+    const firstCall = callback.mock.calls[0];
+    assertNotNullable(firstCall);
+    const receivedSignal = firstCall[0] as AbortSignal;
     expect(receivedSignal).toBeInstanceOf(AbortSignal);
   });
 
@@ -469,7 +472,9 @@ describe('onAbort', () => {
     onAbort(controller.signal, callback);
     controller.abort(new Error('test'));
 
-    const receivedSignal = callback.mock.calls[0]![0] as AbortSignal;
+    const firstCall = callback.mock.calls[0];
+    assertNotNullable(firstCall);
+    const receivedSignal = firstCall[0] as AbortSignal;
     expect(receivedSignal.aborted).toBe(true);
   });
 

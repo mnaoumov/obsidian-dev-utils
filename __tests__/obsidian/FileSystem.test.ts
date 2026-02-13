@@ -41,6 +41,7 @@ import {
   MARKDOWN_FILE_EXTENSION,
   trimMarkdownExtension
 } from '../../src/obsidian/FileSystem.ts';
+import { assertNotNullable } from '../__helpers.ts';
 
 function createTestFile(path: string, ext = 'md'): TFile {
   const file = new TFile();
@@ -400,7 +401,8 @@ describe('getAbstractFileOrNull', () => {
     });
 
     it('should have the correct path', () => {
-      expect(result!.path).toBe('note.md');
+      assertNotNullable(result);
+      expect(result.path).toBe('note.md');
     });
   });
 
@@ -446,7 +448,8 @@ describe('getFileOrNull', () => {
     });
 
     it('should have the correct path', () => {
-      expect(result!.path).toBe('note.md');
+      assertNotNullable(result);
+      expect(result.path).toBe('note.md');
     });
   });
 
@@ -498,7 +501,8 @@ describe('getFolderOrNull', () => {
     });
 
     it('should have the correct path', () => {
-      expect(result!.path).toBe('my-folder');
+      assertNotNullable(result);
+      expect(result.path).toBe('my-folder');
     });
   });
 

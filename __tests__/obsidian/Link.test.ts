@@ -22,6 +22,7 @@ import {
   testWikilink,
   unescapeAlias
 } from '../../src/obsidian/Link.ts';
+import { assertNotNullable } from '../__helpers.ts';
 
 describe('splitSubpath', () => {
   describe('should return the full link as linkPath when there is no subpath', () => {
@@ -312,15 +313,18 @@ describe('parseLink', () => {
       });
 
       it('should be a wikilink', () => {
-        expect(result!.isWikilink).toBe(true);
+        assertNotNullable(result);
+        expect(result.isWikilink).toBe(true);
       });
 
       it('should have url "note"', () => {
-        expect(result!.url).toBe('note');
+        assertNotNullable(result);
+        expect(result.url).toBe('note');
       });
 
       it('should not be an embed', () => {
-        expect(result!.isEmbed).toBe(false);
+        assertNotNullable(result);
+        expect(result.isEmbed).toBe(false);
       });
     });
 
@@ -332,26 +336,31 @@ describe('parseLink', () => {
       });
 
       it('should be a wikilink', () => {
-        expect(result!.isWikilink).toBe(true);
+        assertNotNullable(result);
+        expect(result.isWikilink).toBe(true);
       });
 
       it('should have url "note"', () => {
-        expect(result!.url).toBe('note');
+        assertNotNullable(result);
+        expect(result.url).toBe('note');
       });
 
       it('should have alias "display text"', () => {
-        expect(result!.alias).toBe('display text');
+        assertNotNullable(result);
+        expect(result.alias).toBe('display text');
       });
     });
 
     it('should parse a wikilink with a path', () => {
       const result = parseLink('[[folder/note]]');
-      expect(result!.url).toBe('folder/note');
+      assertNotNullable(result);
+      expect(result.url).toBe('folder/note');
     });
 
     it('should parse a wikilink with a heading', () => {
       const result = parseLink('[[note#heading]]');
-      expect(result!.url).toBe('note#heading');
+      assertNotNullable(result);
+      expect(result.url).toBe('note#heading');
     });
 
     describe('should parse an embed wikilink', () => {
@@ -362,15 +371,18 @@ describe('parseLink', () => {
       });
 
       it('should be a wikilink', () => {
-        expect(result!.isWikilink).toBe(true);
+        assertNotNullable(result);
+        expect(result.isWikilink).toBe(true);
       });
 
       it('should be an embed', () => {
-        expect(result!.isEmbed).toBe(true);
+        assertNotNullable(result);
+        expect(result.isEmbed).toBe(true);
       });
 
       it('should have url "image.png"', () => {
-        expect(result!.url).toBe('image.png');
+        assertNotNullable(result);
+        expect(result.url).toBe('image.png');
       });
     });
 
@@ -382,21 +394,25 @@ describe('parseLink', () => {
       });
 
       it('should be an embed', () => {
-        expect(result!.isEmbed).toBe(true);
+        assertNotNullable(result);
+        expect(result.isEmbed).toBe(true);
       });
 
       it('should have url "image.png"', () => {
-        expect(result!.url).toBe('image.png');
+        assertNotNullable(result);
+        expect(result.url).toBe('image.png');
       });
 
       it('should have alias "500"', () => {
-        expect(result!.alias).toBe('500');
+        assertNotNullable(result);
+        expect(result.alias).toBe('500');
       });
     });
 
     it('should not have alias when no pipe is present', () => {
       const result = parseLink('[[note]]');
-      expect(result!.alias).toBeUndefined();
+      assertNotNullable(result);
+      expect(result.alias).toBeUndefined();
     });
   });
 
@@ -409,15 +425,18 @@ describe('parseLink', () => {
       });
 
       it('should not be a wikilink', () => {
-        expect(result!.isWikilink).toBe(false);
+        assertNotNullable(result);
+        expect(result.isWikilink).toBe(false);
       });
 
       it('should have url "note.md"', () => {
-        expect(result!.url).toBe('note.md');
+        assertNotNullable(result);
+        expect(result.url).toBe('note.md');
       });
 
       it('should have alias "display"', () => {
-        expect(result!.alias).toBe('display');
+        assertNotNullable(result);
+        expect(result.alias).toBe('display');
       });
     });
 
@@ -429,15 +448,18 @@ describe('parseLink', () => {
       });
 
       it('should not be a wikilink', () => {
-        expect(result!.isWikilink).toBe(false);
+        assertNotNullable(result);
+        expect(result.isWikilink).toBe(false);
       });
 
       it('should have url "note.md"', () => {
-        expect(result!.url).toBe('note.md');
+        assertNotNullable(result);
+        expect(result.url).toBe('note.md');
       });
 
       it('should have undefined alias', () => {
-        expect(result!.alias).toBeUndefined();
+        assertNotNullable(result);
+        expect(result.alias).toBeUndefined();
       });
     });
 
@@ -449,21 +471,25 @@ describe('parseLink', () => {
       });
 
       it('should be an embed', () => {
-        expect(result!.isEmbed).toBe(true);
+        assertNotNullable(result);
+        expect(result.isEmbed).toBe(true);
       });
 
       it('should not be a wikilink', () => {
-        expect(result!.isWikilink).toBe(false);
+        assertNotNullable(result);
+        expect(result.isWikilink).toBe(false);
       });
 
       it('should have url "image.png"', () => {
-        expect(result!.url).toBe('image.png');
+        assertNotNullable(result);
+        expect(result.url).toBe('image.png');
       });
     });
 
     it('should parse a markdown link with spaces encoded in URL', () => {
       const result = parseLink('[link](path%20with%20spaces.md)');
-      expect(result!.url).toBe('path with spaces.md');
+      assertNotNullable(result);
+      expect(result.url).toBe('path with spaces.md');
     });
 
     describe('should parse a markdown link with angle brackets', () => {
@@ -474,11 +500,13 @@ describe('parseLink', () => {
       });
 
       it('should have angle brackets', () => {
-        expect(result!.hasAngleBrackets).toBe(true);
+        assertNotNullable(result);
+        expect(result.hasAngleBrackets).toBe(true);
       });
 
       it('should have the correct url', () => {
-        expect(result!.url).toBe('path with spaces.md');
+        assertNotNullable(result);
+        expect(result.url).toBe('path with spaces.md');
       });
     });
 
@@ -490,17 +518,20 @@ describe('parseLink', () => {
       });
 
       it('should be external', () => {
-        expect(result!.isExternal).toBe(true);
+        assertNotNullable(result);
+        expect(result.isExternal).toBe(true);
       });
 
       it('should have the correct url', () => {
-        expect(result!.url).toBe('https://example.com');
+        assertNotNullable(result);
+        expect(result.url).toBe('https://example.com');
       });
     });
 
     it('should parse an internal link as not external', () => {
       const result = parseLink('[link](note.md)');
-      expect(result!.isExternal).toBe(false);
+      assertNotNullable(result);
+      expect(result.isExternal).toBe(false);
     });
 
     describe('should parse an embed markdown link with alias', () => {
@@ -511,11 +542,13 @@ describe('parseLink', () => {
       });
 
       it('should be an embed', () => {
-        expect(result!.isEmbed).toBe(true);
+        assertNotNullable(result);
+        expect(result.isEmbed).toBe(true);
       });
 
       it('should have alias "my image"', () => {
-        expect(result!.alias).toBe('my image');
+        assertNotNullable(result);
+        expect(result.alias).toBe('my image');
       });
     });
 
@@ -527,11 +560,13 @@ describe('parseLink', () => {
       });
 
       it('should have url "note.md"', () => {
-        expect(result!.url).toBe('note.md');
+        assertNotNullable(result);
+        expect(result.url).toBe('note.md');
       });
 
       it('should have title "hover text"', () => {
-        expect(result!.title).toBe('hover text');
+        assertNotNullable(result);
+        expect(result.title).toBe('hover text');
       });
     });
   });
@@ -558,11 +593,15 @@ describe('parseLinks', () => {
     });
 
     it('should parse the first wikilink url', () => {
-      expect(wikilinks[0]!.url).toBe('note1');
+      const firstWikilink = wikilinks[0];
+      assertNotNullable(firstWikilink);
+      expect(firstWikilink.url).toBe('note1');
     });
 
     it('should parse the second wikilink url', () => {
-      expect(wikilinks[1]!.url).toBe('note2');
+      const secondWikilink = wikilinks[1];
+      assertNotNullable(secondWikilink);
+      expect(secondWikilink.url).toBe('note2');
     });
   });
 
@@ -595,7 +634,9 @@ describe('parseLinks', () => {
     });
 
     it('should have url "image.png"', () => {
-      expect(embeds[0]!.url).toBe('image.png');
+      const firstEmbed = embeds[0];
+      assertNotNullable(firstEmbed);
+      expect(firstEmbed.url).toBe('image.png');
     });
   });
 
@@ -609,11 +650,15 @@ describe('parseLinks', () => {
     });
 
     it('should have correct offset for first wikilink', () => {
-      expect(text.slice(wikilinks[0]!.startOffset, wikilinks[0]!.endOffset)).toBe('[[note1]]');
+      const firstWikilink = wikilinks[0];
+      assertNotNullable(firstWikilink);
+      expect(text.slice(firstWikilink.startOffset, firstWikilink.endOffset)).toBe('[[note1]]');
     });
 
     it('should have correct offset for second wikilink', () => {
-      expect(text.slice(wikilinks[1]!.startOffset, wikilinks[1]!.endOffset)).toBe('[[note2]]');
+      const secondWikilink = wikilinks[1];
+      assertNotNullable(secondWikilink);
+      expect(text.slice(secondWikilink.startOffset, secondWikilink.endOffset)).toBe('[[note2]]');
     });
   });
 
@@ -626,7 +671,9 @@ describe('parseLinks', () => {
     });
 
     it('should have the correct url', () => {
-      expect(external[0]!.url).toBe('https://example.com');
+      const firstExternal = external[0];
+      assertNotNullable(firstExternal);
+      expect(firstExternal.url).toBe('https://example.com');
     });
   });
 
@@ -639,11 +686,15 @@ describe('parseLinks', () => {
     });
 
     it('should parse the first alias', () => {
-      expect(wikilinks[0]!.alias).toBe('alias1');
+      const firstWikilink = wikilinks[0];
+      assertNotNullable(firstWikilink);
+      expect(firstWikilink.alias).toBe('alias1');
     });
 
     it('should parse the second alias', () => {
-      expect(wikilinks[1]!.alias).toBe('alias2');
+      const secondWikilink = wikilinks[1];
+      assertNotNullable(secondWikilink);
+      expect(secondWikilink.alias).toBe('alias2');
     });
   });
 });
@@ -729,23 +780,36 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should have 1 frontmatter link', () => {
-      expect(cache.frontmatterLinks!.length).toBe(1);
+      assertNotNullable(cache.frontmatterLinks);
+      expect(cache.frontmatterLinks.length).toBe(1);
     });
 
     it('should set the link property', () => {
-      expect(cache.frontmatterLinks![0]!.link).toBe('note.md');
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.link).toBe('note.md');
     });
 
     it('should set the original property', () => {
-      expect(cache.frontmatterLinks![0]!.original).toBe('[alias](note.md)');
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.original).toBe('[alias](note.md)');
     });
 
     it('should set the displayText property', () => {
-      expect(cache.frontmatterLinks![0]!.displayText).toBe('alias');
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.displayText).toBe('alias');
     });
 
     it('should set the key property', () => {
-      expect(cache.frontmatterLinks![0]!.key).toBe('source');
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.key).toBe('source');
     });
   });
 
@@ -807,11 +871,15 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should have 1 frontmatter link', () => {
-      expect(cache.frontmatterLinks!.length).toBe(1);
+      assertNotNullable(cache.frontmatterLinks);
+      expect(cache.frontmatterLinks.length).toBe(1);
     });
 
     it('should set the key to the nested path', () => {
-      expect(cache.frontmatterLinks![0]!.key).toBe('meta.source');
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.key).toBe('meta.source');
     });
   });
 
@@ -833,7 +901,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should have 2 frontmatter links', () => {
-      expect(cache.frontmatterLinks!.length).toBe(2);
+      assertNotNullable(cache.frontmatterLinks);
+      expect(cache.frontmatterLinks.length).toBe(2);
     });
   });
 
@@ -877,11 +946,17 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should set the link property', () => {
-      expect(cache.frontmatterLinks![0]!.link).toBe('note.md');
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.link).toBe('note.md');
     });
 
     it('should not set displayText when alias is undefined', () => {
-      expect(cache.frontmatterLinks![0]!.displayText).toBeUndefined();
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.displayText).toBeUndefined();
     });
   });
 
@@ -903,19 +978,29 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should have 1 frontmatter link', () => {
-      expect(cache.frontmatterLinks!.length).toBe(1);
+      assertNotNullable(cache.frontmatterLinks);
+      expect(cache.frontmatterLinks.length).toBe(1);
     });
 
     it('should update the link property', () => {
-      expect(cache.frontmatterLinks![0]!.link).toBe('new-note.md');
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.link).toBe('new-note.md');
     });
 
     it('should update the original property', () => {
-      expect(cache.frontmatterLinks![0]!.original).toBe('[new-alias](new-note.md)');
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.original).toBe('[new-alias](new-note.md)');
     });
 
     it('should update the displayText property', () => {
-      expect(cache.frontmatterLinks![0]!.displayText).toBe('new-alias');
+      assertNotNullable(cache.frontmatterLinks);
+      const firstLink = cache.frontmatterLinks[0];
+      assertNotNullable(firstLink);
+      expect(firstLink.displayText).toBe('new-alias');
     });
   });
 
@@ -967,48 +1052,57 @@ describe('unescapeAlias (additional edge cases)', () => {
 describe('parseLink (additional edge cases)', () => {
   it('should correctly capture raw text of a wikilink', () => {
     const result = parseLink('[[note]]');
-    expect(result!.raw).toBe('[[note]]');
+    assertNotNullable(result);
+    expect(result.raw).toBe('[[note]]');
   });
 
   it('should correctly capture raw text of a markdown link', () => {
     const result = parseLink('[alias](note.md)');
-    expect(result!.raw).toBe('[alias](note.md)');
+    assertNotNullable(result);
+    expect(result.raw).toBe('[alias](note.md)');
   });
 
   it('should correctly capture raw text of an embed wikilink', () => {
     const result = parseLink('![[image.png]]');
-    expect(result!.raw).toBe('![[image.png]]');
+    assertNotNullable(result);
+    expect(result.raw).toBe('![[image.png]]');
   });
 
   it('should set isExternal to false for wikilinks', () => {
     const result = parseLink('[[note]]');
-    expect(result!.isExternal).toBe(false);
+    assertNotNullable(result);
+    expect(result.isExternal).toBe(false);
   });
 
   it('should not have title for wikilinks', () => {
     const result = parseLink('[[note]]');
-    expect(result!.title).toBeUndefined();
+    assertNotNullable(result);
+    expect(result.title).toBeUndefined();
   });
 
   it('should not have hasAngleBrackets for wikilinks', () => {
     const result = parseLink('[[note]]');
-    expect(result!.hasAngleBrackets).toBeUndefined();
+    assertNotNullable(result);
+    expect(result.hasAngleBrackets).toBeUndefined();
   });
 
   it('should parse a markdown link with encoded special characters', () => {
     const result = parseLink('[link](path%5Cto%5Cfile.md)');
-    expect(result!.url).toBe('path\\to\\file.md');
+    assertNotNullable(result);
+    expect(result.url).toBe('path\\to\\file.md');
   });
 
   describe('should parse wikilink with block reference', () => {
     const result = parseLink('[[note#^block-id]]');
 
     it('should be a wikilink', () => {
-      expect(result!.isWikilink).toBe(true);
+      assertNotNullable(result);
+      expect(result.isWikilink).toBe(true);
     });
 
     it('should have url "note#^block-id"', () => {
-      expect(result!.url).toBe('note#^block-id');
+      assertNotNullable(result);
+      expect(result.url).toBe('note#^block-id');
     });
   });
 
@@ -1016,11 +1110,13 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[link](note.md "a title")');
 
     it('should have the correct title', () => {
-      expect(result!.title).toBe('a title');
+      assertNotNullable(result);
+      expect(result.title).toBe('a title');
     });
 
     it('should have the correct url', () => {
-      expect(result!.url).toBe('note.md');
+      assertNotNullable(result);
+      expect(result.url).toBe('note.md');
     });
   });
 
@@ -1032,15 +1128,18 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should be external', () => {
-      expect(result!.isExternal).toBe(true);
+      assertNotNullable(result);
+      expect(result.isExternal).toBe(true);
     });
 
     it('should have the correct url', () => {
-      expect(result!.url).toBe('https://example.com');
+      assertNotNullable(result);
+      expect(result.url).toBe('https://example.com');
     });
 
     it('should not be a wikilink', () => {
-      expect(result!.isWikilink).toBe(false);
+      assertNotNullable(result);
+      expect(result.isWikilink).toBe(false);
     });
   });
 
@@ -1052,15 +1151,18 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should be an embed', () => {
-      expect(result!.isEmbed).toBe(true);
+      assertNotNullable(result);
+      expect(result.isEmbed).toBe(true);
     });
 
     it('should have angle brackets', () => {
-      expect(result!.hasAngleBrackets).toBe(true);
+      assertNotNullable(result);
+      expect(result.hasAngleBrackets).toBe(true);
     });
 
     it('should have the correct url', () => {
-      expect(result!.url).toBe('image file.png');
+      assertNotNullable(result);
+      expect(result.url).toBe('image file.png');
     });
   });
 
@@ -1072,11 +1174,13 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should have the escaped alias', () => {
-      expect(result!.alias).toBe('\\*bold\\*');
+      assertNotNullable(result);
+      expect(result.alias).toBe('\\*bold\\*');
     });
 
     it('should have the unescaped alias', () => {
-      expect(result!.unescapedAlias).toBe('*bold*');
+      assertNotNullable(result);
+      expect(result.unescapedAlias).toBe('*bold*');
     });
   });
 
@@ -1088,11 +1192,13 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should be external', () => {
-      expect(result!.isExternal).toBe(true);
+      assertNotNullable(result);
+      expect(result.isExternal).toBe(true);
     });
 
     it('should have encodedUrl defined', () => {
-      expect(result!.encodedUrl).toBeDefined();
+      assertNotNullable(result);
+      expect(result.encodedUrl).toBeDefined();
     });
   });
 
@@ -1104,11 +1210,13 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should not be external', () => {
-      expect(result!.isExternal).toBe(false);
+      assertNotNullable(result);
+      expect(result.isExternal).toBe(false);
     });
 
     it('should have encodedUrl undefined', () => {
-      expect(result!.encodedUrl).toBeUndefined();
+      assertNotNullable(result);
+      expect(result.encodedUrl).toBeUndefined();
     });
   });
 
@@ -1116,11 +1224,13 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[[note#heading#subheading]]');
 
     it('should be a wikilink', () => {
-      expect(result!.isWikilink).toBe(true);
+      assertNotNullable(result);
+      expect(result.isWikilink).toBe(true);
     });
 
     it('should have the correct url', () => {
-      expect(result!.url).toBe('note#heading#subheading');
+      assertNotNullable(result);
+      expect(result.url).toBe('note#heading#subheading');
     });
   });
 
@@ -1128,11 +1238,13 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[[folder/note|My Note]]');
 
     it('should have the correct url', () => {
-      expect(result!.url).toBe('folder/note');
+      assertNotNullable(result);
+      expect(result.url).toBe('folder/note');
     });
 
     it('should have the correct alias', () => {
-      expect(result!.alias).toBe('My Note');
+      assertNotNullable(result);
+      expect(result.alias).toBe('My Note');
     });
   });
 
@@ -1140,11 +1252,13 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[[note]]');
 
     it('should have startOffset 0', () => {
-      expect(result!.startOffset).toBe(0);
+      assertNotNullable(result);
+      expect(result.startOffset).toBe(0);
     });
 
     it('should have endOffset 8', () => {
-      expect(result!.endOffset).toBe(8);
+      assertNotNullable(result);
+      expect(result.endOffset).toBe(8);
     });
   });
 
@@ -1152,11 +1266,13 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[alias](note.md)');
 
     it('should have startOffset 0', () => {
-      expect(result!.startOffset).toBe(0);
+      assertNotNullable(result);
+      expect(result.startOffset).toBe(0);
     });
 
     it('should have endOffset 16', () => {
-      expect(result!.endOffset).toBe(16);
+      assertNotNullable(result);
+      expect(result.endOffset).toBe(16);
     });
   });
 });
@@ -1176,11 +1292,15 @@ describe('parseLinks (additional edge cases)', () => {
     });
 
     it('should parse first embed url', () => {
-      expect(embeds[0]!.url).toBe('img1.png');
+      const firstEmbed = embeds[0];
+      assertNotNullable(firstEmbed);
+      expect(firstEmbed.url).toBe('img1.png');
     });
 
     it('should parse second embed url', () => {
-      expect(embeds[1]!.url).toBe('img2.png');
+      const secondEmbed = embeds[1];
+      assertNotNullable(secondEmbed);
+      expect(secondEmbed.url).toBe('img2.png');
     });
   });
 
@@ -1198,7 +1318,9 @@ describe('parseLinks (additional edge cases)', () => {
     });
 
     it('should have the correct embed url', () => {
-      expect(embed[0]!.url).toBe('image.png');
+      const firstEmbed = embed[0];
+      assertNotNullable(firstEmbed);
+      expect(firstEmbed.url).toBe('image.png');
     });
   });
 
@@ -1218,11 +1340,15 @@ describe('parseLinks (additional edge cases)', () => {
     });
 
     it('should have correct offset for first markdown link', () => {
-      expect(text.slice(mdLinks[0]!.startOffset, mdLinks[0]!.endOffset)).toBe('[a](b.md)');
+      const firstMdLink = mdLinks[0];
+      assertNotNullable(firstMdLink);
+      expect(text.slice(firstMdLink.startOffset, firstMdLink.endOffset)).toBe('[a](b.md)');
     });
 
     it('should have correct offset for second markdown link', () => {
-      expect(text.slice(mdLinks[1]!.startOffset, mdLinks[1]!.endOffset)).toBe('[c](d.md)');
+      const secondMdLink = mdLinks[1];
+      assertNotNullable(secondMdLink);
+      expect(text.slice(secondMdLink.startOffset, secondMdLink.endOffset)).toBe('[c](d.md)');
     });
   });
 
@@ -1235,24 +1361,34 @@ describe('parseLinks (additional edge cases)', () => {
     });
 
     it('should parse first link title', () => {
-      expect(mdLinks[0]!.title).toBe('title1');
+      const firstMdLink = mdLinks[0];
+      assertNotNullable(firstMdLink);
+      expect(firstMdLink.title).toBe('title1');
     });
 
     it('should parse second link title', () => {
-      expect(mdLinks[1]!.title).toBe('title2');
+      const secondMdLink = mdLinks[1];
+      assertNotNullable(secondMdLink);
+      expect(secondMdLink.title).toBe('title2');
     });
   });
 
   it('should handle a wikilink followed by a markdown link with no space', () => {
     const results = parseLinks('[[wiki]][md](note.md)');
     const wikilinks = results.filter((r) => r.isWikilink);
-    expect(wikilinks[0]!.url).toBe('wiki');
+    const firstWikilink = wikilinks[0];
+    assertNotNullable(firstWikilink);
+    expect(firstWikilink.url).toBe('wiki');
   });
 
   it('should sort all links by startOffset', () => {
     const results = parseLinks('[[a]] [b](c.md) [[d]]');
     for (let i = 1; i < results.length; i++) {
-      expect(results[i]!.startOffset).toBeGreaterThanOrEqual(results[i - 1]!.startOffset);
+      const current = results[i];
+      const previous = results[i - 1];
+      assertNotNullable(current);
+      assertNotNullable(previous);
+      expect(current.startOffset).toBeGreaterThanOrEqual(previous.startOffset);
     }
   });
 });
