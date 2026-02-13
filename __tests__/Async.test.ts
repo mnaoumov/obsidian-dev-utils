@@ -7,6 +7,8 @@ import {
   vi
 } from 'vitest';
 
+import type { TimeoutContext } from '../src/Async.ts';
+
 import {
   addErrorHandler,
   asyncFilter,
@@ -555,7 +557,7 @@ describe('Async', () => {
     });
 
     it('should reject when custom onTimeout handler terminates the operation', async () => {
-      const onTimeout = vi.fn((ctx) => {
+      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
         ctx.terminateOperation();
       });
 
@@ -572,7 +574,7 @@ describe('Async', () => {
     });
 
     it('should call custom onTimeout handler when timeout occurs', async () => {
-      const onTimeout = vi.fn((ctx) => {
+      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
         ctx.terminateOperation();
       });
 
@@ -595,7 +597,7 @@ describe('Async', () => {
     });
 
     it('should pass correct TimeoutContext to custom onTimeout handler', async () => {
-      const onTimeout = vi.fn((ctx) => {
+      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
         ctx.terminateOperation();
       });
 
@@ -894,7 +896,7 @@ describe('Async', () => {
     });
 
     it('should resolve when custom onTimeout terminates the operation', async () => {
-      const onTimeout = vi.fn((ctx) => {
+      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
         ctx.terminateOperation();
       });
 
@@ -909,7 +911,7 @@ describe('Async', () => {
     });
 
     it('should call custom onTimeout when forwarded to runWithTimeout', async () => {
-      const onTimeout = vi.fn((ctx) => {
+      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
         ctx.terminateOperation();
       });
 
