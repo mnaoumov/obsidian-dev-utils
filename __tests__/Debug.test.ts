@@ -34,10 +34,10 @@ describe('Debug', () => {
     it('should return an object with enable, disable, get, set methods', () => {
       const controller = getDebugController();
       expect(controller).toEqual(expect.objectContaining({
-        disable: expect.any(Function),
-        enable: expect.any(Function),
-        get: expect.any(Function),
-        set: expect.any(Function)
+        disable: expect.any(Function) as unknown,
+        enable: expect.any(Function) as unknown,
+        get: expect.any(Function) as unknown,
+        set: expect.any(Function) as unknown
       }));
     });
 
