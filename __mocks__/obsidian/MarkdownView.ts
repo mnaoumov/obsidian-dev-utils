@@ -2,6 +2,11 @@ import type { EventRef } from 'obsidian';
 
 import type { TFile } from './TFile.ts';
 
+import {
+  noop,
+  noopAsync
+} from '../../src/Function.ts';
+
 export class MarkdownView {
   public allowNoFile = false;
   public app: unknown = null;
@@ -29,7 +34,10 @@ export class MarkdownView {
     return false;
   }
 
-  public clear(): void {}
+  public clear(): void {
+    noop();
+  }
+
   public getDisplayText(): string {
     return '';
   }
@@ -58,14 +66,38 @@ export class MarkdownView {
     return 'markdown';
   }
 
-  public load(): void {}
-  public onload(): void {}
-  public onPaneMenu(_menu: unknown, _source: string): void {}
-  public onResize(): void {}
-  public onunload(): void {}
-  public register(_cb: () => unknown): void {}
-  public registerDomEvent(_el: unknown, _type: string, _callback: unknown, _options?: unknown): void {}
-  public registerEvent(_ref: EventRef): void {}
+  public load(): void {
+    noop();
+  }
+
+  public onload(): void {
+    noop();
+  }
+
+  public onPaneMenu(_menu: unknown, _source: string): void {
+    noop();
+  }
+
+  public onResize(): void {
+    noop();
+  }
+
+  public onunload(): void {
+    noop();
+  }
+
+  public register(_cb: () => unknown): void {
+    noop();
+  }
+
+  public registerDomEvent(_el: unknown, _type: string, _callback: unknown, _options?: unknown): void {
+    noop();
+  }
+
+  public registerEvent(_ref: EventRef): void {
+    noop();
+  }
+
   public registerInterval(_id: number): number {
     return _id;
   }
@@ -74,11 +106,31 @@ export class MarkdownView {
     return component;
   }
 
-  public requestSave: () => void = () => {};
-  public async save(_clear?: boolean): Promise<void> {}
-  public setEphemeralState(_state: unknown): void {}
-  public async setState(_state: unknown, _result: unknown): Promise<void> {}
-  public setViewData(_data: string, _clear: boolean): void {}
-  public showSearch(_replace?: boolean): void {}
-  public unload(): void {}
+  public requestSave(): void {
+    noop();
+  }
+
+  public async save(_clear?: boolean): Promise<void> {
+    await noopAsync();
+  }
+
+  public setEphemeralState(_state: unknown): void {
+    noop();
+  }
+
+  public async setState(_state: unknown, _result: unknown): Promise<void> {
+    await noopAsync();
+  }
+
+  public setViewData(_data: string, _clear: boolean): void {
+    noop();
+  }
+
+  public showSearch(_replace?: boolean): void {
+    noop();
+  }
+
+  public unload(): void {
+    noop();
+  }
 }

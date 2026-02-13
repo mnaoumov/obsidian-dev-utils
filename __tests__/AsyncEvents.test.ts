@@ -8,6 +8,7 @@ import {
 } from 'vitest';
 
 import { AsyncEvents } from '../src/AsyncEvents.ts';
+import { noopAsync } from '../src/Function.ts';
 
 describe('AsyncEvents', () => {
   let events: AsyncEvents;
@@ -262,7 +263,7 @@ describe('AsyncEvents', () => {
     });
 
     it('should pass arguments to async callbacks', async () => {
-      const callback = vi.fn(async () => {});
+      const callback = vi.fn(noopAsync);
       events.on<[string]>('test', callback);
       await events.triggerAsync<[string]>('test', 'async-arg');
       expect(callback).toHaveBeenCalledWith('async-arg');
@@ -293,7 +294,7 @@ describe('AsyncEvents', () => {
       const callback1 = vi.fn(async () => {
         throw new Error('oops');
       });
-      const callback2 = vi.fn(async () => {});
+      const callback2 = vi.fn(noopAsync);
       events.on('test', callback1);
       events.on('test', callback2);
       await events.triggerAsync('test');
@@ -348,7 +349,7 @@ describe('AsyncEvents', () => {
 
   describe('tryTriggerAsync', () => {
     it('should call the async callback from the event ref with correct args', async () => {
-      const callback = vi.fn(async () => {});
+      const callback = vi.fn(noopAsync);
       const ref = events.on<[string]>('test', callback);
       await events.tryTriggerAsync(ref, ['async-arg']);
       expect(callback).toHaveBeenCalledWith('async-arg');

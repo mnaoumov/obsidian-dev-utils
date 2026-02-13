@@ -1,5 +1,6 @@
 import type { TAbstractFile } from './TAbstractFile.ts';
 
+import { noopAsync } from '../../src/Function.ts';
 import { DataAdapter } from './DataAdapter.ts';
 import { Events } from './Events.ts';
 import { TFile } from './TFile.ts';
@@ -20,7 +21,9 @@ export class Vault extends Events {
     }
   }
 
-  public async append(_file: TFile, _data: string): Promise<void> {}
+  public async append(_file: TFile, _data: string): Promise<void> {
+    await noopAsync();
+  }
 
   public async cachedRead(_file: TFile): Promise<string> {
     return '';
@@ -48,7 +51,9 @@ export class Vault extends Events {
     return f;
   }
 
-  public async delete(_file: TAbstractFile, _force?: boolean): Promise<void> {}
+  public async delete(_file: TAbstractFile, _force?: boolean): Promise<void> {
+    await noopAsync();
+  }
 
   public getAbstractFileByPath(path: string): null | TAbstractFile {
     return this.fileMap[path] ?? null;
@@ -98,8 +103,13 @@ export class Vault extends Events {
     return root;
   }
 
-  public async modify(_file: TFile, _data: string): Promise<void> {}
-  public async modifyBinary(_file: TFile, _data: ArrayBuffer): Promise<void> {}
+  public async modify(_file: TFile, _data: string): Promise<void> {
+    await noopAsync();
+  }
+
+  public async modifyBinary(_file: TFile, _data: ArrayBuffer): Promise<void> {
+    await noopAsync();
+  }
 
   public async process(_file: TFile, fn: (data: string) => string): Promise<string> {
     return fn('');
@@ -113,6 +123,11 @@ export class Vault extends Events {
     return new ArrayBuffer(0);
   }
 
-  public async rename(_file: TAbstractFile, _newPath: string): Promise<void> {}
-  public async trash(_file: TAbstractFile, _system: boolean): Promise<void> {}
+  public async rename(_file: TAbstractFile, _newPath: string): Promise<void> {
+    await noopAsync();
+  }
+
+  public async trash(_file: TAbstractFile, _system: boolean): Promise<void> {
+    await noopAsync();
+  }
 }

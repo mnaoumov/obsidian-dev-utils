@@ -4,6 +4,7 @@ import {
   it
 } from 'vitest';
 
+import { noop } from '../src/Function.ts';
 import {
   assignWithNonEnumerableProperties,
   cloneWithNonEnumerableProperties,
@@ -169,7 +170,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should skip function values', () => {
-      const obj = { a: 1, fn: (): void => {} };
+      const obj = { a: 1, fn: noop };
       expect(getAllKeys(obj)).toEqual(['a']);
     });
 
@@ -420,14 +421,16 @@ describe('ObjectUtils', () => {
     });
 
     it('should exclude functions by default', () => {
-      const obj = { a: 1, fn: (): void => {} };
+      const obj = { a: 1, fn: noop };
       const json = toJson(obj);
       const parsed = JSON.parse(json);
       expect(parsed).toEqual({ a: 1 });
     });
 
     it('should include function names when NameOnly mode', () => {
-      function myFunc(): void {}
+      function myFunc(): void {
+        noop();
+      }
       const obj = { a: 1, fn: myFunc };
       const json = toJson(obj, { functionHandlingMode: FunctionHandlingMode.NameOnly });
       expect(json).toContain('myFunc');
@@ -498,7 +501,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should handle arrow functions in NameOnly mode', () => {
-      const obj = { fn: (): void => {} };
+      const obj = { fn: noop };
       const json = toJson(obj, { functionHandlingMode: FunctionHandlingMode.NameOnly });
       expect(json).toContain('function fn()');
     });
@@ -520,7 +523,9 @@ describe('ObjectUtils', () => {
         get prop(): number {
           return 1;
         },
-        set prop(_v: number) {}
+        set prop(_v: number) {
+          noop();
+        }
       };
       expect(getAllKeys(obj)).toContain('prop');
     });
