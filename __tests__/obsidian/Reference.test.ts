@@ -162,6 +162,14 @@ describe('sortReferences', () => {
     expect(sorted).toEqual([withOffsets, withoutOffsets]);
   });
 
+  it('should sort two frontmatter links without offsets by key only', () => {
+    const fm1 = makeFrontmatterLink('link1', 'aliases');
+    const fm2 = makeFrontmatterLink('link2', 'aliases');
+    const sorted = sortReferences([fm1, fm2]);
+    expect(sorted[0]).toBe(fm1);
+    expect(sorted[1]).toBe(fm2);
+  });
+
   it('should handle empty array', () => {
     expect(sortReferences([])).toEqual([]);
   });
