@@ -283,7 +283,7 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
 
       /* v8 ignore start -- It incorrectly reports this as uncovered, but it is covered by `should populate missingGroupIndices for undefined capture groups` test. */
       if (typeof arg === 'undefined') {
-      /* v8 ignore stop */
+        /* v8 ignore stop */
         commonArgs.missingGroupIndices.push(index);
         return '';
       }

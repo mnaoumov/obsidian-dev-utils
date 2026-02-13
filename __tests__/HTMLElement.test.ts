@@ -1,5 +1,9 @@
+// @vitest-environment jsdom
+
 import {
+  afterAll,
   afterEach,
+  beforeAll,
   beforeEach,
   describe,
   expect,
@@ -21,42 +25,24 @@ import {
   onAncestorScrollOrResize,
   toPx
 } from '../src/HTMLElement.ts';
+import { assertNotNullable } from './TestHelpers.ts';
 
-interface MockElement {
-  addEventListener: ReturnType<typeof vi.fn>;
-  complete?: boolean;
-  contentDocument?: unknown;
-  getBoundingClientRect: ReturnType<typeof vi.fn>;
-  getSVGDocument?: ReturnType<typeof vi.fn>;
-  naturalWidth?: number;
-  offsetParent: MockElement | null;
-  parentElement: MockElement | null;
-  parentNode: MockElement | null;
-  querySelectorAll: ReturnType<typeof vi.fn>;
-  readyState?: number;
-  rel?: string;
-  removeEventListener: ReturnType<typeof vi.fn>;
-  sheet?: unknown;
-}
+// Obsidian provides these globals at runtime; define them for jsdom.
+beforeAll(() => {
+  vi.stubGlobal('createDiv', vi.fn((_o?: DomElementInfo | string) => document.createElement('div')));
+  vi.stubGlobal('createEl', vi.fn((tag: keyof HTMLElementTagNameMap, _o?: DomElementInfo | string) => document.createElement(tag)));
+  vi.stubGlobal('createSpan', vi.fn((_o?: DomElementInfo | string) => document.createElement('span')));
+  vi.stubGlobal('createFragment', vi.fn(() => document.createDocumentFragment()));
+  vi.stubGlobal(
+    'createSvg',
+    // eslint-disable-next-line no-undef -- SvgElementInfo is an Obsidian global type not available in jsdom.
+    vi.fn((tag: keyof SVGElementTagNameMap, _o?: string | SvgElementInfo) => document.createElementNS('http://www.w3.org/2000/svg', tag))
+  );
+});
 
-function createMockElement(overrides: Partial<MockElement> = {}): MockElement {
-  return {
-    addEventListener: vi.fn(),
-    getBoundingClientRect: vi.fn(() => ({ bottom: 100, left: 0, right: 100, top: 0 })),
-    offsetParent: null,
-    parentElement: null,
-    parentNode: null,
-    querySelectorAll: vi.fn(() => []),
-    removeEventListener: vi.fn(),
-    ...overrides
-  };
-}
-
-function createMockHTMLClass(name: string): ReturnType<typeof vi.fn> {
-  const ctor = vi.fn();
-  Object.defineProperty(ctor, 'name', { value: name });
-  return ctor;
-}
+afterAll(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('toPx', () => {
   it.each([
@@ -72,21 +58,9 @@ describe('toPx', () => {
 });
 
 describe('createDivAsync', () => {
-  let mockDiv: Record<string, unknown>;
-
-  beforeEach(() => {
-    mockDiv = { tagName: 'DIV' };
-    vi.stubGlobal('createDiv', vi.fn(() => mockDiv));
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-  });
-
   it('should return the created div', async () => {
     const result = await createDivAsync();
-    expect(result).toBe(mockDiv);
+    expect(result).toBeInstanceOf(HTMLDivElement);
   });
 
   it('should call createDiv with the provided options', async () => {
@@ -96,13 +70,13 @@ describe('createDivAsync', () => {
 
   it('should work without a callback', async () => {
     const result = await createDivAsync();
-    expect(result).toBe(mockDiv);
+    expect(result).toBeInstanceOf(HTMLDivElement);
   });
 
   it('should call the sync callback with the div', async () => {
     const callback = vi.fn();
     await createDivAsync(undefined, callback);
-    expect(callback).toHaveBeenCalledWith(mockDiv);
+    expect(callback).toHaveBeenCalledWith(expect.any(HTMLDivElement));
   });
 
   it('should call the async callback with the div', async () => {
@@ -110,7 +84,7 @@ describe('createDivAsync', () => {
       await Promise.resolve();
     });
     await createDivAsync(undefined, callback);
-    expect(callback).toHaveBeenCalledWith(mockDiv);
+    expect(callback).toHaveBeenCalledWith(expect.any(HTMLDivElement));
   });
 
   it('should await the async callback before returning', async () => {
@@ -125,21 +99,9 @@ describe('createDivAsync', () => {
 });
 
 describe('createElAsync', () => {
-  let mockParagraph: Record<string, unknown>;
-
-  beforeEach(() => {
-    mockParagraph = { tagName: 'P' };
-    vi.stubGlobal('createEl', vi.fn(() => mockParagraph));
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-  });
-
   it('should return the created element', async () => {
     const result = await createElAsync('p');
-    expect(result).toBe(mockParagraph);
+    expect(result).toBeInstanceOf(HTMLParagraphElement);
   });
 
   it('should call createEl with the tag and options', async () => {
@@ -149,13 +111,13 @@ describe('createElAsync', () => {
 
   it('should work without a callback', async () => {
     const result = await createElAsync('p');
-    expect(result).toBe(mockParagraph);
+    expect(result).toBeInstanceOf(HTMLParagraphElement);
   });
 
   it('should call the sync callback with the element', async () => {
     const callback = vi.fn();
     await createElAsync('p', undefined, callback);
-    expect(callback).toHaveBeenCalledWith(mockParagraph);
+    expect(callback).toHaveBeenCalledWith(expect.any(HTMLParagraphElement));
   });
 
   it('should call the async callback with the element', async () => {
@@ -163,7 +125,7 @@ describe('createElAsync', () => {
       await Promise.resolve();
     });
     await createElAsync('p', undefined, callback);
-    expect(callback).toHaveBeenCalledWith(mockParagraph);
+    expect(callback).toHaveBeenCalledWith(expect.any(HTMLParagraphElement));
   });
 
   it('should await the async callback before returning', async () => {
@@ -178,21 +140,9 @@ describe('createElAsync', () => {
 });
 
 describe('createSpanAsync', () => {
-  let mockSpan: Record<string, unknown>;
-
-  beforeEach(() => {
-    mockSpan = { tagName: 'SPAN' };
-    vi.stubGlobal('createSpan', vi.fn(() => mockSpan));
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-  });
-
   it('should return the created span', async () => {
     const result = await createSpanAsync();
-    expect(result).toBe(mockSpan);
+    expect(result).toBeInstanceOf(HTMLSpanElement);
   });
 
   it('should call createSpan with the provided options', async () => {
@@ -202,13 +152,13 @@ describe('createSpanAsync', () => {
 
   it('should work without a callback', async () => {
     const result = await createSpanAsync();
-    expect(result).toBe(mockSpan);
+    expect(result).toBeInstanceOf(HTMLSpanElement);
   });
 
   it('should call the sync callback with the span', async () => {
     const callback = vi.fn();
     await createSpanAsync(undefined, callback);
-    expect(callback).toHaveBeenCalledWith(mockSpan);
+    expect(callback).toHaveBeenCalledWith(expect.any(HTMLSpanElement));
   });
 
   it('should call the async callback with the span', async () => {
@@ -216,7 +166,7 @@ describe('createSpanAsync', () => {
       await Promise.resolve();
     });
     await createSpanAsync(undefined, callback);
-    expect(callback).toHaveBeenCalledWith(mockSpan);
+    expect(callback).toHaveBeenCalledWith(expect.any(HTMLSpanElement));
   });
 
   it('should await the async callback before returning', async () => {
@@ -231,32 +181,20 @@ describe('createSpanAsync', () => {
 });
 
 describe('createFragmentAsync', () => {
-  let mockFragment: Record<string, unknown>;
-
-  beforeEach(() => {
-    mockFragment = { nodeType: 11 };
-    vi.stubGlobal('createFragment', vi.fn(() => mockFragment));
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-  });
-
   it('should return the created fragment', async () => {
     const result = await createFragmentAsync();
-    expect(result).toBe(mockFragment);
+    expect(result).toBeInstanceOf(DocumentFragment);
   });
 
   it('should work without a callback', async () => {
     const result = await createFragmentAsync();
-    expect(result).toBe(mockFragment);
+    expect(result).toBeInstanceOf(DocumentFragment);
   });
 
   it('should call the sync callback with the fragment', async () => {
     const callback = vi.fn();
     await createFragmentAsync(callback);
-    expect(callback).toHaveBeenCalledWith(mockFragment);
+    expect(callback).toHaveBeenCalledWith(expect.any(DocumentFragment));
   });
 
   it('should call the async callback with the fragment', async () => {
@@ -264,7 +202,7 @@ describe('createFragmentAsync', () => {
       await Promise.resolve();
     });
     await createFragmentAsync(callback);
-    expect(callback).toHaveBeenCalledWith(mockFragment);
+    expect(callback).toHaveBeenCalledWith(expect.any(DocumentFragment));
   });
 
   it('should await the async callback before returning', async () => {
@@ -279,21 +217,9 @@ describe('createFragmentAsync', () => {
 });
 
 describe('createSvgAsync', () => {
-  let mockSvg: Record<string, unknown>;
-
-  beforeEach(() => {
-    mockSvg = { tagName: 'svg' };
-    vi.stubGlobal('createSvg', vi.fn(() => mockSvg));
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-  });
-
   it('should return the created svg element', async () => {
     const result = await createSvgAsync('svg');
-    expect(result).toBe(mockSvg);
+    expect(result).toBeInstanceOf(SVGSVGElement);
   });
 
   it('should call createSvg with the tag and options', async () => {
@@ -303,13 +229,13 @@ describe('createSvgAsync', () => {
 
   it('should work without a callback', async () => {
     const result = await createSvgAsync('svg');
-    expect(result).toBe(mockSvg);
+    expect(result).toBeInstanceOf(SVGSVGElement);
   });
 
   it('should call the sync callback with the svg element', async () => {
     const callback = vi.fn();
     await createSvgAsync('svg', undefined, callback);
-    expect(callback).toHaveBeenCalledWith(mockSvg);
+    expect(callback).toHaveBeenCalledWith(expect.any(SVGSVGElement));
   });
 
   it('should call the async callback with the svg element', async () => {
@@ -317,7 +243,7 @@ describe('createSvgAsync', () => {
       await Promise.resolve();
     });
     await createSvgAsync('svg', undefined, callback);
-    expect(callback).toHaveBeenCalledWith(mockSvg);
+    expect(callback).toHaveBeenCalledWith(expect.any(SVGSVGElement));
   });
 
   it('should await the async callback before returning', async () => {
@@ -332,13 +258,10 @@ describe('createSvgAsync', () => {
 });
 
 describe('appendCodeBlock', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('should call createEl on the element with strong tag and correct options', () => {
     const mockCreateEl = vi.fn();
-    const el = { createEl: mockCreateEl } as unknown as HTMLElement;
+    const el = createMockElement();
+    el.createEl = mockCreateEl;
     appendCodeBlock(el, 'console.log("hello")');
     expect(mockCreateEl).toHaveBeenCalledWith(
       'strong',
@@ -349,22 +272,26 @@ describe('appendCodeBlock', () => {
 
   it('should call createEl on the strong element with code tag inside the callback', () => {
     const innerCreateEl = vi.fn();
-    const mockStrong = { createEl: innerCreateEl } as unknown as HTMLElement;
+    const mockStrong = createMockElement();
+    mockStrong.createEl = innerCreateEl;
     const mockCreateEl = vi.fn((_tag: string, _opts: unknown, cb: (el: HTMLElement) => void) => {
       cb(mockStrong);
     });
-    const el = { createEl: mockCreateEl } as unknown as HTMLElement;
+    const el = createMockElement();
+    el.createEl = mockCreateEl;
     appendCodeBlock(el, 'my-code');
     expect(innerCreateEl).toHaveBeenCalledWith('code', { text: 'my-code' });
   });
 
   it('should pass the code text correctly', () => {
     const innerCreateEl = vi.fn();
-    const mockStrong = { createEl: innerCreateEl } as unknown as HTMLElement;
+    const mockStrong = createMockElement();
+    mockStrong.createEl = innerCreateEl;
     const mockCreateEl = vi.fn((_tag: string, _opts: unknown, cb: (el: HTMLElement) => void) => {
       cb(mockStrong);
     });
-    const el = { createEl: mockCreateEl } as unknown as HTMLElement;
+    const el = createMockElement();
+    el.createEl = mockCreateEl;
     const code = 'const x = 42;';
     appendCodeBlock(el, code);
     expect(innerCreateEl).toHaveBeenCalledWith('code', { text: code });
@@ -384,107 +311,77 @@ describe('getZIndex', () => {
   it('should return the z-index from computed style when set', () => {
     const el = createMockElement();
     vi.mocked(getComputedStyle).mockReturnValue({ zIndex: '10' } as CSSStyleDeclaration);
-    expect(getZIndex(el as unknown as Element)).toBe(10);
+    expect(getZIndex(el)).toBe(10);
   });
 
   it('should return 0 for an element with auto z-index and no parent', () => {
     const el = createMockElement();
     vi.mocked(getComputedStyle).mockReturnValue({ zIndex: 'auto' } as CSSStyleDeclaration);
-    expect(getZIndex(el as unknown as Element)).toBe(0);
+    expect(getZIndex(el)).toBe(0);
   });
 
   it('should return parent z-index if child has auto', () => {
     const parent = createMockElement();
-    const child = createMockElement({ parentElement: parent });
-    const childAsElement = child as unknown as Element;
-    const parentAsElement = parent as unknown as Element;
+    const child = createMockElement(parent);
     vi.mocked(getComputedStyle).mockImplementation((target) => {
-      if (target === childAsElement) {
+      if (target === child) {
         return { zIndex: 'auto' } as CSSStyleDeclaration;
       }
-      if (target === parentAsElement) {
+      if (target === parent) {
         return { zIndex: '5' } as CSSStyleDeclaration;
       }
       return { zIndex: 'auto' } as CSSStyleDeclaration;
     });
-    expect(getZIndex(childAsElement)).toBe(5);
+    expect(getZIndex(child)).toBe(5);
   });
 
   it('should return 0 if no ancestor has a numeric z-index', () => {
     const grandparent = createMockElement();
-    const parent = createMockElement({ parentElement: grandparent });
-    const child = createMockElement({ parentElement: parent });
+    const parent = createMockElement(grandparent);
+    const child = createMockElement(parent);
     vi.mocked(getComputedStyle).mockReturnValue({ zIndex: 'auto' } as CSSStyleDeclaration);
-    expect(getZIndex(child as unknown as Element)).toBe(0);
+    expect(getZIndex(child)).toBe(0);
   });
 
   it('should return negative z-index values', () => {
     const el = createMockElement();
     vi.mocked(getComputedStyle).mockReturnValue({ zIndex: '-3' } as CSSStyleDeclaration);
-    expect(getZIndex(el as unknown as Element)).toBe(-3);
+    expect(getZIndex(el)).toBe(-3);
   });
 
   it('should skip elements with empty z-index string', () => {
     const parent = createMockElement();
-    const child = createMockElement({ parentElement: parent });
-    const childAsElement = child as unknown as Element;
+    const child = createMockElement(parent);
     vi.mocked(getComputedStyle).mockImplementation((target) => {
-      if (target === childAsElement) {
+      if (target === child) {
         return { zIndex: '' } as CSSStyleDeclaration;
       }
       return { zIndex: '7' } as CSSStyleDeclaration;
     });
-    expect(getZIndex(childAsElement)).toBe(7);
+    expect(getZIndex(child)).toBe(7);
   });
 });
 
 describe('isLoaded', () => {
-  const MockHTMLBodyElement = createMockHTMLClass('HTMLBodyElement');
-  const MockHTMLImageElement = createMockHTMLClass('HTMLImageElement');
-  const MockHTMLIFrameElement = createMockHTMLClass('HTMLIFrameElement');
-  const MockHTMLEmbedElement = createMockHTMLClass('HTMLEmbedElement');
-  const MockHTMLLinkElement = createMockHTMLClass('HTMLLinkElement');
-  const MockHTMLObjectElement = createMockHTMLClass('HTMLObjectElement');
-  const MockHTMLScriptElement = createMockHTMLClass('HTMLScriptElement');
-  const MockHTMLStyleElement = createMockHTMLClass('HTMLStyleElement');
-  const MockHTMLTrackElement = createMockHTMLClass('HTMLTrackElement');
-
-  beforeEach(() => {
-    vi.stubGlobal('HTMLBodyElement', MockHTMLBodyElement);
-    vi.stubGlobal('HTMLImageElement', MockHTMLImageElement);
-    vi.stubGlobal('HTMLIFrameElement', MockHTMLIFrameElement);
-    vi.stubGlobal('HTMLEmbedElement', MockHTMLEmbedElement);
-    vi.stubGlobal('HTMLLinkElement', MockHTMLLinkElement);
-    vi.stubGlobal('HTMLObjectElement', MockHTMLObjectElement);
-    vi.stubGlobal('HTMLScriptElement', MockHTMLScriptElement);
-    vi.stubGlobal('HTMLStyleElement', MockHTMLStyleElement);
-    vi.stubGlobal('HTMLTrackElement', MockHTMLTrackElement);
-    vi.stubGlobal('document', { readyState: 'complete' });
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-  });
-
   describe('HTMLBodyElement', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
     it('should return true when document.readyState is complete', () => {
-      const el = Object.create(MockHTMLBodyElement.prototype) as Element;
-      Object.assign(el, createMockElement());
+      const el = document.body;
       vi.stubGlobal('document', { readyState: 'complete' });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return true when document.readyState is interactive', () => {
-      const el = Object.create(MockHTMLBodyElement.prototype) as Element;
-      Object.assign(el, createMockElement());
+      const el = document.body;
       vi.stubGlobal('document', { readyState: 'interactive' });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when document.readyState is loading', () => {
-      const el = Object.create(MockHTMLBodyElement.prototype) as Element;
-      Object.assign(el, createMockElement());
+      const el = document.body;
       vi.stubGlobal('document', { readyState: 'loading' });
       expect(isLoaded(el)).toBe(false);
     });
@@ -492,130 +389,131 @@ describe('isLoaded', () => {
 
   describe('HTMLImageElement', () => {
     it('should return true when complete is true and naturalWidth > 0', () => {
-      const el = Object.create(MockHTMLImageElement.prototype) as Element;
-      Object.assign(el, createMockElement({ complete: true, naturalWidth: 100 }));
+      const el = createElement('img', {
+        complete: true,
+        naturalWidth: 100
+      });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when complete is false', () => {
-      const el = Object.create(MockHTMLImageElement.prototype) as Element;
-      Object.assign(el, createMockElement({ complete: false, naturalWidth: 100 }));
+      const el = createElement('img', {
+        complete: false,
+        naturalWidth: 100
+      });
       expect(isLoaded(el)).toBe(false);
     });
 
     it('should return false when naturalWidth is 0', () => {
-      const el = Object.create(MockHTMLImageElement.prototype) as Element;
-      Object.assign(el, createMockElement({ complete: true, naturalWidth: 0 }));
+      const el = createElement('img', {
+        complete: true,
+        naturalWidth: 0
+      });
       expect(isLoaded(el)).toBe(false);
     });
   });
 
   describe('HTMLIFrameElement', () => {
     it('should return true when contentDocument exists', () => {
-      const el = Object.create(MockHTMLIFrameElement.prototype) as Element;
-      Object.assign(el, createMockElement({ contentDocument: {} }));
+      const el = createElement('iframe', {
+        contentDocument: {}
+      });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when contentDocument is null', () => {
-      const el = Object.create(MockHTMLIFrameElement.prototype) as Element;
-      Object.assign(el, createMockElement({ contentDocument: null }));
+      const el = createElement('iframe', {
+        contentDocument: null
+      });
       expect(isLoaded(el)).toBe(false);
     });
   });
 
   describe('HTMLEmbedElement', () => {
     it('should return true when getSVGDocument returns truthy', () => {
-      const el = Object.create(MockHTMLEmbedElement.prototype) as Element;
-      Object.assign(el, createMockElement({ getSVGDocument: vi.fn(() => ({})) }));
+      const el = createElement('embed', {
+        getSVGDocument: vi.fn(() => ({}))
+      });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when getSVGDocument returns null', () => {
-      const el = Object.create(MockHTMLEmbedElement.prototype) as Element;
-      Object.assign(el, createMockElement({ getSVGDocument: vi.fn(() => null) }));
+      const el = createElement('embed', {
+        getSVGDocument: vi.fn(() => null)
+      });
       expect(isLoaded(el)).toBe(false);
     });
   });
 
   describe('HTMLLinkElement', () => {
     it('should return true for stylesheet link with sheet set', () => {
-      const el = Object.create(MockHTMLLinkElement.prototype) as Element;
-      Object.assign(el, createMockElement({ rel: 'stylesheet', sheet: {} }));
+      const el = createElement('link', {
+        rel: 'stylesheet',
+        sheet: {}
+      });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false for stylesheet link with sheet null', () => {
-      const el = Object.create(MockHTMLLinkElement.prototype) as Element;
-      Object.assign(el, createMockElement({ rel: 'stylesheet', sheet: null }));
+      const el = createElement('link', { rel: 'stylesheet', sheet: null });
       expect(isLoaded(el)).toBe(false);
     });
 
     it('should return true for non-stylesheet link', () => {
-      const el = Object.create(MockHTMLLinkElement.prototype) as Element;
-      Object.assign(el, createMockElement({ rel: 'icon', sheet: null }));
+      const el = createElement('link', { rel: 'icon', sheet: null });
       expect(isLoaded(el)).toBe(true);
     });
   });
 
   describe('HTMLObjectElement', () => {
     it('should return true when contentDocument exists', () => {
-      const el = Object.create(MockHTMLObjectElement.prototype) as Element;
-      Object.assign(el, createMockElement({ contentDocument: {}, getSVGDocument: vi.fn(() => null) }));
+      const el = createElement('object', { contentDocument: {}, getSVGDocument: vi.fn(() => null) });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return true when getSVGDocument returns truthy', () => {
-      const el = Object.create(MockHTMLObjectElement.prototype) as Element;
-      Object.assign(el, createMockElement({ contentDocument: null, getSVGDocument: vi.fn(() => ({})) }));
+      const el = createElement('object', { contentDocument: null, getSVGDocument: vi.fn(() => ({})) });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when both contentDocument and getSVGDocument are falsy', () => {
-      const el = Object.create(MockHTMLObjectElement.prototype) as Element;
-      Object.assign(el, createMockElement({ contentDocument: null, getSVGDocument: vi.fn(() => null) }));
+      const el = createElement('object', { contentDocument: null, getSVGDocument: vi.fn(() => null) });
       expect(isLoaded(el)).toBe(false);
     });
   });
 
   describe('HTMLScriptElement', () => {
     it('should always return true', () => {
-      const el = Object.create(MockHTMLScriptElement.prototype) as Element;
-      Object.assign(el, createMockElement());
+      const el = createElement('script');
       expect(isLoaded(el)).toBe(true);
     });
   });
 
   describe('HTMLStyleElement', () => {
     it('should return true when sheet is set', () => {
-      const el = Object.create(MockHTMLStyleElement.prototype) as Element;
-      Object.assign(el, createMockElement({ sheet: {} }));
+      const el = createElement('style', { sheet: {} });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when sheet is null', () => {
-      const el = Object.create(MockHTMLStyleElement.prototype) as Element;
-      Object.assign(el, createMockElement({ sheet: null }));
+      const el = createElement('style', { sheet: null });
       expect(isLoaded(el)).toBe(false);
     });
   });
 
   describe('HTMLTrackElement', () => {
     it('should return true when readyState is 2 (loaded)', () => {
-      const el = Object.create(MockHTMLTrackElement.prototype) as Element;
-      Object.assign(el, createMockElement({ readyState: 2 }));
+      const el = createElement('track', { readyState: 2 });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when readyState is not 2', () => {
-      const el = Object.create(MockHTMLTrackElement.prototype) as Element;
-      Object.assign(el, createMockElement({ readyState: 0 }));
+      const el = createElement('track', { readyState: 0 });
       expect(isLoaded(el)).toBe(false);
     });
 
     it('should return false when readyState is 1', () => {
-      const el = Object.create(MockHTMLTrackElement.prototype) as Element;
-      Object.assign(el, createMockElement({ readyState: 1 }));
+      const el = createElement('track', { readyState: 1 });
       expect(isLoaded(el)).toBe(false);
     });
   });
@@ -623,24 +521,20 @@ describe('isLoaded', () => {
   describe('generic element', () => {
     it('should return true when element has no loadable children', () => {
       const el = createMockElement();
-      el.querySelectorAll.mockReturnValue([]);
-      expect(isLoaded(el as unknown as Element)).toBe(true);
+      expect(isLoaded(el)).toBe(true);
     });
 
     it('should return true when all loadable children are loaded', () => {
-      const script = Object.create(MockHTMLScriptElement.prototype) as Record<string, unknown>;
-      Object.assign(script, createMockElement());
       const el = createMockElement();
-      el.querySelectorAll.mockReturnValue([script]);
-      expect(isLoaded(el as unknown as Element)).toBe(true);
+      createMockElement(el);
+      expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when a loadable child is not loaded', () => {
-      const img = Object.create(MockHTMLImageElement.prototype) as Record<string, unknown>;
-      Object.assign(img, createMockElement({ complete: false, naturalWidth: 0 }));
+      const img = createElement('img', { complete: false, naturalWidth: 0 });
       const el = createMockElement();
-      el.querySelectorAll.mockReturnValue([img]);
-      expect(isLoaded(el as unknown as Element)).toBe(false);
+      el.appendChild(img);
+      expect(isLoaded(el)).toBe(false);
     });
   });
 });
@@ -651,181 +545,141 @@ describe('isElementVisibleInOffsetParent', () => {
   });
 
   it('should return false when offsetParent is null', () => {
-    const el = createMockElement({ offsetParent: null });
-    expect(isElementVisibleInOffsetParent(el as unknown as HTMLElement)).toBe(false);
+    const el = createElement('div', { offsetParent: null });
+    expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return true when element is fully within offset parent', () => {
     const parent = createMockElement();
-    parent.getBoundingClientRect.mockReturnValue({ bottom: 200, left: 0, right: 200, top: 0 });
-    const el = createMockElement({ offsetParent: parent });
-    el.getBoundingClientRect.mockReturnValue({ bottom: 100, left: 10, right: 100, top: 10 });
-    expect(isElementVisibleInOffsetParent(el as unknown as HTMLElement)).toBe(true);
+    parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 200, left: 0, right: 200, toJSON: vi.fn(), top: 0, width: 200, x: 0, y: 0 }));
+    const el = createElement('div', { offsetParent: parent });
+    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(el)).toBe(true);
   });
 
   it('should return false when element extends above offset parent', () => {
     const parent = createMockElement();
-    parent.getBoundingClientRect.mockReturnValue({ bottom: 200, left: 0, right: 200, top: 50 });
-    const el = createMockElement({ offsetParent: parent });
-    el.getBoundingClientRect.mockReturnValue({ bottom: 100, left: 10, right: 100, top: 10 });
-    expect(isElementVisibleInOffsetParent(el as unknown as HTMLElement)).toBe(false);
+    parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 150, left: 0, right: 200, toJSON: vi.fn(), top: 50, width: 200, x: 0, y: 50 }));
+    const el = createMockElement(parent);
+    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return false when element extends below offset parent', () => {
     const parent = createMockElement();
-    parent.getBoundingClientRect.mockReturnValue({ bottom: 100, left: 0, right: 200, top: 0 });
-    const el = createMockElement({ offsetParent: parent });
-    el.getBoundingClientRect.mockReturnValue({ bottom: 150, left: 10, right: 100, top: 10 });
-    expect(isElementVisibleInOffsetParent(el as unknown as HTMLElement)).toBe(false);
+    parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 200, toJSON: vi.fn(), top: 0, width: 200, x: 0, y: 0 }));
+    const el = createElement('div', { offsetParent: parent });
+    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 150, height: 140, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return false when element extends left of offset parent', () => {
     const parent = createMockElement();
-    parent.getBoundingClientRect.mockReturnValue({ bottom: 200, left: 50, right: 200, top: 0 });
-    const el = createMockElement({ offsetParent: parent });
-    el.getBoundingClientRect.mockReturnValue({ bottom: 100, left: 10, right: 100, top: 10 });
-    expect(isElementVisibleInOffsetParent(el as unknown as HTMLElement)).toBe(false);
+    parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 150, left: 50, right: 200, toJSON: vi.fn(), top: 0, width: 150, x: 50, y: 0 }));
+    const el = createElement('div', { offsetParent: parent });
+    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return false when element extends right of offset parent', () => {
     const parent = createMockElement();
-    parent.getBoundingClientRect.mockReturnValue({ bottom: 200, left: 0, right: 100, top: 0 });
-    const el = createMockElement({ offsetParent: parent });
-    el.getBoundingClientRect.mockReturnValue({ bottom: 100, left: 10, right: 150, top: 10 });
-    expect(isElementVisibleInOffsetParent(el as unknown as HTMLElement)).toBe(false);
+    parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
+    const el = createElement('div', { offsetParent: parent });
+    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 150, toJSON: vi.fn(), top: 10, width: 140, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return true when element exactly matches offset parent bounds', () => {
     const parent = createMockElement();
-    parent.getBoundingClientRect.mockReturnValue({ bottom: 100, left: 0, right: 100, top: 0 });
-    const el = createMockElement({ offsetParent: parent });
-    el.getBoundingClientRect.mockReturnValue({ bottom: 100, left: 0, right: 100, top: 0 });
-    expect(isElementVisibleInOffsetParent(el as unknown as HTMLElement)).toBe(true);
+    parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
+    const el = createElement('div', { offsetParent: parent });
+    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
+    expect(isElementVisibleInOffsetParent(el)).toBe(true);
   });
 });
 
-interface MockEventTarget {
-  addEventListener: ReturnType<typeof vi.fn>;
-  removeEventListener: ReturnType<typeof vi.fn>;
-}
-
 describe('onAncestorScrollOrResize', () => {
-  let mockDocument: MockEventTarget;
-  let mockWindow: MockEventTarget;
-  let rafCallback: (() => void) | null;
-
-  beforeEach(() => {
-    mockDocument = {
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn()
-    };
-    mockWindow = {
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn()
-    };
-    rafCallback = null;
-    vi.stubGlobal('document', mockDocument);
-    vi.stubGlobal('window', mockWindow);
-    vi.stubGlobal(
-      'requestAnimationFrame',
-      vi.fn((cb: () => void) => {
-        rafCallback = cb;
-        return 0;
-      })
-    );
-  });
-
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
   it('should return a cleanup function', () => {
     const node = createMockElement();
-    const cleanup = onAncestorScrollOrResize(node as unknown as Node, vi.fn());
+    const cleanup = onAncestorScrollOrResize(node, vi.fn());
     expect(typeof cleanup).toBe('function');
   });
 
   it('should add scroll and resize listeners to document, window, and the node', () => {
     const node = createMockElement();
-    onAncestorScrollOrResize(node as unknown as Node, vi.fn());
+    const docSpy = vi.spyOn(document, 'addEventListener');
+    const winSpy = vi.spyOn(window, 'addEventListener');
+    const nodeSpy = vi.spyOn(node, 'addEventListener');
 
-    expect(mockDocument.addEventListener).toHaveBeenCalledWith(
-      'scroll',
-      expect.any(Function),
-      { capture: true }
-    );
-    expect(mockDocument.addEventListener).toHaveBeenCalledWith(
-      'resize',
-      expect.any(Function),
-      { capture: true }
-    );
-    expect(mockWindow.addEventListener).toHaveBeenCalledWith(
-      'scroll',
-      expect.any(Function),
-      { capture: true }
-    );
-    expect(mockWindow.addEventListener).toHaveBeenCalledWith(
-      'resize',
-      expect.any(Function),
-      { capture: true }
-    );
-    expect(node.addEventListener).toHaveBeenCalledWith(
-      'scroll',
-      expect.any(Function),
-      { capture: true }
-    );
-    expect(node.addEventListener).toHaveBeenCalledWith(
-      'resize',
-      expect.any(Function),
-      { capture: true }
-    );
+    onAncestorScrollOrResize(node, vi.fn());
+
+    expect(docSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(docSpy).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
+    expect(winSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(winSpy).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
+    expect(nodeSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(nodeSpy).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
   });
 
   it('should add listeners to ancestor nodes in the parent chain', () => {
     const grandparent = createMockElement();
-    const parent = createMockElement({ parentNode: grandparent });
-    const node = createMockElement({ parentNode: parent });
+    const parent = createMockElement(grandparent);
+    const node = createMockElement(parent);
 
-    onAncestorScrollOrResize(node as unknown as Node, vi.fn());
+    const nodeSpy = vi.spyOn(node, 'addEventListener');
+    const parentSpy = vi.spyOn(parent, 'addEventListener');
+    const grandparentSpy = vi.spyOn(grandparent, 'addEventListener');
 
-    expect(node.addEventListener).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    expect(parent.addEventListener).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    expect(grandparent.addEventListener).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    onAncestorScrollOrResize(node, vi.fn());
+
+    expect(nodeSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(parentSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(grandparentSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
   });
 
   it('should remove all listeners when cleanup is called', () => {
     const node = createMockElement();
-    const cleanup = onAncestorScrollOrResize(node as unknown as Node, vi.fn());
+    const cleanup = onAncestorScrollOrResize(node, vi.fn());
+
+    const documentRemoveEventListeners = vi.fn();
+    document.removeEventListener = documentRemoveEventListeners;
+    const windowRemoveEventListeners = vi.fn();
+    window.removeEventListener = windowRemoveEventListeners;
+    const nodeRemoveEventListeners = vi.fn();
+    node.removeEventListener = nodeRemoveEventListeners;
 
     cleanup();
 
-    expect(mockDocument.removeEventListener).toHaveBeenCalledWith(
+    expect(documentRemoveEventListeners).toHaveBeenCalledWith(
       'scroll',
       expect.any(Function),
       { capture: true }
     );
-    expect(mockDocument.removeEventListener).toHaveBeenCalledWith(
+    expect(documentRemoveEventListeners).toHaveBeenCalledWith(
       'resize',
       expect.any(Function),
       { capture: true }
     );
-    expect(mockWindow.removeEventListener).toHaveBeenCalledWith(
+    expect(windowRemoveEventListeners).toHaveBeenCalledWith(
       'scroll',
       expect.any(Function),
       { capture: true }
     );
-    expect(mockWindow.removeEventListener).toHaveBeenCalledWith(
+    expect(windowRemoveEventListeners).toHaveBeenCalledWith(
       'resize',
       expect.any(Function),
       { capture: true }
     );
-    expect(node.removeEventListener).toHaveBeenCalledWith(
+    expect(nodeRemoveEventListeners).toHaveBeenCalledWith(
       'scroll',
       expect.any(Function),
       { capture: true }
     );
-    expect(node.removeEventListener).toHaveBeenCalledWith(
+    expect(nodeRemoveEventListeners).toHaveBeenCalledWith(
       'resize',
       expect.any(Function),
       { capture: true }
@@ -833,233 +687,179 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should invoke the callback via requestAnimationFrame when a scroll event fires', () => {
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    });
+
     const node = createMockElement();
     const callback = vi.fn();
-    onAncestorScrollOrResize(node as unknown as Node, callback);
+    onAncestorScrollOrResize(node, callback);
 
-    // Extract the scroll handler that was registered on the node
-    const scrollHandler = node.addEventListener.mock.calls.find(
-      (call: unknown[]) => call[0] === 'scroll'
-    )?.[1] as (() => void) | undefined;
-    expect(scrollHandler).toBeDefined();
-    scrollHandler?.();
+    node.dispatchEvent(new Event('scroll'));
 
-    expect(requestAnimationFrame).toHaveBeenCalled();
-
-    // Simulate requestAnimationFrame execution
-    expect(rafCallback).not.toBeNull();
-    rafCallback?.();
+    expect(rafSpy).toHaveBeenCalled();
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
   it('should debounce multiple rapid event triggers', () => {
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
+
     const node = createMockElement();
     const callback = vi.fn();
-    onAncestorScrollOrResize(node as unknown as Node, callback);
-
-    const scrollHandler = node.addEventListener.mock.calls.find(
-      (call: unknown[]) => call[0] === 'scroll'
-    )?.[1] as (() => void) | undefined;
-    expect(scrollHandler).toBeDefined();
+    onAncestorScrollOrResize(node, callback);
 
     // Trigger scroll multiple times before requestAnimationFrame fires
-    scrollHandler?.();
-    scrollHandler?.();
-    scrollHandler?.();
+    node.dispatchEvent(new Event('scroll'));
+    node.dispatchEvent(new Event('scroll'));
+    node.dispatchEvent(new Event('scroll'));
 
     // RequestAnimationFrame should only be called once because isEventTriggered guards
-    expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
+    expect(rafSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should allow new events after requestAnimationFrame callback completes', () => {
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    });
+
     const node = createMockElement();
     const callback = vi.fn();
-    onAncestorScrollOrResize(node as unknown as Node, callback);
-
-    const scrollHandler = node.addEventListener.mock.calls.find(
-      (call: unknown[]) => call[0] === 'scroll'
-    )?.[1] as (() => void) | undefined;
-    expect(scrollHandler).toBeDefined();
+    onAncestorScrollOrResize(node, callback);
 
     // First event
-    scrollHandler?.();
-    rafCallback?.();
+    node.dispatchEvent(new Event('scroll'));
     expect(callback).toHaveBeenCalledTimes(1);
 
     // Second event after first completes
-    scrollHandler?.();
-    expect(requestAnimationFrame).toHaveBeenCalledTimes(2);
-    rafCallback?.();
+    node.dispatchEvent(new Event('scroll'));
+    expect(rafSpy).toHaveBeenCalledTimes(2);
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
   it('should reset isEventTriggered even if callback throws', () => {
+    const rafCallbacks: FrameRequestCallback[] = [];
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+      rafCallbacks.push(cb);
+      return 0;
+    });
+
     const node = createMockElement();
     const callback = vi.fn(() => {
       throw new Error('callback error');
     });
-    onAncestorScrollOrResize(node as unknown as Node, callback);
+    onAncestorScrollOrResize(node, callback);
 
-    const scrollHandler = node.addEventListener.mock.calls.find(
-      (call: unknown[]) => call[0] === 'scroll'
-    )?.[1] as (() => void) | undefined;
-    expect(scrollHandler).toBeDefined();
+    // First scroll queues a raf callback
+    node.dispatchEvent(new Event('scroll'));
+    expect(rafSpy).toHaveBeenCalledTimes(1);
 
-    scrollHandler?.();
+    // Execute the raf callback — it throws but try/finally should reset isEventTriggered
+    const firstCallback = rafCallbacks[0];
+    assertNotNullable(firstCallback);
     expect(() => {
-      rafCallback?.();
+      firstCallback(0);
     }).toThrow('callback error');
 
-    // Should be able to trigger again because isEventTriggered was reset in finally block
-    scrollHandler?.();
-    expect(requestAnimationFrame).toHaveBeenCalledTimes(2);
+    // If isEventTriggered was properly reset, a second scroll should queue another raf
+    node.dispatchEvent(new Event('scroll'));
+    expect(rafSpy).toHaveBeenCalledTimes(2);
   });
 });
 
 describe('ensureLoaded', () => {
-  const MockHTMLBodyElement = createMockHTMLClass('HTMLBodyElement');
-  const MockHTMLImageElement = createMockHTMLClass('HTMLImageElement');
-  const MockHTMLIFrameElement = createMockHTMLClass('HTMLIFrameElement');
-  const MockHTMLEmbedElement = createMockHTMLClass('HTMLEmbedElement');
-  const MockHTMLLinkElement = createMockHTMLClass('HTMLLinkElement');
-  const MockHTMLObjectElement = createMockHTMLClass('HTMLObjectElement');
-  const MockHTMLScriptElement = createMockHTMLClass('HTMLScriptElement');
-  const MockHTMLStyleElement = createMockHTMLClass('HTMLStyleElement');
-  const MockHTMLTrackElement = createMockHTMLClass('HTMLTrackElement');
-
-  beforeEach(() => {
-    vi.stubGlobal('HTMLBodyElement', MockHTMLBodyElement);
-    vi.stubGlobal('HTMLImageElement', MockHTMLImageElement);
-    vi.stubGlobal('HTMLIFrameElement', MockHTMLIFrameElement);
-    vi.stubGlobal('HTMLEmbedElement', MockHTMLEmbedElement);
-    vi.stubGlobal('HTMLLinkElement', MockHTMLLinkElement);
-    vi.stubGlobal('HTMLObjectElement', MockHTMLObjectElement);
-    vi.stubGlobal('HTMLScriptElement', MockHTMLScriptElement);
-    vi.stubGlobal('HTMLStyleElement', MockHTMLStyleElement);
-    vi.stubGlobal('HTMLTrackElement', MockHTMLTrackElement);
-    vi.stubGlobal('document', { readyState: 'complete' });
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-  });
-
   it('should resolve immediately when element is already loaded', async () => {
-    const el = Object.create(MockHTMLScriptElement.prototype) as Element;
-    Object.assign(el, createMockElement());
+    const el = createMockElement();
     await expect(ensureLoaded(el)).resolves.toBeUndefined();
   });
 
   it('should resolve immediately for a generic element with no loadable children', async () => {
     const el = createMockElement();
-    el.querySelectorAll.mockReturnValue([]);
-    await expect(ensureLoaded(el as unknown as Element)).resolves.toBeUndefined();
+    await expect(ensureLoaded(el)).resolves.toBeUndefined();
   });
 
   it('should wait for load event on an unloaded image', async () => {
-    const el = Object.create(MockHTMLImageElement.prototype) as Record<string, unknown>;
-    let loadHandler: (() => void) | undefined;
-    Object.assign(
-      el,
-      createMockElement({
-        addEventListener: vi.fn((event: string, handler: () => void) => {
-          if (event === 'load') {
-            loadHandler = handler;
-          }
-        }),
-        complete: false,
-        naturalWidth: 0
-      })
-    );
+    const el = createElement('img', {
+      complete: false,
+      naturalWidth: 0
+    });
 
-    const promise = ensureLoaded(el as unknown as Element);
-
-    // Simulate the load event firing
-    expect(loadHandler).toBeDefined();
-    loadHandler?.();
+    const promise = ensureLoaded(el);
+    el.dispatchEvent(new Event('load'));
 
     await expect(promise).resolves.toBeUndefined();
   });
 
   it('should wait for error event on an unloaded image', async () => {
-    const el = Object.create(MockHTMLImageElement.prototype) as Record<string, unknown>;
-    let errorHandler: (() => void) | undefined;
-    Object.assign(
-      el,
-      createMockElement({
-        addEventListener: vi.fn((event: string, handler: () => void) => {
-          if (event === 'error') {
-            errorHandler = handler;
-          }
-        }),
-        complete: false,
-        naturalWidth: 0
-      })
-    );
+    const el = createElement('img', {
+      complete: false,
+      naturalWidth: 0
+    });
 
-    const promise = ensureLoaded(el as unknown as Element);
-
-    // Simulate the error event firing
-    expect(errorHandler).toBeDefined();
-    errorHandler?.();
+    const promise = ensureLoaded(el);
+    el.dispatchEvent(new Event('error'));
 
     await expect(promise).resolves.toBeUndefined();
   });
 
   it('should recursively ensure all loadable children are loaded for generic elements', async () => {
-    const script = Object.create(MockHTMLScriptElement.prototype) as Record<string, unknown>;
-    Object.assign(script, createMockElement());
-
+    const script = createElement('script');
     const el = createMockElement();
-    el.querySelectorAll.mockReturnValue([script]);
+    el.appendChild(script);
+    await expect(ensureLoaded(el)).resolves.toBeUndefined();
+  });
 
-    await expect(ensureLoaded(el as unknown as Element)).resolves.toBeUndefined();
+  it('should recursively wait for unloaded children inside a generic element', async () => {
+    const img = createElement('img', {
+      complete: false,
+      naturalWidth: 0
+    });
+    const el = createMockElement();
+    el.appendChild(img);
+
+    const promise = ensureLoaded(el);
+    img.dispatchEvent(new Event('load'));
+
+    await expect(promise).resolves.toBeUndefined();
   });
 
   it('should wait for load on an unloaded iframe', async () => {
-    const el = Object.create(MockHTMLIFrameElement.prototype) as Record<string, unknown>;
-    let loadHandler: (() => void) | undefined;
-    Object.assign(
-      el,
-      createMockElement({
-        addEventListener: vi.fn((event: string, handler: () => void) => {
-          if (event === 'load') {
-            loadHandler = handler;
-          }
-        }),
-        contentDocument: null
-      })
-    );
+    const el = createElement('iframe', {
+      contentDocument: null
+    });
 
-    const promise = ensureLoaded(el as unknown as Element);
-
-    expect(loadHandler).toBeDefined();
-    loadHandler?.();
+    const promise = ensureLoaded(el);
+    el.dispatchEvent(new Event('load'));
 
     await expect(promise).resolves.toBeUndefined();
   });
 
   it('should wait for load on an unloaded style element', async () => {
-    const el = Object.create(MockHTMLStyleElement.prototype) as Record<string, unknown>;
-    let loadHandler: (() => void) | undefined;
-    Object.assign(
-      el,
-      createMockElement({
-        addEventListener: vi.fn((event: string, handler: () => void) => {
-          if (event === 'load') {
-            loadHandler = handler;
-          }
-        }),
-        sheet: null
-      })
-    );
+    const el = createElement('style', {
+      sheet: null
+    });
 
-    const promise = ensureLoaded(el as unknown as Element);
-
-    expect(loadHandler).toBeDefined();
-    loadHandler?.();
+    const promise = ensureLoaded(el);
+    el.dispatchEvent(new Event('load'));
 
     await expect(promise).resolves.toBeUndefined();
   });
 });
+
+function createElement(tag: string, attrs: Record<string, unknown> = {}): HTMLElement {
+  const el = document.createElement(tag);
+  const record = el as unknown as Record<string, unknown>;
+
+  for (const [key, value] of Object.entries(attrs)) {
+    Object.defineProperty(record, key, { value });
+  }
+
+  return el;
+}
+
+function createMockElement(parent?: HTMLElement): HTMLElement {
+  const el = createElement('div');
+  parent?.appendChild(el);
+  return el;
+}

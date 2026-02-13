@@ -27,6 +27,27 @@ class DoubleTransformer extends Transformer {
   }
 }
 
+/**
+ * A concrete test transformer that returns undefined.
+ */
+class UndefinedTransformer extends Transformer {
+  public override get id(): string {
+    return 'undefined';
+  }
+
+  public override canTransform(): boolean {
+    return true;
+  }
+
+  public override transformValue(): unknown {
+    return undefined;
+  }
+
+  protected override restoreValue(): unknown {
+    return undefined;
+  }
+}
+
 describe('Transformer (via DoubleTransformer)', () => {
   const transformer = new DoubleTransformer();
 
@@ -188,6 +209,34 @@ describe('Transformer (via DoubleTransformer)', () => {
     it('should handle empty arrays in objects', () => {
       const result = transformer.transformObjectRecursively({ items: [] });
       expect(result).toEqual({ items: [] });
+    });
+  });
+});
+
+describe('Transformer (via UndefinedTransformer)', () => {
+  const transformer: Transformer = new UndefinedTransformer();
+
+  describe('id', () => {
+    it('should return "undefined"', () => {
+      expect(transformer.id).toBe('undefined');
+    });
+  });
+
+  describe('canTransform', () => {
+    it('should return true for any value', () => {
+      expect(transformer.canTransform([42], 'key')).toBe(true);
+    });
+  });
+
+  describe('transformValue', () => {
+    it('should return undefined', () => {
+      expect(transformer.transformValue([42], 'key')).toBeUndefined();
+    });
+  });
+
+  describe('transformObjectRecursively', () => {
+    it('should return undefined', () => {
+      expect(transformer.transformObjectRecursively({ a: 42 })).toBeUndefined();
     });
   });
 });

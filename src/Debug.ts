@@ -86,12 +86,16 @@ export function getLibDebugger(namespace: string): Debugger {
  * @param args - The arguments to print.
  */
 export function printWithStackTrace(debuggerInstance: Debugger, stackTrace: string, message: string, ...args: unknown[]): void {
+  /* v8 ignore start -- Only the true branch is taken in Node tests (window is undefined). */
   if (!isInObsidian()) {
+    /* v8 ignore stop */
     debuggerInstance(message, ...args);
     return;
   }
 
+  /* v8 ignore start -- Only reachable in Obsidian (window defined). */
   debuggerInstance(message, ...args, '\n\n---\nContext stack trace:\n', makeStackTraceError(stackTrace));
+  /* v8 ignore stop */
 }
 
 /**
@@ -145,10 +149,14 @@ function getNamespaces(): string[] {
 }
 
 function getSharedDebugLibInstance(): typeof debug {
+  /* v8 ignore start -- In Node tests, window is always undefined. */
   if (typeof window === 'undefined') {
+    /* v8 ignore stop */
     return debug;
   }
+  /* v8 ignore start -- Only reachable in Obsidian (window defined). */
   return getObsidianDevUtilsState(null, 'debug', debug).value;
+  /* v8 ignore stop */
 }
 
 function isInObsidian(): boolean {
@@ -156,15 +164,20 @@ function isInObsidian(): boolean {
 }
 
 function logWithCaller(namespace: string, framesToSkip: number, message: string, ...args: unknown[]): void {
+  /* v8 ignore start -- Branch depends on debug namespace enablement state. */
   if (!getSharedDebugLibInstance().enabled(namespace)) {
     return;
   }
+  /* v8 ignore stop */
 
+  /* v8 ignore start -- Only the true branch is taken in Node tests (window is undefined). */
   if (!isInObsidian()) {
+    /* v8 ignore stop */
     console.debug(message, ...args);
     return;
   }
 
+  /* v8 ignore start -- Only reachable in Obsidian (window defined). */
   /**
    * A caller line index is 4 because the call stack is as follows:
    *
@@ -180,8 +193,10 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   stackLines.splice(0, CALLER_LINE_INDEX + framesToSkip);
 
   console.debug(message, ...args, '\n\n---\nLogger stack trace:\n', makeStackTraceError(stackLines.join('\n')));
+  /* v8 ignore stop */
 }
 
+/* v8 ignore start -- Only used in Obsidian context. */
 function makeStackTraceError(stackTrace: string): CustomStackTraceError {
   return new CustomStackTraceError(
     'Debug mode: intentional placeholder error. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md.',
@@ -189,6 +204,7 @@ function makeStackTraceError(stackTrace: string): CustomStackTraceError {
     undefined
   );
 }
+/* v8 ignore stop */
 
 /**
  * Sets the namespaces to enable.

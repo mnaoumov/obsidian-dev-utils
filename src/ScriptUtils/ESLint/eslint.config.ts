@@ -93,7 +93,7 @@ function getEslintConfigs(): Linter.Config[] {
         'accessor-pairs': 'error',
         'array-callback-return': 'error',
         'camelcase': 'error',
-        'capitalized-comments': 'error',
+        'capitalized-comments': ['error', 'always', { block: { ignorePattern: 'v8' } }],
         'complexity': 'error',
         'consistent-this': 'error',
         'curly': 'error',
