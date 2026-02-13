@@ -15,7 +15,7 @@ import {
   onAbort,
   waitForAbort
 } from '../src/AbortController.ts';
-import { assertNotNullable } from './__helpers.ts';
+import { assertNotNullable } from './TestHelpers.ts';
 
 type WindowEx = typeof globalThis & Window;
 
