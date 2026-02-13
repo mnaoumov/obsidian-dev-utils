@@ -76,6 +76,7 @@ describe('abortSignalTimeout', () => {
     let originalTimeout: typeof AbortSignal.timeout;
 
     beforeEach(() => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- No bind.
       originalTimeout = AbortSignal.timeout;
       AbortSignal.timeout = undefined as unknown as typeof AbortSignal.timeout;
     });
@@ -272,6 +273,7 @@ describe('abortSignalAny', () => {
     let originalAny: typeof AbortSignal.any;
 
     beforeEach(() => {
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- No bind.
       originalAny = AbortSignal.any;
       AbortSignal.any = undefined as unknown as typeof AbortSignal.any;
     });
