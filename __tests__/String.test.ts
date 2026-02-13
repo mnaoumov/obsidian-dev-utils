@@ -418,7 +418,7 @@ describe('replaceAll', () => {
   });
 
   it('should handle regex with capture groups', () => {
-    const result = replaceAll('2024-01-15', /(\d{4})-(\d{2})-(\d{2})/g, (_common, year, month, day) => {
+    const result = replaceAll('2024-01-15', /(?<Year>\d{4})-(?<Month>\d{2})-(?<Day>\d{2})/g, (_common, year, month, day) => {
       return `${day}/${month}/${year}`;
     });
     expect(result).toBe('15/01/2024');
@@ -554,7 +554,7 @@ describe('replaceAll - missingGroupIndices and named groups', () => {
   it('should populate missingGroupIndices for undefined capture groups', () => {
     const missingIndices: number[][] = [];
     // Regex with optional groups: one matches, one does not
-    replaceAll('test', /(?:(x)|(t))/g, (common, _g1, _g2) => {
+    replaceAll('test', /(?:(?<Group1>x)|(?<Group2>t))/g, (common, _g1, _g2) => {
       missingIndices.push([...common.missingGroupIndices]);
       return common.substring;
     });
@@ -575,7 +575,7 @@ describe('replaceAll - missingGroupIndices and named groups', () => {
 
   it('should set groups to undefined when regex has no named groups', () => {
     const capturedGroups: (Record<string, string | undefined> | undefined)[] = [];
-    replaceAll('abc', /(.)/g, (common) => {
+    replaceAll('abc', /(?<Group1>.)/g, (common) => {
       capturedGroups.push(common.groups);
       return common.substring;
     });
@@ -584,7 +584,7 @@ describe('replaceAll - missingGroupIndices and named groups', () => {
 
   it('should have empty missingGroupIndices when all groups match', () => {
     const missingIndices: number[][] = [];
-    replaceAll('ab', /(a)(b)/g, (common) => {
+    replaceAll('ab', /(?<Group1>a)(?<Group2>b)/g, (common) => {
       missingIndices.push([...common.missingGroupIndices]);
       return common.substring;
     });
