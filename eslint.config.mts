@@ -162,7 +162,6 @@ const configs: Linter.Config[] = defineConfig([
       'jsdoc/require-returns': 'off',
       'jsdoc/require-returns-description': 'off',
       'no-magic-numbers': 'off',
-      'prefer-named-capture-group': 'off',
       'tsdoc/syntax': 'off'
     }
   }

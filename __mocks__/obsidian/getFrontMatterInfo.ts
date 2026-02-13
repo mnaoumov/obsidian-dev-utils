@@ -1,7 +1,7 @@
 import type { FrontMatterInfo } from 'obsidian';
 
 export function getFrontMatterInfo(content: string): FrontMatterInfo {
-  const fmRegex = /^---\r?\n([\s\S]*?)\r?\n---(\r?\n|$)/;
+  const fmRegex = /^---\r?\n(?<FrontmatterBody>[\s\S]*?)\r?\n---(?<TrailingNewline>\r?\n|$)/;
   const match = fmRegex.exec(content);
   if (match) {
     const fullMatch = match[0];
