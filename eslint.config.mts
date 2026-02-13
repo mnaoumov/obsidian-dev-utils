@@ -152,6 +152,12 @@ const configs: Linter.Config[] = defineConfig([
     }
   },
   {
+    files: ['package.json'],
+    rules: {
+      'depend/ban-dependencies': ['error', { allowed: ['moment'] }]
+    }
+  },
+  {
     files: testFiles,
     rules: {
       'eslint-plugin-tsdoc-required/tsdoc-required': 'off',

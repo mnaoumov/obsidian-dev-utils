@@ -30,6 +30,9 @@ import {
   getFileSystemType,
   getFolder,
   getFolderOrNull,
+  getMarkdownFiles,
+  getOrCreateFile,
+  getOrCreateFolder,
   getPath,
   isAbstractFile,
   isBaseFile,
@@ -424,6 +427,13 @@ describe('getAbstractFileOrNull', () => {
     const result = getAbstractFileOrNull(app, file);
     expect(result).not.toBeNull();
   });
+
+  it('should return the TAbstractFile itself when not in fileMap', () => {
+    const file = createTestFile('orphan.md');
+    const app = createMockApp();
+    const result = getAbstractFileOrNull(app, file);
+    expect(result).toBe(file);
+  });
 });
 
 describe('getAbstractFile', () => {
@@ -622,5 +632,133 @@ describe('trimMarkdownExtension', () => {
     const folder = app.vault.getFolderByPath('my-folder');
     assertNotNullable(folder);
     expect(trimMarkdownExtension(app, folder)).toBe('my-folder');
+  });
+});
+
+describe('getAbstractFileOrNull (resolved path fallback)', () => {
+  it('should resolve a relative path and find the file', () => {
+    const app = createMockApp({ files: [{ path: 'note.md' }] });
+    const result = getAbstractFileOrNull(app, './note.md');
+    assertNotNullable(result);
+    expect(result.path).toBe('note.md');
+  });
+
+  it('should resolve a path with parent traversal', () => {
+    const app = createMockApp({ files: [{ path: 'note.md' }] });
+    const result = getAbstractFileOrNull(app, 'folder/../note.md');
+    assertNotNullable(result);
+    expect(result.path).toBe('note.md');
+  });
+});
+
+describe('getAbstractFileOrNull (case-insensitive)', () => {
+  it('should find a file case-insensitively when isCaseInsensitive is true', () => {
+    const app = createMockApp({ files: [{ path: 'Note.md' }] });
+    const result = getAbstractFileOrNull(app, 'note.md', true);
+    assertNotNullable(result);
+    expect(result.path).toBe('Note.md');
+  });
+
+  it('should use adapter.insensitive when isCaseInsensitive is not provided', () => {
+    const app = createMockApp({ files: [{ path: 'Note.md' }] });
+    (app.vault.adapter as { insensitive: boolean }).insensitive = true;
+    const result = getAbstractFileOrNull(app, 'note.md');
+    assertNotNullable(result);
+    expect(result.path).toBe('Note.md');
+  });
+});
+
+describe('getMarkdownFiles', () => {
+  it('should return markdown files in a folder (non-recursive)', () => {
+    const app = createMockApp({
+      files: [
+        { path: 'docs/a.md' },
+        { path: 'docs/b.md' },
+        { extension: 'png', path: 'docs/image.png' }
+      ],
+      folders: ['docs']
+    });
+    const folder = app.vault.getFolderByPath('docs');
+    assertNotNullable(folder);
+    const fileA = app.vault.getFileByPath('docs/a.md');
+    assertNotNullable(fileA);
+    const fileB = app.vault.getFileByPath('docs/b.md');
+    assertNotNullable(fileB);
+    const filePng = app.vault.getFileByPath('docs/image.png');
+    assertNotNullable(filePng);
+    folder.children = [fileA, fileB, filePng];
+
+    const result = getMarkdownFiles(app, folder);
+    expect(result).toHaveLength(2);
+    expect(result.map((f) => f.path)).toEqual(['docs/a.md', 'docs/b.md']);
+  });
+
+  it('should return markdown files recursively', () => {
+    const app = createMockApp({
+      files: [
+        { path: 'docs/a.md' },
+        { path: 'docs/sub/b.md' }
+      ],
+      folders: ['docs', 'docs/sub']
+    });
+    const folder = app.vault.getFolderByPath('docs');
+    assertNotNullable(folder);
+    const subFolder = app.vault.getFolderByPath('docs/sub');
+    assertNotNullable(subFolder);
+    const fileA = app.vault.getFileByPath('docs/a.md');
+    assertNotNullable(fileA);
+    const fileB = app.vault.getFileByPath('docs/sub/b.md');
+    assertNotNullable(fileB);
+    folder.children = [fileA, subFolder];
+    subFolder.children = [fileB];
+
+    const result = getMarkdownFiles(app, folder, true);
+    expect(result).toHaveLength(2);
+    expect(result.map((f) => f.path)).toEqual(['docs/a.md', 'docs/sub/b.md']);
+  });
+
+  it('should return an empty array when no markdown files exist', () => {
+    const app = createMockApp({
+      files: [{ extension: 'png', path: 'docs/image.png' }],
+      folders: ['docs']
+    });
+    const folder = app.vault.getFolderByPath('docs');
+    assertNotNullable(folder);
+    const filePng = app.vault.getFileByPath('docs/image.png');
+    assertNotNullable(filePng);
+    folder.children = [filePng];
+
+    const result = getMarkdownFiles(app, folder);
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe('getOrCreateFile', () => {
+  it('should return the existing file if it exists', async () => {
+    const app = createMockApp({ files: [{ path: 'note.md' }] });
+    const result = await getOrCreateFile(app, 'note.md');
+    expect(result.path).toBe('note.md');
+  });
+
+  it('should create a new file if it does not exist', async () => {
+    const app = createMockApp();
+    const result = await getOrCreateFile(app, 'new-note.md');
+    expect(result).toBeInstanceOf(TFile);
+    expect(result.path).toBe('new-note.md');
+  });
+});
+
+describe('getOrCreateFolder', () => {
+  it('should return the existing folder if it exists', async () => {
+    const app = createMockApp({ folders: ['my-folder'] });
+    const result = await getOrCreateFolder(app, 'my-folder');
+    expect(result.path).toBe('my-folder');
+  });
+
+  it('should create a new folder if it does not exist', async () => {
+    const app = createMockApp();
+    const result = await getOrCreateFolder(app, 'new-folder');
+    expect(result).toBeInstanceOf(TFolder);
+    expect(result.path).toBe('new-folder');
   });
 });
