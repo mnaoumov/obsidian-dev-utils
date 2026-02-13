@@ -436,7 +436,7 @@ describe('Async', () => {
 
     it('should handle an empty async iterable', async () => {
       async function* gen(): AsyncGenerator<never, void> {
-        // yields nothing
+        // Yields nothing
       }
       const result = await toArray(gen());
       expect(result).toEqual([]);
@@ -509,8 +509,8 @@ describe('Async', () => {
 
   describe('marksAsTerminateRetry', () => {
     it('should mark an error for retry termination', () => {
-      // marksAsTerminateRetry is tested indirectly through retryWithTimeout
-      // but we can verify it does not throw
+      // MarksAsTerminateRetry is tested indirectly through retryWithTimeout
+      // But we can verify it does not throw
       const error = new Error('test');
       expect(() => {
         marksAsTerminateRetry(error);
@@ -590,7 +590,7 @@ describe('Async', () => {
           timeoutInMilliseconds: 50
         });
       } catch {
-        // expected
+        // Expected
       }
 
       expect(onTimeout).toHaveBeenCalledTimes(1);
@@ -613,7 +613,7 @@ describe('Async', () => {
           timeoutInMilliseconds: 50
         });
       } catch {
-        // expected
+        // Expected
       }
 
       expect(onTimeout).toHaveBeenCalledWith(expect.objectContaining({
@@ -642,7 +642,7 @@ describe('Async', () => {
           timeoutInMilliseconds: 50
         });
       } catch {
-        // expected
+        // Expected
       }
 
       expect(capturedCtx).not.toBeNull();
@@ -666,7 +666,7 @@ describe('Async', () => {
           timeoutInMilliseconds: 50
         });
       } catch {
-        // expected
+        // Expected
       }
 
       assertNotNullable(capturedCtx);
@@ -742,7 +742,7 @@ describe('Async', () => {
           timeoutInMilliseconds: 50
         });
       } catch {
-        // expected
+        // Expected
       }
 
       assertNotNullable(receivedSignal);
@@ -931,7 +931,7 @@ describe('Async', () => {
   describe('addErrorHandler', () => {
     it('should resolve successfully when the async function succeeds', async () => {
       await expect(addErrorHandler(async () => {
-        // success
+        // Success
       })).resolves.toBeUndefined();
     });
 
@@ -968,7 +968,7 @@ describe('Async', () => {
       });
 
       // The addErrorHandler wraps the thrown error in CustomStackTraceError,
-      // so the chain is CustomStackTraceError -> Error -> SilentError
+      // So the chain is CustomStackTraceError -> Error -> SilentError
       expect(handler).not.toHaveBeenCalled();
       unregister();
     });
@@ -978,7 +978,7 @@ describe('Async', () => {
     it('should not throw when the async function succeeds', () => {
       expect(() => {
         invokeAsyncSafely(async () => {
-          // success
+          // Success
         });
       }).not.toThrow();
     });
@@ -1013,7 +1013,7 @@ describe('Async', () => {
   describe('invokeAsyncSafelyAfterDelay', () => {
     it('should not invoke the function immediately', () => {
       const fn = vi.fn(async () => {
-        // success
+        // Success
       });
 
       invokeAsyncSafelyAfterDelay(fn, 50);
@@ -1023,7 +1023,7 @@ describe('Async', () => {
 
     it('should invoke the function after a delay', async () => {
       const fn = vi.fn(async () => {
-        // success
+        // Success
       });
 
       invokeAsyncSafelyAfterDelay(fn, 50);
@@ -1042,7 +1042,7 @@ describe('Async', () => {
       expect(() => {
         invokeAsyncSafelyAfterDelay(
           async () => {
-            // should not reach
+            // Should not reach
           },
           0,
           undefined,
@@ -1081,7 +1081,7 @@ describe('Async', () => {
 
     it('should default delay to 0', async () => {
       const fn = vi.fn(async () => {
-        // success
+        // Success
       });
 
       invokeAsyncSafelyAfterDelay(fn);

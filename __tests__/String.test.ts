@@ -104,7 +104,7 @@ describe('trimEnd', () => {
   });
 
   it('should handle empty suffix', () => {
-    // str.endsWith('') is true, so str.slice(0, -0) = str.slice(0, 0) = ''
+    // Str.endsWith('') is true, so str.slice(0, -0) = str.slice(0, 0) = ''
     expect(trimEnd('hello', '')).toBe('');
   });
 
@@ -264,7 +264,7 @@ describe('normalize', () => {
   });
 
   it('should return NFC-normalized string', () => {
-    // e + combining acute accent should become a single character
+    // E + combining acute accent should become a single character
     const input = 'e\u0301';
     const result = normalize(input);
     expect(result).toBe(input.normalize('NFC'));

@@ -70,8 +70,8 @@ describe('SkipPrivatePropertyTransformer', () => {
   describe('restoreValue', () => {
     it('should throw an Error', () => {
       expect(() => {
-        // restoreValue is protected, but we can test it through the transformer's
-        // recursive restore mechanism by constructing a wrapper object
+        // RestoreValue is protected, but we can test it through the transformer's
+        // Recursive restore mechanism by constructing a wrapper object
         // For direct testing, we use the getTransformer + restore path
         const t = transformer.getTransformer('skip-private-property');
         // Access restoreValue indirectly via transformObjectRecursively with a wrapper

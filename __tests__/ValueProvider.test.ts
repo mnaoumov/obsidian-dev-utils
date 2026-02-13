@@ -141,7 +141,7 @@ describe('resolveValue', () => {
       try {
         await resolveValue(provider, controller.signal);
       } catch {
-        // expected
+        // Expected
       }
       expect(provider).not.toHaveBeenCalled();
     });
