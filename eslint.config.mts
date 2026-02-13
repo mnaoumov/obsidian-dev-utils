@@ -154,7 +154,6 @@ const configs: Linter.Config[] = defineConfig([
   {
     files: testFiles,
     rules: {
-      '@typescript-eslint/no-confusing-void-expression': 'off',
       '@typescript-eslint/no-deprecated': 'off',
       '@typescript-eslint/no-empty-function': 'off',
       '@typescript-eslint/no-extraneous-class': 'off',

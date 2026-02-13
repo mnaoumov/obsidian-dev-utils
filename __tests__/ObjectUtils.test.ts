@@ -310,6 +310,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should return undefined for undefined', () => {
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Need to test `void` as `undefined`.
       expect(getPrototypeOf(undefined)).toBeUndefined();
     });
   });

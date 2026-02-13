@@ -405,6 +405,7 @@ describe('Async', () => {
     });
 
     it('should return undefined when promise rejects and no fallback given', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Need to test `void` as `undefined`.
       const result = await ignoreError(Promise.reject(new Error('ignored')));
       expect(result).toBeUndefined();
     });
