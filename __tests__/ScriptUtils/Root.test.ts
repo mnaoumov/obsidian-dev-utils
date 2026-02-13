@@ -7,13 +7,18 @@ import {
 } from 'vitest';
 
 import {
+  execFromRoot,
   getRootFolder,
   resolvePathFromRoot,
   resolvePathFromRootSafe,
   toRelativeFromRoot
 } from '../../src/ScriptUtils/Root.ts';
 
-const { mockExistsSync } = vi.hoisted(() => ({
+const {
+  mockExec,
+  mockExistsSync
+} = vi.hoisted(() => ({
+  mockExec: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>()
 }));
 
@@ -24,6 +29,10 @@ vi.mock('../../src/ScriptUtils/NodeModules.ts', async (importOriginal) => {
     existsSync: mockExistsSync
   };
 });
+
+vi.mock('../../src/ScriptUtils/Exec.ts', () => ({
+  exec: mockExec
+}));
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -90,5 +99,51 @@ describe('toRelativeFromRoot', () => {
     mockExistsSync.mockReturnValue(false);
     const result = toRelativeFromRoot('C:/some/file.ts', 'C:/no/root');
     expect(result).toBeNull();
+  });
+});
+
+describe('execFromRoot', () => {
+  beforeEach(() => {
+    mockExec.mockResolvedValue('output');
+  });
+
+  it('should execute command from root folder', async () => {
+    mockExistsSync.mockImplementation((p: string) => p === 'C:/project/package.json');
+    await execFromRoot('echo hello', { cwd: 'C:/project/src' });
+    expect(mockExec).toHaveBeenCalledWith('echo hello', expect.objectContaining({ cwd: 'C:/project', shouldIncludeDetails: false }));
+  });
+
+  it('should throw when root is not found and shouldFailIfCalledFromOutsideRoot defaults to true', () => {
+    mockExistsSync.mockReturnValue(false);
+    expect(() => execFromRoot('echo hello', { cwd: 'C:/no/root' })).toThrow('Could not find root folder');
+  });
+
+  it('should throw when root is not found and shouldFailIfCalledFromOutsideRoot is true', () => {
+    mockExistsSync.mockReturnValue(false);
+    expect(() => execFromRoot('echo hello', { cwd: 'C:/no/root', shouldFailIfCalledFromOutsideRoot: true })).toThrow('Could not find root folder');
+  });
+
+  it('should use cwd when root is not found and shouldFailIfCalledFromOutsideRoot is false', async () => {
+    mockExistsSync.mockReturnValue(false);
+    await execFromRoot('echo hello', { cwd: 'C:/fallback', shouldFailIfCalledFromOutsideRoot: false });
+    expect(mockExec).toHaveBeenCalledWith('echo hello', expect.objectContaining({ cwd: 'C:/fallback' }));
+  });
+
+  it('should fall back to process.cwd when root not found and no cwd provided', async () => {
+    mockExistsSync.mockReturnValue(false);
+    await execFromRoot('echo hello', { shouldFailIfCalledFromOutsideRoot: false });
+    expect(mockExec).toHaveBeenCalledTimes(1);
+  });
+
+  it('should pass shouldIncludeDetails: true when option is set', async () => {
+    mockExistsSync.mockImplementation((p: string) => p === 'C:/project/package.json');
+    await execFromRoot('echo hello', { cwd: 'C:/project', shouldIncludeDetails: true });
+    expect(mockExec).toHaveBeenCalledWith('echo hello', expect.objectContaining({ shouldIncludeDetails: true }));
+  });
+
+  it('should pass shouldIncludeDetails: false when option is not set', async () => {
+    mockExistsSync.mockImplementation((p: string) => p === 'C:/project/package.json');
+    await execFromRoot('echo hello', { cwd: 'C:/project' });
+    expect(mockExec).toHaveBeenCalledWith('echo hello', expect.objectContaining({ shouldIncludeDetails: false }));
   });
 });
