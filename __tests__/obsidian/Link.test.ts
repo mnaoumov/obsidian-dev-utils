@@ -7,6 +7,7 @@ import {
   it
 } from 'vitest';
 
+import { assertNotNullable } from '../__helpers.ts';
 import {
   encodeUrl,
   escapeAlias,
@@ -22,7 +23,6 @@ import {
   testWikilink,
   unescapeAlias
 } from '../../src/obsidian/Link.ts';
-import { assertNotNullable } from '../__helpers.ts';
 
 describe('splitSubpath', () => {
   describe('should return the full link as linkPath when there is no subpath', () => {

@@ -10,6 +10,7 @@ import {
   it
 } from 'vitest';
 
+import { assertNotNullable } from '../__helpers.ts';
 import { createMockApp } from '../../__mocks__/obsidian/App.ts';
 import {
   asArrayOfFiles,
@@ -41,7 +42,6 @@ import {
   MARKDOWN_FILE_EXTENSION,
   trimMarkdownExtension
 } from '../../src/obsidian/FileSystem.ts';
-import { assertNotNullable } from '../__helpers.ts';
 
 function createTestFile(path: string, ext = 'md'): TFile {
   const file = new TFile();
