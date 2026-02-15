@@ -81,4 +81,44 @@ describe('v8 ignore imports', () => {
     const mod = await import('../../src/ScriptUtils/markdownlint/markdownlint-cli2-config.ts');
     expect(mod.obsidianDevUtilsConfig).toBeDefined();
   });
+
+  it('should load DebugController so v8 processes its ignore comments', async () => {
+    const mod = await import('../../src/DebugController.ts');
+    expect(mod).toBeDefined();
+  });
+
+  it('should load StateFieldSpec so v8 processes its ignore comments', async () => {
+    const mod = await import('../../src/codemirror/StateFieldSpec.ts');
+    expect(mod).toBeDefined();
+  });
+
+  it('should load PluginSettingsWrapper so v8 processes its ignore comments', async () => {
+    const mod = await import('../../src/obsidian/Plugin/PluginSettingsWrapper.ts');
+    expect(mod).toBeDefined();
+  });
+
+  it('should load PluginTypesBase so v8 processes its ignore comments', async () => {
+    const mod = await import('../../src/obsidian/Plugin/PluginTypesBase.ts');
+    expect(mod).toBeDefined();
+  });
+
+  it('should load CustomTypeOptionsBase so v8 processes its ignore comments', async () => {
+    const mod = await import('../../src/obsidian/i18n/CustomTypeOptionsBase.ts');
+    expect(mod).toBeDefined();
+  });
+
+  it('should load DefaultTranslationsBase so v8 processes its ignore comments', async () => {
+    const mod = await import('../../src/obsidian/i18n/DefaultTranslationsBase.ts');
+    expect(mod).toBeDefined();
+  });
+
+  it('should load ValueComponentWithChangeTracking so v8 processes its ignore comments', async () => {
+    const mod = await import('../../src/obsidian/Components/SettingComponents/ValueComponentWithChangeTracking.ts');
+    expect(mod).toBeDefined();
+  });
+
+  it('should load CodeBlockMarkdownInformation so v8 processes its ignore comments', async () => {
+    const mod = await import('../../src/obsidian/CodeBlockMarkdownInformation.ts');
+    expect(mod).toBeDefined();
+  });
 });

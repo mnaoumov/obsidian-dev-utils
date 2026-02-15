@@ -4,6 +4,8 @@
  * This file defines a custom type options base for `i18next`.
  */
 
+/* v8 ignore start -- Interface-only module; no runtime code to test. */
+
 import type { PluginTypesBase } from '../Plugin/PluginTypesBase.ts';
 
 import { DEFAULT_NS } from './i18n.ts';
@@ -34,3 +36,5 @@ export interface CustomTypeOptionsBase<PluginTypes extends PluginTypesBase> {
     [DEFAULT_NS]: PluginTypes['defaultTranslations'];
   };
 }
+
+/* v8 ignore stop */

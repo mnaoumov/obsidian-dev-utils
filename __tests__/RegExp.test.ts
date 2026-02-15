@@ -33,7 +33,7 @@ describe('escapeRegExp', () => {
   it('should produce a pattern that does not match a modified string', () => {
     const literal = 'foo.bar(baz)+';
     const pattern = new RegExp(escapeRegExp(literal));
-    expect(pattern.test('fooXbar(baz)+')).toBe(false);
+    expect(pattern.test('foo-bar(baz)+')).toBe(false);
   });
 });
 

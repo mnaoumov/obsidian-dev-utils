@@ -17,6 +17,8 @@
  * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md}
  */
 
+/* v8 ignore start -- Interface-only module; no runtime code to test. */
+
 /**
  * Controls debug output by managing debug namespaces.
  * Exposed globally as `window.DEBUG`.
@@ -88,3 +90,5 @@ export interface DebugController {
    */
   set(namespaces: string | string[]): void;
 }
+
+/* v8 ignore stop */

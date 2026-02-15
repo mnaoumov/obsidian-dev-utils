@@ -4,6 +4,8 @@
  * Plugin settings wrapper.
  */
 
+/* v8 ignore start -- Interface-only module; no runtime code to test. */
+
 import type { StringKeys } from '../../Type.ts';
 
 /**
@@ -27,3 +29,5 @@ export interface PluginSettingsWrapper<PluginSettings extends object> {
    */
   validationMessages: Record<StringKeys<PluginSettings>, string>;
 }
+
+/* v8 ignore stop */

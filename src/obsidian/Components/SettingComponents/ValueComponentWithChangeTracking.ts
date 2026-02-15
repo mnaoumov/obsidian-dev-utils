@@ -4,6 +4,8 @@
  * Contains a type that extends ValueComponent to allow for change tracking.
  */
 
+/* v8 ignore start -- Interface-only module; no runtime code to test. */
+
 import type { ValueComponent } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
@@ -20,3 +22,5 @@ export interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
    */
   onChange(callback: (newValue: T) => Promisable<void>): this;
 }
+
+/* v8 ignore stop */
