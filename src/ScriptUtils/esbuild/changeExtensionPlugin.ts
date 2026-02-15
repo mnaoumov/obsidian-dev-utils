@@ -4,6 +4,8 @@
  * This module defines an esbuild plugin that changes the extension of JavaScript files after the build process.
  */
 
+/* v8 ignore start -- esbuild plugin that rewrites file extensions at build time; requires a live esbuild context. */
+
 import type { Plugin } from 'esbuild';
 
 import { replaceAll } from '../../String.ts';
@@ -52,3 +54,5 @@ export function changeExtensionPlugin(extension: string): Plugin {
     }
   };
 }
+
+/* v8 ignore stop */

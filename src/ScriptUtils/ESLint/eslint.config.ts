@@ -9,6 +9,8 @@
  * It sets up parsers, plugins, and rules for maintaining code quality and consistency.
  */
 
+/* v8 ignore start -- Declarative ESLint rule/plugin configuration; correctness is verified by running ESLint, not unit tests. */
+
 /* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
 import type {
   ESLint,
@@ -487,3 +489,5 @@ function getTseslintConfigs(): Linter.Config[] {
 }
 
 /* eslint-enable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
+
+/* v8 ignore stop */

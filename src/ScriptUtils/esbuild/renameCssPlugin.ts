@@ -4,6 +4,8 @@
  * Rename CSS esbuild plugin.
  */
 
+/* v8 ignore start -- esbuild plugin that renames CSS output files; requires a live esbuild context. */
+
 import type { Plugin } from 'esbuild';
 
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
@@ -33,3 +35,5 @@ export function renameCssPlugin(distFolder: string): Plugin {
     }
   };
 }
+
+/* v8 ignore stop */

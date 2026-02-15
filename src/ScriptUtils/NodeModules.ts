@@ -4,6 +4,8 @@
  * Contains utility functions for Node.js modules.
  */
 
+/* v8 ignore start -- Pure re-exports from Node.js built-in modules; no logic to test. */
+
 // eslint-disable-next-line import-x/no-nodejs-modules, import-x/no-namespace -- This is the only file we encapsulate importing Node.js modules.
 import * as process from 'node:process';
 
@@ -75,3 +77,5 @@ export { createInterface } from 'node:readline/promises';
 
 // eslint-disable-next-line import-x/no-nodejs-modules, eslint-plugin-tsdoc-required/tsdoc-required -- This is the only file we encapsulate importing Node.js modules.
 export { fileURLToPath } from 'node:url';
+
+/* v8 ignore stop */

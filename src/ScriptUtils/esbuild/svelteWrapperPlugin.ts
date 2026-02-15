@@ -4,6 +4,8 @@
  * Svelte wrapper esbuild plugin.
  */
 
+/* v8 ignore start -- esbuild plugin wrapping esbuild-svelte with svelte-preprocess; requires a live esbuild context. */
+
 import type { Plugin } from 'esbuild';
 
 import esbuildSvelte_ from 'esbuild-svelte';
@@ -47,3 +49,5 @@ export function svelteWrapperPlugin(isProductionBuild: boolean): Plugin {
     }
   };
 }
+
+/* v8 ignore stop */

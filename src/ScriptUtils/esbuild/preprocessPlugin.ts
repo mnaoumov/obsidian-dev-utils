@@ -7,6 +7,8 @@
  * We cannot use `.` instead of `(dot)` in the above description because the file itself is preprocessed with the same rule.
  */
 
+/* v8 ignore start -- esbuild plugin that preprocesses source files with import.meta.url shims and process polyfills; requires a live esbuild context. */
+
 import type { Plugin } from 'esbuild';
 
 import type { GenericObject } from '../../ObjectUtils.ts';
@@ -222,3 +224,5 @@ function initEsm(): void {
   };
   globalThis.process = browserProcess as NodeJS.Process;
 }
+
+/* v8 ignore stop */
