@@ -4,6 +4,8 @@
  * Contains a specification for a state field.
  */
 
+/* v8 ignore start -- Interface-only module; no runtime code to test. */
+
 import type {
   EditorState,
   Extension,
@@ -79,3 +81,5 @@ export interface StateFieldSpec<Value> {
    */
   update(value: Value, transaction: Transaction): Value;
 }
+
+/* v8 ignore stop */

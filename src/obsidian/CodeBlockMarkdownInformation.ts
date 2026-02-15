@@ -4,6 +4,8 @@
  * This module provides a helper type for the information about a code block in a markdown file.
  */
 
+/* v8 ignore start -- Interface-only module; no runtime code to test. */
+
 import type {
   MarkdownSectionInformation,
   Pos
@@ -58,3 +60,5 @@ export interface CodeBlockMarkdownInformation {
    */
   startDelimiter: string;
 }
+
+/* v8 ignore stop */

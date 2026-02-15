@@ -55,6 +55,10 @@ export class Vault extends Events {
     await noopAsync();
   }
 
+  public async exists(_path: string): Promise<boolean> {
+    return false;
+  }
+
   public getAbstractFileByPath(path: string): null | TAbstractFile {
     return this.fileMap[path] ?? null;
   }

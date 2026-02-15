@@ -4,6 +4,8 @@
  * Types helpers for plugin types.
  */
 
+/* v8 ignore start -- Interface-only module; no runtime code to test. */
+
 import type { ReadonlyDeep } from 'type-fest';
 
 import type {
@@ -105,3 +107,5 @@ export interface PluginTypesBase {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown`, `PluginTypeBase` don't work, getting compiler errors.
   pluginSettingsTab: PluginSettingsTabBase<any>;
 }
+
+/* v8 ignore stop */
