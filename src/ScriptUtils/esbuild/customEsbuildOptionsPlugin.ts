@@ -4,6 +4,8 @@
  * This module defines an esbuild plugin that allows for custom esbuild options to be used during the build process.
  */
 
+/* v8 ignore start -- esbuild plugin that applies custom build options; requires a live esbuild context. */
+
 import type {
   BuildOptions,
   Plugin
@@ -23,3 +25,5 @@ export function customEsbuildOptionsPlugin(customizeEsbuildOptions?: (options: B
     }
   };
 }
+
+/* v8 ignore stop */

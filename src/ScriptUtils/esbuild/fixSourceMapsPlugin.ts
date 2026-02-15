@@ -6,6 +6,8 @@
  * A plugin is only active during development builds.
  */
 
+/* v8 ignore start -- esbuild plugin that rewrites source maps for Obsidian URL scheme; requires a live esbuild context. */
+
 import type { Plugin } from 'esbuild';
 
 import { toPosixPath } from '../../Path.ts';
@@ -84,3 +86,5 @@ function fixSourceMap(sourceMapBase64: string, pluginName: string): string {
   sourceMap.sources = (sourceMap.sources ?? []).map((path) => convertPathToObsidianUrl(path, pluginName));
   return Buffer.from(JSON.stringify(sourceMap)).toString('base64');
 }
+
+/* v8 ignore stop */

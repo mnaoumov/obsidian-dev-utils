@@ -6,6 +6,8 @@
  * and it sets up various esbuild plugins to preprocess, lint, fix source maps, and copy files to the Obsidian plugins folder.
  */
 
+/* v8 ignore start -- esbuild-based build pipeline with sass/svelte plugins and file watchers; requires a live esbuild context. */
+
 import type {
   BuildContext,
   BuildOptions,
@@ -216,3 +218,5 @@ export async function invokeEsbuild(buildContext: BuildContext, isProductionBuil
   await buildContext.watch();
   return CliTaskResult.DoNotExit();
 }
+
+/* v8 ignore stop */

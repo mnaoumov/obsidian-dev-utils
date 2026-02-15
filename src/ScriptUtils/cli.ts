@@ -7,6 +7,8 @@
  * synchronous and asynchronous tasks.
  */
 
+/* v8 ignore start -- CLI entry point using commander and dynamic jiti imports; requires a live process environment. */
+
 import type { Promisable } from 'type-fest';
 
 import { Command } from 'commander';
@@ -160,3 +162,5 @@ function addCommand<Args extends unknown[]>(
       })
     );
 }
+
+/* v8 ignore stop */

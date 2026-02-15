@@ -4,6 +4,8 @@
  * This module defines a custom esbuild plugin that fixes the `require` statement for ESM modules.
  */
 
+/* v8 ignore start -- esbuild plugin that patches require calls for ESM compatibility; requires a live esbuild context. */
+
 import type { Plugin } from 'esbuild';
 
 import { replaceAll } from '../../String.ts';
@@ -26,3 +28,5 @@ export function fixEsmPlugin(): Plugin {
     }
   };
 }
+
+/* v8 ignore stop */

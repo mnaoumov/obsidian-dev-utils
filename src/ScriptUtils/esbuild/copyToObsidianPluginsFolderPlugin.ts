@@ -7,6 +7,8 @@
  * in the correct Obsidian folder for testing and use.
  */
 
+/* v8 ignore start -- esbuild plugin that copies build output to Obsidian plugins folder; requires a live esbuild context. */
+
 import type { Plugin } from 'esbuild';
 
 import { getLibDebugger } from '../../Debug.ts';
@@ -77,3 +79,5 @@ export function copyToObsidianPluginsFolderPlugin(
     }
   };
 }
+
+/* v8 ignore stop */

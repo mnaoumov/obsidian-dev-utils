@@ -4,6 +4,8 @@
  * Default markdownlint-cli2 configuration for the Obsidian Dev Utils.
  */
 
+/* v8 ignore start -- Declarative markdownlint-cli2 rule/plugin configuration; correctness is verified by running markdownlint, not unit tests. */
+
 import relativeLinksRule from 'markdownlint-rule-relative-links';
 
 import type { MarkdownlintCli2ConfigurationSchema } from './@types/markdownlint-cli2-config-schema.d.ts';
@@ -41,3 +43,5 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigurationSchema = {
     'dist/**'
   ]
 };
+
+/* v8 ignore stop */

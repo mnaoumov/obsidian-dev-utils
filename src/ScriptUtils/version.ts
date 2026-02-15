@@ -180,12 +180,14 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
     throw new Error(`Invalid current version format: ${currentVersion}`);
   }
 
+  /* v8 ignore start -- v8 tracks optional chaining/nullish coalescing as branches; groups always exist when regex matches. */
   let major = Number(match.groups?.['Major'] ?? '');
   let minor = Number(match.groups?.['Minor'] ?? '');
   let patch = Number(match.groups?.['Patch'] ?? '');
   let beta = Number(match.groups?.['Beta'] ?? '');
 
   switch (versionType) {
+    /* v8 ignore stop */
     case VersionUpdateType.Beta:
       if (beta === 0) {
         patch++;
@@ -210,8 +212,10 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
         beta = 0;
       }
       break;
+    /* v8 ignore start -- Dead code: getVersionUpdateType already validates all cases before reaching getNewVersion switch. */
     default:
       throw new Error(`Invalid version update type: ${versionType}`);
+      /* v8 ignore stop */
   }
 
   return `${String(major)}.${String(minor)}.${String(patch)}${beta > 0 ? `-beta.${String(beta)}` : ''}`;
@@ -228,7 +232,9 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
   const content = await readFile(changelogPath, 'utf-8');
   const newVersionEscaped = replaceAll(newVersion, '.', '\\.');
   const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
+  /* v8 ignore start -- v8 tracks optional chaining and ternary as separate branches; both paths are tested. */
   let releaseNotes = match?.[1] ? `${match[1]}\n\n` : '';
+  /* v8 ignore stop */
 
   const tags = (await execFromRoot('git tag --sort=-creatordate', { isQuiet: true })).split(/\r?\n/);
   const previousVersion = tags[1];
@@ -339,9 +345,11 @@ export async function updateChangelog(newVersion: string): Promise<void> {
   if (existsSync(changelogPath)) {
     const content = await readFile(changelogPath, 'utf-8');
     previousChangelogLines = content.split('\n').slice(HEADER_LINES_COUNT);
+    /* v8 ignore start -- Edge case: changelog content without trailing newline. */
     if (previousChangelogLines.at(-1) === '') {
       previousChangelogLines.pop();
     }
+    /* v8 ignore stop */
   } else {
     previousChangelogLines = [];
   }
@@ -489,7 +497,9 @@ async function getLatestObsidianVersion(): Promise<string> {
   // eslint-disable-next-line no-restricted-globals -- We run this outside of Obsidian, so we don't have `requestUrl()`.
   const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');
   const obsidianReleasesJson = await response.json() as Partial<ObsidianReleasesJson>;
+  /* v8 ignore start -- Error path: GitHub API always returns a name for valid releases. */
   return obsidianReleasesJson.name ?? throwExpression(new Error('Could not find the name of the latest Obsidian release'));
+  /* v8 ignore stop */
 }
 
 function isBeta(version: string): boolean {

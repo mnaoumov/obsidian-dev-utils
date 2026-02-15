@@ -6,6 +6,8 @@
  * should be bundled, as well as an esbuild plugin for extracting dependencies to bundle.
  */
 
+/* v8 ignore start -- esbuild plugin that resolves dependencies at build time; requires a live esbuild context. */
+
 import type {
   BuildOptions,
   Plugin
@@ -132,3 +134,5 @@ function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, depe
     }
   };
 }
+
+/* v8 ignore stop */
