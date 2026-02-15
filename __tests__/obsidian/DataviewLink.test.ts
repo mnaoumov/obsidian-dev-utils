@@ -4,6 +4,8 @@ import {
   it
 } from 'vitest';
 
+import type { Link } from '../../src/obsidian/Dataview.ts';
+
 import { makeLinkWithPath } from '../../src/obsidian/DataviewLink.ts';
 
 describe('makeLinkWithPath', () => {
@@ -11,7 +13,7 @@ describe('makeLinkWithPath', () => {
     const link = {
       path: 'folder/note.md',
       toString: (): string => '[[note]]'
-    };
+    } as Link;
     expect(makeLinkWithPath(link)).toBe('[[note]] (folder/note.md)');
   });
 
@@ -19,7 +21,7 @@ describe('makeLinkWithPath', () => {
     const link = {
       path: 'note.md',
       toString: (): string => '[[note]]'
-    };
+    } as Link;
     expect(makeLinkWithPath(link)).toBe('[[note]] (note.md)');
   });
 
@@ -27,7 +29,7 @@ describe('makeLinkWithPath', () => {
     const link = {
       path: 'a/b/c/d.md',
       toString: (): string => '[[d]]'
-    };
+    } as Link;
     expect(makeLinkWithPath(link)).toBe('[[d]] (a/b/c/d.md)');
   });
 });
