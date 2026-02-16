@@ -47,7 +47,7 @@ vi.mock('../../src/obsidian/Frontmatter.ts', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../src/obsidian/Frontmatter.ts')>();
   return {
     ...original,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Spy wrapper passes through to original implementation
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Spy wrapper passes through to original implementation.
     parseFrontmatter: vi.fn((...args: Parameters<typeof original.parseFrontmatter>) => original.parseFrontmatter(...args))
   };
 });

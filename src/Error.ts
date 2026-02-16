@@ -34,7 +34,7 @@ export class CustomStackTraceError extends Error {
     super(message, { cause });
     this.name = 'CustomStackTraceError';
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2.
     Error.captureStackTrace?.(this, CustomStackTraceError);
 
     let rootCause = cause;
@@ -71,7 +71,7 @@ export class SilentError extends Error {
     super(message);
     this.name = 'SilentError';
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2.
     Error.captureStackTrace?.(this, SilentError);
   }
 }
