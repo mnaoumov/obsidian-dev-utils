@@ -15,7 +15,7 @@ import type {
 
 import { context } from 'esbuild';
 
-import { throwExpression } from '../../Error.ts';
+import { ensureNonNullable } from '../../ObjectUtils.ts';
 import {
   getFolderName,
   join
@@ -124,7 +124,7 @@ function extractDependenciesToBundlePlugin(dependenciesToSkip: Set<string>, depe
     setup(build): void {
       build.onResolve({ filter: /^[^./]/ }, (args) => {
         if (!args.importer.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
-          const moduleName = trimStart(args.path.split('/')[0] ?? throwExpression(new Error('Wrong path')), 'node:');
+          const moduleName = trimStart(ensureNonNullable(args.path.split('/')[0], () => 'Wrong path'), 'node:');
           if (!dependenciesToSkip.has(args.path) && !dependenciesToSkip.has(moduleName)) {
             dependenciesToBundle.add(args.path);
           }

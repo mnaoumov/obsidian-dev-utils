@@ -4,6 +4,8 @@
  * Contains utility functions for Blob objects.
  */
 
+import { assertNonNullable } from './ObjectUtils.ts';
+
 /**
  * Converts a {@link Blob} object to an {@link ArrayBuffer}.
  *
@@ -57,9 +59,7 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
     function handleLoad(): void {
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
-      if (!context) {
-        throw new Error('Could not get 2D context.');
-      }
+      assertNonNullable(context, () => 'Could not get 2D context.');
       const imageWidth = image.width;
       const imageHeight = image.height;
 

@@ -15,6 +15,7 @@ import type { CodeBlockMarkdownInformation } from './CodeBlockMarkdownInformatio
 
 import { abortSignalAny } from '../AbortController.ts';
 import { requestAnimationFrameAsync } from '../Async.ts';
+import { assertNonNullable } from '../ObjectUtils.ts';
 import {
   ensureLfEndings,
   getLfNormalizedOffsetToOriginalOffsetMapper,
@@ -130,9 +131,7 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfo
   const { app, ctx, el, source } = options;
 
   const sourceFile = getFileOrNull(app, ctx.sourcePath);
-  if (!sourceFile) {
-    throw new Error(`Source file ${ctx.sourcePath} not found.`);
-  }
+  assertNonNullable(sourceFile, () => `Source file ${ctx.sourcePath} not found.`);
 
   await requestAnimationFrameAsync();
   await saveNote(app, sourceFile);
@@ -229,9 +228,7 @@ export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Pro
 
   await process(app, ctx.sourcePath, async (_abortSignal, content) => {
     const markdownInfo = await getCodeBlockMarkdownInfo(options);
-    if (!markdownInfo) {
-      throw new Error('Could not uniquely identify the code block.');
-    }
+    assertNonNullable(markdownInfo, () => 'Could not uniquely identify the code block.');
 
     if (content !== markdownInfo.noteContent) {
       return null;

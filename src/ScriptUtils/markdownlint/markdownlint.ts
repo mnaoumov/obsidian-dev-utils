@@ -6,6 +6,7 @@
 
 import { toArray } from '../../Async.ts';
 import { getLibDebugger } from '../../Debug.ts';
+import { assertNonNullable } from '../../ObjectUtils.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   getFolderName,
@@ -50,9 +51,7 @@ export async function lintMarkdown(shouldFix = false): Promise<void> {
   if (!configFileExist) {
     getLibDebugger('markdownlint:lintMarkdown')('markdownlint configuration file not found. Creating default config...');
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
-    if (!packageFolder) {
-      throw new Error('Package folder not found');
-    }
+    assertNonNullable(packageFolder, () => 'Package folder not found');
     await cp(
       join(packageFolder, ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.MarkdownlintCli2ConfigMjs),
       resolvePathFromRootSafe(ObsidianPluginRepoPaths.MarkdownlintCli2ConfigMjs)

@@ -4,6 +4,7 @@
  * Format the source code.
  */
 
+import { assertNonNullable } from '../ObjectUtils.ts';
 import {
   getFolderName,
   join
@@ -24,15 +25,11 @@ import {
  */
 export async function format(rewrite = true): Promise<void> {
   const rootFolder = getRootFolder();
-  if (!rootFolder) {
-    throw new Error('Root folder not found');
-  }
+  assertNonNullable(rootFolder, () => 'Root folder not found');
   let dprintJsonPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.DprintJson);
   if (!existsSync(dprintJsonPath)) {
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
-    if (!packageFolder) {
-      throw new Error('Could not find package folder.');
-    }
+    assertNonNullable(packageFolder, () => 'Could not find package folder.');
     dprintJsonPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.DprintJson), packageFolder);
   }
 

@@ -16,10 +16,8 @@ import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { convertAsyncToSync } from '../Async.ts';
-import {
-  errorToString,
-  throwExpression
-} from '../Error.ts';
+import { errorToString } from '../Error.ts';
+import { ensureNonNullable } from '../ObjectUtils.ts';
 import {
   getFile,
   getPath
@@ -394,7 +392,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     return;
   }
   const container = dv.container;
-  let itemsPerPage = itemsPerPageOptions[0] ?? throwExpression(new Error('Items per page options are empty'));
+  let itemsPerPage = ensureNonNullable(itemsPerPageOptions[0], () => 'Items per page options are empty');
   let totalPages = Math.ceil(rows.length / itemsPerPage);
   await renderPage(1);
 

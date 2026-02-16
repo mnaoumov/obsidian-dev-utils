@@ -10,6 +10,8 @@ import {
   useContext
 } from 'react';
 
+import { ensureNonNullable } from '../../ObjectUtils.ts';
+
 /**
  * A context for the app.
  *
@@ -28,9 +30,5 @@ export const AppContext = createContext<App | undefined>(undefined);
  * @returns The app instance.
  */
 export function useApp(): App {
-  const app = useContext(AppContext);
-  if (!app) {
-    throw new Error('AppContext not found');
-  }
-  return app;
+  return ensureNonNullable(useContext(AppContext), () => 'AppContext not found');
 }

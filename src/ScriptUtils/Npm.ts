@@ -11,8 +11,10 @@ import type {
 
 import type { EditJsonOptions } from './JSON.ts';
 
-import { throwExpression } from '../Error.ts';
-import { normalizeOptionalProperties } from '../ObjectUtils.ts';
+import {
+  ensureNonNullable,
+  normalizeOptionalProperties
+} from '../ObjectUtils.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   editJson,
@@ -149,7 +151,7 @@ export function editPackageLockJsonSync(
  * @returns The resolved path to the `npm-shrinkwrap.json` file.
  */
 export function getNpmShrinkWrapJsonPath(cwd?: string): string {
-  return resolvePathFromRoot(ObsidianPluginRepoPaths.NpmShrinkwrapJson, cwd) ?? throwExpression(new Error('Could not determine the npm-shrinkwrap.json path'));
+  return ensureNonNullable(resolvePathFromRoot(ObsidianPluginRepoPaths.NpmShrinkwrapJson, cwd), () => 'Could not determine the npm-shrinkwrap.json path');
 }
 
 /**
@@ -159,7 +161,7 @@ export function getNpmShrinkWrapJsonPath(cwd?: string): string {
  * @returns The resolved path to the `package.json` file.
  */
 export function getPackageJsonPath(cwd?: string): string {
-  return resolvePathFromRoot(ObsidianPluginRepoPaths.PackageJson, cwd) ?? throwExpression(new Error('Could not determine the package.json path'));
+  return ensureNonNullable(resolvePathFromRoot(ObsidianPluginRepoPaths.PackageJson, cwd), () => 'Could not determine the package.json path');
 }
 
 /**
@@ -169,7 +171,7 @@ export function getPackageJsonPath(cwd?: string): string {
  * @returns The resolved path to the `package-lock.json` file.
  */
 export function getPackageLockJsonPath(cwd?: string): string {
-  return resolvePathFromRoot(ObsidianPluginRepoPaths.PackageLockJson, cwd) ?? throwExpression(new Error('Could not determine the package-lock.json path'));
+  return ensureNonNullable(resolvePathFromRoot(ObsidianPluginRepoPaths.PackageLockJson, cwd), () => 'Could not determine the package-lock.json path');
 }
 
 /**

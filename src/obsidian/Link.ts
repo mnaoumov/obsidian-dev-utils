@@ -35,6 +35,7 @@ import type { ProcessOptions } from './Vault.ts';
 
 import { abortSignalNever } from '../AbortController.ts';
 import {
+  assertNonNullable,
   normalizeOptionalProperties,
   toJson
 } from '../ObjectUtils.ts';
@@ -825,9 +826,7 @@ export async function editLinksInContent(
   });
   abortSignal.throwIfAborted();
 
-  if (newContent === null) {
-    throw new Error('Failed to update links in content');
-  }
+  assertNonNullable(newContent, () => 'Failed to update links in content');
 
   return newContent;
 }

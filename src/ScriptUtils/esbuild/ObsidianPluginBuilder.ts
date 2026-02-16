@@ -18,8 +18,10 @@ import { context } from 'esbuild';
 // eslint-disable-next-line import-x/no-rename-default -- We need a temp variable to apply `extractDefaultExportInterop()` fix below.
 import sassPlugin_ from 'esbuild-sass-plugin';
 
-import { throwExpression } from '../../Error.ts';
-import { extractDefaultExportInterop } from '../../ObjectUtils.ts';
+import {
+  ensureNonNullable,
+  extractDefaultExportInterop
+} from '../../ObjectUtils.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
 import { buildCompile } from '../build.ts';
@@ -111,10 +113,10 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
   const obsidianConfigFolder = options.obsidianConfigFolder ?? obsidianPluginBuilderEnv.OBSIDIAN_CONFIG_FOLDER ?? '';
   const isProductionBuild = options.mode === BuildMode.Production;
 
-  const distFolder = resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev);
-  if (!distFolder) {
-    throw new Error('Could not determine the dist folder');
-  }
+  const distFolder = ensureNonNullable(
+    resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev),
+    () => 'Could not determine the dist folder'
+  );
 
   if (existsSync(distFolder)) {
     await rm(distFolder, { recursive: true });
@@ -129,10 +131,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
   }
 
   for (const fileName of distFileNames) {
-    const localFile = resolvePathFromRoot(fileName);
-    if (!localFile) {
-      throw new Error(`Could not determine the local file for ${fileName}`);
-    }
+    const localFile = ensureNonNullable(resolvePathFromRoot(fileName), () => `Could not determine the local file for ${fileName}`);
     const distFile = join(distFolder, fileName);
 
     if (existsSync(localFile)) {
@@ -153,8 +152,10 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     bundle: true,
     conditions: ['browser'],
     entryPoints: [
-      resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs))
-        ?? throwExpression(new Error('Could not determine the entry point for the plugin'))
+      ensureNonNullable(
+        resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs)),
+        () => 'Could not determine the entry point for the plugin'
+      )
     ],
     external: [
       'obsidian',
