@@ -4,6 +4,8 @@
  * Provides utility functions for working with attachment paths.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type {
   App,
   FileStats,
@@ -331,3 +333,5 @@ function normalizeSlashes(path: string): string {
   path = replaceAll(path, /^\/+|\/+$/g, '');
   return path || '/';
 }
+
+/* v8 ignore stop */

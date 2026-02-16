@@ -97,9 +97,11 @@ export interface LoopOptions<T> {
 export async function loop<T>(options: LoopOptions<T>): Promise<void> {
   const DEFAULT_OPTIONS: Required<LoopOptions<T>> = {
     abortSignal: abortSignalNever(),
+    /* v8 ignore start -- buildNoticeMessage is required in LoopOptions and always overridden by the spread. */
     buildNoticeMessage() {
       throw new Error('buildNoticeMessage is required');
     },
+    /* v8 ignore stop */
     items: [],
     // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     noticeBeforeShownTimeoutInMilliseconds: 500,

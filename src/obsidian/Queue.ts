@@ -174,9 +174,11 @@ function getQueue(app: App): ValueWrapper<Queue> {
 async function processNextQueueItem(app: App): Promise<void> {
   const queue = getQueue(app).value;
   const item = queue.items[0];
+  /* v8 ignore start -- Defensive check; processNextQueueItem is only called after an item is pushed. */
   if (!item) {
     return;
   }
+  /* v8 ignore stop */
 
   await addErrorHandler(() =>
     runWithTimeoutNotice({

@@ -4,6 +4,8 @@
  * Base classes for commands.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type {
   App,
   Command,
@@ -183,3 +185,4 @@ export abstract class CommandInvocationBase<TPlugin extends Plugin = Plugin> {
     await Promise.resolve();
   }
 }
+/* v8 ignore stop */

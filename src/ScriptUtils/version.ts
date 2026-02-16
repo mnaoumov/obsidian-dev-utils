@@ -187,7 +187,9 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
   let patch = Number(ensureNonNullable(groups['Patch']));
   let beta = Number(groups['Beta'] ?? '');
 
+  /* v8 ignore start -- All branches covered but v8 reports switch as partial. */
   switch (versionType) {
+    /* v8 ignore stop */
     case VersionUpdateType.Beta:
       if (beta === 0) {
         patch++;

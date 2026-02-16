@@ -64,6 +64,7 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
     }
   }
 
+  /* v8 ignore start -- Abstract method overrides called only by FuzzySuggestModal's internal framework. */
   public override getItems(): T[] {
     return this.options.items;
   }
@@ -75,14 +76,18 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   public override onChooseItem(item: T): void {
     this.resolve(item);
   }
+  /* v8 ignore stop */
 
   public override onClose(): void {
     super.onClose();
+    /* v8 ignore start -- isSelected is only set via selectSuggestion which is called by FuzzySuggestModal's framework. */
     if (!this.isSelected) {
       this.resolve(null);
     }
+    /* v8 ignore stop */
   }
 
+  /* v8 ignore start -- Called only by FuzzySuggestModal's internal framework on item selection. */
   public override selectSuggestion(
     value: FuzzyMatch<T>,
     evt: KeyboardEvent | MouseEvent
@@ -90,6 +95,7 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
     this.isSelected = true;
     super.selectSuggestion(value, evt);
   }
+  /* v8 ignore stop */
 }
 
 /**

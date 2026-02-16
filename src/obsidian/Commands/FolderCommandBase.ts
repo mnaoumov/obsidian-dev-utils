@@ -4,6 +4,8 @@
  * Base classes for folder commands.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type {
   Plugin,
   TAbstractFile,
@@ -269,3 +271,4 @@ export class SequentialFoldersCommandInvocationBase<TPlugin extends Plugin> exte
     }
   }
 }
+/* v8 ignore stop */

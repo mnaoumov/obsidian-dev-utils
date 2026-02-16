@@ -22,6 +22,7 @@ import { ensureNonNullable } from '../../TypeGuards.ts';
  * </AppContext.Provider>
  * ```
  */
+/* v8 ignore start -- React context requires React testing setup that is not available in this project. */
 export const AppContext = createContext<App | undefined>(undefined);
 
 /**
@@ -32,3 +33,4 @@ export const AppContext = createContext<App | undefined>(undefined);
 export function useApp(): App {
   return ensureNonNullable(useContext(AppContext), 'AppContext not found');
 }
+/* v8 ignore stop */

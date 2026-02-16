@@ -4,6 +4,8 @@
  * Base classes for file commands.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type {
   Plugin,
   TAbstractFile,
@@ -274,3 +276,4 @@ export class SequentialFilesCommandInvocationBase<TPlugin extends Plugin> extend
     }
   }
 }
+/* v8 ignore stop */

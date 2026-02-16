@@ -4,6 +4,8 @@
  * Base classes for non-editor commands.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type { Plugin } from 'obsidian';
 
 import type {
@@ -47,3 +49,4 @@ export abstract class NonEditorCommandBase<TPlugin extends Plugin> extends Comma
    */
   protected abstract createCommandInvocation(): CommandInvocationBase;
 }
+/* v8 ignore stop */

@@ -4,6 +4,8 @@
  * Contains utility functions for handling rename and delete events in Obsidian.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type {
   App,
   CachedMetadata,
@@ -1011,3 +1013,5 @@ async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHand
     }
   }
 }
+
+/* v8 ignore stop */

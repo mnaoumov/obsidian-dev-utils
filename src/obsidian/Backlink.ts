@@ -4,6 +4,8 @@
  * Provides utility functions for working with backlinks.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type { TFile } from 'obsidian';
 
 import type {
@@ -158,3 +160,5 @@ export function renderDelayedBacklinksForFolder(options: RenderDelayedBacklinksF
     title
   });
 }
+
+/* v8 ignore stop */

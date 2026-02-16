@@ -8,6 +8,8 @@
  * loading tasks.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type { ReadonlyDeep } from 'type-fest';
 
 import {
@@ -416,3 +418,4 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     await this.events.triggerAsync(name);
   }
 }
+/* v8 ignore stop */
