@@ -14,6 +14,7 @@ export default defineConfig({
     exclude: ['node_modules', 'dist'],
     environment: 'node',
     globals: false,
+    setupFiles: ['./__mocks__/obsidian-globals/index.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
