@@ -1,6 +1,6 @@
-// eslint-disable-next-line import-x/no-nodejs-modules -- needed for mock child process
+// eslint-disable-next-line import-x/no-nodejs-modules -- needed for mock child process.
 import { EventEmitter } from 'node:events';
-// eslint-disable-next-line import-x/no-nodejs-modules -- needed for mock child process
+// eslint-disable-next-line import-x/no-nodejs-modules -- needed for mock child process.
 import { PassThrough } from 'node:stream';
 import {
   beforeEach,

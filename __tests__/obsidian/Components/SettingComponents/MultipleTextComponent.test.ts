@@ -76,7 +76,7 @@ describe('MultipleTextComponent', () => {
     comp.setValue(['line1', 'line2']);
     const callback = vi.fn();
     comp.onChange(callback);
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- simulateChange is intended for test use
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- simulateChange is intended for test use.
     comp.simulateChange();
     expect(callback).toHaveBeenCalledWith(['line1', 'line2']);
   });

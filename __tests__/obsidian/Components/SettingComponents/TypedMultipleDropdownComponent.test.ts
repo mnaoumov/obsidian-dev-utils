@@ -101,7 +101,7 @@ describe('TypedMultipleDropdownComponent', () => {
     opt0.selected = true;
     const callback = vi.fn();
     comp.onChange(callback);
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- simulateChange is intended for test use
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- simulateChange is intended for test use.
     comp.simulateChange();
     expect(callback).toHaveBeenCalledWith(['a']);
   });
