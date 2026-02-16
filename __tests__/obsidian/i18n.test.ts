@@ -12,6 +12,8 @@ import {
   noopAsync
 } from '../../src/Function.ts';
 
+const HEAVY_IMPORT_TIMEOUT = 30_000;
+
 const mockAddResourceBundleFn = vi.fn();
 const mockInitFn = vi.fn(noopAsync);
 const mockTLibFn = vi.fn((selector: unknown) => {
@@ -61,7 +63,7 @@ describe('i18n module', () => {
     it('should export DEFAULT_NS as "translation"', async () => {
       const { DEFAULT_NS } = await import('../../src/obsidian/i18n/i18n.ts');
       expect(DEFAULT_NS).toBe('translation');
-    });
+    }, HEAVY_IMPORT_TIMEOUT);
   });
 
   describe('t function auto-initialization', () => {
