@@ -52,6 +52,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
   }
 
   private readonly multipleDropdownComponent: MultipleDropdownComponent;
+  private simulateChangeCallback?: () => void;
   private readonly values: T[] = [];
 
   /**
@@ -112,7 +113,11 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    * @returns The component.
    */
   public onChange(callback: (value: readonly T[]) => Promisable<void>): this {
-    this.multipleDropdownComponent.onChange(() => callback(this.getValue()));
+    const changeHandler = (): void => {
+      callback(this.getValue());
+    };
+    this.simulateChangeCallback = changeHandler;
+    this.multipleDropdownComponent.onChange(changeHandler);
     return this;
   }
 
@@ -138,5 +143,12 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
     const indices = value.map((v) => this.values.indexOf(v)).filter((index) => index !== -1);
     this.multipleDropdownComponent.setValue(indices.map((index) => String(index)));
     return this;
+  }
+
+  /**
+   * @deprecated Use only from tests to simulate a change event.
+   */
+  public simulateChange(): void {
+    this.simulateChangeCallback?.();
   }
 }

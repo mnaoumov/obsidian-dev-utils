@@ -18,8 +18,7 @@ describe('AsyncEventsComponent', () => {
     const eventRef = {
       asyncEvents: { offref }
     };
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- Mock doesn't implement full Obsidian type
-    comp.registerAsyncEvent(eventRef as any);
+    comp.registerAsyncEvent(eventRef as never);
   });
 
   it('should register an async event via the standalone function', () => {
@@ -29,8 +28,7 @@ describe('AsyncEventsComponent', () => {
     const eventRef = {
       asyncEvents: { offref }
     };
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- Mock doesn't implement full Obsidian type
-    registerAsyncEvent(component as any, eventRef as any);
+    registerAsyncEvent(component as never, eventRef as never);
     expect(registerSpy).toHaveBeenCalled();
     // Call the registered callback to cover the offref path
     const firstCall = registerSpy.mock.calls[0];

@@ -61,6 +61,7 @@ export class CodeHighlighterComponent extends ValueComponent<string>
   private readonly codeEl: HTMLElement;
   private placeholder = '';
   private readonly preEl: HTMLElement;
+  private simulateChangeCallback?: () => void;
   private tabSize: number;
   private readonly textAreaComponent: TextAreaComponent;
 
@@ -127,7 +128,11 @@ export class CodeHighlighterComponent extends ValueComponent<string>
    * @returns The component.
    */
   public onChange(callback: (newValue: string) => Promisable<void>): this {
-    this.textAreaComponent.onChange(() => callback(this.getValue()));
+    const changeHandler = (): void => {
+      callback(this.getValue());
+    };
+    this.simulateChangeCallback = changeHandler;
+    this.textAreaComponent.onChange(changeHandler);
     return this;
   }
 
@@ -206,6 +211,13 @@ export class CodeHighlighterComponent extends ValueComponent<string>
     this.textAreaComponent.setValue(value);
     invokeAsyncSafely(this.updateHighlightedCode.bind(this));
     return this;
+  }
+
+  /**
+   * @deprecated Use only from tests to simulate a change event.
+   */
+  public simulateChange(): void {
+    this.simulateChangeCallback?.();
   }
 
   private handleKeyDown(evt: KeyboardEvent): void {

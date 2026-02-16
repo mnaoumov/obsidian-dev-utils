@@ -53,6 +53,8 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
 
   private readonly dropdownComponent: DropdownComponent;
 
+  private simulateChangeCallback?: () => void;
+
   private readonly values: T[] = [];
 
   /**
@@ -112,7 +114,11 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
    * @returns The component.
    */
   public onChange(callback: (value: null | T) => Promisable<void>): this {
-    this.dropdownComponent.onChange(() => callback(this.getValue()));
+    const changeHandler = (): void => {
+      callback(this.getValue());
+    };
+    this.simulateChangeCallback = changeHandler;
+    this.dropdownComponent.onChange(changeHandler);
     return this;
   }
 
@@ -138,5 +144,12 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
     const index = value === null ? -1 : this.values.indexOf(value);
     this.dropdownComponent.selectEl.selectedIndex = index;
     return this;
+  }
+
+  /**
+   * @deprecated Use only from tests to simulate a change event.
+   */
+  public simulateChange(): void {
+    this.simulateChangeCallback?.();
   }
 }

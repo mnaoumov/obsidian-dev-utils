@@ -92,7 +92,7 @@ describe('TypedMultipleDropdownComponent', () => {
     expect(comp.getValue()).toEqual(['a']);
   });
 
-  it('should call onChange callback when dropdown changes', () => {
+  it('should register onChange callback and forward current value', () => {
     const comp = createComponent();
     comp.addOption('a', 'A');
     comp.addOption('b', 'B');
@@ -101,8 +101,8 @@ describe('TypedMultipleDropdownComponent', () => {
     opt0.selected = true;
     const callback = vi.fn();
     comp.onChange(callback);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any -- Accessing private mock for test
-    (comp as any).multipleDropdownComponent.dropdownComponent.simulateChange();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- simulateChange is intended for test use
+    comp.simulateChange();
     expect(callback).toHaveBeenCalledWith(['a']);
   });
 
