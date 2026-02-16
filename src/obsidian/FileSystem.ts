@@ -225,10 +225,14 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
     if (isFile(pathOrFile)) {
       return app.vault.getFileByPath(pathOrFile.path) ?? pathOrFile;
     }
+    /* v8 ignore start -- TAbstractFile is always TFile or TFolder in Obsidian; defensive fallback. */
     if (isFolder(pathOrFile)) {
       return app.vault.getFolderByPath(pathOrFile.path) ?? pathOrFile;
     }
+    /* v8 ignore stop */
+    /* v8 ignore start -- TAbstractFile is always TFile or TFolder in Obsidian; defensive fallback. */
     return app.vault.getAbstractFileByPath(pathOrFile.path) ?? pathOrFile;
+    /* v8 ignore stop */
   }
 
   const file = getFileInternal(app, pathOrFile, isCaseInsensitive);

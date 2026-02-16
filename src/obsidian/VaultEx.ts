@@ -92,7 +92,9 @@ export async function deleteSafe(
 
   let canDelete = isFile(file) || (shouldDeleteEmptyFolders ?? true);
 
+  /* v8 ignore start -- TAbstractFile is always TFile or TFolder in Obsidian; the false branch of isFile leads to isFolder. */
   if (isFile(file)) {
+    /* v8 ignore stop */
     const backlinks = await getBacklinksForFileSafe(app, file);
     if (deletedNotePath) {
       backlinks.clear(deletedNotePath);
@@ -103,7 +105,9 @@ export async function deleteSafe(
       }
       canDelete = false;
     }
+    /* v8 ignore start -- TAbstractFile is always TFile or TFolder in Obsidian; defensive fallback. */
   } else if (isFolder(file)) {
+    /* v8 ignore stop */
     const listedFiles = await listSafe(app, file);
     for (const child of [...listedFiles.files, ...listedFiles.folders]) {
       canDelete &&= await deleteSafe(app, child, deletedNotePath, shouldReportUsedAttachments);

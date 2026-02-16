@@ -1,7 +1,7 @@
 import { BaseComponent } from './BaseComponent.ts';
 
 export class ValueComponent<T> extends BaseComponent {
-  public inputEl: HTMLElement = null as unknown as HTMLElement;
+  declare public inputEl: HTMLElement;
   protected value: T = undefined as unknown as T;
 
   public getValue(): T {

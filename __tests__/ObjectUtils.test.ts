@@ -7,6 +7,7 @@ import {
 import { noop } from '../src/Function.ts';
 import {
   assignWithNonEnumerableProperties,
+  castTo,
   cloneWithNonEnumerableProperties,
   deepEqual,
   deleteProperties,
@@ -597,6 +598,20 @@ describe('ObjectUtils', () => {
       const obj = { a: 1, b: undefined };
       const result = normalizeOptionalProperties<{ a: number; b?: number }>(obj);
       expect(result).toBe(obj);
+    });
+  });
+
+  describe('castTo', () => {
+    it('should cast a value to the specified type', () => {
+      const value: unknown = 'hello';
+      const result: string = castTo<string>(value);
+      expect(result).toBe('hello');
+    });
+
+    it('should cast a number to a different type', () => {
+      const value: unknown = 42;
+      const result: number = castTo<number>(value);
+      expect(result).toBe(42);
     });
   });
 });

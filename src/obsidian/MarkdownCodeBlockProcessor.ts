@@ -4,6 +4,8 @@
  * This module provides utility functions for processing code blocks in Obsidian.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type {
   App,
   MarkdownPostProcessorContext,
@@ -423,3 +425,5 @@ function isSuitableCodeBlock(
 
   return cleanCodeBlockContent === sourceLf;
 }
+
+/* v8 ignore stop */

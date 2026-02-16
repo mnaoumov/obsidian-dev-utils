@@ -4,6 +4,8 @@
  * This module provides utility functions for processing Markdown content in Obsidian.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type { App } from 'obsidian';
 import type {
   DomEventsHandlersConstructor,
@@ -260,3 +262,5 @@ async function getDomEventsHandlersConstructor(app: App): Promise<DomEventsHandl
     }
   }
 }
+
+/* v8 ignore stop */

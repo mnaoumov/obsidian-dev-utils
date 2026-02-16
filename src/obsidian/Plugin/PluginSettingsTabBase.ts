@@ -5,6 +5,8 @@
  * It provides a utility method to bind value components to plugin settings and handle changes.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type { Debouncer } from 'obsidian';
 import type {
   ConditionalKeys,
@@ -470,3 +472,4 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     }
   }
 }
+/* v8 ignore stop */

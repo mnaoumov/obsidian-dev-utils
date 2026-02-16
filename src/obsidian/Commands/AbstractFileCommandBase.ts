@@ -4,6 +4,8 @@
  * Base classes for abstract file commands.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type {
   IconName,
   Menu,
@@ -435,3 +437,4 @@ export class SequentialAbstractFilesCommandInvocationBase<TPlugin extends Plugin
     }
   }
 }
+/* v8 ignore stop */

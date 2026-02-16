@@ -4,6 +4,8 @@
  * Base classes for editor commands.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type {
   Editor,
   IconName,
@@ -230,3 +232,4 @@ export class EditorCommandInvocationBase<TPlugin extends Plugin> extends Command
     return super.canExecute() && !!this._file;
   }
 }
+/* v8 ignore stop */

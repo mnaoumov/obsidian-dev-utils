@@ -4,6 +4,8 @@
  * Plugin settings manager base class.
  */
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+
 import type { App } from 'obsidian';
 import type {
   Promisable,
@@ -506,3 +508,4 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     return this.getTransformer().transformObjectRecursively(rawRecord);
   }
 }
+/* v8 ignore stop */

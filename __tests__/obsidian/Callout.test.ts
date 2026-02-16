@@ -89,7 +89,13 @@ vi.mock('../../src/obsidian/Dataview.ts', () => ({
 }));
 
 vi.mock('../../src/obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn(() => 'mock-translation')
+  t: vi.fn((selector: unknown) => {
+    if (typeof selector === 'function') {
+      const proxy: unknown = new Proxy({}, { get: (): unknown => proxy });
+      (selector as (root: unknown) => unknown)(proxy);
+    }
+    return 'mock-translation';
+  })
 }));
 
 vi.mock('../../src/obsidian/Queue.ts', () => ({

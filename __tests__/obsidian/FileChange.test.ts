@@ -12,6 +12,7 @@ import {
 import type { FileChange } from '../../src/obsidian/FileChange.ts';
 
 import { getLibDebugger } from '../../src/Debug.ts';
+import { printError } from '../../src/Error.ts';
 import { noop } from '../../src/Function.ts';
 import {
   applyContentChanges,
@@ -25,6 +26,7 @@ import {
   toFrontmatterChangeWithOffsets
 } from '../../src/obsidian/FileChange.ts';
 import { isCanvasFile } from '../../src/obsidian/FileSystem.ts';
+import { parseFrontmatter } from '../../src/obsidian/Frontmatter.ts';
 import { process } from '../../src/obsidian/Vault.ts';
 import { assertNonNullable } from '../../src/TypeGuards.ts';
 
@@ -40,6 +42,15 @@ vi.mock('../../src/obsidian/FileSystem.ts', () => ({
   getPath: vi.fn((_app: unknown, p: unknown) => typeof p === 'string' ? p : (p as { path: string }).path),
   isCanvasFile: vi.fn(() => false)
 }));
+
+vi.mock('../../src/obsidian/Frontmatter.ts', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../src/obsidian/Frontmatter.ts')>();
+  return {
+    ...original,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Spy wrapper passes through to original implementation
+    parseFrontmatter: vi.fn((...args: Parameters<typeof original.parseFrontmatter>) => original.parseFrontmatter(...args))
+  };
+});
 
 vi.mock('../../src/obsidian/Vault.ts', () => ({
   process: vi.fn(async (_app: unknown, _pathOrFile: unknown, fn: unknown) => {
@@ -752,5 +763,67 @@ describe('debug logging', () => {
     const changes = [makeContentChange('MISMATCH', 'new', 0)];
     await applyContentChanges(signal, content, 'test.md', changes, true);
     expect(getLibDebugger).toHaveBeenCalledWith('FileChange:validateChanges');
+  });
+});
+
+// --- Overlapping content changes ---
+
+describe('overlapping content changes', () => {
+  let signal: AbortSignal;
+
+  beforeEach(() => {
+    signal = new AbortController().signal;
+  });
+
+  it('should merge overlapping changes when the overlapping region matches', async () => {
+    const content = 'ABCDE';
+    // Change 1: replace full "ABCDE" (0-5) with "XYCDE"
+    // Change 2: replace "CDE" (2-5) with "ZZZ"
+    // After Change 1 is applied, the new content has "CDE" at positions 2-5,
+    // Which matches Change 2's oldContent → merge succeeds
+    const changes = [
+      makeContentChange('ABCDE', 'XYCDE', 0),
+      makeContentChange('CDE', 'ZZZ', 2)
+    ];
+    const result = await applyContentChanges(signal, content, 'test.md', changes);
+    expect(result).toBe('XYZZZ');
+  });
+
+  it('should throw on overlapping changes when the overlapping region does not match', async () => {
+    const content = 'ABCDE';
+    // Change 1: replace "ABCDE" (0-5) with "VWXYZ"
+    // Change 2: replace "CDE" (2-5) with "ZZZ"
+    // After Change 1, positions 2-5 contain "XYZ", not "CDE" → throws
+    const changes = [
+      makeContentChange('ABCDE', 'VWXYZ', 0),
+      makeContentChange('CDE', 'ZZZ', 2)
+    ];
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      noop();
+    });
+    await expect(applyContentChanges(signal, content, 'test.md', changes))
+      .rejects.toThrow('Overlapping changes');
+    errorSpy.mockRestore();
+  });
+});
+
+// --- parseFrontmatterSafely catch block ---
+
+describe('frontmatter parsing failure', () => {
+  it('should call printError and return null when parseFrontmatter throws', async () => {
+    const signal = new AbortController().signal;
+    vi.mocked(parseFrontmatter).mockImplementationOnce(() => {
+      throw new Error('bad yaml');
+    });
+    // Content changes only (no frontmatter changes), so validation passes
+    // '---\n' (4) + 'bad: yaml\n' (10) + '---\n' (4) + 'Hello ' (6) = offset 24
+    const content = '---\nbad: yaml\n---\nHello [[old]] world';
+    const changes = [makeContentChange('[[old]]', '[[new]]', 24)];
+    const result = await applyContentChanges(signal, content, 'test.md', changes);
+    expect(printError).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Frontmatter parsing failed in test.md'
+    }));
+    // Content changes still apply since validation passes for them
+    expect(result).toBe('---\nbad: yaml\n---\nHello [[new]] world');
   });
 });

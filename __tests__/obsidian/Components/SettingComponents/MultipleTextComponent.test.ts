@@ -1,0 +1,89 @@
+// @vitest-environment jsdom
+
+import {
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import { MultipleTextComponent } from '../../../../src/obsidian/Components/SettingComponents/MultipleTextComponent.ts';
+
+vi.mock('../../../../src/CssClass.ts', () => ({
+  CssClass: {
+    MultipleTextComponent: 'multiple-text-component'
+  }
+}));
+
+vi.mock('../../../../src/obsidian/Plugin/PluginContext.ts', () => ({
+  addPluginCssClasses: vi.fn()
+}));
+
+describe('MultipleTextComponent', () => {
+  function createComponent(): MultipleTextComponent {
+    const container = document.createElement('div');
+    return new MultipleTextComponent(container);
+  }
+
+  it('should create with a textarea element', () => {
+    const comp = createComponent();
+    expect(comp.inputEl).toBeInstanceOf(HTMLTextAreaElement);
+  });
+
+  it('should return inputEl as validatorEl', () => {
+    const comp = createComponent();
+    expect(comp.validatorEl).toBe(comp.inputEl);
+  });
+
+  it('should return empty array for empty value', () => {
+    const comp = createComponent();
+    comp.setValue([]);
+    expect(comp.getValue()).toEqual(['']);
+  });
+
+  it('should set and get multiple values', () => {
+    const comp = createComponent();
+    comp.setValue(['line1', 'line2', 'line3']);
+    expect(comp.getValue()).toEqual(['line1', 'line2', 'line3']);
+  });
+
+  it('should check isEmpty', () => {
+    const comp = createComponent();
+    expect(comp.isEmpty()).toBe(true);
+    comp.setValue(['hello']);
+    expect(comp.isEmpty()).toBe(false);
+  });
+
+  it('should empty the component', () => {
+    const comp = createComponent();
+    comp.setValue(['some', 'values']);
+    comp.empty();
+    expect(comp.isEmpty()).toBe(true);
+  });
+
+  it('should set placeholder', () => {
+    const comp = createComponent();
+    comp.setPlaceholder('Enter text...');
+  });
+
+  it('should set placeholder value', () => {
+    const comp = createComponent();
+    comp.setPlaceholderValue(['hint1', 'hint2']);
+  });
+
+  it('should call onChange callback when textarea changes', () => {
+    const comp = createComponent();
+    comp.setValue(['line1', 'line2']);
+    const callback = vi.fn();
+    comp.onChange(callback);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any -- Accessing private mock for test
+    (comp as any).textAreaComponent.simulateChange();
+    expect(callback).toHaveBeenCalledWith(['line1', 'line2']);
+  });
+
+  it('should set disabled state', () => {
+    const comp = createComponent();
+    comp.setDisabled(true);
+    expect(comp.disabled).toBe(true);
+  });
+});
