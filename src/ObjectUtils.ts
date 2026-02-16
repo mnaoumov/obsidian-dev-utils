@@ -16,10 +16,7 @@ import type {
   StringKeys
 } from './Type.ts';
 
-import {
-  errorToString,
-  throwExpression
-} from './Error.ts';
+import { errorToString } from './Error.ts';
 import { replaceAll } from './String.ts';
 
 /**
@@ -160,6 +157,27 @@ type RemoveUndefinedOverload<T extends object> = MandatoryKeysWithUndefined<T> e
 type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string[]> = [obj: T, keysToKeep: ExactMembers<MandatoryKeysWithUndefined<T>, K>];
 
 /**
+ * Asserts that a value is not `null` or `undefined`, narrowing its type in place.
+ *
+ * @typeParam T - The type of the value.
+ * @param value - The value to check.
+ * @param errorFactory - Optional factory function that returns an {@link Error} or error message string.
+ * @throws If the value is `null` or `undefined`.
+ */
+export function assertNonNullable<T>(value: T, errorFactory?: () => Error | string): asserts value is NonNullable<T> {
+  if (value !== null && value !== undefined) {
+    return;
+  }
+
+  if (!errorFactory) {
+    throw new Error(value === null ? 'Value is null' : 'Value is undefined');
+  }
+
+  const error = errorFactory();
+  throw typeof error === 'string' ? new Error(error) : error;
+}
+
+/**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
  *
  * @param target - The target object to assign properties to.
@@ -194,7 +212,6 @@ export function assignWithNonEnumerableProperties<T extends object, U, V, W>(tar
 export function assignWithNonEnumerableProperties(target: object, ...sources: object[]): object {
   return _assignWithNonEnumerableProperties(target, ...sources);
 }
-
 /**
  * Clones an object, including non-enumerable properties.
  *
@@ -287,6 +304,20 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
   // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
   delete obj[propertyName];
   return true;
+}
+
+/**
+ * Ensures that a value is not `null` or `undefined` and returns it with narrowed type.
+ *
+ * @typeParam T - The type of the value.
+ * @param value - The value to check.
+ * @param errorFactory - Optional factory function that returns an {@link Error} or error message string.
+ * @returns The value with `null` and `undefined` excluded from its type.
+ * @throws If the value is `null` or `undefined`.
+ */
+export function ensureNonNullable<T>(value: T, errorFactory?: () => Error | string): NonNullable<T> {
+  assertNonNullable(value, errorFactory);
+  return value;
 }
 
 /**
@@ -602,7 +633,7 @@ function applySubstitutions(options: ApplySubstitutionsOptions): MaybeReturn<str
       return options.substitutions.circularReference;
     case TokenSubstitutionKey.Function:
       /* v8 ignore start -- Function index is always valid since we push before accessing. */
-      return options.functionTexts[options.index] ?? throwExpression(new Error(`Function with index ${String(options.index)} not found`));
+      return ensureNonNullable(options.functionTexts[options.index], () => `Function with index ${String(options.index)} not found`);
       /* v8 ignore stop */
     case TokenSubstitutionKey.MaxDepthLimitReached:
       return options.substitutions.maxDepthLimitReached;

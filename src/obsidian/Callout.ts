@@ -9,8 +9,10 @@ import type { ValueProvider } from '../ValueProvider.ts';
 import type { DataviewInlineApi } from './Dataview.ts';
 import type { AddToQueueOptions } from './Queue.ts';
 
-import { throwExpression } from '../Error.ts';
-import { normalizeOptionalProperties } from '../ObjectUtils.ts';
+import {
+  ensureNonNullable,
+  normalizeOptionalProperties
+} from '../ObjectUtils.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { getRenderedContainer } from './Dataview.ts';
 import { t } from './i18n/i18n.ts';
@@ -80,7 +82,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
   } = options;
   const modifier = getModifier(mode);
   const callout = dv.paragraph(`> [!${type}]${modifier} ${header}\n>\n> <div class="content"></div>`);
-  const contentDiv = callout.querySelector<HTMLDivElement>('.content') ?? throwExpression(new Error('Content div not found'));
+  const contentDiv = ensureNonNullable(callout.querySelector<HTMLDivElement>('.content'), () => 'Content div not found');
   dv.paragraph('Loading... ⏳', { container: contentDiv });
 
   const observer = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {

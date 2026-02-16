@@ -18,10 +18,7 @@ import {
   emitAsyncErrorEvent,
   getStackTrace
 } from '../../src/Error.ts';
-import {
-  noop,
-  noopAsync
-} from '../../src/Function.ts';
+import { noop } from '../../src/Function.ts';
 import { loop } from '../../src/obsidian/Loop.ts';
 import { addPluginCssClasses } from '../../src/obsidian/Plugin/PluginContext.ts';
 import { assertNotNullable } from '../TestHelpers.ts';
@@ -91,9 +88,7 @@ if (typeof globalThis.createFragment === 'undefined') {
   };
 }
 if (typeof globalThis.sleep === 'undefined') {
-  (globalThis as Record<string, unknown>)['sleep'] = async (_ms: number): Promise<void> => {
-    await noopAsync();
-  };
+  (globalThis as Record<string, unknown>)['sleep'] = (_ms: number): Promise<void> => Promise.resolve();
 }
 
 describe('loop', () => {

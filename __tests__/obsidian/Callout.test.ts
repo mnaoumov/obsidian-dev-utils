@@ -67,13 +67,8 @@ const mocks = vi.hoisted(() => ({
   addToQueue: vi.fn()
 }));
 
-vi.mock('../../src/Error.ts', () => ({
-  throwExpression: vi.fn((err: Error) => {
-    throw err;
-  })
-}));
-
-vi.mock('../../src/ObjectUtils.ts', () => ({
+vi.mock('../../src/ObjectUtils.ts', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../src/ObjectUtils.ts')>(),
   normalizeOptionalProperties: vi.fn((obj: unknown) => obj)
 }));
 

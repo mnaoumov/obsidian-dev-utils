@@ -23,6 +23,7 @@ import type { PathOrAbstractFile } from './FileSystem.ts';
 
 import { requestAnimationFrameAsync } from '../Async.ts';
 import { getZIndex } from '../HTMLElement.ts';
+import { assertNonNullable } from '../ObjectUtils.ts';
 import {
   getAbstractFileOrNull,
   getPath,
@@ -251,10 +252,7 @@ async function getDomEventsHandlersConstructor(app: App): Promise<DomEventsHandl
       leaf.detach();
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Check is required as TypeScript compiler cannot know that ctor is initialized.
-    if (!ctor) {
-      throw new Error('Failed to get register dom events handlers constructor');
-    }
+    assertNonNullable(ctor, () => 'Failed to get register dom events handlers constructor');
     return ctor;
   } finally {
     if (shouldDelete) {

@@ -1,3 +1,4 @@
+import { assertNonNullable } from 'obsidian-dev-utils/ObjectUtils';
 import { getFolderName } from 'obsidian-dev-utils/Path';
 import { existsSync } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
 import {
@@ -15,9 +16,7 @@ export async function formatWithPrettier(rewrite: boolean): Promise<void> {
   const prettierJsonPath = resolvePathFromRootSafe(PRETTIER_CONFIG_FILE_NAME);
   if (!existsSync(prettierJsonPath)) {
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
-    if (!packageFolder) {
-      throw new Error('Could not find package folder.');
-    }
+    assertNonNullable(packageFolder, () => 'Could not find package folder.');
     throw new Error(`${PRETTIER_CONFIG_FILE_NAME} not found`);
   }
 

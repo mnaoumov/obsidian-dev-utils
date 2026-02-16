@@ -15,7 +15,7 @@ import type {
   PathOrFile
 } from './FileSystem.ts';
 
-import { throwExpression } from '../Error.ts';
+import { ensureNonNullable } from '../ObjectUtils.ts';
 import { renderCallout } from './Callout.ts';
 import { renderPaginatedTable } from './Dataview.ts';
 import { fixTitle } from './DataviewLink.ts';
@@ -103,7 +103,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
       const markdownLink = generateMarkdownLink({
         app: dv.app,
         sourcePathOrFile: dv.current().file.path,
-        targetPathOrFile: dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path) ?? throwExpression(new Error('Link not found'))
+        targetPathOrFile: ensureNonNullable(dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path), () => 'Link not found')
       });
 
       return `${markdownLink} (${backLinkPath})`;

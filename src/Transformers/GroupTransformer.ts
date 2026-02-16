@@ -4,7 +4,10 @@
  * A transformer that combines multiple transformers.
  */
 
-import { throwExpression } from '../Error.ts';
+import {
+  assertNonNullable,
+  ensureNonNullable
+} from '../ObjectUtils.ts';
 import { Transformer } from './Transformer.ts';
 
 /**
@@ -47,7 +50,7 @@ export class GroupTransformer extends Transformer {
    * @returns The transformer with the given id.
    */
   public override getTransformer(transformerId: string): Transformer {
-    return this.transformers.find((t) => t.id === transformerId) ?? throwExpression(`No transformer with id ${transformerId} found`);
+    return ensureNonNullable(this.transformers.find((t) => t.id === transformerId), () => `No transformer with id ${transformerId} found`);
   }
 
   /**
@@ -59,9 +62,7 @@ export class GroupTransformer extends Transformer {
    */
   public override transformValue(value: unknown, key: string): unknown {
     const transformer = this.getFirstTransformerThatCanTransform(value, key);
-    if (transformer === null) {
-      throw new Error('No transformer can transform the value');
-    }
+    assertNonNullable(transformer, () => 'No transformer can transform the value');
 
     return transformer.transformValue(value, key);
   }

@@ -12,6 +12,7 @@ import type {
 } from 'obsidian';
 
 import { invokeAsyncSafely } from '../../Async.ts';
+import { assertNonNullable } from '../../ObjectUtils.ts';
 
 /**
  * Options for creating a command.
@@ -175,9 +176,7 @@ export abstract class CommandInvocationBase<TPlugin extends Plugin = Plugin> {
    * Executes the command.
    */
   protected async execute(): Promise<void> {
-    if (this.lastCanExecuteResult === undefined) {
-      throw new Error('canExecute() must be called before execute()');
-    }
+    assertNonNullable(this.lastCanExecuteResult, () => 'canExecute() must be called before execute()');
     if (!this.lastCanExecuteResult) {
       throw new Error('canExecute() must return true before execute()');
     }
