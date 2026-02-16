@@ -2,12 +2,11 @@ import type {
   App,
   CachedMetadata,
   Plugin,
-  Reference,
-  TFile
+  Reference
 } from 'obsidian';
 
+import { TFile } from 'obsidian';
 // @vitest-environment jsdom
-
 import {
   beforeEach,
   describe,
@@ -15,26 +14,6 @@ import {
   it,
   vi
 } from 'vitest';
-
-vi.mock('../../src/obsidian/MetadataCache.ts', async (importOriginal) => {
-  const original = await importOriginal() as Record<string, unknown>;
-  return {
-    ...original,
-    getBacklinksForFileSafe: vi.fn(),
-    getCacheSafe: vi.fn(),
-    parseMetadata: vi.fn(),
-    tempRegisterFilesAndRun: vi.fn((_app: unknown, _files: unknown[], fn: () => unknown) => fn())
-  };
-});
-
-vi.mock('../../src/obsidian/FileChange.ts', async (importOriginal) => {
-  const original = await importOriginal() as Record<string, unknown>;
-  return {
-    ...original,
-    applyContentChanges: vi.fn(),
-    applyFileChanges: vi.fn()
-  };
-});
 
 import { createMockApp } from '../../__mocks__/obsidian/App.ts';
 import {
@@ -75,18 +54,31 @@ import {
   parseMetadata,
   tempRegisterFilesAndRun
 } from '../../src/obsidian/MetadataCache.ts';
-import { assertNonNullable } from '../../src/ObjectUtils.ts';
+import {
+  assertNonNullable,
+  ensureGenericObject,
+  ensureNonNullable
+} from '../../src/TypeGuards.ts';
 
-// Obsidian patches Array.prototype with a remove method
-if (!Array.prototype.remove) {
-  // eslint-disable-next-line no-extend-native -- Obsidian polyfill needed for tests.
-  Array.prototype.remove = function <T>(this: T[], item: T): void {
-    const index = this.indexOf(item);
-    if (index !== -1) {
-      this.splice(index, 1);
-    }
+vi.mock('../../src/obsidian/MetadataCache.ts', async (importOriginal) => {
+  const original = await importOriginal();
+  return {
+    ...(original as object),
+    getBacklinksForFileSafe: vi.fn(),
+    getCacheSafe: vi.fn(),
+    parseMetadata: vi.fn(),
+    tempRegisterFilesAndRun: vi.fn((_app: unknown, _files: unknown[], fn: () => unknown) => fn())
   };
-}
+});
+
+vi.mock('../../src/obsidian/FileChange.ts', async (importOriginal) => {
+  const original = await importOriginal();
+  return {
+    ...(original as object),
+    applyContentChanges: vi.fn(),
+    applyFileChanges: vi.fn()
+  };
+});
 
 describe('splitSubpath', () => {
   describe('should return the full link as linkPath when there is no subpath', () => {
@@ -1617,7 +1609,7 @@ describe('app-dependent functions', () => {
       folders: ['folder']
     });
 
-    const vaultAny = app.vault as Record<string, unknown>;
+    const vaultAny = ensureGenericObject(app.vault);
     vaultAny['getConfig'] = vi.fn((key: string) => {
       if (key === 'useMarkdownLinks') {
         return false;
@@ -1628,15 +1620,13 @@ describe('app-dependent functions', () => {
       return undefined;
     });
 
-    const metadataCacheAny = app.metadataCache as Record<string, unknown>;
+    const metadataCacheAny = ensureGenericObject(app.metadataCache);
     metadataCacheAny['getLinkpathDest'] = vi.fn((linkpath: string) => {
-      const allFiles = Object.values(app.vault.fileMap);
-      return allFiles.filter((f) =>
-        'basename' in f && ((f as TFile).basename === linkpath || (f as TFile).name === linkpath)
-      );
+      const allFiles = app.vault.getAllLoadedFiles();
+      return allFiles.filter((f): f is TFile => f instanceof TFile && (f.basename === linkpath || f.name === linkpath));
     });
 
-    (app as Record<string, unknown>)['internalPlugins'] = {
+    ensureGenericObject(app)['internalPlugins'] = {
       getEnabledPluginById: vi.fn(() => ({}))
     };
 
@@ -1676,7 +1666,7 @@ describe('app-dependent functions', () => {
 
     it('should return file for absolute path when shouldAllowNonExistingFile is true', () => {
       const link = { link: '/target.md', original: '[[/target.md]]' } as Reference;
-      app.metadataCache.getFirstLinkpathDest = () => null;
+      app.metadataCache.getFirstLinkpathDest = (): null | TFile => null;
       const result = extractLinkFile(app, link, 'note.md', true);
       assertNonNullable(result);
       expect(result.path).toBe('target.md');
@@ -1684,7 +1674,7 @@ describe('app-dependent functions', () => {
 
     it('should return file for relative path when shouldAllowNonExistingFile is true', () => {
       const link = { link: 'other.md', original: '[[other.md]]' } as Reference;
-      app.metadataCache.getFirstLinkpathDest = () => null;
+      app.metadataCache.getFirstLinkpathDest = (): null | TFile => null;
       const result = extractLinkFile(app, link, 'folder/source.md', true);
       assertNonNullable(result);
       expect(result.path).toBe('folder/other.md');
@@ -1692,7 +1682,7 @@ describe('app-dependent functions', () => {
 
     it('should return null when relative path goes outside vault', () => {
       const link = { link: '../../outside', original: '[[../../outside]]' } as Reference;
-      app.metadataCache.getFirstLinkpathDest = () => null;
+      app.metadataCache.getFirstLinkpathDest = (): null | TFile => null;
       const result = extractLinkFile(app, link, 'note.md', true);
       expect(result).toBeNull();
     });
@@ -1800,9 +1790,9 @@ describe('app-dependent functions', () => {
     });
 
     it('should use full path when multiple files match shortest name', () => {
-      (app.metadataCache as Record<string, unknown>)['getLinkpathDest'] = vi.fn(() => [
-        app.vault.fileMap['folder/other.md'],
-        app.vault.fileMap['folder/same.md']
+      ensureGenericObject(app.metadataCache)['getLinkpathDest'] = vi.fn(() => [
+        ensureNonNullable(app.vault.getFileByPath('folder/other.md')),
+        ensureNonNullable(app.vault.getFileByPath('folder/same.md'))
       ]);
       const result = generateMarkdownLink({
         app,
@@ -1846,7 +1836,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use ObsidianSettingsDefault link style (markdown)', () => {
-      (app.vault as Record<string, unknown>)['getConfig'] = vi.fn((key: string) => {
+      ensureGenericObject(app.vault)['getConfig'] = vi.fn((key: string) => {
         if (key === 'useMarkdownLinks') {
           return true;
         }
@@ -1943,7 +1933,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use ObsidianSettingsDefault link path style with absolute format', () => {
-      (app.vault as Record<string, unknown>)['getConfig'] = vi.fn((key: string) => {
+      ensureGenericObject(app.vault)['getConfig'] = vi.fn((key: string) => {
         if (key === 'newLinkFormat') {
           return 'absolute';
         }
@@ -1960,7 +1950,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use ObsidianSettingsDefault link path style with relative format', () => {
-      (app.vault as Record<string, unknown>)['getConfig'] = vi.fn((key: string) => {
+      ensureGenericObject(app.vault)['getConfig'] = vi.fn((key: string) => {
         if (key === 'newLinkFormat') {
           return 'relative';
         }
@@ -1977,38 +1967,44 @@ describe('app-dependent functions', () => {
     });
 
     it('should throw for invalid link style', () => {
-      expect(() => generateMarkdownLink({
-        app,
-        linkStyle: 'Invalid' as LinkStyle,
-        sourcePathOrFile: 'note.md',
-        targetPathOrFile: 'target.md'
-      })).toThrow('Invalid link style');
+      expect(() =>
+        generateMarkdownLink({
+          app,
+          linkStyle: 'Invalid' as LinkStyle,
+          sourcePathOrFile: 'note.md',
+          targetPathOrFile: 'target.md'
+        })
+      ).toThrow('Invalid link style');
     });
 
     it('should throw for invalid link path style', () => {
-      expect(() => generateMarkdownLink({
-        app,
-        linkPathStyle: 'Invalid' as LinkPathStyle,
-        linkStyle: LinkStyle.Wikilink,
-        sourcePathOrFile: 'note.md',
-        targetPathOrFile: 'target.md'
-      })).toThrow('Invalid link path style');
+      expect(() =>
+        generateMarkdownLink({
+          app,
+          linkPathStyle: 'Invalid' as LinkPathStyle,
+          linkStyle: LinkStyle.Wikilink,
+          sourcePathOrFile: 'note.md',
+          targetPathOrFile: 'target.md'
+        })
+      ).toThrow('Invalid link path style');
     });
 
     it('should throw for invalid ObsidianSettingsDefault new link format', () => {
-      (app.vault as Record<string, unknown>)['getConfig'] = vi.fn((key: string) => {
+      ensureGenericObject(app.vault)['getConfig'] = vi.fn((key: string) => {
         if (key === 'newLinkFormat') {
           return 'invalid-format';
         }
         return false;
       });
-      expect(() => generateMarkdownLink({
-        app,
-        linkPathStyle: LinkPathStyle.ObsidianSettingsDefault,
-        linkStyle: LinkStyle.Wikilink,
-        sourcePathOrFile: 'note.md',
-        targetPathOrFile: 'target.md'
-      })).toThrow('Invalid link format');
+      expect(() =>
+        generateMarkdownLink({
+          app,
+          linkPathStyle: LinkPathStyle.ObsidianSettingsDefault,
+          linkStyle: LinkStyle.Wikilink,
+          sourcePathOrFile: 'note.md',
+          targetPathOrFile: 'target.md'
+        })
+      ).toThrow('Invalid link format');
     });
 
     it('should not allow single subpath when isSingleSubpathAllowed is false', () => {
@@ -2181,8 +2177,7 @@ describe('app-dependent functions', () => {
           { content: '# Target', path: 'target.md' }
         ]
       });
-      const canvasFileMap = canvasApp.vault.fileMap;
-      const canvasFile = canvasFileMap['canvas.canvas'] as TFile;
+      const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('canvas.canvas'));
       canvasFile.extension = 'canvas';
       const link = {
         displayText: 'target',
@@ -2513,7 +2508,7 @@ describe('app-dependent functions', () => {
         }
       );
 
-      // getCacheSafe returns a cache whose links include the backlink reference
+      // GetCacheSafe returns a cache whose links include the backlink reference
       vi.mocked(getCacheSafe).mockResolvedValue({
         links: [backlinkRef]
       } as unknown as CachedMetadata);
@@ -2563,7 +2558,7 @@ describe('app-dependent functions', () => {
       );
 
       expect(applyFileChanges).toHaveBeenCalled();
-      // linkConverter should NOT be called because the link is not in the backlinks set
+      // LinkConverter should NOT be called because the link is not in the backlinks set
       expect(linkConverter).not.toHaveBeenCalled();
     });
   });
@@ -2632,18 +2627,17 @@ describe('app-dependent functions', () => {
     });
 
     it('should return early for canvas files when Canvas plugin is disabled', async () => {
-      (app as Record<string, unknown>)['internalPlugins'] = {
+      ensureGenericObject(app)['internalPlugins'] = {
         getEnabledPluginById: vi.fn(() => null)
       };
 
       const canvasApp = createMockApp({
         files: [{ content: '{}', path: 'canvas.canvas' }]
       });
-      (canvasApp as Record<string, unknown>)['internalPlugins'] = {
+      ensureGenericObject(canvasApp)['internalPlugins'] = {
         getEnabledPluginById: vi.fn(() => null)
       };
-      const canvasFileMap = canvasApp.vault.fileMap;
-      const canvasFile = canvasFileMap['canvas.canvas'] as TFile;
+      const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('canvas.canvas'));
       canvasFile.extension = 'canvas';
 
       await updateLinksInFile({
@@ -2722,6 +2716,7 @@ describe('app-dependent functions', () => {
         shouldUseLeadingSlashForAbsolutePaths: true
       }));
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- We need to call the mock.
       expect(mockPlugin.register).toHaveBeenCalled();
 
       const result = generateMarkdownLink({
@@ -2755,8 +2750,7 @@ describe('app-dependent functions', () => {
           { content: '# Target', path: 'target.md' }
         ]
       });
-      const canvasFileMap = canvasApp.vault.fileMap;
-      const canvasFile = canvasFileMap['test.canvas'] as TFile;
+      const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('test.canvas'));
       canvasFile.extension = 'canvas';
 
       vi.mocked(applyFileChanges).mockImplementation(
@@ -2795,8 +2789,7 @@ describe('app-dependent functions', () => {
           { content: '# Target', path: 'target.md' }
         ]
       });
-      const canvasFileMap = canvasApp.vault.fileMap;
-      const canvasFile = canvasFileMap['test.canvas'] as TFile;
+      const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('test.canvas'));
       canvasFile.extension = 'canvas';
 
       vi.mocked(applyFileChanges).mockImplementation(

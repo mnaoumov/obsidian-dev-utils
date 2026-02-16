@@ -4,7 +4,7 @@
  * A base class for transformers.
  */
 
-import type { GenericObject } from '../ObjectUtils.ts';
+import type { GenericObject } from '../TypeGuards.ts';
 
 import { getAllKeys } from '../ObjectUtils.ts';
 

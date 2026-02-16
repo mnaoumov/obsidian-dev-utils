@@ -21,7 +21,7 @@ import {
   renderPaginatedList,
   renderPaginatedTable
 } from '../../src/obsidian/Dataview.ts';
-import { assertNonNullable } from '../../src/ObjectUtils.ts';
+import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/Async.ts', () => ({
   convertAsyncToSync: vi.fn((fn: (...args: unknown[]) => Promise<unknown>) => fn)
@@ -725,10 +725,16 @@ describe('renderPaginated page navigation', () => {
     // eslint-disable-next-line @typescript-eslint/await-thenable -- dispatchEvent may trigger async handlers.
     await nextLink?.dispatchEvent(event);
 
-    // After clicking Next, the list should be re-rendered with the second page items
-    // Due to our mock of convertAsyncToSync, we need to manually call the handler
-    // Let's verify by checking that list was called again
-    // The click handler calls renderPage which calls container.empty() and re-renders
+    // The handler is async (because our convertAsyncToSync mock returns the async fn),
+    // So we need to let it settle before asserting.
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- It's a mock.
+    expect(dv.list).toHaveBeenCalledOnce();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- It's a mock.
+    expect(dv.list).toHaveBeenCalledWith(rows.slice(10, 20));
   });
 
   it('should show ellipsis when there are many pages and current page is far from start', async () => {

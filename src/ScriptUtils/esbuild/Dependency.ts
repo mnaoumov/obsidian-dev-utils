@@ -15,12 +15,12 @@ import type {
 
 import { context } from 'esbuild';
 
-import { ensureNonNullable } from '../../ObjectUtils.ts';
 import {
   getFolderName,
   join
 } from '../../Path.ts';
 import { trimStart } from '../../String.ts';
+import { ensureNonNullable } from '../../TypeGuards.ts';
 import {
   builtinModules,
   createRequire

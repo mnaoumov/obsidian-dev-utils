@@ -23,7 +23,7 @@ import {
   NO_PLUGIN_ID_INITIALIZED,
   setPluginId
 } from '../src/obsidian/Plugin/PluginId.ts';
-import { assertNonNullable } from '../src/ObjectUtils.ts';
+import { assertNonNullable } from '../src/TypeGuards.ts';
 
 describe('Debug', () => {
   let savedNamespaces: string;

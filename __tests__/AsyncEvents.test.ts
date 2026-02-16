@@ -9,7 +9,7 @@ import {
 
 import { AsyncEvents } from '../src/AsyncEvents.ts';
 import { noopAsync } from '../src/Function.ts';
-import { assertNonNullable } from '../src/ObjectUtils.ts';
+import { assertNonNullable } from '../src/TypeGuards.ts';
 
 describe('AsyncEvents', () => {
   let events: AsyncEvents;

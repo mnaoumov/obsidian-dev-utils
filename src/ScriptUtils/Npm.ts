@@ -11,11 +11,9 @@ import type {
 
 import type { EditJsonOptions } from './JSON.ts';
 
-import {
-  ensureNonNullable,
-  normalizeOptionalProperties
-} from '../ObjectUtils.ts';
+import { normalizeOptionalProperties } from '../ObjectUtils.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
+import { ensureNonNullable } from '../TypeGuards.ts';
 import {
   editJson,
   editJsonSync,

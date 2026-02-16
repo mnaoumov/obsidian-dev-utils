@@ -6,7 +6,7 @@
 
 import type { App } from 'obsidian';
 
-import type { GenericObject } from '../ObjectUtils.ts';
+import type { GenericObject } from '../TypeGuards.ts';
 
 import { noop } from '../Function.ts';
 

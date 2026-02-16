@@ -15,9 +15,14 @@ import type {
   MaybeReturn,
   StringKeys
 } from './Type.ts';
+import type { GenericObject } from './TypeGuards.ts';
 
 import { errorToString } from './Error.ts';
 import { replaceAll } from './String.ts';
+import {
+  ensureGenericObject,
+  ensureNonNullable
+} from './TypeGuards.ts';
 
 /**
  * Specifies how functions should be handled in the JSON output.
@@ -140,11 +145,6 @@ const equalityComparerEntries = createEqualityComparerEntries(
   ] as const
 );
 
-/**
- * A type that represents a generic object.
- */
-export type GenericObject = Record<string, unknown>;
-
 type KeysWithUndefined<T> = {
   [K in keyof T]-?: undefined extends T[K] ? K : never;
 }[keyof T];
@@ -155,24 +155,6 @@ type RemoveUndefinedOverload<T extends object> = MandatoryKeysWithUndefined<T> e
   : never;
 
 type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string[]> = [obj: T, keysToKeep: ExactMembers<MandatoryKeysWithUndefined<T>, K>];
-
-/**
- * Asserts that a value is not `null` or `undefined`, narrowing its type in place.
- *
- * @typeParam T - The type of the value.
- * @param value - The value to check.
- * @param errorOrMessage - Optional {@link Error} or error message string.
- * @throws If the value is `null` or `undefined`.
- */
-export function assertNonNullable<T>(value: T, errorOrMessage?: Error | string): asserts value is NonNullable<T> {
-  if (value !== null && value !== undefined) {
-    return;
-  }
-
-  errorOrMessage ??= value === null ? 'Value is null' : 'Value is undefined';
-  const error = typeof errorOrMessage === 'string' ? new Error(errorOrMessage) : errorOrMessage;
-  throw error;
-}
 
 /**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
@@ -210,6 +192,16 @@ export function assignWithNonEnumerableProperties(target: object, ...sources: ob
   return _assignWithNonEnumerableProperties(target, ...sources);
 }
 /**
+ * Casts a value to a specific type.
+ *
+ * @param value - The value to cast.
+ * @returns The value as the specified type.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to cast.
+export function castTo<T>(value: unknown): T {
+  return value as T;
+}
+/**
  * Clones an object, including non-enumerable properties.
  *
  * @param obj - The object to clone.
@@ -218,7 +210,6 @@ export function assignWithNonEnumerableProperties(target: object, ...sources: ob
 export function cloneWithNonEnumerableProperties<T extends object>(obj: T): T {
   return Object.create(getPrototypeOf(obj), Object.getOwnPropertyDescriptors(obj)) as T;
 }
-
 /**
  * Compares two values to determine if they are deeply equal.
  *
@@ -256,8 +247,8 @@ export function deepEqual(a: unknown, b: unknown): boolean {
     return false;
   }
 
-  const aRecord = a as GenericObject;
-  const bRecord = b as GenericObject;
+  const aRecord = ensureGenericObject(a);
+  const bRecord = ensureGenericObject(b);
 
   for (const key of keysA) {
     if (!keysB.includes(key) || !deepEqual(aRecord[key], bRecord[key])) {
@@ -301,20 +292,6 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
   // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
   delete obj[propertyName];
   return true;
-}
-
-/**
- * Ensures that a value is not `null` or `undefined` and returns it with narrowed type.
- *
- * @typeParam T - The type of the value.
- * @param value - The value to check.
- * @param errorOrMessage - Optional {@link Error} or error message string.
- * @returns The value with `null` and `undefined` excluded from its type.
- * @throws If the value is `null` or `undefined`.
- */
-export function ensureNonNullable<T>(value: T, errorOrMessage?: Error | string): NonNullable<T> {
-  assertNonNullable(value, errorOrMessage);
-  return value;
 }
 
 /**

@@ -5,8 +5,8 @@ import {
   vi
 } from 'vitest';
 
+import { assertNonNullable } from '../src/TypeGuards.ts';
 import { resolveValue } from '../src/ValueProvider.ts';
-import { assertNonNullable } from '../src/ObjectUtils.ts';
 
 describe('resolveValue', () => {
   describe('direct value provider', () => {

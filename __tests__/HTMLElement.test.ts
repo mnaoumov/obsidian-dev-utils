@@ -25,7 +25,7 @@ import {
   onAncestorScrollOrResize,
   toPx
 } from '../src/HTMLElement.ts';
-import { assertNonNullable } from '../src/ObjectUtils.ts';
+import { assertNonNullable } from '../src/TypeGuards.ts';
 
 // Obsidian provides these globals at runtime; define them for jsdom.
 beforeAll(() => {

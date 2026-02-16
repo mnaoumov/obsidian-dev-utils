@@ -16,7 +16,7 @@ import {
   SilentError,
   throwExpression
 } from '../src/Error.ts';
-import { assertNonNullable } from '../src/ObjectUtils.ts';
+import { assertNonNullable } from '../src/TypeGuards.ts';
 
 describe('ASYNC_WRAPPER_ERROR_MESSAGE', () => {
   it('should be the expected constant string', () => {

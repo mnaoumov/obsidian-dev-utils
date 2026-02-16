@@ -15,7 +15,6 @@ import type { CodeBlockMarkdownInformation } from './CodeBlockMarkdownInformatio
 
 import { abortSignalAny } from '../AbortController.ts';
 import { requestAnimationFrameAsync } from '../Async.ts';
-import { assertNonNullable } from '../ObjectUtils.ts';
 import {
   ensureLfEndings,
   getLfNormalizedOffsetToOriginalOffsetMapper,
@@ -23,6 +22,7 @@ import {
   indent,
   unindent
 } from '../String.ts';
+import { assertNonNullable } from '../TypeGuards.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { getFileOrNull } from './FileSystem.ts';
 import {

@@ -5,7 +5,7 @@
  */
 
 import { AsyncEvents } from './AsyncEvents.ts';
-import { ensureNonNullable } from './ObjectUtils.ts';
+import { ensureNonNullable } from './TypeGuards.ts';
 
 const ASYNC_ERROR_EVENT = 'asyncError';
 

@@ -19,12 +19,12 @@ import {
   parentFolderPath
 } from 'obsidian-typings/implementations';
 
-import { ensureNonNullable } from '../ObjectUtils.ts';
 import {
   extname,
   resolve
 } from '../Path.ts';
 import { trimEnd } from '../String.ts';
+import { ensureNonNullable } from '../TypeGuards.ts';
 
 /**
  * A file extension for `base` files.
@@ -222,7 +222,13 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
   }
 
   if (isAbstractFile(pathOrFile)) {
-    return app.vault.fileMap[pathOrFile.path] ?? pathOrFile;
+    if (isFile(pathOrFile)) {
+      return app.vault.getFileByPath(pathOrFile.path) ?? pathOrFile;
+    }
+    if (isFolder(pathOrFile)) {
+      return app.vault.getFolderByPath(pathOrFile.path) ?? pathOrFile;
+    }
+    return app.vault.getAbstractFileByPath(pathOrFile.path) ?? pathOrFile;
   }
 
   const file = getFileInternal(app, pathOrFile, isCaseInsensitive);

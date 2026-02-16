@@ -8,7 +8,7 @@ import {
   vi
 } from 'vitest';
 
-import { assertNonNullable } from '../../src/ObjectUtils.ts';
+import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 const mocks = vi.hoisted(() => {
   const mockReconfigure = vi.fn((extensions: unknown[]): { effects: unknown[] } => ({ effects: extensions }));

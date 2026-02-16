@@ -17,7 +17,7 @@ import {
   isReferenceCache
 } from 'obsidian-typings/implementations';
 
-import type { GenericObject } from '../ObjectUtils.ts';
+import type { GenericObject } from '../TypeGuards.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';

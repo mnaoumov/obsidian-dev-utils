@@ -93,6 +93,7 @@ export function myFunction(param: Type): ReturnType {
 
 - The project aims for 100% test coverage. Every new or changed code path must be covered by tests.
 - Currently unit tests only; full E2E Obsidian Electron tests are planned for the next phase.
+- Every test must include at least one explicit assertion (e.g. `expect(...)`) that directly matches the test name/intent. Avoid tests that only rely on “not throwing” without an `expect`.
 
 ### Framework
 

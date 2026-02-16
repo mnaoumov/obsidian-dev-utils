@@ -6,7 +6,6 @@ import {
 
 import { noop } from '../src/Function.ts';
 import {
-  assertNonNullable,
   assignWithNonEnumerableProperties,
   cloneWithNonEnumerableProperties,
   deepEqual,
@@ -24,6 +23,7 @@ import {
   setNestedPropertyValue,
   toJson
 } from '../src/ObjectUtils.ts';
+import { assertNonNullable } from '../src/TypeGuards.ts';
 
 describe('ObjectUtils', () => {
   describe('deepEqual', () => {
@@ -561,24 +561,34 @@ describe('ObjectUtils', () => {
 
   describe('assertNonNullable', () => {
     it('should not throw for a non-null, non-undefined value', () => {
-      expect(() => assertNonNullable('hello')).not.toThrow();
+      expect(() => {
+        assertNonNullable('hello');
+      }).not.toThrow();
     });
 
     it('should throw "Value is null" when value is null and no error provided', () => {
-      expect(() => assertNonNullable(null)).toThrow('Value is null');
+      expect(() => {
+        assertNonNullable(null);
+      }).toThrow('Value is null');
     });
 
     it('should throw "Value is undefined" when value is undefined and no error provided', () => {
-      expect(() => assertNonNullable(undefined)).toThrow('Value is undefined');
+      expect(() => {
+        assertNonNullable(undefined);
+      }).toThrow('Value is undefined');
     });
 
     it('should throw with the provided string message', () => {
-      expect(() => assertNonNullable(null, 'Custom error')).toThrow('Custom error');
+      expect(() => {
+        assertNonNullable(null, 'Custom error');
+      }).toThrow('Custom error');
     });
 
     it('should throw the provided Error instance', () => {
       const error = new TypeError('Custom type error');
-      expect(() => assertNonNullable(null, error)).toThrow(error);
+      expect(() => {
+        assertNonNullable(null, error);
+      }).toThrow(error);
     });
   });
 

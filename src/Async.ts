@@ -25,10 +25,8 @@ import {
   SilentError
 } from './Error.ts';
 import { noop } from './Function.ts';
-import {
-  ensureNonNullable,
-  normalizeOptionalProperties
-} from './ObjectUtils.ts';
+import { normalizeOptionalProperties } from './ObjectUtils.ts';
+import { assertNonNullable } from './TypeGuards.ts';
 
 /**
  * A type representing a function that resolves a {@link Promise}.
@@ -171,8 +169,9 @@ export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: numbe
 export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: Args) => Promise<unknown>, stackTrace?: string): (...args: Args) => void {
   stackTrace ??= getStackTrace(1);
   return (...args: Args): void => {
+    assertNonNullable(stackTrace);
     const innerStackTrace = getStackTrace(1);
-    stackTrace = `${ensureNonNullable(stackTrace)}\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
+    stackTrace = `${stackTrace}\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
     invokeAsyncSafely(() => asyncFunc(...args), stackTrace);
   };
 }

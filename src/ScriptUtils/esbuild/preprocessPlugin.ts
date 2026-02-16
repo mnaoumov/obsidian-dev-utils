@@ -11,7 +11,7 @@
 
 import type { Plugin } from 'esbuild';
 
-import type { GenericObject } from '../../ObjectUtils.ts';
+import type { GenericObject } from '../../TypeGuards.ts';
 
 import {
   FunctionHandlingMode,

@@ -26,7 +26,7 @@ import {
 } from '../../src/obsidian/FileChange.ts';
 import { isCanvasFile } from '../../src/obsidian/FileSystem.ts';
 import { process } from '../../src/obsidian/Vault.ts';
-import { assertNonNullable } from '../../src/ObjectUtils.ts';
+import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/Debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
