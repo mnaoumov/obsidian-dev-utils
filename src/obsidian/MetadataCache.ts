@@ -23,10 +23,8 @@ import type { RetryOptions } from '../Async.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 
-import {
-  ensureNonNullable,
-  getNestedPropertyValue
-} from '../ObjectUtils.ts';
+import { getNestedPropertyValue } from '../ObjectUtils.ts';
+import { ensureNonNullable } from '../TypeGuards.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import { retryWithTimeoutNotice } from './AsyncWithNotice.ts';
 import {

@@ -43,7 +43,7 @@ import {
   noop,
   noopAsync
 } from '../src/Function.ts';
-import { assertNonNullable } from '../src/ObjectUtils.ts';
+import { assertNonNullable } from '../src/TypeGuards.ts';
 
 describe('Async', () => {
   describe('sleep', () => {

@@ -11,12 +11,12 @@ import type {
 } from 'type-fest';
 
 import type { AsyncEventRef } from '../../AsyncEvents.ts';
-import type { GenericObject } from '../../ObjectUtils.ts';
 import type { Transformer } from '../../Transformers/Transformer.ts';
 import type {
   MaybeReturn,
   StringKeys
 } from '../../Type.ts';
+import type { GenericObject } from '../../TypeGuards.ts';
 import type { PluginSettingsWrapper } from './PluginSettingsWrapper.ts';
 import type {
   ExtractPlugin,

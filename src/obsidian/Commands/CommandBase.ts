@@ -12,7 +12,7 @@ import type {
 } from 'obsidian';
 
 import { invokeAsyncSafely } from '../../Async.ts';
-import { assertNonNullable } from '../../ObjectUtils.ts';
+import { assertNonNullable } from '../../TypeGuards.ts';
 
 /**
  * Options for creating a command.

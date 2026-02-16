@@ -14,7 +14,7 @@ import {
   writeJson,
   writeJsonSync
 } from '../../src/ScriptUtils/JSON.ts';
-import { assertNonNullable } from '../../src/ObjectUtils.ts';
+import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 const {
   mockExistsSync,

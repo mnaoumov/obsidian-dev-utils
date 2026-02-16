@@ -77,9 +77,6 @@ export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
   }
 
   app.vault.fileMap = fileMap;
-  app.vault.getAbstractFileByPath = (path: string): null | TAbstractFile => {
-    return fileMap[path] ?? null;
-  };
   app.vault.cachedRead = async (file: TFile): Promise<string> => {
     return fileContents.get(file.path) ?? '';
   };
@@ -88,16 +85,16 @@ export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
   };
 
   app.metadataCache.getFirstLinkpathDest = (linkpath: string, _sourcePath: string): null | TFile => {
-    const found = fileMap[linkpath];
-    if (found instanceof TFile) {
+    const found = app.vault.getFileByPath(linkpath);
+    if (found) {
       return found;
     }
-    const withMd = fileMap[`${linkpath}.md`];
-    if (withMd instanceof TFile) {
+    const withMd = app.vault.getFileByPath(`${linkpath}.md`);
+    if (withMd) {
       return withMd;
     }
-    for (const f of Object.values(fileMap)) {
-      if (f instanceof TFile && (f.basename === linkpath || f.name === linkpath)) {
+    for (const f of app.vault.getFiles()) {
+      if (f.basename === linkpath || f.name === linkpath) {
         return f;
       }
     }

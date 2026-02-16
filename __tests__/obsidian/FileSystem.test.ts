@@ -44,7 +44,7 @@ import {
   MARKDOWN_FILE_EXTENSION,
   trimMarkdownExtension
 } from '../../src/obsidian/FileSystem.ts';
-import { assertNonNullable } from '../../src/ObjectUtils.ts';
+import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 function createTestFile(path: string, ext = 'md'): TFile {
   const file = new TFile();

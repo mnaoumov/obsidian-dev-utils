@@ -27,16 +27,14 @@ import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
 import { visit } from 'unist-util-visit';
 
-import type { GenericObject } from '../ObjectUtils.ts';
 import type { MaybeReturn } from '../Type.ts';
+import type { GenericObject } from '../TypeGuards.ts';
 import type { FileChange } from './FileChange.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { ProcessOptions } from './Vault.ts';
 
 import { abortSignalNever } from '../AbortController.ts';
 import {
-  assertNonNullable,
-  ensureNonNullable,
   normalizeOptionalProperties,
   toJson
 } from '../ObjectUtils.ts';
@@ -52,6 +50,10 @@ import {
   replaceAll,
   trimEnd
 } from '../String.ts';
+import {
+  assertNonNullable,
+  ensureNonNullable
+} from '../TypeGuards.ts';
 import { isUrl } from '../url.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import {
@@ -1463,7 +1465,7 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
       /* v8 ignore start -- All valid FinalLinkPathStyle values are handled above */
       default:
         throw new Error(`Invalid link path style: ${config.linkPathStyle as string}.`);
-      /* v8 ignore stop */
+        /* v8 ignore stop */
     }
   }
 

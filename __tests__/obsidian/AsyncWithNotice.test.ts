@@ -22,7 +22,7 @@ import {
   runWithTimeoutNotice
 } from '../../src/obsidian/AsyncWithNotice.ts';
 import { t } from '../../src/obsidian/i18n/i18n.ts';
-import { assertNonNullable } from '../../src/ObjectUtils.ts';
+import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/Async.ts', () => ({
   retryWithTimeout: vi.fn(async (options: Record<string, unknown>) => {

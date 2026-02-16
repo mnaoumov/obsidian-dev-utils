@@ -8,12 +8,12 @@
  */
 
 import { getLibDebugger } from '../../Debug.ts';
-import { assertNonNullable } from '../../ObjectUtils.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   getFolderName,
   join
 } from '../../Path.ts';
+import { assertNonNullable } from '../../TypeGuards.ts';
 import {
   cp,
   existsSync

@@ -11,7 +11,7 @@ import {
   CalloutMode,
   wrapForCallout
 } from '../../src/obsidian/Callout.ts';
-import { assertNonNullable } from '../../src/ObjectUtils.ts';
+import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 describe('wrapForCallout', () => {
   it('should wrap a single line with blockquote prefix', () => {

@@ -145,3 +145,12 @@ export class Vault extends Events {
     await noopAsync();
   }
 }
+
+export function deleteVaultAbstractFile(vault: Vault, path: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- This is a simple in-memory map for tests.
+  delete vault.fileMap[path];
+}
+
+export function setVaultAbstractFile(vault: Vault, path: string, file: TAbstractFile): void {
+  vault.fileMap[path] = file;
+}

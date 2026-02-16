@@ -4,7 +4,7 @@
  * Contains utility functions for Blob objects.
  */
 
-import { assertNonNullable } from './ObjectUtils.ts';
+import { assertNonNullable } from './TypeGuards.ts';
 
 /**
  * Converts a {@link Blob} object to an {@link ArrayBuffer}.

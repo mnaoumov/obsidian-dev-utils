@@ -9,10 +9,8 @@ import type { ValueProvider } from '../ValueProvider.ts';
 import type { DataviewInlineApi } from './Dataview.ts';
 import type { AddToQueueOptions } from './Queue.ts';
 
-import {
-  ensureNonNullable,
-  normalizeOptionalProperties
-} from '../ObjectUtils.ts';
+import { normalizeOptionalProperties } from '../ObjectUtils.ts';
+import { ensureNonNullable } from '../TypeGuards.ts';
 import { resolveValue } from '../ValueProvider.ts';
 import { getRenderedContainer } from './Dataview.ts';
 import { t } from './i18n/i18n.ts';

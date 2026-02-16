@@ -4,11 +4,11 @@
  * Format the source code.
  */
 
-import { assertNonNullable } from '../ObjectUtils.ts';
 import {
   getFolderName,
   join
 } from '../Path.ts';
+import { assertNonNullable } from '../TypeGuards.ts';
 import { existsSync } from './NodeModules.ts';
 import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
 import {

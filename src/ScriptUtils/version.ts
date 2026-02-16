@@ -10,13 +10,13 @@
 import type { PackageLockJson } from './Npm.ts';
 
 import { getLibDebugger } from '../Debug.ts';
-import {
-  assertNonNullable,
-  ensureNonNullable
-} from '../ObjectUtils.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../Path.ts';
 import { replaceAll } from '../String.ts';
+import {
+  assertNonNullable,
+  ensureNonNullable
+} from '../TypeGuards.ts';
 import { readdirPosix } from './Fs.ts';
 import { editJson } from './JSON.ts';
 import {

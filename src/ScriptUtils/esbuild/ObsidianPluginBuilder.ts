@@ -18,12 +18,10 @@ import { context } from 'esbuild';
 // eslint-disable-next-line import-x/no-rename-default -- We need a temp variable to apply `extractDefaultExportInterop()` fix below.
 import sassPlugin_ from 'esbuild-sass-plugin';
 
-import {
-  ensureNonNullable,
-  extractDefaultExportInterop
-} from '../../ObjectUtils.ts';
+import { extractDefaultExportInterop } from '../../ObjectUtils.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import { join } from '../../Path.ts';
+import { ensureNonNullable } from '../../TypeGuards.ts';
 import { buildCompile } from '../build.ts';
 import { CliTaskResult } from '../CliUtils.ts';
 import {

@@ -15,7 +15,7 @@ import type {
   PathOrFile
 } from './FileSystem.ts';
 
-import { ensureNonNullable } from '../ObjectUtils.ts';
+import { ensureNonNullable } from '../TypeGuards.ts';
 import { renderCallout } from './Callout.ts';
 import { renderPaginatedTable } from './Dataview.ts';
 import { fixTitle } from './DataviewLink.ts';

@@ -23,7 +23,7 @@ import type { PathOrAbstractFile } from './FileSystem.ts';
 
 import { requestAnimationFrameAsync } from '../Async.ts';
 import { getZIndex } from '../HTMLElement.ts';
-import { assertNonNullable } from '../ObjectUtils.ts';
+import { assertNonNullable } from '../TypeGuards.ts';
 import {
   getAbstractFileOrNull,
   getPath,

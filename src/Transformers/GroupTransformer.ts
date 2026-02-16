@@ -7,7 +7,7 @@
 import {
   assertNonNullable,
   ensureNonNullable
-} from '../ObjectUtils.ts';
+} from '../TypeGuards.ts';
 import { Transformer } from './Transformer.ts';
 
 /**

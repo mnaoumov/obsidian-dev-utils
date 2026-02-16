@@ -5,7 +5,7 @@
  */
 
 import { CssClass } from '../../../CssClass.ts';
-import { assertNonNullable } from '../../../ObjectUtils.ts';
+import { assertNonNullable } from '../../../TypeGuards.ts';
 import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
 
 /**

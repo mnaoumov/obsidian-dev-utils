@@ -47,10 +47,11 @@ describe('fixTitle', () => {
   function createMockDv(app: App): DataviewInlineApi {
     return {
       app,
-      fileLink: (path: string, _embed: boolean, title: string): Link => ({
-        path,
-        title
-      }) as unknown as Link
+      fileLink: (path: string, _embed: boolean, title: string): Link =>
+        ({
+          path,
+          title
+        }) as unknown as Link
     } as unknown as DataviewInlineApi;
   }
 

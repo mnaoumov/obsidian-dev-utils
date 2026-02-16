@@ -17,7 +17,7 @@ import type { CombinedFrontmatter } from './Frontmatter.ts';
 
 import { convertAsyncToSync } from '../Async.ts';
 import { errorToString } from '../Error.ts';
-import { ensureNonNullable } from '../ObjectUtils.ts';
+import { ensureNonNullable } from '../TypeGuards.ts';
 import {
   getFile,
   getPath
