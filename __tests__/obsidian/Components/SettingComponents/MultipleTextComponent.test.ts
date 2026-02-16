@@ -71,13 +71,13 @@ describe('MultipleTextComponent', () => {
     comp.setPlaceholderValue(['hint1', 'hint2']);
   });
 
-  it('should call onChange callback when textarea changes', () => {
+  it('should register onChange callback and forward current value', () => {
     const comp = createComponent();
     comp.setValue(['line1', 'line2']);
     const callback = vi.fn();
     comp.onChange(callback);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any -- Accessing private mock for test
-    (comp as any).textAreaComponent.simulateChange();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- simulateChange is intended for test use
+    comp.simulateChange();
     expect(callback).toHaveBeenCalledWith(['line1', 'line2']);
   });
 

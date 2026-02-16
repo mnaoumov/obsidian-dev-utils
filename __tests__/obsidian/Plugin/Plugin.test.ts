@@ -36,16 +36,14 @@ describe('Plugin', () => {
 
   it('should reload plugin by disabling and re-enabling', async () => {
     const plugin = createMockPlugin();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- Mock doesn't implement full Plugin type
-    await reloadPlugin(plugin as any);
+    await reloadPlugin(plugin as never);
     expect(plugin.app.plugins.disablePlugin).toHaveBeenCalledWith('test-plugin');
     expect(plugin.app.plugins.enablePlugin).toHaveBeenCalledWith('test-plugin');
   });
 
   it('should show error and disable plugin', async () => {
     const plugin = createMockPlugin();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- Mock doesn't implement full Plugin type
-    await showErrorAndDisablePlugin(plugin as any, 'Test error');
+    await showErrorAndDisablePlugin(plugin as never, 'Test error');
     expect(plugin.app.plugins.disablePlugin).toHaveBeenCalledWith('test-plugin');
   });
 });

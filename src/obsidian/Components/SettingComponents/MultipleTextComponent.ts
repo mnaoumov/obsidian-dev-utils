@@ -52,6 +52,8 @@ export class MultipleTextComponent extends ValueComponent<readonly string[]>
     return this.inputEl;
   }
 
+  private simulateChangeCallback?: () => void;
+
   private readonly textAreaComponent: TextAreaComponent;
 
   /**
@@ -97,7 +99,11 @@ export class MultipleTextComponent extends ValueComponent<readonly string[]>
    * @returns The component.
    */
   public onChange(callback: (newValue: readonly string[]) => Promisable<void>): this {
-    this.textAreaComponent.onChange(() => callback(this.getValue()));
+    const changeHandler = (): void => {
+      callback(this.getValue());
+    };
+    this.simulateChangeCallback = changeHandler;
+    this.textAreaComponent.onChange(changeHandler);
     return this;
   }
 
@@ -144,6 +150,13 @@ export class MultipleTextComponent extends ValueComponent<readonly string[]>
   public override setValue(value: readonly string[]): this {
     this.textAreaComponent.setValue(this.valueToString(value));
     return this;
+  }
+
+  /**
+   * @deprecated Use only from tests to simulate a change event.
+   */
+  public simulateChange(): void {
+    this.simulateChangeCallback?.();
   }
 
   private valueToString(value: readonly string[]): string {

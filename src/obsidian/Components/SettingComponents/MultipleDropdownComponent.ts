@@ -53,6 +53,8 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
 
   private readonly dropdownComponent: DropdownComponent;
 
+  private simulateChangeCallback?: () => void;
+
   /**
    * Creates a new multiple dropdown component.
    *
@@ -104,7 +106,11 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    * @returns The component.
    */
   public onChange(callback: (value: readonly string[]) => Promisable<void>): this {
-    this.dropdownComponent.onChange(() => callback(this.getValue()));
+    const changeHandler = (): void => {
+      callback(this.getValue());
+    };
+    this.simulateChangeCallback = changeHandler;
+    this.dropdownComponent.onChange(changeHandler);
     return this;
   }
 
@@ -132,5 +138,12 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
     }
 
     return this;
+  }
+
+  /**
+   * @deprecated Use only from tests to simulate a change event.
+   */
+  public simulateChange(): void {
+    this.simulateChangeCallback?.();
   }
 }
