@@ -2,6 +2,7 @@ import type { MockedFunction } from 'vitest';
 
 // @vitest-environment jsdom
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -87,13 +88,19 @@ if (typeof globalThis.createFragment === 'undefined') {
     return f;
   };
 }
-if (typeof globalThis.sleep === 'undefined') {
-  (globalThis as Record<string, unknown>)['sleep'] = (_ms: number): Promise<void> => Promise.resolve();
+
+function sleepImmediate(_ms: number): Promise<void> {
+  return Promise.resolve();
 }
 
 describe('loop', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('sleep', sleepImmediate);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('should complete without error when items array is empty', async () => {
