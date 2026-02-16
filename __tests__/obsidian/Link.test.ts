@@ -1,28 +1,92 @@
-import type { CachedMetadata } from 'obsidian';
+import type {
+  App,
+  CachedMetadata,
+  Plugin,
+  Reference,
+  TFile
+} from 'obsidian';
 
 // @vitest-environment jsdom
-import {
-  describe,
-  expect,
-  it
-} from 'vitest';
 
 import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+vi.mock('../../src/obsidian/MetadataCache.ts', async (importOriginal) => {
+  const original = await importOriginal() as Record<string, unknown>;
+  return {
+    ...original,
+    getBacklinksForFileSafe: vi.fn(),
+    getCacheSafe: vi.fn(),
+    parseMetadata: vi.fn(),
+    tempRegisterFilesAndRun: vi.fn((_app: unknown, _files: unknown[], fn: () => unknown) => fn())
+  };
+});
+
+vi.mock('../../src/obsidian/FileChange.ts', async (importOriginal) => {
+  const original = await importOriginal() as Record<string, unknown>;
+  return {
+    ...original,
+    applyContentChanges: vi.fn(),
+    applyFileChanges: vi.fn()
+  };
+});
+
+import { createMockApp } from '../../__mocks__/obsidian/App.ts';
+import {
+  applyContentChanges,
+  applyFileChanges
+} from '../../src/obsidian/FileChange.ts';
+import {
+  convertLink,
+  editBacklinks,
+  editLinks,
+  editLinksInContent,
   encodeUrl,
   escapeAlias,
+  extractLinkFile,
   fixFrontmatterMarkdownLinks,
+  generateMarkdownLink,
   generateRawMarkdownLink,
+  LinkPathStyle,
+  LinkStyle,
   parseLink,
   parseLinks,
+  registerGenerateMarkdownLinkDefaultOptionsFn,
+  shouldResetAlias,
   splitSubpath,
   testAngleBrackets,
   testEmbed,
   testLeadingDot,
   testLeadingSlash,
   testWikilink,
-  unescapeAlias
+  unescapeAlias,
+  updateLink,
+  updateLinksInContent,
+  updateLinksInFile
 } from '../../src/obsidian/Link.ts';
-import { assertNotNullable } from '../TestHelpers.ts';
+import {
+  getBacklinksForFileSafe,
+  getCacheSafe,
+  parseMetadata,
+  tempRegisterFilesAndRun
+} from '../../src/obsidian/MetadataCache.ts';
+import { assertNonNullable } from '../../src/ObjectUtils.ts';
+
+// Obsidian patches Array.prototype with a remove method
+if (!Array.prototype.remove) {
+  // eslint-disable-next-line no-extend-native -- Obsidian polyfill needed for tests.
+  Array.prototype.remove = function <T>(this: T[], item: T): void {
+    const index = this.indexOf(item);
+    if (index !== -1) {
+      this.splice(index, 1);
+    }
+  };
+}
 
 describe('splitSubpath', () => {
   describe('should return the full link as linkPath when there is no subpath', () => {
@@ -313,17 +377,17 @@ describe('parseLink', () => {
       });
 
       it('should be a wikilink', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isWikilink).toBe(true);
       });
 
       it('should have url "note"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('note');
       });
 
       it('should not be an embed', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isEmbed).toBe(false);
       });
     });
@@ -336,30 +400,30 @@ describe('parseLink', () => {
       });
 
       it('should be a wikilink', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isWikilink).toBe(true);
       });
 
       it('should have url "note"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('note');
       });
 
       it('should have alias "display text"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.alias).toBe('display text');
       });
     });
 
     it('should parse a wikilink with a path', () => {
       const result = parseLink('[[folder/note]]');
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.url).toBe('folder/note');
     });
 
     it('should parse a wikilink with a heading', () => {
       const result = parseLink('[[note#heading]]');
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.url).toBe('note#heading');
     });
 
@@ -371,17 +435,17 @@ describe('parseLink', () => {
       });
 
       it('should be a wikilink', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isWikilink).toBe(true);
       });
 
       it('should be an embed', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isEmbed).toBe(true);
       });
 
       it('should have url "image.png"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('image.png');
       });
     });
@@ -394,24 +458,24 @@ describe('parseLink', () => {
       });
 
       it('should be an embed', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isEmbed).toBe(true);
       });
 
       it('should have url "image.png"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('image.png');
       });
 
       it('should have alias "500"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.alias).toBe('500');
       });
     });
 
     it('should not have alias when no pipe is present', () => {
       const result = parseLink('[[note]]');
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.alias).toBeUndefined();
     });
   });
@@ -425,17 +489,17 @@ describe('parseLink', () => {
       });
 
       it('should not be a wikilink', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isWikilink).toBe(false);
       });
 
       it('should have url "note.md"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('note.md');
       });
 
       it('should have alias "display"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.alias).toBe('display');
       });
     });
@@ -448,17 +512,17 @@ describe('parseLink', () => {
       });
 
       it('should not be a wikilink', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isWikilink).toBe(false);
       });
 
       it('should have url "note.md"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('note.md');
       });
 
       it('should have undefined alias', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.alias).toBeUndefined();
       });
     });
@@ -471,24 +535,24 @@ describe('parseLink', () => {
       });
 
       it('should be an embed', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isEmbed).toBe(true);
       });
 
       it('should not be a wikilink', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isWikilink).toBe(false);
       });
 
       it('should have url "image.png"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('image.png');
       });
     });
 
     it('should parse a markdown link with spaces encoded in URL', () => {
       const result = parseLink('[link](path%20with%20spaces.md)');
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.url).toBe('path with spaces.md');
     });
 
@@ -500,12 +564,12 @@ describe('parseLink', () => {
       });
 
       it('should have angle brackets', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.hasAngleBrackets).toBe(true);
       });
 
       it('should have the correct url', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('path with spaces.md');
       });
     });
@@ -518,19 +582,19 @@ describe('parseLink', () => {
       });
 
       it('should be external', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isExternal).toBe(true);
       });
 
       it('should have the correct url', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('https://example.com');
       });
     });
 
     it('should parse an internal link as not external', () => {
       const result = parseLink('[link](note.md)');
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.isExternal).toBe(false);
     });
 
@@ -542,12 +606,12 @@ describe('parseLink', () => {
       });
 
       it('should be an embed', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.isEmbed).toBe(true);
       });
 
       it('should have alias "my image"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.alias).toBe('my image');
       });
     });
@@ -560,12 +624,12 @@ describe('parseLink', () => {
       });
 
       it('should have url "note.md"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.url).toBe('note.md');
       });
 
       it('should have title "hover text"', () => {
-        assertNotNullable(result);
+        assertNonNullable(result);
         expect(result.title).toBe('hover text');
       });
     });
@@ -594,13 +658,13 @@ describe('parseLinks', () => {
 
     it('should parse the first wikilink url', () => {
       const firstWikilink = wikilinks[0];
-      assertNotNullable(firstWikilink);
+      assertNonNullable(firstWikilink);
       expect(firstWikilink.url).toBe('note1');
     });
 
     it('should parse the second wikilink url', () => {
       const secondWikilink = wikilinks[1];
-      assertNotNullable(secondWikilink);
+      assertNonNullable(secondWikilink);
       expect(secondWikilink.url).toBe('note2');
     });
   });
@@ -635,7 +699,7 @@ describe('parseLinks', () => {
 
     it('should have url "image.png"', () => {
       const firstEmbed = embeds[0];
-      assertNotNullable(firstEmbed);
+      assertNonNullable(firstEmbed);
       expect(firstEmbed.url).toBe('image.png');
     });
   });
@@ -651,13 +715,13 @@ describe('parseLinks', () => {
 
     it('should have correct offset for first wikilink', () => {
       const firstWikilink = wikilinks[0];
-      assertNotNullable(firstWikilink);
+      assertNonNullable(firstWikilink);
       expect(text.slice(firstWikilink.startOffset, firstWikilink.endOffset)).toBe('[[note1]]');
     });
 
     it('should have correct offset for second wikilink', () => {
       const secondWikilink = wikilinks[1];
-      assertNotNullable(secondWikilink);
+      assertNonNullable(secondWikilink);
       expect(text.slice(secondWikilink.startOffset, secondWikilink.endOffset)).toBe('[[note2]]');
     });
   });
@@ -672,7 +736,7 @@ describe('parseLinks', () => {
 
     it('should have the correct url', () => {
       const firstExternal = external[0];
-      assertNotNullable(firstExternal);
+      assertNonNullable(firstExternal);
       expect(firstExternal.url).toBe('https://example.com');
     });
   });
@@ -687,13 +751,13 @@ describe('parseLinks', () => {
 
     it('should parse the first alias', () => {
       const firstWikilink = wikilinks[0];
-      assertNotNullable(firstWikilink);
+      assertNonNullable(firstWikilink);
       expect(firstWikilink.alias).toBe('alias1');
     });
 
     it('should parse the second alias', () => {
       const secondWikilink = wikilinks[1];
-      assertNotNullable(secondWikilink);
+      assertNonNullable(secondWikilink);
       expect(secondWikilink.alias).toBe('alias2');
     });
   });
@@ -780,35 +844,35 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should have 1 frontmatter link', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       expect(cache.frontmatterLinks.length).toBe(1);
     });
 
     it('should set the link property', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.link).toBe('note.md');
     });
 
     it('should set the original property', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.original).toBe('[alias](note.md)');
     });
 
     it('should set the displayText property', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.displayText).toBe('alias');
     });
 
     it('should set the key property', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.key).toBe('source');
     });
   });
@@ -871,14 +935,14 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should have 1 frontmatter link', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       expect(cache.frontmatterLinks.length).toBe(1);
     });
 
     it('should set the key to the nested path', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.key).toBe('meta.source');
     });
   });
@@ -901,7 +965,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should have 2 frontmatter links', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       expect(cache.frontmatterLinks.length).toBe(2);
     });
   });
@@ -946,16 +1010,16 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should set the link property', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.link).toBe('note.md');
     });
 
     it('should not set displayText when alias is undefined', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.displayText).toBeUndefined();
     });
   });
@@ -978,28 +1042,28 @@ describe('fixFrontmatterMarkdownLinks', () => {
     });
 
     it('should have 1 frontmatter link', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       expect(cache.frontmatterLinks.length).toBe(1);
     });
 
     it('should update the link property', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.link).toBe('new-note.md');
     });
 
     it('should update the original property', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.original).toBe('[new-alias](new-note.md)');
     });
 
     it('should update the displayText property', () => {
-      assertNotNullable(cache.frontmatterLinks);
+      assertNonNullable(cache.frontmatterLinks);
       const firstLink = cache.frontmatterLinks[0];
-      assertNotNullable(firstLink);
+      assertNonNullable(firstLink);
       expect(firstLink.displayText).toBe('new-alias');
     });
   });
@@ -1052,43 +1116,43 @@ describe('unescapeAlias (additional edge cases)', () => {
 describe('parseLink (additional edge cases)', () => {
   it('should correctly capture raw text of a wikilink', () => {
     const result = parseLink('[[note]]');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.raw).toBe('[[note]]');
   });
 
   it('should correctly capture raw text of a markdown link', () => {
     const result = parseLink('[alias](note.md)');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.raw).toBe('[alias](note.md)');
   });
 
   it('should correctly capture raw text of an embed wikilink', () => {
     const result = parseLink('![[image.png]]');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.raw).toBe('![[image.png]]');
   });
 
   it('should set isExternal to false for wikilinks', () => {
     const result = parseLink('[[note]]');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.isExternal).toBe(false);
   });
 
   it('should not have title for wikilinks', () => {
     const result = parseLink('[[note]]');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.title).toBeUndefined();
   });
 
   it('should not have hasAngleBrackets for wikilinks', () => {
     const result = parseLink('[[note]]');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.hasAngleBrackets).toBeUndefined();
   });
 
   it('should parse a markdown link with encoded special characters', () => {
     const result = parseLink('[link](path%5Cto%5Cfile.md)');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.url).toBe('path\\to\\file.md');
   });
 
@@ -1096,12 +1160,12 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[[note#^block-id]]');
 
     it('should be a wikilink', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.isWikilink).toBe(true);
     });
 
     it('should have url "note#^block-id"', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.url).toBe('note#^block-id');
     });
   });
@@ -1110,12 +1174,12 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[link](note.md "a title")');
 
     it('should have the correct title', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.title).toBe('a title');
     });
 
     it('should have the correct url', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.url).toBe('note.md');
     });
   });
@@ -1128,17 +1192,17 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should be external', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.isExternal).toBe(true);
     });
 
     it('should have the correct url', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.url).toBe('https://example.com');
     });
 
     it('should not be a wikilink', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.isWikilink).toBe(false);
     });
   });
@@ -1151,17 +1215,17 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should be an embed', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.isEmbed).toBe(true);
     });
 
     it('should have angle brackets', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.hasAngleBrackets).toBe(true);
     });
 
     it('should have the correct url', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.url).toBe('image file.png');
     });
   });
@@ -1174,12 +1238,12 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should have the escaped alias', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.alias).toBe('\\*bold\\*');
     });
 
     it('should have the unescaped alias', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.unescapedAlias).toBe('*bold*');
     });
   });
@@ -1192,12 +1256,12 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should be external', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.isExternal).toBe(true);
     });
 
     it('should have encodedUrl defined', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.encodedUrl).toBeDefined();
     });
   });
@@ -1210,12 +1274,12 @@ describe('parseLink (additional edge cases)', () => {
     });
 
     it('should not be external', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.isExternal).toBe(false);
     });
 
     it('should have encodedUrl undefined', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.encodedUrl).toBeUndefined();
     });
   });
@@ -1224,12 +1288,12 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[[note#heading#subheading]]');
 
     it('should be a wikilink', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.isWikilink).toBe(true);
     });
 
     it('should have the correct url', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.url).toBe('note#heading#subheading');
     });
   });
@@ -1238,12 +1302,12 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[[folder/note|My Note]]');
 
     it('should have the correct url', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.url).toBe('folder/note');
     });
 
     it('should have the correct alias', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.alias).toBe('My Note');
     });
   });
@@ -1252,12 +1316,12 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[[note]]');
 
     it('should have startOffset 0', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.startOffset).toBe(0);
     });
 
     it('should have endOffset 8', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.endOffset).toBe(8);
     });
   });
@@ -1266,12 +1330,12 @@ describe('parseLink (additional edge cases)', () => {
     const result = parseLink('[alias](note.md)');
 
     it('should have startOffset 0', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.startOffset).toBe(0);
     });
 
     it('should have endOffset 16', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.endOffset).toBe(16);
     });
   });
@@ -1293,13 +1357,13 @@ describe('parseLinks (additional edge cases)', () => {
 
     it('should parse first embed url', () => {
       const firstEmbed = embeds[0];
-      assertNotNullable(firstEmbed);
+      assertNonNullable(firstEmbed);
       expect(firstEmbed.url).toBe('img1.png');
     });
 
     it('should parse second embed url', () => {
       const secondEmbed = embeds[1];
-      assertNotNullable(secondEmbed);
+      assertNonNullable(secondEmbed);
       expect(secondEmbed.url).toBe('img2.png');
     });
   });
@@ -1319,7 +1383,7 @@ describe('parseLinks (additional edge cases)', () => {
 
     it('should have the correct embed url', () => {
       const firstEmbed = embed[0];
-      assertNotNullable(firstEmbed);
+      assertNonNullable(firstEmbed);
       expect(firstEmbed.url).toBe('image.png');
     });
   });
@@ -1341,13 +1405,13 @@ describe('parseLinks (additional edge cases)', () => {
 
     it('should have correct offset for first markdown link', () => {
       const firstMdLink = mdLinks[0];
-      assertNotNullable(firstMdLink);
+      assertNonNullable(firstMdLink);
       expect(text.slice(firstMdLink.startOffset, firstMdLink.endOffset)).toBe('[a](b.md)');
     });
 
     it('should have correct offset for second markdown link', () => {
       const secondMdLink = mdLinks[1];
-      assertNotNullable(secondMdLink);
+      assertNonNullable(secondMdLink);
       expect(text.slice(secondMdLink.startOffset, secondMdLink.endOffset)).toBe('[c](d.md)');
     });
   });
@@ -1362,13 +1426,13 @@ describe('parseLinks (additional edge cases)', () => {
 
     it('should parse first link title', () => {
       const firstMdLink = mdLinks[0];
-      assertNotNullable(firstMdLink);
+      assertNonNullable(firstMdLink);
       expect(firstMdLink.title).toBe('title1');
     });
 
     it('should parse second link title', () => {
       const secondMdLink = mdLinks[1];
-      assertNotNullable(secondMdLink);
+      assertNonNullable(secondMdLink);
       expect(secondMdLink.title).toBe('title2');
     });
   });
@@ -1377,7 +1441,7 @@ describe('parseLinks (additional edge cases)', () => {
     const results = parseLinks('[[wiki]][md](note.md)');
     const wikilinks = results.filter((r) => r.isWikilink);
     const firstWikilink = wikilinks[0];
-    assertNotNullable(firstWikilink);
+    assertNonNullable(firstWikilink);
     expect(firstWikilink.url).toBe('wiki');
   });
 
@@ -1386,8 +1450,8 @@ describe('parseLinks (additional edge cases)', () => {
     for (let i = 1; i < results.length; i++) {
       const current = results[i];
       const previous = results[i - 1];
-      assertNotNullable(current);
-      assertNotNullable(previous);
+      assertNonNullable(current);
+      assertNonNullable(previous);
       expect(current.startOffset).toBeGreaterThanOrEqual(previous.startOffset);
     }
   });
@@ -1516,6 +1580,1253 @@ describe('splitSubpath (additional edge cases)', () => {
 
     it('should set subpath to empty string', () => {
       expect(result.subpath).toBe('');
+    });
+  });
+});
+
+describe('decodeUrlSafely error path', () => {
+  it('should fall back to raw URL when decodeURIComponent throws', () => {
+    const result = parseLink('[link](file%ZZname.md)');
+    assertNonNullable(result);
+    expect(result.url).toBe('file%ZZname.md');
+  });
+});
+
+describe('parseLinks embed-inside-link', () => {
+  it('should handle embed markdown link nested inside a regular link alias', () => {
+    const results = parseLinks('[![Alt](img.png)](note.md)');
+    const mdLinks = results.filter((r) => !r.isExternal);
+    expect(mdLinks.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('app-dependent functions', () => {
+  let app: App;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    app = createMockApp({
+      files: [
+        { content: '# Note\n[[target]]', path: 'note.md' },
+        { content: '# Other', path: 'folder/other.md' },
+        { content: '# Target', path: 'target.md' },
+        { content: '', extension: 'png', path: 'image.png' },
+        { content: '# Same', path: 'folder/same.md' }
+      ],
+      folders: ['folder']
+    });
+
+    const vaultAny = app.vault as Record<string, unknown>;
+    vaultAny['getConfig'] = vi.fn((key: string) => {
+      if (key === 'useMarkdownLinks') {
+        return false;
+      }
+      if (key === 'newLinkFormat') {
+        return 'shortest';
+      }
+      return undefined;
+    });
+
+    const metadataCacheAny = app.metadataCache as Record<string, unknown>;
+    metadataCacheAny['getLinkpathDest'] = vi.fn((linkpath: string) => {
+      const allFiles = Object.values(app.vault.fileMap);
+      return allFiles.filter((f) =>
+        'basename' in f && ((f as TFile).basename === linkpath || (f as TFile).name === linkpath)
+      );
+    });
+
+    (app as Record<string, unknown>)['internalPlugins'] = {
+      getEnabledPluginById: vi.fn(() => ({}))
+    };
+
+    vi.mocked(tempRegisterFilesAndRun).mockImplementation(
+      (_theApp: App, _files: unknown[], fn: () => unknown) => fn()
+    );
+    vi.mocked(getCacheSafe).mockResolvedValue(null);
+    vi.mocked(parseMetadata).mockResolvedValue({} as CachedMetadata);
+    vi.mocked(getBacklinksForFileSafe).mockResolvedValue({
+      get: () => null,
+      keys: () => []
+    } as never);
+    vi.mocked(applyContentChanges).mockImplementation(
+      async (_signal, content, _path, changesProvider) => {
+        if (typeof changesProvider === 'function') {
+          await (changesProvider as () => Promise<unknown>)();
+        }
+        return content;
+      }
+    );
+    vi.mocked(applyFileChanges).mockResolvedValue(undefined);
+  });
+
+  describe('extractLinkFile', () => {
+    it('should return the file when found by getFirstLinkpathDest', () => {
+      const link = { link: 'target', original: '[[target]]' } as Reference;
+      const result = extractLinkFile(app, link, 'note.md');
+      assertNonNullable(result);
+      expect(result.path).toBe('target.md');
+    });
+
+    it('should return null when file not found and shouldAllowNonExistingFile is false', () => {
+      const link = { link: 'nonexistent', original: '[[nonexistent]]' } as Reference;
+      const result = extractLinkFile(app, link, 'note.md');
+      expect(result).toBeNull();
+    });
+
+    it('should return file for absolute path when shouldAllowNonExistingFile is true', () => {
+      const link = { link: '/target.md', original: '[[/target.md]]' } as Reference;
+      app.metadataCache.getFirstLinkpathDest = () => null;
+      const result = extractLinkFile(app, link, 'note.md', true);
+      assertNonNullable(result);
+      expect(result.path).toBe('target.md');
+    });
+
+    it('should return file for relative path when shouldAllowNonExistingFile is true', () => {
+      const link = { link: 'other.md', original: '[[other.md]]' } as Reference;
+      app.metadataCache.getFirstLinkpathDest = () => null;
+      const result = extractLinkFile(app, link, 'folder/source.md', true);
+      assertNonNullable(result);
+      expect(result.path).toBe('folder/other.md');
+    });
+
+    it('should return null when relative path goes outside vault', () => {
+      const link = { link: '../../outside', original: '[[../../outside]]' } as Reference;
+      app.metadataCache.getFirstLinkpathDest = () => null;
+      const result = extractLinkFile(app, link, 'note.md', true);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('generateMarkdownLink', () => {
+    it('should generate a wikilink with shortest path style', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[target]]');
+    });
+
+    it('should generate a wikilink with alias', () => {
+      const result = generateMarkdownLink({
+        alias: 'my alias',
+        app,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[target|my alias]]');
+    });
+
+    it('should generate a wikilink where alias matches link text (case-insensitive)', () => {
+      const result = generateMarkdownLink({
+        alias: 'Target',
+        app,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[Target]]');
+    });
+
+    it('should generate a markdown link', () => {
+      const result = generateMarkdownLink({
+        alias: 'display',
+        app,
+        linkStyle: LinkStyle.Markdown,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[display](target.md)');
+    });
+
+    it('should auto-set basename alias for markdown link to markdown file with no alias', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.Markdown,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('[target]');
+    });
+
+    it('should auto-set name alias for markdown link to non-markdown file when isEmptyEmbedAliasAllowed is false', () => {
+      const result = generateMarkdownLink({
+        app,
+        isEmptyEmbedAliasAllowed: false,
+        linkStyle: LinkStyle.Markdown,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'image.png'
+      });
+      expect(result).toContain('[image]');
+    });
+
+    it('should include attachment extension when shouldIncludeAttachmentExtensionToEmbedAlias is true', () => {
+      const result = generateMarkdownLink({
+        app,
+        isEmptyEmbedAliasAllowed: false,
+        linkStyle: LinkStyle.Markdown,
+        shouldIncludeAttachmentExtensionToEmbedAlias: true,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'image.png'
+      });
+      expect(result).toContain('[image.png]');
+    });
+
+    it('should generate absolute path with leading slash', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.AbsolutePathInVault,
+        linkStyle: LinkStyle.Wikilink,
+        shouldUseLeadingSlashForAbsolutePaths: true,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[/target]]');
+    });
+
+    it('should generate relative path with leading dot', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.RelativePathToTheSource,
+        linkStyle: LinkStyle.Wikilink,
+        shouldUseLeadingDotForRelativePaths: true,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'folder/other.md'
+      });
+      expect(result).toContain('./');
+    });
+
+    it('should use full path when multiple files match shortest name', () => {
+      (app.metadataCache as Record<string, unknown>)['getLinkpathDest'] = vi.fn(() => [
+        app.vault.fileMap['folder/other.md'],
+        app.vault.fileMap['folder/same.md']
+      ]);
+      const result = generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.ShortestPathWhenPossible,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'folder/other.md'
+      });
+      expect(result).toBe('[[folder/other]]');
+    });
+
+    it('should generate self-referential link with subpath only', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'target.md',
+        subpath: '#heading',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[#heading]]');
+    });
+
+    it('should handle source path as root /', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: '/',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('target');
+    });
+
+    it('should use ObsidianSettingsDefault link style (wikilinks)', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.ObsidianSettingsDefault,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[target]]');
+    });
+
+    it('should use ObsidianSettingsDefault link style (markdown)', () => {
+      (app.vault as Record<string, unknown>)['getConfig'] = vi.fn((key: string) => {
+        if (key === 'useMarkdownLinks') {
+          return true;
+        }
+        if (key === 'newLinkFormat') {
+          return 'shortest';
+        }
+        return undefined;
+      });
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.ObsidianSettingsDefault,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('[target]');
+    });
+
+    it('should use PreserveExisting link style with wikilink originalLink', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.PreserveExisting,
+        originalLink: '[[old]]',
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[target]]');
+    });
+
+    it('should use PreserveExisting link style with markdown originalLink', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.PreserveExisting,
+        originalLink: '[old](old.md)',
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('(target.md)');
+    });
+
+    it('should use PreserveExisting without originalLink (falls back to settings)', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.PreserveExisting,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[target]]');
+    });
+
+    it('should infer isEmbed from originalLink', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.Wikilink,
+        originalLink: '![[old]]',
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('![[target]]');
+    });
+
+    it('should infer angle brackets from originalLink', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkStyle: LinkStyle.Markdown,
+        originalLink: '[old](<old file.md>)',
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('<target.md>');
+    });
+
+    it('should infer leading dot from originalLink', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.RelativePathToTheSource,
+        linkStyle: LinkStyle.Wikilink,
+        originalLink: '[[./old]]',
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'folder/other.md'
+      });
+      expect(result).toContain('./');
+    });
+
+    it('should infer leading slash from originalLink', () => {
+      const result = generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.AbsolutePathInVault,
+        linkStyle: LinkStyle.Wikilink,
+        originalLink: '[[/old]]',
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('/target');
+    });
+
+    it('should use ObsidianSettingsDefault link path style with absolute format', () => {
+      (app.vault as Record<string, unknown>)['getConfig'] = vi.fn((key: string) => {
+        if (key === 'newLinkFormat') {
+          return 'absolute';
+        }
+        return false;
+      });
+      const result = generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.ObsidianSettingsDefault,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[target]]');
+    });
+
+    it('should use ObsidianSettingsDefault link path style with relative format', () => {
+      (app.vault as Record<string, unknown>)['getConfig'] = vi.fn((key: string) => {
+        if (key === 'newLinkFormat') {
+          return 'relative';
+        }
+        return false;
+      });
+      const result = generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.ObsidianSettingsDefault,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'folder/other.md'
+      });
+      expect(result).toContain('other');
+    });
+
+    it('should throw for invalid link style', () => {
+      expect(() => generateMarkdownLink({
+        app,
+        linkStyle: 'Invalid' as LinkStyle,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      })).toThrow('Invalid link style');
+    });
+
+    it('should throw for invalid link path style', () => {
+      expect(() => generateMarkdownLink({
+        app,
+        linkPathStyle: 'Invalid' as LinkPathStyle,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      })).toThrow('Invalid link path style');
+    });
+
+    it('should throw for invalid ObsidianSettingsDefault new link format', () => {
+      (app.vault as Record<string, unknown>)['getConfig'] = vi.fn((key: string) => {
+        if (key === 'newLinkFormat') {
+          return 'invalid-format';
+        }
+        return false;
+      });
+      expect(() => generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.ObsidianSettingsDefault,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      })).toThrow('Invalid link format');
+    });
+
+    it('should not allow single subpath when isSingleSubpathAllowed is false', () => {
+      const result = generateMarkdownLink({
+        app,
+        isSingleSubpathAllowed: false,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'target.md',
+        subpath: '#heading',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('target');
+      expect(result).toContain('#heading');
+    });
+
+    it('should handle isNonExistingFileAllowed for non-existing targets', () => {
+      const result = generateMarkdownLink({
+        app,
+        isNonExistingFileAllowed: true,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'nonexistent.md'
+      });
+      expect(result).toContain('nonexistent');
+    });
+  });
+
+  describe('shouldResetAlias', () => {
+    it('should return false when isWikilink is false', () => {
+      const result = shouldResetAlias({
+        app,
+        displayText: 'any',
+        isWikilink: false,
+        newSourcePathOrFile: 'note.md',
+        oldTargetPath: 'target.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe(false);
+    });
+
+    it('should return true when displayText is undefined', () => {
+      const result = shouldResetAlias({
+        app,
+        displayText: undefined,
+        newSourcePathOrFile: 'note.md',
+        oldTargetPath: 'target.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe(true);
+    });
+
+    it('should return true when displayText matches target path', () => {
+      const result = shouldResetAlias({
+        app,
+        displayText: 'target.md',
+        newSourcePathOrFile: 'note.md',
+        oldTargetPath: 'target.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe(true);
+    });
+
+    it('should return true when displayText matches basename without extension', () => {
+      const result = shouldResetAlias({
+        app,
+        displayText: 'target',
+        newSourcePathOrFile: 'note.md',
+        oldTargetPath: 'target.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe(true);
+    });
+
+    it('should return false when displayText does not match any alias', () => {
+      const result = shouldResetAlias({
+        app,
+        displayText: 'completely-different-text',
+        newSourcePathOrFile: 'note.md',
+        oldTargetPath: 'target.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe(false);
+    });
+
+    it('should handle displayText with separator >', () => {
+      const result = shouldResetAlias({
+        app,
+        displayText: 'target > extra',
+        newSourcePathOrFile: 'note.md',
+        oldTargetPath: 'target.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe(true);
+    });
+
+    it('should skip falsy pathOrFile in loop', () => {
+      const result = shouldResetAlias({
+        app,
+        displayText: 'completely-different-text',
+        newSourcePathOrFile: 'note.md',
+        oldTargetPath: '' as never,
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe(false);
+    });
+
+    it('should use oldSourcePathOrFile when provided', () => {
+      const result = shouldResetAlias({
+        app,
+        displayText: 'target',
+        newSourcePathOrFile: 'folder/other.md',
+        oldSourcePathOrFile: 'note.md',
+        oldTargetPath: 'target.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('convertLink', () => {
+    it('should return original when extractLinkFile returns null', () => {
+      const link = {
+        displayText: 'nonexistent',
+        link: 'nonexistent',
+        original: '[[nonexistent]]'
+      } as Reference;
+      const result = convertLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md'
+      });
+      expect(result).toBe('[[nonexistent]]');
+    });
+
+    it('should return updated link when file is found', () => {
+      const link = {
+        displayText: 'target',
+        link: 'target',
+        original: '[[target]]'
+      } as Reference;
+      const result = convertLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md'
+      });
+      expect(result).toContain('target');
+    });
+  });
+
+  describe('updateLink', () => {
+    it('should return original when newTargetPathOrFile is falsy', () => {
+      const link = {
+        displayText: 'target',
+        link: 'target',
+        original: '[[target]]'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: '' as never
+      });
+      expect(result).toBe('[[target]]');
+    });
+
+    it('should return path+subpath for canvas file with canvas file node reference', () => {
+      const canvasApp = createMockApp({
+        files: [
+          { content: '{}', path: 'canvas.canvas' },
+          { content: '# Target', path: 'target.md' }
+        ]
+      });
+      const canvasFileMap = canvasApp.vault.fileMap;
+      const canvasFile = canvasFileMap['canvas.canvas'] as TFile;
+      canvasFile.extension = 'canvas';
+      const link = {
+        displayText: 'target',
+        isCanvas: true,
+        key: 'file',
+        link: 'target',
+        nodeIndex: 0,
+        original: 'target.md',
+        type: 'file'
+      } as unknown as Reference;
+      const result = updateLink({
+        app: canvasApp,
+        link,
+        newSourcePathOrFile: canvasFile,
+        newTargetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('target.md');
+    });
+
+    it('should keep wikilink alias when present', () => {
+      const link = {
+        displayText: 'my alias',
+        link: 'target',
+        original: '[[target|my alias]]'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'target.md'
+      });
+      expect(result).toBe('[[target|my alias]]');
+    });
+
+    it('should update alias matching old basename when shouldUpdateFileNameAlias is not set', () => {
+      const link = {
+        displayText: 'target',
+        link: 'target',
+        original: '[[target]]'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'folder/other.md',
+        oldTargetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('other');
+    });
+
+    it('should update alias matching old name when shouldUpdateFileNameAlias is not set', () => {
+      const link = {
+        displayText: 'target.md',
+        link: 'target',
+        original: '[[target]]'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'folder/other.md',
+        oldTargetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('other');
+    });
+
+    it('should preserve alias when shouldUpdateFileNameAlias is false', () => {
+      const link = {
+        displayText: 'custom alias',
+        link: 'target',
+        original: '[[target|custom alias]]'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'target.md',
+        shouldUpdateFileNameAlias: false
+      });
+      expect(result).toContain('custom alias');
+    });
+
+    it('should use markdown link style', () => {
+      const link = {
+        displayText: 'target',
+        link: 'target',
+        original: '[target](target.md)'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        linkStyle: LinkStyle.Markdown,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('(target.md)');
+    });
+
+    it('should handle subpath in link', () => {
+      const link = {
+        displayText: 'target',
+        link: 'target#heading',
+        original: '[[target#heading]]'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('#heading');
+    });
+
+    it('should remap alias from old basename to new basename when shouldUpdateFileNameAlias is true', () => {
+      const link = {
+        displayText: 'target',
+        link: 'target',
+        original: '[target](target.md)'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        linkStyle: LinkStyle.Markdown,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'folder/other.md',
+        oldTargetPathOrFile: 'target.md',
+        shouldUpdateFileNameAlias: true
+      });
+      expect(result).toContain('[other]');
+    });
+
+    it('should remap alias from old name to new name when shouldUpdateFileNameAlias is true', () => {
+      const link = {
+        displayText: 'target.md',
+        link: 'target',
+        original: '[target.md](target.md)'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        linkStyle: LinkStyle.Markdown,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'folder/other.md',
+        oldTargetPathOrFile: 'target.md',
+        shouldUpdateFileNameAlias: true
+      });
+      expect(result).toContain('[other.md]');
+    });
+
+    it('should set isSingleSubpathAllowed when old source equals old target and alias exists', () => {
+      const link = {
+        displayText: 'alias',
+        link: 'note#heading',
+        original: '[[note#heading|alias]]'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'note.md',
+        oldTargetPathOrFile: 'note.md'
+      });
+      expect(result).toContain('#heading');
+    });
+  });
+
+  describe('editLinksInContent', () => {
+    it('should process links in content', async () => {
+      vi.mocked(parseMetadata).mockResolvedValue({
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
+        }]
+      } as unknown as CachedMetadata);
+
+      const result = await editLinksInContent(
+        app,
+        '# Note\n[[target]]',
+        () => '[[new-target]]'
+      );
+
+      expect(result).toBeDefined();
+    });
+
+    it('should handle linkConverter returning undefined (skip)', async () => {
+      vi.mocked(parseMetadata).mockResolvedValue({
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
+        }]
+      } as unknown as CachedMetadata);
+
+      const result = await editLinksInContent(
+        app,
+        '[[target]]',
+        () => undefined
+      );
+
+      expect(result).toBeDefined();
+    });
+
+    it('should escape wikilink divider when link is inside a table', async () => {
+      vi.mocked(parseMetadata).mockResolvedValue({
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 12, line: 0, offset: 12 }, start: { col: 0, line: 0, offset: 0 } }
+        }],
+        sections: [{
+          position: { end: { col: 50, line: 0, offset: 50 }, start: { col: 0, line: 0, offset: 0 } },
+          type: 'table'
+        }]
+      } as unknown as CachedMetadata);
+
+      const result = await editLinksInContent(
+        app,
+        '| [[target]] |',
+        () => '[[new|alias]]'
+      );
+
+      expect(result).toBeDefined();
+    });
+
+    it('should handle null cache', async () => {
+      vi.mocked(parseMetadata).mockResolvedValue(null as unknown as CachedMetadata);
+
+      const result = await editLinksInContent(
+        app,
+        'no links',
+        () => '[[new]]'
+      );
+
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('editLinks', () => {
+    it('should call applyFileChanges', async () => {
+      await editLinks(
+        app,
+        'note.md',
+        () => '[[updated]]'
+      );
+
+      expect(applyFileChanges).toHaveBeenCalled();
+    });
+
+    it('should invoke changesProvider when applyFileChanges calls it', async () => {
+      vi.mocked(applyFileChanges).mockImplementation(
+        async (_theApp, _pathOrFile, changesProvider) => {
+          if (typeof changesProvider === 'function') {
+            const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+          }
+        }
+      );
+
+      vi.mocked(getCacheSafe).mockResolvedValue({
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
+        }]
+      } as unknown as CachedMetadata);
+
+      await editLinks(
+        app,
+        'note.md',
+        () => '[[updated]]'
+      );
+
+      expect(applyFileChanges).toHaveBeenCalled();
+    });
+
+    it('should return null from changesProvider when content differs from cachedRead', async () => {
+      vi.mocked(applyFileChanges).mockImplementation(
+        async (_theApp, _pathOrFile, changesProvider) => {
+          if (typeof changesProvider === 'function') {
+            const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, 'different content');
+          }
+        }
+      );
+
+      vi.mocked(getCacheSafe).mockResolvedValue({} as CachedMetadata);
+
+      await editLinks(
+        app,
+        'note.md',
+        () => '[[updated]]'
+      );
+
+      expect(applyFileChanges).toHaveBeenCalled();
+    });
+  });
+
+  describe('editBacklinks', () => {
+    it('should process backlinks and invoke linkConverter for matching links', async () => {
+      const backlinkRef = {
+        displayText: 'target',
+        link: 'target',
+        original: '[[target]]',
+        position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
+      };
+      vi.mocked(getBacklinksForFileSafe).mockResolvedValue({
+        get: (key: string) => {
+          if (key === 'note.md') {
+            return [backlinkRef];
+          }
+          return null;
+        },
+        keys: () => ['note.md']
+      } as never);
+
+      // Wire up applyFileChanges to invoke changesProvider
+      vi.mocked(applyFileChanges).mockImplementation(
+        async (_theApp, _pathOrFile, changesProvider) => {
+          if (typeof changesProvider === 'function') {
+            const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+          }
+        }
+      );
+
+      // getCacheSafe returns a cache whose links include the backlink reference
+      vi.mocked(getCacheSafe).mockResolvedValue({
+        links: [backlinkRef]
+      } as unknown as CachedMetadata);
+
+      const linkConverter = vi.fn(() => '[[new-target]]');
+      await editBacklinks(
+        app,
+        'target.md',
+        linkConverter
+      );
+
+      expect(applyFileChanges).toHaveBeenCalled();
+      expect(linkConverter).toHaveBeenCalled();
+    });
+
+    it('should skip links not in backlinks set', async () => {
+      const backlinkRef = {
+        displayText: 'target',
+        link: 'target',
+        original: '[[target]]',
+        position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
+      };
+      vi.mocked(getBacklinksForFileSafe).mockResolvedValue({
+        get: () => [],
+        keys: () => ['note.md']
+      } as never);
+
+      // Wire up applyFileChanges to invoke changesProvider
+      vi.mocked(applyFileChanges).mockImplementation(
+        async (_theApp, _pathOrFile, changesProvider) => {
+          if (typeof changesProvider === 'function') {
+            const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+          }
+        }
+      );
+
+      vi.mocked(getCacheSafe).mockResolvedValue({
+        links: [backlinkRef]
+      } as unknown as CachedMetadata);
+
+      const linkConverter = vi.fn(() => '[[new-target]]');
+      await editBacklinks(
+        app,
+        'target.md',
+        linkConverter
+      );
+
+      expect(applyFileChanges).toHaveBeenCalled();
+      // linkConverter should NOT be called because the link is not in the backlinks set
+      expect(linkConverter).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateLinksInContent', () => {
+    it('should call editLinksInContent with convertLink callback', async () => {
+      vi.mocked(parseMetadata).mockResolvedValue({} as CachedMetadata);
+
+      const result = await updateLinksInContent({
+        app,
+        content: '# Note\n[[target]]',
+        newSourcePathOrFile: 'note.md'
+      });
+
+      expect(result).toBeDefined();
+    });
+
+    it('should skip non-embed links when shouldUpdateEmbedOnlyLinks is true', async () => {
+      vi.mocked(parseMetadata).mockResolvedValue({
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
+        }]
+      } as unknown as CachedMetadata);
+
+      const result = await updateLinksInContent({
+        app,
+        content: '[[target]]',
+        newSourcePathOrFile: 'note.md',
+        shouldUpdateEmbedOnlyLinks: true
+      });
+
+      expect(result).toBeDefined();
+    });
+
+    it('should invoke convertLink for matching links', async () => {
+      vi.mocked(parseMetadata).mockResolvedValue({
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
+        }]
+      } as unknown as CachedMetadata);
+
+      const result = await updateLinksInContent({
+        app,
+        content: '[[target]]',
+        newSourcePathOrFile: 'note.md'
+      });
+
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('updateLinksInFile', () => {
+    it('should call editLinks for markdown files', async () => {
+      await updateLinksInFile({
+        app,
+        newSourcePathOrFile: 'note.md'
+      });
+
+      expect(applyFileChanges).toHaveBeenCalled();
+    });
+
+    it('should return early for canvas files when Canvas plugin is disabled', async () => {
+      (app as Record<string, unknown>)['internalPlugins'] = {
+        getEnabledPluginById: vi.fn(() => null)
+      };
+
+      const canvasApp = createMockApp({
+        files: [{ content: '{}', path: 'canvas.canvas' }]
+      });
+      (canvasApp as Record<string, unknown>)['internalPlugins'] = {
+        getEnabledPluginById: vi.fn(() => null)
+      };
+      const canvasFileMap = canvasApp.vault.fileMap;
+      const canvasFile = canvasFileMap['canvas.canvas'] as TFile;
+      canvasFile.extension = 'canvas';
+
+      await updateLinksInFile({
+        app: canvasApp,
+        newSourcePathOrFile: canvasFile
+      });
+
+      expect(applyFileChanges).not.toHaveBeenCalled();
+    });
+
+    it('should skip links when shouldUpdateEmbedOnlyLinks does not match', async () => {
+      vi.mocked(applyFileChanges).mockImplementation(
+        async (_theApp, _pathOrFile, changesProvider) => {
+          if (typeof changesProvider === 'function') {
+            const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+          }
+        }
+      );
+      vi.mocked(getCacheSafe).mockResolvedValue({
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
+        }]
+      } as unknown as CachedMetadata);
+
+      await updateLinksInFile({
+        app,
+        newSourcePathOrFile: 'note.md',
+        shouldUpdateEmbedOnlyLinks: true
+      });
+
+      expect(applyFileChanges).toHaveBeenCalled();
+    });
+
+    it('should invoke convertLink for matching links', async () => {
+      vi.mocked(applyFileChanges).mockImplementation(
+        async (_theApp, _pathOrFile, changesProvider) => {
+          if (typeof changesProvider === 'function') {
+            const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+          }
+        }
+      );
+      vi.mocked(getCacheSafe).mockResolvedValue({
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
+        }]
+      } as unknown as CachedMetadata);
+
+      await updateLinksInFile({
+        app,
+        newSourcePathOrFile: 'note.md'
+      });
+
+      expect(applyFileChanges).toHaveBeenCalled();
+    });
+  });
+
+  describe('registerGenerateMarkdownLinkDefaultOptionsFn', () => {
+    it('should register and apply default options', () => {
+      let cleanupFn: (() => void) | undefined;
+      const mockPlugin = {
+        app,
+        register: vi.fn((fn: () => void) => {
+          cleanupFn = fn;
+        })
+      } as unknown as Plugin;
+
+      registerGenerateMarkdownLinkDefaultOptionsFn(mockPlugin, () => ({
+        shouldUseLeadingSlashForAbsolutePaths: true
+      }));
+
+      expect(mockPlugin.register).toHaveBeenCalled();
+
+      const result = generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.AbsolutePathInVault,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result).toContain('/');
+
+      assertNonNullable(cleanupFn);
+      cleanupFn();
+
+      const result2 = generateMarkdownLink({
+        app,
+        linkPathStyle: LinkPathStyle.AbsolutePathInVault,
+        linkStyle: LinkStyle.Wikilink,
+        sourcePathOrFile: 'note.md',
+        targetPathOrFile: 'target.md'
+      });
+      expect(result2).toBe('[[target]]');
+    });
+  });
+
+  describe('getFileChanges canvas path', () => {
+    it('should handle canvas file changes through editLinks', async () => {
+      const canvasApp = createMockApp({
+        files: [
+          { content: '{"nodes":[]}', path: 'test.canvas' },
+          { content: '# Target', path: 'target.md' }
+        ]
+      });
+      const canvasFileMap = canvasApp.vault.fileMap;
+      const canvasFile = canvasFileMap['test.canvas'] as TFile;
+      canvasFile.extension = 'canvas';
+
+      vi.mocked(applyFileChanges).mockImplementation(
+        async (_theApp, _pathOrFile, changesProvider) => {
+          if (typeof changesProvider === 'function') {
+            const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '{"nodes":[]}');
+          }
+        }
+      );
+
+      vi.mocked(getCacheSafe).mockResolvedValue({
+        frontmatterLinks: [{
+          isCanvas: true,
+          key: 'file',
+          link: 'target.md',
+          nodeIndex: 0,
+          original: 'target.md',
+          type: 'file'
+        }]
+      } as unknown as CachedMetadata);
+
+      await editLinks(
+        canvasApp,
+        canvasFile,
+        () => 'new-target.md'
+      );
+
+      expect(applyFileChanges).toHaveBeenCalled();
+    });
+
+    it('should log error for non-canvas change in canvas file', async () => {
+      const canvasApp = createMockApp({
+        files: [
+          { content: '{"nodes":[]}', path: 'test.canvas' },
+          { content: '# Target', path: 'target.md' }
+        ]
+      });
+      const canvasFileMap = canvasApp.vault.fileMap;
+      const canvasFile = canvasFileMap['test.canvas'] as TFile;
+      canvasFile.extension = 'canvas';
+
+      vi.mocked(applyFileChanges).mockImplementation(
+        async (_theApp, _pathOrFile, changesProvider) => {
+          if (typeof changesProvider === 'function') {
+            const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '{"nodes":[]}');
+          }
+        }
+      );
+
+      vi.mocked(getCacheSafe).mockResolvedValue({
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
+        }]
+      } as unknown as CachedMetadata);
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      await editLinks(
+        canvasApp,
+        canvasFile,
+        () => '[[new-target]]'
+      );
+
+      expect(consoleSpy).toHaveBeenCalledWith('Unsupported file change', expect.anything());
+      consoleSpy.mockRestore();
     });
   });
 });

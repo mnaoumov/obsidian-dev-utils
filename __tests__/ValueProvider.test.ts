@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { resolveValue } from '../src/ValueProvider.ts';
-import { assertNotNullable } from './TestHelpers.ts';
+import { assertNonNullable } from '../src/ObjectUtils.ts';
 
 describe('resolveValue', () => {
   describe('direct value provider', () => {
@@ -96,7 +96,7 @@ describe('resolveValue', () => {
       });
       await resolveValue(provider, undefined, 42, 'hello');
       const call = provider.mock.calls[0];
-      assertNotNullable(call);
+      assertNonNullable(call);
       expect(call[1]).toBe(42);
     });
 
@@ -106,7 +106,7 @@ describe('resolveValue', () => {
       });
       await resolveValue(provider, undefined, 42, 'hello');
       const call = provider.mock.calls[0];
-      assertNotNullable(call);
+      assertNonNullable(call);
       expect(call[2]).toBe('hello');
     });
   });

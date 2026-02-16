@@ -30,5 +30,5 @@ export const AppContext = createContext<App | undefined>(undefined);
  * @returns The app instance.
  */
 export function useApp(): App {
-  return ensureNonNullable(useContext(AppContext), () => 'AppContext not found');
+  return ensureNonNullable(useContext(AppContext), 'AppContext not found');
 }

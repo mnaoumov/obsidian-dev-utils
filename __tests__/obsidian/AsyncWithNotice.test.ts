@@ -22,7 +22,7 @@ import {
   runWithTimeoutNotice
 } from '../../src/obsidian/AsyncWithNotice.ts';
 import { t } from '../../src/obsidian/i18n/i18n.ts';
-import { assertNotNullable } from '../TestHelpers.ts';
+import { assertNonNullable } from '../../src/ObjectUtils.ts';
 
 vi.mock('../../src/Async.ts', () => ({
   retryWithTimeout: vi.fn(async (options: Record<string, unknown>) => {
@@ -487,7 +487,7 @@ describe('AsyncWithNotice', () => {
 
       // Simulate the operation completing
       const callback = onOperationCompletedCallbacks[0];
-      assertNotNullable(callback);
+      assertNonNullable(callback);
       callback();
 
       expect(clearIntervalSpy).toHaveBeenCalled();
@@ -632,7 +632,7 @@ describe('AsyncWithNotice', () => {
 
       expect(onOperationCompletedCallbacks.length).toBe(1);
       const callback = onOperationCompletedCallbacks[0];
-      assertNotNullable(callback);
+      assertNonNullable(callback);
       callback();
 
       expect(getDebugger).toHaveBeenCalledWith('AsyncWithNotice:onTimeoutWithoutNotice');
@@ -654,7 +654,7 @@ describe('AsyncWithNotice', () => {
       onTimeout(ctx);
 
       const callback = onOperationCompletedCallbacks[0];
-      assertNotNullable(callback);
+      assertNonNullable(callback);
       callback();
 
       expect(mockDebugFn).toHaveBeenCalledWith(

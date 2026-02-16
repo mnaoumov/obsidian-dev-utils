@@ -51,7 +51,7 @@ export async function lintMarkdown(shouldFix = false): Promise<void> {
   if (!configFileExist) {
     getLibDebugger('markdownlint:lintMarkdown')('markdownlint configuration file not found. Creating default config...');
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
-    assertNonNullable(packageFolder, () => 'Package folder not found');
+    assertNonNullable(packageFolder, 'Package folder not found');
     await cp(
       join(packageFolder, ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.MarkdownlintCli2ConfigMjs),
       resolvePathFromRootSafe(ObsidianPluginRepoPaths.MarkdownlintCli2ConfigMjs)

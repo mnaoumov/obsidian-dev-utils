@@ -11,7 +11,7 @@ import {
   CalloutMode,
   wrapForCallout
 } from '../../src/obsidian/Callout.ts';
-import { assertNotNullable } from '../TestHelpers.ts';
+import { assertNonNullable } from '../../src/ObjectUtils.ts';
 
 describe('wrapForCallout', () => {
   it('should wrap a single line with blockquote prefix', () => {
@@ -223,7 +223,7 @@ describe('renderCallout', () => {
     expect(mockObserve).toHaveBeenCalledTimes(1);
     // The observed element should be the .content div
     const firstObserveCall = mockObserve.mock.calls[0];
-    assertNotNullable(firstObserveCall);
+    assertNonNullable(firstObserveCall);
     const observedEl = firstObserveCall[0] as HTMLElement;
     expect(observedEl.className).toBe('content');
   });
@@ -235,7 +235,7 @@ describe('renderCallout', () => {
     renderCallout({ dv: dv as never });
 
     const firstObserveCall = mockObserve.mock.calls[0];
-    assertNotNullable(firstObserveCall);
+    assertNonNullable(firstObserveCall);
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     // Simulate intersection
@@ -262,7 +262,7 @@ describe('renderCallout', () => {
     renderCallout({ dv: dv as never });
 
     const firstObserveCall = mockObserve.mock.calls[0];
-    assertNotNullable(firstObserveCall);
+    assertNonNullable(firstObserveCall);
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
@@ -282,7 +282,7 @@ describe('renderCallout', () => {
     renderCallout({ abortSignal: abortController.signal, dv: dv as never });
 
     const firstObserveCall = mockObserve.mock.calls[0];
-    assertNotNullable(firstObserveCall);
+    assertNonNullable(firstObserveCall);
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
@@ -309,7 +309,7 @@ describe('renderCallout', () => {
     renderCallout({ contentProvider: 'Hello World', dv: dv as never });
 
     const firstObserveCall1 = mockObserve.mock.calls[0];
-    assertNotNullable(firstObserveCall1);
+    assertNonNullable(firstObserveCall1);
     const observedEl = firstObserveCall1[0] as HTMLElement;
 
     intersectionCallback(
@@ -341,7 +341,7 @@ describe('renderCallout', () => {
     renderCallout({ contentProvider: contentFn, dv: dv as never });
 
     const firstObserveCall2 = mockObserve.mock.calls[0];
-    assertNotNullable(firstObserveCall2);
+    assertNonNullable(firstObserveCall2);
     const observedEl = firstObserveCall2[0] as HTMLElement;
 
     intersectionCallback(
@@ -371,7 +371,7 @@ describe('renderCallout', () => {
     renderCallout({ contentProvider: () => undefined, dv: dv as never });
 
     const firstObserveCall3 = mockObserve.mock.calls[0];
-    assertNotNullable(firstObserveCall3);
+    assertNonNullable(firstObserveCall3);
     const observedEl = firstObserveCall3[0] as HTMLElement;
 
     intersectionCallback(
@@ -432,7 +432,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
     renderCallout({ dv: dv as never, mode: CalloutMode.FoldableCollapsed });
 
     const firstParagraphCall1 = dv.paragraph.mock.calls[0];
-    assertNotNullable(firstParagraphCall1);
+    assertNonNullable(firstParagraphCall1);
     const calloutText = firstParagraphCall1[0] as string;
     expect(calloutText).toContain('[!NOTE]-');
   });
@@ -444,7 +444,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
     renderCallout({ dv: dv as never, mode: CalloutMode.FoldableExpanded });
 
     const firstParagraphCall2 = dv.paragraph.mock.calls[0];
-    assertNotNullable(firstParagraphCall2);
+    assertNonNullable(firstParagraphCall2);
     const calloutText = firstParagraphCall2[0] as string;
     expect(calloutText).toContain('[!NOTE]+');
   });
@@ -456,7 +456,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
     renderCallout({ dv: dv as never, mode: CalloutMode.Default });
 
     const firstParagraphCall3 = dv.paragraph.mock.calls[0];
-    assertNotNullable(firstParagraphCall3);
+    assertNonNullable(firstParagraphCall3);
     const calloutText = firstParagraphCall3[0] as string;
     // Default mode: no modifier between ] and space
     expect(calloutText).toMatch(/\[!NOTE\] /);

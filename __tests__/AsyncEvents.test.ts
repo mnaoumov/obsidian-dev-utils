@@ -9,7 +9,7 @@ import {
 
 import { AsyncEvents } from '../src/AsyncEvents.ts';
 import { noopAsync } from '../src/Function.ts';
-import { assertNotNullable } from './TestHelpers.ts';
+import { assertNonNullable } from '../src/ObjectUtils.ts';
 
 describe('AsyncEvents', () => {
   let events: AsyncEvents;
@@ -218,7 +218,7 @@ describe('AsyncEvents', () => {
       events.trigger('test');
 
       const firstCall = setTimeoutSpy.mock.calls[0];
-      assertNotNullable(firstCall);
+      assertNonNullable(firstCall);
       const deferredFn = firstCall[0] as () => void;
       expect(() => {
         deferredFn();
@@ -290,7 +290,7 @@ describe('AsyncEvents', () => {
       });
       await events.triggerAsync('test');
       const firstCall = setTimeoutSpy.mock.calls[0];
-      assertNotNullable(firstCall);
+      assertNonNullable(firstCall);
       const deferredFn = firstCall[0] as () => void;
       expect(() => {
         deferredFn();
@@ -349,7 +349,7 @@ describe('AsyncEvents', () => {
       });
       events.tryTrigger(ref, []);
       const firstCall = setTimeoutSpy.mock.calls[0];
-      assertNotNullable(firstCall);
+      assertNonNullable(firstCall);
       const deferredFn = firstCall[0] as () => void;
       expect(() => {
         deferredFn();
@@ -392,7 +392,7 @@ describe('AsyncEvents', () => {
       });
       await events.tryTriggerAsync(ref, []);
       const firstCall = setTimeoutSpy.mock.calls[0];
-      assertNotNullable(firstCall);
+      assertNonNullable(firstCall);
       const deferredFn = firstCall[0] as () => void;
       expect(() => {
         deferredFn();

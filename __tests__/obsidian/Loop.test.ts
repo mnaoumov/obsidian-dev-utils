@@ -21,7 +21,7 @@ import {
 import { noop } from '../../src/Function.ts';
 import { loop } from '../../src/obsidian/Loop.ts';
 import { addPluginCssClasses } from '../../src/obsidian/Plugin/PluginContext.ts';
-import { assertNotNullable } from '../TestHelpers.ts';
+import { assertNonNullable } from '../../src/ObjectUtils.ts';
 
 vi.mock('../../src/AbortController.ts', () => ({
   abortSignalNever: vi.fn(() => new AbortController().signal)
@@ -306,7 +306,7 @@ describe('loop', () => {
       shouldShowNotice: false
     });
 
-    assertNotNullable(capturedProgressEl);
+    assertNonNullable(capturedProgressEl);
     const progressEl: HTMLProgressElement = capturedProgressEl;
     expect(progressEl.max).toBe(5);
     expect(progressEl.value).toBe(5);
@@ -445,7 +445,7 @@ describe('loop', () => {
     // After each iteration, value is incremented. The values captured during processItem
     // Are 0, 1, 2 because value++ happens after processItem returns.
     expect(values).toEqual([0, 1, 2]);
-    assertNotNullable(capturedProgressEl);
+    assertNonNullable(capturedProgressEl);
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(3);
 
     (globalThis as Record<string, unknown>)['createEl'] = origCreateEl;
@@ -474,7 +474,7 @@ describe('loop', () => {
       shouldShowNotice: false
     });
 
-    assertNotNullable(capturedProgressEl);
+    assertNonNullable(capturedProgressEl);
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(2);
 
     consoleErrorSpy.mockRestore();

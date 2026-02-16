@@ -392,7 +392,7 @@ async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<v
     return;
   }
   const container = dv.container;
-  let itemsPerPage = ensureNonNullable(itemsPerPageOptions[0], () => 'Items per page options are empty');
+  let itemsPerPage = ensureNonNullable(itemsPerPageOptions[0], 'Items per page options are empty');
   let totalPages = Math.ceil(rows.length / itemsPerPage);
   await renderPage(1);
 

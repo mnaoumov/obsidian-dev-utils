@@ -100,7 +100,7 @@ export function asArrayOfFolders(abstractFiles: TAbstractFile[]): TFolder[] {
  * @throws Error if the abstract file is not a file.
  */
 export function asFile(abstractFile: null | TAbstractFile): TFile {
-  return ensureNonNullable(asFileOrNull(abstractFile), () => 'Abstract file is not a file');
+  return ensureNonNullable(asFileOrNull(abstractFile), 'Abstract file is not a file');
 }
 
 /**
@@ -128,7 +128,7 @@ export function asFileOrNull(abstractFile: null | TAbstractFile): null | TFile {
  * @throws Error if the abstract file is not a folder.
  */
 export function asFolder(abstractFile: null | TAbstractFile): TFolder {
-  return ensureNonNullable(asFolderOrNull(abstractFile), () => 'Abstract file is not a folder');
+  return ensureNonNullable(asFolderOrNull(abstractFile), 'Abstract file is not a folder');
 }
 
 /**
@@ -205,7 +205,7 @@ export function exists(app: App, path: string, type?: FileSystemType, isCaseInse
  * @throws Error if the abstract file is not found.
  */
 export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, isCaseInsensitive?: boolean): TAbstractFile {
-  return ensureNonNullable(getAbstractFileOrNull(app, pathOrFile, isCaseInsensitive), () => `Abstract file not found: ${pathOrFile as string}`);
+  return ensureNonNullable(getAbstractFileOrNull(app, pathOrFile, isCaseInsensitive), `Abstract file not found: ${pathOrFile as string}`);
 }
 
 /**

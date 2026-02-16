@@ -36,6 +36,7 @@ import type { ProcessOptions } from './Vault.ts';
 import { abortSignalNever } from '../AbortController.ts';
 import {
   assertNonNullable,
+  ensureNonNullable,
   normalizeOptionalProperties,
   toJson
 } from '../ObjectUtils.ts';
@@ -757,7 +758,7 @@ export async function editBacklinks(
 ): Promise<void> {
   const backlinks = await getBacklinksForFileSafe(app, pathOrFile, processOptions);
   for (const backlinkNotePath of backlinks.keys()) {
-    const currentLinks = backlinks.get(backlinkNotePath) ?? [];
+    const currentLinks = ensureNonNullable(backlinks.get(backlinkNotePath));
     const linkJsons = new Set<string>(currentLinks.map((link) => toJson(link)));
     await editLinks(app, backlinkNotePath, (link) => {
       const linkJson = toJson(link);
@@ -826,7 +827,7 @@ export async function editLinksInContent(
   });
   abortSignal.throwIfAborted();
 
-  assertNonNullable(newContent, () => 'Failed to update links in content');
+  assertNonNullable(newContent, 'Failed to update links in content');
 
   return newContent;
 }
@@ -1087,7 +1088,7 @@ export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
     aliasesToReset.add(app.metadataCache.fileToLinktext(targetFile, sourcePath, false));
   }
 
-  const cleanDisplayText = replaceAll(normalizePath(displayText.split(' > ')[0] ?? ''), /^\.\//g, '').toLowerCase();
+  const cleanDisplayText = replaceAll(normalizePath(ensureNonNullable(displayText.split(' > ')[0])), /^\.\//g, '').toLowerCase();
 
   for (const alias of aliasesToReset) {
     if (alias.toLowerCase() === cleanDisplayText) {
@@ -1459,8 +1460,10 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
         linkText = matchedFiles.length === 1 && matchedFiles[0] === targetFile ? targetFile.name : targetFile.path;
         break;
       }
+      /* v8 ignore start -- All valid FinalLinkPathStyle values are handled above */
       default:
         throw new Error(`Invalid link path style: ${config.linkPathStyle as string}.`);
+      /* v8 ignore stop */
     }
   }
 
@@ -1603,8 +1606,10 @@ function getGenerateMarkdownLinkDefaultOptionsFns(app: App): (() => Partial<Gene
 function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile): LinkConfig {
   const { app } = options;
   return {
+    /* v8 ignore start -- requireApiVersion fallback is only reached in older Obsidian versions */
     isEmbed: options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined)
       ?? (!requireApiVersion('1.10.0') && !isMarkdownFile(app, targetFile)),
+    /* v8 ignore stop */
     isSingleSubpathAllowed: options.isSingleSubpathAllowed ?? true,
     isWikilink: shouldUseWikilinkStyle(app, options.originalLink, options.linkStyle),
     linkPathStyle: getFinalLinkPathStyle(app, options.linkPathStyle),
@@ -1617,7 +1622,8 @@ function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile):
 }
 
 function getRawLink(node: Node, str: string): string {
-  return str.slice(node.position?.start.offset ?? 0, node.position?.end.offset ?? 0);
+  const pos = ensureNonNullable(node.position);
+  return str.slice(pos.start.offset, pos.end.offset);
 }
 
 function hasAngleBracketsInLink(raw: string, rawUrl: string): boolean {
@@ -1631,7 +1637,10 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
   const raw = getRawLink(node, str);
   const aliasNodeStartOffset = node.children[0]?.position?.start.offset ?? 1;
   const aliasNodeEndOffset = node.children.at(-1)?.position?.end.offset ?? 1;
-  const rawUrl = str.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, (node.position?.end.offset ?? 0) - LINK_SUFFIX.length);
+  const position = ensureNonNullable(node.position);
+  const nodeEndOffset = ensureNonNullable(position.end.offset);
+  const nodeStartOffset = ensureNonNullable(position.start.offset);
+  const rawUrl = str.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, nodeEndOffset - LINK_SUFFIX.length);
   const hasAngleBrackets = hasAngleBracketsInLink(raw, rawUrl);
   const isExternal = isUrl(node.url);
   const url = decodeUrlSafely(node.url, isExternal, hasAngleBrackets);
@@ -1639,13 +1648,13 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
   return normalizeOptionalProperties<ParseLinkResult>({
     alias,
     encodedUrl: isExternal ? encodeUrl(url) : undefined,
-    endOffset: node.position?.end.offset ?? 0,
+    endOffset: nodeEndOffset,
     hasAngleBrackets,
     isEmbed: false,
     isExternal,
     isWikilink: false,
     raw,
-    startOffset: node.position?.start.offset ?? 0,
+    startOffset: nodeStartOffset,
     title: node.title ?? undefined,
     unescapedAlias: alias === undefined ? undefined : unescapeAlias(alias),
     url
@@ -1653,22 +1662,25 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
 }
 
 function parseWikilinkNode(node: WikiLinkNode, str: string): ParseLinkResult {
+  const position = ensureNonNullable(node.position);
   return normalizeOptionalProperties<ParseLinkResult>({
     alias: str.includes(WIKILINK_DIVIDER) ? node.data.alias : undefined,
-    endOffset: node.position?.end.offset ?? 0,
+    endOffset: ensureNonNullable(position.end.offset),
     isEmbed: false,
     isExternal: false,
     isWikilink: true,
     raw: getRawLink(node, str),
-    startOffset: node.position?.start.offset ?? 0,
+    startOffset: ensureNonNullable(position.start.offset),
     url: node.value
   });
 }
 
 function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: TablePosition[]): boolean {
+  /* v8 ignore start -- getFileChanges only calls this for non-canvas files which always have content changes */
   if (!isContentChange(fileChange)) {
     return false;
   }
+  /* v8 ignore stop */
 
   if (!UNESCAPED_WIKILINK_DIVIDER_REGEXP.test(fileChange.newContent)) {
     return false;

@@ -16,7 +16,7 @@ import {
   SilentError,
   throwExpression
 } from '../src/Error.ts';
-import { assertNotNullable } from './TestHelpers.ts';
+import { assertNonNullable } from '../src/ObjectUtils.ts';
 
 describe('ASYNC_WRAPPER_ERROR_MESSAGE', () => {
   it('should be the expected constant string', () => {
@@ -318,7 +318,7 @@ describe('printError', () => {
     printError(error, mockConsole);
 
     const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
-    assertNotNullable(firstCall);
+    assertNonNullable(firstCall);
     const output = firstCall[0] as string;
     expect(output).toContain('print me');
   });
@@ -335,7 +335,7 @@ describe('printError', () => {
     printError('just a string', mockConsole);
 
     const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
-    assertNotNullable(firstCall);
+    assertNonNullable(firstCall);
     expect(firstCall[0]).toBe('just a string');
   });
 
@@ -347,7 +347,7 @@ describe('printError', () => {
     printError(error, mockConsole);
 
     const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
-    assertNotNullable(firstCall);
+    assertNonNullable(firstCall);
     const output = firstCall[0] as string;
     expect(output).toContain('outer');
   });
@@ -360,7 +360,7 @@ describe('printError', () => {
     printError(error, mockConsole);
 
     const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
-    assertNotNullable(firstCall);
+    assertNonNullable(firstCall);
     const output = firstCall[0] as string;
     expect(output).toContain('Caused by:');
   });
@@ -373,7 +373,7 @@ describe('printError', () => {
     printError(error, mockConsole);
 
     const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
-    assertNotNullable(firstCall);
+    assertNonNullable(firstCall);
     const output = firstCall[0] as string;
     expect(output).toContain('root');
   });

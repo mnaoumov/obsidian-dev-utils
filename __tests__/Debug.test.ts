@@ -23,7 +23,7 @@ import {
   NO_PLUGIN_ID_INITIALIZED,
   setPluginId
 } from '../src/obsidian/Plugin/PluginId.ts';
-import { assertNotNullable } from './TestHelpers.ts';
+import { assertNonNullable } from '../src/ObjectUtils.ts';
 
 describe('Debug', () => {
   let savedNamespaces: string;
@@ -238,7 +238,7 @@ describe('Debug', () => {
       dbg('test message %s', 'arg1');
       expect(consoleSpy).toHaveBeenCalled();
       const callArgs = consoleSpy.mock.calls[0];
-      assertNotNullable(callArgs);
+      assertNonNullable(callArgs);
       expect(callArgs[0]).toContain('test message');
     });
 

@@ -50,7 +50,7 @@ export class GroupTransformer extends Transformer {
    * @returns The transformer with the given id.
    */
   public override getTransformer(transformerId: string): Transformer {
-    return ensureNonNullable(this.transformers.find((t) => t.id === transformerId), () => `No transformer with id ${transformerId} found`);
+    return ensureNonNullable(this.transformers.find((t) => t.id === transformerId), `No transformer with id ${transformerId} found`);
   }
 
   /**
@@ -62,7 +62,7 @@ export class GroupTransformer extends Transformer {
    */
   public override transformValue(value: unknown, key: string): unknown {
     const transformer = this.getFirstTransformerThatCanTransform(value, key);
-    assertNonNullable(transformer, () => 'No transformer can transform the value');
+    assertNonNullable(transformer, 'No transformer can transform the value');
 
     return transformer.transformValue(value, key);
   }

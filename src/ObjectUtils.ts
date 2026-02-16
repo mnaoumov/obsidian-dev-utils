@@ -161,20 +161,17 @@ type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string
  *
  * @typeParam T - The type of the value.
  * @param value - The value to check.
- * @param errorFactory - Optional factory function that returns an {@link Error} or error message string.
+ * @param errorOrMessage - Optional {@link Error} or error message string.
  * @throws If the value is `null` or `undefined`.
  */
-export function assertNonNullable<T>(value: T, errorFactory?: () => Error | string): asserts value is NonNullable<T> {
+export function assertNonNullable<T>(value: T, errorOrMessage?: Error | string): asserts value is NonNullable<T> {
   if (value !== null && value !== undefined) {
     return;
   }
 
-  if (!errorFactory) {
-    throw new Error(value === null ? 'Value is null' : 'Value is undefined');
-  }
-
-  const error = errorFactory();
-  throw typeof error === 'string' ? new Error(error) : error;
+  errorOrMessage ??= value === null ? 'Value is null' : 'Value is undefined';
+  const error = typeof errorOrMessage === 'string' ? new Error(errorOrMessage) : errorOrMessage;
+  throw error;
 }
 
 /**
@@ -311,12 +308,12 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
  *
  * @typeParam T - The type of the value.
  * @param value - The value to check.
- * @param errorFactory - Optional factory function that returns an {@link Error} or error message string.
+ * @param errorOrMessage - Optional {@link Error} or error message string.
  * @returns The value with `null` and `undefined` excluded from its type.
  * @throws If the value is `null` or `undefined`.
  */
-export function ensureNonNullable<T>(value: T, errorFactory?: () => Error | string): NonNullable<T> {
-  assertNonNullable(value, errorFactory);
+export function ensureNonNullable<T>(value: T, errorOrMessage?: Error | string): NonNullable<T> {
+  assertNonNullable(value, errorOrMessage);
   return value;
 }
 
@@ -517,12 +514,10 @@ export function setNestedPropertyValue(obj: GenericObject, path: string, value: 
     node = node[key] as GenericObject | undefined;
   }
 
-  const lastKey = keys.at(-1);
-  /* v8 ignore start -- lastKey is never undefined because split always returns at least one element. */
-  if (node === undefined || lastKey === undefined) {
+  const lastKey = ensureNonNullable(keys.at(-1));
+  if (node === undefined) {
     throw error;
   }
-  /* v8 ignore stop */
 
   node[lastKey] = value;
 }
@@ -569,9 +564,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   const usedObjects = new WeakSet<object>();
 
   const plainObject = toPlainObject(value, '', 0, true, fullOptions, functionTexts, usedObjects);
-  /* v8 ignore start -- JSON.stringify always returns a string for a valid plain object. */
-  let json = JSON.stringify(plainObject, null, fullOptions.space) ?? '';
-  /* v8 ignore stop */
+  let json = ensureNonNullable(JSON.stringify(plainObject, null, fullOptions.space));
   json = replaceAll(json, /"\[\[(?<Key>[A-Za-z]+)(?<Index>\d*)\]\]"/g, (_, key, indexStr) =>
     applySubstitutions({
       functionTexts,
@@ -633,7 +626,7 @@ function applySubstitutions(options: ApplySubstitutionsOptions): MaybeReturn<str
       return options.substitutions.circularReference;
     case TokenSubstitutionKey.Function:
       /* v8 ignore start -- Function index is always valid since we push before accessing. */
-      return ensureNonNullable(options.functionTexts[options.index], () => `Function with index ${String(options.index)} not found`);
+      return ensureNonNullable(options.functionTexts[options.index], `Function with index ${String(options.index)} not found`);
       /* v8 ignore stop */
     case TokenSubstitutionKey.MaxDepthLimitReached:
       return options.substitutions.maxDepthLimitReached;

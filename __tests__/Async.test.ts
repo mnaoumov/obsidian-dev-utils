@@ -43,7 +43,7 @@ import {
   noop,
   noopAsync
 } from '../src/Function.ts';
-import { assertNotNullable } from './TestHelpers.ts';
+import { assertNonNullable } from '../src/ObjectUtils.ts';
 
 describe('Async', () => {
   describe('sleep', () => {
@@ -678,7 +678,7 @@ describe('Async', () => {
         // Expected
       }
 
-      assertNotNullable(capturedCtx);
+      assertNonNullable(capturedCtx);
       expect((capturedCtx as { operationName: string }).operationName).toBe('myOperation');
     });
 
@@ -754,7 +754,7 @@ describe('Async', () => {
         // Expected
       }
 
-      assertNotNullable(receivedSignal);
+      assertNonNullable(receivedSignal);
       expect((receivedSignal as AbortSignal).aborted).toBe(true);
     });
   });

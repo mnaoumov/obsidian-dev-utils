@@ -25,11 +25,11 @@ import {
  */
 export async function format(rewrite = true): Promise<void> {
   const rootFolder = getRootFolder();
-  assertNonNullable(rootFolder, () => 'Root folder not found');
+  assertNonNullable(rootFolder, 'Root folder not found');
   let dprintJsonPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.DprintJson);
   if (!existsSync(dprintJsonPath)) {
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
-    assertNonNullable(packageFolder, () => 'Could not find package folder.');
+    assertNonNullable(packageFolder, 'Could not find package folder.');
     dprintJsonPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.DprintJson), packageFolder);
   }
 

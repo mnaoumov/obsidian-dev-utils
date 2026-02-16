@@ -23,7 +23,10 @@ import type { RetryOptions } from '../Async.ts';
 import type { PathOrFile } from './FileSystem.ts';
 import type { CombinedFrontmatter } from './Frontmatter.ts';
 
-import { getNestedPropertyValue } from '../ObjectUtils.ts';
+import {
+  ensureNonNullable,
+  getNestedPropertyValue
+} from '../ObjectUtils.ts';
 import { getObsidianDevUtilsState } from './App.ts';
 import { retryWithTimeoutNotice } from './AsyncWithNotice.ts';
 import {
@@ -109,10 +112,7 @@ export function getAllLinks(cache: CachedMetadata): Reference[] {
       return true;
     }
 
-    const previousLink = links[index - 1];
-    if (!previousLink) {
-      return true;
-    }
+    const previousLink = ensureNonNullable(links[index - 1]);
 
     if (isReferenceCache(link) && isReferenceCache(previousLink)) {
       return link.position.start.offset !== previousLink.position.start.offset;

@@ -179,16 +179,15 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
   const currentVersion = packageJson.version ?? '';
 
   const match = /^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Patch>\d+)(?:-beta\.(?<Beta>\d+))?$/.exec(currentVersion);
-  assertNonNullable(match, () => `Invalid current version format: ${currentVersion}`);
+  assertNonNullable(match, `Invalid current version format: ${currentVersion}`);
 
-  /* v8 ignore start -- v8 tracks optional chaining/nullish coalescing as branches; groups always exist when regex matches. */
-  let major = Number(match.groups?.['Major'] ?? '');
-  let minor = Number(match.groups?.['Minor'] ?? '');
-  let patch = Number(match.groups?.['Patch'] ?? '');
-  let beta = Number(match.groups?.['Beta'] ?? '');
+  const groups = ensureNonNullable(match.groups);
+  let major = Number(ensureNonNullable(groups['Major']));
+  let minor = Number(ensureNonNullable(groups['Minor']));
+  let patch = Number(ensureNonNullable(groups['Patch']));
+  let beta = Number(groups['Beta'] ?? '');
 
   switch (versionType) {
-    /* v8 ignore stop */
     case VersionUpdateType.Beta:
       if (beta === 0) {
         patch++;
@@ -499,7 +498,7 @@ async function getLatestObsidianVersion(): Promise<string> {
   const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');
   const obsidianReleasesJson = await response.json() as Partial<ObsidianReleasesJson>;
   /* v8 ignore start -- Error path: GitHub API always returns a name for valid releases. */
-  return ensureNonNullable(obsidianReleasesJson.name, () => 'Could not find the name of the latest Obsidian release');
+  return ensureNonNullable(obsidianReleasesJson.name, 'Could not find the name of the latest Obsidian release');
   /* v8 ignore stop */
 }
 
