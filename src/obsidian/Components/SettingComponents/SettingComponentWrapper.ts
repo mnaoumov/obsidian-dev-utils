@@ -16,7 +16,7 @@ import { addPluginCssClasses } from '../../Plugin/PluginContext.ts';
  */
 export function ensureWrapped(el: HTMLElement): HTMLDivElement {
   const parent = el.parentElement;
-  assertNonNullable(parent, () => 'Element must be attached to the DOM');
+  assertNonNullable(parent, 'Element must be attached to the DOM');
 
   if (parent.classList.contains(CssClass.SettingComponentWrapper)) {
     return parent as HTMLDivElement;

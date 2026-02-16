@@ -25,7 +25,7 @@ import {
   onAncestorScrollOrResize,
   toPx
 } from '../src/HTMLElement.ts';
-import { assertNotNullable } from './TestHelpers.ts';
+import { assertNonNullable } from '../src/ObjectUtils.ts';
 
 // Obsidian provides these globals at runtime; define them for jsdom.
 beforeAll(() => {
@@ -757,7 +757,7 @@ describe('onAncestorScrollOrResize', () => {
 
     // Execute the raf callback — it throws but try/finally should reset isEventTriggered
     const firstCallback = rafCallbacks[0];
-    assertNotNullable(firstCallback);
+    assertNonNullable(firstCallback);
     expect(() => {
       firstCallback(0);
     }).toThrow('callback error');

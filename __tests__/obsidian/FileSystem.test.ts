@@ -44,7 +44,7 @@ import {
   MARKDOWN_FILE_EXTENSION,
   trimMarkdownExtension
 } from '../../src/obsidian/FileSystem.ts';
-import { assertNotNullable } from '../TestHelpers.ts';
+import { assertNonNullable } from '../../src/ObjectUtils.ts';
 
 function createTestFile(path: string, ext = 'md'): TFile {
   const file = new TFile();
@@ -275,7 +275,7 @@ describe('checkExtension', () => {
   it('should return true when a TFile has the expected extension', () => {
     const app = createMockApp({ files: [{ path: 'note.md' }] });
     const file = app.vault.getFileByPath('note.md');
-    assertNotNullable(file);
+    assertNonNullable(file);
     expect(checkExtension(app, file, 'md')).toBe(true);
   });
 
@@ -405,7 +405,7 @@ describe('getAbstractFileOrNull', () => {
     });
 
     it('should have the correct path', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.path).toBe('note.md');
     });
   });
@@ -459,7 +459,7 @@ describe('getFileOrNull', () => {
     });
 
     it('should have the correct path', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.path).toBe('note.md');
     });
   });
@@ -512,7 +512,7 @@ describe('getFolderOrNull', () => {
     });
 
     it('should have the correct path', () => {
-      assertNotNullable(result);
+      assertNonNullable(result);
       expect(result.path).toBe('my-folder');
     });
   });
@@ -616,21 +616,21 @@ describe('trimMarkdownExtension', () => {
   it('should trim the .md extension from a markdown file', () => {
     const app = createMockApp({ files: [{ path: 'folder/note.md' }] });
     const file = app.vault.getFileByPath('folder/note.md');
-    assertNotNullable(file);
+    assertNonNullable(file);
     expect(trimMarkdownExtension(app, file)).toBe('folder/note');
   });
 
   it('should not trim the extension from a non-markdown file', () => {
     const app = createMockApp({ files: [{ extension: 'canvas', path: 'drawing.canvas' }] });
     const file = app.vault.getFileByPath('drawing.canvas');
-    assertNotNullable(file);
+    assertNonNullable(file);
     expect(trimMarkdownExtension(app, file)).toBe('drawing.canvas');
   });
 
   it('should not trim from a folder', () => {
     const app = createMockApp({ folders: ['my-folder'] });
     const folder = app.vault.getFolderByPath('my-folder');
-    assertNotNullable(folder);
+    assertNonNullable(folder);
     expect(trimMarkdownExtension(app, folder)).toBe('my-folder');
   });
 });
@@ -639,14 +639,14 @@ describe('getAbstractFileOrNull (resolved path fallback)', () => {
   it('should resolve a relative path and find the file', () => {
     const app = createMockApp({ files: [{ path: 'note.md' }] });
     const result = getAbstractFileOrNull(app, './note.md');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.path).toBe('note.md');
   });
 
   it('should resolve a path with parent traversal', () => {
     const app = createMockApp({ files: [{ path: 'note.md' }] });
     const result = getAbstractFileOrNull(app, 'folder/../note.md');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.path).toBe('note.md');
   });
 });
@@ -655,7 +655,7 @@ describe('getAbstractFileOrNull (case-insensitive)', () => {
   it('should find a file case-insensitively when isCaseInsensitive is true', () => {
     const app = createMockApp({ files: [{ path: 'Note.md' }] });
     const result = getAbstractFileOrNull(app, 'note.md', true);
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.path).toBe('Note.md');
   });
 
@@ -663,7 +663,7 @@ describe('getAbstractFileOrNull (case-insensitive)', () => {
     const app = createMockApp({ files: [{ path: 'Note.md' }] });
     (app.vault.adapter as { insensitive: boolean }).insensitive = true;
     const result = getAbstractFileOrNull(app, 'note.md');
-    assertNotNullable(result);
+    assertNonNullable(result);
     expect(result.path).toBe('Note.md');
   });
 });
@@ -679,13 +679,13 @@ describe('getMarkdownFiles', () => {
       folders: ['docs']
     });
     const folder = app.vault.getFolderByPath('docs');
-    assertNotNullable(folder);
+    assertNonNullable(folder);
     const fileA = app.vault.getFileByPath('docs/a.md');
-    assertNotNullable(fileA);
+    assertNonNullable(fileA);
     const fileB = app.vault.getFileByPath('docs/b.md');
-    assertNotNullable(fileB);
+    assertNonNullable(fileB);
     const filePng = app.vault.getFileByPath('docs/image.png');
-    assertNotNullable(filePng);
+    assertNonNullable(filePng);
     folder.children = [fileA, fileB, filePng];
 
     const result = getMarkdownFiles(app, folder);
@@ -702,13 +702,13 @@ describe('getMarkdownFiles', () => {
       folders: ['docs', 'docs/sub']
     });
     const folder = app.vault.getFolderByPath('docs');
-    assertNotNullable(folder);
+    assertNonNullable(folder);
     const subFolder = app.vault.getFolderByPath('docs/sub');
-    assertNotNullable(subFolder);
+    assertNonNullable(subFolder);
     const fileA = app.vault.getFileByPath('docs/a.md');
-    assertNotNullable(fileA);
+    assertNonNullable(fileA);
     const fileB = app.vault.getFileByPath('docs/sub/b.md');
-    assertNotNullable(fileB);
+    assertNonNullable(fileB);
     folder.children = [fileA, subFolder];
     subFolder.children = [fileB];
 
@@ -723,9 +723,9 @@ describe('getMarkdownFiles', () => {
       folders: ['docs']
     });
     const folder = app.vault.getFolderByPath('docs');
-    assertNotNullable(folder);
+    assertNonNullable(folder);
     const filePng = app.vault.getFileByPath('docs/image.png');
-    assertNotNullable(filePng);
+    assertNonNullable(filePng);
     folder.children = [filePng];
 
     const result = getMarkdownFiles(app, folder);

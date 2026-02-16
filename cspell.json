@@ -133,7 +133,8 @@
     "varargs",
     "vectorize",
     "Wikilink",
-    "Wikilinks"
+    "Wikilinks",
+    "Zname"
   ],
   "ignoreWords": [],
   "import": [],

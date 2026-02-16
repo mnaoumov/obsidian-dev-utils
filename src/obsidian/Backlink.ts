@@ -103,7 +103,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
       const markdownLink = generateMarkdownLink({
         app: dv.app,
         sourcePathOrFile: dv.current().file.path,
-        targetPathOrFile: ensureNonNullable(dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path), () => 'Link not found')
+        targetPathOrFile: ensureNonNullable(dv.app.metadataCache.getFirstLinkpathDest(backLinkPath, file.path), 'Link not found')
       });
 
       return `${markdownLink} (${backLinkPath})`;

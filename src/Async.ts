@@ -25,7 +25,10 @@ import {
   SilentError
 } from './Error.ts';
 import { noop } from './Function.ts';
-import { normalizeOptionalProperties } from './ObjectUtils.ts';
+import {
+  ensureNonNullable,
+  normalizeOptionalProperties
+} from './ObjectUtils.ts';
 
 /**
  * A type representing a function that resolves a {@link Promise}.
@@ -169,9 +172,7 @@ export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: 
   stackTrace ??= getStackTrace(1);
   return (...args: Args): void => {
     const innerStackTrace = getStackTrace(1);
-    /* v8 ignore start -- stackTrace is always assigned on the line above. */
-    stackTrace = `${stackTrace ?? ''}\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
-    /* v8 ignore stop */
+    stackTrace = `${ensureNonNullable(stackTrace)}\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
     invokeAsyncSafely(() => asyncFunc(...args), stackTrace);
   };
 }

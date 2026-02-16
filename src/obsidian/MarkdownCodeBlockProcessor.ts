@@ -131,7 +131,7 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfo
   const { app, ctx, el, source } = options;
 
   const sourceFile = getFileOrNull(app, ctx.sourcePath);
-  assertNonNullable(sourceFile, () => `Source file ${ctx.sourcePath} not found.`);
+  assertNonNullable(sourceFile, `Source file ${ctx.sourcePath} not found.`);
 
   await requestAnimationFrameAsync();
   await saveNote(app, sourceFile);
@@ -228,7 +228,7 @@ export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Pro
 
   await process(app, ctx.sourcePath, async (_abortSignal, content) => {
     const markdownInfo = await getCodeBlockMarkdownInfo(options);
-    assertNonNullable(markdownInfo, () => 'Could not uniquely identify the code block.');
+    assertNonNullable(markdownInfo, 'Could not uniquely identify the code block.');
 
     if (content !== markdownInfo.noteContent) {
       return null;

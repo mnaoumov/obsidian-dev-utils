@@ -82,7 +82,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
   } = options;
   const modifier = getModifier(mode);
   const callout = dv.paragraph(`> [!${type}]${modifier} ${header}\n>\n> <div class="content"></div>`);
-  const contentDiv = ensureNonNullable(callout.querySelector<HTMLDivElement>('.content'), () => 'Content div not found');
+  const contentDiv = ensureNonNullable(callout.querySelector<HTMLDivElement>('.content'), 'Content div not found');
   dv.paragraph('Loading... ⏳', { container: contentDiv });
 
   const observer = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {

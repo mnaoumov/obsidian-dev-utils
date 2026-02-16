@@ -115,7 +115,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
 
   const distFolder = ensureNonNullable(
     resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev),
-    () => 'Could not determine the dist folder'
+    'Could not determine the dist folder'
   );
 
   if (existsSync(distFolder)) {
@@ -131,7 +131,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
   }
 
   for (const fileName of distFileNames) {
-    const localFile = ensureNonNullable(resolvePathFromRoot(fileName), () => `Could not determine the local file for ${fileName}`);
+    const localFile = ensureNonNullable(resolvePathFromRoot(fileName), `Could not determine the local file for ${fileName}`);
     const distFile = join(distFolder, fileName);
 
     if (existsSync(localFile)) {
@@ -154,7 +154,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): 
     entryPoints: [
       ensureNonNullable(
         resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs)),
-        () => 'Could not determine the entry point for the plugin'
+        'Could not determine the entry point for the plugin'
       )
     ],
     external: [

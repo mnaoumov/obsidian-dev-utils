@@ -252,7 +252,7 @@ async function getDomEventsHandlersConstructor(app: App): Promise<DomEventsHandl
       leaf.detach();
     });
 
-    assertNonNullable(ctor, () => 'Failed to get register dom events handlers constructor');
+    assertNonNullable(ctor, 'Failed to get register dom events handlers constructor');
     return ctor;
   } finally {
     if (shouldDelete) {

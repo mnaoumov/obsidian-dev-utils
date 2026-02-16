@@ -14,7 +14,7 @@ import {
   writeJson,
   writeJsonSync
 } from '../../src/ScriptUtils/JSON.ts';
-import { assertNotNullable } from '../TestHelpers.ts';
+import { assertNonNullable } from '../../src/ObjectUtils.ts';
 
 const {
   mockExistsSync,
@@ -76,7 +76,7 @@ describe('writeJson', () => {
     await writeJson('/out.json', { a: 1 });
     expect(mockWriteFile).toHaveBeenCalledTimes(1);
     const written = mockWriteFile.mock.calls[0]?.[1];
-    assertNotNullable(written);
+    assertNonNullable(written);
     expect(written).toMatch(/\n$/);
     expect(JSON.parse(written)).toEqual({ a: 1 });
   });
@@ -87,7 +87,7 @@ describe('writeJsonSync', () => {
     writeJsonSync('/out.json', { b: 2 });
     expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
     const written = mockWriteFileSync.mock.calls[0]?.[1];
-    assertNotNullable(written);
+    assertNonNullable(written);
     expect(written).toMatch(/\n$/);
     expect(JSON.parse(written)).toEqual({ b: 2 });
   });
@@ -102,7 +102,7 @@ describe('editJson', () => {
     expect(mockReadFile).toHaveBeenCalledWith('/file.json', 'utf-8');
     expect(mockWriteFile).toHaveBeenCalledTimes(1);
     const written = mockWriteFile.mock.calls[0]?.[1];
-    assertNotNullable(written);
+    assertNonNullable(written);
     expect(JSON.parse(written)).toEqual({ count: 5 });
   });
 
@@ -134,7 +134,7 @@ describe('editJson', () => {
       data.items.push('new');
     });
     const written = mockWriteFile.mock.calls[0]?.[1];
-    assertNotNullable(written);
+    assertNonNullable(written);
     expect(JSON.parse(written)).toEqual({ items: ['new'] });
   });
 });
@@ -148,7 +148,7 @@ describe('editJsonSync', () => {
     expect(mockReadFileSync).toHaveBeenCalledWith('/file.json', 'utf-8');
     expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
     const written = mockWriteFileSync.mock.calls[0]?.[1];
-    assertNotNullable(written);
+    assertNonNullable(written);
     expect(JSON.parse(written)).toEqual({ val: 99 });
   });
 

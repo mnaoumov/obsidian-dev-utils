@@ -5,6 +5,7 @@
  */
 
 import { AsyncEvents } from './AsyncEvents.ts';
+import { ensureNonNullable } from './ObjectUtils.ts';
 
 const ASYNC_ERROR_EVENT = 'asyncError';
 
@@ -46,12 +47,10 @@ export class CustomStackTraceError extends Error {
       rootCause = rootCause.cause;
     }
 
-    /* v8 ignore start -- stack is always defined in V8. */
-    const originalStackLines = (this.stack ?? '').split('\n');
+    const originalStackLines = ensureNonNullable(this.stack).split('\n');
     const stackLines = stackTrace.split('\n');
     const ERROR_HEADER_REG_EXP = /^\w*Error(?:: |$)/;
-    if (ERROR_HEADER_REG_EXP.test(stackLines[0] ?? '')) {
-      /* v8 ignore stop */
+    if (ERROR_HEADER_REG_EXP.test(ensureNonNullable(stackLines[0]))) {
       stackLines.splice(0, 1);
     }
     originalStackLines.splice(1, originalStackLines.length - 1, ...stackLines);
@@ -122,9 +121,7 @@ export function errorToString(error: unknown): string {
 export function getStackTrace(framesToSkip = 0): string {
   // Skipping Error prefix and `getStackTrace` function call
   const ADDITIONAL_FRAMES_TO_SKIP = 2;
-  /* v8 ignore start -- stack is always defined in V8. */
-  const stack = new Error().stack ?? '';
-  /* v8 ignore stop */
+  const stack = ensureNonNullable(new Error().stack);
   const lines = stack.split('\n');
   return lines.slice(framesToSkip + ADDITIONAL_FRAMES_TO_SKIP).join('\n');
 }

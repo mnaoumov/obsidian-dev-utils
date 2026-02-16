@@ -18,7 +18,13 @@ import {
   getFile,
   getFileOrNull
 } from '../../src/obsidian/FileSystem.ts';
-import { saveNote } from '../../src/obsidian/Vault.ts';
+import { retryWithTimeoutNotice } from '../../src/obsidian/AsyncWithNotice.ts';
+import { parseFrontmatter } from '../../src/obsidian/Frontmatter.ts';
+import {
+  readSafe,
+  saveNote
+} from '../../src/obsidian/Vault.ts';
+import { getObsidianDevUtilsState } from '../../src/obsidian/App.ts';
 
 vi.mock('../../src/obsidian/App.ts', () => ({
   getObsidianDevUtilsState: vi.fn((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }))
@@ -80,11 +86,24 @@ vi.mock('../../src/obsidian/FrontmatterLinkCacheWithOffsets.ts', () => ({
   })
 }));
 
+vi.mock('obsidian-typings/implementations', async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return {
+    ...actual,
+    CustomArrayDictImpl: class {
+      data = new Map<string, unknown[]>();
+      get(key: string): unknown[] | null { return this.data.get(key) ?? null; }
+      keys(): string[] { return [...this.data.keys()]; }
+    }
+  };
+});
+
 // Must import after vi.mock declarations so mocks are applied
 const {
   ensureMetadataCacheReady,
   getAllLinks,
   getBacklinksForFileOrPath,
+  getBacklinksForFileSafe,
   getCacheSafe,
   getFrontmatterSafe,
   parseMetadata,
@@ -99,6 +118,9 @@ const {
 const mockedGetFile = vi.mocked(getFile);
 const mockedGetFileOrNull = vi.mocked(getFileOrNull);
 const mockedSaveNote = vi.mocked(saveNote);
+const mockedRetryWithTimeoutNotice = vi.mocked(retryWithTimeoutNotice);
+const mockedReadSafe = vi.mocked(readSafe);
+const mockedParseFrontmatter = vi.mocked(parseFrontmatter);
 
 interface MockApp {
   metadataCache: {
@@ -434,6 +456,15 @@ describe('registerFiles', () => {
 
     expect(app.vault.fileMap['folder/note.md']).toBeUndefined();
   });
+
+  it('should not call uniqueFileLookup.add for folder-like deleted entries', () => {
+    const folder = { children: [], deleted: true, path: 'folder' } as unknown as TAbstractFile;
+
+    registerFiles(app as unknown as App, [folder]);
+
+    expect(app.vault.fileMap['folder']).toBe(folder);
+    expect(app.metadataCache.uniqueFileLookup.add).not.toHaveBeenCalled();
+  });
 });
 
 describe('unregisterFiles', () => {
@@ -468,6 +499,32 @@ describe('unregisterFiles', () => {
     unregisterFiles(app as unknown as App, [file]);
 
     expect(app.vault.fileMap['folder/note.md']).toBe(file);
+  });
+
+  it('should not call uniqueFileLookup.remove for folder-like deleted entries', () => {
+    const folder = { children: [], deleted: true, path: 'folder' } as unknown as TAbstractFile;
+    app.vault.fileMap['folder'] = folder;
+
+    unregisterFiles(app as unknown as App, [folder]);
+
+    expect(app.vault.fileMap['folder']).toBeUndefined();
+    expect(app.metadataCache.uniqueFileLookup.remove).not.toHaveBeenCalled();
+  });
+
+  it('should not remove file from fileMap when count is still positive', () => {
+    const sharedMap = new Map<string, number>();
+    const mockedGetState = vi.mocked(getObsidianDevUtilsState);
+    mockedGetState.mockReturnValue({ value: sharedMap });
+
+    const file = { deleted: true, name: 'note.md', path: 'folder/note.md' } as unknown as TAbstractFile;
+
+    registerFiles(app as unknown as App, [file]);
+    registerFiles(app as unknown as App, [file]);
+    unregisterFiles(app as unknown as App, [file]);
+
+    expect(app.vault.fileMap['folder/note.md']).toBe(file);
+
+    mockedGetState.mockImplementation((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }));
   });
 });
 
@@ -653,5 +710,187 @@ describe('getFrontmatterSafe', () => {
 
     const result = await getFrontmatterSafe(app as unknown as App, 'nonexistent.md');
     expect(result).toEqual({});
+  });
+});
+
+describe('getBacklinksForFileSafe', () => {
+  let app: MockApp;
+
+  function setupRetryToInvokeOperationFn(): void {
+    mockedRetryWithTimeoutNotice.mockImplementation(async (options: Record<string, unknown>) => {
+      const operationFn = options['operationFn'] as (abortSignal: AbortSignal) => Promise<boolean>;
+      const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+      await operationFn(abortSignal);
+    });
+  }
+
+  function createBacklinksDict(entries: Record<string, unknown[]>): { get(key: string): unknown[] | null; keys(): string[] } {
+    const map = new Map(Object.entries(entries));
+    return {
+      get: (key: string): unknown[] | null => map.get(key) ?? null,
+      keys: (): string[] => [...map.keys()]
+    };
+  }
+
+  beforeEach(() => {
+    app = createMockApp();
+    mockedGetFile.mockReset();
+    mockedGetFileOrNull.mockReset();
+    mockedSaveNote.mockReset();
+    mockedReadSafe.mockReset();
+    mockedParseFrontmatter.mockReset();
+    mockedRetryWithTimeoutNotice.mockReset();
+    mockedSaveNote.mockResolvedValue(undefined);
+
+    mockedGetFile.mockImplementation((_app: unknown, pathOrFile: unknown) => {
+      if (typeof pathOrFile === 'string') {
+        return { deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile } as unknown as ReturnType<typeof getFile>;
+      }
+      return pathOrFile as ReturnType<typeof getFile>;
+    });
+  });
+
+  it('should use safe overload when available', async () => {
+    const mockResult = { get: vi.fn(), keys: vi.fn().mockReturnValue([]) };
+    const safeFn = vi.fn().mockResolvedValue(mockResult);
+    (app.metadataCache.getBacklinksForFile as Record<string, unknown>)['safe'] = safeFn;
+
+    const result = await getBacklinksForFileSafe(app as unknown as App, 'test.md');
+    expect(safeFn).toHaveBeenCalledWith('test.md');
+    expect(result).toBe(mockResult);
+  });
+
+  it('should default shouldShowTimeoutNotice to true', async () => {
+    mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
+
+    await getBacklinksForFileSafe(app as unknown as App, 'test.md');
+
+    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+    expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
+  });
+
+  it('should pass shouldShowTimeoutNotice from options', async () => {
+    mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
+
+    await getBacklinksForFileSafe(app as unknown as App, 'test.md', { shouldShowTimeoutNotice: false });
+
+    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+    expect(callArg?.['shouldShowTimeoutNotice']).toBe(false);
+  });
+
+  it('should return backlinks for empty backlinks dict', async () => {
+    setupRetryToInvokeOperationFn();
+    const backlinksDict = createBacklinksDict({});
+    app.metadataCache.getBacklinksForFile.mockReturnValue(backlinksDict);
+
+    const result = await getBacklinksForFileSafe(app as unknown as App, 'test.md');
+    expect(result).toBe(backlinksDict);
+  });
+
+  it('should return false when getFileOrNull returns null for note', async () => {
+    setupRetryToInvokeOperationFn();
+    const refLink = makeReferenceCache('[[target]]', 10);
+    app.metadataCache.getBacklinksForFile.mockReturnValue(createBacklinksDict({ 'source.md': [refLink] }));
+    mockedGetFileOrNull.mockReturnValue(null as never);
+
+    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    expect(mockedGetFileOrNull).toHaveBeenCalled();
+  });
+
+  it('should return false when readSafe returns null', async () => {
+    setupRetryToInvokeOperationFn();
+    const refLink = makeReferenceCache('[[target]]', 10);
+    app.metadataCache.getBacklinksForFile.mockReturnValue(createBacklinksDict({ 'source.md': [refLink] }));
+    mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
+    mockedReadSafe.mockResolvedValue(null as never);
+
+    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    expect(mockedReadSafe).toHaveBeenCalled();
+  });
+
+  it('should return false when backlinks.get returns null for note', async () => {
+    setupRetryToInvokeOperationFn();
+    const backlinksDict = {
+      get: (): null => null,
+      keys: (): string[] => ['source.md']
+    };
+    app.metadataCache.getBacklinksForFile.mockReturnValue(backlinksDict);
+    mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
+    mockedReadSafe.mockResolvedValue('some content');
+    mockedParseFrontmatter.mockReturnValue({});
+
+    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    expect(mockedParseFrontmatter).toHaveBeenCalled();
+  });
+
+  it('should succeed when reference cache link matches content', async () => {
+    setupRetryToInvokeOperationFn();
+    const content = '0123456789[[target]]more text';
+    const refLink = makeReferenceCache('[[target]]', 10);
+    app.metadataCache.getBacklinksForFile.mockReturnValue(createBacklinksDict({ 'source.md': [refLink] }));
+    mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
+    mockedReadSafe.mockResolvedValue(content);
+    mockedParseFrontmatter.mockReturnValue({});
+
+    const result = await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    expect(result.keys()).toEqual(['source.md']);
+  });
+
+  it('should return false when reference cache link does not match content', async () => {
+    setupRetryToInvokeOperationFn();
+    const content = '0123456789XXMISMATCHX more text';
+    const refLink = makeReferenceCache('[[target]]', 10);
+    app.metadataCache.getBacklinksForFile.mockReturnValue(createBacklinksDict({ 'source.md': [refLink] }));
+    mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
+    mockedReadSafe.mockResolvedValue(content);
+    mockedParseFrontmatter.mockReturnValue({});
+
+    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+  });
+
+  it('should succeed when frontmatter link matches property value', async () => {
+    setupRetryToInvokeOperationFn();
+    const fmLink = makeFrontmatterLink('target-note', 'aliases');
+    app.metadataCache.getBacklinksForFile.mockReturnValue(createBacklinksDict({ 'source.md': [fmLink] }));
+    mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
+    mockedReadSafe.mockResolvedValue('---\naliases: target-note\n---');
+    mockedParseFrontmatter.mockReturnValue({ aliases: 'target-note' });
+
+    const result = await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    expect(result.keys()).toEqual(['source.md']);
+  });
+
+  it('should return false when frontmatter property value is not a string', async () => {
+    setupRetryToInvokeOperationFn();
+    const fmLink = makeFrontmatterLink('target-note', 'aliases');
+    app.metadataCache.getBacklinksForFile.mockReturnValue(createBacklinksDict({ 'source.md': [fmLink] }));
+    mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
+    mockedReadSafe.mockResolvedValue('---\naliases: 123\n---');
+    mockedParseFrontmatter.mockReturnValue({ aliases: 123 });
+
+    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+  });
+
+  it('should return false when frontmatter link does not match property value', async () => {
+    setupRetryToInvokeOperationFn();
+    const fmLink = makeFrontmatterLink('target-note', 'aliases');
+    app.metadataCache.getBacklinksForFile.mockReturnValue(createBacklinksDict({ 'source.md': [fmLink] }));
+    mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
+    mockedReadSafe.mockResolvedValue('---\naliases: different\n---');
+    mockedParseFrontmatter.mockReturnValue({ aliases: 'different-value' });
+
+    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+  });
+
+  it('should return true for links that are neither reference nor frontmatter', async () => {
+    setupRetryToInvokeOperationFn();
+    const unknownLink = { link: 'something', original: 'something' };
+    app.metadataCache.getBacklinksForFile.mockReturnValue(createBacklinksDict({ 'source.md': [unknownLink] }));
+    mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
+    mockedReadSafe.mockResolvedValue('content');
+    mockedParseFrontmatter.mockReturnValue({});
+
+    const result = await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    expect(result.keys()).toEqual(['source.md']);
   });
 });

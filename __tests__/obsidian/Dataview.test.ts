@@ -21,7 +21,7 @@ import {
   renderPaginatedList,
   renderPaginatedTable
 } from '../../src/obsidian/Dataview.ts';
-import { assertNotNullable } from '../TestHelpers.ts';
+import { assertNonNullable } from '../../src/ObjectUtils.ts';
 
 vi.mock('../../src/Async.ts', () => ({
   convertAsyncToSync: vi.fn((fn: (...args: unknown[]) => Promise<unknown>) => fn)
@@ -832,7 +832,7 @@ describe('renderPaginated page navigation', () => {
     // Change items per page to 20
     // eslint-disable-next-line @typescript-eslint/unbound-method -- It's a mock.
     vi.mocked(dv.list).mockClear();
-    assertNotNullable(select);
+    assertNonNullable(select);
     select.value = '20';
     const changeEvent = new Event('change', { bubbles: true });
     // The handler is async, dispatch triggers it; we await a microtick for it to complete
@@ -864,7 +864,7 @@ describe('renderPaginated page navigation', () => {
     vi.mocked(dv.list).mockClear();
     (input as HTMLInputElement).value = '2';
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Enter' });
-    assertNotNullable(input);
+    assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
     await new Promise((resolve) => {
       setTimeout(resolve, 0);
@@ -893,7 +893,7 @@ describe('renderPaginated page navigation', () => {
     vi.mocked(dv.list).mockClear();
     (input as HTMLInputElement).value = '2';
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Tab' });
-    assertNotNullable(input);
+    assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
     await new Promise((resolve) => {
       setTimeout(resolve, 0);
@@ -916,7 +916,7 @@ describe('renderPaginated page navigation', () => {
     expect(input).not.toBeNull();
     (input as HTMLInputElement).value = '5';
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Enter' });
-    assertNotNullable(input);
+    assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
     await new Promise((resolve) => {
       setTimeout(resolve, 0);
@@ -950,7 +950,7 @@ describe('renderPaginated page navigation', () => {
     vi.mocked(dv.list).mockClear();
     (input as HTMLInputElement).value = '99';
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Enter' });
-    assertNotNullable(input);
+    assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
     await new Promise((resolve) => {
       setTimeout(resolve, 0);

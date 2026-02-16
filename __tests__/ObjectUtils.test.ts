@@ -6,6 +6,7 @@ import {
 
 import { noop } from '../src/Function.ts';
 import {
+  assertNonNullable,
   assignWithNonEnumerableProperties,
   cloneWithNonEnumerableProperties,
   deepEqual,
@@ -18,6 +19,7 @@ import {
   getNestedPropertyValue,
   getPrototypeOf,
   nameof,
+  normalizeOptionalProperties,
   removeUndefinedProperties,
   setNestedPropertyValue,
   toJson
@@ -223,6 +225,13 @@ describe('ObjectUtils', () => {
       expect(() => {
         setNestedPropertyValue(obj, 'x.y.z', 42);
       }).toThrow('Property path x.y.z not found');
+    });
+
+    it('should throw when last intermediate resolves to undefined', () => {
+      const obj: Record<string, unknown> = { a: undefined };
+      expect(() => {
+        setNestedPropertyValue(obj, 'a.b', 42);
+      }).toThrow('Property path a.b not found');
     });
   });
 
@@ -547,6 +556,37 @@ describe('ObjectUtils', () => {
       const obj: Record<string, unknown> = {};
       Object.defineProperty(obj, 'locked', { enumerable: true, value: 1, writable: false });
       expect(getAllKeys(obj)).not.toContain('locked');
+    });
+  });
+
+  describe('assertNonNullable', () => {
+    it('should not throw for a non-null, non-undefined value', () => {
+      expect(() => assertNonNullable('hello')).not.toThrow();
+    });
+
+    it('should throw "Value is null" when value is null and no error provided', () => {
+      expect(() => assertNonNullable(null)).toThrow('Value is null');
+    });
+
+    it('should throw "Value is undefined" when value is undefined and no error provided', () => {
+      expect(() => assertNonNullable(undefined)).toThrow('Value is undefined');
+    });
+
+    it('should throw with the provided string message', () => {
+      expect(() => assertNonNullable(null, 'Custom error')).toThrow('Custom error');
+    });
+
+    it('should throw the provided Error instance', () => {
+      const error = new TypeError('Custom type error');
+      expect(() => assertNonNullable(null, error)).toThrow(error);
+    });
+  });
+
+  describe('normalizeOptionalProperties', () => {
+    it('should return the same object as-is', () => {
+      const obj = { a: 1, b: undefined };
+      const result = normalizeOptionalProperties<{ a: number; b?: number }>(obj);
+      expect(result).toBe(obj);
     });
   });
 });

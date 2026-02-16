@@ -8,7 +8,7 @@ import {
   vi
 } from 'vitest';
 
-import { assertNotNullable } from '../TestHelpers.ts';
+import { assertNonNullable } from '../../src/ObjectUtils.ts';
 
 const mocks = vi.hoisted(() => {
   const mockReconfigure = vi.fn((extensions: unknown[]): { effects: unknown[] } => ({ effects: extensions }));
@@ -86,7 +86,7 @@ describe('lockEditor', () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method -- It's a mock.
     const dispatch = vi.mocked(editor.cm.dispatch);
     const dispatchCall = dispatch.mock.calls[0];
-    assertNotNullable(dispatchCall);
+    assertNonNullable(dispatchCall);
     expect(dispatchCall[0]).toHaveProperty('effects');
   });
 });

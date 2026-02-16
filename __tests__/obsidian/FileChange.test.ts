@@ -26,7 +26,7 @@ import {
 } from '../../src/obsidian/FileChange.ts';
 import { isCanvasFile } from '../../src/obsidian/FileSystem.ts';
 import { process } from '../../src/obsidian/Vault.ts';
-import { assertNotNullable } from '../TestHelpers.ts';
+import { assertNonNullable } from '../../src/ObjectUtils.ts';
 
 vi.mock('../../src/Debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
@@ -527,12 +527,12 @@ describe('canvas changes via applyFileChanges', () => {
 
     await applyFileChanges({} as never, 'test.canvas', changes);
     expect(resultContent).not.toBeNull();
-    assertNotNullable(resultContent);
+    assertNonNullable(resultContent);
     const parsed = JSON.parse(resultContent) as Record<string, Record<string, unknown>[]>;
     const nodes = parsed['nodes'];
-    assertNotNullable(nodes);
+    assertNonNullable(nodes);
     const firstNode = nodes[0];
-    assertNotNullable(firstNode);
+    assertNonNullable(firstNode);
     expect(firstNode['file']).toBe('new.md');
   });
 
@@ -618,12 +618,12 @@ describe('canvas changes via applyFileChanges', () => {
 
     await applyFileChanges({} as never, 'test.canvas', changes);
     expect(resultContent).not.toBeNull();
-    assertNotNullable(resultContent);
+    assertNonNullable(resultContent);
     const parsed = JSON.parse(resultContent) as Record<string, Record<string, unknown>[]>;
     const nodes = parsed['nodes'];
-    assertNotNullable(nodes);
+    assertNonNullable(nodes);
     const firstNode = nodes[0];
-    assertNotNullable(firstNode);
+    assertNonNullable(firstNode);
     expect(firstNode['text']).toBe('Hello [[new]] world');
   });
 
