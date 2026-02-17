@@ -15,6 +15,20 @@ import { castTo } from './ObjectUtils.ts';
 export type ExactKeys<Type extends object, Keys extends readonly string[]> = ExactMembers<StringKeys<Type>, Keys>;
 
 /**
+ * A type that represents the members of a type.
+ *
+ * @typeParam Type - The type to assert the members of.
+ * @typeParam Keys - The list of members to assert.
+ */
+export type ExactMembers<
+  Type extends LiteralKey,
+  Keys extends readonly LiteralKey[]
+> = Exclude<Keys[number], Type> extends never ? Exclude<Type, Keys[number]> extends never ? Duplicates<Keys> extends [] ? Keys
+    : `ERROR: Duplicate members: ${TupleToCSV<Duplicates<Keys>>}`
+  : `ERROR: Missing members: ${TupleToCSV<UnionToTuple<Exclude<Type, Keys[number]>>>}`
+  : `ERROR: Invalid members: ${TupleToCSV<UnionToTuple<Exclude<Keys[number], Type>>>}`;
+
+/**
  * A type that represents a return value that may be `void`.
  *
  * @typeParam T - The type of the value that may be returned.
@@ -36,40 +50,50 @@ export type PropertyValues<T extends object> = T[StringKeys<T>];
  */
 export type StringKeys<T extends object> = Extract<keyof T, string>;
 
-type LastInUnion<Union> = UnionToIntersection<Union extends unknown ? () => Union : never> extends () => infer Last ? Last : never;
-type UnionToIntersection<Union> = (Union extends unknown ? (key: Union) => void : never) extends (key: infer Intersection) => void ? Intersection : never;
-type UnionToTuple<Union, Last = LastInUnion<Union>> = [Union] extends [never] ? [] : [...UnionToTuple<Exclude<Union, Last>>, Last];
-
-const DUMMY_PROXY = new Proxy(dummyThrow, {
-  apply: dummyThrow,
-  construct: dummyThrow,
-  defineProperty: dummyThrow,
-  deleteProperty: dummyThrow,
-  get: dummyThrow,
-  getOwnPropertyDescriptor: dummyThrow,
-  getPrototypeOf: dummyThrow,
-  has: dummyThrow,
-  isExtensible: dummyThrow,
-  ownKeys: dummyThrow,
-  preventExtensions: dummyThrow,
-  set: dummyThrow,
-  setPrototypeOf: dummyThrow
-});
-
 /**
- * A type that represents the members of a type.
+ * A helper that captures a type parameter and provides methods for compile-time exhaustiveness checks.
  *
- * @typeParam Type - The type to assert the members of.
- * @typeParam Keys - The list of members to assert.
+ * @typeParam Type - The captured type.
+ *
+ * @remarks
+ * - `assertAllKeys` is available when `Type` is an object type.
+ * - `assertAllMembers` is available when `Type` is a literal key union (`string | number`).
+ *
+ * @example
+ * ```ts
+ * type A = { a: 1, b: 2, c: 3 };
+ * typeAsserter<A>().assertAllKeys(['a', 'b', 'c']); // OK
+ * typeAsserter<A>().assertAllKeys(['c', 'a', 'b']); // OK, order is ignored
+ * typeAsserter<A>().assertAllKeys(['a', 'b', 'c', 'd']); // Error: Invalid members: d
+ * typeAsserter<A>().assertAllKeys(['a', 'b']); // Error: Missing members: c
+ *
+ * type B = 1 | 2 | 3 | 'a';
+ * typeAsserter<B>().assertAllMembers([1, 2, 3, 'a']); // OK
+ * typeAsserter<B>().assertAllMembers([1, 2, 3, 'a', 4]); // Error: Invalid members: 4
+ * typeAsserter<B>().assertAllMembers([1, 2, 3]); // Error: Missing members: a
+ * ```
  */
-export type ExactMembers<
-  Type extends LiteralKey,
-  Keys extends readonly LiteralKey[]
-> = Exclude<Keys[number], Type> extends never ? Exclude<Type, Keys[number]> extends never ? Duplicates<Keys> extends [] ? Keys
-    : `ERROR: Duplicate members: ${TupleToCSV<Duplicates<Keys>>}`
-  : `ERROR: Missing members: ${TupleToCSV<UnionToTuple<Exclude<Type, Keys[number]>>>}`
-  : `ERROR: Invalid members: ${TupleToCSV<UnionToTuple<Exclude<Keys[number], Type>>>}`;
+export interface TypeAsserter<Type> {
+  /**
+   * Asserts that all keys of an object type are present in a list of keys.
+   *
+   * @remarks Only available when `[Type] extends [object]`.
+   */
+  assertAllKeys: [Type] extends [object] ? <const Keys extends readonly string[]>(
+      keys: ExactMembers<StringKeys<Type>, Keys>
+    ) => readonly (keyof Type)[]
+    : never;
 
+  /**
+   * Asserts that all members of a union type are present in a list of members.
+   *
+   * @remarks Only available when `[Type] extends [LiteralKey]`.
+   */
+  assertAllMembers: [Type] extends [LiteralKey] ? <const Keys extends readonly LiteralKey[]>(
+      keys: ExactMembers<Type, Keys>
+    ) => readonly Type[]
+    : never;
+}
 type Duplicates<
   T extends readonly unknown[],
   Seen extends readonly unknown[] = [],
@@ -80,13 +104,14 @@ type Duplicates<
     : Duplicates<Rest, Seen, [...Added, First], [...Out, First]>
   : Duplicates<Rest, [...Seen, First], Added, Out>
   : Out;
-
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters,no-magic-numbers -- We need to use the dummy parameter to get type inference.
 type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends (<T>() => T extends Y ? 1 : 2) ? true : false;
 
 type Includes<Type extends readonly unknown[], Member> = Type extends readonly [infer First, ...infer Rest]
   ? Equal<First, Member> extends true ? true : Includes<Rest, Member>
   : false;
+
+type LastInUnion<Union> = UnionToIntersection<Union extends unknown ? () => Union : never> extends () => infer Last ? Last : never;
 
 type LiteralKey = number | string;
 
@@ -98,97 +123,37 @@ type TupleToCSV<Tuple extends readonly unknown[]> = Tuple extends readonly [infe
   : never
   : '';
 
+type UnionToIntersection<Union> = (Union extends unknown ? (key: Union) => void : never) extends (key: infer Intersection) => void ? Intersection : never;
+
+type UnionToTuple<Union, Last = LastInUnion<Union>> = [Union] extends [never] ? [] : [...UnionToTuple<Exclude<Union, Last>>, Last];
+
 /**
- * Asserts that all keys of a type are present in a list of keys.
+ * Creates a type helper that captures a type parameter for compile-time exhaustiveness checks.
  *
- * @typeParam Type - The type to assert the keys of.
- * @typeParam Keys - The list of keys to assert.
- * @param _type - The type to assert the keys of.
- * @param keys - The list of keys to assert.
- * @returns The list of keys.
- *
- * @remarks If the incorrect keys are provided, the function has a compile-time error.
+ * @typeParam Type - The type to capture.
+ * @returns A {@link TypeAsserter} with `assertAllKeys` and `assertAllMembers` methods.
  *
  * @example
  * ```ts
  * type A = { a: 1, b: 2, c: 3 };
- * assertAllTypeKeys<A>(typeToDummyParam<A>(), ['a', 'b', 'c']); // OK
- * assertAllTypeKeys<A>(typeToDummyParam<A>(), ['c', 'a', 'b']); // OK, order is ignored
- * assertAllTypeKeys<A>(typeToDummyParam<A>(), ['a', 'b', 'c', 'd']); // Error: Invalid members: d
- * assertAllTypeKeys<A>(typeToDummyParam<A>(), ['a', 'b']); // Error: Missing members: c
- * assertAllTypeKeys<A>(typeToDummyParam<A>(), ['a', 'a', 'b', 'c', 'c']); // Error: Duplicate members: a,c
+ * typeAsserter<A>().assertAllKeys(['a', 'b', 'c']); // OK
+ * typeAsserter<A>().assertAllKeys(['c', 'a', 'b']); // OK, order is ignored
+ *
+ * type B = 1 | 2 | 3 | 'a';
+ * typeAsserter<B>().assertAllMembers([1, 2, 3, 'a']); // OK
  * ```
  */
-export function assertAllTypeKeys<
-  Type extends object,
-  const Keys extends readonly string[]
->(_type: Type, keys: ExactMembers<StringKeys<Type>, Keys>): readonly (keyof Type)[] {
-  return Object.freeze(keys.slice() as (keyof Type)[]);
-}
-
-/**
- * Asserts that all members of a union are present in a list of members.
- *
- * @typeParam Type - The type to assert the members of.
- * @typeParam Keys - The list of members to assert.
- * @param _type - The type to assert the members of.
- * @param keys - The list of members to assert.
- * @returns The list of members.
- *
- * @remarks If the incorrect members are provided, the function has a compile-time error.
- *
- * @example
- * ```ts
- * type A = 1 | 2 | 3 | 'a';
- *
- * assertAllUnionMembers(typeToDummyParam<A>(), [1, 2, 3, 'a']); // OK
- * assertAllUnionMembers(typeToDummyParam<A>(), [3, 2, 1, 'a']); // OK, order is ignored
- * assertAllUnionMembers(typeToDummyParam<A>(), [1, 2, 3, 'a', 4]); // Error: Invalid members: 4
- * assertAllUnionMembers(typeToDummyParam<A>(), [1, 2, 3,]); // Error: Missing members: a
- * assertAllUnionMembers(typeToDummyParam<A>(), [1, 2, 3, 'a', 'a']); // Error: Duplicate members: 1,a
- * ```
- */
-export function assertAllUnionMembers<
-  const Type extends LiteralKey,
-  const Keys extends readonly LiteralKey[]
->(_type: Type, keys: ExactMembers<Type, Keys>): readonly Type[] {
-  return Object.freeze(keys.slice() as Type[]);
-}
-
-/**
- * Converts a type to a dummy parameter.
- *
- * This helper function is useful when we need to get type inference when we cannot use generic type parameters.
- *
- * An example below shows such a scenario.
- *
- * @typeParam T - The type to convert.
- * @returns A dummy parameter of the type.
- *
- * @remarks The result should be used only for type inference. The value should not be used directly.
- *
- * @example
- * ```ts
- * type A = { c: number; };
- * type B = { d: string; }
- *
- * function g<T, U>(u: U) {}
- *
- * // We cannot have partial type inference.
- * g<A>({ d: 'foo' }); // Error: Expected 2 type arguments, but got 1. ts(2558)
- *
- * // We have to call instead
- * g<A, B>({ d: 'foo' }); // OK, but we could not use type inference for `U=B`.
- *
- * function g2<T, U>(_type: T, u: U) {}
- * g2(typeToDummyParam<A>(), { d: 'foo' }); // We could use type inference for `T=A` and `U=B`.
- * ```
- */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-export function typeToDummyParam<T>(): T {
-  return castTo<T>(DUMMY_PROXY);
-}
-
-function dummyThrow(): never {
-  throw new Error('Dummy parameter should not be accessed directly.');
+export function typeAsserter<Type>(): TypeAsserter<Type> {
+  return castTo<TypeAsserter<Type>>({
+    assertAllKeys<const Keys extends readonly string[]>(
+      keys: ExactMembers<StringKeys<object & Type>, Keys>
+    ): readonly (keyof (object & Type))[] {
+      return Object.freeze(keys.slice() as (keyof (object & Type))[]);
+    },
+    assertAllMembers<const Keys extends readonly LiteralKey[]>(
+      keys: ExactMembers<LiteralKey & Type, Keys>
+    ): readonly (LiteralKey & Type)[] {
+      return Object.freeze(keys.slice() as (LiteralKey & Type)[]);
+    }
+  });
 }
