@@ -50,11 +50,9 @@ export class ValueWrapper<T> {
 export function getApp(): App {
   const app = (globalThis as Partial<AppWrapper>).app;
 
-  /* v8 ignore start -- Only reachable in Obsidian. */
   if (app) {
     return app;
   }
-  /* v8 ignore stop */
 
   try {
     return globalThis.require('obsidian/app') as App;

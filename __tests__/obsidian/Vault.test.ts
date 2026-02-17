@@ -1201,4 +1201,23 @@ describe('processFile', () => {
 
     expect(onSpy).toHaveBeenCalled();
   });
+
+  it('should skip locking editors when view.file is null', async () => {
+    mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
+
+    const view = new (MarkdownView as unknown as new () => MarkdownView)();
+    // View.file defaults to null in the mock — don't set it
+    (view as unknown as Record<string, unknown>)['editor'] = {};
+
+    vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
+      { view } as never
+    ]);
+
+    const mockedLockEditor = vi.mocked(lockEditor);
+    mockedLockEditor.mockClear();
+
+    await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: true });
+
+    expect(mockedLockEditor).not.toHaveBeenCalled();
+  });
 });

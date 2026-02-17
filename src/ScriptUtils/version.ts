@@ -347,11 +347,9 @@ export async function updateChangelog(newVersion: string): Promise<void> {
   if (existsSync(changelogPath)) {
     const content = await readFile(changelogPath, 'utf-8');
     previousChangelogLines = content.split('\n').slice(HEADER_LINES_COUNT);
-    /* v8 ignore start -- Edge case: changelog content without trailing newline. */
     if (previousChangelogLines.at(-1) === '') {
       previousChangelogLines.pop();
     }
-    /* v8 ignore stop */
   } else {
     previousChangelogLines = [];
   }

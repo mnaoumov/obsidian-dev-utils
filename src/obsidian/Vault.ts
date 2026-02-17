@@ -485,9 +485,7 @@ export async function process(
 
   if (fullOptions.shouldLockEditorWhileProcessing) {
     for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
-      /* v8 ignore start -- Optional chaining null branch for leaf.view.file is hard to reproduce in unit tests. */
       if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
-        /* v8 ignore stop */
         lockEditor(leaf.view.editor);
       }
     }
@@ -559,9 +557,7 @@ export async function process(
   } finally {
     activeLeafChangeEventRef?.e.offref(activeLeafChangeEventRef);
     for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
-      /* v8 ignore start -- Optional chaining null branch for leaf.view.file is hard to reproduce in unit tests. */
       if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
-        /* v8 ignore stop */
         unlockEditor(leaf.view.editor);
       }
     }

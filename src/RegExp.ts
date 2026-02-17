@@ -179,9 +179,7 @@ function addUnicodeFlags(
       /* v8 ignore stop */
   }
 
-  /* v8 ignore start -- A single regex cannot have both u and v flags simultaneously. */
   if (shouldUseUFlag && shouldUseVFlag) {
-    /* v8 ignore stop */
     /* v8 ignore start -- Throw strategy cannot reach here; earlier checks would have thrown. */
     if (strategy === RegExpMergeFlagsConflictStrategy.Throw) {
       throw new Error('Cannot combine both \'u\'/\'v\' flags in one RegExp.');

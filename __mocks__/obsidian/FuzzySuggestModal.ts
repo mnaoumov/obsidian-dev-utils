@@ -18,8 +18,9 @@ export class FuzzySuggestModal<T> extends Modal {
     noop();
   }
 
-  public selectSuggestion(_value: { item: T }, _evt: Event | KeyboardEvent | MouseEvent): void {
-    noop();
+  public selectSuggestion(value: { item: T }, evt: Event | KeyboardEvent | MouseEvent): void {
+    this.onChooseItem(value.item, evt);
+    this.close();
   }
 
   public setPlaceholder(_placeholder: string): void {

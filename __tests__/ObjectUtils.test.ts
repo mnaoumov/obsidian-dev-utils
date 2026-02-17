@@ -1,7 +1,9 @@
 import {
+  afterEach,
   describe,
   expect,
-  it
+  it,
+  vi
 } from 'vitest';
 
 import { noop } from '../src/Function.ts';
@@ -380,6 +382,41 @@ describe('ObjectUtils', () => {
       assignWithNonEnumerableProperties(target, source);
       expect(Object.getOwnPropertyDescriptor(target, 'hidden')?.value).toBe(42);
     });
+
+    it('should skip prototype key when assigning', () => {
+      const target: Record<string, unknown> = {};
+      const source = Object.create(null) as Record<string, unknown>;
+      Object.defineProperty(source, 'prototype', { configurable: true, enumerable: true, value: 'test', writable: true });
+      Object.defineProperty(source, 'other', { configurable: true, enumerable: true, value: 'kept', writable: true });
+      assignWithNonEnumerableProperties(target, source);
+      expect(Object.getOwnPropertyDescriptor(target, 'prototype')).toBeUndefined();
+      expect(target['other']).toBe('kept');
+    });
+
+    it('should skip read-only non-configurable properties on target', () => {
+      const target: Record<string, unknown> = {};
+      Object.defineProperty(target, 'locked', { configurable: false, enumerable: true, value: 'original', writable: false });
+      const source: Record<string, unknown> = {};
+      Object.defineProperty(source, 'locked', { configurable: true, enumerable: true, value: 'new', writable: true });
+      assignWithNonEnumerableProperties(target, source);
+      expect(target['locked']).toBe('original');
+    });
+
+    it('should silently ignore defineProperty failures', () => {
+      const target: Record<string, unknown> = {};
+      const source = { a: 1 };
+      const originalDefineProperty = Object.defineProperty;
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+      vi.spyOn(Object, 'defineProperty').mockImplementation((obj, prop, descriptor) => {
+        if (prop === 'a' && obj === target) {
+          throw new Error('Cannot define property');
+        }
+        return originalDefineProperty(obj, prop, descriptor as PropertyDescriptor);
+      });
+      expect(() => assignWithNonEnumerableProperties(target, source)).not.toThrow();
+    });
   });
 
   describe('toJson', () => {
@@ -528,6 +565,47 @@ describe('ObjectUtils', () => {
         tokenSubstitutions: { circularReference: '"[CIRCULAR]"' }
       });
       expect(json).toContain('[CIRCULAR]');
+    });
+
+    it('should use anonymous for unnamed functions in NameOnly mode', () => {
+      function fn(): void {
+        noop();
+      }
+      Object.defineProperty(fn, 'name', { value: '' });
+      const obj = { fn };
+      const json = toJson(obj, { functionHandlingMode: FunctionHandlingMode.NameOnly });
+      expect(json).toContain('anonymous');
+    });
+
+    it('should drop undefined properties when shouldHandleUndefined is false', () => {
+      const json = toJson({ a: 1, b: undefined });
+      const parsed = JSON.parse(json) as Record<string, unknown>;
+      expect(parsed).toEqual({ a: 1 });
+    });
+
+    it('should not call nested toJSON when outer toJSON already returned the object', () => {
+      const innerToJSON = vi.fn().mockReturnValue({ x: 1 });
+      const inner = { toJSON: innerToJSON, y: 2 };
+      const outer = {
+        toJSON(): object {
+          return inner;
+        }
+      };
+      const json = toJson(outer);
+      expect(innerToJSON).not.toHaveBeenCalled();
+      const parsed = JSON.parse(json) as Record<string, unknown>;
+      expect(parsed).toEqual({ y: 2 });
+    });
+
+    it('should use Object as constructor name when constructor has no name', () => {
+      function AnonymousCtor(): void {
+        noop();
+      }
+      Object.defineProperty(AnonymousCtor, 'name', { value: '' });
+      const obj: Record<string, unknown> = Object.create(AnonymousCtor.prototype) as Record<string, unknown>;
+      obj['a'] = 1;
+      obj['self'] = obj;
+      expect(() => toJson(obj)).toThrow('starting at object with constructor \'Object\'');
     });
   });
 

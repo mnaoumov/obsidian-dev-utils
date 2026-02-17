@@ -543,6 +543,24 @@ describe('updateChangelog', () => {
       'utf-8'
     );
   });
+
+  it('should handle existing changelog without trailing newline', async () => {
+    mockExistsSync.mockReturnValue(true);
+    // No trailing \n — last element after split won't be ''
+    mockReadFile.mockResolvedValue('# CHANGELOG\n\n## 0.9.0\n\n- Old change');
+    mockExecFromRoot
+      .mockResolvedValueOnce('New feature\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await updateChangelog('1.0.0');
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringContaining('## 0.9.0'),
+      'utf-8'
+    );
+  });
 });
 
 describe('updateVersion', () => {
