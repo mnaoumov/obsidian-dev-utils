@@ -1,37 +1,27 @@
-import { BaseComponent } from './BaseComponent.ts';
+import { AbstractTextComponent } from './AbstractTextComponent.ts';
 
-export class TextAreaComponent extends BaseComponent {
-  public inputEl: HTMLTextAreaElement;
+export class TextAreaComponent extends AbstractTextComponent<HTMLTextAreaElement> {
   private changeCallback?: () => void;
-  private value = '';
 
   public constructor(_containerEl: HTMLElement) {
-    super();
-    this.inputEl = document.createElement('textarea');
+    super(createEl('textarea'));
   }
 
-  public getValue(): string {
-    return this.value;
-  }
-
-  public onChange(cb: (value: string) => void): this {
+  public override onChange(cb: (value: string) => void): this {
     this.changeCallback = (): void => {
       cb(this.getValue());
     };
     return this;
   }
 
-  public setPlaceholder(_placeholder: string): this {
-    return this;
-  }
-
-  public setValue(value: string): this {
-    this.value = value;
+  public override setValue(value: string): this {
+    super.setValue(value);
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Accessing mock-only @deprecated inputEl.
     this.inputEl.value = value;
     return this;
   }
 
-  /** Test helper to trigger change callback. */
+  /** @deprecated Mock-only. Triggers the registered change callback. Not part of the Obsidian API. */
   public simulateChange(): void {
     this.changeCallback?.();
   }

@@ -1,20 +1,20 @@
-import { castTo } from '../../src/ObjectUtils.ts';
 import { BaseComponent } from './BaseComponent.ts';
 
-export class ValueComponent<T> extends BaseComponent {
-  declare public inputEl: HTMLElement;
-  protected value: T = castTo<T>(undefined);
+export abstract class ValueComponent<T> extends BaseComponent {
+  /** @deprecated Mock-only abstract getter. inputEl is a concrete property in the Obsidian API. */
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- Declaring mock-only abstract getter.
+  public abstract get inputEl(): HTMLElement;
 
-  public getValue(): T {
-    return this.value;
+  /** @deprecated Mock-only constructor. ValueComponent has no public constructor in the Obsidian API. */
+  public constructor() {
+    super();
   }
+
+  public abstract getValue(): T;
 
   public registerOptionListener(_listeners: Record<string, (value?: T) => T>, _key: string): this {
     return this;
   }
 
-  public setValue(value: T): this {
-    this.value = value;
-    return this;
-  }
+  public abstract setValue(value: T): this;
 }

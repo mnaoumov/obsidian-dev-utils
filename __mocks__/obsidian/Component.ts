@@ -23,7 +23,25 @@ export class Component {
     noop();
   }
 
-  public registerDomEvent(_el: unknown, _type: string, _callback: unknown, _options?: unknown): void {
+  public registerDomEvent<K extends keyof WindowEventMap>(
+    el: Window,
+    type: K,
+    callback: (this: HTMLElement, ev: WindowEventMap[K]) => unknown,
+    options?: AddEventListenerOptions | boolean
+  ): void;
+  public registerDomEvent<K extends keyof DocumentEventMap>(
+    el: Document,
+    type: K,
+    callback: (this: HTMLElement, ev: DocumentEventMap[K]) => unknown,
+    options?: AddEventListenerOptions | boolean
+  ): void;
+  public registerDomEvent<K extends keyof HTMLElementEventMap>(
+    el: HTMLElement,
+    type: K,
+    callback: (this: HTMLElement, ev: HTMLElementEventMap[K]) => unknown,
+    options?: AddEventListenerOptions | boolean
+  ): void;
+  public registerDomEvent(_el: Document | HTMLElement | Window, _type: string, _callback: unknown, _options?: AddEventListenerOptions | boolean): void {
     noop();
   }
 

@@ -70,7 +70,6 @@ describe('printToPdf', () => {
 
     await printToPdf(el, {});
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- It's a mock.
     expect(document.body.createDiv).toHaveBeenCalledWith('print');
     expect(printDiv.contains(el)).toBe(true);
   });

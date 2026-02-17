@@ -1,21 +1,19 @@
+import type { App } from './App.ts';
+
 import { noop } from '../../src/Function.ts';
-import { castTo } from '../../src/ObjectUtils.ts';
 import { Scope } from './Scope.ts';
 
 export class Modal {
-  public app: unknown;
-  public containerEl: HTMLElement = {} as HTMLElement;
-  public contentEl: HTMLElement = {} as HTMLElement;
-  public modalEl: HTMLElement = {} as HTMLElement;
+  public app: App;
+  public containerEl: HTMLElement = createDiv();
+  public contentEl: HTMLElement = createDiv();
+  public modalEl: HTMLElement = createDiv();
   public scope = new Scope();
   public shouldRestoreSelection = true;
-  public titleEl: HTMLElement = {} as HTMLElement;
+  public titleEl: HTMLElement = createDiv();
 
-  public constructor(app: unknown) {
+  public constructor(app: App) {
     this.app = app;
-    this.containerEl = castTo<HTMLElement>({ addClass: noop });
-    this.contentEl = { createEl: (() => ({})) as unknown } as HTMLElement;
-    this.titleEl = castTo<HTMLElement>({ setText: noop });
   }
 
   public close(): void {
@@ -37,6 +35,10 @@ export class Modal {
     setTimeout(() => {
       this.close();
     }, 0);
+  }
+
+  public setCloseCallback(_callback: () => unknown): this {
+    return this;
   }
 
   public setContent(_content: DocumentFragment | string): this {

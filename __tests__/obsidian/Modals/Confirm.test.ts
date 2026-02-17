@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import {
   beforeEach,
   describe,
@@ -34,6 +36,7 @@ vi.mock('../../../src/obsidian/Plugin/PluginContext.ts', () => ({
 describe('confirm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
     ButtonComponent.instances = [];
   });
 
@@ -53,7 +56,9 @@ describe('confirm', () => {
     // OnOpen has run synchronously - buttons are created.
     // Simulate OK button click via microtask (runs before setTimeout auto-close).
     queueMicrotask(() => {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       const okButton = ButtonComponent.instances[0];
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       okButton?.simulateClick();
     });
     const result = await resultPromise;

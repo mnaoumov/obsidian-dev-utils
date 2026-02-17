@@ -1,4 +1,11 @@
-import type { EventRef } from 'obsidian';
+import type {
+  Component,
+  EventRef,
+  HoverPopover,
+  IconName,
+  Menu,
+  ViewStateResult
+} from 'obsidian';
 
 import type { TFile } from './TFile.ts';
 
@@ -6,28 +13,48 @@ import {
   noop,
   noopAsync
 } from '../../src/Function.ts';
-import { castTo } from '../../src/ObjectUtils.ts';
+import { App } from './App.ts';
+import { Editor } from './Editor.ts';
+import { WorkspaceLeaf } from './WorkspaceLeaf.ts';
+
+class MockEditor extends Editor {}
 
 export class MarkdownView {
   public allowNoFile = false;
-  public app: unknown = null;
-  public containerEl: HTMLElement = castTo<HTMLElement>(null);
-  public contentEl: HTMLElement = castTo<HTMLElement>(null);
-  public currentMode: unknown = null;
+  public app = new App();
+  public containerEl: HTMLElement = createDiv();
+  public contentEl: HTMLElement = createDiv();
+  public currentMode = {
+    applyScroll: noop,
+    get: (): string => '',
+    getScroll: (): number => 0,
+    set: noop
+  };
+
   public data = '';
-  public editor: unknown = {};
+  public editor = new MockEditor();
   public file: null | TFile = null;
-  public hoverPopover: unknown = null;
-  public icon = '';
-  public leaf: unknown = null;
+  public hoverPopover: HoverPopover | null = null;
+  public icon: IconName = '';
+  public leaf = new WorkspaceLeaf();
   public navigation = true;
-  public previewMode: unknown = null;
-  public scope: unknown = null;
-  public addAction(_icon: string, _title: string, _callback: (evt: MouseEvent) => unknown): HTMLElement {
-    return castTo<HTMLElement>(null);
+  public previewMode = {
+    applyScroll: noop,
+    clear: noop,
+    containerEl: createDiv(),
+    get: (): string => '',
+    getScroll: (): number => 0,
+    rerender: noop,
+    set: noop
+  };
+
+  public scope = null;
+
+  public addAction(_icon: IconName, _title: string, _callback: (evt: MouseEvent) => unknown): HTMLElement {
+    return createDiv();
   }
 
-  public addChild<T>(component: T): T {
+  public addChild<T extends Component>(component: T): T {
     return component;
   }
 
@@ -51,7 +78,7 @@ export class MarkdownView {
     return this.icon;
   }
 
-  public getMode(): string {
+  public getMode(): 'preview' | 'source' {
     return 'source';
   }
 
@@ -75,7 +102,7 @@ export class MarkdownView {
     noop();
   }
 
-  public onPaneMenu(_menu: unknown, _source: string): void {
+  public onPaneMenu(_menu: Menu, _source: string): void {
     noop();
   }
 
@@ -91,7 +118,7 @@ export class MarkdownView {
     noop();
   }
 
-  public registerDomEvent(_el: unknown, _type: string, _callback: unknown, _options?: unknown): void {
+  public registerDomEvent(_el: Document | HTMLElement | Window, _type: string, _callback: unknown, _options?: AddEventListenerOptions | boolean): void {
     noop();
   }
 
@@ -103,7 +130,7 @@ export class MarkdownView {
     return _id;
   }
 
-  public removeChild<T>(component: T): T {
+  public removeChild<T extends Component>(component: T): T {
     return component;
   }
 
@@ -119,7 +146,7 @@ export class MarkdownView {
     noop();
   }
 
-  public async setState(_state: unknown, _result: unknown): Promise<void> {
+  public async setState(_state: unknown, _result: ViewStateResult): Promise<void> {
     await noopAsync();
   }
 

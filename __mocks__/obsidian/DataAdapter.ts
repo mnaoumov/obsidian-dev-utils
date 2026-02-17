@@ -1,4 +1,8 @@
-import type { ListedFiles } from 'obsidian';
+import type {
+  DataWriteOptions,
+  ListedFiles,
+  Stat
+} from 'obsidian';
 
 import { noopAsync } from '../../src/Function.ts';
 
@@ -6,7 +10,7 @@ export class DataAdapter {
   public basePath = '';
   public insensitive = false;
 
-  public async append(_normalizedPath: string, _data: string): Promise<void> {
+  public async append(_normalizedPath: string, _data: string, _options?: DataWriteOptions): Promise<void> {
     await noopAsync();
   }
 
@@ -34,7 +38,7 @@ export class DataAdapter {
     await noopAsync();
   }
 
-  public async process(_normalizedPath: string, fn: (data: string) => string): Promise<string> {
+  public async process(_normalizedPath: string, fn: (data: string) => string, _options?: DataWriteOptions): Promise<string> {
     return fn('');
   }
 
@@ -58,7 +62,7 @@ export class DataAdapter {
     await noopAsync();
   }
 
-  public async stat(_normalizedPath: string): Promise<{ ctime: number; mtime: number; size: number } | null> {
+  public async stat(_normalizedPath: string): Promise<null | Stat> {
     return null;
   }
 
@@ -70,11 +74,11 @@ export class DataAdapter {
     return false;
   }
 
-  public async write(_normalizedPath: string, _data: string): Promise<void> {
+  public async write(_normalizedPath: string, _data: string, _options?: DataWriteOptions): Promise<void> {
     await noopAsync();
   }
 
-  public async writeBinary(_normalizedPath: string, _data: ArrayBuffer): Promise<void> {
+  public async writeBinary(_normalizedPath: string, _data: ArrayBuffer, _options?: DataWriteOptions): Promise<void> {
     await noopAsync();
   }
 }

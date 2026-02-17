@@ -1,16 +1,22 @@
-import { BaseComponent } from './BaseComponent.ts';
+import { ValueComponent } from './ValueComponent.ts';
 
-export class DropdownComponent extends BaseComponent {
+export class DropdownComponent extends ValueComponent<string> {
   public selectEl: HTMLSelectElement;
+
+  public override get inputEl(): HTMLSelectElement {
+    return this.selectEl;
+  }
+
   private changeCallback?: () => void;
 
   public constructor(_containerEl: HTMLElement) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Calling mock-only @deprecated ValueComponent constructor.
     super();
-    this.selectEl = document.createElement('select');
+    this.selectEl = createEl('select');
   }
 
   public addOption(value: string, display: string): this {
-    const option = document.createElement('option');
+    const option = createEl('option');
     option.value = value;
     option.text = display;
     this.selectEl.appendChild(option);
@@ -24,7 +30,7 @@ export class DropdownComponent extends BaseComponent {
     return this;
   }
 
-  public getValue(): string {
+  public override getValue(): string {
     return this.selectEl.value;
   }
 
@@ -35,7 +41,7 @@ export class DropdownComponent extends BaseComponent {
     return this;
   }
 
-  public setValue(value: string): this {
+  public override setValue(value: string): this {
     this.selectEl.value = value;
     return this;
   }

@@ -1,11 +1,7 @@
 import type { App } from 'obsidian';
 // @vitest-environment jsdom
 
-import {
-  MarkdownView,
-  TFile,
-  TFolder
-} from 'obsidian';
+import { MarkdownView } from 'obsidian';
 import {
   beforeEach,
   describe,
@@ -16,6 +12,8 @@ import {
 
 import type { RetryWithTimeoutNoticeOptions } from '../../src/obsidian/AsyncWithNotice.ts';
 
+import { createTFileInstance } from '../../__mocks__/obsidian-typings/implementations/createTFileInstance.ts';
+import { createTFolderInstance } from '../../__mocks__/obsidian-typings/implementations/createTFolderInstance.ts';
 import { createMockApp } from '../../__mocks__/obsidian/App.ts';
 import {
   deleteVaultAbstractFile,
@@ -75,38 +73,19 @@ vi.mock('../../src/Debug.ts', () => ({
 }));
 
 const mockedRetryWithTimeoutNotice = vi.mocked(retryWithTimeoutNotice);
+let app: App;
 
-function createTestFile(path: string, ext = 'md'): TFile {
-  const file = new TFile();
-  file.path = path;
-  const parts = path.split('/');
-  file.name = parts[parts.length - 1] ?? '';
-  file.extension = ext;
-  file.basename = file.name.replace(`.${ext}`, '');
-  return file;
-}
-
-function createTestFolder(path: string): TFolder {
-  const folder = new TFolder();
-  folder.path = path;
-  const parts = path.split('/');
-  folder.name = parts[parts.length - 1] ?? '';
-  return folder;
-}
+beforeEach(() => {
+  app = createMockApp();
+});
 
 describe('isChild', () => {
-  let app: App;
-
-  beforeEach(() => {
-    app = createMockApp();
-  });
-
   it('should return false when both paths are the same', () => {
     expect(isChild(app, 'folder/note.md', 'folder/note.md')).toBe(false);
   });
 
   it('should return true when b is root "/"', () => {
-    const root = createTestFolder('/');
+    const root = createTFolderInstance(app, '/');
     setVaultAbstractFile(app.vault, '/', root);
     expect(isChild(app, 'folder/note.md', root)).toBe(true);
   });
@@ -124,8 +103,8 @@ describe('isChild', () => {
   });
 
   it('should work with TAbstractFile instances', () => {
-    const fileA = createTestFile('parent/child.md');
-    const folderB = createTestFolder('parent');
+    const fileA = createTFileInstance(app, 'parent/child.md');
+    const folderB = createTFolderInstance(app, 'parent');
     setVaultAbstractFile(app.vault, 'parent/child.md', fileA);
     setVaultAbstractFile(app.vault, 'parent', folderB);
     expect(isChild(app, fileA, folderB)).toBe(true);
@@ -133,12 +112,6 @@ describe('isChild', () => {
 });
 
 describe('isChildOrSelf', () => {
-  let app: App;
-
-  beforeEach(() => {
-    app = createMockApp();
-  });
-
   it('should return true when both paths are the same', () => {
     expect(isChildOrSelf(app, 'folder/note.md', 'folder/note.md')).toBe(true);
   });
@@ -152,20 +125,14 @@ describe('isChildOrSelf', () => {
   });
 
   it('should return true when both refer to root', () => {
-    const rootA = createTestFolder('/');
-    const rootB = createTestFolder('/');
+    const rootA = createTFolderInstance(app, '/');
+    const rootB = createTFolderInstance(app, '/');
     setVaultAbstractFile(app.vault, '/', rootA);
     expect(isChildOrSelf(app, rootA, rootB)).toBe(true);
   });
 });
 
 describe('getAvailablePath', () => {
-  let app: App;
-
-  beforeEach(() => {
-    app = createMockApp();
-  });
-
   it('should call vault.getAvailablePath with correct base and extension', () => {
     const spy = vi.spyOn(app.vault, 'getAvailablePath');
     getAvailablePath(app, 'folder/note.md');
@@ -192,8 +159,6 @@ describe('getAvailablePath', () => {
 });
 
 describe('getMarkdownFilesSorted', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [
@@ -214,15 +179,12 @@ describe('getMarkdownFilesSorted', () => {
   });
 
   it('should return empty array when no markdown files exist', () => {
-    app = createMockApp();
     const files = getMarkdownFilesSorted(app);
     expect(files).toEqual([]);
   });
 });
 
 describe('getNoteFilesSorted', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [
@@ -259,12 +221,6 @@ describe('getNoteFilesSorted', () => {
 });
 
 describe('createFolderSafe', () => {
-  let app: App;
-
-  beforeEach(() => {
-    app = createMockApp();
-  });
-
   it('should return false if folder already exists', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(true);
     const result = await createFolderSafe(app, 'existing-folder');
@@ -296,8 +252,6 @@ describe('createFolderSafe', () => {
 });
 
 describe('copySafe', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [{ path: 'source.md' }]
@@ -356,8 +310,6 @@ describe('copySafe', () => {
 });
 
 describe('readSafe', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [{ content: 'hello world', path: 'note.md' }]
@@ -383,8 +335,6 @@ describe('readSafe', () => {
 });
 
 describe('getAbstractFilePathSafe', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [{ path: 'existing.md' }],
@@ -417,8 +367,6 @@ describe('getAbstractFilePathSafe', () => {
 });
 
 describe('getFilePathSafe', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [{ path: 'test.md' }]
@@ -438,8 +386,6 @@ describe('getFilePathSafe', () => {
 });
 
 describe('getFolderPathSafe', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       folders: ['my-folder']
@@ -459,8 +405,6 @@ describe('getFolderPathSafe', () => {
 });
 
 describe('saveNote', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [{ path: 'note.md' }]
@@ -468,7 +412,7 @@ describe('saveNote', () => {
   });
 
   it('should not save if file is not a markdown file', async () => {
-    const nonMdFile = createTestFile('data.json', 'json');
+    const nonMdFile = createTFileInstance(app, 'data.json');
     setVaultAbstractFile(app.vault, 'data.json', nonMdFile);
     const getLeavesOfTypeSpy = vi.spyOn(app.workspace, 'getLeavesOfType');
     await saveNote(app, 'data.json');
@@ -509,7 +453,7 @@ describe('saveNote', () => {
 
   it('should not save views for different file paths', async () => {
     const view = new (castTo<new () => MarkdownView>(MarkdownView))();
-    view.file = createTestFile('other.md');
+    view.file = createTFileInstance(app, 'other.md');
     castTo<Record<string, unknown>>(view)['dirty'] = true;
     const saveSpy = vi.spyOn(view, 'save');
 
@@ -523,8 +467,6 @@ describe('saveNote', () => {
 });
 
 describe('isEmptyFolder', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       folders: ['empty-folder', 'full-folder']
@@ -569,8 +511,6 @@ describe('isEmptyFolder', () => {
 });
 
 describe('listSafe', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       folders: ['my-folder']
@@ -623,8 +563,6 @@ describe('listSafe', () => {
 });
 
 describe('getSafeRenamePath', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [{ path: 'old.md' }]
@@ -646,11 +584,11 @@ describe('getSafeRenamePath', () => {
   it('should return newPath directly when paths match case-insensitively on insensitive filesystem', () => {
     app.vault.adapter.insensitive = true;
     // Need a parent folder for the while loop to find
-    const parentFolder = createTestFolder('dir');
+    const parentFolder = createTFolderInstance(app, 'dir');
     castTo<Record<string, unknown>>(parentFolder)['getParentPrefix'] = (): string => 'dir/';
     setVaultAbstractFile(app.vault, 'dir', parentFolder);
 
-    const dirFile = createTestFile('dir/old.md');
+    const dirFile = createTFileInstance(app, 'dir/old.md');
     setVaultAbstractFile(app.vault, 'dir/old.md', dirFile);
 
     const result = getSafeRenamePath(app, 'dir/old.md', 'dir/OLD.md');
@@ -659,7 +597,7 @@ describe('getSafeRenamePath', () => {
 
   it('should handle insensitive filesystem with nested path by walking up to existing folder', () => {
     app.vault.adapter.insensitive = true;
-    const parentFolder = createTestFolder('parent');
+    const parentFolder = createTFolderInstance(app, 'parent');
     castTo<Record<string, unknown>>(parentFolder)['getParentPrefix'] = (): string => 'parent/';
     setVaultAbstractFile(app.vault, 'parent', parentFolder);
 
@@ -670,8 +608,6 @@ describe('getSafeRenamePath', () => {
 });
 
 describe('renameSafe', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [{ path: 'source.md' }]
@@ -735,14 +671,8 @@ describe('renameSafe', () => {
 });
 
 describe('getOrCreateAbstractFileSafe', () => {
-  let app: App;
-
-  beforeEach(() => {
-    app = createMockApp();
-  });
-
   it('should return existing file if it exists', async () => {
-    const file = createTestFile('existing.md');
+    const file = createTFileInstance(app, 'existing.md');
     setVaultAbstractFile(app.vault, 'existing.md', file);
     const result = await getOrCreateAbstractFileSafe(app, 'existing.md', FileSystemType.File);
     expect(result.path).toBe('existing.md');
@@ -757,7 +687,7 @@ describe('getOrCreateAbstractFileSafe', () => {
   });
 
   it('should return existing folder if it exists', async () => {
-    const folder = createTestFolder('existing-folder');
+    const folder = createTFolderInstance(app, 'existing-folder');
     setVaultAbstractFile(app.vault, 'existing-folder', folder);
     const result = await getOrCreateAbstractFileSafe(app, 'existing-folder', FileSystemType.Folder);
     expect(result.path).toBe('existing-folder');
@@ -780,14 +710,8 @@ describe('getOrCreateAbstractFileSafe', () => {
 });
 
 describe('getOrCreateFileSafe', () => {
-  let app: App;
-
-  beforeEach(() => {
-    app = createMockApp();
-  });
-
   it('should return existing file', async () => {
-    const file = createTestFile('test.md');
+    const file = createTFileInstance(app, 'test.md');
     setVaultAbstractFile(app.vault, 'test.md', file);
     const result = await getOrCreateFileSafe(app, 'test.md');
     expect(result.path).toBe('test.md');
@@ -802,14 +726,8 @@ describe('getOrCreateFileSafe', () => {
 });
 
 describe('getOrCreateFolderSafe', () => {
-  let app: App;
-
-  beforeEach(() => {
-    app = createMockApp();
-  });
-
   it('should return existing folder', async () => {
-    const folder = createTestFolder('test-folder');
+    const folder = createTFolderInstance(app, 'test-folder');
     setVaultAbstractFile(app.vault, 'test-folder', folder);
     const result = await getOrCreateFolderSafe(app, 'test-folder');
     expect(result.path).toBe('test-folder');
@@ -824,8 +742,6 @@ describe('getOrCreateFolderSafe', () => {
 });
 
 describe('invokeWithFileSystemLock', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [{ path: 'locked.md' }]
@@ -866,8 +782,6 @@ describe('invokeWithFileSystemLock', () => {
 });
 
 describe('readSafe error paths (invokeFileActionSafe catch)', () => {
-  let app: App;
-
   beforeEach(() => {
     app = createMockApp({
       files: [{ content: 'hello', path: 'note.md' }]
@@ -893,10 +807,7 @@ describe('readSafe error paths (invokeFileActionSafe catch)', () => {
 });
 
 describe('createTempFile', () => {
-  let app: App;
-
   beforeEach(() => {
-    app = createMockApp();
     // Map '' to root folder so createTempFolder recursion terminates
     const root = app.vault.getFolderByPath('/');
     assertNonNullable(root);
@@ -932,9 +843,7 @@ describe('createTempFile', () => {
   });
 
   it('cleanup should trash non-deleted file', async () => {
-    const createdFile = new TFile();
-    createdFile.path = 'new.md';
-    createdFile.name = 'new.md';
+    const createdFile = createTFileInstance(app, 'new.md');
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
     const trashSpy = vi.spyOn(app.fileManager, 'trashFile');
 
@@ -948,9 +857,7 @@ describe('createTempFile', () => {
   });
 
   it('cleanup should not trash deleted file', async () => {
-    const createdFile = new TFile();
-    createdFile.path = 'new.md';
-    createdFile.name = 'new.md';
+    const createdFile = createTFileInstance(app, 'new.md');
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
     const trashSpy = vi.spyOn(app.fileManager, 'trashFile');
 
@@ -966,10 +873,7 @@ describe('createTempFile', () => {
 });
 
 describe('createTempFolder', () => {
-  let app: App;
-
   beforeEach(() => {
-    app = createMockApp();
     // Map '' to root folder so createTempFolder recursion terminates
     const root = app.vault.getFolderByPath('/');
     assertNonNullable(root);
@@ -1000,8 +904,7 @@ describe('createTempFolder', () => {
     const cleanup = await createTempFolder(app, 'temp');
 
     // Set up the folder in fileMap for cleanup to find it
-    const folder = new TFolder();
-    folder.path = 'temp';
+    const folder = createTFolderInstance(app, 'temp');
 
     setVaultAbstractFile(app.vault, 'temp', folder);
     await cleanup();
@@ -1014,8 +917,7 @@ describe('createTempFolder', () => {
 
     const cleanup = await createTempFolder(app, 'temp');
 
-    const folder = new TFolder();
-    folder.path = 'temp';
+    const folder = createTFolderInstance(app, 'temp');
     folder.deleted = true;
 
     setVaultAbstractFile(app.vault, 'temp', folder);
@@ -1025,8 +927,6 @@ describe('createTempFolder', () => {
 });
 
 describe('processFile', () => {
-  let app: App;
-
   function setupRetryToInvokeOperationFn(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
       const operationFn = options.operationFn;
@@ -1091,7 +991,6 @@ describe('processFile', () => {
 
   it('should throw when file is missing and shouldFailOnMissingFile is true', async () => {
     setupRetryToInvokeOperationFn();
-    app = createMockApp(); // No files
 
     await expect(processFile(app, 'missing.md', 'content', { shouldFailOnMissingFile: true }))
       .rejects.toThrow('File \'missing.md\' not found');

@@ -1,3 +1,5 @@
+import type { DataWriteOptions } from 'obsidian';
+
 import type { TAbstractFile } from './TAbstractFile.ts';
 
 import { noopAsync } from '../../src/Function.ts';
@@ -12,6 +14,14 @@ export class Vault extends Events {
   public configDir = '.obsidian';
   public fileMap: Record<string, TAbstractFile> = {};
 
+  public constructor() {
+    super();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Creating root folder entry.
+    const root = new TFolder(this, '/');
+    this.fileMap['/'] = root;
+    root.deleted = false;
+  }
+
   public static recurseChildren(folder: TFolder, cb: (f: TAbstractFile) => unknown): void {
     for (const child of folder.children) {
       cb(child);
@@ -21,7 +31,7 @@ export class Vault extends Events {
     }
   }
 
-  public async append(_file: TFile, _data: string): Promise<void> {
+  public async append(_file: TFile, _data: string, _options?: DataWriteOptions): Promise<void> {
     await noopAsync();
   }
 
@@ -33,22 +43,25 @@ export class Vault extends Events {
     return file;
   }
 
-  public async create(path: string, _data: string): Promise<TFile> {
-    const f = new TFile();
-    f.path = path;
-    return f;
+  public async create(path: string, _data: string, _options?: DataWriteOptions): Promise<TFile> {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Calling mock-only @deprecated TFile constructor.
+    const file = new TFile(this, path);
+    setVaultAbstractFile(this, path, file);
+    return file;
   }
 
-  public async createBinary(path: string, _data: ArrayBuffer): Promise<TFile> {
-    const f = new TFile();
-    f.path = path;
-    return f;
+  public async createBinary(path: string, _data: ArrayBuffer, _options?: DataWriteOptions): Promise<TFile> {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Calling mock-only @deprecated TFile constructor.
+    const file = new TFile(this, path);
+    setVaultAbstractFile(this, path, file);
+    return file;
   }
 
   public async createFolder(path: string): Promise<TFolder> {
-    const f = new TFolder();
-    f.path = path;
-    return f;
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Calling mock-only @deprecated TFolder constructor.
+    const folder = new TFolder(this, path);
+    setVaultAbstractFile(this, path, folder);
+    return folder;
   }
 
   public async delete(_file: TAbstractFile, _force?: boolean): Promise<void> {
@@ -112,20 +125,25 @@ export class Vault extends Events {
   }
 
   public getRoot(): TFolder {
-    const root = new TFolder();
-    root.path = '/';
-    return root;
+    const root = this.fileMap['/'];
+    if (root instanceof TFolder) {
+      return root;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Fallback root folder creation.
+    const fallback = new TFolder(this, '/');
+    this.fileMap['/'] = fallback;
+    return fallback;
   }
 
-  public async modify(_file: TFile, _data: string): Promise<void> {
+  public async modify(_file: TFile, _data: string, _options?: DataWriteOptions): Promise<void> {
     await noopAsync();
   }
 
-  public async modifyBinary(_file: TFile, _data: ArrayBuffer): Promise<void> {
+  public async modifyBinary(_file: TFile, _data: ArrayBuffer, _options?: DataWriteOptions): Promise<void> {
     await noopAsync();
   }
 
-  public async process(_file: TFile, fn: (data: string) => string): Promise<string> {
+  public async process(_file: TFile, fn: (data: string) => string, _options?: DataWriteOptions): Promise<string> {
     return fn('');
   }
 
@@ -153,4 +171,14 @@ export function deleteVaultAbstractFile(vault: Vault, path: string): void {
 
 export function setVaultAbstractFile(vault: Vault, path: string, file: TAbstractFile): void {
   vault.fileMap[path] = file;
+  file.deleted = false;
+  if (path !== '/' && path !== '') {
+    const lastSlash = path.lastIndexOf('/');
+    const parentKey = lastSlash > 0 ? path.slice(0, lastSlash) : '/';
+    const parentFile = vault.fileMap[parentKey];
+    if (parentFile instanceof TFolder) {
+      file.parent = parentFile;
+      parentFile.children.push(file);
+    }
+  }
 }

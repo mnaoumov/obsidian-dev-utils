@@ -2717,7 +2717,6 @@ describe('app-dependent functions', () => {
         shouldUseLeadingSlashForAbsolutePaths: true
       }));
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- We need to call the mock.
       expect(mockPlugin.register).toHaveBeenCalled();
 
       const result = generateMarkdownLink({

@@ -1,21 +1,29 @@
+import type { TooltipOptions } from 'obsidian';
+
 import { BaseComponent } from './BaseComponent.ts';
 
 export class ButtonComponent extends BaseComponent {
+  /** @deprecated Mock-only. Tracks all created instances for test assertions. Not part of the Obsidian API. */
   public static instances: ButtonComponent[] = [];
-  public buttonEl: HTMLButtonElement = {} as HTMLButtonElement;
-  private clickHandler?: (evt: Event) => void;
+  public buttonEl: HTMLButtonElement = createEl('button');
+  private clickHandler?: (evt: MouseEvent) => unknown;
 
   public constructor(_containerEl: HTMLElement) {
     super();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Initializing mock-only tracking field.
     ButtonComponent.instances.push(this);
   }
 
-  public onClick(cb: (evt: Event) => void): this {
-    this.clickHandler = cb;
+  public onClick(callback: (evt: MouseEvent) => unknown): this {
+    this.clickHandler = callback;
     return this;
   }
 
-  public setButtonText(_text: string): this {
+  public removeCta(): this {
+    return this;
+  }
+
+  public setButtonText(_name: string): this {
     return this;
   }
 
@@ -31,7 +39,7 @@ export class ButtonComponent extends BaseComponent {
     return this;
   }
 
-  public setTooltip(_tooltip: string): this {
+  public setTooltip(_tooltip: string, _options?: TooltipOptions): this {
     return this;
   }
 
@@ -39,8 +47,8 @@ export class ButtonComponent extends BaseComponent {
     return this;
   }
 
-  /** Test helper to simulate a click. */
+  /** @deprecated Mock-only. Simulates a button click by invoking the registered click handler. Not part of the Obsidian API. */
   public simulateClick(): void {
-    this.clickHandler?.(new Event('click'));
+    this.clickHandler?.(new Event('click') as MouseEvent);
   }
 }

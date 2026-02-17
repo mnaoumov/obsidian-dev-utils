@@ -1,16 +1,19 @@
-import type { App as ObsidianApp } from 'obsidian';
-
-import type { TAbstractFile } from './TAbstractFile.ts';
+import type {
+  App as ObsidianApp,
+  UserEvent
+} from 'obsidian';
 
 import { noop } from '../../src/Function.ts';
-import { castTo } from '../../src/ObjectUtils.ts';
 import { FileManager } from './FileManager.ts';
 import { Keymap } from './Keymap.ts';
 import { MetadataCache } from './MetadataCache.ts';
 import { Scope } from './Scope.ts';
 import { TFile } from './TFile.ts';
 import { TFolder } from './TFolder.ts';
-import { Vault } from './Vault.ts';
+import {
+  setVaultAbstractFile,
+  Vault
+} from './Vault.ts';
 import { Workspace } from './Workspace.ts';
 
 export interface MockAppOptions {
@@ -27,7 +30,7 @@ export interface MockFileEntry {
 export class App {
   public fileManager = new FileManager(this);
   public keymap = new Keymap();
-  public lastEvent: unknown = null;
+  public lastEvent: null | UserEvent = null;
   public metadataCache = new MetadataCache();
   public scope = new Scope();
   public vault = new Vault();
@@ -48,36 +51,22 @@ export class App {
 
 export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
   const app = new App();
-  const fileMap: Record<string, TAbstractFile> = {};
   const fileContents = new Map<string, string>();
 
-  const root = new TFolder();
-  root.path = '/';
-  root.name = '';
-  fileMap['/'] = root;
-
   for (const folderPath of options.folders ?? []) {
-    const folder = new TFolder();
-    folder.path = folderPath;
-    const parts = folderPath.split('/');
-    folder.name = parts[parts.length - 1] ?? '';
-    fileMap[folderPath] = folder;
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Creating mock file system entries.
+    const folder = new TFolder(app.vault, folderPath);
+    setVaultAbstractFile(app.vault, folderPath, folder);
   }
 
   for (const fileOpt of options.files ?? []) {
-    const file = new TFile();
-    file.path = fileOpt.path;
-    const parts = fileOpt.path.split('/');
-    file.name = parts[parts.length - 1] ?? '';
-    file.extension = fileOpt.extension ?? file.name.split('.').pop() ?? '';
-    file.basename = file.name.replace(`.${file.extension}`, '');
-    fileMap[fileOpt.path] = file;
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Creating mock file system entries.
+    const file = new TFile(app.vault, fileOpt.path);
+    setVaultAbstractFile(app.vault, fileOpt.path, file);
     if (fileOpt.content !== undefined) {
       fileContents.set(fileOpt.path, fileOpt.content);
     }
   }
-
-  app.vault.fileMap = fileMap;
   app.vault.cachedRead = async (file: TFile): Promise<string> => {
     return fileContents.get(file.path) ?? '';
   };
@@ -102,5 +91,5 @@ export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
     return null;
   };
 
-  return castTo<ObsidianApp>(app);
+  return app as ObsidianApp;
 }

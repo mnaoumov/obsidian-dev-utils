@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import type { FuzzyMatch } from 'obsidian';
 
 import { FuzzySuggestModal } from 'obsidian';
