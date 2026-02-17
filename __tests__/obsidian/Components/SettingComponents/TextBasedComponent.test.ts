@@ -6,7 +6,7 @@ import {
   it
 } from 'vitest';
 
-import { AbstractTextComponent } from '../../../../__mocks__/obsidian/AbstractTextComponent.ts';
+import { TextComponent } from '../../../../__mocks__/obsidian/TextComponent.ts';
 import { noop } from '../../../../src/Function.ts';
 import { getTextBasedComponentValue } from '../../../../src/obsidian/Components/SettingComponents/TextBasedComponent.ts';
 import { assertNonNullable } from '../../../../src/TypeGuards.ts';
@@ -31,7 +31,7 @@ describe('getTextBasedComponentValue', () => {
 
   it('should wrap AbstractTextComponent', () => {
     const container = document.createElement('div');
-    const atc = new AbstractTextComponent(container);
+    const atc = new TextComponent(container);
     atc.setValue('hello');
 
     const result = getTextBasedComponentValue<string>(atc);
@@ -42,7 +42,7 @@ describe('getTextBasedComponentValue', () => {
 
   it('should empty the wrapped AbstractTextComponent', () => {
     const container = document.createElement('div');
-    const atc = new AbstractTextComponent(container);
+    const atc = new TextComponent(container);
     atc.setValue('hello');
 
     const result = getTextBasedComponentValue<string>(atc);
@@ -53,7 +53,7 @@ describe('getTextBasedComponentValue', () => {
 
   it('should check isEmpty on wrapped AbstractTextComponent', () => {
     const container = document.createElement('div');
-    const atc = new AbstractTextComponent(container);
+    const atc = new TextComponent(container);
 
     const result = getTextBasedComponentValue<string>(atc);
     assertNonNullable(result);
@@ -64,7 +64,7 @@ describe('getTextBasedComponentValue', () => {
 
   it('should set placeholder value on wrapped AbstractTextComponent', () => {
     const container = document.createElement('div');
-    const atc = new AbstractTextComponent(container);
+    const atc = new TextComponent(container);
 
     const result = getTextBasedComponentValue<string>(atc);
     assertNonNullable(result);

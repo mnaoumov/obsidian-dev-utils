@@ -1,8 +1,10 @@
+import type { App } from './App.ts';
+
 import { noop } from '../../src/Function.ts';
 import { Modal } from './Modal.ts';
 
-export class FuzzySuggestModal<T> extends Modal {
-  public constructor(app: unknown) {
+export abstract class FuzzySuggestModal<T> extends Modal {
+  public constructor(app: App) {
     super(app);
   }
 
@@ -14,11 +16,11 @@ export class FuzzySuggestModal<T> extends Modal {
     return '';
   }
 
-  public onChooseItem(_item: T, _evt: Event | KeyboardEvent | MouseEvent): void {
+  public onChooseItem(_item: T, _evt: KeyboardEvent | MouseEvent): void {
     noop();
   }
 
-  public selectSuggestion(value: { item: T }, evt: Event | KeyboardEvent | MouseEvent): void {
+  public selectSuggestion(value: { item: T }, evt: KeyboardEvent | MouseEvent): void {
     this.onChooseItem(value.item, evt);
     this.close();
   }

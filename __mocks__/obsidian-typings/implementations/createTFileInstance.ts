@@ -1,12 +1,21 @@
-import { TFile } from '../../obsidian/TFile.ts';
+import type {
+  App,
+  TFile
+} from 'obsidian';
 
-export function createTFileInstance(_vault: unknown, path: string): TFile {
-  const file = new TFile();
-  file.path = path;
-  const parts = path.split('/');
-  file.name = parts[parts.length - 1] ?? '';
-  const dotIndex = file.name.lastIndexOf('.');
-  file.extension = dotIndex >= 0 ? file.name.slice(dotIndex + 1) : '';
-  file.basename = dotIndex >= 0 ? file.name.slice(0, dotIndex) : file.name;
+import { TFile as MockTFile } from '../../obsidian/TFile.ts';
+import { createTFolderInstance } from './createTFolderInstance.ts';
+import { parentFolderPath } from './parentFolderPath.ts';
+
+export function createTFileInstance(app: App, path: string): TFile {
+  let file = app.vault.getFileByPath(path);
+  if (file) {
+    return file;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-deprecated, obsidianmd/no-tfile-tfolder-cast -- Mock implementation requires deprecated constructor and cast.
+  file = new MockTFile(app.vault, path) as TFile;
+  file.parent = createTFolderInstance(app, parentFolderPath(path));
+  file.deleted = true;
   return file;
 }

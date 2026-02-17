@@ -1,3 +1,7 @@
+// @vitest-environment jsdom
+
+import type { App } from 'obsidian';
+
 import {
   TFile,
   TFolder
@@ -10,6 +14,9 @@ import {
   vi
 } from 'vitest';
 
+import { createTFileInstance } from '../../__mocks__/obsidian-typings/implementations/createTFileInstance.ts';
+import { createTFolderInstance } from '../../__mocks__/obsidian-typings/implementations/createTFolderInstance.ts';
+import { createMockApp } from '../../__mocks__/obsidian/App.ts';
 import {
   deleteEmptyFolder,
   deleteEmptyFolderHierarchy,
@@ -54,27 +61,13 @@ vi.mock('../../src/obsidian/Vault.ts', () => ({
   listSafe: mocks.listSafe
 }));
 
-function createMockApp(): { fileManager: { trashFile: ReturnType<typeof vi.fn> }; vault: { exists: ReturnType<typeof vi.fn> } } {
-  return {
-    fileManager: { trashFile: vi.fn() },
-    vault: { exists: vi.fn(() => false) }
-  };
-}
+let app: App;
 
-function createMockFile(path: string): TFile {
-  const file = new TFile();
-  file.path = path;
-  file.name = path.split('/').pop() ?? '';
-  return file;
-}
-
-function createMockFolder(path: string, parent: null | TFolder = null): TFolder {
-  const folder = new TFolder();
-  folder.path = path;
-  folder.name = path.split('/').pop() ?? '';
-  folder.parent = parent;
-  return folder;
-}
+beforeEach(() => {
+  app = createMockApp();
+  vi.spyOn(app.fileManager, 'trashFile');
+  vi.spyOn(app.vault, 'exists').mockResolvedValue(false);
+});
 
 describe('deleteEmptyFolder', () => {
   beforeEach(() => {
@@ -83,29 +76,29 @@ describe('deleteEmptyFolder', () => {
 
   it('should do nothing when folder is null', async () => {
     mocks.getFolderOrNull.mockReturnValue(null);
-    const app = createMockApp();
-    await deleteEmptyFolder(app as never, null);
+    await deleteEmptyFolder(app, null);
+
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
   it('should do nothing when folder is not empty', async () => {
-    const folder = createMockFolder('my-folder');
+    const folder = createTFolderInstance(app, 'my-folder');
     mocks.getFolderOrNull.mockReturnValue(folder);
     mocks.isEmptyFolder.mockResolvedValue(false);
     mocks.getAbstractFileOrNull.mockReturnValue(folder);
-    const app = createMockApp();
-    await deleteEmptyFolder(app as never, folder);
+    await deleteEmptyFolder(app, folder);
+
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
   it('should delete when folder is empty', async () => {
-    const folder = createMockFolder('my-folder');
+    const folder = createTFolderInstance(app, 'my-folder');
     mocks.getFolderOrNull.mockReturnValue(folder);
     mocks.isEmptyFolder.mockResolvedValue(true);
     mocks.getAbstractFileOrNull.mockReturnValue(folder);
     mocks.listSafe.mockResolvedValue({ files: [], folders: [] });
-    const app = createMockApp();
-    await deleteEmptyFolder(app as never, folder);
+    await deleteEmptyFolder(app, folder);
+
     expect(app.fileManager.trashFile).toHaveBeenCalledWith(folder);
   });
 });
@@ -117,29 +110,29 @@ describe('deleteEmptyFolderHierarchy', () => {
 
   it('should do nothing when folder is null', async () => {
     mocks.getFolderOrNull.mockReturnValue(null);
-    const app = createMockApp();
-    await deleteEmptyFolderHierarchy(app as never, null);
+    await deleteEmptyFolderHierarchy(app, null);
+
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
   it('should stop when folder is not empty', async () => {
-    const folder = createMockFolder('my-folder');
+    const folder = createTFolderInstance(app, 'my-folder');
     mocks.getFolderOrNull.mockReturnValue(folder);
     mocks.isEmptyFolder.mockResolvedValue(false);
-    const app = createMockApp();
-    await deleteEmptyFolderHierarchy(app as never, folder);
+    await deleteEmptyFolderHierarchy(app, folder);
+
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
   it('should delete folder hierarchy up to parent', async () => {
-    const parent = createMockFolder('parent');
-    const child = createMockFolder('parent/child', parent);
+    createTFolderInstance(app, 'parent');
+    const child = createTFolderInstance(app, 'parent/child');
     mocks.getFolderOrNull.mockReturnValue(child);
     mocks.isEmptyFolder.mockResolvedValue(true);
     mocks.getAbstractFileOrNull.mockImplementation((_app: unknown, f: unknown) => f);
     mocks.listSafe.mockResolvedValue({ files: [], folders: [] });
-    const app = createMockApp();
-    await deleteEmptyFolderHierarchy(app as never, child);
+    await deleteEmptyFolderHierarchy(app, child);
+
     expect(app.fileManager.trashFile).toHaveBeenCalled();
   });
 });
@@ -153,93 +146,93 @@ describe('deleteSafe', () => {
 
   it('should return false when file does not exist', async () => {
     mocks.getAbstractFileOrNull.mockReturnValue(null);
-    const app = createMockApp();
-    const result = await deleteSafe(app as never, 'nonexistent.md');
+    const result = await deleteSafe(app, 'nonexistent.md');
     expect(result).toBe(false);
   });
 
   it('should delete a file with no backlinks', async () => {
-    const file = createMockFile('note.md');
+    const file = createTFileInstance(app, 'note.md');
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
-    const app = createMockApp();
-    const result = await deleteSafe(app as never, file);
+    const result = await deleteSafe(app, file);
     expect(result).toBe(true);
+
     expect(app.fileManager.trashFile).toHaveBeenCalledWith(file);
   });
 
   it('should not delete a file with backlinks', async () => {
-    const file = createMockFile('note.md');
+    const file = createTFileInstance(app, 'note.md');
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 2) });
-    const app = createMockApp();
-    const result = await deleteSafe(app as never, file);
+    const result = await deleteSafe(app, file);
     expect(result).toBe(false);
+
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
   it('should clear backlinks from the deleted note path', async () => {
-    const file = createMockFile('attachment.png');
+    const file = createTFileInstance(app, 'attachment.png');
     const clearFn = vi.fn();
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: clearFn, count: vi.fn(() => 0) });
-    const app = createMockApp();
-    await deleteSafe(app as never, file, 'deleted-note.md');
+    await deleteSafe(app, file, 'deleted-note.md');
     expect(clearFn).toHaveBeenCalledWith('deleted-note.md');
   });
 
   it('should show notice for used attachments when shouldReportUsedAttachments is true', async () => {
-    const file = createMockFile('attachment.png');
+    const file = createTFileInstance(app, 'attachment.png');
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 1) });
-    const app = createMockApp();
-    await deleteSafe(app as never, file, undefined, true);
+    await deleteSafe(app, file, undefined, true);
     // Notice constructor was called (mock from obsidian)
+
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
   it('should recursively delete folder contents', async () => {
-    const childFile = createMockFile('folder/note.md');
-    const folder = createMockFolder('folder');
+    const folder = createTFolderInstance(app, 'folder');
+    const childFile = createTFileInstance(app, 'folder/note.md');
+
     mocks.getAbstractFileOrNull.mockImplementation((_app: unknown, f: unknown) => f);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
     mocks.listSafe.mockResolvedValue({ files: [childFile], folders: [] });
     mocks.isEmptyFolder.mockResolvedValue(true);
-    const app = createMockApp();
-    const result = await deleteSafe(app as never, folder);
+    const result = await deleteSafe(app, folder);
     expect(result).toBe(true);
   });
 
   it('should not delete folder when shouldDeleteEmptyFolders is false', async () => {
-    const folder = createMockFolder('folder');
+    const folder = createTFolderInstance(app, 'folder');
     mocks.getAbstractFileOrNull.mockReturnValue(folder);
     mocks.listSafe.mockResolvedValue({ files: [], folders: [] });
     mocks.isEmptyFolder.mockResolvedValue(true);
-    const app = createMockApp();
-    const result = await deleteSafe(app as never, folder, undefined, undefined, false);
+    const result = await deleteSafe(app, folder, undefined, undefined, false);
     expect(result).toBe(false);
+
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
   it('should handle trashFile failure gracefully when file still exists', async () => {
-    const file = createMockFile('note.md');
+    const file = createTFileInstance(app, 'note.md');
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
-    const app = createMockApp();
-    app.fileManager.trashFile.mockRejectedValue(new Error('trash failed'));
-    app.vault.exists.mockResolvedValue(true);
-    const result = await deleteSafe(app as never, file);
+
+    vi.mocked(app.fileManager.trashFile).mockRejectedValue(new Error('trash failed'));
+
+    vi.mocked(app.vault.exists).mockResolvedValue(true);
+    const result = await deleteSafe(app, file);
     expect(result).toBe(false);
   });
 
   it('should treat trashFile failure as success when file no longer exists', async () => {
-    const file = createMockFile('note.md');
+    const file = createTFileInstance(app, 'note.md');
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
-    const app = createMockApp();
-    app.fileManager.trashFile.mockRejectedValue(new Error('trash failed'));
-    app.vault.exists.mockResolvedValue(false);
-    const result = await deleteSafe(app as never, file);
+
+    vi.mocked(app.fileManager.trashFile).mockRejectedValue(new Error('trash failed'));
+
+    vi.mocked(app.vault.exists).mockResolvedValue(false);
+    const result = await deleteSafe(app, file);
     expect(result).toBe(true);
   });
 });

@@ -40,7 +40,7 @@ describe('getFullContentHtml', () => {
     const view = createMockView('<div>content</div>');
     const cm = view.editor.cm;
     getFullContentHtml(view);
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- It's a mock.
+
     expect(cm.measure).toHaveBeenCalledTimes(2);
   });
 

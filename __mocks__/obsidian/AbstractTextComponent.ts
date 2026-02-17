@@ -1,30 +1,35 @@
-import { noop } from '../../src/Function.ts';
-import { castTo } from '../../src/ObjectUtils.ts';
-import { BaseComponent } from './BaseComponent.ts';
+import { ValueComponent } from './ValueComponent.ts';
 
-export class AbstractTextComponent<T extends HTMLInputElement | HTMLTextAreaElement> extends BaseComponent {
-  public inputEl: T;
-  private value = '';
+export abstract class AbstractTextComponent<T extends HTMLInputElement | HTMLTextAreaElement> extends ValueComponent<string> {
+  public override inputEl: T;
 
-  public constructor(_containerEl: HTMLElement) {
+  private _value = '';
+
+  public constructor(_inputEl: T) {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Calling mock-only @deprecated ValueComponent constructor.
     super();
-    this.inputEl = castTo<T>(document.createElement('input'));
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Assigning mock-only @deprecated inputEl.
+    this.inputEl = _inputEl;
   }
 
-  public getValue(): string {
-    return this.value;
+  public override getValue(): string {
+    return this._value;
+  }
+
+  public onChange(_callback: (value: string) => unknown): this {
+    return this;
   }
 
   public onChanged(): void {
-    noop();
+    // Noop
   }
 
   public setPlaceholder(_placeholder: string): this {
     return this;
   }
 
-  public setValue(value: string): this {
-    this.value = value;
+  public override setValue(value: string): this {
+    this._value = value;
     return this;
   }
 }

@@ -160,6 +160,7 @@ const configs: Linter.Config[] = defineConfig([
   {
     files: testFiles,
     rules: {
+      '@typescript-eslint/unbound-method': 'off',
       'eslint-plugin-tsdoc-required/tsdoc-required': 'off',
       'jsdoc/require-file-overview': 'off',
       'jsdoc/require-jsdoc': 'off',

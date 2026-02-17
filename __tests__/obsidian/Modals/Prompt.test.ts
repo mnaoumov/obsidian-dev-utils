@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import {
   beforeEach,
   describe,
@@ -48,7 +50,9 @@ vi.mock('../../../src/obsidian/Plugin/PluginContext.ts', () => ({
 describe('prompt', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
     ButtonComponent.instances = [];
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
     TextComponent.instances = [];
   });
 
@@ -65,7 +69,9 @@ describe('prompt', () => {
       defaultValue: 'hello'
     });
     queueMicrotask(() => {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       const okButton = ButtonComponent.instances[0];
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       okButton?.simulateClick();
     });
     const result = await resultPromise;
@@ -78,7 +84,9 @@ describe('prompt', () => {
       defaultValue: 'enter-value'
     });
     queueMicrotask(() => {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       const textComp = TextComponent.instances[0];
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       textComp?.simulateEvent('keydown', { key: 'Enter', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
@@ -91,7 +99,9 @@ describe('prompt', () => {
       defaultValue: 'escape-value'
     });
     queueMicrotask(() => {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       const textComp = TextComponent.instances[0];
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       textComp?.simulateEvent('keydown', { key: 'Escape', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
@@ -104,7 +114,9 @@ describe('prompt', () => {
       defaultValue: 'other-key'
     });
     queueMicrotask(() => {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       const textComp = TextComponent.instances[0];
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       textComp?.simulateEvent('keydown', { key: 'a', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
@@ -117,10 +129,14 @@ describe('prompt', () => {
       defaultValue: 'invalid'
     });
     queueMicrotask(() => {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       const textComp = ensureNonNullable(TextComponent.instances[0]);
       // Make checkValidity return false
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       textComp.inputEl.checkValidity = (): boolean => false;
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       const okButton = ensureNonNullable(ButtonComponent.instances[0]);
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       okButton.simulateClick();
     });
     const result = await resultPromise;

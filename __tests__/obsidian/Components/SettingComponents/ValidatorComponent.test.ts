@@ -68,6 +68,7 @@ describe('getValidatorComponent', () => {
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
     assertNonNullable(result);
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Accessing mock-only inputEl.
     expect(result.validatorEl).toBe(comp.inputEl);
   });
 
@@ -86,6 +87,7 @@ describe('getValidatorComponent', () => {
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
     assertNonNullable(result);
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Accessing mock-only inputEl.
     expect(result.validatorEl).toBe(comp.inputEl);
   });
 
@@ -95,6 +97,7 @@ describe('getValidatorComponent', () => {
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
     assertNonNullable(result);
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Accessing mock-only inputEl.
     expect(result.validatorEl).toBe(comp.inputEl);
   });
 

@@ -1,3 +1,5 @@
+import type { DataWriteOptions } from 'obsidian';
+
 import type { App } from './App.ts';
 import type { TAbstractFile } from './TAbstractFile.ts';
 import type { TFile } from './TFile.ts';
@@ -24,7 +26,7 @@ export class FileManager {
     return this.app.vault.getRoot();
   }
 
-  public async processFrontMatter(_file: TFile, _fn: (frontmatter: unknown) => void): Promise<void> {
+  public async processFrontMatter(_file: TFile, _fn: (frontmatter: unknown) => void, _options?: DataWriteOptions): Promise<void> {
     await noopAsync();
   }
 

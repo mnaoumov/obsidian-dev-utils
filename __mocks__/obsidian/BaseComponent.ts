@@ -1,4 +1,4 @@
-export class BaseComponent {
+export abstract class BaseComponent {
   public disabled = false;
 
   public setDisabled(disabled: boolean): this {
