@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import { readdirPosix } from '../../src/ScriptUtils/Fs.ts';
 
 const { mockReaddir } = vi.hoisted(() => ({
@@ -80,7 +81,7 @@ describe('readdirPosix', () => {
         { name: 'index.ts', parentPath: 'C:\\project' }
       ];
       mockReaddir.mockResolvedValue(mockDirents);
-      const result = await readdirPosix('/dir', { withFileTypes: true }) as unknown as { name: string; parentPath: string }[];
+      const result = castTo<{ name: string; parentPath: string }[]>(await readdirPosix('/dir', { withFileTypes: true }));
       expect(result[0]?.name).toBe('sub/file.ts');
       expect(result[0]?.parentPath).toBe('C:/project/src');
       expect(result[1]?.name).toBe('index.ts');

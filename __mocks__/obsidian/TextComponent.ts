@@ -1,4 +1,5 @@
 import { noop } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import { ValueComponent } from './ValueComponent.ts';
 
 export class TextComponent extends ValueComponent<string> {
@@ -10,7 +11,7 @@ export class TextComponent extends ValueComponent<string> {
     super();
     this.value = '';
     const eventListeners = this.eventListeners;
-    this.inputEl = {
+    this.inputEl = castTo<HTMLInputElement>({
       addClass(): void {
         noop();
       },
@@ -27,7 +28,7 @@ export class TextComponent extends ValueComponent<string> {
         noop();
       },
       value: ''
-    } as unknown as HTMLInputElement;
+    });
     TextComponent.instances.push(this);
   }
 

@@ -19,6 +19,7 @@ import {
   showInitialDebugMessage
 } from '../src/Debug.ts';
 import { noop } from '../src/Function.ts';
+import { castTo } from '../src/ObjectUtils.ts';
 import {
   NO_PLUGIN_ID_INITIALIZED,
   setPluginId
@@ -282,7 +283,7 @@ describe('Debug', () => {
   describe('printWithStackTrace', () => {
     it('should call the debugger with message and args in Node environment (no window)', () => {
       debug.enable('print-test');
-      const spy = vi.fn() as unknown as Debugger;
+      const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace(spy, 'fake-stack', 'hello %s', 'world');
       expect(spy).toHaveBeenCalledWith('hello %s', 'world');
@@ -290,7 +291,7 @@ describe('Debug', () => {
 
     it('should not include stack trace info in Node environment', () => {
       debug.enable('print-test-2');
-      const spy = vi.fn() as unknown as Debugger;
+      const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace(spy, 'fake-stack', 'msg');
       expect(spy).toHaveBeenCalledTimes(1);
@@ -299,7 +300,7 @@ describe('Debug', () => {
 
     it('should call the debugger with no extra arguments when none provided', () => {
       debug.enable('print-test-3');
-      const spy = vi.fn() as unknown as Debugger;
+      const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace(spy, 'stack-trace', 'simple message');
       expect(spy).toHaveBeenCalledWith('simple message');
@@ -307,7 +308,7 @@ describe('Debug', () => {
 
     it('should call the debugger with multiple args', () => {
       debug.enable('print-test-4');
-      const spy = vi.fn() as unknown as Debugger;
+      const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace(spy, 'stack', '%s %d %o', 'a', 1, { x: 2 });
       expect(spy).toHaveBeenCalledWith('%s %d %o', 'a', 1, { x: 2 });
@@ -434,7 +435,7 @@ describe('Debug', () => {
     it('should support nested array of namespaces in enable()', () => {
       const controller = getDebugController();
       controller.set('');
-      controller.enable([['nested-a', 'nested-b'] as unknown as string, 'flat-c']);
+      controller.enable([castTo<string>(['nested-a', 'nested-b']), 'flat-c']);
       const namespaces = controller.get();
       expect(namespaces).toContain('nested-a');
       expect(namespaces).toContain('nested-b');

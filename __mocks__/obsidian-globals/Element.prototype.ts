@@ -1,3 +1,4 @@
+import { castTo } from '../../src/ObjectUtils.ts';
 import { empty } from './Node.prototype.ts';
 
 export function addClass(this: Element, ...classes: string[]): void {
@@ -19,7 +20,7 @@ export function findAll(this: Element, selector: string): HTMLElement[] {
 export function findAllSelf(this: Element, selector: string): HTMLElement[] {
   const out: HTMLElement[] = [];
   if (this.matches(selector)) {
-    out.push(this as unknown as HTMLElement);
+    out.push(castTo<HTMLElement>(this));
   }
   out.push(...Array.from(this.querySelectorAll<HTMLElement>(selector)));
   return out;

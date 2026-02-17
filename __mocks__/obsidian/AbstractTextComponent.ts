@@ -1,4 +1,5 @@
 import { noop } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import { BaseComponent } from './BaseComponent.ts';
 
 export class AbstractTextComponent<T extends HTMLInputElement | HTMLTextAreaElement> extends BaseComponent {
@@ -7,7 +8,7 @@ export class AbstractTextComponent<T extends HTMLInputElement | HTMLTextAreaElem
 
   public constructor(_containerEl: HTMLElement) {
     super();
-    this.inputEl = document.createElement('input') as unknown as T;
+    this.inputEl = castTo<T>(document.createElement('input'));
   }
 
   public getValue(): string {

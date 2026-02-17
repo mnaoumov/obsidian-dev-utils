@@ -7,6 +7,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import { relativePathToResourceUrl } from '../../src/obsidian/ResourceUrl.ts';
 
 vi.mock('obsidian', () => ({
@@ -16,13 +17,13 @@ vi.mock('obsidian', () => ({
 }));
 
 function createMockApp(fullRealPath: string): App {
-  return {
+  return castTo<App>({
     vault: {
       adapter: {
         getFullRealPath: vi.fn(() => fullRealPath)
       }
     }
-  } as unknown as App;
+  });
 }
 
 describe('relativePathToResourceUrl', () => {

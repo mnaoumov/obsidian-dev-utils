@@ -1,3 +1,5 @@
+import { castTo } from '../../src/ObjectUtils.ts';
+
 export interface DomElementInfoLike {
   attr?: Record<string, boolean | null | number | string>;
   cls?: string | string[];
@@ -53,13 +55,13 @@ export function createEl<K extends keyof HTMLElementTagNameMap>(
       el.setAttribute('href', o.href);
     }
     if (o.placeholder !== undefined) {
-      (el as unknown as { placeholder?: string }).placeholder = o.placeholder;
+      castTo<{ placeholder?: string }>(el).placeholder = o.placeholder;
     }
     if (o.type !== undefined) {
-      (el as unknown as { type?: string }).type = o.type;
+      castTo<{ type?: string }>(el).type = o.type;
     }
     if (o.value !== undefined) {
-      (el as unknown as { value?: string }).value = o.value;
+      castTo<{ value?: string }>(el).value = o.value;
     }
     if (o.text !== undefined) {
       if (typeof o.text === 'string') {

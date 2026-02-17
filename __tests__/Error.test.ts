@@ -16,6 +16,7 @@ import {
   SilentError,
   throwExpression
 } from '../src/Error.ts';
+import { castTo } from '../src/ObjectUtils.ts';
 import { assertNonNullable } from '../src/TypeGuards.ts';
 
 describe('ASYNC_WRAPPER_ERROR_MESSAGE', () => {
@@ -303,7 +304,7 @@ describe('CustomStackTraceError', () => {
 
 describe('printError', () => {
   it('should call console.error with the error string', () => {
-    const mockConsole = { error: vi.fn() } as unknown as Console;
+    const mockConsole = castTo<Console>({ error: vi.fn() });
     const error = new Error('print me');
 
     printError(error, mockConsole);
@@ -312,7 +313,7 @@ describe('printError', () => {
   });
 
   it('should include the error message in the output', () => {
-    const mockConsole = { error: vi.fn() } as unknown as Console;
+    const mockConsole = castTo<Console>({ error: vi.fn() });
     const error = new Error('print me');
 
     printError(error, mockConsole);
@@ -324,14 +325,14 @@ describe('printError', () => {
   });
 
   it('should call console.error once for non-Error values', () => {
-    const mockConsole = { error: vi.fn() } as unknown as Console;
+    const mockConsole = castTo<Console>({ error: vi.fn() });
     printError('just a string', mockConsole);
 
     expect(mockConsole.error).toHaveBeenCalledTimes(1);
   });
 
   it('should pass the non-Error value directly to console.error', () => {
-    const mockConsole = { error: vi.fn() } as unknown as Console;
+    const mockConsole = castTo<Console>({ error: vi.fn() });
     printError('just a string', mockConsole);
 
     const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
@@ -340,7 +341,7 @@ describe('printError', () => {
   });
 
   it('should include the outer error message when printing nested causes', () => {
-    const mockConsole = { error: vi.fn() } as unknown as Console;
+    const mockConsole = castTo<Console>({ error: vi.fn() });
     const cause = new Error('root');
     const error = new Error('outer', { cause });
 
@@ -353,7 +354,7 @@ describe('printError', () => {
   });
 
   it('should include the Caused by label when printing nested causes', () => {
-    const mockConsole = { error: vi.fn() } as unknown as Console;
+    const mockConsole = castTo<Console>({ error: vi.fn() });
     const cause = new Error('root');
     const error = new Error('outer', { cause });
 
@@ -366,7 +367,7 @@ describe('printError', () => {
   });
 
   it('should include the root cause message when printing nested causes', () => {
-    const mockConsole = { error: vi.fn() } as unknown as Console;
+    const mockConsole = castTo<Console>({ error: vi.fn() });
     const cause = new Error('root');
     const error = new Error('outer', { cause });
 

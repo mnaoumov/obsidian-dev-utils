@@ -16,6 +16,7 @@ import {
 
 import type { RetryWithTimeoutNoticeOptions } from '../../src/obsidian/AsyncWithNotice.ts';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import { getObsidianDevUtilsState } from '../../src/obsidian/App.ts';
 import { retryWithTimeoutNotice } from '../../src/obsidian/AsyncWithNotice.ts';
 import {
@@ -49,7 +50,7 @@ vi.mock('../../src/obsidian/Frontmatter.ts', () => ({
 vi.mock('../../src/obsidian/i18n/i18n.ts', () => ({
   t: vi.fn((fn: (messages: Record<string, unknown>) => unknown) => {
     try {
-      return fn({ obsidianDevUtils: { metadataCache: { getBacklinksForFilePath: 'mock' } } } as unknown as Record<string, unknown>);
+      return fn(castTo<Record<string, unknown>>({ obsidianDevUtils: { metadataCache: { getBacklinksForFilePath: 'mock' } } }));
     } catch {
       return 'mock-t';
     }
@@ -177,23 +178,23 @@ function createMockApp(): MockApp {
 }
 
 function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCache {
-  return {
+  return castTo<FrontmatterLinkCache>({
     displayText: original,
     key,
     link: original,
     original
-  } as unknown as FrontmatterLinkCache;
+  });
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): FrontmatterLinkCache {
-  return {
+  return castTo<FrontmatterLinkCache>({
     displayText: original,
     endOffset,
     key,
     link: original,
     original,
     startOffset
-  } as unknown as FrontmatterLinkCache;
+  });
 }
 
 function makeReferenceCache(original: string, startOffset: number): ReferenceCache {
@@ -336,7 +337,7 @@ describe('getAllLinks', () => {
 describe('ensureMetadataCacheReady', () => {
   it('should resolve when onCleanCache calls the callback', async () => {
     const app = createMockApp();
-    await ensureMetadataCacheReady(app as unknown as App);
+    await ensureMetadataCacheReady(castTo<App>(app));
     expect(app.metadataCache.onCleanCache).toHaveBeenCalledOnce();
   });
 
@@ -345,7 +346,7 @@ describe('ensureMetadataCacheReady', () => {
     app.metadataCache.onCleanCache = vi.fn((cb: () => void) => {
       setTimeout(cb, 0);
     });
-    await ensureMetadataCacheReady(app as unknown as App);
+    await ensureMetadataCacheReady(castTo<App>(app));
     expect(app.metadataCache.onCleanCache).toHaveBeenCalledOnce();
   });
 });
@@ -356,7 +357,7 @@ describe('parseMetadata', () => {
     const mockCache: CachedMetadata = { links: [] };
     app.metadataCache.computeMetadataAsync.mockResolvedValue(mockCache);
 
-    const result = await parseMetadata(app as unknown as App, 'test string');
+    const result = await parseMetadata(castTo<App>(app), 'test string');
     expect(app.metadataCache.computeMetadataAsync).toHaveBeenCalledOnce();
     const callArg = app.metadataCache.computeMetadataAsync.mock.calls[0]?.[0] as ArrayBuffer;
     const decoded = new TextDecoder().decode(callArg);
@@ -368,7 +369,7 @@ describe('parseMetadata', () => {
     const app = createMockApp();
     app.metadataCache.computeMetadataAsync.mockResolvedValue(null);
 
-    const result = await parseMetadata(app as unknown as App, 'test');
+    const result = await parseMetadata(castTo<App>(app), 'test');
     expect(result).toEqual({});
   });
 });
@@ -385,9 +386,9 @@ describe('registerFileCacheForNonExistingFile', () => {
     const file = { deleted: true, name: 'note.md', path: 'folder/note.md' };
     const cache: CachedMetadata = { links: [] };
 
-    mockedGetFile.mockReturnValue(file as unknown as ReturnType<typeof getFile>);
+    mockedGetFile.mockReturnValue(castTo<ReturnType<typeof getFile>>(file));
 
-    registerFileCacheForNonExistingFile(app as unknown as App, file as never, cache);
+    registerFileCacheForNonExistingFile(castTo<App>(app), file as never, cache);
 
     expect(app.metadataCache.fileCache['folder/note.md']).toEqual({
       hash: 'folder/note.md',
@@ -400,10 +401,10 @@ describe('registerFileCacheForNonExistingFile', () => {
   it('should throw when file is not deleted', () => {
     const file = { deleted: false, name: 'note.md', path: 'folder/note.md' };
 
-    mockedGetFile.mockReturnValue(file as unknown as ReturnType<typeof getFile>);
+    mockedGetFile.mockReturnValue(castTo<ReturnType<typeof getFile>>(file));
 
     expect(() => {
-      registerFileCacheForNonExistingFile(app as unknown as App, file as never, {});
+      registerFileCacheForNonExistingFile(castTo<App>(app), file as never, {});
     })
       .toThrow('File is existing');
   });
@@ -422,9 +423,9 @@ describe('unregisterFileCacheForNonExistingFile', () => {
     app.metadataCache.fileCache['folder/note.md'] = { hash: 'folder/note.md', mtime: 0, size: 0 };
     app.metadataCache.metadataCache['folder/note.md'] = { links: [] };
 
-    mockedGetFile.mockReturnValue(file as unknown as ReturnType<typeof getFile>);
+    mockedGetFile.mockReturnValue(castTo<ReturnType<typeof getFile>>(file));
 
-    unregisterFileCacheForNonExistingFile(app as unknown as App, file as never);
+    unregisterFileCacheForNonExistingFile(castTo<App>(app), file as never);
 
     expect(app.metadataCache.fileCache['folder/note.md']).toBeUndefined();
     expect(app.metadataCache.metadataCache['folder/note.md']).toBeUndefined();
@@ -433,10 +434,10 @@ describe('unregisterFileCacheForNonExistingFile', () => {
   it('should throw when file is not deleted', () => {
     const file = { deleted: false, name: 'note.md', path: 'folder/note.md' };
 
-    mockedGetFile.mockReturnValue(file as unknown as ReturnType<typeof getFile>);
+    mockedGetFile.mockReturnValue(castTo<ReturnType<typeof getFile>>(file));
 
     expect(() => {
-      unregisterFileCacheForNonExistingFile(app as unknown as App, file as never);
+      unregisterFileCacheForNonExistingFile(castTo<App>(app), file as never);
     })
       .toThrow('File is existing');
   });
@@ -450,33 +451,33 @@ describe('registerFiles', () => {
   });
 
   it('should register a deleted file into fileMap', () => {
-    const file = { deleted: true, name: 'note.md', path: 'folder/note.md' } as unknown as TAbstractFile;
+    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
-    registerFiles(app as unknown as App, [file]);
+    registerFiles(castTo<App>(app), [file]);
 
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBe(file);
   });
 
   it('should call uniqueFileLookup.add for file-like deleted entries', () => {
-    const file = { deleted: true, name: 'note.md', path: 'folder/note.md' } as unknown as TAbstractFile;
+    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
-    registerFiles(app as unknown as App, [file]);
+    registerFiles(castTo<App>(app), [file]);
 
     expect(app.metadataCache.uniqueFileLookup.add).toHaveBeenCalledWith('note.md', file);
   });
 
   it('should not register a non-deleted file', () => {
-    const file = { deleted: false, name: 'note.md', path: 'folder/note.md' } as unknown as TAbstractFile;
+    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
 
-    registerFiles(app as unknown as App, [file]);
+    registerFiles(castTo<App>(app), [file]);
 
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBeNull();
   });
 
   it('should not call uniqueFileLookup.add for folder-like deleted entries', () => {
-    const folder = { children: [], deleted: true, path: 'folder' } as unknown as TAbstractFile;
+    const folder = castTo<TAbstractFile>({ children: [], deleted: true, path: 'folder' });
 
-    registerFiles(app as unknown as App, [folder]);
+    registerFiles(castTo<App>(app), [folder]);
 
     expect(app.vault.getAbstractFileByPath('folder')).toBe(folder);
     expect(app.metadataCache.uniqueFileLookup.add).not.toHaveBeenCalled();
@@ -491,37 +492,37 @@ describe('unregisterFiles', () => {
   });
 
   it('should remove a deleted file from fileMap when count reaches 0', () => {
-    const file = { deleted: true, name: 'note.md', path: 'folder/note.md' } as unknown as TAbstractFile;
+    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
     setVaultEntry(app, 'folder/note.md', file);
 
-    unregisterFiles(app as unknown as App, [file]);
+    unregisterFiles(castTo<App>(app), [file]);
 
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBeNull();
   });
 
   it('should call uniqueFileLookup.remove for file-like deleted entries when count reaches 0', () => {
-    const file = { deleted: true, name: 'note.md', path: 'folder/note.md' } as unknown as TAbstractFile;
+    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
     setVaultEntry(app, 'folder/note.md', file);
 
-    unregisterFiles(app as unknown as App, [file]);
+    unregisterFiles(castTo<App>(app), [file]);
 
     expect(app.metadataCache.uniqueFileLookup.remove).toHaveBeenCalledWith('note.md', file);
   });
 
   it('should not remove a non-deleted file', () => {
-    const file = { deleted: false, name: 'note.md', path: 'folder/note.md' } as unknown as TAbstractFile;
+    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
     setVaultEntry(app, 'folder/note.md', file);
 
-    unregisterFiles(app as unknown as App, [file]);
+    unregisterFiles(castTo<App>(app), [file]);
 
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBe(file);
   });
 
   it('should not call uniqueFileLookup.remove for folder-like deleted entries', () => {
-    const folder = { children: [], deleted: true, path: 'folder' } as unknown as TAbstractFile;
+    const folder = castTo<TAbstractFile>({ children: [], deleted: true, path: 'folder' });
     setVaultEntry(app, 'folder', folder);
 
-    unregisterFiles(app as unknown as App, [folder]);
+    unregisterFiles(castTo<App>(app), [folder]);
 
     expect(app.vault.getAbstractFileByPath('folder')).toBeNull();
     expect(app.metadataCache.uniqueFileLookup.remove).not.toHaveBeenCalled();
@@ -532,11 +533,11 @@ describe('unregisterFiles', () => {
     const mockedGetState = vi.mocked(getObsidianDevUtilsState);
     mockedGetState.mockReturnValue({ value: sharedMap });
 
-    const file = { deleted: true, name: 'note.md', path: 'folder/note.md' } as unknown as TAbstractFile;
+    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
-    registerFiles(app as unknown as App, [file]);
-    registerFiles(app as unknown as App, [file]);
-    unregisterFiles(app as unknown as App, [file]);
+    registerFiles(castTo<App>(app), [file]);
+    registerFiles(castTo<App>(app), [file]);
+    unregisterFiles(castTo<App>(app), [file]);
 
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBe(file);
 
@@ -552,15 +553,15 @@ describe('tempRegisterFilesAndRun', () => {
   });
 
   it('should run the function and return its result', () => {
-    const file = { deleted: false, name: 'note.md', path: 'note.md' } as unknown as TAbstractFile;
-    const result = tempRegisterFilesAndRun(app as unknown as App, [file], () => 42);
+    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const result = tempRegisterFilesAndRun(castTo<App>(app), [file], () => 42);
     expect(result).toBe(42);
   });
 
   it('should still unregister files even when fn throws', () => {
-    const file = { deleted: false, name: 'note.md', path: 'note.md' } as unknown as TAbstractFile;
+    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     expect(() =>
-      tempRegisterFilesAndRun(app as unknown as App, [file], () => {
+      tempRegisterFilesAndRun(castTo<App>(app), [file], () => {
         throw new Error('test error');
       })
     ).toThrow('test error');
@@ -575,14 +576,14 @@ describe('tempRegisterFilesAndRunAsync', () => {
   });
 
   it('should run the async function and return its result', async () => {
-    const file = { deleted: false, name: 'note.md', path: 'note.md' } as unknown as TAbstractFile;
-    const result = await tempRegisterFilesAndRunAsync(app as unknown as App, [file], async () => 'hello');
+    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const result = await tempRegisterFilesAndRunAsync(castTo<App>(app), [file], async () => 'hello');
     expect(result).toBe('hello');
   });
 
   it('should still unregister files even when fn rejects', async () => {
-    const file = { deleted: false, name: 'note.md', path: 'note.md' } as unknown as TAbstractFile;
-    await expect(tempRegisterFilesAndRunAsync(app as unknown as App, [file], async () => {
+    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    await expect(tempRegisterFilesAndRunAsync(castTo<App>(app), [file], async () => {
       throw new Error('async error');
     })).rejects.toThrow('async error');
   });
@@ -593,7 +594,7 @@ describe('getBacklinksForFileOrPath', () => {
     mockedGetFile.mockReset();
     mockedGetFile.mockImplementation((_app: unknown, pathOrFile: unknown) => {
       if (typeof pathOrFile === 'string') {
-        return { deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile } as unknown as ReturnType<typeof getFile>;
+        return castTo<ReturnType<typeof getFile>>({ deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile });
       }
       return pathOrFile as ReturnType<typeof getFile>;
     });
@@ -604,7 +605,7 @@ describe('getBacklinksForFileOrPath', () => {
     const mockBacklinks = { data: new Map() };
     app.metadataCache.getBacklinksForFile.mockReturnValue(mockBacklinks);
 
-    const result = getBacklinksForFileOrPath(app as unknown as App, 'test.md');
+    const result = getBacklinksForFileOrPath(castTo<App>(app), 'test.md');
 
     expect(app.metadataCache.getBacklinksForFile).toHaveBeenCalled();
     expect(result).toBe(mockBacklinks);
@@ -622,9 +623,9 @@ describe('getCacheSafe', () => {
   });
 
   it('should return null when file does not exist', async () => {
-    mockedGetFileOrNull.mockReturnValue(null as unknown as ReturnType<typeof getFileOrNull>);
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(null));
 
-    const result = await getCacheSafe(app as unknown as App, 'nonexistent.md');
+    const result = await getCacheSafe(castTo<App>(app), 'nonexistent.md');
     expect(result).toBeNull();
   });
 
@@ -632,10 +633,10 @@ describe('getCacheSafe', () => {
     const file = { deleted: true, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 0, size: 0 } };
     const mockCache: CachedMetadata = { links: [] };
 
-    mockedGetFileOrNull.mockReturnValue(file as unknown as ReturnType<typeof getFileOrNull>);
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
     app.metadataCache.getFileCache.mockReturnValue(mockCache);
 
-    const result = await getCacheSafe(app as unknown as App, file as never);
+    const result = await getCacheSafe(castTo<App>(app), file as never);
     expect(result).toBe(mockCache);
   });
 
@@ -643,11 +644,11 @@ describe('getCacheSafe', () => {
     const file = { deleted: false, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 100, size: 50 } };
     const mockCache: CachedMetadata = { links: [] };
 
-    mockedGetFileOrNull.mockReturnValue(file as unknown as ReturnType<typeof getFileOrNull>);
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
     app.metadataCache.getFileCache.mockReturnValue(mockCache);
     app.metadataCache.computeFileMetadataAsync.mockResolvedValue(undefined);
 
-    const result = await getCacheSafe(app as unknown as App, file as never);
+    const result = await getCacheSafe(castTo<App>(app), file as never);
     expect(app.metadataCache.computeFileMetadataAsync).toHaveBeenCalledWith(file);
     expect(result).toBe(mockCache);
   });
@@ -656,12 +657,12 @@ describe('getCacheSafe', () => {
     const file = { deleted: false, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 100, size: 50 } };
     const mockCache: CachedMetadata = { links: [] };
 
-    mockedGetFileOrNull.mockReturnValue(file as unknown as ReturnType<typeof getFileOrNull>);
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
     app.metadataCache.fileCache['note.md'] = { hash: 'abc', mtime: 100, size: 50 };
     app.metadataCache.metadataCache['abc'] = mockCache;
     app.metadataCache.getFileCache.mockReturnValue(mockCache);
 
-    const result = await getCacheSafe(app as unknown as App, file as never);
+    const result = await getCacheSafe(castTo<App>(app), file as never);
     expect(app.metadataCache.computeFileMetadataAsync).not.toHaveBeenCalled();
     expect(result).toBe(mockCache);
   });
@@ -669,22 +670,22 @@ describe('getCacheSafe', () => {
   it('should return null if deleted file throws an error', async () => {
     const file = { deleted: true, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 0, size: 0 } };
 
-    mockedGetFileOrNull.mockReturnValue(file as unknown as ReturnType<typeof getFileOrNull>);
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
     app.metadataCache.getFileCache.mockImplementation(() => {
       throw new Error('cache error');
     });
 
-    const result = await getCacheSafe(app as unknown as App, file as never);
+    const result = await getCacheSafe(castTo<App>(app), file as never);
     expect(result).toBeNull();
   });
 
   it('should rethrow error for non-deleted existing file', async () => {
     const file = { deleted: false, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 0, size: 0 } };
 
-    mockedGetFileOrNull.mockReturnValue(file as unknown as ReturnType<typeof getFileOrNull>);
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
     mockedSaveNote.mockRejectedValue(new Error('save error'));
 
-    await expect(getCacheSafe(app as unknown as App, file as never)).rejects.toThrow('save error');
+    await expect(getCacheSafe(castTo<App>(app), file as never)).rejects.toThrow('save error');
   });
 });
 
@@ -701,12 +702,12 @@ describe('getFrontmatterSafe', () => {
   it('should return frontmatter from cache', async () => {
     const file = { deleted: true, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 0, size: 0 } };
     const mockFrontmatter = { title: 'Test' };
-    const mockCache = { frontmatter: mockFrontmatter } as unknown as CachedMetadata;
+    const mockCache = castTo<CachedMetadata>({ frontmatter: mockFrontmatter });
 
-    mockedGetFileOrNull.mockReturnValue(file as unknown as ReturnType<typeof getFileOrNull>);
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
     app.metadataCache.getFileCache.mockReturnValue(mockCache);
 
-    const result = await getFrontmatterSafe(app as unknown as App, file as never);
+    const result = await getFrontmatterSafe(castTo<App>(app), file as never);
     expect(result).toBe(mockFrontmatter);
   });
 
@@ -714,17 +715,17 @@ describe('getFrontmatterSafe', () => {
     const file = { deleted: true, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 0, size: 0 } };
     const mockCache: CachedMetadata = {};
 
-    mockedGetFileOrNull.mockReturnValue(file as unknown as ReturnType<typeof getFileOrNull>);
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
     app.metadataCache.getFileCache.mockReturnValue(mockCache);
 
-    const result = await getFrontmatterSafe(app as unknown as App, file as never);
+    const result = await getFrontmatterSafe(castTo<App>(app), file as never);
     expect(result).toEqual({});
   });
 
   it('should return empty object when cache is null', async () => {
-    mockedGetFileOrNull.mockReturnValue(null as unknown as ReturnType<typeof getFileOrNull>);
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(null));
 
-    const result = await getFrontmatterSafe(app as unknown as App, 'nonexistent.md');
+    const result = await getFrontmatterSafe(castTo<App>(app), 'nonexistent.md');
     expect(result).toEqual({});
   });
 });
@@ -735,7 +736,7 @@ describe('getBacklinksForFileSafe', () => {
   function setupRetryToInvokeOperationFn(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
       const operationFn = options.operationFn;
-      const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
     });
   }
@@ -760,7 +761,7 @@ describe('getBacklinksForFileSafe', () => {
 
     mockedGetFile.mockImplementation((_app: unknown, pathOrFile: unknown) => {
       if (typeof pathOrFile === 'string') {
-        return { deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile } as unknown as ReturnType<typeof getFile>;
+        return castTo<ReturnType<typeof getFile>>({ deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile });
       }
       return pathOrFile as ReturnType<typeof getFile>;
     });
@@ -771,7 +772,7 @@ describe('getBacklinksForFileSafe', () => {
     const safeFn = vi.fn().mockResolvedValue(mockResult);
     ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = safeFn;
 
-    const result = await getBacklinksForFileSafe(app as unknown as App, 'test.md');
+    const result = await getBacklinksForFileSafe(castTo<App>(app), 'test.md');
     expect(safeFn).toHaveBeenCalledWith('test.md');
     expect(result).toBe(mockResult);
   });
@@ -779,7 +780,7 @@ describe('getBacklinksForFileSafe', () => {
   it('should default shouldShowTimeoutNotice to true', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    await getBacklinksForFileSafe(app as unknown as App, 'test.md');
+    await getBacklinksForFileSafe(castTo<App>(app), 'test.md');
 
     const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
@@ -788,7 +789,7 @@ describe('getBacklinksForFileSafe', () => {
   it('should pass shouldShowTimeoutNotice from options', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    await getBacklinksForFileSafe(app as unknown as App, 'test.md', { shouldShowTimeoutNotice: false });
+    await getBacklinksForFileSafe(castTo<App>(app), 'test.md', { shouldShowTimeoutNotice: false });
 
     const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(false);
@@ -799,7 +800,7 @@ describe('getBacklinksForFileSafe', () => {
     const backlinksDict = createBacklinksDict({});
     app.metadataCache.getBacklinksForFile.mockReturnValue(backlinksDict);
 
-    const result = await getBacklinksForFileSafe(app as unknown as App, 'test.md');
+    const result = await getBacklinksForFileSafe(castTo<App>(app), 'test.md');
     expect(result).toBe(backlinksDict);
   });
 
@@ -809,7 +810,7 @@ describe('getBacklinksForFileSafe', () => {
     app.metadataCache.getBacklinksForFile.mockReturnValue(createBacklinksDict({ 'source.md': [refLink] }));
     mockedGetFileOrNull.mockReturnValue(null as never);
 
-    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    await getBacklinksForFileSafe(castTo<App>(app), 'target.md');
     expect(mockedGetFileOrNull).toHaveBeenCalled();
   });
 
@@ -820,7 +821,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
     mockedReadSafe.mockResolvedValue(null as never);
 
-    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    await getBacklinksForFileSafe(castTo<App>(app), 'target.md');
     expect(mockedReadSafe).toHaveBeenCalled();
   });
 
@@ -835,7 +836,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('some content');
     mockedParseFrontmatter.mockReturnValue({});
 
-    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    await getBacklinksForFileSafe(castTo<App>(app), 'target.md');
     expect(mockedParseFrontmatter).toHaveBeenCalled();
   });
 
@@ -848,7 +849,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue(content);
     mockedParseFrontmatter.mockReturnValue({});
 
-    const result = await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    const result = await getBacklinksForFileSafe(castTo<App>(app), 'target.md');
     expect(result.keys()).toEqual(['source.md']);
   });
 
@@ -856,7 +857,7 @@ describe('getBacklinksForFileSafe', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
       const operationFn = options.operationFn;
-      const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     const content = '0123456789XXMISMATCHX more text';
@@ -866,7 +867,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue(content);
     mockedParseFrontmatter.mockReturnValue({});
 
-    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    await getBacklinksForFileSafe(castTo<App>(app), 'target.md');
     expect(operationResult).toBe(false);
   });
 
@@ -878,7 +879,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('---\naliases: target-note\n---');
     mockedParseFrontmatter.mockReturnValue({ aliases: ['target-note'] });
 
-    const result = await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    const result = await getBacklinksForFileSafe(castTo<App>(app), 'target.md');
     expect(result.keys()).toEqual(['source.md']);
   });
 
@@ -886,7 +887,7 @@ describe('getBacklinksForFileSafe', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
       const operationFn = options.operationFn;
-      const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
@@ -895,7 +896,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('---\naliases: 123\n---');
     mockedParseFrontmatter.mockReturnValue({ aliases: 123 } as never);
 
-    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    await getBacklinksForFileSafe(castTo<App>(app), 'target.md');
     expect(operationResult).toBe(false);
   });
 
@@ -903,7 +904,7 @@ describe('getBacklinksForFileSafe', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
       const operationFn = options.operationFn;
-      const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
@@ -912,7 +913,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('---\naliases: different\n---');
     mockedParseFrontmatter.mockReturnValue({ aliases: 'different-value' } as never);
 
-    await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    await getBacklinksForFileSafe(castTo<App>(app), 'target.md');
     expect(operationResult).toBe(false);
   });
 
@@ -924,7 +925,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('content');
     mockedParseFrontmatter.mockReturnValue({});
 
-    const result = await getBacklinksForFileSafe(app as unknown as App, 'target.md');
+    const result = await getBacklinksForFileSafe(castTo<App>(app), 'target.md');
     expect(result.keys()).toEqual(['source.md']);
   });
 });

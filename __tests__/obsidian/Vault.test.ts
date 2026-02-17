@@ -21,6 +21,7 @@ import {
   deleteVaultAbstractFile,
   setVaultAbstractFile
 } from '../../__mocks__/obsidian/Vault.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import { retryWithTimeoutNotice } from '../../src/obsidian/AsyncWithNotice.ts';
 import { lockEditor } from '../../src/obsidian/Editor.ts';
 import { FileSystemType } from '../../src/obsidian/FileSystem.ts';
@@ -63,7 +64,7 @@ vi.mock('../../src/obsidian/Editor.ts', () => ({
 vi.mock('../../src/obsidian/i18n/i18n.ts', () => ({
   t: vi.fn((fn: (messages: Record<string, unknown>) => unknown) => {
     try {
-      fn({ obsidianDevUtils: { vault: { processFile: 'mock' } } } as unknown as Record<string, unknown>);
+      fn(castTo<Record<string, unknown>>({ obsidianDevUtils: { vault: { processFile: 'mock' } } }));
     } catch { /* Ignore */ }
     return 'mock-t';
   })
@@ -475,11 +476,11 @@ describe('saveNote', () => {
   });
 
   it('should save dirty markdown views matching the file path', async () => {
-    const view = new (MarkdownView as unknown as new () => MarkdownView)();
+    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    (view as unknown as Record<string, unknown>)['dirty'] = true;
+    castTo<Record<string, unknown>>(view)['dirty'] = true;
     const saveSpy = vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -491,11 +492,11 @@ describe('saveNote', () => {
   });
 
   it('should not save non-dirty views', async () => {
-    const view = new (MarkdownView as unknown as new () => MarkdownView)();
+    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    (view as unknown as Record<string, unknown>)['dirty'] = false;
+    castTo<Record<string, unknown>>(view)['dirty'] = false;
     const saveSpy = vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -507,9 +508,9 @@ describe('saveNote', () => {
   });
 
   it('should not save views for different file paths', async () => {
-    const view = new (MarkdownView as unknown as new () => MarkdownView)();
+    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
     view.file = createTestFile('other.md');
-    (view as unknown as Record<string, unknown>)['dirty'] = true;
+    castTo<Record<string, unknown>>(view)['dirty'] = true;
     const saveSpy = vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -646,7 +647,7 @@ describe('getSafeRenamePath', () => {
     app.vault.adapter.insensitive = true;
     // Need a parent folder for the while loop to find
     const parentFolder = createTestFolder('dir');
-    (parentFolder as unknown as Record<string, unknown>)['getParentPrefix'] = (): string => 'dir/';
+    castTo<Record<string, unknown>>(parentFolder)['getParentPrefix'] = (): string => 'dir/';
     setVaultAbstractFile(app.vault, 'dir', parentFolder);
 
     const dirFile = createTestFile('dir/old.md');
@@ -659,7 +660,7 @@ describe('getSafeRenamePath', () => {
   it('should handle insensitive filesystem with nested path by walking up to existing folder', () => {
     app.vault.adapter.insensitive = true;
     const parentFolder = createTestFolder('parent');
-    (parentFolder as unknown as Record<string, unknown>)['getParentPrefix'] = (): string => 'parent/';
+    castTo<Record<string, unknown>>(parentFolder)['getParentPrefix'] = (): string => 'parent/';
     setVaultAbstractFile(app.vault, 'parent', parentFolder);
 
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('parent/sub/new');
@@ -773,7 +774,7 @@ describe('getOrCreateAbstractFileSafe', () => {
   it('should throw for invalid file system type', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('path');
     await expect(
-      getOrCreateAbstractFileSafe(app, 'path', 'invalid' as unknown as FileSystemType)
+      getOrCreateAbstractFileSafe(app, 'path', castTo<FileSystemType>('invalid'))
     ).rejects.toThrow('Invalid file system type');
   });
 });
@@ -1029,7 +1030,7 @@ describe('processFile', () => {
   function setupRetryToInvokeOperationFn(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
       const operationFn = options.operationFn;
-      const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
     });
   }
@@ -1076,7 +1077,7 @@ describe('processFile', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
       const operationFn = options.operationFn;
-      const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     // Vault.read returns 'old content' but vault.process sees 'changed content'
@@ -1108,7 +1109,7 @@ describe('processFile', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
       const operationFn = options.operationFn;
-      const abortSignal = { throwIfAborted: vi.fn() } as unknown as AbortSignal;
+      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
 
@@ -1133,11 +1134,11 @@ describe('processFile', () => {
   it('should lock and unlock editors when shouldLockEditorWhileProcessing is true', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    const view = new (MarkdownView as unknown as new () => MarkdownView)();
+    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    (view as unknown as Record<string, unknown>)['editor'] = {};
+    castTo<Record<string, unknown>>(view)['editor'] = {};
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
@@ -1152,11 +1153,11 @@ describe('processFile', () => {
   it('should invoke active-leaf-change callback that locks matching editors', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    const view = new (MarkdownView as unknown as new () => MarkdownView)();
+    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    (view as unknown as Record<string, unknown>)['editor'] = {};
+    castTo<Record<string, unknown>>(view)['editor'] = {};
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
 
@@ -1205,9 +1206,9 @@ describe('processFile', () => {
   it('should skip locking editors when view.file is null', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    const view = new (MarkdownView as unknown as new () => MarkdownView)();
+    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
     // View.file defaults to null in the mock — don't set it
-    (view as unknown as Record<string, unknown>)['editor'] = {};
+    castTo<Record<string, unknown>>(view)['editor'] = {};
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never

@@ -1,8 +1,9 @@
+import { castTo } from '../../src/ObjectUtils.ts';
 import { BaseComponent } from './BaseComponent.ts';
 
 export class ValueComponent<T> extends BaseComponent {
   declare public inputEl: HTMLElement;
-  protected value: T = undefined as unknown as T;
+  protected value: T = castTo<T>(undefined);
 
   public getValue(): T {
     return this.value;

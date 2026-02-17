@@ -6,12 +6,13 @@ import {
   noop,
   noopAsync
 } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 
 export class MarkdownView {
   public allowNoFile = false;
   public app: unknown = null;
-  public containerEl: HTMLElement = null as unknown as HTMLElement;
-  public contentEl: HTMLElement = null as unknown as HTMLElement;
+  public containerEl: HTMLElement = castTo<HTMLElement>(null);
+  public contentEl: HTMLElement = castTo<HTMLElement>(null);
   public currentMode: unknown = null;
   public data = '';
   public editor: unknown = {};
@@ -23,7 +24,7 @@ export class MarkdownView {
   public previewMode: unknown = null;
   public scope: unknown = null;
   public addAction(_icon: string, _title: string, _callback: (evt: MouseEvent) => unknown): HTMLElement {
-    return null as unknown as HTMLElement;
+    return castTo<HTMLElement>(null);
   }
 
   public addChild<T>(component: T): T {

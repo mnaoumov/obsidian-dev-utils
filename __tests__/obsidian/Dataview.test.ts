@@ -13,6 +13,7 @@ import {
 import type { DataviewInlineApi } from '../../src/obsidian/Dataview.ts';
 
 import { noop } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   getRenderedContainer,
   insertCodeBlock,
@@ -68,7 +69,7 @@ function createMockDv(): DataviewInlineApi {
   const container = document.createElement('div');
   document.body.appendChild(container);
 
-  return {
+  return castTo<DataviewInlineApi>({
     app: { metadataCache: {}, vault: { adapter: {} } },
     container,
     current: vi.fn(() => ({ file: { path: 'current.md' } })),
@@ -104,7 +105,7 @@ function createMockDv(): DataviewInlineApi {
     table: vi.fn(async () => {
       noop();
     })
-  } as unknown as DataviewInlineApi;
+  });
 }
 
 /**

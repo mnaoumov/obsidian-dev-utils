@@ -7,6 +7,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   CalloutMode,
   wrapForCallout
@@ -137,18 +138,20 @@ describe('renderCallout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    globalThis.IntersectionObserver = vi.fn(function MockIntersectionObserver(this: IntersectionObserver, callback: IntersectionObserverCallback) {
-      intersectionCallback = callback;
-      Object.assign(this, {
-        disconnect: mockDisconnect,
-        observe: mockObserve,
-        root: null,
-        rootMargin: '0px',
-        takeRecords: vi.fn(() => []),
-        thresholds: [0],
-        unobserve: mockUnobserve
-      });
-    }) as unknown as typeof IntersectionObserver;
+    globalThis.IntersectionObserver = castTo<typeof IntersectionObserver>(
+      vi.fn(function MockIntersectionObserver(this: IntersectionObserver, callback: IntersectionObserverCallback) {
+        intersectionCallback = callback;
+        Object.assign(this, {
+          disconnect: mockDisconnect,
+          observe: mockObserve,
+          root: null,
+          rootMargin: '0px',
+          takeRecords: vi.fn(() => []),
+          thresholds: [0],
+          unobserve: mockUnobserve
+        });
+      })
+    );
 
     // Obsidian extends HTMLElement with .empty()
     HTMLElement.prototype.empty = function empty(this: HTMLElement): void {
@@ -246,7 +249,7 @@ describe('renderCallout', () => {
 
     // Simulate intersection
     intersectionCallback(
-      [{ isIntersecting: true, target: observedEl } as unknown as IntersectionObserverEntry],
+      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -272,7 +275,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [{ isIntersecting: false, target: observedEl } as unknown as IntersectionObserverEntry],
+      [castTo<IntersectionObserverEntry>({ isIntersecting: false, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -292,7 +295,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [{ isIntersecting: true, target: observedEl } as unknown as IntersectionObserverEntry],
+      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -319,7 +322,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall1[0] as HTMLElement;
 
     intersectionCallback(
-      [{ isIntersecting: true, target: observedEl } as unknown as IntersectionObserverEntry],
+      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -351,7 +354,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall2[0] as HTMLElement;
 
     intersectionCallback(
-      [{ isIntersecting: true, target: observedEl } as unknown as IntersectionObserverEntry],
+      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -381,7 +384,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall3[0] as HTMLElement;
 
     intersectionCallback(
-      [{ isIntersecting: true, target: observedEl } as unknown as IntersectionObserverEntry],
+      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -414,7 +417,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    globalThis.IntersectionObserver = vi.fn(function MockIntersectionObserver(this: IntersectionObserver) {
+    globalThis.IntersectionObserver = castTo<typeof IntersectionObserver>(vi.fn(function MockIntersectionObserver(this: IntersectionObserver) {
       Object.assign(this, {
         disconnect: vi.fn(),
         observe: vi.fn(),
@@ -424,7 +427,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
         thresholds: [0],
         unobserve: vi.fn()
       });
-    }) as unknown as typeof IntersectionObserver;
+    }));
 
     HTMLElement.prototype.empty = function empty(this: HTMLElement): void {
       this.innerHTML = '';

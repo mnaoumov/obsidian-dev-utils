@@ -8,6 +8,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 const mocks = vi.hoisted(() => {
@@ -47,11 +48,11 @@ vi.mock('@codemirror/view', () => ({
 }));
 
 function createMockEditor(): Editor {
-  return {
+  return castTo<Editor>({
     cm: {
       dispatch: vi.fn()
     }
-  } as unknown as Editor;
+  });
 }
 
 describe('lockEditor', () => {

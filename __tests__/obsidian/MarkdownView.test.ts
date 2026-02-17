@@ -7,11 +7,12 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import { getFullContentHtml } from '../../src/obsidian/MarkdownView.ts';
 
 function createMockView(html: string): MarkdownView {
   const measure = vi.fn();
-  return {
+  return castTo<MarkdownView>({
     contentEl: { innerHTML: html },
     editor: {
       cm: {
@@ -19,7 +20,7 @@ function createMockView(html: string): MarkdownView {
         viewState: { printing: false }
       }
     }
-  } as unknown as MarkdownView;
+  });
 }
 
 describe('getFullContentHtml', () => {

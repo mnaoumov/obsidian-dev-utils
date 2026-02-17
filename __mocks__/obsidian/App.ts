@@ -3,6 +3,7 @@ import type { App as ObsidianApp } from 'obsidian';
 import type { TAbstractFile } from './TAbstractFile.ts';
 
 import { noop } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import { FileManager } from './FileManager.ts';
 import { Keymap } from './Keymap.ts';
 import { MetadataCache } from './MetadataCache.ts';
@@ -101,5 +102,5 @@ export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
     return null;
   };
 
-  return app as unknown as ObsidianApp;
+  return castTo<ObsidianApp>(app);
 }

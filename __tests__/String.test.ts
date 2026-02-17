@@ -4,6 +4,7 @@ import {
   it
 } from 'vitest';
 
+import { castTo } from '../src/ObjectUtils.ts';
 import {
   ensureEndsWith,
   ensureLfEndings,
@@ -390,7 +391,7 @@ describe('replace', () => {
   });
 
   it('impossible case for code coverage', () => {
-    expect(() => replace('foo', { foo: undefined as unknown as string })).toThrow('Unexpected replacement source: foo');
+    expect(() => replace('foo', { foo: castTo<string>(undefined) })).toThrow('Unexpected replacement source: foo');
   });
 });
 
@@ -429,7 +430,7 @@ describe('replaceAll', () => {
   });
 
   it('should return the string unchanged when replacer is undefined', () => {
-    expect(replaceAll('hello', 'x', undefined as unknown as string)).toBe('hello');
+    expect(replaceAll('hello', 'x', castTo<string>(undefined))).toBe('hello');
   });
 
   it('should handle no matches', () => {
@@ -441,7 +442,7 @@ describe('replaceAll', () => {
   });
 
   it('should return original substring when function replacer returns undefined', () => {
-    const result = replaceAll('abc', /./g, () => undefined as unknown as string);
+    const result = replaceAll('abc', /./g, () => castTo<string>(undefined));
     expect(result).toBe('abc');
   });
 });

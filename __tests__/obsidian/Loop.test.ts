@@ -20,6 +20,7 @@ import {
   getStackTrace
 } from '../../src/Error.ts';
 import { noop } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import { loop } from '../../src/obsidian/Loop.ts';
 import { addPluginCssClasses } from '../../src/obsidian/Plugin/PluginContext.ts';
 import { assertNonNullable } from '../../src/TypeGuards.ts';
@@ -265,7 +266,7 @@ describe('loop', () => {
 
   it('should call getLibDebugger with Loop namespace', async () => {
     const mockDebugFn = vi.fn();
-    (getLibDebugger as MockedFunction<typeof getLibDebugger>).mockReturnValue(mockDebugFn as unknown as ReturnType<typeof getLibDebugger>);
+    (getLibDebugger as MockedFunction<typeof getLibDebugger>).mockReturnValue(castTo<ReturnType<typeof getLibDebugger>>(mockDebugFn));
 
     await loop({
       buildNoticeMessage: vi.fn(() => 'debug msg'),

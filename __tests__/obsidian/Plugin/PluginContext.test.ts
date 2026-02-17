@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../../src/ObjectUtils.ts';
 import {
   addPluginCssClasses,
   initDebugController,
@@ -59,7 +60,7 @@ describe('addPluginCssClasses', () => {
 
   it('should add library name, plugin id, and custom css classes', () => {
     const addClass = vi.fn();
-    const el = { addClass } as unknown as HTMLElement;
+    const el = castTo<HTMLElement>({ addClass });
     addPluginCssClasses(el, 'custom-class');
     expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin', 'custom-class');
   });

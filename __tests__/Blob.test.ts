@@ -14,6 +14,7 @@ import {
   dataUrlToArrayBuffer,
   isImageFile
 } from '../src/Blob.ts';
+import { castTo } from '../src/ObjectUtils.ts';
 
 class MockFileReader {
   public result: ArrayBuffer | null | string = null;
@@ -26,7 +27,7 @@ class MockFileReader {
 
   public readAsArrayBuffer(_blob: Blob): void {
     const encoder = new TextEncoder();
-    const blobParts = (_blob as unknown as { _parts?: string[] })._parts;
+    const blobParts = castTo<{ _parts?: string[] }>(_blob)._parts;
     if (blobParts && blobParts.length > 0) {
       this.result = encoder.encode(blobParts.join('')).buffer;
     } else {

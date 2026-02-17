@@ -11,6 +11,7 @@ import {
 } from 'vitest';
 
 import { createMockApp } from '../../__mocks__/obsidian/App.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   asArrayOfFiles,
   asArrayOfFolders,
@@ -142,7 +143,7 @@ describe('isAbstractFile', () => {
   });
 
   it('should return true for a TAbstractFile instance', () => {
-    const abstract = new (TAbstractFile as unknown as new () => TAbstractFile)();
+    const abstract = new (castTo<new () => TAbstractFile>(TAbstractFile))();
     abstract.path = 'something';
     expect(isAbstractFile(abstract)).toBe(true);
   });
@@ -266,7 +267,7 @@ describe('getFileSystemType', () => {
   });
 
   it('should throw for a plain TAbstractFile', () => {
-    const abstract = new (TAbstractFile as unknown as new () => TAbstractFile)();
+    const abstract = new (castTo<new () => TAbstractFile>(TAbstractFile))();
     expect(() => getFileSystemType(abstract)).toThrow('Abstract file is not a file or a folder');
   });
 });

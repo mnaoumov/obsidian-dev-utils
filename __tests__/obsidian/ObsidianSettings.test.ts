@@ -6,17 +6,18 @@ import {
   it
 } from 'vitest';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   getNewLinkFormat,
   shouldUseWikilinks
 } from '../../src/obsidian/ObsidianSettings.ts';
 
 function createMockApp(config: Record<string, unknown>): App {
-  return {
+  return castTo<App>({
     vault: {
       getConfig: (key: string): unknown => config[key]
     }
-  } as unknown as App;
+  });
 }
 
 describe('getNewLinkFormat', () => {

@@ -14,6 +14,7 @@ import type { FileChange } from '../../src/obsidian/FileChange.ts';
 import { getLibDebugger } from '../../src/Debug.ts';
 import { printError } from '../../src/Error.ts';
 import { noop } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -291,8 +292,8 @@ describe('toFrontmatterChangeWithOffsets', () => {
     const change = makeFrontmatterChange('hello', 'world', 'aliases');
     const result = toFrontmatterChangeWithOffsets(change as never);
     expect(isFrontmatterChangeWithOffsets(result)).toBe(true);
-    expect((result.reference as unknown as Record<string, unknown>)['startOffset']).toBe(0);
-    expect((result.reference as unknown as Record<string, unknown>)['endOffset']).toBe(5);
+    expect(castTo<Record<string, unknown>>(result.reference)['startOffset']).toBe(0);
+    expect(castTo<Record<string, unknown>>(result.reference)['endOffset']).toBe(5);
   });
 
   it('should preserve all original properties on the converted change', () => {
@@ -300,7 +301,7 @@ describe('toFrontmatterChangeWithOffsets', () => {
     const result = toFrontmatterChangeWithOffsets(change as never);
     expect(result.newContent).toBe('new-value');
     expect(result.oldContent).toBe('link-value');
-    expect((result.reference as unknown as Record<string, unknown>)['key']).toBe('myKey');
+    expect(castTo<Record<string, unknown>>(result.reference)['key']).toBe('myKey');
   });
 });
 

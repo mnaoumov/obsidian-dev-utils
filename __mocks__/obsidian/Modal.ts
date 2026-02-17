@@ -1,4 +1,5 @@
 import { noop } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import { Scope } from './Scope.ts';
 
 export class Modal {
@@ -12,9 +13,9 @@ export class Modal {
 
   public constructor(app: unknown) {
     this.app = app;
-    this.containerEl = { addClass: noop } as unknown as HTMLElement;
+    this.containerEl = castTo<HTMLElement>({ addClass: noop });
     this.contentEl = { createEl: (() => ({})) as unknown } as HTMLElement;
-    this.titleEl = { setText: noop } as unknown as HTMLElement;
+    this.titleEl = castTo<HTMLElement>({ setText: noop });
   }
 
   public close(): void {
