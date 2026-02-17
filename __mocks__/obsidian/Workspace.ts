@@ -4,12 +4,13 @@ import {
   noop,
   noopAsync
 } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import { Events } from './Events.ts';
 
 export class Workspace extends Events {
   public activeEditor: unknown = null;
   public activeLeaf: unknown = null;
-  public containerEl: HTMLElement = null as unknown as HTMLElement;
+  public containerEl: HTMLElement = castTo<HTMLElement>(null);
   public layoutReady = false;
   public leftRibbon: unknown = null;
   public leftSplit: unknown = null;

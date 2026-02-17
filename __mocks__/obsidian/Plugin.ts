@@ -9,10 +9,11 @@ import {
   noop,
   noopAsync
 } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import { Component } from './Component.ts';
 
 export class Plugin extends Component {
-  public app: App = null as unknown as App;
+  public app: App = castTo<App>(null);
   public manifest: PluginManifest = { author: '', description: '', id: '', minAppVersion: '', name: '', version: '' };
 
   public addCommand(command: Command): Command {
@@ -20,7 +21,7 @@ export class Plugin extends Component {
   }
 
   public addRibbonIcon(_icon: string, _title: string, _callback: (evt: MouseEvent) => unknown): HTMLElement {
-    return null as unknown as HTMLElement;
+    return castTo<HTMLElement>(null);
   }
 
   public addSettingTab(_settingTab: unknown): void {
@@ -28,7 +29,7 @@ export class Plugin extends Component {
   }
 
   public addStatusBarItem(): HTMLElement {
-    return null as unknown as HTMLElement;
+    return castTo<HTMLElement>(null);
   }
 
   public async loadData(): Promise<unknown> {

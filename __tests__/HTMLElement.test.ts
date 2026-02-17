@@ -25,6 +25,7 @@ import {
   onAncestorScrollOrResize,
   toPx
 } from '../src/HTMLElement.ts';
+import { castTo } from '../src/ObjectUtils.ts';
 import { assertNonNullable } from '../src/TypeGuards.ts';
 
 // Obsidian provides these globals at runtime; define them for jsdom.
@@ -849,7 +850,7 @@ describe('ensureLoaded', () => {
 
 function createElement(tag: string, attrs: Record<string, unknown> = {}): HTMLElement {
   const el = document.createElement(tag);
-  const record = el as unknown as Record<string, unknown>;
+  const record = castTo<Record<string, unknown>>(el);
 
   for (const [key, value] of Object.entries(attrs)) {
     Object.defineProperty(record, key, { value });

@@ -6,6 +6,7 @@ import {
   it
 } from 'vitest';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   getAllContainers,
   getAllDomWindows
@@ -15,7 +16,7 @@ function createMockApp(containers: { win: Window }[]): App {
   const leaves = containers.map((container) => ({
     getContainer: (): { win: Window } => container
   }));
-  return {
+  return castTo<App>({
     workspace: {
       iterateAllLeaves: (callback: (leaf: { getContainer(): { win: Window } }) => void): void => {
         for (const leaf of leaves) {
@@ -23,7 +24,7 @@ function createMockApp(containers: { win: Window }[]): App {
         }
       }
     }
-  } as unknown as App;
+  });
 }
 
 describe('getAllContainers', () => {

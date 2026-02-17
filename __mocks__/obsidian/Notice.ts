@@ -1,9 +1,10 @@
 import { noop } from '../../src/Function.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 
 export class Notice {
-  public containerEl: HTMLElement = null as unknown as HTMLElement;
-  public messageEl: HTMLElement = null as unknown as HTMLElement;
-  public noticeEl: HTMLElement = null as unknown as HTMLElement;
+  public containerEl: HTMLElement = castTo<HTMLElement>(null);
+  public messageEl: HTMLElement = castTo<HTMLElement>(null);
+  public noticeEl: HTMLElement = castTo<HTMLElement>(null);
 
   public constructor(_message: DocumentFragment | string, _duration?: number) {
     noop();

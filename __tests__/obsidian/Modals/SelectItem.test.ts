@@ -10,6 +10,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../../src/ObjectUtils.ts';
 import { selectItem } from '../../../src/obsidian/Modals/SelectItem.ts';
 import { assertNonNullable } from '../../../src/TypeGuards.ts';
 
@@ -74,7 +75,7 @@ describe('selectItem', () => {
 
     const modal = openSpy.mock.contexts[0] as FuzzySuggestModal<string>;
     assertNonNullable(modal);
-    modal.selectSuggestion({ item: 'b' } as FuzzyMatch<string>, new Event('click') as unknown as MouseEvent);
+    modal.selectSuggestion({ item: 'b' } as FuzzyMatch<string>, castTo<MouseEvent>(new Event('click')));
 
     const result = await promise;
     expect(result).toBe('b');

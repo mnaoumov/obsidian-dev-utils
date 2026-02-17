@@ -9,6 +9,7 @@ import {
   it
 } from 'vitest';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   isFrontmatterLinkCacheWithOffsets,
   toFrontmatterLinkCacheWithOffsets
@@ -25,16 +26,16 @@ function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCach
 
 describe('isFrontmatterLinkCacheWithOffsets', () => {
   it('should return true when startOffset and endOffset are present', () => {
-    const ref = {
+    const ref = castTo<Reference>({
       ...makeFrontmatterLink('link', 'aliases'),
       endOffset: 4,
       startOffset: 0
-    } as unknown as Reference;
+    });
     expect(isFrontmatterLinkCacheWithOffsets(ref)).toBe(true);
   });
 
   it('should return false for a frontmatter link without offsets', () => {
-    const ref = makeFrontmatterLink('link', 'aliases') as unknown as Reference;
+    const ref = castTo<Reference>(makeFrontmatterLink('link', 'aliases'));
     expect(isFrontmatterLinkCacheWithOffsets(ref)).toBe(false);
   });
 
@@ -48,10 +49,10 @@ describe('isFrontmatterLinkCacheWithOffsets', () => {
   });
 
   it('should return false when only startOffset is present', () => {
-    const ref = {
+    const ref = castTo<Reference>({
       ...makeFrontmatterLink('link', 'aliases'),
       startOffset: 0
-    } as unknown as Reference;
+    });
     expect(isFrontmatterLinkCacheWithOffsets(ref)).toBe(false);
   });
 });
@@ -63,7 +64,7 @@ describe('toFrontmatterLinkCacheWithOffsets', () => {
       endOffset: 4,
       startOffset: 0
     };
-    const result = toFrontmatterLinkCacheWithOffsets(ref as unknown as FrontmatterLinkCache);
+    const result = toFrontmatterLinkCacheWithOffsets(castTo<FrontmatterLinkCache>(ref));
     expect(result).toBe(ref);
   });
 

@@ -6,6 +6,7 @@ import {
   it
 } from 'vitest';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   isCanvasFileNodeReference,
   isCanvasReference,
@@ -15,7 +16,7 @@ import {
 } from '../../src/obsidian/Reference.ts';
 
 function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
-  return {
+  return castTo<Reference>({
     displayText: 'link',
     isCanvas: true,
     key,
@@ -23,27 +24,27 @@ function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
     nodeIndex: 0,
     original: 'link',
     type
-  } as unknown as Reference;
+  });
 }
 
 function makeFrontmatterLink(original: string, key: string): Reference {
-  return {
+  return castTo<Reference>({
     displayText: original,
     key,
     link: original,
     original
-  } as unknown as Reference;
+  });
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): Reference {
-  return {
+  return castTo<Reference>({
     displayText: original,
     endOffset,
     key,
     link: original,
     original,
     startOffset
-  } as unknown as Reference;
+  });
 }
 
 function makeReferenceCache(original: string, startOffset: number): Reference {

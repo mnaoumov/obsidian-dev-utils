@@ -15,6 +15,7 @@ import {
   onAbort,
   waitForAbort
 } from '../src/AbortController.ts';
+import { castTo } from '../src/ObjectUtils.ts';
 import { assertNonNullable } from '../src/TypeGuards.ts';
 
 type WindowEx = typeof globalThis & Window;
@@ -78,7 +79,7 @@ describe('abortSignalTimeout', () => {
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/unbound-method -- No bind.
       originalTimeout = AbortSignal.timeout;
-      AbortSignal.timeout = undefined as unknown as typeof AbortSignal.timeout;
+      AbortSignal.timeout = castTo<typeof AbortSignal.timeout>(undefined);
     });
 
     afterEach(() => {
@@ -275,7 +276,7 @@ describe('abortSignalAny', () => {
     beforeEach(() => {
       // eslint-disable-next-line @typescript-eslint/unbound-method -- No bind.
       originalAny = AbortSignal.any;
-      AbortSignal.any = undefined as unknown as typeof AbortSignal.any;
+      AbortSignal.any = castTo<typeof AbortSignal.any>(undefined);
     });
 
     afterEach(() => {

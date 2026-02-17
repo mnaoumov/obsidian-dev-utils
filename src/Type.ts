@@ -4,6 +4,8 @@
  * Type utilities.
  */
 
+import { castTo } from './ObjectUtils.ts';
+
 /**
  * A type that represents the keys of an object as strings and asserts that all keys are present in a list of keys.
  *
@@ -184,7 +186,7 @@ export function assertAllUnionMembers<
  */
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
 export function typeToDummyParam<T>(): T {
-  return DUMMY_PROXY as unknown as T;
+  return castTo<T>(DUMMY_PROXY);
 }
 
 function dummyThrow(): never {

@@ -3,6 +3,7 @@ import type {
   SvgElementInfoLike
 } from './functions.ts';
 
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   createEl as createElGlobal,
   createSvg as createSvgGlobal
@@ -83,7 +84,7 @@ export function insertAfter<T extends Node>(this: Node, node: T, child: Node | n
 }
 
 export function instanceOf<T>(this: Node, type: new () => T): this is T {
-  return this instanceof (type as unknown as new () => object);
+  return this instanceof (castTo<new () => object>(type));
 }
 
 export function setChildrenInPlace(this: Node, children: Node[]): void {

@@ -12,6 +12,7 @@ import type {
 } from '../../src/obsidian/Dataview.ts';
 
 import { createMockApp } from '../../__mocks__/obsidian/App.ts';
+import { castTo } from '../../src/ObjectUtils.ts';
 import {
   fixTitle,
   makeLinkWithPath
@@ -48,11 +49,11 @@ describe('fixTitle', () => {
     return {
       app,
       fileLink: (path: string, _embed: boolean, title: string): Link =>
-        ({
+        castTo<Link>({
           path,
           title
-        }) as unknown as Link
-    } as unknown as DataviewInlineApi;
+        })
+    } as DataviewInlineApi;
   }
 
   it('should use basename without extension as title for regular files', () => {
