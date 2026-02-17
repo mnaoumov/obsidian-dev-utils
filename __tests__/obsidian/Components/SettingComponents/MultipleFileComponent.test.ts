@@ -38,7 +38,7 @@ describe('MultipleFileComponent', () => {
 
   it('should return getValue from valueFromString', () => {
     const comp = createComponent();
-    expect(comp.valueFromString('')).toEqual([]);
+    expect(comp.valueFromString()).toEqual([]);
   });
 
   it('should convert empty files to empty string', () => {

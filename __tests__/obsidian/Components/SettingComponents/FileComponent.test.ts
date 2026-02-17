@@ -37,7 +37,7 @@ describe('FileComponent', () => {
 
   it('should return null from valueFromString', () => {
     const comp = createComponent();
-    expect(comp.valueFromString('')).toBeNull();
+    expect(comp.valueFromString()).toBeNull();
   });
 
   it('should convert null file to empty string', () => {

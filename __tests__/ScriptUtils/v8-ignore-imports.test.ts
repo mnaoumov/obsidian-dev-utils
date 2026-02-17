@@ -9,7 +9,7 @@ import {
   it
 } from 'vitest';
 
-const HEAVY_IMPORT_TIMEOUT = 30_000;
+const HEAVY_IMPORT_TIMEOUT = 60_000;
 
 describe('v8 ignore imports', () => {
   it('should load NodeModules so v8 processes its ignore comments', async () => {

@@ -1,4 +1,8 @@
+import type { FuzzyMatch } from 'obsidian';
+
+import { FuzzySuggestModal } from 'obsidian';
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -7,6 +11,7 @@ import {
 } from 'vitest';
 
 import { selectItem } from '../../../src/obsidian/Modals/SelectItem.ts';
+import { assertNonNullable } from '../../../src/TypeGuards.ts';
 
 vi.mock('../../../src/CssClass.ts', () => ({
   CssClass: {
@@ -52,4 +57,62 @@ describe('selectItem', () => {
     });
     expect(result).toBeNull();
   });
+
+  it('should resolve with selected item when selectSuggestion is called', async () => {
+    vi.useFakeTimers();
+    const openSpy = vi.spyOn(FuzzySuggestModal.prototype, 'open').mockImplementation(
+      function openOverride(this: FuzzySuggestModal<string>): void {
+        this.onOpen();
+      }
+    );
+
+    const promise = selectItem({
+      app: {} as never,
+      items: ['a', 'b', 'c'],
+      itemTextFunc: (item: string) => item.toUpperCase()
+    });
+
+    const modal = openSpy.mock.contexts[0] as FuzzySuggestModal<string>;
+    assertNonNullable(modal);
+    modal.selectSuggestion({ item: 'b' } as FuzzyMatch<string>, new Event('click') as unknown as MouseEvent);
+
+    const result = await promise;
+    expect(result).toBe('b');
+
+    openSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('should return items from getItems', async () => {
+    vi.useFakeTimers();
+    const openSpy = vi.spyOn(FuzzySuggestModal.prototype, 'open').mockImplementation(
+      function openOverride(this: FuzzySuggestModal<string>): void {
+        this.onOpen();
+      }
+    );
+
+    const items = ['x', 'y', 'z'];
+    const promise = selectItem({
+      app: {} as never,
+      items,
+      itemTextFunc: (item: string) => item
+    });
+
+    const modal = openSpy.mock.contexts[0] as FuzzySuggestModal<string>;
+    assertNonNullable(modal);
+    expect(modal.getItems()).toEqual(['x', 'y', 'z']);
+    expect(modal.getItemText('x')).toBe('x');
+
+    // Close the modal to resolve the promise
+    modal.close();
+    const result = await promise;
+    expect(result).toBeNull();
+
+    openSpy.mockRestore();
+    vi.useRealTimers();
+  });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });

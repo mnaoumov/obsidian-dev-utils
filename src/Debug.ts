@@ -164,11 +164,9 @@ function isInObsidian(): boolean {
 }
 
 function logWithCaller(namespace: string, framesToSkip: number, message: string, ...args: unknown[]): void {
-  /* v8 ignore start -- Branch depends on debug namespace enablement state. */
   if (!getSharedDebugLibInstance().enabled(namespace)) {
     return;
   }
-  /* v8 ignore stop */
 
   /* v8 ignore start -- Only the true branch is taken in Node tests (window is undefined). */
   if (!isInObsidian()) {

@@ -262,10 +262,8 @@ async function applyCanvasChanges(
       return null;
     }
 
-    /* v8 ignore start -- Canvas file node changes are not covered by unit tests. */
     if (isCanvasFileNodeChange(change)) {
       if (node.file !== change.oldContent) {
-        /* v8 ignore stop */
         getLibDebugger('FileChange:applyCanvasChanges')('Content mismatch', {
           actualContent: node.file as string | undefined,
           expectedContent: change.oldContent,
@@ -277,11 +275,9 @@ async function applyCanvasChanges(
         return null;
       }
       node.file = change.newContent;
-      /* v8 ignore start -- Canvas text node changes are not covered by unit tests. */
     } else if (isCanvasTextNodeChange(change)) {
       let canvasTextChangesForNode = canvasTextChanges.get(change.reference.nodeIndex);
       if (!canvasTextChangesForNode) {
-        /* v8 ignore stop */
         canvasTextChangesForNode = [];
         canvasTextChanges.set(change.reference.nodeIndex, canvasTextChangesForNode);
       }

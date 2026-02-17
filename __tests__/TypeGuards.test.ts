@@ -23,8 +23,8 @@ describe('TypeGuards', () => {
     it('should narrow the type to GenericObject', () => {
       const obj: object = { a: 1, b: 'two' };
       assertGenericObject(obj);
-      expect(obj.a).toBe(1);
-      expect(obj.b).toBe('two');
+      expect(obj['a']).toBe(1);
+      expect(obj['b']).toBe('two');
     });
   });
 
@@ -66,7 +66,7 @@ describe('TypeGuards', () => {
       const obj: object = { x: 42 };
       const result = ensureGenericObject(obj);
       expect(result).toBe(obj);
-      expect(result.x).toBe(42);
+      expect(result['x']).toBe(42);
     });
   });
 

@@ -249,6 +249,15 @@ describe('Debug', () => {
       dbg('should not appear');
       expect(consoleSpy).not.toHaveBeenCalled();
     });
+
+    it('should return early from logWithCaller when namespace is disabled and log is called directly', () => {
+      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      debug.enable('');
+      const dbg = getDebugger('direct-log-disabled-ns');
+      assertNonNullable(dbg.log);
+      dbg.log('direct call test');
+      expect(consoleSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('getLibDebugger', () => {
