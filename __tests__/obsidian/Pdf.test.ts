@@ -23,12 +23,10 @@ let mockIpcRenderer: MockIpcRenderer;
 
 describe('printToPdf', () => {
   let printDiv: HTMLDivElement;
-  let removeSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     printDiv = document.createElement('div');
-    removeSpy = vi.fn();
-    printDiv.remove = removeSpy as () => void;
+    printDiv.remove = vi.fn() as () => void;
     document.body.createDiv = vi.fn((): HTMLDivElement => {
       document.body.appendChild(printDiv);
       return printDiv;
@@ -157,7 +155,7 @@ describe('printToPdf', () => {
 
     await printToPdf(el, {});
 
-    expect(removeSpy).toHaveBeenCalled();
+    expect(vi.mocked(printDiv.remove)).toHaveBeenCalled();
   });
 
   it('should remove the print div even when ipcRenderer rejects', async () => {
@@ -173,6 +171,6 @@ describe('printToPdf', () => {
 
     await expect(printToPdf(el, {})).rejects.toThrow('IPC error');
 
-    expect(removeSpy).toHaveBeenCalled();
+    expect(vi.mocked(printDiv.remove)).toHaveBeenCalled();
   });
 });

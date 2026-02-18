@@ -766,10 +766,10 @@ describe('renderPaginated page navigation', () => {
     expect(firstLink).not.toBeNull();
 
     const event = new PointerEvent('click', { bubbles: true, cancelable: true });
-    const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+    vi.spyOn(event, 'preventDefault');
     (firstLink as HTMLAnchorElement | null)?.onclick?.(event);
 
-    expect(preventDefaultSpy).toHaveBeenCalled();
+    expect(vi.mocked(event.preventDefault)).toHaveBeenCalled();
   });
 
   it('should restore dv.container after rendering page content', async () => {

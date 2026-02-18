@@ -2810,7 +2810,7 @@ describe('app-dependent functions', () => {
         }]
       }));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       await editLinks(
         canvasApp,
@@ -2818,8 +2818,8 @@ describe('app-dependent functions', () => {
         () => '[[new-target]]'
       );
 
-      expect(consoleSpy).toHaveBeenCalledWith('Unsupported file change', expect.anything());
-      consoleSpy.mockRestore();
+      expect(vi.mocked(console.error)).toHaveBeenCalledWith('Unsupported file change', expect.anything());
+      vi.mocked(console.error).mockRestore();
     });
   });
 });

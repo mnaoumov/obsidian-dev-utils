@@ -63,7 +63,7 @@ describe('selectItem', () => {
 
   it('should resolve with selected item when selectSuggestion is called', async () => {
     vi.useFakeTimers();
-    const openSpy = vi.spyOn(FuzzySuggestModal.prototype, 'open').mockImplementation(
+    vi.spyOn(FuzzySuggestModal.prototype, 'open').mockImplementation(
       function openOverride(this: FuzzySuggestModal<string>): void {
         this.onOpen();
       }
@@ -75,20 +75,20 @@ describe('selectItem', () => {
       itemTextFunc: (item: string) => item.toUpperCase()
     });
 
-    const modal = openSpy.mock.contexts[0] as FuzzySuggestModal<string>;
+    const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string>;
     assertNonNullable(modal);
     modal.selectSuggestion({ item: 'b' } as FuzzyMatch<string>, castTo<MouseEvent>(new Event('click')));
 
     const result = await promise;
     expect(result).toBe('b');
 
-    openSpy.mockRestore();
+    vi.mocked(FuzzySuggestModal.prototype.open).mockRestore();
     vi.useRealTimers();
   });
 
   it('should return items from getItems', async () => {
     vi.useFakeTimers();
-    const openSpy = vi.spyOn(FuzzySuggestModal.prototype, 'open').mockImplementation(
+    vi.spyOn(FuzzySuggestModal.prototype, 'open').mockImplementation(
       function openOverride(this: FuzzySuggestModal<string>): void {
         this.onOpen();
       }
@@ -101,7 +101,7 @@ describe('selectItem', () => {
       itemTextFunc: (item: string) => item
     });
 
-    const modal = openSpy.mock.contexts[0] as FuzzySuggestModal<string>;
+    const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string>;
     assertNonNullable(modal);
     expect(modal.getItems()).toEqual(['x', 'y', 'z']);
     expect(modal.getItemText('x')).toBe('x');
@@ -111,7 +111,7 @@ describe('selectItem', () => {
     const result = await promise;
     expect(result).toBeNull();
 
-    openSpy.mockRestore();
+    vi.mocked(FuzzySuggestModal.prototype.open).mockRestore();
     vi.useRealTimers();
   });
 });

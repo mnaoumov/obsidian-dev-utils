@@ -134,21 +134,21 @@ describe('isChildOrSelf', () => {
 
 describe('getAvailablePath', () => {
   it('should call vault.getAvailablePath with correct base and extension', () => {
-    const spy = vi.spyOn(app.vault, 'getAvailablePath');
+    vi.spyOn(app.vault, 'getAvailablePath');
     getAvailablePath(app, 'folder/note.md');
-    expect(spy).toHaveBeenCalledWith('folder/note', 'md');
+    expect(vi.mocked(app.vault.getAvailablePath)).toHaveBeenCalledWith('folder/note', 'md');
   });
 
   it('should handle paths with no extension', () => {
-    const spy = vi.spyOn(app.vault, 'getAvailablePath');
+    vi.spyOn(app.vault, 'getAvailablePath');
     getAvailablePath(app, 'folder/readme');
-    expect(spy).toHaveBeenCalledWith('folder/readme', '');
+    expect(vi.mocked(app.vault.getAvailablePath)).toHaveBeenCalledWith('folder/readme', '');
   });
 
   it('should handle paths with multiple dots', () => {
-    const spy = vi.spyOn(app.vault, 'getAvailablePath');
+    vi.spyOn(app.vault, 'getAvailablePath');
     getAvailablePath(app, 'folder/my.note.md');
-    expect(spy).toHaveBeenCalledWith('folder/my.note', 'md');
+    expect(vi.mocked(app.vault.getAvailablePath)).toHaveBeenCalledWith('folder/my.note', 'md');
   });
 
   it('should return the value from vault.getAvailablePath', () => {
@@ -179,6 +179,7 @@ describe('getMarkdownFilesSorted', () => {
   });
 
   it('should return empty array when no markdown files exist', () => {
+    app = createMockApp();
     const files = getMarkdownFilesSorted(app);
     expect(files).toEqual([]);
   });
@@ -229,10 +230,10 @@ describe('createFolderSafe', () => {
 
   it('should create folder and return true when it does not exist', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
-    const spy = vi.spyOn(app.vault, 'createFolder');
+    vi.spyOn(app.vault, 'createFolder');
     const result = await createFolderSafe(app, 'new-folder');
     expect(result).toBe(true);
-    expect(spy).toHaveBeenCalledWith('new-folder');
+    expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalledWith('new-folder');
   });
 
   it('should return true if createFolder fails but folder now exists', async () => {
@@ -265,17 +266,17 @@ describe('copySafe', () => {
 
   it('should copy file to new path', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
-    const copySpy = vi.spyOn(app.vault, 'copy');
+    vi.spyOn(app.vault, 'copy');
     const result = await copySafe(app, 'source.md', 'dest/target.md');
-    expect(copySpy).toHaveBeenCalled();
+    expect(vi.mocked(app.vault.copy)).toHaveBeenCalled();
     expect(typeof result).toBe('string');
   });
 
   it('should create parent folder before copying', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
-    const createFolderSpy = vi.spyOn(app.vault, 'createFolder');
+    vi.spyOn(app.vault, 'createFolder');
     await copySafe(app, 'source.md', 'newdir/target.md');
-    expect(createFolderSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
   });
 
   it('should return available path if copy succeeds', async () => {
@@ -414,9 +415,9 @@ describe('saveNote', () => {
   it('should not save if file is not a markdown file', async () => {
     const nonMdFile = createTFileInstance(app, 'data.json');
     setVaultAbstractFile(app.vault, 'data.json', nonMdFile);
-    const getLeavesOfTypeSpy = vi.spyOn(app.workspace, 'getLeavesOfType');
+    vi.spyOn(app.workspace, 'getLeavesOfType');
     await saveNote(app, 'data.json');
-    expect(getLeavesOfTypeSpy).not.toHaveBeenCalled();
+    expect(vi.mocked(app.workspace.getLeavesOfType)).not.toHaveBeenCalled();
   });
 
   it('should save dirty markdown views matching the file path', async () => {
@@ -425,14 +426,14 @@ describe('saveNote', () => {
     assertNonNullable(file);
     view.file = file;
     castTo<Record<string, unknown>>(view)['dirty'] = true;
-    const saveSpy = vi.spyOn(view, 'save');
+    vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
     ]);
 
     await saveNote(app, 'note.md');
-    expect(saveSpy).toHaveBeenCalled();
+    expect(vi.mocked(view.save)).toHaveBeenCalled();
   });
 
   it('should not save non-dirty views', async () => {
@@ -441,28 +442,28 @@ describe('saveNote', () => {
     assertNonNullable(file);
     view.file = file;
     castTo<Record<string, unknown>>(view)['dirty'] = false;
-    const saveSpy = vi.spyOn(view, 'save');
+    vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
     ]);
 
     await saveNote(app, 'note.md');
-    expect(saveSpy).not.toHaveBeenCalled();
+    expect(vi.mocked(view.save)).not.toHaveBeenCalled();
   });
 
   it('should not save views for different file paths', async () => {
     const view = new (castTo<new () => MarkdownView>(MarkdownView))();
     view.file = createTFileInstance(app, 'other.md');
     castTo<Record<string, unknown>>(view)['dirty'] = true;
-    const saveSpy = vi.spyOn(view, 'save');
+    vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
     ]);
 
     await saveNote(app, 'note.md');
-    expect(saveSpy).not.toHaveBeenCalled();
+    expect(vi.mocked(view.save)).not.toHaveBeenCalled();
   });
 });
 
@@ -615,29 +616,29 @@ describe('renameSafe', () => {
   });
 
   it('should not rename if old and new paths are the same', async () => {
-    const renameSpy = vi.spyOn(app.fileManager, 'renameFile');
+    vi.spyOn(app.fileManager, 'renameFile');
     const result = await renameSafe(app, 'source.md', 'source.md');
-    expect(renameSpy).not.toHaveBeenCalled();
+    expect(vi.mocked(app.fileManager.renameFile)).not.toHaveBeenCalled();
     expect(result).toBe('source.md');
   });
 
   it('should rename when case differs (case rename)', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('Source.md');
-    const renameSpy = vi.spyOn(app.fileManager, 'renameFile');
+    vi.spyOn(app.fileManager, 'renameFile');
     const result = await renameSafe(app, 'source.md', 'Source.md');
     // Source.md and Source.md differ in case, so lowercase compare matches
     // GetSafeRenamePath returns getAvailablePath result
     // Then oldAbstractFile.path.toLowerCase() === newAvailablePath.toLowerCase() is checked
     expect(result).toBe('Source.md');
-    expect(renameSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.fileManager.renameFile)).toHaveBeenCalled();
   });
 
   it('should create parent folder for new path', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('dest/target');
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
-    const createFolderSpy = vi.spyOn(app.vault, 'createFolder');
+    vi.spyOn(app.vault, 'createFolder');
     await renameSafe(app, 'source.md', 'dest/target.md');
-    expect(createFolderSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
   });
 
   it('should not throw if rename fails but file exists at new path and not at old', async () => {
@@ -680,9 +681,9 @@ describe('getOrCreateAbstractFileSafe', () => {
 
   it('should create a new file when it does not exist', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new-file');
-    const createSpy = vi.spyOn(app.vault, 'create');
+    vi.spyOn(app.vault, 'create');
     const result = await getOrCreateAbstractFileSafe(app, 'new-file.md', FileSystemType.File);
-    expect(createSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.vault.create)).toHaveBeenCalled();
     expect(result).toBeDefined();
   });
 
@@ -695,9 +696,9 @@ describe('getOrCreateAbstractFileSafe', () => {
 
   it('should create a new folder when it does not exist', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new-folder');
-    const createFolderSpy = vi.spyOn(app.vault, 'createFolder');
+    vi.spyOn(app.vault, 'createFolder');
     const result = await getOrCreateAbstractFileSafe(app, 'new-folder', FileSystemType.Folder);
-    expect(createFolderSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
     expect(result).toBeDefined();
   });
 
@@ -719,9 +720,9 @@ describe('getOrCreateFileSafe', () => {
 
   it('should create file when not found', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new');
-    const createSpy = vi.spyOn(app.vault, 'create');
+    vi.spyOn(app.vault, 'create');
     await getOrCreateFileSafe(app, 'new.md');
-    expect(createSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.vault.create)).toHaveBeenCalled();
   });
 });
 
@@ -735,9 +736,9 @@ describe('getOrCreateFolderSafe', () => {
 
   it('should create folder when not found', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new-folder');
-    const createFolderSpy = vi.spyOn(app.vault, 'createFolder');
+    vi.spyOn(app.vault, 'createFolder');
     await getOrCreateFolderSafe(app, 'new-folder');
-    expect(createFolderSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
   });
 });
 
@@ -755,9 +756,9 @@ describe('invokeWithFileSystemLock', () => {
   });
 
   it('should call vault.process with the file', async () => {
-    const processSpy = vi.spyOn(app.vault, 'process');
+    vi.spyOn(app.vault, 'process');
     await invokeWithFileSystemLock(app, 'locked.md', vi.fn());
-    expect(processSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
   it('should work with TFile instances', async () => {
@@ -769,10 +770,10 @@ describe('invokeWithFileSystemLock', () => {
   });
 
   it('should return the content unchanged after fn is called', async () => {
-    const processSpy = vi.spyOn(app.vault, 'process');
+    vi.spyOn(app.vault, 'process');
     await invokeWithFileSystemLock(app, 'locked.md', vi.fn());
     // The process function should return the same content
-    const call = processSpy.mock.calls[0];
+    const call = vi.mocked(app.vault.process).mock.calls[0];
     expect(call).toBeDefined();
     if (call) {
       const processFn = call[1] as (data: string) => string;
@@ -823,9 +824,9 @@ describe('createTempFile', () => {
   });
 
   it('should create file and return cleanup function', async () => {
-    const createSpy = vi.spyOn(app.vault, 'create');
+    vi.spyOn(app.vault, 'create');
     const cleanup = await createTempFile(app, 'new.md');
-    expect(createSpy).toHaveBeenCalledWith('new.md', '');
+    expect(vi.mocked(app.vault.create)).toHaveBeenCalledWith('new.md', '');
     expect(typeof cleanup).toBe('function');
   });
 
@@ -845,7 +846,7 @@ describe('createTempFile', () => {
   it('cleanup should trash non-deleted file', async () => {
     const createdFile = createTFileInstance(app, 'new.md');
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
-    const trashSpy = vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.fileManager, 'trashFile');
 
     const cleanup = await createTempFile(app, 'new.md');
 
@@ -853,22 +854,21 @@ describe('createTempFile', () => {
 
     setVaultAbstractFile(app.vault, 'new.md', createdFile);
     await cleanup();
-    expect(trashSpy).toHaveBeenCalledWith(createdFile);
+    expect(vi.mocked(app.fileManager.trashFile)).toHaveBeenCalledWith(createdFile);
   });
 
   it('cleanup should not trash deleted file', async () => {
     const createdFile = createTFileInstance(app, 'new.md');
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
-    const trashSpy = vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.fileManager, 'trashFile');
 
     const cleanup = await createTempFile(app, 'new.md');
 
     // Put file in fileMap but mark as deleted
-    createdFile.deleted = true;
-
     setVaultAbstractFile(app.vault, 'new.md', createdFile);
+    createdFile.deleted = true;
     await cleanup();
-    expect(trashSpy).not.toHaveBeenCalled();
+    expect(vi.mocked(app.fileManager.trashFile)).not.toHaveBeenCalled();
   });
 });
 
@@ -889,17 +889,17 @@ describe('createTempFolder', () => {
   });
 
   it('should create folder and return cleanup function', async () => {
-    const createFolderSpy = vi.spyOn(app.vault, 'createFolder');
+    vi.spyOn(app.vault, 'createFolder');
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
 
     const cleanup = await createTempFolder(app, 'new-folder');
-    expect(createFolderSpy).toHaveBeenCalledWith('new-folder');
+    expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalledWith('new-folder');
     expect(typeof cleanup).toBe('function');
   });
 
   it('cleanup should trash non-deleted folder', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
-    const trashSpy = vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.fileManager, 'trashFile');
 
     const cleanup = await createTempFolder(app, 'temp');
 
@@ -908,21 +908,20 @@ describe('createTempFolder', () => {
 
     setVaultAbstractFile(app.vault, 'temp', folder);
     await cleanup();
-    expect(trashSpy).toHaveBeenCalledWith(folder);
+    expect(vi.mocked(app.fileManager.trashFile)).toHaveBeenCalledWith(folder);
   });
 
   it('cleanup should not trash deleted folder', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
-    const trashSpy = vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.fileManager, 'trashFile');
 
     const cleanup = await createTempFolder(app, 'temp');
 
     const folder = createTFolderInstance(app, 'temp');
-    folder.deleted = true;
-
     setVaultAbstractFile(app.vault, 'temp', folder);
+    folder.deleted = true;
     await cleanup();
-    expect(trashSpy).not.toHaveBeenCalled();
+    expect(vi.mocked(app.fileManager.trashFile)).not.toHaveBeenCalled();
   });
 });
 
@@ -961,7 +960,6 @@ describe('processFile', () => {
 
   it('should write new content when content matches', async () => {
     setupRetryToInvokeOperationFn();
-    const processSpy = vi.spyOn(app.vault, 'process');
     // Vault.read returns 'old content', vault.process calls fn with '' by default
     // We need vault.process to call fn with the same content readSafe returns
     vi.spyOn(app.vault, 'process').mockImplementation(async (_file, fn) => {
@@ -970,7 +968,7 @@ describe('processFile', () => {
 
     await processFile(app, 'note.md', 'new content');
 
-    expect(processSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
   it('should return false when content changed between read and write', async () => {
@@ -1042,11 +1040,11 @@ describe('processFile', () => {
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
     ]);
-    const onSpy = vi.spyOn(app.workspace, 'on');
+    vi.spyOn(app.workspace, 'on');
 
     await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: true });
 
-    expect(onSpy).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
+    expect(vi.mocked(app.workspace.on)).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
   });
 
   it('should invoke active-leaf-change callback that locks matching editors', async () => {
@@ -1084,22 +1082,22 @@ describe('processFile', () => {
   it('should not lock editors when shouldLockEditorWhileProcessing is false', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    const onSpy = vi.spyOn(app.workspace, 'on');
+    vi.spyOn(app.workspace, 'on');
 
     await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: false });
 
-    expect(onSpy).not.toHaveBeenCalled();
+    expect(vi.mocked(app.workspace.on)).not.toHaveBeenCalled();
   });
 
   it('should clean up event ref in finally block', async () => {
     mockedRetryWithTimeoutNotice.mockRejectedValue(new Error('Timeout'));
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
-    const onSpy = vi.spyOn(app.workspace, 'on');
+    vi.spyOn(app.workspace, 'on');
 
     await expect(processFile(app, 'note.md', 'new content')).rejects.toThrow('Timeout');
 
-    expect(onSpy).toHaveBeenCalled();
+    expect(vi.mocked(app.workspace.on)).toHaveBeenCalled();
   });
 
   it('should skip locking editors when view.file is null', async () => {

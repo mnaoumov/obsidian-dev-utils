@@ -73,7 +73,7 @@ describe('i18n module', () => {
     });
 
     it('should warn and auto-initialize when not initialized', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {
         noop();
       });
 
@@ -81,12 +81,12 @@ describe('i18n module', () => {
 
       freshT(((translations: Record<string, unknown>) => translations['test']) as never);
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect(vi.mocked(console.warn)).toHaveBeenCalledWith(
         'I18N was not initialized, initializing default obsidian-dev-utils translations'
       );
       expect(mockInvokeAsyncSafelyFn).toHaveBeenCalledTimes(1);
 
-      consoleWarnSpy.mockRestore();
+      vi.mocked(console.warn).mockRestore();
     });
   });
 
