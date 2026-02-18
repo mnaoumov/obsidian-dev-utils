@@ -601,7 +601,7 @@ describe('canvas changes via applyFileChanges', () => {
     };
     const changes = [makeContentChange('old', 'new', 0)];
 
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
     });
 
@@ -611,8 +611,8 @@ describe('canvas changes via applyFileChanges', () => {
     });
 
     await applyFileChanges({} as never, 'test.canvas', changes);
-    expect(errorSpy).toHaveBeenCalled();
-    errorSpy.mockRestore();
+    expect(vi.mocked(console.error)).toHaveBeenCalled();
+    vi.mocked(console.error).mockRestore();
   });
 
   it('should apply canvas text node changes using applyContentChanges', async () => {
@@ -660,7 +660,7 @@ describe('canvas changes via applyFileChanges', () => {
     const changes = [makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 0)];
     let resultContent: null | string = null;
 
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
     });
 
@@ -671,8 +671,8 @@ describe('canvas changes via applyFileChanges', () => {
 
     await applyFileChanges({} as never, 'test.canvas', changes);
     expect(resultContent).toBeNull();
-    expect(errorSpy).toHaveBeenCalled();
-    errorSpy.mockRestore();
+    expect(vi.mocked(console.error)).toHaveBeenCalled();
+    vi.mocked(console.error).mockRestore();
   });
 });
 
@@ -799,12 +799,12 @@ describe('overlapping content changes', () => {
       makeContentChange('ABCDE', 'VWXYZ', 0),
       makeContentChange('CDE', 'ZZZ', 2)
     ];
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
     });
     await expect(applyContentChanges(signal, content, 'test.md', changes))
       .rejects.toThrow('Overlapping changes');
-    errorSpy.mockRestore();
+    vi.mocked(console.error).mockRestore();
   });
 });
 

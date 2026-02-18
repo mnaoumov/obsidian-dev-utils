@@ -1,5 +1,3 @@
-import type { MockedFunction } from 'vitest';
-
 // @vitest-environment jsdom
 import {
   afterEach,
@@ -192,7 +190,7 @@ describe('loop', () => {
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce(undefined);
 
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
     });
 
@@ -205,9 +203,9 @@ describe('loop', () => {
 
     expect(processItem).toHaveBeenCalledTimes(3);
     expect(emitAsyncErrorEvent).toHaveBeenCalledTimes(1);
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error processing item', 'a');
+    expect(vi.mocked(console.error)).toHaveBeenCalledWith('Error processing item', 'a');
 
-    consoleErrorSpy.mockRestore();
+    vi.mocked(console.error).mockRestore();
   });
 
   it('should throw when shouldContinueOnError is false and an error occurs', async () => {
@@ -216,7 +214,7 @@ describe('loop', () => {
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(error);
 
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
     });
 
@@ -229,14 +227,12 @@ describe('loop', () => {
     })).rejects.toThrow('loop failed');
 
     expect(processItem).toHaveBeenCalledTimes(2);
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error processing item', 'b');
+    expect(vi.mocked(console.error)).toHaveBeenCalledWith('Error processing item', 'b');
 
-    consoleErrorSpy.mockRestore();
+    vi.mocked(console.error).mockRestore();
   });
 
   it('should not show notice when shouldShowNotice is false', async () => {
-    const mockedInvokeAsyncSafely = invokeAsyncSafely as MockedFunction<typeof invokeAsyncSafely>;
-
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
@@ -244,9 +240,9 @@ describe('loop', () => {
       shouldShowNotice: false
     });
 
-    expect(mockedInvokeAsyncSafely).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(invokeAsyncSafely)).toHaveBeenCalledTimes(1);
 
-    const showNoticeFn = mockedInvokeAsyncSafely.mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
+    const showNoticeFn = vi.mocked(invokeAsyncSafely).mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
     expect(showNoticeFn).toBeDefined();
     if (showNoticeFn) {
       await showNoticeFn();
@@ -266,7 +262,7 @@ describe('loop', () => {
 
   it('should call getLibDebugger with Loop namespace', async () => {
     const mockDebugFn = vi.fn();
-    (getLibDebugger as MockedFunction<typeof getLibDebugger>).mockReturnValue(castTo<ReturnType<typeof getLibDebugger>>(mockDebugFn));
+    vi.mocked(getLibDebugger).mockReturnValue(castTo<ReturnType<typeof getLibDebugger>>(mockDebugFn));
 
     await loop({
       buildNoticeMessage: vi.fn(() => 'debug msg'),
@@ -288,7 +284,7 @@ describe('loop', () => {
     });
 
     expect(addPluginCssClasses).toHaveBeenCalledTimes(1);
-    const call = (addPluginCssClasses as MockedFunction<typeof addPluginCssClasses>).mock.calls[0];
+    const call = vi.mocked(addPluginCssClasses).mock.calls[0];
     expect(call).toBeDefined();
     expect(call?.[0]).toBeInstanceOf(HTMLProgressElement);
     expect(call?.[1]).toBe('loop');
@@ -361,7 +357,7 @@ describe('loop', () => {
       .mockRejectedValueOnce(new Error('err2'))
       .mockResolvedValueOnce(undefined);
 
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
     });
 
@@ -375,7 +371,7 @@ describe('loop', () => {
     expect(processItem).toHaveBeenCalledTimes(3);
     expect(emitAsyncErrorEvent).toHaveBeenCalledTimes(2);
 
-    consoleErrorSpy.mockRestore();
+    vi.mocked(console.error).mockRestore();
   });
 
   it('should respect custom options', async () => {
@@ -470,7 +466,7 @@ describe('loop', () => {
       return el;
     };
 
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
     });
 
@@ -485,7 +481,7 @@ describe('loop', () => {
     assertNonNullable(capturedProgressEl);
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(2);
 
-    consoleErrorSpy.mockRestore();
+    vi.mocked(console.error).mockRestore();
     (globalThis as Record<string, unknown>)['createEl'] = origCreateEl;
   });
 
@@ -507,7 +503,7 @@ describe('loop', () => {
 
   it('should call requestAnimationFrameAsync when UI update threshold is exceeded', async () => {
     let callCount = 0;
-    const performanceNowSpy = vi.spyOn(performance, 'now').mockImplementation(() => {
+    vi.spyOn(performance, 'now').mockImplementation(() => {
       // Return increasing timestamps that exceed the default 100ms threshold
       return callCount++ * 200;
     });
@@ -521,19 +517,18 @@ describe('loop', () => {
 
     expect(requestAnimationFrameAsync).toHaveBeenCalled();
 
-    performanceNowSpy.mockRestore();
+    vi.mocked(performance.now).mockRestore();
   });
 
   it('should set notice message when shouldShowProgressBar is false and notice exists', async () => {
     // Make invokeAsyncSafely actually await the function so the notice gets created
-    const mockedInvokeAsyncSafely = invokeAsyncSafely as MockedFunction<typeof invokeAsyncSafely>;
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    mockedInvokeAsyncSafely.mockImplementation(async (fn: () => Promise<unknown>) => {
+    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => Promise<unknown>) => {
       await fn();
     });
 
     const { Notice } = await import('obsidian');
-    const setMessageSpy = vi.spyOn(Notice.prototype, 'setMessage');
+    vi.spyOn(Notice.prototype, 'setMessage');
 
     await loop({
       buildNoticeMessage: vi.fn(() => 'progress message'),
@@ -544,21 +539,20 @@ describe('loop', () => {
     });
 
     // Notice.setMessage should have been called with the string message (not a fragment)
-    expect(setMessageSpy).toHaveBeenCalledWith('progress message');
+    expect(vi.mocked(Notice.prototype.setMessage)).toHaveBeenCalledWith('progress message');
 
-    setMessageSpy.mockRestore();
+    vi.mocked(Notice.prototype.setMessage).mockRestore();
   });
 
   it('should return early from showNotice when shouldShowProgressBar is false', async () => {
     // Make invokeAsyncSafely actually await so the notice is created
-    const mockedInvokeAsyncSafely = invokeAsyncSafely as MockedFunction<typeof invokeAsyncSafely>;
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    mockedInvokeAsyncSafely.mockImplementation(async (fn: () => Promise<unknown>) => {
+    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => Promise<unknown>) => {
       await fn();
     });
 
     const { Notice } = await import('obsidian');
-    const constructorSpy = vi.spyOn(Notice.prototype, 'setMessage');
+    vi.spyOn(Notice.prototype, 'setMessage');
 
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
@@ -571,10 +565,10 @@ describe('loop', () => {
     // When shouldShowProgressBar is false, notice is created but setMessage with
     // Fragment is NOT called (it returns early). setMessage is only called with
     // The string message for each item.
-    for (const call of constructorSpy.mock.calls) {
+    for (const call of vi.mocked(Notice.prototype.setMessage).mock.calls) {
       expect(typeof call[0]).toBe('string');
     }
 
-    constructorSpy.mockRestore();
+    vi.mocked(Notice.prototype.setMessage).mockRestore();
   });
 });

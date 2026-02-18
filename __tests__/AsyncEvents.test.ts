@@ -13,12 +13,10 @@ import { assertNonNullable } from '../src/TypeGuards.ts';
 
 describe('AsyncEvents', () => {
   let events: AsyncEvents;
-  let setTimeoutSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     events = new AsyncEvents();
-    setTimeoutSpy = vi.fn();
-    vi.stubGlobal('window', { setTimeout: setTimeoutSpy });
+    vi.stubGlobal('window', { setTimeout: vi.fn() });
   });
 
   afterEach(() => {
@@ -206,8 +204,8 @@ describe('AsyncEvents', () => {
         throw error;
       });
       events.trigger('test');
-      expect(setTimeoutSpy).toHaveBeenCalledOnce();
-      expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 0);
+      expect(vi.mocked(window.setTimeout)).toHaveBeenCalledOnce();
+      expect(vi.mocked(window.setTimeout)).toHaveBeenCalledWith(expect.any(Function), 0);
     });
 
     it('should rethrow the error from the deferred function', () => {
@@ -217,7 +215,7 @@ describe('AsyncEvents', () => {
       });
       events.trigger('test');
 
-      const firstCall = setTimeoutSpy.mock.calls[0];
+      const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
       assertNonNullable(firstCall);
       const deferredFn = firstCall[0] as () => void;
       expect(() => {
@@ -248,7 +246,7 @@ describe('AsyncEvents', () => {
       events.on('test', callback1);
       events.on('test', callback2);
       events.trigger('test');
-      expect(setTimeoutSpy).toHaveBeenCalledOnce();
+      expect(vi.mocked(window.setTimeout)).toHaveBeenCalledOnce();
     });
   });
 
@@ -280,7 +278,7 @@ describe('AsyncEvents', () => {
         throw error;
       });
       await events.triggerAsync('test');
-      expect(setTimeoutSpy).toHaveBeenCalledOnce();
+      expect(vi.mocked(window.setTimeout)).toHaveBeenCalledOnce();
     });
 
     it('should rethrow the async error from the deferred function', async () => {
@@ -289,7 +287,7 @@ describe('AsyncEvents', () => {
         throw error;
       });
       await events.triggerAsync('test');
-      const firstCall = setTimeoutSpy.mock.calls[0];
+      const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
       assertNonNullable(firstCall);
       const deferredFn = firstCall[0] as () => void;
       expect(() => {
@@ -339,7 +337,7 @@ describe('AsyncEvents', () => {
         throw error;
       });
       events.tryTrigger(ref, []);
-      expect(setTimeoutSpy).toHaveBeenCalledOnce();
+      expect(vi.mocked(window.setTimeout)).toHaveBeenCalledOnce();
     });
 
     it('should rethrow the error from the deferred function in tryTrigger', () => {
@@ -348,7 +346,7 @@ describe('AsyncEvents', () => {
         throw error;
       });
       events.tryTrigger(ref, []);
-      const firstCall = setTimeoutSpy.mock.calls[0];
+      const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
       assertNonNullable(firstCall);
       const deferredFn = firstCall[0] as () => void;
       expect(() => {
@@ -382,7 +380,7 @@ describe('AsyncEvents', () => {
         throw error;
       });
       await events.tryTriggerAsync(ref, []);
-      expect(setTimeoutSpy).toHaveBeenCalledOnce();
+      expect(vi.mocked(window.setTimeout)).toHaveBeenCalledOnce();
     });
 
     it('should rethrow the async error from the deferred function in tryTriggerAsync', async () => {
@@ -391,7 +389,7 @@ describe('AsyncEvents', () => {
         throw error;
       });
       await events.tryTriggerAsync(ref, []);
-      const firstCall = setTimeoutSpy.mock.calls[0];
+      const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
       assertNonNullable(firstCall);
       const deferredFn = firstCall[0] as () => void;
       expect(() => {

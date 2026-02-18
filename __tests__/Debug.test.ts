@@ -233,31 +233,31 @@ describe('Debug', () => {
     });
 
     it('should have a custom log function that calls console.debug in Node environment', () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('log-test-ns');
       const dbg = getDebugger('log-test-ns');
       dbg('test message %s', 'arg1');
-      expect(consoleSpy).toHaveBeenCalled();
-      const callArgs = consoleSpy.mock.calls[0];
+      expect(vi.mocked(console.debug)).toHaveBeenCalled();
+      const callArgs = vi.mocked(console.debug).mock.calls[0];
       assertNonNullable(callArgs);
       expect(callArgs[0]).toContain('test message');
     });
 
     it('should not call console.debug when the namespace is disabled', () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('');
       const dbg = getDebugger('disabled-log-ns');
       dbg('should not appear');
-      expect(consoleSpy).not.toHaveBeenCalled();
+      expect(vi.mocked(console.debug)).not.toHaveBeenCalled();
     });
 
     it('should return early from logWithCaller when namespace is disabled and log is called directly', () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('');
       const dbg = getDebugger('direct-log-disabled-ns');
       assertNonNullable(dbg.log);
       dbg.log('direct call test');
-      expect(consoleSpy).not.toHaveBeenCalled();
+      expect(vi.mocked(console.debug)).not.toHaveBeenCalled();
     });
   });
 
@@ -323,25 +323,25 @@ describe('Debug', () => {
     });
 
     it('should produce console.debug output when the plugin namespace is enabled', () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('show-msg-plugin');
       showInitialDebugMessage('show-msg-plugin');
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(vi.mocked(console.debug)).toHaveBeenCalled();
     });
 
     it('should include the plugin ID in the debug message', () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('my-plugin-for-msg');
       showInitialDebugMessage('my-plugin-for-msg');
-      const allArgs = consoleSpy.mock.calls.flat().join(' ');
+      const allArgs = vi.mocked(console.debug).mock.calls.flat().join(' ');
       expect(allArgs).toContain('my-plugin-for-msg');
     });
 
     it('should indicate enabled state when plugin namespace is enabled', () => {
-      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('enabled-plugin');
       showInitialDebugMessage('enabled-plugin');
-      const allArgs = consoleSpy.mock.calls.flat().join(' ');
+      const allArgs = vi.mocked(console.debug).mock.calls.flat().join(' ');
       expect(allArgs).toContain('enabled');
     });
 

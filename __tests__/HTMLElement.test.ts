@@ -612,18 +612,18 @@ describe('onAncestorScrollOrResize', () => {
 
   it('should add scroll and resize listeners to document, window, and the node', () => {
     const node = createMockElement();
-    const docSpy = vi.spyOn(document, 'addEventListener');
-    const winSpy = vi.spyOn(window, 'addEventListener');
-    const nodeSpy = vi.spyOn(node, 'addEventListener');
+    vi.spyOn(document, 'addEventListener');
+    vi.spyOn(window, 'addEventListener');
+    vi.spyOn(node, 'addEventListener');
 
     onAncestorScrollOrResize(node, vi.fn());
 
-    expect(docSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    expect(docSpy).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
-    expect(winSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    expect(winSpy).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
-    expect(nodeSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    expect(nodeSpy).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
+    expect(vi.mocked(document.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(vi.mocked(document.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
+    expect(vi.mocked(window.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(vi.mocked(window.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
+    expect(vi.mocked(node.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(vi.mocked(node.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
   });
 
   it('should add listeners to ancestor nodes in the parent chain', () => {
@@ -631,15 +631,15 @@ describe('onAncestorScrollOrResize', () => {
     const parent = createMockElement(grandparent);
     const node = createMockElement(parent);
 
-    const nodeSpy = vi.spyOn(node, 'addEventListener');
-    const parentSpy = vi.spyOn(parent, 'addEventListener');
-    const grandparentSpy = vi.spyOn(grandparent, 'addEventListener');
+    vi.spyOn(node, 'addEventListener');
+    vi.spyOn(parent, 'addEventListener');
+    vi.spyOn(grandparent, 'addEventListener');
 
     onAncestorScrollOrResize(node, vi.fn());
 
-    expect(nodeSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    expect(parentSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    expect(grandparentSpy).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(vi.mocked(node.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(vi.mocked(parent.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(vi.mocked(grandparent.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
   });
 
   it('should remove all listeners when cleanup is called', () => {
@@ -688,7 +688,7 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should invoke the callback via requestAnimationFrame when a scroll event fires', () => {
-    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       cb(0);
       return 0;
     });
@@ -699,12 +699,12 @@ describe('onAncestorScrollOrResize', () => {
 
     node.dispatchEvent(new Event('scroll'));
 
-    expect(rafSpy).toHaveBeenCalled();
+    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalled();
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
   it('should debounce multiple rapid event triggers', () => {
-    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
 
     const node = createMockElement();
     const callback = vi.fn();
@@ -716,11 +716,11 @@ describe('onAncestorScrollOrResize', () => {
     node.dispatchEvent(new Event('scroll'));
 
     // RequestAnimationFrame should only be called once because isEventTriggered guards
-    expect(rafSpy).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalledTimes(1);
   });
 
   it('should allow new events after requestAnimationFrame callback completes', () => {
-    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       cb(0);
       return 0;
     });
@@ -735,13 +735,13 @@ describe('onAncestorScrollOrResize', () => {
 
     // Second event after first completes
     node.dispatchEvent(new Event('scroll'));
-    expect(rafSpy).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalledTimes(2);
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
   it('should reset isEventTriggered even if callback throws', () => {
     const rafCallbacks: FrameRequestCallback[] = [];
-    const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       rafCallbacks.push(cb);
       return 0;
     });
@@ -754,7 +754,7 @@ describe('onAncestorScrollOrResize', () => {
 
     // First scroll queues a raf callback
     node.dispatchEvent(new Event('scroll'));
-    expect(rafSpy).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalledTimes(1);
 
     // Execute the raf callback — it throws but try/finally should reset isEventTriggered
     const firstCallback = rafCallbacks[0];
@@ -765,7 +765,7 @@ describe('onAncestorScrollOrResize', () => {
 
     // If isEventTriggered was properly reset, a second scroll should queue another raf
     node.dispatchEvent(new Event('scroll'));
-    expect(rafSpy).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalledTimes(2);
   });
 });
 
