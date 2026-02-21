@@ -25,8 +25,12 @@ import {
   onAncestorScrollOrResize,
   toPx
 } from '../src/HTMLElement.ts';
-import { castTo } from '../src/ObjectUtils.ts';
-import { assertNonNullable } from '../src/TypeGuards.ts';
+import type { GenericObject } from '../src/TypeGuards.ts';
+
+import {
+  assertNonNullable,
+  ensureGenericObject
+} from '../src/TypeGuards.ts';
 
 // Obsidian provides these globals at runtime; define them for jsdom.
 beforeAll(() => {
@@ -848,9 +852,9 @@ describe('ensureLoaded', () => {
   });
 });
 
-function createElement(tag: string, attrs: Record<string, unknown> = {}): HTMLElement {
+function createElement(tag: string, attrs: GenericObject = {}): HTMLElement {
   const el = document.createElement(tag);
-  const record = castTo<Record<string, unknown>>(el);
+  const record = ensureGenericObject(el);
 
   for (const [key, value] of Object.entries(attrs)) {
     Object.defineProperty(record, key, { value });

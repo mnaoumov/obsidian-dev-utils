@@ -8,11 +8,8 @@ import {
   vi
 } from 'vitest';
 
-import type {
-  RetryWithTimeoutOptions,
-  RunWithTimeoutOptions,
-  TimeoutContext
-} from '../../src/Async.ts';
+import type { TimeoutContext } from '../../src/Async.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
 
 import {
   retryWithTimeout,
@@ -24,10 +21,13 @@ import {
   runWithTimeoutNotice
 } from '../../src/obsidian/AsyncWithNotice.ts';
 import { t } from '../../src/obsidian/i18n/i18n.ts';
-import { assertNonNullable } from '../../src/TypeGuards.ts';
+import {
+  assertNonNullable,
+  ensureGenericObject
+} from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/Async.ts', () => ({
-  retryWithTimeout: vi.fn(async (options: Record<string, unknown>) => {
+  retryWithTimeout: vi.fn(async (options: GenericObject) => {
     if (typeof options['_captureOnTimeout'] === 'function') {
       (options['_captureOnTimeout'] as (fn: unknown) => void)(options['onTimeout']);
     }
@@ -35,7 +35,7 @@ vi.mock('../../src/Async.ts', () => ({
       await (options['operationFn'] as (signal: AbortSignal) => Promise<unknown>)(new AbortController().signal);
     }
   }),
-  runWithTimeout: vi.fn(async (options: Record<string, unknown>) => {
+  runWithTimeout: vi.fn(async (options: GenericObject) => {
     if (typeof options['_captureOnTimeout'] === 'function') {
       (options['_captureOnTimeout'] as (fn: unknown) => void)(options['onTimeout']);
     }
@@ -51,7 +51,7 @@ vi.mock('../../src/Debug.ts', () => ({
 }));
 
 vi.mock('../../src/obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((selectorFn: (translations: Record<string, unknown>) => string, _options?: Record<string, unknown>) => {
+  t: vi.fn((selectorFn: (translations: GenericObject) => string, _options?: GenericObject) => {
     const translations = {
       obsidianDevUtils: {
         asyncWithNotice: {
@@ -149,7 +149,7 @@ describe('AsyncWithNotice', () => {
     it('should forward operationFn to retryWithTimeout', async () => {
       const operationFn = vi.fn(async () => true);
       await retryWithTimeoutNotice({ operationFn });
-      const callArgs = vi.mocked(retryWithTimeout).mock.calls[0]?.[0] as RetryWithTimeoutOptions;
+      const callArgs = ensureGenericObject(vi.mocked(retryWithTimeout).mock.calls[0]![0]);
       expect(callArgs['operationFn']).toBe(operationFn);
     });
 
@@ -159,7 +159,7 @@ describe('AsyncWithNotice', () => {
         operationFn,
         operationName: 'myOperation'
       });
-      const callArgs = vi.mocked(retryWithTimeout).mock.calls[0]?.[0] as RetryWithTimeoutOptions;
+      const callArgs = ensureGenericObject(vi.mocked(retryWithTimeout).mock.calls[0]![0]);
       expect(callArgs['operationName']).toBe('myOperation');
     });
 
@@ -170,7 +170,7 @@ describe('AsyncWithNotice', () => {
         operationFn,
         retryOptions
       });
-      const callArgs = vi.mocked(retryWithTimeout).mock.calls[0]?.[0] as RetryWithTimeoutOptions;
+      const callArgs = ensureGenericObject(vi.mocked(retryWithTimeout).mock.calls[0]![0]);
       expect(callArgs['retryOptions']).toBe(retryOptions);
     });
 
@@ -180,7 +180,7 @@ describe('AsyncWithNotice', () => {
         operationFn,
         stackTrace: 'custom-stack'
       });
-      const callArgs = vi.mocked(retryWithTimeout).mock.calls[0]?.[0] as RetryWithTimeoutOptions;
+      const callArgs = ensureGenericObject(vi.mocked(retryWithTimeout).mock.calls[0]![0]);
       expect(callArgs['stackTrace']).toBe('custom-stack');
     });
 
@@ -291,7 +291,7 @@ describe('AsyncWithNotice', () => {
         operationFn,
         timeoutInMilliseconds: 5000
       });
-      const callArgs = vi.mocked(runWithTimeout).mock.calls[0]?.[0] as RunWithTimeoutOptions<unknown>;
+      const callArgs = ensureGenericObject(vi.mocked(runWithTimeout).mock.calls[0]![0]);
       expect(callArgs['operationFn']).toBe(operationFn);
     });
 
@@ -301,7 +301,7 @@ describe('AsyncWithNotice', () => {
         operationName: 'myOp',
         timeoutInMilliseconds: 5000
       });
-      const callArgs = vi.mocked(runWithTimeout).mock.calls[0]?.[0] as RunWithTimeoutOptions<unknown>;
+      const callArgs = ensureGenericObject(vi.mocked(runWithTimeout).mock.calls[0]![0]);
       expect(callArgs['operationName']).toBe('myOp');
     });
 
@@ -310,7 +310,7 @@ describe('AsyncWithNotice', () => {
         operationFn: async () => 'value',
         timeoutInMilliseconds: 3000
       });
-      const callArgs = vi.mocked(runWithTimeout).mock.calls[0]?.[0] as RunWithTimeoutOptions<unknown>;
+      const callArgs = ensureGenericObject(vi.mocked(runWithTimeout).mock.calls[0]![0]);
       expect(callArgs['timeoutInMilliseconds']).toBe(3000);
     });
 
@@ -320,7 +320,7 @@ describe('AsyncWithNotice', () => {
         stackTrace: 'my-stack',
         timeoutInMilliseconds: 5000
       });
-      const callArgs = vi.mocked(runWithTimeout).mock.calls[0]?.[0] as RunWithTimeoutOptions<unknown>;
+      const callArgs = ensureGenericObject(vi.mocked(runWithTimeout).mock.calls[0]![0]);
       expect(callArgs['stackTrace']).toBe('my-stack');
     });
 
@@ -331,7 +331,7 @@ describe('AsyncWithNotice', () => {
         operationFn: async () => 'value',
         timeoutInMilliseconds: 5000
       });
-      const callArgs = vi.mocked(runWithTimeout).mock.calls[0]?.[0] as RunWithTimeoutOptions<unknown>;
+      const callArgs = ensureGenericObject(vi.mocked(runWithTimeout).mock.calls[0]![0]);
       expect(callArgs['context']).toBe(context);
     });
 

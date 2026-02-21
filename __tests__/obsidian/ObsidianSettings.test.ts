@@ -6,13 +6,15 @@ import {
   it
 } from 'vitest';
 
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
 import { castTo } from '../../src/ObjectUtils.ts';
 import {
   getNewLinkFormat,
   shouldUseWikilinks
 } from '../../src/obsidian/ObsidianSettings.ts';
 
-function createMockApp(config: Record<string, unknown>): App {
+function createMockApp(config: GenericObject): App {
   return castTo<App>({
     vault: {
       getConfig: (key: string): unknown => config[key]
