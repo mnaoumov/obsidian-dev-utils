@@ -12,6 +12,8 @@ import {
   CalloutMode,
   wrapForCallout
 } from '../../src/obsidian/Callout.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
 import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 describe('wrapForCallout', () => {
@@ -104,7 +106,7 @@ vi.mock('../../src/obsidian/Queue.ts', () => ({
 }));
 
 interface MockDv {
-  app: Record<string, unknown>;
+  app: GenericObject;
   container: HTMLDivElement;
   paragraph: ReturnType<typeof vi.fn>;
 }

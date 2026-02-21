@@ -26,7 +26,12 @@ import {
   setNestedPropertyValue,
   toJson
 } from '../src/ObjectUtils.ts';
-import { assertNonNullable } from '../src/TypeGuards.ts';
+import type { GenericObject } from '../src/TypeGuards.ts';
+
+import {
+  assertNonNullable,
+  ensureGenericObject
+} from '../src/TypeGuards.ts';
 
 describe('ObjectUtils', () => {
   describe('deepEqual', () => {
@@ -180,7 +185,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should skip __proto__', () => {
-      const obj = Object.create(null) as Record<string, unknown>;
+      const obj = ensureGenericObject(Object.create(null) as object);
       // eslint-disable-next-line no-proto -- Testing `__proto__`.
       obj['__proto__'] = 'test';
       obj['a'] = 1;
@@ -212,26 +217,26 @@ describe('ObjectUtils', () => {
 
   describe('setNestedPropertyValue', () => {
     it('should set a top-level property', () => {
-      const obj: Record<string, unknown> = { a: 1 };
+      const obj: GenericObject = { a: 1 };
       setNestedPropertyValue(obj, 'a', 2);
       expect(obj['a']).toBe(2);
     });
 
     it('should set a nested property', () => {
       const obj = { a: { b: { c: 1 } } };
-      setNestedPropertyValue(obj as Record<string, unknown>, 'a.b.c', 42);
+      setNestedPropertyValue(ensureGenericObject(obj), 'a.b.c', 42);
       expect(obj.a.b.c).toBe(42);
     });
 
     it('should throw for missing intermediate path', () => {
-      const obj: Record<string, unknown> = { a: 1 };
+      const obj: GenericObject = { a: 1 };
       expect(() => {
         setNestedPropertyValue(obj, 'x.y.z', 42);
       }).toThrow('Property path x.y.z not found');
     });
 
     it('should throw when last intermediate resolves to undefined', () => {
-      const obj: Record<string, unknown> = { a: undefined };
+      const obj: GenericObject = { a: undefined };
       expect(() => {
         setNestedPropertyValue(obj, 'a.b', 42);
       }).toThrow('Property path a.b not found');
@@ -353,7 +358,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should clone non-enumerable properties', () => {
-      const obj: Record<string, unknown> = {};
+      const obj: GenericObject = {};
       Object.defineProperty(obj, 'hidden', { enumerable: false, value: 42 });
       const clone = cloneWithNonEnumerableProperties(obj);
       expect(Object.getOwnPropertyDescriptor(clone, 'hidden')?.value).toBe(42);
@@ -376,16 +381,16 @@ describe('ObjectUtils', () => {
     });
 
     it('should assign non-enumerable properties', () => {
-      const target: Record<string, unknown> = { a: 1 };
-      const source: Record<string, unknown> = {};
+      const target: GenericObject = { a: 1 };
+      const source: GenericObject = {};
       Object.defineProperty(source, 'hidden', { configurable: true, enumerable: false, value: 42, writable: true });
       assignWithNonEnumerableProperties(target, source);
       expect(Object.getOwnPropertyDescriptor(target, 'hidden')?.value).toBe(42);
     });
 
     it('should skip prototype key when assigning', () => {
-      const target: Record<string, unknown> = {};
-      const source = Object.create(null) as Record<string, unknown>;
+      const target: GenericObject = {};
+      const source = ensureGenericObject(Object.create(null) as object);
       Object.defineProperty(source, 'prototype', { configurable: true, enumerable: true, value: 'test', writable: true });
       Object.defineProperty(source, 'other', { configurable: true, enumerable: true, value: 'kept', writable: true });
       assignWithNonEnumerableProperties(target, source);
@@ -394,16 +399,16 @@ describe('ObjectUtils', () => {
     });
 
     it('should skip read-only non-configurable properties on target', () => {
-      const target: Record<string, unknown> = {};
+      const target: GenericObject = {};
       Object.defineProperty(target, 'locked', { configurable: false, enumerable: true, value: 'original', writable: false });
-      const source: Record<string, unknown> = {};
+      const source: GenericObject = {};
       Object.defineProperty(source, 'locked', { configurable: true, enumerable: true, value: 'new', writable: true });
       assignWithNonEnumerableProperties(target, source);
       expect(target['locked']).toBe('original');
     });
 
     it('should silently ignore defineProperty failures', () => {
-      const target: Record<string, unknown> = {};
+      const target: GenericObject = {};
       const source = { a: 1 };
       const originalDefineProperty = Object.defineProperty;
       afterEach(() => {
@@ -446,14 +451,14 @@ describe('ObjectUtils', () => {
     });
 
     it('should handle circular references when enabled', () => {
-      const obj: Record<string, unknown> = { a: 1 };
+      const obj: GenericObject = { a: 1 };
       obj['self'] = obj;
       const json = toJson(obj, { shouldHandleCircularReferences: true });
       expect(json).toContain('CircularReference');
     });
 
     it('should throw on circular references when not enabled', () => {
-      const obj: Record<string, unknown> = { a: 1 };
+      const obj: GenericObject = { a: 1 };
       obj['self'] = obj;
       expect(() => toJson(obj)).toThrow('Converting circular structure to JSON');
     });
@@ -502,7 +507,7 @@ describe('ObjectUtils', () => {
     it('should sort keys when enabled', () => {
       const obj = { a: 2, m: 3, z: 1 };
       const json = toJson(obj, { shouldSortKeys: true });
-      const keys = Object.keys(JSON.parse(json) as Record<string, unknown>);
+      const keys = Object.keys(ensureGenericObject(JSON.parse(json) as object));
       expect(keys).toEqual(['a', 'm', 'z']);
     });
 
@@ -558,7 +563,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should use custom tokenSubstitutions for circular references', () => {
-      const obj: Record<string, unknown> = { a: 1 };
+      const obj: GenericObject = { a: 1 };
       obj['self'] = obj;
       const json = toJson(obj, {
         shouldHandleCircularReferences: true,
@@ -579,7 +584,7 @@ describe('ObjectUtils', () => {
 
     it('should drop undefined properties when shouldHandleUndefined is false', () => {
       const json = toJson({ a: 1, b: undefined });
-      const parsed = JSON.parse(json) as Record<string, unknown>;
+      const parsed = ensureGenericObject(JSON.parse(json) as object);
       expect(parsed).toEqual({ a: 1 });
     });
 
@@ -593,7 +598,7 @@ describe('ObjectUtils', () => {
       };
       const json = toJson(outer);
       expect(innerToJSON).not.toHaveBeenCalled();
-      const parsed = JSON.parse(json) as Record<string, unknown>;
+      const parsed = ensureGenericObject(JSON.parse(json) as object);
       expect(parsed).toEqual({ y: 2 });
     });
 
@@ -602,7 +607,7 @@ describe('ObjectUtils', () => {
         noop();
       }
       Object.defineProperty(AnonymousCtor, 'name', { value: '' });
-      const obj: Record<string, unknown> = Object.create(AnonymousCtor.prototype) as Record<string, unknown>;
+      const obj = ensureGenericObject(Object.create(AnonymousCtor.prototype) as object);
       obj['a'] = 1;
       obj['self'] = obj;
       expect(() => toJson(obj)).toThrow('starting at object with constructor \'Object\'');
@@ -632,7 +637,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should exclude non-enumerable, non-writable properties', () => {
-      const obj: Record<string, unknown> = {};
+      const obj: GenericObject = {};
       Object.defineProperty(obj, 'locked', { enumerable: true, value: 1, writable: false });
       expect(getAllKeys(obj)).not.toContain('locked');
     });

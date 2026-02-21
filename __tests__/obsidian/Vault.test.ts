@@ -48,7 +48,12 @@ import {
   renameSafe,
   saveNote
 } from '../../src/obsidian/Vault.ts';
-import { assertNonNullable } from '../../src/TypeGuards.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
+import {
+  assertNonNullable,
+  ensureGenericObject
+} from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/obsidian/AsyncWithNotice.ts', () => ({
   retryWithTimeoutNotice: vi.fn()
@@ -60,9 +65,9 @@ vi.mock('../../src/obsidian/Editor.ts', () => ({
 }));
 
 vi.mock('../../src/obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((fn: (messages: Record<string, unknown>) => unknown) => {
+  t: vi.fn((fn: (messages: GenericObject) => unknown) => {
     try {
-      fn(castTo<Record<string, unknown>>({ obsidianDevUtils: { vault: { processFile: 'mock' } } }));
+      fn(ensureGenericObject({ obsidianDevUtils: { vault: { processFile: 'mock' } } }));
     } catch { /* Ignore */ }
     return 'mock-t';
   })
@@ -425,7 +430,7 @@ describe('saveNote', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    castTo<Record<string, unknown>>(view)['dirty'] = true;
+    ensureGenericObject(view)['dirty'] = true;
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -441,7 +446,7 @@ describe('saveNote', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    castTo<Record<string, unknown>>(view)['dirty'] = false;
+    ensureGenericObject(view)['dirty'] = false;
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -455,7 +460,7 @@ describe('saveNote', () => {
   it('should not save views for different file paths', async () => {
     const view = new (castTo<new () => MarkdownView>(MarkdownView))();
     view.file = createTFileInstance(app, 'other.md');
-    castTo<Record<string, unknown>>(view)['dirty'] = true;
+    ensureGenericObject(view)['dirty'] = true;
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -586,7 +591,7 @@ describe('getSafeRenamePath', () => {
     app.vault.adapter.insensitive = true;
     // Need a parent folder for the while loop to find
     const parentFolder = createTFolderInstance(app, 'dir');
-    castTo<Record<string, unknown>>(parentFolder)['getParentPrefix'] = (): string => 'dir/';
+    ensureGenericObject(parentFolder)['getParentPrefix'] = (): string => 'dir/';
     setVaultAbstractFile(app.vault, 'dir', parentFolder);
 
     const dirFile = createTFileInstance(app, 'dir/old.md');
@@ -599,7 +604,7 @@ describe('getSafeRenamePath', () => {
   it('should handle insensitive filesystem with nested path by walking up to existing folder', () => {
     app.vault.adapter.insensitive = true;
     const parentFolder = createTFolderInstance(app, 'parent');
-    castTo<Record<string, unknown>>(parentFolder)['getParentPrefix'] = (): string => 'parent/';
+    ensureGenericObject(parentFolder)['getParentPrefix'] = (): string => 'parent/';
     setVaultAbstractFile(app.vault, 'parent', parentFolder);
 
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('parent/sub/new');
@@ -946,7 +951,7 @@ describe('processFile', () => {
     await processFile(app, 'note.md', 'new content');
 
     expect(mockedRetryWithTimeoutNotice).toHaveBeenCalledOnce();
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
   });
 
@@ -954,7 +959,7 @@ describe('processFile', () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
     await processFile(app, 'note.md', 'new content', { shouldShowTimeoutNotice: false });
 
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(false);
   });
 
@@ -1035,7 +1040,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    castTo<Record<string, unknown>>(view)['editor'] = {};
+    ensureGenericObject(view)['editor'] = {};
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
@@ -1054,7 +1059,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    castTo<Record<string, unknown>>(view)['editor'] = {};
+    ensureGenericObject(view)['editor'] = {};
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
 
@@ -1105,7 +1110,7 @@ describe('processFile', () => {
 
     const view = new (castTo<new () => MarkdownView>(MarkdownView))();
     // View.file defaults to null in the mock — don't set it
-    castTo<Record<string, unknown>>(view)['editor'] = {};
+    ensureGenericObject(view)['editor'] = {};
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never

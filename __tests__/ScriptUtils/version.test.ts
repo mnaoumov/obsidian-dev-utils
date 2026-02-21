@@ -6,6 +6,8 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
 import {
   addGitTag,
   addUpdatedFilesToGit,
@@ -338,8 +340,8 @@ describe('updateVersionInFiles', () => {
 
   it('should update version and packages default entry in lock file', async () => {
     await updateVersionInFiles('3.0.0');
-    const updateFn = mockEditPackageLockJson.mock.calls[0]?.[0] as (lock: Record<string, unknown>) => void;
-    const lockJson: Record<string, unknown> = { packages: { '': { version: '1.0.0' } }, version: '1.0.0' };
+    const updateFn = mockEditPackageLockJson.mock.calls[0]?.[0] as (lock: GenericObject) => void;
+    const lockJson: GenericObject = { packages: { '': { version: '1.0.0' } }, version: '1.0.0' };
     updateFn(lockJson);
     expect(lockJson['version']).toBe('3.0.0');
     expect((lockJson['packages'] as Record<string, Record<string, string>>)['']?.['version']).toBe('3.0.0');
@@ -347,8 +349,8 @@ describe('updateVersionInFiles', () => {
 
   it('should handle lock file without packages entry', async () => {
     await updateVersionInFiles('3.0.0');
-    const updateFn = mockEditPackageLockJson.mock.calls[0]?.[0] as (lock: Record<string, unknown>) => void;
-    const lockJson: Record<string, unknown> = { version: '1.0.0' };
+    const updateFn = mockEditPackageLockJson.mock.calls[0]?.[0] as (lock: GenericObject) => void;
+    const lockJson: GenericObject = { version: '1.0.0' };
     updateFn(lockJson);
     expect(lockJson['version']).toBe('3.0.0');
   });

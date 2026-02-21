@@ -28,6 +28,8 @@ import {
   readSafe,
   saveNote
 } from '../../src/obsidian/Vault.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
 import {
   assertNonNullable,
   ensureGenericObject
@@ -51,9 +53,9 @@ vi.mock('../../src/obsidian/Frontmatter.ts', () => ({
 }));
 
 vi.mock('../../src/obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((fn: (messages: Record<string, unknown>) => unknown) => {
+  t: vi.fn((fn: (messages: GenericObject) => unknown) => {
     try {
-      return fn(castTo<Record<string, unknown>>({ obsidianDevUtils: { metadataCache: { getBacklinksForFilePath: 'mock' } } }));
+      return fn(ensureGenericObject({ obsidianDevUtils: { metadataCache: { getBacklinksForFilePath: 'mock' } } }));
     } catch {
       return 'mock-t';
     }
@@ -76,16 +78,16 @@ vi.mock('../../src/obsidian/FileSystem.ts', () => ({
   getFolder: vi.fn((_app: unknown, path: string) => ({ children: [], deleted: false, path })),
   getPath: vi.fn((_app: unknown, pathOrFile: unknown) => typeof pathOrFile === 'string' ? pathOrFile : (pathOrFile as { path: string }).path),
   isFile: vi.fn((file: unknown) =>
-    file !== null && typeof file === 'object' && 'name' in (file as Record<string, unknown>) && !('children' in (file as Record<string, unknown>))
+    file !== null && typeof file === 'object' && 'name' in (file as GenericObject) && !('children' in (file as GenericObject))
   )
 }));
 
 vi.mock('../../src/obsidian/FrontmatterLinkCacheWithOffsets.ts', () => ({
   isFrontmatterLinkCacheWithOffsets: vi.fn((ref: unknown) => {
-    const r = ref as Record<string, unknown>;
+    const r = ref as GenericObject;
     return r['startOffset'] !== undefined && r['endOffset'] !== undefined && r['key'] !== undefined;
   }),
-  toFrontmatterLinkCacheWithOffsets: vi.fn((link: Record<string, unknown>) => {
+  toFrontmatterLinkCacheWithOffsets: vi.fn((link: GenericObject) => {
     if (link['startOffset'] !== undefined && link['endOffset'] !== undefined) {
       return link;
     }
@@ -147,10 +149,10 @@ function createMockApp(): App {
     metadataCache: {
       computeFileMetadataAsync: vi.fn(),
       computeMetadataAsync: vi.fn(),
-      fileCache: {} as Record<string, unknown>,
+      fileCache: {} as GenericObject,
       getBacklinksForFile: vi.fn(),
       getFileCache: vi.fn(),
-      metadataCache: {} as Record<string, unknown>,
+      metadataCache: {} as GenericObject,
       onCleanCache: vi.fn((cb: () => void) => {
         cb();
       }),
@@ -746,7 +748,7 @@ describe('getBacklinksForFileSafe', () => {
 
     await getBacklinksForFileSafe(app, 'test.md');
 
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
   });
 
@@ -755,7 +757,7 @@ describe('getBacklinksForFileSafe', () => {
 
     await getBacklinksForFileSafe(app, 'test.md', { shouldShowTimeoutNotice: false });
 
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(false);
   });
 

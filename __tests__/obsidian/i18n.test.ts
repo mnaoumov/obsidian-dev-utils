@@ -7,10 +7,13 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
 import {
   noop,
   noopAsync
 } from '../../src/Function.ts';
+import { ensureGenericObject } from '../../src/TypeGuards.ts';
 
 const HEAVY_IMPORT_TIMEOUT = 30_000;
 
@@ -18,7 +21,7 @@ const mockAddResourceBundleFn = vi.fn();
 const mockInitFn = vi.fn(noopAsync);
 const mockTLibFn = vi.fn((selector: unknown) => {
   if (typeof selector === 'function') {
-    return (selector as (translations: Record<string, unknown>) => unknown)({ test: 'translated-value' });
+    return (selector as (translations: GenericObject) => unknown)({ test: 'translated-value' });
   }
   return 'mock-translated';
 });
@@ -79,7 +82,7 @@ describe('i18n module', () => {
 
       const { t: freshT } = await import('../../src/obsidian/i18n/i18n.ts');
 
-      freshT(((translations: Record<string, unknown>) => translations['test']) as never);
+      freshT(((translations: GenericObject) => translations['test']) as never);
 
       expect(vi.mocked(console.warn)).toHaveBeenCalledWith(
         'I18N was not initialized, initializing default obsidian-dev-utils translations'
@@ -103,7 +106,7 @@ describe('i18n module', () => {
       await initI18N(translationsMap as never, false);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArgs = (mockInitFn.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0] as object);
       expect(callArgs).toMatchObject({
         fallbackLng: 'en',
         initAsync: false,
@@ -121,7 +124,7 @@ describe('i18n module', () => {
       await initI18N(translationsMap as never, false);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArgs = (mockInitFn.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0] as object);
       expect(callArgs['resources']).toEqual({
         en: { translation: { greeting: 'Hello' } },
         fr: { translation: { greeting: 'Bonjour' } }
@@ -155,7 +158,7 @@ describe('i18n module', () => {
       await initI18N({ en: { test: 'value' } } as never);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArgs = (mockInitFn.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0] as object);
       expect(callArgs['initAsync']).toBe(true);
     });
   });
@@ -171,7 +174,7 @@ describe('i18n module', () => {
       await initI18N({ en: { test: 'hello' } } as never, false);
       mockTLibFn.mockClear();
 
-      const selector = (($: Record<string, unknown>): unknown => $['test']) as never;
+      const selector = (($: GenericObject): unknown => $['test']) as never;
       tFn(selector);
 
       expect(mockTLibFn).toHaveBeenCalledTimes(1);
@@ -183,7 +186,7 @@ describe('i18n module', () => {
       await initI18N({ en: { test: 'hello' } } as never, false);
       mockTLibFn.mockClear();
 
-      const selector = (($: Record<string, unknown>): unknown => $['test']) as never;
+      const selector = (($: GenericObject): unknown => $['test']) as never;
       const options = { ns: ['translation' as const] };
       tFn(selector, options as never);
 
@@ -195,7 +198,7 @@ describe('i18n module', () => {
       const { initI18N, t: tFn } = await import('../../src/obsidian/i18n/i18n.ts');
       await initI18N({ en: { test: 'hello' } } as never, false);
 
-      const result = tFn((($: Record<string, unknown>): unknown => $['test']) as never);
+      const result = tFn((($: GenericObject): unknown => $['test']) as never);
 
       expect(result).toBe('translated-value');
     });

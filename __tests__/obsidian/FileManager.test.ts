@@ -21,6 +21,8 @@ import {
   setFrontmatter
 } from '../../src/obsidian/Frontmatter.ts';
 import { process } from '../../src/obsidian/Vault.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
 import { ensureNonNullable } from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/ObjectUtils.ts', () => ({
@@ -89,7 +91,7 @@ describe('addAlias', () => {
   });
 
   it('should add an alias to frontmatter', async () => {
-    const frontmatter: Record<string, unknown> = {};
+    const frontmatter: GenericObject = {};
     vi.mocked(parseFrontmatter).mockReturnValue(frontmatter);
     vi.mocked(getFile).mockReturnValue({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' } as never);
 
@@ -158,7 +160,7 @@ describe('deleteAlias', () => {
   });
 
   it('should delete aliases property when array becomes empty', async () => {
-    const frontmatter: Record<string, unknown> = { aliases: ['only'] };
+    const frontmatter: GenericObject = { aliases: ['only'] };
     vi.mocked(parseFrontmatter).mockReturnValue(frontmatter);
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {

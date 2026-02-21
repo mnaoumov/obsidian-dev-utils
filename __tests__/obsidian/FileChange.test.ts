@@ -10,11 +10,11 @@ import {
 } from 'vitest';
 
 import type { FileChange } from '../../src/obsidian/FileChange.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
 
 import { getLibDebugger } from '../../src/Debug.ts';
 import { printError } from '../../src/Error.ts';
 import { noop } from '../../src/Function.ts';
-import { castTo } from '../../src/ObjectUtils.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -29,7 +29,10 @@ import {
 import { isCanvasFile } from '../../src/obsidian/FileSystem.ts';
 import { parseFrontmatter } from '../../src/obsidian/Frontmatter.ts';
 import { process } from '../../src/obsidian/Vault.ts';
-import { assertNonNullable } from '../../src/TypeGuards.ts';
+import {
+  assertNonNullable,
+  ensureGenericObject
+} from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/Debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
@@ -292,8 +295,8 @@ describe('toFrontmatterChangeWithOffsets', () => {
     const change = makeFrontmatterChange('hello', 'world', 'aliases');
     const result = toFrontmatterChangeWithOffsets(change as never);
     expect(isFrontmatterChangeWithOffsets(result)).toBe(true);
-    expect(castTo<Record<string, unknown>>(result.reference)['startOffset']).toBe(0);
-    expect(castTo<Record<string, unknown>>(result.reference)['endOffset']).toBe(5);
+    expect(ensureGenericObject(result.reference)['startOffset']).toBe(0);
+    expect(ensureGenericObject(result.reference)['endOffset']).toBe(5);
   });
 
   it('should preserve all original properties on the converted change', () => {
@@ -301,7 +304,7 @@ describe('toFrontmatterChangeWithOffsets', () => {
     const result = toFrontmatterChangeWithOffsets(change as never);
     expect(result.newContent).toBe('new-value');
     expect(result.oldContent).toBe('link-value');
-    expect(castTo<Record<string, unknown>>(result.reference)['key']).toBe('myKey');
+    expect(ensureGenericObject(result.reference)['key']).toBe('myKey');
   });
 });
 
@@ -540,7 +543,7 @@ describe('canvas changes via applyFileChanges', () => {
     await applyFileChanges({} as never, 'test.canvas', changes);
     expect(resultContent).not.toBeNull();
     assertNonNullable(resultContent);
-    const parsed = JSON.parse(resultContent) as Record<string, Record<string, unknown>[]>;
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
     const nodes = parsed['nodes'];
     assertNonNullable(nodes);
     const firstNode = nodes[0];
@@ -631,7 +634,7 @@ describe('canvas changes via applyFileChanges', () => {
     await applyFileChanges({} as never, 'test.canvas', changes);
     expect(resultContent).not.toBeNull();
     assertNonNullable(resultContent);
-    const parsed = JSON.parse(resultContent) as Record<string, Record<string, unknown>[]>;
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
     const nodes = parsed['nodes'];
     assertNonNullable(nodes);
     const firstNode = nodes[0];

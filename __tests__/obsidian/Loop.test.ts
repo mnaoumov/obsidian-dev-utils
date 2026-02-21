@@ -21,7 +21,9 @@ import { noop } from '../../src/Function.ts';
 import { castTo } from '../../src/ObjectUtils.ts';
 import { loop } from '../../src/obsidian/Loop.ts';
 import { addPluginCssClasses } from '../../src/obsidian/Plugin/PluginContext.ts';
-import { assertNonNullable } from '../../src/TypeGuards.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
+import { assertNonNullable, ensureGenericObject } from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/AbortController.ts', () => ({
   abortSignalNever: vi.fn(() => new AbortController().signal)
@@ -60,14 +62,14 @@ vi.mock('../../src/obsidian/Plugin/PluginContext.ts', () => ({
 }));
 
 if (typeof globalThis.createEl === 'undefined') {
-  (globalThis as Record<string, unknown>)['createEl'] = (tag: string): HTMLElement => document.createElement(tag);
+  ensureGenericObject(globalThis)['createEl'] = (tag: string): HTMLElement => document.createElement(tag);
 }
 
 // Obsidian augments Node.prototype with createDiv
 if (!('createDiv' in DocumentFragment.prototype)) {
-  (DocumentFragment.prototype as Record<string, unknown>)['createDiv'] = function createDiv(
+  ensureGenericObject(DocumentFragment.prototype)['createDiv'] = function createDiv(
     this: DocumentFragment,
-    o?: Record<string, unknown> | string
+    o?: GenericObject | string
   ): HTMLDivElement {
     const div = document.createElement('div');
     if (typeof o === 'string') {
@@ -81,7 +83,7 @@ if (!('createDiv' in DocumentFragment.prototype)) {
 }
 
 if (typeof globalThis.createFragment === 'undefined') {
-  (globalThis as Record<string, unknown>)['createFragment'] = (cb?: (f: DocumentFragment) => void): DocumentFragment => {
+  ensureGenericObject(globalThis)['createFragment'] = (cb?: (f: DocumentFragment) => void): DocumentFragment => {
     const f = document.createDocumentFragment();
     cb?.(f);
     return f;
@@ -295,7 +297,7 @@ describe('loop', () => {
 
     const origCreateEl = globalThis.createEl;
     let capturedProgressEl: HTMLProgressElement | null = null;
-    (globalThis as Record<string, unknown>)['createEl'] = (tag: string): HTMLElement => {
+    ensureGenericObject(globalThis)['createEl'] = (tag: string): HTMLElement => {
       const el = document.createElement(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
@@ -315,7 +317,7 @@ describe('loop', () => {
     expect(progressEl.max).toBe(5);
     expect(progressEl.value).toBe(5);
 
-    (globalThis as Record<string, unknown>)['createEl'] = origCreateEl;
+    ensureGenericObject(globalThis)['createEl'] = origCreateEl;
   });
 
   it('should process items with numeric type', async () => {
@@ -423,7 +425,7 @@ describe('loop', () => {
   it('should increment progress bar value for each processed item', async () => {
     const origCreateEl = globalThis.createEl;
     let capturedProgressEl: HTMLProgressElement | null = null;
-    (globalThis as Record<string, unknown>)['createEl'] = (tag: string): HTMLElement => {
+    ensureGenericObject(globalThis)['createEl'] = (tag: string): HTMLElement => {
       const el = document.createElement(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
@@ -452,13 +454,13 @@ describe('loop', () => {
     assertNonNullable(capturedProgressEl);
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(3);
 
-    (globalThis as Record<string, unknown>)['createEl'] = origCreateEl;
+    ensureGenericObject(globalThis)['createEl'] = origCreateEl;
   });
 
   it('should still increment progress bar value even when processItem throws', async () => {
     const origCreateEl = globalThis.createEl;
     let capturedProgressEl: HTMLProgressElement | null = null;
-    (globalThis as Record<string, unknown>)['createEl'] = (tag: string): HTMLElement => {
+    ensureGenericObject(globalThis)['createEl'] = (tag: string): HTMLElement => {
       const el = document.createElement(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
@@ -482,7 +484,7 @@ describe('loop', () => {
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(2);
 
     vi.mocked(console.error).mockRestore();
-    (globalThis as Record<string, unknown>)['createEl'] = origCreateEl;
+    ensureGenericObject(globalThis)['createEl'] = origCreateEl;
   });
 
   it('should work with a single item', async () => {
