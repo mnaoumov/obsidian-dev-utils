@@ -6,6 +6,8 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericObject } from '../src/TypeGuards.ts';
+
 import { noop } from '../src/Function.ts';
 import {
   assignWithNonEnumerableProperties,
@@ -26,8 +28,6 @@ import {
   setNestedPropertyValue,
   toJson
 } from '../src/ObjectUtils.ts';
-import type { GenericObject } from '../src/TypeGuards.ts';
-
 import {
   assertNonNullable,
   ensureGenericObject
@@ -646,7 +646,7 @@ describe('ObjectUtils', () => {
   describe('assertNonNullable', () => {
     it('should not throw for a non-null, non-undefined value', () => {
       expect(() => {
-        assertNonNullable('hello');
+        assertNonNullable('hello' as string | undefined);
       }).not.toThrow();
     });
 

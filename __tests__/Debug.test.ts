@@ -255,7 +255,6 @@ describe('Debug', () => {
       vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('');
       const dbg = getDebugger('direct-log-disabled-ns');
-      assertNonNullable(dbg.log);
       dbg.log('direct call test');
       expect(vi.mocked(console.debug)).not.toHaveBeenCalled();
     });

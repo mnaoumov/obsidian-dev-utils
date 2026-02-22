@@ -12,6 +12,14 @@ import { noop } from './Function.ts';
 export type GenericObject = Record<string, unknown>;
 
 /**
+ * A type constraint that ensures `T` includes `null` or `undefined`.
+ *
+ * Resolves to `unknown` when `T` is nullable, and to `never` when `T` is already non-nullable.
+ * Uses `unknown` instead of `T` in the true branch to avoid a circular constraint.
+ */
+export type Nullable<T> = [T] extends [NonNullable<T>] ? never : unknown;
+
+/**
  * Asserts that a value is a generic object, narrowing its type in place.
  *
  * @param _obj - The value to assert.
@@ -23,12 +31,14 @@ export function assertGenericObject(_obj: object): asserts _obj is GenericObject
 /**
  * Asserts that a value is not `null` or `undefined`, narrowing its type in place.
  *
+ * Only callable when `T` includes `null` or `undefined`. Passing an already non-nullable type is a compile error.
+ *
  * @typeParam T - The type of the value.
  * @param value - The value to check.
  * @param errorOrMessage - Optional {@link Error} or error message string.
  * @throws If the value is `null` or `undefined`.
  */
-export function assertNonNullable<T>(value: T, errorOrMessage?: Error | string): asserts value is NonNullable<T> {
+export function assertNonNullable<T extends Nullable<T>>(value: T, errorOrMessage?: Error | string): asserts value is NonNullable<T> {
   if (value !== null && value !== undefined) {
     return;
   }
@@ -51,13 +61,15 @@ export function ensureGenericObject(obj: object): GenericObject {
 /**
  * Ensures that a value is not `null` or `undefined` and returns it with narrowed type.
  *
+ * Only callable when `T` includes `null` or `undefined`. Passing an already non-nullable type is a compile error.
+ *
  * @typeParam T - The type of the value.
  * @param value - The value to check.
  * @param errorOrMessage - Optional {@link Error} or error message string.
  * @returns The value with `null` and `undefined` excluded from its type.
  * @throws If the value is `null` or `undefined`.
  */
-export function ensureNonNullable<T>(value: T, errorOrMessage?: Error | string): NonNullable<T> {
+export function ensureNonNullable<T extends Nullable<T>>(value: T, errorOrMessage?: Error | string): NonNullable<T> {
   assertNonNullable(value, errorOrMessage);
   return value;
 }
