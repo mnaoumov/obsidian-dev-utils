@@ -8,6 +8,8 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
 import {
   invokeAsyncSafely,
   requestAnimationFrameAsync
@@ -21,9 +23,10 @@ import { noop } from '../../src/Function.ts';
 import { castTo } from '../../src/ObjectUtils.ts';
 import { loop } from '../../src/obsidian/Loop.ts';
 import { addPluginCssClasses } from '../../src/obsidian/Plugin/PluginContext.ts';
-import type { GenericObject } from '../../src/TypeGuards.ts';
-
-import { assertNonNullable, ensureGenericObject } from '../../src/TypeGuards.ts';
+import {
+  assertNonNullable,
+  ensureGenericObject
+} from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/AbortController.ts', () => ({
   abortSignalNever: vi.fn(() => new AbortController().signal)

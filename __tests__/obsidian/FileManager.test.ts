@@ -6,6 +6,8 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
 import { deepEqual } from '../../src/ObjectUtils.ts';
 import {
   addAlias,
@@ -21,8 +23,6 @@ import {
   setFrontmatter
 } from '../../src/obsidian/Frontmatter.ts';
 import { process } from '../../src/obsidian/Vault.ts';
-import type { GenericObject } from '../../src/TypeGuards.ts';
-
 import { ensureNonNullable } from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/ObjectUtils.ts', () => ({
