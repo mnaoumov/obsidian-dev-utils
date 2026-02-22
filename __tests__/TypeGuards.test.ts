@@ -31,7 +31,7 @@ describe('TypeGuards', () => {
   describe('assertNonNullable', () => {
     it('should not throw for a defined value', () => {
       expect(() => {
-        assertNonNullable('hello');
+        assertNonNullable('hello' as string | undefined);
       }).not.toThrow();
     });
 
@@ -72,7 +72,7 @@ describe('TypeGuards', () => {
 
   describe('ensureNonNullable', () => {
     it('should return the value when not null or undefined', () => {
-      expect(ensureNonNullable('hello')).toBe('hello');
+      expect(ensureNonNullable('hello' as string | undefined)).toBe('hello');
     });
 
     it('should throw for null', () => {

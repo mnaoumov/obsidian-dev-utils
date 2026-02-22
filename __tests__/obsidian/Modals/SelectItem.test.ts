@@ -75,7 +75,7 @@ describe('selectItem', () => {
       itemTextFunc: (item: string) => item.toUpperCase()
     });
 
-    const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string>;
+    const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string> | undefined;
     assertNonNullable(modal);
     modal.selectSuggestion({ item: 'b' } as FuzzyMatch<string>, castTo<MouseEvent>(new Event('click')));
 
@@ -101,7 +101,7 @@ describe('selectItem', () => {
       itemTextFunc: (item: string) => item
     });
 
-    const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string>;
+    const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string> | undefined;
     assertNonNullable(modal);
     expect(modal.getItems()).toEqual(['x', 'y', 'z']);
     expect(modal.getItemText('x')).toBe('x');
