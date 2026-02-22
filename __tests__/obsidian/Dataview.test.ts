@@ -11,6 +11,7 @@ import {
 } from 'vitest';
 
 import type { DataviewInlineApi } from '../../src/obsidian/Dataview.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
 
 import { noop } from '../../src/Function.ts';
 import { castTo } from '../../src/ObjectUtils.ts';
@@ -22,8 +23,6 @@ import {
   renderPaginatedList,
   renderPaginatedTable
 } from '../../src/obsidian/Dataview.ts';
-import type { GenericObject } from '../../src/TypeGuards.ts';
-
 import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/Async.ts', () => ({
@@ -114,7 +113,7 @@ function createMockDv(): DataviewInlineApi {
  * Polyfill Obsidian's prototype extensions on HTMLElement for jsdom.
  */
 function polyfillObsidianHTMLElement(): void {
-  const proto = HTMLElement.prototype as HTMLElement & GenericObject;
+  const proto = HTMLElement.prototype as GenericObject & HTMLElement;
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Polyfill guard for jsdom.
   if (!proto.empty) {
     proto.empty = function empty(this: HTMLElement): void {

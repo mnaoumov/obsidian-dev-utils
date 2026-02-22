@@ -7,13 +7,13 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericObject } from '../../src/TypeGuards.ts';
+
 import { castTo } from '../../src/ObjectUtils.ts';
 import {
   CalloutMode,
   wrapForCallout
 } from '../../src/obsidian/Callout.ts';
-import type { GenericObject } from '../../src/TypeGuards.ts';
-
 import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 describe('wrapForCallout', () => {

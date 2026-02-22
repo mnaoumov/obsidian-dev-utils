@@ -11,6 +11,7 @@ import {
 } from 'vitest';
 
 import type { RetryWithTimeoutNoticeOptions } from '../../src/obsidian/AsyncWithNotice.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
 
 import { createTFileInstance } from '../../__mocks__/obsidian-typings/implementations/createTFileInstance.ts';
 import { createTFolderInstance } from '../../__mocks__/obsidian-typings/implementations/createTFolderInstance.ts';
@@ -48,8 +49,6 @@ import {
   renameSafe,
   saveNote
 } from '../../src/obsidian/Vault.ts';
-import type { GenericObject } from '../../src/TypeGuards.ts';
-
 import {
   assertNonNullable,
   ensureGenericObject

@@ -187,7 +187,7 @@ describe('AsyncWithNotice', () => {
     it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is true', async () => {
       let capturedOnTimeout: ((ctx: TimeoutContext) => void) | null = null;
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeout = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeout = options.onTimeout as (ctx: TimeoutContext) => void;
       });
 
       await retryWithTimeoutNotice({
@@ -201,7 +201,7 @@ describe('AsyncWithNotice', () => {
     it('should pass onTimeoutWithoutNotice as onTimeout when shouldShowTimeoutNotice is false', async () => {
       let capturedOnTimeout: ((ctx: TimeoutContext) => void) | null = null;
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeout = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeout = options.onTimeout as (ctx: TimeoutContext) => void;
       });
 
       await retryWithTimeoutNotice({
@@ -217,7 +217,7 @@ describe('AsyncWithNotice', () => {
       let capturedOnTimeoutWithUndefined: ((ctx: TimeoutContext) => void) | null = null;
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeoutWithFalse = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutWithFalse = options.onTimeout as (ctx: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
         operationFn: async () => true,
@@ -225,7 +225,7 @@ describe('AsyncWithNotice', () => {
       });
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeoutWithUndefined = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutWithUndefined = options.onTimeout as (ctx: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
         operationFn: async () => true
@@ -240,7 +240,7 @@ describe('AsyncWithNotice', () => {
       let capturedOnTimeoutFalse: ((ctx: TimeoutContext) => void) | null = null;
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeoutTrue = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutTrue = options.onTimeout as (ctx: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
         operationFn: async () => true,
@@ -248,7 +248,7 @@ describe('AsyncWithNotice', () => {
       });
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeoutFalse = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutFalse = options.onTimeout as (ctx: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
         operationFn: async () => true,
@@ -338,7 +338,7 @@ describe('AsyncWithNotice', () => {
     it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is true', async () => {
       let capturedOnTimeout: ((ctx: TimeoutContext) => void) | null = null;
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeout = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeout = options.onTimeout as (ctx: TimeoutContext) => void;
         return undefined;
       });
 
@@ -354,7 +354,7 @@ describe('AsyncWithNotice', () => {
     it('should pass onTimeoutWithoutNotice as onTimeout when shouldShowTimeoutNotice is false', async () => {
       let capturedOnTimeout: ((ctx: TimeoutContext) => void) | null = null;
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeout = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeout = options.onTimeout as (ctx: TimeoutContext) => void;
         return undefined;
       });
 
@@ -372,7 +372,7 @@ describe('AsyncWithNotice', () => {
       let capturedOnTimeoutFalse: ((ctx: TimeoutContext) => void) | null = null;
 
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeoutTrue = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutTrue = options.onTimeout as (ctx: TimeoutContext) => void;
         return undefined;
       });
       await runWithTimeoutNotice({
@@ -382,7 +382,7 @@ describe('AsyncWithNotice', () => {
       });
 
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
-        capturedOnTimeoutFalse = options['onTimeout'] as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutFalse = options.onTimeout as (ctx: TimeoutContext) => void;
         return undefined;
       });
       await runWithTimeoutNotice({
@@ -399,7 +399,7 @@ describe('AsyncWithNotice', () => {
     function captureOnTimeoutNotice(): Promise<(ctx: TimeoutContext) => void> {
       return new Promise((resolve) => {
         vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
-          resolve(options['onTimeout'] as (ctx: TimeoutContext) => void);
+          resolve(options.onTimeout as (ctx: TimeoutContext) => void);
         });
         retryWithTimeoutNotice({
           operationFn: async () => true,
@@ -587,7 +587,7 @@ describe('AsyncWithNotice', () => {
     function captureOnTimeoutWithoutNotice(): Promise<(ctx: TimeoutContext) => void> {
       return new Promise((resolve) => {
         vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
-          resolve(options['onTimeout'] as (ctx: TimeoutContext) => void);
+          resolve(options.onTimeout as (ctx: TimeoutContext) => void);
         });
         retryWithTimeoutNotice({
           operationFn: async () => true,

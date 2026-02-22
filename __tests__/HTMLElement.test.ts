@@ -11,6 +11,8 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericObject } from '../src/TypeGuards.ts';
+
 import {
   appendCodeBlock,
   createDivAsync,
@@ -25,8 +27,6 @@ import {
   onAncestorScrollOrResize,
   toPx
 } from '../src/HTMLElement.ts';
-import type { GenericObject } from '../src/TypeGuards.ts';
-
 import {
   assertNonNullable,
   ensureGenericObject

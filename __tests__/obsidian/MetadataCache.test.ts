@@ -15,6 +15,7 @@ import {
 } from 'vitest';
 
 import type { RetryWithTimeoutNoticeOptions } from '../../src/obsidian/AsyncWithNotice.ts';
+import type { GenericObject } from '../../src/TypeGuards.ts';
 
 import { castTo } from '../../src/ObjectUtils.ts';
 import { getObsidianDevUtilsState } from '../../src/obsidian/App.ts';
@@ -28,8 +29,6 @@ import {
   readSafe,
   saveNote
 } from '../../src/obsidian/Vault.ts';
-import type { GenericObject } from '../../src/TypeGuards.ts';
-
 import {
   assertNonNullable,
   ensureGenericObject
@@ -77,9 +76,7 @@ vi.mock('../../src/obsidian/FileSystem.ts', () => ({
   }),
   getFolder: vi.fn((_app: unknown, path: string) => ({ children: [], deleted: false, path })),
   getPath: vi.fn((_app: unknown, pathOrFile: unknown) => typeof pathOrFile === 'string' ? pathOrFile : (pathOrFile as { path: string }).path),
-  isFile: vi.fn((file: unknown) =>
-    file !== null && typeof file === 'object' && 'name' in (file as GenericObject) && !('children' in (file as GenericObject))
-  )
+  isFile: vi.fn((file: unknown) => file !== null && typeof file === 'object' && 'name' in (file as GenericObject) && !('children' in (file as GenericObject)))
 }));
 
 vi.mock('../../src/obsidian/FrontmatterLinkCacheWithOffsets.ts', () => ({
