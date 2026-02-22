@@ -37,32 +37,32 @@ export interface RenderCalloutOptions {
   /**
    * An abort signal.
    */
-  abortSignal?: AbortSignal;
+  readonly abortSignal?: AbortSignal;
 
   /**
    * An optional provider for the content, which can be either a string or a Node.
    */
-  contentProvider?: ValueProvider<MaybeReturn<Node | string>>;
+  readonly contentProvider?: ValueProvider<MaybeReturn<Node | string>>;
 
   /**
    * A {@link DataviewInlineApi} instance.
    */
-  dv: DataviewInlineApi;
+  readonly dv: DataviewInlineApi;
 
   /**
    * A header text of the callout, default is an empty string.
    */
-  header?: string;
+  readonly header?: string;
 
   /**
    * A callout mode, default is `CalloutMode.FoldableCollapsed`.
    */
-  mode?: CalloutMode;
+  readonly mode?: CalloutMode;
 
   /**
    * A type of the callout, default is `"NOTE"`.
    */
-  type?: string;
+  readonly type?: string;
 }
 
 /**

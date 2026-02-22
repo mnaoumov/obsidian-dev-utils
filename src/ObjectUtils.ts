@@ -58,61 +58,61 @@ export interface ToJsonOptions {
   /**
    * Specifies how functions should be handled in the JSON output (default: `exclude`).
    */
-  functionHandlingMode: FunctionHandlingMode;
+  readonly functionHandlingMode: FunctionHandlingMode;
 
   /**
    * Specifies the maximum depth of nested objects to include in the JSON output.
    * Use `-1` for no limit.
    * Defaults to `-1`.
    */
-  maxDepth: number;
+  readonly maxDepth: number;
 
   /**
    * Specifies whether to catch errors in `toJSON()` and replace them with a placeholder.
    * Defaults to `false`.
    */
-  shouldCatchToJSONErrors: boolean;
+  readonly shouldCatchToJSONErrors: boolean;
 
   /**
    * Specifies whether to handle circular references in the JSON output.
    * Defaults to `false`.
    */
-  shouldHandleCircularReferences: boolean;
+  readonly shouldHandleCircularReferences: boolean;
 
   /**
    * Specifies whether to handle errors in the JSON output.
    * Defaults to `false`.
    */
-  shouldHandleErrors: boolean;
+  readonly shouldHandleErrors: boolean;
 
   /**
    * Specifies whether to handle undefined values in the JSON output.
    * Defaults to `false`.
    */
-  shouldHandleUndefined: boolean;
+  readonly shouldHandleUndefined: boolean;
 
   /**
    * Specifies whether to sort the keys of the JSON output.
    * Defaults to `false`.
    */
-  shouldSortKeys: boolean;
+  readonly shouldSortKeys: boolean;
 
   /**
    * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
    */
-  space: number | string;
+  readonly space: number | string;
 
   /**
    * Specifies the substitutions to use in the JSON output.
    */
-  tokenSubstitutions: Partial<TokenSubstitutions>;
+  readonly tokenSubstitutions: Partial<TokenSubstitutions>;
 }
 
 interface ApplySubstitutionsOptions {
-  functionTexts: string[];
-  index: number;
-  key: TokenSubstitutionKey;
-  substitutions: TokenSubstitutions;
+  readonly functionTexts: readonly string[];
+  readonly index: number;
+  readonly key: TokenSubstitutionKey;
+  readonly substitutions: TokenSubstitutions;
 }
 
 interface EqualityComparerEntry<T> {

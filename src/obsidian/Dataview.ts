@@ -155,22 +155,22 @@ export interface RenderIframeOptions {
   /**
    * A {@link DataviewInlineApi} instance.
    */
-  dv: DataviewInlineApi;
+  readonly dv: DataviewInlineApi;
 
   /**
    * A height of the iframe.
    */
-  height?: string;
+  readonly height?: string;
 
   /**
    * A relative path to the resource to be displayed in the iframe.
    */
-  relativePathOrFile: PathOrFile;
+  readonly relativePathOrFile: PathOrFile;
 
   /**
    * A width of the iframe.
    */
-  width?: string;
+  readonly width?: string;
 }
 
 /**
@@ -180,17 +180,17 @@ export interface RenderPaginatedListOptions<T> {
   /**
    * A {@link DataviewInlineApi} instance.
    */
-  dv: DataviewInlineApi;
+  readonly dv: DataviewInlineApi;
 
   /**
    * Options for items per page. Defaults to `[10, 20, 50, 100]`.
    */
-  itemsPerPageOptions?: number[];
+  readonly itemsPerPageOptions?: number[];
 
   /**
    * A list of items to paginate.
    */
-  rows: ArrayOrDataArray<T>;
+  readonly rows: ArrayOrDataArray<T>;
 }
 
 /**
@@ -200,12 +200,12 @@ export interface RenderPaginatedOptions<T> {
   /**
    * A {@link DataviewInlineApi} instance.
    */
-  dv: DataviewInlineApi;
+  readonly dv: DataviewInlineApi;
 
   /**
    * Options for items per page.
    */
-  itemsPerPageOptions?: number[];
+  readonly itemsPerPageOptions?: number[];
 
   /**
    * Display the paginated content.
@@ -213,12 +213,12 @@ export interface RenderPaginatedOptions<T> {
    * @param rowsForOnePage - The rows to render.
    * @returns A {@link Promise} that resolves when the content is rendered.
    */
-  renderer(rowsForOnePage: ArrayOrDataArray<T>): Promisable<void>;
+  readonly renderer: (rowsForOnePage: ArrayOrDataArray<T>) => Promisable<void>;
 
   /**
    * Rows to paginate.
    */
-  rows: ArrayOrDataArray<T>;
+  readonly rows: ArrayOrDataArray<T>;
 }
 
 /**
@@ -228,22 +228,22 @@ export interface RenderPaginatedTableOptions<T> {
   /**
    * A {@link DataviewInlineApi} instance.
    */
-  dv: DataviewInlineApi;
+  readonly dv: DataviewInlineApi;
 
   /**
    * A headers of the table.
    */
-  headers: string[];
+  readonly headers: string[];
 
   /**
    * Options for items per page. Defaults to `[10, 20, 50, 100]`.
    */
-  itemsPerPageOptions?: number[];
+  readonly itemsPerPageOptions?: number[];
 
   /**
    * Rows of the table to paginate.
    */
-  rows: ArrayOrDataArray<T>;
+  readonly rows: ArrayOrDataArray<T>;
 }
 
 /**

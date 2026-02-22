@@ -28,37 +28,37 @@ export interface AbstractFileCommandBaseOptions<TPlugin extends Plugin> extends 
   /**
    * The item name to use in the file menu.
    */
-  fileMenuItemName?: string | undefined;
+  readonly fileMenuItemName?: string | undefined;
 
   /**
    * The section to use in the file menu.
    */
-  fileMenuSection?: string | undefined;
+  readonly fileMenuSection?: string | undefined;
 
   /**
    * The icon to use in the file menu submenu.
    */
-  fileMenuSubmenuIcon?: IconName | undefined;
+  readonly fileMenuSubmenuIcon?: IconName | undefined;
 
   /**
    * The item name to use in the files menu.
    */
-  filesMenuItemName?: string | undefined;
+  readonly filesMenuItemName?: string | undefined;
 
   /**
    * The section to use in the files menu.
    */
-  filesMenuSection?: string | undefined;
+  readonly filesMenuSection?: string | undefined;
 
   /**
    * The icon to use in the files menu submenu.
    */
-  filesMenuSubmenuIcon?: IconName | undefined;
+  readonly filesMenuSubmenuIcon?: IconName | undefined;
 
   /**
    * Whether to add the command to the submenu.
    */
-  shouldAddCommandToSubmenu?: boolean | undefined;
+  readonly shouldAddCommandToSubmenu?: boolean | undefined;
 }
 
 /**

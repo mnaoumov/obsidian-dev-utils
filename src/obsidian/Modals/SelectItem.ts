@@ -26,17 +26,17 @@ export interface SelectItemOptions<T> {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A CSS class to apply to the modal.
    */
-  cssClass?: string;
+  readonly cssClass?: string;
 
   /**
    * A list of items to choose from.
    */
-  items: T[];
+  readonly items: T[];
 
   /**
    * Get the display text for each item
@@ -44,12 +44,12 @@ export interface SelectItemOptions<T> {
    * @param item - The item to get the display text for.
    * @returns The display text for the item.
    */
-  itemTextFunc(item: T): string;
+  readonly itemTextFunc: (item: T) => string;
 
   /**
    * A placeholder text for the input field.
    */
-  placeholder?: string;
+  readonly placeholder?: string;
 }
 
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {

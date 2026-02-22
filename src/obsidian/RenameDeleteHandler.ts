@@ -174,25 +174,25 @@ interface InterruptedRename {
 }
 
 interface RenameHandlerOptions {
-  abortSignal: AbortSignal;
-  app: App;
-  handledRenames: HandledRenames;
-  interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>;
-  interruptedRenamesMap: Map<string, InterruptedRename[]>;
-  newPath: string;
-  oldCache: CachedMetadata | null;
-  oldPath: string;
-  oldPathBacklinksMap: Map<string, Reference[]>;
-  settingsManager: SettingsManager;
+  readonly abortSignal: AbortSignal;
+  readonly app: App;
+  readonly handledRenames: HandledRenames;
+  readonly interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>;
+  readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
+  readonly newPath: string;
+  readonly oldCache: CachedMetadata | null;
+  readonly oldPath: string;
+  readonly oldPathBacklinksMap: Map<string, Reference[]>;
+  readonly settingsManager: SettingsManager;
 }
 
 interface RenameMapOptions {
-  abortSignal: AbortSignal;
-  app: App;
-  newPath: string;
-  oldCache: CachedMetadata | null;
-  oldPath: string;
-  settingsManager: SettingsManager;
+  readonly abortSignal: AbortSignal;
+  readonly app: App;
+  readonly newPath: string;
+  readonly oldCache: CachedMetadata | null;
+  readonly oldPath: string;
+  readonly settingsManager: SettingsManager;
 }
 
 type RunAsyncLinkUpdateFn = { renameDeleteHandlerPatched?: boolean } & FileManager['runAsyncLinkUpdate'];

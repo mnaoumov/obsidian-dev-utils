@@ -19,32 +19,32 @@ export interface ExecOption {
   /**
    * A current working folder for the command execution.
    */
-  cwd?: string;
+  readonly cwd?: string;
 
   /**
    * If true, suppresses the output of the command.
    */
-  isQuiet?: boolean;
+  readonly isQuiet?: boolean;
 
   /**
    * If true, throws an error if the command fails.
    */
-  shouldFailIfCalledFromOutsideRoot?: boolean;
+  readonly shouldFailIfCalledFromOutsideRoot?: boolean;
 
   /**
    * If true, ignores the exit code of the command.
    */
-  shouldIgnoreExitCode?: boolean;
+  readonly shouldIgnoreExitCode?: boolean;
 
   /**
    * If false, only returns the output of the command.
    */
-  shouldIncludeDetails?: boolean;
+  readonly shouldIncludeDetails?: boolean;
 
   /**
    * An input to be passed to the command.
    */
-  stdin?: string;
+  readonly stdin?: string;
 }
 
 /**

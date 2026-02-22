@@ -9,14 +9,14 @@ import { Platform } from 'obsidian';
 import { ensureLoaded } from '../HTMLElement.ts';
 
 interface PrintToPdfOptions {
-  filepath: string;
-  includeName: boolean;
-  landscape: boolean;
-  marginsType: number;
-  open: boolean;
-  pageSize: string;
-  scale: number;
-  scaleFactor: number;
+  readonly filepath: string;
+  readonly includeName: boolean;
+  readonly landscape: boolean;
+  readonly marginsType: number;
+  readonly open: boolean;
+  readonly pageSize: string;
+  readonly scale: number;
+  readonly scaleFactor: number;
 }
 
 const ELECTRON_PRINT_TO_PDF_CHANNEL = 'print-to-pdf';

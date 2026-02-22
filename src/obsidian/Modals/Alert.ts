@@ -26,27 +26,27 @@ export interface AlertOptions {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A CSS class to apply to the modal.
    */
-  cssClass?: string;
+  readonly cssClass?: string;
 
   /**
    * A message to display in the modal.
    */
-  message: DocumentFragment | string;
+  readonly message: DocumentFragment | string;
 
   /**
    * A text for the "OK" button.
    */
-  okButtonText?: string;
+  readonly okButtonText?: string;
 
   /**
    * A title of the modal.
    */
-  title?: DocumentFragment | string;
+  readonly title?: DocumentFragment | string;
 }
 
 class AlertModal extends ModalBase<void, AlertOptions> {

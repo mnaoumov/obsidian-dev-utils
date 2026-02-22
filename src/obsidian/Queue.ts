@@ -31,37 +31,37 @@ export interface AddToQueueAndWaitOptions {
   /**
    * Optional abort signal.
    */
-  abortSignal?: AbortSignal;
+  readonly abortSignal?: AbortSignal;
 
   /**
    * The Obsidian application instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * The function to add.
    */
-  operationFn: (abortSignal: AbortSignal) => Promisable<void>;
+  readonly operationFn: (abortSignal: AbortSignal) => Promisable<void>;
 
   /**
    * Optional name of the operation.
    */
-  operationName?: string;
+  readonly operationName?: string;
 
   /**
    * Whether to show a timeout notice. Default is `true`.
    */
-  shouldShowTimeoutNotice?: boolean;
+  readonly shouldShowTimeoutNotice?: boolean;
 
   /**
    * Optional stack trace.
    */
-  stackTrace?: string;
+  readonly stackTrace?: string;
 
   /**
    * The timeout in milliseconds.
    */
-  timeoutInMilliseconds?: number;
+  readonly timeoutInMilliseconds?: number;
 }
 
 /**
@@ -71,37 +71,37 @@ export interface AddToQueueOptions {
   /**
    * Optional abort signal.
    */
-  abortSignal?: AbortSignal;
+  readonly abortSignal?: AbortSignal;
 
   /**
    * The Obsidian application instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * The function to add.
    */
-  operationFn: (abortSignal: AbortSignal) => Promisable<void>;
+  readonly operationFn: (abortSignal: AbortSignal) => Promisable<void>;
 
   /**
    * Optional name of the operation.
    */
-  operationName?: string;
+  readonly operationName?: string;
 
   /**
    * Whether to show a timeout notice. Default is `true`.
    */
-  shouldShowTimeoutNotice?: boolean;
+  readonly shouldShowTimeoutNotice?: boolean;
 
   /**
    * Optional stack trace.
    */
-  stackTrace?: string;
+  readonly stackTrace?: string;
 
   /**
    * The timeout in milliseconds.
    */
-  timeoutInMilliseconds?: number;
+  readonly timeoutInMilliseconds?: number;
 }
 
 interface Queue {

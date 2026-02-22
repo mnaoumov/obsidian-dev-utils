@@ -40,22 +40,22 @@ export interface GetCodeBlockMarkdownInfoOptions {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A {@link MarkdownPostProcessorContext} object.
    */
-  ctx: MarkdownPostProcessorContext;
+  readonly ctx: MarkdownPostProcessorContext;
 
   /**
    * A {@link HTMLElement} representing the code block.
    */
-  el: HTMLElement;
+  readonly el: HTMLElement;
 
   /**
    * A source of the code block.
    */
-  source: string;
+  readonly source: string;
 }
 
 /**
@@ -65,17 +65,17 @@ export interface InsertCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions 
   /**
    * A number of lines to offset the insertion by. Default is `0`.
    */
-  lineOffset?: number;
+  readonly lineOffset?: number;
 
   /**
    * Whether to preserve the line prefix of the code block. Default is `false`.
    */
-  shouldPreserveLinePrefix?: boolean;
+  readonly shouldPreserveLinePrefix?: boolean;
 
   /**
    * A text to insert after the code block.
    */
-  text: string;
+  readonly text: string;
 }
 
 /**
@@ -85,7 +85,7 @@ export interface RemoveCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions 
   /**
    * Whether to keep the gap after removing the code block. Default is `false`.
    */
-  shouldKeepGap?: boolean;
+  readonly shouldKeepGap?: boolean;
 }
 
 /**
@@ -95,32 +95,32 @@ export interface ReplaceCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions
   /**
    * An abort signal to control the execution of the function.
    */
-  abortSignal?: AbortSignal;
+  readonly abortSignal?: AbortSignal;
 
   /**
    * Provides a new code block.
    */
-  codeBlockProvider: ValueProvider<string, [string]>;
+  readonly codeBlockProvider: ValueProvider<string, [string]>;
 
   /**
    * Whether to keep the gap when the new code block is empty. Default is `false`.
    */
-  shouldKeepGapWhenEmpty?: boolean;
+  readonly shouldKeepGapWhenEmpty?: boolean;
 
   /**
    * Whether to preserve the line prefix of the code block. Default is `false`.
    */
-  shouldPreserveLinePrefix?: boolean;
+  readonly shouldPreserveLinePrefix?: boolean;
 }
 
 interface CreateMarkdownInfoFromMatchOptions {
-  approximateSectionInfo: MarkdownSectionInformation;
-  linesBeforeSectionCount: number;
-  match: RegExpMatchArray;
-  noteContent: string;
-  potentialCodeBlockText: string;
-  sourceLinesCount: number;
-  textLineOffsets: Map<number, number>;
+  readonly approximateSectionInfo: MarkdownSectionInformation;
+  readonly linesBeforeSectionCount: number;
+  readonly match: RegExpMatchArray;
+  readonly noteContent: string;
+  readonly potentialCodeBlockText: string;
+  readonly sourceLinesCount: number;
+  readonly textLineOffsets: ReadonlyMap<number, number>;
 }
 
 /**

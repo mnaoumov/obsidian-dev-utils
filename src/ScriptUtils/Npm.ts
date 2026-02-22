@@ -31,12 +31,12 @@ export interface EditPackageJsonOptions {
   /**
    * A current working folder where `package.json` is located.
    */
-  cwd?: string;
+  readonly cwd?: string;
 
   /**
    * If true, skips editing if the file does not exist.
    */
-  shouldSkipIfMissing?: boolean;
+  readonly shouldSkipIfMissing?: boolean;
 }
 
 /**

@@ -25,17 +25,17 @@ export type BufferResultOptions = 'buffer' | {
   /**
    * Should be set to "buffer" to return buffers.
    */
-  encoding: 'buffer';
+  readonly encoding: 'buffer';
 
   /**
    * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
    */
-  recursive?: boolean;
+  readonly recursive?: boolean;
 
   /**
    * Should be set to `false` to return buffers.
    */
-  withFileTypes?: false;
+  readonly withFileTypes?: false;
 };
 
 /**
@@ -45,12 +45,12 @@ export type DirentResultOptions = {
   /**
    * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
    */
-  recursive?: boolean;
+  readonly recursive?: boolean;
 
   /**
    * Should be set to `true` to return Dirent objects.
    */
-  withFileTypes: true;
+  readonly withFileTypes: true;
 } & ObjectEncodingOptions;
 
 /**
@@ -61,12 +61,12 @@ export type StringResultOptions =
     /**
      * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
      */
-    recursive?: boolean;
+    readonly recursive?: boolean;
 
     /**
      * Should be set to `false` to return strings.
      */
-    withFileTypes?: false;
+    readonly withFileTypes?: false;
   } & ObjectEncodingOptions
   | undefined;
 
@@ -77,12 +77,12 @@ interface CommonOptions {
   /**
    * Encoding to use when returning strings.
    */
-  encoding?: 'buffer' | NodeJS.BufferEncoding;
+  readonly encoding?: 'buffer' | NodeJS.BufferEncoding;
 
   /**
    * Set `true` to return Dirent objects or `false` to return strings or buffers.
    */
-  withFileTypes?: boolean;
+  readonly withFileTypes?: boolean;
 }
 
 /**

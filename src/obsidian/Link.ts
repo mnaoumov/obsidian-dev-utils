@@ -179,32 +179,32 @@ export interface ConvertLinkOptions {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A reference for the link.
    */
-  link: Reference;
+  readonly link: Reference;
 
   /**
    * A style of the link.
    */
-  linkStyle?: LinkStyle;
+  readonly linkStyle?: LinkStyle;
 
   /**
    * A source file containing the link.
    */
-  newSourcePathOrFile: PathOrFile;
+  readonly newSourcePathOrFile: PathOrFile;
 
   /**
    * An old path of the link.
    */
-  oldSourcePathOrFile?: PathOrFile;
+  readonly oldSourcePathOrFile?: PathOrFile;
 
   /**
    * Whether to update file name alias. Defaults to `true`.
    */
-  shouldUpdateFileNameAlias?: boolean;
+  readonly shouldUpdateFileNameAlias?: boolean;
 }
 
 /**
@@ -217,12 +217,12 @@ export interface GenerateMarkdownLinkOptions {
    * @example `[[alias|link]]`
    * @example `[alias](link.md)`
    */
-  alias?: string;
+  readonly alias?: string;
 
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * Indicates if the link should be embedded. If not provided, it will be inferred based on the file type.
@@ -231,7 +231,7 @@ export interface GenerateMarkdownLinkOptions {
    *
    * If `false`: `[[target]]`.
    */
-  isEmbed?: boolean;
+  readonly isEmbed?: boolean;
 
   /**
    * Whether to allow an empty alias for embeds. Defaults to `true`.
@@ -242,14 +242,14 @@ export interface GenerateMarkdownLinkOptions {
    *
    * If `false`: `![foo](foo.png)`.
    */
-  isEmptyEmbedAliasAllowed?: boolean;
+  readonly isEmptyEmbedAliasAllowed?: boolean;
 
   /**
    * Whether to allow non-existing files. Defaults to `false`.
    *
    * If `false` and {@link targetPathOrFile} is a non-existing file, an error will be thrown.
    */
-  isNonExistingFileAllowed?: boolean;
+  readonly isNonExistingFileAllowed?: boolean;
 
   /**
    * Whether to allow a single subpath. Defaults to `true`.
@@ -260,17 +260,17 @@ export interface GenerateMarkdownLinkOptions {
    *
    * If `false`: `[[source#subpath]]`
    */
-  isSingleSubpathAllowed?: boolean;
+  readonly isSingleSubpathAllowed?: boolean;
 
   /**
    * A style of the link path.
    */
-  linkPathStyle?: LinkPathStyle;
+  readonly linkPathStyle?: LinkPathStyle;
 
   /**
    * A style of the link.
    */
-  linkStyle?: LinkStyle;
+  readonly linkStyle?: LinkStyle;
 
   /**
    * An original link text.
@@ -285,7 +285,7 @@ export interface GenerateMarkdownLinkOptions {
    *
    * These inferred values will be overridden by corresponding settings if specified.
    */
-  originalLink?: string;
+  readonly originalLink?: string;
 
   /**
    * Whether to escape the alias. Defaults to `false`.
@@ -296,7 +296,7 @@ export interface GenerateMarkdownLinkOptions {
    *
    * If `false`: `[**alias**](link.md)`.
    */
-  shouldEscapeAlias?: boolean;
+  readonly shouldEscapeAlias?: boolean;
 
   /**
    * Whether to include the attachment extension in the embed alias. Defaults to `false`.
@@ -307,7 +307,7 @@ export interface GenerateMarkdownLinkOptions {
    *
    * If `false`: `[foo](foo.png)`.
    */
-  shouldIncludeAttachmentExtensionToEmbedAlias?: boolean;
+  readonly shouldIncludeAttachmentExtensionToEmbedAlias?: boolean;
 
   /**
    * Indicates if the link should use angle brackets. Defaults to `false`.
@@ -318,7 +318,7 @@ export interface GenerateMarkdownLinkOptions {
    *
    * If `false`: `[alias](path%20with%20spaces.md)`.
    */
-  shouldUseAngleBrackets?: boolean;
+  readonly shouldUseAngleBrackets?: boolean;
 
   /**
    * Indicates if the link should use a leading dot. Defaults to `false`.
@@ -329,7 +329,7 @@ export interface GenerateMarkdownLinkOptions {
    *
    * If `false`: `[[relative/path/to/target]]`
    */
-  shouldUseLeadingDotForRelativePaths?: boolean;
+  readonly shouldUseLeadingDotForRelativePaths?: boolean;
 
   /**
    * Indicates if the link should use a leading slash. Defaults to `false`.
@@ -340,12 +340,12 @@ export interface GenerateMarkdownLinkOptions {
    *
    * If `false`: `[[absolute/path/to/target]]`
    */
-  shouldUseLeadingSlashForAbsolutePaths?: boolean;
+  readonly shouldUseLeadingSlashForAbsolutePaths?: boolean;
 
   /**
    * A source path of the link.
    */
-  sourcePathOrFile: PathOrFile;
+  readonly sourcePathOrFile: PathOrFile;
 
   /**
    * A subpath of the link.
@@ -356,12 +356,12 @@ export interface GenerateMarkdownLinkOptions {
    * @example `[[link-with-subpath#subpath]]`
    * @example `[[link-with-subpath#subpath#nested-subpath]]`
    */
-  subpath?: string;
+  readonly subpath?: string;
 
   /**
    * A target path or file.
    */
-  targetPathOrFile: PathOrFile;
+  readonly targetPathOrFile: PathOrFile;
 }
 
 /**
@@ -371,37 +371,37 @@ export interface GenerateRawMarkdownLinkOptions {
   /**
    * An alias of the link. Defaults to `undefined`.
    */
-  alias?: string | undefined;
+  readonly alias?: string | undefined;
 
   /**
    * Whether the link should be an embed link. Defaults to `false`.
    */
-  isEmbed?: boolean;
+  readonly isEmbed?: boolean;
 
   /**
    * Whether the link should be a wikilink.
    */
-  isWikilink: boolean;
+  readonly isWikilink: boolean;
 
   /**
    * Whether to escape the alias. Applicable only if {@link isWikilink} is `false`. Defaults to `false`.
    */
-  shouldEscapeAlias?: boolean;
+  readonly shouldEscapeAlias?: boolean;
 
   /**
    * Whether to use angle brackets. Applicable only if {@link isWikilink} is `false`. Defaults to `false`.
    */
-  shouldUseAngleBrackets?: boolean;
+  readonly shouldUseAngleBrackets?: boolean;
 
   /**
    * A title of the link.
    */
-  title?: string;
+  readonly title?: string;
 
   /**
    * An URL of the link.
    */
-  url: string;
+  readonly url: string;
 }
 
 /**
@@ -530,37 +530,37 @@ export interface ShouldResetAliasOptions {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A display text of the link.
    */
-  displayText: string | undefined;
+  readonly displayText: string | undefined;
 
   /**
    * Indicates if the link is a wikilink.
    */
-  isWikilink?: boolean;
+  readonly isWikilink?: boolean;
 
   /**
    * A source path of the link.
    */
-  newSourcePathOrFile: PathOrFile;
+  readonly newSourcePathOrFile: PathOrFile;
 
   /**
    * An old source file containing the link.
    */
-  oldSourcePathOrFile?: PathOrFile;
+  readonly oldSourcePathOrFile?: PathOrFile;
 
   /**
    * An old target path of the link.
    */
-  oldTargetPath: PathOrFile;
+  readonly oldTargetPath: PathOrFile;
 
   /**
    * A target path or file.
    */
-  targetPathOrFile: PathOrFile;
+  readonly targetPathOrFile: PathOrFile;
 }
 
 /**
@@ -585,42 +585,42 @@ export interface UpdateLinkOptions {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A reference for the link.
    */
-  link: Reference;
+  readonly link: Reference;
 
   /**
    * Whether to force markdown links.
    */
-  linkStyle?: LinkStyle;
+  readonly linkStyle?: LinkStyle;
 
   /**
    * A source file containing the link.
    */
-  newSourcePathOrFile: PathOrFile;
+  readonly newSourcePathOrFile: PathOrFile;
 
   /**
    * A file associated with the link.
    */
-  newTargetPathOrFile: PathOrFile;
+  readonly newTargetPathOrFile: PathOrFile;
 
   /**
    * An old source file containing the link.
    */
-  oldSourcePathOrFile?: PathOrFile;
+  readonly oldSourcePathOrFile?: PathOrFile;
 
   /**
    * An old path of the file.
    */
-  oldTargetPathOrFile?: PathOrFile;
+  readonly oldTargetPathOrFile?: PathOrFile;
 
   /**
    * Whether to update file name alias. Defaults to `true`.
    */
-  shouldUpdateFileNameAlias?: boolean;
+  readonly shouldUpdateFileNameAlias?: boolean;
 }
 
 /**
@@ -630,42 +630,42 @@ export interface UpdateLinksInFileOptions extends ProcessOptions {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A style of the link.
    */
-  linkStyle?: LinkStyle;
+  readonly linkStyle?: LinkStyle;
 
   /**
    * A file to update the links in.
    */
-  newSourcePathOrFile: PathOrFile;
+  readonly newSourcePathOrFile: PathOrFile;
 
   /**
    * An old path of the file.
    */
-  oldSourcePathOrFile?: PathOrFile;
+  readonly oldSourcePathOrFile?: PathOrFile;
 
   /**
    * Whether to update only embedded links.
    */
-  shouldUpdateEmbedOnlyLinks?: boolean;
+  readonly shouldUpdateEmbedOnlyLinks?: boolean;
 
   /**
    * Whether to update file name alias. Defaults to `true`.
    */
-  shouldUpdateFileNameAlias?: boolean;
+  readonly shouldUpdateFileNameAlias?: boolean;
 }
 
 interface LinkConfig {
-  isEmbed: boolean;
-  isSingleSubpathAllowed: boolean;
-  isWikilink: boolean;
-  linkPathStyle: FinalLinkPathStyle;
-  shouldUseAngleBrackets: boolean;
-  shouldUseLeadingDotForRelativePaths: boolean;
-  shouldUseLeadingSlashForAbsolutePaths: boolean;
+  readonly isEmbed: boolean;
+  readonly isSingleSubpathAllowed: boolean;
+  readonly isWikilink: boolean;
+  readonly linkPathStyle: FinalLinkPathStyle;
+  readonly shouldUseAngleBrackets: boolean;
+  readonly shouldUseLeadingDotForRelativePaths: boolean;
+  readonly shouldUseLeadingSlashForAbsolutePaths: boolean;
 }
 
 interface TablePosition {
@@ -680,37 +680,37 @@ interface UpdateLinksInContentOptions {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A content to update the links in.
    */
-  content: string;
+  readonly content: string;
 
   /**
    * A style of the link.
    */
-  linkStyle?: LinkStyle;
+  readonly linkStyle?: LinkStyle;
 
   /**
    * A new source path or file.
    */
-  newSourcePathOrFile: PathOrFile;
+  readonly newSourcePathOrFile: PathOrFile;
 
   /**
    * An old source path or file.
    */
-  oldSourcePathOrFile?: PathOrFile;
+  readonly oldSourcePathOrFile?: PathOrFile;
 
   /**
    * Whether to update only embedded links.
    */
-  shouldUpdateEmbedOnlyLinks?: boolean;
+  readonly shouldUpdateEmbedOnlyLinks?: boolean;
 
   /**
    * Whether to update file name alias.
    */
-  shouldUpdateFileNameAlias?: boolean;
+  readonly shouldUpdateFileNameAlias?: boolean;
 }
 
 interface WikiLinkNode extends Node {
@@ -1499,18 +1499,19 @@ function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options:
   const { app } = options;
 
   let alias = options.alias ?? '';
+  let shouldEscapeAlias = options.shouldEscapeAlias ?? false;
   if (!alias && (isMarkdownFile(app, targetFile) || !options.isEmptyEmbedAliasAllowed)) {
     alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile)
       ? targetFile.basename
       : targetFile.name;
-    options.shouldEscapeAlias = true;
+    shouldEscapeAlias = true;
   }
 
   return generateRawMarkdownLink({
     alias,
     isEmbed: config.isEmbed,
     isWikilink: false,
-    shouldEscapeAlias: options.shouldEscapeAlias ?? false,
+    shouldEscapeAlias,
     shouldUseAngleBrackets: config.shouldUseAngleBrackets,
     url: linkText
   });
