@@ -63,57 +63,57 @@ export interface GetAvailablePathForAttachmentsExtendedFnOptions {
   /**
    * A base name of the attachment.
    */
-  attachmentFileBaseName: string;
+  readonly attachmentFileBaseName: string;
 
   /**
    * A content of the attachment file.
    */
-  attachmentFileContent?: ArrayBuffer | undefined;
+  readonly attachmentFileContent?: ArrayBuffer | undefined;
 
   /**
    * An extension of the attachment.
    */
-  attachmentFileExtension: string;
+  readonly attachmentFileExtension: string;
 
   /**
    * A stats of the attachment file.
    */
-  attachmentFileStat?: FileStats | undefined;
+  readonly attachmentFileStat?: FileStats | undefined;
 
   /**
    * A context.
    */
-  context: AttachmentPathContext;
+  readonly context: AttachmentPathContext;
 
   /**
    * A path or file of the note.
    */
-  notePathOrFile: null | PathOrFile;
+  readonly notePathOrFile: null | PathOrFile;
 
   /**
    * A path or file of the old attachment.
    */
-  oldAttachmentPathOrFile: PathOrFile;
+  readonly oldAttachmentPathOrFile: PathOrFile;
 
   /**
    * A path or file of the old note.
    */
-  oldNotePathOrFile?: PathOrFile | undefined;
+  readonly oldNotePathOrFile?: PathOrFile | undefined;
 
   /**
    * Should the duplicate check be skipped.
    */
-  shouldSkipDuplicateCheck?: boolean;
+  readonly shouldSkipDuplicateCheck?: boolean;
 
   /**
    * Should the generated attachment file name be skipped.
    */
-  shouldSkipGeneratedAttachmentFileName?: boolean;
+  readonly shouldSkipGeneratedAttachmentFileName?: boolean;
 
   /**
    * Should missing attachment folder creation be skipped.
    */
-  shouldSkipMissingAttachmentFolderCreation: boolean | undefined;
+  readonly shouldSkipMissingAttachmentFolderCreation: boolean | undefined;
 }
 
 /**
@@ -143,32 +143,32 @@ export interface GetAttachmentFilePathOptions {
   /**
    * An Obsidian application instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A context.
    */
-  context: AttachmentPathContext;
+  readonly context: AttachmentPathContext;
 
   /**
    * A path of the note.
    */
-  notePathOrFile: PathOrFile;
+  readonly notePathOrFile: PathOrFile;
 
   /**
    * A path of the attachment.
    */
-  oldAttachmentPathOrFile: PathOrFile;
+  readonly oldAttachmentPathOrFile: PathOrFile;
 
   /**
    * A path of the old note.
    */
-  oldNotePathOrFile?: PathOrFile | undefined;
+  readonly oldNotePathOrFile?: PathOrFile | undefined;
 
   /**
    * Should the duplicate check be skipped.
    */
-  shouldSkipDuplicateCheck: boolean;
+  readonly shouldSkipDuplicateCheck: boolean;
 }
 
 /**
@@ -178,27 +178,27 @@ export interface GetAvailablePathForAttachmentsOptions {
   /**
    * An Obsidian application instance.
    */
-  app: App;
+  readonly app: App;
   /**
    * A base name of the attachment.
    */
-  attachmentFileBaseName: string;
+  readonly attachmentFileBaseName: string;
   /**
    * An extension of the attachment.
    */
-  attachmentFileExtension: string;
+  readonly attachmentFileExtension: string;
   /**
    * A file to attach to.
    */
-  notePathOrFile: null | PathOrFile;
+  readonly notePathOrFile: null | PathOrFile;
   /**
    * Should the duplicate check be skipped.
    */
-  shouldSkipDuplicateCheck?: boolean;
+  readonly shouldSkipDuplicateCheck?: boolean;
   /**
    * Should missing attachment folder creation be skipped.
    */
-  shouldSkipMissingAttachmentFolderCreation?: boolean;
+  readonly shouldSkipMissingAttachmentFolderCreation?: boolean;
 }
 
 /**

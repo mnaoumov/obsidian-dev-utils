@@ -30,27 +30,27 @@ export interface RetryWithTimeoutNoticeOptions {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<boolean>;
+  readonly operationFn: (this: void, abortSignal: AbortSignal) => Promisable<boolean>;
 
   /**
    * The name of the operation.
    */
-  operationName?: string;
+  readonly operationName?: string;
 
   /**
    * The retry options.
    */
-  retryOptions?: RetryOptions;
+  readonly retryOptions?: RetryOptions;
 
   /**
    * Whether to show a timeout notice. Default is `true`.
    */
-  shouldShowTimeoutNotice?: boolean;
+  readonly shouldShowTimeoutNotice?: boolean;
 
   /**
    * The stack trace of the source function.
    */
-  stackTrace?: string;
+  readonly stackTrace?: string;
 }
 
 /**
@@ -60,7 +60,7 @@ export interface RunWithTimeoutNoticeOptions<Result> {
   /**
    * The context of the function.
    */
-  context?: unknown;
+  readonly context?: unknown;
 
   /**
    * The operation function to execute.
@@ -68,27 +68,27 @@ export interface RunWithTimeoutNoticeOptions<Result> {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(abortSignal: AbortSignal): Promisable<Result>;
+  readonly operationFn: (abortSignal: AbortSignal) => Promisable<Result>;
 
   /**
    * The name of the operation.
    */
-  operationName?: string;
+  readonly operationName?: string;
 
   /**
    * Whether to show a timeout notice. Default is `true`.
    */
-  shouldShowTimeoutNotice?: boolean;
+  readonly shouldShowTimeoutNotice?: boolean;
 
   /**
    * The stack trace of the source function.
    */
-  stackTrace?: string;
+  readonly stackTrace?: string;
 
   /**
    * The maximum time to wait in milliseconds.
    */
-  timeoutInMilliseconds: number;
+  readonly timeoutInMilliseconds: number;
 }
 
 /**

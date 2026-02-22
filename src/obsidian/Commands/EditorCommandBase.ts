@@ -31,22 +31,22 @@ export interface EditorCommandBaseOptions<TPlugin extends Plugin> extends Comman
   /**
    * The item name to use in the editor menu.
    */
-  editorMenuItemName?: string | undefined;
+  readonly editorMenuItemName?: string | undefined;
 
   /**
    * The section to use in the editor menu.
    */
-  editorMenuSection?: string | undefined;
+  readonly editorMenuSection?: string | undefined;
 
   /**
    * The icon to use in the editor menu submenu.
    */
-  editorMenuSubmenuIcon?: IconName | undefined;
+  readonly editorMenuSubmenuIcon?: IconName | undefined;
 
   /**
    * Whether to add the command to the submenu.
    */
-  shouldAddCommandToSubmenu?: boolean | undefined;
+  readonly shouldAddCommandToSubmenu?: boolean | undefined;
 }
 
 /**

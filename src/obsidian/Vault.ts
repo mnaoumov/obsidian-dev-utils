@@ -69,17 +69,17 @@ export interface ProcessOptions extends RetryOptions {
   /**
    * Whether to fail if the file is missing or deleted. Default is `true`.
    */
-  shouldFailOnMissingFile?: boolean;
+  readonly shouldFailOnMissingFile?: boolean;
 
   /**
    * Whether to lock the editor while processing the file. Applicable only for markdown files. Default is `true`.
    */
-  shouldLockEditorWhileProcessing?: boolean;
+  readonly shouldLockEditorWhileProcessing?: boolean;
 
   /**
    * Whether to show a timeout notice. Default is `true`.
    */
-  shouldShowTimeoutNotice?: boolean;
+  readonly shouldShowTimeoutNotice?: boolean;
 }
 
 /**

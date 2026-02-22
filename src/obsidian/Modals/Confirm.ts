@@ -26,32 +26,32 @@ export interface ConfirmOptions {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A text for the "Cancel" button.
    */
-  cancelButtonText?: string;
+  readonly cancelButtonText?: string;
 
   /**
    * A CSS class to apply to the modal.
    */
-  cssClass?: string;
+  readonly cssClass?: string;
 
   /**
    * A message to display in the modal.
    */
-  message: DocumentFragment | string;
+  readonly message: DocumentFragment | string;
 
   /**
    * A text for the "OK" button.
    */
-  okButtonText?: string;
+  readonly okButtonText?: string;
 
   /**
    * A title of the modal.
    */
-  title?: DocumentFragment | string;
+  readonly title?: DocumentFragment | string;
 }
 
 class ConfirmModal extends ModalBase<boolean, ConfirmOptions> {

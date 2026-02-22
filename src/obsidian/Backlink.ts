@@ -37,17 +37,17 @@ export interface RenderDelayedBacklinksForFolderOptions {
   /**
    * A {@link DataviewInlineApi} instance.
    */
-  dv: DataviewInlineApi;
+  readonly dv: DataviewInlineApi;
 
   /**
    * A folder path. If not provided, the current file's folder will be used.
    */
-  folder?: string;
+  readonly folder?: string;
 
   /**
    * A title for the rendered backlinks. Defaults to "Folder Backlinks".
    */
-  title?: string;
+  readonly title?: string;
 }
 
 /**
@@ -57,17 +57,17 @@ export interface RenderDelayedBacklinksOptions {
   /**
    * A {@link DataviewInlineApi} instance.
    */
-  dv: DataviewInlineApi;
+  readonly dv: DataviewInlineApi;
 
   /**
    * An array of PathOrFile.
    */
-  files: PathOrFile[];
+  readonly files: PathOrFile[];
 
   /**
    * A title for the rendered backlinks. Defaults to "Backlinks".
    */
-  title?: string;
+  readonly title?: string;
 }
 
 /**

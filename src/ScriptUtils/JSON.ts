@@ -22,7 +22,7 @@ export interface EditJsonOptions {
   /**
    * If true, skips editing if the file does not exist.
    */
-  shouldSkipIfMissing?: boolean;
+  readonly shouldSkipIfMissing?: boolean;
 }
 
 /**

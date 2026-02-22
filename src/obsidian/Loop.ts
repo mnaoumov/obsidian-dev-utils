@@ -30,7 +30,7 @@ export interface LoopOptions<T> {
   /**
    * An optional abort signal to cancel the loop.
    */
-  abortSignal?: AbortSignal;
+  readonly abortSignal?: AbortSignal;
 
   /**
    * Build a notice message for each item.
@@ -39,54 +39,54 @@ export interface LoopOptions<T> {
    * @param iterationStr - A string representing the current iteration.
    * @returns A string to display in the notice.
    */
-  buildNoticeMessage(item: T, iterationStr: string): string;
+  readonly buildNoticeMessage: (item: T, iterationStr: string) => string;
 
   /**
    * Items to loop over.
    */
-  items: T[];
+  readonly items: T[];
 
   /**
    * A timeout for the notice before it is shown. Default is `500`.
    */
-  noticeBeforeShownTimeoutInMilliseconds?: number;
+  readonly noticeBeforeShownTimeoutInMilliseconds?: number;
 
   /**
    * A minimum timeout for the notice. Default is `2000`.
    */
-  noticeMinTimeoutInMilliseconds?: number;
+  readonly noticeMinTimeoutInMilliseconds?: number;
 
   /**
    * Process each item.
    *
    * @param item - The current item.
    */
-  processItem(item: T): Promisable<void>;
+  readonly processItem: (item: T) => Promisable<void>;
 
   /**
    * A title of the progress bar. Default is `''`.
    */
-  progressBarTitle?: string;
+  readonly progressBarTitle?: string;
 
   /**
    * Whether to continue the loop on error. Default is `true`.
    */
-  shouldContinueOnError?: boolean;
+  readonly shouldContinueOnError?: boolean;
 
   /**
    * Whether to show a notice. Default is `true`.
    */
-  shouldShowNotice?: boolean;
+  readonly shouldShowNotice?: boolean;
 
   /**
    * Whether to show a progress bar. Default is `true`.
    */
-  shouldShowProgressBar?: boolean;
+  readonly shouldShowProgressBar?: boolean;
 
   /**
    * A threshold for the UI update. Default is `100`.
    */
-  uiUpdateThresholdInMilliseconds?: number;
+  readonly uiUpdateThresholdInMilliseconds?: number;
 }
 
 /**

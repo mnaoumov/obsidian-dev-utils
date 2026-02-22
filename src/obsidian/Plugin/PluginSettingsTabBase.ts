@@ -64,24 +64,24 @@ export interface BindOptions<T> {
   /**
    * A callback function that is called when the value of the component changes.
    */
-  onChanged?(newValue: ReadonlyDeep<T>, oldValue: ReadonlyDeep<T>): Promisable<void>;
+  readonly onChanged?: (newValue: ReadonlyDeep<T>, oldValue: ReadonlyDeep<T>) => Promisable<void>;
 
   /**
    * Whether to reset the setting when the component value is empty. Default is `true`.
    * Applicable only to text-based components.
    */
-  shouldResetSettingWhenComponentIsEmpty?: boolean;
+  readonly shouldResetSettingWhenComponentIsEmpty?: boolean;
 
   /**
    * Whether to show the placeholder for default values. Default is `true`.
    * Applicable only to text-based components.
    */
-  shouldShowPlaceholderForDefaultValues?: boolean;
+  readonly shouldShowPlaceholderForDefaultValues?: boolean;
 
   /**
    * Whether to show the validation message when the component value is invalid. Default is `true`.
    */
-  shouldShowValidationMessage?: boolean;
+  readonly shouldShowValidationMessage?: boolean;
 }
 
 /**
@@ -98,7 +98,7 @@ export interface BindOptionsExtended<
    * @param uiValue - The value of the UI component.
    * @returns The value to set on the plugin settings.
    */
-  componentToPluginSettingsValueConverter(uiValue: UIValue): PluginSettings[PropertyName] | ValidationMessageHolder;
+  readonly componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[PropertyName] | ValidationMessageHolder;
 
   /**
    * Converts the plugin settings value to the value used by the UI component.
@@ -106,7 +106,7 @@ export interface BindOptionsExtended<
    * @param pluginSettingsValue - The value of the property in the plugin settings.
    * @returns The value to set on the UI component.
    */
-  pluginSettingsToComponentValueConverter(pluginSettingsValue: ReadonlyDeep<PluginSettings[PropertyName]>): UIValue;
+  readonly pluginSettingsToComponentValueConverter: (pluginSettingsValue: ReadonlyDeep<PluginSettings[PropertyName]>) => UIValue;
 }
 
 /**

@@ -43,22 +43,22 @@ export interface RetryOptions {
   /**
    * A abort signal to cancel the retry operation.
    */
-  abortSignal?: AbortSignal;
+  readonly abortSignal?: AbortSignal;
 
   /**
    * A delay in milliseconds between retry attempts.
    */
-  retryDelayInMilliseconds?: number;
+  readonly retryDelayInMilliseconds?: number;
 
   /**
    * Whether to retry the function on error.
    */
-  shouldRetryOnError?: boolean;
+  readonly shouldRetryOnError?: boolean;
 
   /**
    * A maximum time in milliseconds to wait before giving up on retrying.
    */
-  timeoutInMilliseconds?: number;
+  readonly timeoutInMilliseconds?: number;
 }
 
 /**
@@ -319,7 +319,7 @@ export interface RetryWithTimeoutOptions {
    *
    * @param context - The timeout context.
    */
-  onTimeout?(this: void, context: TimeoutContext): void;
+  readonly onTimeout?: (this: void, context: TimeoutContext) => void;
 
   /**
    * The function to execute.
@@ -327,22 +327,22 @@ export interface RetryWithTimeoutOptions {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<boolean>;
+  readonly operationFn: (this: void, abortSignal: AbortSignal) => Promisable<boolean>;
 
   /**
    * The name of the operation.
    */
-  operationName?: string;
+  readonly operationName?: string;
 
   /**
    * The retry options.
    */
-  retryOptions?: RetryOptions;
+  readonly retryOptions?: RetryOptions;
 
   /**
    * The stack trace of the source function.
    */
-  stackTrace?: string;
+  readonly stackTrace?: string;
 }
 
 /**
@@ -352,14 +352,14 @@ export interface RunWithTimeoutOptions<Result> {
   /**
    * The context of the function.
    */
-  context?: unknown;
+  readonly context?: unknown;
 
   /**
    * The function to handle the timeout.
    *
    * @param context - The timeout context.
    */
-  onTimeout?(this: void, context: TimeoutContext): void;
+  readonly onTimeout?: (this: void, context: TimeoutContext) => void;
 
   /**
    * The operation function to execute.
@@ -367,22 +367,22 @@ export interface RunWithTimeoutOptions<Result> {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<Result>;
+  readonly operationFn: (this: void, abortSignal: AbortSignal) => Promisable<Result>;
 
   /**
    * The name of the operation.
    */
-  operationName?: string;
+  readonly operationName?: string;
 
   /**
    * The stack trace of the source function.
    */
-  stackTrace?: string | undefined;
+  readonly stackTrace?: string | undefined;
 
   /**
    * The maximum time to wait in milliseconds.
    */
-  timeoutInMilliseconds: number;
+  readonly timeoutInMilliseconds: number;
 }
 
 /**
@@ -392,21 +392,21 @@ export interface TimeoutContext {
   /**
    * The duration in milliseconds since the operation started.
    */
-  duration: number;
+  readonly duration: number;
   /**
    * Registers a callback to be invoked when the operation completes.
    *
    * @param callback - The function to call when the operation completes.
    */
-  onOperationCompleted(callback: () => void): void;
+  readonly onOperationCompleted: (callback: () => void) => void;
   /**
    * The name of the operation.
    */
-  operationName: string;
+  readonly operationName: string;
   /**
    * Terminates the operation that timed out.
    */
-  terminateOperation(): void;
+  readonly terminateOperation: () => void;
 }
 
 /**

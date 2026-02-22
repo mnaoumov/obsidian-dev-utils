@@ -25,22 +25,22 @@ export interface CommandBaseOptions<TPlugin extends Plugin> {
   /**
    * The icon to use for the command.
    */
-  icon: IconName;
+  readonly icon: IconName;
 
   /**
    * The ID of the command.
    */
-  id: string;
+  readonly id: string;
 
   /**
    * The name of the command.
    */
-  name: string;
+  readonly name: string;
 
   /**
    * The plugin that the command belongs to.
    */
-  plugin: TPlugin;
+  readonly plugin: TPlugin;
 }
 
 /**

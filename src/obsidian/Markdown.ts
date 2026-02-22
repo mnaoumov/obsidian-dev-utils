@@ -42,32 +42,32 @@ export interface FullRenderOptions {
   /**
    * The Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * The Component instance to use for the render.
    */
-  component?: Component;
+  readonly component?: Component;
 
   /**
    * The HTMLElement to render to.
    */
-  el: HTMLElement;
+  readonly el: HTMLElement;
 
   /**
    * The Markdown string to render.
    */
-  markdown: string;
+  readonly markdown: string;
 
   /**
    * Whether to register link handlers for the rendered element.
    */
-  shouldRegisterLinkHandlers?: boolean;
+  readonly shouldRegisterLinkHandlers?: boolean;
 
   /**
    * The source path to resolve relative links.
    */
-  sourcePath?: string;
+  readonly sourcePath?: string;
 }
 
 type RegisterDomEventsFn = typeof MarkdownPreviewRenderer.registerDomEvents;

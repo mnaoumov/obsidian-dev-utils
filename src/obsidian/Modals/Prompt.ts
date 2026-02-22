@@ -36,32 +36,32 @@ export interface PromptOptions {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A text for the "Cancel" button.
    */
-  cancelButtonText?: string;
+  readonly cancelButtonText?: string;
 
   /**
    * A default value to pre-fill the input field.
    */
-  defaultValue?: string;
+  readonly defaultValue?: string;
 
   /**
    * A text for the "OK" button.
    */
-  okButtonText?: string;
+  readonly okButtonText?: string;
 
   /**
    * A placeholder text for the input field.
    */
-  placeholder?: string;
+  readonly placeholder?: string;
 
   /**
    * A title of the modal.
    */
-  title?: DocumentFragment | string;
+  readonly title?: DocumentFragment | string;
 
   /**
    * A function to validate the input value.
@@ -69,7 +69,7 @@ export interface PromptOptions {
    * @param value - The input value to validate.
    * @returns an error message if the value is invalid, or null if the value is valid.
    */
-  valueValidator?(value: string): Promisable<MaybeReturn<string>>;
+  readonly valueValidator?: (value: string) => Promisable<MaybeReturn<string>>;
 }
 
 class PromptModal extends ModalBase<null | string, PromptOptions> {
