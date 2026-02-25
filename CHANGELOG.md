@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 48.1.3
+
+- chore: update libs
+- test: add unit tests
+
 ## 48.1.2
 
 - chore: lint
