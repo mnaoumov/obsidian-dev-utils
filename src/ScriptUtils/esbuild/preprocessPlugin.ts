@@ -14,7 +14,6 @@ import type { Plugin } from 'esbuild';
 import type { GenericObject } from '../../TypeGuards.ts';
 
 import {
-  castTo,
   FunctionHandlingMode,
   toJson
 } from '../../ObjectUtils.ts';
@@ -113,7 +112,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 }
 
 function initCjs(): void {
-  const globalThisRecord = castTo<GenericObject>(globalThis);
+  const globalThisRecord = globalThis as GenericObject;
   globalThisRecord['__name'] ??= name;
   const originalRequire = require as (NodeJS.Require & Partial<RequirePatched> | undefined);
   if (originalRequire && !originalRequire.__isPatched) {
