@@ -15,8 +15,7 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
-import {
-  i18next,
+import i18next, {
   init,
   t as tLib
 } from 'i18next';
