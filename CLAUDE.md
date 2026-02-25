@@ -142,4 +142,3 @@ describe('MyModule', () => {
   - `npm run build:compile:typescript`
   - `npm run lint:fix`
   - `npm run format`
-
