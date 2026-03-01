@@ -497,9 +497,7 @@ async function getLatestObsidianVersion(): Promise<string> {
   // eslint-disable-next-line no-restricted-globals -- We run this outside of Obsidian, so we don't have `requestUrl()`.
   const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');
   const obsidianReleasesJson = await response.json() as Partial<ObsidianReleasesJson>;
-  /* v8 ignore start -- Error path: GitHub API always returns a name for valid releases. */
   return ensureNonNullable(obsidianReleasesJson.name, 'Could not find the name of the latest Obsidian release');
-  /* v8 ignore stop */
 }
 
 function isBeta(version: string): boolean {

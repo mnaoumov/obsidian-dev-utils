@@ -598,9 +598,7 @@ function applySubstitutions(options: ApplySubstitutionsParams): MaybeReturn<stri
     case TokenSubstitutionKey.CircularReference:
       return options.substitutions.circularReference;
     case TokenSubstitutionKey.Function:
-      /* v8 ignore start -- Function index is always valid since we push before accessing. */
       return ensureNonNullable(options.functionTexts[options.index], `Function with index ${String(options.index)} not found`);
-      /* v8 ignore stop */
     case TokenSubstitutionKey.MaxDepthLimitReached:
       return options.substitutions.maxDepthLimitReached;
     case TokenSubstitutionKey.MaxDepthLimitReachedArray:
