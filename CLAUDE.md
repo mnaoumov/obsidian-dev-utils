@@ -68,6 +68,7 @@ export function myFunction(param: Type): ReturnType {
 - Functions: camelCase
 - Classes: PascalCase
 - Constants: UPPER_SNAKE_CASE
+- Parameter-bag types: use `...Params` when the type is the **sole argument** of a function (`fn(params: FnParams)`); use `...Options` when the type is **supplementary configuration** alongside other positional args (`fn(arg1, arg2, options: FnOptions)`)
 
 ### Documentation
 

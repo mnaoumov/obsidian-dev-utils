@@ -22,7 +22,7 @@ import {
 /**
  * Options for {@link alert}.
  */
-export interface AlertOptions {
+export interface AlertParams {
   /**
    * An Obsidian app instance.
    */
@@ -49,12 +49,12 @@ export interface AlertOptions {
   readonly title?: DocumentFragment | string;
 }
 
-class AlertModal extends ModalBase<void, AlertOptions> {
-  private readonly options: Required<AlertOptions>;
+class AlertModal extends ModalBase<void, AlertParams> {
+  private readonly options: Required<AlertParams>;
 
-  public constructor(options: AlertOptions, resolve: PromiseResolve<void>) {
+  public constructor(options: AlertParams, resolve: PromiseResolve<void>) {
     super(options, resolve, CssClass.AlertModal);
-    const DEFAULT_OPTIONS: Required<AlertOptions> = {
+    const DEFAULT_OPTIONS: Required<AlertParams> = {
       app: options.app,
       cssClass: '',
       message: options.message,
@@ -87,6 +87,6 @@ class AlertModal extends ModalBase<void, AlertOptions> {
  * @param options - The options for the alert modal.
  * @returns A {@link Promise} that resolves when the modal is closed.
  */
-export async function alert(options: AlertOptions): Promise<void> {
+export async function alert(options: AlertParams): Promise<void> {
   await showModal((resolve) => new AlertModal(options, resolve));
 }

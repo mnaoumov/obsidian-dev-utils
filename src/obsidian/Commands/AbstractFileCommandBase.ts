@@ -14,7 +14,7 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
-import type { CommandBaseOptions } from './CommandBase.ts';
+import type { CommandBaseParams } from './CommandBase.ts';
 
 import { CommandInvocationBase } from './CommandBase.ts';
 import { NonEditorCommandBase } from './NonEditorCommandBase.ts';
@@ -24,7 +24,7 @@ import { NonEditorCommandBase } from './NonEditorCommandBase.ts';
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
-export interface AbstractFileCommandBaseOptions<TPlugin extends Plugin> extends CommandBaseOptions<TPlugin> {
+export interface AbstractFileCommandBaseParams<TPlugin extends Plugin> extends CommandBaseParams<TPlugin> {
   /**
    * The item name to use in the file menu.
    */
@@ -186,7 +186,7 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
    *
    * @param options - The options for the abstract file command.
    */
-  public constructor(options: AbstractFileCommandBaseOptions<TPlugin>) {
+  public constructor(options: AbstractFileCommandBaseParams<TPlugin>) {
     super(options);
     this._fileMenuItemName = options.fileMenuItemName;
     this._fileMenuSection = options.fileMenuSection;

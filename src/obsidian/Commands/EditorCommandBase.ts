@@ -15,7 +15,7 @@ import type {
   TFile
 } from 'obsidian';
 
-import type { CommandBaseOptions } from './CommandBase.ts';
+import type { CommandBaseParams } from './CommandBase.ts';
 
 import {
   CommandBase,
@@ -27,7 +27,7 @@ import {
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
-export interface EditorCommandBaseOptions<TPlugin extends Plugin> extends CommandBaseOptions<TPlugin> {
+export interface EditorCommandBaseParams<TPlugin extends Plugin> extends CommandBaseParams<TPlugin> {
   /**
    * The item name to use in the editor menu.
    */
@@ -101,7 +101,7 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
    *
    * @param options - The options for the editor command.
    */
-  public constructor(options: EditorCommandBaseOptions<TPlugin>) {
+  public constructor(options: EditorCommandBaseParams<TPlugin>) {
     super(options);
     this._editorMenuItemName = options.editorMenuItemName;
     this._editorMenuSection = options.editorMenuSection;

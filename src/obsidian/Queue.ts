@@ -27,7 +27,7 @@ import { invokeAsyncAndLog } from './Logger.ts';
 /**
  * Options for the {@link addToQueueAndWait} function.
  */
-export interface AddToQueueAndWaitOptions {
+export interface AddToQueueAndWaitParams {
   /**
    * Optional abort signal.
    */
@@ -67,7 +67,7 @@ export interface AddToQueueAndWaitOptions {
 /**
  * Options for the {@link addToQueue} function.
  */
-export interface AddToQueueOptions {
+export interface AddToQueueParams {
   /**
    * Optional abort signal.
    */
@@ -123,7 +123,7 @@ interface QueueItem {
  *
  * @param options - The options for the function.
  */
-export function addToQueue(options: AddToQueueOptions): void {
+export function addToQueue(options: AddToQueueParams): void {
   const stackTrace = options.stackTrace ?? getStackTrace(1);
   invokeAsyncSafely(() => addToQueueAndWait(options), stackTrace);
 }
@@ -133,7 +133,7 @@ export function addToQueue(options: AddToQueueOptions): void {
  *
  * @param options - The options for the function.
  */
-export async function addToQueueAndWait(options: AddToQueueAndWaitOptions): Promise<void> {
+export async function addToQueueAndWait(options: AddToQueueAndWaitParams): Promise<void> {
   const abortSignal = options.abortSignal ?? abortSignalNever();
   abortSignal.throwIfAborted();
 

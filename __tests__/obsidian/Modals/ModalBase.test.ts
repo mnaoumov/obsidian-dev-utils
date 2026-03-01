@@ -8,7 +8,7 @@ import {
   vi
 } from 'vitest';
 
-import type { ModalOptionsBase } from '../../../src/obsidian/Modals/ModalBase.ts';
+import type { ModalParamsBase } from '../../../src/obsidian/Modals/ModalBase.ts';
 
 import {
   ModalBase,
@@ -19,7 +19,7 @@ vi.mock('../../../src/obsidian/Plugin/PluginContext.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 
-class TestModal extends ModalBase<string, ModalOptionsBase> {
+class TestModal extends ModalBase<string, ModalParamsBase> {
   public override onClose(): void {
     super.onClose();
     this.resolve('closed');

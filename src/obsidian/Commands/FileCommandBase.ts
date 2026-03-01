@@ -14,7 +14,7 @@ import type {
 
 import { TFile } from 'obsidian';
 
-import type { AbstractFileCommandBaseOptions } from './AbstractFileCommandBase.ts';
+import type { AbstractFileCommandBaseParams } from './AbstractFileCommandBase.ts';
 
 import {
   asArrayOfFiles,
@@ -115,7 +115,7 @@ export abstract class FileCommandBase<TPlugin extends Plugin = Plugin> extends A
    *
    * @param options - The options for the file command.
    */
-  public constructor(options: AbstractFileCommandBaseOptions<TPlugin>) {
+  public constructor(options: AbstractFileCommandBaseParams<TPlugin>) {
     super(options);
   }
 

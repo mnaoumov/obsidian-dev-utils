@@ -59,7 +59,7 @@ export enum AttachmentPathContext {
 /**
  * Options for the get available path for attachments extended function.
  */
-export interface GetAvailablePathForAttachmentsExtendedFnOptions {
+export interface GetAvailablePathForAttachmentsExtendedFnParams {
   /**
    * A base name of the attachment.
    */
@@ -126,7 +126,7 @@ export interface GetAvailablePathForAttachmentsFnExtended extends GetAvailablePa
    * @param options - Options for the get available path for attachments.
    * @returns A {@link Promise} that resolves to the available path for attachments.
    */
-  extended(options: GetAvailablePathForAttachmentsExtendedFnOptions): Promise<string>;
+  extended(options: GetAvailablePathForAttachmentsExtendedFnParams): Promise<string>;
 }
 
 type GetAvailablePathForAttachmentsFn = Vault['getAvailablePathForAttachments'];
@@ -139,7 +139,7 @@ export const DUMMY_PATH = '__DUMMY__';
 /**
  * Options for the getAttachmentFilePath function.
  */
-export interface GetAttachmentFilePathOptions {
+export interface GetAttachmentFilePathParams {
   /**
    * An Obsidian application instance.
    */
@@ -174,7 +174,7 @@ export interface GetAttachmentFilePathOptions {
 /**
  * Options for the getAvailablePathForAttachments function.
  */
-export interface GetAvailablePathForAttachmentsOptions {
+export interface GetAvailablePathForAttachmentsParams {
   /**
    * An Obsidian application instance.
    */
@@ -207,7 +207,7 @@ export interface GetAvailablePathForAttachmentsOptions {
  * @param options - Options for the get attachment file path function.
  * @returns A {@link Promise} that resolves to the file path of the attachment.
  */
-export async function getAttachmentFilePath(options: GetAttachmentFilePathOptions): Promise<string> {
+export async function getAttachmentFilePath(options: GetAttachmentFilePathParams): Promise<string> {
   const {
     app,
     notePathOrFile,
@@ -271,7 +271,7 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
  * @param options - Options for the get available path for attachments function.
  * @returns A {@link Promise} that resolves to the available path for attachments.
  */
-export async function getAvailablePathForAttachments(options: GetAvailablePathForAttachmentsOptions): Promise<string> {
+export async function getAvailablePathForAttachments(options: GetAvailablePathForAttachmentsParams): Promise<string> {
   const {
     app,
     attachmentFileExtension,

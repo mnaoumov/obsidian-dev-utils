@@ -23,7 +23,7 @@ import { t } from './i18n/i18n.ts';
 /**
  * Options for {@link retryWithTimeoutNotice}.
  */
-export interface RetryWithTimeoutNoticeOptions {
+export interface RetryWithTimeoutNoticeParams {
   /**
    * The operation function to execute.
    *
@@ -56,7 +56,7 @@ export interface RetryWithTimeoutNoticeOptions {
 /**
  * Options for {@link runWithTimeout}.
  */
-export interface RunWithTimeoutNoticeOptions<Result> {
+export interface RunWithTimeoutNoticeParams<Result> {
   /**
    * The context of the function.
    */
@@ -97,7 +97,7 @@ export interface RunWithTimeoutNoticeOptions<Result> {
  * @param options - The options for the function.
  * @returns A {@link Promise} that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeoutNotice(options: RetryWithTimeoutNoticeOptions): Promise<void> {
+export async function retryWithTimeoutNotice(options: RetryWithTimeoutNoticeParams): Promise<void> {
   return retryWithTimeout({
     ...options,
     onTimeout: options.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice
@@ -111,7 +111,7 @@ export async function retryWithTimeoutNotice(options: RetryWithTimeoutNoticeOpti
  * @param options - The options for the function.
  * @returns The result of the function.
  */
-export async function runWithTimeoutNotice<Result>(options: RunWithTimeoutNoticeOptions<Result>): Promise<Result> {
+export async function runWithTimeoutNotice<Result>(options: RunWithTimeoutNoticeParams<Result>): Promise<Result> {
   return runWithTimeout({
     ...options,
     onTimeout: options.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice

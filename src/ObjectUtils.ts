@@ -108,7 +108,7 @@ export interface ToJsonOptions {
   readonly tokenSubstitutions: Partial<TokenSubstitutions>;
 }
 
-interface ApplySubstitutionsOptions {
+interface ApplySubstitutionsParams {
   readonly functionTexts: readonly string[];
   readonly index: number;
   readonly key: TokenSubstitutionKey;
@@ -591,7 +591,7 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
   return target;
 }
 
-function applySubstitutions(options: ApplySubstitutionsOptions): MaybeReturn<string> {
+function applySubstitutions(options: ApplySubstitutionsParams): MaybeReturn<string> {
   /* v8 ignore start -- All enum values are handled above; default branch is unreachable. */
   switch (options.key) {
     /* v8 ignore stop */

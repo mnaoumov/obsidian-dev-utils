@@ -22,7 +22,7 @@ import { showModal } from './ModalBase.ts';
 /**
  * Options for {@link selectItem}.
  */
-export interface SelectItemOptions<T> {
+export interface SelectItemParams<T> {
   /**
    * An Obsidian app instance.
    */
@@ -55,7 +55,7 @@ export interface SelectItemOptions<T> {
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   private isSelected = false;
 
-  public constructor(private readonly options: SelectItemOptions<T>, private readonly resolve: PromiseResolve<null | T>) {
+  public constructor(private readonly options: SelectItemParams<T>, private readonly resolve: PromiseResolve<null | T>) {
     super(options.app);
     this.setPlaceholder(options.placeholder ?? '');
     addPluginCssClasses(this.containerEl, CssClass.SelectItemModal);
@@ -98,6 +98,6 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
  * @param options - The options for the selection modal.
  * @returns A {@link Promise} that resolves with the selected item or null if no item was selected.
  */
-export async function selectItem<T>(options: SelectItemOptions<T>): Promise<null | T> {
+export async function selectItem<T>(options: SelectItemParams<T>): Promise<null | T> {
   return await showModal<null | T>((resolve) => new ItemSelectModal(options, resolve));
 }

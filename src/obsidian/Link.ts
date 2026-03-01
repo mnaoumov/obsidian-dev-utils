@@ -175,7 +175,7 @@ enum FinalLinkPathStyle {
 /**
  * Options for {@link convertLink}.
  */
-export interface ConvertLinkOptions {
+export interface ConvertLinkParams {
   /**
    * An Obsidian app instance.
    */
@@ -210,7 +210,7 @@ export interface ConvertLinkOptions {
 /**
  * Options for {@link generateMarkdownLink}.
  */
-export interface GenerateMarkdownLinkOptions {
+export interface GenerateMarkdownLinkParams {
   /**
    * An alias for the link.
    *
@@ -367,7 +367,7 @@ export interface GenerateMarkdownLinkOptions {
 /**
  * Options for {@link generateRawMarkdownLink}.
  */
-export interface GenerateRawMarkdownLinkOptions {
+export interface GenerateRawMarkdownLinkParams {
   /**
    * An alias of the link. Defaults to `undefined`.
    */
@@ -526,7 +526,7 @@ export interface ParseLinkResult {
 /**
  * Options for {@link shouldResetAlias}.
  */
-export interface ShouldResetAliasOptions {
+export interface ShouldResetAliasParams {
   /**
    * An Obsidian app instance.
    */
@@ -581,7 +581,7 @@ export interface SplitSubpathResult {
 /**
  * Options for {@link updateLink}.
  */
-export interface UpdateLinkOptions {
+export interface UpdateLinkParams {
   /**
    * An Obsidian app instance.
    */
@@ -626,7 +626,7 @@ export interface UpdateLinkOptions {
 /**
  * Options for {@link updateLinksInFile}.
  */
-export interface UpdateLinksInFileOptions extends ProcessOptions {
+export interface UpdateLinksInFileParams extends ProcessOptions {
   /**
    * An Obsidian app instance.
    */
@@ -676,7 +676,7 @@ interface TablePosition {
 /**
  * Options for {@link updateLinksInContent}.
  */
-interface UpdateLinksInContentOptions {
+interface UpdateLinksInContentParams {
   /**
    * An Obsidian app instance.
    */
@@ -726,13 +726,13 @@ interface WikiLinkNode extends Node {
  * @param options - The options for converting the link.
  * @returns The converted link.
  */
-export function convertLink(options: ConvertLinkOptions): string {
+export function convertLink(options: ConvertLinkParams): string {
   const targetFile = extractLinkFile(options.app, options.link, options.oldSourcePathOrFile ?? options.newSourcePathOrFile);
   if (!targetFile) {
     return options.link.original;
   }
 
-  return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
+  return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
     app: options.app,
     link: options.link,
     linkStyle: options.linkStyle,
@@ -909,10 +909,10 @@ export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
  * @param options - The options for generating the markdown link.
  * @returns The generated markdown link.
  */
-export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): string {
+export function generateMarkdownLink(options: GenerateMarkdownLinkParams): string {
   const { app } = options;
 
-  const DEFAULT_OPTIONS: Partial<GenerateMarkdownLinkOptions> = {
+  const DEFAULT_OPTIONS: Partial<GenerateMarkdownLinkParams> = {
     isEmptyEmbedAliasAllowed: true
   };
 
@@ -929,7 +929,7 @@ export function generateMarkdownLink(options: GenerateMarkdownLinkOptions): stri
  * @param options - The options for generating a raw markdown link.
  * @returns A raw markdown link.
  */
-export function generateRawMarkdownLink(options: GenerateRawMarkdownLinkOptions): string {
+export function generateRawMarkdownLink(options: GenerateRawMarkdownLinkParams): string {
   const embedPrefix = options.isEmbed ? '!' : '';
 
   if (options.isWikilink) {
@@ -1035,7 +1035,7 @@ export function parseLinks(str: string): ParseLinkResult[] {
  * @param plugin - The plugin instance.
  * @param fn - The function that returns the default options.
  */
-export function registerGenerateMarkdownLinkDefaultOptionsFn(plugin: Plugin, fn: () => Partial<GenerateMarkdownLinkOptions>): void {
+export function registerGenerateMarkdownLinkDefaultOptionsFn(plugin: Plugin, fn: () => Partial<GenerateMarkdownLinkParams>): void {
   const generateMarkdownLinkDefaultOptionsFns = getGenerateMarkdownLinkDefaultOptionsFns(plugin.app);
   generateMarkdownLinkDefaultOptionsFns.push(fn);
   plugin.register(() => {
@@ -1049,7 +1049,7 @@ export function registerGenerateMarkdownLinkDefaultOptionsFn(plugin: Plugin, fn:
  * @param options - The options for determining if the alias should be reset.
  * @returns Whether the alias should be reset.
  */
-export function shouldResetAlias(options: ShouldResetAliasOptions): boolean {
+export function shouldResetAlias(options: ShouldResetAliasParams): boolean {
   const {
     app,
     displayText,
@@ -1209,7 +1209,7 @@ export function unescapeAlias(escapedAlias: string): string {
  * @param options - The options for updating the link.
  * @returns The updated link.
  */
-export function updateLink(options: UpdateLinkOptions): string {
+export function updateLink(options: UpdateLinkParams): string {
   const {
     app,
     link,
@@ -1247,7 +1247,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     shouldKeepAlias = true;
   }
 
-  alias ??= shouldResetAlias(normalizeOptionalProperties<ShouldResetAliasOptions>({
+  alias ??= shouldResetAlias(normalizeOptionalProperties<ShouldResetAliasParams>({
       app,
       displayText: link.displayText,
       isWikilink,
@@ -1269,7 +1269,7 @@ export function updateLink(options: UpdateLinkOptions): string {
     /* v8 ignore stop */
   }
 
-  const newLink = generateMarkdownLink(normalizeOptionalProperties<GenerateMarkdownLinkOptions>({
+  const newLink = generateMarkdownLink(normalizeOptionalProperties<GenerateMarkdownLinkParams>({
     alias,
     app,
     isSingleSubpathAllowed: oldSourcePath === oldTargetPath && !!parseLinkResult?.alias,
@@ -1288,7 +1288,7 @@ export function updateLink(options: UpdateLinkOptions): string {
  * @param options - The options for updating the links.
  * @returns A {@link Promise} that resolves to the content with updated links.
  */
-export async function updateLinksInContent(options: UpdateLinksInContentOptions): Promise<string> {
+export async function updateLinksInContent(options: UpdateLinksInContentParams): Promise<string> {
   const {
     app,
     content,
@@ -1304,7 +1304,7 @@ export async function updateLinksInContent(options: UpdateLinksInContentOptions)
     if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
       return;
     }
-    return convertLink(normalizeOptionalProperties<ConvertLinkOptions>({
+    return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
       app,
       link,
       linkStyle,
@@ -1321,7 +1321,7 @@ export async function updateLinksInContent(options: UpdateLinksInContentOptions)
  * @param options - The options for updating the links.
  * @returns A {@link Promise} that resolves when the links are updated.
  */
-export async function updateLinksInFile(options: UpdateLinksInFileOptions): Promise<void> {
+export async function updateLinksInFile(options: UpdateLinksInFileParams): Promise<void> {
   const {
     app,
     linkStyle,
@@ -1340,7 +1340,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileOptions): Prom
     if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
       return;
     }
-    return convertLink(normalizeOptionalProperties<ConvertLinkOptions>({
+    return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
       app,
       link,
       linkStyle,
@@ -1481,7 +1481,7 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
   return linkText;
 }
 
-function generateMarkdownLinkImpl(options: GenerateMarkdownLinkOptions): string {
+function generateMarkdownLinkImpl(options: GenerateMarkdownLinkParams): string {
   const { app } = options;
   const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
   const sourcePath = getPath(app, options.sourcePathOrFile);
@@ -1495,7 +1495,7 @@ function generateMarkdownLinkImpl(options: GenerateMarkdownLinkOptions): string 
     : generateMarkdownStyleLink(linkText, targetFile, options, linkConfig);
 }
 
-function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options: GenerateMarkdownLinkOptions, config: LinkConfig): string {
+function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options: GenerateMarkdownLinkParams, config: LinkConfig): string {
   const { app } = options;
 
   let alias = options.alias ?? '';
@@ -1608,11 +1608,11 @@ function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLi
   }
 }
 
-function getGenerateMarkdownLinkDefaultOptionsFns(app: App): (() => Partial<GenerateMarkdownLinkOptions>)[] {
-  return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkOptions>)[]>(app, 'generateMarkdownLinkDefaultOptionsFns', []).value;
+function getGenerateMarkdownLinkDefaultOptionsFns(app: App): (() => Partial<GenerateMarkdownLinkParams>)[] {
+  return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkParams>)[]>(app, 'generateMarkdownLinkDefaultOptionsFns', []).value;
 }
 
-function getLinkConfig(options: GenerateMarkdownLinkOptions, targetFile: TFile): LinkConfig {
+function getLinkConfig(options: GenerateMarkdownLinkParams, targetFile: TFile): LinkConfig {
   const { app } = options;
   return {
     /* v8 ignore start -- requireApiVersion fallback is only reached in older Obsidian versions */

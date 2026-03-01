@@ -32,7 +32,7 @@ import {
 /**
  * Options for {@link prompt}.
  */
-export interface PromptOptions {
+export interface PromptParams {
   /**
    * An Obsidian app instance.
    */
@@ -72,14 +72,14 @@ export interface PromptOptions {
   readonly valueValidator?: (value: string) => Promisable<MaybeReturn<string>>;
 }
 
-class PromptModal extends ModalBase<null | string, PromptOptions> {
+class PromptModal extends ModalBase<null | string, PromptParams> {
   private isOkClicked = false;
-  private readonly options: Required<PromptOptions>;
+  private readonly options: Required<PromptParams>;
   private value: string;
 
-  public constructor(options: PromptOptions, resolve: PromiseResolve<null | string>) {
+  public constructor(options: PromptParams, resolve: PromiseResolve<null | string>) {
     super(options, resolve, CssClass.PromptModal);
-    const DEFAULT_OPTIONS: Required<PromptOptions> = {
+    const DEFAULT_OPTIONS: Required<PromptParams> = {
       app: options.app,
       cancelButtonText: t(($) => $.obsidianDevUtils.buttons.cancel),
       defaultValue: '',
@@ -156,6 +156,6 @@ class PromptModal extends ModalBase<null | string, PromptOptions> {
  * @param options - The options for the prompt modal.
  * @returns A {@link Promise} that resolves with the user input or null if the prompt was cancelled.
  */
-export async function prompt(options: PromptOptions): Promise<null | string> {
+export async function prompt(options: PromptParams): Promise<null | string> {
   return await showModal<null | string>((resolve) => new PromptModal(options, resolve));
 }

@@ -26,7 +26,7 @@ import { addPluginCssClasses } from './Plugin/PluginContext.ts';
 /**
  * Options for {@link loop}.
  */
-export interface LoopOptions<T> {
+export interface LoopParams<T> {
   /**
    * An optional abort signal to cancel the loop.
    */
@@ -94,10 +94,10 @@ export interface LoopOptions<T> {
  *
  * @param options - The options for the loop.
  */
-export async function loop<T>(options: LoopOptions<T>): Promise<void> {
-  const DEFAULT_OPTIONS: Required<LoopOptions<T>> = {
+export async function loop<T>(options: LoopParams<T>): Promise<void> {
+  const DEFAULT_OPTIONS: Required<LoopParams<T>> = {
     abortSignal: abortSignalNever(),
-    /* v8 ignore start -- buildNoticeMessage is required in LoopOptions and always overridden by the spread. */
+    /* v8 ignore start -- buildNoticeMessage is required in LoopParams and always overridden by the spread. */
     buildNoticeMessage() {
       throw new Error('buildNoticeMessage is required');
     },
@@ -116,7 +116,7 @@ export async function loop<T>(options: LoopOptions<T>): Promise<void> {
     uiUpdateThresholdInMilliseconds: 100
   };
 
-  const fullOptions: Required<LoopOptions<T>> = {
+  const fullOptions: Required<LoopParams<T>> = {
     ...DEFAULT_OPTIONS,
     ...options
   };

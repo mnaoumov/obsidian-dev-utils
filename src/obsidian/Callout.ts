@@ -7,7 +7,7 @@
 import type { MaybeReturn } from '../Type.ts';
 import type { ValueProvider } from '../ValueProvider.ts';
 import type { DataviewInlineApi } from './Dataview.ts';
-import type { AddToQueueOptions } from './Queue.ts';
+import type { AddToQueueParams } from './Queue.ts';
 
 import { normalizeOptionalProperties } from '../ObjectUtils.ts';
 import { ensureNonNullable } from '../TypeGuards.ts';
@@ -33,7 +33,7 @@ export enum CalloutMode {
 /**
  * Options for {@link renderCallout}.
  */
-export interface RenderCalloutOptions {
+export interface RenderCalloutParams {
   /**
    * An abort signal.
    */
@@ -70,7 +70,7 @@ export interface RenderCalloutOptions {
  *
  * @param options - The options for rendering the callout.
  */
-export function renderCallout(options: RenderCalloutOptions): void {
+export function renderCallout(options: RenderCalloutParams): void {
   const {
     contentProvider = '',
     dv,
@@ -87,7 +87,7 @@ export function renderCallout(options: RenderCalloutOptions): void {
     for (const entry of entries) {
       if (entry.isIntersecting) {
         observer.unobserve(entry.target);
-        addToQueue(normalizeOptionalProperties<AddToQueueOptions>({
+        addToQueue(normalizeOptionalProperties<AddToQueueParams>({
           abortSignal: options.abortSignal,
           app: dv.app,
           operationFn: loadContent,

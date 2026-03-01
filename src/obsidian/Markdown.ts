@@ -38,7 +38,7 @@ let domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
 /**
  * The options for the full render.
  */
-export interface FullRenderOptions {
+export interface FullRenderParams {
   /**
    * The Obsidian app instance.
    */
@@ -111,7 +111,7 @@ class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
  * @param options - The options for the full render.
  * @returns The {@link Promise} that resolves when the full render is complete.
  */
-export async function fullRender(options: FullRenderOptions): Promise<void> {
+export async function fullRender(options: FullRenderParams): Promise<void> {
   const sourcePath = options.sourcePath ?? '/';
   let shouldUnloadComponent = false;
   let component: Component;

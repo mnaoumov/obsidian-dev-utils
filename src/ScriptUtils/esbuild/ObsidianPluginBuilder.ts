@@ -68,7 +68,7 @@ if you want to view the source, please visit the github repository of this plugi
 /**
  * Options for {@link buildObsidianPlugin}.
  */
-export interface BuildObsidianPluginOptions {
+export interface BuildObsidianPluginParams {
   /**
    * Custom esbuild plugins to be used during the build process.
    */
@@ -100,7 +100,7 @@ interface ObsidianPluginBuilderEnv {
  * @param options - The parameters for building the plugin.
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult} indicating the success or failure of the build.
  */
-export async function buildObsidianPlugin(options: BuildObsidianPluginOptions): Promise<CliTaskResult> {
+export async function buildObsidianPlugin(options: BuildObsidianPluginParams): Promise<CliTaskResult> {
   await buildCompile();
   const envPath = resolvePathFromRoot('.env');
   if (envPath && existsSync(envPath)) {

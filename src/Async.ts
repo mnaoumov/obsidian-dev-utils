@@ -313,7 +313,7 @@ const terminateRetryErrors = new WeakSet<Error>();
 /**
  * Options for {@link retryWithTimeout}.
  */
-export interface RetryWithTimeoutOptions {
+export interface RetryWithTimeoutParams {
   /**
    * The function to handle the timeout.
    *
@@ -348,7 +348,7 @@ export interface RetryWithTimeoutOptions {
 /**
  * Options for {@link runWithTimeout}.
  */
-export interface RunWithTimeoutOptions<Result> {
+export interface RunWithTimeoutParams<Result> {
   /**
    * The context of the function.
    */
@@ -477,7 +477,7 @@ export async function requestAnimationFrameAsync(): Promise<void> {
  * @param options - The options for the function.
  * @returns A {@link Promise} that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeout(options: RetryWithTimeoutOptions): Promise<void> {
+export async function retryWithTimeout(options: RetryWithTimeoutParams): Promise<void> {
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
   const stackTrace = options.stackTrace ?? getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
@@ -490,7 +490,7 @@ export async function retryWithTimeout(options: RetryWithTimeoutOptions): Promis
   const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...options.retryOptions };
   fullOptions.abortSignal?.throwIfAborted();
 
-  await runWithTimeout(normalizeOptionalProperties<RunWithTimeoutOptions<void>>({
+  await runWithTimeout(normalizeOptionalProperties<RunWithTimeoutParams<void>>({
     context: { operationName: options.operationName ?? '', retryFn: options.operationFn },
     onTimeout: options.onTimeout,
     async operationFn(abortSignal: AbortSignal): Promise<void> {
@@ -546,7 +546,7 @@ export async function retryWithTimeout(options: RetryWithTimeoutOptions): Promis
  * @param options - The options for the function.
  * @returns A {@link Promise} that resolves with the result of the asynchronous function or rejects if it times out.
  */
-export async function runWithTimeout<Result>(options: RunWithTimeoutOptions<Result>): Promise<Result> {
+export async function runWithTimeout<Result>(options: RunWithTimeoutParams<Result>): Promise<Result> {
   const stackTrace = options.stackTrace ?? getStackTrace(1);
   const startTime = performance.now();
 

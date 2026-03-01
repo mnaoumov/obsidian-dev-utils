@@ -28,8 +28,8 @@ import {
 import { InternalPluginName } from 'obsidian-typings/implementations';
 
 import type {
-  UpdateLinkOptions,
-  UpdateLinksInFileOptions
+  UpdateLinkParams,
+  UpdateLinksInFileParams
 } from './Link.ts';
 
 import { abortSignalNever } from '../AbortController.ts';
@@ -173,7 +173,7 @@ interface InterruptedRename {
   oldPath: string;
 }
 
-interface RenameHandlerOptions {
+interface RenameHandlerParams {
   readonly abortSignal: AbortSignal;
   readonly app: App;
   readonly handledRenames: HandledRenames;
@@ -186,7 +186,7 @@ interface RenameHandlerOptions {
   readonly settingsManager: SettingsManager;
 }
 
-interface RenameMapOptions {
+interface RenameMapParams {
   readonly abortSignal: AbortSignal;
   readonly app: App;
   readonly newPath: string;
@@ -568,7 +568,7 @@ class RenameHandler {
   private readonly oldPathLinks: Reference[];
   private readonly settingsManager: SettingsManager;
 
-  public constructor(options: RenameHandlerOptions) {
+  public constructor(options: RenameHandlerParams) {
     this.app = options.app;
     this.oldPath = options.oldPath;
     this.newPath = options.newPath;
@@ -660,7 +660,7 @@ class RenameHandler {
           renamedFilePaths.add(newBacklinkPath);
           renamedLinks.add(`${newBacklinkPath}//${String(linkIndex)}`);
 
-          return updateLink(normalizeOptionalProperties<UpdateLinkOptions>({
+          return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
             app: this.app,
             link,
             newSourcePathOrFile: newBacklinkPath,
@@ -675,7 +675,7 @@ class RenameHandler {
       }
 
       if (isNote(this.app, this.newPath)) {
-        await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileOptions>({
+        await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileParams>({
           app: this.app,
           newSourcePathOrFile: this.newPath,
           oldSourcePathOrFile: this.oldPath,
@@ -816,7 +816,7 @@ class RenameMap {
   private readonly oldPathLinks: Reference[];
   private readonly settingsManager: SettingsManager;
 
-  public constructor(options: RenameMapOptions) {
+  public constructor(options: RenameMapParams) {
     this.abortSignal = options.abortSignal;
     this.app = options.app;
     this.settingsManager = options.settingsManager;
