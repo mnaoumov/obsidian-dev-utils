@@ -14,7 +14,7 @@ import type {
 
 import { TFolder } from 'obsidian';
 
-import type { AbstractFileCommandBaseOptions } from './AbstractFileCommandBase.ts';
+import type { AbstractFileCommandBaseParams } from './AbstractFileCommandBase.ts';
 
 import {
   asArrayOfFolders,
@@ -105,7 +105,7 @@ export abstract class FolderCommandBase<TPlugin extends Plugin = Plugin> extends
    *
    * @param options - The options for the folder command.
    */
-  public constructor(options: AbstractFileCommandBaseOptions<TPlugin>) {
+  public constructor(options: AbstractFileCommandBaseParams<TPlugin>) {
     super(options);
   }
 

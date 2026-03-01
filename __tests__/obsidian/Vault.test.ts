@@ -10,7 +10,7 @@ import {
   vi
 } from 'vitest';
 
-import type { RetryWithTimeoutNoticeOptions } from '../../src/obsidian/AsyncWithNotice.ts';
+import type { RetryWithTimeoutNoticeParams } from '../../src/obsidian/AsyncWithNotice.ts';
 import type { GenericObject } from '../../src/TypeGuards.ts';
 
 import { createTFileInstance } from '../../__mocks__/obsidian-typings/implementations/createTFileInstance.ts';
@@ -931,7 +931,7 @@ describe('createTempFolder', () => {
 
 describe('processFile', () => {
   function setupRetryToInvokeOperationFn(): void {
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
+    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
       const operationFn = options.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
@@ -977,7 +977,7 @@ describe('processFile', () => {
 
   it('should return false when content changed between read and write', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
+    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
       const operationFn = options.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
@@ -1008,7 +1008,7 @@ describe('processFile', () => {
 
   it('should return false when newContentProvider returns null', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
+    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
       const operationFn = options.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);

@@ -14,7 +14,7 @@ import {
   vi
 } from 'vitest';
 
-import type { RetryWithTimeoutNoticeOptions } from '../../src/obsidian/AsyncWithNotice.ts';
+import type { RetryWithTimeoutNoticeParams } from '../../src/obsidian/AsyncWithNotice.ts';
 import type { GenericObject } from '../../src/TypeGuards.ts';
 
 import { castTo } from '../../src/ObjectUtils.ts';
@@ -697,7 +697,7 @@ describe('getFrontmatterSafe', () => {
 
 describe('getBacklinksForFileSafe', () => {
   function setupRetryToInvokeOperationFn(): void {
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
+    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
       const operationFn = options.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
@@ -829,7 +829,7 @@ describe('getBacklinksForFileSafe', () => {
 
   it('should return false when reference cache link does not match content', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
+    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
       const operationFn = options.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
@@ -865,7 +865,7 @@ describe('getBacklinksForFileSafe', () => {
 
   it('should return false when frontmatter property value is not a string', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
+    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
       const operationFn = options.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
@@ -885,7 +885,7 @@ describe('getBacklinksForFileSafe', () => {
 
   it('should return false when frontmatter link does not match property value', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeOptions) => {
+    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
       const operationFn = options.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);

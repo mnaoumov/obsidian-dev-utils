@@ -16,7 +16,7 @@ import {
 } from './Vault.ts';
 import { Workspace } from './Workspace.ts';
 
-export interface MockAppOptions {
+export interface MockAppParams {
   files?: MockFileEntry[];
   folders?: string[];
 }
@@ -49,7 +49,7 @@ export class App {
   }
 }
 
-export function createMockApp(options: MockAppOptions = {}): ObsidianApp {
+export function createMockApp(options: MockAppParams = {}): ObsidianApp {
   const app = new App();
   const fileContents = new Map<string, string>();
 

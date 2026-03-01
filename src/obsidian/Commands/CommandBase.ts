@@ -21,7 +21,7 @@ import { assertNonNullable } from '../../TypeGuards.ts';
  *
  * @typeParam TPlugin - The type of the plugin that the command belongs to.
  */
-export interface CommandBaseOptions<TPlugin extends Plugin> {
+export interface CommandBaseParams<TPlugin extends Plugin> {
   /**
    * The icon to use for the command.
    */
@@ -97,7 +97,7 @@ export abstract class CommandBase<TPlugin extends Plugin> implements Command {
    *
    * @param options - The options for the command.
    */
-  public constructor(options: CommandBaseOptions<TPlugin>) {
+  public constructor(options: CommandBaseParams<TPlugin>) {
     this.id = options.id;
     this.name = options.name;
     this.icon = options.icon;

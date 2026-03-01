@@ -9,7 +9,7 @@
 import type { Plugin } from 'obsidian';
 
 import type {
-  CommandBaseOptions,
+  CommandBaseParams,
   CommandInvocationBase
 } from './CommandBase.ts';
 
@@ -26,7 +26,7 @@ export abstract class NonEditorCommandBase<TPlugin extends Plugin> extends Comma
    *
    * @param options - The options for the non-editor command.
    */
-  public constructor(options: CommandBaseOptions<TPlugin>) {
+  public constructor(options: CommandBaseParams<TPlugin>) {
     super(options);
 
     this.checkCallback = this.checkCallback.bind(this);

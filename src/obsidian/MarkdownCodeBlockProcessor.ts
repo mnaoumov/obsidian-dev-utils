@@ -36,7 +36,7 @@ import {
 /**
  * Options for {@link getCodeBlockMarkdownInfo}.
  */
-export interface GetCodeBlockMarkdownInfoOptions {
+export interface GetCodeBlockMarkdownInfoParams {
   /**
    * An Obsidian app instance.
    */
@@ -61,7 +61,7 @@ export interface GetCodeBlockMarkdownInfoOptions {
 /**
  * Options for {@link insertAfterCodeBlock} / {@link insertBeforeCodeBlock}.
  */
-export interface InsertCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions {
+export interface InsertCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
    * A number of lines to offset the insertion by. Default is `0`.
    */
@@ -81,7 +81,7 @@ export interface InsertCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions 
 /**
  * Options for {@link removeCodeBlock}.
  */
-export interface RemoveCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions {
+export interface RemoveCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
    * Whether to keep the gap after removing the code block. Default is `false`.
    */
@@ -91,7 +91,7 @@ export interface RemoveCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions 
 /**
  * Options for {@link replaceCodeBlock}.
  */
-export interface ReplaceCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions {
+export interface ReplaceCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
    * An abort signal to control the execution of the function.
    */
@@ -113,7 +113,7 @@ export interface ReplaceCodeBlockOptions extends GetCodeBlockMarkdownInfoOptions
   readonly shouldPreserveLinePrefix?: boolean;
 }
 
-interface CreateMarkdownInfoFromMatchOptions {
+interface CreateMarkdownInfoFromMatchParams {
   readonly approximateSectionInfo: MarkdownSectionInformation;
   readonly linesBeforeSectionCount: number;
   readonly match: RegExpMatchArray;
@@ -129,7 +129,7 @@ interface CreateMarkdownInfoFromMatchOptions {
  * @param options - The options for the function.
  * @returns The information about the code block in the Markdown section.
  */
-export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfoOptions): Promise<CodeBlockMarkdownInformation | null> {
+export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfoParams): Promise<CodeBlockMarkdownInformation | null> {
   const { app, ctx, el, source } = options;
 
   const sourceFile = getFileOrNull(app, ctx.sourcePath);
@@ -225,7 +225,7 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfo
  *
  * @param options - The options for the function.
  */
-export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Promise<void> {
+export async function insertAfterCodeBlock(options: InsertCodeBlockParams): Promise<void> {
   const { app, ctx, lineOffset = 0, text } = options;
 
   await process(app, ctx.sourcePath, async (_abortSignal, content) => {
@@ -246,7 +246,7 @@ export async function insertAfterCodeBlock(options: InsertCodeBlockOptions): Pro
  *
  * @param options - The options for the function.
  */
-export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Promise<void> {
+export async function insertBeforeCodeBlock(options: InsertCodeBlockParams): Promise<void> {
   const { app, ctx, lineOffset = 0, text } = options;
 
   await process(app, ctx.sourcePath, async (_abortSignal, content) => {
@@ -269,7 +269,7 @@ export async function insertBeforeCodeBlock(options: InsertCodeBlockOptions): Pr
  *
  * @param options - The options for the function.
  */
-export async function removeCodeBlock(options: RemoveCodeBlockOptions): Promise<void> {
+export async function removeCodeBlock(options: RemoveCodeBlockParams): Promise<void> {
   await replaceCodeBlock({
     ...options,
     codeBlockProvider: '',
@@ -282,7 +282,7 @@ export async function removeCodeBlock(options: RemoveCodeBlockOptions): Promise<
  *
  * @param options - The options for the function.
  */
-export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promise<void> {
+export async function replaceCodeBlock(options: ReplaceCodeBlockParams): Promise<void> {
   const { app, codeBlockProvider, ctx } = options;
   options.abortSignal?.throwIfAborted();
 
@@ -328,7 +328,7 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockOptions): Promis
   });
 }
 
-function createMarkdownInfoFromMatch(options: CreateMarkdownInfoFromMatchOptions): CodeBlockMarkdownInformation {
+function createMarkdownInfoFromMatch(options: CreateMarkdownInfoFromMatchParams): CodeBlockMarkdownInformation {
   const {
     approximateSectionInfo,
     linesBeforeSectionCount,

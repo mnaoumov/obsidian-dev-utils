@@ -151,7 +151,7 @@ export type ArrayOrDataArray<T> = DataArray<T> | T[];
 /**
  * Options for {@link renderIframe}.
  */
-export interface RenderIframeOptions {
+export interface RenderIframeParams {
   /**
    * A {@link DataviewInlineApi} instance.
    */
@@ -176,7 +176,7 @@ export interface RenderIframeOptions {
 /**
  * Options for {@link renderPaginatedList}.
  */
-export interface RenderPaginatedListOptions<T> {
+export interface RenderPaginatedListParams<T> {
   /**
    * A {@link DataviewInlineApi} instance.
    */
@@ -196,7 +196,7 @@ export interface RenderPaginatedListOptions<T> {
 /**
  * Options for {@link renderPaginated}.
  */
-export interface RenderPaginatedOptions<T> {
+export interface RenderPaginatedParams<T> {
   /**
    * A {@link DataviewInlineApi} instance.
    */
@@ -224,7 +224,7 @@ export interface RenderPaginatedOptions<T> {
 /**
  * Options for {@link renderPaginatedTable}.
  */
-export interface RenderPaginatedTableOptions<T> {
+export interface RenderPaginatedTableParams<T> {
   /**
    * A {@link DataviewInlineApi} instance.
    */
@@ -300,7 +300,7 @@ ${resultFence}`);
  *
  * @param options - The options for rendering the iframe.
  */
-export function renderIframe(options: RenderIframeOptions): void {
+export function renderIframe(options: RenderIframeParams): void {
   const {
     dv,
     height = '600px',
@@ -325,7 +325,7 @@ export function renderIframe(options: RenderIframeOptions): void {
  *
  * @returns A {@link Promise} that resolves when the list is rendered.
  */
-export async function renderPaginatedList<T>(options: RenderPaginatedListOptions<T>): Promise<void> {
+export async function renderPaginatedList<T>(options: RenderPaginatedListParams<T>): Promise<void> {
   const {
     dv,
     // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
@@ -351,7 +351,7 @@ export async function renderPaginatedList<T>(options: RenderPaginatedListOptions
  *
  * @returns A {@link Promise} that resolves when the table is rendered.
  */
-export async function renderPaginatedTable<T extends unknown[]>(options: RenderPaginatedTableOptions<T>): Promise<void> {
+export async function renderPaginatedTable<T extends unknown[]>(options: RenderPaginatedTableParams<T>): Promise<void> {
   const {
     dv,
     headers,
@@ -378,7 +378,7 @@ export async function renderPaginatedTable<T extends unknown[]>(options: RenderP
  *
  * @returns A {@link Promise} that resolves when the content is rendered.
  */
-async function renderPaginated<T>(options: RenderPaginatedOptions<T>): Promise<void> {
+async function renderPaginated<T>(options: RenderPaginatedParams<T>): Promise<void> {
   const SECOND_PAGE_NUMBER = 2;
   const MORE_PAGE_NUMBER = 3;
   const {

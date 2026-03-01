@@ -33,7 +33,7 @@ import { getBacklinksForFileSafe } from './MetadataCache.ts';
 /**
  * Options for {@link renderDelayedBacklinksForFolder}.
  */
-export interface RenderDelayedBacklinksForFolderOptions {
+export interface RenderDelayedBacklinksForFolderParams {
   /**
    * A {@link DataviewInlineApi} instance.
    */
@@ -53,7 +53,7 @@ export interface RenderDelayedBacklinksForFolderOptions {
 /**
  * Options for {@link renderDelayedBacklinks}.
  */
-export interface RenderDelayedBacklinksOptions {
+export interface RenderDelayedBacklinksParams {
   /**
    * A {@link DataviewInlineApi} instance.
    */
@@ -127,7 +127,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
  *
  * @param options - The options for rendering delayed backlinks.
  */
-export function renderDelayedBacklinks(options: RenderDelayedBacklinksOptions): void {
+export function renderDelayedBacklinks(options: RenderDelayedBacklinksParams): void {
   const {
     dv,
     files,
@@ -147,7 +147,7 @@ export function renderDelayedBacklinks(options: RenderDelayedBacklinksOptions): 
  *
  * @param options - The options for rendering delayed backlinks.
  */
-export function renderDelayedBacklinksForFolder(options: RenderDelayedBacklinksForFolderOptions): void {
+export function renderDelayedBacklinksForFolder(options: RenderDelayedBacklinksForFolderParams): void {
   const {
     dv,
     folder,

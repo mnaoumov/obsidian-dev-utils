@@ -22,7 +22,7 @@ import {
 /**
  * Options for {@link confirm}.
  */
-export interface ConfirmOptions {
+export interface ConfirmParams {
   /**
    * An Obsidian app instance.
    */
@@ -54,13 +54,13 @@ export interface ConfirmOptions {
   readonly title?: DocumentFragment | string;
 }
 
-class ConfirmModal extends ModalBase<boolean, ConfirmOptions> {
+class ConfirmModal extends ModalBase<boolean, ConfirmParams> {
   private isConfirmed = false;
-  private readonly options: Required<ConfirmOptions>;
+  private readonly options: Required<ConfirmParams>;
 
-  public constructor(options: ConfirmOptions, resolve: PromiseResolve<boolean>) {
+  public constructor(options: ConfirmParams, resolve: PromiseResolve<boolean>) {
     super(options, resolve, CssClass.ConfirmModal);
-    const DEFAULT_OPTIONS: Required<ConfirmOptions> = {
+    const DEFAULT_OPTIONS: Required<ConfirmParams> = {
       app: options.app,
       cancelButtonText: t(($) => $.obsidianDevUtils.buttons.cancel),
       cssClass: '',
@@ -102,6 +102,6 @@ class ConfirmModal extends ModalBase<boolean, ConfirmOptions> {
  * @param options - The options for the confirm modal.
  * @returns A {@link Promise} that resolves with a boolean indicating whether the "OK" button was clicked.
  */
-export async function confirm(options: ConfirmOptions): Promise<boolean> {
+export async function confirm(options: ConfirmParams): Promise<boolean> {
   return await showModal<boolean>((resolve) => new ConfirmModal(options, resolve));
 }

@@ -15,7 +15,7 @@ import { addPluginCssClasses } from '../Plugin/PluginContext.ts';
 /**
  * Base options for a modal.
  */
-export interface ModalOptionsBase {
+export interface ModalParamsBase {
   /**
    * An Obsidian app instance.
    */
@@ -30,7 +30,7 @@ export interface ModalOptionsBase {
 /**
  * A base class for displaying modals in Obsidian.
  */
-export abstract class ModalBase<Value, Options extends ModalOptionsBase> extends Modal {
+export abstract class ModalBase<Value, Options extends ModalParamsBase> extends Modal {
   /**
    * Creates a new modal.
    *
