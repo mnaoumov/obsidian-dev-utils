@@ -92,9 +92,9 @@ export interface LoopParams<T> {
 /**
  * Loops over a list of items and processes each item.
  *
- * @param options - The options for the loop.
+ * @param params - The parameters for the loop.
  */
-export async function loop<T>(options: LoopParams<T>): Promise<void> {
+export async function loop<T>(params: LoopParams<T>): Promise<void> {
   const DEFAULT_OPTIONS: Required<LoopParams<T>> = {
     abortSignal: abortSignalNever(),
     /* v8 ignore start -- buildNoticeMessage is required in LoopParams and always overridden by the spread. */
@@ -118,7 +118,7 @@ export async function loop<T>(options: LoopParams<T>): Promise<void> {
 
   const fullOptions: Required<LoopParams<T>> = {
     ...DEFAULT_OPTIONS,
-    ...options
+    ...params
   };
 
   const stackTrace = getStackTrace(1);

@@ -94,13 +94,13 @@ export interface RunWithTimeoutNoticeParams<Result> {
 /**
  * Retries the provided function until it returns true or the timeout is reached and displays a notice if the function times out.
  *
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  * @returns A {@link Promise} that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeoutNotice(options: RetryWithTimeoutNoticeParams): Promise<void> {
+export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParams): Promise<void> {
   return retryWithTimeout({
-    ...options,
-    onTimeout: options.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice
+    ...params,
+    onTimeout: params.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice
   });
 }
 
@@ -108,13 +108,13 @@ export async function retryWithTimeoutNotice(options: RetryWithTimeoutNoticePara
  * Executes a function with a timeout and displays a notice if the function times out.
  *
  * @typeParam R - The type of the result from the asynchronous function.
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  * @returns The result of the function.
  */
-export async function runWithTimeoutNotice<Result>(options: RunWithTimeoutNoticeParams<Result>): Promise<Result> {
+export async function runWithTimeoutNotice<Result>(params: RunWithTimeoutNoticeParams<Result>): Promise<Result> {
   return runWithTimeout({
-    ...options,
-    onTimeout: options.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice
+    ...params,
+    onTimeout: params.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice
   });
 }
 

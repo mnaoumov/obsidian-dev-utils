@@ -568,18 +568,18 @@ class RenameHandler {
   private readonly oldPathLinks: Reference[];
   private readonly settingsManager: SettingsManager;
 
-  public constructor(options: RenameHandlerParams) {
-    this.app = options.app;
-    this.oldPath = options.oldPath;
-    this.newPath = options.newPath;
-    this.oldPathBacklinksMap = options.oldPathBacklinksMap;
-    this.oldCache = options.oldCache;
-    this.abortSignal = options.abortSignal;
-    this.settingsManager = options.settingsManager;
-    this.interruptedRenamesMap = options.interruptedRenamesMap;
+  public constructor(params: RenameHandlerParams) {
+    this.app = params.app;
+    this.oldPath = params.oldPath;
+    this.newPath = params.newPath;
+    this.oldPathBacklinksMap = params.oldPathBacklinksMap;
+    this.oldCache = params.oldCache;
+    this.abortSignal = params.abortSignal;
+    this.settingsManager = params.settingsManager;
+    this.interruptedRenamesMap = params.interruptedRenamesMap;
     this.oldPathLinks = this.oldCache ? getAllLinks(this.oldCache) : [];
-    this.handledRenames = options.handledRenames;
-    this.interruptedCombinedBacklinksMap = options.interruptedCombinedBacklinksMap ?? new Map<string, Map<string, string>>();
+    this.handledRenames = params.handledRenames;
+    this.interruptedCombinedBacklinksMap = params.interruptedCombinedBacklinksMap ?? new Map<string, Map<string, string>>();
   }
 
   public async handle(): Promise<void> {
@@ -816,13 +816,13 @@ class RenameMap {
   private readonly oldPathLinks: Reference[];
   private readonly settingsManager: SettingsManager;
 
-  public constructor(options: RenameMapParams) {
-    this.abortSignal = options.abortSignal;
-    this.app = options.app;
-    this.settingsManager = options.settingsManager;
-    this.oldCache = options.oldCache;
-    this.oldPath = options.oldPath;
-    this.newPath = options.newPath;
+  public constructor(params: RenameMapParams) {
+    this.abortSignal = params.abortSignal;
+    this.app = params.app;
+    this.settingsManager = params.settingsManager;
+    this.oldCache = params.oldCache;
+    this.oldPath = params.oldPath;
+    this.newPath = params.newPath;
     this.oldPathLinks = this.oldCache ? getAllLinks(this.oldCache) : [];
   }
 

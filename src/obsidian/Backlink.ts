@@ -125,14 +125,14 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
 /**
  * Renders delayed backlinks.
  *
- * @param options - The options for rendering delayed backlinks.
+ * @param params - The parameters for rendering delayed backlinks.
  */
-export function renderDelayedBacklinks(options: RenderDelayedBacklinksParams): void {
+export function renderDelayedBacklinks(params: RenderDelayedBacklinksParams): void {
   const {
     dv,
     files,
     title = 'Backlinks'
-  } = options;
+  } = params;
   renderCallout({
     async contentProvider() {
       await renderBacklinksTable(dv, files);
@@ -145,14 +145,14 @@ export function renderDelayedBacklinks(options: RenderDelayedBacklinksParams): v
 /**
  * Renders delayed backlinks for a specific folder.
  *
- * @param options - The options for rendering delayed backlinks.
+ * @param params - The parameters for rendering delayed backlinks.
  */
-export function renderDelayedBacklinksForFolder(options: RenderDelayedBacklinksForFolderParams): void {
+export function renderDelayedBacklinksForFolder(params: RenderDelayedBacklinksForFolderParams): void {
   const {
     dv,
     folder,
     title = 'Folder Backlinks'
-  } = options;
+  } = params;
   const folder2 = folder ?? dv.current().file.folder;
   renderDelayedBacklinks({
     dv,

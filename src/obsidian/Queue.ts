@@ -121,36 +121,36 @@ interface QueueItem {
 /**
  * Adds an asynchronous function to be executed after the previous function completes.
  *
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  */
-export function addToQueue(options: AddToQueueParams): void {
-  const stackTrace = options.stackTrace ?? getStackTrace(1);
-  invokeAsyncSafely(() => addToQueueAndWait(options), stackTrace);
+export function addToQueue(params: AddToQueueParams): void {
+  const stackTrace = params.stackTrace ?? getStackTrace(1);
+  invokeAsyncSafely(() => addToQueueAndWait(params), stackTrace);
 }
 
 /**
  * Adds an asynchronous function to be executed after the previous function completes and returns a {@link Promise} that resolves when the function completes.
  *
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  */
-export async function addToQueueAndWait(options: AddToQueueAndWaitParams): Promise<void> {
-  const abortSignal = options.abortSignal ?? abortSignalNever();
+export async function addToQueueAndWait(params: AddToQueueAndWaitParams): Promise<void> {
+  const abortSignal = params.abortSignal ?? abortSignalNever();
   abortSignal.throwIfAborted();
 
   const DEFAULT_TIMEOUT_IN_MILLISECONDS = 60000;
-  const timeoutInMilliseconds = options.timeoutInMilliseconds ?? DEFAULT_TIMEOUT_IN_MILLISECONDS;
-  const stackTrace = options.stackTrace ?? getStackTrace(1);
-  const operationName = options.operationName ?? '';
-  const queue = getQueue(options.app).value;
+  const timeoutInMilliseconds = params.timeoutInMilliseconds ?? DEFAULT_TIMEOUT_IN_MILLISECONDS;
+  const stackTrace = params.stackTrace ?? getStackTrace(1);
+  const operationName = params.operationName ?? '';
+  const queue = getQueue(params.app).value;
   queue.items.push({
     abortSignal,
-    operationFn: options.operationFn,
+    operationFn: params.operationFn,
     operationName,
-    shouldShowTimeoutNotice: options.shouldShowTimeoutNotice ?? true,
+    shouldShowTimeoutNotice: params.shouldShowTimeoutNotice ?? true,
     stackTrace,
     timeoutInMilliseconds
   });
-  queue.promise = queue.promise.then(() => processNextQueueItem(options.app));
+  queue.promise = queue.promise.then(() => processNextQueueItem(params.app));
   await queue.promise;
 }
 

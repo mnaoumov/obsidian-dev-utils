@@ -591,20 +591,20 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
   return target;
 }
 
-function applySubstitutions(options: ApplySubstitutionsParams): MaybeReturn<string> {
+function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<string> {
   /* v8 ignore start -- All enum values are handled above; default branch is unreachable. */
-  switch (options.key) {
+  switch (params.key) {
     /* v8 ignore stop */
     case TokenSubstitutionKey.CircularReference:
-      return options.substitutions.circularReference;
+      return params.substitutions.circularReference;
     case TokenSubstitutionKey.Function:
-      return ensureNonNullable(options.functionTexts[options.index], `Function with index ${String(options.index)} not found`);
+      return ensureNonNullable(params.functionTexts[params.index], `Function with index ${String(params.index)} not found`);
     case TokenSubstitutionKey.MaxDepthLimitReached:
-      return options.substitutions.maxDepthLimitReached;
+      return params.substitutions.maxDepthLimitReached;
     case TokenSubstitutionKey.MaxDepthLimitReachedArray:
-      return `Array(${String(options.index)})`;
+      return `Array(${String(params.index)})`;
     case TokenSubstitutionKey.ToJSONFailed:
-      return options.substitutions.toJSONFailed;
+      return params.substitutions.toJSONFailed;
     case TokenSubstitutionKey.Undefined:
       return 'undefined';
     default:

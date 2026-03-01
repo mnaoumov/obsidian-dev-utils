@@ -56,19 +56,19 @@ export interface ConfirmParams {
 
 class ConfirmModal extends ModalBase<boolean, ConfirmParams> {
   private isConfirmed = false;
-  private readonly options: Required<ConfirmParams>;
+  private readonly params: Required<ConfirmParams>;
 
-  public constructor(options: ConfirmParams, resolve: PromiseResolve<boolean>) {
-    super(options, resolve, CssClass.ConfirmModal);
+  public constructor(params: ConfirmParams, resolve: PromiseResolve<boolean>) {
+    super(params, resolve, CssClass.ConfirmModal);
     const DEFAULT_OPTIONS: Required<ConfirmParams> = {
-      app: options.app,
+      app: params.app,
       cancelButtonText: t(($) => $.obsidianDevUtils.buttons.cancel),
       cssClass: '',
-      message: options.message,
+      message: params.message,
       okButtonText: t(($) => $.obsidianDevUtils.buttons.ok),
       title: ''
     };
-    this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.params = { ...DEFAULT_OPTIONS, ...params };
   }
 
   public override onClose(): void {
@@ -78,10 +78,10 @@ class ConfirmModal extends ModalBase<boolean, ConfirmParams> {
 
   public override onOpen(): void {
     super.onOpen();
-    this.titleEl.setText(this.options.title);
-    this.contentEl.createEl('p', { text: this.options.message });
+    this.titleEl.setText(this.params.title);
+    this.contentEl.createEl('p', { text: this.params.message });
     const okButton = new ButtonComponent(this.contentEl);
-    okButton.setButtonText(this.options.okButtonText);
+    okButton.setButtonText(this.params.okButtonText);
     okButton.setCta();
     okButton.onClick(() => {
       this.isConfirmed = true;
@@ -90,7 +90,7 @@ class ConfirmModal extends ModalBase<boolean, ConfirmParams> {
     okButton.setClass(CssClass.OkButton);
 
     const cancelButton = new ButtonComponent(this.contentEl);
-    cancelButton.setButtonText(this.options.cancelButtonText);
+    cancelButton.setButtonText(this.params.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
     cancelButton.setClass(CssClass.CancelButton);
   }
@@ -99,9 +99,9 @@ class ConfirmModal extends ModalBase<boolean, ConfirmParams> {
 /**
  * Displays an confirm modal in Obsidian with a specified message.
  *
- * @param options - The options for the confirm modal.
+ * @param params - The parameters for the confirm modal.
  * @returns A {@link Promise} that resolves with a boolean indicating whether the "OK" button was clicked.
  */
-export async function confirm(options: ConfirmParams): Promise<boolean> {
-  return await showModal<boolean>((resolve) => new ConfirmModal(options, resolve));
+export async function confirm(params: ConfirmParams): Promise<boolean> {
+  return await showModal<boolean>((resolve) => new ConfirmModal(params, resolve));
 }

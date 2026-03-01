@@ -298,15 +298,15 @@ ${resultFence}`);
 /**
  * Renders an iframe in the Dataview container with the specified relative path, width, and height.
  *
- * @param options - The options for rendering the iframe.
+ * @param params - The parameters for rendering the iframe.
  */
-export function renderIframe(options: RenderIframeParams): void {
+export function renderIframe(params: RenderIframeParams): void {
   const {
     dv,
     height = '600px',
     relativePathOrFile,
     width = '100%'
-  } = options;
+  } = params;
   dv.el('iframe', '', {
     attr: {
       height,
@@ -321,17 +321,17 @@ export function renderIframe(options: RenderIframeParams): void {
  *
  * @typeParam T - The type of items in the list.
  *
- * @param options - The options for rendering the paginated list.
+ * @param params - The parameters for rendering the paginated list.
  *
  * @returns A {@link Promise} that resolves when the list is rendered.
  */
-export async function renderPaginatedList<T>(options: RenderPaginatedListParams<T>): Promise<void> {
+export async function renderPaginatedList<T>(params: RenderPaginatedListParams<T>): Promise<void> {
   const {
     dv,
     // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     itemsPerPageOptions = [10, 20, 50, 100],
     rows
-  } = options;
+  } = params;
   await renderPaginated({
     dv,
     itemsPerPageOptions,
@@ -347,18 +347,18 @@ export async function renderPaginatedList<T>(options: RenderPaginatedListParams<
  *
  * @typeParam T - The type of items in the table rows.
  *
- * @param options - The options for rendering the paginated table.
+ * @param params - The parameters for rendering the paginated table.
  *
  * @returns A {@link Promise} that resolves when the table is rendered.
  */
-export async function renderPaginatedTable<T extends unknown[]>(options: RenderPaginatedTableParams<T>): Promise<void> {
+export async function renderPaginatedTable<T extends unknown[]>(params: RenderPaginatedTableParams<T>): Promise<void> {
   const {
     dv,
     headers,
     // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     itemsPerPageOptions = [10, 20, 50, 100],
     rows
-  } = options;
+  } = params;
   await renderPaginated({
     dv,
     itemsPerPageOptions,
@@ -374,11 +374,11 @@ export async function renderPaginatedTable<T extends unknown[]>(options: RenderP
  *
  * @typeParam T - The type of items to paginate.
  *
- * @param options - The options for rendering the paginated content.
+ * @param params - The parameters for rendering the paginated content.
  *
  * @returns A {@link Promise} that resolves when the content is rendered.
  */
-async function renderPaginated<T>(options: RenderPaginatedParams<T>): Promise<void> {
+async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<void> {
   const SECOND_PAGE_NUMBER = 2;
   const MORE_PAGE_NUMBER = 3;
   const {
@@ -386,7 +386,7 @@ async function renderPaginated<T>(options: RenderPaginatedParams<T>): Promise<vo
     // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     itemsPerPageOptions = [10, 20, 50, 100],
     rows
-  } = options;
+  } = params;
   if (rows.length === 0) {
     dv.paragraph('No items found');
     return;
@@ -489,7 +489,7 @@ async function renderPaginated<T>(options: RenderPaginatedParams<T>): Promise<vo
 
     dv.container = container;
     try {
-      await options.renderer(rowsForCurrentPage);
+      await params.renderer(rowsForCurrentPage);
     } catch (e) {
       dv.paragraph(`❌${errorToString(e)}`);
     } finally {

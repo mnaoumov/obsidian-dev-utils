@@ -36,7 +36,7 @@ import { invokeWithPatchAsync } from './MonkeyAround.ts';
 let domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
 
 /**
- * The options for the full render.
+ * The params for the full render.
  */
 export interface FullRenderParams {
   /**
@@ -108,35 +108,35 @@ class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
 /**
  * Render the markdown and embeds.
  *
- * @param options - The options for the full render.
+ * @param params - The parameters for the full render.
  * @returns The {@link Promise} that resolves when the full render is complete.
  */
-export async function fullRender(options: FullRenderParams): Promise<void> {
-  const sourcePath = options.sourcePath ?? '/';
+export async function fullRender(params: FullRenderParams): Promise<void> {
+  const sourcePath = params.sourcePath ?? '/';
   let shouldUnloadComponent = false;
   let component: Component;
-  if (options.component) {
-    component = options.component;
+  if (params.component) {
+    component = params.component;
   } else {
     component = new Component();
     component.load();
     shouldUnloadComponent = true;
   }
-  await invokeWithPatchAsync(options.app.embedRegistry.embedByExtension, {
+  await invokeWithPatchAsync(params.app.embedRegistry.embedByExtension, {
     md: (next: EmbedCreator): EmbedCreator => (context, file, subpath) => {
       context.displayMode = false;
       return next(context, file, subpath);
     }
   }, async () => {
-    await MarkdownRenderer.render(options.app, options.markdown, options.el, sourcePath, component);
+    await MarkdownRenderer.render(params.app, params.markdown, params.el, sourcePath, component);
   });
 
   if (shouldUnloadComponent) {
     component.unload();
   }
 
-  if (options.shouldRegisterLinkHandlers) {
-    await registerLinkHandlers(options.app, options.el, options.sourcePath);
+  if (params.shouldRegisterLinkHandlers) {
+    await registerLinkHandlers(params.app, params.el, params.sourcePath);
   }
 }
 

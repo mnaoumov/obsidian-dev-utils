@@ -24,10 +24,10 @@ export abstract class NonEditorCommandBase<TPlugin extends Plugin> extends Comma
   /**
    * Creates a new non-editor command.
    *
-   * @param options - The options for the non-editor command.
+   * @param params - The parameters for the non-editor command.
    */
-  public constructor(options: CommandBaseParams<TPlugin>) {
-    super(options);
+  public constructor(params: CommandBaseParams<TPlugin>) {
+    super(params);
 
     this.checkCallback = this.checkCallback.bind(this);
   }

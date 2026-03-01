@@ -184,17 +184,17 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
   /**
    * Creates a new abstract file command.
    *
-   * @param options - The options for the abstract file command.
+   * @param params - The parameters for the abstract file command.
    */
-  public constructor(options: AbstractFileCommandBaseParams<TPlugin>) {
-    super(options);
-    this._fileMenuItemName = options.fileMenuItemName;
-    this._fileMenuSection = options.fileMenuSection;
-    this._fileMenuSubmenuIcon = options.fileMenuSubmenuIcon;
-    this._filesMenuItemName = options.filesMenuItemName;
-    this._filesMenuSection = options.filesMenuSection;
-    this._filesMenuSubmenuIcon = options.filesMenuSubmenuIcon;
-    this._shouldAddCommandToSubmenu = options.shouldAddCommandToSubmenu;
+  public constructor(params: AbstractFileCommandBaseParams<TPlugin>) {
+    super(params);
+    this._fileMenuItemName = params.fileMenuItemName;
+    this._fileMenuSection = params.fileMenuSection;
+    this._fileMenuSubmenuIcon = params.fileMenuSubmenuIcon;
+    this._filesMenuItemName = params.filesMenuItemName;
+    this._filesMenuSection = params.filesMenuSection;
+    this._filesMenuSubmenuIcon = params.filesMenuSubmenuIcon;
+    this._shouldAddCommandToSubmenu = params.shouldAddCommandToSubmenu;
   }
 
   /**

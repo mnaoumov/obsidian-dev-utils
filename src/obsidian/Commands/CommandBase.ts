@@ -95,13 +95,13 @@ export abstract class CommandBase<TPlugin extends Plugin> implements Command {
   /**
    * Creates a new command.
    *
-   * @param options - The options for the command.
+   * @param params - The parameters for the command.
    */
-  public constructor(options: CommandBaseParams<TPlugin>) {
-    this.id = options.id;
-    this.name = options.name;
-    this.icon = options.icon;
-    this.plugin = options.plugin;
+  public constructor(params: CommandBaseParams<TPlugin>) {
+    this.id = params.id;
+    this.name = params.name;
+    this.icon = params.icon;
+    this.plugin = params.plugin;
     this.app = this.plugin.app;
     this.originalId = this.id;
     this.originalName = this.name;

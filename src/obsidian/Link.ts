@@ -723,23 +723,23 @@ interface WikiLinkNode extends Node {
 /**
  * Converts a link to a new path.
  *
- * @param options - The options for converting the link.
+ * @param params - The parameters for converting the link.
  * @returns The converted link.
  */
-export function convertLink(options: ConvertLinkParams): string {
-  const targetFile = extractLinkFile(options.app, options.link, options.oldSourcePathOrFile ?? options.newSourcePathOrFile);
+export function convertLink(params: ConvertLinkParams): string {
+  const targetFile = extractLinkFile(params.app, params.link, params.oldSourcePathOrFile ?? params.newSourcePathOrFile);
   if (!targetFile) {
-    return options.link.original;
+    return params.link.original;
   }
 
   return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
-    app: options.app,
-    link: options.link,
-    linkStyle: options.linkStyle,
-    newSourcePathOrFile: options.newSourcePathOrFile,
+    app: params.app,
+    link: params.link,
+    linkStyle: params.linkStyle,
+    newSourcePathOrFile: params.newSourcePathOrFile,
     newTargetPathOrFile: targetFile,
-    oldSourcePathOrFile: options.oldSourcePathOrFile,
-    shouldUpdateFileNameAlias: options.shouldUpdateFileNameAlias
+    oldSourcePathOrFile: params.oldSourcePathOrFile,
+    shouldUpdateFileNameAlias: params.shouldUpdateFileNameAlias
   }));
 }
 
@@ -906,46 +906,46 @@ export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
 /**
  * Generates a markdown link based on the provided parameters.
  *
- * @param options - The options for generating the markdown link.
+ * @param params - The parameters for generating the markdown link.
  * @returns The generated markdown link.
  */
-export function generateMarkdownLink(options: GenerateMarkdownLinkParams): string {
-  const { app } = options;
+export function generateMarkdownLink(params: GenerateMarkdownLinkParams): string {
+  const { app } = params;
 
   const DEFAULT_OPTIONS: Partial<GenerateMarkdownLinkParams> = {
     isEmptyEmbedAliasAllowed: true
   };
 
   const customDefaultOptions = getGenerateMarkdownLinkDefaultOptionsFns(app).map((defaultOptionsFn) => defaultOptionsFn());
-  options = Object.assign({}, DEFAULT_OPTIONS, ...customDefaultOptions, options);
-  const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
+  params = Object.assign({}, DEFAULT_OPTIONS, ...customDefaultOptions, params);
+  const targetFile = getFile(app, params.targetPathOrFile, params.isNonExistingFileAllowed);
 
-  return tempRegisterFilesAndRun(app, [targetFile], () => generateMarkdownLinkImpl(options));
+  return tempRegisterFilesAndRun(app, [targetFile], () => generateMarkdownLinkImpl(params));
 }
 
 /**
  * Generates a raw markdown link based on the provided options.
  *
- * @param options - The options for generating a raw markdown link.
+ * @param params - The parameters for generating a raw markdown link.
  * @returns A raw markdown link.
  */
-export function generateRawMarkdownLink(options: GenerateRawMarkdownLinkParams): string {
-  const embedPrefix = options.isEmbed ? '!' : '';
+export function generateRawMarkdownLink(params: GenerateRawMarkdownLinkParams): string {
+  const embedPrefix = params.isEmbed ? '!' : '';
 
-  if (options.isWikilink) {
-    const aliasPart = options.alias ? `|${options.alias}` : '';
-    return `${embedPrefix}[[${options.url}${aliasPart}]]`;
+  if (params.isWikilink) {
+    const aliasPart = params.alias ? `|${params.alias}` : '';
+    return `${embedPrefix}[[${params.url}${aliasPart}]]`;
   }
 
-  const alias = options.alias ?? '';
-  const shouldEscapeAlias = options.shouldEscapeAlias ?? false;
+  const alias = params.alias ?? '';
+  const shouldEscapeAlias = params.shouldEscapeAlias ?? false;
   const escapedAlias = shouldEscapeAlias ? escapeAlias(alias) : alias;
 
-  const url = options.shouldUseAngleBrackets
-    ? `<${options.url}>`
-    : encodeUrl(options.url);
+  const url = params.shouldUseAngleBrackets
+    ? `<${params.url}>`
+    : encodeUrl(params.url);
 
-  const titlePart = options.title ? ` ${JSON.stringify(options.title)}` : '';
+  const titlePart = params.title ? ` ${JSON.stringify(params.title)}` : '';
 
   return `${embedPrefix}[${escapedAlias}](${url}${titlePart})`;
 }
@@ -1046,10 +1046,10 @@ export function registerGenerateMarkdownLinkDefaultOptionsFn(plugin: Plugin, fn:
 /**
  * Determines if the alias of a link should be reset.
  *
- * @param options - The options for determining if the alias should be reset.
+ * @param params - The parameters for determining if the alias should be reset.
  * @returns Whether the alias should be reset.
  */
-export function shouldResetAlias(options: ShouldResetAliasParams): boolean {
+export function shouldResetAlias(params: ShouldResetAliasParams): boolean {
   const {
     app,
     displayText,
@@ -1058,7 +1058,7 @@ export function shouldResetAlias(options: ShouldResetAliasParams): boolean {
     oldSourcePathOrFile,
     oldTargetPath,
     targetPathOrFile
-  } = options;
+  } = params;
   if (isWikilink === false) {
     return false;
   }
@@ -1206,10 +1206,10 @@ export function unescapeAlias(escapedAlias: string): string {
 /**
  * Updates a link based on the provided parameters.
  *
- * @param options - The options for updating the link.
+ * @param params - The parameters for updating the link.
  * @returns The updated link.
  */
-export function updateLink(options: UpdateLinkParams): string {
+export function updateLink(params: UpdateLinkParams): string {
   const {
     app,
     link,
@@ -1219,7 +1219,7 @@ export function updateLink(options: UpdateLinkParams): string {
     oldSourcePathOrFile,
     oldTargetPathOrFile,
     shouldUpdateFileNameAlias
-  } = options;
+  } = params;
   if (!newTargetPathOrFile) {
     return link.original;
   }
@@ -1285,10 +1285,10 @@ export function updateLink(options: UpdateLinkParams): string {
 /**
  * Updates the links in a content string based on the provided parameters.
  *
- * @param options - The options for updating the links.
+ * @param params - The parameters for updating the links.
  * @returns A {@link Promise} that resolves to the content with updated links.
  */
-export async function updateLinksInContent(options: UpdateLinksInContentParams): Promise<string> {
+export async function updateLinksInContent(params: UpdateLinksInContentParams): Promise<string> {
   const {
     app,
     content,
@@ -1297,7 +1297,7 @@ export async function updateLinksInContent(options: UpdateLinksInContentParams):
     oldSourcePathOrFile,
     shouldUpdateEmbedOnlyLinks,
     shouldUpdateFileNameAlias
-  } = options;
+  } = params;
 
   return await editLinksInContent(app, content, (link) => {
     const isEmbedLink = testEmbed(link.original);
@@ -1318,10 +1318,10 @@ export async function updateLinksInContent(options: UpdateLinksInContentParams):
 /**
  * Updates the links in a file based on the provided parameters.
  *
- * @param options - The options for updating the links.
+ * @param params - The parameters for updating the links.
  * @returns A {@link Promise} that resolves when the links are updated.
  */
-export async function updateLinksInFile(options: UpdateLinksInFileParams): Promise<void> {
+export async function updateLinksInFile(params: UpdateLinksInFileParams): Promise<void> {
   const {
     app,
     linkStyle,
@@ -1329,7 +1329,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileParams): Promi
     oldSourcePathOrFile,
     shouldUpdateEmbedOnlyLinks,
     shouldUpdateFileNameAlias
-  } = options;
+  } = params;
 
   if (isCanvasFile(app, newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
     return;
@@ -1348,7 +1348,7 @@ export async function updateLinksInFile(options: UpdateLinksInFileParams): Promi
       oldSourcePathOrFile,
       shouldUpdateFileNameAlias
     }));
-  }, options);
+  }, params);
 }
 
 function _fixFrontmatterMarkdownLinks(value: unknown, key: string, cache: CachedMetadata): boolean {
@@ -1481,27 +1481,27 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
   return linkText;
 }
 
-function generateMarkdownLinkImpl(options: GenerateMarkdownLinkParams): string {
-  const { app } = options;
-  const targetFile = getFile(app, options.targetPathOrFile, options.isNonExistingFileAllowed);
-  const sourcePath = getPath(app, options.sourcePathOrFile);
-  const subpath = options.subpath ?? '';
+function generateMarkdownLinkImpl(params: GenerateMarkdownLinkParams): string {
+  const { app } = params;
+  const targetFile = getFile(app, params.targetPathOrFile, params.isNonExistingFileAllowed);
+  const sourcePath = getPath(app, params.sourcePathOrFile);
+  const subpath = params.subpath ?? '';
 
-  const linkConfig = getLinkConfig(options, targetFile);
+  const linkConfig = getLinkConfig(params, targetFile);
   const linkText = generateLinkText(app, targetFile, sourcePath, subpath, linkConfig);
 
   return linkConfig.isWikilink
-    ? generateWikiLink(linkText, options.alias, linkConfig.isEmbed)
-    : generateMarkdownStyleLink(linkText, targetFile, options, linkConfig);
+    ? generateWikiLink(linkText, params.alias, linkConfig.isEmbed)
+    : generateMarkdownStyleLink(linkText, targetFile, params, linkConfig);
 }
 
-function generateMarkdownStyleLink(linkText: string, targetFile: TFile, options: GenerateMarkdownLinkParams, config: LinkConfig): string {
-  const { app } = options;
+function generateMarkdownStyleLink(linkText: string, targetFile: TFile, params: GenerateMarkdownLinkParams, config: LinkConfig): string {
+  const { app } = params;
 
-  let alias = options.alias ?? '';
-  let shouldEscapeAlias = options.shouldEscapeAlias ?? false;
-  if (!alias && (isMarkdownFile(app, targetFile) || !options.isEmptyEmbedAliasAllowed)) {
-    alias = !options.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile)
+  let alias = params.alias ?? '';
+  let shouldEscapeAlias = params.shouldEscapeAlias ?? false;
+  if (!alias && (isMarkdownFile(app, targetFile) || !params.isEmptyEmbedAliasAllowed)) {
+    alias = !params.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile)
       ? targetFile.basename
       : targetFile.name;
     shouldEscapeAlias = true;
@@ -1612,21 +1612,21 @@ function getGenerateMarkdownLinkDefaultOptionsFns(app: App): (() => Partial<Gene
   return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkParams>)[]>(app, 'generateMarkdownLinkDefaultOptionsFns', []).value;
 }
 
-function getLinkConfig(options: GenerateMarkdownLinkParams, targetFile: TFile): LinkConfig {
-  const { app } = options;
+function getLinkConfig(params: GenerateMarkdownLinkParams, targetFile: TFile): LinkConfig {
+  const { app } = params;
   return {
     /* v8 ignore start -- requireApiVersion fallback is only reached in older Obsidian versions */
-    isEmbed: options.isEmbed ?? (options.originalLink ? testEmbed(options.originalLink) : undefined)
+    isEmbed: params.isEmbed ?? (params.originalLink ? testEmbed(params.originalLink) : undefined)
       ?? (!requireApiVersion('1.10.0') && !isMarkdownFile(app, targetFile)),
     /* v8 ignore stop */
-    isSingleSubpathAllowed: options.isSingleSubpathAllowed ?? true,
-    isWikilink: shouldUseWikilinkStyle(app, options.originalLink, options.linkStyle),
-    linkPathStyle: getFinalLinkPathStyle(app, options.linkPathStyle),
-    shouldUseAngleBrackets: options.shouldUseAngleBrackets ?? (options.originalLink ? testAngleBrackets(options.originalLink) : undefined) ?? false,
-    shouldUseLeadingDotForRelativePaths: options.shouldUseLeadingDotForRelativePaths
-      ?? (options.originalLink ? testLeadingDot(options.originalLink) : undefined) ?? false,
-    shouldUseLeadingSlashForAbsolutePaths: options.shouldUseLeadingSlashForAbsolutePaths
-      ?? (options.originalLink ? testLeadingSlash(options.originalLink) : undefined) ?? false
+    isSingleSubpathAllowed: params.isSingleSubpathAllowed ?? true,
+    isWikilink: shouldUseWikilinkStyle(app, params.originalLink, params.linkStyle),
+    linkPathStyle: getFinalLinkPathStyle(app, params.linkPathStyle),
+    shouldUseAngleBrackets: params.shouldUseAngleBrackets ?? (params.originalLink ? testAngleBrackets(params.originalLink) : undefined) ?? false,
+    shouldUseLeadingDotForRelativePaths: params.shouldUseLeadingDotForRelativePaths
+      ?? (params.originalLink ? testLeadingDot(params.originalLink) : undefined) ?? false,
+    shouldUseLeadingSlashForAbsolutePaths: params.shouldUseLeadingSlashForAbsolutePaths
+      ?? (params.originalLink ? testLeadingSlash(params.originalLink) : undefined) ?? false
   };
 }
 

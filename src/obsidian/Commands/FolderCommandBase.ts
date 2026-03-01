@@ -103,10 +103,10 @@ export abstract class FolderCommandBase<TPlugin extends Plugin = Plugin> extends
   /**
    * Creates a new folder command.
    *
-   * @param options - The options for the folder command.
+   * @param params - The parameters for the folder command.
    */
-  public constructor(options: AbstractFileCommandBaseParams<TPlugin>) {
-    super(options);
+  public constructor(params: AbstractFileCommandBaseParams<TPlugin>) {
+    super(params);
   }
 
   /**

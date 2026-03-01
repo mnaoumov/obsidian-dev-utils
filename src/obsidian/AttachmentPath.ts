@@ -121,12 +121,12 @@ export interface GetAvailablePathForAttachmentsExtendedFnParams {
  */
 export interface GetAvailablePathForAttachmentsFnExtended extends GetAvailablePathForAttachmentsFn {
   /**
-   * Get available path for attachments with additional options.
+   * Get available path for attachments with additional params.
    *
-   * @param options - Options for the get available path for attachments.
+   * @param params - Parameters for the get available path for attachments.
    * @returns A {@link Promise} that resolves to the available path for attachments.
    */
-  extended(options: GetAvailablePathForAttachmentsExtendedFnParams): Promise<string>;
+  extended(params: GetAvailablePathForAttachmentsExtendedFnParams): Promise<string>;
 }
 
 type GetAvailablePathForAttachmentsFn = Vault['getAvailablePathForAttachments'];
@@ -204,16 +204,16 @@ export interface GetAvailablePathForAttachmentsParams {
 /**
  * Retrieves the file path for an attachment within a note.
  *
- * @param options - Options for the get attachment file path function.
+ * @param params - Parameters for the get attachment file path function.
  * @returns A {@link Promise} that resolves to the file path of the attachment.
  */
-export async function getAttachmentFilePath(options: GetAttachmentFilePathParams): Promise<string> {
+export async function getAttachmentFilePath(params: GetAttachmentFilePathParams): Promise<string> {
   const {
     app,
     notePathOrFile,
     oldAttachmentPathOrFile,
     shouldSkipDuplicateCheck
-  } = options;
+  } = params;
   const attachmentPath = getPath(app, oldAttachmentPathOrFile);
   const attachmentFileExtension = extname(attachmentPath);
   const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
@@ -226,10 +226,10 @@ export async function getAttachmentFilePath(options: GetAttachmentFilePathParams
       attachmentFileContent: attachmentFile ? await app.vault.readBinary(attachmentFile) : undefined,
       attachmentFileExtension: attachmentFileExtension.slice(1),
       attachmentFileStat: attachmentFile?.stat,
-      context: options.context,
+      context: params.context,
       notePathOrFile,
-      oldAttachmentPathOrFile: options.oldAttachmentPathOrFile,
-      oldNotePathOrFile: options.oldNotePathOrFile,
+      oldAttachmentPathOrFile: params.oldAttachmentPathOrFile,
+      oldNotePathOrFile: params.oldNotePathOrFile,
       shouldSkipDuplicateCheck,
       shouldSkipMissingAttachmentFolderCreation: true
     });
@@ -268,17 +268,17 @@ export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFi
 /**
  * Retrieves the available path for attachments.
  *
- * @param options - Options for the get available path for attachments function.
+ * @param params - Parameters for the get available path for attachments function.
  * @returns A {@link Promise} that resolves to the available path for attachments.
  */
-export async function getAvailablePathForAttachments(options: GetAvailablePathForAttachmentsParams): Promise<string> {
+export async function getAvailablePathForAttachments(params: GetAvailablePathForAttachmentsParams): Promise<string> {
   const {
     app,
     attachmentFileExtension,
     notePathOrFile,
     shouldSkipDuplicateCheck,
     shouldSkipMissingAttachmentFolderCreation
-  } = options;
+  } = params;
   let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
   const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
   const relativePath = attachmentFolderPath.startsWith('./') ? trimStart(attachmentFolderPath, './') : null;
@@ -292,7 +292,7 @@ export async function getAvailablePathForAttachments(options: GetAvailablePathFo
   }
 
   attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
-  const attachmentFileBaseName = normalize(normalizeSlashes(options.attachmentFileBaseName));
+  const attachmentFileBaseName = normalize(normalizeSlashes(params.attachmentFileBaseName));
 
   let folder = getFolderOrNull(app, attachmentFolderPath, true);
 
