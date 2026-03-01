@@ -931,8 +931,8 @@ describe('createTempFolder', () => {
 
 describe('processFile', () => {
   function setupRetryToInvokeOperationFn(): void {
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
-      const operationFn = options.operationFn;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFn = params.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
     });
@@ -945,7 +945,7 @@ describe('processFile', () => {
     mockedRetryWithTimeoutNotice.mockReset();
   });
 
-  it('should call retryWithTimeoutNotice with correct options', async () => {
+  it('should call retryWithTimeoutNotice with correct params', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
     await processFile(app, 'note.md', 'new content');
 
@@ -954,7 +954,7 @@ describe('processFile', () => {
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
   });
 
-  it('should pass shouldShowTimeoutNotice from options', async () => {
+  it('should pass shouldShowTimeoutNotice from params', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
     await processFile(app, 'note.md', 'new content', { shouldShowTimeoutNotice: false });
 
@@ -977,8 +977,8 @@ describe('processFile', () => {
 
   it('should return false when content changed between read and write', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
-      const operationFn = options.operationFn;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFn = params.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
@@ -1008,8 +1008,8 @@ describe('processFile', () => {
 
   it('should return false when newContentProvider returns null', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
-      const operationFn = options.operationFn;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFn = params.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });

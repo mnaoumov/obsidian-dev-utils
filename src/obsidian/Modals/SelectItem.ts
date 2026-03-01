@@ -55,21 +55,21 @@ export interface SelectItemParams<T> {
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   private isSelected = false;
 
-  public constructor(private readonly options: SelectItemParams<T>, private readonly resolve: PromiseResolve<null | T>) {
-    super(options.app);
-    this.setPlaceholder(options.placeholder ?? '');
+  public constructor(private readonly params: SelectItemParams<T>, private readonly resolve: PromiseResolve<null | T>) {
+    super(params.app);
+    this.setPlaceholder(params.placeholder ?? '');
     addPluginCssClasses(this.containerEl, CssClass.SelectItemModal);
-    if (options.cssClass) {
-      this.containerEl.addClass(options.cssClass);
+    if (params.cssClass) {
+      this.containerEl.addClass(params.cssClass);
     }
   }
 
   public override getItems(): T[] {
-    return this.options.items;
+    return this.params.items;
   }
 
   public override getItemText(item: T): string {
-    return this.options.itemTextFunc(item);
+    return this.params.itemTextFunc(item);
   }
 
   public override onChooseItem(item: T): void {
@@ -95,9 +95,9 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
 /**
  * Displays a selection modal in Obsidian for choosing an item from a list.
  *
- * @param options - The options for the selection modal.
+ * @param params - The parameters for the selection modal.
  * @returns A {@link Promise} that resolves with the selected item or null if no item was selected.
  */
-export async function selectItem<T>(options: SelectItemParams<T>): Promise<null | T> {
-  return await showModal<null | T>((resolve) => new ItemSelectModal(options, resolve));
+export async function selectItem<T>(params: SelectItemParams<T>): Promise<null | T> {
+  return await showModal<null | T>((resolve) => new ItemSelectModal(params, resolve));
 }

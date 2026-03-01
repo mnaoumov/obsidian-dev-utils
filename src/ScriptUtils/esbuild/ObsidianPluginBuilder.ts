@@ -97,10 +97,10 @@ interface ObsidianPluginBuilderEnv {
 /**
  * Builds the Obsidian plugin based on the specified mode and configuration folder.
  *
- * @param options - The parameters for building the plugin.
+ * @param params - The parameters for building the plugin.
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult} indicating the success or failure of the build.
  */
-export async function buildObsidianPlugin(options: BuildObsidianPluginParams): Promise<CliTaskResult> {
+export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Promise<CliTaskResult> {
   await buildCompile();
   const envPath = resolvePathFromRoot('.env');
   if (envPath && existsSync(envPath)) {
@@ -108,8 +108,8 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginParams): P
   }
   const obsidianPluginBuilderEnv = process.env as Partial<ObsidianPluginBuilderEnv>;
 
-  const obsidianConfigFolder = options.obsidianConfigFolder ?? obsidianPluginBuilderEnv.OBSIDIAN_CONFIG_FOLDER ?? '';
-  const isProductionBuild = options.mode === BuildMode.Production;
+  const obsidianConfigFolder = params.obsidianConfigFolder ?? obsidianPluginBuilderEnv.OBSIDIAN_CONFIG_FOLDER ?? '';
+  const isProductionBuild = params.mode === BuildMode.Production;
 
   const distFolder = ensureNonNullable(
     resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev),
@@ -180,7 +180,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginParams): P
     outfile: distPath,
     platform: 'node',
     plugins: [
-      customEsbuildOptionsPlugin(options.customizeEsbuildOptions?.bind(options)),
+      customEsbuildOptionsPlugin(params.customizeEsbuildOptions?.bind(params)),
       svelteWrapperPlugin(isProductionBuild),
       sassPlugin({
         sourceMap: !isProductionBuild
@@ -189,7 +189,7 @@ export async function buildObsidianPlugin(options: BuildObsidianPluginParams): P
       preprocessPlugin(),
       fixEsmPlugin(),
       fixSourceMapsPlugin(isProductionBuild, [distPath, cssPath], pluginName),
-      ...options.customEsbuildPlugins ?? [],
+      ...params.customEsbuildPlugins ?? [],
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distFolder, obsidianConfigFolder, pluginName)
     ],
     sourcemap: isProductionBuild ? false : 'inline',

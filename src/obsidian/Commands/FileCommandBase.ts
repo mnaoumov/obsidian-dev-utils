@@ -113,10 +113,10 @@ export abstract class FileCommandBase<TPlugin extends Plugin = Plugin> extends A
   /**
    * Creates a new file command.
    *
-   * @param options - The options for the file command.
+   * @param params - The parameters for the file command.
    */
-  public constructor(options: AbstractFileCommandBaseParams<TPlugin>) {
-    super(options);
+  public constructor(params: AbstractFileCommandBaseParams<TPlugin>) {
+    super(params);
   }
 
   /**

@@ -99,14 +99,14 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
   /**
    * Creates a new editor command.
    *
-   * @param options - The options for the editor command.
+   * @param params - The parameters for the editor command.
    */
-  public constructor(options: EditorCommandBaseParams<TPlugin>) {
-    super(options);
-    this._editorMenuItemName = options.editorMenuItemName;
-    this._editorMenuSection = options.editorMenuSection;
-    this._editorMenuSubmenuIcon = options.editorMenuSubmenuIcon;
-    this._shouldAddCommandToSubmenu = options.shouldAddCommandToSubmenu;
+  public constructor(params: EditorCommandBaseParams<TPlugin>) {
+    super(params);
+    this._editorMenuItemName = params.editorMenuItemName;
+    this._editorMenuSection = params.editorMenuSection;
+    this._editorMenuSubmenuIcon = params.editorMenuSubmenuIcon;
+    this._shouldAddCommandToSubmenu = params.shouldAddCommandToSubmenu;
 
     this.editorCheckCallback = this.editorCheckCallback.bind(this);
   }

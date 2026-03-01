@@ -68,16 +68,16 @@ export interface RenderCalloutParams {
 /**
  * Renders a callout block in Dataview.
  *
- * @param options - The options for rendering the callout.
+ * @param params - The parameters for rendering the callout.
  */
-export function renderCallout(options: RenderCalloutParams): void {
+export function renderCallout(params: RenderCalloutParams): void {
   const {
     contentProvider = '',
     dv,
     header = '',
     mode = CalloutMode.FoldableCollapsed,
     type = 'NOTE'
-  } = options;
+  } = params;
   const modifier = getModifier(mode);
   const callout = dv.paragraph(`> [!${type}]${modifier} ${header}\n>\n> <div class="content"></div>`);
   const contentDiv = ensureNonNullable(callout.querySelector<HTMLDivElement>('.content'), 'Content div not found');
@@ -88,7 +88,7 @@ export function renderCallout(options: RenderCalloutParams): void {
       if (entry.isIntersecting) {
         observer.unobserve(entry.target);
         addToQueue(normalizeOptionalProperties<AddToQueueParams>({
-          abortSignal: options.abortSignal,
+          abortSignal: params.abortSignal,
           app: dv.app,
           operationFn: loadContent,
           operationName: t(($) => $.obsidianDevUtils.callout.loadContent)

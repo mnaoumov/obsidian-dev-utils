@@ -474,12 +474,12 @@ export async function requestAnimationFrameAsync(): Promise<void> {
 /**
  * Retries the provided function until it returns true or the timeout is reached.
  *
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  * @returns A {@link Promise} that resolves when the function returns true or rejects when the timeout is reached.
  */
-export async function retryWithTimeout(options: RetryWithTimeoutParams): Promise<void> {
+export async function retryWithTimeout(params: RetryWithTimeoutParams): Promise<void> {
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');
-  const stackTrace = options.stackTrace ?? getStackTrace(1);
+  const stackTrace = params.stackTrace ?? getStackTrace(1);
   const DEFAULT_RETRY_OPTIONS = {
     // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     retryDelayInMilliseconds: 100,
@@ -487,12 +487,12 @@ export async function retryWithTimeout(options: RetryWithTimeoutParams): Promise
     // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
     timeoutInMilliseconds: 5000
   };
-  const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...options.retryOptions };
+  const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...params.retryOptions };
   fullOptions.abortSignal?.throwIfAborted();
 
   await runWithTimeout(normalizeOptionalProperties<RunWithTimeoutParams<void>>({
-    context: { operationName: options.operationName ?? '', retryFn: options.operationFn },
-    onTimeout: options.onTimeout,
+    context: { operationName: params.operationName ?? '', retryFn: params.operationFn },
+    onTimeout: params.onTimeout,
     async operationFn(abortSignal: AbortSignal): Promise<void> {
       const combinedAbortSignal = abortSignalAny(fullOptions.abortSignal, abortSignal);
       combinedAbortSignal.throwIfAborted();
@@ -501,7 +501,7 @@ export async function retryWithTimeout(options: RetryWithTimeoutParams): Promise
         attempt++;
         let isSuccess: boolean;
         try {
-          isSuccess = await options.operationFn(combinedAbortSignal);
+          isSuccess = await params.operationFn(combinedAbortSignal);
         } catch (error) {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed inside `fn()`. ESLint mistakenly does not recognize it.
           if (combinedAbortSignal.aborted || !fullOptions.shouldRetryOnError || terminateRetryErrors.has(error as Error)) {
@@ -512,8 +512,8 @@ export async function retryWithTimeout(options: RetryWithTimeoutParams): Promise
         }
         if (isSuccess) {
           printWithStackTrace(retryWithTimeoutDebugger, stackTrace, `Retry completed successfully after ${String(attempt)} attempts`, {
-            operationFn: options.operationFn,
-            operationName: options.operationName ?? ''
+            operationFn: params.operationFn,
+            operationName: params.operationName ?? ''
           });
           return;
         }
@@ -523,15 +523,15 @@ export async function retryWithTimeout(options: RetryWithTimeoutParams): Promise
           stackTrace,
           `Retry attempt ${String(attempt)} completed unsuccessfully. Trying again in ${String(fullOptions.retryDelayInMilliseconds)} milliseconds`,
           {
-            operationFn: options.operationFn,
-            operationName: options.operationName ?? ''
+            operationFn: params.operationFn,
+            operationName: params.operationName ?? ''
           }
         );
 
         await sleep(fullOptions.retryDelayInMilliseconds, abortSignal);
       }
     },
-    operationName: options.operationName ?? '',
+    operationName: params.operationName ?? '',
     stackTrace,
     timeoutInMilliseconds: fullOptions.timeoutInMilliseconds
   }));
@@ -543,11 +543,11 @@ export async function retryWithTimeout(options: RetryWithTimeoutParams): Promise
  * If `DEBUG=obsidian-dev-utils:Async:runWithTimeout` is set, the execution is not terminated after the timeout and the function is allowed to run indefinitely.
  *
  * @typeParam Result - The type of the result from the asynchronous function.
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  * @returns A {@link Promise} that resolves with the result of the asynchronous function or rejects if it times out.
  */
-export async function runWithTimeout<Result>(options: RunWithTimeoutParams<Result>): Promise<Result> {
-  const stackTrace = options.stackTrace ?? getStackTrace(1);
+export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result>): Promise<Result> {
+  const stackTrace = params.stackTrace ?? getStackTrace(1);
   const startTime = performance.now();
 
   const runAbortController = new AbortController();
@@ -557,7 +557,7 @@ export async function runWithTimeout<Result>(options: RunWithTimeoutParams<Resul
   let hasResult = false;
   let isCompleted = false;
   const runWithTimeoutDebugger = getLibDebugger('Async:runWithTimeout');
-  const onTimeout = options.onTimeout ?? defaultOnTimeout;
+  const onTimeout = params.onTimeout ?? defaultOnTimeout;
 
   await Promise.race([run(), innerTimeout()]);
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed inside `run()`. ESLint mistakenly does not recognize it.
@@ -569,12 +569,12 @@ export async function runWithTimeout<Result>(options: RunWithTimeoutParams<Resul
 
   async function run(): Promise<void> {
     try {
-      result = await options.operationFn(runAbortController.signal);
+      result = await params.operationFn(runAbortController.signal);
       const duration = Math.trunc(performance.now() - startTime);
       printWithStackTrace(runWithTimeoutDebugger, stackTrace, `Execution time: ${String(duration)} milliseconds`, {
-        context: options.context,
-        operationFn: options.operationFn,
-        operationName: options.operationName ?? ''
+        context: params.context,
+        operationFn: params.operationFn,
+        operationName: params.operationName ?? ''
       });
       hasResult = true;
     } catch (e) {
@@ -586,16 +586,16 @@ export async function runWithTimeout<Result>(options: RunWithTimeoutParams<Resul
   }
 
   async function innerTimeout(): Promise<void> {
-    await sleep(options.timeoutInMilliseconds, timeoutAbortController.signal);
+    await sleep(params.timeoutInMilliseconds, timeoutAbortController.signal);
 
     if (isCompleted) {
       return;
     }
     const duration = Math.trunc(performance.now() - startTime);
     printWithStackTrace(runWithTimeoutDebugger, stackTrace, `Timed out after ${String(duration)} milliseconds`, {
-      context: options.context,
-      operationFn: options.operationFn,
-      operationName: options.operationName ?? ''
+      context: params.context,
+      operationFn: params.operationFn,
+      operationName: params.operationName ?? ''
     });
 
     const timeoutContext: TimeoutContext = normalizeOptionalProperties<TimeoutContext>({
@@ -603,7 +603,7 @@ export async function runWithTimeout<Result>(options: RunWithTimeoutParams<Resul
       onOperationCompleted(callback) {
         timeoutAbortController.signal.addEventListener('abort', callback);
       },
-      operationName: options.operationName ?? '',
+      operationName: params.operationName ?? '',
       terminateOperation() {
         const error = new Error(`Timed out after ${String(duration)} milliseconds`);
         runAbortController.abort(error);

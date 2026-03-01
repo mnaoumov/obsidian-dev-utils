@@ -697,8 +697,8 @@ describe('getFrontmatterSafe', () => {
 
 describe('getBacklinksForFileSafe', () => {
   function setupRetryToInvokeOperationFn(): void {
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
-      const operationFn = options.operationFn;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFn = params.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
     });
@@ -749,7 +749,7 @@ describe('getBacklinksForFileSafe', () => {
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
   });
 
-  it('should pass shouldShowTimeoutNotice from options', async () => {
+  it('should pass shouldShowTimeoutNotice from params', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
     await getBacklinksForFileSafe(app, 'test.md', { shouldShowTimeoutNotice: false });
@@ -829,8 +829,8 @@ describe('getBacklinksForFileSafe', () => {
 
   it('should return false when reference cache link does not match content', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
-      const operationFn = options.operationFn;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFn = params.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
@@ -865,8 +865,8 @@ describe('getBacklinksForFileSafe', () => {
 
   it('should return false when frontmatter property value is not a string', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
-      const operationFn = options.operationFn;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFn = params.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
@@ -885,8 +885,8 @@ describe('getBacklinksForFileSafe', () => {
 
   it('should return false when frontmatter link does not match property value', async () => {
     let operationResult: boolean | undefined;
-    mockedRetryWithTimeoutNotice.mockImplementation(async (options: RetryWithTimeoutNoticeParams) => {
-      const operationFn = options.operationFn;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFn = params.operationFn;
       const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });

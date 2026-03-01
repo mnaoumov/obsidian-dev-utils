@@ -74,13 +74,13 @@ export interface PromptParams {
 
 class PromptModal extends ModalBase<null | string, PromptParams> {
   private isOkClicked = false;
-  private readonly options: Required<PromptParams>;
+  private readonly params: Required<PromptParams>;
   private value: string;
 
-  public constructor(options: PromptParams, resolve: PromiseResolve<null | string>) {
-    super(options, resolve, CssClass.PromptModal);
+  public constructor(params: PromptParams, resolve: PromiseResolve<null | string>) {
+    super(params, resolve, CssClass.PromptModal);
     const DEFAULT_OPTIONS: Required<PromptParams> = {
-      app: options.app,
+      app: params.app,
       cancelButtonText: t(($) => $.obsidianDevUtils.buttons.cancel),
       defaultValue: '',
       okButtonText: t(($) => $.obsidianDevUtils.buttons.ok),
@@ -88,8 +88,8 @@ class PromptModal extends ModalBase<null | string, PromptParams> {
       title: '',
       valueValidator: noop
     };
-    this.options = { ...DEFAULT_OPTIONS, ...options };
-    this.value = options.defaultValue ?? '';
+    this.params = { ...DEFAULT_OPTIONS, ...params };
+    this.value = params.defaultValue ?? '';
   }
 
   public override onClose(): void {
@@ -99,19 +99,19 @@ class PromptModal extends ModalBase<null | string, PromptParams> {
 
   public override onOpen(): void {
     super.onOpen();
-    this.titleEl.setText(this.options.title);
+    this.titleEl.setText(this.params.title);
     const textComponent = new TextComponent(this.contentEl);
     const inputEl = textComponent.inputEl;
 
     const validate = async (): Promise<void> => {
-      const errorMessage = await this.options.valueValidator(inputEl.value) as string | undefined;
+      const errorMessage = await this.params.valueValidator(inputEl.value) as string | undefined;
       inputEl.setCustomValidity(errorMessage ?? '');
       inputEl.reportValidity();
     };
 
     textComponent.setValue(this.value);
     textComponent.inputEl.select();
-    textComponent.setPlaceholder(this.options.placeholder);
+    textComponent.setPlaceholder(this.params.placeholder);
     inputEl.addClass(CssClass.TextBox);
     textComponent.onChange((newValue) => {
       this.value = newValue;
@@ -127,14 +127,14 @@ class PromptModal extends ModalBase<null | string, PromptParams> {
     inputEl.addEventListener('focus', convertAsyncToSync(validate));
     invokeAsyncSafely(validate);
     const okButton = new ButtonComponent(this.contentEl);
-    okButton.setButtonText(this.options.okButtonText);
+    okButton.setButtonText(this.params.okButtonText);
     okButton.setCta();
     okButton.onClick((event) => {
       this.handleOk(event, textComponent);
     });
     okButton.setClass(CssClass.OkButton);
     const cancelButton = new ButtonComponent(this.contentEl);
-    cancelButton.setButtonText(this.options.cancelButtonText);
+    cancelButton.setButtonText(this.params.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
     cancelButton.setClass(CssClass.CancelButton);
   }
@@ -153,9 +153,9 @@ class PromptModal extends ModalBase<null | string, PromptParams> {
 /**
  * Displays a prompt modal in Obsidian to get user input.
  *
- * @param options - The options for the prompt modal.
+ * @param params - The parameters for the prompt modal.
  * @returns A {@link Promise} that resolves with the user input or null if the prompt was cancelled.
  */
-export async function prompt(options: PromptParams): Promise<null | string> {
-  return await showModal<null | string>((resolve) => new PromptModal(options, resolve));
+export async function prompt(params: PromptParams): Promise<null | string> {
+  return await showModal<null | string>((resolve) => new PromptModal(params, resolve));
 }

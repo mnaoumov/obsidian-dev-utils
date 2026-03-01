@@ -49,17 +49,17 @@ export class App {
   }
 }
 
-export function createMockApp(options: MockAppParams = {}): ObsidianApp {
+export function createMockApp(params: MockAppParams = {}): ObsidianApp {
   const app = new App();
   const fileContents = new Map<string, string>();
 
-  for (const folderPath of options.folders ?? []) {
+  for (const folderPath of params.folders ?? []) {
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- Creating mock file system entries.
     const folder = new TFolder(app.vault, folderPath);
     setVaultAbstractFile(app.vault, folderPath, folder);
   }
 
-  for (const fileOpt of options.files ?? []) {
+  for (const fileOpt of params.files ?? []) {
     // eslint-disable-next-line @typescript-eslint/no-deprecated -- Creating mock file system entries.
     const file = new TFile(app.vault, fileOpt.path);
     setVaultAbstractFile(app.vault, fileOpt.path, file);

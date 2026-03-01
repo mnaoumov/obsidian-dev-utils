@@ -126,11 +126,11 @@ interface CreateMarkdownInfoFromMatchParams {
 /**
  * Gets the information about a code block in a Markdown section.
  *
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  * @returns The information about the code block in the Markdown section.
  */
-export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfoParams): Promise<CodeBlockMarkdownInformation | null> {
-  const { app, ctx, el, source } = options;
+export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoParams): Promise<CodeBlockMarkdownInformation | null> {
+  const { app, ctx, el, source } = params;
 
   const sourceFile = getFileOrNull(app, ctx.sourcePath);
   assertNonNullable(sourceFile, `Source file ${ctx.sourcePath} not found.`);
@@ -223,13 +223,13 @@ export async function getCodeBlockMarkdownInfo(options: GetCodeBlockMarkdownInfo
 /**
  * Inserts text after the code block.
  *
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  */
-export async function insertAfterCodeBlock(options: InsertCodeBlockParams): Promise<void> {
-  const { app, ctx, lineOffset = 0, text } = options;
+export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promise<void> {
+  const { app, ctx, lineOffset = 0, text } = params;
 
   await process(app, ctx.sourcePath, async (_abortSignal, content) => {
-    const markdownInfo = await getCodeBlockMarkdownInfo(options);
+    const markdownInfo = await getCodeBlockMarkdownInfo(params);
     assertNonNullable(markdownInfo, 'Could not uniquely identify the code block.');
 
     if (content !== markdownInfo.noteContent) {
@@ -237,20 +237,20 @@ export async function insertAfterCodeBlock(options: InsertCodeBlockParams): Prom
     }
 
     const insertLineIndex = markdownInfo.positionInNote.end.line + lineOffset + 1;
-    return insertText(content, insertLineIndex, text, options.shouldPreserveLinePrefix);
+    return insertText(content, insertLineIndex, text, params.shouldPreserveLinePrefix);
   });
 }
 
 /**
  * Inserts text before the code block.
  *
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  */
-export async function insertBeforeCodeBlock(options: InsertCodeBlockParams): Promise<void> {
-  const { app, ctx, lineOffset = 0, text } = options;
+export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Promise<void> {
+  const { app, ctx, lineOffset = 0, text } = params;
 
   await process(app, ctx.sourcePath, async (_abortSignal, content) => {
-    const markdownInfo = await getCodeBlockMarkdownInfo(options);
+    const markdownInfo = await getCodeBlockMarkdownInfo(params);
     if (!markdownInfo) {
       throw new Error('Could not uniquely identify the code block.');
     }
@@ -260,36 +260,36 @@ export async function insertBeforeCodeBlock(options: InsertCodeBlockParams): Pro
     }
 
     const insertLineIndex = markdownInfo.positionInNote.start.line - lineOffset;
-    return insertText(content, insertLineIndex, text, options.shouldPreserveLinePrefix);
+    return insertText(content, insertLineIndex, text, params.shouldPreserveLinePrefix);
   });
 }
 
 /**
  * Removes the code block.
  *
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  */
-export async function removeCodeBlock(options: RemoveCodeBlockParams): Promise<void> {
+export async function removeCodeBlock(params: RemoveCodeBlockParams): Promise<void> {
   await replaceCodeBlock({
-    ...options,
+    ...params,
     codeBlockProvider: '',
-    shouldKeepGapWhenEmpty: options.shouldKeepGap ?? false
+    shouldKeepGapWhenEmpty: params.shouldKeepGap ?? false
   });
 }
 
 /**
  * Replaces the code block.
  *
- * @param options - The options for the function.
+ * @param params - The parameters for the function.
  */
-export async function replaceCodeBlock(options: ReplaceCodeBlockParams): Promise<void> {
-  const { app, codeBlockProvider, ctx } = options;
-  options.abortSignal?.throwIfAborted();
+export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<void> {
+  const { app, codeBlockProvider, ctx } = params;
+  params.abortSignal?.throwIfAborted();
 
   await process(app, ctx.sourcePath, async (abortSignal, content) => {
-    abortSignal = abortSignalAny(abortSignal, options.abortSignal);
+    abortSignal = abortSignalAny(abortSignal, params.abortSignal);
     abortSignal.throwIfAborted();
-    const markdownInfo = await getCodeBlockMarkdownInfo(options);
+    const markdownInfo = await getCodeBlockMarkdownInfo(params);
     if (!markdownInfo) {
       throw new Error('Could not uniquely identify the code block.');
     }
@@ -299,20 +299,20 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockParams): Promise
     }
 
     let oldCodeBlock = content.slice(markdownInfo.positionInNote.start.offset, markdownInfo.positionInNote.end.offset);
-    if (options.shouldPreserveLinePrefix) {
+    if (params.shouldPreserveLinePrefix) {
       oldCodeBlock = unindent(oldCodeBlock, markdownInfo.linePrefix);
     }
 
     let newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
     abortSignal.throwIfAborted();
-    if ((newCodeBlock || options.shouldKeepGapWhenEmpty) && options.shouldPreserveLinePrefix) {
+    if ((newCodeBlock || params.shouldKeepGapWhenEmpty) && params.shouldPreserveLinePrefix) {
       newCodeBlock = indent(newCodeBlock, markdownInfo.linePrefix);
     }
 
     const textBeforeCodeBlock = content.slice(0, markdownInfo.positionInNote.start.offset);
     const textAfterCodeBlock = content.slice(markdownInfo.positionInNote.end.offset);
 
-    if (newCodeBlock || options.shouldKeepGapWhenEmpty) {
+    if (newCodeBlock || params.shouldKeepGapWhenEmpty) {
       return `${textBeforeCodeBlock}${newCodeBlock}${textAfterCodeBlock}`;
     }
 
@@ -328,7 +328,7 @@ export async function replaceCodeBlock(options: ReplaceCodeBlockParams): Promise
   });
 }
 
-function createMarkdownInfoFromMatch(options: CreateMarkdownInfoFromMatchParams): CodeBlockMarkdownInformation {
+function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams): CodeBlockMarkdownInformation {
   const {
     approximateSectionInfo,
     linesBeforeSectionCount,
@@ -337,7 +337,7 @@ function createMarkdownInfoFromMatch(options: CreateMarkdownInfoFromMatchParams)
     potentialCodeBlockText,
     sourceLinesCount,
     textLineOffsets
-  } = options;
+  } = params;
 
   const linePrefix = match.groups?.['LinePrefix'] ?? '';
   const codeBlockStartDelimiter = match.groups?.['CodeBlockStartDelimiter'] ?? '';
