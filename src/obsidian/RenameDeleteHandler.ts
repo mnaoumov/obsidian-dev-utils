@@ -221,7 +221,7 @@ class DeleteHandler {
       return;
     }
 
-    const parentFolderPaths = new Set<string>([this.file.parent?.path ?? '']);
+    const parentFolderPaths = new Set<string>([dirname(this.file.path)]);
 
     if (settings.shouldHandleDeletions) {
       const cache = this.deletedMetadataCacheMap.get(this.file.path);
