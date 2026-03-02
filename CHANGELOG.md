@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 49.0.1
+
+- fix: switch to new resolver
+
 ## 49.0.0
 
 - fix: use proper type from typings
