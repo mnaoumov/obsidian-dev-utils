@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 49.0.0
+
+- fix: use proper type from typings
+- feat: disallow anonymous types
+- chore: update libs
+
 ## 48.1.4
 
 - fix: cast
