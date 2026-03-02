@@ -6,6 +6,8 @@ import {
   vi
 } from 'vitest';
 
+import type { RunWithTimeoutNoticeParams } from '../../src/obsidian/AsyncWithNotice.ts';
+
 import { noop } from '../../src/Function.ts';
 import {
   addToQueue,
@@ -24,9 +26,9 @@ const mocks = vi.hoisted(() => ({
   invokeAsyncSafely: vi.fn((fn: () => Promise<unknown>) => {
     fn().catch(() => undefined);
   }),
-  runWithTimeoutNotice: vi.fn(async (options: { operationFn: (signal: AbortSignal) => Promise<void> }) => {
+  runWithTimeoutNotice: vi.fn(async (params: RunWithTimeoutNoticeParams<unknown>) => {
     const controller = new AbortController();
-    await options.operationFn(controller.signal);
+    await params.operationFn(controller.signal);
   })
 }));
 

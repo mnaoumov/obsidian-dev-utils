@@ -1,4 +1,8 @@
-import type { App } from 'obsidian';
+import type {
+  App,
+  WorkspaceContainer,
+  WorkspaceLeaf
+} from 'obsidian';
 
 import {
   describe,
@@ -12,13 +16,19 @@ import {
   getAllDomWindows
 } from '../../src/obsidian/Workspace.ts';
 
-function createMockApp(containers: { win: Window }[]): App {
-  const leaves = containers.map((container) => ({
-    getContainer: (): { win: Window } => container
-  }));
+function createMockContainer(win: Window): WorkspaceContainer {
+  return castTo<WorkspaceContainer>({ win });
+}
+
+function createMockApp(containers: WorkspaceContainer[]): App {
+  const leaves = containers.map((container) =>
+    castTo<WorkspaceLeaf>({
+      getContainer: (): WorkspaceContainer => container
+    })
+  );
   return castTo<App>({
     workspace: {
-      iterateAllLeaves: (callback: (leaf: { getContainer(): { win: Window } }) => void): void => {
+      iterateAllLeaves: (callback: (leaf: WorkspaceLeaf) => void): void => {
         for (const leaf of leaves) {
           callback(leaf);
         }
@@ -29,8 +39,8 @@ function createMockApp(containers: { win: Window }[]): App {
 
 describe('getAllContainers', () => {
   it('should return all unique containers', () => {
-    const container1 = { win: {} as Window };
-    const container2 = { win: {} as Window };
+    const container1 = createMockContainer({} as Window);
+    const container2 = createMockContainer({} as Window);
     const app = createMockApp([container1, container2]);
     const result = getAllContainers(app);
     expect(result).toHaveLength(2);
@@ -39,7 +49,7 @@ describe('getAllContainers', () => {
   });
 
   it('should deduplicate containers', () => {
-    const container = { win: {} as Window };
+    const container = createMockContainer({} as Window);
     const app = createMockApp([container, container]);
     const result = getAllContainers(app);
     expect(result).toHaveLength(1);
@@ -55,7 +65,7 @@ describe('getAllDomWindows', () => {
   it('should return windows from all containers', () => {
     const win1 = {} as Window;
     const win2 = {} as Window;
-    const app = createMockApp([{ win: win1 }, { win: win2 }]);
+    const app = createMockApp([createMockContainer(win1), createMockContainer(win2)]);
     const result = getAllDomWindows(app);
     expect(result).toHaveLength(2);
     expect(result).toContain(win1);

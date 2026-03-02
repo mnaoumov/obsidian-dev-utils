@@ -8,8 +8,6 @@ import {
   vi
 } from 'vitest';
 
-import type { GenericObject } from '../../src/TypeGuards.ts';
-
 import {
   invokeAsyncSafely,
   requestAnimationFrameAsync
@@ -23,10 +21,7 @@ import { noop } from '../../src/Function.ts';
 import { castTo } from '../../src/ObjectUtils.ts';
 import { loop } from '../../src/obsidian/Loop.ts';
 import { addPluginCssClasses } from '../../src/obsidian/Plugin/PluginContext.ts';
-import {
-  assertNonNullable,
-  ensureGenericObject
-} from '../../src/TypeGuards.ts';
+import { assertNonNullable } from '../../src/TypeGuards.ts';
 
 vi.mock('../../src/AbortController.ts', () => ({
   abortSignalNever: vi.fn(() => new AbortController().signal)
@@ -64,35 +59,6 @@ vi.mock('../../src/obsidian/Plugin/PluginContext.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 
-if (typeof globalThis.createEl === 'undefined') {
-  ensureGenericObject(globalThis)['createEl'] = (tag: string): HTMLElement => document.createElement(tag);
-}
-
-// Obsidian augments Node.prototype with createDiv
-if (!('createDiv' in DocumentFragment.prototype)) {
-  ensureGenericObject(DocumentFragment.prototype)['createDiv'] = function createDiv(
-    this: DocumentFragment,
-    o?: GenericObject | string
-  ): HTMLDivElement {
-    const div = document.createElement('div');
-    if (typeof o === 'string') {
-      div.textContent = o;
-    } else if (o && typeof o === 'object' && typeof o['text'] === 'string') {
-      div.textContent = o['text'];
-    }
-    this.appendChild(div);
-    return div;
-  };
-}
-
-if (typeof globalThis.createFragment === 'undefined') {
-  ensureGenericObject(globalThis)['createFragment'] = (cb?: (f: DocumentFragment) => void): DocumentFragment => {
-    const f = document.createDocumentFragment();
-    cb?.(f);
-    return f;
-  };
-}
-
 function sleepImmediate(_ms: number): Promise<void> {
   return Promise.resolve();
 }
@@ -100,11 +66,14 @@ function sleepImmediate(_ms: number): Promise<void> {
 describe('loop', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('sleep', sleepImmediate);
+    vi.spyOn(
+      globalThis as unknown as { sleep: (ms: number) => Promise<void> },
+      'sleep'
+    ).mockImplementation(sleepImmediate);
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('should complete without error when items array is empty', async () => {
@@ -298,15 +267,17 @@ describe('loop', () => {
   it('should set progress bar max to items length', async () => {
     const items = ['a', 'b', 'c', 'd', 'e'];
 
-    const origCreateEl = globalThis.createEl;
     let capturedProgressEl: HTMLProgressElement | null = null;
-    ensureGenericObject(globalThis)['createEl'] = (tag: string): HTMLElement => {
+    const createElSpy = vi.spyOn(
+      globalThis as unknown as { createEl: (tag: string) => HTMLElement },
+      'createEl'
+    ).mockImplementation((tag: string): HTMLElement => {
       const el = document.createElement(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
       }
       return el;
-    };
+    });
 
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
@@ -320,7 +291,7 @@ describe('loop', () => {
     expect(progressEl.max).toBe(5);
     expect(progressEl.value).toBe(5);
 
-    ensureGenericObject(globalThis)['createEl'] = origCreateEl;
+    createElSpy.mockRestore();
   });
 
   it('should process items with numeric type', async () => {
@@ -426,15 +397,17 @@ describe('loop', () => {
   });
 
   it('should increment progress bar value for each processed item', async () => {
-    const origCreateEl = globalThis.createEl;
     let capturedProgressEl: HTMLProgressElement | null = null;
-    ensureGenericObject(globalThis)['createEl'] = (tag: string): HTMLElement => {
+    const createElSpy = vi.spyOn(
+      globalThis as unknown as { createEl: (tag: string) => HTMLElement },
+      'createEl'
+    ).mockImplementation((tag: string): HTMLElement => {
       const el = document.createElement(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
       }
       return el;
-    };
+    });
 
     const values: number[] = [];
     const processItem = vi.fn(() => {
@@ -457,19 +430,21 @@ describe('loop', () => {
     assertNonNullable(capturedProgressEl);
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(3);
 
-    ensureGenericObject(globalThis)['createEl'] = origCreateEl;
+    createElSpy.mockRestore();
   });
 
   it('should still increment progress bar value even when processItem throws', async () => {
-    const origCreateEl = globalThis.createEl;
     let capturedProgressEl: HTMLProgressElement | null = null;
-    ensureGenericObject(globalThis)['createEl'] = (tag: string): HTMLElement => {
+    const createElSpy = vi.spyOn(
+      globalThis as unknown as { createEl: (tag: string) => HTMLElement },
+      'createEl'
+    ).mockImplementation((tag: string): HTMLElement => {
       const el = document.createElement(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
       }
       return el;
-    };
+    });
 
     vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
@@ -487,7 +462,7 @@ describe('loop', () => {
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(2);
 
     vi.mocked(console.error).mockRestore();
-    ensureGenericObject(globalThis)['createEl'] = origCreateEl;
+    createElSpy.mockRestore();
   });
 
   it('should work with a single item', async () => {

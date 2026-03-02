@@ -7,6 +7,7 @@ import {
   vi
 } from 'vitest';
 
+import type { AddToQueueParams } from '../../src/obsidian/Queue.ts';
 import type { GenericObject } from '../../src/TypeGuards.ts';
 
 import { castTo } from '../../src/ObjectUtils.ts';
@@ -111,12 +112,16 @@ interface MockDv {
   paragraph: ReturnType<typeof vi.fn>;
 }
 
+interface ParagraphOptions {
+  container?: HTMLElement;
+}
+
 function createMockDv(): MockDv {
   const container = document.createElement('div');
   return {
     app: {},
     container,
-    paragraph: vi.fn((text: unknown, options?: { container?: HTMLElement }) => {
+    paragraph: vi.fn((text: unknown, options?: ParagraphOptions) => {
       const p = document.createElement('p');
       if (typeof text === 'string') {
         // eslint-disable-next-line @microsoft/sdl/no-inner-html -- test setup
@@ -312,9 +317,9 @@ describe('renderCallout', () => {
     const { renderCallout } = await import('../../src/obsidian/Callout.ts');
     const dv = createMockDv();
 
-    mocks.addToQueue.mockImplementationOnce(async (options: { operationFn: (abortSignal: AbortSignal) => Promise<void> }) => {
+    mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
       const abortController = new AbortController();
-      await options.operationFn(abortController.signal);
+      await params.operationFn(abortController.signal);
     });
 
     renderCallout({ contentProvider: 'Hello World', dv: dv as never });
@@ -344,9 +349,9 @@ describe('renderCallout', () => {
     const dv = createMockDv();
     const contentFn = vi.fn(() => 'Dynamic Content');
 
-    mocks.addToQueue.mockImplementationOnce(async (options: { operationFn: (abortSignal: AbortSignal) => Promise<void> }) => {
+    mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
       const abortController = new AbortController();
-      await options.operationFn(abortController.signal);
+      await params.operationFn(abortController.signal);
     });
 
     renderCallout({ contentProvider: contentFn, dv: dv as never });
@@ -372,7 +377,7 @@ describe('renderCallout', () => {
     const { renderCallout } = await import('../../src/obsidian/Callout.ts');
     const dv = createMockDv();
 
-    mocks.addToQueue.mockImplementationOnce(async (options: { operationFn: (abortSignal: AbortSignal) => Promise<void> }) => {
+    mocks.addToQueue.mockImplementationOnce(async (options: AddToQueueParams) => {
       const abortController = new AbortController();
       await options.operationFn(abortController.signal);
     });

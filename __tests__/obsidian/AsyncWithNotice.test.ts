@@ -76,57 +76,24 @@ vi.mock('../../src/obsidian/i18n/i18n.ts', () => ({
 }));
 
 /**
- * Adds Obsidian-specific DOM extension methods (appendText, createEl, createSpan)
- * to a DocumentFragment so it can be used with Obsidian's createFragment API.
- */
-function addObsidianDomExtensions(fragment: DocumentFragment): DocumentFragment {
-  const extendedFragment = fragment as {
-    appendText(text: string): void;
-    createEl(tag: string, options?: { text?: string }): HTMLElement;
-    createSpan(): HTMLSpanElement;
-  } & DocumentFragment;
-
-  extendedFragment.appendText = function appendText(text: string): void {
-    this.appendChild(document.createTextNode(text));
-  };
-
-  extendedFragment.createEl = function createEl(tag: string, options?: { text?: string }): HTMLElement {
-    const el = document.createElement(tag);
-    if (options?.text) {
-      el.textContent = options.text;
-    }
-    this.appendChild(el);
-    return el;
-  };
-
-  extendedFragment.createSpan = function createSpan(): HTMLSpanElement {
-    const span = document.createElement('span');
-    this.appendChild(span);
-    return span;
-  };
-
-  return extendedFragment;
-}
-
-/**
- * Sets up the global createFragment function that Obsidian provides,
- * with the necessary DOM extension methods on the fragment.
+ * Wraps the global createFragment (provided by obsidian-globals) to capture
+ * the last created fragment for test assertions.
  *
- * @returns A cleanup function to remove the global.
+ * @returns A cleanup function and a getter for the last fragment.
  */
 function setupCreateFragmentGlobal(): { cleanup: () => void; getLastFragment: () => DocumentFragment | null } {
   let lastFragment: DocumentFragment | null = null;
+  const originalCreateFragment = globalThis.createFragment;
 
-  globalThis.createFragment = (cb?: (f: DocumentFragment) => void): DocumentFragment => {
-    const fragment = addObsidianDomExtensions(document.createDocumentFragment());
-    cb?.(fragment);
+  globalThis.createFragment = vi.fn((cb?: (f: DocumentFragment) => void): DocumentFragment => {
+    const fragment = originalCreateFragment(cb);
     lastFragment = fragment;
     return fragment;
-  };
+  });
 
   return {
     cleanup: (): void => {
-      delete (globalThis as Partial<{ createFragment: unknown }>).createFragment;
+      globalThis.createFragment = originalCreateFragment;
     },
     getLastFragment: (): DocumentFragment | null => lastFragment
   };
