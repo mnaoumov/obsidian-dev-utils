@@ -11,7 +11,7 @@ import type {
 } from 'obsidian';
 import type {
   EnsureSideLeafOptions,
-  SetActiveLeafOptions
+  SetActiveLeafParams
 } from 'obsidian-typings';
 
 import type { TFile } from './TFile.ts';
@@ -156,7 +156,7 @@ export class Workspace extends Events {
     await noopAsync();
   }
 
-  public setActiveLeaf(_leaf: WorkspaceLeaf, _params?: SetActiveLeafOptions): void {
+  public setActiveLeaf(_leaf: WorkspaceLeaf, _params?: SetActiveLeafParams): void {
     noop();
   }
 
