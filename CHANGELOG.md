@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 49.0.2
+
+- fix: parent path for deleted file re <https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/19>
+
 ## 49.0.1
 
 - fix: switch to new resolver
