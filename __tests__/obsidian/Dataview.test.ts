@@ -2,7 +2,6 @@
 
 import {
   afterAll,
-  beforeAll,
   beforeEach,
   describe,
   expect,
@@ -11,7 +10,6 @@ import {
 } from 'vitest';
 
 import type { DataviewInlineApi } from '../../src/obsidian/Dataview.ts';
-import type { GenericObject } from '../../src/TypeGuards.ts';
 
 import { noop } from '../../src/Function.ts';
 import { castTo } from '../../src/ObjectUtils.ts';
@@ -66,6 +64,14 @@ vi.mock('../../src/obsidian/i18n/i18n.ts', () => ({
   })
 }));
 
+interface ElOptions {
+  attr?: Record<string, string>;
+}
+
+interface ParagraphOptions {
+  container?: HTMLElement;
+}
+
 function createMockDv(): DataviewInlineApi {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -78,7 +84,7 @@ function createMockDv(): DataviewInlineApi {
       (
         tag: string,
         _text: string,
-        options?: { attr?: Record<string, string> }
+        options?: ElOptions
       ) => {
         const el = document.createElement(tag);
         if (options?.attr) {
@@ -94,7 +100,7 @@ function createMockDv(): DataviewInlineApi {
       noop();
     }),
     paragraph: vi.fn(
-      (text: unknown, options?: { container?: HTMLElement }) => {
+      (text: unknown, options?: ParagraphOptions) => {
         const p = document.createElement('p');
         if (typeof text === 'string') {
           p.textContent = text;
@@ -108,112 +114,6 @@ function createMockDv(): DataviewInlineApi {
     })
   });
 }
-
-/**
- * Polyfill Obsidian's prototype extensions on HTMLElement for jsdom.
- */
-function polyfillObsidianHTMLElement(): void {
-  const proto = HTMLElement.prototype as GenericObject & HTMLElement;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Polyfill guard for jsdom.
-  if (!proto.empty) {
-    proto.empty = function empty(this: HTMLElement): void {
-      this.innerHTML = '';
-    };
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Polyfill guard for jsdom.
-  if (!proto.createDiv) {
-    proto.createDiv = function createDiv(
-      this: HTMLElement,
-      o?: { cls?: string; text?: string } | string
-    ): HTMLDivElement {
-      const div = document.createElement('div');
-      if (typeof o === 'string') {
-        div.className = o;
-      } else if (o) {
-        if (o.cls) {
-          div.className = o.cls;
-        }
-        if (o.text) {
-          div.textContent = o.text;
-        }
-      }
-      this.appendChild(div);
-      return div;
-    };
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Polyfill guard for jsdom.
-  if (!proto.createSpan) {
-    proto.createSpan = function createSpan(
-      this: HTMLElement,
-      o?: { cls?: string; text?: string } | string
-    ): HTMLSpanElement {
-      const span = document.createElement('span');
-      if (typeof o === 'string') {
-        span.className = o;
-      } else if (o) {
-        if (o.cls) {
-          span.className = o.cls;
-        }
-        if (o.text) {
-          span.textContent = o.text;
-        }
-      }
-      this.appendChild(span);
-      return span;
-    };
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Polyfill guard for jsdom.
-  if (!proto.createEl) {
-    proto.createEl = function createEl(
-      this: HTMLElement,
-      tag: string,
-      o?: {
-        attr?: Record<string, number | string>;
-        cls?: string;
-        href?: string;
-        text?: string;
-        type?: string;
-        value?: string;
-      }
-    ): HTMLElement {
-      const el = document.createElement(tag);
-      if (o) {
-        if (o.cls) {
-          el.className = o.cls;
-        }
-        if (o.text) {
-          el.textContent = o.text;
-        }
-        if (o.type) {
-          el.setAttribute('type', o.type);
-        }
-        if (o.value) {
-          (el as HTMLInputElement).value = o.value;
-        }
-        if (o.href) {
-          el.setAttribute('href', o.href);
-        }
-        if (o.attr) {
-          for (const [k, v] of Object.entries(o.attr)) {
-            el.setAttribute(k, String(v));
-          }
-        }
-      }
-      this.appendChild(el);
-      return el;
-    };
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Polyfill guard for jsdom.
-  if (!proto.addClass) {
-    proto.addClass = function addClass(this: HTMLElement, cls: string): void {
-      this.classList.add(cls);
-    };
-  }
-}
-
-beforeAll(() => {
-  polyfillObsidianHTMLElement();
-});
 
 afterAll(() => {
   vi.restoreAllMocks();

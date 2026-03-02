@@ -16,10 +16,6 @@ import {
   getAllDomWindows
 } from '../../src/obsidian/Workspace.ts';
 
-function createMockContainer(win: Window): WorkspaceContainer {
-  return castTo<WorkspaceContainer>({ win });
-}
-
 function createMockApp(containers: WorkspaceContainer[]): App {
   const leaves = containers.map((container) =>
     castTo<WorkspaceLeaf>({
@@ -35,6 +31,10 @@ function createMockApp(containers: WorkspaceContainer[]): App {
       }
     }
   });
+}
+
+function createMockContainer(win: Window): WorkspaceContainer {
+  return castTo<WorkspaceContainer>({ win });
 }
 
 describe('getAllContainers', () => {
