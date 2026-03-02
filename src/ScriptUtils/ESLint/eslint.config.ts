@@ -21,6 +21,7 @@ import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/con
 import eslint from '@eslint/js';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import stylistic from '@stylistic/eslint-plugin';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-import-x';
 import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
@@ -253,11 +254,11 @@ function getEslintImportResolverTypescriptConfigs(): Linter.Config[] {
   return defineConfig([
     {
       settings: {
-        'import/resolver': {
-          typescript: {
+        'import-x/resolver-next': [
+          createTypeScriptImportResolver({
             alwaysTryTypes: true
-          }
-        }
+          })
+        ]
       }
     }
   ]);
