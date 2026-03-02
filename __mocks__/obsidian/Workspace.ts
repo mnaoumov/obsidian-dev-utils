@@ -9,6 +9,10 @@ import type {
   WorkspaceParent,
   WorkspaceWindowInitData
 } from 'obsidian';
+import type {
+  EnsureSideLeafOptions,
+  SetActiveLeafOptions
+} from 'obsidian-typings';
 
 import type { TFile } from './TFile.ts';
 
@@ -70,7 +74,7 @@ export class Workspace extends Events {
   public async ensureSideLeaf(
     _type: string,
     _side: Side,
-    _options?: { active?: boolean; reveal?: boolean; split?: boolean; state?: unknown }
+    _options?: EnsureSideLeafOptions
   ): Promise<WorkspaceLeaf> {
     await noopAsync();
     return new WorkspaceLeaf();
@@ -152,7 +156,7 @@ export class Workspace extends Events {
     await noopAsync();
   }
 
-  public setActiveLeaf(_leaf: WorkspaceLeaf, _params?: { focus?: boolean }): void {
+  public setActiveLeaf(_leaf: WorkspaceLeaf, _params?: SetActiveLeafOptions): void {
     noop();
   }
 

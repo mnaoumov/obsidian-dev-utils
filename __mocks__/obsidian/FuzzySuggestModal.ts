@@ -1,3 +1,5 @@
+import type { FuzzyMatch } from 'obsidian';
+
 import type { App } from './App.ts';
 
 import { noop } from '../../src/Function.ts';
@@ -20,7 +22,7 @@ export abstract class FuzzySuggestModal<T> extends Modal {
     noop();
   }
 
-  public selectSuggestion(value: { item: T }, evt: KeyboardEvent | MouseEvent): void {
+  public selectSuggestion(value: FuzzyMatch<T>, evt: KeyboardEvent | MouseEvent): void {
     this.onChooseItem(value.item, evt);
     this.close();
   }

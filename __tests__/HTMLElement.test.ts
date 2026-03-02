@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 
 import {
-  afterAll,
   afterEach,
-  beforeAll,
   beforeEach,
   describe,
   expect,
@@ -32,23 +30,6 @@ import {
   ensureGenericObject
 } from '../src/TypeGuards.ts';
 
-// Obsidian provides these globals at runtime; define them for jsdom.
-beforeAll(() => {
-  vi.stubGlobal('createDiv', vi.fn((_o?: DomElementInfo | string) => document.createElement('div')));
-  vi.stubGlobal('createEl', vi.fn((tag: keyof HTMLElementTagNameMap, _o?: DomElementInfo | string) => document.createElement(tag)));
-  vi.stubGlobal('createSpan', vi.fn((_o?: DomElementInfo | string) => document.createElement('span')));
-  vi.stubGlobal('createFragment', vi.fn(() => document.createDocumentFragment()));
-  vi.stubGlobal(
-    'createSvg',
-    // eslint-disable-next-line no-undef -- SvgElementInfo is an Obsidian global type not available in jsdom.
-    vi.fn((tag: keyof SVGElementTagNameMap, _o?: string | SvgElementInfo) => document.createElementNS('http://www.w3.org/2000/svg', tag))
-  );
-});
-
-afterAll(() => {
-  vi.unstubAllGlobals();
-});
-
 describe('toPx', () => {
   it.each([
     [0, '0px'],
@@ -69,8 +50,13 @@ describe('createDivAsync', () => {
   });
 
   it('should call createDiv with the provided options', async () => {
+    const spy = vi.spyOn(
+      globalThis as unknown as { createDiv: typeof createDiv },
+      'createDiv'
+    );
     await createDivAsync('my-class');
-    expect(createDiv).toHaveBeenCalledWith('my-class');
+    expect(spy).toHaveBeenCalledWith('my-class');
+    spy.mockRestore();
   });
 
   it('should work without a callback', async () => {
@@ -110,8 +96,13 @@ describe('createElAsync', () => {
   });
 
   it('should call createEl with the tag and options', async () => {
+    const spy = vi.spyOn(
+      globalThis as unknown as { createEl: typeof createEl },
+      'createEl'
+    );
     await createElAsync('p', 'my-class');
-    expect(createEl).toHaveBeenCalledWith('p', 'my-class');
+    expect(spy).toHaveBeenCalledWith('p', 'my-class');
+    spy.mockRestore();
   });
 
   it('should work without a callback', async () => {
@@ -151,8 +142,13 @@ describe('createSpanAsync', () => {
   });
 
   it('should call createSpan with the provided options', async () => {
+    const spy = vi.spyOn(
+      globalThis as unknown as { createSpan: typeof createSpan },
+      'createSpan'
+    );
     await createSpanAsync('my-class');
-    expect(createSpan).toHaveBeenCalledWith('my-class');
+    expect(spy).toHaveBeenCalledWith('my-class');
+    spy.mockRestore();
   });
 
   it('should work without a callback', async () => {
@@ -228,8 +224,13 @@ describe('createSvgAsync', () => {
   });
 
   it('should call createSvg with the tag and options', async () => {
+    const spy = vi.spyOn(
+      globalThis as unknown as { createSvg: typeof createSvg },
+      'createSvg'
+    );
     await createSvgAsync('svg', 'my-class');
-    expect(createSvg).toHaveBeenCalledWith('svg', 'my-class');
+    expect(spy).toHaveBeenCalledWith('svg', 'my-class');
+    spy.mockRestore();
   });
 
   it('should work without a callback', async () => {

@@ -52,6 +52,10 @@ export type TranslationsMap<PluginTypes extends PluginTypesBase> = Record<string
 
 let isInitialized = false;
 
+interface TOptions extends SelectorOptions<[typeof DEFAULT_NS]> {
+  readonly ns: [typeof DEFAULT_NS];
+}
+
 /**
  * Initializes the `i18n` module.
  *
@@ -91,7 +95,7 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
 
 function tImpl(
   selector: SelectorFn<ReadonlyDeep<Translations<PluginTypesBase>>, string, SelectorOptions<[typeof DEFAULT_NS]>>,
-  options?: { ns: [typeof DEFAULT_NS] } & SelectorOptions<[typeof DEFAULT_NS]>
+  options?: TOptions
 ): string {
   if (!isInitialized) {
     console.warn('I18N was not initialized, initializing default obsidian-dev-utils translations');
