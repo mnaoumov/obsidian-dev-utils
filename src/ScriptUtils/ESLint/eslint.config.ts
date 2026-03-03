@@ -197,7 +197,7 @@ function getEslintConfigs(): Linter.Config[] {
           },
           {
             message: 'Do not use anonymous inline object types in function return types. Define a named interface instead.',
-            selector: ':function > TSTypeAnnotation:last-child TSTypeLiteral'
+            selector: ':function > TSTypeAnnotation TSTypeLiteral'
           },
           {
             message: 'Do not use anonymous inline object types in interface/method signatures. Define a named interface instead.',

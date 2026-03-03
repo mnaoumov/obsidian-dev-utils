@@ -1,3 +1,5 @@
+import type { Plugin } from 'obsidian';
+
 import {
   describe,
   expect,
@@ -9,6 +11,7 @@ import {
   reloadPlugin,
   showErrorAndDisablePlugin
 } from '../../../src/obsidian/Plugin/Plugin.ts';
+import { createMockOf } from '../../TestHelpers.ts';
 
 vi.mock('../../../src/Error.ts', () => ({
   printError: vi.fn()
@@ -19,11 +22,8 @@ vi.mock('obsidian', () => ({
 }));
 
 describe('Plugin', () => {
-  function createMockPlugin(): {
-    app: { plugins: { disablePlugin: ReturnType<typeof vi.fn>; enablePlugin: ReturnType<typeof vi.fn> } };
-    manifest: { id: string };
-  } {
-    return {
+  function createMockPlugin(): Plugin {
+    return createMockOf<Plugin>({
       app: {
         plugins: {
           disablePlugin: vi.fn(() => Promise.resolve()),
@@ -31,19 +31,19 @@ describe('Plugin', () => {
         }
       },
       manifest: { id: 'test-plugin' }
-    };
+    });
   }
 
   it('should reload plugin by disabling and re-enabling', async () => {
     const plugin = createMockPlugin();
-    await reloadPlugin(plugin as never);
+    await reloadPlugin(plugin);
     expect(plugin.app.plugins.disablePlugin).toHaveBeenCalledWith('test-plugin');
     expect(plugin.app.plugins.enablePlugin).toHaveBeenCalledWith('test-plugin');
   });
 
   it('should show error and disable plugin', async () => {
     const plugin = createMockPlugin();
-    await showErrorAndDisablePlugin(plugin as never, 'Test error');
+    await showErrorAndDisablePlugin(plugin, 'Test error');
     expect(plugin.app.plugins.disablePlugin).toHaveBeenCalledWith('test-plugin');
   });
 });

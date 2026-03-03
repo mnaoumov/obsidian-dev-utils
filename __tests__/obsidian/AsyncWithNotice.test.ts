@@ -75,13 +75,18 @@ vi.mock('../../src/obsidian/i18n/i18n.ts', () => ({
   })
 }));
 
+interface CreateFragmentGlobalResult {
+  cleanup: () => void;
+  getLastFragment: () => DocumentFragment | null;
+}
+
 /**
  * Wraps the global createFragment (provided by obsidian-globals) to capture
  * the last created fragment for test assertions.
  *
  * @returns A cleanup function and a getter for the last fragment.
  */
-function setupCreateFragmentGlobal(): { cleanup: () => void; getLastFragment: () => DocumentFragment | null } {
+function setupCreateFragmentGlobal(): CreateFragmentGlobalResult {
   let lastFragment: DocumentFragment | null = null;
   const originalCreateFragment = globalThis.createFragment;
 

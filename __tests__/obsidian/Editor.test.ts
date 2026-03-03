@@ -1,3 +1,7 @@
+import type {
+  Extension,
+  StateEffect
+} from '@codemirror/state';
 import type { Editor } from 'obsidian';
 
 import {
@@ -8,19 +12,19 @@ import {
   vi
 } from 'vitest';
 
-import { castTo } from '../../src/ObjectUtils.ts';
 import { assertNonNullable } from '../../src/TypeGuards.ts';
+import { createMockOf } from '../TestHelpers.ts';
 
 const mocks = vi.hoisted(() => {
-  const mockReconfigure = vi.fn((extensions: unknown[]): { effects: unknown[] } => ({ effects: extensions }));
+  const mockReconfigure = vi.fn((extensions: unknown[]): StateEffect<unknown> => createMockOf<StateEffect<unknown>>({ effects: extensions }));
 
   class MockCompartment {
     public reconfigure = mockReconfigure;
   }
 
-  const mockReadOnlyOf = vi.fn((value: boolean): { facet: string; value: boolean } => ({ facet: 'readOnly', value }));
+  const mockReadOnlyOf = vi.fn((value: boolean): Extension => createMockOf<Extension>({ facet: 'readOnly', value }));
 
-  const mockEditableOf = vi.fn((value: boolean): { facet: string; value: boolean } => ({ facet: 'editable', value }));
+  const mockEditableOf = vi.fn((value: boolean): Extension => createMockOf<Extension>({ facet: 'editable', value }));
 
   return {
     MockCompartment,
@@ -48,7 +52,7 @@ vi.mock('@codemirror/view', () => ({
 }));
 
 function createMockEditor(): Editor {
-  return castTo<Editor>({
+  return createMockOf<Editor>({
     cm: {
       dispatch: vi.fn()
     }

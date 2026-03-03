@@ -7,6 +7,7 @@ import type {
   EditorSelectionOrCaret,
   EditorTransaction
 } from 'obsidian';
+import type { CoordsLeftTop } from 'obsidian-typings';
 
 import { noop } from '../../src/Function.ts';
 
@@ -42,7 +43,7 @@ export abstract class Editor {
     return '';
   }
 
-  public getScrollInfo(): { left: number; top: number } {
+  public getScrollInfo(): CoordsLeftTop {
     return { left: 0, top: 0 };
   }
 

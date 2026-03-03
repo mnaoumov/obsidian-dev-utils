@@ -1,4 +1,6 @@
-export function parseLinktext(linktext: string): { path: string; subpath: string } {
+import type { ParsedLinktext } from 'obsidian-typings';
+
+export function parseLinktext(linktext: string): ParsedLinktext {
   const hashIndex = linktext.indexOf('#');
   if (hashIndex === -1) {
     return { path: linktext, subpath: '' };

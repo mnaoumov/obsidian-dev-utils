@@ -74,12 +74,22 @@ export interface FileChange {
    */
   reference: Reference;
 }
+interface ApplyContentChangesToTextResult {
+  frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>;
+  newContent: string;
+}
 type CanvasChange = { reference: CanvasReference } & FileChange;
 type CanvasFileNodeChange = { reference: CanvasFileNodeReference } & FileChange;
 type CanvasTextNodeChange = { reference: CanvasTextNodeReference } & FileChange;
 type ContentChange = { reference: ReferenceCache } & FileChange;
 type FrontmatterChange = { reference: FrontmatterLinkCache } & FileChange;
+
 type FrontmatterChangeWithOffsets = { reference: FrontmatterLinkCacheWithOffsets } & FileChange;
+
+interface ParseFrontmatterSafelyResult {
+  frontmatter: CombinedFrontmatter<unknown>;
+  hasFrontmatterError: boolean;
+}
 
 /**
  * Applies a series of content changes to the specified content.
@@ -328,7 +338,7 @@ function applyContentChangesToText(
   content: string,
   hasFrontmatterError: boolean,
   path: string
-): { frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>; newContent: string } {
+): ApplyContentChangesToTextResult {
   let newContent = '';
   let lastIndex = 0;
   let lastContentChange: ContentChange = {
@@ -448,7 +458,7 @@ function buildFinalContent(
   return newContent;
 }
 
-function parseFrontmatterSafely(content: string, path: string): { frontmatter: CombinedFrontmatter<unknown>; hasFrontmatterError: boolean } {
+function parseFrontmatterSafely(content: string, path: string): ParseFrontmatterSafelyResult {
   let frontmatter: CombinedFrontmatter<unknown> = {};
   let hasFrontmatterError = false;
 
