@@ -2,10 +2,13 @@ import type {
   App,
   CachedMetadata,
   FrontmatterLinkCache,
+  Reference,
   ReferenceCache,
   TAbstractFile
 } from 'obsidian';
+import type { CustomArrayDict } from 'obsidian-typings';
 
+import { CustomArrayDictImpl } from 'obsidian-typings/implementations';
 import {
   beforeEach,
   describe,
@@ -33,6 +36,7 @@ import {
   assertNonNullable,
   ensureGenericObject
 } from '../../src/TypeGuards.ts';
+import { createMockOf } from '../TestHelpers.ts';
 
 vi.mock('../../src/obsidian/App.ts', () => ({
   getObsidianDevUtilsState: vi.fn((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }))
@@ -98,6 +102,12 @@ vi.mock('obsidian-typings/implementations', async (importOriginal) => {
     ...actual as object,
     CustomArrayDictImpl: class {
       public data = new Map<string, unknown[]>();
+      public add(key: string, value: unknown): void {
+        const arr = this.data.get(key) ?? [];
+        arr.push(value);
+        this.data.set(key, arr);
+      }
+
       public get(key: string): null | unknown[] {
         return this.data.get(key) ?? null;
       }
@@ -429,7 +439,7 @@ describe('unregisterFileCacheForNonExistingFile', () => {
 
 describe('registerFiles', () => {
   it('should register a deleted file into fileMap', () => {
-    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
     registerFiles(app, [file]);
 
@@ -437,7 +447,7 @@ describe('registerFiles', () => {
   });
 
   it('should call uniqueFileLookup.add for file-like deleted entries', () => {
-    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
     registerFiles(app, [file]);
 
@@ -445,7 +455,7 @@ describe('registerFiles', () => {
   });
 
   it('should not register a non-deleted file', () => {
-    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
 
     registerFiles(app, [file]);
 
@@ -453,7 +463,7 @@ describe('registerFiles', () => {
   });
 
   it('should not call uniqueFileLookup.add for folder-like deleted entries', () => {
-    const folder = castTo<TAbstractFile>({ children: [], deleted: true, path: 'folder' });
+    const folder = createMockOf<TAbstractFile>({ children: [], deleted: true, path: 'folder' });
 
     registerFiles(app, [folder]);
 
@@ -465,7 +475,7 @@ describe('registerFiles', () => {
 
 describe('unregisterFiles', () => {
   it('should remove a deleted file from fileMap when count reaches 0', () => {
-    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
     setVaultEntry(app, 'folder/note.md', file);
 
     unregisterFiles(app, [file]);
@@ -474,7 +484,7 @@ describe('unregisterFiles', () => {
   });
 
   it('should call uniqueFileLookup.remove for file-like deleted entries when count reaches 0', () => {
-    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
     setVaultEntry(app, 'folder/note.md', file);
 
     unregisterFiles(app, [file]);
@@ -483,7 +493,7 @@ describe('unregisterFiles', () => {
   });
 
   it('should not remove a non-deleted file', () => {
-    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
     setVaultEntry(app, 'folder/note.md', file);
 
     unregisterFiles(app, [file]);
@@ -492,7 +502,7 @@ describe('unregisterFiles', () => {
   });
 
   it('should not call uniqueFileLookup.remove for folder-like deleted entries', () => {
-    const folder = castTo<TAbstractFile>({ children: [], deleted: true, path: 'folder' });
+    const folder = createMockOf<TAbstractFile>({ children: [], deleted: true, path: 'folder' });
     setVaultEntry(app, 'folder', folder);
 
     unregisterFiles(app, [folder]);
@@ -507,7 +517,7 @@ describe('unregisterFiles', () => {
     const mockedGetState = vi.mocked(getObsidianDevUtilsState);
     mockedGetState.mockReturnValue({ value: sharedMap });
 
-    const file = castTo<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
     registerFiles(app, [file]);
     registerFiles(app, [file]);
@@ -521,13 +531,13 @@ describe('unregisterFiles', () => {
 
 describe('tempRegisterFilesAndRun', () => {
   it('should run the function and return its result', () => {
-    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     const result = tempRegisterFilesAndRun(app, [file], () => 42);
     expect(result).toBe(42);
   });
 
   it('should still unregister files even when fn throws', () => {
-    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     expect(() =>
       tempRegisterFilesAndRun(app, [file], () => {
         throw new Error('test error');
@@ -538,13 +548,13 @@ describe('tempRegisterFilesAndRun', () => {
 
 describe('tempRegisterFilesAndRunAsync', () => {
   it('should run the async function and return its result', async () => {
-    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     const result = await tempRegisterFilesAndRunAsync(app, [file], async () => 'hello');
     expect(result).toBe('hello');
   });
 
   it('should still unregister files even when fn rejects', async () => {
-    const file = castTo<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     await expect(tempRegisterFilesAndRunAsync(app, [file], async () => {
       throw new Error('async error');
     })).rejects.toThrow('async error');
@@ -699,17 +709,21 @@ describe('getBacklinksForFileSafe', () => {
   function setupRetryToInvokeOperationFn(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
     });
   }
 
-  function createBacklinksDict(entries: Record<string, unknown[]>): { get(key: string): null | unknown[]; keys(): string[] } {
-    const map = new Map(Object.entries(entries));
-    return {
-      get: (key: string): null | unknown[] => map.get(key) ?? null,
-      keys: (): string[] => [...map.keys()]
-    };
+  function createBacklinksDict(entries: Record<string, Reference[]>): CustomArrayDict<Reference> {
+    const dict = new CustomArrayDictImpl<Reference>();
+
+    for (const [key, references] of Object.entries(entries)) {
+      for (const reference of references) {
+        dict.add(key, reference);
+      }
+    }
+
+    return dict;
   }
 
   beforeEach(() => {
@@ -762,7 +776,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFn();
     const backlinksDict = createBacklinksDict({});
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(backlinksDict as ReturnType<typeof app.metadataCache.getBacklinksForFile>);
+    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(backlinksDict);
 
     const result = await getBacklinksForFileSafe(app, 'test.md');
     expect(result).toBe(backlinksDict);
@@ -773,7 +787,7 @@ describe('getBacklinksForFileSafe', () => {
     const refLink = makeReferenceCache('[[target]]', 10);
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [refLink] }) as ReturnType<typeof app.metadataCache.getBacklinksForFile>
+      createBacklinksDict({ 'source.md': [refLink] })
     );
     mockedGetFileOrNull.mockReturnValue(null as never);
 
@@ -786,7 +800,7 @@ describe('getBacklinksForFileSafe', () => {
     const refLink = makeReferenceCache('[[target]]', 10);
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [refLink] }) as ReturnType<typeof app.metadataCache.getBacklinksForFile>
+      createBacklinksDict({ 'source.md': [refLink] })
     );
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
     mockedReadSafe.mockResolvedValue(null as never);
@@ -817,7 +831,7 @@ describe('getBacklinksForFileSafe', () => {
     const refLink = makeReferenceCache('[[target]]', 10);
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [refLink] }) as ReturnType<typeof app.metadataCache.getBacklinksForFile>
+      createBacklinksDict({ 'source.md': [refLink] })
     );
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
     mockedReadSafe.mockResolvedValue(content);
@@ -831,14 +845,14 @@ describe('getBacklinksForFileSafe', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     const content = '0123456789XXMISMATCHX more text';
     const refLink = makeReferenceCache('[[target]]', 10);
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [refLink] }) as ReturnType<typeof app.metadataCache.getBacklinksForFile>
+      createBacklinksDict({ 'source.md': [refLink] })
     );
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
     mockedReadSafe.mockResolvedValue(content);
@@ -853,7 +867,7 @@ describe('getBacklinksForFileSafe', () => {
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [fmLink] }) as ReturnType<typeof app.metadataCache.getBacklinksForFile>
+      createBacklinksDict({ 'source.md': [fmLink] })
     );
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
     mockedReadSafe.mockResolvedValue('---\naliases: target-note\n---');
@@ -867,13 +881,13 @@ describe('getBacklinksForFileSafe', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [fmLink] }) as ReturnType<typeof app.metadataCache.getBacklinksForFile>
+      createBacklinksDict({ 'source.md': [fmLink] })
     );
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
     mockedReadSafe.mockResolvedValue('---\naliases: 123\n---');
@@ -887,13 +901,13 @@ describe('getBacklinksForFileSafe', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [fmLink] }) as ReturnType<typeof app.metadataCache.getBacklinksForFile>
+      createBacklinksDict({ 'source.md': [fmLink] })
     );
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
     mockedReadSafe.mockResolvedValue('---\naliases: different\n---');
@@ -908,7 +922,7 @@ describe('getBacklinksForFileSafe', () => {
     const unknownLink = { link: 'something', original: 'something' };
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [unknownLink] }) as ReturnType<typeof app.metadataCache.getBacklinksForFile>
+      createBacklinksDict({ 'source.md': [unknownLink] })
     );
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
     mockedReadSafe.mockResolvedValue('content');
