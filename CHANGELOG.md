@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 49.0.3
+
+- chore: update libs
+- chore: force no anonymous types
+
 ## 49.0.2
 
 - fix: parent path for deleted file re <https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/19>
