@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 50.0.0
+
+- refactor: split VaultEx -> Vault/VaultDelete
+- chore: update libs
+- feat: extract trashSafe
+
 ## 49.0.3
 
 - chore: update libs
