@@ -32,6 +32,7 @@ import {
   isFolder
 } from './FileSystem.ts';
 import { invokeWithPatchAsync } from './MonkeyAround.ts';
+import { trashSafe } from './Vault.ts';
 
 let domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
 
@@ -258,7 +259,7 @@ async function getDomEventsHandlersConstructor(app: App): Promise<DomEventsHandl
     return ctor;
   } finally {
     if (shouldDelete) {
-      await app.fileManager.trashFile(mdFile);
+      await trashSafe(app, mdFile);
     }
   }
 }

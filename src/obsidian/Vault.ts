@@ -163,7 +163,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
   return async () => {
     file = getFile(app, path);
     if (!file.deleted) {
-      await app.fileManager.trashFile(file);
+      await trashSafe(app, file);
     }
     await folderCleanup();
   };
@@ -192,10 +192,48 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
   return async () => {
     folder = getFolder(app, path);
     if (!folder.deleted) {
-      await app.fileManager.trashFile(folder);
+      await trashSafe(app, folder);
     }
     await folderCleanup();
   };
+}
+
+/**
+ * Deletes an empty folder.
+ *
+ * @param app - The application instance.
+ * @param pathOrFolder - The folder to delete.
+ * @returns A {@link Promise} that resolves when the folder is deleted.
+ */
+export async function deleteEmptyFolder(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
+  const folder = getFolderOrNull(app, pathOrFolder);
+  if (!folder) {
+    return;
+  }
+  if (!await isEmptyFolder(app, folder)) {
+    return;
+  }
+  await trashSafe(app, folder);
+}
+
+/**
+ * Removes empty folder hierarchy starting from the given folder.
+ *
+ * @param app - The application instance.
+ * @param pathOrFolder - The folder to start removing empty hierarchy from.
+ * @returns A {@link Promise} that resolves when the empty hierarchy is deleted.
+ */
+export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
+  let folder = getFolderOrNull(app, pathOrFolder);
+
+  while (folder) {
+    if (!await isEmptyFolder(app, folder)) {
+      return;
+    }
+    const parent = folder.parent;
+    await deleteEmptyFolder(app, folder);
+    folder = parent;
+  }
 }
 
 /**
@@ -635,6 +673,30 @@ export async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> 
     if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path && leaf.view.dirty) {
       await leaf.view.save();
     }
+  }
+}
+
+/**
+ * Trashes an abstract file safely from the vault.
+ *
+ * @param app - The Obsidian application instance.
+ * @param pathOrFile - The path or abstract file to trash.
+ * @returns A {@link Promise} that resolves when the file is trashed.
+ */
+export async function trashSafe(app: App, pathOrFile: PathOrAbstractFile): Promise<void> {
+  const file = getAbstractFileOrNull(app, pathOrFile);
+  if (!file) {
+    return;
+  }
+
+  try {
+    await app.fileManager.trashFile(file);
+  } catch (e) {
+    if (await app.vault.exists(file.path)) {
+      throw e;
+    }
+
+    getLibDebugger('Vault:trashSafe')(`An error occurred while trashing ${file.path}, but the file no longer exists.`, { error: e, path: file.path });
   }
 }
 

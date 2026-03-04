@@ -80,14 +80,13 @@ import {
 import { registerPatch } from './MonkeyAround.ts';
 import { addToQueue } from './Queue.ts';
 import {
-  getSafeRenamePath,
-  renameSafe
-} from './Vault.ts';
-import {
   deleteEmptyFolder,
   deleteEmptyFolderHierarchy,
-  deleteSafe
-} from './VaultEx.ts';
+  getSafeRenamePath,
+  renameSafe,
+  trashSafe
+} from './Vault.ts';
+import { deleteIfNotUsed } from './VaultDelete.ts';
 
 /**
  * A behavior of the rename/delete handler when deleting empty folders.
@@ -240,7 +239,7 @@ class DeleteHandler {
           }
 
           parentFolderPaths.add(attachmentFile.parent?.path ?? '');
-          await deleteSafe(this.app, attachmentFile, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
+          await deleteIfNotUsed(this.app, attachmentFile, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
           this.abortSignal.throwIfAborted();
         }
       }
@@ -267,7 +266,7 @@ class DeleteHandler {
 
     this.abortSignal.throwIfAborted();
 
-    await deleteSafe(this.app, attachmentFolder, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
+    await deleteIfNotUsed(this.app, attachmentFolder, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
     this.abortSignal.throwIfAborted();
   }
 }
@@ -933,7 +932,7 @@ class RenameMap {
         const newAttachmentFile = getFileOrNull(this.app, newAttachmentFilePath);
         if (newAttachmentFile) {
           getLibDebugger('RenameDeleteHandler:fillRenameMap')(`Removing conflicting attachment ${newAttachmentFile.path}.`);
-          await this.app.fileManager.trashFile(newAttachmentFile);
+          await trashSafe(this.app, newAttachmentFile);
           this.abortSignal.throwIfAborted();
         }
       } else {
