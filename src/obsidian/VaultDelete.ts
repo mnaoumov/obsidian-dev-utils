@@ -1,24 +1,18 @@
 /**
  * @packageDocumentation
  *
- * This module provides additional utilities for working with the Obsidian Vault.
- *
- * It has to be extracted from `Vault` because of circular dependencies.
+ * This module provides deletion utilities that require metadata cache access.
  */
 
 import type { App } from 'obsidian';
 
 import { Notice } from 'obsidian';
 
-import type {
-  PathOrAbstractFile,
-  PathOrFolder
-} from './FileSystem.ts';
+import type { PathOrAbstractFile } from './FileSystem.ts';
 
 import { printError } from '../Error.ts';
 import {
   getAbstractFileOrNull,
-  getFolderOrNull,
   isFile,
   isFolder
 } from './FileSystem.ts';
@@ -26,49 +20,12 @@ import { t } from './i18n/i18n.ts';
 import { getBacklinksForFileSafe } from './MetadataCache.ts';
 import {
   isEmptyFolder,
-  listSafe
+  listSafe,
+  trashSafe
 } from './Vault.ts';
 
 /**
- * Deletes an empty folder.
- *
- * @param app - The application instance.
- * @param pathOrFolder - The folder to delete.
- * @returns A {@link Promise} that resolves when the folder is deleted.
- */
-export async function deleteEmptyFolder(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
-  const folder = getFolderOrNull(app, pathOrFolder);
-  if (!folder) {
-    return;
-  }
-  if (!await isEmptyFolder(app, folder)) {
-    return;
-  }
-  await deleteSafe(app, folder);
-}
-
-/**
- * Removes empty folder hierarchy starting from the given folder.
- *
- * @param app - The application instance.
- * @param pathOrFolder - The folder to start removing empty hierarchy from.
- * @returns A {@link Promise} that resolves when the empty hierarchy is deleted.
- */
-export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
-  let folder = getFolderOrNull(app, pathOrFolder);
-
-  while (folder) {
-    if (!await isEmptyFolder(app, folder)) {
-      return;
-    }
-    const parent = folder.parent;
-    await deleteEmptyFolder(app, folder);
-    folder = parent;
-  }
-}
-
-/**
- * Deletes abstract file safely from the vault.
+ * Deletes an abstract file safely from the vault, but only if it is not referenced by other notes.
  *
  * @param app - The Obsidian application instance.
  * @param pathOrFile - The path or abstract file to delete.
@@ -77,7 +34,7 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | 
  * @param shouldDeleteEmptyFolders - Optional. If `true`, empty folders will be deleted.
  * @returns A {@link Promise} that resolves to a boolean indicating whether the removal was successful.
  */
-export async function deleteSafe(
+export async function deleteIfNotUsed(
   app: App,
   pathOrFile: PathOrAbstractFile,
   deletedNotePath?: string,
@@ -110,7 +67,7 @@ export async function deleteSafe(
     /* v8 ignore stop */
     const listedFiles = await listSafe(app, file);
     for (const child of [...listedFiles.files, ...listedFiles.folders]) {
-      canDelete &&= await deleteSafe(app, child, deletedNotePath, shouldReportUsedAttachments);
+      canDelete &&= await deleteIfNotUsed(app, child, deletedNotePath, shouldReportUsedAttachments);
     }
 
     canDelete &&= await isEmptyFolder(app, file);
@@ -118,12 +75,10 @@ export async function deleteSafe(
 
   if (canDelete) {
     try {
-      await app.fileManager.trashFile(file);
+      await trashSafe(app, file);
     } catch (e) {
-      if (await app.vault.exists(file.path)) {
-        printError(new Error(`Failed to delete ${file.path}`, { cause: e }));
-        canDelete = false;
-      }
+      printError(new Error(`Failed to delete ${file.path}`, { cause: e }));
+      canDelete = false;
     }
   }
 
