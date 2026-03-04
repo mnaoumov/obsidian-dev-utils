@@ -29,6 +29,8 @@ import {
   createFolderSafe,
   createTempFile,
   createTempFolder,
+  deleteEmptyFolder,
+  deleteEmptyFolderHierarchy,
   getAbstractFilePathSafe,
   getAvailablePath,
   getFilePathSafe,
@@ -47,7 +49,8 @@ import {
   process as processFile,
   readSafe,
   renameSafe,
-  saveNote
+  saveNote,
+  trashSafe
 } from '../../src/obsidian/Vault.ts';
 import {
   assertNonNullable,
@@ -1121,5 +1124,99 @@ describe('processFile', () => {
     await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: true });
 
     expect(mockedLockEditor).not.toHaveBeenCalled();
+  });
+});
+
+describe('trashSafe', () => {
+  it('should do nothing when file does not exist', async () => {
+    app = createMockApp();
+    vi.spyOn(app.fileManager, 'trashFile');
+    await trashSafe(app, 'nonexistent.md');
+
+    expect(app.fileManager.trashFile).not.toHaveBeenCalled();
+  });
+
+  it('should trash an existing file', async () => {
+    app = createMockApp({ files: [{ path: 'note.md' }] });
+    vi.spyOn(app.fileManager, 'trashFile');
+    await trashSafe(app, 'note.md');
+
+    expect(app.fileManager.trashFile).toHaveBeenCalled();
+  });
+
+  it('should suppress error when file no longer exists after failure', async () => {
+    app = createMockApp({ files: [{ path: 'note.md' }] });
+    vi.spyOn(app.fileManager, 'trashFile').mockRejectedValue(new Error('trash failed'));
+    vi.spyOn(app.vault, 'exists').mockResolvedValue(false);
+
+    await expect(trashSafe(app, 'note.md')).resolves.toBeUndefined();
+  });
+
+  it('should rethrow error when file still exists after failure', async () => {
+    app = createMockApp({ files: [{ path: 'note.md' }] });
+    vi.spyOn(app.fileManager, 'trashFile').mockRejectedValue(new Error('trash failed'));
+    vi.spyOn(app.vault, 'exists').mockResolvedValue(true);
+
+    await expect(trashSafe(app, 'note.md')).rejects.toThrow('trash failed');
+  });
+});
+
+describe('deleteEmptyFolder', () => {
+  it('should do nothing when folder is null', async () => {
+    app = createMockApp();
+    vi.spyOn(app.fileManager, 'trashFile');
+    await deleteEmptyFolder(app, null);
+
+    expect(app.fileManager.trashFile).not.toHaveBeenCalled();
+  });
+
+  it('should do nothing when folder is not empty', async () => {
+    app = createMockApp({ folders: ['my-folder'] });
+    vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
+    vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: ['my-folder/note.md'], folders: [] });
+    await deleteEmptyFolder(app, 'my-folder');
+
+    expect(app.fileManager.trashFile).not.toHaveBeenCalled();
+  });
+
+  it('should delete when folder is empty', async () => {
+    app = createMockApp({ folders: ['my-folder'] });
+    vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
+    vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
+    await deleteEmptyFolder(app, 'my-folder');
+
+    expect(app.fileManager.trashFile).toHaveBeenCalled();
+  });
+});
+
+describe('deleteEmptyFolderHierarchy', () => {
+  it('should do nothing when folder is null', async () => {
+    app = createMockApp();
+    vi.spyOn(app.fileManager, 'trashFile');
+    await deleteEmptyFolderHierarchy(app, null);
+
+    expect(app.fileManager.trashFile).not.toHaveBeenCalled();
+  });
+
+  it('should stop when folder is not empty', async () => {
+    app = createMockApp({ folders: ['my-folder'] });
+    vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
+    vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: ['my-folder/note.md'], folders: [] });
+    await deleteEmptyFolderHierarchy(app, 'my-folder');
+
+    expect(app.fileManager.trashFile).not.toHaveBeenCalled();
+  });
+
+  it('should delete folder hierarchy when empty', async () => {
+    app = createMockApp({ folders: ['parent', 'parent/child'] });
+    vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
+    vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
+    await deleteEmptyFolderHierarchy(app, 'parent/child');
+
+    expect(app.fileManager.trashFile).toHaveBeenCalled();
   });
 });
