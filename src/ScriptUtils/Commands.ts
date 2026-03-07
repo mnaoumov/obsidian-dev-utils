@@ -29,7 +29,7 @@ import {
   test as testImpl,
   testCoverage as testCoverageImpl,
   testWatch as testWatchImpl
-} from './testRunners/vitest/vitest.ts';
+} from './test-runners/vitest/vitest.ts';
 import { updateVersion as updateVersionImpl } from './version.ts';
 
 /**
