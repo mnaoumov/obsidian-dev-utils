@@ -4,25 +4,25 @@
  * Lint markdown documentation using `markdownlint-cli2` and `linkinator`.
  */
 
-import { toArray } from '../../Async.ts';
-import { getLibDebugger } from '../../Debug.ts';
-import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
+import { toArray } from '../../../Async.ts';
+import { getLibDebugger } from '../../../Debug.ts';
+import { ObsidianPluginRepoPaths } from '../../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   getFolderName,
   join
-} from '../../Path.ts';
-import { assertNonNullable } from '../../TypeGuards.ts';
+} from '../../../Path.ts';
+import { assertNonNullable } from '../../../TypeGuards.ts';
 import {
   cp,
   existsSync,
   glob
-} from '../NodeModules.ts';
-import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
+} from '../../NodeModules.ts';
+import { ObsidianDevUtilsRepoPaths } from '../../ObsidianDevUtilsRepoPaths.ts';
 import {
   execFromRoot,
   getRootFolder,
   resolvePathFromRootSafe
-} from '../Root.ts';
+} from '../../Root.ts';
 
 /**
  * Lint markdown documentation using `markdownlint-cli2` and `linkinator`.

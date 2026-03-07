@@ -13,13 +13,13 @@ import {
   normalizeIfRelative
 } from '../src/Path.ts';
 import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
-import { changeExtensionPlugin } from '../src/ScriptUtils/esbuild/changeExtensionPlugin.ts';
-import { fixEsmPlugin } from '../src/ScriptUtils/esbuild/fixEsmPlugin.ts';
+import { changeExtensionPlugin } from '../src/ScriptUtils/bundlers/esbuild/changeExtensionPlugin.ts';
+import { fixEsmPlugin } from '../src/ScriptUtils/bundlers/esbuild/fixEsmPlugin.ts';
 import {
   banner,
   invokeEsbuild
-} from '../src/ScriptUtils/esbuild/ObsidianPluginBuilder.ts';
-import { preprocessPlugin } from '../src/ScriptUtils/esbuild/preprocessPlugin.ts';
+} from '../src/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder.ts';
+import { preprocessPlugin } from '../src/ScriptUtils/bundlers/esbuild/preprocessPlugin.ts';
 import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 

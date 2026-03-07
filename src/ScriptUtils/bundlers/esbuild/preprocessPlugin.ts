@@ -11,17 +11,17 @@
 
 import type { Plugin } from 'esbuild';
 
-import type { GenericObject } from '../../TypeGuards.ts';
+import type { GenericObject } from '../../../TypeGuards.ts';
 
 import {
   FunctionHandlingMode,
   toJson
-} from '../../ObjectUtils.ts';
+} from '../../../ObjectUtils.ts';
 import {
   makeValidVariableName,
   replaceAll
-} from '../../String.ts';
-import { readFile } from '../NodeModules.ts';
+} from '../../../String.ts';
+import { readFile } from '../../NodeModules.ts';
 
 interface BrowserProcess extends Partial<NodeJS.Process> {
   browser: boolean;

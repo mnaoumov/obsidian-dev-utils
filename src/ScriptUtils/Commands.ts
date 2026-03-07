@@ -16,17 +16,17 @@ import {
 import {
   BuildMode,
   buildObsidianPlugin
-} from './esbuild/ObsidianPluginBuilder.ts';
-import { lint as lintImpl } from './ESLint/ESLint.ts';
-import { format as formatImpl } from './format.ts';
-import { lintMarkdown as lintMarkdownImpl } from './markdownlint/markdownlint.ts';
+} from './bundlers/esbuild/ObsidianPluginBuilder.ts';
+import { lint as lintImpl } from './linters/eslint/ESLint.ts';
+import { format as formatImpl } from './formatters/dprint/dprint.ts';
+import { lintMarkdown as lintMarkdownImpl } from './linters/markdownlint/markdownlint.ts';
 import { publish as publishImpl } from './NpmPublish.ts';
 import { spellcheck as spellcheckImpl } from './spellcheck.ts';
 import {
   test as testImpl,
   testCoverage as testCoverageImpl,
   testWatch as testWatchImpl
-} from './test.ts';
+} from './testRunners/vitest/vitest.ts';
 import { updateVersion as updateVersionImpl } from './version.ts';
 
 /**

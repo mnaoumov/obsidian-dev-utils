@@ -8,7 +8,7 @@
 
 import type { Plugin } from 'esbuild';
 
-import { replaceAll } from '../../String.ts';
+import { replaceAll } from '../../../String.ts';
 
 /**
  * Creates an esbuild plugin that fixes the `require` statement for ESM modules.

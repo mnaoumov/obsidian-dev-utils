@@ -4,7 +4,7 @@
  * This module provides functions for running tests using the Vitest framework.
  */
 
-import { execFromRoot } from './Root.ts';
+import { execFromRoot } from '../../Root.ts';
 
 /**
  * Runs the test suite.

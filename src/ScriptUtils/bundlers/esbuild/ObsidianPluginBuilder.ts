@@ -18,12 +18,12 @@ import { context } from 'esbuild';
 // eslint-disable-next-line import-x/no-rename-default -- We need a temp variable to apply `extractDefaultExportInterop()` fix below.
 import sassPlugin_ from 'esbuild-sass-plugin';
 
-import { extractDefaultExportInterop } from '../../ObjectUtils.ts';
-import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
-import { join } from '../../Path.ts';
-import { ensureNonNullable } from '../../TypeGuards.ts';
-import { buildCompile } from '../build.ts';
-import { CliTaskResult } from '../CliUtils.ts';
+import { extractDefaultExportInterop } from '../../../ObjectUtils.ts';
+import { ObsidianPluginRepoPaths } from '../../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
+import { join } from '../../../Path.ts';
+import { ensureNonNullable } from '../../../TypeGuards.ts';
+import { buildCompile } from '../../build.ts';
+import { CliTaskResult } from '../../CliUtils.ts';
 import {
   builtinModules,
   cp,
@@ -33,9 +33,9 @@ import {
   process,
   rm,
   writeFile
-} from '../NodeModules.ts';
-import { readPackageJson } from '../Npm.ts';
-import { resolvePathFromRoot } from '../Root.ts';
+} from '../../NodeModules.ts';
+import { readPackageJson } from '../../Npm.ts';
+import { resolvePathFromRoot } from '../../Root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
 import { customEsbuildOptionsPlugin } from './customEsbuildOptionsPlugin.ts';
 import { fixEsmPlugin } from './fixEsmPlugin.ts';

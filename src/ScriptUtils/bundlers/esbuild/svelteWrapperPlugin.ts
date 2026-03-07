@@ -11,8 +11,8 @@ import type { Plugin } from 'esbuild';
 import esbuildSvelte_ from 'esbuild-svelte';
 import { sveltePreprocess } from 'svelte-preprocess';
 
-import { extractDefaultExportInterop } from '../../ObjectUtils.ts';
-import { readPackageJson } from '../Npm.ts';
+import { extractDefaultExportInterop } from '../../../ObjectUtils.ts';
+import { readPackageJson } from '../../Npm.ts';
 
 const esbuildSvelte = extractDefaultExportInterop(esbuildSvelte_);
 

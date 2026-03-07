@@ -18,62 +18,62 @@ describe('v8 ignore imports', () => {
   });
 
   it('should load eslint.config so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/ESLint/eslint.config.ts');
+    const mod = await import('../../src/ScriptUtils/linters/eslint/eslint.config.ts');
     expect(mod.obsidianDevUtilsConfigs).toBeDefined();
   }, HEAVY_IMPORT_TIMEOUT);
 
   it('should load Dependency so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/Dependency.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/Dependency.ts');
     expect(mod).toBeDefined();
   });
 
   it('should load ObsidianPluginBuilder so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/ObsidianPluginBuilder.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder.ts');
     expect(mod).toBeDefined();
   });
 
   it('should load changeExtensionPlugin so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/changeExtensionPlugin.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/changeExtensionPlugin.ts');
     expect(mod.changeExtensionPlugin).toBeDefined();
   });
 
   it('should load copyToObsidianPluginsFolderPlugin so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/copyToObsidianPluginsFolderPlugin.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/copyToObsidianPluginsFolderPlugin.ts');
     expect(mod.copyToObsidianPluginsFolderPlugin).toBeDefined();
   });
 
   it('should load customEsbuildOptionsPlugin so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/customEsbuildOptionsPlugin.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/customEsbuildOptionsPlugin.ts');
     expect(mod.customEsbuildOptionsPlugin).toBeDefined();
   });
 
   it('should load fixEsmPlugin so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/fixEsmPlugin.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/fixEsmPlugin.ts');
     expect(mod.fixEsmPlugin).toBeDefined();
   });
 
   it('should load fixSourceMapsPlugin so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/fixSourceMapsPlugin.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/fixSourceMapsPlugin.ts');
     expect(mod.fixSourceMapsPlugin).toBeDefined();
   });
 
   it('should load preprocessPlugin so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/preprocessPlugin.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/preprocessPlugin.ts');
     expect(mod.preprocessPlugin).toBeDefined();
   });
 
   it('should load renameCssPlugin so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/renameCssPlugin.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/renameCssPlugin.ts');
     expect(mod.renameCssPlugin).toBeDefined();
   });
 
   it('should load svelteWrapperPlugin so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/esbuild/svelteWrapperPlugin.ts');
+    const mod = await import('../../src/ScriptUtils/bundlers/esbuild/svelteWrapperPlugin.ts');
     expect(mod.svelteWrapperPlugin).toBeDefined();
   });
 
   it('should load markdownlint-cli2-config so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/markdownlint/markdownlint-cli2-config.ts');
+    const mod = await import('../../src/ScriptUtils/linters/markdownlint/markdownlint-cli2-config.ts');
     expect(mod.obsidianDevUtilsConfig).toBeDefined();
   });
 

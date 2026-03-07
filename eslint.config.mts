@@ -23,7 +23,7 @@ import { join } from './src/Path.ts';
 import {
   obsidianDevUtilsConfigs,
   typeScriptFiles
-} from './src/ScriptUtils/ESLint/eslint.config.ts';
+} from './src/ScriptUtils/linters/eslint/eslint.config.ts';
 import { ObsidianDevUtilsRepoPaths } from './src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
 
 const eslintPluginTsdocRequired = eslintPluginTsdocRequired_ as ESLint.Plugin;

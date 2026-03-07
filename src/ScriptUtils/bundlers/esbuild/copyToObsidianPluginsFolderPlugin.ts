@@ -11,17 +11,17 @@
 
 import type { Plugin } from 'esbuild';
 
-import { getLibDebugger } from '../../Debug.ts';
+import { getLibDebugger } from '../../../Debug.ts';
 import {
   join,
   toPosixPath
-} from '../../Path.ts';
+} from '../../../Path.ts';
 import {
   cp,
   existsSync,
   mkdir,
   writeFile
-} from '../NodeModules.ts';
+} from '../../NodeModules.ts';
 
 /**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
