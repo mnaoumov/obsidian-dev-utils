@@ -4,20 +4,20 @@
  * Build generate index script.
  */
 
-import type { Dirent } from '../src/ScriptUtils/NodeModules.ts';
+import type { Dirent } from '../src/script-utils/node-modules.ts';
 
-import { asyncMap } from '../src/Async.ts';
+import { asyncMap } from '../src/async.ts';
 import {
   basename,
   extname,
   join,
   normalizeIfRelative
-} from '../src/Path.ts';
-import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
-import { generate } from '../src/ScriptUtils/CodeGenerator.ts';
-import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
-import { makeValidVariableName } from '../src/String.ts';
+} from '../src/path.ts';
+import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
+import { generate } from '../src/script-utils/code-generator.ts';
+import { readdirPosix } from '../src/script-utils/fs.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+import { makeValidVariableName } from '../src/string.ts';
 
 await wrapCliTask(async () => {
   await generateIndex(ObsidianDevUtilsRepoPaths.Src);

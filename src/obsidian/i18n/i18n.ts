@@ -21,9 +21,9 @@ import i18next, {
 } from 'i18next';
 import { getLanguage } from 'obsidian';
 
-import type { PluginTypesBase } from '../Plugin/PluginTypesBase.ts';
+import type { PluginTypesBase } from '../plugin/plugin-types-base.ts';
 
-import { invokeAsyncSafely } from '../../Async.ts';
+import { invokeAsyncSafely } from '../../async.ts';
 import { en } from './locales/en.ts';
 import {
   DEFAULT_LANGUAGE,

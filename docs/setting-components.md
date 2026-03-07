@@ -7,14 +7,14 @@ In order for components to look properly, their styles has to be initialized. Se
 ## CheckboxComponent
 
 ```ts
-import { CheckboxComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/CheckboxComponent';
+import { CheckboxComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/checkbox-component';
 
 const checkbox = new CheckboxComponent(containerEl);
 checkbox.setValue(false);
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addCheckbox((checkbox) => {
@@ -27,7 +27,7 @@ new SettingEx()
 ## CodeHighlighterComponent
 
 ```ts
-import { CodeHighlighterComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/CodeHighlighterComponent';
+import { CodeHighlighterComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/code-highlighter-component';
 
 const codeHighlighter = new CodeHighlighterComponent(containerEl);
 codeHighlighter
@@ -38,7 +38,7 @@ codeHighlighter
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addCodeHighlighter((codeHighlighter) => {
@@ -55,14 +55,14 @@ new SettingEx()
 ## DateComponent
 
 ```ts
-import { DateComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/DateComponent';
+import { DateComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/date-component';
 
 const date = new DateComponent(containerEl);
 date.setValue(new Date());
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addDate((date) => {
@@ -75,14 +75,14 @@ new SettingEx()
 ## DateTimeComponent
 
 ```ts
-import { DateTimeComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/DateTimeComponent';
+import { DateTimeComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/date-time-component';
 
 const dateTime = new DateTimeComponent(containerEl);
 dateTime.setValue(new Date());
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addDateTime((dateTime) => {
@@ -95,14 +95,14 @@ new SettingEx()
 ## EmailComponent
 
 ```ts
-import { EmailComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/EmailComponent';
+import { EmailComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/email-component';
 
 const email = new EmailComponent(containerEl);
 email.setValue('foo@bar.com');
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addEmail((email) => {
@@ -115,14 +115,14 @@ new SettingEx()
 ## FileComponent
 
 ```ts
-import { FileComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/FileComponent';
+import { FileComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/file-component';
 
 const file = new FileComponent(containerEl);
 file.onChange((value) => console.log(value));
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addFile((file) => {
@@ -135,7 +135,7 @@ new SettingEx()
 ## MonthComponent
 
 ```ts
-import { MonthComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/MonthComponent';
+import { MonthComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/month-component';
 
 const month = new MonthComponent(containerEl);
 month.setValue({
@@ -145,7 +145,7 @@ month.setValue({
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addMonth((month) => {
@@ -161,7 +161,7 @@ new SettingEx()
 ## MultipleDropdownComponent
 
 ```ts
-import { MultipleDropdownComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/MultipleDropdownComponent';
+import { MultipleDropdownComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/multiple-dropdown-component';
 
 const multipleDropdown = new MultipleDropdownComponent(containerEl);
 multipleDropdown.addOptions({
@@ -175,7 +175,7 @@ multipleDropdown.setValue(['Value2', 'Value3']);
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addMultipleDropdown((multipleDropdown) => {
@@ -195,14 +195,14 @@ new SettingEx()
 ## MultipleEmailComponent
 
 ```ts
-import { MultipleEmailComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/MultipleEmailComponent';
+import { MultipleEmailComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/multiple-email-component';
 
 const multipleEmail = new MultipleEmailComponent(containerEl);
 multipleEmail.setValue(['foo@bar.com', 'baz@qux.com']);
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addMultipleEmail((multipleEmail) => {
@@ -215,14 +215,14 @@ new SettingEx()
 ## MultipleFileComponent
 
 ```ts
-import { MultipleFileComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/MultipleFileComponent';
+import { MultipleFileComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/multiple-file-component';
 
 const multipleFile = new MultipleFileComponent(containerEl);
 multipleFile.onChange((value) => console.log(value));
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addMultipleFile((multipleFile) => {
@@ -235,14 +235,14 @@ new SettingEx()
 ## MultipleTextComponent
 
 ```ts
-import { MultipleTextComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/MultipleTextComponent';
+import { MultipleTextComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/multiple-text-component';
 
 const multipleText = new MultipleTextComponent(containerEl);
 multipleText.setValue(['foo', 'bar']);
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addMultipleText((multipleText) => {
@@ -255,14 +255,14 @@ new SettingEx()
 ## NumberComponent
 
 ```ts
-import { NumberComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/NumberComponent';
+import { NumberComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/number-component';
 
 const number = new NumberComponent(containerEl);
 number.setValue(42);
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addNumber((number) => {
@@ -275,14 +275,14 @@ new SettingEx()
 ## PasswordComponent
 
 ```ts
-import { PasswordComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/PasswordComponent';
+import { PasswordComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/password-component';
 
 const password = new PasswordComponent(containerEl);
 password.setValue('foo');
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addPassword((password) => {
@@ -295,14 +295,14 @@ new SettingEx()
 ## TelephoneComponent
 
 ```ts
-import { TelephoneComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/TelephoneComponent';
+import { TelephoneComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/telephone-component';
 
 const telephone = new TelephoneComponent(containerEl);
 telephone.setValue('+123 456 78 90');
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addTelephone((telephone) => {
@@ -320,7 +320,7 @@ On mobile the keyboard for this component changes.
 
 ```ts
 import { moment } from 'obsidian';
-import { TimeComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/TimeComponent';
+import { TimeComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/time-component';
 
 const time = new TimeComponent(containerEl);
 time.setValue(moment.duration({ hours: 12, minutes: 34 }));
@@ -328,7 +328,7 @@ time.setValue(moment.duration({ hours: 12, minutes: 34 }));
 // or
 
 import { moment } from 'obsidian';
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addTime((time) => {
@@ -341,14 +341,14 @@ new SettingEx()
 ## TriStateCheckboxComponent
 
 ```ts
-import { TriStateCheckboxComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/TriStateCheckboxComponent';
+import { TriStateCheckboxComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/tri-state-checkbox-component';
 
 const triStateCheckbox = new TriStateCheckboxComponent(containerEl);
 triStateCheckbox.setValue(null);
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addTriStateCheckbox((triStateCheckbox) => {
@@ -361,7 +361,7 @@ new SettingEx()
 ## TypedDropdownComponent
 
 ```ts
-import { TypedDropdownComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/TypedDropdownComponent';
+import { TypedDropdownComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/typed-dropdown-component';
 
 export class TypedItem {
   public static readonly Bar = new TypedItem('Bar');
@@ -381,7 +381,7 @@ typedDropdown.setValue(TypedItem.Bar);
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 export class TypedItem {
   public static readonly Bar = new TypedItem('Bar');
@@ -407,7 +407,7 @@ new SettingEx()
 ## TypedMultipleDropdownComponent
 
 ```ts
-import { TypedMultipleDropdownComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/TypedMultipleDropdownComponent';
+import { TypedMultipleDropdownComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/typed-multiple-dropdown-component';
 
 export class TypedItem {
   public static readonly Bar = new TypedItem('Bar');
@@ -427,7 +427,7 @@ typedMultipleDropdown.setValue([TypedItem.Bar, TypedItem.Baz]);
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 export class TypedItem {
   public static readonly Bar = new TypedItem('Bar');
@@ -453,14 +453,14 @@ new SettingEx()
 ## UrlComponent
 
 ```ts
-import { UrlComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/UrlComponent';
+import { UrlComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/url-component';
 
 const url = new UrlComponent(containerEl);
 url.setValue('https://foo.com/');
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addUrl((dateTime) => {
@@ -473,7 +473,7 @@ new SettingEx()
 ## WeekComponent
 
 ```ts
-import { WeekComponent } from 'obsidian-dev-utils/obsidian/Components/SettingComponent/WeekComponent';
+import { WeekComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/week-component';
 
 const week = new WeekComponent(containerEl);
 dateTime.setValue({
@@ -483,7 +483,7 @@ dateTime.setValue({
 
 // or
 
-import { SettingEx } from 'obsidian-dev-utils/obsidian/SettingEx';
+import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addWeek((week) => {

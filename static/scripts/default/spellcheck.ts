@@ -1,4 +1,4 @@
-import { spellcheck } from 'obsidian-dev-utils/ScriptUtils/linters/cspell/cspell';
+import { spellcheck } from 'obsidian-dev-utils/script-utils/linters/cspell/cspell';
 
 export async function invoke(): Promise<void> {
   await spellcheck();

@@ -7,13 +7,13 @@ import {
   vi
 } from 'vitest';
 
-import type { GenericObject } from '../../src/TypeGuards.ts';
+import type { GenericObject } from '../../src/type-guards.ts';
 
 import {
   noop,
   noopAsync
-} from '../../src/Function.ts';
-import { ensureGenericObject } from '../../src/TypeGuards.ts';
+} from '../../src/function.ts';
+import { ensureGenericObject } from '../../src/type-guards.ts';
 
 const HEAVY_IMPORT_TIMEOUT = 30_000;
 
@@ -48,7 +48,7 @@ vi.mock('obsidian', async () => {
   };
 });
 
-vi.mock('../../src/Async.ts', () => ({
+vi.mock('../../src/async.ts', () => ({
   invokeAsyncSafely: mockInvokeAsyncSafelyFn
 }));
 

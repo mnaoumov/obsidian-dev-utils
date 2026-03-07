@@ -5,13 +5,13 @@
 The functions are grouped by files and folders and you have multiple ways to import them:
 
 ```typescript
-import { prompt } from 'obsidian-dev-utils/obsidian/Modal/Prompt';
+import { prompt } from 'obsidian-dev-utils/obsidian/modal/prompt';
 await prompt({
   app,
   title: 'Enter your name'
 });
 
-import { Prompt } from 'obsidian-dev-utils/obsidian/Modal';
+import { Prompt } from 'obsidian-dev-utils/obsidian/modal';
 await Prompt.prompt({
   app,
   title: 'Enter your name'

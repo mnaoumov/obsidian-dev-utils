@@ -4,8 +4,8 @@
  * Build script.
  */
 
-import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
-import { execFromRoot } from '../src/ScriptUtils/Root.ts';
+import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
+import { execFromRoot } from '../src/script-utils/root.ts';
 
 const BUILD_STEPS = [
   'build:clean',

@@ -29,16 +29,16 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 
 ### Directory Structure
 
-- `src/` — source code, organized by domain (e.g., `obsidian/`, `codemirror/`, `ScriptUtils/`, `Transformers/`)
+- `src/` — source code, organized by domain (e.g., `obsidian/`, `codemirror/`, `script-utils/`, `transformers/`)
 - `__tests__/` — test files, mirrors `src/` structure
 - `__mocks__/obsidian/` — mock implementations for the `obsidian` package (one file per export)
 - `__mocks__/obsidian-typings/` — mock implementations for `obsidian-typings`
-- `src/ScriptUtils/bundlers/esbuild/` — esbuild bundler (build, dev)
-- `src/ScriptUtils/linters/eslint/` — ESLint linting
-- `src/ScriptUtils/linters/markdownlint/` — Markdown linting
-- `src/ScriptUtils/linters/cspell/` — spellchecking
-- `src/ScriptUtils/formatters/dprint/` — dprint formatting
-- `src/ScriptUtils/test-runners/vitest/` — Vitest test runner
+- `src/script-utils/bundlers/esbuild/` — esbuild bundler (build, dev)
+- `src/script-utils/linters/eslint/` — ESLint linting
+- `src/script-utils/linters/markdownlint/` — Markdown linting
+- `src/script-utils/linters/cspell/` — spellchecking
+- `src/script-utils/formatters/dprint/` — dprint formatting
+- `src/script-utils/test-runners/vitest/` — Vitest test runner
 - `scripts/` — npm script entry points (executed via `jiti`), each imports directly from the relevant tool module
 - `dist/` — compiled output (ESM `.mjs` + CJS `.cjs` + type declarations)
 
@@ -68,9 +68,9 @@ Every source file follows this pattern:
  * Brief description of module purpose.
  */
 
-import type { SomeType } from './SomeModule.ts';
+import type { SomeType } from './some-module.ts';
 
-import { something } from './OtherModule.ts';
+import { something } from './other-module.ts';
 
 export function myFunction(param: Type): ReturnType {
   // ...
@@ -80,7 +80,7 @@ export function myFunction(param: Type): ReturnType {
 ### Naming
 
 - Files: PascalCase (e.g., `Array.ts`, `Async.ts`, `ValueProvider.ts`)
-- Directories: kebab-case (e.g., `bundlers/esbuild`, `test-runners/vitest`)
+- Directories: kebab-case (e.g., `script-utils/bundlers/esbuild`, `test-runners/vitest`)
 - Functions: camelCase
 - Classes: PascalCase
 - Constants: UPPER_SNAKE_CASE
@@ -101,7 +101,7 @@ export function myFunction(param: Type): ReturnType {
 
 ### Code Quality
 
-- Do NOT use the `!` non-null assertion operator — use `assertNotNullable()` from `__tests__/TestHelpers.ts` in tests instead
+- Do NOT use the `!` non-null assertion operator — use `assertNotNullable()` from `__tests__/test-helpers.ts` in tests instead
 - No default exports (except config files like `eslint.config.mts`)
 - v8 coverage ignore: use block form only (`/* v8 ignore start -- explanation. */` ... `/* v8 ignore stop */`). The single-line `/* v8 ignore next */` does NOT work in this project. The `start` comment MUST include a mandatory explanation ending with a dot, e.g., `/* v8 ignore start -- this is a type guard. */`.
 
@@ -121,9 +121,9 @@ export function myFunction(param: Type): ReturnType {
 
 ### File Conventions
 
-- Test files: `__tests__/[ModuleName].test.ts` (mirrors `src/` path)
-- Browser tests: `__tests__/[ModuleName].browser.test.ts` with `// @vitest-environment jsdom`
-- Test helper: `__tests__/TestHelpers.ts` — exports `assertNotNullable<T>()` for type-safe null assertions
+- Test files: `__tests__/[module-name].test.ts` (mirrors `src/` path, kebab-case)
+- Browser tests: `__tests__/[module-name].browser.test.ts` with `// @vitest-environment jsdom`
+- Test helper: `__tests__/test-helpers.ts` — exports `assertNotNullable<T>()` for type-safe null assertions
 
 ### Patterns
 
@@ -135,7 +135,7 @@ import {
   vi
 } from 'vitest';
 
-import { myFunction } from '../src/MyModule.ts';
+import { myFunction } from '../src/my-module.ts';
 
 describe('MyModule', () => {
   it('should do something', () => {

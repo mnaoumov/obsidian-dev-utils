@@ -3,7 +3,7 @@ import type {
   TFolder
 } from 'obsidian';
 
-import { TFolder as MockTFolder } from '../../obsidian/TFolder.ts';
+import { TFolder as MockTFolder } from '../../obsidian/t-folder.ts';
 import { parentFolderPath } from './parentFolderPath.ts';
 
 export function createTFolderInstance(app: App, path: string): TFolder {

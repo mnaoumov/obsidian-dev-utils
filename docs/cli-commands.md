@@ -3,7 +3,7 @@
 `Obsidian Dev Utils` exposes command functions from tool-specific modules. Each tool is identified by its import path. You can import and call them directly:
 
 ```typescript
-import { build } from 'obsidian-dev-utils/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder';
+import { build } from 'obsidian-dev-utils/script-utils/bundlers/esbuild/obsidian-plugin-builder';
 
 await build();
 ```
@@ -13,7 +13,7 @@ await build();
 ### Build Production Version
 
 ```typescript
-import { build } from 'obsidian-dev-utils/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder';
+import { build } from 'obsidian-dev-utils/script-utils/bundlers/esbuild/obsidian-plugin-builder';
 ```
 
 Compiles the production version of your plugin into the `dist/build` folder.
@@ -21,7 +21,7 @@ Compiles the production version of your plugin into the `dist/build` folder.
 ### Clean build folder
 
 ```typescript
-import { buildClean } from 'obsidian-dev-utils/ScriptUtils/build';
+import { buildClean } from 'obsidian-dev-utils/script-utils/build';
 ```
 
 Cleans `dist` folder.
@@ -29,7 +29,7 @@ Cleans `dist` folder.
 ### Compile code
 
 ```typescript
-import { buildCompile } from 'obsidian-dev-utils/ScriptUtils/build';
+import { buildCompile } from 'obsidian-dev-utils/script-utils/build';
 ```
 
 Checks if code compiles.
@@ -37,7 +37,7 @@ Checks if code compiles.
 ### Compile Svelte code
 
 ```typescript
-import { buildCompileSvelte } from 'obsidian-dev-utils/ScriptUtils/build';
+import { buildCompileSvelte } from 'obsidian-dev-utils/script-utils/build';
 ```
 
 Checks if Svelte code compiles.
@@ -45,7 +45,7 @@ Checks if Svelte code compiles.
 ### Compile TypeScript code
 
 ```typescript
-import { buildCompileTypeScript } from 'obsidian-dev-utils/ScriptUtils/build';
+import { buildCompileTypeScript } from 'obsidian-dev-utils/script-utils/build';
 ```
 
 Checks if TypeScript code compiles.
@@ -53,7 +53,7 @@ Checks if TypeScript code compiles.
 ### Build static assets
 
 ```typescript
-import { buildStatic } from 'obsidian-dev-utils/ScriptUtils/build';
+import { buildStatic } from 'obsidian-dev-utils/script-utils/build';
 ```
 
 Copies `static` folder to `dist` folder.
@@ -61,7 +61,7 @@ Copies `static` folder to `dist` folder.
 ### Build Development Version
 
 ```typescript
-import { dev } from 'obsidian-dev-utils/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder';
+import { dev } from 'obsidian-dev-utils/script-utils/bundlers/esbuild/obsidian-plugin-builder';
 ```
 
 Compiles the development version of your plugin into the `dist/dev` folder. The `OBSIDIAN_CONFIG_FOLDER` can be set either as an environment variable or specified in a `.env` file (e.g., `path/to/my/vault/.obsidian`). The command automatically copies the compiled plugin to the specified Obsidian configuration folder and triggers the [Hot Reload] plugin, if it is enabled. If the [Hot Reload] plugin is not installed, it will be installed automatically, and you will need to enable it manually.
@@ -69,7 +69,7 @@ Compiles the development version of your plugin into the `dist/dev` folder. The 
 ### Format Code
 
 ```typescript
-import { format } from 'obsidian-dev-utils/ScriptUtils/formatters/dprint/dprint';
+import { format } from 'obsidian-dev-utils/script-utils/formatters/dprint/dprint';
 ```
 
 Formats your code using [dprint](https://dprint.dev/).
@@ -77,7 +77,7 @@ Formats your code using [dprint](https://dprint.dev/).
 ### Check Code Formatting
 
 ```typescript
-import { format } from 'obsidian-dev-utils/ScriptUtils/formatters/dprint/dprint';
+import { format } from 'obsidian-dev-utils/script-utils/formatters/dprint/dprint';
 
 await format(false);
 ```
@@ -87,7 +87,7 @@ Checks formatting of your code using [dprint](https://dprint.dev/).
 ### Lint Code
 
 ```typescript
-import { lint } from 'obsidian-dev-utils/ScriptUtils/linters/eslint/ESLint';
+import { lint } from 'obsidian-dev-utils/script-utils/linters/eslint/eslint';
 ```
 
 Lints your code, enforcing a code convention to minimize common errors.
@@ -97,7 +97,7 @@ This command is looking for `ESLint` config file in the root of your project and
 ### Lint and Fix Code
 
 ```typescript
-import { lint } from 'obsidian-dev-utils/ScriptUtils/linters/eslint/ESLint';
+import { lint } from 'obsidian-dev-utils/script-utils/linters/eslint/eslint';
 
 await lint(true);
 ```
@@ -109,7 +109,7 @@ This command is looking for `ESLint` config file in the root of your project and
 ### Lint Markdown
 
 ```typescript
-import { lint } from 'obsidian-dev-utils/ScriptUtils/linters/markdownlint/markdownlint';
+import { lint } from 'obsidian-dev-utils/script-utils/linters/markdownlint/markdownlint';
 ```
 
 Lints your markdown documentation.
@@ -119,7 +119,7 @@ This command is looking for existing `markdownlint-cli2` config file in the root
 ### Lint and Fix Markdown
 
 ```typescript
-import { lint } from 'obsidian-dev-utils/ScriptUtils/linters/markdownlint/markdownlint';
+import { lint } from 'obsidian-dev-utils/script-utils/linters/markdownlint/markdownlint';
 
 await lint(true);
 ```
@@ -131,7 +131,7 @@ This command is looking for existing `markdownlint-cli2` config file in the root
 ### Publish
 
 ```typescript
-import { publish } from 'obsidian-dev-utils/ScriptUtils/NpmPublish';
+import { publish } from 'obsidian-dev-utils/script-utils/npm-publish';
 ```
 
 Publishes the package to NPM. Usually not applicable for plugins.
@@ -141,7 +141,7 @@ To bypass manual verification, consider setting `NPM_TOKEN` to the environment v
 ### Spellcheck Code
 
 ```typescript
-import { spellcheck } from 'obsidian-dev-utils/ScriptUtils/linters/cspell/cspell';
+import { spellcheck } from 'obsidian-dev-utils/script-utils/linters/cspell/cspell';
 ```
 
 Checks your code for spelling errors.
@@ -149,7 +149,7 @@ Checks your code for spelling errors.
 ### Test
 
 ```typescript
-import { test } from 'obsidian-dev-utils/ScriptUtils/test-runners/vitest/vitest';
+import { test } from 'obsidian-dev-utils/script-utils/test-runners/vitest/vitest';
 ```
 
 Runs the test suite using Vitest.
@@ -157,7 +157,7 @@ Runs the test suite using Vitest.
 ### Test with Coverage
 
 ```typescript
-import { testCoverage } from 'obsidian-dev-utils/ScriptUtils/test-runners/vitest/vitest';
+import { testCoverage } from 'obsidian-dev-utils/script-utils/test-runners/vitest/vitest';
 ```
 
 Runs the test suite with v8 coverage reporting.
@@ -165,7 +165,7 @@ Runs the test suite with v8 coverage reporting.
 ### Test Watch Mode
 
 ```typescript
-import { testWatch } from 'obsidian-dev-utils/ScriptUtils/test-runners/vitest/vitest';
+import { testWatch } from 'obsidian-dev-utils/script-utils/test-runners/vitest/vitest';
 ```
 
 Runs the test suite in watch mode.
@@ -173,7 +173,7 @@ Runs the test suite in watch mode.
 ### Version Management
 
 ```typescript
-import { updateVersion } from 'obsidian-dev-utils/ScriptUtils/version';
+import { updateVersion } from 'obsidian-dev-utils/script-utils/version';
 ```
 
 Runs build checks before updating the version and releases if all checks pass.
@@ -211,7 +211,7 @@ To use these commands in your `package.json`, create script entry points using [
 Each script file follows this pattern:
 
 ```typescript
-import { build } from 'obsidian-dev-utils/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder';
+import { build } from 'obsidian-dev-utils/script-utils/bundlers/esbuild/obsidian-plugin-builder';
 
 await build();
 ```
