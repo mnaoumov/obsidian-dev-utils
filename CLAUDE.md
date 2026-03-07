@@ -6,15 +6,24 @@
 
 ## Commands
 
+All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function from `src/ScriptUtils/Commands.ts` and wraps it with `wrapCliTask`.
+
 - `npm test` — run tests (Vitest)
 - `npm run test:coverage` — run tests with v8 coverage
 - `npm run test:watch` — watch mode
 - `npm run lint` — run ESLint
 - `npm run lint:fix` — auto-fix lint issues
+- `npm run lint:md` — lint markdown with markdownlint
+- `npm run lint:md:fix` — auto-fix markdown lint issues
 - `npm run format` — format with dprint
 - `npm run format:check` — check formatting
 - `npm run build` — full build pipeline
+- `npm run build:clean` — clean build output
+- `npm run build:compile:typescript` — type-check with tsc
+- `npm run build:static` — copy static assets
 - `npm run spellcheck` — spell check with cspell
+- `npm run commit` — guided commit via Commitizen
+- `npm run version` — update version
 
 ## Architecture
 
@@ -24,7 +33,8 @@
 - `__tests__/` — test files, mirrors `src/` structure
 - `__mocks__/obsidian/` — mock implementations for the `obsidian` package (one file per export)
 - `__mocks__/obsidian-typings/` — mock implementations for `obsidian-typings`
-- `scripts/` — build scripts (executed via `jiti`)
+- `src/ScriptUtils/Commands.ts` — flat module exporting all command functions (consumers use `import { buildClean } from 'obsidian-dev-utils/ScriptUtils/Commands'`)
+- `scripts/` — npm script entry points (executed via `jiti`), each imports from `Commands.ts` and wraps with `wrapCliTask`
 - `dist/` — compiled output (ESM `.mjs` + CJS `.cjs` + type declarations)
 
 ### TypeScript

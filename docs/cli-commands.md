@@ -1,146 +1,178 @@
-# CLI Commands
+# Commands
 
-`Obsidian Dev Utils` offers several CLI commands to facilitate common development tasks:
+`Obsidian Dev Utils` exposes all command functions as named exports from `obsidian-dev-utils/ScriptUtils/Commands`. Each command handles error catching, process exit codes, and watch-mode lifecycle internally. You can import and call them directly:
 
-## Build Production Version
+```typescript
+import { build } from 'obsidian-dev-utils/ScriptUtils/Commands';
 
-```bash
-npx obsidian-dev-utils build
+await build();
+```
+
+## Available Commands
+
+### Build Production Version
+
+```typescript
+import { build } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Compiles the production version of your plugin into the `dist/build` folder.
 
-## Clean build folder
+### Clean build folder
 
-```bash
-npx obsidian-dev-utils build:clean
+```typescript
+import { buildClean } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Cleans `dist` folder.
 
-## Compile code
+### Compile code
 
-```bash
-npx obsidian-dev-utils build:compile
+```typescript
+import { buildCompile } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Checks if code compiles.
 
-## Compile Svelte code
+### Compile Svelte code
 
-```bash
-npx obsidian-dev-utils build:compile:svelte
+```typescript
+import { buildCompileSvelte } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Checks if Svelte code compiles.
 
-## Compile TypeScript code
+### Compile TypeScript code
 
-```bash
-npx obsidian-dev-utils build:compile:typescript
+```typescript
+import { buildCompileTypeScript } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Checks if TypeScript code compiles.
 
-## Build static assets
+### Build static assets
 
-```bash
-npx obsidian-dev-utils build:static
+```typescript
+import { buildStatic } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Copies `static` folder to `dist` folder.
 
-## Build Development Version
+### Build Development Version
 
-```bash
-npx obsidian-dev-utils dev
+```typescript
+import { dev } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Compiles the development version of your plugin into the `dist/dev` folder. The `OBSIDIAN_CONFIG_FOLDER` can be set either as an environment variable or specified in a `.env` file (e.g., `path/to/my/vault/.obsidian`). The command automatically copies the compiled plugin to the specified Obsidian configuration folder and triggers the [Hot Reload] plugin, if it is enabled. If the [Hot Reload] plugin is not installed, it will be installed automatically, and you will need to enable it manually.
 
-## Format Code
+### Format Code
 
-```bash
-npx obsidian-dev-utils format
+```typescript
+import { format } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Formats your code using [dprint](https://dprint.dev/).
 
-## Check Code Formatting
+### Check Code Formatting
 
-```bash
-npx obsidian-dev-utils format:check
+```typescript
+import { formatCheck } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Checks formatting of your code using [dprint](https://dprint.dev/).
 
-## Lint Code
+### Lint Code
 
-```bash
-npx obsidian-dev-utils lint
+```typescript
+import { lint } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Lints your code, enforcing a code convention to minimize common errors.
 
 This command is looking for `ESLint` config file in the root of your project and if it's not found, it creates it referencing the default configuration.
 
-## Lint and Fix Code
+### Lint and Fix Code
 
-```bash
-npx obsidian-dev-utils lint:fix
+```typescript
+import { lintFix } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Lints your code and automatically applies fixes where possible.
 
 This command is looking for `ESLint` config file in the root of your project and if it's not found, it creates it referencing the default configuration.
 
-## Lint Markdown
+### Lint Markdown
 
-```bash
-npx obsidian-dev-utils lint:md
+```typescript
+import { lintMarkdown } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Lints your markdown documentation.
 
 This command is looking for existing `markdownlint-cli2` config file in the root of your project and if it's not found, it creates it referencing the default configuration.
 
-## Lint and Fix Markdown
+### Lint and Fix Markdown
 
-```bash
-npx obsidian-dev-utils lint:md:fix
+```typescript
+import { lintMarkdownFix } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Lints your markdown documentation and automatically applies fixes where possible.
 
 This command is looking for existing `markdownlint-cli2` config file in the root of your project and if it's not found, it creates it referencing the default configuration.
 
-## Publish
+### Publish
 
-```bash
-npx obsidian-dev-utils publish
+```typescript
+import { publish } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Publishes the package to NPM. Usually not applicable for plugins.
 
 To bypass manual verification, consider setting `NPM_TOKEN` to the environment variable or in your `.env` file.
 
-## Spellcheck Code
+### Spellcheck Code
 
-```bash
-npx obsidian-dev-utils spellcheck
+```typescript
+import { spellcheck } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
 Checks your code for spelling errors.
 
-## Version Management
+### Test
 
-```bash
-npx obsidian-dev-utils version <versionUpdateType>
+```typescript
+import { test } from 'obsidian-dev-utils/ScriptUtils/Commands';
 ```
 
-Runs build checks before updating the version and releases if all checks pass. The `<versionUpdateType>` can be `major`, `minor`, `patch`, `beta`, or a specific version like `x.y.z[-suffix]`.
+Runs the test suite using Vitest.
 
-If you use `beta` as `<versionUpdateType>` for your Obsidian plugin, the plugin will be deployed compatible to install with [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
+### Test with Coverage
+
+```typescript
+import { testCoverage } from 'obsidian-dev-utils/ScriptUtils/Commands';
+```
+
+Runs the test suite with v8 coverage reporting.
+
+### Test Watch Mode
+
+```typescript
+import { testWatch } from 'obsidian-dev-utils/ScriptUtils/Commands';
+```
+
+Runs the test suite in watch mode.
+
+### Version Management
+
+```typescript
+import { updateVersion } from 'obsidian-dev-utils/ScriptUtils/Commands';
+```
+
+Runs build checks before updating the version and releases if all checks pass.
+
+If you use `beta` as version update type for your Obsidian plugin, the plugin will be deployed compatible to install with [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
 
 Additionally, the script fetches the latest stable Obsidian version, which is used to update the `minAppVersion` in `manifest.json` and to add a new entry to `versions.json`.
 
@@ -148,58 +180,36 @@ For the script to be able to publish releases in your repository, you need to en
 
 ## Simplified Usage
 
-To simplify the usage of these commands, you can add them to your `package.json`:
+To use these commands in your `package.json`, create script entry points using [jiti](https://github.com/unjs/jiti):
 
 ```json
 {
   "scripts": {
-    "build": "obsidian-dev-utils build",
-    "build:compile": "obsidian-dev-utils build:compile",
-    "build:compile:svelte": "obsidian-dev-utils build:compile:svelte",
-    "build:compile:typescript": "obsidian-dev-utils build:compile:typescript",
-    "build:clean": "obsidian-dev-utils build:clean",
-    "build:static": "obsidian-dev-utils build:static",
-    "dev": "obsidian-dev-utils dev",
-    "format": "obsidian-dev-utils format",
-    "format:check": "obsidian-dev-utils format:check",
-    "lint": "obsidian-dev-utils lint",
-    "lint:fix": "obsidian-dev-utils lint:fix",
-    "publish": "obsidian-dev-utils publish",
-    "spellcheck": "obsidian-dev-utils spellcheck",
-    "version": "obsidian-dev-utils version"
+    "build": "jiti scripts/build.ts",
+    "build:clean": "jiti scripts/build-clean.ts",
+    "build:compile:typescript": "jiti scripts/build-compile-typescript.ts",
+    "build:static": "jiti scripts/build-static.ts",
+    "dev": "jiti scripts/dev.ts",
+    "format": "jiti scripts/format.ts",
+    "format:check": "jiti scripts/format-check.ts",
+    "lint": "jiti scripts/lint.ts",
+    "lint:fix": "jiti scripts/lint-fix.ts",
+    "spellcheck": "jiti scripts/spellcheck.ts",
+    "test": "jiti scripts/test.ts",
+    "version": "jiti scripts/version.ts"
   },
   "...": "..."
 }
+```
+
+Each script file follows this pattern:
+
+```typescript
+import { build } from 'obsidian-dev-utils/ScriptUtils/Commands';
+
+await build();
 ```
 
 This setup allows you to run the commands using `npm run`, like `npm run build`.
-
-## Customizing CLI commands
-
-If you want to alter the way provided CLI commands work, you have two ways
-
-### Make your own scripts and replace the CLI command in `package.json`
-
-```json
-{
-  "scripts": {
-    "build": "node my-build.mjs",
-    "build:compile:typescript": "jiti my-build-compile-typescript.ts"
-  },
-  "...": "..."
-}
-```
-
-### Add hook scripts into `scripts` folder (recommended)
-
-Hook scripts follow naming conventions:
-
-1. They are put in `scripts` folder.
-2. They are named as the CLI command.
-3. If CLI command name contains `:`, it is replaced with `-`.
-
-E.g., `scripts/build.ts`, `scripts/build-compile-typescript.ts`.
-
-[See the example of such hook scripts](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/static/scripts). You can copy them into your `scripts` folder and modify according to your needs.
 
 [Hot Reload]: https://github.com/pjeby/hot-reload
