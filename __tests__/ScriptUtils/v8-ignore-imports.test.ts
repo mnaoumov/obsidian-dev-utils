@@ -2,144 +2,117 @@
  * This test file exists solely to import modules that are excluded from coverage
  * via `v8 ignore` comments. Without importing them, v8 never loads the files and
  * the ignore comments are not processed, causing them to appear as 0% covered.
- *
- * All imports are performed in beforeAll (with a generous timeout) so that slow
- * module resolution under parallel load never causes individual test timeouts.
  */
 import {
-  beforeAll,
   describe,
   expect,
   it
 } from 'vitest';
 
-const IMPORT_TIMEOUT = 120_000;
-
-const modules: Record<string, unknown> = {};
-
-const modulePaths = [
-  '../../src/ScriptUtils/NodeModules.ts',
-  '../../src/ScriptUtils/linters/eslint/eslint.config.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/Dependency.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/changeExtensionPlugin.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/copyToObsidianPluginsFolderPlugin.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/customEsbuildOptionsPlugin.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/fixEsmPlugin.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/fixSourceMapsPlugin.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/preprocessPlugin.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/renameCssPlugin.ts',
-  '../../src/ScriptUtils/bundlers/esbuild/svelteWrapperPlugin.ts',
-  '../../src/ScriptUtils/linters/markdownlint/markdownlint-cli2-config.ts',
-  '../../src/DebugController.ts',
-  '../../src/codemirror/StateFieldSpec.ts',
-  '../../src/obsidian/Plugin/PluginSettingsWrapper.ts',
-  '../../src/obsidian/Plugin/PluginTypesBase.ts',
-  '../../src/obsidian/i18n/CustomTypeOptionsBase.ts',
-  '../../src/obsidian/i18n/DefaultTranslationsBase.ts',
-  '../../src/obsidian/Components/SettingComponents/ValueComponentWithChangeTracking.ts',
-  '../../src/obsidian/CodeBlockMarkdownInformation.ts'
-] as const;
+import * as changeExtensionPlugin from '../../src/ScriptUtils/bundlers/esbuild/changeExtensionPlugin.ts';
+import * as copyToObsidianPluginsFolderPlugin from '../../src/ScriptUtils/bundlers/esbuild/copyToObsidianPluginsFolderPlugin.ts';
+import * as customEsbuildOptionsPlugin from '../../src/ScriptUtils/bundlers/esbuild/customEsbuildOptionsPlugin.ts';
+import * as Dependency from '../../src/ScriptUtils/bundlers/esbuild/Dependency.ts';
+import * as fixEsmPlugin from '../../src/ScriptUtils/bundlers/esbuild/fixEsmPlugin.ts';
+import * as fixSourceMapsPlugin from '../../src/ScriptUtils/bundlers/esbuild/fixSourceMapsPlugin.ts';
+import * as ObsidianPluginBuilder from '../../src/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder.ts';
+import * as preprocessPlugin from '../../src/ScriptUtils/bundlers/esbuild/preprocessPlugin.ts';
+import * as renameCssPlugin from '../../src/ScriptUtils/bundlers/esbuild/renameCssPlugin.ts';
+import * as svelteWrapperPlugin from '../../src/ScriptUtils/bundlers/esbuild/svelteWrapperPlugin.ts';
+import * as eslintConfig from '../../src/ScriptUtils/linters/eslint/eslint.config.ts';
+import * as markdownlintCli2Config from '../../src/ScriptUtils/linters/markdownlint/markdownlint-cli2-config.ts';
+import * as NodeModules from '../../src/ScriptUtils/NodeModules.ts';
+import * as StateFieldSpec from '../../src/codemirror/StateFieldSpec.ts';
+import * as DebugController from '../../src/DebugController.ts';
+import * as CodeBlockMarkdownInformation from '../../src/obsidian/CodeBlockMarkdownInformation.ts';
+import * as ValueComponentWithChangeTracking from '../../src/obsidian/Components/SettingComponents/ValueComponentWithChangeTracking.ts';
+import * as CustomTypeOptionsBase from '../../src/obsidian/i18n/CustomTypeOptionsBase.ts';
+import * as DefaultTranslationsBase from '../../src/obsidian/i18n/DefaultTranslationsBase.ts';
+import * as PluginSettingsWrapper from '../../src/obsidian/Plugin/PluginSettingsWrapper.ts';
+import * as PluginTypesBase from '../../src/obsidian/Plugin/PluginTypesBase.ts';
 
 describe('v8 ignore imports', () => {
-  beforeAll(async () => {
-    for (const path of modulePaths) {
-      modules[path] = await import(path);
-    }
-  }, IMPORT_TIMEOUT);
-
   it('should load NodeModules so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/NodeModules.ts'] as Record<string, unknown>;
-    expect(mod['process']).toBeDefined();
+    expect(NodeModules.process).toBeDefined();
   });
 
   it('should load eslint.config so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/linters/eslint/eslint.config.ts'] as Record<string, unknown>;
-    expect(mod['obsidianDevUtilsConfigs']).toBeDefined();
+    expect(eslintConfig.obsidianDevUtilsConfigs).toBeDefined();
   });
 
   it('should load Dependency so v8 processes its ignore comments', () => {
-    expect(modules['../../src/ScriptUtils/bundlers/esbuild/Dependency.ts']).toBeDefined();
+    expect(Dependency).toBeDefined();
   });
 
   it('should load ObsidianPluginBuilder so v8 processes its ignore comments', () => {
-    expect(modules['../../src/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder.ts']).toBeDefined();
+    expect(ObsidianPluginBuilder).toBeDefined();
   });
 
   it('should load changeExtensionPlugin so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/bundlers/esbuild/changeExtensionPlugin.ts'] as Record<string, unknown>;
-    expect(mod['changeExtensionPlugin']).toBeDefined();
+    expect(changeExtensionPlugin.changeExtensionPlugin).toBeDefined();
   });
 
   it('should load copyToObsidianPluginsFolderPlugin so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/bundlers/esbuild/copyToObsidianPluginsFolderPlugin.ts'] as Record<string, unknown>;
-    expect(mod['copyToObsidianPluginsFolderPlugin']).toBeDefined();
+    expect(copyToObsidianPluginsFolderPlugin.copyToObsidianPluginsFolderPlugin).toBeDefined();
   });
 
   it('should load customEsbuildOptionsPlugin so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/bundlers/esbuild/customEsbuildOptionsPlugin.ts'] as Record<string, unknown>;
-    expect(mod['customEsbuildOptionsPlugin']).toBeDefined();
+    expect(customEsbuildOptionsPlugin.customEsbuildOptionsPlugin).toBeDefined();
   });
 
   it('should load fixEsmPlugin so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/bundlers/esbuild/fixEsmPlugin.ts'] as Record<string, unknown>;
-    expect(mod['fixEsmPlugin']).toBeDefined();
+    expect(fixEsmPlugin.fixEsmPlugin).toBeDefined();
   });
 
   it('should load fixSourceMapsPlugin so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/bundlers/esbuild/fixSourceMapsPlugin.ts'] as Record<string, unknown>;
-    expect(mod['fixSourceMapsPlugin']).toBeDefined();
+    expect(fixSourceMapsPlugin.fixSourceMapsPlugin).toBeDefined();
   });
 
   it('should load preprocessPlugin so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/bundlers/esbuild/preprocessPlugin.ts'] as Record<string, unknown>;
-    expect(mod['preprocessPlugin']).toBeDefined();
+    expect(preprocessPlugin.preprocessPlugin).toBeDefined();
   });
 
   it('should load renameCssPlugin so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/bundlers/esbuild/renameCssPlugin.ts'] as Record<string, unknown>;
-    expect(mod['renameCssPlugin']).toBeDefined();
+    expect(renameCssPlugin.renameCssPlugin).toBeDefined();
   });
 
   it('should load svelteWrapperPlugin so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/bundlers/esbuild/svelteWrapperPlugin.ts'] as Record<string, unknown>;
-    expect(mod['svelteWrapperPlugin']).toBeDefined();
+    expect(svelteWrapperPlugin.svelteWrapperPlugin).toBeDefined();
   });
 
   it('should load markdownlint-cli2-config so v8 processes its ignore comments', () => {
-    const mod = modules['../../src/ScriptUtils/linters/markdownlint/markdownlint-cli2-config.ts'] as Record<string, unknown>;
-    expect(mod['obsidianDevUtilsConfig']).toBeDefined();
+    expect(markdownlintCli2Config.obsidianDevUtilsConfig).toBeDefined();
   });
 
   it('should load DebugController so v8 processes its ignore comments', () => {
-    expect(modules['../../src/DebugController.ts']).toBeDefined();
+    expect(DebugController).toBeDefined();
   });
 
   it('should load StateFieldSpec so v8 processes its ignore comments', () => {
-    expect(modules['../../src/codemirror/StateFieldSpec.ts']).toBeDefined();
+    expect(StateFieldSpec).toBeDefined();
   });
 
   it('should load PluginSettingsWrapper so v8 processes its ignore comments', () => {
-    expect(modules['../../src/obsidian/Plugin/PluginSettingsWrapper.ts']).toBeDefined();
+    expect(PluginSettingsWrapper).toBeDefined();
   });
 
   it('should load PluginTypesBase so v8 processes its ignore comments', () => {
-    expect(modules['../../src/obsidian/Plugin/PluginTypesBase.ts']).toBeDefined();
+    expect(PluginTypesBase).toBeDefined();
   });
 
   it('should load CustomTypeOptionsBase so v8 processes its ignore comments', () => {
-    expect(modules['../../src/obsidian/i18n/CustomTypeOptionsBase.ts']).toBeDefined();
+    expect(CustomTypeOptionsBase).toBeDefined();
   });
 
   it('should load DefaultTranslationsBase so v8 processes its ignore comments', () => {
-    expect(modules['../../src/obsidian/i18n/DefaultTranslationsBase.ts']).toBeDefined();
+    expect(DefaultTranslationsBase).toBeDefined();
   });
 
   it('should load ValueComponentWithChangeTracking so v8 processes its ignore comments', () => {
-    expect(modules['../../src/obsidian/Components/SettingComponents/ValueComponentWithChangeTracking.ts']).toBeDefined();
+    expect(ValueComponentWithChangeTracking).toBeDefined();
   });
 
   it('should load CodeBlockMarkdownInformation so v8 processes its ignore comments', () => {
-    expect(modules['../../src/obsidian/CodeBlockMarkdownInformation.ts']).toBeDefined();
+    expect(CodeBlockMarkdownInformation).toBeDefined();
   });
 });

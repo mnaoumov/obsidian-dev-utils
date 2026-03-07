@@ -91,6 +91,7 @@ export function myFunction(param: Type): ReturnType {
 - Sorted alphabetically (enforced by `eslint-plugin-perfectionist`)
 - Type imports separated from value imports (`import type` on its own line)
 - Always include `.ts` extension in relative imports
+- Prefer static imports over dynamic `import()` — only use dynamic imports when there is a concrete reason (lazy loading, conditional loading, circular dependency breaking)
 
 ### Code Quality
 
