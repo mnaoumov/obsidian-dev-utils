@@ -38,8 +38,12 @@ import { lintMarkdown } from './markdownlint/markdownlint.ts';
 import { process } from './NodeModules.ts';
 import { readPackageJson } from './Npm.ts';
 import { publish } from './NpmPublish.ts';
-import { execFromRoot } from './Root.ts';
 import { spellcheck } from './spellcheck.ts';
+import {
+  test,
+  testCoverage,
+  testWatch
+} from './test.ts';
 import { updateVersion } from './version.ts';
 
 /**
@@ -107,9 +111,9 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
       addCommand(program, CommandNames.Publish, 'Publish to NPM', (isBeta: boolean) => publish(isBeta))
         .argument('[isBeta]', 'Publish to NPM beta');
       addCommand(program, CommandNames.Spellcheck, 'Spellcheck the source code', () => spellcheck());
-      addCommand(program, CommandNames.Test, 'Run tests', () => execFromRoot('vitest run'));
-      addCommand(program, CommandNames.TestCoverage, 'Run tests with coverage', () => execFromRoot('vitest run --coverage'));
-      addCommand(program, CommandNames.TestWatch, 'Run tests in watch mode', () => execFromRoot('vitest'));
+      addCommand(program, CommandNames.Test, 'Run tests', () => test());
+      addCommand(program, CommandNames.TestCoverage, 'Run tests with coverage', () => testCoverage());
+      addCommand(program, CommandNames.TestWatch, 'Run tests in watch mode', () => testWatch());
       addCommand(program, CommandNames.Version, 'Release a new version', (versionUpdateType: string) => updateVersion(versionUpdateType))
         .argument('[versionUpdateType]', 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]');
       await program.parseAsync(argv, { from: 'user' });
