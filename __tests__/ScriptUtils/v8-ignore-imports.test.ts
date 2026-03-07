@@ -9,9 +9,7 @@ import {
   it
 } from 'vitest';
 
-const HEAVY_IMPORT_TIMEOUT = 60_000;
-
-describe('v8 ignore imports', () => {
+describe('v8 ignore imports', { timeout: 60_000 }, () => {
   it('should load NodeModules so v8 processes its ignore comments', async () => {
     const mod = await import('../../src/ScriptUtils/NodeModules.ts');
     expect(mod.process).toBeDefined();
@@ -20,7 +18,7 @@ describe('v8 ignore imports', () => {
   it('should load eslint.config so v8 processes its ignore comments', async () => {
     const mod = await import('../../src/ScriptUtils/linters/eslint/eslint.config.ts');
     expect(mod.obsidianDevUtilsConfigs).toBeDefined();
-  }, HEAVY_IMPORT_TIMEOUT);
+  });
 
   it('should load Dependency so v8 processes its ignore comments', async () => {
     const mod = await import('../../src/ScriptUtils/bundlers/esbuild/Dependency.ts');
@@ -100,7 +98,7 @@ describe('v8 ignore imports', () => {
   it('should load CustomTypeOptionsBase so v8 processes its ignore comments', async () => {
     const mod = await import('../../src/obsidian/i18n/CustomTypeOptionsBase.ts');
     expect(mod).toBeDefined();
-  }, HEAVY_IMPORT_TIMEOUT);
+  });
 
   it('should load DefaultTranslationsBase so v8 processes its ignore comments', async () => {
     const mod = await import('../../src/obsidian/i18n/DefaultTranslationsBase.ts');
