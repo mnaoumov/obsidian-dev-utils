@@ -4,6 +4,6 @@
  * Build compile TypeScript script.
  */
 
-import { buildCompileTypeScript } from '../src/ScriptUtils/Commands.ts';
+import { buildCompileTypeScript } from '../src/ScriptUtils/build.ts';
 
 await buildCompileTypeScript();

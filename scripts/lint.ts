@@ -4,6 +4,6 @@
  * Lint script.
  */
 
-import { lintEslint } from '../src/ScriptUtils/Commands.ts';
+import { lint } from '../src/ScriptUtils/linters/eslint/ESLint.ts';
 
-await lintEslint();
+await lint();

@@ -4,6 +4,6 @@
  * Lint markdown script.
  */
 
-import { lintMarkdown } from '../src/ScriptUtils/Commands.ts';
+import { lint } from '../src/ScriptUtils/linters/markdownlint/markdownlint.ts';
 
-await lintMarkdown();
+await lint();

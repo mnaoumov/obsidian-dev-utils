@@ -5,7 +5,7 @@
  * It reports any spelling issues found in the code and returns a {@link CliTaskResult} indicating whether the spellcheck was successful.
  */
 
-import { execFromRoot } from './Root.ts';
+import { execFromRoot } from '../../Root.ts';
 
 /**
  * Runs a spellcheck on the entire codebase using `cspell`.

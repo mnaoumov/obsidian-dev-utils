@@ -29,7 +29,7 @@ import {
  *
  * @param shouldFix - Whether to fix linting issues automatically.
  */
-export async function lintMarkdown(shouldFix = false): Promise<void> {
+export async function lint(shouldFix = false): Promise<void> {
   const configFiles = [
     ObsidianPluginRepoPaths.MarkdownlintCli2ConfigJsonc,
     ObsidianPluginRepoPaths.MarkdownlintCli2ConfigYaml,
@@ -49,7 +49,7 @@ export async function lintMarkdown(shouldFix = false): Promise<void> {
   });
 
   if (!configFileExist) {
-    getLibDebugger('markdownlint:lintMarkdown')('markdownlint configuration file not found. Creating default config...');
+    getLibDebugger('markdownlint:lint')('markdownlint configuration file not found. Creating default config...');
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
     assertNonNullable(packageFolder, 'Package folder not found');
     await cp(
