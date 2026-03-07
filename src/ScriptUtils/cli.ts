@@ -9,42 +9,37 @@
 
 /* v8 ignore start -- CLI entry point using commander and dynamic jiti imports; requires a live process environment. */
 
-import type { Promisable } from 'type-fest';
-
 import { Command } from 'commander';
 
-import type { MaybeReturn } from '../Type.ts';
+import type { CliCommand } from './CliCommand.ts';
 
 import { invokeAsyncSafely } from '../Async.ts';
 import { getFolderName } from '../Path.ts';
 import {
-  buildClean,
-  buildCompile,
-  buildCompileSvelte,
-  buildCompileTypeScript,
-  buildStatic
-} from './build.ts';
-import {
   CliTaskResult,
   wrapCliTask
 } from './CliUtils.ts';
-import {
-  BuildMode,
-  buildObsidianPlugin
-} from './esbuild/ObsidianPluginBuilder.ts';
-import { lint } from './ESLint/ESLint.ts';
-import { format } from './format.ts';
-import { lintMarkdown } from './markdownlint/markdownlint.ts';
+import { BuildCleanCommand } from './commands/BuildCleanCommand.ts';
+import { BuildCommand } from './commands/BuildCommand.ts';
+import { BuildCompileCommand } from './commands/BuildCompileCommand.ts';
+import { BuildCompileSvelteCommand } from './commands/BuildCompileSvelteCommand.ts';
+import { BuildCompileTypeScriptCommand } from './commands/BuildCompileTypeScriptCommand.ts';
+import { BuildStaticCommand } from './commands/BuildStaticCommand.ts';
+import { DevCommand } from './commands/DevCommand.ts';
+import { FormatCheckCommand } from './commands/FormatCheckCommand.ts';
+import { FormatCommand } from './commands/FormatCommand.ts';
+import { LintCommand } from './commands/LintCommand.ts';
+import { LintFixCommand } from './commands/LintFixCommand.ts';
+import { LintMarkdownCommand } from './commands/LintMarkdownCommand.ts';
+import { LintMarkdownFixCommand } from './commands/LintMarkdownFixCommand.ts';
+import { PublishCommand } from './commands/PublishCommand.ts';
+import { SpellcheckCommand } from './commands/SpellcheckCommand.ts';
+import { TestCommand } from './commands/TestCommand.ts';
+import { TestCoverageCommand } from './commands/TestCoverageCommand.ts';
+import { TestWatchCommand } from './commands/TestWatchCommand.ts';
+import { VersionCommand } from './commands/VersionCommand.ts';
 import { process } from './NodeModules.ts';
 import { readPackageJson } from './Npm.ts';
-import { publish } from './NpmPublish.ts';
-import { spellcheck } from './spellcheck.ts';
-import {
-  test,
-  testCoverage,
-  testWatch
-} from './test.ts';
-import { updateVersion } from './version.ts';
 
 /**
  * A number of leading arguments to skip when parsing command-line arguments.
@@ -52,200 +47,6 @@ import { updateVersion } from './version.ts';
  * `["node", "path/to/cli.cjs", ...actualArgs]`
  */
 const NODE_SCRIPT_ARGV_SKIP_COUNT = 2;
-
-/**
- * Represents a CLI command argument definition.
- */
-interface CliCommandArgument {
-  description: string;
-  name: string;
-}
-
-/**
- * Abstract base class for CLI commands. Each command encapsulates its own
- * name, description, optional arguments, and execution logic.
- */
-abstract class CliCommand {
-  public readonly arguments: CliCommandArgument[] = [];
-  public abstract readonly description: string;
-  public abstract readonly name: string;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Commander passes `any` typed arguments.
-  public abstract execute(...args: any[]): Promisable<MaybeReturn<CliTaskResult>>;
-}
-
-class BuildCleanCommand extends CliCommand {
-  public readonly description = 'Clean the dist folder';
-  public readonly name = 'build:clean';
-
-  public execute(): Promise<void> {
-    return buildClean();
-  }
-}
-
-class BuildCommand extends CliCommand {
-  public readonly description = 'Build the plugin';
-  public readonly name = 'build';
-
-  public execute(): Promise<CliTaskResult> {
-    return buildObsidianPlugin({ mode: BuildMode.Production });
-  }
-}
-
-class BuildCompileCommand extends CliCommand {
-  public readonly description = 'Check if code compiles';
-  public readonly name = 'build:compile';
-
-  public execute(): Promise<void> {
-    return buildCompile();
-  }
-}
-
-class BuildCompileSvelteCommand extends CliCommand {
-  public readonly description = 'Check if Svelte code compiles';
-  public readonly name = 'build:compile:svelte';
-
-  public execute(): Promise<void> {
-    return buildCompileSvelte();
-  }
-}
-
-class BuildCompileTypeScriptCommand extends CliCommand {
-  public readonly description = 'Check if TypeScript code compiles';
-  public readonly name = 'build:compile:typescript';
-
-  public execute(): Promise<void> {
-    return buildCompileTypeScript();
-  }
-}
-
-class BuildStaticCommand extends CliCommand {
-  public readonly description = 'Copy static content to dist';
-  public readonly name = 'build:static';
-
-  public execute(): Promise<void> {
-    return buildStatic();
-  }
-}
-
-class DevCommand extends CliCommand {
-  public readonly description = 'Build the plugin in development mode';
-  public readonly name = 'dev';
-
-  public execute(): Promise<CliTaskResult> {
-    return buildObsidianPlugin({ mode: BuildMode.Development });
-  }
-}
-
-class FormatCheckCommand extends CliCommand {
-  public readonly description = 'Check if the source code is formatted';
-  public readonly name = 'format:check';
-
-  public execute(): Promise<void> {
-    return format(false);
-  }
-}
-
-class FormatCommand extends CliCommand {
-  public readonly description = 'Format the source code';
-  public readonly name = 'format';
-
-  public execute(): Promise<void> {
-    return format();
-  }
-}
-
-class LintCommand extends CliCommand {
-  public readonly description = 'Lint the source code';
-  public readonly name = 'lint';
-
-  public execute(): Promise<void> {
-    return lint();
-  }
-}
-
-class LintFixCommand extends CliCommand {
-  public readonly description = 'Lint the source code and apply automatic fixes';
-  public readonly name = 'lint:fix';
-
-  public execute(): Promise<void> {
-    return lint(true);
-  }
-}
-
-class LintMarkdownCommand extends CliCommand {
-  public readonly description = 'Lint the markdown documentation';
-  public readonly name = 'lint:md';
-
-  public execute(): Promise<void> {
-    return lintMarkdown();
-  }
-}
-
-class LintMarkdownFixCommand extends CliCommand {
-  public readonly description = 'Lint the markdown documentation and apply automatic fixes';
-  public readonly name = 'lint:md:fix';
-
-  public execute(): Promise<void> {
-    return lintMarkdown(true);
-  }
-}
-
-class PublishCommand extends CliCommand {
-  public override readonly arguments = [{ description: 'Publish to NPM beta', name: '[isBeta]' }];
-  public readonly description = 'Publish to NPM';
-  public readonly name = 'publish';
-
-  public execute(isBeta: boolean): Promise<void> {
-    return publish(isBeta);
-  }
-}
-
-class SpellcheckCommand extends CliCommand {
-  public readonly description = 'Spellcheck the source code';
-  public readonly name = 'spellcheck';
-
-  public execute(): Promise<void> {
-    return spellcheck();
-  }
-}
-
-class TestCommand extends CliCommand {
-  public readonly description = 'Run tests';
-  public readonly name = 'test';
-
-  public execute(): Promise<void> {
-    return test();
-  }
-}
-
-class TestCoverageCommand extends CliCommand {
-  public readonly description = 'Run tests with coverage';
-  public readonly name = 'test:coverage';
-
-  public execute(): Promise<void> {
-    return testCoverage();
-  }
-}
-
-class TestWatchCommand extends CliCommand {
-  public readonly description = 'Run tests in watch mode';
-  public readonly name = 'test:watch';
-
-  public execute(): Promise<void> {
-    return testWatch();
-  }
-}
-
-class VersionCommand extends CliCommand {
-  public override readonly arguments = [{ description: 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]', name: '[versionUpdateType]' }];
-  public readonly description = 'Release a new version';
-  public readonly name = 'version';
-
-  public execute(versionUpdateType: string): Promise<void> {
-    return updateVersion(versionUpdateType);
-  }
-}
 
 /**
  * All available CLI commands.
