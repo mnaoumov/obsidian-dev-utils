@@ -1,4 +1,4 @@
-import { castTo } from '../../src/ObjectUtils.ts';
+import { castTo } from '../../src/object-utils.ts';
 
 export interface DomElementInfoLike {
   attr?: Record<string, boolean | null | number | string>;

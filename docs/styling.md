@@ -11,7 +11,7 @@ Otherwise, you need to initialize it manually:
 ```ts
 import {
   initPluginContext
-} from 'obsidian-dev-utils/obsidian/Plugin/PluginContext';
+} from 'obsidian-dev-utils/obsidian/plugin/plugin-context';
 
 class MyPlugin extends Plugin {
   public override onload(): void {

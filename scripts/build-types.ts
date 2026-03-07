@@ -8,17 +8,17 @@ import {
   basename,
   dirname,
   join
-} from '../src/Path.ts';
-import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
-import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
+} from '../src/path.ts';
+import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
+import { readdirPosix } from '../src/script-utils/fs.ts';
 import {
   mkdir,
   readFile,
   writeFile
-} from '../src/ScriptUtils/NodeModules.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
-import { execFromRoot } from '../src/ScriptUtils/Root.ts';
-import { replaceAll } from '../src/String.ts';
+} from '../src/script-utils/node-modules.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+import { execFromRoot } from '../src/script-utils/root.ts';
+import { replaceAll } from '../src/string.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');

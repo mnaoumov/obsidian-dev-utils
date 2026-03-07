@@ -1,4 +1,4 @@
-import { buildCompileSvelte } from 'obsidian-dev-utils/ScriptUtils/build';
+import { buildCompileSvelte } from 'obsidian-dev-utils/script-utils/build';
 
 export async function invoke(): Promise<void> {
   await buildCompileSvelte();

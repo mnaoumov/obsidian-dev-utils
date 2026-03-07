@@ -1,0 +1,154 @@
+/**
+ * @packageDocumentation
+ *
+ * Contains a component that displays and edits a multi-select dropdown.
+ */
+
+import type { Promisable } from 'type-fest';
+
+import { ValueComponent } from 'obsidian';
+
+import type { ValidatorElement } from '../../../html-element.ts';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
+import type { initPluginContext } from '../../plugin/plugin-context.ts';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `SettingEx` to use it in the tsdocs.
+import type { SettingEx } from '../../setting-ex.ts';
+import type { ValidatorComponent } from './validator-component.ts';
+import type { ValueComponentWithChangeTracking } from './value-component-with-change-tracking.ts';
+
+import { CssClass } from '../../../css-class.ts';
+import { addPluginCssClasses } from '../../plugin/plugin-context.ts';
+import { MultipleDropdownComponent } from './multiple-dropdown-component.ts';
+
+/**
+ * A multi-select dropdown component.
+ *
+ * You can add this component using {@link SettingEx.addTypedMultipleDropdown}.
+ *
+ * In order to add the styles for the component, use {@link initPluginContext} in your plugin's `onload()` function.
+ *
+ * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
+ *
+ * @typeParam T - The type of the value to select.
+ */
+export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T[]>
+  implements ValidatorComponent, ValueComponentWithChangeTracking<readonly T[]> {
+  /**
+   * A select element of the component.
+   *
+   * @returns The select element.
+   */
+  public get selectEl(): HTMLSelectElement {
+    return this.multipleDropdownComponent.selectEl;
+  }
+
+  /**
+   * A validator element of the component.
+   *
+   * @returns The validator element.
+   */
+  public get validatorEl(): ValidatorElement {
+    return this.selectEl;
+  }
+
+  private readonly multipleDropdownComponent: MultipleDropdownComponent;
+  private simulateChangeCallback?: () => void;
+  private readonly values: T[] = [];
+
+  /**
+   * Creates a new multiple dropdown component.
+   *
+   * @param containerEl - The container element of the component.
+   */
+  public constructor(containerEl: HTMLElement) {
+    super();
+    this.multipleDropdownComponent = new MultipleDropdownComponent(containerEl);
+    addPluginCssClasses(containerEl, CssClass.TypedMultipleDropdownComponent);
+  }
+
+  /**
+   * Adds an option to the dropdown.
+   *
+   * @param value - The value of the option.
+   * @param display - The display text of the option.
+   * @returns The component.
+   */
+  public addOption(value: T, display: string): this {
+    let index = this.values.indexOf(value);
+    if (index === -1) {
+      this.values.push(value);
+      index = this.values.length - 1;
+    }
+    this.multipleDropdownComponent.addOption(String(index), display);
+    return this;
+  }
+
+  /**
+   * Adds multiple options to the dropdown.
+   *
+   * @param options - The options to add.
+   * @returns The component.
+   */
+  public addOptions(options: Map<T, string>): this {
+    for (const [value, display] of options.entries()) {
+      this.addOption(value, display);
+    }
+    return this;
+  }
+
+  /**
+   * Gets the value of the component.
+   *
+   * @returns The value of the component.
+   */
+  public getValue(): readonly T[] {
+    const indices = this.multipleDropdownComponent.getValue().map((str) => parseInt(str, 10));
+    return indices.map((index) => this.values[index]).filter((value): value is T => value !== undefined);
+  }
+
+  /**
+   * Sets the callback function to be called when the component is changed.
+   *
+   * @param callback - The callback function to be called when the component is changed.
+   * @returns The component.
+   */
+  public onChange(callback: (value: readonly T[]) => Promisable<void>): this {
+    const changeHandler = (): void => {
+      callback(this.getValue());
+    };
+    this.simulateChangeCallback = changeHandler;
+    this.multipleDropdownComponent.onChange(changeHandler);
+    return this;
+  }
+
+  /**
+   * Sets the disabled state of the component.
+   *
+   * @param disabled - The disabled state to set.
+   * @returns The component.
+   */
+  public override setDisabled(disabled: boolean): this {
+    super.setDisabled(disabled);
+    this.multipleDropdownComponent.setDisabled(disabled);
+    return this;
+  }
+
+  /**
+   * Sets the value of the component.
+   *
+   * @param value - The value to set.
+   * @returns The component.
+   */
+  public setValue(value: readonly T[]): this {
+    const indices = value.map((v) => this.values.indexOf(v)).filter((index) => index !== -1);
+    this.multipleDropdownComponent.setValue(indices.map((index) => String(index)));
+    return this;
+  }
+
+  /**
+   * @deprecated Use only from tests to simulate a change event.
+   */
+  public simulateChange(): void {
+    this.simulateChangeCallback?.();
+  }
+}

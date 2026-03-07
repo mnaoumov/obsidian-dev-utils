@@ -1,11 +1,11 @@
-import { assertNonNullable } from 'obsidian-dev-utils/ObjectUtils';
-import { getFolderName } from 'obsidian-dev-utils/Path';
-import { existsSync } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
+import { assertNonNullable } from 'obsidian-dev-utils/object-utils';
+import { getFolderName } from 'obsidian-dev-utils/path';
+import { existsSync } from 'obsidian-dev-utils/script-utils/node-modules';
 import {
   execFromRoot,
   getRootFolder,
   resolvePathFromRootSafe
-} from 'obsidian-dev-utils/ScriptUtils/Root';
+} from 'obsidian-dev-utils/script-utils/root';
 
 export async function invoke(): Promise<void> {
   await formatWithPrettier(true);

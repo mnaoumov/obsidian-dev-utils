@@ -4,29 +4,29 @@
  * Build generate exports script.
  */
 
-import type { PackageJson } from '../src/ScriptUtils/Npm.ts';
+import type { PackageJson } from '../src/script-utils/npm.ts';
 
-import { deepEqual } from '../src/ObjectUtils.ts';
+import { deepEqual } from '../src/object-utils.ts';
 import {
   basename,
   dirname,
   join,
   normalizeIfRelative,
   relative
-} from '../src/Path.ts';
+} from '../src/path.ts';
 import {
   CliTaskResult,
   wrapCliTask
-} from '../src/ScriptUtils/CliUtils.ts';
-import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
-import { writeJson } from '../src/ScriptUtils/JSON.ts';
+} from '../src/script-utils/cli-utils.ts';
+import { readdirPosix } from '../src/script-utils/fs.ts';
+import { writeJson } from '../src/script-utils/json.ts';
 import {
   existsSync,
   mkdir
-} from '../src/ScriptUtils/NodeModules.ts';
-import { editPackageJson } from '../src/ScriptUtils/Npm.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
-import { replaceAll } from '../src/String.ts';
+} from '../src/script-utils/node-modules.ts';
+import { editPackageJson } from '../src/script-utils/npm.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+import { replaceAll } from '../src/string.ts';
 
 await wrapCliTask(async () => {
   const srcFolders: string[] = [ObsidianDevUtilsRepoPaths.Src];

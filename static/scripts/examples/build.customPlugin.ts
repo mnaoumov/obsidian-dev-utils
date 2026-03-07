@@ -2,12 +2,12 @@ import type {
   OnLoadResult,
   Plugin
 } from 'esbuild';
-import type { CliTaskResult } from 'obsidian-dev-utils/ScriptUtils/CliUtils';
+import type { CliTaskResult } from 'obsidian-dev-utils/script-utils/cli-utils';
 import {
   BuildMode,
   buildObsidianPlugin
-} from 'obsidian-dev-utils/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder';
-import { readFile } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
+} from 'obsidian-dev-utils/script-utils/bundlers/esbuild/obsidian-plugin-builder';
+import { readFile } from 'obsidian-dev-utils/script-utils/node-modules';
 
 export async function invoke(): Promise<CliTaskResult> {
   return await buildWithCustomPlugin();

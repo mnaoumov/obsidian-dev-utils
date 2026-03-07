@@ -4,20 +4,20 @@
  * Version script.
  */
 
-import { join } from '../src/Path.ts';
-import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { join } from '../src/path.ts';
+import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import {
   process,
   readFile,
   writeFile
-} from '../src/ScriptUtils/NodeModules.ts';
-import { publish } from '../src/ScriptUtils/NpmPublish.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
+} from '../src/script-utils/node-modules.ts';
+import { publish } from '../src/script-utils/npm-publish.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 import {
   execFromRoot,
   resolvePathFromRootSafe
-} from '../src/ScriptUtils/Root.ts';
-import { updateVersion } from '../src/ScriptUtils/version.ts';
+} from '../src/script-utils/root.ts';
+import { updateVersion } from '../src/script-utils/version.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot(['npm', 'run', 'build:static']);

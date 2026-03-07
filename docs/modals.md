@@ -7,7 +7,7 @@ In order for models to look properly, their styles have to be initialized. See [
 ## Alert
 
 ```ts
-import { alert } from 'obsidian-dev-utils/obsidian/Modal/Alert';
+import { alert } from 'obsidian-dev-utils/obsidian/modal/alert';
 
 await prompt({
   app,
@@ -21,7 +21,7 @@ await prompt({
 ## Confirm
 
 ```ts
-import { confirm } from 'obsidian-dev-utils/obsidian/Modal/Confirm';
+import { confirm } from 'obsidian-dev-utils/obsidian/modal/confirm';
 
 await confirm({
   app,
@@ -35,8 +35,8 @@ await confirm({
 ## Prompt
 
 ```ts
-import { prompt } from 'obsidian-dev-utils/obsidian/Modal/Prompt';
-import { MaybeReturn } from 'obsidian-dev-utils/Type';
+import { prompt } from 'obsidian-dev-utils/obsidian/modal/prompt';
+import { MaybeReturn } from 'obsidian-dev-utils/type';
 
 await prompt({
   app,
@@ -55,7 +55,7 @@ await prompt({
 ## Select Item
 
 ```ts
-import { selectItem } from 'obsidian-dev-utils/obsidian/Modal/SelectItem';
+import { selectItem } from 'obsidian-dev-utils/obsidian/modal/select-item';
 
 await selectItem({
   app,

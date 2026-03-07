@@ -11,17 +11,17 @@ import { context } from 'esbuild';
 import {
   join,
   normalizeIfRelative
-} from '../src/Path.ts';
-import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
-import { changeExtensionPlugin } from '../src/ScriptUtils/bundlers/esbuild/changeExtensionPlugin.ts';
-import { fixEsmPlugin } from '../src/ScriptUtils/bundlers/esbuild/fixEsmPlugin.ts';
+} from '../src/path.ts';
+import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
+import { changeExtensionPlugin } from '../src/script-utils/bundlers/esbuild/changeExtensionPlugin.ts';
+import { fixEsmPlugin } from '../src/script-utils/bundlers/esbuild/fixEsmPlugin.ts';
 import {
   banner,
   invokeEsbuild
-} from '../src/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder.ts';
-import { preprocessPlugin } from '../src/ScriptUtils/bundlers/esbuild/preprocessPlugin.ts';
-import { readdirPosix } from '../src/ScriptUtils/Fs.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/ScriptUtils/ObsidianDevUtilsRepoPaths.ts';
+} from '../src/script-utils/bundlers/esbuild/obsidian-plugin-builder.ts';
+import { preprocessPlugin } from '../src/script-utils/bundlers/esbuild/preprocessPlugin.ts';
+import { readdirPosix } from '../src/script-utils/fs.ts';
+import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 
 await wrapCliTask(async () => {
   const libFiles = await getLibFiles();
