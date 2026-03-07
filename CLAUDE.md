@@ -75,6 +75,7 @@ export function myFunction(param: Type): ReturnType {
 ### Naming
 
 - Files: PascalCase (e.g., `Array.ts`, `Async.ts`, `ValueProvider.ts`)
+- Directories: kebab-case (e.g., `bundlers/esbuild`, `test-runners/vitest`)
 - Functions: camelCase
 - Classes: PascalCase
 - Constants: UPPER_SNAKE_CASE
