@@ -4,6 +4,6 @@
  * Test coverage script.
  */
 
-import { testCoverage } from '../src/ScriptUtils/Commands.ts';
+import { testCoverageVitest } from '../src/ScriptUtils/Commands.ts';
 
-await testCoverage();
+await testCoverageVitest();

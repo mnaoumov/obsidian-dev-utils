@@ -4,6 +4,9 @@
  * Strongly typed command functions for Obsidian plugin development tasks.
  * Each function corresponds to a CLI command and can be imported directly.
  * Commands are safe to call from other code — they never call `process.exit()`.
+ *
+ * Tool-specific commands use the `{action}{Tool}` naming convention
+ * (e.g., `buildEsbuild`, `lintEslint`, `formatDprint`, `testVitest`).
  */
 
 import {
@@ -17,8 +20,8 @@ import {
   BuildMode,
   buildObsidianPlugin
 } from './bundlers/esbuild/ObsidianPluginBuilder.ts';
-import { lint as lintImpl } from './linters/eslint/ESLint.ts';
 import { format as formatImpl } from './formatters/dprint/dprint.ts';
+import { lint as lintImpl } from './linters/eslint/ESLint.ts';
 import { lintMarkdown as lintMarkdownImpl } from './linters/markdownlint/markdownlint.ts';
 import { publish as publishImpl } from './NpmPublish.ts';
 import { spellcheck as spellcheckImpl } from './spellcheck.ts';
@@ -30,11 +33,11 @@ import {
 import { updateVersion as updateVersionImpl } from './version.ts';
 
 /**
- * Builds the plugin in production mode.
+ * Builds the plugin in production mode using esbuild.
  *
  * @returns A {@link Promise} that resolves when the build is complete.
  */
-export async function build(): Promise<void> {
+export async function buildEsbuild(): Promise<void> {
   const result = await buildObsidianPlugin({ mode: BuildMode.Production });
   result.throwOnFailure();
 }
@@ -85,47 +88,47 @@ export async function buildStatic(): Promise<void> {
 }
 
 /**
- * Builds the plugin in development mode.
+ * Builds the plugin in development mode using esbuild.
  *
  * @returns A {@link Promise} that resolves when the dev build starts (keeps process alive for watch mode).
  */
-export async function dev(): Promise<void> {
+export async function devEsbuild(): Promise<void> {
   await buildObsidianPlugin({ mode: BuildMode.Development });
 }
 
 /**
- * Formats the source code.
+ * Formats the source code using dprint.
  *
  * @returns A {@link Promise} that resolves when formatting is complete.
  */
-export async function format(): Promise<void> {
+export async function formatDprint(): Promise<void> {
   await formatImpl();
 }
 
 /**
- * Checks if the source code is formatted.
+ * Checks if the source code is formatted using dprint.
  *
  * @returns A {@link Promise} that resolves when the check is complete.
  */
-export async function formatCheck(): Promise<void> {
+export async function formatCheckDprint(): Promise<void> {
   await formatImpl(false);
 }
 
 /**
- * Lints the source code.
+ * Lints the source code using ESLint.
  *
  * @returns A {@link Promise} that resolves when linting is complete.
  */
-export async function lint(): Promise<void> {
+export async function lintEslint(): Promise<void> {
   await lintImpl();
 }
 
 /**
- * Lints the source code and applies automatic fixes.
+ * Lints the source code using ESLint and applies automatic fixes.
  *
  * @returns A {@link Promise} that resolves when linting and fixing is complete.
  */
-export async function lintFix(): Promise<void> {
+export async function lintFixEslint(): Promise<void> {
   await lintImpl(true);
 }
 
@@ -166,29 +169,29 @@ export async function spellcheck(): Promise<void> {
 }
 
 /**
- * Runs the test suite.
+ * Runs the test suite using Vitest.
  *
  * @returns A {@link Promise} that resolves when testing is complete.
  */
-export async function test(): Promise<void> {
+export async function testVitest(): Promise<void> {
   await testImpl();
 }
 
 /**
- * Runs the test suite with coverage reporting.
+ * Runs the test suite with coverage reporting using Vitest.
  *
  * @returns A {@link Promise} that resolves when testing is complete.
  */
-export async function testCoverage(): Promise<void> {
+export async function testCoverageVitest(): Promise<void> {
   await testCoverageImpl();
 }
 
 /**
- * Runs the test suite in watch mode.
+ * Runs the test suite in watch mode using Vitest.
  *
  * @returns A {@link Promise} that resolves when testing starts (keeps process alive for watch mode).
  */
-export async function testWatch(): Promise<void> {
+export async function testWatchVitest(): Promise<void> {
   await testWatchImpl();
 }
 
