@@ -136,6 +136,7 @@ describe('MyModule', () => {
 
 ## Commits
 
+- Commit after each logical step. Do not batch unrelated changes into a single commit.
 - Conventional Commits enforced via commitlint + husky
 - Use `npm run commit` (Commitizen) for guided commit messages
 - Before each commit, run these commands and ensure they complete without errors:
