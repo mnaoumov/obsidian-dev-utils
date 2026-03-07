@@ -17,11 +17,6 @@ describe('v8 ignore imports', () => {
     expect(mod.process).toBeDefined();
   });
 
-  it('should load cli so v8 processes its ignore comments', async () => {
-    const mod = await import('../../src/ScriptUtils/cli.ts');
-    expect(mod.cli).toBeDefined();
-  }, HEAVY_IMPORT_TIMEOUT);
-
   it('should load eslint.config so v8 processes its ignore comments', async () => {
     const mod = await import('../../src/ScriptUtils/ESLint/eslint.config.ts');
     expect(mod.obsidianDevUtilsConfigs).toBeDefined();

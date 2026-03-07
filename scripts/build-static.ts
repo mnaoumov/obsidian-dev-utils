@@ -5,7 +5,7 @@
  */
 
 import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
-import { buildStatic } from '../src/ScriptUtils/commands/BuildStatic.ts';
+import { buildStatic } from '../src/ScriptUtils/Commands.ts';
 
 await wrapCliTask(async () => {
   await buildStatic();

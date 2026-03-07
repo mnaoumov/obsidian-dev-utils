@@ -5,7 +5,7 @@
  */
 
 import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
-import { formatCheck } from '../src/ScriptUtils/commands/FormatCheck.ts';
+import { formatCheck } from '../src/ScriptUtils/Commands.ts';
 
 await wrapCliTask(async () => {
   await formatCheck();

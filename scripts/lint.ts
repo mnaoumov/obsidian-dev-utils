@@ -5,7 +5,7 @@
  */
 
 import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
-import { lint } from '../src/ScriptUtils/commands/Lint.ts';
+import { lint } from '../src/ScriptUtils/Commands.ts';
 
 await wrapCliTask(async () => {
   await lint();
