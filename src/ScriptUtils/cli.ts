@@ -54,29 +54,58 @@ import { updateVersion } from './version.ts';
 const NODE_SCRIPT_ARGV_SKIP_COUNT = 2;
 
 /**
- * Enum representing the names of the commands available in the CLI.
+ * Represents a self-contained CLI command definition.
  */
-enum CommandNames {
-  Build = 'build',
-  BuildClean = 'build:clean',
-  BuildCompile = 'build:compile',
-  BuildCompileSvelte = 'build:compile:svelte',
-  BuildCompileTypeScript = 'build:compile:typescript',
-  BuildStatic = 'build:static',
-  Dev = 'dev',
-  Format = 'format',
-  FormatCheck = 'format:check',
-  Lint = 'lint',
-  LintFix = 'lint:fix',
-  LintMarkdown = 'lint:md',
-  LintMarkdownFix = 'lint:md:fix',
-  Publish = 'publish',
-  Spellcheck = 'spellcheck',
-  Test = 'test',
-  TestCoverage = 'test:coverage',
-  TestWatch = 'test:watch',
-  Version = 'version'
+interface CliCommand {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Commander passes `any` typed arguments.
+  action: (...args: any[]) => Promisable<MaybeReturn<CliTaskResult>>;
+  arguments?: CliCommandArgument[];
+  description: string;
+  name: string;
 }
+
+/**
+ * Represents a CLI command argument definition.
+ */
+interface CliCommandArgument {
+  description: string;
+  name: string;
+}
+
+/**
+ * All available CLI commands.
+ */
+const commands: CliCommand[] = [
+  { action: () => buildObsidianPlugin({ mode: BuildMode.Production }), description: 'Build the plugin', name: 'build' },
+  { action: () => buildClean(), description: 'Clean the dist folder', name: 'build:clean' },
+  { action: () => buildCompile(), description: 'Check if code compiles', name: 'build:compile' },
+  { action: () => buildCompileSvelte(), description: 'Check if Svelte code compiles', name: 'build:compile:svelte' },
+  { action: () => buildCompileTypeScript(), description: 'Check if TypeScript code compiles', name: 'build:compile:typescript' },
+  { action: () => buildStatic(), description: 'Copy static content to dist', name: 'build:static' },
+  { action: () => buildObsidianPlugin({ mode: BuildMode.Development }), description: 'Build the plugin in development mode', name: 'dev' },
+  { action: () => format(), description: 'Format the source code', name: 'format' },
+  { action: () => format(false), description: 'Check if the source code is formatted', name: 'format:check' },
+  { action: () => lint(), description: 'Lint the source code', name: 'lint' },
+  { action: () => lint(true), description: 'Lint the source code and apply automatic fixes', name: 'lint:fix' },
+  { action: () => lintMarkdown(), description: 'Lint the markdown documentation', name: 'lint:md' },
+  { action: () => lintMarkdown(true), description: 'Lint the markdown documentation and apply automatic fixes', name: 'lint:md:fix' },
+  {
+    action: (isBeta: boolean) => publish(isBeta),
+    arguments: [{ description: 'Publish to NPM beta', name: '[isBeta]' }],
+    description: 'Publish to NPM',
+    name: 'publish'
+  },
+  { action: () => spellcheck(), description: 'Spellcheck the source code', name: 'spellcheck' },
+  { action: () => test(), description: 'Run tests', name: 'test' },
+  { action: () => testCoverage(), description: 'Run tests with coverage', name: 'test:coverage' },
+  { action: () => testWatch(), description: 'Run tests in watch mode', name: 'test:watch' },
+  {
+    action: (versionUpdateType: string) => updateVersion(versionUpdateType),
+    arguments: [{ description: 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]', name: '[versionUpdateType]' }],
+    description: 'Release a new version',
+    name: 'version'
+  }
+];
 
 /**
  * Main function to run the CLI. It sets up the commands using the `commander` library and
@@ -95,52 +124,20 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
         .description('CLI for Obsidian plugin development utilities')
         .version(packageJson.version ?? '(unknown)');
 
-      addCommand(program, CommandNames.Build, 'Build the plugin', () => buildObsidianPlugin({ mode: BuildMode.Production }));
-      addCommand(program, CommandNames.BuildClean, 'Clean the dist folder', () => buildClean());
-      addCommand(program, CommandNames.BuildCompile, 'Check if code compiles', () => buildCompile());
-      addCommand(program, CommandNames.BuildCompileSvelte, 'Check if Svelte code compiles', () => buildCompileSvelte());
-      addCommand(program, CommandNames.BuildCompileTypeScript, 'Check if TypeScript code compiles', () => buildCompileTypeScript());
-      addCommand(program, CommandNames.BuildStatic, 'Copy static content to dist', () => buildStatic());
-      addCommand(program, CommandNames.Dev, 'Build the plugin in development mode', () => buildObsidianPlugin({ mode: BuildMode.Development }));
-      addCommand(program, CommandNames.Format, 'Format the source code', () => format());
-      addCommand(program, CommandNames.FormatCheck, 'Check if the source code is formatted', () => format(false));
-      addCommand(program, CommandNames.Lint, 'Lint the source code', () => lint());
-      addCommand(program, CommandNames.LintFix, 'Lint the source code and apply automatic fixes', () => lint(true));
-      addCommand(program, CommandNames.LintMarkdown, 'Lint the markdown documentation', () => lintMarkdown());
-      addCommand(program, CommandNames.LintMarkdownFix, 'Lint the markdown documentation and apply automatic fixes', () => lintMarkdown(true));
-      addCommand(program, CommandNames.Publish, 'Publish to NPM', (isBeta: boolean) => publish(isBeta))
-        .argument('[isBeta]', 'Publish to NPM beta');
-      addCommand(program, CommandNames.Spellcheck, 'Spellcheck the source code', () => spellcheck());
-      addCommand(program, CommandNames.Test, 'Run tests', () => test());
-      addCommand(program, CommandNames.TestCoverage, 'Run tests with coverage', () => testCoverage());
-      addCommand(program, CommandNames.TestWatch, 'Run tests in watch mode', () => testWatch());
-      addCommand(program, CommandNames.Version, 'Release a new version', (versionUpdateType: string) => updateVersion(versionUpdateType))
-        .argument('[versionUpdateType]', 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]');
+      for (const command of commands) {
+        const cmd = program.command(command.name)
+          .description(command.description)
+          .action((...args: unknown[]) => wrapCliTask(async () => await command.action(...args)));
+
+        for (const arg of command.arguments ?? []) {
+          cmd.argument(arg.name, arg.description);
+        }
+      }
+
       await program.parseAsync(argv, { from: 'user' });
       return CliTaskResult.DoNotExit();
     })
   );
-}
-
-/**
- * Adds a command to the CLI program with the specified name, description, and task function.
- *
- * @param program - The `commander` program instance to which the command is added.
- * @param name - The name of the command.
- * @param description - A brief description of what the command does.
- * @param taskFn - The function to execute when the command is invoked. Can return a {@link CliTaskResult} or `void`.
- * @returns The `commander` command instance for further chaining.
- */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-function addCommand<Args extends unknown[]>(
-  program: Command,
-  name: string,
-  description: string,
-  taskFn: (...args: Args) => Promisable<MaybeReturn<CliTaskResult>>
-): Command {
-  return program.command(name)
-    .description(description)
-    .action((...args: Args) => wrapCliTask(async () => await taskFn(...args)));
 }
 
 /* v8 ignore stop */
