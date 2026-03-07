@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import { lint } from '../../src/ScriptUtils/ESLint/ESLint.ts';
+import { lint } from '../../src/ScriptUtils/linters/eslint/ESLint.ts';
 
 const {
   mockCp,

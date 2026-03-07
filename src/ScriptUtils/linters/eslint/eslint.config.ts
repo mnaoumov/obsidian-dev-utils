@@ -35,9 +35,9 @@ import globals from 'globals';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
 import tseslint from 'typescript-eslint';
 
-import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
-import { join } from '../../Path.ts';
-import { getRootFolder } from '../Root.ts';
+import { ObsidianPluginRepoPaths } from '../../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
+import { join } from '../../../Path.ts';
+import { getRootFolder } from '../../Root.ts';
 
 /**
  * The list of TypeScript files to lint.

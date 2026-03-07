@@ -8,9 +8,9 @@
 
 import type { Plugin } from 'esbuild';
 
-import { replaceAll } from '../../String.ts';
-import { writeFile } from '../NodeModules.ts';
-import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
+import { replaceAll } from '../../../String.ts';
+import { writeFile } from '../../NodeModules.ts';
+import { ObsidianDevUtilsRepoPaths } from '../../ObsidianDevUtilsRepoPaths.ts';
 
 /**
  * Creates an esbuild plugin that changes the extension of JavaScript files after the build process.

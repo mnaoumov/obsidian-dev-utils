@@ -7,23 +7,23 @@
  * It can automatically fix linting issues if specified, and logs results to the console.
  */
 
-import { getLibDebugger } from '../../Debug.ts';
-import { ObsidianPluginRepoPaths } from '../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
+import { getLibDebugger } from '../../../Debug.ts';
+import { ObsidianPluginRepoPaths } from '../../../obsidian/Plugin/ObsidianPluginRepoPaths.ts';
 import {
   getFolderName,
   join
-} from '../../Path.ts';
-import { assertNonNullable } from '../../TypeGuards.ts';
+} from '../../../Path.ts';
+import { assertNonNullable } from '../../../TypeGuards.ts';
 import {
   cp,
   existsSync
-} from '../NodeModules.ts';
-import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
+} from '../../NodeModules.ts';
+import { ObsidianDevUtilsRepoPaths } from '../../ObsidianDevUtilsRepoPaths.ts';
 import {
   execFromRoot,
   getRootFolder,
   resolvePathFromRootSafe
-} from '../Root.ts';
+} from '../../Root.ts';
 
 /**
  * Lint the project with ESLint.

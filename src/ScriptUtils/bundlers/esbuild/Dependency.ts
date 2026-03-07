@@ -18,15 +18,15 @@ import { context } from 'esbuild';
 import {
   getFolderName,
   join
-} from '../../Path.ts';
-import { trimStart } from '../../String.ts';
-import { ensureNonNullable } from '../../TypeGuards.ts';
+} from '../../../Path.ts';
+import { trimStart } from '../../../String.ts';
+import { ensureNonNullable } from '../../../TypeGuards.ts';
 import {
   builtinModules,
   createRequire
-} from '../NodeModules.ts';
-import { readPackageJson } from '../Npm.ts';
-import { ObsidianDevUtilsRepoPaths } from '../ObsidianDevUtilsRepoPaths.ts';
+} from '../../NodeModules.ts';
+import { readPackageJson } from '../../Npm.ts';
+import { ObsidianDevUtilsRepoPaths } from '../../ObsidianDevUtilsRepoPaths.ts';
 import {
   banner,
   invokeEsbuild

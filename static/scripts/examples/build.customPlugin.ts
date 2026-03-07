@@ -6,7 +6,7 @@ import type { CliTaskResult } from 'obsidian-dev-utils/ScriptUtils/CliUtils';
 import {
   BuildMode,
   buildObsidianPlugin
-} from 'obsidian-dev-utils/ScriptUtils/esbuild/ObsidianPluginBuilder';
+} from 'obsidian-dev-utils/ScriptUtils/bundlers/esbuild/ObsidianPluginBuilder';
 import { readFile } from 'obsidian-dev-utils/ScriptUtils/NodeModules';
 
 export async function invoke(): Promise<CliTaskResult> {

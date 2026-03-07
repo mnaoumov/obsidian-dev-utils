@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import { lintMarkdown } from '../../src/ScriptUtils/markdownlint/markdownlint.ts';
+import { lintMarkdown } from '../../src/ScriptUtils/linters/markdownlint/markdownlint.ts';
 
 const {
   mockCp,
