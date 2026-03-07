@@ -100,7 +100,7 @@ describe('v8 ignore imports', () => {
   it('should load CustomTypeOptionsBase so v8 processes its ignore comments', async () => {
     const mod = await import('../../src/obsidian/i18n/CustomTypeOptionsBase.ts');
     expect(mod).toBeDefined();
-  });
+  }, HEAVY_IMPORT_TIMEOUT);
 
   it('should load DefaultTranslationsBase so v8 processes its ignore comments', async () => {
     const mod = await import('../../src/obsidian/i18n/DefaultTranslationsBase.ts');
