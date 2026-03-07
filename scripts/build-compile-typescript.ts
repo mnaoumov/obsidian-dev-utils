@@ -5,7 +5,7 @@
  */
 
 import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
-import { buildCompileTypeScript } from '../src/ScriptUtils/commands/BuildCompileTypeScript.ts';
+import { buildCompileTypeScript } from '../src/ScriptUtils/Commands.ts';
 
 await wrapCliTask(async () => {
   await buildCompileTypeScript();

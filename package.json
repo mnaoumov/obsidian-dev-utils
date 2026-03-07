@@ -501,9 +501,6 @@
   "main": "./dist/lib/cjs/index.cjs",
   "module": "./dist/lib/esm/index.mjs",
   "types": "./dist/lib/cjs/index.d.cts",
-  "bin": {
-    "obsidian-dev-utils": "dist/bin/cli.cjs"
-  },
   "files": [
     "dist/",
     "!dist/*.tgz",
