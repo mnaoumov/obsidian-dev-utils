@@ -54,17 +54,6 @@ import { updateVersion } from './version.ts';
 const NODE_SCRIPT_ARGV_SKIP_COUNT = 2;
 
 /**
- * Represents a self-contained CLI command definition.
- */
-interface CliCommand {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Commander passes `any` typed arguments.
-  action: (...args: any[]) => Promisable<MaybeReturn<CliTaskResult>>;
-  arguments?: CliCommandArgument[];
-  description: string;
-  name: string;
-}
-
-/**
  * Represents a CLI command argument definition.
  */
 interface CliCommandArgument {
@@ -73,38 +62,214 @@ interface CliCommandArgument {
 }
 
 /**
+ * Abstract base class for CLI commands. Each command encapsulates its own
+ * name, description, optional arguments, and execution logic.
+ */
+abstract class CliCommand {
+  public readonly arguments: CliCommandArgument[] = [];
+  public abstract readonly description: string;
+  public abstract readonly name: string;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Commander passes `any` typed arguments.
+  public abstract execute(...args: any[]): Promisable<MaybeReturn<CliTaskResult>>;
+}
+
+class BuildCleanCommand extends CliCommand {
+  public readonly description = 'Clean the dist folder';
+  public readonly name = 'build:clean';
+
+  public execute(): Promise<void> {
+    return buildClean();
+  }
+}
+
+class BuildCommand extends CliCommand {
+  public readonly description = 'Build the plugin';
+  public readonly name = 'build';
+
+  public execute(): Promise<CliTaskResult> {
+    return buildObsidianPlugin({ mode: BuildMode.Production });
+  }
+}
+
+class BuildCompileCommand extends CliCommand {
+  public readonly description = 'Check if code compiles';
+  public readonly name = 'build:compile';
+
+  public execute(): Promise<void> {
+    return buildCompile();
+  }
+}
+
+class BuildCompileSvelteCommand extends CliCommand {
+  public readonly description = 'Check if Svelte code compiles';
+  public readonly name = 'build:compile:svelte';
+
+  public execute(): Promise<void> {
+    return buildCompileSvelte();
+  }
+}
+
+class BuildCompileTypeScriptCommand extends CliCommand {
+  public readonly description = 'Check if TypeScript code compiles';
+  public readonly name = 'build:compile:typescript';
+
+  public execute(): Promise<void> {
+    return buildCompileTypeScript();
+  }
+}
+
+class BuildStaticCommand extends CliCommand {
+  public readonly description = 'Copy static content to dist';
+  public readonly name = 'build:static';
+
+  public execute(): Promise<void> {
+    return buildStatic();
+  }
+}
+
+class DevCommand extends CliCommand {
+  public readonly description = 'Build the plugin in development mode';
+  public readonly name = 'dev';
+
+  public execute(): Promise<CliTaskResult> {
+    return buildObsidianPlugin({ mode: BuildMode.Development });
+  }
+}
+
+class FormatCheckCommand extends CliCommand {
+  public readonly description = 'Check if the source code is formatted';
+  public readonly name = 'format:check';
+
+  public execute(): Promise<void> {
+    return format(false);
+  }
+}
+
+class FormatCommand extends CliCommand {
+  public readonly description = 'Format the source code';
+  public readonly name = 'format';
+
+  public execute(): Promise<void> {
+    return format();
+  }
+}
+
+class LintCommand extends CliCommand {
+  public readonly description = 'Lint the source code';
+  public readonly name = 'lint';
+
+  public execute(): Promise<void> {
+    return lint();
+  }
+}
+
+class LintFixCommand extends CliCommand {
+  public readonly description = 'Lint the source code and apply automatic fixes';
+  public readonly name = 'lint:fix';
+
+  public execute(): Promise<void> {
+    return lint(true);
+  }
+}
+
+class LintMarkdownCommand extends CliCommand {
+  public readonly description = 'Lint the markdown documentation';
+  public readonly name = 'lint:md';
+
+  public execute(): Promise<void> {
+    return lintMarkdown();
+  }
+}
+
+class LintMarkdownFixCommand extends CliCommand {
+  public readonly description = 'Lint the markdown documentation and apply automatic fixes';
+  public readonly name = 'lint:md:fix';
+
+  public execute(): Promise<void> {
+    return lintMarkdown(true);
+  }
+}
+
+class PublishCommand extends CliCommand {
+  public override readonly arguments = [{ description: 'Publish to NPM beta', name: '[isBeta]' }];
+  public readonly description = 'Publish to NPM';
+  public readonly name = 'publish';
+
+  public execute(isBeta: boolean): Promise<void> {
+    return publish(isBeta);
+  }
+}
+
+class SpellcheckCommand extends CliCommand {
+  public readonly description = 'Spellcheck the source code';
+  public readonly name = 'spellcheck';
+
+  public execute(): Promise<void> {
+    return spellcheck();
+  }
+}
+
+class TestCommand extends CliCommand {
+  public readonly description = 'Run tests';
+  public readonly name = 'test';
+
+  public execute(): Promise<void> {
+    return test();
+  }
+}
+
+class TestCoverageCommand extends CliCommand {
+  public readonly description = 'Run tests with coverage';
+  public readonly name = 'test:coverage';
+
+  public execute(): Promise<void> {
+    return testCoverage();
+  }
+}
+
+class TestWatchCommand extends CliCommand {
+  public readonly description = 'Run tests in watch mode';
+  public readonly name = 'test:watch';
+
+  public execute(): Promise<void> {
+    return testWatch();
+  }
+}
+
+class VersionCommand extends CliCommand {
+  public override readonly arguments = [{ description: 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]', name: '[versionUpdateType]' }];
+  public readonly description = 'Release a new version';
+  public readonly name = 'version';
+
+  public execute(versionUpdateType: string): Promise<void> {
+    return updateVersion(versionUpdateType);
+  }
+}
+
+/**
  * All available CLI commands.
  */
 const commands: CliCommand[] = [
-  { action: () => buildObsidianPlugin({ mode: BuildMode.Production }), description: 'Build the plugin', name: 'build' },
-  { action: () => buildClean(), description: 'Clean the dist folder', name: 'build:clean' },
-  { action: () => buildCompile(), description: 'Check if code compiles', name: 'build:compile' },
-  { action: () => buildCompileSvelte(), description: 'Check if Svelte code compiles', name: 'build:compile:svelte' },
-  { action: () => buildCompileTypeScript(), description: 'Check if TypeScript code compiles', name: 'build:compile:typescript' },
-  { action: () => buildStatic(), description: 'Copy static content to dist', name: 'build:static' },
-  { action: () => buildObsidianPlugin({ mode: BuildMode.Development }), description: 'Build the plugin in development mode', name: 'dev' },
-  { action: () => format(), description: 'Format the source code', name: 'format' },
-  { action: () => format(false), description: 'Check if the source code is formatted', name: 'format:check' },
-  { action: () => lint(), description: 'Lint the source code', name: 'lint' },
-  { action: () => lint(true), description: 'Lint the source code and apply automatic fixes', name: 'lint:fix' },
-  { action: () => lintMarkdown(), description: 'Lint the markdown documentation', name: 'lint:md' },
-  { action: () => lintMarkdown(true), description: 'Lint the markdown documentation and apply automatic fixes', name: 'lint:md:fix' },
-  {
-    action: (isBeta: boolean) => publish(isBeta),
-    arguments: [{ description: 'Publish to NPM beta', name: '[isBeta]' }],
-    description: 'Publish to NPM',
-    name: 'publish'
-  },
-  { action: () => spellcheck(), description: 'Spellcheck the source code', name: 'spellcheck' },
-  { action: () => test(), description: 'Run tests', name: 'test' },
-  { action: () => testCoverage(), description: 'Run tests with coverage', name: 'test:coverage' },
-  { action: () => testWatch(), description: 'Run tests in watch mode', name: 'test:watch' },
-  {
-    action: (versionUpdateType: string) => updateVersion(versionUpdateType),
-    arguments: [{ description: 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]', name: '[versionUpdateType]' }],
-    description: 'Release a new version',
-    name: 'version'
-  }
+  new BuildCleanCommand(),
+  new BuildCommand(),
+  new BuildCompileCommand(),
+  new BuildCompileSvelteCommand(),
+  new BuildCompileTypeScriptCommand(),
+  new BuildStaticCommand(),
+  new DevCommand(),
+  new FormatCheckCommand(),
+  new FormatCommand(),
+  new LintCommand(),
+  new LintFixCommand(),
+  new LintMarkdownCommand(),
+  new LintMarkdownFixCommand(),
+  new PublishCommand(),
+  new SpellcheckCommand(),
+  new TestCommand(),
+  new TestCoverageCommand(),
+  new TestWatchCommand(),
+  new VersionCommand()
 ];
 
 /**
@@ -127,9 +292,9 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
       for (const command of commands) {
         const cmd = program.command(command.name)
           .description(command.description)
-          .action((...args: unknown[]) => wrapCliTask(async () => await command.action(...args)));
+          .action((...args: unknown[]) => wrapCliTask(async () => await command.execute(...args)));
 
-        for (const arg of command.arguments ?? []) {
+        for (const arg of command.arguments) {
           cmd.argument(arg.name, arg.description);
         }
       }
