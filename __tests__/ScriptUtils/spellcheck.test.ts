@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import { spellcheck } from '../../src/ScriptUtils/spellcheck.ts';
+import { spellcheck } from '../../src/ScriptUtils/linters/cspell/cspell.ts';
 
 const { mockExecFromRoot } = vi.hoisted(() => ({
   mockExecFromRoot: vi.fn()

@@ -6,7 +6,7 @@
 
 ## Commands
 
-All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function from `src/ScriptUtils/Commands.ts` and wraps it with `wrapCliTask`.
+All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint/ESLint.ts`, `formatters/dprint/dprint.ts`).
 
 - `npm test` — run tests (Vitest)
 - `npm run test:coverage` — run tests with v8 coverage
@@ -33,8 +33,13 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - `__tests__/` — test files, mirrors `src/` structure
 - `__mocks__/obsidian/` — mock implementations for the `obsidian` package (one file per export)
 - `__mocks__/obsidian-typings/` — mock implementations for `obsidian-typings`
-- `src/ScriptUtils/Commands.ts` — flat module exporting all command functions (consumers use `import { buildClean } from 'obsidian-dev-utils/ScriptUtils/Commands'`)
-- `scripts/` — npm script entry points (executed via `jiti`), each imports from `Commands.ts` and wraps with `wrapCliTask`
+- `src/ScriptUtils/bundlers/esbuild/` — esbuild bundler (build, dev)
+- `src/ScriptUtils/linters/eslint/` — ESLint linting
+- `src/ScriptUtils/linters/markdownlint/` — Markdown linting
+- `src/ScriptUtils/linters/cspell/` — spellchecking
+- `src/ScriptUtils/formatters/dprint/` — dprint formatting
+- `src/ScriptUtils/test-runners/vitest/` — Vitest test runner
+- `scripts/` — npm script entry points (executed via `jiti`), each imports directly from the relevant tool module
 - `dist/` — compiled output (ESM `.mjs` + CJS `.cjs` + type declarations)
 
 ### TypeScript

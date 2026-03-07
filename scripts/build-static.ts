@@ -4,6 +4,6 @@
  * Build static script.
  */
 
-import { buildStatic } from '../src/ScriptUtils/Commands.ts';
+import { buildStatic } from '../src/ScriptUtils/build.ts';
 
 await buildStatic();

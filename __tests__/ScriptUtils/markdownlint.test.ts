@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import { lintMarkdown } from '../../src/ScriptUtils/linters/markdownlint/markdownlint.ts';
+import { lint } from '../../src/ScriptUtils/linters/markdownlint/markdownlint.ts';
 
 const {
   mockCp,
@@ -54,10 +54,10 @@ beforeEach(() => {
   })());
 });
 
-describe('lintMarkdown', () => {
+describe('lint', () => {
   it('should run markdownlint-cli2 and linkinator when config file exists', async () => {
     mockExistsSync.mockReturnValue(true);
-    await lintMarkdown();
+    await lint();
     expect(mockExecFromRoot).toHaveBeenCalledTimes(2);
     expect(mockExecFromRoot).toHaveBeenCalledWith(
       expect.arrayContaining(['npx', 'markdownlint-cli2', '.'])
@@ -69,7 +69,7 @@ describe('lintMarkdown', () => {
 
   it('should pass --fix when shouldFix is true', async () => {
     mockExistsSync.mockReturnValue(true);
-    await lintMarkdown(true);
+    await lint(true);
     expect(mockExecFromRoot).toHaveBeenCalledWith(
       expect.arrayContaining(['npx', 'markdownlint-cli2', '--fix', '.'])
     );
@@ -77,7 +77,7 @@ describe('lintMarkdown', () => {
 
   it('should not pass --fix when shouldFix is false', async () => {
     mockExistsSync.mockReturnValue(true);
-    await lintMarkdown(false);
+    await lint(false);
     const firstCall = mockExecFromRoot.mock.calls[0] as string[][];
     expect(firstCall[0]).not.toContain('--fix');
   });
@@ -85,7 +85,7 @@ describe('lintMarkdown', () => {
   it('should copy default configs when no config file exists', async () => {
     mockExistsSync.mockReturnValue(false);
     mockGetRootFolder.mockReturnValue('/pkg');
-    await lintMarkdown();
+    await lint();
     expect(mockCp).toHaveBeenCalledTimes(2);
     expect(mockExecFromRoot).toHaveBeenCalledTimes(2);
   });
@@ -93,7 +93,7 @@ describe('lintMarkdown', () => {
   it('should throw when package folder is not found', async () => {
     mockExistsSync.mockReturnValue(false);
     mockGetRootFolder.mockReturnValue(null);
-    await expect(lintMarkdown()).rejects.toThrow('Package folder not found');
+    await expect(lint()).rejects.toThrow('Package folder not found');
   });
 
   it('should handle multiple markdown files from glob', async () => {
@@ -103,7 +103,7 @@ describe('lintMarkdown', () => {
       yield 'CHANGELOG.md';
       yield 'docs/guide.md';
     })());
-    await lintMarkdown();
+    await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
       expect.arrayContaining(['npx', 'linkinator', 'README.md', 'CHANGELOG.md', 'docs/guide.md'])
     );

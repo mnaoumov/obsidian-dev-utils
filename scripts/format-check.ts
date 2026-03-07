@@ -4,6 +4,6 @@
  * Format check script.
  */
 
-import { formatCheckDprint } from '../src/ScriptUtils/Commands.ts';
+import { format } from '../src/ScriptUtils/formatters/dprint/dprint.ts';
 
-await formatCheckDprint();
+await format(false);

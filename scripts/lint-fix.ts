@@ -4,6 +4,6 @@
  * Lint fix script.
  */
 
-import { lintFixEslint } from '../src/ScriptUtils/Commands.ts';
+import { lint } from '../src/ScriptUtils/linters/eslint/ESLint.ts';
 
-await lintFixEslint();
+await lint(true);

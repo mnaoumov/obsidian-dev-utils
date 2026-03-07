@@ -4,6 +4,6 @@
  * Format script.
  */
 
-import { formatDprint } from '../src/ScriptUtils/Commands.ts';
+import { format } from '../src/ScriptUtils/formatters/dprint/dprint.ts';
 
-await formatDprint();
+await format();

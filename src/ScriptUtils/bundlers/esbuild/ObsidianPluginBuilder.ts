@@ -218,4 +218,25 @@ export async function invokeEsbuild(buildContext: BuildContext, isProductionBuil
   return CliTaskResult.DoNotExit();
 }
 
+/**
+ * Builds the Obsidian plugin in production mode using esbuild.
+ *
+ * @param params - Optional build parameters (mode is set to Production automatically).
+ * @returns A {@link Promise} that resolves when the build is complete.
+ */
+export async function build(params?: Omit<BuildObsidianPluginParams, 'mode'>): Promise<void> {
+  const result = await buildObsidianPlugin({ ...params, mode: BuildMode.Production });
+  result.throwOnFailure();
+}
+
+/**
+ * Builds the Obsidian plugin in development mode using esbuild with watch.
+ *
+ * @param params - Optional build parameters (mode is set to Development automatically).
+ * @returns A {@link Promise} that resolves when the dev build starts (keeps process alive for watch mode).
+ */
+export async function dev(params?: Omit<BuildObsidianPluginParams, 'mode'>): Promise<void> {
+  await buildObsidianPlugin({ ...params, mode: BuildMode.Development });
+}
+
 /* v8 ignore stop */
