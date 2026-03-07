@@ -4,6 +4,9 @@
  * Lint markdown fix script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { lintMarkdownFix } from '../src/ScriptUtils/commands/LintMarkdownFix.ts';
 
-cli(['lint:md:fix']);
+await wrapCliTask(async () => {
+  await lintMarkdownFix();
+});

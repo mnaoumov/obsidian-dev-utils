@@ -4,6 +4,9 @@
  * Test coverage script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { testCoverage } from '../src/ScriptUtils/commands/TestCoverage.ts';
 
-cli(['test:coverage']);
+await wrapCliTask(async () => {
+  await testCoverage();
+});

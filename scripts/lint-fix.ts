@@ -4,6 +4,9 @@
  * Lint fix script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { lintFix } from '../src/ScriptUtils/commands/LintFix.ts';
 
-cli(['lint:fix']);
+await wrapCliTask(async () => {
+  await lintFix();
+});

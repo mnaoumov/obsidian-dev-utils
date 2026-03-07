@@ -4,6 +4,9 @@
  * Lint markdown script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { lintMarkdown } from '../src/ScriptUtils/commands/LintMarkdown.ts';
 
-cli(['lint:md']);
+await wrapCliTask(async () => {
+  await lintMarkdown();
+});

@@ -4,6 +4,9 @@
  * Spellcheck script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { spellcheck } from '../src/ScriptUtils/commands/Spellcheck.ts';
 
-cli(['spellcheck']);
+await wrapCliTask(async () => {
+  await spellcheck();
+});

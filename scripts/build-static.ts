@@ -4,6 +4,9 @@
  * Build static script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { buildStatic } from '../src/ScriptUtils/commands/BuildStatic.ts';
 
-cli(['build:static']);
+await wrapCliTask(async () => {
+  await buildStatic();
+});

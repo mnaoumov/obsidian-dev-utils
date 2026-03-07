@@ -4,6 +4,9 @@
  * Format check script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { formatCheck } from '../src/ScriptUtils/commands/FormatCheck.ts';
 
-cli(['format:check']);
+await wrapCliTask(async () => {
+  await formatCheck();
+});

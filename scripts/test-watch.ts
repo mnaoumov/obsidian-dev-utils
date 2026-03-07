@@ -4,6 +4,9 @@
  * Test watch script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { testWatch } from '../src/ScriptUtils/commands/TestWatch.ts';
 
-cli(['test:watch']);
+await wrapCliTask(async () => {
+  await testWatch();
+});

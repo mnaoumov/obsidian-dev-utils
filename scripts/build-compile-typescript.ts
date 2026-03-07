@@ -4,6 +4,9 @@
  * Build compile TypeScript script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { buildCompileTypeScript } from '../src/ScriptUtils/commands/BuildCompileTypeScript.ts';
 
-cli(['build:compile:typescript']);
+await wrapCliTask(async () => {
+  await buildCompileTypeScript();
+});
