@@ -4,6 +4,6 @@
  * Test watch script.
  */
 
-import { testWatch } from '../src/ScriptUtils/Commands.ts';
+import { testWatchVitest } from '../src/ScriptUtils/Commands.ts';
 
-await testWatch();
+await testWatchVitest();

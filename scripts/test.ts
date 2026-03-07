@@ -4,6 +4,6 @@
  * Test script.
  */
 
-import { test } from '../src/ScriptUtils/Commands.ts';
+import { testVitest } from '../src/ScriptUtils/Commands.ts';
 
-await test();
+await testVitest();
