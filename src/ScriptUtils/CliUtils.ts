@@ -81,6 +81,15 @@ export abstract class CliTaskResult {
   public abstract exit(): void;
 
   /**
+   * Throws an error if the task was not successful.
+   */
+  public throwOnFailure(): void {
+    if (!this.isSuccessful()) {
+      throw new Error('Task failed');
+    }
+  }
+
+  /**
    * Determines if the task was successful.
    *
    * @returns `true` if the task was successful, otherwise `false`.

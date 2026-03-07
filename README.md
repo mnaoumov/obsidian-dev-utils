@@ -5,7 +5,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-dev-utils)](https://github.com/mnaoumov/obsidian-dev-utils/releases)
 [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-dev-utils/total)](https://github.com/mnaoumov/obsidian-dev-utils/releases)
 
-`Obsidian Dev Utils` is a collection of essential functions and CLI tools designed to streamline your Obsidian plugin development process. Whether you're building a plugin from scratch or enhancing an existing one, these utilities are here to simplify your workflow.
+`Obsidian Dev Utils` is a collection of essential functions and utilities designed to streamline your Obsidian plugin development process. Whether you're building a plugin from scratch or enhancing an existing one, these utilities are here to simplify your workflow.
 
 ## What is Obsidian?
 
@@ -29,7 +29,7 @@ npm install obsidian-dev-utils
 
 ## Usage
 
-- [CLI Commands](./docs/cli-commands.md).
+- [Commands](./docs/cli-commands.md)
 - [Helper Functions](./docs/helper-functions.md)
 - [Styling](./docs/styling.md)
 - [Setting Components](./docs/setting-components.md)
