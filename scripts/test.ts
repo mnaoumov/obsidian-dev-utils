@@ -4,6 +4,9 @@
  * Test script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { test } from '../src/ScriptUtils/commands/Test.ts';
 
-cli(['test']);
+await wrapCliTask(async () => {
+  await test();
+});

@@ -4,6 +4,9 @@
  * Lint script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { lint } from '../src/ScriptUtils/commands/Lint.ts';
 
-cli(['lint']);
+await wrapCliTask(async () => {
+  await lint();
+});

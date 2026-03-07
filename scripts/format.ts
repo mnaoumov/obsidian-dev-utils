@@ -4,6 +4,9 @@
  * Format script.
  */
 
-import { cli } from '../src/ScriptUtils/cli.ts';
+import { wrapCliTask } from '../src/ScriptUtils/CliUtils.ts';
+import { format } from '../src/ScriptUtils/commands/Format.ts';
 
-cli(['format']);
+await wrapCliTask(async () => {
+  await format();
+});
