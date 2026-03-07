@@ -12,16 +12,11 @@
 import type { Promisable } from 'type-fest';
 
 import { Command } from 'commander';
-import { createJiti } from 'jiti';
 
 import type { MaybeReturn } from '../Type.ts';
 
 import { invokeAsyncSafely } from '../Async.ts';
-import {
-  getFolderName,
-  join,
-  relative
-} from '../Path.ts';
+import { getFolderName } from '../Path.ts';
 import {
   buildClean,
   buildCompile,
@@ -40,18 +35,12 @@ import {
 import { lint } from './ESLint/ESLint.ts';
 import { format } from './format.ts';
 import { lintMarkdown } from './markdownlint/markdownlint.ts';
-import {
-  existsSync,
-  process
-} from './NodeModules.ts';
+import { process } from './NodeModules.ts';
 import { readPackageJson } from './Npm.ts';
 import { publish } from './NpmPublish.ts';
-import { ObsidianDevUtilsRepoPaths } from './ObsidianDevUtilsRepoPaths.ts';
-import { resolvePathFromRootSafe } from './Root.ts';
+import { execFromRoot } from './Root.ts';
 import { spellcheck } from './spellcheck.ts';
 import { updateVersion } from './version.ts';
-
-const jiti = createJiti(import.meta.url);
 
 /**
  * A number of leading arguments to skip when parsing command-line arguments.
@@ -79,11 +68,10 @@ enum CommandNames {
   LintMarkdownFix = 'lint:md:fix',
   Publish = 'publish',
   Spellcheck = 'spellcheck',
+  Test = 'test',
+  TestCoverage = 'test:coverage',
+  TestWatch = 'test:watch',
   Version = 'version'
-}
-
-interface OverrideModule<Args extends unknown[]> {
-  invoke(...args: Args): Promise<MaybeReturn<CliTaskResult>>;
 }
 
 /**
@@ -119,6 +107,9 @@ export function cli(argv: string[] = process.argv.slice(NODE_SCRIPT_ARGV_SKIP_CO
       addCommand(program, CommandNames.Publish, 'Publish to NPM', (isBeta: boolean) => publish(isBeta))
         .argument('[isBeta]', 'Publish to NPM beta');
       addCommand(program, CommandNames.Spellcheck, 'Spellcheck the source code', () => spellcheck());
+      addCommand(program, CommandNames.Test, 'Run tests', () => execFromRoot('vitest run'));
+      addCommand(program, CommandNames.TestCoverage, 'Run tests with coverage', () => execFromRoot('vitest run --coverage'));
+      addCommand(program, CommandNames.TestWatch, 'Run tests in watch mode', () => execFromRoot('vitest'));
       addCommand(program, CommandNames.Version, 'Release a new version', (versionUpdateType: string) => updateVersion(versionUpdateType))
         .argument('[versionUpdateType]', 'Version update type: major, minor, patch, beta, or x.y.z[-suffix]');
       await program.parseAsync(argv, { from: 'user' });
@@ -145,22 +136,7 @@ function addCommand<Args extends unknown[]>(
 ): Command {
   return program.command(name)
     .description(description)
-    .action((...args: Args) =>
-      wrapCliTask(async () => {
-        const scriptPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Scripts, `${name.replace(':', '-')}.ts`));
-        if (existsSync(scriptPath)) {
-          const folder = getFolderName(import.meta.url);
-          const relativeScriptPath = relative(folder, scriptPath);
-          const module = await jiti.import<Partial<OverrideModule<Args>>>(relativeScriptPath);
-          if (typeof module.invoke !== 'function') {
-            throw new Error(`${relativeScriptPath} does not export an invoke function`);
-          }
-          return module.invoke(...args);
-        }
-
-        return await taskFn(...args);
-      })
-    );
+    .action((...args: Args) => wrapCliTask(async () => await taskFn(...args)));
 }
 
 /* v8 ignore stop */
