@@ -13,4 +13,10 @@ export {
   invokeEsbuild
 } from './esbuild-impl/obsidian-plugin-builder.ts';
 
-export type { BuildObsidianPluginParams } from './esbuild-impl/obsidian-plugin-builder.ts';
+/**
+ * Re-exported types for the esbuild bundler.
+ */
+export type {
+  BuildObsidianPluginParams,
+  BuildParams
+} from './esbuild-impl/obsidian-plugin-builder.ts';
