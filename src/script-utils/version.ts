@@ -7,6 +7,13 @@
  * Git operations such as tagging and pushing.
  */
 
+import type { ReleaseType } from 'semver';
+
+import {
+  inc,
+  prerelease
+} from 'semver';
+
 import type { PackageLockJson } from './npm.ts';
 
 import { getLibDebugger } from '../debug.ts';
@@ -28,15 +35,15 @@ import {
   writeFile
 } from './node-modules.ts';
 import {
+  npmRun,
+  npmRunOptional
+} from './npm-run.ts';
+import {
   editNpmShrinkWrapJson,
   editPackageJson,
   editPackageLockJson,
   readPackageJson
 } from './npm.ts';
-import {
-  npmRun,
-  npmRunOptional
-} from './npm-run.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 import {
   execFromRoot,
@@ -44,15 +51,25 @@ import {
 } from './root.ts';
 
 /**
+ * The default pre-release identifier used for pre-release versions.
+ */
+const DEFAULT_PREID = 'beta';
+
+/**
  * Enum representing different types of version updates.
+ *
+ * Aligns with npm's `npm version` increment types plus `Manual` for explicit versions.
  */
 export enum VersionUpdateType {
-  Beta = 'beta',
   Invalid = 'invalid',
   Major = 'major',
   Manual = 'manual',
   Minor = 'minor',
-  Patch = 'patch'
+  Patch = 'patch',
+  PreMajor = 'premajor',
+  PreMinor = 'preminor',
+  PrePatch = 'prepatch',
+  PreRelease = 'prerelease'
 }
 
 /**
@@ -165,9 +182,13 @@ export async function copyUpdatedManifest(): Promise<void> {
 /**
  * Generates a new version string based on the current version and the specified update type.
  *
- * @param versionUpdateType - The type of version update (major, minor, patch, beta, or manual).
+ * Uses the `semver` package to compute the next version, supporting all npm increment types:
+ * `major`, `minor`, `patch`, `premajor`, `preminor`, `prepatch`, and `prerelease`.
+ * Pre-release versions use the `beta` identifier by default (e.g., `1.2.4-beta.0`).
+ *
+ * @param versionUpdateType - The type of version update or an explicit version string.
  * @returns A {@link Promise} that resolves to the new version string.
- * @throws Error if the current version format is invalid.
+ * @throws Error if the current version is invalid or the increment fails.
  */
 export async function getNewVersion(versionUpdateType: string): Promise<string> {
   const versionType = getVersionUpdateType(versionUpdateType);
@@ -178,49 +199,14 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
   const packageJson = await readPackageJson();
   const currentVersion = packageJson.version ?? '';
 
-  const match = /^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Patch>\d+)(?:-beta\.(?<Beta>\d+))?$/.exec(currentVersion);
-  assertNonNullable(match, `Invalid current version format: ${currentVersion}`);
+  const releaseType = versionType as ReleaseType;
+  const isPreReleaseType = releaseType.startsWith('pre');
+  const newVersion = isPreReleaseType
+    ? inc(currentVersion, releaseType, DEFAULT_PREID)
+    : inc(currentVersion, releaseType);
+  assertNonNullable(newVersion, `Failed to increment version from '${currentVersion}' with type '${versionType}'`);
 
-  const groups = ensureNonNullable(match.groups);
-  let major = Number(ensureNonNullable(groups['Major']));
-  let minor = Number(ensureNonNullable(groups['Minor']));
-  let patch = Number(ensureNonNullable(groups['Patch']));
-  let beta = Number(groups['Beta'] ?? '');
-
-  /* v8 ignore start -- All branches covered but v8 reports switch as partial. */
-  switch (versionType) {
-    /* v8 ignore stop */
-    case VersionUpdateType.Beta:
-      if (beta === 0) {
-        patch++;
-      }
-      beta++;
-      break;
-    case VersionUpdateType.Major:
-      major++;
-      minor = 0;
-      patch = 0;
-      beta = 0;
-      break;
-    case VersionUpdateType.Minor:
-      minor++;
-      patch = 0;
-      beta = 0;
-      break;
-    case VersionUpdateType.Patch:
-      if (beta === 0) {
-        patch++;
-      } else {
-        beta = 0;
-      }
-      break;
-    /* v8 ignore start -- Dead code: getVersionUpdateType already validates all cases before reaching getNewVersion switch. */
-    default:
-      throw new Error(`Invalid version update type: ${versionType}`);
-      /* v8 ignore stop */
-  }
-
-  return `${String(major)}.${String(minor)}.${String(patch)}${beta > 0 ? `-beta.${String(beta)}` : ''}`;
+  return newVersion;
 }
 
 /**
@@ -263,10 +249,13 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
 export function getVersionUpdateType(versionUpdateType: string): VersionUpdateType {
   const versionUpdateTypeEnum = versionUpdateType as VersionUpdateType;
   switch (versionUpdateTypeEnum) {
-    case VersionUpdateType.Beta:
     case VersionUpdateType.Major:
     case VersionUpdateType.Minor:
     case VersionUpdateType.Patch:
+    case VersionUpdateType.PreMajor:
+    case VersionUpdateType.PreMinor:
+    case VersionUpdateType.PrePatch:
+    case VersionUpdateType.PreRelease:
       return versionUpdateTypeEnum;
 
     default:
@@ -322,7 +311,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     ...filePaths,
     '--title',
     `v${newVersion}`,
-    ...(isBeta(newVersion) ? ['--prerelease'] : []),
+    ...(isPreRelease(newVersion) ? ['--prerelease'] : []),
     '--notes-file',
     '-'
   ], {
@@ -406,7 +395,7 @@ export async function updateChangelog(newVersion: string): Promise<void> {
  * 7. Adds updated files to Git, tags the commit, and pushes to the repository.
  * 8. If an Obsidian plugin, copies the updated manifest and publishes a GitHub release.
  *
- * @param versionUpdateType - The type of version update to perform (major, minor, patch, beta, or x.y.z[-beta:u]).
+ * @param versionUpdateType - The type of version update to perform (major, minor, patch, premajor, preminor, prepatch, prerelease, or x.y.z[-suffix]).
  * @param prepareGitHubRelease - A callback function to prepare the GitHub release.
  * @returns A {@link Promise} that resolves when the version update is complete.
  */
@@ -484,7 +473,9 @@ export async function updateVersionInFiles(newVersion: string): Promise<void> {
  */
 export function validate(versionUpdateType: string): void {
   if (getVersionUpdateType(versionUpdateType) === VersionUpdateType.Invalid) {
-    throw new Error('Invalid version update type. Please use \'major\', \'minor\', \'patch\', or \'x.y.z[-suffix]\' format.');
+    throw new Error(
+      'Invalid version update type. Please use \'major\', \'minor\', \'patch\', \'premajor\', \'preminor\', \'prepatch\', \'prerelease\', or \'x.y.z[-suffix]\' format.'
+    );
   }
 }
 
@@ -500,8 +491,8 @@ async function getLatestObsidianVersion(): Promise<string> {
   return ensureNonNullable(obsidianReleasesJson.name, 'Could not find the name of the latest Obsidian release');
 }
 
-function isBeta(version: string): boolean {
-  return version.includes(VersionUpdateType.Beta);
+function isPreRelease(version: string): boolean {
+  return prerelease(version) !== null;
 }
 
 function toSingleLine(str: string): string {
@@ -511,7 +502,7 @@ function toSingleLine(str: string): string {
 
 async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> {
   const manifestBetaJsonPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestBetaJson);
-  if (isBeta(newVersion)) {
+  if (isPreRelease(newVersion)) {
     await cp(
       resolvePathFromRootSafe(ObsidianPluginRepoPaths.ManifestJson),
       manifestBetaJsonPath,
