@@ -47,7 +47,6 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 
 - Extends `@tsconfig/strictest` — very strict settings
 - Target: ES2024, Module: NodeNext
-- `verbatimModuleSyntax: true` — use explicit `import type` for type-only imports
 - `allowImportingTsExtensions: true` — always use `.ts` extension in imports
 
 ### Build
@@ -80,13 +79,8 @@ export function myFunction(param: Type): ReturnType {
 
 ### Naming
 
-- Files: kebab-case (e.g., `array.ts`, `async.ts`, `value-provider.ts`)
 - Directories: kebab-case (e.g., `script-utils/bundlers/esbuild-impl`, `test-runners`)
 - **Exception:** `__mocks__/` files use PascalCase to mirror Obsidian API export names (e.g., `App.ts`, `Vault.ts`, `TFile.ts`)
-- Functions: camelCase
-- Classes: PascalCase
-- Constants: UPPER_SNAKE_CASE
-- Parameter-bag types: use `...Params` when the type is the **sole argument** of a function (`fn(params: FnParams)`); use `...Options` when the type is **supplementary configuration** alongside other positional args (`fn(arg1, arg2, options: FnOptions)`)
 
 ### Documentation
 
@@ -97,15 +91,11 @@ export function myFunction(param: Type): ReturnType {
 ### Imports
 
 - Sorted alphabetically (enforced by `eslint-plugin-perfectionist`)
-- Type imports separated from value imports (`import type` on its own line)
 - Always include `.ts` extension in relative imports
-- Prefer static imports over dynamic `import()` — only use dynamic imports when there is a concrete reason (lazy loading, conditional loading, circular dependency breaking)
 
 ### Code Quality
 
-- Do NOT use the `!` non-null assertion operator — use `assertNotNullable()` from `__tests__/test-helpers.ts` in tests instead
-- No default exports (except config files like `eslint.config.mts`)
-- v8 coverage ignore: use block form only (`/* v8 ignore start -- explanation. */` ... `/* v8 ignore stop */`). The single-line `/* v8 ignore next */` does NOT work in this project. The `start` comment MUST include a mandatory explanation ending with a dot, e.g., `/* v8 ignore start -- this is a type guard. */`.
+- Use `assertNotNullable()` from `__tests__/test-helpers.ts` in tests instead of `!`
 
 ## Testing
 
@@ -113,7 +103,6 @@ export function myFunction(param: Type): ReturnType {
 
 - The project aims for 100% test coverage. Every new or changed code path must be covered by tests.
 - Currently unit tests only; full E2E Obsidian Electron tests are planned for the next phase.
-- Every test must include at least one explicit assertion (e.g. `expect(...)`) that directly matches the test name/intent. Avoid tests that only rely on “not throwing” without an `expect`.
 
 ### Framework
 
@@ -153,9 +142,19 @@ describe('MyModule', () => {
 - Use `vi.fn()` for mock functions, `vi.useFakeTimers()`/`vi.useRealTimers()` for timer mocking
 - Use `vi.stubGlobal()` / `vi.unstubAllGlobals()` for global stubs
 
+## Dependencies
+
+### Pinned versions
+
+| Package | Version | Reason |
+|---|---|---|
+| `@codemirror/state` | `6.5.0` | `obsidian` peer dependency |
+| `@codemirror/view` | `6.38.6` | `obsidian` peer dependency |
+| `@lezer/common` | `1.2.3` | `obsidian` uses this version at runtime |
+| `@types/node` | `25.0.3` | Matches the Node.js version used in the project |
+
 ## Commits
 
-- Commit after each logical step. Do not batch unrelated changes into a single commit.
 - Conventional Commits enforced via commitlint + husky
 - Use `npm run commit` (Commitizen) for guided commit messages
 - Before each commit, run these commands and ensure they complete without errors:
