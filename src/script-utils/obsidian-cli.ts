@@ -26,12 +26,12 @@ import { exec } from './exec.ts';
  * @param args - Additional arguments to pass after `app`. Must be JSON-serializable.
  * @returns A {@link Promise} that resolves to the return value of `fn`.
  */
-export async function evalObsidianCli<Args extends unknown[], T>(fn: (app: App, ...args: Args) => Promisable<T>, ...args: Args): Promise<T> {
+export async function evalObsidianCli<Args extends unknown[], Result>(fn: (app: App, ...args: Args) => Promisable<Result>, ...args: Args): Promise<Result> {
   const fnString = fn.toString();
   const argsStr = args.length > 0 ? `, ...${JSON.stringify(args) as string}` : '';
   const expression = `await (${fnString})(app${argsStr})`;
   const resultJson = await exec(['obsidian', 'eval', `JSON.stringify(${expression})`], { isQuiet: true });
-  return JSON.parse(resultJson) as T;
+  return JSON.parse(resultJson) as Result;
 }
 
 /* v8 ignore stop */
