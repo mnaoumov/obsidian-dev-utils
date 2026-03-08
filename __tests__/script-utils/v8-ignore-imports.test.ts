@@ -9,18 +9,18 @@ import {
   it
 } from 'vitest';
 
-import * as changeExtensionPlugin from '../../src/script-utils/bundlers/esbuild/changeExtensionPlugin.ts';
-import * as copyToObsidianPluginsFolderPlugin from '../../src/script-utils/bundlers/esbuild/copyToObsidianPluginsFolderPlugin.ts';
-import * as customEsbuildOptionsPlugin from '../../src/script-utils/bundlers/esbuild/customEsbuildOptionsPlugin.ts';
-import * as Dependency from '../../src/script-utils/bundlers/esbuild/dependency.ts';
-import * as fixEsmPlugin from '../../src/script-utils/bundlers/esbuild/fixEsmPlugin.ts';
-import * as fixSourceMapsPlugin from '../../src/script-utils/bundlers/esbuild/fixSourceMapsPlugin.ts';
-import * as ObsidianPluginBuilder from '../../src/script-utils/bundlers/esbuild/obsidian-plugin-builder.ts';
-import * as preprocessPlugin from '../../src/script-utils/bundlers/esbuild/preprocessPlugin.ts';
-import * as renameCssPlugin from '../../src/script-utils/bundlers/esbuild/renameCssPlugin.ts';
-import * as svelteWrapperPlugin from '../../src/script-utils/bundlers/esbuild/svelteWrapperPlugin.ts';
-import * as eslintConfig from '../../src/script-utils/linters/eslint/eslint.config.ts';
-import * as markdownlintCli2Config from '../../src/script-utils/linters/markdownlint/markdownlint-cli2-config.ts';
+import * as changeExtensionPlugin from '../../src/script-utils/bundlers/esbuild-impl/changeExtensionPlugin.ts';
+import * as copyToObsidianPluginsFolderPlugin from '../../src/script-utils/bundlers/esbuild-impl/copyToObsidianPluginsFolderPlugin.ts';
+import * as customEsbuildOptionsPlugin from '../../src/script-utils/bundlers/esbuild-impl/customEsbuildOptionsPlugin.ts';
+import * as Dependency from '../../src/script-utils/bundlers/esbuild-impl/dependency.ts';
+import * as fixEsmPlugin from '../../src/script-utils/bundlers/esbuild-impl/fixEsmPlugin.ts';
+import * as fixSourceMapsPlugin from '../../src/script-utils/bundlers/esbuild-impl/fixSourceMapsPlugin.ts';
+import * as ObsidianPluginBuilder from '../../src/script-utils/bundlers/esbuild-impl/obsidian-plugin-builder.ts';
+import * as preprocessPlugin from '../../src/script-utils/bundlers/esbuild-impl/preprocessPlugin.ts';
+import * as renameCssPlugin from '../../src/script-utils/bundlers/esbuild-impl/renameCssPlugin.ts';
+import * as svelteWrapperPlugin from '../../src/script-utils/bundlers/esbuild-impl/svelteWrapperPlugin.ts';
+import * as eslintConfig from '../../src/script-utils/linters/eslint-config.ts';
+import * as markdownlintCli2Config from '../../src/script-utils/linters/markdownlint-cli2-config.ts';
 import * as NodeModules from '../../src/script-utils/node-modules.ts';
 import * as StateFieldSpec from '../../src/codemirror/state-field-spec.ts';
 import * as DebugController from '../../src/debug-controller.ts';

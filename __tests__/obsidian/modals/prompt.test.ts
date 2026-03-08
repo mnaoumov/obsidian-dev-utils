@@ -8,8 +8,8 @@ import {
   vi
 } from 'vitest';
 
-import { ButtonComponent } from '../../../__mocks__/obsidian/button-component.ts';
-import { TextComponent } from '../../../__mocks__/obsidian/text-component.ts';
+import { ButtonComponent } from '../../../__mocks__/obsidian/ButtonComponent.ts';
+import { TextComponent } from '../../../__mocks__/obsidian/TextComponent.ts';
 import { prompt } from '../../../src/obsidian/modals/prompt.ts';
 import { ensureNonNullable } from '../../../src/type-guards.ts';
 

@@ -8,7 +8,7 @@ import {
   vi
 } from 'vitest';
 
-import { ButtonComponent } from '../../../__mocks__/obsidian/button-component.ts';
+import { ButtonComponent } from '../../../__mocks__/obsidian/ButtonComponent.ts';
 import { confirm } from '../../../src/obsidian/modals/confirm.ts';
 
 vi.mock('../../../src/css-class.ts', () => ({

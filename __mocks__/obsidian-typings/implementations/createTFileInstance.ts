@@ -3,7 +3,7 @@ import type {
   TFile
 } from 'obsidian';
 
-import { TFile as MockTFile } from '../../obsidian/t-file.ts';
+import { TFile as MockTFile } from '../../obsidian/TFile.ts';
 import { createTFolderInstance } from './createTFolderInstance.ts';
 import { parentFolderPath } from './parentFolderPath.ts';
 

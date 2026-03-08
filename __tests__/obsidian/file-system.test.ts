@@ -14,7 +14,7 @@ import {
 
 import { createTFileInstance } from '../../__mocks__/obsidian-typings/implementations/createTFileInstance.ts';
 import { createTFolderInstance } from '../../__mocks__/obsidian-typings/implementations/createTFolderInstance.ts';
-import { createMockApp } from '../../__mocks__/obsidian/app.ts';
+import { createMockApp } from '../../__mocks__/obsidian/App.ts';
 import { castTo } from '../../src/object-utils.ts';
 import {
   asArrayOfFiles,

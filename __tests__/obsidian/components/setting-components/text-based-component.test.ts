@@ -6,7 +6,7 @@ import {
   it
 } from 'vitest';
 
-import { TextComponent } from '../../../../__mocks__/obsidian/text-component.ts';
+import { TextComponent } from '../../../../__mocks__/obsidian/TextComponent.ts';
 import { noop } from '../../../../src/function.ts';
 import { getTextBasedComponentValue } from '../../../../src/obsidian/components/setting-components/text-based-component.ts';
 import { assertNonNullable } from '../../../../src/type-guards.ts';
