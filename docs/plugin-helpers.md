@@ -27,7 +27,7 @@
 
 The links below contains the full documentation. Here in the docs we mention only the most important ones.
 
-## [PluginTypesBase](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/Plugin/PluginTypesBase.ts)
+## [PluginTypesBase](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/plugin/plugin-types-base.ts)
 
 It is a type helper to simplify working with generics.
 
@@ -51,7 +51,7 @@ export interface FooPluginTypes {
 
 Corresponding types will be extracted from this wrapper automatically when needed.
 
-## [PluginBase](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/Plugin/PluginBase.ts)
+## [PluginBase](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/plugin/plugin-base.ts)
 
 `PluginBase` is a base class for plugins, that has some additional useful features to standard [Obsidian Plugin class](https://docs.obsidian.md/Reference/TypeScript+API/Plugin).
 
@@ -71,7 +71,7 @@ The most important methods in the execution order:
 - `onunload()` - usually you don't need to override it.
 - `onunloadImpl()`
 
-## [PluginSettingsManagerBase](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/Plugin/PluginSettingsManagerBase.ts)
+## [PluginSettingsManagerBase](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/plugin/plugin-settings-manager-base.ts)
 
 ```ts
 export class FooPluginSettingsManager extends PluginSettingsManagerBase<FooPluginTypes> {
@@ -85,7 +85,7 @@ The most important methods in the execution order:
 - `onLoadRecord()`
 - `onSavingRecord()`
 
-## [PluginSettingsTabBase](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/Plugin/PluginSettingsTabBase.ts)
+## [PluginSettingsTabBase](https://github.com/mnaoumov/obsidian-dev-utils/tree/main/src/obsidian/plugin/plugin-settings-tab-base.ts)
 
 ```ts
 export class FooPluginSettingsTab extends PluginSettingsTabBase<FooPluginTypes> {

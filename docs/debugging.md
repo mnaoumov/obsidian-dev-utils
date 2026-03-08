@@ -20,7 +20,7 @@ window.DEBUG.enable('*:obsidian-dev-utils:*'); // show all debug messages for th
 window.DEBUG.enable('*'); // show all debug messages
 ```
 
-See full documentation of [`window.DEBUG`](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/DebugController.ts).
+See full documentation of [`window.DEBUG`](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/debug-controller.ts).
 
 > [!NOTE]
 >
