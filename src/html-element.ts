@@ -13,7 +13,7 @@ export interface ValidatorElement extends HTMLElement {
   /**
    * Checks the validity of the element.
    *
-   * @returns True if the element is valid, false otherwise.
+   * @returns `true` if the element is valid, `false` otherwise.
    */
   checkValidity(): boolean;
 
@@ -183,7 +183,7 @@ export function getZIndex(el: Element): number {
  * Checks if the element is visible in the offset parent.
  *
  * @param el - The element to check.
- * @returns True if the element is visible in the offset parent, false otherwise.
+ * @returns `true` if the element is visible in the offset parent, `false` otherwise.
  */
 export function isElementVisibleInOffsetParent(el: HTMLElement): boolean {
   const parentEl = el.offsetParent;
@@ -206,7 +206,7 @@ export function isElementVisibleInOffsetParent(el: HTMLElement): boolean {
  * Checks if the element is loaded.
  *
  * @param el - The element to check.
- * @returns True if the element is loaded, false otherwise.
+ * @returns `true` if the element is loaded, `false` otherwise.
  */
 export function isLoaded(el: Element): boolean {
   if (el instanceof HTMLBodyElement) {

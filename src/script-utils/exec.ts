@@ -22,22 +22,22 @@ export interface ExecOption {
   readonly cwd?: string;
 
   /**
-   * If true, suppresses the output of the command.
+   * If `true`, suppresses the output of the command.
    */
   readonly isQuiet?: boolean;
 
   /**
-   * If true, throws an error if the command fails.
+   * If `true`, throws an error if the command fails.
    */
   readonly shouldFailIfCalledFromOutsideRoot?: boolean;
 
   /**
-   * If true, ignores the exit code of the command.
+   * If `true`, ignores the exit code of the command.
    */
   readonly shouldIgnoreExitCode?: boolean;
 
   /**
-   * If false, only returns the output of the command.
+   * If `false`, only returns the output of the command.
    */
   readonly shouldIncludeDetails?: boolean;
 
@@ -78,9 +78,9 @@ export interface ExecResult {
  * @param command - The command to execute. It can be a string or an array of strings.
  * @param options - The options for the execution.
  * @returns A {@link Promise} that resolves with the output of the command.
- * @throws If the command fails with a non-zero exit code and `ignoreExitCode` is `false`.
+ * @throws If the command fails with a non-zero exit code and ignoreExitCode is `false`.
  *         The error message includes the exit code and stderr.
- *         If an error occurs during the execution and `ignoreExitCode` is `true`,
+ *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
 export async function exec(command: string | string[], options?: { withDetails?: false } & ExecOption): Promise<string>;
@@ -91,9 +91,9 @@ export async function exec(command: string | string[], options?: { withDetails?:
  * @param options - The options for the execution.
  * @returns A {@link Promise} that resolves with ExecResult object.
  *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
- * @throws If the command fails with a non-zero exit code and ignoreExitCode is false.
+ * @throws If the command fails with a non-zero exit code and ignoreExitCode is `false`.
  *         The error message includes the exit code and stderr.
- *         If an error occurs during the execution and ignoreExitCode is true,
+ *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
 export function exec(command: string | string[], options: { withDetails: true } & ExecOption): Promise<ExecResult>;
@@ -104,9 +104,9 @@ export function exec(command: string | string[], options: { withDetails: true } 
  * @param options - The options for the execution.
  * @returns A {@link Promise} that resolves with the output of the command or an ExecResult object.
  *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
- * @throws If the command fails with a non-zero exit code and ignoreExitCode is false.
+ * @throws If the command fails with a non-zero exit code and ignoreExitCode is `false`.
  *         The error message includes the exit code and stderr.
- *         If an error occurs during the execution and ignoreExitCode is true,
+ *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
 export function exec(command: string | string[], options: ExecOption = {}): Promise<ExecResult | string> {

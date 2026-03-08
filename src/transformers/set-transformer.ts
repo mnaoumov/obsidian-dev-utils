@@ -23,7 +23,7 @@ export class SetTransformer extends TypedTransformer<Set<unknown>, unknown[]> {
    * Checks if the value is a Set.
    *
    * @param value - The value to check.
-   * @returns True if the value is a Set, false otherwise.
+   * @returns `true` if the value is a Set, `false` otherwise.
    */
   public override canTransform(value: unknown): value is Set<unknown> {
     return value instanceof Set;

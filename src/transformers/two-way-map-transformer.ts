@@ -26,7 +26,7 @@ export class TwoWayMapTransformer extends TypedTransformer<TwoWayMap<unknown, un
    * Checks if the value is a TwoWayMap.
    *
    * @param value - The value to check.
-   * @returns True if the value is a TwoWayMap, false otherwise.
+   * @returns `true` if the value is a TwoWayMap, `false` otherwise.
    */
   public override canTransform(value: unknown): value is TwoWayMap<unknown, unknown> {
     return value instanceof TwoWayMap;

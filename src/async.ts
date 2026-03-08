@@ -472,10 +472,10 @@ export async function requestAnimationFrameAsync(): Promise<void> {
 }
 
 /**
- * Retries the provided function until it returns true or the timeout is reached.
+ * Retries the provided function until it returns `true` or the timeout is reached.
  *
  * @param params - The parameters for the function.
- * @returns A {@link Promise} that resolves when the function returns true or rejects when the timeout is reached.
+ * @returns A {@link Promise} that resolves when the function returns `true` or rejects when the timeout is reached.
  */
 export async function retryWithTimeout(params: RetryWithTimeoutParams): Promise<void> {
   const retryWithTimeoutDebugger = getLibDebugger('Async:retryWithTimeout');

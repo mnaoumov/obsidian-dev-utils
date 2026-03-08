@@ -342,7 +342,7 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
  *
  * @param str - The string to trim.
  * @param suffix - The suffix to remove from the end of the string.
- * @param shouldValidate - If true, throws an error if the string does not end with the suffix.
+ * @param shouldValidate - If `true`, throws an error if the string does not end with the suffix.
  * @returns The trimmed string.
  * @throws If `validate` is true and the string does not end with the suffix.
  */
@@ -363,7 +363,7 @@ export function trimEnd(str: string, suffix: string, shouldValidate?: boolean): 
  *
  * @param str - The string to trim.
  * @param prefix - The prefix to remove from the start of the string.
- * @param validate - If true, throws an error if the string does not start with the prefix.
+ * @param validate - If `true`, throws an error if the string does not start with the prefix.
  * @returns The trimmed string.
  * @throws If `validate` is true and the string does not start with the prefix.
  */

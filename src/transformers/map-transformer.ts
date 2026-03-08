@@ -25,7 +25,7 @@ export class MapTransformer extends TypedTransformer<Map<unknown, unknown>, MapE
    * Checks if the value is a Map.
    *
    * @param value - The value to check.
-   * @returns True if the value is a Map, false otherwise.
+   * @returns `true` if the value is a Map, `false` otherwise.
    */
   public override canTransform(value: unknown): value is Map<unknown, unknown> {
     return value instanceof Map;

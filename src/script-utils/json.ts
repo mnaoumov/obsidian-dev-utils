@@ -20,7 +20,7 @@ import {
  */
 export interface EditJsonOptions {
   /**
-   * If true, skips editing if the file does not exist.
+   * If `true`, skips editing if the file does not exist.
    */
   readonly shouldSkipIfMissing?: boolean;
 }
