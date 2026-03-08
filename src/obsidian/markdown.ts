@@ -23,16 +23,14 @@ import { InternalPluginName } from 'obsidian-typings/implementations';
 
 import type { PathOrAbstractFile } from './file-system.ts';
 
-import { requestAnimationFrameAsync } from '../async.ts';
 import { getZIndex } from '../html-element.ts';
-import { assertNonNullable } from '../type-guards.ts';
+import { getDomEventsHandlersConstructor } from './constructors/get-dom-events-handlers-constructor.ts';
 import {
   getAbstractFileOrNull,
   getPath,
   isFolder
 } from './file-system.ts';
 import { invokeWithPatchAsync } from './monkey-around.ts';
-import { trashSafe } from './vault.ts';
 
 let domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
 
@@ -70,8 +68,6 @@ export interface FullRenderParams {
    */
   readonly sourcePath?: string;
 }
-
-type RegisterDomEventsFn = typeof MarkdownPreviewRenderer.registerDomEvents;
 
 class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
   public get hoverPopover(): HoverPopover | null {
@@ -226,42 +222,6 @@ export async function renderInternalLink(app: App, pathOrAbstractFile: PathOrAbs
   const aEl = wrapperEl.find('a') as HTMLAnchorElement;
   await registerLinkHandlers(app, aEl);
   return aEl;
-}
-
-async function getDomEventsHandlersConstructor(app: App): Promise<DomEventsHandlersConstructor> {
-  let mdFile = app.vault.getMarkdownFiles()[0];
-  let shouldDelete = false;
-  if (!mdFile) {
-    // eslint-disable-next-line require-atomic-updates -- No race condition.
-    mdFile = await app.vault.create('__temp.md', '');
-    shouldDelete = true;
-  }
-  let ctor: DomEventsHandlersConstructor | null = null;
-  try {
-    await invokeWithPatchAsync(MarkdownPreviewRenderer, {
-      registerDomEvents: (next: RegisterDomEventsFn): RegisterDomEventsFn => {
-        return (el, handlers, childElFn) => {
-          ctor = handlers.constructor as DomEventsHandlersConstructor;
-          next(el, handlers, childElFn);
-        };
-      }
-    }, async () => {
-      const leaf = app.workspace.getLeaf(true);
-      await leaf.openFile(mdFile, {
-        active: true,
-        state: { mode: 'preview' }
-      });
-      await requestAnimationFrameAsync();
-      leaf.detach();
-    });
-
-    assertNonNullable(ctor, 'Failed to get register dom events handlers constructor');
-    return ctor;
-  } finally {
-    if (shouldDelete) {
-      await trashSafe(app, mdFile);
-    }
-  }
 }
 
 /* v8 ignore stop */
