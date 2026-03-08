@@ -27,8 +27,8 @@ import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
 import { visit } from 'unist-util-visit';
 
-import type { MaybeReturn } from '../type.ts';
 import type { GenericObject } from '../type-guards.ts';
+import type { MaybeReturn } from '../type.ts';
 import type { FileChange } from './file-change.ts';
 import type { PathOrFile } from './file-system.ts';
 import type { ProcessOptions } from './vault.ts';

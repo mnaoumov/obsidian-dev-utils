@@ -19,8 +19,8 @@ import type {
 
 import { ensureNonNullable } from '../type-guards.ts';
 import { renderCallout } from './callout.ts';
-import { renderPaginatedTable } from './dataview.ts';
 import { fixTitle } from './dataview-link.ts';
+import { renderPaginatedTable } from './dataview.ts';
 import {
   getAbstractFileOrNull,
   getMarkdownFiles,

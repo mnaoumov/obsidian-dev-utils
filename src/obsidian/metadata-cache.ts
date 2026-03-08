@@ -34,11 +34,11 @@ import {
   getPath,
   isFile
 } from './file-system.ts';
-import { parseFrontmatter } from './frontmatter.ts';
 import {
   isFrontmatterLinkCacheWithOffsets,
   toFrontmatterLinkCacheWithOffsets
 } from './frontmatter-link-cache-with-offsets.ts';
+import { parseFrontmatter } from './frontmatter.ts';
 import { t } from './i18n/i18n.ts';
 import { sortReferences } from './reference.ts';
 import {

@@ -26,12 +26,12 @@ import type {
   PluginTypesBase
 } from './plugin-types-base.ts';
 
+import { AsyncEvents } from '../../async-events.ts';
 import {
   convertAsyncToSync,
   invokeAsyncSafely,
   invokeAsyncSafelyAfterDelay
 } from '../../async.ts';
-import { AsyncEvents } from '../../async-events.ts';
 import { getDebugger } from '../../debug.ts';
 import {
   registerAsyncErrorEventHandler,

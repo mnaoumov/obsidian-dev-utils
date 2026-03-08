@@ -10,12 +10,12 @@ import type {
   UndefinedOnPartialDeep
 } from 'type-fest';
 
+import type { GenericObject } from './type-guards.ts';
 import type {
   ExactMembers,
   MaybeReturn,
   StringKeys
 } from './type.ts';
-import type { GenericObject } from './type-guards.ts';
 
 import { errorToString } from './error.ts';
 import { replaceAll } from './string.ts';

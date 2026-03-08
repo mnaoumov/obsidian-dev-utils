@@ -34,11 +34,11 @@ import type {
   PluginTypesBase
 } from './plugin-types-base.ts';
 
+import { AsyncEvents } from '../../async-events.ts';
 import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from '../../async.ts';
-import { AsyncEvents } from '../../async-events.ts';
 import { CssClass } from '../../css-class.ts';
 import {
   noop,
