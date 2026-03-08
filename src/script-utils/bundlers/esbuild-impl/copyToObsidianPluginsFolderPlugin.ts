@@ -16,7 +16,6 @@ import {
   join,
   toPosixPath
 } from '../../../path.ts';
-import { exec } from '../../exec.ts';
 import {
   cp,
   existsSync,
@@ -24,6 +23,7 @@ import {
   readFile,
   writeFile
 } from '../../node-modules.ts';
+import { evalObsidianCli } from '../../obsidian-cli.ts';
 
 /**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
@@ -100,7 +100,7 @@ async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: str
   }
 
   try {
-    await exec(['obsidian', 'eval', `app.plugins.enablePlugin('${pluginId}')`], { isQuiet: true });
+    await evalObsidianCli(`app.plugins.enablePlugin('${pluginId}')`);
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
     const isNotFound = errorMessage.includes('ENOENT') || errorMessage.includes('not found') || errorMessage.includes('not recognized');
