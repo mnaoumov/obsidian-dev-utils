@@ -148,7 +148,7 @@ describe('MyModule', () => {
 ### Pinned versions
 
 | Package | Version | Reason |
-|---|---|---|
+| --- | --- | --- |
 | `@codemirror/state` | `6.5.0` | `obsidian` peer dependency |
 | `@codemirror/view` | `6.38.6` | `obsidian` peer dependency |
 | `@lezer/common` | `1.2.3` | `obsidian` uses this version at runtime |
