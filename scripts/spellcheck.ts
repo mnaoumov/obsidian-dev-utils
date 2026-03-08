@@ -4,6 +4,6 @@
  * Spellcheck script.
  */
 
-import { spellcheck } from '../src/script-utils/linters/cspell/cspell.ts';
+import { spellcheck } from '../src/script-utils/linters/cspell.ts';
 
 await spellcheck();

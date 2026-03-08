@@ -6,7 +6,7 @@
 
 ## Commands
 
-All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint/ESLint.ts`, `formatters/dprint/dprint.ts`).
+All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint.ts`, `formatters/dprint.ts`).
 
 - `npm test` — run tests (Vitest)
 - `npm run test:coverage` — run tests with v8 coverage
@@ -33,12 +33,13 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - `__tests__/` — test files, mirrors `src/` structure
 - `__mocks__/obsidian/` — mock implementations for the `obsidian` package (one file per export)
 - `__mocks__/obsidian-typings/` — mock implementations for `obsidian-typings`
-- `src/script-utils/bundlers/esbuild/` — esbuild bundler (build, dev)
-- `src/script-utils/linters/eslint/` — ESLint linting
-- `src/script-utils/linters/markdownlint/` — Markdown linting
-- `src/script-utils/linters/cspell/` — spellchecking
-- `src/script-utils/formatters/dprint/` — dprint formatting
-- `src/script-utils/test-runners/vitest/` — Vitest test runner
+- `src/script-utils/bundlers/esbuild.ts` — public API for esbuild bundler (build, dev)
+- `src/script-utils/bundlers/esbuild-impl/` — internal esbuild implementation details
+- `src/script-utils/linters/eslint.ts` — ESLint linting
+- `src/script-utils/linters/markdownlint.ts` — Markdown linting
+- `src/script-utils/linters/cspell.ts` — spellchecking
+- `src/script-utils/formatters/dprint.ts` — dprint formatting
+- `src/script-utils/test-runners/vitest.ts` — Vitest test runner
 - `scripts/` — npm script entry points (executed via `jiti`), each imports directly from the relevant tool module
 - `dist/` — compiled output (ESM `.mjs` + CJS `.cjs` + type declarations)
 
@@ -79,8 +80,9 @@ export function myFunction(param: Type): ReturnType {
 
 ### Naming
 
-- Files: PascalCase (e.g., `Array.ts`, `Async.ts`, `ValueProvider.ts`)
-- Directories: kebab-case (e.g., `script-utils/bundlers/esbuild`, `test-runners/vitest`)
+- Files: kebab-case (e.g., `array.ts`, `async.ts`, `value-provider.ts`)
+- Directories: kebab-case (e.g., `script-utils/bundlers/esbuild-impl`, `test-runners`)
+- **Exception:** `__mocks__/` files use PascalCase to mirror Obsidian API export names (e.g., `App.ts`, `Vault.ts`, `TFile.ts`)
 - Functions: camelCase
 - Classes: PascalCase
 - Constants: UPPER_SNAKE_CASE

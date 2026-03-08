@@ -15,11 +15,11 @@ import type { GenericObject } from '../../src/type-guards.ts';
 
 import { createTFileInstance } from '../../__mocks__/obsidian-typings/implementations/createTFileInstance.ts';
 import { createTFolderInstance } from '../../__mocks__/obsidian-typings/implementations/createTFolderInstance.ts';
-import { createMockApp } from '../../__mocks__/obsidian/app.ts';
+import { createMockApp } from '../../__mocks__/obsidian/App.ts';
 import {
   deleteVaultAbstractFile,
   setVaultAbstractFile
-} from '../../__mocks__/obsidian/vault.ts';
+} from '../../__mocks__/obsidian/Vault.ts';
 import { castTo } from '../../src/object-utils.ts';
 import { retryWithTimeoutNotice } from '../../src/obsidian/async-with-notice.ts';
 import { lockEditor } from '../../src/obsidian/editor.ts';

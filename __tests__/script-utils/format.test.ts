@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import { format } from '../../src/script-utils/formatters/dprint/dprint.ts';
+import { format } from '../../src/script-utils/formatters/dprint.ts';
 
 const {
   mockExecFromRoot,
