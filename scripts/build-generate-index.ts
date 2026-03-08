@@ -23,14 +23,17 @@ await wrapCliTask(async () => {
   await generateIndex(ObsidianDevUtilsRepoPaths.Src);
 });
 
-async function generateIndex(folder: string): Promise<void> {
+async function generateIndex(folder: string): Promise<boolean> {
   const dirents = await readdirPosix(folder, { withFileTypes: true });
   const lines = (await asyncMap(dirents, (dirent) => handleDirent(folder, dirent)))
     .filter((line) => line !== undefined);
 
-  if (lines.length > 0) {
-    await generate(join(folder, ObsidianDevUtilsRepoPaths.IndexTs), lines);
+  if (lines.length === 0) {
+    return false;
   }
+
+  await generate(join(folder, ObsidianDevUtilsRepoPaths.IndexTs), lines);
+  return true;
 }
 
 async function handleDirent(folder: string, dirent: Dirent): Promise<string | undefined> {
@@ -57,7 +60,10 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
   let sourceFile: string;
   let name: string;
   if (dirent.isDirectory()) {
-    await generateIndex(join(folder, dirent.name));
+    const hasExports = await generateIndex(join(folder, dirent.name));
+    if (!hasExports) {
+      return;
+    }
     sourceFile = normalizeIfRelative(join(dirent.name, ObsidianDevUtilsRepoPaths.IndexTs));
     name = dirent.name;
   } else {
