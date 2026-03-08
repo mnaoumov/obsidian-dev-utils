@@ -100,7 +100,7 @@ async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: str
   }
 
   try {
-    await evalObsidianCli(`app.plugins.enablePlugin('${pluginId}')`);
+    await evalObsidianCli((app, id) => app.plugins.enablePlugin(id), pluginId);
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
     const isNotFound = errorMessage.includes('ENOENT') || errorMessage.includes('not found') || errorMessage.includes('not recognized');
