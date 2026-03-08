@@ -16,10 +16,12 @@ import {
   join,
   toPosixPath
 } from '../../../path.ts';
+import { exec } from '../../exec.ts';
 import {
   cp,
   existsSync,
   mkdir,
+  readFile,
   writeFile
 } from '../../node-modules.ts';
 
@@ -75,9 +77,33 @@ export function copyToObsidianPluginsFolderPlugin(
             await writeFile(join(hotReloadFolder, fileName), text);
           }
         }
+
+        await enableCommunityPlugin(obsidianConfigFolder, 'hot-reload');
+        await enableCommunityPlugin(obsidianConfigFolder, pluginName);
       });
     }
   };
+}
+
+async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: string): Promise<void> {
+  const communityPluginsPath = join(obsidianConfigFolder, 'community-plugins.json');
+  let plugins: string[] = [];
+  if (existsSync(communityPluginsPath)) {
+    const content = await readFile(communityPluginsPath, 'utf-8');
+    plugins = JSON.parse(content) as string[];
+  }
+
+  if (!plugins.includes(pluginId)) {
+    plugins.push(pluginId);
+    const JSON_INDENT = 2;
+    await writeFile(communityPluginsPath, JSON.stringify(plugins, null, JSON_INDENT), 'utf-8');
+  }
+
+  try {
+    await exec(['obsidian', 'eval', `app.plugins.enablePlugin('${pluginId}')`], { isQuiet: true });
+  } catch {
+    // Obsidian CLI may not be available; plugin will be enabled on next vault open.
+  }
 }
 
 /* v8 ignore stop */
