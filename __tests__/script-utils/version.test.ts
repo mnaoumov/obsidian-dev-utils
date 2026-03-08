@@ -134,8 +134,20 @@ describe('VersionUpdateType', () => {
     expect(VersionUpdateType.Patch).toBe('patch');
   });
 
-  it('should have Beta equal to "beta"', () => {
-    expect(VersionUpdateType.Beta).toBe('beta');
+  it('should have PreMajor equal to "premajor"', () => {
+    expect(VersionUpdateType.PreMajor).toBe('premajor');
+  });
+
+  it('should have PreMinor equal to "preminor"', () => {
+    expect(VersionUpdateType.PreMinor).toBe('preminor');
+  });
+
+  it('should have PrePatch equal to "prepatch"', () => {
+    expect(VersionUpdateType.PrePatch).toBe('prepatch');
+  });
+
+  it('should have PreRelease equal to "prerelease"', () => {
+    expect(VersionUpdateType.PreRelease).toBe('prerelease');
   });
 
   it('should have Manual equal to "manual"', () => {
@@ -152,7 +164,10 @@ describe('getVersionUpdateType', () => {
     ['major', VersionUpdateType.Major],
     ['minor', VersionUpdateType.Minor],
     ['patch', VersionUpdateType.Patch],
-    ['beta', VersionUpdateType.Beta],
+    ['premajor', VersionUpdateType.PreMajor],
+    ['preminor', VersionUpdateType.PreMinor],
+    ['prepatch', VersionUpdateType.PrePatch],
+    ['prerelease', VersionUpdateType.PreRelease],
     ['1.2.3', VersionUpdateType.Manual],
     ['1.2.3-beta.1', VersionUpdateType.Manual],
     ['0.0.1', VersionUpdateType.Manual],
@@ -170,7 +185,10 @@ describe('validate', () => {
     ['major'],
     ['minor'],
     ['patch'],
-    ['beta'],
+    ['premajor'],
+    ['preminor'],
+    ['prepatch'],
+    ['prerelease'],
     ['1.2.3']
   ])('should not throw for valid input %j', (input: string) => {
     expect(() => {
@@ -214,44 +232,62 @@ describe('getNewVersion', () => {
     expect(result).toBe('1.2.4');
   });
 
-  it('should create first beta from non-beta version', async () => {
+  it('should bump prerelease from non-prerelease version', async () => {
     mockReadPackageJson.mockResolvedValue({ version: '1.2.3' });
-    const result = await getNewVersion('beta');
+    const result = await getNewVersion('prerelease');
+    expect(result).toBe('1.2.4-beta.0');
+  });
+
+  it('should increment prerelease from existing prerelease version', async () => {
+    mockReadPackageJson.mockResolvedValue({ version: '1.2.4-beta.0' });
+    const result = await getNewVersion('prerelease');
     expect(result).toBe('1.2.4-beta.1');
   });
 
-  it('should increment beta from existing beta version', async () => {
-    mockReadPackageJson.mockResolvedValue({ version: '1.2.4-beta.1' });
-    const result = await getNewVersion('beta');
-    expect(result).toBe('1.2.4-beta.2');
+  it('should bump premajor version', async () => {
+    mockReadPackageJson.mockResolvedValue({ version: '1.2.3' });
+    const result = await getNewVersion('premajor');
+    expect(result).toBe('2.0.0-beta.0');
   });
 
-  it('should promote beta to release on patch bump', async () => {
+  it('should bump preminor version', async () => {
+    mockReadPackageJson.mockResolvedValue({ version: '1.2.3' });
+    const result = await getNewVersion('preminor');
+    expect(result).toBe('1.3.0-beta.0');
+  });
+
+  it('should bump prepatch version', async () => {
+    mockReadPackageJson.mockResolvedValue({ version: '1.2.3' });
+    const result = await getNewVersion('prepatch');
+    expect(result).toBe('1.2.4-beta.0');
+  });
+
+  it('should promote prerelease to release on patch bump', async () => {
     mockReadPackageJson.mockResolvedValue({ version: '1.2.4-beta.2' });
     const result = await getNewVersion('patch');
     expect(result).toBe('1.2.4');
   });
 
-  it('should reset beta on major bump', async () => {
+  it('should reset prerelease on major bump', async () => {
     mockReadPackageJson.mockResolvedValue({ version: '1.2.4-beta.2' });
     const result = await getNewVersion('major');
     expect(result).toBe('2.0.0');
   });
 
-  it('should reset beta on minor bump', async () => {
+  it('should reset prerelease on minor bump', async () => {
     mockReadPackageJson.mockResolvedValue({ version: '1.2.4-beta.2' });
     const result = await getNewVersion('minor');
     expect(result).toBe('1.3.0');
   });
 
-  it('should throw for invalid current version format', async () => {
+  it('should throw for invalid current version', async () => {
     mockReadPackageJson.mockResolvedValue({ version: 'invalid' });
-    await expect(getNewVersion('patch')).rejects.toThrow('Invalid current version format');
+    await expect(getNewVersion('patch')).rejects.toThrow('Failed to increment version');
   });
 
-  it('should handle missing version in package.json', async () => {
+  it('should throw for missing version in package.json', async () => {
     mockReadPackageJson.mockResolvedValue({});
-    await expect(getNewVersion('patch')).rejects.toThrow('Invalid current version format');
+    await expect(getNewVersion('patch')).rejects.toThrow('Failed to increment version');
   });
 });
 
@@ -448,7 +484,7 @@ describe('publishGitHubRelease', () => {
     );
   });
 
-  it('should add --prerelease flag for beta versions', async () => {
+  it('should add --prerelease flag for pre-release versions', async () => {
     setupReleaseNotesMocks();
     mockReaddirPosix.mockResolvedValue(['main.js']);
     mockExistsSync.mockReturnValue(true);
@@ -617,19 +653,19 @@ describe('updateVersion', () => {
     expect(prepareRelease).toHaveBeenCalledWith('1.0.1');
   });
 
-  it('should run updateVersionInFilesForPlugin for obsidian plugin with beta', async () => {
+  it('should run updateVersionInFilesForPlugin for obsidian plugin with prerelease', async () => {
     setupFullMocks();
     mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
     mockExistsSync.mockImplementation((path: string) => path.includes('manifest.json'));
     mockReaddirPosix.mockResolvedValue([]);
-    await updateVersion('beta');
+    await updateVersion('prerelease');
     expect(mockCp).toHaveBeenCalled();
     expect(mockEditJson).toHaveBeenCalledTimes(1);
 
     const betaManifestCallback = mockEditJson.mock.calls[0]?.[1] as (m: Record<string, string>) => void;
     const betaManifest: Record<string, string> = { version: '1.0.0' };
     betaManifestCallback(betaManifest);
-    expect(betaManifest['version']).toBe('1.0.1-beta.1');
+    expect(betaManifest['version']).toBe('1.0.1-beta.0');
   });
 
   it('should use npm env vars when no version type provided', async () => {
@@ -675,7 +711,7 @@ describe('updateVersion', () => {
     }
   });
 
-  it('should remove manifest-beta.json for non-beta obsidian plugin release when it exists', async () => {
+  it('should remove manifest-beta.json for non-prerelease obsidian plugin release when it exists', async () => {
     setupFullMocks();
     mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
     mockExistsSync.mockImplementation((path: string) => path.includes('manifest.json') || path.includes('manifest-beta.json'));

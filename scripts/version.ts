@@ -24,8 +24,8 @@ await wrapCliTask(async () => {
   const VERSION_UPDATE_TYPE_ARG_INDEX = 2;
   const versionUpdateTypeStr = process.argv[VERSION_UPDATE_TYPE_ARG_INDEX];
   await updateVersion(versionUpdateTypeStr, prepareGitHubRelease);
-  const isBeta = versionUpdateTypeStr?.includes('beta');
-  await publish(isBeta);
+  const isPreRelease = Boolean(versionUpdateTypeStr?.startsWith('pre')) || Boolean(versionUpdateTypeStr?.includes('-'));
+  await publish(isPreRelease);
 });
 
 async function prepareGitHubRelease(newVersion: string): Promise<void> {
