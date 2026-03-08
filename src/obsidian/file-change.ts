@@ -20,8 +20,8 @@ import {
 import type { GenericObject } from '../type-guards.ts';
 import type { ValueProvider } from '../value-provider.ts';
 import type { PathOrFile } from './file-system.ts';
-import type { CombinedFrontmatter } from './frontmatter.ts';
 import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-with-offsets.ts';
+import type { CombinedFrontmatter } from './frontmatter.ts';
 import type {
   CanvasFileNodeReference,
   CanvasReference,
@@ -42,13 +42,13 @@ import {
   isCanvasFile
 } from './file-system.ts';
 import {
-  parseFrontmatter,
-  setFrontmatter
-} from './frontmatter.ts';
-import {
   isFrontmatterLinkCacheWithOffsets,
   toFrontmatterLinkCacheWithOffsets
 } from './frontmatter-link-cache-with-offsets.ts';
+import {
+  parseFrontmatter,
+  setFrontmatter
+} from './frontmatter.ts';
 import {
   isCanvasReference,
   referenceToFileChange

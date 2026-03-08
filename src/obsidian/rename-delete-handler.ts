@@ -79,6 +79,7 @@ import {
 } from './metadata-cache.ts';
 import { registerPatch } from './monkey-around.ts';
 import { addToQueue } from './queue.ts';
+import { deleteIfNotUsed } from './vault-delete.ts';
 import {
   deleteEmptyFolder,
   deleteEmptyFolderHierarchy,
@@ -86,7 +87,6 @@ import {
   renameSafe,
   trashSafe
 } from './vault.ts';
-import { deleteIfNotUsed } from './vault-delete.ts';
 
 /**
  * A behavior of the rename/delete handler when deleting empty folders.

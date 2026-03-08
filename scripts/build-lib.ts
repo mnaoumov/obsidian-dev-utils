@@ -12,7 +12,6 @@ import {
   join,
   normalizeIfRelative
 } from '../src/path.ts';
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import { changeExtensionPlugin } from '../src/script-utils/bundlers/esbuild-impl/changeExtensionPlugin.ts';
 import { fixEsmPlugin } from '../src/script-utils/bundlers/esbuild-impl/fixEsmPlugin.ts';
 import {
@@ -20,6 +19,7 @@ import {
   invokeEsbuild
 } from '../src/script-utils/bundlers/esbuild-impl/obsidian-plugin-builder.ts';
 import { preprocessPlugin } from '../src/script-utils/bundlers/esbuild-impl/preprocessPlugin.ts';
+import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import { readdirPosix } from '../src/script-utils/fs.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 
