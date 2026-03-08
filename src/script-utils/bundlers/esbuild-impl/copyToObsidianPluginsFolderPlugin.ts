@@ -101,8 +101,8 @@ async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: str
 
   try {
     await exec(['obsidian', 'eval', `app.plugins.enablePlugin('${pluginId}')`], { isQuiet: true });
-  } catch {
-    // Obsidian CLI may not be available; plugin will be enabled on next vault open.
+  } catch (e: unknown) {
+    console.error(`Failed to enable plugin '${pluginId}' via Obsidian CLI. It will be enabled on next vault open.`, e);
   }
 }
 
