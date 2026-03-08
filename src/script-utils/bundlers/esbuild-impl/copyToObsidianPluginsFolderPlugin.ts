@@ -102,7 +102,13 @@ async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: str
   try {
     await exec(['obsidian', 'eval', `app.plugins.enablePlugin('${pluginId}')`], { isQuiet: true });
   } catch (e: unknown) {
-    console.error(`Failed to enable plugin '${pluginId}' via Obsidian CLI. It will be enabled on next vault open.`, e);
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    const isNotFound = errorMessage.includes('ENOENT') || errorMessage.includes('not found') || errorMessage.includes('not recognized');
+    if (isNotFound) {
+      console.error(`Obsidian CLI is not installed. Plugin '${pluginId}' will be enabled on next vault open. See https://help.obsidian.md/cli`);
+    } else {
+      console.error(`Failed to enable plugin '${pluginId}' via Obsidian CLI.`, e);
+    }
   }
 }
 
