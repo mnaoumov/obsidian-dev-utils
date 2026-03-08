@@ -24,7 +24,7 @@ import { InternalPluginName } from 'obsidian-typings/implementations';
 import type { PathOrAbstractFile } from './file-system.ts';
 
 import { getZIndex } from '../html-element.ts';
-import { getDomEventsHandlersConstructor } from './constructors/get-dom-events-handlers-constructor.ts';
+import { getDomEventsHandlersConstructor } from './constructors/getDomEventsHandlersConstructor.ts';
 import {
   getAbstractFileOrNull,
   getPath,

@@ -81,6 +81,7 @@ export function myFunction(param: Type): ReturnType {
 
 - Directories: kebab-case (e.g., `script-utils/bundlers/esbuild-impl`, `test-runners`)
 - **Exception:** `__mocks__/` files use PascalCase to mirror Obsidian API export names (e.g., `App.ts`, `Vault.ts`, `TFile.ts`)
+- **Exception:** `constructors/` files use camelCase matching the exported function name (e.g., `getDomEventsHandlersConstructor.ts`), mirroring the `obsidian-typings` Constructors convention
 
 ### Documentation
 
