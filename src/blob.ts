@@ -110,7 +110,7 @@ export function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
  * Checks if a given file is an image.
  *
  * @param file - The file to check.
- * @returns True if the file is an image, false otherwise.
+ * @returns `true` if the file is an image, `false` otherwise.
  */
 export function isImageFile(file: File): boolean {
   return file.type.startsWith('image/');

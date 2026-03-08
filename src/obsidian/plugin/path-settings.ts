@@ -98,7 +98,7 @@ export class PathSettings {
    * Checks if a path is ignored by the include/exclude path settings.
    *
    * @param path - The path to check.
-   * @returns True if the path is ignored, false otherwise.
+   * @returns `true` if the path is ignored, `false` otherwise.
    */
   public isPathIgnored(path: string): boolean {
     return this._includePaths.isPathIgnored(path) || this._excludePaths.isPathIgnored(path);

@@ -86,7 +86,7 @@ export interface ToJsonOptions {
   readonly shouldHandleErrors: boolean;
 
   /**
-   * Specifies whether to handle undefined values in the JSON output.
+   * Specifies whether to handle `undefined` values in the JSON output.
    * Defaults to `false`.
    */
   readonly shouldHandleUndefined: boolean;
@@ -434,34 +434,34 @@ export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): 
 }
 
 /**
- * Removes all undefined properties from an object when there are no mandatory keys with undefined values.
+ * Removes all `undefined` properties from an object when there are no mandatory keys with `undefined` values.
  *
  * @typeParam Type - The type of the object.
  * @param args - The arguments to the function.
- * @returns The object with all undefined properties removed.
+ * @returns The object with all `undefined` properties removed.
  */
 export function removeUndefinedProperties<Type extends object>(
   ...args: RemoveUndefinedOverload<Type>
 ): Type;
 /**
- * Removes all undefined properties from an object when there are mandatory keys with undefined values.
+ * Removes all `undefined` properties from an object when there are mandatory keys with `undefined` values.
  *
  * @typeParam Type - The type of the object.
  * @typeParam KeysToKeep - The keys to keep.
  * @param args - The arguments to the function.
- * @returns The object with all undefined properties removed.
+ * @returns The object with all `undefined` properties removed.
  */
 export function removeUndefinedProperties<Type extends object, const KeysToKeep extends readonly string[]>(
   ...args: RemoveUndefinedWithKeysOverload<Type, KeysToKeep>
 ): Type;
 /**
- * Removes all undefined properties from an object.
+ * Removes all `undefined` properties from an object.
  *
  * @typeParam Type - The type of the object.
  * @typeParam KeysToKeep - The keys to keep.
- * @param obj - The object to remove undefined properties from.
+ * @param obj - The object to remove `undefined` properties from.
  * @param keysToKeep - The keys to keep.
- * @returns The object with all undefined properties removed.
+ * @returns The object with all `undefined` properties removed.
  */
 export function removeUndefinedProperties<Type extends object>(obj: Type, keysToKeep?: readonly string[]): Type {
   for (const [key, value] of Object.entries(obj) as [StringKeys<Type>, unknown][]) {

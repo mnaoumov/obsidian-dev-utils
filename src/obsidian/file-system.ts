@@ -356,7 +356,7 @@ export function getFolderOrNull(app: App, pathOrFolder: null | PathOrFolder, isC
  *
  * @param app - The Obsidian App instance.
  * @param pathOrFolder - The path or folder to retrieve the markdown files from.
- * @param isRecursive - Optional. Specifies whether to recursively search for markdown files within subfolders. Default is false.
+ * @param isRecursive - Optional. Specifies whether to recursively search for markdown files within subfolders. Default is `false`.
  * @returns An array of files representing the markdown files.
  */
 export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursive?: boolean): TFile[] {

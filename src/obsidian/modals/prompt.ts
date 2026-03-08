@@ -67,7 +67,7 @@ export interface PromptParams {
    * A function to validate the input value.
    *
    * @param value - The input value to validate.
-   * @returns an error message if the value is invalid, or null if the value is valid.
+   * @returns an error message if the value is invalid, or `null` if the value is valid.
    */
   readonly valueValidator?: (value: string) => Promisable<MaybeReturn<string>>;
 }
@@ -154,7 +154,7 @@ class PromptModal extends ModalBase<null | string, PromptParams> {
  * Displays a prompt modal in Obsidian to get user input.
  *
  * @param params - The parameters for the prompt modal.
- * @returns A {@link Promise} that resolves with the user input or null if the prompt was cancelled.
+ * @returns A {@link Promise} that resolves with the user input or `null` if the prompt was cancelled.
  */
 export async function prompt(params: PromptParams): Promise<null | string> {
   return await showModal<null | string>((resolve) => new PromptModal(params, resolve));

@@ -286,7 +286,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   /**
    * Creates a plugin settings tab.
    *
-   * @returns The settings tab or null if not applicable.
+   * @returns The settings tab or `null` if not applicable.
    */
   protected createSettingsTab(): ExtractPluginSettingsTab<PluginTypes> | null {
     return null;

@@ -68,7 +68,7 @@ export abstract class CliTaskResult {
   /**
    * Creates a CliTaskResult representing a successful task result.
    *
-   * @param isSuccess - A boolean indicating whether the task was successful. Default is true.
+   * @param isSuccess - A boolean indicating whether the task was successful. Default is `true`.
    * @returns A CliTaskResult object representing a successful task result.
    */
   public static Success(isSuccess = true): CliTaskResult {

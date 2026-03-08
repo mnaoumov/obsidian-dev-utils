@@ -224,7 +224,7 @@ export async function getBacklinksForFileSafe(
  *
  * @param app - The Obsidian app instance.
  * @param fileOrPath - The file or path to retrieve the metadata for.
- * @returns The cached metadata for the file, or null if it doesn't exist.
+ * @returns The cached metadata for the file, or `null` if it doesn't exist.
  */
 export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<CachedMetadata | null> {
   const file = getFileOrNull(app, fileOrPath);

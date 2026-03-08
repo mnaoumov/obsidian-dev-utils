@@ -866,7 +866,7 @@ export function escapeAlias(alias: string): string {
  * @param link - The reference cache for the link.
  * @param sourcePathOrFile - The source path or file.
  * @param shouldAllowNonExistingFile - Whether to allow non-existing files. Defaults to `false`.
- * @returns The file associated with the link, or null if not found.
+ * @returns The file associated with the link, or `null` if not found.
  */
 export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: PathOrFile, shouldAllowNonExistingFile = false): null | TFile {
   const { linkPath } = splitSubpath(link.link);
@@ -1468,7 +1468,7 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
         linkText = matchedFiles.length === 1 && matchedFiles[0] === targetFile ? targetFile.name : targetFile.path;
         break;
       }
-      /* v8 ignore start -- All valid FinalLinkPathStyle values are handled above */
+      /* v8 ignore start -- All valid FinalLinkPathStyle values are handled above. */
       default:
         throw new Error(`Invalid link path style: ${config.linkPathStyle as string}.`);
         /* v8 ignore stop */
@@ -1615,7 +1615,7 @@ function getGenerateMarkdownLinkDefaultOptionsFns(app: App): (() => Partial<Gene
 function getLinkConfig(params: GenerateMarkdownLinkParams, targetFile: TFile): LinkConfig {
   const { app } = params;
   return {
-    /* v8 ignore start -- requireApiVersion fallback is only reached in older Obsidian versions */
+    /* v8 ignore start -- requireApiVersion fallback is only reached in older Obsidian versions. */
     isEmbed: params.isEmbed ?? (params.originalLink ? testEmbed(params.originalLink) : undefined)
       ?? (!requireApiVersion('1.10.0') && !isMarkdownFile(app, targetFile)),
     /* v8 ignore stop */
@@ -1685,7 +1685,7 @@ function parseWikilinkNode(node: WikiLinkNode, str: string): ParseLinkResult {
 }
 
 function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: TablePosition[]): boolean {
-  /* v8 ignore start -- getFileChanges only calls this for non-canvas files which always have content changes */
+  /* v8 ignore start -- getFileChanges only calls this for non-canvas files which always have content changes. */
   if (!isContentChange(fileChange)) {
     return false;
   }

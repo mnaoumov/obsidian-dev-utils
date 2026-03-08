@@ -25,7 +25,7 @@ export class DurationTransformer extends TypedTransformer<moment.Duration, strin
    * Checks if the value is a Duration.
    *
    * @param value - The value to check.
-   * @returns True if the value is a Duration, false otherwise.
+   * @returns `true` if the value is a Duration, `false` otherwise.
    */
   public override canTransform(value: unknown): value is moment.Duration {
     const maybeDuration = (value ?? {}) as Partial<moment.Duration>;

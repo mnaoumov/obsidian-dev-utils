@@ -92,10 +92,10 @@ export interface RunWithTimeoutNoticeParams<Result> {
 }
 
 /**
- * Retries the provided function until it returns true or the timeout is reached and displays a notice if the function times out.
+ * Retries the provided function until it returns `true` or the timeout is reached and displays a notice if the function times out.
  *
  * @param params - The parameters for the function.
- * @returns A {@link Promise} that resolves when the function returns true or rejects when the timeout is reached.
+ * @returns A {@link Promise} that resolves when the function returns `true` or rejects when the timeout is reached.
  */
 export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParams): Promise<void> {
   return retryWithTimeout({
