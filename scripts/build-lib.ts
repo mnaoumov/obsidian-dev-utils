@@ -1,9 +1,3 @@
-/**
- * @packageDocumentation
- *
- * Build lib script.
- */
-
 import type { BuildOptions } from 'esbuild';
 
 import { context } from 'esbuild';

@@ -1,9 +1,3 @@
-/**
- * @packageDocumentation
- *
- * Build styles script.
- */
-
 import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import { execFromRoot } from '../src/script-utils/root.ts';
 
