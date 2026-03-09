@@ -193,8 +193,8 @@ See `static/scripts/` for the full set of consumer examples.
 
 ## Commits
 
-- Conventional Commits enforced via commitlint + husky + nano-staged
-- nano-staged runs spellcheck, compilation, lint, and format on staged files via pre-commit hook
+- Conventional Commits enforced via commitlint + husky (commit-msg hook)
+- nano-staged runs spellcheck, compilation, lint, and format on staged files via husky pre-commit hook
 - Use `npm run commit` (Commitizen) for guided commit messages
 - Before each commit, run these commands and ensure they complete without errors:
   - `npm run spellcheck`
