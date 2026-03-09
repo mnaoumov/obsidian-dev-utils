@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash",
-      "Read",
-      "Bash(cd F:\\\\dev\\\\projects\\\\!obsidian\\\\obsidian-dev-utils:*)"
-    ]
-  }
-}
