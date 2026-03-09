@@ -24,6 +24,7 @@ import {
   updateVersion,
   updateVersionInFiles,
   validate,
+  version,
   VersionUpdateType
 } from '../../src/script-utils/version.ts';
 
@@ -742,5 +743,11 @@ describe('updateVersion', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe('version', () => {
+  it('should delegate to updateVersion', async () => {
+    await expect(version('invalid')).rejects.toThrow('Invalid version update type');
   });
 });
