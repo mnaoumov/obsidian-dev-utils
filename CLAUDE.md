@@ -40,7 +40,10 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - `src/script-utils/linters/cspell.ts` — spellchecking
 - `src/script-utils/formatters/dprint.ts` — dprint formatting
 - `src/script-utils/test-runners/vitest.ts` — Vitest test runner
-- `scripts/` — npm script entry points (executed via `jiti`), each imports directly from the relevant tool module
+- `scripts/` — npm script entry points (executed via `jiti`), each wraps its call in `wrapCliTask()` for error handling and exit codes
+- `static/scripts/` — consumer example scripts organized by module (bundlers, formatters, linters, test-runners, build, version)
+- `src/script-utils/commitlint-config.ts` — shared commitlint configuration
+- `src/script-utils/nano-staged-config.ts` — shared nano-staged pre-commit configuration
 - `dist/` — compiled output (ESM `.mjs` + CJS `.cjs` + type declarations)
 
 ### TypeScript
@@ -154,9 +157,44 @@ describe('MyModule', () => {
 | `@lezer/common` | `1.2.3` | `obsidian` uses this version at runtime |
 | `@types/node` | `25.0.3` | Matches the Node.js version used in the project |
 
+## Consumer Script Pattern
+
+Consumer projects import functions from `obsidian-dev-utils` and wrap them with `wrapCliTask()`:
+
+```typescript
+// scripts/build.ts
+import { wrapCliTask } from 'obsidian-dev-utils/script-utils/cli-utils';
+import { build } from 'obsidian-dev-utils/script-utils/bundlers/esbuild';
+
+await wrapCliTask(() => build());
+```
+
+For scripts needing argv:
+
+```typescript
+// scripts/version.ts
+import process from 'node:process';
+import { wrapCliTask } from 'obsidian-dev-utils/script-utils/cli-utils';
+import { updateVersion } from 'obsidian-dev-utils/script-utils/version';
+
+const [, , versionUpdateType] = process.argv;
+await wrapCliTask(() => updateVersion(versionUpdateType));
+```
+
+Config scripts re-export shared configs:
+
+```typescript
+// scripts/commitlint-config.ts
+import { obsidianDevUtilsConfig } from 'obsidian-dev-utils/script-utils/commitlint-config';
+export const config = obsidianDevUtilsConfig;
+```
+
+See `static/scripts/` for the full set of consumer examples.
+
 ## Commits
 
-- Conventional Commits enforced via commitlint + husky
+- Conventional Commits enforced via commitlint + husky + nano-staged
+- nano-staged runs spellcheck, compilation, lint, and format on staged files via pre-commit hook
 - Use `npm run commit` (Commitizen) for guided commit messages
 - Before each commit, run these commands and ensure they complete without errors:
   - `npm run spellcheck`
