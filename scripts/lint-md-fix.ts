@@ -1,3 +1,3 @@
-import { lintFix } from '../src/script-utils/linters/markdownlint.ts';
+import { lint } from '../src/script-utils/linters/markdownlint.ts';
 
-await lintFix();
+await lint(true);

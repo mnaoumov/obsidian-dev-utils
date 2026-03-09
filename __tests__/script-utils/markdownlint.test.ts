@@ -6,10 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import {
-  lint,
-  lintFix
-} from '../../src/script-utils/linters/markdownlint.ts';
+import { lint } from '../../src/script-utils/linters/markdownlint.ts';
 
 const {
   mockCp,
@@ -116,16 +113,6 @@ describe('lint', () => {
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
       expect.arrayContaining(['npx', 'linkinator', 'README.md', 'CHANGELOG.md', 'docs/guide.md'])
-    );
-  });
-});
-
-describe('lintFix', () => {
-  it('should run markdownlint-cli2 with --fix', async () => {
-    mockExistsSync.mockReturnValue(true);
-    await lintFix();
-    expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'markdownlint-cli2', '--fix', '.'])
     );
   });
 });

@@ -1,3 +1,3 @@
-import { formatCheck } from '../src/script-utils/formatters/dprint.ts';
+import { format } from '../src/script-utils/formatters/dprint.ts';
 
-await formatCheck();
+await format(false);
