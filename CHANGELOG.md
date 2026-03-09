@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 51.0.0
+
+- fix: log error when Obsidian CLI plugin enable fails
+- feat: auto-enable hot-reload and dev plugin via community-plugins.json and Obsidian CLI
+- chore: add English language requirement to issue templates
+- refactor: kebab-case
+- refactor: reorganize ScriptUtils
+- refactor: remove CLI
+- feat: add test commands
+
 ## 50.0.0
 
 - refactor: split VaultEx -> Vault/VaultDelete
