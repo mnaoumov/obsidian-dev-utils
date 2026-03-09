@@ -61,12 +61,12 @@ vi.mock('../../src/obsidian/i18n/locales/translationsMap.ts', () => ({
   defaultTranslationsMap: { en: { obsidianDevUtils: { test: 'english-value' } } }
 }));
 
-describe('i18n module', () => {
+describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
   describe('DEFAULT_NS', () => {
     it('should export DEFAULT_NS as "translation"', async () => {
       const { DEFAULT_NS } = await import('../../src/obsidian/i18n/i18n.ts');
       expect(DEFAULT_NS).toBe('translation');
-    }, HEAVY_IMPORT_TIMEOUT);
+    });
   });
 
   describe('t function auto-initialization', () => {

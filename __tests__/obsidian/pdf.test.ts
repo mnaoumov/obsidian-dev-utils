@@ -21,7 +21,9 @@ interface MockIpcRenderer {
 
 let mockIpcRenderer: MockIpcRenderer;
 
-describe('printToPdf', () => {
+const HEAVY_IMPORT_TIMEOUT = 30_000;
+
+describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
   let printDiv: HTMLDivElement;
 
   beforeEach(() => {
