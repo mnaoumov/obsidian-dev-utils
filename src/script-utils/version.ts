@@ -294,8 +294,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     filePaths = fileNames.map((fileName) => join(buildFolder, fileName));
   } else {
     const resultOutput = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json'], { isQuiet: true });
-    getLibDebugger('Version')(`npm pack raw output: ${JSON.stringify(resultOutput)}`);
-    const result = extractJsonArray(resultOutput) as [{ filename: string }];
+    const result = JSON.parse(resultOutput) as [{ filename: string }];
     filePaths = [
       join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename),
       join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.StylesCss)
@@ -478,24 +477,6 @@ export function validate(versionUpdateType: string): void {
       'Invalid version update type. Please use \'major\', \'minor\', \'patch\', \'premajor\', \'preminor\', \'prepatch\', \'prerelease\', or \'x.y.z[-suffix]\' format.'
     );
   }
-}
-
-function extractJsonArray(output: string): unknown[] {
-  let searchFrom = 0;
-  while (searchFrom < output.length) {
-    const jsonStart = output.indexOf('[', searchFrom);
-    if (jsonStart < 0) {
-      break;
-    }
-
-    try {
-      return JSON.parse(output.slice(jsonStart)) as unknown[];
-    } catch {
-      searchFrom = jsonStart + 1;
-    }
-  }
-
-  throw new Error(`No JSON array found in output: ${output}`);
 }
 
 /**
