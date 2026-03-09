@@ -1,9 +1,3 @@
-/**
- * @packageDocumentation
- *
- * Build generate exports script.
- */
-
 import type { PackageJson } from '../src/script-utils/npm.ts';
 
 import { deepEqual } from '../src/object-utils.ts';

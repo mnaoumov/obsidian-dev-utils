@@ -1,9 +1,3 @@
-/**
- * @packageDocumentation
- *
- * Build types script.
- */
-
 import {
   basename,
   dirname,
