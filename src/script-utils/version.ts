@@ -295,7 +295,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
   } else {
     const resultOutput = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json'], { isQuiet: true });
     getLibDebugger('Version')(`npm pack raw output: ${JSON.stringify(resultOutput)}`);
-    const result = extractJsonArray<[{ filename: string }]>(resultOutput);
+    const result = extractJsonArray(resultOutput) as [{ filename: string }];
     filePaths = [
       join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename),
       join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.StylesCss)
@@ -480,7 +480,7 @@ export function validate(versionUpdateType: string): void {
   }
 }
 
-function extractJsonArray<T>(output: string): T {
+function extractJsonArray(output: string): unknown[] {
   let searchFrom = 0;
   while (searchFrom < output.length) {
     const jsonStart = output.indexOf('[', searchFrom);
@@ -489,7 +489,7 @@ function extractJsonArray<T>(output: string): T {
     }
 
     try {
-      return JSON.parse(output.slice(jsonStart)) as T;
+      return JSON.parse(output.slice(jsonStart)) as unknown[];
     } catch {
       searchFrom = jsonStart + 1;
     }
