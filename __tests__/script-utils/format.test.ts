@@ -6,7 +6,10 @@ import {
   vi
 } from 'vitest';
 
-import { format } from '../../src/script-utils/formatters/dprint.ts';
+import {
+  format,
+  formatCheck
+} from '../../src/script-utils/formatters/dprint.ts';
 
 const {
   mockExecFromRoot,
@@ -84,5 +87,15 @@ describe('format', () => {
     mockGetRootFolder.mockImplementation((cwd?: string) => cwd ? '/pkg' : '/root');
     await format();
     expect(mockExecFromRoot).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('formatCheck', () => {
+  it('should run dprint check', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await formatCheck();
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      expect.arrayContaining(['npx', 'dprint', 'check'])
+    );
   });
 });

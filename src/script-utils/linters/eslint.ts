@@ -56,3 +56,12 @@ export async function lint(shouldFix?: boolean): Promise<void> {
 
   await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentFolder]);
 }
+
+/**
+ * Lint the project with ESLint and automatically fix issues.
+ *
+ * @returns A {@link Promise} that resolves when linting is complete.
+ */
+export async function lintFix(): Promise<void> {
+  await lint(true);
+}

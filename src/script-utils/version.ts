@@ -480,6 +480,17 @@ export function validate(versionUpdateType: string): void {
 }
 
 /**
+ * Convenience alias for {@link updateVersion} that matches the `npm run version` command name.
+ *
+ * @param versionUpdateType - The type of version update to perform (major, minor, patch, premajor, preminor, prepatch, prerelease, or x.y.z[-suffix]).
+ * @param prepareGitHubRelease - A callback function to prepare the GitHub release.
+ * @returns A {@link Promise} that resolves when the version update is complete.
+ */
+export async function version(versionUpdateType?: string, prepareGitHubRelease?: (newVersion: string) => Promise<void>): Promise<void> {
+  await updateVersion(versionUpdateType, prepareGitHubRelease);
+}
+
+/**
  * Fetches the latest version of Obsidian from the GitHub releases API.
  *
  * @returns A {@link Promise} that resolves to the latest version of Obsidian.
@@ -491,8 +502,8 @@ async function getLatestObsidianVersion(): Promise<string> {
   return ensureNonNullable(obsidianReleasesJson.name, 'Could not find the name of the latest Obsidian release');
 }
 
-function isPreRelease(version: string): boolean {
-  return prerelease(version) !== null;
+function isPreRelease(versionStr: string): boolean {
+  return prerelease(versionStr) !== null;
 }
 
 function toSingleLine(str: string): string {

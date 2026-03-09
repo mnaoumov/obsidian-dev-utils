@@ -1,3 +1,3 @@
-import { lint } from '../src/script-utils/linters/eslint.ts';
+import { lintFix } from '../src/script-utils/linters/eslint.ts';
 
-await lint(true);
+await lintFix();
