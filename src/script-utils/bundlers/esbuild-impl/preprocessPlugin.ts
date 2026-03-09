@@ -11,6 +11,8 @@
 
 import type { Plugin } from 'esbuild';
 
+import { readFile } from 'node:fs/promises';
+
 import type { GenericObject } from '../../../type-guards.ts';
 
 import {
@@ -21,7 +23,6 @@ import {
   makeValidVariableName,
   replaceAll
 } from '../../../string.ts';
-import { readFile } from '../../node-modules.ts';
 
 interface BrowserProcess extends Partial<NodeJS.Process> {
   browser: boolean;

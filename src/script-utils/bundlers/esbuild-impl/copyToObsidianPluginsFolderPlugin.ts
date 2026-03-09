@@ -11,18 +11,19 @@
 
 import type { Plugin } from 'esbuild';
 
+import { existsSync } from 'node:fs';
+import {
+  cp,
+  mkdir,
+  readFile,
+  writeFile
+} from 'node:fs/promises';
+
 import { getLibDebugger } from '../../../debug.ts';
 import {
   join,
   toPosixPath
 } from '../../../path.ts';
-import {
-  cp,
-  existsSync,
-  mkdir,
-  readFile,
-  writeFile
-} from '../../node-modules.ts';
 import { evalObsidianCli } from '../../obsidian-cli.ts';
 
 /**

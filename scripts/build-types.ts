@@ -1,15 +1,16 @@
 import {
+  mkdir,
+  readFile,
+  writeFile
+} from 'node:fs/promises';
+
+import {
   basename,
   dirname,
   join
 } from '../src/path.ts';
 import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import { readdirPosix } from '../src/script-utils/fs.ts';
-import {
-  mkdir,
-  readFile,
-  writeFile
-} from '../src/script-utils/node-modules.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 import { execFromRoot } from '../src/script-utils/root.ts';
 import { replaceAll } from '../src/string.ts';

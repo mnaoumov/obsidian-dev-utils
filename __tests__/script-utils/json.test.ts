@@ -30,15 +30,22 @@ const {
   mockWriteFileSync: vi.fn<(path: string, data: string) => void>()
 }));
 
-vi.mock('../../src/script-utils/node-modules.ts', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../../src/script-utils/node-modules.ts')>();
+vi.mock('node:fs', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:fs')>();
   return {
     ...mod,
     existsSync: mockExistsSync,
-    readFile: mockReadFile,
     readFileSync: mockReadFileSync,
-    writeFile: mockWriteFile,
     writeFileSync: mockWriteFileSync
+  };
+});
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:fs/promises')>();
+  return {
+    ...mod,
+    readFile: mockReadFile,
+    writeFile: mockWriteFile
   };
 });
 

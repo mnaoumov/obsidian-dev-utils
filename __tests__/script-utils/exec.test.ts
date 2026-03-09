@@ -40,18 +40,25 @@ const {
   mockStdoutWrite: vi.fn()
 }));
 
-vi.mock('../../src/script-utils/node-modules.ts', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../../src/script-utils/node-modules.ts')>();
+vi.mock('node:child_process', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:child_process')>();
   return {
     ...mod,
-    process: {
-      ...mod.process,
-      cwd: (): string => mod.process.cwd(),
-      env: mod.process.env,
+    spawn: mockSpawn
+  };
+});
+
+vi.mock('node:process', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:process')>();
+  return {
+    ...mod,
+    default: {
+      ...mod,
+      cwd: (): string => mod.cwd(),
+      env: mod.env,
       stderr: { write: mockStderrWrite },
       stdout: { write: mockStdoutWrite }
-    },
-    spawn: mockSpawn
+    }
   };
 });
 

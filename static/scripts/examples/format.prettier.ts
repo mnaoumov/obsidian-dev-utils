@@ -1,6 +1,6 @@
+import { existsSync } from 'node:fs';
 import { assertNonNullable } from 'obsidian-dev-utils/object-utils';
 import { getFolderName } from 'obsidian-dev-utils/path';
-import { existsSync } from 'obsidian-dev-utils/script-utils/node-modules';
 import {
   execFromRoot,
   getRootFolder,

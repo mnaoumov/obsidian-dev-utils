@@ -13,8 +13,8 @@ const { mockReaddir } = vi.hoisted(() => ({
   mockReaddir: vi.fn()
 }));
 
-vi.mock('../../src/script-utils/node-modules.ts', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../../src/script-utils/node-modules.ts')>();
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:fs/promises')>();
   return {
     ...mod,
     readdir: mockReaddir

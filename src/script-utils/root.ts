@@ -5,6 +5,8 @@
  * resolving paths relative to the root.
  */
 
+import { existsSync } from 'node:fs';
+
 import type {
   ExecOption,
   ExecResult
@@ -18,7 +20,6 @@ import {
   toPosixPath
 } from '../path.ts';
 import { exec } from './exec.ts';
-import { existsSync } from './node-modules.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 
 /**

@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
+
 import type { PackageJson } from '../src/script-utils/npm.ts';
 
 import { deepEqual } from '../src/object-utils.ts';
@@ -14,10 +17,6 @@ import {
 } from '../src/script-utils/cli-utils.ts';
 import { readdirPosix } from '../src/script-utils/fs.ts';
 import { writeJson } from '../src/script-utils/json.ts';
-import {
-  existsSync,
-  mkdir
-} from '../src/script-utils/node-modules.ts';
 import { editPackageJson } from '../src/script-utils/npm.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 import { replaceAll } from '../src/string.ts';

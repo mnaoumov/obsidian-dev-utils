@@ -16,11 +16,11 @@ const { mockExit } = vi.hoisted(() => ({
   mockExit: vi.fn()
 }));
 
-vi.mock('../../src/script-utils/node-modules.ts', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../../src/script-utils/node-modules.ts')>();
+vi.mock('node:process', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:process')>();
   return {
     ...mod,
-    process: { ...mod.process, exit: mockExit }
+    default: { ...mod, exit: mockExit }
   };
 });
 

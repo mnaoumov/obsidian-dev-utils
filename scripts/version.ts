@@ -1,10 +1,11 @@
-import { join } from '../src/path.ts';
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import {
-  process,
   readFile,
   writeFile
-} from '../src/script-utils/node-modules.ts';
+} from 'node:fs/promises';
+import process from 'node:process';
+
+import { join } from '../src/path.ts';
+import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import { publish } from '../src/script-utils/npm-publish.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 import {

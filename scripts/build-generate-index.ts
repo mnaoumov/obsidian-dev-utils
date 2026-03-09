@@ -1,4 +1,4 @@
-import type { Dirent } from '../src/script-utils/node-modules.ts';
+import type { Dirent } from 'node:fs';
 
 import { asyncMap } from '../src/async.ts';
 import {

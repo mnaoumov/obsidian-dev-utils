@@ -17,6 +17,15 @@ import type {
 import { context } from 'esbuild';
 // eslint-disable-next-line import-x/no-rename-default -- We need a temp variable to apply `extractDefaultExportInterop()` fix below.
 import sassPlugin_ from 'esbuild-sass-plugin';
+import { existsSync } from 'node:fs';
+import {
+  cp,
+  mkdir,
+  rm,
+  writeFile
+} from 'node:fs/promises';
+import { builtinModules } from 'node:module';
+import process, { loadEnvFile } from 'node:process';
 
 import { extractDefaultExportInterop } from '../../../object-utils.ts';
 import { ObsidianPluginRepoPaths } from '../../../obsidian/plugin/obsidian-plugin-repo-paths.ts';
@@ -24,16 +33,6 @@ import { join } from '../../../path.ts';
 import { ensureNonNullable } from '../../../type-guards.ts';
 import { buildCompile } from '../../build.ts';
 import { CliTaskResult } from '../../cli-utils.ts';
-import {
-  builtinModules,
-  cp,
-  existsSync,
-  loadEnvFile,
-  mkdir,
-  process,
-  rm,
-  writeFile
-} from '../../node-modules.ts';
 import { readPackageJson } from '../../npm.ts';
 import { resolvePathFromRoot } from '../../root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
