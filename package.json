@@ -663,6 +663,7 @@
     "globals": "latest",
     "i18next": "latest",
     "jiti": "latest",
+    "nano-staged": "latest",
     "linkinator": "latest",
     "localforage": "latest",
     "lru-cache": "latest",
