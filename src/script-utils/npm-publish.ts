@@ -4,11 +4,9 @@
  * Contains utility functions for NPM publish.
  */
 
-import {
-  existsSync,
-  loadEnvFile,
-  process
-} from './node-modules.ts';
+import { existsSync } from 'node:fs';
+import process, { loadEnvFile } from 'node:process';
+
 import {
   execFromRoot,
   resolvePathFromRoot

@@ -37,13 +37,8 @@ import { renameCssPlugin } from '../../src/script-utils/bundlers/esbuild-impl/re
 import { svelteWrapperPlugin } from '../../src/script-utils/bundlers/esbuild-impl/svelteWrapperPlugin.ts';
 import { obsidianDevUtilsConfigs } from '../../src/script-utils/linters/eslint-config.ts';
 import { obsidianDevUtilsConfig } from '../../src/script-utils/linters/markdownlint-cli2-config.ts';
-import { process } from '../../src/script-utils/node-modules.ts';
 
 describe('v8 ignore imports', () => {
-  it('should load NodeModules so v8 processes its ignore comments', () => {
-    expect(process).toBeDefined();
-  });
-
   it('should load eslint.config so v8 processes its ignore comments', () => {
     expect(obsidianDevUtilsConfigs).toBeDefined();
   });

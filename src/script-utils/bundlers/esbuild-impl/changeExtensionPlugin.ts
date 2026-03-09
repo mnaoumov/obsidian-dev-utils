@@ -8,8 +8,9 @@
 
 import type { Plugin } from 'esbuild';
 
+import { writeFile } from 'node:fs/promises';
+
 import { replaceAll } from '../../../string.ts';
-import { writeFile } from '../../node-modules.ts';
 import { ObsidianDevUtilsRepoPaths } from '../../obsidian-dev-utils-repo-paths.ts';
 
 /**

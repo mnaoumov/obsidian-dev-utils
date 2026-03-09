@@ -27,13 +27,20 @@ vi.mock('../../src/script-utils/root.ts', () => ({
   resolvePathFromRoot: mockResolvePathFromRoot
 }));
 
-vi.mock('../../src/script-utils/node-modules.ts', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../../src/script-utils/node-modules.ts')>();
+vi.mock('node:fs', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:fs')>();
   return {
     ...mod,
-    existsSync: mockExistsSync,
-    loadEnvFile: mockLoadEnvFile,
-    process: mockProcess
+    existsSync: mockExistsSync
+  };
+});
+
+vi.mock('node:process', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:process')>();
+  return {
+    ...mod,
+    default: mockProcess,
+    loadEnvFile: mockLoadEnvFile
   };
 });
 

@@ -22,8 +22,8 @@ const {
   mockExistsSync: vi.fn<(path: string) => boolean>()
 }));
 
-vi.mock('../../src/script-utils/node-modules.ts', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../../src/script-utils/node-modules.ts')>();
+vi.mock('node:fs', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:fs')>();
   return {
     ...mod,
     existsSync: mockExistsSync

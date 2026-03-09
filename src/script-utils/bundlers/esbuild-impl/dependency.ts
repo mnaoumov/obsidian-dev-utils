@@ -14,6 +14,10 @@ import type {
 } from 'esbuild';
 
 import { context } from 'esbuild';
+import {
+  builtinModules,
+  createRequire
+} from 'node:module';
 
 import {
   getFolderName,
@@ -21,10 +25,6 @@ import {
 } from '../../../path.ts';
 import { trimStart } from '../../../string.ts';
 import { ensureNonNullable } from '../../../type-guards.ts';
-import {
-  builtinModules,
-  createRequire
-} from '../../node-modules.ts';
 import { readPackageJson } from '../../npm.ts';
 import { ObsidianDevUtilsRepoPaths } from '../../obsidian-dev-utils-repo-paths.ts';
 import {

@@ -8,17 +8,18 @@
 
 import type { TsConfigJson } from 'type-fest';
 
+import {
+  cp,
+  glob,
+  rm
+} from 'node:fs/promises';
+
 import { toArray } from '../async.ts';
 import { getLibDebugger } from '../debug.ts';
 import { join } from '../path.ts';
 import { trimStart } from '../string.ts';
 import { readdirPosix } from './fs.ts';
 import { readJson } from './json.ts';
-import {
-  cp,
-  glob,
-  rm
-} from './node-modules.ts';
 import { npmRun } from './npm-run.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 import {

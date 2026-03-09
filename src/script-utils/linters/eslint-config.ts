@@ -315,7 +315,7 @@ function getImportXConfigs(): Linter.Config[] {
       }
     },
     {
-      files: ['scripts/**/*.ts'],
+      files: ['scripts/**/*.ts', 'src/script-utils/**/*.ts'],
       rules: {
         'import-x/no-nodejs-modules': 'off'
       }

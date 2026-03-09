@@ -4,13 +4,12 @@
  * Contains utility functions for executing commands.
  */
 
+import { spawn } from 'node:child_process';
+import process from 'node:process';
+
 import { getLibDebugger } from '../debug.ts';
 import { trimEnd } from '../string.ts';
 import { toCommandLine } from './cli-utils.ts';
-import {
-  process,
-  spawn
-} from './node-modules.ts';
 
 /**
  * Options for executing a command.

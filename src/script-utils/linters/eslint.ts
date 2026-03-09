@@ -7,6 +7,9 @@
  * It can automatically fix linting issues if specified, and logs results to the console.
  */
 
+import { existsSync } from 'node:fs';
+import { cp } from 'node:fs/promises';
+
 import { getLibDebugger } from '../../debug.ts';
 import { ObsidianPluginRepoPaths } from '../../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import {
@@ -14,10 +17,6 @@ import {
   join
 } from '../../path.ts';
 import { assertNonNullable } from '../../type-guards.ts';
-import {
-  cp,
-  existsSync
-} from '../node-modules.ts';
 import { ObsidianDevUtilsRepoPaths } from '../obsidian-dev-utils-repo-paths.ts';
 import {
   execFromRoot,

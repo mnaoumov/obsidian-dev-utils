@@ -9,6 +9,14 @@
 
 import type { ReleaseType } from 'semver';
 
+import { existsSync } from 'node:fs';
+import {
+  cp,
+  readFile,
+  rm,
+  writeFile
+} from 'node:fs/promises';
+import { createInterface } from 'node:readline/promises';
 import {
   inc,
   prerelease
@@ -26,14 +34,6 @@ import {
 } from '../type-guards.ts';
 import { readdirPosix } from './fs.ts';
 import { editJson } from './json.ts';
-import {
-  cp,
-  createInterface,
-  existsSync,
-  readFile,
-  rm,
-  writeFile
-} from './node-modules.ts';
 import {
   npmRun,
   npmRunOptional

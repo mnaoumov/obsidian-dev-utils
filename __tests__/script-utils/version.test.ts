@@ -75,16 +75,30 @@ vi.mock('../../src/script-utils/root.ts', () => ({
   resolvePathFromRootSafe: mockResolvePathFromRootSafe
 }));
 
-vi.mock('../../src/script-utils/node-modules.ts', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../../src/script-utils/node-modules.ts')>();
+vi.mock('node:fs', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...mod,
+    existsSync: mockExistsSync
+  };
+});
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:fs/promises')>();
   return {
     ...mod,
     cp: mockCp,
-    createInterface: mockCreateInterface,
-    existsSync: mockExistsSync,
     readFile: mockReadFile,
     rm: mockRm,
     writeFile: mockWriteFile
+  };
+});
+
+vi.mock('node:readline/promises', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('node:readline/promises')>();
+  return {
+    ...mod,
+    createInterface: mockCreateInterface
   };
 });
 
