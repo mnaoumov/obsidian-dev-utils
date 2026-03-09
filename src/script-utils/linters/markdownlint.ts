@@ -90,12 +90,3 @@ export async function lint(shouldFix = false): Promise<void> {
     'https://registry.npmjs.org/'
   ]);
 }
-
-/**
- * Lint markdown documentation and automatically fix issues.
- *
- * @returns A {@link Promise} that resolves when linting is complete.
- */
-export async function lintFix(): Promise<void> {
-  await lint(true);
-}

@@ -41,12 +41,3 @@ export async function format(rewrite = true): Promise<void> {
   const command = rewrite ? 'fmt' : 'check';
   await execFromRoot(['npx', 'dprint', command, '--config', dprintJsonPath, '**/*']);
 }
-
-/**
- * Checks the source code formatting without modifying files.
- *
- * @returns A {@link Promise} that resolves when the formatting check is complete.
- */
-export async function formatCheck(): Promise<void> {
-  await format(false);
-}

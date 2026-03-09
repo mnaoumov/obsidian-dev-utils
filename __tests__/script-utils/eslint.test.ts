@@ -6,10 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import {
-  lint,
-  lintFix
-} from '../../src/script-utils/linters/eslint.ts';
+import { lint } from '../../src/script-utils/linters/eslint.ts';
 
 const {
   mockCp,
@@ -95,15 +92,5 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(false);
     mockGetRootFolder.mockReturnValue(null);
     await expect(lint()).rejects.toThrow('Package folder not found');
-  });
-});
-
-describe('lintFix', () => {
-  it('should run eslint with --fix', async () => {
-    mockExistsSync.mockReturnValue(true);
-    await lintFix();
-    expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'eslint', '--fix', '.'])
-    );
   });
 });
