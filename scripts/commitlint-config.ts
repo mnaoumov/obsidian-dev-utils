@@ -1,5 +1,3 @@
-import type { UserConfig } from '@commitlint/types';
+import { obsidianDevUtilsConfig } from '../src/script-utils/commitlint-config.ts';
 
-export const config: UserConfig = {
-  extends: ['@commitlint/config-conventional']
-};
+export const config = obsidianDevUtilsConfig;
