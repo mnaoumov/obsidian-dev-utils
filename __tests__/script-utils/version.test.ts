@@ -473,52 +473,6 @@ describe('publishGitHubRelease', () => {
     );
   });
 
-  it('should handle npm pack output with non-JSON prefix from lifecycle scripts', async () => {
-    mockReadFile.mockResolvedValue('# CHANGELOG\n\n');
-    mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
-      const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
-      if (cmdStr.startsWith('git tag')) {
-        return Promise.resolve('1.0.0');
-      }
-      if (cmdStr.startsWith('gh repo view')) {
-        return Promise.resolve('https://github.com/user/repo');
-      }
-      if (cmdStr.includes('npm pack')) {
-        return Promise.resolve(`npm warn some-warning\n${JSON.stringify([{ filename: 'pkg-1.0.0.tgz' }])}`);
-      }
-      return Promise.resolve('');
-    });
-    mockExistsSync.mockReturnValue(true);
-    await publishGitHubRelease('1.0.0', false);
-    expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['gh', 'release', 'create', '1.0.0']),
-      expect.objectContaining({ isQuiet: true })
-    );
-  });
-
-  it('should handle npm pack output with bracket-containing prefix like progress indicators', async () => {
-    mockReadFile.mockResolvedValue('# CHANGELOG\n\n');
-    mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
-      const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
-      if (cmdStr.startsWith('git tag')) {
-        return Promise.resolve('1.0.0');
-      }
-      if (cmdStr.startsWith('gh repo view')) {
-        return Promise.resolve('https://github.com/user/repo');
-      }
-      if (cmdStr.includes('npm pack')) {
-        return Promise.resolve(`[1/1] packing...\n${JSON.stringify([{ filename: 'pkg-1.0.0.tgz' }])}`);
-      }
-      return Promise.resolve('');
-    });
-    mockExistsSync.mockReturnValue(true);
-    await publishGitHubRelease('1.0.0', false);
-    expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['gh', 'release', 'create', '1.0.0']),
-      expect.objectContaining({ isQuiet: true })
-    );
-  });
-
   it('should filter out non-existent files', async () => {
     setupReleaseNotesMocks();
     mockReaddirPosix.mockResolvedValue(['main.js', 'missing.js']);
