@@ -14,6 +14,8 @@ const BUILD_STEPS = [
 
 await wrapCliTask(async () => {
   for (const step of BUILD_STEPS) {
-    await execFromRoot(['npm', 'run', step]);
+    await wrapCliTask(async () => {
+      await execFromRoot(['npm', 'run', step]);
+    });
   }
 });

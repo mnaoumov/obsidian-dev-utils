@@ -1,3 +1,6 @@
+import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import { test } from '../src/script-utils/test-runners/vitest.ts';
 
-await test();
+await wrapCliTask(async () => {
+  await test();
+});
