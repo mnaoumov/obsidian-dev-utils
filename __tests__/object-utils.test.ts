@@ -33,6 +33,17 @@ import {
   ensureGenericObject
 } from '../src/type-guards.ts';
 
+interface NormalizeTestObj {
+  a: number;
+  b?: number;
+}
+
+interface RemoveUndefinedTestObj {
+  a: number;
+  b?: undefined;
+  c: string;
+}
+
 describe('ObjectUtils', () => {
   describe('deepEqual', () => {
     it('should return true for identical references', () => {
@@ -281,7 +292,7 @@ describe('ObjectUtils', () => {
 
   describe('removeUndefinedProperties', () => {
     it('should remove undefined properties', () => {
-      const obj: { a: number; b?: undefined; c: string } = { a: 1, b: undefined, c: 'hello' };
+      const obj: RemoveUndefinedTestObj = { a: 1, b: undefined, c: 'hello' };
       removeUndefinedProperties(obj);
       expect(obj).toEqual({ a: 1, c: 'hello' });
     });
@@ -679,7 +690,7 @@ describe('ObjectUtils', () => {
   describe('normalizeOptionalProperties', () => {
     it('should return the same object as-is', () => {
       const obj = { a: 1, b: undefined };
-      const result = normalizeOptionalProperties<{ a: number; b?: number }>(obj);
+      const result = normalizeOptionalProperties<NormalizeTestObj>(obj);
       expect(result).toBe(obj);
     });
   });

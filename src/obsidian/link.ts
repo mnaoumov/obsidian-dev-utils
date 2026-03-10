@@ -714,10 +714,12 @@ interface UpdateLinksInContentParams {
 }
 
 interface WikiLinkNode extends Node {
-  data: {
-    alias: string;
-  };
+  data: WikiLinkNodeData;
   value: string;
+}
+
+interface WikiLinkNodeData extends Record<string, unknown> {
+  alias: string;
 }
 
 /**

@@ -12,6 +12,14 @@ import {
   ValueWrapper
 } from '../../src/obsidian/app.ts';
 
+interface GlobalThisWithApp {
+  app: unknown;
+}
+
+interface GlobalThisWithState {
+  obsidianDevUtilsState: unknown;
+}
+
 describe('ValueWrapper', () => {
   it('should store a number value', () => {
     const wrapper = new ValueWrapper(42);
@@ -48,12 +56,12 @@ describe('ValueWrapper', () => {
 
 describe('getApp', () => {
   afterEach(() => {
-    delete (globalThis as Partial<{ app: unknown }>).app;
+    delete (globalThis as Partial<GlobalThisWithApp>).app;
   });
 
   it('should return globalThis.app when it exists', () => {
     const mockApp = { vault: {} };
-    (globalThis as Partial<{ app: unknown }>).app = mockApp;
+    (globalThis as Partial<GlobalThisWithApp>).app = mockApp;
     // eslint-disable-next-line @typescript-eslint/no-deprecated, import-x/no-deprecated -- Testing `getApp()`.
     expect(getApp()).toBe(mockApp);
   });
@@ -66,7 +74,7 @@ describe('getApp', () => {
 
 describe('getObsidianDevUtilsState', () => {
   afterEach(() => {
-    delete (globalThis as Partial<{ obsidianDevUtilsState: unknown }>).obsidianDevUtilsState;
+    delete (globalThis as Partial<GlobalThisWithState>).obsidianDevUtilsState;
   });
 
   it('should return a ValueWrapper with the default value when key is new', () => {

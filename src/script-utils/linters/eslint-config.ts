@@ -202,6 +202,14 @@ function getEslintConfigs(): Linter.Config[] {
           {
             message: 'Do not use anonymous inline object types in interface/method signatures. Define a named interface instead.',
             selector: 'TSMethodSignature TSTypeLiteral'
+          },
+          {
+            message: 'Do not use anonymous inline object types as type arguments. Define a named interface instead.',
+            selector: 'TSTypeParameterInstantiation > TSTypeLiteral'
+          },
+          {
+            message: 'Do not use anonymous inline object types in type annotations. Define a named interface instead.',
+            selector: 'TSTypeAnnotation > TSTypeLiteral'
           }
         ],
         'no-return-assign': 'error',
@@ -502,5 +510,3 @@ function getTseslintConfigs(): Linter.Config[] {
 }
 
 /* eslint-enable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
-
-/* v8 ignore stop */
