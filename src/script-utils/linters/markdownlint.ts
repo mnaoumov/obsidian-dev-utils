@@ -26,11 +26,27 @@ import {
 } from '../root.ts';
 
 /**
+ * Parameters for the {@link lint} function.
+ */
+export interface LintParams {
+  /**
+   * Optional file paths to lint. If omitted, lints the entire project.
+   */
+  paths?: string[] | undefined;
+
+  /**
+   * Whether to fix linting issues automatically.
+   */
+  shouldFix?: boolean | undefined;
+}
+
+/**
  * Lint markdown documentation using `markdownlint-cli2` and `linkinator`.
  *
- * @param shouldFix - Whether to fix linting issues automatically.
+ * @param params - The {@link LintParams}.
  */
-export async function lint(shouldFix = false): Promise<void> {
+export async function lint(params?: LintParams): Promise<void> {
+  const { paths, shouldFix = false } = params ?? {};
   const configFiles = [
     ObsidianPluginRepoPaths.MarkdownlintCli2ConfigJsonc,
     ObsidianPluginRepoPaths.MarkdownlintCli2ConfigYaml,
@@ -64,15 +80,18 @@ export async function lint(shouldFix = false): Promise<void> {
     );
   }
 
-  await execFromRoot(['npx', 'markdownlint-cli2', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentFolder]);
+  const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
+  await execFromRoot(['npx', 'markdownlint-cli2', ...(shouldFix ? ['--fix'] : []), ...targets]);
 
-  const mdFiles = await toArray(glob(['**/*.md'], {
-    exclude: [
-      '.git/**',
-      'dist/**',
-      'node_modules/**'
-    ]
-  }));
+  const mdFiles = paths?.length
+    ? paths
+    : await toArray(glob(['**/*.md'], {
+      exclude: [
+        '.git/**',
+        'dist/**',
+        'node_modules/**'
+      ]
+    }));
   await execFromRoot([
     'npx',
     'linkinator',

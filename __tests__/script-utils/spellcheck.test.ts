@@ -24,6 +24,6 @@ beforeEach(() => {
 describe('spellcheck', () => {
   it('should run cspell via execFromRoot', async () => {
     await spellcheck();
-    expect(mockExecFromRoot).toHaveBeenCalledWith('npx cspell . --no-progress');
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['npx', 'cspell', '.', '--no-progress']);
   });
 });

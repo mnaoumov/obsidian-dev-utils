@@ -25,11 +25,27 @@ import {
 } from '../root.ts';
 
 /**
+ * Parameters for the {@link lint} function.
+ */
+export interface LintParams {
+  /**
+   * Optional file paths to lint. If omitted, lints the entire project.
+   */
+  paths?: string[] | undefined;
+
+  /**
+   * Whether to fix linting issues automatically.
+   */
+  shouldFix?: boolean | undefined;
+}
+
+/**
  * Lint the project with ESLint.
  *
- * @param shouldFix - Whether to fix linting issues automatically.
+ * @param params - The {@link LintParams}.
  */
-export async function lint(shouldFix?: boolean): Promise<void> {
+export async function lint(params?: LintParams): Promise<void> {
+  const { paths, shouldFix } = params ?? {};
   const configFiles = [
     ObsidianPluginRepoPaths.EslintConfigJs,
     ObsidianPluginRepoPaths.EslintConfigMjs,
@@ -54,5 +70,6 @@ export async function lint(shouldFix?: boolean): Promise<void> {
     );
   }
 
-  await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), ObsidianPluginRepoPaths.CurrentFolder]);
+  const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
+  await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), ...targets]);
 }
