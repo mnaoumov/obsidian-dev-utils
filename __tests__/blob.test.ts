@@ -16,6 +16,10 @@ import {
 } from '../src/blob.ts';
 import { castTo } from '../src/object-utils.ts';
 
+interface BlobWithParts {
+  _parts?: string[];
+}
+
 class MockFileReader {
   public result: ArrayBuffer | null | string = null;
   private readonly listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
@@ -27,7 +31,7 @@ class MockFileReader {
 
   public readAsArrayBuffer(_blob: Blob): void {
     const encoder = new TextEncoder();
-    const blobParts = castTo<{ _parts?: string[] }>(_blob)._parts;
+    const blobParts = castTo<BlobWithParts>(_blob)._parts;
     if (blobParts && blobParts.length > 0) {
       this.result = encoder.encode(blobParts.join('')).buffer;
     } else {

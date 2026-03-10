@@ -29,12 +29,19 @@ export interface CustomTypeOptionsBase<PluginTypes extends PluginTypesBase> {
   /**
    * The resources.
    */
-  resources: {
-    /**
-     * The default namespace.
-     */
-    [DEFAULT_NS]: PluginTypes['defaultTranslations'];
-  };
+  resources: CustomTypeOptionsResources<PluginTypes>;
+}
+
+/**
+ * The resources for `i18next` custom type options.
+ *
+ * @typeParam PluginTypes - The plugin types.
+ */
+export interface CustomTypeOptionsResources<PluginTypes extends PluginTypesBase> {
+  /**
+   * The default namespace.
+   */
+  [DEFAULT_NS]: PluginTypes['defaultTranslations'];
 }
 
 /* v8 ignore stop */

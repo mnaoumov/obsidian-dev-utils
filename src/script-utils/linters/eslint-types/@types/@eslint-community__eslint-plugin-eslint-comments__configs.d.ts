@@ -7,9 +7,11 @@
 declare module '@eslint-community/eslint-plugin-eslint-comments/configs' {
   import type { Linter } from 'eslint';
 
-  const configs: {
+  interface EslintCommentsConfigs {
     recommended: Linter.Config;
-  };
+  }
+
+  const configs: EslintCommentsConfigs;
   // eslint-disable-next-line import-x/no-default-export -- That is the way library exports.
   export default configs;
 }

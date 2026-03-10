@@ -16,6 +16,26 @@ import {
 } from '../../src/script-utils/json.ts';
 import { assertNonNullable } from '../../src/type-guards.ts';
 
+interface CountJson {
+  count: number;
+}
+
+interface ItemsJson {
+  items: string[];
+}
+
+interface KeyJson {
+  key: string;
+}
+
+interface NameJson {
+  name: string;
+}
+
+interface ValJson {
+  val: number;
+}
+
 const {
   mockExistsSync,
   mockReadFile,
@@ -57,7 +77,7 @@ beforeEach(() => {
 describe('readJson', () => {
   it('should read and parse JSON file', async () => {
     mockReadFile.mockResolvedValue('{"name":"test"}');
-    const result = await readJson<{ name: string }>('/file.json');
+    const result = await readJson<NameJson>('/file.json');
     expect(result).toEqual({ name: 'test' });
     expect(mockReadFile).toHaveBeenCalledWith('/file.json', 'utf-8');
   });
@@ -72,7 +92,7 @@ describe('readJson', () => {
 describe('readJsonSync', () => {
   it('should read and parse JSON file synchronously', () => {
     mockReadFileSync.mockReturnValue('{"key":"value"}');
-    const result = readJsonSync<{ key: string }>('/file.json');
+    const result = readJsonSync<KeyJson>('/file.json');
     expect(result).toEqual({ key: 'value' });
     expect(mockReadFileSync).toHaveBeenCalledWith('/file.json', 'utf-8');
   });
@@ -103,7 +123,7 @@ describe('writeJsonSync', () => {
 describe('editJson', () => {
   it('should read, edit, and write back JSON', async () => {
     mockReadFile.mockResolvedValue('{"count":0}');
-    await editJson<{ count: number }>('/file.json', (data) => {
+    await editJson<CountJson>('/file.json', (data) => {
       data.count = 5;
     });
     expect(mockReadFile).toHaveBeenCalledWith('/file.json', 'utf-8');
@@ -136,7 +156,7 @@ describe('editJson', () => {
 
   it('should support async edit functions', async () => {
     mockReadFile.mockResolvedValue('{"items":[]}');
-    await editJson<{ items: string[] }>('/file.json', async (data) => {
+    await editJson<ItemsJson>('/file.json', async (data) => {
       await Promise.resolve();
       data.items.push('new');
     });
@@ -149,7 +169,7 @@ describe('editJson', () => {
 describe('editJsonSync', () => {
   it('should read, edit, and write back JSON synchronously', () => {
     mockReadFileSync.mockReturnValue('{"val":1}');
-    editJsonSync<{ val: number }>('/file.json', (data) => {
+    editJsonSync<ValJson>('/file.json', (data) => {
       data.val = 99;
     });
     expect(mockReadFileSync).toHaveBeenCalledWith('/file.json', 'utf-8');
