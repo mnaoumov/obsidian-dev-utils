@@ -5,20 +5,22 @@
  */
 
 /**
- * Nano-staged configuration that runs lint and format on staged files.
+ * Nano-staged configuration that runs file-based lint, format, and spellcheck on staged files.
+ *
+ * Only includes tools that can operate on individual files. Whole-project checks
+ * (TypeScript compilation, unit tests) are left to CI.
+ *
+ * Commands use `npm run ... --` so nano-staged file paths are forwarded as CLI arguments.
  */
 export const obsidianDevUtilsConfig: Record<string, string[]> = {
   '*': [
-    'npm run spellcheck'
+    'npm run spellcheck --'
   ],
   '*.{ts,tsx,mts}': [
-    'npm run build:compile:typescript',
-    'npm run spellcheck',
-    'npm run lint:fix',
-    'npm run format'
+    'npm run lint:fix --',
+    'npm run format --'
   ],
   '*.md': [
-    'npm run spellcheck',
-    'npm run lint:md:fix'
+    'npm run lint:md:fix --'
   ]
 };

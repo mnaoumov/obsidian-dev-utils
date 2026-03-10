@@ -57,7 +57,7 @@ describe('format', () => {
 
   it('should run dprint check when rewrite is false', async () => {
     mockExistsSync.mockReturnValue(true);
-    await format(false);
+    await format({ rewrite: false });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
       expect.arrayContaining(['npx', 'dprint', 'check'])
     );

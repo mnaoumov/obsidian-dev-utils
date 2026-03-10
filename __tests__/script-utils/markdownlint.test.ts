@@ -76,7 +76,7 @@ describe('lint', () => {
 
   it('should pass --fix when shouldFix is true', async () => {
     mockExistsSync.mockReturnValue(true);
-    await lint(true);
+    await lint({ shouldFix: true });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
       expect.arrayContaining(['npx', 'markdownlint-cli2', '--fix', '.'])
     );
@@ -84,7 +84,7 @@ describe('lint', () => {
 
   it('should not pass --fix when shouldFix is false', async () => {
     mockExistsSync.mockReturnValue(true);
-    await lint(false);
+    await lint({ shouldFix: false });
     const firstCall = mockExecFromRoot.mock.calls[0] as string[][];
     expect(firstCall[0]).not.toContain('--fix');
   });
