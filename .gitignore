@@ -37,3 +37,6 @@ package.json
 !/package.json
 
 /.claude/settings.local.json
+
+__mocks__
+__tests__
