@@ -256,6 +256,12 @@ function getEslintConfigs(): Linter.Config[] {
         'vars-on-top': 'error',
         'yoda': 'error'
       }
+    },
+    {
+      files: ['src/script-utils/linters/markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts'],
+      rules: {
+        'no-restricted-syntax': 'off'
+      }
     }
   ]);
 }
