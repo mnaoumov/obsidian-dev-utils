@@ -23,11 +23,14 @@ export interface SpellcheckParams {
  * Checks all files in the current folder and its subfolders for spelling issues.
  * If issues are found, they are logged to the console with their file path, line, and column number.
  *
+ * Uses `--no-must-find-files` so that cspell does not fail when all provided paths
+ * are excluded by built-in ignore rules (e.g., `package-lock.json`).
+ *
  * @param params - The {@link SpellcheckParams}.
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult}, indicating the success or failure of the spellcheck.
  */
 export async function spellcheck(params?: SpellcheckParams): Promise<void> {
   const { paths } = params ?? {};
   const targets = paths?.length ? paths : ['.'];
-  await execFromRoot(['npx', 'cspell', ...targets, '--no-progress']);
+  await execFromRoot(['npx', 'cspell', ...targets, '--no-progress', '--no-must-find-files']);
 }
