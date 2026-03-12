@@ -21,6 +21,8 @@ import {
   ViewType
 } from 'obsidian-typings/implementations';
 
+import { getDataAdapterEx } from 'obsidian-typings/implementations';
+
 import type { RetryOptions } from '../async.ts';
 import type { ValueProvider } from '../value-provider.ts';
 import type {
@@ -375,7 +377,7 @@ export async function getOrCreateFolderSafe(app: App, path: string): Promise<TFo
 export function getSafeRenamePath(app: App, oldPathOrAbstractFile: PathOrAbstractFile, newPath: string): string {
   const oldPath = getPath(app, oldPathOrAbstractFile);
 
-  if (app.vault.adapter.insensitive) {
+  if (getDataAdapterEx(app).insensitive) {
     let folderPath = dirname(newPath);
     let nonExistingPath = basename(newPath);
     let folder: null | TFolder;
