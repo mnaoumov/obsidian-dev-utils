@@ -4,8 +4,6 @@
  * Contains utility functions for handling rename and delete events in Obsidian.
  */
 
-/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
-import { getDataAdapterEx } from 'obsidian-typings/implementations';
 import type {
   App,
   CachedMetadata,
@@ -25,6 +23,8 @@ import {
   Notice,
   Vault
 } from 'obsidian';
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+import { getDataAdapterEx } from 'obsidian-typings/implementations';
 import { InternalPluginName } from 'obsidian-typings/implementations';
 
 import type {
