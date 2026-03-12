@@ -9,6 +9,7 @@ import type { App } from 'obsidian';
 import { Platform } from 'obsidian';
 
 import { toPosixPath } from '../path.ts';
+import { getDataAdapterEx  } from 'obsidian-typings/implementations';
 
 /**
  * Converts a relative path to a resource URL.
@@ -19,7 +20,7 @@ import { toPosixPath } from '../path.ts';
  * @returns The resource URL.
  */
 export function relativePathToResourceUrl(app: App, relativePath: string, notePath: string): string {
-  const noteFullPath = toPosixPath(app.vault.adapter.getFullRealPath(notePath));
+  const noteFullPath = toPosixPath(getDataAdapterEx(app).getFullRealPath(notePath));
   const noteUrl = `${Platform.resourcePathPrefix}${noteFullPath}`;
   const relativeUrl = new URL(relativePath, noteUrl);
   return String(relativeUrl);

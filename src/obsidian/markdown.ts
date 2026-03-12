@@ -8,10 +8,11 @@
 
 import type { App } from 'obsidian';
 import type {
-  DomEventsHandlersConstructor,
+  DomEventsHandlers,
   DomEventsHandlersInfo,
   EmbedCreator
 } from 'obsidian-typings';
+import type { ExtractConstructor } from 'obsidian-typings/implementations';
 
 import {
   Component,
@@ -31,6 +32,8 @@ import {
   isFolder
 } from './file-system.ts';
 import { invokeWithPatchAsync } from './monkey-around.ts';
+
+type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
 
 let domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
 

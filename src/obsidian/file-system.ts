@@ -25,6 +25,7 @@ import {
 } from '../path.ts';
 import { trimEnd } from '../string.ts';
 import { ensureNonNullable } from '../type-guards.ts';
+import { getDataAdapterEx } from 'obsidian-typings/implementations';
 
 /**
  * A file extension for `base` files.
@@ -524,7 +525,7 @@ export function trimMarkdownExtension(app: App, file: TAbstractFile): string {
 }
 
 function getFileInternal(app: App, path: string, isCaseInsensitive?: boolean): null | TAbstractFile {
-  isCaseInsensitive ??= app.vault.adapter.insensitive;
+  isCaseInsensitive ??= getDataAdapterEx(app).insensitive;
   if (isCaseInsensitive) {
     return app.vault.getAbstractFileByPathInsensitive(path);
   }

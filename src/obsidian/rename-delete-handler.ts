@@ -5,7 +5,7 @@
  */
 
 /* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
-
+import { getDataAdapterEx } from 'obsidian-typings/implementations';
 import type {
   App,
   CachedMetadata,
@@ -739,7 +739,7 @@ class RenameHandler {
   }
 
   private async handleCaseCollision(): Promise<boolean> {
-    if (!this.app.vault.adapter.insensitive || this.oldPath.toLowerCase() !== this.newPath.toLowerCase()) {
+    if (!getDataAdapterEx(this.app).insensitive || this.oldPath.toLowerCase() !== this.newPath.toLowerCase()) {
       return false;
     }
 

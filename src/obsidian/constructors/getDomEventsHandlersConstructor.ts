@@ -9,7 +9,10 @@
 /* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
 
 import type { App } from 'obsidian';
-import type { DomEventsHandlersConstructor } from 'obsidian-typings';
+import type {
+  DomEventsHandlers,
+  ExtractConstructor
+} from 'obsidian-typings';
 
 import { MarkdownPreviewRenderer } from 'obsidian';
 
@@ -18,6 +21,7 @@ import { assertNonNullable } from '../../type-guards.ts';
 import { invokeWithPatchAsync } from '../monkey-around.ts';
 import { trashSafe } from '../vault.ts';
 
+type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
 type RegisterDomEventsFn = typeof MarkdownPreviewRenderer.registerDomEvents;
 
 /**
