@@ -12,6 +12,16 @@ import { trimEnd } from '../string.ts';
 import { toCommandLine } from './cli-utils.ts';
 
 /**
+ * Options for {@link exec} that return detailed results.
+ */
+export interface ExecDetailedOptions extends ExecOption {
+  /**
+   * Must be `true` to receive detailed results.
+   */
+  withDetails: true;
+}
+
+/**
  * Options for executing a command.
  */
 export interface ExecOption {
@@ -72,6 +82,16 @@ export interface ExecResult {
 }
 
 /**
+ * Options for {@link exec} that return only stdout.
+ */
+export interface ExecSimpleOptions extends ExecOption {
+  /**
+   * Must be `false` or omitted to receive only stdout.
+   */
+  withDetails?: false;
+}
+
+/**
  * Executes a command.
  *
  * @param command - The command to execute. It can be a string or an array of strings.
@@ -82,7 +102,7 @@ export interface ExecResult {
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export async function exec(command: string | string[], options?: { withDetails?: false } & ExecOption): Promise<string>;
+export async function exec(command: string | string[], options?: ExecSimpleOptions): Promise<string>;
 /**
  * Executes a command.
  *
@@ -95,7 +115,7 @@ export async function exec(command: string | string[], options?: { withDetails?:
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export function exec(command: string | string[], options: { withDetails: true } & ExecOption): Promise<ExecResult>;
+export function exec(command: string | string[], options: ExecDetailedOptions): Promise<ExecResult>;
 /**
  * Executes a command.
  *

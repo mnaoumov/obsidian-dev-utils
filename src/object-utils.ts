@@ -128,6 +128,10 @@ interface ModuleWithDefaultExport<T> {
   default: T;
 }
 
+interface ResolvedToJsonOptions extends ToJsonOptions {
+  readonly tokenSubstitutions: TokenSubstitutions;
+}
+
 interface TokenSubstitutions {
   circularReference: string;
   maxDepthLimitReached: string;
@@ -507,7 +511,7 @@ export function setNestedPropertyValue(obj: GenericObject, path: string, value: 
  * @returns The JSON string representation of the input value.
  */
 export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): string {
-  const DEFAULT_OPTIONS: { tokenSubstitutions: TokenSubstitutions } & ToJsonOptions = {
+  const DEFAULT_OPTIONS: ResolvedToJsonOptions = {
     functionHandlingMode: FunctionHandlingMode.Exclude,
     maxDepth: -1,
     shouldCatchToJSONErrors: false,

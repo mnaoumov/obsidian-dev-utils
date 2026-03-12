@@ -8,8 +8,10 @@
 import { existsSync } from 'node:fs';
 
 import type {
+  ExecDetailedOptions,
   ExecOption,
-  ExecResult
+  ExecResult,
+  ExecSimpleOptions
 } from './exec.ts';
 
 import {
@@ -33,7 +35,7 @@ import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export async function execFromRoot(command: string | string[], options?: { withDetails?: false } & ExecOption): Promise<string>;
+export async function execFromRoot(command: string | string[], options?: ExecSimpleOptions): Promise<string>;
 /**
  * Executes a command from the root folder of the project.
  *
@@ -46,7 +48,7 @@ export async function execFromRoot(command: string | string[], options?: { withD
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: string | string[], options: { withDetails: true } & ExecOption): Promise<ExecResult>;
+export function execFromRoot(command: string | string[], options: ExecDetailedOptions): Promise<ExecResult>;
 /**
  * Executes a command from the root folder of the project.
  *
