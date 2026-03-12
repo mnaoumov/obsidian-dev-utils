@@ -24,8 +24,10 @@ import {
   Vault
 } from 'obsidian';
 /* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
-import { getDataAdapterEx } from 'obsidian-typings/implementations';
-import { InternalPluginName } from 'obsidian-typings/implementations';
+import {
+  getDataAdapterEx,
+  InternalPluginName
+} from 'obsidian-typings/implementations';
 
 import type {
   UpdateLinkParams,
