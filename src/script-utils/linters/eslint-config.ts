@@ -205,11 +205,11 @@ function getEslintConfigs(): Linter.Config[] {
           },
           {
             message: 'Do not use anonymous inline object types as type arguments. Define a named interface instead.',
-            selector: 'TSTypeParameterInstantiation > TSTypeLiteral'
+            selector: 'TSTypeParameterInstantiation TSTypeLiteral'
           },
           {
             message: 'Do not use anonymous inline object types in type annotations. Define a named interface instead.',
-            selector: 'TSTypeAnnotation > TSTypeLiteral'
+            selector: 'TSTypeAnnotation TSTypeLiteral'
           }
         ],
         'no-return-assign': 'error',
