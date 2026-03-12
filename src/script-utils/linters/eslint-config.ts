@@ -11,13 +11,14 @@
 
 /* v8 ignore start -- Declarative ESLint rule/plugin configuration; correctness is verified by running ESLint, not unit tests. */
 
-/* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
 import type {
   ESLint,
   Linter
 } from 'eslint';
 
+/* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
 import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
+import { includeIgnoreFile } from '@eslint/compat';
 import eslint from '@eslint/js';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import stylistic from '@stylistic/eslint-plugin';
@@ -57,6 +58,7 @@ export const typeScriptFiles = [
  * ESLint configurations for TypeScript projects.
  */
 export const obsidianDevUtilsConfigs: Linter.Config[] = defineConfig(
+  includeIgnoreFile(join(getRootFolder() ?? '', '.gitignore')),
   globalIgnores([
     join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyCjs),
     join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyJs),
