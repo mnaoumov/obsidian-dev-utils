@@ -16,6 +16,7 @@ import {
 import {
   createTFileInstance,
   createTFolderInstance,
+  getDataAdapterEx,
   parentFolderPath
 } from 'obsidian-typings/implementations';
 
@@ -25,7 +26,6 @@ import {
 } from '../path.ts';
 import { trimEnd } from '../string.ts';
 import { ensureNonNullable } from '../type-guards.ts';
-import { getDataAdapterEx } from 'obsidian-typings/implementations';
 
 /**
  * A file extension for `base` files.

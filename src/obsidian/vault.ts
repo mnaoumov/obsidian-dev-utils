@@ -17,11 +17,10 @@ import {
   TFolder
 } from 'obsidian';
 import {
+  getDataAdapterEx,
   parentFolderPath,
   ViewType
 } from 'obsidian-typings/implementations';
-
-import { getDataAdapterEx } from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../async.ts';
 import type { ValueProvider } from '../value-provider.ts';

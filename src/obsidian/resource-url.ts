@@ -7,9 +7,9 @@
 import type { App } from 'obsidian';
 
 import { Platform } from 'obsidian';
+import { getDataAdapterEx } from 'obsidian-typings/implementations';
 
 import { toPosixPath } from '../path.ts';
-import { getDataAdapterEx  } from 'obsidian-typings/implementations';
 
 /**
  * Converts a relative path to a resource URL.
