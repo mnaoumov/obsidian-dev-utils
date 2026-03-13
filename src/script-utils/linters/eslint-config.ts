@@ -24,7 +24,6 @@ import eslint from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-import-x';
-import eslintPluginModulesNewlines from 'eslint-plugin-modules-newlines';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
@@ -70,7 +69,6 @@ export const obsidianDevUtilsConfigs: Linter.Config[] = defineConfig(
   ...getStylisticConfigs(),
   ...getImportXConfigs(),
   ...getPerfectionistConfigs(),
-  ...getModulesNewlinesConfigs(),
   ...getEslintImportResolverTypescriptConfigs(),
   ...getEslintCommentsConfigs(),
   ...getObsidianLintConfigs()
@@ -325,7 +323,7 @@ function getImportXConfigs(): Linter.Config[] {
             ]
           }
         ],
-        'import-x/no-unused-modules': 'error',
+        'import-x/no-unused-modules': 'off',
         'import-x/no-useless-path-segments': 'error',
         'import-x/no-webpack-loader-syntax': 'error'
       }
@@ -334,21 +332,6 @@ function getImportXConfigs(): Linter.Config[] {
       files: ['scripts/**/*.ts', 'src/script-utils/**/*.ts'],
       rules: {
         'import-x/no-nodejs-modules': 'off'
-      }
-    }
-  ]);
-}
-
-function getModulesNewlinesConfigs(): Linter.Config[] {
-  return defineConfig([
-    {
-      files: typeScriptFiles,
-      plugins: {
-        'modules-newlines': eslintPluginModulesNewlines
-      },
-      rules: {
-        'modules-newlines/export-declaration-newline': 'error',
-        'modules-newlines/import-declaration-newline': 'error'
       }
     }
   ]);

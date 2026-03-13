@@ -1,10 +1,5 @@
-import type {
-  ESLint,
-  Linter
-} from 'eslint';
+import type { Linter } from 'eslint';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports -- Plugin is written for CommonJS.
-import eslintPluginTsdocRequired_ = require('@guardian/eslint-plugin-tsdoc-required');
 // eslint-disable-next-line import-x/no-rename-default, import-x/no-named-as-default -- The default export name `index` is too confusing.
 import jsdoc from 'eslint-plugin-jsdoc';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
@@ -19,8 +14,6 @@ import {
   typeScriptFiles
 } from '../src/script-utils/linters/eslint-config.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
-
-const eslintPluginTsdocRequired = eslintPluginTsdocRequired_ as ESLint.Plugin;
 
 const testFiles = ['__tests__/**/*.ts', '__mocks__/**/*.ts'];
 const rootScriptFiles = ['commitlint.config.ts', 'eslint.config.mts'];
@@ -38,16 +31,6 @@ export const configs: Linter.Config[] = defineConfig([
     ObsidianDevUtilsRepoPaths.Static
   ]),
   ...obsidianDevUtilsConfigs,
-  {
-    files: typeScriptFiles,
-    ignores: scriptFiles,
-    plugins: {
-      'eslint-plugin-tsdoc-required': eslintPluginTsdocRequired
-    },
-    rules: {
-      'eslint-plugin-tsdoc-required/tsdoc-required': 'error'
-    }
-  },
   {
     files: typeScriptFiles,
     plugins: {
@@ -122,6 +105,21 @@ export const configs: Linter.Config[] = defineConfig([
             },
             {
               context: 'ExportDefaultDeclaration > ClassDeclaration > ClassBody > TSAbstractPropertyDefinition:not([accessibility=\'private\'])'
+            },
+            {
+              context: 'ExportNamedDeclaration > TSInterfaceDeclaration'
+            },
+            {
+              context: 'ExportNamedDeclaration > TSTypeAliasDeclaration'
+            },
+            {
+              context: 'ExportNamedDeclaration > TSEnumDeclaration'
+            },
+            {
+              context: 'ExportNamedDeclaration > ClassDeclaration'
+            },
+            {
+              context: 'ExportDefaultDeclaration > ClassDeclaration'
             }
           ],
           publicOnly: false,
@@ -167,7 +165,6 @@ export const configs: Linter.Config[] = defineConfig([
     files: testFiles,
     rules: {
       '@typescript-eslint/unbound-method': 'off',
-      'eslint-plugin-tsdoc-required/tsdoc-required': 'off',
       'jsdoc/require-file-overview': 'off',
       'jsdoc/require-jsdoc': 'off',
       'jsdoc/require-param': 'off',
