@@ -104,6 +104,72 @@ describe('exec', () => {
     }
   });
 
+  it('should reject when more than one ExecArg is provided', async () => {
+    await expect(
+      exec(['cmd', { batchedArgs: ['a'] }, { batchedArgs: ['b'] }])
+    ).rejects.toThrow('Only one ExecArg with batchedArgs is allowed');
+  });
+
+  it('should expand ExecArg inline when total length is within limit', async () => {
+    const child = createMockChild();
+    mockSpawn.mockReturnValue(child);
+
+    const promise = exec(['echo', { batchedArgs: ['a', 'b', 'c'] }], { isQuiet: true });
+
+    child.stdout.push(Buffer.from('a b c'));
+    child.stdout.end();
+    child.stderr.end();
+    child.emit('close', 0, null);
+
+    await expect(promise).resolves.toBe('a b c');
+    const calledCommand = mockSpawn.mock.calls[0][0] as string;
+    expect(calledCommand).toContain('echo');
+    expect(calledCommand).toContain('a');
+    expect(calledCommand).toContain('b');
+    expect(calledCommand).toContain('c');
+  });
+
+  it('should split ExecArg into batches when total exceeds limit', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const longArg = 'x'.repeat(4000);
+      const children = [createMockChild(), createMockChild()];
+      let callIndex = 0;
+      mockSpawn.mockImplementation(() => {
+        const child = children[callIndex];
+        callIndex++;
+        setTimeout(() => {
+          child.stdout.push(Buffer.from(`out${String(callIndex)}`));
+          child.stdout.end();
+          child.stderr.end();
+          child.emit('close', 0, null);
+        });
+        return child;
+      });
+
+      const result = await exec(['echo', { batchedArgs: [longArg, longArg, longArg] }], { isQuiet: true });
+
+      expect(mockSpawn).toHaveBeenCalledTimes(2);
+      expect(result).toContain('out');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should reject when a single batched arg exceeds max length', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const hugeArg = 'x'.repeat(8192);
+      await expect(
+        exec(['echo', { batchedArgs: [hugeArg] }])
+      ).rejects.toThrow('Cannot split');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
   it('should resolve with stdout on successful command', async () => {
     const child = createMockChild();
     mockSpawn.mockReturnValue(child);

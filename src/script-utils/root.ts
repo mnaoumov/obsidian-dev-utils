@@ -8,6 +8,7 @@
 import { existsSync } from 'node:fs';
 
 import type {
+  CommandPart,
   ExecDetailedOptions,
   ExecOption,
   ExecResult,
@@ -35,7 +36,7 @@ import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export async function execFromRoot(command: string | string[], options?: ExecSimpleOptions): Promise<string>;
+export async function execFromRoot(command: CommandPart[] | string, options?: ExecSimpleOptions): Promise<string>;
 /**
  * Executes a command from the root folder of the project.
  *
@@ -48,7 +49,7 @@ export async function execFromRoot(command: string | string[], options?: ExecSim
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: string | string[], options: ExecDetailedOptions): Promise<ExecResult>;
+export function execFromRoot(command: CommandPart[] | string, options: ExecDetailedOptions): Promise<ExecResult>;
 /**
  * Executes a command from the root folder of the project.
  *
@@ -61,7 +62,7 @@ export function execFromRoot(command: string | string[], options: ExecDetailedOp
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: string | string[], options: ExecOption = {}): Promise<ExecResult | string> {
+export function execFromRoot(command: CommandPart[] | string, options: ExecOption = {}): Promise<ExecResult | string> {
   let root = getRootFolder(options.cwd);
 
   if (!root) {
