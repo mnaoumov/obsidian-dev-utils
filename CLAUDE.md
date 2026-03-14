@@ -29,8 +29,7 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 
 ### Directory Structure
 
-- `src/` — source code, organized by domain (e.g., `obsidian/`, `codemirror/`, `script-utils/`, `transformers/`)
-- `__tests__/` — test files, mirrors `src/` structure
+- `src/` — source code and tests, organized by domain (e.g., `obsidian/`, `codemirror/`, `script-utils/`, `transformers/`)
 - `__mocks__/obsidian/` — mock implementations for the `obsidian` package (one file per export)
 - `__mocks__/obsidian-typings/` — mock implementations for `obsidian-typings`
 - `src/script-utils/bundlers/esbuild.ts` — public API for esbuild bundler (build, dev)
@@ -99,7 +98,7 @@ export function myFunction(param: Type): ReturnType {
 
 ### Code Quality
 
-- Use `assertNotNullable()` from `__tests__/test-helpers.ts` in tests instead of `!`
+- Use `assertNotNullable()` from `src/test-helpers.ts` in tests instead of `!`
 
 ## Testing
 
@@ -116,9 +115,9 @@ export function myFunction(param: Type): ReturnType {
 
 ### File Conventions
 
-- Test files: `__tests__/[module-name].test.ts` (mirrors `src/` path, kebab-case)
-- Browser tests: `__tests__/[module-name].browser.test.ts` with `// @vitest-environment jsdom`
-- Test helper: `__tests__/test-helpers.ts` — exports `assertNotNullable<T>()` for type-safe null assertions
+- Test files: `src/[module-name].test.ts` (next to source file, kebab-case)
+- Browser tests: `src/[module-name].browser.test.ts` with `// @vitest-environment jsdom`
+- Test helper: `src/test-helpers.ts` — exports `assertNotNullable<T>()` for type-safe null assertions
 
 ### Patterns
 
@@ -130,7 +129,7 @@ import {
   vi
 } from 'vitest';
 
-import { myFunction } from '../src/my-module.ts';
+import { myFunction } from './my-module.ts';
 
 describe('MyModule', () => {
   it('should do something', () => {
@@ -141,7 +140,7 @@ describe('MyModule', () => {
 
 ### Mocking
 
-- `obsidian` module is aliased to `__mocks__/obsidian/index.ts` via Vitest config
+- `obsidian` module is aliased to `obsidian-test-mocks/obsidian` via Vitest config
 - Mock structure: one file per Obsidian export in `__mocks__/obsidian/` (e.g., `App.ts`, `Vault.ts`, `Plugin.ts`)
 - Use `vi.fn()` for mock functions, `vi.useFakeTimers()`/`vi.useRealTimers()` for timer mocking
 - Use `vi.stubGlobal()` / `vi.unstubAllGlobals()` for global stubs

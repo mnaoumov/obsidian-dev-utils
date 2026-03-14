@@ -23,7 +23,7 @@ import { getPath } from './file-system.ts';
  * @param dv - The DataviewInlineApi instance used to create the file link.
  * @param pathOrFile - The file path for which the title is to be fixed.
  * @param isFolderNote - A boolean indicating whether the file is a folder note. Defaults to `false`.
- * If true, the title is derived from the folder name. Defaults to `false`.
+ * If `true`, the title is derived from the folder name. Defaults to `false`.
  * @returns A Link object with the corrected title.
  */
 export function fixTitle(dv: DataviewInlineApi, pathOrFile: PathOrFile, isFolderNote?: boolean): Link {
