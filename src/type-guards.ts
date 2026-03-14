@@ -14,6 +14,21 @@ export type GenericObject = Record<string, unknown>;
 type NullableConstraint<T> = null extends T ? unknown : undefined extends T ? unknown : never;
 
 /**
+ * Asserts that a condition is `true`. Throws if it is not.
+ *
+ * Use in place of `/* v8 ignore *\/` for defensive guards that should
+ * never trigger at runtime but would otherwise create uncovered branches.
+ *
+ * @param condition - The condition to assert.
+ * @param errorOrMessage - The error or message to throw if the condition is `false`.
+ */
+export function assert(condition: boolean, errorOrMessage: Error | string): asserts condition {
+  if (!condition) {
+    throw typeof errorOrMessage === 'string' ? new Error(errorOrMessage) : errorOrMessage;
+  }
+}
+
+/**
  * Asserts that a value is a generic object, narrowing its type in place.
  *
  * @param _obj - The value to assert.

@@ -10,6 +10,7 @@ import {
   NEVER_MATCH_REG_EXP
 } from '../../reg-exp.ts';
 import { trimEnd } from '../../string.ts';
+import { assert } from '../../type-guards.ts';
 
 enum PathSettingType {
   Exclude = 'Exclude',
@@ -43,10 +44,8 @@ class PathSetting {
         return this.regExp.test(path);
       case PathSettingType.Include:
         return !this.regExp.test(path);
-      /* v8 ignore start -- All enum values are handled above. */
       default:
-        throw new Error(`Invalid path setting type: ${this.type as string}`);
-        /* v8 ignore stop */
+        assert(false, `Invalid path setting type: ${this.type as string}`);
     }
   }
 }
@@ -113,10 +112,8 @@ function getDefaultRegExp(type: PathSettingType): RegExp {
       return NEVER_MATCH_REG_EXP;
     case PathSettingType.Include:
       return ALWAYS_MATCH_REG_EXP;
-    /* v8 ignore start -- All enum values are handled above. */
     default:
-      throw new Error(`Invalid path setting type: ${type as string}`);
-      /* v8 ignore stop */
+      assert(false, `Invalid path setting type: ${type as string}`);
   }
 }
 

@@ -5,6 +5,7 @@ import {
 } from 'vitest';
 
 import {
+  assert,
   assertGenericObject,
   assertNonNullable,
   ensureGenericObject,
@@ -12,6 +13,27 @@ import {
 } from './type-guards.ts';
 
 describe('TypeGuards', () => {
+  describe('assert', () => {
+    it('should not throw when condition is true', () => {
+      expect(() => {
+        assert(true, 'should not throw');
+      }).not.toThrow();
+    });
+
+    it('should throw with string message when condition is false', () => {
+      expect(() => {
+        assert(false, 'test error');
+      }).toThrow('test error');
+    });
+
+    it('should throw the provided Error instance when condition is false', () => {
+      const error = new TypeError('custom error');
+      expect(() => {
+        assert(false, error);
+      }).toThrow(error);
+    });
+  });
+
   describe('assertGenericObject', () => {
     it('should not throw for a plain object', () => {
       const obj = { key: 'value' };

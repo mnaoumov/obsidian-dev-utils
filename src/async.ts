@@ -26,7 +26,10 @@ import {
 } from './error.ts';
 import { noop } from './function.ts';
 import { normalizeOptionalProperties } from './object-utils.ts';
-import { assertNonNullable } from './type-guards.ts';
+import {
+  assert,
+  assertNonNullable
+} from './type-guards.ts';
 
 /**
  * A type representing a function that resolves a {@link Promise}.
@@ -427,9 +430,7 @@ export async function neverEnds(): Promise<never> {
   await new Promise(() => {
     noop();
   });
-  /* v8 ignore start -- By design, this function never resolves. */
-  throw new Error('Should never happen');
-  /* v8 ignore stop */
+  assert(false, 'Should never happen');
 }
 
 /**

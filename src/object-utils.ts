@@ -20,6 +20,7 @@ import type {
 import { errorToString } from './error.ts';
 import { replaceAll } from './string.ts';
 import {
+  assert,
   ensureGenericObject,
   ensureNonNullable
 } from './type-guards.ts';
@@ -596,9 +597,7 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
 }
 
 function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<string> {
-  /* v8 ignore start -- All enum values are handled above; default branch is unreachable. */
   switch (params.key) {
-    /* v8 ignore stop */
     case TokenSubstitutionKey.CircularReference:
       return params.substitutions.circularReference;
     case TokenSubstitutionKey.Function:
@@ -612,9 +611,7 @@ function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<strin
     case TokenSubstitutionKey.Undefined:
       return 'undefined';
     default:
-      /* v8 ignore start -- All enum values are handled above. */
-      break;
-      /* v8 ignore stop */
+      assert(false, 'Unhandled substitution key');
   }
 }
 

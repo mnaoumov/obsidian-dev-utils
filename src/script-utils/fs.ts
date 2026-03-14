@@ -16,6 +16,7 @@ import {
   toPosixBuffer,
   toPosixPath
 } from '../path.ts';
+import { assert } from '../type-guards.ts';
 
 /**
  * Options for controlling the format of the result when returning buffers.
@@ -147,11 +148,7 @@ export async function readdirPosix(
  * @returns `true` if the options are for returning buffers, otherwise `false`.
  */
 function isBufferResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is BufferResultOptions {
-  /* v8 ignore start -- Dead code: readdirPosix defaults options to {}, so undefined never reaches here. */
-  if (options === undefined) {
-    return false;
-  }
-  /* v8 ignore stop */
+  assert(options !== undefined, 'options must be defined');
 
   if (options === 'buffer') {
     return true;
@@ -179,11 +176,7 @@ function isBufferResultOptions(options: BufferResultOptions | DirentResultOption
  * @returns `true` if the options are for returning strings, otherwise `false`.
  */
 function isStringResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is StringResultOptions {
-  /* v8 ignore start -- Dead code: readdirPosix defaults options to {}, so undefined never reaches here. */
-  if (options === undefined) {
-    return true;
-  }
-  /* v8 ignore stop */
+  assert(options !== undefined, 'options must be defined');
 
   if (options === 'buffer') {
     return false;
