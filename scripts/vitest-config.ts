@@ -11,7 +11,9 @@ export const config = defineConfig({
       exclude: [
         'src/**/@types/**',
         'src/**/index.ts',
-        'src/**/*.d.ts'
+        'src/**/*.d.ts',
+        'src/**/*.test.ts',
+        'src/test-helpers.ts'
       ],
       include: ['src/**/*.ts'],
       provider: 'v8',
@@ -21,7 +23,7 @@ export const config = defineConfig({
     environment: 'node',
     exclude: ['node_modules', 'dist'],
     globals: false,
-    include: ['__tests__/**/*.test.ts'],
+    include: ['src/**/*.test.ts'],
     server: {
       deps: {
         inline: ['obsidian-typings']

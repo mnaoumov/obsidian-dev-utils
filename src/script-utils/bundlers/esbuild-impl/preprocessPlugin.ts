@@ -10,6 +10,7 @@
 /* v8 ignore start -- esbuild plugin that preprocesses source files with import.meta.url shims and process polyfills; requires a live esbuild context. */
 
 import type { Plugin } from 'esbuild';
+import type { pathToFileURL } from 'node:url';
 
 import { readFile } from 'node:fs/promises';
 
@@ -55,7 +56,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
       [replaceAll('import(dot)meta(dot)url', '(dot)', '.')]: (): string => {
         if (typeof __filename === 'string') {
           const localRequire = require;
-          const url = localRequire('node:url') as typeof import('node:url');
+          const url = localRequire('node:url') as { pathToFileURL: typeof pathToFileURL };
           if (typeof url.pathToFileURL === 'function') {
             return url.pathToFileURL(__filename).href;
           }

@@ -51,6 +51,10 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
     return;
   }
 
+  if (dirent.isFile() && (dirent.name.endsWith('.test.ts') || dirent.name === 'test-helpers.ts')) {
+    return;
+  }
+
   let sourceFile: string;
   let name: string;
   if (dirent.isDirectory()) {

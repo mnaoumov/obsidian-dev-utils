@@ -6,6 +6,10 @@
     "noEmit": false,
     "resolveJsonModule": true
   },
+  "exclude": [
+    "./src/**/*.test.ts",
+    "./src/test-helpers.ts"
+  ],
   "include": [
     "./src/**/*.ts"
   ]

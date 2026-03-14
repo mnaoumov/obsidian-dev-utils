@@ -25,7 +25,6 @@
   },
   "include": [
     "__mocks__/obsidian-typings/src/**/*.ts",
-    "__tests__/**/*.ts",
     "./commitlint.config.ts",
     "./eslint.config.mts",
     "./scripts/**/*.ts",
