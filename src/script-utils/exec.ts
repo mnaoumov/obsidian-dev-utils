@@ -9,6 +9,7 @@ import process from 'node:process';
 
 import { getLibDebugger } from '../debug.ts';
 import { trimEnd } from '../string.ts';
+import { assertNonNullable } from '../type-guards.ts';
 import { toCommandLine } from './cli-utils.ts';
 
 /**
@@ -320,6 +321,7 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOption): Promis
   }
 
   const execArg = execArgs[0];
+  assertNonNullable(execArg);
   const staticParts = parts.filter((part): part is string => typeof part === 'string');
   const baseCommand = toCommandLine(staticParts);
   const maxCommandLength = getMaxCommandLength();
