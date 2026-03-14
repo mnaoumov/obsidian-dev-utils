@@ -32,5 +32,5 @@ export interface SpellcheckParams {
 export async function spellcheck(params?: SpellcheckParams): Promise<void> {
   const { paths } = params ?? {};
   const targets = paths?.length ? paths : ['.'];
-  await execFromRoot(['npx', 'cspell', ...targets, '--no-progress', '--no-must-find-files']);
+  await execFromRoot(['npx', 'cspell', '--no-progress', '--no-must-find-files', { batchedArgs: targets }]);
 }
