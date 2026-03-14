@@ -167,6 +167,7 @@ export const configs: Linter.Config[] = defineConfig([
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/unbound-method': 'off',
       'jsdoc/require-file-overview': 'off',
       'jsdoc/require-jsdoc': 'off',
