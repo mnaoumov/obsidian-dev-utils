@@ -1602,7 +1602,6 @@ describe('app-dependent functions', () => {
 
     app = await App.createConfigured__({
       files: {
-        'folder/': '',
         'folder/other.md': '# Other',
         'folder/same.md': '# Same',
         'image.png': '',
