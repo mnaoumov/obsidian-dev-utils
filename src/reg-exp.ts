@@ -4,6 +4,8 @@
  * Contains utility functions for regular expressions.
  */
 
+import { assert } from './type-guards.ts';
+
 /**
  * A strategy to use when merging multiple regex flags into one alternation.
  */
@@ -64,9 +66,7 @@ function shouldPickFlag(regExps: RegExp[], flag: string, strategy: RegExpMergeFl
     case RegExpMergeFlagsConflictStrategy.Union:
       return count > 0;
     default:
-      /* v8 ignore start -- All enum values are handled above. */
-      throw new Error(`Invalid strategy: ${strategy as string}`);
-      /* v8 ignore stop */
+      assert(false, `Invalid strategy: ${strategy as string}`);
   }
 
   const allSame = count === 0 || count === regExps.length;
@@ -174,9 +174,7 @@ function addUnicodeFlags(
       shouldUseVFlag = countV > 0;
       break;
     default:
-      /* v8 ignore start -- All enum values are handled above. */
-      throw new Error(`Invalid strategy: ${strategy as string}`);
-      /* v8 ignore stop */
+      assert(false, `Invalid strategy: ${strategy as string}`);
   }
 
   if (shouldUseUFlag && shouldUseVFlag) {
