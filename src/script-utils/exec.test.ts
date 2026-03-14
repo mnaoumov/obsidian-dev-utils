@@ -76,7 +76,7 @@ describe('exec', () => {
     }
   });
 
-  it('should not reject long commands on non-Windows platforms', async () => {
+  it('should allow longer commands on non-Windows platforms', async () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'linux' });
     try {
@@ -88,6 +88,17 @@ describe('exec', () => {
       child.stderr.end('');
       child.emit('close', 0, null);
       await expect(promise).resolves.toBe('ok');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should reject when command exceeds non-Windows max length', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    try {
+      const longCommand = 'a'.repeat(131073);
+      await expect(exec(longCommand)).rejects.toThrow('Command line is too long');
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
     }

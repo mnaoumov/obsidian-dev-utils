@@ -141,12 +141,14 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
   }
 
   const WINDOWS_MAX_COMMAND_LENGTH = 8191;
-  if (process.platform === 'win32' && command.length > WINDOWS_MAX_COMMAND_LENGTH) {
+  const UNIX_MAX_COMMAND_LENGTH = 131072;
+  const maxCommandLength = process.platform === 'win32' ? WINDOWS_MAX_COMMAND_LENGTH : UNIX_MAX_COMMAND_LENGTH;
+  if (command.length > maxCommandLength) {
     return Promise.reject(
       new Error(
         `Command line is too long (${String(command.length)} chars, max ${
-          String(WINDOWS_MAX_COMMAND_LENGTH)
-        } on Windows). Consider splitting into smaller batches.`
+          String(maxCommandLength)
+        } on ${process.platform}). Consider splitting into smaller batches.`
       )
     );
   }
