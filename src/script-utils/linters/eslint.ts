@@ -71,5 +71,5 @@ export async function lint(params?: LintParams): Promise<void> {
   }
 
   const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
-  await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), ...targets]);
+  await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), { batchedArgs: targets }]);
 }
