@@ -5,7 +5,7 @@
     "paths": {
       "obsidian": ["./node_modules/obsidian-test-mocks/dist/lib/cjs/obsidian/index.d.cts"]
     },
-    "skipLibCheck": true
+    "skipLibCheck": false
   },
   "exclude": [],
   "include": [

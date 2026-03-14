@@ -115,10 +115,9 @@ export function mockImplementation<
 
   const originalImplementation = map.get(method) as F;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bridging between vitest's spy types and our generic F requires any.
-  return vi.spyOn(obj, method as never).mockImplementation(function mockImpl(this: unknown, ...args: any[]): any {
+  return vi.spyOn(obj, method as never).mockImplementation(function mockImpl(this: unknown, ...args: unknown[]): unknown {
     return impl.call(this as T, originalImplementation, ...(args as Parameters<F>));
-  } as unknown);
+  });
 }
 
 /**
