@@ -21,7 +21,7 @@ vi.mock('../../../../src/obsidian/plugin/plugin-context.ts', () => ({
 
 describe('EmailComponent', () => {
   function createComponent(): EmailComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new EmailComponent(container);
   }
 

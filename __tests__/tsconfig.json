@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "obsidian": ["../node_modules/obsidian-test-mocks/dist/lib/cjs/obsidian/index.d.cts"]
+    }
+  },
+  "include": [
+    "./**/*.ts",
+    "../__mocks__/obsidian-typings/src/**/*.ts"
+  ]
+}

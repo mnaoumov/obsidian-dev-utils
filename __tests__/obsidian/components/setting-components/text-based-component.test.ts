@@ -1,15 +1,23 @@
 // @vitest-environment jsdom
 
+import { TextComponent } from 'obsidian';
 import {
   describe,
   expect,
   it
 } from 'vitest';
 
-import { TextComponent } from '../../../../__mocks__/obsidian/TextComponent.ts';
 import { noop } from '../../../../src/function.ts';
 import { getTextBasedComponentValue } from '../../../../src/obsidian/components/setting-components/text-based-component.ts';
-import { assertNonNullable } from '../../../../src/type-guards.ts';
+import {
+  assertNonNullable,
+  ensureGenericObject
+} from '../../../../src/type-guards.ts';
+
+// Allow duck-type check in getTextBasedComponentValue to work with strictMock.
+// StrictMock throws on access to unknown properties; setting this to undefined
+// Makes `typeof tc.setPlaceholderValue === 'function'` return false instead.
+ensureGenericObject(TextComponent.prototype).setPlaceholderValue = undefined;
 
 describe('getTextBasedComponentValue', () => {
   it('should return null for objects without TextBasedComponent interface', () => {
@@ -30,7 +38,7 @@ describe('getTextBasedComponentValue', () => {
   });
 
   it('should wrap AbstractTextComponent', () => {
-    const container = document.createElement('div');
+    const container = createDiv();
     const atc = new TextComponent(container);
     atc.setValue('hello');
 
@@ -41,7 +49,7 @@ describe('getTextBasedComponentValue', () => {
   });
 
   it('should empty the wrapped AbstractTextComponent', () => {
-    const container = document.createElement('div');
+    const container = createDiv();
     const atc = new TextComponent(container);
     atc.setValue('hello');
 
@@ -52,7 +60,7 @@ describe('getTextBasedComponentValue', () => {
   });
 
   it('should check isEmpty on wrapped AbstractTextComponent', () => {
-    const container = document.createElement('div');
+    const container = createDiv();
     const atc = new TextComponent(container);
 
     const result = getTextBasedComponentValue<string>(atc);
@@ -63,7 +71,7 @@ describe('getTextBasedComponentValue', () => {
   });
 
   it('should set placeholder value on wrapped AbstractTextComponent', () => {
-    const container = document.createElement('div');
+    const container = createDiv();
     const atc = new TextComponent(container);
 
     const result = getTextBasedComponentValue<string>(atc);

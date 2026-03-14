@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 
 import {
+  ButtonComponent,
+  TextComponent
+} from 'obsidian';
+import {
   beforeEach,
   describe,
   expect,
@@ -8,10 +12,9 @@ import {
   vi
 } from 'vitest';
 
-import { ButtonComponent } from '../../../__mocks__/obsidian/ButtonComponent.ts';
-import { TextComponent } from '../../../__mocks__/obsidian/TextComponent.ts';
 import { prompt } from '../../../src/obsidian/modals/prompt.ts';
 import { ensureNonNullable } from '../../../src/type-guards.ts';
+import { mockImplementation } from '../../test-helpers.ts';
 
 vi.mock('../../../src/async.ts', () => ({
   convertAsyncToSync: vi.fn((fn: () => unknown) => fn),
@@ -48,12 +51,23 @@ vi.mock('../../../src/obsidian/plugin/plugin-context.ts', () => ({
 }));
 
 describe('prompt', () => {
+  const buttonInstances: ButtonComponent[] = [];
+  const textInstances: TextComponent[] = [];
+
   beforeEach(() => {
     vi.clearAllMocks();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-    ButtonComponent.instances = [];
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-    TextComponent.instances = [];
+    buttonInstances.length = 0;
+    textInstances.length = 0;
+    // @ts-expect-error -- constructor2__ is a mock-only hook from obsidian-test-mocks.
+    mockImplementation(ButtonComponent.prototype, 'constructor2__', function captureButton(this: ButtonComponent, originalImplementation) {
+      originalImplementation.call(this);
+      buttonInstances.push(this);
+    });
+    // @ts-expect-error -- constructor4__ is a mock-only hook from obsidian-test-mocks.
+    mockImplementation(TextComponent.prototype, 'constructor4__', function captureText(this: TextComponent, originalImplementation) {
+      originalImplementation.call(this);
+      textInstances.push(this);
+    });
   });
 
   it('should resolve null when modal is closed without clicking OK', async () => {
@@ -69,10 +83,8 @@ describe('prompt', () => {
       defaultValue: 'hello'
     });
     queueMicrotask(() => {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      const okButton = ButtonComponent.instances[0];
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      okButton?.simulateClick();
+      const okButton = buttonInstances[0];
+      okButton?.simulateClick__();
     });
     const result = await resultPromise;
     expect(result).toBe('hello');
@@ -84,10 +96,8 @@ describe('prompt', () => {
       defaultValue: 'enter-value'
     });
     queueMicrotask(() => {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      const textComp = TextComponent.instances[0];
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      textComp?.simulateEvent('keydown', { key: 'Enter', preventDefault: vi.fn() });
+      const textComp = textInstances[0];
+      textComp?.simulateEvent__('keydown', { key: 'Enter', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
     expect(result).toBe('enter-value');
@@ -99,10 +109,8 @@ describe('prompt', () => {
       defaultValue: 'escape-value'
     });
     queueMicrotask(() => {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      const textComp = TextComponent.instances[0];
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      textComp?.simulateEvent('keydown', { key: 'Escape', preventDefault: vi.fn() });
+      const textComp = textInstances[0];
+      textComp?.simulateEvent__('keydown', { key: 'Escape', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
     expect(result).toBeNull();
@@ -114,10 +122,8 @@ describe('prompt', () => {
       defaultValue: 'other-key'
     });
     queueMicrotask(() => {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      const textComp = TextComponent.instances[0];
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      textComp?.simulateEvent('keydown', { key: 'a', preventDefault: vi.fn() });
+      const textComp = textInstances[0];
+      textComp?.simulateEvent__('keydown', { key: 'a', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
     expect(result).toBeNull();
@@ -129,15 +135,11 @@ describe('prompt', () => {
       defaultValue: 'invalid'
     });
     queueMicrotask(() => {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      const textComp = ensureNonNullable(TextComponent.instances[0]);
+      const textComp = ensureNonNullable(textInstances[0]);
       // Make checkValidity return false
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
       textComp.inputEl.checkValidity = (): boolean => false;
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      const okButton = ensureNonNullable(ButtonComponent.instances[0]);
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      okButton.simulateClick();
+      const okButton = ensureNonNullable(buttonInstances[0]);
+      okButton.simulateClick__();
     });
     const result = await resultPromise;
     // Since checkValidity is false, handleOk returns early - isOkClicked stays false
