@@ -92,6 +92,7 @@ export function deleteVaultAbstractFile(vault: ObsidianVault, path: string): voi
  * @param impl - Replacement function receiving the original implementation and call args.
  * @returns The spy instance.
  */
+
 export function mockImplementation<
   T extends object,
   K extends keyof T & string,
@@ -114,9 +115,10 @@ export function mockImplementation<
 
   const originalImplementation = map.get(method) as F;
 
-  return vi.spyOn(obj, method as never).mockImplementation(function mockImpl(this: unknown, ...args: unknown[]): unknown {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bridging between vitest's spy types and our generic F requires any.
+  return vi.spyOn(obj, method as never).mockImplementation(function mockImpl(this: unknown, ...args: any[]): any {
     return impl.call(this as T, originalImplementation, ...(args as Parameters<F>));
-  });
+  } as unknown);
 }
 
 /**
