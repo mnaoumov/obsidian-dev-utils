@@ -24,7 +24,6 @@
     "verbatimModuleSyntax": true
   },
   "include": [
-    "__mocks__/obsidian-typings/src/**/*.ts",
     "./commitlint.config.ts",
     "./eslint.config.mts",
     "./scripts/**/*.ts",
