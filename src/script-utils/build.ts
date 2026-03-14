@@ -73,7 +73,7 @@ export async function buildCompileSvelte(): Promise<void> {
  * @returns A {@link Promise} that resolves when the code compiles successfully.
  */
 export async function buildCompileTypeScript(): Promise<void> {
-  await execFromRoot(['npx', 'tsc', '--build', '--force']);
+  await execFromRoot(['npx', 'tsc', '-p', 'tsconfig.build.json']);
 }
 
 /**
