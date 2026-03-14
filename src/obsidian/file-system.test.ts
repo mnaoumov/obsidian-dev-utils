@@ -656,7 +656,6 @@ describe('getMarkdownFiles', () => {
   it('should return markdown files in a folder (non-recursive)', async () => {
     app = await App.createConfigured__({
       files: {
-        'docs/': '',
         'docs/a.md': '',
         'docs/b.md': '',
         'docs/image.png': ''
@@ -680,9 +679,7 @@ describe('getMarkdownFiles', () => {
   it('should return markdown files recursively', async () => {
     app = await App.createConfigured__({
       files: {
-        'docs/': '',
         'docs/a.md': '',
-        'docs/sub/': '',
         'docs/sub/b.md': ''
       }
     });
@@ -705,7 +702,6 @@ describe('getMarkdownFiles', () => {
   it('should return an empty array when no markdown files exist', async () => {
     app = await App.createConfigured__({
       files: {
-        'docs/': '',
         'docs/image.png': ''
       }
     });

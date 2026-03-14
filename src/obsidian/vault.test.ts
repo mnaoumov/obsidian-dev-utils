@@ -1217,7 +1217,7 @@ describe('deleteEmptyFolderHierarchy', () => {
   });
 
   it('should delete folder hierarchy when empty', async () => {
-    app = await App.createConfigured__({ files: { 'parent/': '', 'parent/child/': '' } });
+    app = await App.createConfigured__({ files: { 'parent/child/': '' } });
     vi.spyOn(app.fileManager, 'trashFile');
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
