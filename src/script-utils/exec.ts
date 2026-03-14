@@ -140,6 +140,17 @@ export function exec(command: string | string[], options: ExecOption = {}): Prom
     command = toCommandLine(command);
   }
 
+  const WINDOWS_MAX_COMMAND_LENGTH = 8191;
+  if (process.platform === 'win32' && command.length > WINDOWS_MAX_COMMAND_LENGTH) {
+    return Promise.reject(
+      new Error(
+        `Command line is too long (${String(command.length)} chars, max ${
+          String(WINDOWS_MAX_COMMAND_LENGTH)
+        } on Windows). Consider splitting into smaller batches.`
+      )
+    );
+  }
+
   return new Promise((resolve, reject) => {
     getLibDebugger('Exec')(`Executing command: ${command}`);
 
