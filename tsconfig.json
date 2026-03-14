@@ -23,11 +23,18 @@
     ],
     "verbatimModuleSyntax": true
   },
+  "exclude": [
+    "./src/**/*.test.ts",
+    "./src/test-helpers.ts"
+  ],
   "include": [
     "./commitlint.config.ts",
     "./eslint.config.mts",
     "./scripts/**/*.ts",
     "./src/**/*.ts",
     "./vitest.config.ts"
+  ],
+  "references": [
+    { "path": "./tsconfig.test.json" }
   ]
 }
