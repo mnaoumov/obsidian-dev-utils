@@ -30,8 +30,7 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 ### Directory Structure
 
 - `src/` — source code and tests, organized by domain (e.g., `obsidian/`, `codemirror/`, `script-utils/`, `transformers/`)
-- `__mocks__/obsidian/` — mock implementations for the `obsidian` package (one file per export)
-- `__mocks__/obsidian-typings/` — mock implementations for `obsidian-typings`
+- `__mocks__/obsidian-typings/` — mock augmentations for `obsidian-typings` (hooks into obsidian-test-mocks constructors)
 - `src/script-utils/bundlers/esbuild.ts` — public API for esbuild bundler (build, dev)
 - `src/script-utils/bundlers/esbuild-impl/` — internal esbuild implementation details
 - `src/script-utils/linters/eslint.ts` — ESLint linting
@@ -98,7 +97,7 @@ export function myFunction(param: Type): ReturnType {
 
 ### Code Quality
 
-- Use `assertNotNullable()` from `src/test-helpers.ts` in tests instead of `!`
+- Use `assertNonNullable()` from `src/test-helpers.ts` in tests instead of `!`
 
 ## Testing
 
@@ -141,7 +140,7 @@ describe('MyModule', () => {
 ### Mocking
 
 - `obsidian` module is aliased to `obsidian-test-mocks/obsidian` via Vitest config
-- Mock structure: one file per Obsidian export in `__mocks__/obsidian/` (e.g., `App.ts`, `Vault.ts`, `Plugin.ts`)
+- Test files use `tsconfig.test.json` (with `paths` mapping to obsidian-test-mocks types) for IDE and ESLint
 - Use `vi.fn()` for mock functions, `vi.useFakeTimers()`/`vi.useRealTimers()` for timer mocking
 - Use `vi.stubGlobal()` / `vi.unstubAllGlobals()` for global stubs
 
