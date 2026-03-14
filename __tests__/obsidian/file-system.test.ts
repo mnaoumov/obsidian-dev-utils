@@ -1,20 +1,18 @@
+// @vitest-environment jsdom
 import {
   App,
   TAbstractFile,
   TFile,
   TFolder
 } from 'obsidian';
-// @vitest-environment jsdom
 import {
+  beforeAll,
   beforeEach,
   describe,
   expect,
   it
 } from 'vitest';
 
-import { createTFileInstance } from '../../__mocks__/obsidian-typings/implementations/createTFileInstance.ts';
-import { createTFolderInstance } from '../../__mocks__/obsidian-typings/implementations/createTFolderInstance.ts';
-import { createMockApp } from '../../__mocks__/obsidian/App.ts';
 import { castTo } from '../../src/object-utils.ts';
 import {
   asArrayOfFiles,
@@ -53,8 +51,8 @@ import { assertNonNullable } from '../../src/type-guards.ts';
 
 let app: App;
 
-beforeEach(() => {
-  app = createMockApp();
+beforeEach(async () => {
+  app = await App.createConfigured__();
 });
 
 describe('constants', () => {
@@ -73,12 +71,12 @@ describe('constants', () => {
 
 describe('isFile', () => {
   it('should return true for a TFile instance', () => {
-    const file = createTFileInstance(app, 'note.md');
+    const file = TFile.create__(app.vault, 'note.md');
     expect(isFile(file)).toBe(true);
   });
 
   it('should return false for a TFolder instance', () => {
-    const folder = createTFolderInstance(app, 'my-folder');
+    const folder = TFolder.create__(app.vault, 'my-folder');
     expect(isFile(folder)).toBe(false);
   });
 
@@ -101,12 +99,12 @@ describe('isFile', () => {
 
 describe('isFolder', () => {
   it('should return true for a TFolder instance', () => {
-    const folder = createTFolderInstance(app, 'my-folder');
+    const folder = TFolder.create__(app.vault, 'my-folder');
     expect(isFolder(folder)).toBe(true);
   });
 
   it('should return false for a TFile instance', () => {
-    const file = createTFileInstance(app, 'note.md');
+    const file = TFile.create__(app.vault, 'note.md');
     expect(isFolder(file)).toBe(false);
   });
 
@@ -125,17 +123,17 @@ describe('isFolder', () => {
 
 describe('isAbstractFile', () => {
   it('should return true for a TFile instance', () => {
-    const file = createTFileInstance(app, 'note.md');
+    const file = TFile.create__(app.vault, 'note.md');
     expect(isAbstractFile(file)).toBe(true);
   });
 
   it('should return true for a TFolder instance', () => {
-    const folder = createTFolderInstance(app, 'my-folder');
+    const folder = TFolder.create__(app.vault, 'my-folder');
     expect(isAbstractFile(folder)).toBe(true);
   });
 
   it('should return true for a TAbstractFile instance', () => {
-    const abstract = createTFileInstance(app, 'something');
+    const abstract = TFile.create__(app.vault, 'something');
     expect(isAbstractFile(abstract)).toBe(true);
   });
 
@@ -150,12 +148,12 @@ describe('isAbstractFile', () => {
 
 describe('asFile', () => {
   it('should return the file if the abstract file is a TFile', () => {
-    const file = createTFileInstance(app, 'note.md');
+    const file = TFile.create__(app.vault, 'note.md');
     expect(asFile(file)).toBe(file);
   });
 
   it('should throw if the abstract file is a TFolder', () => {
-    const folder = createTFolderInstance(app, 'my-folder');
+    const folder = TFolder.create__(app.vault, 'my-folder');
     expect(() => asFile(folder)).toThrow('Abstract file is not a file');
   });
 
@@ -166,7 +164,7 @@ describe('asFile', () => {
 
 describe('asFileOrNull', () => {
   it('should return the file if the abstract file is a TFile', () => {
-    const file = createTFileInstance(app, 'note.md');
+    const file = TFile.create__(app.vault, 'note.md');
     expect(asFileOrNull(file)).toBe(file);
   });
 
@@ -175,19 +173,19 @@ describe('asFileOrNull', () => {
   });
 
   it('should throw if the abstract file is a TFolder', () => {
-    const folder = createTFolderInstance(app, 'my-folder');
+    const folder = TFolder.create__(app.vault, 'my-folder');
     expect(() => asFileOrNull(folder)).toThrow('Abstract file is not a file');
   });
 });
 
 describe('asFolder', () => {
   it('should return the folder if the abstract file is a TFolder', () => {
-    const folder = createTFolderInstance(app, 'my-folder');
+    const folder = TFolder.create__(app.vault, 'my-folder');
     expect(asFolder(folder)).toBe(folder);
   });
 
   it('should throw if the abstract file is a TFile', () => {
-    const file = createTFileInstance(app, 'note.md');
+    const file = TFile.create__(app.vault, 'note.md');
     expect(() => asFolder(file)).toThrow('Abstract file is not a folder');
   });
 
@@ -198,7 +196,7 @@ describe('asFolder', () => {
 
 describe('asFolderOrNull', () => {
   it('should return the folder if the abstract file is a TFolder', () => {
-    const folder = createTFolderInstance(app, 'my-folder');
+    const folder = TFolder.create__(app.vault, 'my-folder');
     expect(asFolderOrNull(folder)).toBe(folder);
   });
 
@@ -207,20 +205,20 @@ describe('asFolderOrNull', () => {
   });
 
   it('should throw if the abstract file is a TFile', () => {
-    const file = createTFileInstance(app, 'note.md');
+    const file = TFile.create__(app.vault, 'note.md');
     expect(() => asFolderOrNull(file)).toThrow('Abstract file is not a folder');
   });
 });
 
 describe('asArrayOfFiles', () => {
   it('should convert an array of TFile instances', () => {
-    const files = [createTFileInstance(app, 'a.md'), createTFileInstance(app, 'b.md')];
+    const files = [TFile.create__(app.vault, 'a.md'), TFile.create__(app.vault, 'b.md')];
     const result = asArrayOfFiles(files);
     expect(result).toEqual(files);
   });
 
   it('should throw if any element is a TFolder', () => {
-    const items: TAbstractFile[] = [createTFileInstance(app, 'a.md'), createTFolderInstance(app, 'folder')];
+    const items: TAbstractFile[] = [TFile.create__(app.vault, 'a.md'), TFolder.create__(app.vault, 'folder')];
     expect(() => asArrayOfFiles(items)).toThrow('Abstract file is not a file');
   });
 
@@ -231,13 +229,13 @@ describe('asArrayOfFiles', () => {
 
 describe('asArrayOfFolders', () => {
   it('should convert an array of TFolder instances', () => {
-    const folders = [createTFolderInstance(app, 'a'), createTFolderInstance(app, 'b')];
+    const folders = [TFolder.create__(app.vault, 'a'), TFolder.create__(app.vault, 'b')];
     const result = asArrayOfFolders(folders);
     expect(result).toEqual(folders);
   });
 
   it('should throw if any element is a TFile', () => {
-    const items: TAbstractFile[] = [createTFolderInstance(app, 'folder'), createTFileInstance(app, 'a.md')];
+    const items: TAbstractFile[] = [TFolder.create__(app.vault, 'folder'), TFile.create__(app.vault, 'a.md')];
     expect(() => asArrayOfFolders(items)).toThrow('Abstract file is not a folder');
   });
 
@@ -248,12 +246,12 @@ describe('asArrayOfFolders', () => {
 
 describe('getFileSystemType', () => {
   it('should return File for a TFile', () => {
-    const file = createTFileInstance(app, 'note.md');
+    const file = TFile.create__(app.vault, 'note.md');
     expect(getFileSystemType(file)).toBe(FileSystemType.File);
   });
 
   it('should return Folder for a TFolder', () => {
-    const folder = createTFolderInstance(app, 'my-folder');
+    const folder = TFolder.create__(app.vault, 'my-folder');
     expect(getFileSystemType(folder)).toBe(FileSystemType.Folder);
   });
 
@@ -263,21 +261,21 @@ describe('getFileSystemType', () => {
 });
 
 describe('checkExtension', () => {
-  it('should return true when a TFile has the expected extension', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return true when a TFile has the expected extension', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     expect(checkExtension(app, file, 'md')).toBe(true);
   });
 
-  it('should return false when a TFile has a different extension', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return false when a TFile has a different extension', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const file = app.vault.getFileByPath('note.md');
     expect(checkExtension(app, file, 'canvas')).toBe(false);
   });
 
-  it('should check extension by path string when the file exists in the vault', () => {
-    app = createMockApp({ files: [{ path: 'drawing.canvas' }] });
+  it('should check extension by path string when the file exists in the vault', async () => {
+    app = await App.createConfigured__({ files: { 'drawing.canvas': '' } });
     expect(checkExtension(app, 'drawing.canvas', 'canvas')).toBe(true);
   });
 
@@ -289,22 +287,22 @@ describe('checkExtension', () => {
     expect(checkExtension(app, null, 'md')).toBe(false);
   });
 
-  it('should return false for a TFolder', () => {
-    app = createMockApp({ folders: ['my-folder'] });
+  it('should return false for a TFolder', async () => {
+    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
     const folder = app.vault.getFolderByPath('my-folder');
     expect(checkExtension(app, folder, 'md')).toBe(false);
   });
 });
 
 describe('isMarkdownFile', () => {
-  it('should return true for a markdown file', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return true for a markdown file', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const file = app.vault.getFileByPath('note.md');
     expect(isMarkdownFile(app, file)).toBe(true);
   });
 
-  it('should return false for a canvas file', () => {
-    app = createMockApp({ files: [{ path: 'drawing.canvas' }] });
+  it('should return false for a canvas file', async () => {
+    app = await App.createConfigured__({ files: { 'drawing.canvas': '' } });
     const file = app.vault.getFileByPath('drawing.canvas');
     expect(isMarkdownFile(app, file)).toBe(false);
   });
@@ -319,14 +317,14 @@ describe('isMarkdownFile', () => {
 });
 
 describe('isCanvasFile', () => {
-  it('should return true for a canvas file', () => {
-    app = createMockApp({ files: [{ path: 'drawing.canvas' }] });
+  it('should return true for a canvas file', async () => {
+    app = await App.createConfigured__({ files: { 'drawing.canvas': '' } });
     const file = app.vault.getFileByPath('drawing.canvas');
     expect(isCanvasFile(app, file)).toBe(true);
   });
 
-  it('should return false for a markdown file', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return false for a markdown file', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const file = app.vault.getFileByPath('note.md');
     expect(isCanvasFile(app, file)).toBe(false);
   });
@@ -337,40 +335,40 @@ describe('isCanvasFile', () => {
 });
 
 describe('isBaseFile', () => {
-  it('should return true for a base file', () => {
-    app = createMockApp({ files: [{ extension: 'base', path: 'config.base' }] });
+  it('should return true for a base file', async () => {
+    app = await App.createConfigured__({ files: { 'config.base': '' } });
     const file = app.vault.getFileByPath('config.base');
     expect(isBaseFile(app, file)).toBe(true);
   });
 
-  it('should return false for a markdown file', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return false for a markdown file', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const file = app.vault.getFileByPath('note.md');
     expect(isBaseFile(app, file)).toBe(false);
   });
 });
 
 describe('isNote', () => {
-  it('should return true for a markdown file', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return true for a markdown file', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const file = app.vault.getFileByPath('note.md');
     expect(isNote(app, file)).toBe(true);
   });
 
-  it('should return true for a canvas file', () => {
-    app = createMockApp({ files: [{ path: 'drawing.canvas' }] });
+  it('should return true for a canvas file', async () => {
+    app = await App.createConfigured__({ files: { 'drawing.canvas': '' } });
     const file = app.vault.getFileByPath('drawing.canvas');
     expect(isNote(app, file)).toBe(true);
   });
 
-  it('should return true for a base file', () => {
-    app = createMockApp({ files: [{ extension: 'base', path: 'config.base' }] });
+  it('should return true for a base file', async () => {
+    app = await App.createConfigured__({ files: { 'config.base': '' } });
     const file = app.vault.getFileByPath('config.base');
     expect(isNote(app, file)).toBe(true);
   });
 
-  it('should return false for an image file', () => {
-    app = createMockApp({ files: [{ extension: 'png', path: 'image.png' }] });
+  it('should return false for an image file', async () => {
+    app = await App.createConfigured__({ files: { 'image.png': '' } });
     const file = app.vault.getFileByPath('image.png');
     expect(isNote(app, file)).toBe(false);
   });
@@ -382,8 +380,11 @@ describe('isNote', () => {
 
 describe('getAbstractFileOrNull', () => {
   describe('should return the file when found by path', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
-    const result = getAbstractFileOrNull(app, 'note.md');
+    let result: ReturnType<typeof getAbstractFileOrNull>;
+    beforeAll(async () => {
+      app = await App.createConfigured__({ files: { 'note.md': '' } });
+      result = getAbstractFileOrNull(app, 'note.md');
+    });
 
     it('should not be null', () => {
       expect(result).not.toBeNull();
@@ -404,23 +405,23 @@ describe('getAbstractFileOrNull', () => {
     expect(getAbstractFileOrNull(app, null)).toBeNull();
   });
 
-  it('should return a TAbstractFile when passed directly', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
-    const file = createTFileInstance(app, 'note.md');
+  it('should return a TAbstractFile when passed directly', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
+    const file = TFile.create__(app.vault, 'note.md');
     const result = getAbstractFileOrNull(app, file);
     expect(result).not.toBeNull();
   });
 
   it('should return the TAbstractFile itself when not in fileMap', () => {
-    const file = createTFileInstance(app, 'orphan.md');
+    const file = TFile.create__(app.vault, 'orphan.md');
     const result = getAbstractFileOrNull(app, file);
     expect(result).toBe(file);
   });
 });
 
 describe('getAbstractFile', () => {
-  it('should return the file when found', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return the file when found', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const result = getAbstractFile(app, 'note.md');
     expect(result.path).toBe('note.md');
   });
@@ -432,8 +433,11 @@ describe('getAbstractFile', () => {
 
 describe('getFileOrNull', () => {
   describe('should return the file when found', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
-    const result = getFileOrNull(app, 'note.md');
+    let result: ReturnType<typeof getFileOrNull>;
+    beforeAll(async () => {
+      app = await App.createConfigured__({ files: { 'note.md': '' } });
+      result = getFileOrNull(app, 'note.md');
+    });
 
     it('should not be null', () => {
       expect(result).not.toBeNull();
@@ -445,8 +449,8 @@ describe('getFileOrNull', () => {
     });
   });
 
-  it('should return null when path refers to a folder', () => {
-    app = createMockApp({ folders: ['my-folder'] });
+  it('should return null when path refers to a folder', async () => {
+    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
     const result = getFileOrNull(app, 'my-folder');
     expect(result).toBeNull();
   });
@@ -457,8 +461,8 @@ describe('getFileOrNull', () => {
 });
 
 describe('getFile', () => {
-  it('should return the file when found', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return the file when found', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const result = getFile(app, 'note.md');
     expect(result.path).toBe('note.md');
   });
@@ -468,7 +472,10 @@ describe('getFile', () => {
   });
 
   describe('should create a new TFile when not found and shouldIncludeNonExisting is true', () => {
-    const result = getFile(app, 'new-note.md', true);
+    let result: ReturnType<typeof getFile>;
+    beforeAll(() => {
+      result = getFile(app, 'new-note.md', true);
+    });
 
     it('should be a TFile instance', () => {
       expect(result).toBeInstanceOf(TFile);
@@ -482,8 +489,11 @@ describe('getFile', () => {
 
 describe('getFolderOrNull', () => {
   describe('should return the folder when found', () => {
-    app = createMockApp({ folders: ['my-folder'] });
-    const result = getFolderOrNull(app, 'my-folder');
+    let result: ReturnType<typeof getFolderOrNull>;
+    beforeAll(async () => {
+      app = await App.createConfigured__({ files: { 'my-folder/': '' } });
+      result = getFolderOrNull(app, 'my-folder');
+    });
 
     it('should not be null', () => {
       expect(result).not.toBeNull();
@@ -495,8 +505,8 @@ describe('getFolderOrNull', () => {
     });
   });
 
-  it('should return null when path refers to a file', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return null when path refers to a file', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const result = getFolderOrNull(app, 'note.md');
     expect(result).toBeNull();
   });
@@ -507,8 +517,8 @@ describe('getFolderOrNull', () => {
 });
 
 describe('getFolder', () => {
-  it('should return the folder when found', () => {
-    app = createMockApp({ folders: ['my-folder'] });
+  it('should return the folder when found', async () => {
+    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
     const result = getFolder(app, 'my-folder');
     expect(result.path).toBe('my-folder');
   });
@@ -518,7 +528,10 @@ describe('getFolder', () => {
   });
 
   describe('should create a new TFolder when not found and shouldIncludeNonExisting is true', () => {
-    const result = getFolder(app, 'new-folder', true);
+    let result: ReturnType<typeof getFolder>;
+    beforeAll(() => {
+      result = getFolder(app, 'new-folder', true);
+    });
 
     it('should be a TFolder instance', () => {
       expect(result).toBeInstanceOf(TFolder);
@@ -536,25 +549,25 @@ describe('getPath', () => {
   });
 
   it('should return the path from a TFile', () => {
-    const file = createTFileInstance(app, 'folder/note.md');
+    const file = TFile.create__(app.vault, 'folder/note.md');
     expect(getPath(app, file)).toBe('folder/note.md');
   });
 
   it('should return the path from a TFolder', () => {
-    const folder = createTFolderInstance(app, 'my-folder');
+    const folder = TFolder.create__(app.vault, 'my-folder');
     expect(getPath(app, folder)).toBe('my-folder');
   });
 
-  it('should return the resolved path from the vault if file exists', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return the resolved path from the vault if file exists', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const result = getPath(app, 'note.md');
     expect(result).toBe('note.md');
   });
 });
 
 describe('exists', () => {
-  it('should return true when the file exists', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return true when the file exists', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     expect(exists(app, 'note.md')).toBe(true);
   });
 
@@ -562,44 +575,44 @@ describe('exists', () => {
     expect(exists(app, 'nonexistent.md')).toBe(false);
   });
 
-  it('should return true when checking for a file with File type', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return true when checking for a file with File type', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     expect(exists(app, 'note.md', FileSystemType.File)).toBe(true);
   });
 
-  it('should return false when checking for a file with Folder type', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should return false when checking for a file with Folder type', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     expect(exists(app, 'note.md', FileSystemType.Folder)).toBe(false);
   });
 
-  it('should return true when checking for a folder with Folder type', () => {
-    app = createMockApp({ folders: ['my-folder'] });
+  it('should return true when checking for a folder with Folder type', async () => {
+    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
     expect(exists(app, 'my-folder', FileSystemType.Folder)).toBe(true);
   });
 
-  it('should return false when checking for a folder with File type', () => {
-    app = createMockApp({ folders: ['my-folder'] });
+  it('should return false when checking for a folder with File type', async () => {
+    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
     expect(exists(app, 'my-folder', FileSystemType.File)).toBe(false);
   });
 });
 
 describe('trimMarkdownExtension', () => {
-  it('should trim the .md extension from a markdown file', () => {
-    app = createMockApp({ files: [{ path: 'folder/note.md' }] });
+  it('should trim the .md extension from a markdown file', async () => {
+    app = await App.createConfigured__({ files: { 'folder/note.md': '' } });
     const file = app.vault.getFileByPath('folder/note.md');
     assertNonNullable(file);
     expect(trimMarkdownExtension(app, file)).toBe('folder/note');
   });
 
-  it('should not trim the extension from a non-markdown file', () => {
-    app = createMockApp({ files: [{ extension: 'canvas', path: 'drawing.canvas' }] });
+  it('should not trim the extension from a non-markdown file', async () => {
+    app = await App.createConfigured__({ files: { 'drawing.canvas': '' } });
     const file = app.vault.getFileByPath('drawing.canvas');
     assertNonNullable(file);
     expect(trimMarkdownExtension(app, file)).toBe('drawing.canvas');
   });
 
-  it('should not trim from a folder', () => {
-    app = createMockApp({ folders: ['my-folder'] });
+  it('should not trim from a folder', async () => {
+    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
     const folder = app.vault.getFolderByPath('my-folder');
     assertNonNullable(folder);
     expect(trimMarkdownExtension(app, folder)).toBe('my-folder');
@@ -607,15 +620,15 @@ describe('trimMarkdownExtension', () => {
 });
 
 describe('getAbstractFileOrNull (resolved path fallback)', () => {
-  it('should resolve a relative path and find the file', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should resolve a relative path and find the file', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const result = getAbstractFileOrNull(app, './note.md');
     assertNonNullable(result);
     expect(result.path).toBe('note.md');
   });
 
-  it('should resolve a path with parent traversal', () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+  it('should resolve a path with parent traversal', async () => {
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const result = getAbstractFileOrNull(app, 'folder/../note.md');
     assertNonNullable(result);
     expect(result.path).toBe('note.md');
@@ -623,15 +636,15 @@ describe('getAbstractFileOrNull (resolved path fallback)', () => {
 });
 
 describe('getAbstractFileOrNull (case-insensitive)', () => {
-  it('should find a file case-insensitively when isCaseInsensitive is true', () => {
-    app = createMockApp({ files: [{ path: 'Note.md' }] });
+  it('should find a file case-insensitively when isCaseInsensitive is true', async () => {
+    app = await App.createConfigured__({ files: { 'Note.md': '' } });
     const result = getAbstractFileOrNull(app, 'note.md', true);
     assertNonNullable(result);
     expect(result.path).toBe('Note.md');
   });
 
-  it('should use adapter.insensitive when isCaseInsensitive is not provided', () => {
-    app = createMockApp({ files: [{ path: 'Note.md' }] });
+  it('should use adapter.insensitive when isCaseInsensitive is not provided', async () => {
+    app = await App.createConfigured__({ files: { 'Note.md': '' } });
     (app.vault.adapter as { insensitive: boolean }).insensitive = true;
     const result = getAbstractFileOrNull(app, 'note.md');
     assertNonNullable(result);
@@ -640,14 +653,14 @@ describe('getAbstractFileOrNull (case-insensitive)', () => {
 });
 
 describe('getMarkdownFiles', () => {
-  it('should return markdown files in a folder (non-recursive)', () => {
-    app = createMockApp({
-      files: [
-        { path: 'docs/a.md' },
-        { path: 'docs/b.md' },
-        { extension: 'png', path: 'docs/image.png' }
-      ],
-      folders: ['docs']
+  it('should return markdown files in a folder (non-recursive)', async () => {
+    app = await App.createConfigured__({
+      files: {
+        'docs/': '',
+        'docs/a.md': '',
+        'docs/b.md': '',
+        'docs/image.png': ''
+      }
     });
     const folder = app.vault.getFolderByPath('docs');
     assertNonNullable(folder);
@@ -664,13 +677,14 @@ describe('getMarkdownFiles', () => {
     expect(result.map((f) => f.path)).toEqual(['docs/a.md', 'docs/b.md']);
   });
 
-  it('should return markdown files recursively', () => {
-    app = createMockApp({
-      files: [
-        { path: 'docs/a.md' },
-        { path: 'docs/sub/b.md' }
-      ],
-      folders: ['docs', 'docs/sub']
+  it('should return markdown files recursively', async () => {
+    app = await App.createConfigured__({
+      files: {
+        'docs/': '',
+        'docs/a.md': '',
+        'docs/sub/': '',
+        'docs/sub/b.md': ''
+      }
     });
     const folder = app.vault.getFolderByPath('docs');
     assertNonNullable(folder);
@@ -688,10 +702,12 @@ describe('getMarkdownFiles', () => {
     expect(result.map((f) => f.path)).toEqual(['docs/a.md', 'docs/sub/b.md']);
   });
 
-  it('should return an empty array when no markdown files exist', () => {
-    app = createMockApp({
-      files: [{ extension: 'png', path: 'docs/image.png' }],
-      folders: ['docs']
+  it('should return an empty array when no markdown files exist', async () => {
+    app = await App.createConfigured__({
+      files: {
+        'docs/': '',
+        'docs/image.png': ''
+      }
     });
     const folder = app.vault.getFolderByPath('docs');
     assertNonNullable(folder);
@@ -706,7 +722,7 @@ describe('getMarkdownFiles', () => {
 
 describe('getOrCreateFile', () => {
   it('should return the existing file if it exists', async () => {
-    app = createMockApp({ files: [{ path: 'note.md' }] });
+    app = await App.createConfigured__({ files: { 'note.md': '' } });
     const result = await getOrCreateFile(app, 'note.md');
     expect(result.path).toBe('note.md');
   });
@@ -720,7 +736,7 @@ describe('getOrCreateFile', () => {
 
 describe('getOrCreateFolder', () => {
   it('should return the existing folder if it exists', async () => {
-    app = createMockApp({ folders: ['my-folder'] });
+    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
     const result = await getOrCreateFolder(app, 'my-folder');
     expect(result.path).toBe('my-folder');
   });

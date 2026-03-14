@@ -28,7 +28,7 @@ describe('SettingGroupEx', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    settingGroupEx = new SettingGroupEx({} as HTMLElement);
+    settingGroupEx = new SettingGroupEx(createDiv());
   });
 
   it('should create an instance', () => {

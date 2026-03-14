@@ -706,6 +706,7 @@
     "jsdom": "latest",
     "moment": "latest",
     "nano-staged": "latest",
+    "obsidian-test-mocks": "latest",
     "patch-package": "latest",
     "vitest": "latest",
     "yaml": "latest"

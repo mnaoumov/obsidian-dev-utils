@@ -1,11 +1,9 @@
-import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 export const config = defineConfig({
   resolve: {
     alias: {
-      'obsidian': fileURLToPath(new URL('./__mocks__/obsidian/index.ts', import.meta.url)),
-      'obsidian-typings/implementations': fileURLToPath(new URL('./__mocks__/obsidian-typings/implementations/index.ts', import.meta.url))
+      obsidian: 'obsidian-test-mocks/obsidian'
     }
   },
   test: {
@@ -24,6 +22,11 @@ export const config = defineConfig({
     exclude: ['node_modules', 'dist'],
     globals: false,
     include: ['__tests__/**/*.test.ts'],
-    setupFiles: ['./__mocks__/obsidian-globals/index.ts']
+    server: {
+      deps: {
+        inline: ['obsidian-typings']
+      }
+    },
+    setupFiles: ['obsidian-test-mocks/globals', './__mocks__/obsidian-typings/index.ts']
   }
 });

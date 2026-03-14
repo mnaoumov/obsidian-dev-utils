@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { ButtonComponent } from 'obsidian';
 import {
   beforeEach,
   describe,
@@ -8,8 +9,8 @@ import {
   vi
 } from 'vitest';
 
-import { ButtonComponent } from '../../../__mocks__/obsidian/ButtonComponent.ts';
 import { confirm } from '../../../src/obsidian/modals/confirm.ts';
+import { mockImplementation } from '../../test-helpers.ts';
 
 vi.mock('../../../src/css-class.ts', () => ({
   CssClass: {
@@ -34,10 +35,20 @@ vi.mock('../../../src/obsidian/plugin/plugin-context.ts', () => ({
 }));
 
 describe('confirm', () => {
+  const buttonInstances: ButtonComponent[] = [];
+
   beforeEach(() => {
     vi.clearAllMocks();
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-    ButtonComponent.instances = [];
+    buttonInstances.length = 0;
+    // @ts-expect-error -- constructor2__ is a mock-only hook from obsidian-test-mocks.
+    mockImplementation(
+      ButtonComponent.prototype,
+      'constructor2__',
+      function captureButton(this: ButtonComponent, originalImplementation, containerEl: HTMLElement) {
+        originalImplementation.call(this, containerEl);
+        buttonInstances.push(this);
+      }
+    );
   });
 
   it('should resolve false when modal is closed without confirming', async () => {
@@ -56,10 +67,8 @@ describe('confirm', () => {
     // OnOpen has run synchronously - buttons are created.
     // Simulate OK button click via microtask (runs before setTimeout auto-close).
     queueMicrotask(() => {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      const okButton = ButtonComponent.instances[0];
-      // eslint-disable-next-line @typescript-eslint/no-deprecated -- Test uses mock-only API.
-      okButton?.simulateClick();
+      const okButton = buttonInstances[0];
+      okButton?.simulateClick__();
     });
     const result = await resultPromise;
     expect(result).toBe(true);

@@ -4,6 +4,22 @@
  * Test helper utilities shared across test files.
  */
 
+import type { MockInstance } from 'vitest';
+
+import { vi } from 'vitest';
+
+/**
+ * Spies on a method and replaces it with an implementation that receives
+ * `originalImplementation` as its first argument, followed by the real call
+ * arguments. The caller is responsible for forwarding `this` via `.call(this, ...)`.
+ *
+ * @param obj - The object whose method to spy on.
+ * @param method - The method name.
+ * @param impl - `function(originalImplementation, ...args)`.
+ * @returns The spy instance.
+ */
+const savedOriginals = new WeakMap<object, Map<string, unknown>>();
+
 /**
  * Creates a strictly-typed mock object from a partial implementation.
  * Unlike `castTo<T>()`, this uses a `Proxy` to throw an error if any
@@ -49,6 +65,34 @@ export function createMockOf<T>(partial: unknown): T {
       return value;
     }
   }) as T;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- T[K] must be callable; `any` avoids distributing over union parameter types.
+export function mockImplementation<
+  T extends object,
+  K extends keyof T & string,
+  F extends (...args: any[]) => any = T[K] extends (...args: any[]) => any ? T[K] : never
+>(
+  obj: T,
+  method: K,
+  impl: (this: T, originalImplementation: F, ...args: Parameters<F>) => ReturnType<F>
+): MockInstance {
+  let map = savedOriginals.get(obj);
+  if (!map) {
+    map = new Map();
+    savedOriginals.set(obj, map);
+  }
+
+  const current = obj[method];
+  if (!map.has(method) && !vi.isMockFunction(current)) {
+    map.set(method, current);
+  }
+
+  const originalImplementation = map.get(method) as F;
+
+  return vi.spyOn(obj, method as never).mockImplementation(function mockImpl(this: unknown, ...args: unknown[]): unknown {
+    return impl.call(this as T, originalImplementation, ...(args as Parameters<F>));
+  });
 }
 
 /**

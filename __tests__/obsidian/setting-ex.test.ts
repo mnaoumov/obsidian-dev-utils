@@ -109,7 +109,7 @@ describe('SettingEx', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requireApiVersion.mockReturnValue(true);
-    settingEx = new SettingEx({} as HTMLElement);
+    settingEx = new SettingEx(createDiv());
   });
 
   describe('addComponentClass', () => {
