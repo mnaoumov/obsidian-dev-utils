@@ -1,10 +1,79 @@
 import {
   describe,
   expect,
+  expectTypeOf,
   it
 } from 'vitest';
 
+import type {
+  ExactKeys,
+  ExactMembers,
+  PropertyValues,
+  StringKeys
+} from './type.ts';
+
 import { typeAsserter } from './type.ts';
+
+describe('StringKeys', () => {
+  it('should extract string keys from an object type', () => {
+    interface TestType {
+      a: number;
+      b: string;
+    }
+    expectTypeOf<StringKeys<TestType>>().toEqualTypeOf<'a' | 'b'>();
+  });
+});
+
+describe('PropertyValues', () => {
+  it('should extract value types from an object type', () => {
+    interface TestType {
+      a: number;
+      b: string;
+    }
+    expectTypeOf<PropertyValues<TestType>>().toEqualTypeOf<number | string>();
+  });
+});
+
+describe('ExactMembers', () => {
+  it('should accept exact match', () => {
+    expectTypeOf<ExactMembers<'a' | 'b', readonly ['a', 'b']>>().toEqualTypeOf<readonly ['a', 'b']>();
+  });
+
+  it('should produce error string for missing members', () => {
+    type Result = ExactMembers<'a' | 'b' | 'c', readonly ['a', 'b']>;
+    expectTypeOf<Result>().toBeString();
+  });
+
+  it('should produce error string for invalid members', () => {
+    type Result = ExactMembers<'a' | 'b', readonly ['a', 'b', 'c']>;
+    expectTypeOf<Result>().toBeString();
+  });
+
+  it('should produce error string for duplicate members', () => {
+    type Result = ExactMembers<'a' | 'b', readonly ['a', 'b', 'a']>;
+    expectTypeOf<Result>().toBeString();
+  });
+});
+
+describe('ExactKeys', () => {
+  it('should accept exact keys', () => {
+    interface TestType {
+      x: number;
+      y: string;
+    }
+    expectTypeOf<ExactKeys<TestType, readonly ['x', 'y']>>().toEqualTypeOf<readonly ['x', 'y']>();
+  });
+
+  it('should produce error string for missing keys', () => {
+    interface TestType {
+      a: number;
+      b: string;
+      c: boolean;
+    }
+    type Result = ExactKeys<TestType, readonly ['a', 'b']>;
+    expectTypeOf<Result>().toBeString();
+  });
+});
 
 describe('typeAsserter().assertAllKeys', () => {
   it('should return frozen array of keys for a matching type', () => {
