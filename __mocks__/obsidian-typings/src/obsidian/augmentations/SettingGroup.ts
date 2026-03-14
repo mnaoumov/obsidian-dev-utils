@@ -8,7 +8,6 @@ mockImplementation(
   SettingGroup.prototype,
   'constructor__',
   function initSettingGroup(this: SettingGroup, originalImplementation, containerEl: HTMLElement): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- originalImplementation is untyped mock-only constructor hook.
     originalImplementation.call(this, containerEl);
     // @ts-expect-error -- listEl__ is mock-only from obsidian-test-mocks, listEl is from obsidian-typings.
     ensureGenericObject(this).listEl = this.listEl__;
