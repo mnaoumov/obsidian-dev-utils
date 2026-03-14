@@ -33,8 +33,5 @@
     "./scripts/**/*.ts",
     "./src/**/*.ts",
     "./vitest.config.ts"
-  ],
-  "references": [
-    { "path": "./tsconfig.test.json" }
   ]
 }

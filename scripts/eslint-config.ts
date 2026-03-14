@@ -163,6 +163,12 @@ export const configs: Linter.Config[] = defineConfig([
   },
   {
     files: testFiles,
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.test.json',
+        projectService: false
+      }
+    },
     rules: {
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
