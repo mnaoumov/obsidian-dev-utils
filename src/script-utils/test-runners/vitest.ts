@@ -33,13 +33,10 @@ export async function test(): Promise<void> {
  * @returns A {@link Promise} that resolves when the tests have completed.
  */
 export async function testCoverage(options?: TestCoverageOptions): Promise<void> {
-  let command = 'vitest run --coverage';
-  if (options?.minCoverage !== undefined) {
-    const threshold = String(options.minCoverage);
-    command +=
-      ` --coverage.thresholds.lines=${threshold} --coverage.thresholds.functions=${threshold} --coverage.thresholds.branches=${threshold} --coverage.thresholds.statements=${threshold}`;
-  }
-  await execFromRoot(command);
+  const threshold = String(options?.minCoverage ?? 0);
+  await execFromRoot(
+    `vitest run --coverage --coverage.thresholds.lines=${threshold} --coverage.thresholds.functions=${threshold} --coverage.thresholds.branches=${threshold} --coverage.thresholds.statements=${threshold}`
+  );
 }
 
 /**
