@@ -15,7 +15,7 @@ import {
 } from '../src/script-utils/linters/eslint-config.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 
-const testFiles = ['__tests__/**/*.ts', '__mocks__/**/*.ts'];
+const testFiles = ['src/**/*.test.ts', 'src/test-helpers.ts', '__mocks__/**/*.ts'];
 const rootScriptFiles = ['commitlint.config.ts', 'eslint.config.mts'];
 const scriptFiles = [
   ...rootScriptFiles,
