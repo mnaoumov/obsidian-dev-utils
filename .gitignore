@@ -27,7 +27,7 @@ coverage
 index.ts
 _dependencies.ts
 
-/tsconfig.tsbuildinfo
+*.tsbuildinfo
 /.env
 
 /src/**/*.d.ts
