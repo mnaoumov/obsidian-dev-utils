@@ -65,6 +65,34 @@ beforeEach(() => {
 });
 
 describe('exec', () => {
+  it('should reject when command exceeds Windows max length', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const longCommand = 'a'.repeat(8192);
+      await expect(exec(longCommand)).rejects.toThrow('Command line is too long');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should not reject long commands on non-Windows platforms', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    try {
+      const longCommand = `echo ${'a'.repeat(8192)}`;
+      const child = createMockChild();
+      mockSpawn.mockReturnValue(child);
+      const promise = exec(longCommand);
+      child.stdout.end('ok');
+      child.stderr.end('');
+      child.emit('close', 0, null);
+      await expect(promise).resolves.toBe('ok');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
   it('should resolve with stdout on successful command', async () => {
     const child = createMockChild();
     mockSpawn.mockReturnValue(child);
