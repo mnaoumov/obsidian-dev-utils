@@ -20,6 +20,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../object-utils.ts';
+import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
   assertNonNullable,
   ensureGenericObject,
@@ -1615,7 +1616,7 @@ describe('app-dependent functions', () => {
     );
 
     const vaultAny = ensureGenericObject(app.vault);
-    vaultAny['getConfig'] = vi.fn((key: string) => {
+    vaultAny.getConfig = vi.fn((key: string) => {
       if (key === 'useMarkdownLinks') {
         return false;
       }
@@ -1626,14 +1627,14 @@ describe('app-dependent functions', () => {
     });
 
     const metadataCacheAny = ensureGenericObject(app.metadataCache);
-    metadataCacheAny['getLinkpathDest'] = vi.fn((linkpath: string) => {
+    metadataCacheAny.getLinkpathDest = vi.fn((linkpath: string) => {
       const allFiles = app.vault.getAllLoadedFiles();
       return allFiles.filter((f): f is TFile => f instanceof MockTFile && (f.basename === linkpath || f.name === linkpath));
     });
 
-    ensureGenericObject(app)['internalPlugins'] = {
+    ensureGenericObject(app).internalPlugins = createMockOf({
       getEnabledPluginById: vi.fn(() => ({}))
-    };
+    });
 
     vi.mocked(tempRegisterFilesAndRun).mockImplementation(
       (_theApp: App, _files: unknown[], fn: () => unknown) => fn()
@@ -1795,7 +1796,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use full path when multiple files match shortest name', () => {
-      ensureGenericObject(app.metadataCache)['getLinkpathDest'] = vi.fn(() => [
+      ensureGenericObject(app.metadataCache).getLinkpathDest = vi.fn(() => [
         ensureNonNullable(app.vault.getFileByPath('folder/other.md')),
         ensureNonNullable(app.vault.getFileByPath('folder/same.md'))
       ]);
@@ -1841,7 +1842,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use ObsidianSettingsDefault link style (markdown)', () => {
-      ensureGenericObject(app.vault)['getConfig'] = vi.fn((key: string) => {
+      ensureGenericObject(app.vault).getConfig = vi.fn((key: string) => {
         if (key === 'useMarkdownLinks') {
           return true;
         }
@@ -1938,7 +1939,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use ObsidianSettingsDefault link path style with absolute format', () => {
-      ensureGenericObject(app.vault)['getConfig'] = vi.fn((key: string) => {
+      ensureGenericObject(app.vault).getConfig = vi.fn((key: string) => {
         if (key === 'newLinkFormat') {
           return 'absolute';
         }
@@ -1955,7 +1956,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use ObsidianSettingsDefault link path style with relative format', () => {
-      ensureGenericObject(app.vault)['getConfig'] = vi.fn((key: string) => {
+      ensureGenericObject(app.vault).getConfig = vi.fn((key: string) => {
         if (key === 'newLinkFormat') {
           return 'relative';
         }
@@ -1995,7 +1996,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should throw for invalid ObsidianSettingsDefault new link format', () => {
-      ensureGenericObject(app.vault)['getConfig'] = vi.fn((key: string) => {
+      ensureGenericObject(app.vault).getConfig = vi.fn((key: string) => {
         if (key === 'newLinkFormat') {
           return 'invalid-format';
         }
@@ -2634,18 +2635,18 @@ describe('app-dependent functions', () => {
     });
 
     it('should return early for canvas files when Canvas plugin is disabled', async () => {
-      ensureGenericObject(app)['internalPlugins'] = {
+      ensureGenericObject(app).internalPlugins = createMockOf({
         getEnabledPluginById: vi.fn(() => null)
-      };
+      });
 
       const canvasApp = castTo<App>(
         await MockApp.createConfigured__({
           files: { 'canvas.canvas': '{}' }
         })
       );
-      ensureGenericObject(canvasApp)['internalPlugins'] = {
+      ensureGenericObject(canvasApp).internalPlugins = createMockOf({
         getEnabledPluginById: vi.fn(() => null)
-      };
+      });
       const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('canvas.canvas'));
       canvasFile.extension = 'canvas';
 

@@ -25,6 +25,7 @@ import type { GenericObject } from '../type-guards.ts';
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
 
 import { castTo } from '../object-utils.ts';
+import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
   deleteVaultAbstractFile,
   setVaultAbstractFile
@@ -1085,7 +1086,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).editor = {};
+    ensureGenericObject(view).editor = createMockOf({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
@@ -1104,7 +1105,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).editor = {};
+    ensureGenericObject(view).editor = createMockOf({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
 
@@ -1155,7 +1156,7 @@ describe('processFile', () => {
 
     const view = new (castTo<new () => MarkdownView>(MockMarkdownView))();
     // View.file defaults to null in the mock — don't set it
-    ensureGenericObject(view).editor = {};
+    ensureGenericObject(view).editor = createMockOf({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
