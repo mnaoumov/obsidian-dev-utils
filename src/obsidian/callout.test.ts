@@ -11,6 +11,7 @@ import type { GenericObject } from '../type-guards.ts';
 import type { AddToQueueParams } from './queue.ts';
 
 import { castTo } from '../object-utils.ts';
+import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
   CalloutMode,
@@ -256,7 +257,7 @@ describe('renderCallout', () => {
 
     // Simulate intersection
     intersectionCallback(
-      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -282,7 +283,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [castTo<IntersectionObserverEntry>({ isIntersecting: false, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: false, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -302,7 +303,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -329,7 +330,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall1[0] as HTMLElement;
 
     intersectionCallback(
-      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -361,7 +362,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall2[0] as HTMLElement;
 
     intersectionCallback(
-      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 
@@ -391,7 +392,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall3[0] as HTMLElement;
 
     intersectionCallback(
-      [castTo<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       {} as IntersectionObserver
     );
 

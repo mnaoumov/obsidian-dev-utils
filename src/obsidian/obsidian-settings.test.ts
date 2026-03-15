@@ -8,14 +8,14 @@ import {
 
 import type { GenericObject } from '../type-guards.ts';
 
-import { castTo } from '../object-utils.ts';
+import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
   getNewLinkFormat,
   shouldUseWikilinks
 } from './obsidian-settings.ts';
 
 function createMockApp(config: GenericObject): App {
-  return castTo<App>({
+  return createMockOf<App>({
     vault: {
       getConfig: (key: string): unknown => config[key]
     }

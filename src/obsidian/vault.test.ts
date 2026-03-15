@@ -978,7 +978,7 @@ describe('processFile', () => {
   function setupRetryToInvokeOperationFn(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
     });
   }
@@ -1026,7 +1026,7 @@ describe('processFile', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     // Vault.read returns 'old content' but vault.process sees 'changed content'
@@ -1057,7 +1057,7 @@ describe('processFile', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
 
