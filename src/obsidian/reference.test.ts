@@ -6,7 +6,7 @@ import {
   it
 } from 'vitest';
 
-import { castTo } from '../object-utils.ts';
+import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
   isCanvasFileNodeReference,
   isCanvasReference,
@@ -16,7 +16,7 @@ import {
 } from './reference.ts';
 
 function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
-  return castTo<Reference>({
+  return createMockOf<Reference>({
     displayText: 'link',
     isCanvas: true,
     key,
@@ -28,7 +28,7 @@ function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
 }
 
 function makeFrontmatterLink(original: string, key: string): Reference {
-  return castTo<Reference>({
+  return createMockOf<Reference>({
     displayText: original,
     key,
     link: original,
@@ -37,7 +37,7 @@ function makeFrontmatterLink(original: string, key: string): Reference {
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): Reference {
-  return castTo<Reference>({
+  return createMockOf<Reference>({
     displayText: original,
     endOffset,
     key,

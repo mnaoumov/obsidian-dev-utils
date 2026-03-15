@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import { castTo } from '../../object-utils.ts';
+import { createMockOf } from '../../test-helpers/mock-implementation.ts';
 import { ensureGenericObject } from '../../type-guards.ts';
 import {
   addPluginCssClasses,
@@ -60,7 +60,7 @@ describe('addPluginCssClasses', () => {
 
   it('should add library name, plugin id, and custom css classes', () => {
     const addClass = vi.fn();
-    const el = castTo<HTMLElement>({ addClass });
+    const el = createMockOf<HTMLElement>({ addClass });
     addPluginCssClasses(el, 'custom-class');
     expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin', 'custom-class');
   });

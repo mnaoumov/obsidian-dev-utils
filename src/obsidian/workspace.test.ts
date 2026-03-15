@@ -10,7 +10,7 @@ import {
   it
 } from 'vitest';
 
-import { castTo } from '../object-utils.ts';
+import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
   getAllContainers,
   getAllDomWindows
@@ -18,11 +18,11 @@ import {
 
 function createMockApp(containers: WorkspaceContainer[]): App {
   const leaves = containers.map((container) =>
-    castTo<WorkspaceLeaf>({
+    createMockOf<WorkspaceLeaf>({
       getContainer: (): WorkspaceContainer => container
     })
   );
-  return castTo<App>({
+  return createMockOf<App>({
     workspace: {
       iterateAllLeaves: (callback: (leaf: WorkspaceLeaf) => void): void => {
         for (const leaf of leaves) {
@@ -34,7 +34,7 @@ function createMockApp(containers: WorkspaceContainer[]): App {
 }
 
 function createMockContainer(win: Window): WorkspaceContainer {
-  return castTo<WorkspaceContainer>({ win });
+  return createMockOf<WorkspaceContainer>({ win });
 }
 
 describe('getAllContainers', () => {

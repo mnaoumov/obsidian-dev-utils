@@ -10,6 +10,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../object-utils.ts';
+import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
   isFrontmatterLinkCacheWithOffsets,
   toFrontmatterLinkCacheWithOffsets
@@ -26,7 +27,7 @@ function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCach
 
 describe('isFrontmatterLinkCacheWithOffsets', () => {
   it('should return true when startOffset and endOffset are present', () => {
-    const ref = castTo<Reference>({
+    const ref = createMockOf<Reference>({
       ...makeFrontmatterLink('link', 'aliases'),
       endOffset: 4,
       startOffset: 0
@@ -49,7 +50,7 @@ describe('isFrontmatterLinkCacheWithOffsets', () => {
   });
 
   it('should return false when only startOffset is present', () => {
-    const ref = castTo<Reference>({
+    const ref = createMockOf<Reference>({
       ...makeFrontmatterLink('link', 'aliases'),
       startOffset: 0
     });

@@ -825,7 +825,7 @@ describe('testLeadingSlash', () => {
 
 describe('fixFrontmatterMarkdownLinks', () => {
   describe('should detect a markdown link in frontmatter string and add it to frontmatterLinks', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         source: '[alias](note.md)'
       }
@@ -875,7 +875,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should return false when frontmatter contains no markdown links', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         title: 'plain text'
       }
@@ -892,7 +892,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should ignore wikilinks in frontmatter', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         source: '[[note]]'
       }
@@ -903,7 +903,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should ignore external URLs in frontmatter', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         source: '[example](https://example.com)'
       }
@@ -914,7 +914,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should handle nested objects in frontmatter', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         meta: {
           source: '[alias](note.md)'
@@ -945,7 +945,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should handle multiple links in different frontmatter properties', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         link1: '[a](file1.md)',
         link2: '[b](file2.md)'
@@ -968,7 +968,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should handle null frontmatter values gracefully', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         nothing: null
       }
@@ -979,7 +979,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should handle numeric and boolean frontmatter values', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         count: 42,
         enabled: true
@@ -991,7 +991,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should handle a markdown link without alias (empty alias)', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         source: '[](note.md)'
       }
@@ -1022,7 +1022,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should update existing frontmatterLink entry if key already exists', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({
       frontmatter: {
         source: '[new-alias](new-note.md)'
       },
@@ -1066,7 +1066,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should handle undefined frontmatter gracefully', () => {
-    const cache: CachedMetadata = castTo<CachedMetadata>({});
+    const cache: CachedMetadata = createMockOf<CachedMetadata>({});
 
     const result = fixFrontmatterMarkdownLinks(cache);
     expect(result).toBe(false);
@@ -2187,7 +2187,7 @@ describe('app-dependent functions', () => {
       );
       const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('canvas.canvas'));
       canvasFile.extension = 'canvas';
-      const link = castTo<Reference>({
+      const link = createMockOf<Reference>({
         displayText: 'target',
         isCanvas: true,
         key: 'file',
@@ -2354,7 +2354,7 @@ describe('app-dependent functions', () => {
 
   describe('editLinksInContent', () => {
     it('should process links in content', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [{
           displayText: 'target',
           link: 'target',
@@ -2373,7 +2373,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should handle linkConverter returning undefined (skip)', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [{
           displayText: 'target',
           link: 'target',
@@ -2392,7 +2392,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should escape wikilink divider when link is inside a table', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [{
           displayText: 'target',
           link: 'target',
@@ -2442,13 +2442,13 @@ describe('app-dependent functions', () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
-            const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+            const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
             await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
           }
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [{
           displayText: 'target',
           link: 'target',
@@ -2470,7 +2470,7 @@ describe('app-dependent functions', () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
-            const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+            const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
             await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, 'different content');
           }
         }
@@ -2510,14 +2510,14 @@ describe('app-dependent functions', () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
-            const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+            const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
             await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
           }
         }
       );
 
       // GetCacheSafe returns a cache whose links include the backlink reference
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [backlinkRef]
       }));
 
@@ -2548,13 +2548,13 @@ describe('app-dependent functions', () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
-            const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+            const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
             await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
           }
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [backlinkRef]
       }));
 
@@ -2585,7 +2585,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should skip non-embed links when shouldUpdateEmbedOnlyLinks is true', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [{
           displayText: 'target',
           link: 'target',
@@ -2605,7 +2605,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should invoke convertLink for matching links', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [{
           displayText: 'target',
           link: 'target',
@@ -2662,12 +2662,12 @@ describe('app-dependent functions', () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
-            const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+            const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
             await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
           }
         }
       );
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [{
           displayText: 'target',
           link: 'target',
@@ -2689,12 +2689,12 @@ describe('app-dependent functions', () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
-            const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+            const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
             await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
           }
         }
       );
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [{
           displayText: 'target',
           link: 'target',
@@ -2715,7 +2715,7 @@ describe('app-dependent functions', () => {
   describe('registerGenerateMarkdownLinkDefaultOptionsFn', () => {
     it('should register and apply default options', () => {
       let cleanupFn: (() => void) | undefined;
-      const mockPlugin = castTo<Plugin>({
+      const mockPlugin = createMockOf<Plugin>({
         app,
         register: vi.fn((fn: () => void) => {
           cleanupFn = fn;
@@ -2767,13 +2767,13 @@ describe('app-dependent functions', () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
-            const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+            const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
             await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '{"nodes":[]}');
           }
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(createMockOf<CachedMetadata>({
         frontmatterLinks: [{
           isCanvas: true,
           key: 'file',
@@ -2808,13 +2808,13 @@ describe('app-dependent functions', () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
-            const abortSignal = castTo<AbortSignal>({ throwIfAborted: vi.fn() });
+            const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
             await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '{"nodes":[]}');
           }
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(createMockOf<CachedMetadata>({
         links: [{
           displayText: 'target',
           link: 'target',

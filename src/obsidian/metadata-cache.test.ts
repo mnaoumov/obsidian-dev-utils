@@ -152,7 +152,7 @@ const mockedParseFrontmatter = vi.mocked(parseFrontmatter);
 function createMockApp(): App {
   const fileMap: Record<string, TAbstractFile> = {};
 
-  return castTo<App>({
+  return createMockOf<App>({
     metadataCache: {
       computeFileMetadataAsync: vi.fn(),
       computeMetadataAsync: vi.fn(),
@@ -176,7 +176,7 @@ function createMockApp(): App {
 }
 
 function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCache {
-  return castTo<FrontmatterLinkCache>({
+  return createMockOf<FrontmatterLinkCache>({
     displayText: original,
     key,
     link: original,
@@ -185,7 +185,7 @@ function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCach
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): FrontmatterLinkCache {
-  return castTo<FrontmatterLinkCache>({
+  return createMockOf<FrontmatterLinkCache>({
     displayText: original,
     endOffset,
     key,
@@ -675,7 +675,7 @@ describe('getFrontmatterSafe', () => {
   it('should return frontmatter from cache', async () => {
     const file = { deleted: true, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 0, size: 0 } };
     const mockFrontmatter = { title: 'Test' };
-    const mockCache = castTo<CachedMetadata>({ frontmatter: mockFrontmatter });
+    const mockCache = createMockOf<CachedMetadata>({ frontmatter: mockFrontmatter });
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 

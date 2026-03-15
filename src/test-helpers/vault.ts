@@ -10,6 +10,8 @@ import type {
   Vault as ObsidianVault
 } from 'obsidian';
 
+import { ensureGenericObject } from '../type-guards.ts';
+
 /**
  * Removes an abstract file from the mock vault's internal file map.
  *
@@ -32,14 +34,14 @@ export function deleteVaultAbstractFile(vault: ObsidianVault, path: string): voi
 export function setVaultAbstractFile(vault: ObsidianVault, path: string, file: TAbstractFile): void {
   const fileMap = getFileMap(vault);
   fileMap[path] = file;
-  (file as unknown as { deleted__: boolean }).deleted__ = false;
+  ensureGenericObject(file)['deleted__'] = false;
   if (path !== '/' && path !== '') {
     const lastSlash = path.lastIndexOf('/');
     const parentKey = lastSlash > 0 ? path.slice(0, lastSlash) : '/';
     const parentFile = fileMap[parentKey];
     if (parentFile && 'children' in parentFile) {
-      (file as unknown as { parent: TAbstractFile }).parent = parentFile;
-      (parentFile as unknown as { children: TAbstractFile[] }).children.push(file);
+      (ensureGenericObject(file) as Record<string, unknown>)['parent'] = parentFile;
+      (ensureGenericObject(parentFile).children as TAbstractFile[]).push(file);
     }
   }
 }
@@ -51,5 +53,5 @@ export function setVaultAbstractFile(vault: ObsidianVault, path: string, file: T
  * @returns The file map record.
  */
 function getFileMap(vault: ObsidianVault): Record<string, TAbstractFile> {
-  return (vault as unknown as { fileMap__: Record<string, TAbstractFile> }).fileMap__;
+  return ensureGenericObject(vault)['fileMap__'] as Record<string, TAbstractFile>;
 }

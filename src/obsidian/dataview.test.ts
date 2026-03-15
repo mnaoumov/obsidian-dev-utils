@@ -12,7 +12,7 @@ import {
 import type { DataviewInlineApi } from './dataview.ts';
 
 import { noop } from '../function.ts';
-import { castTo } from '../object-utils.ts';
+import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
   getRenderedContainer,
@@ -76,7 +76,7 @@ function createMockDv(): DataviewInlineApi {
   const container = document.createElement('div');
   document.body.appendChild(container);
 
-  return castTo<DataviewInlineApi>({
+  return createMockOf<DataviewInlineApi>({
     app: { metadataCache: {}, vault: { adapter: {} } },
     container,
     current: vi.fn(() => ({ file: { path: 'current.md' } })),

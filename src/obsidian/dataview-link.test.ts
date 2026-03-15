@@ -13,6 +13,7 @@ import type {
 } from './dataview.ts';
 
 import { castTo } from '../object-utils.ts';
+import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
   fixTitle,
   makeLinkWithPath
@@ -49,7 +50,7 @@ describe('fixTitle', () => {
     return {
       app,
       fileLink: (path: string, _embed: boolean, title: string): Link =>
-        castTo<Link>({
+        createMockOf<Link>({
           path,
           title
         })
