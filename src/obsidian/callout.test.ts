@@ -258,7 +258,7 @@ describe('renderCallout', () => {
     // Simulate intersection
     intersectionCallback(
       [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
-      {} as IntersectionObserver
+      createMockOf<IntersectionObserver>({})
     );
 
     expect(mockUnobserve).toHaveBeenCalledWith(observedEl);
@@ -284,7 +284,7 @@ describe('renderCallout', () => {
 
     intersectionCallback(
       [createMockOf<IntersectionObserverEntry>({ isIntersecting: false, target: observedEl })],
-      {} as IntersectionObserver
+      createMockOf<IntersectionObserver>({})
     );
 
     expect(mockUnobserve).not.toHaveBeenCalled();
@@ -304,7 +304,7 @@ describe('renderCallout', () => {
 
     intersectionCallback(
       [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
-      {} as IntersectionObserver
+      createMockOf<IntersectionObserver>({})
     );
 
     expect(mocks.addToQueue).toHaveBeenCalledWith(
@@ -331,7 +331,7 @@ describe('renderCallout', () => {
 
     intersectionCallback(
       [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
-      {} as IntersectionObserver
+      createMockOf<IntersectionObserver>({})
     );
 
     // Wait for async loadContent to settle
@@ -363,7 +363,7 @@ describe('renderCallout', () => {
 
     intersectionCallback(
       [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
-      {} as IntersectionObserver
+      createMockOf<IntersectionObserver>({})
     );
 
     await vi.waitFor(() => {
@@ -393,7 +393,7 @@ describe('renderCallout', () => {
 
     intersectionCallback(
       [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
-      {} as IntersectionObserver
+      createMockOf<IntersectionObserver>({})
     );
 
     await vi.waitFor(() => {

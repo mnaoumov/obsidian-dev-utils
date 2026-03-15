@@ -13,6 +13,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../../object-utils.ts';
+import { createMockOf } from '../../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { selectItem } from './select-item.ts';
 
@@ -77,7 +78,7 @@ describe('selectItem', () => {
 
     const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string> | undefined;
     assertNonNullable(modal);
-    modal.selectSuggestion({ item: 'b' } as FuzzyMatch<string>, castTo<MouseEvent>(new Event('click')));
+    modal.selectSuggestion(createMockOf<FuzzyMatch<string>>({ item: 'b' }), castTo<MouseEvent>(new Event('click')));
 
     const result = await promise;
     expect(result).toBe('b');

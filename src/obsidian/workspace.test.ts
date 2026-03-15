@@ -39,8 +39,8 @@ function createMockContainer(win: Window): WorkspaceContainer {
 
 describe('getAllContainers', () => {
   it('should return all unique containers', () => {
-    const container1 = createMockContainer({} as Window);
-    const container2 = createMockContainer({} as Window);
+    const container1 = createMockContainer(createMockOf<Window>({}));
+    const container2 = createMockContainer(createMockOf<Window>({}));
     const app = createMockApp([container1, container2]);
     const result = getAllContainers(app);
     expect(result).toHaveLength(2);
@@ -49,7 +49,7 @@ describe('getAllContainers', () => {
   });
 
   it('should deduplicate containers', () => {
-    const container = createMockContainer({} as Window);
+    const container = createMockContainer(createMockOf<Window>({}));
     const app = createMockApp([container, container]);
     const result = getAllContainers(app);
     expect(result).toHaveLength(1);
@@ -63,8 +63,8 @@ describe('getAllContainers', () => {
 
 describe('getAllDomWindows', () => {
   it('should return windows from all containers', () => {
-    const win1 = {} as Window;
-    const win2 = {} as Window;
+    const win1 = createMockOf<Window>({});
+    const win2 = createMockOf<Window>({});
     const app = createMockApp([createMockContainer(win1), createMockContainer(win2)]);
     const result = getAllDomWindows(app);
     expect(result).toHaveLength(2);
