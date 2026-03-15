@@ -6,10 +6,9 @@ import { mockImplementation } from '../../../../../mock-implementation.ts';
 mockImplementation(
   SettingGroup.prototype,
   'constructor__',
-  function initSettingGroup(this: SettingGroup, originalImplementation, containerEl: HTMLElement): SettingGroup {
+  function initSettingGroup(this: SettingGroup, originalImplementation, containerEl: HTMLElement): void {
     originalImplementation.call(this, containerEl);
-    // @ts-expect-error -- listEl__ is mock-only from obsidian-test-mocks, listEl is from obsidian-typings.
-    ensureGenericObject(this).listEl = this.listEl__;
-    return this;
+    // ListEl__ (HTMLElement) bridges to listEl (HTMLDivElement) from obsidian-typings.
+    ensureGenericObject(this)['listEl'] = this.listEl__;
   }
 );

@@ -71,8 +71,9 @@ export function createMockOf<T>(partial: unknown): T {
 
 export function mockImplementation<
   T extends object,
-  K extends keyof T & string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mock methods from obsidian-test-mocks have incompatible signatures; fallback to generic function type.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Matches vitest's Procedure type: (...args: any[]) => any.
+  K extends keyof { [P in keyof T as T[P] extends (...args: any[]) => any ? P : never]: T[P] } & string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Matches vitest's Procedure type for conditional inference.
   F extends (...args: any[]) => any = T[K] extends (...args: any[]) => any ? T[K] : (...args: unknown[]) => unknown
 >(
   obj: T,
@@ -92,13 +93,11 @@ export function mockImplementation<
 
   const originalImplementation = map.get(method) as F;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vi.spyOn with generic key yields never-typed spy; cast required.
-  const spy = vi.spyOn(obj, method as any);
+  const spy = vi.spyOn(obj, method);
   spy.mockImplementation(function mockImpl(this: unknown, ...args: unknown[]): unknown {
     return impl.call(this as T, originalImplementation, ...(args as Parameters<F>));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required to bypass never-typed spy's mockImplementation constraint.
-  } as any);
-  return spy;
+  } as never);
+  return spy as MockInstance;
 }
 
 /**
