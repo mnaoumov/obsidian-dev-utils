@@ -10,6 +10,7 @@
   "exclude": [],
   "include": [
     "__mocks__/obsidian-typings/src/**/*.ts",
-    "./src/**/*.ts"
+    "./src/**/*.test.ts",
+    "./src/test-helpers.ts"
   ]
 }
