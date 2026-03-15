@@ -24,6 +24,10 @@ await wrapCliTask(async () => {
       continue;
     }
 
+    if (file.startsWith(ObsidianDevUtilsRepoPaths.TestMocks)) {
+      continue;
+    }
+
     const folder = dirname(file);
     const name = basename(file, ObsidianDevUtilsRepoPaths.DtsExtension);
     const fullSourcePath = join(ObsidianDevUtilsRepoPaths.Src, file);

@@ -30,7 +30,7 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 ### Directory Structure
 
 - `src/` — source code and tests, organized by domain (e.g., `obsidian/`, `codemirror/`, `script-utils/`, `transformers/`)
-- `__mocks__/obsidian-typings/` — mock augmentations for `obsidian-typings` (hooks into obsidian-test-mocks constructors)
+- `src/test-mocks/obsidian-typings/` — mock augmentations for `obsidian-typings` (hooks into obsidian-test-mocks constructors)
 - `src/script-utils/bundlers/esbuild.ts` — public API for esbuild bundler (build, dev)
 - `src/script-utils/bundlers/esbuild-impl/` — internal esbuild implementation details
 - `src/script-utils/linters/eslint.ts` — ESLint linting
@@ -81,7 +81,7 @@ export function myFunction(param: Type): ReturnType {
 ### Naming
 
 - Directories: kebab-case (e.g., `script-utils/bundlers/esbuild-impl`, `test-runners`)
-- **Exception:** `__mocks__/` files use PascalCase to mirror Obsidian API export names (e.g., `App.ts`, `Vault.ts`, `TFile.ts`)
+- **Exception:** `src/test-mocks/` files use PascalCase to mirror Obsidian API export names (e.g., `App.ts`, `Vault.ts`, `TFile.ts`)
 - **Exception:** `constructors/` files use camelCase matching the exported function name (e.g., `getDomEventsHandlersConstructor.ts`), mirroring the `obsidian-typings` Constructors convention
 
 ### Documentation

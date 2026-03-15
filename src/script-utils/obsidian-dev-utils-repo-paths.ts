@@ -133,6 +133,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Styles CSS file. */
   StylesCss = 'styles.css',
 
+  /** Test mocks folder. */
+  TestMocks = 'test-mocks',
+
   /** TypeScript configuration file. */
   TsConfigJson = 'tsconfig.json',
 

@@ -1,7 +1,7 @@
 import { SettingGroup } from 'obsidian-test-mocks/obsidian';
 
-import { mockImplementation } from '../../../../../src/test-helpers.ts';
-import { ensureGenericObject } from '../../../../../src/type-guards.ts';
+import { mockImplementation } from '../../../../../test-helpers.ts';
+import { ensureGenericObject } from '../../../../../type-guards.ts';
 
 mockImplementation(
   SettingGroup.prototype,

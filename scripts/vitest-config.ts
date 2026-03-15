@@ -29,6 +29,6 @@ export const config = defineConfig({
         inline: ['obsidian-typings']
       }
     },
-    setupFiles: ['obsidian-test-mocks/globals', './__mocks__/obsidian-typings/index.ts']
+    setupFiles: ['obsidian-test-mocks/globals', './src/test-mocks/obsidian-typings/index.ts']
   }
 });
