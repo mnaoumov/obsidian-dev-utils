@@ -117,7 +117,7 @@ export function myFunction(param: Type): ReturnType {
 
 - Test files: `src/[module-name].test.ts` (next to source file, kebab-case)
 - Browser tests: `src/[module-name].browser.test.ts` with `// @vitest-environment jsdom`
-- Test helpers: `src/test-helpers/` — mock utilities (`mock-implementation.ts`) and vault helpers (`vault.ts`)
+- Test helpers: `src/test-helpers/` — mock utilities (`mock-implementation.ts`)
 
 ### Patterns
 

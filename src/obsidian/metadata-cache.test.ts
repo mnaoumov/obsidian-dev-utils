@@ -22,7 +22,6 @@ import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
 
 import { castTo } from '../object-utils.ts';
 import { createMockOf } from '../test-helpers/mock-implementation.ts';
-import { setVaultAbstractFile } from '../test-helpers/vault.ts';
 import {
   assertNonNullable,
   ensureGenericObject
@@ -208,7 +207,9 @@ function makeReferenceCache(original: string, startOffset: number): ReferenceCac
 }
 
 function setVaultEntry(targetApp: App, path: string, value: TAbstractFile): void {
-  setVaultAbstractFile(targetApp.vault, path, value);
+  const vaultObj = ensureGenericObject(targetApp.vault);
+  const fileMap = vaultObj.fileMap as Record<string, TAbstractFile>;
+  fileMap[path] = value;
 }
 
 describe('getAllLinks', () => {
