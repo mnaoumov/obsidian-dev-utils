@@ -12,7 +12,6 @@ import type {
   Link
 } from './dataview.ts';
 
-import { castTo } from '../object-utils.ts';
 import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
   fixTitle,
@@ -58,28 +57,28 @@ describe('fixTitle', () => {
   }
 
   it('should use basename without extension as title for regular files', async () => {
-    const app = castTo<App>(await MockApp.createConfigured__({ files: { 'folder/note.md': '' } }));
+    const app = (await MockApp.createConfigured__({ files: { 'folder/note.md': '' } })).asOriginalType__();
     const dv = createMockDv(app);
     const result = fixTitle(dv, 'folder/note.md');
     expect(result).toEqual({ path: 'folder/note.md', title: 'note' });
   });
 
   it('should use folder name as title when isFolderNote is true', async () => {
-    const app = castTo<App>(await MockApp.createConfigured__({ files: { 'projects/my-project/my-project.md': '' } }));
+    const app = (await MockApp.createConfigured__({ files: { 'projects/my-project/my-project.md': '' } })).asOriginalType__();
     const dv = createMockDv(app);
     const result = fixTitle(dv, 'projects/my-project/my-project.md', true);
     expect(result).toEqual({ path: 'projects/my-project/my-project.md', title: 'my-project' });
   });
 
   it('should use basename without extension when isFolderNote is false', async () => {
-    const app = castTo<App>(await MockApp.createConfigured__({ files: { 'folder/document.md': '' } }));
+    const app = (await MockApp.createConfigured__({ files: { 'folder/document.md': '' } })).asOriginalType__();
     const dv = createMockDv(app);
     const result = fixTitle(dv, 'folder/document.md', false);
     expect(result).toEqual({ path: 'folder/document.md', title: 'document' });
   });
 
   it('should handle root-level files', async () => {
-    const app = castTo<App>(await MockApp.createConfigured__({ files: { 'readme.md': '' } }));
+    const app = (await MockApp.createConfigured__({ files: { 'readme.md': '' } })).asOriginalType__();
     const dv = createMockDv(app);
     const result = fixTitle(dv, 'readme.md');
     expect(result).toEqual({ path: 'readme.md', title: 'readme' });
