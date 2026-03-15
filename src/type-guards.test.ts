@@ -1,6 +1,7 @@
 import {
   describe,
   expect,
+  expectTypeOf,
   it
 } from 'vitest';
 
@@ -89,6 +90,22 @@ describe('TypeGuards', () => {
       const result = ensureGenericObject(obj);
       expect(result).toBe(obj);
       expect(result['x']).toBe(42);
+    });
+
+    it('should preserve original type in the intersection', () => {
+      const obj = { name: 'test', value: 123 };
+      const result = ensureGenericObject(obj);
+      expect(result.name).toBe('test');
+      expect(result.value).toBe(123);
+      expectTypeOf(result.name).toEqualTypeOf<string>();
+      expectTypeOf(result.value).toEqualTypeOf<number>();
+    });
+
+    it('should allow accessing unknown properties via index signature', () => {
+      const obj = { name: 'test' };
+      const result = ensureGenericObject(obj);
+      result['newProp'] = 'dynamic';
+      expect(result['newProp']).toBe('dynamic');
     });
   });
 
