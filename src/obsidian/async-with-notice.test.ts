@@ -123,7 +123,7 @@ describe('AsyncWithNotice', () => {
       const operationFn = vi.fn(async () => true);
       await retryWithTimeoutNotice({ operationFn });
       const callArgs = ensureGenericObject(ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0]);
-      expect(callArgs['operationFn']).toBe(operationFn);
+      expect(callArgs.operationFn).toBe(operationFn);
     });
 
     it('should forward operationName to retryWithTimeout', async () => {
@@ -133,7 +133,7 @@ describe('AsyncWithNotice', () => {
         operationName: 'myOperation'
       });
       const callArgs = ensureGenericObject(ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0]);
-      expect(callArgs['operationName']).toBe('myOperation');
+      expect(callArgs.operationName).toBe('myOperation');
     });
 
     it('should forward retryOptions to retryWithTimeout', async () => {
@@ -144,7 +144,7 @@ describe('AsyncWithNotice', () => {
         retryOptions
       });
       const callArgs = ensureGenericObject(ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0]);
-      expect(callArgs['retryOptions']).toBe(retryOptions);
+      expect(callArgs.retryOptions).toBe(retryOptions);
     });
 
     it('should forward stackTrace to retryWithTimeout', async () => {
@@ -154,7 +154,7 @@ describe('AsyncWithNotice', () => {
         stackTrace: 'custom-stack'
       });
       const callArgs = ensureGenericObject(ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0]);
-      expect(callArgs['stackTrace']).toBe('custom-stack');
+      expect(callArgs.stackTrace).toBe('custom-stack');
     });
 
     it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is true', async () => {
@@ -265,7 +265,7 @@ describe('AsyncWithNotice', () => {
         timeoutInMilliseconds: 5000
       });
       const callArgs = ensureGenericObject(ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0]);
-      expect(callArgs['operationFn']).toBe(operationFn);
+      expect(callArgs.operationFn).toBe(operationFn);
     });
 
     it('should forward operationName to runWithTimeout', async () => {
@@ -275,7 +275,7 @@ describe('AsyncWithNotice', () => {
         timeoutInMilliseconds: 5000
       });
       const callArgs = ensureGenericObject(ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0]);
-      expect(callArgs['operationName']).toBe('myOp');
+      expect(callArgs.operationName).toBe('myOp');
     });
 
     it('should forward timeoutInMilliseconds to runWithTimeout', async () => {
@@ -284,7 +284,7 @@ describe('AsyncWithNotice', () => {
         timeoutInMilliseconds: 3000
       });
       const callArgs = ensureGenericObject(ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0]);
-      expect(callArgs['timeoutInMilliseconds']).toBe(3000);
+      expect(callArgs.timeoutInMilliseconds).toBe(3000);
     });
 
     it('should forward stackTrace to runWithTimeout', async () => {
@@ -294,7 +294,7 @@ describe('AsyncWithNotice', () => {
         timeoutInMilliseconds: 5000
       });
       const callArgs = ensureGenericObject(ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0]);
-      expect(callArgs['stackTrace']).toBe('my-stack');
+      expect(callArgs.stackTrace).toBe('my-stack');
     });
 
     it('should forward context to runWithTimeout', async () => {
@@ -305,7 +305,7 @@ describe('AsyncWithNotice', () => {
         timeoutInMilliseconds: 5000
       });
       const callArgs = ensureGenericObject(ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0]);
-      expect(callArgs['context']).toBe(context);
+      expect(callArgs.context).toBe(context);
     });
 
     it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is true', async () => {

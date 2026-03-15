@@ -295,8 +295,8 @@ describe('toFrontmatterChangeWithOffsets', () => {
     const change = makeFrontmatterChange('hello', 'world', 'aliases');
     const result = toFrontmatterChangeWithOffsets(change as never);
     expect(isFrontmatterChangeWithOffsets(result)).toBe(true);
-    expect(ensureGenericObject(result.reference)['startOffset']).toBe(0);
-    expect(ensureGenericObject(result.reference)['endOffset']).toBe(5);
+    expect(ensureGenericObject(result.reference).startOffset).toBe(0);
+    expect(ensureGenericObject(result.reference).endOffset).toBe(5);
   });
 
   it('should preserve all original properties on the converted change', () => {
@@ -304,7 +304,7 @@ describe('toFrontmatterChangeWithOffsets', () => {
     const result = toFrontmatterChangeWithOffsets(change as never);
     expect(result.newContent).toBe('new-value');
     expect(result.oldContent).toBe('link-value');
-    expect(ensureGenericObject(result.reference)['key']).toBe('myKey');
+    expect(ensureGenericObject(result.reference).key).toBe('myKey');
   });
 });
 
