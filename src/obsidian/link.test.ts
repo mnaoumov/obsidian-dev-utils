@@ -1,13 +1,15 @@
 import type {
+  App,
   CachedMetadata,
   Plugin,
-  Reference
+  Reference,
+  TFile
 } from 'obsidian';
 
 import {
-  App,
-  TFile
-} from 'obsidian';
+  App as MockApp,
+  TFile as MockTFile
+} from 'obsidian-test-mocks/obsidian';
 // @vitest-environment jsdom
 import {
   beforeEach,
@@ -1600,15 +1602,17 @@ describe('app-dependent functions', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    app = await App.createConfigured__({
-      files: {
-        'folder/other.md': '# Other',
-        'folder/same.md': '# Same',
-        'image.png': '',
-        'note.md': '# Note\n[[target]]',
-        'target.md': '# Target'
-      }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: {
+          'folder/other.md': '# Other',
+          'folder/same.md': '# Same',
+          'image.png': '',
+          'note.md': '# Note\n[[target]]',
+          'target.md': '# Target'
+        }
+      })
+    );
 
     const vaultAny = ensureGenericObject(app.vault);
     vaultAny['getConfig'] = vi.fn((key: string) => {
@@ -1624,7 +1628,7 @@ describe('app-dependent functions', () => {
     const metadataCacheAny = ensureGenericObject(app.metadataCache);
     metadataCacheAny['getLinkpathDest'] = vi.fn((linkpath: string) => {
       const allFiles = app.vault.getAllLoadedFiles();
-      return allFiles.filter((f): f is TFile => f instanceof TFile && (f.basename === linkpath || f.name === linkpath));
+      return allFiles.filter((f): f is TFile => f instanceof MockTFile && (f.basename === linkpath || f.name === linkpath));
     });
 
     ensureGenericObject(app)['internalPlugins'] = {
@@ -2172,12 +2176,14 @@ describe('app-dependent functions', () => {
     });
 
     it('should return path+subpath for canvas file with canvas file node reference', async () => {
-      const canvasApp = await App.createConfigured__({
-        files: {
-          'canvas.canvas': '{}',
-          'target.md': '# Target'
-        }
-      });
+      const canvasApp = castTo<App>(
+        await MockApp.createConfigured__({
+          files: {
+            'canvas.canvas': '{}',
+            'target.md': '# Target'
+          }
+        })
+      );
       const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('canvas.canvas'));
       canvasFile.extension = 'canvas';
       const link = castTo<Reference>({
@@ -2632,9 +2638,11 @@ describe('app-dependent functions', () => {
         getEnabledPluginById: vi.fn(() => null)
       };
 
-      const canvasApp = await App.createConfigured__({
-        files: { 'canvas.canvas': '{}' }
-      });
+      const canvasApp = castTo<App>(
+        await MockApp.createConfigured__({
+          files: { 'canvas.canvas': '{}' }
+        })
+      );
       ensureGenericObject(canvasApp)['internalPlugins'] = {
         getEnabledPluginById: vi.fn(() => null)
       };
@@ -2744,12 +2752,14 @@ describe('app-dependent functions', () => {
 
   describe('getFileChanges canvas path', () => {
     it('should handle canvas file changes through editLinks', async () => {
-      const canvasApp = await App.createConfigured__({
-        files: {
-          'target.md': '# Target',
-          'test.canvas': '{"nodes":[]}'
-        }
-      });
+      const canvasApp = castTo<App>(
+        await MockApp.createConfigured__({
+          files: {
+            'target.md': '# Target',
+            'test.canvas': '{"nodes":[]}'
+          }
+        })
+      );
       const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('test.canvas'));
       canvasFile.extension = 'canvas';
 
@@ -2783,12 +2793,14 @@ describe('app-dependent functions', () => {
     });
 
     it('should log error for non-canvas change in canvas file', async () => {
-      const canvasApp = await App.createConfigured__({
-        files: {
-          'target.md': '# Target',
-          'test.canvas': '{"nodes":[]}'
-        }
-      });
+      const canvasApp = castTo<App>(
+        await MockApp.createConfigured__({
+          files: {
+            'target.md': '# Target',
+            'test.canvas': '{"nodes":[]}'
+          }
+        })
+      );
       const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('test.canvas'));
       canvasFile.extension = 'canvas';
 

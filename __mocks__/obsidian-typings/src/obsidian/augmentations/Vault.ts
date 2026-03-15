@@ -3,7 +3,7 @@ import type {
   TAbstractFile
 } from 'obsidian';
 
-import { Vault } from 'obsidian';
+import { Vault } from 'obsidian-test-mocks/obsidian';
 
 import { mockImplementation } from '../../../../../src/test-helpers.ts';
 import { ensureGenericObject } from '../../../../../src/type-guards.ts';

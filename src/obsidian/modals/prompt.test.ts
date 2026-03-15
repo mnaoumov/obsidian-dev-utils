@@ -1,5 +1,10 @@
 // @vitest-environment jsdom
 
+import type {
+  ButtonComponent as MockButtonComponent,
+  TextComponent as MockTextComponent
+} from 'obsidian-test-mocks/obsidian';
+
 import {
   ButtonComponent,
   TextComponent
@@ -12,6 +17,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../object-utils.ts';
 import { mockImplementation } from '../../test-helpers.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { prompt } from './prompt.ts';
@@ -92,7 +98,7 @@ describe('prompt', () => {
     });
     queueMicrotask(() => {
       const okButton = buttonInstances[0];
-      okButton?.simulateClick__();
+      castTo<MockButtonComponent>(okButton).simulateClick__();
     });
     const result = await resultPromise;
     expect(result).toBe('hello');
@@ -105,7 +111,7 @@ describe('prompt', () => {
     });
     queueMicrotask(() => {
       const textComp = textInstances[0];
-      textComp?.simulateEvent__('keydown', { key: 'Enter', preventDefault: vi.fn() });
+      castTo<MockTextComponent>(textComp).simulateEvent__('keydown', { key: 'Enter', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
     expect(result).toBe('enter-value');
@@ -118,7 +124,7 @@ describe('prompt', () => {
     });
     queueMicrotask(() => {
       const textComp = textInstances[0];
-      textComp?.simulateEvent__('keydown', { key: 'Escape', preventDefault: vi.fn() });
+      castTo<MockTextComponent>(textComp).simulateEvent__('keydown', { key: 'Escape', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
     expect(result).toBeNull();
@@ -131,7 +137,7 @@ describe('prompt', () => {
     });
     queueMicrotask(() => {
       const textComp = textInstances[0];
-      textComp?.simulateEvent__('keydown', { key: 'a', preventDefault: vi.fn() });
+      castTo<MockTextComponent>(textComp).simulateEvent__('keydown', { key: 'a', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
     expect(result).toBeNull();
@@ -147,7 +153,7 @@ describe('prompt', () => {
       // Make checkValidity return false
       textComp.inputEl.checkValidity = (): boolean => false;
       const okButton = ensureNonNullable(buttonInstances[0]);
-      okButton.simulateClick__();
+      castTo<MockButtonComponent>(okButton).simulateClick__();
     });
     const result = await resultPromise;
     // Since checkValidity is false, handleOk returns early - isOkClicked stays false
