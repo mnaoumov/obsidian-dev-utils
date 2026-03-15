@@ -53,5 +53,5 @@ export function setVaultAbstractFile(vault: ObsidianVault, path: string, file: T
  * @returns The file map record.
  */
 function getFileMap(vault: ObsidianVault): Record<string, TAbstractFile> {
-  return ensureGenericObject(vault)['fileMap__'] as Record<string, TAbstractFile>;
+  return ensureGenericObject(vault).fileMap as Record<string, TAbstractFile>;
 }
