@@ -389,10 +389,6 @@ describe('replace', () => {
     const result = replace('price is $10.00', { '$10.00': '20 dollars' });
     expect(result).toBe('price is 20 dollars');
   });
-
-  it('impossible case for code coverage', () => {
-    expect(() => replace('foo', { foo: castTo<string>(undefined) })).toThrow('Unexpected replacement source: foo');
-  });
 });
 
 describe('replaceAll', () => {

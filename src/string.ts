@@ -8,8 +8,8 @@ import type { MaybeReturn } from './type.ts';
 import type { ValueProvider } from './value-provider.ts';
 
 import { abortSignalNever } from './abort-controller.ts';
-import { throwExpression } from './error.ts';
 import { escapeRegExp } from './reg-exp.ts';
+import { ensureNonNullable } from './type-guards.ts';
 import { resolveValue } from './value-provider.ts';
 
 /**
@@ -234,7 +234,7 @@ export function normalize(str: string): string {
  */
 export function replace(str: string, replacementsMap: Record<string, string>): string {
   const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join('|'), 'g');
-  return replaceAll(str, regExp, ({ substring: source }) => replacementsMap[source] ?? throwExpression(new Error(`Unexpected replacement source: ${source}`)));
+  return replaceAll(str, regExp, ({ substring: source }) => ensureNonNullable(replacementsMap[source]));
 }
 
 /**
