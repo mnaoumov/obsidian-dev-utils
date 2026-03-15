@@ -518,7 +518,7 @@ describe('ObjectUtils', () => {
     it('should sort keys when enabled', () => {
       const obj = { a: 2, m: 3, z: 1 };
       const json = toJson(obj, { shouldSortKeys: true });
-      const keys = Object.keys(ensureGenericObject(JSON.parse(json) as object));
+      const keys = Object.keys(JSON.parse(json) as object);
       expect(keys).toEqual(['a', 'm', 'z']);
     });
 
@@ -595,7 +595,7 @@ describe('ObjectUtils', () => {
 
     it('should drop undefined properties when shouldHandleUndefined is false', () => {
       const json = toJson({ a: 1, b: undefined });
-      const parsed = ensureGenericObject(JSON.parse(json) as object);
+      const parsed = JSON.parse(json) as object;
       expect(parsed).toEqual({ a: 1 });
     });
 
@@ -609,7 +609,7 @@ describe('ObjectUtils', () => {
       };
       const json = toJson(outer);
       expect(innerToJSON).not.toHaveBeenCalled();
-      const parsed = ensureGenericObject(JSON.parse(json) as object);
+      const parsed = JSON.parse(json) as object;
       expect(parsed).toEqual({ y: 2 });
     });
 

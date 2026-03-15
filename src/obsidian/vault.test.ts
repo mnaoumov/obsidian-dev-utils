@@ -78,7 +78,7 @@ vi.mock('../obsidian/editor.ts', () => ({
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
   t: vi.fn((fn: (messages: GenericObject) => unknown) => {
     try {
-      fn(ensureGenericObject({ obsidianDevUtils: { vault: { processFile: 'mock' } } }));
+      fn({ obsidianDevUtils: { vault: { processFile: 'mock' } } });
     } catch { /* Ignore */ }
     return 'mock-t';
   })

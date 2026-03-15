@@ -58,7 +58,7 @@ vi.mock('../obsidian/frontmatter.ts', () => ({
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
   t: vi.fn((fn: (messages: GenericObject) => unknown) => {
     try {
-      return fn(ensureGenericObject({ obsidianDevUtils: { metadataCache: { getBacklinksForFilePath: 'mock' } } }));
+      return fn({ obsidianDevUtils: { metadataCache: { getBacklinksForFilePath: 'mock' } } });
     } catch {
       return 'mock-t';
     }

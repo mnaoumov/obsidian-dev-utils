@@ -15,10 +15,7 @@ import type { FileChange } from './file-change.ts';
 import { getLibDebugger } from '../debug.ts';
 import { printError } from '../error.ts';
 import { noop } from '../function.ts';
-import {
-  assertNonNullable,
-  ensureGenericObject
-} from '../type-guards.ts';
+import { assertNonNullable } from '../type-guards.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -295,8 +292,8 @@ describe('toFrontmatterChangeWithOffsets', () => {
     const change = makeFrontmatterChange('hello', 'world', 'aliases');
     const result = toFrontmatterChangeWithOffsets(change as never);
     expect(isFrontmatterChangeWithOffsets(result)).toBe(true);
-    expect(ensureGenericObject(result.reference).startOffset).toBe(0);
-    expect(ensureGenericObject(result.reference).endOffset).toBe(5);
+    expect(result.reference.startOffset).toBe(0);
+    expect(result.reference.endOffset).toBe(5);
   });
 
   it('should preserve all original properties on the converted change', () => {
@@ -304,7 +301,7 @@ describe('toFrontmatterChangeWithOffsets', () => {
     const result = toFrontmatterChangeWithOffsets(change as never);
     expect(result.newContent).toBe('new-value');
     expect(result.oldContent).toBe('link-value');
-    expect(ensureGenericObject(result.reference).key).toBe('myKey');
+    expect(result.reference.key).toBe('myKey');
   });
 });
 
