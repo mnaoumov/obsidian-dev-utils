@@ -21,40 +21,40 @@ import {
 
 describe('makeLinkWithPath', () => {
   it('should format link text with path', () => {
-    const link = {
+    const link = createMockOf<Link>({
       path: 'folder/note.md',
       toString: (): string => '[[note]]'
-    } as Link;
+    });
     expect(makeLinkWithPath(link)).toBe('[[note]] (folder/note.md)');
   });
 
   it('should handle root-level path', () => {
-    const link = {
+    const link = createMockOf<Link>({
       path: 'note.md',
       toString: (): string => '[[note]]'
-    } as Link;
+    });
     expect(makeLinkWithPath(link)).toBe('[[note]] (note.md)');
   });
 
   it('should handle deeply nested path', () => {
-    const link = {
+    const link = createMockOf<Link>({
       path: 'a/b/c/d.md',
       toString: (): string => '[[d]]'
-    } as Link;
+    });
     expect(makeLinkWithPath(link)).toBe('[[d]] (a/b/c/d.md)');
   });
 });
 
 describe('fixTitle', () => {
   function createMockDv(app: App): DataviewInlineApi {
-    return {
+    return createMockOf<DataviewInlineApi>({
       app,
       fileLink: (path: string, _embed: boolean, title: string): Link =>
         createMockOf<Link>({
           path,
           title
         })
-    } as DataviewInlineApi;
+    });
   }
 
   it('should use basename without extension as title for regular files', async () => {

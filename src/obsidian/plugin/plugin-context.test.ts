@@ -72,7 +72,7 @@ describe('initDebugController', () => {
   });
 
   it('should set DEBUG on window', () => {
-    const win = {} as Window;
+    const win = createMockOf<Window>({});
     initDebugController(win);
     expect(ensureGenericObject(win)['DEBUG']).toBeDefined();
     expect(mocks.getDebugController).toHaveBeenCalled();
