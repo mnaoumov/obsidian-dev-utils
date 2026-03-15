@@ -28,6 +28,7 @@ index.ts
 _dependencies.ts
 
 *.tsbuildinfo
+.tsbuildinfo/
 /.env
 
 /src/**/*.d.ts

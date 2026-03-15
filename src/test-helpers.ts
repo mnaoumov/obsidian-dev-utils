@@ -96,7 +96,8 @@ export function deleteVaultAbstractFile(vault: ObsidianVault, path: string): voi
 export function mockImplementation<
   T extends object,
   K extends keyof T & string,
-  F extends (...args: unknown[]) => unknown = T[K] extends (...args: unknown[]) => unknown ? T[K] : never
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mock methods from obsidian-test-mocks have incompatible signatures; fallback to generic function type.
+  F extends (...args: any[]) => any = T[K] extends (...args: any[]) => any ? T[K] : (...args: unknown[]) => unknown
 >(
   obj: T,
   method: K,
@@ -115,9 +116,13 @@ export function mockImplementation<
 
   const originalImplementation = map.get(method) as F;
 
-  return vi.spyOn(obj, method as never).mockImplementation(function mockImpl(this: unknown, ...args: unknown[]): unknown {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vi.spyOn with generic key yields never-typed spy; cast required.
+  const spy = vi.spyOn(obj, method as any);
+  spy.mockImplementation(function mockImpl(this: unknown, ...args: unknown[]): unknown {
     return impl.call(this as T, originalImplementation, ...(args as Parameters<F>));
-  });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required to bypass never-typed spy's mockImplementation constraint.
+  } as any);
+  return spy;
 }
 
 /**

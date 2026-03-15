@@ -40,13 +40,13 @@ describe('confirm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     buttonInstances.length = 0;
-    // @ts-expect-error -- constructor2__ is a mock-only hook from obsidian-test-mocks.
     mockImplementation(
       ButtonComponent.prototype,
       'constructor2__',
-      function captureButton(this: ButtonComponent, originalImplementation, containerEl: HTMLElement) {
+      function captureButton(this: ButtonComponent, originalImplementation, containerEl: HTMLElement): ButtonComponent {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
+        return this;
       }
     );
   });

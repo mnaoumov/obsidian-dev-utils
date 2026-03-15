@@ -14,7 +14,10 @@ import {
 } from 'vitest';
 
 import { castTo } from '../object-utils.ts';
-import { assertNonNullable } from '../type-guards.ts';
+import {
+  assertNonNullable,
+  ensureGenericObject
+} from '../type-guards.ts';
 import {
   asArrayOfFiles,
   asArrayOfFolders,
@@ -645,7 +648,7 @@ describe('getAbstractFileOrNull (case-insensitive)', () => {
 
   it('should use adapter.insensitive when isCaseInsensitive is not provided', async () => {
     app = await App.createConfigured__({ files: { 'Note.md': '' } });
-    (app.vault.adapter as { insensitive: boolean }).insensitive = true;
+    ensureGenericObject(app.vault.adapter)['insensitive'] = true;
     const result = getAbstractFileOrNull(app, 'note.md');
     assertNonNullable(result);
     expect(result.path).toBe('Note.md');

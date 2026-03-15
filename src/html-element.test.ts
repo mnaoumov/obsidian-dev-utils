@@ -267,7 +267,7 @@ describe('appendCodeBlock', () => {
   it('should call createEl on the element with strong tag and correct options', () => {
     const mockCreateEl = vi.fn();
     const el = createMockElement();
-    el.createEl = mockCreateEl;
+    ensureGenericObject(el)['createEl'] = mockCreateEl;
     appendCodeBlock(el, 'console.log("hello")');
     expect(mockCreateEl).toHaveBeenCalledWith(
       'strong',
@@ -280,11 +280,12 @@ describe('appendCodeBlock', () => {
     const innerCreateEl = vi.fn();
     const mockStrong = createMockElement();
     mockStrong.createEl = innerCreateEl;
-    const mockCreateEl = vi.fn((_tag: string, _opts: unknown, cb: (el: HTMLElement) => void) => {
+    const mockCreateEl = vi.fn((_tag: string, _opts: unknown, cb: (el: HTMLElement) => void): HTMLElement => {
       cb(mockStrong);
+      return mockStrong;
     });
     const el = createMockElement();
-    el.createEl = mockCreateEl;
+    ensureGenericObject(el)['createEl'] = mockCreateEl;
     appendCodeBlock(el, 'my-code');
     expect(innerCreateEl).toHaveBeenCalledWith('code', { text: 'my-code' });
   });
@@ -293,11 +294,12 @@ describe('appendCodeBlock', () => {
     const innerCreateEl = vi.fn();
     const mockStrong = createMockElement();
     mockStrong.createEl = innerCreateEl;
-    const mockCreateEl = vi.fn((_tag: string, _opts: unknown, cb: (el: HTMLElement) => void) => {
+    const mockCreateEl = vi.fn((_tag: string, _opts: unknown, cb: (el: HTMLElement) => void): HTMLElement => {
       cb(mockStrong);
+      return mockStrong;
     });
     const el = createMockElement();
-    el.createEl = mockCreateEl;
+    ensureGenericObject(el)['createEl'] = mockCreateEl;
     const code = 'const x = 42;';
     appendCodeBlock(el, code);
     expect(innerCreateEl).toHaveBeenCalledWith('code', { text: code });
