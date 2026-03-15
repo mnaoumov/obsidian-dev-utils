@@ -106,7 +106,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       await initI18N(translationsMap as never, false);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0] as object);
+      const callArgs = (mockInitFn.mock.calls[0] as unknown[])[0] as object;
       expect(callArgs).toMatchObject({
         fallbackLng: 'en',
         initAsync: false,
