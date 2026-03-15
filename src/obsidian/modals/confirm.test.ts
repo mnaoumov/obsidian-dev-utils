@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import type { ButtonComponent as MockButtonComponent } from 'obsidian-test-mocks/obsidian';
+
 import { ButtonComponent } from 'obsidian';
 import {
   beforeEach,
@@ -9,6 +11,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../object-utils.ts';
 import { mockImplementation } from '../../test-helpers.ts';
 import { confirm } from './confirm.ts';
 
@@ -68,7 +71,7 @@ describe('confirm', () => {
     // Simulate OK button click via microtask (runs before setTimeout auto-close).
     queueMicrotask(() => {
       const okButton = buttonInstances[0];
-      okButton?.simulateClick__();
+      castTo<MockButtonComponent>(okButton).simulateClick__();
     });
     const result = await resultPromise;
     expect(result).toBe(true);

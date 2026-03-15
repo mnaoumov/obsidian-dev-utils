@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
 
-import {
+import type {
   App,
   TFile,
   TFolder
 } from 'obsidian';
+
+import {
+  App as MockApp,
+  TFile as MockTFile,
+  TFolder as MockTFolder
+} from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -13,6 +19,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../object-utils.ts';
 import { deleteIfNotUsed } from './vault-delete.ts';
 
 const mocks = vi.hoisted(() => ({
@@ -29,8 +36,8 @@ vi.mock('../error.ts', () => ({
 
 vi.mock('../obsidian/file-system.ts', () => ({
   getAbstractFileOrNull: mocks.getAbstractFileOrNull,
-  isFile: vi.fn((f: unknown) => f instanceof TFile),
-  isFolder: vi.fn((f: unknown) => f instanceof TFolder)
+  isFile: vi.fn((f: unknown) => f instanceof MockTFile),
+  isFolder: vi.fn((f: unknown) => f instanceof MockTFolder)
 }));
 
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
@@ -56,7 +63,7 @@ vi.mock('../obsidian/vault.ts', () => ({
 let app: App;
 
 beforeEach(async () => {
-  app = await App.createConfigured__();
+  app = castTo<App>(await MockApp.createConfigured__());
   vi.clearAllMocks();
   mocks.isEmptyFolder.mockResolvedValue(true);
   mocks.listSafe.mockResolvedValue({ files: [], folders: [] });
@@ -71,7 +78,7 @@ describe('deleteIfNotUsed', () => {
   });
 
   it('should delete a file with no backlinks', async () => {
-    const file = TFile.create__(app.vault, 'note.md');
+    const file = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'note.md'));
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
     const result = await deleteIfNotUsed(app, file);
@@ -81,7 +88,7 @@ describe('deleteIfNotUsed', () => {
   });
 
   it('should not delete a file with backlinks', async () => {
-    const file = TFile.create__(app.vault, 'note.md');
+    const file = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'note.md'));
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 2) });
     const result = await deleteIfNotUsed(app, file);
@@ -91,7 +98,7 @@ describe('deleteIfNotUsed', () => {
   });
 
   it('should clear backlinks from the deleted note path', async () => {
-    const file = TFile.create__(app.vault, 'attachment.png');
+    const file = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'attachment.png'));
     const clearFn = vi.fn();
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: clearFn, count: vi.fn(() => 0) });
@@ -100,7 +107,7 @@ describe('deleteIfNotUsed', () => {
   });
 
   it('should show notice for used attachments when shouldReportUsedAttachments is true', async () => {
-    const file = TFile.create__(app.vault, 'attachment.png');
+    const file = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'attachment.png'));
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 1) });
     await deleteIfNotUsed(app, file, undefined, true);
@@ -109,8 +116,8 @@ describe('deleteIfNotUsed', () => {
   });
 
   it('should recursively delete folder contents', async () => {
-    const folder = TFolder.create__(app.vault, 'folder');
-    const childFile = TFile.create__(app.vault, 'folder/note.md');
+    const folder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'folder'));
+    const childFile = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'folder/note.md'));
 
     mocks.getAbstractFileOrNull.mockImplementation((_app: unknown, f: unknown) => f);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
@@ -121,7 +128,7 @@ describe('deleteIfNotUsed', () => {
   });
 
   it('should not delete folder when shouldDeleteEmptyFolders is false', async () => {
-    const folder = TFolder.create__(app.vault, 'folder');
+    const folder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'folder'));
     mocks.getAbstractFileOrNull.mockReturnValue(folder);
     mocks.listSafe.mockResolvedValue({ files: [], folders: [] });
     mocks.isEmptyFolder.mockResolvedValue(true);
@@ -132,7 +139,7 @@ describe('deleteIfNotUsed', () => {
   });
 
   it('should handle trashSafe failure gracefully', async () => {
-    const file = TFile.create__(app.vault, 'note.md');
+    const file = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'note.md'));
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
     mocks.trashSafe.mockRejectedValue(new Error('trash failed'));

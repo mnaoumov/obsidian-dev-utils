@@ -139,8 +139,9 @@ describe('MyModule', () => {
 
 ### Mocking
 
-- `obsidian` module is aliased to `obsidian-test-mocks/obsidian` via Vitest config
-- Test files use `tsconfig.test.json` (with `paths` mapping to obsidian-test-mocks types) for IDE and ESLint
+- `obsidian` module is aliased to `obsidian-test-mocks/obsidian` via Vitest config (runtime only)
+- For types, use `import type { App } from 'obsidian'` (real types)
+- For mock-specific APIs (`create__`, `createConfigured__`, etc.), import from `'obsidian-test-mocks/obsidian'` directly
 - Use `vi.fn()` for mock functions, `vi.useFakeTimers()`/`vi.useRealTimers()` for timer mocking
 - Use `vi.stubGlobal()` / `vi.unstubAllGlobals()` for global stubs
 
@@ -205,5 +206,3 @@ See `static/scripts/` for the full set of consumer examples.
 - **207 test failures**: Pre-existing after `chore: update libs` (commit e363229b). Likely caused by `obsidian-test-mocks` version bump introducing breaking changes (e.g., `validatorEl` not mocked in `ToggleComponent`).
 - **544 spellcheck issues in 1 file**: Pre-existing. Likely a generated or large file triggering false positives.
 - **ESLint/dprint import order conflict**: `perfectionist/sort-named-imports` sorts by alias name, dprint sorts by original export name. Affects aliased imports like `Vault as ObsidianVault`. dprint wins since it runs after ESLint in the pre-commit hook.
-- **`tsconfig.test.json` uses `skipLibCheck: true`** (intentionally overrides G10e): Required because remapping `obsidian` → `obsidian-test-mocks` via `paths` causes ~99 type conflicts in `obsidian-typings` and `obsidian-test-mocks` `.d.cts` files. The main `tsconfig.json` still validates with `skipLibCheck: false`.
-- **5 source file errors in `tsconfig.test.json`**: Source files compiled under the test config with mock types have errors (`activeDocument` missing, `fileMap` private, `SettingTab` type mismatch). These don't show in the IDE because source files use `tsconfig.json` (which compiles clean).

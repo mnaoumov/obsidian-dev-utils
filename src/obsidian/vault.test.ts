@@ -1,11 +1,18 @@
 // @vitest-environment jsdom
 
-import {
+import type {
   App,
   MarkdownView,
   TFile,
   TFolder
 } from 'obsidian';
+
+import {
+  App as MockApp,
+  MarkdownView as MockMarkdownView,
+  TFile as MockTFile,
+  TFolder as MockTFolder
+} from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -84,7 +91,7 @@ const mockedRetryWithTimeoutNotice = vi.mocked(retryWithTimeoutNotice);
 let app: App;
 
 beforeEach(async () => {
-  app = await App.createConfigured__();
+  app = castTo<App>(await MockApp.createConfigured__());
 });
 
 describe('isChild', () => {
@@ -93,7 +100,7 @@ describe('isChild', () => {
   });
 
   it('should return true when b is root "/"', () => {
-    const root = TFolder.create__(app.vault, '/');
+    const root = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), '/'));
     setVaultAbstractFile(app.vault, '/', root);
     expect(isChild(app, 'folder/note.md', root)).toBe(true);
   });
@@ -111,8 +118,8 @@ describe('isChild', () => {
   });
 
   it('should work with TAbstractFile instances', () => {
-    const fileA = TFile.create__(app.vault, 'parent/child.md');
-    const folderB = TFolder.create__(app.vault, 'parent');
+    const fileA = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'parent/child.md'));
+    const folderB = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'parent'));
     setVaultAbstractFile(app.vault, 'parent/child.md', fileA);
     setVaultAbstractFile(app.vault, 'parent', folderB);
     expect(isChild(app, fileA, folderB)).toBe(true);
@@ -133,8 +140,8 @@ describe('isChildOrSelf', () => {
   });
 
   it('should return true when both refer to root', () => {
-    const rootA = TFolder.create__(app.vault, '/');
-    const rootB = TFolder.create__(app.vault, '/');
+    const rootA = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), '/'));
+    const rootB = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), '/'));
     setVaultAbstractFile(app.vault, '/', rootA);
     expect(isChildOrSelf(app, rootA, rootB)).toBe(true);
   });
@@ -168,13 +175,15 @@ describe('getAvailablePath', () => {
 
 describe('getMarkdownFilesSorted', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: {
-        'a-note.md': '',
-        'folder/m-note.md': '',
-        'z-note.md': ''
-      }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: {
+          'a-note.md': '',
+          'folder/m-note.md': '',
+          'z-note.md': ''
+        }
+      })
+    );
   });
 
   it('should return markdown files sorted by path', () => {
@@ -187,7 +196,7 @@ describe('getMarkdownFilesSorted', () => {
   });
 
   it('should return empty array when no markdown files exist', async () => {
-    app = await App.createConfigured__();
+    app = castTo<App>(await MockApp.createConfigured__());
     const files = getMarkdownFilesSorted(app);
     expect(files).toEqual([]);
   });
@@ -195,15 +204,17 @@ describe('getMarkdownFilesSorted', () => {
 
 describe('getNoteFilesSorted', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: {
-        'a-note.md': '',
-        'data.json': '',
-        'drawing.canvas': '',
-        'subfolder/': '',
-        'z-note.md': ''
-      }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: {
+          'a-note.md': '',
+          'data.json': '',
+          'drawing.canvas': '',
+          'subfolder/': '',
+          'z-note.md': ''
+        }
+      })
+    );
   });
 
   it('should return note files (md, canvas) sorted by path, excluding non-notes', () => {
@@ -262,9 +273,11 @@ describe('createFolderSafe', () => {
 
 describe('copySafe', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'source.md': '' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'source.md': '' }
+      })
+    );
   });
 
   it('should return same path when old and new paths are the same', async () => {
@@ -320,9 +333,11 @@ describe('copySafe', () => {
 
 describe('readSafe', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'note.md': 'hello world' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'note.md': 'hello world' }
+      })
+    );
   });
 
   it('should return file content when file exists', async () => {
@@ -345,12 +360,14 @@ describe('readSafe', () => {
 
 describe('getAbstractFilePathSafe', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: {
-        'existing-folder/': '',
-        'existing.md': ''
-      }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: {
+          'existing-folder/': '',
+          'existing.md': ''
+        }
+      })
+    );
   });
 
   it('should return path when file exists and type matches File', () => {
@@ -379,9 +396,11 @@ describe('getAbstractFilePathSafe', () => {
 
 describe('getFilePathSafe', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'test.md': '' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'test.md': '' }
+      })
+    );
   });
 
   it('should return path when file exists', () => {
@@ -398,9 +417,11 @@ describe('getFilePathSafe', () => {
 
 describe('getFolderPathSafe', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'my-folder/': '' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'my-folder/': '' }
+      })
+    );
   });
 
   it('should return path when folder exists', () => {
@@ -417,13 +438,15 @@ describe('getFolderPathSafe', () => {
 
 describe('saveNote', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'note.md': '' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'note.md': '' }
+      })
+    );
   });
 
   it('should not save if file is not a markdown file', async () => {
-    const nonMdFile = TFile.create__(app.vault, 'data.json');
+    const nonMdFile = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'data.json'));
     setVaultAbstractFile(app.vault, 'data.json', nonMdFile);
     vi.spyOn(app.workspace, 'getLeavesOfType');
     await saveNote(app, 'data.json');
@@ -431,7 +454,7 @@ describe('saveNote', () => {
   });
 
   it('should save dirty markdown views matching the file path', async () => {
-    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
+    const view = new (castTo<new () => MarkdownView>(MockMarkdownView))();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
@@ -447,7 +470,7 @@ describe('saveNote', () => {
   });
 
   it('should not save non-dirty views', async () => {
-    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
+    const view = new (castTo<new () => MarkdownView>(MockMarkdownView))();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
@@ -463,8 +486,8 @@ describe('saveNote', () => {
   });
 
   it('should not save views for different file paths', async () => {
-    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
-    view.file = TFile.create__(app.vault, 'other.md');
+    const view = new (castTo<new () => MarkdownView>(MockMarkdownView))();
+    view.file = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'other.md'));
     ensureGenericObject(view)['dirty'] = true;
     vi.spyOn(view, 'save');
 
@@ -479,12 +502,14 @@ describe('saveNote', () => {
 
 describe('isEmptyFolder', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: {
-        'empty-folder/': '',
-        'full-folder/': ''
-      }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: {
+          'empty-folder/': '',
+          'full-folder/': ''
+        }
+      })
+    );
   });
 
   it('should return true for an empty folder', async () => {
@@ -526,9 +551,11 @@ describe('isEmptyFolder', () => {
 
 describe('listSafe', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'my-folder/': '' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'my-folder/': '' }
+      })
+    );
   });
 
   it('should return empty when path is not a folder', async () => {
@@ -578,9 +605,11 @@ describe('listSafe', () => {
 
 describe('getSafeRenamePath', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'old.md': '' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'old.md': '' }
+      })
+    );
   });
 
   it('should return available path when paths differ (case-sensitive)', () => {
@@ -598,11 +627,11 @@ describe('getSafeRenamePath', () => {
   it('should return newPath directly when paths match case-insensitively on insensitive filesystem', () => {
     ensureGenericObject(app.vault.adapter)['insensitive'] = true;
     // Need a parent folder for the while loop to find
-    const parentFolder = TFolder.create__(app.vault, 'dir');
+    const parentFolder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'dir'));
     ensureGenericObject(parentFolder)['getParentPrefix'] = (): string => 'dir/';
     setVaultAbstractFile(app.vault, 'dir', parentFolder);
 
-    const dirFile = TFile.create__(app.vault, 'dir/old.md');
+    const dirFile = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'dir/old.md'));
     setVaultAbstractFile(app.vault, 'dir/old.md', dirFile);
 
     const result = getSafeRenamePath(app, 'dir/old.md', 'dir/OLD.md');
@@ -611,7 +640,7 @@ describe('getSafeRenamePath', () => {
 
   it('should handle insensitive filesystem with nested path by walking up to existing folder', () => {
     ensureGenericObject(app.vault.adapter)['insensitive'] = true;
-    const parentFolder = TFolder.create__(app.vault, 'parent');
+    const parentFolder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'parent'));
     ensureGenericObject(parentFolder)['getParentPrefix'] = (): string => 'parent/';
     setVaultAbstractFile(app.vault, 'parent', parentFolder);
 
@@ -623,9 +652,11 @@ describe('getSafeRenamePath', () => {
 
 describe('renameSafe', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'source.md': '' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'source.md': '' }
+      })
+    );
   });
 
   it('should not rename if old and new paths are the same', async () => {
@@ -686,7 +717,7 @@ describe('renameSafe', () => {
 
 describe('getOrCreateAbstractFileSafe', () => {
   it('should return existing file if it exists', async () => {
-    const file = TFile.create__(app.vault, 'existing.md');
+    const file = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'existing.md'));
     setVaultAbstractFile(app.vault, 'existing.md', file);
     const result = await getOrCreateAbstractFileSafe(app, 'existing.md', FileSystemType.File);
     expect(result.path).toBe('existing.md');
@@ -701,7 +732,7 @@ describe('getOrCreateAbstractFileSafe', () => {
   });
 
   it('should return existing folder if it exists', async () => {
-    const folder = TFolder.create__(app.vault, 'existing-folder');
+    const folder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'existing-folder'));
     setVaultAbstractFile(app.vault, 'existing-folder', folder);
     const result = await getOrCreateAbstractFileSafe(app, 'existing-folder', FileSystemType.Folder);
     expect(result.path).toBe('existing-folder');
@@ -725,7 +756,7 @@ describe('getOrCreateAbstractFileSafe', () => {
 
 describe('getOrCreateFileSafe', () => {
   it('should return existing file', async () => {
-    const file = TFile.create__(app.vault, 'test.md');
+    const file = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'test.md'));
     setVaultAbstractFile(app.vault, 'test.md', file);
     const result = await getOrCreateFileSafe(app, 'test.md');
     expect(result.path).toBe('test.md');
@@ -741,7 +772,7 @@ describe('getOrCreateFileSafe', () => {
 
 describe('getOrCreateFolderSafe', () => {
   it('should return existing folder', async () => {
-    const folder = TFolder.create__(app.vault, 'test-folder');
+    const folder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'test-folder'));
     setVaultAbstractFile(app.vault, 'test-folder', folder);
     const result = await getOrCreateFolderSafe(app, 'test-folder');
     expect(result.path).toBe('test-folder');
@@ -757,9 +788,11 @@ describe('getOrCreateFolderSafe', () => {
 
 describe('invokeWithFileSystemLock', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'locked.md': '' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'locked.md': '' }
+      })
+    );
   });
 
   it('should call the function with the file content', async () => {
@@ -797,9 +830,11 @@ describe('invokeWithFileSystemLock', () => {
 
 describe('readSafe error paths (invokeFileActionSafe catch)', () => {
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'note.md': 'hello' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'note.md': 'hello' }
+      })
+    );
   });
 
   it('should return null when read throws and file is subsequently deleted', async () => {
@@ -830,7 +865,7 @@ describe('createTempFile', () => {
   });
 
   it('should return noopAsync when file already exists', async () => {
-    app = await App.createConfigured__({ files: { 'existing.md': '' } });
+    app = castTo<App>(await MockApp.createConfigured__({ files: { 'existing.md': '' } }));
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(true);
     const cleanup = await createTempFile(app, 'existing.md');
     await expect(cleanup()).resolves.toBeUndefined();
@@ -857,7 +892,7 @@ describe('createTempFile', () => {
   });
 
   it('cleanup should trash non-deleted file', async () => {
-    const createdFile = TFile.create__(app.vault, 'new.md');
+    const createdFile = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'new.md'));
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
     vi.spyOn(app.fileManager, 'trashFile');
 
@@ -871,7 +906,7 @@ describe('createTempFile', () => {
   });
 
   it('cleanup should not trash deleted file', async () => {
-    const createdFile = TFile.create__(app.vault, 'new.md');
+    const createdFile = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'new.md'));
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
     vi.spyOn(app.fileManager, 'trashFile');
 
@@ -895,7 +930,7 @@ describe('createTempFolder', () => {
   });
 
   it('should return noopAsync when folder already exists', async () => {
-    app = await App.createConfigured__({ files: { 'existing/': '' } });
+    app = castTo<App>(await MockApp.createConfigured__({ files: { 'existing/': '' } }));
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(true);
     const cleanup = await createTempFolder(app, 'existing');
     await expect(cleanup()).resolves.toBeUndefined();
@@ -917,7 +952,7 @@ describe('createTempFolder', () => {
     const cleanup = await createTempFolder(app, 'temp');
 
     // Set up the folder in fileMap for cleanup to find it
-    const folder = TFolder.create__(app.vault, 'temp');
+    const folder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'temp'));
 
     setVaultAbstractFile(app.vault, 'temp', folder);
     await cleanup();
@@ -930,7 +965,7 @@ describe('createTempFolder', () => {
 
     const cleanup = await createTempFolder(app, 'temp');
 
-    const folder = TFolder.create__(app.vault, 'temp');
+    const folder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'temp'));
     setVaultAbstractFile(app.vault, 'temp', folder);
     folder.deleted = true;
     await cleanup();
@@ -948,9 +983,11 @@ describe('processFile', () => {
   }
 
   beforeEach(async () => {
-    app = await App.createConfigured__({
-      files: { 'note.md': 'old content' }
-    });
+    app = castTo<App>(
+      await MockApp.createConfigured__({
+        files: { 'note.md': 'old content' }
+      })
+    );
     mockedRetryWithTimeoutNotice.mockReset();
   });
 
@@ -1009,7 +1046,7 @@ describe('processFile', () => {
 
   it('should succeed when file is missing and shouldFailOnMissingFile is false', async () => {
     setupRetryToInvokeOperationFn();
-    app = await App.createConfigured__(); // No files
+    app = castTo<App>(await MockApp.createConfigured__()); // No files
 
     await expect(processFile(app, 'missing.md', 'content', { shouldFailOnMissingFile: false }))
       .resolves.toBeUndefined();
@@ -1044,7 +1081,7 @@ describe('processFile', () => {
   it('should lock and unlock editors when shouldLockEditorWhileProcessing is true', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
+    const view = new (castTo<new () => MarkdownView>(MockMarkdownView))();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
@@ -1063,7 +1100,7 @@ describe('processFile', () => {
   it('should invoke active-leaf-change callback that locks matching editors', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
+    const view = new (castTo<new () => MarkdownView>(MockMarkdownView))();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
@@ -1116,7 +1153,7 @@ describe('processFile', () => {
   it('should skip locking editors when view.file is null', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    const view = new (castTo<new () => MarkdownView>(MarkdownView))();
+    const view = new (castTo<new () => MarkdownView>(MockMarkdownView))();
     // View.file defaults to null in the mock — don't set it
     ensureGenericObject(view)['editor'] = {};
 
@@ -1135,7 +1172,7 @@ describe('processFile', () => {
 
 describe('trashSafe', () => {
   it('should do nothing when file does not exist', async () => {
-    app = await App.createConfigured__();
+    app = castTo<App>(await MockApp.createConfigured__());
     vi.spyOn(app.fileManager, 'trashFile');
     await trashSafe(app, 'nonexistent.md');
 
@@ -1143,7 +1180,7 @@ describe('trashSafe', () => {
   });
 
   it('should trash an existing file', async () => {
-    app = await App.createConfigured__({ files: { 'note.md': '' } });
+    app = castTo<App>(await MockApp.createConfigured__({ files: { 'note.md': '' } }));
     vi.spyOn(app.fileManager, 'trashFile');
     await trashSafe(app, 'note.md');
 
@@ -1151,7 +1188,7 @@ describe('trashSafe', () => {
   });
 
   it('should suppress error when file no longer exists after failure', async () => {
-    app = await App.createConfigured__({ files: { 'note.md': '' } });
+    app = castTo<App>(await MockApp.createConfigured__({ files: { 'note.md': '' } }));
     vi.spyOn(app.fileManager, 'trashFile').mockRejectedValue(new Error('trash failed'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(false);
 
@@ -1159,7 +1196,7 @@ describe('trashSafe', () => {
   });
 
   it('should rethrow error when file still exists after failure', async () => {
-    app = await App.createConfigured__({ files: { 'note.md': '' } });
+    app = castTo<App>(await MockApp.createConfigured__({ files: { 'note.md': '' } }));
     vi.spyOn(app.fileManager, 'trashFile').mockRejectedValue(new Error('trash failed'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(true);
 
@@ -1169,7 +1206,7 @@ describe('trashSafe', () => {
 
 describe('deleteEmptyFolder', () => {
   it('should do nothing when folder is null', async () => {
-    app = await App.createConfigured__();
+    app = castTo<App>(await MockApp.createConfigured__());
     vi.spyOn(app.fileManager, 'trashFile');
     await deleteEmptyFolder(app, null);
 
@@ -1177,7 +1214,7 @@ describe('deleteEmptyFolder', () => {
   });
 
   it('should do nothing when folder is not empty', async () => {
-    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
+    app = castTo<App>(await MockApp.createConfigured__({ files: { 'my-folder/': '' } }));
     vi.spyOn(app.fileManager, 'trashFile');
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: ['my-folder/note.md'], folders: [] });
@@ -1187,7 +1224,7 @@ describe('deleteEmptyFolder', () => {
   });
 
   it('should delete when folder is empty', async () => {
-    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
+    app = castTo<App>(await MockApp.createConfigured__({ files: { 'my-folder/': '' } }));
     vi.spyOn(app.fileManager, 'trashFile');
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
@@ -1199,7 +1236,7 @@ describe('deleteEmptyFolder', () => {
 
 describe('deleteEmptyFolderHierarchy', () => {
   it('should do nothing when folder is null', async () => {
-    app = await App.createConfigured__();
+    app = castTo<App>(await MockApp.createConfigured__());
     vi.spyOn(app.fileManager, 'trashFile');
     await deleteEmptyFolderHierarchy(app, null);
 
@@ -1207,7 +1244,7 @@ describe('deleteEmptyFolderHierarchy', () => {
   });
 
   it('should stop when folder is not empty', async () => {
-    app = await App.createConfigured__({ files: { 'my-folder/': '' } });
+    app = castTo<App>(await MockApp.createConfigured__({ files: { 'my-folder/': '' } }));
     vi.spyOn(app.fileManager, 'trashFile');
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: ['my-folder/note.md'], folders: [] });
@@ -1217,7 +1254,7 @@ describe('deleteEmptyFolderHierarchy', () => {
   });
 
   it('should delete folder hierarchy when empty', async () => {
-    app = await App.createConfigured__({ files: { 'parent/child/': '' } });
+    app = castTo<App>(await MockApp.createConfigured__({ files: { 'parent/child/': '' } }));
     vi.spyOn(app.fileManager, 'trashFile');
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
