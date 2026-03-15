@@ -12,7 +12,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../../object-utils.ts';
-import { mockImplementation } from '../../test-helpers.ts';
+import { mockImplementation } from '../../test-helpers/mock-implementation.ts';
 import { confirm } from './confirm.ts';
 
 vi.mock('../../css-class.ts', () => ({

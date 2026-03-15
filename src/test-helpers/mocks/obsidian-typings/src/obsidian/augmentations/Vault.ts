@@ -5,8 +5,8 @@ import type {
 
 import { Vault } from 'obsidian-test-mocks/obsidian';
 
-import { mockImplementation } from '../../../../../test-helpers.ts';
-import { ensureGenericObject } from '../../../../../type-guards.ts';
+import { ensureGenericObject } from '../../../../../../type-guards.ts';
+import { mockImplementation } from '../../../../../mock-implementation.ts';
 
 mockImplementation(Vault.prototype, 'constructor2__', function initVault(this: Vault, originalImplementation, _adapter: DataAdapter): Vault {
   originalImplementation.call(this, _adapter);

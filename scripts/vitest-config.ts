@@ -13,7 +13,7 @@ export const config = defineConfig({
         'src/**/index.ts',
         'src/**/*.d.ts',
         'src/**/*.test.ts',
-        'src/test-helpers.ts'
+        'src/test-helpers/**'
       ],
       include: ['src/**/*.ts'],
       provider: 'v8',
@@ -29,6 +29,6 @@ export const config = defineConfig({
         inline: ['obsidian-typings']
       }
     },
-    setupFiles: ['obsidian-test-mocks/globals', './src/test-mocks/obsidian-typings/index.ts']
+    setupFiles: ['obsidian-test-mocks/globals', './src/test-helpers/mocks/obsidian-typings/index.ts']
   }
 });

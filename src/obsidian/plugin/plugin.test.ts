@@ -7,7 +7,7 @@ import {
   vi
 } from 'vitest';
 
-import { createMockOf } from '../../test-helpers.ts';
+import { createMockOf } from '../../test-helpers/mock-implementation.ts';
 import {
   reloadPlugin,
   showErrorAndDisablePlugin

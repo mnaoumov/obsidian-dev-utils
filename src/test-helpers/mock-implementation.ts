@@ -1,27 +1,15 @@
 /**
  * @packageDocumentation
  *
- * Test helper utilities shared across test files.
+ * Mock and spy utilities for test files. Provides helpers to spy on methods
+ * with access to original implementations, create strictly-typed mock objects
+ * via `Proxy`, and detect plain objects for recursive proxying.
  */
 
-import type {
-  TAbstractFile,
-  Vault as ObsidianVault
-} from 'obsidian';
 import type { MockInstance } from 'vitest';
 
 import { vi } from 'vitest';
 
-/**
- * Spies on a method and replaces it with an implementation that receives
- * `originalImplementation` as its first argument, followed by the real call
- * arguments. The caller is responsible for forwarding `this` via `.call(this, ...)`.
- *
- * @param obj - The object whose method to spy on.
- * @param method - The method name.
- * @param impl - `function(originalImplementation, ...args)`.
- * @returns The spy instance.
- */
 const savedOriginals = new WeakMap<object, Map<string, unknown>>();
 
 /**
@@ -72,18 +60,6 @@ export function createMockOf<T>(partial: unknown): T {
 }
 
 /**
- * Removes an abstract file from the mock vault's internal file map.
- *
- * @param vault - The mock vault.
- * @param path - The path key to delete.
- */
-export function deleteVaultAbstractFile(vault: ObsidianVault, path: string): void {
-  const fileMap = getFileMap(vault);
-  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- Simple in-memory map for tests.
-  delete fileMap[path];
-}
-
-/**
  * Spies on a method and replaces it with an implementation that receives
  * `originalImplementation` as its first argument, followed by the real call arguments.
  *
@@ -123,38 +99,6 @@ export function mockImplementation<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required to bypass never-typed spy's mockImplementation constraint.
   } as any);
   return spy;
-}
-
-/**
- * Adds an abstract file to the mock vault's internal file map.
- *
- * @param vault - The mock vault.
- * @param path - The path key.
- * @param file - The abstract file to store.
- */
-export function setVaultAbstractFile(vault: ObsidianVault, path: string, file: TAbstractFile): void {
-  const fileMap = getFileMap(vault);
-  fileMap[path] = file;
-  (file as unknown as { deleted__: boolean }).deleted__ = false;
-  if (path !== '/' && path !== '') {
-    const lastSlash = path.lastIndexOf('/');
-    const parentKey = lastSlash > 0 ? path.slice(0, lastSlash) : '/';
-    const parentFile = fileMap[parentKey];
-    if (parentFile && 'children' in parentFile) {
-      (file as unknown as { parent: TAbstractFile }).parent = parentFile;
-      (parentFile as unknown as { children: TAbstractFile[] }).children.push(file);
-    }
-  }
-}
-
-/**
- * Internal accessor for the mock vault's file map.
- *
- * @param vault - The mock vault.
- * @returns The file map record.
- */
-function getFileMap(vault: ObsidianVault): Record<string, TAbstractFile> {
-  return (vault as unknown as { fileMap__: Record<string, TAbstractFile> }).fileMap__;
 }
 
 /**

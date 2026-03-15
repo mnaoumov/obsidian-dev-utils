@@ -28,7 +28,7 @@ import { castTo } from '../object-utils.ts';
 import {
   deleteVaultAbstractFile,
   setVaultAbstractFile
-} from '../test-helpers.ts';
+} from '../test-helpers/vault.ts';
 import {
   assertNonNullable,
   ensureGenericObject
@@ -458,7 +458,7 @@ describe('saveNote', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view)['dirty'] = true;
+    ensureGenericObject(view).dirty = true;
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -474,7 +474,7 @@ describe('saveNote', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view)['dirty'] = false;
+    ensureGenericObject(view).dirty = false;
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -488,7 +488,7 @@ describe('saveNote', () => {
   it('should not save views for different file paths', async () => {
     const view = new (castTo<new () => MarkdownView>(MockMarkdownView))();
     view.file = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'other.md'));
-    ensureGenericObject(view)['dirty'] = true;
+    ensureGenericObject(view).dirty = true;
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -628,7 +628,7 @@ describe('getSafeRenamePath', () => {
     ensureGenericObject(app.vault.adapter)['insensitive'] = true;
     // Need a parent folder for the while loop to find
     const parentFolder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'dir'));
-    ensureGenericObject(parentFolder)['getParentPrefix'] = (): string => 'dir/';
+    ensureGenericObject(parentFolder).getParentPrefix = (): string => 'dir/';
     setVaultAbstractFile(app.vault, 'dir', parentFolder);
 
     const dirFile = castTo<TFile>(MockTFile.create__(castTo(app.vault), 'dir/old.md'));
@@ -641,7 +641,7 @@ describe('getSafeRenamePath', () => {
   it('should handle insensitive filesystem with nested path by walking up to existing folder', () => {
     ensureGenericObject(app.vault.adapter)['insensitive'] = true;
     const parentFolder = castTo<TFolder>(MockTFolder.create__(castTo(app.vault), 'parent'));
-    ensureGenericObject(parentFolder)['getParentPrefix'] = (): string => 'parent/';
+    ensureGenericObject(parentFolder).getParentPrefix = (): string => 'parent/';
     setVaultAbstractFile(app.vault, 'parent', parentFolder);
 
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('parent/sub/new');
@@ -1085,7 +1085,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view)['editor'] = {};
+    ensureGenericObject(view).editor = {};
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
@@ -1104,7 +1104,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view)['editor'] = {};
+    ensureGenericObject(view).editor = {};
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
 
@@ -1155,7 +1155,7 @@ describe('processFile', () => {
 
     const view = new (castTo<new () => MarkdownView>(MockMarkdownView))();
     // View.file defaults to null in the mock — don't set it
-    ensureGenericObject(view)['editor'] = {};
+    ensureGenericObject(view).editor = {};
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never

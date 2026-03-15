@@ -18,7 +18,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../../object-utils.ts';
-import { mockImplementation } from '../../test-helpers.ts';
+import { mockImplementation } from '../../test-helpers/mock-implementation.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { prompt } from './prompt.ts';
 
