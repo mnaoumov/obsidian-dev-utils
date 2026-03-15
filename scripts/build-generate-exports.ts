@@ -33,6 +33,10 @@ await wrapCliTask(async () => {
       continue;
     }
 
+    if (dirent.name === ObsidianDevUtilsRepoPaths.TestMocks as string) {
+      continue;
+    }
+
     const path = join(dirent.parentPath, dirent.name);
     srcFolders.push(path);
   }

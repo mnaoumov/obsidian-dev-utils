@@ -47,6 +47,10 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
     return;
   }
 
+  if (dirent.name === ObsidianDevUtilsRepoPaths.TestMocks as string) {
+    return;
+  }
+
   if (dirent.isFile() && !dirent.name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension)) {
     return;
   }
