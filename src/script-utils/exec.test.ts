@@ -8,6 +8,7 @@ import {
   vi
 } from 'vitest';
 
+import { assertNonNullable } from '../type-guards.ts';
 import { exec } from './exec.ts';
 
 vi.mock('../debug.ts', () => ({
@@ -122,7 +123,9 @@ describe('exec', () => {
     child.emit('close', 0, null);
 
     await expect(promise).resolves.toBe('a b c');
-    const calledCommand = mockSpawn.mock.calls[0][0] as string;
+    const firstCall = mockSpawn.mock.calls[0];
+    assertNonNullable(firstCall);
+    const calledCommand = firstCall[0] as string;
     expect(calledCommand).toContain('echo');
     expect(calledCommand).toContain('a');
     expect(calledCommand).toContain('b');
@@ -138,6 +141,7 @@ describe('exec', () => {
       let callIndex = 0;
       mockSpawn.mockImplementation(() => {
         const child = children[callIndex];
+        assertNonNullable(child);
         callIndex++;
         setTimeout(() => {
           child.stdout.push(Buffer.from(`out${String(callIndex)}`));

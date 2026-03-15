@@ -2,15 +2,18 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "composite": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "outDir": "./.tsbuildinfo",
     "paths": {
       "obsidian": ["./node_modules/obsidian-test-mocks/dist/lib/cjs/obsidian/index.d.cts"]
     },
-    "skipLibCheck": false
+    "skipLibCheck": true
   },
   "exclude": [],
   "include": [
     "__mocks__/obsidian-typings/src/**/*.ts",
-    "./src/**/*.test.ts",
-    "./src/test-helpers.ts"
-  ]
+    "./src/**/*.ts"
+  ],
+  "references": []
 }

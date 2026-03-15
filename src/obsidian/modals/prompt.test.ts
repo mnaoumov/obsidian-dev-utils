@@ -58,16 +58,24 @@ describe('prompt', () => {
     vi.clearAllMocks();
     buttonInstances.length = 0;
     textInstances.length = 0;
-    // @ts-expect-error -- constructor2__ is a mock-only hook from obsidian-test-mocks.
-    mockImplementation(ButtonComponent.prototype, 'constructor2__', function captureButton(this: ButtonComponent, originalImplementation) {
-      originalImplementation.call(this);
-      buttonInstances.push(this);
-    });
-    // @ts-expect-error -- constructor4__ is a mock-only hook from obsidian-test-mocks.
-    mockImplementation(TextComponent.prototype, 'constructor4__', function captureText(this: TextComponent, originalImplementation) {
-      originalImplementation.call(this);
-      textInstances.push(this);
-    });
+    mockImplementation(
+      ButtonComponent.prototype,
+      'constructor2__',
+      function captureButton(this: ButtonComponent, originalImplementation, containerEl: HTMLElement): ButtonComponent {
+        originalImplementation.call(this, containerEl);
+        buttonInstances.push(this);
+        return this;
+      }
+    );
+    mockImplementation(
+      TextComponent.prototype,
+      'constructor4__',
+      function captureText(this: TextComponent, originalImplementation, containerEl: HTMLElement): TextComponent {
+        originalImplementation.call(this, containerEl);
+        textInstances.push(this);
+        return this;
+      }
+    );
   });
 
   it('should resolve null when modal is closed without clicking OK', async () => {

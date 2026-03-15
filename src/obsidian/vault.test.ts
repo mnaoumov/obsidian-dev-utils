@@ -596,7 +596,7 @@ describe('getSafeRenamePath', () => {
   });
 
   it('should return newPath directly when paths match case-insensitively on insensitive filesystem', () => {
-    app.vault.adapter.insensitive = true;
+    ensureGenericObject(app.vault.adapter)['insensitive'] = true;
     // Need a parent folder for the while loop to find
     const parentFolder = TFolder.create__(app.vault, 'dir');
     ensureGenericObject(parentFolder)['getParentPrefix'] = (): string => 'dir/';
@@ -610,7 +610,7 @@ describe('getSafeRenamePath', () => {
   });
 
   it('should handle insensitive filesystem with nested path by walking up to existing folder', () => {
-    app.vault.adapter.insensitive = true;
+    ensureGenericObject(app.vault.adapter)['insensitive'] = true;
     const parentFolder = TFolder.create__(app.vault, 'parent');
     ensureGenericObject(parentFolder)['getParentPrefix'] = (): string => 'parent/';
     setVaultAbstractFile(app.vault, 'parent', parentFolder);
