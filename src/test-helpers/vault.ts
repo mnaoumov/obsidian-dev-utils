@@ -15,8 +15,6 @@ import {
   Vault as MockVault
 } from 'obsidian-test-mocks/obsidian';
 
-import { castTo } from '../object-utils.ts';
-
 /**
  * Removes an abstract file from the mock vault's internal file map.
  *
@@ -24,7 +22,7 @@ import { castTo } from '../object-utils.ts';
  * @param path - The path key to delete.
  */
 export function deleteVaultAbstractFile(vault: ObsidianVault, path: string): void {
-  castTo<MockVault>(vault).deleteVaultAbstractFile__(path);
+  (vault as unknown as MockVault).deleteVaultAbstractFile__(path);
 }
 
 /**
@@ -35,5 +33,5 @@ export function deleteVaultAbstractFile(vault: ObsidianVault, path: string): voi
  * @param file - The abstract file to store.
  */
 export function setVaultAbstractFile(vault: ObsidianVault, path: string, file: TAbstractFile): void {
-  castTo<MockVault>(vault).setVaultAbstractFile__(path, castTo<MockTAbstractFile>(file));
+  (vault as unknown as MockVault).setVaultAbstractFile__(path, file as unknown as MockTAbstractFile);
 }
