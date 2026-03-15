@@ -24,7 +24,6 @@
     "verbatimModuleSyntax": true
   },
   "include": [
-    "./src/test-mocks/**/*.ts",
     "./commitlint.config.ts",
     "./eslint.config.mts",
     "./scripts/**/*.ts",

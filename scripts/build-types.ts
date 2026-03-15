@@ -24,7 +24,7 @@ await wrapCliTask(async () => {
       continue;
     }
 
-    if (file.startsWith(ObsidianDevUtilsRepoPaths.TestMocks)) {
+    if (file.startsWith(ObsidianDevUtilsRepoPaths.TestHelpers)) {
       continue;
     }
 

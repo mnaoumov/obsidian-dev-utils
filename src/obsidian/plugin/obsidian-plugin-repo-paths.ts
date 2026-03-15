@@ -114,7 +114,7 @@ export enum ObsidianPluginRepoPaths {
   MarkdownlintConfigYml = '.markdownlint.yml',
 
   /** Mocks folder. */
-  Mocks = 'src/test-mocks',
+  Mocks = 'src/test-helpers',
 
   /** NPM shrinkwrap file. */
   NpmShrinkwrapJson = 'npm-shrinkwrap.json',

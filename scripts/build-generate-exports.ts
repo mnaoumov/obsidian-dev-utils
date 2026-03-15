@@ -33,7 +33,7 @@ await wrapCliTask(async () => {
       continue;
     }
 
-    if (dirent.name === ObsidianDevUtilsRepoPaths.TestMocks as string) {
+    if (dirent.name === ObsidianDevUtilsRepoPaths.TestHelpers as string) {
       continue;
     }
 

@@ -55,7 +55,7 @@ async function getLibFiles(): Promise<string[]> {
   files = files.map((file) => normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.Src, file)));
   files = files.filter((file) =>
     file.endsWith(ObsidianDevUtilsRepoPaths.TsExtension) && !file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) && !file.endsWith('.test.ts')
-    && !file.endsWith('/test-helpers.ts')
+    && !file.includes(`/${ObsidianDevUtilsRepoPaths.TestHelpers}/`)
   );
   return files;
 }

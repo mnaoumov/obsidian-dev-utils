@@ -30,7 +30,8 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 ### Directory Structure
 
 - `src/` — source code and tests, organized by domain (e.g., `obsidian/`, `codemirror/`, `script-utils/`, `transformers/`)
-- `src/test-mocks/obsidian-typings/` — mock augmentations for `obsidian-typings` (hooks into obsidian-test-mocks constructors)
+- `src/test-helpers/` — test helper utilities (mock implementations, vault helpers, mocks)
+- `src/test-helpers/mocks/obsidian-typings/` — mock augmentations for `obsidian-typings` (hooks into obsidian-test-mocks constructors)
 - `src/script-utils/bundlers/esbuild.ts` — public API for esbuild bundler (build, dev)
 - `src/script-utils/bundlers/esbuild-impl/` — internal esbuild implementation details
 - `src/script-utils/linters/eslint.ts` — ESLint linting
@@ -81,7 +82,7 @@ export function myFunction(param: Type): ReturnType {
 ### Naming
 
 - Directories: kebab-case (e.g., `script-utils/bundlers/esbuild-impl`, `test-runners`)
-- **Exception:** `src/test-mocks/` files use PascalCase to mirror Obsidian API export names (e.g., `App.ts`, `Vault.ts`, `TFile.ts`)
+- **Exception:** `src/test-helpers/mocks/` files use PascalCase to mirror Obsidian API export names (e.g., `App.ts`, `Vault.ts`, `TFile.ts`)
 - **Exception:** `constructors/` files use camelCase matching the exported function name (e.g., `getDomEventsHandlersConstructor.ts`), mirroring the `obsidian-typings` Constructors convention
 
 ### Documentation
@@ -97,7 +98,7 @@ export function myFunction(param: Type): ReturnType {
 
 ### Code Quality
 
-- Use `assertNonNullable()` from `src/test-helpers.ts` in tests instead of `!`
+- Use `assertNonNullable()` from `src/type-guards.ts` in tests instead of `!`
 
 ## Testing
 
@@ -116,7 +117,7 @@ export function myFunction(param: Type): ReturnType {
 
 - Test files: `src/[module-name].test.ts` (next to source file, kebab-case)
 - Browser tests: `src/[module-name].browser.test.ts` with `// @vitest-environment jsdom`
-- Test helper: `src/test-helpers.ts` — exports `assertNotNullable<T>()` for type-safe null assertions
+- Test helpers: `src/test-helpers/` — mock utilities (`mock-implementation.ts`) and vault helpers (`vault.ts`)
 
 ### Patterns
 
