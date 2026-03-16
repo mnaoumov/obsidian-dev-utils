@@ -4,7 +4,8 @@ import type {
   App as AppOriginal,
   Editor
 } from 'obsidian';
-import type { DataAdapterEx } from 'obsidian-typings';
+
+import { getDataAdapterEx } from 'obsidian-typings/implementations';
 
 import {
   App,
@@ -618,7 +619,7 @@ describe('getSafeRenamePath', () => {
   });
 
   it('should return newPath directly when paths match case-insensitively on insensitive filesystem', () => {
-    (app.vault.adapter as DataAdapterEx).insensitive = true;
+    getDataAdapterEx(app).insensitive = true;
     // Need a parent folder for the while loop to find
     const mockParentFolder = TFolder.create__(mockApp.vault, 'dir');
     const parentFolder = mockParentFolder.asOriginalType2__();
@@ -633,7 +634,7 @@ describe('getSafeRenamePath', () => {
   });
 
   it('should handle insensitive filesystem with nested path by walking up to existing folder', () => {
-    (app.vault.adapter as DataAdapterEx).insensitive = true;
+    getDataAdapterEx(app).insensitive = true;
     const mockParentFolder = TFolder.create__(mockApp.vault, 'parent');
     const parentFolder = mockParentFolder.asOriginalType2__();
     parentFolder.getParentPrefix = (): string => 'parent/';
