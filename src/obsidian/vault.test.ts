@@ -4,6 +4,7 @@ import type {
   App as AppOriginal,
   Editor
 } from 'obsidian';
+import type { DataAdapterEx } from 'obsidian-typings';
 
 import {
   App,
@@ -25,10 +26,7 @@ import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
 
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../test-helpers/mock-implementation.ts';
-import {
-  assertNonNullable,
-  ensureGenericObject
-} from '../type-guards.ts';
+import { assertNonNullable } from '../type-guards.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
 import { lockEditor } from './editor.ts';
 import { FileSystemType } from './file-system.ts';
@@ -620,7 +618,7 @@ describe('getSafeRenamePath', () => {
   });
 
   it('should return newPath directly when paths match case-insensitively on insensitive filesystem', () => {
-    ensureGenericObject(app.vault.adapter)['insensitive'] = true;
+    (app.vault.adapter as DataAdapterEx).insensitive = true;
     // Need a parent folder for the while loop to find
     const mockParentFolder = TFolder.create__(mockApp.vault, 'dir');
     const parentFolder = mockParentFolder.asOriginalType2__();
@@ -635,7 +633,7 @@ describe('getSafeRenamePath', () => {
   });
 
   it('should handle insensitive filesystem with nested path by walking up to existing folder', () => {
-    ensureGenericObject(app.vault.adapter)['insensitive'] = true;
+    (app.vault.adapter as DataAdapterEx).insensitive = true;
     const mockParentFolder = TFolder.create__(mockApp.vault, 'parent');
     const parentFolder = mockParentFolder.asOriginalType2__();
     parentFolder.getParentPrefix = (): string => 'parent/';

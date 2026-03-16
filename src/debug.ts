@@ -12,7 +12,11 @@ import type { DebugController } from './debug-controller.ts';
 
 import { CustomStackTraceError } from './error.ts';
 import { LIBRARY_NAME } from './library.ts';
-import { getObsidianDevUtilsState } from './obsidian/app.ts';
+import {
+  // eslint-disable-next-line import-x/no-deprecated -- We need to use the deprecated function to check for Obsidian.
+  getApp,
+  getObsidianDevUtilsState
+} from './obsidian/app.ts';
 import {
   getPluginId,
   NO_PLUGIN_ID_INITIALIZED
@@ -149,18 +153,26 @@ function getNamespaces(): string[] {
 }
 
 function getSharedDebugLibInstance(): typeof debug {
-  /* v8 ignore start -- In Node tests, window is always undefined. */
-  if (typeof window === 'undefined') {
-    /* v8 ignore stop */
+  if (!isInObsidian()) {
     return debug;
   }
-  /* v8 ignore start -- Only reachable in Obsidian (window defined). */
+  /* v8 ignore start -- Only reachable in Obsidian. */
   return getObsidianDevUtilsState(null, 'debug', debug).value;
   /* v8 ignore stop */
 }
 
 function isInObsidian(): boolean {
-  return typeof window !== 'undefined';
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- We need to use the deprecated function to check for Obsidian.
+    getApp();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function logWithCaller(namespace: string, framesToSkip: number, message: string, ...args: unknown[]): void {

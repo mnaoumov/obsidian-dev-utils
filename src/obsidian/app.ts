@@ -77,12 +77,10 @@ export function getObsidianDevUtilsState<T>(app: App | null, key: string, defaul
 }
 
 function getAppOrNull(): App | null {
-  /* v8 ignore start -- Only reachable in Obsidian (window defined). */
-  if (typeof window === 'undefined') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- We need to use the deprecated function to get the app instance.
+    return getApp();
+  } catch {
     return null;
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- We need to use the deprecated function to get the app instance.
-  return getApp();
-  /* v8 ignore stop */
 }
