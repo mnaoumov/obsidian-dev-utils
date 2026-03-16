@@ -902,7 +902,7 @@ export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: Pat
  * @returns Whether the frontmatter markdown links were fixed.
  */
 export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
-  return _fixFrontmatterMarkdownLinks(cache.frontmatter, '', cache);
+  return fixFrontmatterMarkdownLinksImpl(cache.frontmatter, '', cache);
 }
 
 /**
@@ -1353,48 +1353,6 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
   }, params);
 }
 
-function _fixFrontmatterMarkdownLinks(value: unknown, key: string, cache: CachedMetadata): boolean {
-  if (typeof value === 'string') {
-    const parseLinkResult = parseLink(value);
-    if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
-      return false;
-    }
-
-    cache.frontmatterLinks ??= [];
-    let link = cache.frontmatterLinks.find((frontmatterLink) => frontmatterLink.key === key);
-
-    if (!link) {
-      link = {
-        key,
-        link: '',
-        original: ''
-      };
-      cache.frontmatterLinks.push(link);
-    }
-
-    link.link = parseLinkResult.url;
-    link.original = value;
-    if (parseLinkResult.alias !== undefined) {
-      link.displayText = parseLinkResult.alias;
-    }
-
-    return true;
-  }
-
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-
-  let hasFrontmatterLinks = false;
-
-  for (const [childKey, childValue] of Object.entries(value as GenericObject)) {
-    const hasChildFrontmatterLinks = _fixFrontmatterMarkdownLinks(childValue, key ? `${key}.${childKey}` : childKey, cache);
-    hasFrontmatterLinks ||= hasChildFrontmatterLinks;
-  }
-
-  return hasFrontmatterLinks;
-}
-
 function decodeUrlSafely(url: string, isExternal: boolean, hasAngleBrackets: boolean): string {
   if (isExternal || hasAngleBrackets) {
     return url;
@@ -1437,6 +1395,48 @@ function extractTextLinks(str: string, startOffset: number, endOffset: number, t
       url
     });
   });
+}
+
+function fixFrontmatterMarkdownLinksImpl(value: unknown, key: string, cache: CachedMetadata): boolean {
+  if (typeof value === 'string') {
+    const parseLinkResult = parseLink(value);
+    if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
+      return false;
+    }
+
+    cache.frontmatterLinks ??= [];
+    let link = cache.frontmatterLinks.find((frontmatterLink) => frontmatterLink.key === key);
+
+    if (!link) {
+      link = {
+        key,
+        link: '',
+        original: ''
+      };
+      cache.frontmatterLinks.push(link);
+    }
+
+    link.link = parseLinkResult.url;
+    link.original = value;
+    if (parseLinkResult.alias !== undefined) {
+      link.displayText = parseLinkResult.alias;
+    }
+
+    return true;
+  }
+
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  let hasFrontmatterLinks = false;
+
+  for (const [childKey, childValue] of Object.entries(value as GenericObject)) {
+    const hasChildFrontmatterLinks = fixFrontmatterMarkdownLinksImpl(childValue, key ? `${key}.${childKey}` : childKey, cache);
+    hasFrontmatterLinks ||= hasChildFrontmatterLinks;
+  }
+
+  return hasFrontmatterLinks;
 }
 
 function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpath: string, config: LinkConfig): string {

@@ -50,6 +50,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     const originalIsMobile = Platform.isMobile;
     try {
       Platform.isMobile = true;
+      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
       const { printToPdf } = await import('./pdf.ts');
       const el = document.createElement('div');
       await expect(printToPdf(el, {})).rejects.toThrow('Printing to PDF is not supported on mobile devices.');
@@ -65,6 +66,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { printToPdf } = await import('./pdf.ts');
     const el = document.createElement('span');
 
@@ -79,7 +81,9 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { ensureLoaded } = await import('../html-element.ts');
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { printToPdf } = await import('./pdf.ts');
     const el = document.createElement('div');
 
@@ -93,6 +97,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { printToPdf } = await import('./pdf.ts');
     const el = document.createElement('div');
 
@@ -116,6 +121,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { printToPdf } = await import('./pdf.ts');
     const el = document.createElement('div');
 
@@ -139,6 +145,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { printToPdf } = await import('./pdf.ts');
     const el = document.createElement('div');
 
@@ -152,6 +159,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { printToPdf } = await import('./pdf.ts');
     const el = document.createElement('div');
 
@@ -168,6 +176,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       throw new Error('IPC error');
     });
 
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { printToPdf } = await import('./pdf.ts');
     const el = document.createElement('div');
 

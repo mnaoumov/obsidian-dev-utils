@@ -142,6 +142,7 @@ const {
   tempRegisterFilesAndRunAsync,
   unregisterFileCacheForNonExistingFile,
   unregisterFiles
+  // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
 } = await import('./metadata-cache.ts');
 
 const mockedGetFile = vi.mocked(getFile);

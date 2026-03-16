@@ -52,7 +52,7 @@ describe('createDivAsync', () => {
 
   it('should call createDiv with the provided options', async () => {
     const spy = vi.spyOn(
-      globalThis as unknown as { createDiv: typeof createDiv },
+      globalThis,
       'createDiv'
     );
     await createDivAsync('my-class');
@@ -98,7 +98,7 @@ describe('createElAsync', () => {
 
   it('should call createEl with the tag and options', async () => {
     const spy = vi.spyOn(
-      globalThis as unknown as { createEl: typeof createEl },
+      globalThis,
       'createEl'
     );
     await createElAsync('p', 'my-class');
@@ -144,7 +144,7 @@ describe('createSpanAsync', () => {
 
   it('should call createSpan with the provided options', async () => {
     const spy = vi.spyOn(
-      globalThis as unknown as { createSpan: typeof createSpan },
+      globalThis,
       'createSpan'
     );
     await createSpanAsync('my-class');
@@ -226,7 +226,7 @@ describe('createSvgAsync', () => {
 
   it('should call createSvg with the tag and options', async () => {
     const spy = vi.spyOn(
-      globalThis as unknown as { createSvg: typeof createSvg },
+      globalThis,
       'createSvg'
     );
     await createSvgAsync('svg', 'my-class');

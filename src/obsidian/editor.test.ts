@@ -66,6 +66,7 @@ describe('lockEditor', () => {
   });
 
   it('should dispatch readOnly true and editable false', async () => {
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { lockEditor } = await import('./editor.ts');
     const editor = createMockEditor();
     lockEditor(editor);
@@ -77,6 +78,7 @@ describe('lockEditor', () => {
   });
 
   it('should create a compartment on first call', async () => {
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { lockEditor } = await import('./editor.ts');
     const editor = createMockEditor();
     lockEditor(editor);
@@ -85,6 +87,7 @@ describe('lockEditor', () => {
   });
 
   it('should dispatch effects from compartment reconfigure', async () => {
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { lockEditor } = await import('./editor.ts');
     const editor = createMockEditor();
     lockEditor(editor);
@@ -102,6 +105,7 @@ describe('unlockEditor', () => {
   });
 
   it('should dispatch readOnly false and editable true', async () => {
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { unlockEditor } = await import('./editor.ts');
     const editor = createMockEditor();
     unlockEditor(editor);
@@ -113,6 +117,7 @@ describe('unlockEditor', () => {
   });
 
   it('should create a compartment on first call', async () => {
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { unlockEditor } = await import('./editor.ts');
     const editor = createMockEditor();
     unlockEditor(editor);
@@ -127,6 +132,7 @@ describe('ensureCompartment', () => {
   });
 
   it('should reuse the same compartment for repeated calls on the same editor', async () => {
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { lockEditor, unlockEditor } = await import('./editor.ts');
     const editor = createMockEditor();
 
@@ -142,6 +148,7 @@ describe('ensureCompartment', () => {
   });
 
   it('should create different compartments for different editors', async () => {
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { lockEditor } = await import('./editor.ts');
     const editor1 = createMockEditor();
     const editor2 = createMockEditor();
