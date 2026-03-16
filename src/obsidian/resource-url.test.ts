@@ -11,7 +11,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../object-utils.ts';
-import { createMockOf } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import { relativePathToResourceUrl } from './resource-url.ts';
 
 vi.mock('obsidian', () => ({
@@ -21,7 +21,7 @@ vi.mock('obsidian', () => ({
 }));
 
 function createMockApp(fullRealPath: string): App {
-  return createMockOf<App>({
+  return strictProxy<App>({
     vault: {
       adapter: castTo<DataAdapter>({
         getFullRealPath: vi.fn(() => fullRealPath)

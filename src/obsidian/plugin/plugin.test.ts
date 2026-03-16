@@ -7,7 +7,7 @@ import {
   vi
 } from 'vitest';
 
-import { createMockOf } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import {
   reloadPlugin,
   showErrorAndDisablePlugin
@@ -23,7 +23,7 @@ vi.mock('obsidian', () => ({
 
 describe('Plugin', () => {
   function createMockPlugin(): Plugin {
-    return createMockOf<Plugin>({
+    return strictProxy<Plugin>({
       app: {
         plugins: {
           disablePlugin: vi.fn(() => Promise.resolve()),

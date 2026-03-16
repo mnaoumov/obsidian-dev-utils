@@ -78,12 +78,12 @@ describe('constants', () => {
 
 describe('isFile', () => {
   it('should return true for a TFile instance', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     expect(isFile(file)).toBe(true);
   });
 
   it('should return false for a TFolder instance', () => {
-    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType__();
+    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
     expect(isFile(folder)).toBe(false);
   });
 
@@ -106,12 +106,12 @@ describe('isFile', () => {
 
 describe('isFolder', () => {
   it('should return true for a TFolder instance', () => {
-    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType__();
+    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
     expect(isFolder(folder)).toBe(true);
   });
 
   it('should return false for a TFile instance', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     expect(isFolder(file)).toBe(false);
   });
 
@@ -130,17 +130,17 @@ describe('isFolder', () => {
 
 describe('isAbstractFile', () => {
   it('should return true for a TFile instance', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     expect(isAbstractFile(file)).toBe(true);
   });
 
   it('should return true for a TFolder instance', () => {
-    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType__();
+    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
     expect(isAbstractFile(folder)).toBe(true);
   });
 
   it('should return true for a TAbstractFile instance', () => {
-    const abstract = MockTFile.create__(castTo(app.vault), 'something').asOriginalType__();
+    const abstract = MockTFile.create__(castTo(app.vault), 'something').asOriginalType2__();
     expect(isAbstractFile(abstract)).toBe(true);
   });
 
@@ -155,12 +155,12 @@ describe('isAbstractFile', () => {
 
 describe('asFile', () => {
   it('should return the file if the abstract file is a TFile', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     expect(asFile(file)).toBe(file);
   });
 
   it('should throw if the abstract file is a TFolder', () => {
-    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType__();
+    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
     expect(() => asFile(folder)).toThrow('Abstract file is not a file');
   });
 
@@ -171,7 +171,7 @@ describe('asFile', () => {
 
 describe('asFileOrNull', () => {
   it('should return the file if the abstract file is a TFile', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     expect(asFileOrNull(file)).toBe(file);
   });
 
@@ -180,19 +180,19 @@ describe('asFileOrNull', () => {
   });
 
   it('should throw if the abstract file is a TFolder', () => {
-    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType__();
+    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
     expect(() => asFileOrNull(folder)).toThrow('Abstract file is not a file');
   });
 });
 
 describe('asFolder', () => {
   it('should return the folder if the abstract file is a TFolder', () => {
-    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType__();
+    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
     expect(asFolder(folder)).toBe(folder);
   });
 
   it('should throw if the abstract file is a TFile', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     expect(() => asFolder(file)).toThrow('Abstract file is not a folder');
   });
 
@@ -203,7 +203,7 @@ describe('asFolder', () => {
 
 describe('asFolderOrNull', () => {
   it('should return the folder if the abstract file is a TFolder', () => {
-    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType__();
+    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
     expect(asFolderOrNull(folder)).toBe(folder);
   });
 
@@ -212,22 +212,22 @@ describe('asFolderOrNull', () => {
   });
 
   it('should throw if the abstract file is a TFile', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     expect(() => asFolderOrNull(file)).toThrow('Abstract file is not a folder');
   });
 });
 
 describe('asArrayOfFiles', () => {
   it('should convert an array of TFile instances', () => {
-    const files = [MockTFile.create__(castTo(app.vault), 'a.md').asOriginalType__(), MockTFile.create__(castTo(app.vault), 'b.md').asOriginalType__()];
+    const files = [MockTFile.create__(castTo(app.vault), 'a.md').asOriginalType2__(), MockTFile.create__(castTo(app.vault), 'b.md').asOriginalType2__()];
     const result = asArrayOfFiles(files);
     expect(result).toEqual(files);
   });
 
   it('should throw if any element is a TFolder', () => {
     const items: TAbstractFile[] = [
-      MockTFile.create__(castTo(app.vault), 'a.md').asOriginalType__(),
-      MockTFolder.create__(castTo(app.vault), 'folder').asOriginalType__()
+      MockTFile.create__(castTo(app.vault), 'a.md').asOriginalType2__(),
+      MockTFolder.create__(castTo(app.vault), 'folder').asOriginalType2__()
     ];
     expect(() => asArrayOfFiles(items)).toThrow('Abstract file is not a file');
   });
@@ -239,15 +239,15 @@ describe('asArrayOfFiles', () => {
 
 describe('asArrayOfFolders', () => {
   it('should convert an array of TFolder instances', () => {
-    const folders = [MockTFolder.create__(castTo(app.vault), 'a').asOriginalType__(), MockTFolder.create__(castTo(app.vault), 'b').asOriginalType__()];
+    const folders = [MockTFolder.create__(castTo(app.vault), 'a').asOriginalType2__(), MockTFolder.create__(castTo(app.vault), 'b').asOriginalType2__()];
     const result = asArrayOfFolders(folders);
     expect(result).toEqual(folders);
   });
 
   it('should throw if any element is a TFile', () => {
     const items: TAbstractFile[] = [
-      MockTFolder.create__(castTo(app.vault), 'folder').asOriginalType__(),
-      MockTFile.create__(castTo(app.vault), 'a.md').asOriginalType__()
+      MockTFolder.create__(castTo(app.vault), 'folder').asOriginalType2__(),
+      MockTFile.create__(castTo(app.vault), 'a.md').asOriginalType2__()
     ];
     expect(() => asArrayOfFolders(items)).toThrow('Abstract file is not a folder');
   });
@@ -259,12 +259,12 @@ describe('asArrayOfFolders', () => {
 
 describe('getFileSystemType', () => {
   it('should return File for a TFile', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     expect(getFileSystemType(file)).toBe(FileSystemType.File);
   });
 
   it('should return Folder for a TFolder', () => {
-    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType__();
+    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
     expect(getFileSystemType(folder)).toBe(FileSystemType.Folder);
   });
 
@@ -420,13 +420,13 @@ describe('getAbstractFileOrNull', () => {
 
   it('should return a TAbstractFile when passed directly', async () => {
     app = (await MockApp.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
-    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     const result = getAbstractFileOrNull(app, file);
     expect(result).not.toBeNull();
   });
 
   it('should return the TAbstractFile itself when not in fileMap', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'orphan.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'orphan.md').asOriginalType2__();
     const result = getAbstractFileOrNull(app, file);
     expect(result).toBe(file);
   });
@@ -562,12 +562,12 @@ describe('getPath', () => {
   });
 
   it('should return the path from a TFile', () => {
-    const file = MockTFile.create__(castTo(app.vault), 'folder/note.md').asOriginalType__();
+    const file = MockTFile.create__(castTo(app.vault), 'folder/note.md').asOriginalType2__();
     expect(getPath(app, file)).toBe('folder/note.md');
   });
 
   it('should return the path from a TFolder', () => {
-    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType__();
+    const folder = MockTFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
     expect(getPath(app, folder)).toBe('my-folder');
   });
 

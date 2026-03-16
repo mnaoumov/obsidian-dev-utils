@@ -7,12 +7,12 @@ import {
   vi
 } from 'vitest';
 
-import { createMockOf } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import { getFullContentHtml } from './markdown-view.ts';
 
 function createMockView(html: string): MarkdownView {
   const measure = vi.fn();
-  return createMockOf<MarkdownView>({
+  return strictProxy<MarkdownView>({
     contentEl: { innerHTML: html },
     editor: {
       cm: {

@@ -25,7 +25,7 @@ import {
   onAncestorScrollOrResize,
   toPx
 } from './html-element.ts';
-import { createMockOf } from './test-helpers/mock-implementation.ts';
+import { strictProxy } from './test-helpers/mock-implementation.ts';
 import {
   assertNonNullable,
   ensureGenericObject
@@ -319,13 +319,13 @@ describe('getZIndex', () => {
 
   it('should return the z-index from computed style when set', () => {
     const el = createMockElement();
-    vi.mocked(getComputedStyle).mockReturnValue(createMockOf<CSSStyleDeclaration>({ zIndex: '10' }));
+    vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: '10' }));
     expect(getZIndex(el)).toBe(10);
   });
 
   it('should return 0 for an element with auto z-index and no parent', () => {
     const el = createMockElement();
-    vi.mocked(getComputedStyle).mockReturnValue(createMockOf<CSSStyleDeclaration>({ zIndex: 'auto' }));
+    vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' }));
     expect(getZIndex(el)).toBe(0);
   });
 
@@ -334,12 +334,12 @@ describe('getZIndex', () => {
     const child = createMockElement(parent);
     vi.mocked(getComputedStyle).mockImplementation((target) => {
       if (target === child) {
-        return createMockOf<CSSStyleDeclaration>({ zIndex: 'auto' });
+        return strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' });
       }
       if (target === parent) {
-        return createMockOf<CSSStyleDeclaration>({ zIndex: '5' });
+        return strictProxy<CSSStyleDeclaration>({ zIndex: '5' });
       }
-      return createMockOf<CSSStyleDeclaration>({ zIndex: 'auto' });
+      return strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' });
     });
     expect(getZIndex(child)).toBe(5);
   });
@@ -348,13 +348,13 @@ describe('getZIndex', () => {
     const grandparent = createMockElement();
     const parent = createMockElement(grandparent);
     const child = createMockElement(parent);
-    vi.mocked(getComputedStyle).mockReturnValue(createMockOf<CSSStyleDeclaration>({ zIndex: 'auto' }));
+    vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' }));
     expect(getZIndex(child)).toBe(0);
   });
 
   it('should return negative z-index values', () => {
     const el = createMockElement();
-    vi.mocked(getComputedStyle).mockReturnValue(createMockOf<CSSStyleDeclaration>({ zIndex: '-3' }));
+    vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: '-3' }));
     expect(getZIndex(el)).toBe(-3);
   });
 
@@ -363,9 +363,9 @@ describe('getZIndex', () => {
     const child = createMockElement(parent);
     vi.mocked(getComputedStyle).mockImplementation((target) => {
       if (target === child) {
-        return createMockOf<CSSStyleDeclaration>({ zIndex: '' });
+        return strictProxy<CSSStyleDeclaration>({ zIndex: '' });
       }
-      return createMockOf<CSSStyleDeclaration>({ zIndex: '7' });
+      return strictProxy<CSSStyleDeclaration>({ zIndex: '7' });
     });
     expect(getZIndex(child)).toBe(7);
   });

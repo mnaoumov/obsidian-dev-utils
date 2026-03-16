@@ -24,7 +24,7 @@ import type { GenericObject } from '../type-guards.ts';
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
 
 import { castTo } from '../object-utils.ts';
-import { createMockOf } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import {
   assertNonNullable,
   ensureGenericObject
@@ -99,7 +99,7 @@ describe('isChild', () => {
 
   it('should return true when b is root "/"', () => {
     const mockRoot = MockTFolder.create__(mockApp.vault, '/');
-    const root = mockRoot.asOriginalType__();
+    const root = mockRoot.asOriginalType2__();
     mockApp.vault.setVaultAbstractFile__('/', mockRoot);
     expect(isChild(app, 'folder/note.md', root)).toBe(true);
   });
@@ -118,9 +118,9 @@ describe('isChild', () => {
 
   it('should work with TAbstractFile instances', () => {
     const mockFileA = MockTFile.create__(mockApp.vault, 'parent/child.md');
-    const fileA = mockFileA.asOriginalType__();
+    const fileA = mockFileA.asOriginalType2__();
     const mockFolderB = MockTFolder.create__(mockApp.vault, 'parent');
-    const folderB = mockFolderB.asOriginalType__();
+    const folderB = mockFolderB.asOriginalType2__();
     mockApp.vault.setVaultAbstractFile__('parent/child.md', mockFileA);
     mockApp.vault.setVaultAbstractFile__('parent', mockFolderB);
     expect(isChild(app, fileA, folderB)).toBe(true);
@@ -142,8 +142,8 @@ describe('isChildOrSelf', () => {
 
   it('should return true when both refer to root', () => {
     const mockRootA = MockTFolder.create__(mockApp.vault, '/');
-    const rootA = mockRootA.asOriginalType__();
-    const rootB = MockTFolder.create__(mockApp.vault, '/').asOriginalType__();
+    const rootA = mockRootA.asOriginalType2__();
+    const rootB = MockTFolder.create__(mockApp.vault, '/').asOriginalType2__();
     mockApp.vault.setVaultAbstractFile__('/', mockRootA);
     expect(isChildOrSelf(app, rootA, rootB)).toBe(true);
   });
@@ -482,7 +482,7 @@ describe('saveNote', () => {
 
   it('should not save views for different file paths', async () => {
     const view = new (MockMarkdownView as unknown as new () => MarkdownView)();
-    view.file = MockTFile.create__(mockApp.vault, 'other.md').asOriginalType__();
+    view.file = MockTFile.create__(mockApp.vault, 'other.md').asOriginalType2__();
     ensureGenericObject(view).dirty = true;
     vi.spyOn(view, 'save');
 
@@ -620,7 +620,7 @@ describe('getSafeRenamePath', () => {
     ensureGenericObject(app.vault.adapter)['insensitive'] = true;
     // Need a parent folder for the while loop to find
     const mockParentFolder = MockTFolder.create__(mockApp.vault, 'dir');
-    const parentFolder = mockParentFolder.asOriginalType__();
+    const parentFolder = mockParentFolder.asOriginalType2__();
     ensureGenericObject(parentFolder).getParentPrefix = (): string => 'dir/';
     mockApp.vault.setVaultAbstractFile__('dir', mockParentFolder);
 
@@ -634,7 +634,7 @@ describe('getSafeRenamePath', () => {
   it('should handle insensitive filesystem with nested path by walking up to existing folder', () => {
     ensureGenericObject(app.vault.adapter)['insensitive'] = true;
     const mockParentFolder = MockTFolder.create__(mockApp.vault, 'parent');
-    const parentFolder = mockParentFolder.asOriginalType__();
+    const parentFolder = mockParentFolder.asOriginalType2__();
     ensureGenericObject(parentFolder).getParentPrefix = (): string => 'parent/';
     mockApp.vault.setVaultAbstractFile__('parent', mockParentFolder);
 
@@ -884,7 +884,7 @@ describe('createTempFile', () => {
 
   it('cleanup should trash non-deleted file', async () => {
     const mockCreatedFile = MockTFile.create__(mockApp.vault, 'new.md');
-    const createdFile = mockCreatedFile.asOriginalType__();
+    const createdFile = mockCreatedFile.asOriginalType2__();
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
     vi.spyOn(app.fileManager, 'trashFile');
 
@@ -898,7 +898,7 @@ describe('createTempFile', () => {
 
   it('cleanup should not trash deleted file', async () => {
     const mockCreatedFile = MockTFile.create__(mockApp.vault, 'new.md');
-    const createdFile = mockCreatedFile.asOriginalType__();
+    const createdFile = mockCreatedFile.asOriginalType2__();
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
     vi.spyOn(app.fileManager, 'trashFile');
 
@@ -945,7 +945,7 @@ describe('createTempFolder', () => {
 
     // Set up the folder in fileMap for cleanup to find it
     const mockFolder = MockTFolder.create__(mockApp.vault, 'temp');
-    const folder = mockFolder.asOriginalType__();
+    const folder = mockFolder.asOriginalType2__();
     mockApp.vault.setVaultAbstractFile__('temp', mockFolder);
     await cleanup();
     expect(vi.mocked(app.fileManager.trashFile)).toHaveBeenCalledWith(folder);
@@ -958,7 +958,7 @@ describe('createTempFolder', () => {
     const cleanup = await createTempFolder(app, 'temp');
 
     const mockFolder = MockTFolder.create__(mockApp.vault, 'temp');
-    const folder = mockFolder.asOriginalType__();
+    const folder = mockFolder.asOriginalType2__();
     mockApp.vault.setVaultAbstractFile__('temp', mockFolder);
     folder.deleted = true;
     await cleanup();
@@ -970,7 +970,7 @@ describe('processFile', () => {
   function setupRetryToInvokeOperationFn(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
     });
   }
@@ -1017,7 +1017,7 @@ describe('processFile', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     // Vault.read returns 'old content' but vault.process sees 'changed content'
@@ -1049,7 +1049,7 @@ describe('processFile', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
 
@@ -1078,7 +1078,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).editor = createMockOf<Editor>({});
+    ensureGenericObject(view).editor = strictProxy<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
@@ -1097,7 +1097,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).editor = createMockOf<Editor>({});
+    ensureGenericObject(view).editor = strictProxy<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
 
@@ -1148,7 +1148,7 @@ describe('processFile', () => {
 
     const view = new (MockMarkdownView as unknown as new () => MarkdownView)();
     // View.file defaults to null in the mock — don't set it
-    ensureGenericObject(view).editor = createMockOf<Editor>({});
+    ensureGenericObject(view).editor = strictProxy<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never

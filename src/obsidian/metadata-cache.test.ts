@@ -23,7 +23,7 @@ import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
 import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-with-offsets.ts';
 
 import { castTo } from '../object-utils.ts';
-import { createMockOf } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import {
   assertNonNullable,
   ensureGenericObject
@@ -154,7 +154,7 @@ const mockedParseFrontmatter = vi.mocked(parseFrontmatter);
 function createMockApp(): App {
   const fileMap: Record<string, TAbstractFile> = {};
 
-  return createMockOf<App>({
+  return strictProxy<App>({
     metadataCache: {
       computeFileMetadataAsync: vi.fn(),
       computeMetadataAsync: vi.fn(),
@@ -178,7 +178,7 @@ function createMockApp(): App {
 }
 
 function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCache {
-  return createMockOf<FrontmatterLinkCache>({
+  return strictProxy<FrontmatterLinkCache>({
     displayText: original,
     key,
     link: original,
@@ -187,7 +187,7 @@ function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCach
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): FrontmatterLinkCache {
-  return createMockOf<FrontmatterLinkCacheWithOffsets>({
+  return strictProxy<FrontmatterLinkCacheWithOffsets>({
     displayText: original,
     endOffset,
     key,
@@ -443,7 +443,7 @@ describe('unregisterFileCacheForNonExistingFile', () => {
 
 describe('registerFiles', () => {
   it('should register a deleted file into fileMap', () => {
-    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
     registerFiles(app, [file]);
 
@@ -451,7 +451,7 @@ describe('registerFiles', () => {
   });
 
   it('should call uniqueFileLookup.add for file-like deleted entries', () => {
-    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
     registerFiles(app, [file]);
 
@@ -459,7 +459,7 @@ describe('registerFiles', () => {
   });
 
   it('should not register a non-deleted file', () => {
-    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
 
     registerFiles(app, [file]);
 
@@ -467,7 +467,7 @@ describe('registerFiles', () => {
   });
 
   it('should not call uniqueFileLookup.add for folder-like deleted entries', () => {
-    const folder = createMockOf<TFolder>({ children: [], deleted: true, path: 'folder' });
+    const folder = strictProxy<TFolder>({ children: [], deleted: true, path: 'folder' });
 
     registerFiles(app, [folder]);
 
@@ -479,7 +479,7 @@ describe('registerFiles', () => {
 
 describe('unregisterFiles', () => {
   it('should remove a deleted file from fileMap when count reaches 0', () => {
-    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
     setVaultEntry(app, 'folder/note.md', file);
 
     unregisterFiles(app, [file]);
@@ -488,7 +488,7 @@ describe('unregisterFiles', () => {
   });
 
   it('should call uniqueFileLookup.remove for file-like deleted entries when count reaches 0', () => {
-    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
     setVaultEntry(app, 'folder/note.md', file);
 
     unregisterFiles(app, [file]);
@@ -497,7 +497,7 @@ describe('unregisterFiles', () => {
   });
 
   it('should not remove a non-deleted file', () => {
-    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'folder/note.md' });
     setVaultEntry(app, 'folder/note.md', file);
 
     unregisterFiles(app, [file]);
@@ -506,7 +506,7 @@ describe('unregisterFiles', () => {
   });
 
   it('should not call uniqueFileLookup.remove for folder-like deleted entries', () => {
-    const folder = createMockOf<TFolder>({ children: [], deleted: true, path: 'folder' });
+    const folder = strictProxy<TFolder>({ children: [], deleted: true, path: 'folder' });
     setVaultEntry(app, 'folder', folder);
 
     unregisterFiles(app, [folder]);
@@ -521,7 +521,7 @@ describe('unregisterFiles', () => {
     const mockedGetState = vi.mocked(getObsidianDevUtilsState);
     mockedGetState.mockReturnValue({ value: sharedMap });
 
-    const file = createMockOf<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
     registerFiles(app, [file]);
     registerFiles(app, [file]);
@@ -535,13 +535,13 @@ describe('unregisterFiles', () => {
 
 describe('tempRegisterFilesAndRun', () => {
   it('should run the function and return its result', () => {
-    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     const result = tempRegisterFilesAndRun(app, [file], () => 42);
     expect(result).toBe(42);
   });
 
   it('should still unregister files even when fn throws', () => {
-    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     expect(() =>
       tempRegisterFilesAndRun(app, [file], () => {
         throw new Error('test error');
@@ -552,13 +552,13 @@ describe('tempRegisterFilesAndRun', () => {
 
 describe('tempRegisterFilesAndRunAsync', () => {
   it('should run the async function and return its result', async () => {
-    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     const result = await tempRegisterFilesAndRunAsync(app, [file], async () => 'hello');
     expect(result).toBe('hello');
   });
 
   it('should still unregister files even when fn rejects', async () => {
-    const file = createMockOf<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
+    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     await expect(tempRegisterFilesAndRunAsync(app, [file], async () => {
       throw new Error('async error');
     })).rejects.toThrow('async error');
@@ -679,7 +679,7 @@ describe('getFrontmatterSafe', () => {
   it('should return frontmatter from cache', async () => {
     const file = { deleted: true, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 0, size: 0 } };
     const mockFrontmatter = { title: 'Test' };
-    const mockCache = createMockOf<CachedMetadata>({ frontmatter: mockFrontmatter });
+    const mockCache = strictProxy<CachedMetadata>({ frontmatter: mockFrontmatter });
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
@@ -713,7 +713,7 @@ describe('getBacklinksForFileSafe', () => {
   function setupRetryToInvokeOperationFn(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFn(abortSignal);
     });
   }
@@ -849,7 +849,7 @@ describe('getBacklinksForFileSafe', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     const content = '0123456789XXMISMATCHX more text';
@@ -885,7 +885,7 @@ describe('getBacklinksForFileSafe', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
@@ -905,7 +905,7 @@ describe('getBacklinksForFileSafe', () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
       const operationFn = params.operationFn;
-      const abortSignal = createMockOf<AbortSignal>({ throwIfAborted: vi.fn() });
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFn(abortSignal);
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
