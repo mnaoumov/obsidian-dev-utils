@@ -489,13 +489,13 @@ function getTseslintConfigs(): Linter.Config[] {
           }
         ],
         '@typescript-eslint/prefer-readonly': 'error',
-        'custom/no-used-underscore-params': 'error'
+        'obsidian-dev-utils/no-used-underscore-params': 'error'
       }
     },
     {
       files: typeScriptFiles,
       plugins: {
-        custom: {
+        'obsidian-dev-utils': {
           rules: {
             'no-used-underscore-params': noUsedUnderscoreParams
           }

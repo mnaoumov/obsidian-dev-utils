@@ -17,6 +17,7 @@ import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
   CalloutMode,
+  renderCallout,
   wrapForCallout
 } from './callout.ts';
 
@@ -170,8 +171,6 @@ describe('renderCallout', () => {
   });
 
   it('should create a callout paragraph with FoldableCollapsed modifier by default', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -181,8 +180,6 @@ describe('renderCallout', () => {
   });
 
   it('should create a callout paragraph with Default mode (no modifier)', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.Default });
@@ -192,8 +189,6 @@ describe('renderCallout', () => {
   });
 
   it('should create a callout paragraph with FoldableExpanded modifier', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.FoldableExpanded });
@@ -203,8 +198,6 @@ describe('renderCallout', () => {
   });
 
   it('should use the specified type in the callout', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, type: 'WARNING' });
@@ -214,8 +207,6 @@ describe('renderCallout', () => {
   });
 
   it('should use the specified header in the callout', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, header: 'My Header' });
@@ -225,8 +216,6 @@ describe('renderCallout', () => {
   });
 
   it('should show "Loading..." initially in the content div', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -239,8 +228,6 @@ describe('renderCallout', () => {
   });
 
   it('should set up an IntersectionObserver and observe the content div', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -255,8 +242,6 @@ describe('renderCallout', () => {
   });
 
   it('should call addToQueue when IntersectionObserver fires with isIntersecting', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -283,8 +268,6 @@ describe('renderCallout', () => {
   });
 
   it('should not call addToQueue when entry is not intersecting', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -303,8 +286,6 @@ describe('renderCallout', () => {
   });
 
   it('should pass abortSignal to addToQueue when provided', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
     const abortController = new AbortController();
 
@@ -327,8 +308,6 @@ describe('renderCallout', () => {
   });
 
   it('should render string content when loadContent is invoked', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
@@ -359,8 +338,6 @@ describe('renderCallout', () => {
   });
 
   it('should render content from a function contentProvider', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
     const contentFn = vi.fn(() => 'Dynamic Content');
 
@@ -389,8 +366,6 @@ describe('renderCallout', () => {
   });
 
   it('should use the rendered paragraph as fallback when contentProvider returns undefined', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     mocks.addToQueue.mockImplementationOnce(async (options: AddToQueueParams) => {
@@ -421,8 +396,6 @@ describe('renderCallout', () => {
   });
 
   it('should combine custom type, header, and FoldableExpanded mode correctly', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({
@@ -459,8 +432,6 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
   });
 
   it('should produce "-" modifier for FoldableCollapsed mode', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.FoldableCollapsed });
@@ -472,8 +443,6 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
   });
 
   it('should produce "+" modifier for FoldableExpanded mode', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.FoldableExpanded });
@@ -485,8 +454,6 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
   });
 
   it('should produce no modifier for Default mode', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { renderCallout } = await import('./callout.ts');
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.Default });

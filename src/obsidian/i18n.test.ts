@@ -14,6 +14,11 @@ import {
   noopAsync
 } from '../function.ts';
 import { ensureGenericObject } from '../type-guards.ts';
+import {
+  DEFAULT_NS,
+  initI18N,
+  t
+} from './i18n/i18n.ts';
 
 const HEAVY_IMPORT_TIMEOUT = 30_000;
 
@@ -64,8 +69,6 @@ vi.mock('../obsidian/i18n/locales/translationsMap.ts', () => ({
 describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
   describe('DEFAULT_NS', () => {
     it('should export DEFAULT_NS as "translation"', async () => {
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { DEFAULT_NS } = await import('./i18n/i18n.ts');
       expect(DEFAULT_NS).toBe('translation');
     });
   });
@@ -81,8 +84,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
         noop();
       });
 
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { t: freshT } = await import('./i18n/i18n.ts');
+      const freshT = t;
 
       freshT(((translations: GenericObject) => translations['test']) as never);
 
@@ -102,8 +104,6 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should call init with correct options', async () => {
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { initI18N } = await import('./i18n/i18n.ts');
       const translationsMap = { en: { greeting: 'Hello' } };
 
       await initI18N(translationsMap as never, false);
@@ -121,8 +121,6 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should structure resources with DEFAULT_NS as key', async () => {
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { initI18N } = await import('./i18n/i18n.ts');
       const translationsMap = { en: { greeting: 'Hello' }, fr: { greeting: 'Bonjour' } };
 
       await initI18N(translationsMap as never, false);
@@ -136,8 +134,6 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should add en resource bundle after init', async () => {
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { initI18N } = await import('./i18n/i18n.ts');
       await initI18N({ en: { test: 'value' } } as never, false);
 
       expect(mockAddResourceBundleFn).toHaveBeenCalledWith(
@@ -150,8 +146,6 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should only initialize once (idempotent)', async () => {
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { initI18N } = await import('./i18n/i18n.ts');
       await initI18N({ en: { test: 'value' } } as never, false);
       expect(mockInitFn).toHaveBeenCalledTimes(1);
 
@@ -160,8 +154,6 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should default isAsync to true', async () => {
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { initI18N } = await import('./i18n/i18n.ts');
       await initI18N({ en: { test: 'value' } } as never);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
@@ -177,8 +169,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should call tLib with selector when no options provided', async () => {
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { initI18N, t: tFn } = await import('./i18n/i18n.ts');
+      const tFn = t;
       await initI18N({ en: { test: 'hello' } } as never, false);
       mockTLibFn.mockClear();
 
@@ -190,8 +181,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should call tLib with selector and options when options provided', async () => {
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { initI18N, t: tFn } = await import('./i18n/i18n.ts');
+      const tFn = t;
       await initI18N({ en: { test: 'hello' } } as never, false);
       mockTLibFn.mockClear();
 
@@ -204,8 +194,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should return the translated value from tLib', async () => {
-      // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-      const { initI18N, t: tFn } = await import('./i18n/i18n.ts');
+      const tFn = t;
       await initI18N({ en: { test: 'hello' } } as never, false);
 
       const result = tFn((($: GenericObject): unknown => $['test']) as never);
