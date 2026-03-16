@@ -6,7 +6,8 @@
  * bridge obsidian-typings properties onto mock instances.
  */
 
-// eslint-disable-next-line import-x/no-unassigned-import -- Side-effect imports that register mock augmentations.
-import './src/obsidian/augmentations/SettingGroup.ts';
-// eslint-disable-next-line import-x/no-unassigned-import -- Side-effect imports that register mock augmentations.
-import './src/obsidian/augmentations/Vault.ts';
+import { mockSettingGroup } from './src/obsidian/augmentations/SettingGroup.ts';
+import { mockVault } from './src/obsidian/augmentations/Vault.ts';
+
+mockSettingGroup();
+mockVault();
