@@ -29,9 +29,9 @@ class MockFileReader {
     this.listeners[event].push(fn);
   }
 
-  public readAsArrayBuffer(_blob: Blob): void {
+  public readAsArrayBuffer(blob: Blob): void {
     const encoder = new TextEncoder();
-    const blobParts = castTo<BlobWithParts>(_blob)._parts;
+    const blobParts = castTo<BlobWithParts>(blob)._parts;
     if (blobParts && blobParts.length > 0) {
       this.result = encoder.encode(blobParts.join('')).buffer;
     } else {
