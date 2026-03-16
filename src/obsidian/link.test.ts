@@ -1604,11 +1604,11 @@ describe('parseLinks embed-inside-link', () => {
 describe('app-dependent functions', () => {
   let app: AppOriginal;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
 
     app = (
-      await App.createConfigured__({
+      App.createConfigured__({
         files: {
           'folder/other.md': '# Other',
           'folder/same.md': '# Same',
@@ -1642,7 +1642,7 @@ describe('app-dependent functions', () => {
       (_theApp: AppOriginal, _files: unknown[], fn: () => unknown) => fn()
     );
     vi.mocked(getCacheSafe).mockResolvedValue(null);
-    vi.mocked(parseMetadata).mockResolvedValue({} as CachedMetadata);
+    vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({}));
     vi.mocked(getBacklinksForFileSafe).mockResolvedValue({
       get: () => null,
       keys: () => []
@@ -2178,9 +2178,9 @@ describe('app-dependent functions', () => {
       expect(result).toBe('[[target]]');
     });
 
-    it('should return path+subpath for canvas file with canvas file node reference', async () => {
+    it('should return path+subpath for canvas file with canvas file node reference', () => {
       const canvasApp = (
-        await App.createConfigured__({
+        App.createConfigured__({
           files: {
             'canvas.canvas': '{}',
             'target.md': '# Target'
@@ -2478,7 +2478,7 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue({} as CachedMetadata);
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({}));
 
       await editLinks(
         app,
@@ -2575,7 +2575,7 @@ describe('app-dependent functions', () => {
 
   describe('updateLinksInContent', () => {
     it('should call editLinksInContent with convertLink callback', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue({} as CachedMetadata);
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({}));
 
       const result = await updateLinksInContent({
         app,
@@ -2642,7 +2642,7 @@ describe('app-dependent functions', () => {
       });
 
       const canvasApp = (
-        await App.createConfigured__({
+        App.createConfigured__({
           files: { 'canvas.canvas': '{}' }
         })
       ).asOriginalType__();
@@ -2756,7 +2756,7 @@ describe('app-dependent functions', () => {
   describe('getFileChanges canvas path', () => {
     it('should handle canvas file changes through editLinks', async () => {
       const canvasApp = (
-        await App.createConfigured__({
+        App.createConfigured__({
           files: {
             'target.md': '# Target',
             'test.canvas': '{"nodes":[]}'
@@ -2797,7 +2797,7 @@ describe('app-dependent functions', () => {
 
     it('should log error for non-canvas change in canvas file', async () => {
       const canvasApp = (
-        await App.createConfigured__({
+        App.createConfigured__({
           files: {
             'target.md': '# Target',
             'test.canvas': '{"nodes":[]}'

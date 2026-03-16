@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
-import type { Reference } from 'obsidian';
+import type {
+  App as AppOriginal,
+  Reference
+} from 'obsidian';
 
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -61,6 +65,12 @@ vi.mock('../obsidian/vault.ts', () => ({
 }));
 
 type ProcessFn = (signal: AbortSignal, content: string) => Promise<null | string>;
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
 
 // --- Helper factories ---
 
@@ -471,14 +481,12 @@ describe('applyFileChanges', () => {
   });
 
   it('should call process with the correct arguments', async () => {
-    const app = {} as never;
     const changes: FileChange[] = [];
     await applyFileChanges(app, 'test.md', changes);
     expect(process).toHaveBeenCalledWith(app, 'test.md', expect.any(Function), {});
   });
 
   it('should pass processOptions to process', async () => {
-    const app = {} as never;
     const options = { timeoutInMilliseconds: 3000 };
     await applyFileChanges(app, 'test.md', [], options);
     expect(process).toHaveBeenCalledWith(app, 'test.md', expect.any(Function), options);
@@ -486,7 +494,6 @@ describe('applyFileChanges', () => {
 
   it('should invoke applyContentChanges for non-canvas files', async () => {
     vi.mocked(isCanvasFile).mockReturnValue(false);
-    const app = {} as never;
     const changes = [makeContentChange('test', 'replaced', 0)];
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
@@ -500,7 +507,6 @@ describe('applyFileChanges', () => {
 
   it('should invoke applyCanvasChanges for canvas files', async () => {
     vi.mocked(isCanvasFile).mockReturnValue(true);
-    const app = {} as never;
     const canvasContent = JSON.stringify({
       edges: [],
       nodes: [{ file: 'old.md', id: 'node1', type: 'file' }]
@@ -537,7 +543,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
     });
 
-    await applyFileChanges({} as never, 'test.canvas', changes);
+    await applyFileChanges(app, 'test.canvas', changes);
     expect(resultContent).not.toBeNull();
     assertNonNullable(resultContent);
     const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
@@ -561,7 +567,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
     });
 
-    await applyFileChanges({} as never, 'test.canvas', changes);
+    await applyFileChanges(app, 'test.canvas', changes);
     expect(resultContent).toBeNull();
   });
 
@@ -578,7 +584,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
     });
 
-    await applyFileChanges({} as never, 'test.canvas', changes);
+    await applyFileChanges(app, 'test.canvas', changes);
     expect(resultContent).toBeNull();
   });
 
@@ -590,7 +596,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await (fn as ProcessFn)(controller.signal, '{}');
     });
 
-    await applyFileChanges({} as never, 'test.canvas', null as never);
+    await applyFileChanges(app, 'test.canvas', null as never);
     expect(resultContent).toBeNull();
   });
 
@@ -610,7 +616,7 @@ describe('canvas changes via applyFileChanges', () => {
       await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
     });
 
-    await applyFileChanges({} as never, 'test.canvas', changes);
+    await applyFileChanges(app, 'test.canvas', changes);
     expect(vi.mocked(console.error)).toHaveBeenCalled();
     vi.mocked(console.error).mockRestore();
   });
@@ -628,7 +634,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
     });
 
-    await applyFileChanges({} as never, 'test.canvas', changes);
+    await applyFileChanges(app, 'test.canvas', changes);
     expect(resultContent).not.toBeNull();
     assertNonNullable(resultContent);
     const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
@@ -649,7 +655,7 @@ describe('canvas changes via applyFileChanges', () => {
 
     // When JSON is invalid, it is parsed as {} without a nodes property,
     // Causing a TypeError when accessing canvasData.nodes[nodeIndex]
-    await expect(applyFileChanges({} as never, 'test.canvas', changes)).rejects.toThrow(TypeError);
+    await expect(applyFileChanges(app, 'test.canvas', changes)).rejects.toThrow(TypeError);
   });
 
   it('should return null when canvas text node text is not a string', async () => {
@@ -669,7 +675,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
     });
 
-    await applyFileChanges({} as never, 'test.canvas', changes);
+    await applyFileChanges(app, 'test.canvas', changes);
     expect(resultContent).toBeNull();
     expect(vi.mocked(console.error)).toHaveBeenCalled();
     vi.mocked(console.error).mockRestore();
