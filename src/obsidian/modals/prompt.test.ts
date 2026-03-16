@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import type { App as AppOriginal } from 'obsidian';
 import type {
   ButtonComponent,
   TextComponent
@@ -9,6 +10,7 @@ import {
   ButtonComponent as ButtonComponentOriginal,
   TextComponent as TextComponentOriginal
 } from 'obsidian';
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -21,6 +23,12 @@ import { castTo } from '../../object-utils.ts';
 import { mockImplementation } from '../../test-helpers/mock-implementation.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { prompt } from './prompt.ts';
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
 
 vi.mock('../../async.ts', () => ({
   convertAsyncToSync: vi.fn((fn: () => unknown) => fn),
@@ -86,14 +94,14 @@ describe('prompt', () => {
 
   it('should resolve null when modal is closed without clicking OK', async () => {
     const result = await prompt({
-      app: {} as never
+      app
     });
     expect(result).toBeNull();
   });
 
   it('should resolve value when OK button is clicked', async () => {
     const resultPromise = prompt({
-      app: {} as never,
+      app,
       defaultValue: 'hello'
     });
     queueMicrotask(() => {
@@ -106,7 +114,7 @@ describe('prompt', () => {
 
   it('should resolve value when Enter key is pressed', async () => {
     const resultPromise = prompt({
-      app: {} as never,
+      app,
       defaultValue: 'enter-value'
     });
     queueMicrotask(() => {
@@ -119,7 +127,7 @@ describe('prompt', () => {
 
   it('should close when Escape key is pressed', async () => {
     const resultPromise = prompt({
-      app: {} as never,
+      app,
       defaultValue: 'escape-value'
     });
     queueMicrotask(() => {
@@ -132,7 +140,7 @@ describe('prompt', () => {
 
   it('should ignore non-Enter non-Escape keys', async () => {
     const resultPromise = prompt({
-      app: {} as never,
+      app,
       defaultValue: 'other-key'
     });
     queueMicrotask(() => {
@@ -145,7 +153,7 @@ describe('prompt', () => {
 
   it('should not submit when input is invalid', async () => {
     const resultPromise = prompt({
-      app: {} as never,
+      app,
       defaultValue: 'invalid'
     });
     queueMicrotask(() => {
@@ -163,7 +171,7 @@ describe('prompt', () => {
 
   it('should accept default value and placeholder', async () => {
     const result = await prompt({
-      app: {} as never,
+      app,
       defaultValue: 'test value',
       placeholder: 'Enter text...',
       title: 'Input'
@@ -173,7 +181,7 @@ describe('prompt', () => {
 
   it('should accept custom button texts', async () => {
     const result = await prompt({
-      app: {} as never,
+      app,
       cancelButtonText: 'Dismiss',
       okButtonText: 'Submit'
     });
@@ -183,7 +191,7 @@ describe('prompt', () => {
   it('should accept a value validator', async () => {
     const validator = vi.fn(() => undefined);
     const result = await prompt({
-      app: {} as never,
+      app,
       valueValidator: validator
     });
     expect(result).toBeNull();

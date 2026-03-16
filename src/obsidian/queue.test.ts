@@ -1,3 +1,6 @@
+import type { App as AppOriginal } from 'obsidian';
+
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -14,6 +17,12 @@ import {
   addToQueueAndWait,
   flushQueue
 } from './queue.ts';
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
 
 const mocks = vi.hoisted(() => ({
   addErrorHandler: vi.fn(async (fn: () => Promise<void>) => {
@@ -92,7 +101,7 @@ describe('addToQueue', () => {
 
   it('should add an item to the queue via invokeAsyncSafely', () => {
     const operationFn = vi.fn();
-    addToQueue({ app: {} as never, operationFn, operationName: 'test-op' });
+    addToQueue({ app, operationFn, operationName: 'test-op' });
     expect(mocks.invokeAsyncSafely).toHaveBeenCalledWith(expect.any(Function), 'mock-stack-trace');
   });
 });
@@ -108,7 +117,7 @@ describe('addToQueueAndWait', () => {
 
   it('should add an item to the queue and process it', async () => {
     const operationFn = vi.fn();
-    await addToQueueAndWait({ app: {} as never, operationFn, operationName: 'test-op' });
+    await addToQueueAndWait({ app, operationFn, operationName: 'test-op' });
     expect(queue.items.length).toBe(0);
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalled();
   });
@@ -122,8 +131,8 @@ describe('addToQueueAndWait', () => {
       order.push(2);
     });
 
-    await addToQueueAndWait({ app: {} as never, operationFn: op1, operationName: 'op1' });
-    await addToQueueAndWait({ app: {} as never, operationFn: op2, operationName: 'op2' });
+    await addToQueueAndWait({ app, operationFn: op1, operationName: 'op1' });
+    await addToQueueAndWait({ app, operationFn: op2, operationName: 'op2' });
     expect(order).toEqual([1, 2]);
   });
 
@@ -132,13 +141,13 @@ describe('addToQueueAndWait', () => {
     controller.abort();
     await expect(addToQueueAndWait({
       abortSignal: controller.signal,
-      app: {} as never,
+      app,
       operationFn: vi.fn()
     })).rejects.toThrow();
   });
 
   it('should use default timeout when not specified', async () => {
-    await addToQueueAndWait({ app: {} as never, operationFn: vi.fn() });
+    await addToQueueAndWait({ app, operationFn: vi.fn() });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         timeoutInMilliseconds: 60000
@@ -147,7 +156,7 @@ describe('addToQueueAndWait', () => {
   });
 
   it('should use custom timeout when specified', async () => {
-    await addToQueueAndWait({ app: {} as never, operationFn: vi.fn(), timeoutInMilliseconds: 5000 });
+    await addToQueueAndWait({ app, operationFn: vi.fn(), timeoutInMilliseconds: 5000 });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         timeoutInMilliseconds: 5000
@@ -156,7 +165,7 @@ describe('addToQueueAndWait', () => {
   });
 
   it('should use custom stack trace when provided', async () => {
-    await addToQueueAndWait({ app: {} as never, operationFn: vi.fn(), stackTrace: 'custom-stack' });
+    await addToQueueAndWait({ app, operationFn: vi.fn(), stackTrace: 'custom-stack' });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         stackTrace: 'custom-stack'
@@ -167,7 +176,7 @@ describe('addToQueueAndWait', () => {
   it('should handle empty queue gracefully', async () => {
     // Queue with no items should just resolve
     queue.items = [];
-    await addToQueueAndWait({ app: {} as never, operationFn: noop });
+    await addToQueueAndWait({ app, operationFn: noop });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalled();
   });
 });
@@ -182,7 +191,7 @@ describe('flushQueue', () => {
   });
 
   it('should add a noop operation to the queue', async () => {
-    await flushQueue({} as never);
+    await flushQueue(app);
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         operationName: 'mock-translation'

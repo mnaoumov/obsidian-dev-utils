@@ -1,3 +1,6 @@
+import type { App as AppOriginal } from 'obsidian';
+
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -51,6 +54,12 @@ vi.mock('../obsidian/vault.ts', () => ({
 
 type ProcessFn = (abortSignal: AbortSignal, content: string) => Promise<null | string>;
 
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
+
 describe('addAlias', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -64,29 +73,29 @@ describe('addAlias', () => {
   });
 
   it('should do nothing when alias is empty', async () => {
-    await addAlias({} as never, 'note.md', '');
+    await addAlias(app, 'note.md', '');
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias is undefined', async () => {
-    await addAlias({} as never, 'note.md', undefined);
+    await addAlias(app, 'note.md', undefined);
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(addAlias({} as never, 'image.png', 'my-alias')).rejects.toThrow('not a markdown file');
+    await expect(addAlias(app, 'image.png', 'my-alias')).rejects.toThrow('not a markdown file');
   });
 
   it('should do nothing when alias matches basename', async () => {
     vi.mocked(getFile).mockReturnValue({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' } as never);
-    await addAlias({} as never, 'note.md', 'note');
+    await addAlias(app, 'note.md', 'note');
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias matches file name', async () => {
     vi.mocked(getFile).mockReturnValue({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' } as never);
-    await addAlias({} as never, 'note.md', 'note.md');
+    await addAlias(app, 'note.md', 'note.md');
     expect(process).not.toHaveBeenCalled();
   });
 
@@ -100,7 +109,7 @@ describe('addAlias', () => {
       await (fn as ProcessFn)(controller.signal, '---\n---\ncontent');
     });
 
-    await addAlias({} as never, 'note.md', 'my-alias');
+    await addAlias(app, 'note.md', 'my-alias');
     expect(process).toHaveBeenCalled();
   });
 
@@ -114,7 +123,7 @@ describe('addAlias', () => {
       await (fn as ProcessFn)(controller.signal, '---\naliases: existing-alias\n---\ncontent');
     });
 
-    await addAlias({} as never, 'note.md', 'existing-alias');
+    await addAlias(app, 'note.md', 'existing-alias');
     expect(frontmatter.aliases).toEqual(['existing-alias']);
   });
 });
@@ -132,18 +141,18 @@ describe('deleteAlias', () => {
   });
 
   it('should do nothing when alias is empty', async () => {
-    await deleteAlias({} as never, 'note.md', '');
+    await deleteAlias(app, 'note.md', '');
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias is undefined', async () => {
-    await deleteAlias({} as never, 'note.md', undefined);
+    await deleteAlias(app, 'note.md', undefined);
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(deleteAlias({} as never, 'image.png', 'my-alias')).rejects.toThrow('not a markdown file');
+    await expect(deleteAlias(app, 'image.png', 'my-alias')).rejects.toThrow('not a markdown file');
   });
 
   it('should delete an alias from frontmatter', async () => {
@@ -155,7 +164,7 @@ describe('deleteAlias', () => {
       await (fn as ProcessFn)(controller.signal, '---\naliases:\n  - keep\n  - remove\n---\ncontent');
     });
 
-    await deleteAlias({} as never, 'note.md', 'remove');
+    await deleteAlias(app, 'note.md', 'remove');
     expect(process).toHaveBeenCalled();
   });
 
@@ -168,7 +177,7 @@ describe('deleteAlias', () => {
       await (fn as ProcessFn)(controller.signal, '---\naliases: only\n---\ncontent');
     });
 
-    await deleteAlias({} as never, 'note.md', 'only');
+    await deleteAlias(app, 'note.md', 'only');
     expect(process).toHaveBeenCalled();
   });
 
@@ -180,7 +189,7 @@ describe('deleteAlias', () => {
       await (fn as ProcessFn)(controller.signal, '---\n---\ncontent');
     });
 
-    await deleteAlias({} as never, 'note.md', 'my-alias');
+    await deleteAlias(app, 'note.md', 'my-alias');
     expect(process).toHaveBeenCalled();
   });
 });
@@ -194,7 +203,7 @@ describe('processFrontmatter', () => {
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(processFrontmatter({} as never, 'image.png', vi.fn())).rejects.toThrow('not a markdown file');
+    await expect(processFrontmatter(app, 'image.png', vi.fn())).rejects.toThrow('not a markdown file');
   });
 
   it('should call process with the file', async () => {
@@ -205,7 +214,7 @@ describe('processFrontmatter', () => {
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
     const frontmatterFn = vi.fn();
-    await processFrontmatter({} as never, 'note.md', frontmatterFn);
+    await processFrontmatter(app, 'note.md', frontmatterFn);
     expect(process).toHaveBeenCalled();
     expect(frontmatterFn).toHaveBeenCalled();
   });
@@ -219,7 +228,7 @@ describe('processFrontmatter', () => {
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
-    await processFrontmatter({} as never, 'note.md', () => null);
+    await processFrontmatter(app, 'note.md', () => null);
     expect(resultContent).toBeNull();
   });
 
@@ -234,7 +243,7 @@ describe('processFrontmatter', () => {
     });
     vi.mocked(parseFrontmatter).mockReturnValue({ title: 'test' });
 
-    await processFrontmatter({} as never, 'note.md', vi.fn());
+    await processFrontmatter(app, 'note.md', vi.fn());
     expect(resultContent).toBe(content);
     expect(setFrontmatter).not.toHaveBeenCalled();
   });
@@ -249,7 +258,7 @@ describe('processFrontmatter', () => {
     vi.mocked(parseFrontmatter).mockReturnValue({ title: 'old' });
     vi.mocked(setFrontmatter).mockReturnValue('---\ntitle: new\n---\ncontent');
 
-    await processFrontmatter({} as never, 'note.md', (fm) => {
+    await processFrontmatter(app, 'note.md', (fm) => {
       fm['title'] = 'new';
     });
     expect(setFrontmatter).toHaveBeenCalled();
@@ -263,7 +272,7 @@ describe('processFrontmatter', () => {
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
     const processOptions = { timeoutInMilliseconds: 5000 };
-    await processFrontmatter({} as never, 'note.md', vi.fn(), processOptions);
+    await processFrontmatter(app, 'note.md', vi.fn(), processOptions);
     expect(process).toHaveBeenCalledWith(expect.anything(), 'note.md', expect.any(Function), processOptions);
   });
 });
