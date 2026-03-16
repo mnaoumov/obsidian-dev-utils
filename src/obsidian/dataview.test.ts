@@ -568,6 +568,7 @@ describe('reloadCurrentFileCache', () => {
 
   it('should pass the file from dv.current().file.path to getFile', async () => {
     const dv = createMockDv();
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { getFile } = await import('./file-system.ts');
     const reloadFn = vi.fn(async () => {
       noop();

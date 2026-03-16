@@ -67,7 +67,7 @@ describe('loop', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(
-      globalThis as unknown as { sleep: (ms: number) => Promise<void> },
+      globalThis,
       'sleep'
     ).mockImplementation(sleepImmediate);
   });
@@ -269,7 +269,7 @@ describe('loop', () => {
 
     let capturedProgressEl: HTMLProgressElement | null = null;
     const createElSpy = vi.spyOn(
-      globalThis as unknown as { createEl: (tag: string) => HTMLElement },
+      globalThis,
       'createEl'
     ).mockImplementation((tag: string): HTMLElement => {
       const el = document.createElement(tag);
@@ -368,6 +368,7 @@ describe('loop', () => {
   });
 
   it('should use default abortSignal from abortSignalNever when none provided', async () => {
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { abortSignalNever } = await import('../abort-controller.ts');
 
     await loop({
@@ -399,7 +400,7 @@ describe('loop', () => {
   it('should increment progress bar value for each processed item', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
     const createElSpy = vi.spyOn(
-      globalThis as unknown as { createEl: (tag: string) => HTMLElement },
+      globalThis,
       'createEl'
     ).mockImplementation((tag: string): HTMLElement => {
       const el = document.createElement(tag);
@@ -436,7 +437,7 @@ describe('loop', () => {
   it('should still increment progress bar value even when processItem throws', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
     const createElSpy = vi.spyOn(
-      globalThis as unknown as { createEl: (tag: string) => HTMLElement },
+      globalThis,
       'createEl'
     ).mockImplementation((tag: string): HTMLElement => {
       const el = document.createElement(tag);
@@ -507,6 +508,7 @@ describe('loop', () => {
       await fn();
     });
 
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { Notice } = await import('obsidian');
     vi.spyOn(Notice.prototype, 'setMessage');
 
@@ -531,6 +533,7 @@ describe('loop', () => {
       await fn();
     });
 
+    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
     const { Notice } = await import('obsidian');
     vi.spyOn(Notice.prototype, 'setMessage');
 

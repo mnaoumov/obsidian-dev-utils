@@ -38,6 +38,7 @@ import tseslint from 'typescript-eslint';
 import { ObsidianPluginRepoPaths } from '../../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import { join } from '../../path.ts';
 import { getRootFolder } from '../root.ts';
+import { noUsedUnderscoreParams } from './eslint-rules/no-used-underscore-params.ts';
 
 /**
  * The list of TypeScript files to lint.
@@ -487,7 +488,18 @@ function getTseslintConfigs(): Linter.Config[] {
             varsIgnorePattern: '^_'
           }
         ],
-        '@typescript-eslint/prefer-readonly': 'error'
+        '@typescript-eslint/prefer-readonly': 'error',
+        'custom/no-used-underscore-params': 'error'
+      }
+    },
+    {
+      files: typeScriptFiles,
+      plugins: {
+        custom: {
+          rules: {
+            'no-used-underscore-params': noUsedUnderscoreParams
+          }
+        } as ESLint.Plugin
       }
     },
     {

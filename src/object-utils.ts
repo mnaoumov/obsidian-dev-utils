@@ -194,7 +194,7 @@ export function assignWithNonEnumerableProperties<T extends object, U, V, W>(tar
  * @returns The target object with the assigned properties.
  */
 export function assignWithNonEnumerableProperties(target: object, ...sources: object[]): object {
-  return _assignWithNonEnumerableProperties(target, ...sources);
+  return assignWithNonEnumerablePropertiesImpl(target, ...sources);
 }
 /**
  * Casts a value to a specific type.
@@ -557,7 +557,26 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   return json;
 }
 
-function _assignWithNonEnumerableProperties(target: object, ...sources: object[]): object {
+function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<string> {
+  switch (params.key) {
+    case TokenSubstitutionKey.CircularReference:
+      return params.substitutions.circularReference;
+    case TokenSubstitutionKey.Function:
+      return ensureNonNullable(params.functionTexts[params.index], `Function with index ${String(params.index)} not found`);
+    case TokenSubstitutionKey.MaxDepthLimitReached:
+      return params.substitutions.maxDepthLimitReached;
+    case TokenSubstitutionKey.MaxDepthLimitReachedArray:
+      return `Array(${String(params.index)})`;
+    case TokenSubstitutionKey.ToJSONFailed:
+      return params.substitutions.toJSONFailed;
+    case TokenSubstitutionKey.Undefined:
+      return 'undefined';
+    default:
+      assert(false, 'Unhandled substitution key');
+  }
+}
+
+function assignWithNonEnumerablePropertiesImpl(target: object, ...sources: object[]): object {
   for (const source of sources) {
     const descriptors = Object.getOwnPropertyDescriptors(source);
 
@@ -584,7 +603,7 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
     .filter((proto): proto is object => !!proto);
 
   if (sourcePrototypes.length > 0) {
-    const targetPrototype = _assignWithNonEnumerableProperties({}, getPrototypeOf(target), ...sourcePrototypes);
+    const targetPrototype = assignWithNonEnumerablePropertiesImpl({}, getPrototypeOf(target), ...sourcePrototypes);
 
     try {
       Object.setPrototypeOf(target, targetPrototype);
@@ -594,25 +613,6 @@ function _assignWithNonEnumerableProperties(target: object, ...sources: object[]
   }
 
   return target;
-}
-
-function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<string> {
-  switch (params.key) {
-    case TokenSubstitutionKey.CircularReference:
-      return params.substitutions.circularReference;
-    case TokenSubstitutionKey.Function:
-      return ensureNonNullable(params.functionTexts[params.index], `Function with index ${String(params.index)} not found`);
-    case TokenSubstitutionKey.MaxDepthLimitReached:
-      return params.substitutions.maxDepthLimitReached;
-    case TokenSubstitutionKey.MaxDepthLimitReachedArray:
-      return `Array(${String(params.index)})`;
-    case TokenSubstitutionKey.ToJSONFailed:
-      return params.substitutions.toJSONFailed;
-    case TokenSubstitutionKey.Undefined:
-      return 'undefined';
-    default:
-      assert(false, 'Unhandled substitution key');
-  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown` doesn't work, getting compiler errors.

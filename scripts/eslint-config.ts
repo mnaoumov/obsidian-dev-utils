@@ -45,12 +45,12 @@ const noRestrictedSyntaxRules: Linter.RuleEntry = [
     selector: 'FunctionDeclaration[id.name=/^_/]'
   },
   {
-    message: 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading (G10a).',
-    selector: 'ImportExpression'
-  },
-  {
     message: 'Do not rename imports with "Mock" in the alias. Mock classes are the canonical types — use the original name.',
     selector: 'ImportSpecifier[local.name=/Mock/]:not([imported.name=/Mock/])'
+  },
+  {
+    message: 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading (G10a).',
+    selector: 'ImportExpression'
   }
 ];
 
