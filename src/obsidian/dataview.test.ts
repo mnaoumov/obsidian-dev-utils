@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import type { PartialDeep } from 'type-fest';
+
 import {
   afterAll,
   beforeEach,
@@ -12,6 +14,7 @@ import {
 import type { DataviewInlineApi } from './dataview.ts';
 
 import { noop } from '../function.ts';
+import { castTo } from '../object-utils.ts';
 import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
@@ -78,9 +81,9 @@ function createMockDv(): DataviewInlineApi {
 
   return createMockOf<DataviewInlineApi>({
     app: { metadataCache: {}, vault: { adapter: {} } },
-    container,
-    current: vi.fn(() => ({ file: { path: 'current.md' } })),
-    el: vi.fn(
+    container: castTo<PartialDeep<HTMLElement>>(container),
+    current: castTo<DataviewInlineApi['current']>(vi.fn(() => ({ file: { path: 'current.md' } }))),
+    el: castTo<DataviewInlineApi['el']>(vi.fn(
       (
         tag: string,
         _text: string,
@@ -95,7 +98,7 @@ function createMockDv(): DataviewInlineApi {
         container.appendChild(el);
         return el;
       }
-    ),
+    )),
     list: vi.fn(async () => {
       noop();
     }),

@@ -4,7 +4,8 @@ import type {
   FrontmatterLinkCache,
   Reference,
   ReferenceCache,
-  TAbstractFile
+  TAbstractFile,
+  TFolder
 } from 'obsidian';
 import type { CustomArrayDict } from 'obsidian-typings';
 
@@ -19,6 +20,7 @@ import {
 
 import type { GenericObject } from '../type-guards.ts';
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
+import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-with-offsets.ts';
 
 import { castTo } from '../object-utils.ts';
 import { createMockOf } from '../test-helpers/mock-implementation.ts';
@@ -156,10 +158,10 @@ function createMockApp(): App {
     metadataCache: {
       computeFileMetadataAsync: vi.fn(),
       computeMetadataAsync: vi.fn(),
-      fileCache: {} as GenericObject,
+      fileCache: {},
       getBacklinksForFile: vi.fn(),
       getFileCache: vi.fn(),
-      metadataCache: {} as GenericObject,
+      metadataCache: {},
       onCleanCache: vi.fn((cb: () => void) => {
         cb();
       }),
@@ -185,7 +187,7 @@ function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCach
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): FrontmatterLinkCache {
-  return createMockOf<FrontmatterLinkCache>({
+  return createMockOf<FrontmatterLinkCacheWithOffsets>({
     displayText: original,
     endOffset,
     key,
@@ -465,7 +467,7 @@ describe('registerFiles', () => {
   });
 
   it('should not call uniqueFileLookup.add for folder-like deleted entries', () => {
-    const folder = createMockOf<TAbstractFile>({ children: [], deleted: true, path: 'folder' });
+    const folder = createMockOf<TFolder>({ children: [], deleted: true, path: 'folder' });
 
     registerFiles(app, [folder]);
 
@@ -504,7 +506,7 @@ describe('unregisterFiles', () => {
   });
 
   it('should not call uniqueFileLookup.remove for folder-like deleted entries', () => {
-    const folder = createMockOf<TAbstractFile>({ children: [], deleted: true, path: 'folder' });
+    const folder = createMockOf<TFolder>({ children: [], deleted: true, path: 'folder' });
     setVaultEntry(app, 'folder', folder);
 
     unregisterFiles(app, [folder]);

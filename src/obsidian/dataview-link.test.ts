@@ -1,4 +1,5 @@
 import type { App } from 'obsidian';
+import type { PartialDeep } from 'type-fest';
 
 import { App as MockApp } from 'obsidian-test-mocks/obsidian';
 import {
@@ -12,6 +13,7 @@ import type {
   Link
 } from './dataview.ts';
 
+import { castTo } from '../object-utils.ts';
 import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
   fixTitle,
@@ -47,9 +49,9 @@ describe('makeLinkWithPath', () => {
 describe('fixTitle', () => {
   function createMockDv(app: App): DataviewInlineApi {
     return createMockOf<DataviewInlineApi>({
-      app,
+      app: castTo<PartialDeep<App>>(app),
       fileLink: (path: string, _embed: boolean, title: string): Link =>
-        createMockOf<Link>({
+        castTo<Link>({
           path,
           title
         })

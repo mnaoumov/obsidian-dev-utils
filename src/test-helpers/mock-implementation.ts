@@ -6,6 +6,7 @@
  * via `Proxy`, and detect plain objects for recursive proxying.
  */
 
+import type { PartialDeep } from 'type-fest';
 import type { MockInstance } from 'vitest';
 
 import { vi } from 'vitest';
@@ -25,8 +26,7 @@ const savedOriginals = new WeakMap<object, Map<string, unknown>>();
  * @param partial - A partial object containing only the mocked members.
  * @returns A proxy typed as `T` that throws on unmocked property access.
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- T provides return type inference at call sites.
-export function createMockOf<T>(partial: unknown): T {
+export function createMockOf<T>(partial: PartialDeep<T>): T {
   if (!isPlainObject(partial)) {
     return partial as T;
   }
@@ -50,7 +50,7 @@ export function createMockOf<T>(partial: unknown): T {
 
       const value = Reflect.get(target, prop, receiver);
       if (isPlainObject(value)) {
-        const result = createMockOf(value);
+        const result = createMockOf(value as PartialDeep<Record<string, unknown>>);
         proxiedChildren.set(prop, result);
         return result;
       }

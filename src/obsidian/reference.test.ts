@@ -1,10 +1,16 @@
-import type { Reference } from 'obsidian';
+import type {
+  FrontmatterLinkCache,
+  Reference
+} from 'obsidian';
 
 import {
   describe,
   expect,
   it
 } from 'vitest';
+
+import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-with-offsets.ts';
+import type { CanvasReference } from './reference.ts';
 
 import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import {
@@ -16,7 +22,7 @@ import {
 } from './reference.ts';
 
 function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
-  return createMockOf<Reference>({
+  return createMockOf<CanvasReference>({
     displayText: 'link',
     isCanvas: true,
     key,
@@ -28,7 +34,7 @@ function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
 }
 
 function makeFrontmatterLink(original: string, key: string): Reference {
-  return createMockOf<Reference>({
+  return createMockOf<FrontmatterLinkCache>({
     displayText: original,
     key,
     link: original,
@@ -37,7 +43,7 @@ function makeFrontmatterLink(original: string, key: string): Reference {
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): Reference {
-  return createMockOf<Reference>({
+  return createMockOf<FrontmatterLinkCacheWithOffsets>({
     displayText: original,
     endOffset,
     key,

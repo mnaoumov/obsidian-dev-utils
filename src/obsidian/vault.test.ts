@@ -2,6 +2,7 @@
 
 import type {
   App,
+  Editor,
   MarkdownView
 } from 'obsidian';
 
@@ -1077,7 +1078,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).editor = createMockOf({});
+    ensureGenericObject(view).editor = createMockOf<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
@@ -1096,7 +1097,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).editor = createMockOf({});
+    ensureGenericObject(view).editor = createMockOf<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
 
@@ -1147,7 +1148,7 @@ describe('processFile', () => {
 
     const view = new (MockMarkdownView as unknown as new () => MarkdownView)();
     // View.file defaults to null in the mock — don't set it
-    ensureGenericObject(view).editor = createMockOf({});
+    ensureGenericObject(view).editor = createMockOf<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never

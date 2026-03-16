@@ -1,4 +1,7 @@
-import type { App } from 'obsidian';
+import type {
+  App,
+  DataAdapter
+} from 'obsidian';
 
 import {
   describe,
@@ -7,6 +10,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../object-utils.ts';
 import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import { relativePathToResourceUrl } from './resource-url.ts';
 
@@ -19,9 +23,9 @@ vi.mock('obsidian', () => ({
 function createMockApp(fullRealPath: string): App {
   return createMockOf<App>({
     vault: {
-      adapter: {
+      adapter: castTo<DataAdapter>({
         getFullRealPath: vi.fn(() => fullRealPath)
-      }
+      })
     }
   });
 }

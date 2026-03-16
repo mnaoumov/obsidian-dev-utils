@@ -12,19 +12,20 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../object-utils.ts';
 import { createMockOf } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
 
 const mocks = vi.hoisted(() => {
-  const mockReconfigure = vi.fn((extensions: unknown[]): StateEffect<unknown> => createMockOf<StateEffect<unknown>>({ effects: extensions }));
+  const mockReconfigure = vi.fn((extensions: unknown[]): StateEffect<unknown> => castTo<StateEffect<unknown>>({ effects: extensions }));
 
   class MockCompartment {
     public reconfigure = mockReconfigure;
   }
 
-  const mockReadOnlyOf = vi.fn((value: boolean): Extension => createMockOf<Extension>({ facet: 'readOnly', value }));
+  const mockReadOnlyOf = vi.fn((value: boolean): Extension => castTo<Extension>({ facet: 'readOnly', value }));
 
-  const mockEditableOf = vi.fn((value: boolean): Extension => createMockOf<Extension>({ facet: 'editable', value }));
+  const mockEditableOf = vi.fn((value: boolean): Extension => castTo<Extension>({ facet: 'editable', value }));
 
   return {
     MockCompartment,
