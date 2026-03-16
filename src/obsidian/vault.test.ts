@@ -1107,9 +1107,9 @@ describe('processFile', () => {
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
 
     let capturedCallback: ((leaf: unknown) => void) | undefined;
-    vi.spyOn(app.workspace, 'on').mockImplementation((_name: string, callback: (...data: unknown[]) => unknown, _ctx?: unknown) => {
+    vi.spyOn(app.workspace, 'on').mockImplementation((name: string, callback: (...data: unknown[]) => unknown, _ctx?: unknown) => {
       capturedCallback = callback as (leaf: unknown) => void;
-      return { e: app.workspace, fn: callback, name: _name } as never;
+      return { e: app.workspace, fn: callback, name } as never;
     });
 
     await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: true });
