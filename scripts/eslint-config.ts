@@ -75,7 +75,6 @@ export const configs: Linter.Config[] = defineConfig([
   {
     files: typeScriptFiles,
     rules: {
-      '@typescript-eslint/no-non-null-assertion': 'error',
       'no-restricted-syntax': noRestrictedSyntaxRules
     }
   },
