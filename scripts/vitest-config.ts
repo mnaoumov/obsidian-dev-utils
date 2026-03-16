@@ -20,7 +20,7 @@ export const config = defineConfig({
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: './coverage'
     },
-    environment: 'node',
+    environment: 'jsdom',
     exclude: ['node_modules', 'dist'],
     globals: false,
     include: ['src/**/*.test.ts'],
@@ -29,6 +29,6 @@ export const config = defineConfig({
         inline: ['obsidian-typings']
       }
     },
-    setupFiles: ['obsidian-test-mocks/globals', './src/test-helpers/mocks/obsidian-typings/index.ts']
+    setupFiles: ['obsidian-test-mocks/globals', './src/test-helpers/mocks/obsidian-typings/setup.ts']
   }
 });
