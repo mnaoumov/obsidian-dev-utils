@@ -36,6 +36,21 @@ import {
 } from './file-system.ts';
 import { parseFrontmatter } from './frontmatter.ts';
 import {
+  ensureMetadataCacheReady,
+  getAllLinks,
+  getBacklinksForFileOrPath,
+  getBacklinksForFileSafe,
+  getCacheSafe,
+  getFrontmatterSafe,
+  parseMetadata,
+  registerFileCacheForNonExistingFile,
+  registerFiles,
+  tempRegisterFilesAndRun,
+  tempRegisterFilesAndRunAsync,
+  unregisterFileCacheForNonExistingFile,
+  unregisterFiles
+} from './metadata-cache.ts';
+import {
   readSafe,
   saveNote
 } from './vault.ts';
@@ -126,24 +141,6 @@ let app: App;
 beforeEach(() => {
   app = createMockApp();
 });
-
-// Must import after vi.mock declarations so mocks are applied
-const {
-  ensureMetadataCacheReady,
-  getAllLinks,
-  getBacklinksForFileOrPath,
-  getBacklinksForFileSafe,
-  getCacheSafe,
-  getFrontmatterSafe,
-  parseMetadata,
-  registerFileCacheForNonExistingFile,
-  registerFiles,
-  tempRegisterFilesAndRun,
-  tempRegisterFilesAndRunAsync,
-  unregisterFileCacheForNonExistingFile,
-  unregisterFiles
-  // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-} = await import('./metadata-cache.ts');
 
 const mockedGetFile = vi.mocked(getFile);
 const mockedGetFileOrNull = vi.mocked(getFileOrNull);

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { Notice } from 'obsidian';
 import {
   afterEach,
   beforeEach,
@@ -8,6 +9,7 @@ import {
   vi
 } from 'vitest';
 
+import { abortSignalNever } from '../abort-controller.ts';
 import {
   invokeAsyncSafely,
   requestAnimationFrameAsync
@@ -368,9 +370,6 @@ describe('loop', () => {
   });
 
   it('should use default abortSignal from abortSignalNever when none provided', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { abortSignalNever } = await import('../abort-controller.ts');
-
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
@@ -508,8 +507,6 @@ describe('loop', () => {
       await fn();
     });
 
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { Notice } = await import('obsidian');
     vi.spyOn(Notice.prototype, 'setMessage');
 
     await loop({
@@ -533,8 +530,6 @@ describe('loop', () => {
       await fn();
     });
 
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { Notice } = await import('obsidian');
     vi.spyOn(Notice.prototype, 'setMessage');
 
     await loop({

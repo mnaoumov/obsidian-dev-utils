@@ -10,6 +10,7 @@ import {
 
 import type { ModalParamsBase } from './modal-base.ts';
 
+import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import {
   ModalBase,
   showModal
@@ -36,8 +37,6 @@ describe('ModalBase', () => {
   });
 
   it('should create a modal and apply plugin css classes', async () => {
-    // eslint-disable-next-line no-restricted-syntax -- Dynamic import required for vitest module re-import after vi.mock().
-    const { addPluginCssClasses } = await import('../plugin/plugin-context.ts');
     const resolve = vi.fn();
     const modal = new TestModal({ app: {} as never }, resolve, 'test-modal-class');
     expect(addPluginCssClasses).toHaveBeenCalledWith(modal.containerEl, 'test-modal-class');
