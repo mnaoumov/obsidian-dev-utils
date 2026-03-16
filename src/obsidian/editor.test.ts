@@ -13,7 +13,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../object-utils.ts';
-import { createMockOf } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
 
 const mocks = vi.hoisted(() => {
@@ -53,7 +53,7 @@ vi.mock('@codemirror/view', () => ({
 }));
 
 function createMockEditor(): Editor {
-  return createMockOf<Editor>({
+  return strictProxy<Editor>({
     cm: {
       dispatch: vi.fn()
     }

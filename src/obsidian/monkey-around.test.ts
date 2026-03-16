@@ -5,7 +5,7 @@ import {
   vi
 } from 'vitest';
 
-import { createMockOf } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import {
   around,
   invokeWithPatch,
@@ -123,7 +123,7 @@ describe('registerPatch', () => {
   it('should apply patch and register uninstaller on component', () => {
     const obj = createTestObj();
     const registerFn = vi.fn();
-    const component = createMockOf<import('obsidian').Component>({ register: registerFn });
+    const component = strictProxy<import('obsidian').Component>({ register: registerFn });
     registerPatch(component, obj, {
       greet: (next: TestObjGreet) => (name: string): string => `registered: ${next(name)}`
     });
@@ -134,7 +134,7 @@ describe('registerPatch', () => {
   it('should uninstall patch when component uninstaller is called', () => {
     const obj = createTestObj();
     let registeredFn: (() => void) | undefined;
-    const component = createMockOf<import('obsidian').Component>({
+    const component = strictProxy<import('obsidian').Component>({
       register: (fn: () => void): void => {
         registeredFn = fn;
       }
@@ -150,7 +150,7 @@ describe('registerPatch', () => {
   it('should be safe to call uninstaller wrapper twice', () => {
     const obj = createTestObj();
     let registeredFn: (() => void) | undefined;
-    const component = createMockOf<import('obsidian').Component>({
+    const component = strictProxy<import('obsidian').Component>({
       register: (fn: () => void): void => {
         registeredFn = fn;
       }

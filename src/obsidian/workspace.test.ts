@@ -12,7 +12,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../object-utils.ts';
-import { createMockOf } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import {
   getAllContainers,
   getAllDomWindows
@@ -20,11 +20,11 @@ import {
 
 function createMockApp(containers: WorkspaceContainer[]): App {
   const leaves = containers.map((container) =>
-    createMockOf<WorkspaceLeaf>({
+    strictProxy<WorkspaceLeaf>({
       getContainer: (): WorkspaceContainer => container
     })
   );
-  return createMockOf<App>({
+  return strictProxy<App>({
     workspace: {
       iterateAllLeaves: (callback: (leaf: WorkspaceLeaf) => void): void => {
         for (const leaf of leaves) {
@@ -36,13 +36,13 @@ function createMockApp(containers: WorkspaceContainer[]): App {
 }
 
 function createMockContainer(win: Window): WorkspaceContainer {
-  return createMockOf<WorkspaceContainer>({ win: castTo<PartialDeep<Window>>(win) });
+  return strictProxy<WorkspaceContainer>({ win: castTo<PartialDeep<Window>>(win) });
 }
 
 describe('getAllContainers', () => {
   it('should return all unique containers', () => {
-    const container1 = createMockContainer(createMockOf<Window>({}));
-    const container2 = createMockContainer(createMockOf<Window>({}));
+    const container1 = createMockContainer(strictProxy<Window>({}));
+    const container2 = createMockContainer(strictProxy<Window>({}));
     const app = createMockApp([container1, container2]);
     const result = getAllContainers(app);
     expect(result).toHaveLength(2);
@@ -51,7 +51,7 @@ describe('getAllContainers', () => {
   });
 
   it('should deduplicate containers', () => {
-    const container = createMockContainer(createMockOf<Window>({}));
+    const container = createMockContainer(strictProxy<Window>({}));
     const app = createMockApp([container, container]);
     const result = getAllContainers(app);
     expect(result).toHaveLength(1);
@@ -65,8 +65,8 @@ describe('getAllContainers', () => {
 
 describe('getAllDomWindows', () => {
   it('should return windows from all containers', () => {
-    const win1 = createMockOf<Window>({});
-    const win2 = createMockOf<Window>({});
+    const win1 = strictProxy<Window>({});
+    const win2 = strictProxy<Window>({});
     const app = createMockApp([createMockContainer(win1), createMockContainer(win2)]);
     const result = getAllDomWindows(app);
     expect(result).toHaveLength(2);

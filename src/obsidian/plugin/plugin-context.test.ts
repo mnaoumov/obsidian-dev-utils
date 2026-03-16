@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import { createMockOf } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { ensureGenericObject } from '../../type-guards.ts';
 import {
   addPluginCssClasses,
@@ -60,7 +60,7 @@ describe('addPluginCssClasses', () => {
 
   it('should add library name, plugin id, and custom css classes', () => {
     const addClass = vi.fn();
-    const el = createMockOf<HTMLElement>({ addClass });
+    const el = strictProxy<HTMLElement>({ addClass });
     addPluginCssClasses(el, 'custom-class');
     expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin', 'custom-class');
   });
@@ -72,7 +72,7 @@ describe('initDebugController', () => {
   });
 
   it('should set DEBUG on window', () => {
-    const win = createMockOf<Window>({});
+    const win = strictProxy<Window>({});
     initDebugController(win);
     expect(ensureGenericObject(win)['DEBUG']).toBeDefined();
     expect(mocks.getDebugController).toHaveBeenCalled();

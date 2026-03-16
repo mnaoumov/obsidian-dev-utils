@@ -13,7 +13,7 @@ import type { GenericObject } from '../type-guards.ts';
 import type { AddToQueueParams } from './queue.ts';
 
 import { castTo } from '../object-utils.ts';
-import { createMockOf } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
   CalloutMode,
@@ -259,8 +259,8 @@ describe('renderCallout', () => {
 
     // Simulate intersection
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
-      createMockOf<IntersectionObserver>({})
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      strictProxy<IntersectionObserver>({})
     );
 
     expect(mockUnobserve).toHaveBeenCalledWith(observedEl);
@@ -285,8 +285,8 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: false, target: castTo<PartialDeep<Element>>(observedEl) })],
-      createMockOf<IntersectionObserver>({})
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: false, target: castTo<PartialDeep<Element>>(observedEl) })],
+      strictProxy<IntersectionObserver>({})
     );
 
     expect(mockUnobserve).not.toHaveBeenCalled();
@@ -305,8 +305,8 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
-      createMockOf<IntersectionObserver>({})
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      strictProxy<IntersectionObserver>({})
     );
 
     expect(mocks.addToQueue).toHaveBeenCalledWith(
@@ -332,8 +332,8 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall1[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
-      createMockOf<IntersectionObserver>({})
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      strictProxy<IntersectionObserver>({})
     );
 
     // Wait for async loadContent to settle
@@ -364,8 +364,8 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall2[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
-      createMockOf<IntersectionObserver>({})
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      strictProxy<IntersectionObserver>({})
     );
 
     await vi.waitFor(() => {
@@ -394,8 +394,8 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall3[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
-      createMockOf<IntersectionObserver>({})
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      strictProxy<IntersectionObserver>({})
     );
 
     await vi.waitFor(() => {

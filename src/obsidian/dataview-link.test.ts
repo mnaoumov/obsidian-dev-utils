@@ -14,7 +14,7 @@ import type {
 } from './dataview.ts';
 
 import { castTo } from '../object-utils.ts';
-import { createMockOf } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import {
   fixTitle,
   makeLinkWithPath
@@ -22,7 +22,7 @@ import {
 
 describe('makeLinkWithPath', () => {
   it('should format link text with path', () => {
-    const link = createMockOf<Link>({
+    const link = strictProxy<Link>({
       path: 'folder/note.md',
       toString: (): string => '[[note]]'
     });
@@ -30,7 +30,7 @@ describe('makeLinkWithPath', () => {
   });
 
   it('should handle root-level path', () => {
-    const link = createMockOf<Link>({
+    const link = strictProxy<Link>({
       path: 'note.md',
       toString: (): string => '[[note]]'
     });
@@ -38,7 +38,7 @@ describe('makeLinkWithPath', () => {
   });
 
   it('should handle deeply nested path', () => {
-    const link = createMockOf<Link>({
+    const link = strictProxy<Link>({
       path: 'a/b/c/d.md',
       toString: (): string => '[[d]]'
     });
@@ -48,7 +48,7 @@ describe('makeLinkWithPath', () => {
 
 describe('fixTitle', () => {
   function createMockDv(app: App): DataviewInlineApi {
-    return createMockOf<DataviewInlineApi>({
+    return strictProxy<DataviewInlineApi>({
       app: castTo<PartialDeep<App>>(app),
       fileLink: (path: string, _embed: boolean, title: string): Link =>
         castTo<Link>({
