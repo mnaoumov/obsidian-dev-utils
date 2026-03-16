@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 
+import type { App as AppOriginal } from 'obsidian';
 import type { ButtonComponent } from 'obsidian-test-mocks/obsidian';
 
 import { ButtonComponent as ButtonComponentOriginal } from 'obsidian';
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -14,6 +16,12 @@ import {
 import { castTo } from '../../object-utils.ts';
 import { mockImplementation } from '../../test-helpers/mock-implementation.ts';
 import { confirm } from './confirm.ts';
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
 
 vi.mock('../../css-class.ts', () => ({
   CssClass: {
@@ -56,7 +64,7 @@ describe('confirm', () => {
 
   it('should resolve false when modal is closed without confirming', async () => {
     const result = await confirm({
-      app: {} as never,
+      app,
       message: 'Are you sure?'
     });
     expect(result).toBe(false);
@@ -64,7 +72,7 @@ describe('confirm', () => {
 
   it('should resolve true when OK button is clicked', async () => {
     const resultPromise = confirm({
-      app: {} as never,
+      app,
       message: 'Continue?'
     });
     // OnOpen has run synchronously - buttons are created.
@@ -79,7 +87,7 @@ describe('confirm', () => {
 
   it('should accept custom button texts and title', async () => {
     const result = await confirm({
-      app: {} as never,
+      app,
       cancelButtonText: 'No',
       message: 'Continue?',
       okButtonText: 'Yes',
@@ -90,7 +98,7 @@ describe('confirm', () => {
 
   it('should accept custom css class', async () => {
     const result = await confirm({
-      app: {} as never,
+      app,
       cssClass: 'custom-confirm',
       message: 'Continue?'
     });

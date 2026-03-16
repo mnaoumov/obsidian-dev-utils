@@ -37,6 +37,7 @@ import {
   noopAsync
 } from '../../function.ts';
 import {
+  castTo,
   deepEqual,
   getAllKeys
 } from '../../object-utils.ts';
@@ -426,7 +427,7 @@ export abstract class PluginSettingsManagerBase<PluginTypes extends PluginTypesB
     return {
       safeSettings: this.createDefaultSettings(),
       settings: this.createDefaultSettings(),
-      validationMessages: {} as Record<ExtractPluginSettingsPropertyNames<PluginTypes>, string>
+      validationMessages: castTo<Record<ExtractPluginSettingsPropertyNames<PluginTypes>, string>>({})
     };
   }
 

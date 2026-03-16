@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 
-import type { FuzzyMatch } from 'obsidian';
+import type {
+  App as AppOriginal,
+  FuzzyMatch
+} from 'obsidian';
 
 import { FuzzySuggestModal } from 'obsidian';
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   afterEach,
   beforeEach,
@@ -16,6 +20,12 @@ import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { selectItem } from './select-item.ts';
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
 
 vi.mock('../../css-class.ts', () => ({
   CssClass: {
@@ -34,7 +44,7 @@ describe('selectItem', () => {
 
   it('should resolve null when modal is closed without selection', async () => {
     const result = await selectItem({
-      app: {} as never,
+      app,
       items: ['a', 'b', 'c'],
       itemTextFunc: (item: string) => item
     });
@@ -44,7 +54,7 @@ describe('selectItem', () => {
 
   it('should accept custom placeholder', async () => {
     const result = await selectItem({
-      app: {} as never,
+      app,
       items: [1, 2, 3],
       itemTextFunc: (item: number) => String(item),
       placeholder: 'Select a number'
@@ -54,7 +64,7 @@ describe('selectItem', () => {
 
   it('should accept custom css class', async () => {
     const result = await selectItem({
-      app: {} as never,
+      app,
       cssClass: 'custom-select',
       items: ['x'],
       itemTextFunc: (item: string) => item
@@ -71,7 +81,7 @@ describe('selectItem', () => {
     );
 
     const promise = selectItem({
-      app: {} as never,
+      app,
       items: ['a', 'b', 'c'],
       itemTextFunc: (item: string) => item.toUpperCase()
     });
@@ -97,7 +107,7 @@ describe('selectItem', () => {
 
     const items = ['x', 'y', 'z'];
     const promise = selectItem({
-      app: {} as never,
+      app,
       items,
       itemTextFunc: (item: string) => item
     });

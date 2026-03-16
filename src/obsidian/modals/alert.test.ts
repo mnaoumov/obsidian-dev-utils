@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import type { App as AppOriginal } from 'obsidian';
+
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -8,6 +11,12 @@ import {
 } from 'vitest';
 
 import { alert } from './alert.ts';
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
 
 vi.mock('i18next', () => ({
   t: vi.fn((selector: unknown) => {
@@ -37,14 +46,14 @@ describe('alert', () => {
 
   it('should show an alert modal and resolve when closed', async () => {
     await alert({
-      app: {} as never,
+      app,
       message: 'Test message'
     });
   });
 
   it('should show an alert with title and custom ok button text', async () => {
     await alert({
-      app: {} as never,
+      app,
       message: 'Test message',
       okButtonText: 'Got it',
       title: 'Test Title'
@@ -53,7 +62,7 @@ describe('alert', () => {
 
   it('should show an alert with custom css class', async () => {
     await alert({
-      app: {} as never,
+      app,
       cssClass: 'custom-alert',
       message: 'Test message'
     });

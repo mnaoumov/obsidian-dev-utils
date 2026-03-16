@@ -1,3 +1,6 @@
+import type { App as AppOriginal } from 'obsidian';
+
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -13,6 +16,12 @@ import {
   initDebugController,
   initPluginContext
 } from './plugin-context.ts';
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
 
 const mocks = vi.hoisted(() => ({
   compareVersions: vi.fn((_a: string, _b: string) => 1),
@@ -92,7 +101,7 @@ describe('initPluginContext', () => {
       querySelector: vi.fn(() => null)
     };
     vi.stubGlobal('document', { head: mockHead });
-    initPluginContext({} as never, 'my-plugin');
+    initPluginContext(app, 'my-plugin');
     expect(mocks.setPluginId).toHaveBeenCalledWith('my-plugin');
     expect(mocks.showInitialDebugMessage).toHaveBeenCalledWith('my-plugin');
     vi.unstubAllGlobals();
@@ -100,7 +109,7 @@ describe('initPluginContext', () => {
 
   it('should skip style injection when version is not newer', () => {
     mocks.compareVersions.mockReturnValue(0);
-    initPluginContext({} as never, 'my-plugin');
+    initPluginContext(app, 'my-plugin');
     expect(mocks.setPluginId).toHaveBeenCalledWith('my-plugin');
   });
 
@@ -113,7 +122,7 @@ describe('initPluginContext', () => {
       querySelector: vi.fn(() => oldStyleEl)
     };
     vi.stubGlobal('document', { head: mockHead });
-    initPluginContext({} as never, 'my-plugin');
+    initPluginContext(app, 'my-plugin');
     expect(oldStyleEl.remove).toHaveBeenCalled();
     expect(mockHead.createEl).toHaveBeenCalledWith('style', {
       attr: { id: 'obsidian-dev-utils-styles' },
@@ -131,7 +140,7 @@ describe('initPluginContext', () => {
       querySelector: vi.fn(() => null)
     };
     vi.stubGlobal('document', { head: mockHead });
-    initPluginContext({} as never, 'my-plugin');
+    initPluginContext(app, 'my-plugin');
     expect(wrapper.value).toBe('1.0.0');
     vi.unstubAllGlobals();
   });

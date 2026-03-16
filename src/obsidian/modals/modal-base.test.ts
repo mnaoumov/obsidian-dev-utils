@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import type { App as AppOriginal } from 'obsidian';
+
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -15,6 +18,12 @@ import {
   ModalBase,
   showModal
 } from './modal-base.ts';
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
 
 vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
@@ -38,24 +47,24 @@ describe('ModalBase', () => {
 
   it('should create a modal and apply plugin css classes', async () => {
     const resolve = vi.fn();
-    const modal = new TestModal({ app: {} as never }, resolve, 'test-modal-class');
+    const modal = new TestModal({ app }, resolve, 'test-modal-class');
     expect(addPluginCssClasses).toHaveBeenCalledWith(modal.containerEl, 'test-modal-class');
   });
 
   it('should apply custom css class when provided', () => {
     const resolve = vi.fn();
     const addClass = vi.fn();
-    const modal = new TestModal({ app: {} as never, cssClass: 'custom-class' }, resolve, 'test-modal-class');
+    const modal = new TestModal({ app, cssClass: 'custom-class' }, resolve, 'test-modal-class');
     modal.containerEl.addClass = addClass;
     // Re-create to test the constructor branch
-    const modal2 = new TestModal({ app: {} as never, cssClass: 'custom-class' }, resolve, 'test-modal-class');
+    const modal2 = new TestModal({ app, cssClass: 'custom-class' }, resolve, 'test-modal-class');
     // The addClass should have been called in the constructor
     expect(modal2).toBeDefined();
   });
 
   it('should not add custom class when not provided', () => {
     const resolve = vi.fn();
-    const modal = new TestModal({ app: {} as never }, resolve, 'test-modal-class');
+    const modal = new TestModal({ app }, resolve, 'test-modal-class');
     expect(modal).toBeDefined();
   });
 });
@@ -67,7 +76,7 @@ describe('showModal', () => {
 
   it('should create and open modal, resolving when closed', async () => {
     const result = await showModal<string>((resolve) => {
-      const modal = new TestModal({ app: {} as never }, resolve, 'test');
+      const modal = new TestModal({ app }, resolve, 'test');
       return modal;
     });
     expect(result).toBe('closed');
