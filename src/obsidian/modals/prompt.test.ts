@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 
 import type {
-  ButtonComponent as MockButtonComponent,
-  TextComponent as MockTextComponent
+  ButtonComponent,
+  TextComponent
 } from 'obsidian-test-mocks/obsidian';
 
 import {
-  ButtonComponent,
-  TextComponent
+  ButtonComponent as ButtonComponentOriginal,
+  TextComponent as TextComponentOriginal
 } from 'obsidian';
 import {
   beforeEach,
@@ -57,26 +57,26 @@ vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
 }));
 
 describe('prompt', () => {
-  const buttonInstances: ButtonComponent[] = [];
-  const textInstances: TextComponent[] = [];
+  const buttonInstances: ButtonComponentOriginal[] = [];
+  const textInstances: TextComponentOriginal[] = [];
 
   beforeEach(() => {
     vi.clearAllMocks();
     buttonInstances.length = 0;
     textInstances.length = 0;
     mockImplementation(
-      ButtonComponent.prototype,
+      ButtonComponentOriginal.prototype,
       'constructor2__',
-      function captureButton(this: ButtonComponent, originalImplementation, containerEl: HTMLElement): ButtonComponent {
+      function captureButton(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
       }
     );
     mockImplementation(
-      TextComponent.prototype,
+      TextComponentOriginal.prototype,
       'constructor4__',
-      function captureText(this: TextComponent, originalImplementation, containerEl: HTMLElement): TextComponent {
+      function captureText(this: TextComponentOriginal, originalImplementation, containerEl: HTMLElement): TextComponentOriginal {
         originalImplementation.call(this, containerEl);
         textInstances.push(this);
         return this;
@@ -98,7 +98,7 @@ describe('prompt', () => {
     });
     queueMicrotask(() => {
       const okButton = buttonInstances[0];
-      castTo<MockButtonComponent>(okButton).simulateClick__();
+      castTo<ButtonComponent>(okButton).simulateClick__();
     });
     const result = await resultPromise;
     expect(result).toBe('hello');
@@ -111,7 +111,7 @@ describe('prompt', () => {
     });
     queueMicrotask(() => {
       const textComp = textInstances[0];
-      castTo<MockTextComponent>(textComp).simulateEvent__('keydown', { key: 'Enter', preventDefault: vi.fn() });
+      castTo<TextComponent>(textComp).simulateEvent__('keydown', { key: 'Enter', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
     expect(result).toBe('enter-value');
@@ -124,7 +124,7 @@ describe('prompt', () => {
     });
     queueMicrotask(() => {
       const textComp = textInstances[0];
-      castTo<MockTextComponent>(textComp).simulateEvent__('keydown', { key: 'Escape', preventDefault: vi.fn() });
+      castTo<TextComponent>(textComp).simulateEvent__('keydown', { key: 'Escape', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
     expect(result).toBeNull();
@@ -137,7 +137,7 @@ describe('prompt', () => {
     });
     queueMicrotask(() => {
       const textComp = textInstances[0];
-      castTo<MockTextComponent>(textComp).simulateEvent__('keydown', { key: 'a', preventDefault: vi.fn() });
+      castTo<TextComponent>(textComp).simulateEvent__('keydown', { key: 'a', preventDefault: vi.fn() });
     });
     const result = await resultPromise;
     expect(result).toBeNull();
@@ -153,7 +153,7 @@ describe('prompt', () => {
       // Make checkValidity return false
       textComp.inputEl.checkValidity = (): boolean => false;
       const okButton = ensureNonNullable(buttonInstances[0]);
-      castTo<MockButtonComponent>(okButton).simulateClick__();
+      castTo<ButtonComponent>(okButton).simulateClick__();
     });
     const result = await resultPromise;
     // Since checkValidity is false, handleOk returns early - isOkClicked stays false

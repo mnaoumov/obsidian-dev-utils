@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import type { ButtonComponent as MockButtonComponent } from 'obsidian-test-mocks/obsidian';
+import type { ButtonComponent } from 'obsidian-test-mocks/obsidian';
 
-import { ButtonComponent } from 'obsidian';
+import { ButtonComponent as ButtonComponentOriginal } from 'obsidian';
 import {
   beforeEach,
   describe,
@@ -38,15 +38,15 @@ vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
 }));
 
 describe('confirm', () => {
-  const buttonInstances: ButtonComponent[] = [];
+  const buttonInstances: ButtonComponentOriginal[] = [];
 
   beforeEach(() => {
     vi.clearAllMocks();
     buttonInstances.length = 0;
     mockImplementation(
-      ButtonComponent.prototype,
+      ButtonComponentOriginal.prototype,
       'constructor2__',
-      function captureButton(this: ButtonComponent, originalImplementation, containerEl: HTMLElement): ButtonComponent {
+      function captureButton(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
@@ -71,7 +71,7 @@ describe('confirm', () => {
     // Simulate OK button click via microtask (runs before setTimeout auto-close).
     queueMicrotask(() => {
       const okButton = buttonInstances[0];
-      castTo<MockButtonComponent>(okButton).simulateClick__();
+      castTo<ButtonComponent>(okButton).simulateClick__();
     });
     const result = await resultPromise;
     expect(result).toBe(true);

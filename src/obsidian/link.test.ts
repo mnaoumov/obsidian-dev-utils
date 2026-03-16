@@ -1,17 +1,17 @@
 import type {
-  App,
+  App as AppOriginal,
   CachedMetadata,
   FrontmatterLinkCache,
   Plugin,
   Reference,
-  TFile
+  TFile as TFileOriginal
 } from 'obsidian';
 import type { InternalPlugins } from 'obsidian-typings';
 import type { PartialDeep } from 'type-fest';
 
 import {
-  App as MockApp,
-  TFile as MockTFile
+  App,
+  TFile
 } from 'obsidian-test-mocks/obsidian';
 // @vitest-environment jsdom
 import {
@@ -1602,13 +1602,13 @@ describe('parseLinks embed-inside-link', () => {
 });
 
 describe('app-dependent functions', () => {
-  let app: App;
+  let app: AppOriginal;
 
   beforeEach(async () => {
     vi.clearAllMocks();
 
     app = (
-      await MockApp.createConfigured__({
+      await App.createConfigured__({
         files: {
           'folder/other.md': '# Other',
           'folder/same.md': '# Same',
@@ -1631,7 +1631,7 @@ describe('app-dependent functions', () => {
 
     app.metadataCache.getLinkpathDest = vi.fn((linkpath: string) => {
       const allFiles = app.vault.getAllLoadedFiles();
-      return allFiles.filter((f): f is TFile => f instanceof MockTFile && (f.basename === linkpath || f.name === linkpath));
+      return allFiles.filter((f): f is TFileOriginal => f instanceof TFile && (f.basename === linkpath || f.name === linkpath));
     });
 
     app.internalPlugins = strictProxy<InternalPlugins>({
@@ -1639,7 +1639,7 @@ describe('app-dependent functions', () => {
     });
 
     vi.mocked(tempRegisterFilesAndRun).mockImplementation(
-      (_theApp: App, _files: unknown[], fn: () => unknown) => fn()
+      (_theApp: AppOriginal, _files: unknown[], fn: () => unknown) => fn()
     );
     vi.mocked(getCacheSafe).mockResolvedValue(null);
     vi.mocked(parseMetadata).mockResolvedValue({} as CachedMetadata);
@@ -1674,7 +1674,7 @@ describe('app-dependent functions', () => {
 
     it('should return file for absolute path when shouldAllowNonExistingFile is true', () => {
       const link = { link: '/target.md', original: '[[/target.md]]' } as Reference;
-      app.metadataCache.getFirstLinkpathDest = (): null | TFile => null;
+      app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
       const result = extractLinkFile(app, link, 'note.md', true);
       assertNonNullable(result);
       expect(result.path).toBe('target.md');
@@ -1682,7 +1682,7 @@ describe('app-dependent functions', () => {
 
     it('should return file for relative path when shouldAllowNonExistingFile is true', () => {
       const link = { link: 'other.md', original: '[[other.md]]' } as Reference;
-      app.metadataCache.getFirstLinkpathDest = (): null | TFile => null;
+      app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
       const result = extractLinkFile(app, link, 'folder/source.md', true);
       assertNonNullable(result);
       expect(result.path).toBe('folder/other.md');
@@ -1690,7 +1690,7 @@ describe('app-dependent functions', () => {
 
     it('should return null when relative path goes outside vault', () => {
       const link = { link: '../../outside', original: '[[../../outside]]' } as Reference;
-      app.metadataCache.getFirstLinkpathDest = (): null | TFile => null;
+      app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
       const result = extractLinkFile(app, link, 'note.md', true);
       expect(result).toBeNull();
     });
@@ -2180,7 +2180,7 @@ describe('app-dependent functions', () => {
 
     it('should return path+subpath for canvas file with canvas file node reference', async () => {
       const canvasApp = (
-        await MockApp.createConfigured__({
+        await App.createConfigured__({
           files: {
             'canvas.canvas': '{}',
             'target.md': '# Target'
@@ -2642,7 +2642,7 @@ describe('app-dependent functions', () => {
       });
 
       const canvasApp = (
-        await MockApp.createConfigured__({
+        await App.createConfigured__({
           files: { 'canvas.canvas': '{}' }
         })
       ).asOriginalType__();
@@ -2718,7 +2718,7 @@ describe('app-dependent functions', () => {
     it('should register and apply default options', () => {
       let cleanupFn: (() => void) | undefined;
       const mockPlugin = strictProxy<Plugin>({
-        app: castTo<PartialDeep<App>>(app),
+        app: castTo<PartialDeep<AppOriginal>>(app),
         register: vi.fn((fn: () => void) => {
           cleanupFn = fn;
         })
@@ -2756,7 +2756,7 @@ describe('app-dependent functions', () => {
   describe('getFileChanges canvas path', () => {
     it('should handle canvas file changes through editLinks', async () => {
       const canvasApp = (
-        await MockApp.createConfigured__({
+        await App.createConfigured__({
           files: {
             'target.md': '# Target',
             'test.canvas': '{"nodes":[]}'
@@ -2797,7 +2797,7 @@ describe('app-dependent functions', () => {
 
     it('should log error for non-canvas change in canvas file', async () => {
       const canvasApp = (
-        await MockApp.createConfigured__({
+        await App.createConfigured__({
           files: {
             'target.md': '# Target',
             'test.canvas': '{"nodes":[]}'
