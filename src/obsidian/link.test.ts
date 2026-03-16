@@ -28,7 +28,6 @@ import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import {
   assertNonNullable,
-  ensureGenericObject,
   ensureNonNullable
 } from '../type-guards.ts';
 import {
@@ -1620,8 +1619,7 @@ describe('app-dependent functions', () => {
       })
     ).asOriginalType__();
 
-    const vaultAny = ensureGenericObject(app.vault);
-    vaultAny.getConfig = vi.fn((key: string) => {
+    app.vault.getConfig = vi.fn((key: string) => {
       if (key === 'useMarkdownLinks') {
         return false;
       }
@@ -1631,13 +1629,12 @@ describe('app-dependent functions', () => {
       return undefined;
     });
 
-    const metadataCacheAny = ensureGenericObject(app.metadataCache);
-    metadataCacheAny.getLinkpathDest = vi.fn((linkpath: string) => {
+    app.metadataCache.getLinkpathDest = vi.fn((linkpath: string) => {
       const allFiles = app.vault.getAllLoadedFiles();
       return allFiles.filter((f): f is TFile => f instanceof MockTFile && (f.basename === linkpath || f.name === linkpath));
     });
 
-    ensureGenericObject(app).internalPlugins = strictProxy<InternalPlugins>({
+    app.internalPlugins = strictProxy<InternalPlugins>({
       getEnabledPluginById: castTo<InternalPlugins['getEnabledPluginById']>(vi.fn(() => ({})))
     });
 
@@ -1801,7 +1798,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use full path when multiple files match shortest name', () => {
-      ensureGenericObject(app.metadataCache).getLinkpathDest = vi.fn(() => [
+      app.metadataCache.getLinkpathDest = vi.fn(() => [
         ensureNonNullable(app.vault.getFileByPath('folder/other.md')),
         ensureNonNullable(app.vault.getFileByPath('folder/same.md'))
       ]);
@@ -1847,7 +1844,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use ObsidianSettingsDefault link style (markdown)', () => {
-      ensureGenericObject(app.vault).getConfig = vi.fn((key: string) => {
+      app.vault.getConfig = vi.fn((key: string) => {
         if (key === 'useMarkdownLinks') {
           return true;
         }
@@ -1944,7 +1941,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use ObsidianSettingsDefault link path style with absolute format', () => {
-      ensureGenericObject(app.vault).getConfig = vi.fn((key: string) => {
+      app.vault.getConfig = vi.fn((key: string) => {
         if (key === 'newLinkFormat') {
           return 'absolute';
         }
@@ -1961,7 +1958,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use ObsidianSettingsDefault link path style with relative format', () => {
-      ensureGenericObject(app.vault).getConfig = vi.fn((key: string) => {
+      app.vault.getConfig = vi.fn((key: string) => {
         if (key === 'newLinkFormat') {
           return 'relative';
         }
@@ -2001,7 +1998,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should throw for invalid ObsidianSettingsDefault new link format', () => {
-      ensureGenericObject(app.vault).getConfig = vi.fn((key: string) => {
+      app.vault.getConfig = vi.fn((key: string) => {
         if (key === 'newLinkFormat') {
           return 'invalid-format';
         }
@@ -2640,7 +2637,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should return early for canvas files when Canvas plugin is disabled', async () => {
-      ensureGenericObject(app).internalPlugins = strictProxy<InternalPlugins>({
+      app.internalPlugins = strictProxy<InternalPlugins>({
         getEnabledPluginById: castTo<InternalPlugins['getEnabledPluginById']>(vi.fn(() => null))
       });
 
@@ -2649,7 +2646,7 @@ describe('app-dependent functions', () => {
           files: { 'canvas.canvas': '{}' }
         })
       ).asOriginalType__();
-      ensureGenericObject(canvasApp).internalPlugins = strictProxy<InternalPlugins>({
+      canvasApp.internalPlugins = strictProxy<InternalPlugins>({
         getEnabledPluginById: vi.fn(() => null)
       });
       const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('canvas.canvas'));

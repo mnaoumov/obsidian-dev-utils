@@ -209,8 +209,7 @@ function makeReferenceCache(original: string, startOffset: number): ReferenceCac
 }
 
 function setVaultEntry(targetApp: App, path: string, value: TAbstractFile): void {
-  const vaultObj = ensureGenericObject(targetApp.vault);
-  const fileMap = vaultObj.fileMap as Record<string, TAbstractFile>;
+  const fileMap = targetApp.vault.fileMap;
   fileMap[path] = value;
 }
 

@@ -18,10 +18,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../object-utils.ts';
-import {
-  assertNonNullable,
-  ensureGenericObject
-} from '../type-guards.ts';
+import { assertNonNullable } from '../type-guards.ts';
 import {
   asArrayOfFiles,
   asArrayOfFolders,
@@ -657,8 +654,7 @@ describe('getAbstractFileOrNull (case-insensitive)', () => {
   });
 
   it('should use adapter.insensitive when isCaseInsensitive is not provided', async () => {
-    app = (await MockApp.createConfigured__({ files: { 'Note.md': '' } })).asOriginalType__();
-    ensureGenericObject(app.vault.adapter)['insensitive'] = true;
+    app = (await MockApp.createConfigured__({ files: { 'Note.md': '' }, isAdapterCaseInsensitive: true })).asOriginalType__();
     const result = getAbstractFileOrNull(app, 'note.md');
     assertNonNullable(result);
     expect(result.path).toBe('Note.md');

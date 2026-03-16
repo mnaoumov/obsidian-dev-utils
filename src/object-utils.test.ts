@@ -196,7 +196,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should skip __proto__', () => {
-      const obj = ensureGenericObject(Object.create(null) as object);
+      const obj = ensureGenericObject(Object.create(null));
       // eslint-disable-next-line no-proto -- Testing `__proto__`.
       obj['__proto__'] = 'test';
       obj['a'] = 1;
@@ -401,7 +401,7 @@ describe('ObjectUtils', () => {
 
     it('should skip prototype key when assigning', () => {
       const target: GenericObject = {};
-      const source = ensureGenericObject(Object.create(null) as object);
+      const source = ensureGenericObject(Object.create(null));
       Object.defineProperty(source, 'prototype', { configurable: true, enumerable: true, value: 'test', writable: true });
       Object.defineProperty(source, 'other', { configurable: true, enumerable: true, value: 'kept', writable: true });
       assignWithNonEnumerableProperties(target, source);
@@ -618,9 +618,9 @@ describe('ObjectUtils', () => {
         noop();
       }
       Object.defineProperty(AnonymousCtor, 'name', { value: '' });
-      const obj = ensureGenericObject(Object.create(AnonymousCtor.prototype) as object);
-      obj['a'] = 1;
-      obj['self'] = obj;
+      const obj = ensureGenericObject(Object.create(AnonymousCtor.prototype));
+      obj.a = 1;
+      obj.self = obj;
       expect(() => toJson(obj)).toThrow('starting at object with constructor \'Object\'');
     });
   });
