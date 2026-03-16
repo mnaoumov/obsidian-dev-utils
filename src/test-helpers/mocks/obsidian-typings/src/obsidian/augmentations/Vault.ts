@@ -7,8 +7,10 @@ import { Vault } from 'obsidian-test-mocks/obsidian';
 
 import { mockImplementation } from '../../../../../mock-implementation.ts';
 
-mockImplementation(Vault.prototype, 'constructor2__', function initVault(this: Vault, originalImplementation, adapter: DataAdapter): void {
-  originalImplementation.call(this, adapter);
-  this.asOriginalType2__().getAbstractFileByPathInsensitive = (path: string): null | TAbstractFile =>
-    this.getAbstractFileByPathInsensitive__(path)?.asOriginalType__() ?? null;
-});
+export function mockVault(): void {
+  mockImplementation(Vault.prototype, 'constructor2__', function initVault(this: Vault, originalImplementation, adapter: DataAdapter): void {
+    originalImplementation.call(this, adapter);
+    this.asOriginalType2__().getAbstractFileByPathInsensitive = (path: string): null | TAbstractFile =>
+      this.getAbstractFileByPathInsensitive__(path)?.asOriginalType__() ?? null;
+  });
+}
