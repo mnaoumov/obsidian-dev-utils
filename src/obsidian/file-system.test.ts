@@ -56,7 +56,7 @@ import {
 let app: AppOriginal;
 
 beforeEach(async () => {
-  app = (await App.createConfigured__()).asOriginalType__();
+  app = App.createConfigured__().asOriginalType__();
 });
 
 describe('constants', () => {
@@ -271,21 +271,21 @@ describe('getFileSystemType', () => {
 });
 
 describe('checkExtension', () => {
-  it('should return true when a TFile has the expected extension', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return true when a TFile has the expected extension', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     expect(checkExtension(app, file, 'md')).toBe(true);
   });
 
-  it('should return false when a TFile has a different extension', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return false when a TFile has a different extension', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
     expect(checkExtension(app, file, 'canvas')).toBe(false);
   });
 
-  it('should check extension by path string when the file exists in the vault', async () => {
-    app = (await App.createConfigured__({ files: { 'drawing.canvas': '' } })).asOriginalType__();
+  it('should check extension by path string when the file exists in the vault', () => {
+    app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
     expect(checkExtension(app, 'drawing.canvas', 'canvas')).toBe(true);
   });
 
@@ -297,22 +297,22 @@ describe('checkExtension', () => {
     expect(checkExtension(app, null, 'md')).toBe(false);
   });
 
-  it('should return false for a TFolder', async () => {
-    app = (await App.createConfigured__({ files: { 'my-folder/': '' } })).asOriginalType__();
+  it('should return false for a TFolder', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
     const folder = app.vault.getFolderByPath('my-folder');
     expect(checkExtension(app, folder, 'md')).toBe(false);
   });
 });
 
 describe('isMarkdownFile', () => {
-  it('should return true for a markdown file', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return true for a markdown file', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
     expect(isMarkdownFile(app, file)).toBe(true);
   });
 
-  it('should return false for a canvas file', async () => {
-    app = (await App.createConfigured__({ files: { 'drawing.canvas': '' } })).asOriginalType__();
+  it('should return false for a canvas file', () => {
+    app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('drawing.canvas');
     expect(isMarkdownFile(app, file)).toBe(false);
   });
@@ -327,14 +327,14 @@ describe('isMarkdownFile', () => {
 });
 
 describe('isCanvasFile', () => {
-  it('should return true for a canvas file', async () => {
-    app = (await App.createConfigured__({ files: { 'drawing.canvas': '' } })).asOriginalType__();
+  it('should return true for a canvas file', () => {
+    app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('drawing.canvas');
     expect(isCanvasFile(app, file)).toBe(true);
   });
 
-  it('should return false for a markdown file', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return false for a markdown file', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
     expect(isCanvasFile(app, file)).toBe(false);
   });
@@ -345,40 +345,40 @@ describe('isCanvasFile', () => {
 });
 
 describe('isBaseFile', () => {
-  it('should return true for a base file', async () => {
-    app = (await App.createConfigured__({ files: { 'config.base': '' } })).asOriginalType__();
+  it('should return true for a base file', () => {
+    app = App.createConfigured__({ files: { 'config.base': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('config.base');
     expect(isBaseFile(app, file)).toBe(true);
   });
 
-  it('should return false for a markdown file', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return false for a markdown file', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
     expect(isBaseFile(app, file)).toBe(false);
   });
 });
 
 describe('isNote', () => {
-  it('should return true for a markdown file', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return true for a markdown file', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
     expect(isNote(app, file)).toBe(true);
   });
 
-  it('should return true for a canvas file', async () => {
-    app = (await App.createConfigured__({ files: { 'drawing.canvas': '' } })).asOriginalType__();
+  it('should return true for a canvas file', () => {
+    app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('drawing.canvas');
     expect(isNote(app, file)).toBe(true);
   });
 
-  it('should return true for a base file', async () => {
-    app = (await App.createConfigured__({ files: { 'config.base': '' } })).asOriginalType__();
+  it('should return true for a base file', () => {
+    app = App.createConfigured__({ files: { 'config.base': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('config.base');
     expect(isNote(app, file)).toBe(true);
   });
 
-  it('should return false for an image file', async () => {
-    app = (await App.createConfigured__({ files: { 'image.png': '' } })).asOriginalType__();
+  it('should return false for an image file', () => {
+    app = App.createConfigured__({ files: { 'image.png': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('image.png');
     expect(isNote(app, file)).toBe(false);
   });
@@ -392,7 +392,7 @@ describe('getAbstractFileOrNull', () => {
   describe('should return the file when found by path', () => {
     let result: ReturnType<typeof getAbstractFileOrNull>;
     beforeAll(async () => {
-      app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+      app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
       result = getAbstractFileOrNull(app, 'note.md');
     });
 
@@ -415,8 +415,8 @@ describe('getAbstractFileOrNull', () => {
     expect(getAbstractFileOrNull(app, null)).toBeNull();
   });
 
-  it('should return a TAbstractFile when passed directly', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return a TAbstractFile when passed directly', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = TFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     const result = getAbstractFileOrNull(app, file);
     expect(result).not.toBeNull();
@@ -430,8 +430,8 @@ describe('getAbstractFileOrNull', () => {
 });
 
 describe('getAbstractFile', () => {
-  it('should return the file when found', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return the file when found', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const result = getAbstractFile(app, 'note.md');
     expect(result.path).toBe('note.md');
   });
@@ -445,7 +445,7 @@ describe('getFileOrNull', () => {
   describe('should return the file when found', () => {
     let result: ReturnType<typeof getFileOrNull>;
     beforeAll(async () => {
-      app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+      app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
       result = getFileOrNull(app, 'note.md');
     });
 
@@ -459,8 +459,8 @@ describe('getFileOrNull', () => {
     });
   });
 
-  it('should return null when path refers to a folder', async () => {
-    app = (await App.createConfigured__({ files: { 'my-folder/': '' } })).asOriginalType__();
+  it('should return null when path refers to a folder', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
     const result = getFileOrNull(app, 'my-folder');
     expect(result).toBeNull();
   });
@@ -471,8 +471,8 @@ describe('getFileOrNull', () => {
 });
 
 describe('getFile', () => {
-  it('should return the file when found', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return the file when found', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const result = getFile(app, 'note.md');
     expect(result.path).toBe('note.md');
   });
@@ -501,7 +501,7 @@ describe('getFolderOrNull', () => {
   describe('should return the folder when found', () => {
     let result: ReturnType<typeof getFolderOrNull>;
     beforeAll(async () => {
-      app = (await App.createConfigured__({ files: { 'my-folder/': '' } })).asOriginalType__();
+      app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
       result = getFolderOrNull(app, 'my-folder');
     });
 
@@ -515,8 +515,8 @@ describe('getFolderOrNull', () => {
     });
   });
 
-  it('should return null when path refers to a file', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return null when path refers to a file', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const result = getFolderOrNull(app, 'note.md');
     expect(result).toBeNull();
   });
@@ -527,8 +527,8 @@ describe('getFolderOrNull', () => {
 });
 
 describe('getFolder', () => {
-  it('should return the folder when found', async () => {
-    app = (await App.createConfigured__({ files: { 'my-folder/': '' } })).asOriginalType__();
+  it('should return the folder when found', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
     const result = getFolder(app, 'my-folder');
     expect(result.path).toBe('my-folder');
   });
@@ -568,16 +568,16 @@ describe('getPath', () => {
     expect(getPath(app, folder)).toBe('my-folder');
   });
 
-  it('should return the resolved path from the vault if file exists', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return the resolved path from the vault if file exists', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const result = getPath(app, 'note.md');
     expect(result).toBe('note.md');
   });
 });
 
 describe('exists', () => {
-  it('should return true when the file exists', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return true when the file exists', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     expect(exists(app, 'note.md')).toBe(true);
   });
 
@@ -585,44 +585,44 @@ describe('exists', () => {
     expect(exists(app, 'nonexistent.md')).toBe(false);
   });
 
-  it('should return true when checking for a file with File type', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return true when checking for a file with File type', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     expect(exists(app, 'note.md', FileSystemType.File)).toBe(true);
   });
 
-  it('should return false when checking for a file with Folder type', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should return false when checking for a file with Folder type', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     expect(exists(app, 'note.md', FileSystemType.Folder)).toBe(false);
   });
 
-  it('should return true when checking for a folder with Folder type', async () => {
-    app = (await App.createConfigured__({ files: { 'my-folder/': '' } })).asOriginalType__();
+  it('should return true when checking for a folder with Folder type', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
     expect(exists(app, 'my-folder', FileSystemType.Folder)).toBe(true);
   });
 
-  it('should return false when checking for a folder with File type', async () => {
-    app = (await App.createConfigured__({ files: { 'my-folder/': '' } })).asOriginalType__();
+  it('should return false when checking for a folder with File type', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
     expect(exists(app, 'my-folder', FileSystemType.File)).toBe(false);
   });
 });
 
 describe('trimMarkdownExtension', () => {
-  it('should trim the .md extension from a markdown file', async () => {
-    app = (await App.createConfigured__({ files: { 'folder/note.md': '' } })).asOriginalType__();
+  it('should trim the .md extension from a markdown file', () => {
+    app = App.createConfigured__({ files: { 'folder/note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('folder/note.md');
     assertNonNullable(file);
     expect(trimMarkdownExtension(app, file)).toBe('folder/note');
   });
 
-  it('should not trim the extension from a non-markdown file', async () => {
-    app = (await App.createConfigured__({ files: { 'drawing.canvas': '' } })).asOriginalType__();
+  it('should not trim the extension from a non-markdown file', () => {
+    app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('drawing.canvas');
     assertNonNullable(file);
     expect(trimMarkdownExtension(app, file)).toBe('drawing.canvas');
   });
 
-  it('should not trim from a folder', async () => {
-    app = (await App.createConfigured__({ files: { 'my-folder/': '' } })).asOriginalType__();
+  it('should not trim from a folder', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
     const folder = app.vault.getFolderByPath('my-folder');
     assertNonNullable(folder);
     expect(trimMarkdownExtension(app, folder)).toBe('my-folder');
@@ -630,15 +630,15 @@ describe('trimMarkdownExtension', () => {
 });
 
 describe('getAbstractFileOrNull (resolved path fallback)', () => {
-  it('should resolve a relative path and find the file', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should resolve a relative path and find the file', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const result = getAbstractFileOrNull(app, './note.md');
     assertNonNullable(result);
     expect(result.path).toBe('note.md');
   });
 
-  it('should resolve a path with parent traversal', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+  it('should resolve a path with parent traversal', () => {
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const result = getAbstractFileOrNull(app, 'folder/../note.md');
     assertNonNullable(result);
     expect(result.path).toBe('note.md');
@@ -646,15 +646,15 @@ describe('getAbstractFileOrNull (resolved path fallback)', () => {
 });
 
 describe('getAbstractFileOrNull (case-insensitive)', () => {
-  it('should find a file case-insensitively when isCaseInsensitive is true', async () => {
-    app = (await App.createConfigured__({ files: { 'Note.md': '' } })).asOriginalType__();
+  it('should find a file case-insensitively when isCaseInsensitive is true', () => {
+    app = App.createConfigured__({ files: { 'Note.md': '' } }).asOriginalType__();
     const result = getAbstractFileOrNull(app, 'note.md', true);
     assertNonNullable(result);
     expect(result.path).toBe('Note.md');
   });
 
-  it('should use adapter.insensitive when isCaseInsensitive is not provided', async () => {
-    app = (await App.createConfigured__({ files: { 'Note.md': '' }, isAdapterCaseInsensitive: true })).asOriginalType__();
+  it('should use adapter.insensitive when isCaseInsensitive is not provided', () => {
+    app = App.createConfigured__({ files: { 'Note.md': '' }, isAdapterCaseInsensitive: true }).asOriginalType__();
     const result = getAbstractFileOrNull(app, 'note.md');
     assertNonNullable(result);
     expect(result.path).toBe('Note.md');
@@ -662,9 +662,9 @@ describe('getAbstractFileOrNull (case-insensitive)', () => {
 });
 
 describe('getMarkdownFiles', () => {
-  it('should return markdown files in a folder (non-recursive)', async () => {
+  it('should return markdown files in a folder (non-recursive)', () => {
     app = (
-      await App.createConfigured__({
+      App.createConfigured__({
         files: {
           'docs/a.md': '',
           'docs/b.md': '',
@@ -687,9 +687,9 @@ describe('getMarkdownFiles', () => {
     expect(result.map((f) => f.path)).toEqual(['docs/a.md', 'docs/b.md']);
   });
 
-  it('should return markdown files recursively', async () => {
+  it('should return markdown files recursively', () => {
     app = (
-      await App.createConfigured__({
+      App.createConfigured__({
         files: {
           'docs/a.md': '',
           'docs/sub/b.md': ''
@@ -712,9 +712,9 @@ describe('getMarkdownFiles', () => {
     expect(result.map((f) => f.path)).toEqual(['docs/a.md', 'docs/sub/b.md']);
   });
 
-  it('should return an empty array when no markdown files exist', async () => {
+  it('should return an empty array when no markdown files exist', () => {
     app = (
-      await App.createConfigured__({
+      App.createConfigured__({
         files: {
           'docs/image.png': ''
         }
@@ -733,7 +733,7 @@ describe('getMarkdownFiles', () => {
 
 describe('getOrCreateFile', () => {
   it('should return the existing file if it exists', async () => {
-    app = (await App.createConfigured__({ files: { 'note.md': '' } })).asOriginalType__();
+    app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const result = await getOrCreateFile(app, 'note.md');
     expect(result.path).toBe('note.md');
   });
@@ -747,7 +747,7 @@ describe('getOrCreateFile', () => {
 
 describe('getOrCreateFolder', () => {
   it('should return the existing folder if it exists', async () => {
-    app = (await App.createConfigured__({ files: { 'my-folder/': '' } })).asOriginalType__();
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
     const result = await getOrCreateFolder(app, 'my-folder');
     expect(result.path).toBe('my-folder');
   });

@@ -167,7 +167,7 @@ function isInObsidian(): boolean {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- We need to use the deprecated function to check for Obsidian.
+    // eslint-disable-next-line @typescript-eslint/no-deprecated, import-x/no-deprecated -- We need to use the deprecated function to check for Obsidian.
     getApp();
     return true;
   } catch {

@@ -62,8 +62,8 @@ vi.mock('../obsidian/vault.ts', () => ({
 
 let app: AppOriginal;
 
-beforeEach(async () => {
-  app = (await App.createConfigured__()).asOriginalType__();
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
   vi.clearAllMocks();
   mocks.isEmptyFolder.mockResolvedValue(true);
   mocks.listSafe.mockResolvedValue({ files: [], folders: [] });
