@@ -23,7 +23,7 @@ export const noUsedUnderscoreParams: Rule.RuleModule = {
 
           // Must be a parameter (not a local variable)
           const defNode = variable.defs[0];
-          if (!defNode || defNode.type !== 'Parameter') {
+          if (defNode?.type !== 'Parameter') {
             continue;
           }
 
