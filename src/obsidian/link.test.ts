@@ -1,10 +1,13 @@
 import type {
   App,
   CachedMetadata,
+  FrontmatterLinkCache,
   Plugin,
   Reference,
   TFile
 } from 'obsidian';
+import type { InternalPlugins } from 'obsidian-typings';
+import type { PartialDeep } from 'type-fest';
 
 import {
   App as MockApp,
@@ -18,6 +21,8 @@ import {
   it,
   vi
 } from 'vitest';
+
+import type { CanvasReference } from './reference.ts';
 
 import { castTo } from '../object-utils.ts';
 import { createMockOf } from '../test-helpers/mock-implementation.ts';
@@ -1632,8 +1637,8 @@ describe('app-dependent functions', () => {
       return allFiles.filter((f): f is TFile => f instanceof MockTFile && (f.basename === linkpath || f.name === linkpath));
     });
 
-    ensureGenericObject(app).internalPlugins = createMockOf({
-      getEnabledPluginById: vi.fn(() => ({}))
+    ensureGenericObject(app).internalPlugins = createMockOf<InternalPlugins>({
+      getEnabledPluginById: castTo<InternalPlugins['getEnabledPluginById']>(vi.fn(() => ({})))
     });
 
     vi.mocked(tempRegisterFilesAndRun).mockImplementation(
@@ -2187,7 +2192,7 @@ describe('app-dependent functions', () => {
       ).asOriginalType__();
       const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('canvas.canvas'));
       canvasFile.extension = 'canvas';
-      const link = createMockOf<Reference>({
+      const link = createMockOf<CanvasReference>({
         displayText: 'target',
         isCanvas: true,
         key: 'file',
@@ -2635,8 +2640,8 @@ describe('app-dependent functions', () => {
     });
 
     it('should return early for canvas files when Canvas plugin is disabled', async () => {
-      ensureGenericObject(app).internalPlugins = createMockOf({
-        getEnabledPluginById: vi.fn(() => null)
+      ensureGenericObject(app).internalPlugins = createMockOf<InternalPlugins>({
+        getEnabledPluginById: castTo<InternalPlugins['getEnabledPluginById']>(vi.fn(() => null))
       });
 
       const canvasApp = (
@@ -2644,7 +2649,7 @@ describe('app-dependent functions', () => {
           files: { 'canvas.canvas': '{}' }
         })
       ).asOriginalType__();
-      ensureGenericObject(canvasApp).internalPlugins = createMockOf({
+      ensureGenericObject(canvasApp).internalPlugins = createMockOf<InternalPlugins>({
         getEnabledPluginById: vi.fn(() => null)
       });
       const canvasFile = ensureNonNullable(canvasApp.vault.getFileByPath('canvas.canvas'));
@@ -2716,7 +2721,7 @@ describe('app-dependent functions', () => {
     it('should register and apply default options', () => {
       let cleanupFn: (() => void) | undefined;
       const mockPlugin = createMockOf<Plugin>({
-        app,
+        app: castTo<PartialDeep<App>>(app),
         register: vi.fn((fn: () => void) => {
           cleanupFn = fn;
         })
@@ -2774,14 +2779,14 @@ describe('app-dependent functions', () => {
       );
 
       vi.mocked(getCacheSafe).mockResolvedValue(createMockOf<CachedMetadata>({
-        frontmatterLinks: [{
+        frontmatterLinks: [castTo<FrontmatterLinkCache>({
           isCanvas: true,
           key: 'file',
           link: 'target.md',
           nodeIndex: 0,
           original: 'target.md',
           type: 'file'
-        }]
+        })]
       }));
 
       await editLinks(

@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import type { PartialDeep } from 'type-fest';
+
 import {
   beforeEach,
   describe,
@@ -257,7 +259,7 @@ describe('renderCallout', () => {
 
     // Simulate intersection
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
       createMockOf<IntersectionObserver>({})
     );
 
@@ -283,7 +285,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: false, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: false, target: castTo<PartialDeep<Element>>(observedEl) })],
       createMockOf<IntersectionObserver>({})
     );
 
@@ -303,7 +305,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
       createMockOf<IntersectionObserver>({})
     );
 
@@ -330,7 +332,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall1[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
       createMockOf<IntersectionObserver>({})
     );
 
@@ -362,7 +364,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall2[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
       createMockOf<IntersectionObserver>({})
     );
 
@@ -392,7 +394,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall3[0] as HTMLElement;
 
     intersectionCallback(
-      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [createMockOf<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
       createMockOf<IntersectionObserver>({})
     );
 
