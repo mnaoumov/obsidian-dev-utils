@@ -14,13 +14,17 @@ import { mockImplementation } from '../../../../../mock-implementation.ts';
  * Patches FileSystemAdapter to expose `insensitive` from obsidian-typings.
  */
 export function mockFileSystemAdapter(): void {
-  mockImplementation(FileSystemAdapter.prototype, 'constructor__', function initFSAdapter(this: FileSystemAdapter, originalImplementation, basePath: string): void {
-    originalImplementation.call(this, basePath);
-    Object.defineProperty(this, 'insensitive', {
-      get: (): boolean => this.insensitive__,
-      set: (value: boolean): void => {
-        ensureGenericObject(this)['insensitive__'] = value;
-      }
-    });
-  });
+  mockImplementation(
+    FileSystemAdapter.prototype,
+    'constructor__',
+    function initFSAdapter(this: FileSystemAdapter, originalImplementation, basePath: string): void {
+      originalImplementation.call(this, basePath);
+      Object.defineProperty(this, 'insensitive', {
+        get: (): boolean => this.insensitive__,
+        set: (value: boolean): void => {
+          ensureGenericObject(this).insensitive__ = value;
+        }
+      });
+    }
+  );
 }
