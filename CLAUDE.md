@@ -141,7 +141,10 @@ describe('MyModule', () => {
 ### Mocking
 
 - `obsidian` module is aliased to `obsidian-test-mocks/obsidian` via Vitest config (runtime only)
-- For types, use `import type { App } from 'obsidian'` (real types)
+- Import convention in test files:
+  - Real types: `import type { App as AppOriginal } from 'obsidian'` — use `Original` suffix
+  - Mock classes: `import { App } from 'obsidian-test-mocks/obsidian'` — use original name, no alias
+  - Do NOT use `Mock` prefix aliases (enforced by ESLint `no-restricted-syntax`)
 - For mock-specific APIs (`create__`, `createConfigured__`, etc.), import from `'obsidian-test-mocks/obsidian'` directly
 - Use `vi.fn()` for mock functions, `vi.useFakeTimers()`/`vi.useRealTimers()` for timer mocking
 - Use `vi.stubGlobal()` / `vi.unstubAllGlobals()` for global stubs

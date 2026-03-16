@@ -22,6 +22,38 @@ const scriptFiles = [
   'scripts/**/*.ts'
 ];
 
+const noRestrictedSyntaxRules: Linter.RuleEntry = [
+  'error',
+  {
+    message: 'Do not use definite assignment assertions (!). Initialize the field or make it optional (G10e).',
+    selector: 'PropertyDefinition[definite=true]'
+  },
+  {
+    message: 'Do not use definite assignment assertions (!) on abstract fields (G10e).',
+    selector: 'TSAbstractPropertyDefinition[definite=true]'
+  },
+  {
+    message: 'Do not use double type assertions (as X as Y). Use strictProxy<T>() or ensureGenericObject() instead (G10e).',
+    selector: 'TSAsExpression > TSAsExpression'
+  },
+  {
+    message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only (G10e).',
+    selector: 'MethodDefinition[key.name=/^_/]'
+  },
+  {
+    message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only (G10e).',
+    selector: 'FunctionDeclaration[id.name=/^_/]'
+  },
+  {
+    message: 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading (G10a).',
+    selector: 'ImportExpression'
+  },
+  {
+    message: 'Do not rename imports with "Mock" in the alias. Mock classes are the canonical types — use the original name.',
+    selector: 'ImportSpecifier[local.name=/Mock/]:not([imported.name=/Mock/])'
+  }
+];
+
 export const configs: Linter.Config[] = defineConfig([
   globalIgnores([
     join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
@@ -38,6 +70,13 @@ export const configs: Linter.Config[] = defineConfig([
     },
     rules: {
       'tsdoc/syntax': 'error'
+    }
+  },
+  {
+    files: typeScriptFiles,
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      'no-restricted-syntax': noRestrictedSyntaxRules
     }
   },
   {
@@ -176,7 +215,6 @@ export const configs: Linter.Config[] = defineConfig([
       'jsdoc/require-returns': 'off',
       'jsdoc/require-returns-description': 'off',
       'no-magic-numbers': 'off',
-      'no-restricted-syntax': 'off',
       'tsdoc/syntax': 'off'
     }
   },
