@@ -268,7 +268,7 @@ describe('appendCodeBlock', () => {
   it('should call createEl on the element with strong tag and correct options', () => {
     const mockCreateEl = vi.fn();
     const el = createMockElement();
-    ensureGenericObject(el).createEl = mockCreateEl;
+    el.createEl = mockCreateEl;
     appendCodeBlock(el, 'console.log("hello")');
     expect(mockCreateEl).toHaveBeenCalledWith(
       'strong',
@@ -286,7 +286,7 @@ describe('appendCodeBlock', () => {
       return mockStrong;
     });
     const el = createMockElement();
-    ensureGenericObject(el).createEl = mockCreateEl;
+    el.createEl = mockCreateEl;
     appendCodeBlock(el, 'my-code');
     expect(innerCreateEl).toHaveBeenCalledWith('code', { text: 'my-code' });
   });
@@ -300,7 +300,7 @@ describe('appendCodeBlock', () => {
       return mockStrong;
     });
     const el = createMockElement();
-    ensureGenericObject(el).createEl = mockCreateEl;
+    el.createEl = mockCreateEl;
     const code = 'const x = 42;';
     appendCodeBlock(el, code);
     expect(innerCreateEl).toHaveBeenCalledWith('code', { text: code });
@@ -856,8 +856,8 @@ describe('ensureLoaded', () => {
   });
 });
 
-function createElement(tag: string, attrs: GenericObject = {}): HTMLElement {
-  const el = document.createElement(tag);
+function createElement(tag: keyof HTMLElementTagNameMap, attrs: GenericObject = {}): HTMLElement {
+  const el = createEl(tag);
   const record = ensureGenericObject(el);
 
   for (const [key, value] of Object.entries(attrs)) {

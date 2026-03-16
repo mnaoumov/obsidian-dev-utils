@@ -124,7 +124,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       await initI18N(translationsMap as never, false);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0] as object);
+      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
       expect(callArgs['resources']).toEqual({
         en: { translation: { greeting: 'Hello' } },
         fr: { translation: { greeting: 'Bonjour' } }
@@ -158,7 +158,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       await initI18N({ en: { test: 'value' } } as never);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0] as object);
+      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
       expect(callArgs['initAsync']).toBe(true);
     });
   });

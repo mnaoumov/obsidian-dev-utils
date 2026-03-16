@@ -453,7 +453,7 @@ describe('saveNote', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).dirty = true;
+    view.dirty = true;
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -469,7 +469,7 @@ describe('saveNote', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).dirty = false;
+    view.dirty = false;
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -483,7 +483,7 @@ describe('saveNote', () => {
   it('should not save views for different file paths', async () => {
     const view = new (MockMarkdownView as unknown as new () => MarkdownView)();
     view.file = MockTFile.create__(mockApp.vault, 'other.md').asOriginalType2__();
-    ensureGenericObject(view).dirty = true;
+    view.dirty = true;
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
@@ -621,7 +621,7 @@ describe('getSafeRenamePath', () => {
     // Need a parent folder for the while loop to find
     const mockParentFolder = MockTFolder.create__(mockApp.vault, 'dir');
     const parentFolder = mockParentFolder.asOriginalType2__();
-    ensureGenericObject(parentFolder).getParentPrefix = (): string => 'dir/';
+    parentFolder.getParentPrefix = (): string => 'dir/';
     mockApp.vault.setVaultAbstractFile__('dir', mockParentFolder);
 
     const mockDirFile = MockTFile.create__(mockApp.vault, 'dir/old.md');
@@ -635,7 +635,7 @@ describe('getSafeRenamePath', () => {
     ensureGenericObject(app.vault.adapter)['insensitive'] = true;
     const mockParentFolder = MockTFolder.create__(mockApp.vault, 'parent');
     const parentFolder = mockParentFolder.asOriginalType2__();
-    ensureGenericObject(parentFolder).getParentPrefix = (): string => 'parent/';
+    parentFolder.getParentPrefix = (): string => 'parent/';
     mockApp.vault.setVaultAbstractFile__('parent', mockParentFolder);
 
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('parent/sub/new');
@@ -1078,7 +1078,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).editor = strictProxy<Editor>({});
+    view.editor = strictProxy<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
@@ -1097,7 +1097,7 @@ describe('processFile', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     view.file = file;
-    ensureGenericObject(view).editor = strictProxy<Editor>({});
+    view.editor = strictProxy<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
 
@@ -1148,7 +1148,7 @@ describe('processFile', () => {
 
     const view = new (MockMarkdownView as unknown as new () => MarkdownView)();
     // View.file defaults to null in the mock — don't set it
-    ensureGenericObject(view).editor = strictProxy<Editor>({});
+    view.editor = strictProxy<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
       { view } as never
