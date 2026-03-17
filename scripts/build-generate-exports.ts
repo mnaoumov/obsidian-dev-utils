@@ -29,15 +29,16 @@ await wrapCliTask(async () => {
       continue;
     }
 
-    if (dirent.name === ObsidianDevUtilsRepoPaths.Styles as string) {
-      continue;
-    }
-
-    if (dirent.name === ObsidianDevUtilsRepoPaths.TestHelpers as string) {
-      continue;
-    }
-
     const path = join(dirent.parentPath, dirent.name);
+
+    if (path.includes(ObsidianDevUtilsRepoPaths.Styles)) {
+      continue;
+    }
+
+    if (path.includes(ObsidianDevUtilsRepoPaths.TestHelpers)) {
+      continue;
+    }
+
     srcFolders.push(path);
   }
 
