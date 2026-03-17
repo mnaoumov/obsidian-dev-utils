@@ -293,8 +293,12 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     const fileNames = await readdirPosix(buildFolder);
     filePaths = fileNames.map((fileName) => join(buildFolder, fileName));
   } else {
-    const resultOutput = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json', '--silent'], { isQuiet: true });
-    await writeFile('f:\\dev\\test.txt', resultOutput, 'utf-8');
+    let resultOutput = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json'], { isQuiet: true });
+    const index = resultOutput.indexOf('[\n  {');
+    if (index === -1) {
+      throw new Error('Failed to find the start of the JSON array in the result output');
+    }
+    resultOutput = resultOutput.slice(index);
     const result = JSON.parse(resultOutput) as [{ filename: string }];
     filePaths = [
       join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename),
