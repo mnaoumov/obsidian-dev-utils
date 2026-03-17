@@ -1,14 +1,21 @@
+/**
+ * @packageDocumentation
+ *
+ * Bridges the `listEl` property from `obsidian-typings` onto the mock
+ * `SettingGroup` via the internal `listEl__` field.
+ */
+
 import { SettingGroup } from 'obsidian-test-mocks/obsidian';
 
-import { mockImplementation } from '../../../../../mock-implementation.ts';
+import { defineMissingProperty } from './define-missing-property.ts';
 
+/**
+ * Patches SettingGroup prototype to expose `listEl` from obsidian-typings.
+ */
 export function mockSettingGroup(): void {
-  mockImplementation(
-    SettingGroup.prototype,
-    'constructor__',
-    function initSettingGroup(this: SettingGroup, originalImplementation, containerEl: HTMLElement): void {
-      originalImplementation.call(this, containerEl);
-      this.asOriginalType__().listEl = this.listEl__;
+  defineMissingProperty(SettingGroup.prototype, 'listEl', {
+    get(this: SettingGroup): HTMLElement {
+      return this.listEl__;
     }
-  );
+  });
 }

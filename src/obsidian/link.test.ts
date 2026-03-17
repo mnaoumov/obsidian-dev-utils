@@ -829,10 +829,11 @@ describe('testLeadingSlash', () => {
 
 describe('fixFrontmatterMarkdownLinks', () => {
   describe('should detect a markdown link in frontmatter string and add it to frontmatterLinks', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         source: '[alias](note.md)'
-      }
+      },
+      frontmatterLinks: undefined
     });
     const result = fixFrontmatterMarkdownLinks(cache);
 
@@ -879,10 +880,11 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should return false when frontmatter contains no markdown links', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         title: 'plain text'
-      }
+      },
+      frontmatterLinks: undefined
     });
     const result = fixFrontmatterMarkdownLinks(cache);
 
@@ -896,10 +898,11 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should ignore wikilinks in frontmatter', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         source: '[[note]]'
-      }
+      },
+      frontmatterLinks: undefined
     });
 
     const result = fixFrontmatterMarkdownLinks(cache);
@@ -907,10 +910,11 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should ignore external URLs in frontmatter', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         source: '[example](https://example.com)'
-      }
+      },
+      frontmatterLinks: undefined
     });
 
     const result = fixFrontmatterMarkdownLinks(cache);
@@ -918,12 +922,13 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should handle nested objects in frontmatter', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         meta: {
           source: '[alias](note.md)'
         }
-      }
+      },
+      frontmatterLinks: undefined
     });
     const result = fixFrontmatterMarkdownLinks(cache);
 
@@ -949,11 +954,12 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should handle multiple links in different frontmatter properties', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         link1: '[a](file1.md)',
         link2: '[b](file2.md)'
-      }
+      },
+      frontmatterLinks: undefined
     });
     const result = fixFrontmatterMarkdownLinks(cache);
 
@@ -972,10 +978,11 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should handle null frontmatter values gracefully', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         nothing: null
-      }
+      },
+      frontmatterLinks: undefined
     });
 
     const result = fixFrontmatterMarkdownLinks(cache);
@@ -983,11 +990,12 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should handle numeric and boolean frontmatter values', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         count: 42,
         enabled: true
-      }
+      },
+      frontmatterLinks: undefined
     });
 
     const result = fixFrontmatterMarkdownLinks(cache);
@@ -995,10 +1003,11 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should handle a markdown link without alias (empty alias)', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         source: '[](note.md)'
-      }
+      },
+      frontmatterLinks: undefined
     });
     const result = fixFrontmatterMarkdownLinks(cache);
 
@@ -1026,7 +1035,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   describe('should update existing frontmatterLink entry if key already exists', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({
+    const cache: CachedMetadata = castTo<CachedMetadata>({
       frontmatter: {
         source: '[new-alias](new-note.md)'
       },
@@ -1070,7 +1079,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
   });
 
   it('should handle undefined frontmatter gracefully', () => {
-    const cache: CachedMetadata = strictProxy<CachedMetadata>({});
+    const cache: CachedMetadata = castTo<CachedMetadata>({ frontmatter: undefined, frontmatterLinks: undefined });
 
     const result = fixFrontmatterMarkdownLinks(cache);
     expect(result).toBe(false);
@@ -1618,6 +1627,8 @@ describe('app-dependent functions', () => {
         }
       })
     ).asOriginalType__();
+
+    castTo<Record<string, unknown>>(app)['obsidianDevUtilsState'] = {};
 
     app.vault.getConfig = vi.fn((key: string) => {
       if (key === 'useMarkdownLinks') {
@@ -2356,13 +2367,16 @@ describe('app-dependent functions', () => {
 
   describe('editLinksInContent', () => {
     it('should process links in content', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
         links: [{
           displayText: 'target',
           link: 'target',
           original: '[[target]]',
           position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
-        }]
+        }],
+        sections: undefined
       }));
 
       const result = await editLinksInContent(
@@ -2375,13 +2389,16 @@ describe('app-dependent functions', () => {
     });
 
     it('should handle linkConverter returning undefined (skip)', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
         links: [{
           displayText: 'target',
           link: 'target',
           original: '[[target]]',
           position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
-        }]
+        }],
+        sections: undefined
       }));
 
       const result = await editLinksInContent(
@@ -2394,7 +2411,9 @@ describe('app-dependent functions', () => {
     });
 
     it('should escape wikilink divider when link is inside a table', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
         links: [{
           displayText: 'target',
           link: 'target',
@@ -2450,13 +2469,16 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
         links: [{
           displayText: 'target',
           link: 'target',
           original: '[[target]]',
           position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
-        }]
+        }],
+        sections: undefined
       }));
 
       await editLinks(
@@ -2519,8 +2541,11 @@ describe('app-dependent functions', () => {
       );
 
       // GetCacheSafe returns a cache whose links include the backlink reference
-      vi.mocked(getCacheSafe).mockResolvedValue(strictProxy<CachedMetadata>({
-        links: [backlinkRef]
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
+        links: [backlinkRef],
+        sections: undefined
       }));
 
       const linkConverter = vi.fn(() => '[[new-target]]');
@@ -2556,8 +2581,11 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(strictProxy<CachedMetadata>({
-        links: [backlinkRef]
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
+        links: [backlinkRef],
+        sections: undefined
       }));
 
       const linkConverter = vi.fn(() => '[[new-target]]');
@@ -2587,13 +2615,16 @@ describe('app-dependent functions', () => {
     });
 
     it('should skip non-embed links when shouldUpdateEmbedOnlyLinks is true', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
         links: [{
           displayText: 'target',
           link: 'target',
           original: '[[target]]',
           position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
-        }]
+        }],
+        sections: undefined
       }));
 
       const result = await updateLinksInContent({
@@ -2607,13 +2638,16 @@ describe('app-dependent functions', () => {
     });
 
     it('should invoke convertLink for matching links', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
         links: [{
           displayText: 'target',
           link: 'target',
           original: '[[target]]',
           position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
-        }]
+        }],
+        sections: undefined
       }));
 
       const result = await updateLinksInContent({
@@ -2669,13 +2703,16 @@ describe('app-dependent functions', () => {
           }
         }
       );
-      vi.mocked(getCacheSafe).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
         links: [{
           displayText: 'target',
           link: 'target',
           original: '[[target]]',
           position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
-        }]
+        }],
+        sections: undefined
       }));
 
       await updateLinksInFile({
@@ -2696,13 +2733,16 @@ describe('app-dependent functions', () => {
           }
         }
       );
-      vi.mocked(getCacheSafe).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
         links: [{
           displayText: 'target',
           link: 'target',
           original: '[[target]]',
           position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
-        }]
+        }],
+        sections: undefined
       }));
 
       await updateLinksInFile({
@@ -2775,7 +2815,8 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
         frontmatterLinks: [castTo<FrontmatterLinkCache>({
           isCanvas: true,
           key: 'file',
@@ -2783,7 +2824,9 @@ describe('app-dependent functions', () => {
           nodeIndex: 0,
           original: 'target.md',
           type: 'file'
-        })]
+        })],
+        links: undefined,
+        sections: undefined
       }));
 
       await editLinks(
@@ -2816,13 +2859,16 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(strictProxy<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
         links: [{
           displayText: 'target',
           link: 'target',
           original: '[[target]]',
           position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
-        }]
+        }],
+        sections: undefined
       }));
 
       vi.spyOn(console, 'error').mockImplementation(() => undefined);

@@ -139,5 +139,5 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
 }
 
 function isValidatorComponent(obj: unknown): obj is ValidatorComponent {
-  return !!(obj as Partial<ValidatorComponent>).validatorEl;
+  return typeof obj === 'object' && obj !== null && 'validatorEl' in obj && !!(obj as Partial<ValidatorComponent>).validatorEl;
 }

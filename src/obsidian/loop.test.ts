@@ -24,6 +24,7 @@ import { castTo } from '../object-utils.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { loop } from './loop.ts';
 import { addPluginCssClasses } from './plugin/plugin-context.ts';
+import { mockImplementation } from '../test-helpers/mock-implementation.ts';
 
 vi.mock('../abort-controller.ts', () => ({
   abortSignalNever: vi.fn(() => new AbortController().signal)
@@ -270,11 +271,8 @@ describe('loop', () => {
     const items = ['a', 'b', 'c', 'd', 'e'];
 
     let capturedProgressEl: HTMLProgressElement | null = null;
-    const createElSpy = vi.spyOn(
-      globalThis,
-      'createEl'
-    ).mockImplementation((tag: string): HTMLElement => {
-      const el = createEl(tag);
+    const createElSpy = mockImplementation(globalThis, 'createEl', (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
+      const el = originalImplementation(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
       }
@@ -398,11 +396,8 @@ describe('loop', () => {
 
   it('should increment progress bar value for each processed item', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
-    const createElSpy = vi.spyOn(
-      globalThis,
-      'createEl'
-    ).mockImplementation((tag: string): HTMLElement => {
-      const el = createEl(tag);
+    const createElSpy = mockImplementation(globalThis, 'createEl', (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
+      const el = originalImplementation(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
       }
@@ -435,16 +430,14 @@ describe('loop', () => {
 
   it('should still increment progress bar value even when processItem throws', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
-    const createElSpy = vi.spyOn(
-      globalThis,
-      'createEl'
-    ).mockImplementation((tag: string): HTMLElement => {
-      const el = createEl(tag);
+    const createElSpy = mockImplementation(globalThis, 'createEl', (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
+      const el = originalImplementation(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
       }
       return el;
     });
+
 
     vi.spyOn(console, 'error').mockImplementation(() => {
       noop();

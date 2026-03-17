@@ -34,10 +34,7 @@ import type { PathOrFile } from './file-system.ts';
 import type { ProcessOptions } from './vault.ts';
 
 import { abortSignalNever } from '../abort-controller.ts';
-import {
-  normalizeOptionalProperties,
-  toJson
-} from '../object-utils.ts';
+import { normalizeOptionalProperties } from '../object-utils.ts';
 import {
   basename,
   dirname,
@@ -763,9 +760,9 @@ export async function editBacklinks(
   const backlinks = await getBacklinksForFileSafe(app, pathOrFile, processOptions);
   for (const backlinkNotePath of backlinks.keys()) {
     const currentLinks = ensureNonNullable(backlinks.get(backlinkNotePath));
-    const linkJsons = new Set<string>(currentLinks.map((link) => toJson(link)));
+    const linkJsons = new Set<string>(currentLinks.map((link) => JSON.stringify(link)));
     await editLinks(app, backlinkNotePath, (link) => {
-      const linkJson = toJson(link);
+      const linkJson = JSON.stringify(link);
       if (!linkJsons.has(linkJson)) {
         return;
       }
