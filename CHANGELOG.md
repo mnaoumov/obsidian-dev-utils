@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 51.1.1
+
+- chore: update exports
+- fix: build
+- chore: lint
+
 ## 51.1.0
 
 - chore: extract mocks
