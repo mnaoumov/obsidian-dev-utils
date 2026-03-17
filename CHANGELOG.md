@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 51.1.3
+
+- fix: republish
+
 ## 51.1.2
 
 - fix: publish script
