@@ -4,27 +4,34 @@
  * the ignore comments are not processed, causing them to appear as 0% covered.
  */
 import {
-  describe,
   expect,
   it
 } from 'vitest';
 
-// eslint-disable-next-line import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage.
+/* eslint-disable import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage. */
 import * as StateFieldSpec from '../codemirror/state-field-spec.ts';
-// eslint-disable-next-line import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage.
 import * as DebugController from '../debug-controller.ts';
-// eslint-disable-next-line import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage.
+import * as AttachmentPath from '../obsidian/attachment-path.ts';
+import * as Backlink from '../obsidian/backlink.ts';
 import * as CodeBlockMarkdownInformation from '../obsidian/code-block-markdown-information.ts';
-// eslint-disable-next-line import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage.
+import * as AbstractFileCommandBase from '../obsidian/commands/abstract-file-command-base.ts';
+import * as CommandBase from '../obsidian/commands/command-base.ts';
+import * as EditorCommandBase from '../obsidian/commands/editor-command-base.ts';
+import * as FileCommandBase from '../obsidian/commands/file-command-base.ts';
+import * as FolderCommandBase from '../obsidian/commands/folder-command-base.ts';
+import * as NonEditorCommandBase from '../obsidian/commands/non-editor-command-base.ts';
 import * as ValueComponentWithChangeTracking from '../obsidian/components/setting-components/value-component-with-change-tracking.ts';
-// eslint-disable-next-line import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage.
+import * as GetDomEventsHandlersConstructor from '../obsidian/constructors/getDomEventsHandlersConstructor.ts';
 import * as CustomTypeOptionsBase from '../obsidian/i18n/custom-type-options-base.ts';
-// eslint-disable-next-line import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage.
 import * as DefaultTranslationsBase from '../obsidian/i18n/default-translations-base.ts';
-// eslint-disable-next-line import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage.
+import * as Markdown from '../obsidian/markdown.ts';
+import * as PluginBase from '../obsidian/plugin/plugin-base.ts';
+import * as PluginSettingsManagerBase from '../obsidian/plugin/plugin-settings-manager-base.ts';
+import * as PluginSettingsTabBase from '../obsidian/plugin/plugin-settings-tab-base.ts';
 import * as PluginSettingsWrapper from '../obsidian/plugin/plugin-settings-wrapper.ts';
-// eslint-disable-next-line import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage.
 import * as PluginTypesBase from '../obsidian/plugin/plugin-types-base.ts';
+import * as AppContext from '../obsidian/react/app-context.ts';
+import * as RenameDeleteHandler from '../obsidian/rename-delete-handler.ts';
 import { changeExtensionPlugin } from './bundlers/esbuild-impl/changeExtensionPlugin.ts';
 import { copyToObsidianPluginsFolderPlugin } from './bundlers/esbuild-impl/copyToObsidianPluginsFolderPlugin.ts';
 import { customEsbuildOptionsPlugin } from './bundlers/esbuild-impl/customEsbuildOptionsPlugin.ts';
@@ -35,87 +42,59 @@ import { BuildMode } from './bundlers/esbuild-impl/obsidian-plugin-builder.ts';
 import { preprocessPlugin } from './bundlers/esbuild-impl/preprocessPlugin.ts';
 import { renameCssPlugin } from './bundlers/esbuild-impl/renameCssPlugin.ts';
 import { svelteWrapperPlugin } from './bundlers/esbuild-impl/svelteWrapperPlugin.ts';
+import * as Esbuild from './bundlers/esbuild.ts';
+import * as CommitlintConfig from './commitlint-config.ts';
 import { obsidianDevUtilsConfigs } from './linters/eslint-config.ts';
 import { obsidianDevUtilsConfig } from './linters/markdownlint-cli2-config.ts';
+import * as NanoStagedConfig from './nano-staged-config.ts';
+import * as ObsidianCli from './obsidian-cli.ts';
 
-describe('v8 ignore imports', () => {
-  it('should load eslint.config so v8 processes its ignore comments', () => {
-    expect(obsidianDevUtilsConfigs).toBeDefined();
-  });
+/* eslint-enable import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage. */
 
-  it('should load Dependency so v8 processes its ignore comments', () => {
-    expect(getDependenciesToBundle).toBeDefined();
-  });
+it('should load all v8-ignored modules so coverage processes their ignore comments', () => {
+  const modules = [
+    AbstractFileCommandBase,
+    AppContext,
+    AttachmentPath,
+    Backlink,
+    BuildMode,
+    CodeBlockMarkdownInformation,
+    CommandBase,
+    CommitlintConfig,
+    CustomTypeOptionsBase,
+    DebugController,
+    DefaultTranslationsBase,
+    EditorCommandBase,
+    Esbuild,
+    FileCommandBase,
+    FolderCommandBase,
+    GetDomEventsHandlersConstructor,
+    Markdown,
+    NanoStagedConfig,
+    NonEditorCommandBase,
+    ObsidianCli,
+    PluginBase,
+    PluginSettingsManagerBase,
+    PluginSettingsTabBase,
+    PluginSettingsWrapper,
+    PluginTypesBase,
+    RenameDeleteHandler,
+    StateFieldSpec,
+    ValueComponentWithChangeTracking,
+    changeExtensionPlugin,
+    copyToObsidianPluginsFolderPlugin,
+    customEsbuildOptionsPlugin,
+    fixEsmPlugin,
+    fixSourceMapsPlugin,
+    getDependenciesToBundle,
+    obsidianDevUtilsConfig,
+    obsidianDevUtilsConfigs,
+    preprocessPlugin,
+    renameCssPlugin,
+    svelteWrapperPlugin
+  ];
 
-  it('should load ObsidianPluginBuilder so v8 processes its ignore comments', () => {
-    expect(BuildMode).toBeDefined();
-  });
-
-  it('should load changeExtensionPlugin so v8 processes its ignore comments', () => {
-    expect(changeExtensionPlugin).toBeDefined();
-  });
-
-  it('should load copyToObsidianPluginsFolderPlugin so v8 processes its ignore comments', () => {
-    expect(copyToObsidianPluginsFolderPlugin).toBeDefined();
-  });
-
-  it('should load customEsbuildOptionsPlugin so v8 processes its ignore comments', () => {
-    expect(customEsbuildOptionsPlugin).toBeDefined();
-  });
-
-  it('should load fixEsmPlugin so v8 processes its ignore comments', () => {
-    expect(fixEsmPlugin).toBeDefined();
-  });
-
-  it('should load fixSourceMapsPlugin so v8 processes its ignore comments', () => {
-    expect(fixSourceMapsPlugin).toBeDefined();
-  });
-
-  it('should load preprocessPlugin so v8 processes its ignore comments', () => {
-    expect(preprocessPlugin).toBeDefined();
-  });
-
-  it('should load renameCssPlugin so v8 processes its ignore comments', () => {
-    expect(renameCssPlugin).toBeDefined();
-  });
-
-  it('should load svelteWrapperPlugin so v8 processes its ignore comments', () => {
-    expect(svelteWrapperPlugin).toBeDefined();
-  });
-
-  it('should load markdownlint-cli2-config so v8 processes its ignore comments', () => {
-    expect(obsidianDevUtilsConfig).toBeDefined();
-  });
-
-  it('should load DebugController so v8 processes its ignore comments', () => {
-    expect(DebugController).toBeDefined();
-  });
-
-  it('should load StateFieldSpec so v8 processes its ignore comments', () => {
-    expect(StateFieldSpec).toBeDefined();
-  });
-
-  it('should load PluginSettingsWrapper so v8 processes its ignore comments', () => {
-    expect(PluginSettingsWrapper).toBeDefined();
-  });
-
-  it('should load PluginTypesBase so v8 processes its ignore comments', () => {
-    expect(PluginTypesBase).toBeDefined();
-  });
-
-  it('should load CustomTypeOptionsBase so v8 processes its ignore comments', () => {
-    expect(CustomTypeOptionsBase).toBeDefined();
-  });
-
-  it('should load DefaultTranslationsBase so v8 processes its ignore comments', () => {
-    expect(DefaultTranslationsBase).toBeDefined();
-  });
-
-  it('should load ValueComponentWithChangeTracking so v8 processes its ignore comments', () => {
-    expect(ValueComponentWithChangeTracking).toBeDefined();
-  });
-
-  it('should load CodeBlockMarkdownInformation so v8 processes its ignore comments', () => {
-    expect(CodeBlockMarkdownInformation).toBeDefined();
-  });
+  for (const mod of modules) {
+    expect(mod).toBeDefined();
+  }
 });

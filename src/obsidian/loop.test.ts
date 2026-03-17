@@ -21,10 +21,10 @@ import {
 } from '../error.ts';
 import { noop } from '../function.ts';
 import { castTo } from '../object-utils.ts';
+import { mockImplementation } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { loop } from './loop.ts';
 import { addPluginCssClasses } from './plugin/plugin-context.ts';
-import { mockImplementation } from '../test-helpers/mock-implementation.ts';
 
 vi.mock('../abort-controller.ts', () => ({
   abortSignalNever: vi.fn(() => new AbortController().signal)
@@ -437,7 +437,6 @@ describe('loop', () => {
       }
       return el;
     });
-
 
     vi.spyOn(console, 'error').mockImplementation(() => {
       noop();

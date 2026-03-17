@@ -176,7 +176,7 @@ function createMockApp(): App {
 }
 
 function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCache {
-  return strictProxy<FrontmatterLinkCache & { position?: undefined; startOffset?: undefined }>({
+  return strictProxy<{ position?: undefined; startOffset?: undefined } & FrontmatterLinkCache>({
     displayText: original,
     key,
     link: original,
@@ -187,7 +187,7 @@ function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCach
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): FrontmatterLinkCache {
-  return strictProxy<FrontmatterLinkCacheWithOffsets & { position?: undefined }>({
+  return strictProxy<{ position?: undefined } & FrontmatterLinkCacheWithOffsets>({
     displayText: original,
     endOffset,
     key,

@@ -56,7 +56,7 @@ function hasFlag(regExp: RegExp, flag: string): boolean {
 
 function shouldPickFlag(regExps: RegExp[], flag: string, strategy: RegExpMergeFlagsConflictStrategy): boolean {
   const count = regExps.filter((regExp) => hasFlag(regExp, flag)).length;
-  /* v8 ignore start -- All branches covered but v8 reports switch as partial. */
+  /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
   switch (strategy) {
     /* v8 ignore stop */
     case RegExpMergeFlagsConflictStrategy.Intersect:
@@ -66,7 +66,9 @@ function shouldPickFlag(regExps: RegExp[], flag: string, strategy: RegExpMergeFl
     case RegExpMergeFlagsConflictStrategy.Union:
       return count > 0;
     default:
+      /* v8 ignore start -- Exhaustive switch guard. */
       assert(false, `Invalid strategy: ${strategy as string}`);
+      /* v8 ignore stop */
   }
 
   const allSame = count === 0 || count === regExps.length;
@@ -148,7 +150,7 @@ function addUnicodeFlags(
   let shouldUseUFlag: boolean;
   let shouldUseVFlag: boolean;
 
-  /* v8 ignore start -- All branches covered but v8 reports switch as partial. */
+  /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
   switch (strategy) {
     /* v8 ignore stop */
     case RegExpMergeFlagsConflictStrategy.Intersect:
@@ -174,15 +176,13 @@ function addUnicodeFlags(
       shouldUseVFlag = countV > 0;
       break;
     default:
+      /* v8 ignore start -- Exhaustive switch guard. */
       assert(false, `Invalid strategy: ${strategy as string}`);
+      /* v8 ignore stop */
   }
 
   if (shouldUseUFlag && shouldUseVFlag) {
-    /* v8 ignore start -- Throw strategy cannot reach here; earlier checks would have thrown. */
-    if (strategy === RegExpMergeFlagsConflictStrategy.Throw) {
-      throw new Error('Cannot combine both \'u\'/\'v\' flags in one RegExp.');
-    }
-    /* v8 ignore stop */
+    assert(strategy !== RegExpMergeFlagsConflictStrategy.Throw, 'Cannot combine both \'u\'/\'v\' flags in one RegExp.');
     shouldUseUFlag = false;
   }
 

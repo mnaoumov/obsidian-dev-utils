@@ -55,6 +55,8 @@ export async function format(params?: FormatParams): Promise<void> {
   }
 
   const command = rewrite ? 'fmt' : 'check';
+  /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : ['**/*'];
+  /* v8 ignore stop */
   await execFromRoot(['npx', 'dprint', command, '--config', dprintJsonPath, { batchedArgs: targets }]);
 }

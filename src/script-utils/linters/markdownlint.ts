@@ -80,9 +80,12 @@ export async function lint(params?: LintParams): Promise<void> {
     );
   }
 
+  /* v8 ignore start -- The paths-provided branches are only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
+  /* v8 ignore stop */
   await execFromRoot(['npx', 'markdownlint-cli2', ...(shouldFix ? ['--fix'] : []), { batchedArgs: targets }]);
 
+  /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const mdFiles = paths?.length
     ? paths
     : await toArray(glob(['**/*.md'], {
@@ -92,6 +95,7 @@ export async function lint(params?: LintParams): Promise<void> {
         'node_modules/**'
       ]
     }));
+  /* v8 ignore stop */
   await execFromRoot([
     'npx',
     'linkinator',

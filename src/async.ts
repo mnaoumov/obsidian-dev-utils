@@ -430,7 +430,9 @@ export async function neverEnds(): Promise<never> {
   await new Promise(() => {
     noop();
   });
+  /* v8 ignore start -- Exhaustive switch guard; the await above never resolves. */
   assert(false, 'Should never happen');
+  /* v8 ignore stop */
 }
 
 /**

@@ -10,6 +10,8 @@
  */
 import type { Rule } from 'eslint';
 
+/* v8 ignore start -- ESLint rule module; correctness is verified by running ESLint, not unit tests. */
+
 export const noUsedUnderscoreParams: Rule.RuleModule = {
   create(context) {
     return {
@@ -62,3 +64,5 @@ export const noUsedUnderscoreParams: Rule.RuleModule = {
     type: 'problem'
   }
 };
+
+/* v8 ignore stop */

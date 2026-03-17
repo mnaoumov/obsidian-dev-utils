@@ -645,6 +645,34 @@ describe('canvas changes via applyFileChanges', () => {
     expect(firstNode['text']).toBe('Hello [[new]] world');
   });
 
+  it('should apply multiple canvas text node changes on the same node', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ id: '1', text: 'Hello [[old]] and [[other]]', type: 'text' }]
+    };
+    const changes = [
+      makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 6),
+      makeCanvasTextNodeChange('[[other]]', '[[replaced]]', 0, 18)
+    ];
+    let resultContent: null | string = null;
+
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+      const controller = new AbortController();
+      resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
+    });
+
+    await applyFileChanges(app, 'test.canvas', changes);
+    expect(resultContent).not.toBeNull();
+    assertNonNullable(resultContent);
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
+    const nodes = parsed['nodes'];
+    assertNonNullable(nodes);
+    const firstNode = nodes[0];
+    assertNonNullable(firstNode);
+    expect(firstNode['text']).toContain('[[new]]');
+    expect(firstNode['text']).toContain('[[replaced]]');
+  });
+
   it('should handle invalid JSON canvas content by throwing', async () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
 

@@ -285,7 +285,9 @@ async function applyCanvasChanges(
         return null;
       }
       node.file = change.newContent;
+      /* v8 ignore start -- The false branch of the else-if is unreachable; only 'file' and 'text' canvas node types exist. */
     } else if (isCanvasTextNodeChange(change)) {
+      /* v8 ignore stop */
       let canvasTextChangesForNode = canvasTextChanges.get(change.reference.nodeIndex);
       if (!canvasTextChangesForNode) {
         canvasTextChangesForNode = [];

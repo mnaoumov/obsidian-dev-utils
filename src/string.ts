@@ -9,7 +9,10 @@ import type { ValueProvider } from './value-provider.ts';
 
 import { abortSignalNever } from './abort-controller.ts';
 import { escapeRegExp } from './reg-exp.ts';
-import { ensureNonNullable } from './type-guards.ts';
+import {
+  assert,
+  ensureNonNullable
+} from './type-guards.ts';
 import { resolveValue } from './value-provider.ts';
 
 /**
@@ -131,7 +134,6 @@ export function escape(str: string): string {
  * @returns A function that maps LF-normalized offsets to original offsets.
  */
 export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOffset: number) => number {
-  const lfStr = ensureLfEndings(str);
   const lfOffsetToOriginalOffsetMap: number[] = [];
 
   for (let i = 0; i < str.length; i++) {
@@ -151,18 +153,7 @@ export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOff
       return lfOffset - lfOffsetToOriginalOffsetMap.length + str.length;
     }
 
-    /* v8 ignore start -- Never happens. */
-    if (lfOffsetToOriginalOffsetMap[lfOffset] === undefined) {
-      const message = 'Could not map offset';
-      console.error(message, {
-        lfOffset,
-        lfStr,
-        str
-      });
-      throw new Error(message);
-    }
-    /* v8 ignore stop */
-
+    assert(lfOffsetToOriginalOffsetMap[lfOffset] !== undefined, 'Could not map offset');
     return lfOffsetToOriginalOffsetMap[lfOffset];
   };
 }
@@ -276,7 +267,7 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
       substring
     };
 
-    const groupArgs = args.slice(0, sourceIndex - 1).map((arg, index) => {
+    const groupArgs = args.slice(0, sourceIndex - 1).map((arg, index): string => {
       if (typeof arg === 'string') {
         return arg;
       }

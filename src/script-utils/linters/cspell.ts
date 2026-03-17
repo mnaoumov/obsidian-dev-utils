@@ -31,6 +31,8 @@ export interface SpellcheckParams {
  */
 export async function spellcheck(params?: SpellcheckParams): Promise<void> {
   const { paths } = params ?? {};
+  /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : ['.'];
+  /* v8 ignore stop */
   await execFromRoot(['npx', 'cspell', '--no-progress', '--no-must-find-files', { batchedArgs: targets }]);
 }

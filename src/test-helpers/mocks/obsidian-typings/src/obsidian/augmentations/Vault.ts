@@ -10,8 +10,8 @@ import type { TAbstractFile } from 'obsidian';
 
 import { Vault } from 'obsidian-test-mocks/obsidian';
 
-import { defineMissingProperty } from './define-missing-property.ts';
 import { noopAsync } from '../../../../../../function.ts';
+import { defineMissingProperty } from './define-missing-property.ts';
 
 /**
  * Patches Vault prototype to expose methods from the Obsidian API that are
@@ -26,7 +26,7 @@ export function mockVault(): void {
   });
 
   defineMissingProperty(Vault.prototype, 'exists', {
-    async value(this:Vault, normalizedPath: string, sensitive?: boolean): Promise<boolean> {
+    async value(this: Vault, normalizedPath: string, sensitive?: boolean): Promise<boolean> {
       await noopAsync();
       const file = sensitive ? this.getAbstractFileByPath(normalizedPath) : this.getAbstractFileByPathInsensitive__(normalizedPath);
       return file !== null;

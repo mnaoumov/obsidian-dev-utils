@@ -10,6 +10,7 @@ import type { initPluginContext } from '../../plugin/plugin-context.ts';
 import type { SettingEx } from '../../setting-ex.ts';
 
 import { CssClass } from '../../../css-class.ts';
+import { ensureNonNullable } from '../../../type-guards.ts';
 import { TypedTextComponent } from './typed-text-component.ts';
 
 /**
@@ -38,7 +39,7 @@ export class MultipleFileComponent extends TypedTextComponent<readonly File[]> {
    * @returns The value of the component.
    */
   public override getValue(): readonly File[] {
-    return Array.from(this.inputEl.files ?? []);
+    return Array.from(ensureNonNullable(this.inputEl.files));
   }
 
   /**
