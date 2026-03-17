@@ -513,3 +513,5 @@ function getTseslintConfigs(): Linter.Config[] {
 }
 
 /* eslint-enable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
+
+/* v8 ignore stop */

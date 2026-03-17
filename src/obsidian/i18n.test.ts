@@ -21,22 +21,22 @@ const {
   mockInvokeAsyncSafelyFn,
   mockTLibFn
 } = vi.hoisted(() => {
-  const mockAddResourceBundleFn = vi.fn();
-  const mockInitFn = vi.fn(() => Promise.resolve());
-  const mockTLibFn = vi.fn((selector: unknown) => {
+  const mockAddResourceBundleFn2 = vi.fn();
+  const mockInitFn2 = vi.fn(() => Promise.resolve());
+  const mockTLibFn2 = vi.fn((selector: unknown) => {
     if (typeof selector === 'function') {
       return (selector as (translations: Record<string, unknown>) => unknown)({ test: 'translated-value' });
     }
     return 'mock-translated';
   });
-  const mockInvokeAsyncSafelyFn = vi.fn((fn: () => Promise<unknown>) => {
+  const mockInvokeAsyncSafelyFn2 = vi.fn((fn: () => Promise<unknown>) => {
     fn().then(() => undefined, () => undefined);
   });
   return {
-    mockAddResourceBundleFn,
-    mockInitFn,
-    mockInvokeAsyncSafelyFn,
-    mockTLibFn
+    mockAddResourceBundleFn: mockAddResourceBundleFn2,
+    mockInitFn: mockInitFn2,
+    mockInvokeAsyncSafelyFn: mockInvokeAsyncSafelyFn2,
+    mockTLibFn: mockTLibFn2
   };
 });
 
@@ -72,6 +72,11 @@ vi.mock('../obsidian/i18n/locales/translationsMap.ts', () => ({
   defaultTranslationsMap: { en: { obsidianDevUtils: { test: 'english-value' } } }
 }));
 
+async function reloadI18N(): Promise<typeof import('./i18n/i18n.ts')> {
+  // eslint-disable-next-line no-restricted-syntax -- We need to reload i18n dynamically.
+  return await import('./i18n/i18n.ts');
+}
+
 describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
   describe('DEFAULT_NS', () => {
     it('should export DEFAULT_NS as "translation"', async () => {
@@ -90,7 +95,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
         noop();
       });
 
-      const { t: freshT } = await import('./i18n/i18n.ts');
+      const { t: freshT } = await reloadI18N();
 
       freshT(((translations: GenericObject) => translations['test']) as never);
 
@@ -110,7 +115,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should call init with correct options', async () => {
-      const { initI18N } = await import('./i18n/i18n.ts');
+      const { initI18N } = await reloadI18N();
       const translationsMap = { en: { greeting: 'Hello' } };
 
       await initI18N(translationsMap as never, false);
@@ -128,7 +133,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should structure resources with DEFAULT_NS as key', async () => {
-      const { initI18N } = await import('./i18n/i18n.ts');
+      const { initI18N } = await reloadI18N();
       const translationsMap = { en: { greeting: 'Hello' }, fr: { greeting: 'Bonjour' } };
 
       await initI18N(translationsMap as never, false);
@@ -142,7 +147,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should add en resource bundle after init', async () => {
-      const { initI18N } = await import('./i18n/i18n.ts');
+      const { initI18N } = await reloadI18N();
 
       await initI18N({ en: { test: 'value' } } as never, false);
 
@@ -156,7 +161,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should only initialize once (idempotent)', async () => {
-      const { initI18N } = await import('./i18n/i18n.ts');
+      const { initI18N } = await reloadI18N();
 
       await initI18N({ en: { test: 'value' } } as never, false);
       expect(mockInitFn).toHaveBeenCalledTimes(1);
@@ -166,7 +171,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should default isAsync to true', async () => {
-      const { initI18N } = await import('./i18n/i18n.ts');
+      const { initI18N } = await reloadI18N();
 
       await initI18N({ en: { test: 'value' } } as never);
 
@@ -183,7 +188,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should call tLib with selector when no options provided', async () => {
-      const { initI18N, t: freshT } = await import('./i18n/i18n.ts');
+      const { initI18N, t: freshT } = await reloadI18N();
       await initI18N({ en: { test: 'hello' } } as never, false);
       mockTLibFn.mockClear();
 
@@ -195,7 +200,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should call tLib with selector and options when options provided', async () => {
-      const { initI18N, t: freshT } = await import('./i18n/i18n.ts');
+      const { initI18N, t: freshT } = await reloadI18N();
       await initI18N({ en: { test: 'hello' } } as never, false);
       mockTLibFn.mockClear();
 
@@ -208,7 +213,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should return the translated value from tLib', async () => {
-      const { initI18N, t: freshT } = await import('./i18n/i18n.ts');
+      const { initI18N, t: freshT } = await reloadI18N();
       await initI18N({ en: { test: 'hello' } } as never, false);
 
       const result = freshT((($: GenericObject): unknown => $['test']) as never);

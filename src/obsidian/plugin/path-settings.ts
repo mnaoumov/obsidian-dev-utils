@@ -45,7 +45,9 @@ class PathSetting {
       case PathSettingType.Include:
         return !this.regExp.test(path);
       default:
+        /* v8 ignore start -- Exhaustive switch guard. */
         assert(false, `Invalid path setting type: ${this.type as string}`);
+        /* v8 ignore stop */
     }
   }
 }
@@ -113,7 +115,9 @@ function getDefaultRegExp(type: PathSettingType): RegExp {
     case PathSettingType.Include:
       return ALWAYS_MATCH_REG_EXP;
     default:
+      /* v8 ignore start -- Exhaustive switch guard. */
       assert(false, `Invalid path setting type: ${type as string}`);
+      /* v8 ignore stop */
   }
 }
 

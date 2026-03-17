@@ -571,8 +571,10 @@ function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<strin
       return params.substitutions.toJSONFailed;
     case TokenSubstitutionKey.Undefined:
       return 'undefined';
+    /* v8 ignore start -- Exhaustive switch guard; default branch is unreachable. */
     default:
       assert(false, 'Unhandled substitution key');
+      /* v8 ignore stop */
   }
 }
 

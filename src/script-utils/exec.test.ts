@@ -167,6 +167,39 @@ describe('exec', () => {
     }
   });
 
+  it('should return ExecResult when shouldIncludeDetails is true with batched args that split', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const longArg = 'x'.repeat(4000);
+      const children = [createMockChild(), createMockChild()];
+      let callIndex = 0;
+      mockSpawn.mockImplementation(() => {
+        const child = children[callIndex];
+        assertNonNullable(child);
+        callIndex++;
+        setTimeout(() => {
+          child.stdout.push(Buffer.from(`batch${String(callIndex)}`));
+          child.stdout.end();
+          child.stderr.end();
+          child.emit('close', 0, null);
+        });
+        return child;
+      });
+
+      const result = await exec(['echo', { batchedArgs: [longArg, longArg, longArg] }], { isQuiet: true, shouldIncludeDetails: true });
+
+      expect(result).toEqual({
+        exitCode: 0,
+        exitSignal: null,
+        stderr: '',
+        stdout: ''
+      });
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
   it('should reject when a single batched arg exceeds max length', async () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });

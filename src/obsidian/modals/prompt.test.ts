@@ -188,6 +188,21 @@ describe('prompt', () => {
     expect(result).toBeNull();
   });
 
+  it('should update value when onChange callback fires and resolve the new value', async () => {
+    const resultPromise = prompt({
+      app,
+      defaultValue: 'initial'
+    });
+    queueMicrotask(() => {
+      const textComp = textInstances[0];
+      castTo<TextComponent>(textComp).setValue('updated');
+      const okButton = buttonInstances[0];
+      castTo<ButtonComponent>(okButton).simulateClick__();
+    });
+    const result = await resultPromise;
+    expect(result).toBe('updated');
+  });
+
   it('should accept a value validator', async () => {
     const validator = vi.fn(() => undefined);
     const result = await prompt({

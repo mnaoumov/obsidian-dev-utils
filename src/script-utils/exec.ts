@@ -354,7 +354,9 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOption): Promis
       currentBatch.push(arg);
     }
   }
+  /* v8 ignore start -- Always true after the loop; batchedArgs is non-empty at this point. */
   if (currentBatch.length > 0) {
+    /* v8 ignore stop */
     batches.push(currentBatch);
   }
 

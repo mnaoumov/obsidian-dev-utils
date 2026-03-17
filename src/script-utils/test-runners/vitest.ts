@@ -4,6 +4,8 @@
  * This module provides functions for running tests using the Vitest framework.
  */
 
+/* v8 ignore start -- Executes vitest as a CLI subprocess; correctness is verified by running tests, not unit tests. */
+
 import { execFromRoot } from '../root.ts';
 
 /**
@@ -47,3 +49,5 @@ export async function testCoverage(options?: TestCoverageOptions): Promise<void>
 export async function testWatch(): Promise<void> {
   await execFromRoot('vitest');
 }
+
+/* v8 ignore stop */

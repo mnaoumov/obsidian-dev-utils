@@ -62,6 +62,20 @@ describe('CliTaskResult', () => {
     });
   });
 
+  describe('throwOnFailure', () => {
+    it('should not throw for a successful result', () => {
+      expect(() => {
+        CliTaskResult.Success().throwOnFailure();
+      }).not.toThrow();
+    });
+
+    it('should throw when result is not successful', () => {
+      expect(() => {
+        CliTaskResult.Failure().throwOnFailure();
+      }).toThrow('Task failed');
+    });
+  });
+
   describe('exit', () => {
     it('should exit with code 0 for Success', () => {
       CliTaskResult.Success().exit();

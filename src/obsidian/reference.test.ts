@@ -34,7 +34,7 @@ function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
 }
 
 function makeFrontmatterLink(original: string, key: string): Reference {
-  return strictProxy<FrontmatterLinkCache & { endOffset?: undefined; isCanvas?: undefined; position?: undefined; startOffset?: undefined }>({
+  return strictProxy<{ endOffset?: undefined; isCanvas?: undefined; position?: undefined; startOffset?: undefined } & FrontmatterLinkCache>({
     displayText: original,
     endOffset: undefined,
     isCanvas: undefined,
@@ -47,7 +47,7 @@ function makeFrontmatterLink(original: string, key: string): Reference {
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): Reference {
-  return strictProxy<FrontmatterLinkCacheWithOffsets & { position?: undefined }>({
+  return strictProxy<{ position?: undefined } & FrontmatterLinkCacheWithOffsets>({
     displayText: original,
     endOffset,
     key,

@@ -70,6 +70,8 @@ export async function lint(params?: LintParams): Promise<void> {
     );
   }
 
+  /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
+  /* v8 ignore stop */
   await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), { batchedArgs: targets }]);
 }

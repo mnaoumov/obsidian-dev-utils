@@ -20,6 +20,8 @@ import {
 } from './debug.ts';
 import { noop } from './function.ts';
 import { castTo } from './object-utils.ts';
+// eslint-disable-next-line import-x/no-namespace -- We need to import the module to mock it.
+import * as isInObsidianModule from './obsidian/is-in-obsidian.ts';
 import {
   NO_PLUGIN_ID_INITIALIZED,
   setPluginId
@@ -280,18 +282,8 @@ describe('Debug', () => {
   });
 
   describe('printWithStackTrace', () => {
-    let savedApp: unknown;
-
-    beforeEach(() => {
-      savedApp = castTo<Record<string, unknown>>(globalThis)['app'];
-      delete castTo<Record<string, unknown>>(globalThis)['app'];
-    });
-
-    afterEach(() => {
-      castTo<Record<string, unknown>>(globalThis)['app'] = savedApp;
-    });
-
-    it('should call the debugger with message and args in Node environment (no window)', () => {
+    it('should call the debugger with message and args outside Obsidian', () => {
+      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(false);
       debug.enable('print-test');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
@@ -299,7 +291,8 @@ describe('Debug', () => {
       expect(spy).toHaveBeenCalledWith('hello %s', 'world');
     });
 
-    it('should not include stack trace info in Node environment', () => {
+    it('should not include stack trace info outside Obsidian', () => {
+      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(false);
       debug.enable('print-test-2');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
@@ -308,20 +301,36 @@ describe('Debug', () => {
       expect(spy).toHaveBeenCalledWith('msg');
     });
 
-    it('should call the debugger with no extra arguments when none provided', () => {
-      debug.enable('print-test-3');
+    it('should include stack trace info inside Obsidian', () => {
+      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(true);
+      debug.enable('print-test-obsidian');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
-      printWithStackTrace(spy, 'stack-trace', 'simple message');
-      expect(spy).toHaveBeenCalledWith('simple message');
+      printWithStackTrace(spy, 'fake-stack', 'msg');
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith('msg', expect.stringContaining('stack trace'), expect.anything());
+    });
+  });
+
+  describe('logWithCaller (via debugger call)', () => {
+    it('should call console.debug without stack trace outside Obsidian', () => {
+      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(false);
+      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      const namespace = 'log-caller-outside';
+      debug.enable(namespace);
+      const dbg = getDebugger(namespace);
+      dbg('hello %s', 'world');
+      expect(consoleSpy).toHaveBeenCalled();
     });
 
-    it('should call the debugger with multiple args', () => {
-      debug.enable('print-test-4');
-      const spy = castTo<Debugger>(vi.fn());
-      spy.enabled = true;
-      printWithStackTrace(spy, 'stack', '%s %d %o', 'a', 1, { x: 2 });
-      expect(spy).toHaveBeenCalledWith('%s %d %o', 'a', 1, { x: 2 });
+    it('should call console.debug with stack trace inside Obsidian', () => {
+      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(true);
+      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      const namespace = 'log-caller-inside';
+      debug.enable(namespace);
+      const dbg = getDebugger(namespace);
+      dbg('inside message');
+      expect(consoleSpy).toHaveBeenCalled();
     });
   });
 
