@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 51.1.7
+
+- chore: include postinstall
+
 ## 51.1.6
 
 - fix: npm pack parsing
