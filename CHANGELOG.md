@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 51.1.0
+
+- chore: extract mocks
+
 ## 51.0.1
 
 - fix: increase test timeouts for heavy dynamic imports in i18n and pdf tests Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
