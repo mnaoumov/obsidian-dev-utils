@@ -43,7 +43,7 @@ vi.mock('obsidian-typings/implementations', () => ({
 
 describe('CodeHighlighterComponent', () => {
   function createComponent(): CodeHighlighterComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new CodeHighlighterComponent(container);
   }
 
@@ -177,7 +177,7 @@ describe('CodeHighlighterComponent', () => {
   });
 
   it('should remove existing language class and skip non-language classes', () => {
-    const container = document.createElement('div');
+    const container = createDiv();
     const comp = new CodeHighlighterComponent(container);
     comp.setLanguage('javascript');
     // Add a non-language class via DOM to trigger the false branch of startsWith check

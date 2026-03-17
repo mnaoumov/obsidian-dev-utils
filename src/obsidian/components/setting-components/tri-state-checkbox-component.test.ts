@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('TriStateCheckboxComponent', () => {
   function createComponent(): TriStateCheckboxComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new TriStateCheckboxComponent(container);
   }
 

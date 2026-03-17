@@ -22,7 +22,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('MultipleDropdownComponent', () => {
   function createComponent(): MultipleDropdownComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new MultipleDropdownComponent(container);
   }
 

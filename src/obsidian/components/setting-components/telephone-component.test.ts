@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('TelephoneComponent', () => {
   function createComponent(): TelephoneComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new TelephoneComponent(container);
   }
 

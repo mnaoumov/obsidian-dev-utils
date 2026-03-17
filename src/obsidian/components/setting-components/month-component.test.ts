@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('MonthComponent', () => {
   function createComponent(): MonthComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new MonthComponent(container);
   }
 

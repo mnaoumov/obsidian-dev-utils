@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('CheckboxComponent', () => {
   function createComponent(): CheckboxComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new CheckboxComponent(container);
   }
 

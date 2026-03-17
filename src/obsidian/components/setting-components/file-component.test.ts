@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('FileComponent', () => {
   function createComponent(): FileComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new FileComponent(container);
   }
 

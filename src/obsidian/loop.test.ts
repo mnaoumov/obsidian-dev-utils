@@ -274,7 +274,7 @@ describe('loop', () => {
       globalThis,
       'createEl'
     ).mockImplementation((tag: string): HTMLElement => {
-      const el = document.createElement(tag);
+      const el = createEl(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
       }
@@ -402,7 +402,7 @@ describe('loop', () => {
       globalThis,
       'createEl'
     ).mockImplementation((tag: string): HTMLElement => {
-      const el = document.createElement(tag);
+      const el = createEl(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
       }
@@ -439,7 +439,7 @@ describe('loop', () => {
       globalThis,
       'createEl'
     ).mockImplementation((tag: string): HTMLElement => {
-      const el = document.createElement(tag);
+      const el = createEl(tag);
       if (tag === 'progress') {
         capturedProgressEl = el as HTMLProgressElement;
       }

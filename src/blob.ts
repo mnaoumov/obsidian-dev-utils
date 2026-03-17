@@ -57,7 +57,7 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
     image.src = dataUrl;
 
     function handleLoad(): void {
-      const canvas = document.createElement('canvas');
+      const canvas = createEl('canvas');
       const context = canvas.getContext('2d');
       assertNonNullable(context, 'Could not get 2D context.');
       const imageWidth = image.width;

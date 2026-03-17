@@ -92,7 +92,7 @@ vi.mock('../value-provider.ts', () => ({
 vi.mock('../obsidian/dataview.ts', () => ({
   getRenderedContainer: vi.fn(async (_dv: unknown, renderer: () => Promise<void>) => {
     await renderer();
-    return document.createElement('p');
+    return createEl('p');
   })
 }));
 
@@ -121,12 +121,12 @@ interface ParagraphOptions {
 }
 
 function createMockDv(): MockDv {
-  const container = document.createElement('div');
+  const container = createDiv();
   return {
     app: {},
     container,
     paragraph: vi.fn((text: unknown, options?: ParagraphOptions) => {
-      const p = document.createElement('p');
+      const p = createEl('p');
       if (typeof text === 'string') {
         // eslint-disable-next-line @microsoft/sdl/no-inner-html -- test setup
         p.innerHTML = text;
