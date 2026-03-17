@@ -204,9 +204,3 @@ See `static/scripts/` for the full set of consumer examples.
   - `npm run build:compile:typescript`
   - `npm run lint:fix`
   - `npm run format`
-
-## Known Issues
-
-- **207 test failures**: Pre-existing after `chore: update libs` (commit e363229b). Likely caused by `obsidian-test-mocks` version bump introducing breaking changes (e.g., `validatorEl` not mocked in `ToggleComponent`).
-- **544 spellcheck issues in 1 file**: Pre-existing. Likely a generated or large file triggering false positives.
-- **ESLint/dprint import order conflict**: `perfectionist/sort-named-imports` sorts by alias name, dprint sorts by original export name. Affects aliased imports like `Vault as ObsidianVault`. dprint wins since it runs after ESLint in the pre-commit hook.
