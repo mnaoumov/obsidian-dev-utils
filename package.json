@@ -602,12 +602,13 @@
   "module": "./dist/lib/esm/index.mjs",
   "types": "./dist/lib/cjs/index.d.cts",
   "files": [
+    "**/package.json",
+    "CHANGELOG.md",
     "dist/",
     "!dist/*.tgz",
-    "CHANGELOG.md",
     "LICENSE",
     "README.md",
-    "**/package.json"
+    "scripts/postinstall.mjs"
   ],
   "scripts": {
     "build": "jiti scripts/build.ts",
