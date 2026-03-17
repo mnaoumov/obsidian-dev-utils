@@ -1,4 +1,7 @@
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
+import {
+  CliTaskResult,
+  wrapCliTask
+} from '../src/script-utils/cli-utils.ts';
 import { execFromRoot } from '../src/script-utils/root.ts';
 
 const BUILD_STEPS = [
@@ -16,6 +19,7 @@ await wrapCliTask(async () => {
   for (const step of BUILD_STEPS) {
     await wrapCliTask(async () => {
       await execFromRoot(['npm', 'run', step]);
+      return CliTaskResult.DoNotExit();
     });
   }
 });
