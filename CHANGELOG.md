@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 51.1.8
+
+- fix: dep
+
 ## 51.1.7
 
 - chore: include postinstall
