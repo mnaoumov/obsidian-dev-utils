@@ -6,7 +6,6 @@ import {
   vi
 } from 'vitest';
 
-import { castTo } from '../object-utils.ts';
 import { publish } from './npm-publish.ts';
 
 const {
@@ -19,7 +18,7 @@ const {
   mockExecFromRoot: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
   mockLoadEnvFile: vi.fn(),
-  mockProcess: { env: castTo<Record<string, string | undefined>>({}) },
+  mockProcess: { env: {} as Record<string, string | undefined> },
   mockResolvePathFromRoot: vi.fn<(path: string) => null | string>()
 }));
 
