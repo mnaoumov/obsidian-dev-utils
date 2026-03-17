@@ -26,6 +26,7 @@ export const config = defineConfig({
     coverage: SHARED_COVERAGE,
     exclude: ['node_modules', 'dist'],
     globals: false,
+    onConsoleLog: (): false => false,
     projects: [
       {
         resolve: SHARED_RESOLVE,
