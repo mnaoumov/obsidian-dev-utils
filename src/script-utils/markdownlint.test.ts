@@ -67,10 +67,10 @@ describe('lint', () => {
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledTimes(2);
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'markdownlint-cli2', '.'])
+      expect.arrayContaining(['npx', 'markdownlint-cli2', { batchedArgs: ['.'] }])
     );
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', 'README.md'])
+      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md'] }])
     );
   });
 
@@ -78,7 +78,7 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(true);
     await lint({ shouldFix: true });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'markdownlint-cli2', '--fix', '.'])
+      expect.arrayContaining(['npx', 'markdownlint-cli2', '--fix', { batchedArgs: ['.'] }])
     );
   });
 
@@ -112,7 +112,7 @@ describe('lint', () => {
     })());
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', 'README.md', 'CHANGELOG.md', 'docs/guide.md'])
+      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md', 'CHANGELOG.md', 'docs/guide.md'] }])
     );
   });
 });

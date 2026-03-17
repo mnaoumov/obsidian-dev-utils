@@ -49,15 +49,21 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 vi.mock('node:process', async (importOriginal) => {
   const mod = await importOriginal<typeof import('node:process')>();
+  const mockProcess = {
+    ...mod,
+    cwd: (): string => mod.cwd(),
+    env: mod.env,
+    stderr: { write: mockStderrWrite },
+    stdout: { write: mockStdoutWrite }
+  };
+  Object.defineProperty(mockProcess, 'platform', {
+    configurable: true,
+    enumerable: true,
+    get: () => process.platform
+  });
   return {
     ...mod,
-    default: {
-      ...mod,
-      cwd: (): string => mod.cwd(),
-      env: mod.env,
-      stderr: { write: mockStderrWrite },
-      stdout: { write: mockStdoutWrite }
-    }
+    default: mockProcess
   };
 });
 
