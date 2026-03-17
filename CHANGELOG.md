@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 51.1.2
+
+- fix: publish script
+
 ## 51.1.1
 
 - chore: update exports
