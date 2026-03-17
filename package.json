@@ -501,6 +501,26 @@
         "default": "./dist/lib/cjs/script-utils/linters/*.cjs"
       }
     },
+    "./script-utils/linters/eslint-rules": {
+      "import": {
+        "types": "./dist/lib/esm/script-utils/linters/eslint-rules/index.d.mts",
+        "default": "./dist/lib/esm/script-utils/linters/eslint-rules/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/script-utils/linters/eslint-rules/index.d.cts",
+        "default": "./dist/lib/cjs/script-utils/linters/eslint-rules/index.cjs"
+      }
+    },
+    "./script-utils/linters/eslint-rules/*": {
+      "import": {
+        "types": "./dist/lib/esm/script-utils/linters/eslint-rules/*.d.mts",
+        "default": "./dist/lib/esm/script-utils/linters/eslint-rules/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/script-utils/linters/eslint-rules/*.d.cts",
+        "default": "./dist/lib/cjs/script-utils/linters/eslint-rules/*.cjs"
+      }
+    },
     "./script-utils/linters/eslint-types/*": {
       "import": {
         "types": "./dist/lib/esm/script-utils/linters/eslint-types/*.d.mts",
