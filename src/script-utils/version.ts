@@ -294,6 +294,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     filePaths = fileNames.map((fileName) => join(buildFolder, fileName));
   } else {
     const resultOutput = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json', '--silent'], { isQuiet: true });
+    console.warn(resultOutput);
     const result = JSON.parse(resultOutput) as [{ filename: string }];
     filePaths = [
       join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename),
