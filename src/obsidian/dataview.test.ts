@@ -90,7 +90,7 @@ function createMockDv(): DataviewInlineApi {
         _text: string,
         options?: ElOptions
       ) => {
-        const el = createEl(tag);
+        const el = createEl(tag as keyof HTMLElementTagNameMap);
         if (options?.attr) {
           for (const [k, v] of Object.entries(options.attr)) {
             el.setAttribute(k, v);

@@ -7,26 +7,18 @@
 
 import { TAbstractFile } from 'obsidian-test-mocks/obsidian';
 
-import { ensureGenericObject } from '../../../../../../type-guards.ts';
-import { mockImplementation } from '../../../../../mock-implementation.ts';
+import { defineMissingProperty } from './define-missing-property.ts';
 
 /**
- * Patches TAbstractFile to expose `deleted` from the Obsidian API.
+ * Patches TAbstractFile prototype to expose `deleted` from the Obsidian API.
  */
 export function mockTAbstractFile(): void {
-  mockImplementation(
-    TAbstractFile.prototype,
-    'constructor__',
-    function initTAbstractFile(this: TAbstractFile, originalImplementation, ...args: Parameters<TAbstractFile['constructor__']>): void {
-      originalImplementation.call(this, ...args);
-      Object.defineProperty(this, 'deleted', {
-        configurable: true,
-        enumerable: true,
-        get: (): boolean => this.deleted__,
-        set: (value: boolean): void => {
-          ensureGenericObject(this).deleted__ = value;
-        }
-      });
+  defineMissingProperty(TAbstractFile.prototype, 'deleted', {
+    get(this: TAbstractFile): boolean {
+      return this.deleted__;
+    },
+    set(this: TAbstractFile, value: boolean): void {
+      this.deleted__ = value;
     }
-  );
+  });
 }

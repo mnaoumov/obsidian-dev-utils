@@ -267,7 +267,7 @@ describe('createSvgAsync', () => {
 describe('appendCodeBlock', () => {
   it('should call createEl on the element with strong tag and correct options', () => {
     const mockCreateEl = vi.fn();
-    const el = createMockElement();
+    const el = buildElement();
     el.createEl = mockCreateEl;
     appendCodeBlock(el, 'console.log("hello")');
     expect(mockCreateEl).toHaveBeenCalledWith(
@@ -279,13 +279,13 @@ describe('appendCodeBlock', () => {
 
   it('should call createEl on the strong element with code tag inside the callback', () => {
     const innerCreateEl = vi.fn();
-    const mockStrong = createMockElement();
+    const mockStrong = buildElement();
     mockStrong.createEl = innerCreateEl;
     const mockCreateEl = vi.fn((_tag: string, _opts: unknown, cb: (el: HTMLElement) => void): HTMLElement => {
       cb(mockStrong);
       return mockStrong;
     });
-    const el = createMockElement();
+    const el = buildElement();
     el.createEl = mockCreateEl;
     appendCodeBlock(el, 'my-code');
     expect(innerCreateEl).toHaveBeenCalledWith('code', { text: 'my-code' });
@@ -293,13 +293,13 @@ describe('appendCodeBlock', () => {
 
   it('should pass the code text correctly', () => {
     const innerCreateEl = vi.fn();
-    const mockStrong = createMockElement();
+    const mockStrong = buildElement();
     mockStrong.createEl = innerCreateEl;
     const mockCreateEl = vi.fn((_tag: string, _opts: unknown, cb: (el: HTMLElement) => void): HTMLElement => {
       cb(mockStrong);
       return mockStrong;
     });
-    const el = createMockElement();
+    const el = buildElement();
     el.createEl = mockCreateEl;
     const code = 'const x = 42;';
     appendCodeBlock(el, code);
@@ -318,20 +318,20 @@ describe('getZIndex', () => {
   });
 
   it('should return the z-index from computed style when set', () => {
-    const el = createMockElement();
+    const el = buildElement();
     vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: '10' }));
     expect(getZIndex(el)).toBe(10);
   });
 
   it('should return 0 for an element with auto z-index and no parent', () => {
-    const el = createMockElement();
+    const el = buildElement();
     vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' }));
     expect(getZIndex(el)).toBe(0);
   });
 
   it('should return parent z-index if child has auto', () => {
-    const parent = createMockElement();
-    const child = createMockElement(parent);
+    const parent = buildElement();
+    const child = buildElement({ parent });
     vi.mocked(getComputedStyle).mockImplementation((target) => {
       if (target === child) {
         return strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' });
@@ -345,22 +345,22 @@ describe('getZIndex', () => {
   });
 
   it('should return 0 if no ancestor has a numeric z-index', () => {
-    const grandparent = createMockElement();
-    const parent = createMockElement(grandparent);
-    const child = createMockElement(parent);
+    const grandparent = buildElement();
+    const parent = buildElement({ parent: grandparent });
+    const child = buildElement({ parent });
     vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' }));
     expect(getZIndex(child)).toBe(0);
   });
 
   it('should return negative z-index values', () => {
-    const el = createMockElement();
+    const el = buildElement();
     vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: '-3' }));
     expect(getZIndex(el)).toBe(-3);
   });
 
   it('should skip elements with empty z-index string', () => {
-    const parent = createMockElement();
-    const child = createMockElement(parent);
+    const parent = buildElement();
+    const child = buildElement({ parent });
     vi.mocked(getComputedStyle).mockImplementation((target) => {
       if (target === child) {
         return strictProxy<CSSStyleDeclaration>({ zIndex: '' });
@@ -398,25 +398,34 @@ describe('isLoaded', () => {
 
   describe('HTMLImageElement', () => {
     it('should return true when complete is true and naturalWidth > 0', () => {
-      const el = createElement('img', {
-        complete: true,
-        naturalWidth: 100
+      const el = buildElement({
+        attrs: {
+          complete: true,
+          naturalWidth: 100
+        },
+        tag: 'img'
       });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when complete is false', () => {
-      const el = createElement('img', {
-        complete: false,
-        naturalWidth: 100
+      const el = buildElement({
+        attrs: {
+          complete: false,
+          naturalWidth: 100
+        },
+        tag: 'img'
       });
       expect(isLoaded(el)).toBe(false);
     });
 
     it('should return false when naturalWidth is 0', () => {
-      const el = createElement('img', {
-        complete: true,
-        naturalWidth: 0
+      const el = buildElement({
+        attrs: {
+          complete: true,
+          naturalWidth: 0
+        },
+        tag: 'img'
       });
       expect(isLoaded(el)).toBe(false);
     });
@@ -424,15 +433,21 @@ describe('isLoaded', () => {
 
   describe('HTMLIFrameElement', () => {
     it('should return true when contentDocument exists', () => {
-      const el = createElement('iframe', {
-        contentDocument: {}
+      const el = buildElement({
+        attrs: {
+          contentDocument: {}
+        },
+        tag: 'iframe'
       });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when contentDocument is null', () => {
-      const el = createElement('iframe', {
-        contentDocument: null
+      const el = buildElement({
+        attrs: {
+          contentDocument: null
+        },
+        tag: 'iframe'
       });
       expect(isLoaded(el)).toBe(false);
     });
@@ -440,15 +455,21 @@ describe('isLoaded', () => {
 
   describe('HTMLEmbedElement', () => {
     it('should return true when getSVGDocument returns truthy', () => {
-      const el = createElement('embed', {
-        getSVGDocument: vi.fn(() => ({}))
+      const el = buildElement({
+        attrs: {
+          getSVGDocument: vi.fn(() => ({}))
+        },
+        tag: 'embed'
       });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when getSVGDocument returns null', () => {
-      const el = createElement('embed', {
-        getSVGDocument: vi.fn(() => null)
+      const el = buildElement({
+        attrs: {
+          getSVGDocument: vi.fn(() => null)
+        },
+        tag: 'embed'
       });
       expect(isLoaded(el)).toBe(false);
     });
@@ -456,92 +477,107 @@ describe('isLoaded', () => {
 
   describe('HTMLLinkElement', () => {
     it('should return true for stylesheet link with sheet set', () => {
-      const el = createElement('link', {
-        rel: 'stylesheet',
-        sheet: {}
+      const el = buildElement({
+        attrs: {
+          rel: 'stylesheet',
+          sheet: {}
+        },
+        tag: 'link'
       });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false for stylesheet link with sheet null', () => {
-      const el = createElement('link', { rel: 'stylesheet', sheet: null });
+      const el = buildElement({
+        attrs: {
+          rel: 'stylesheet',
+          sheet: null
+        },
+        tag: 'link'
+      });
       expect(isLoaded(el)).toBe(false);
     });
 
     it('should return true for non-stylesheet link', () => {
-      const el = createElement('link', { rel: 'icon', sheet: null });
+      const el = buildElement({
+        attrs: {
+          rel: 'icon',
+          sheet: null
+        },
+        tag: 'link'
+      });
       expect(isLoaded(el)).toBe(true);
     });
   });
 
   describe('HTMLObjectElement', () => {
     it('should return true when contentDocument exists', () => {
-      const el = createElement('object', { contentDocument: {}, getSVGDocument: vi.fn(() => null) });
+      const el = buildElement({ attrs: { contentDocument: {}, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return true when getSVGDocument returns truthy', () => {
-      const el = createElement('object', { contentDocument: null, getSVGDocument: vi.fn(() => ({})) });
+      const el = buildElement({ attrs: { contentDocument: null, getSVGDocument: vi.fn(() => ({})) }, tag: 'object' });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when both contentDocument and getSVGDocument are falsy', () => {
-      const el = createElement('object', { contentDocument: null, getSVGDocument: vi.fn(() => null) });
+      const el = buildElement({ attrs: { contentDocument: null, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
       expect(isLoaded(el)).toBe(false);
     });
   });
 
   describe('HTMLScriptElement', () => {
     it('should always return true', () => {
-      const el = createElement('script');
+      const el = buildElement({ tag: 'script' });
       expect(isLoaded(el)).toBe(true);
     });
   });
 
   describe('HTMLStyleElement', () => {
     it('should return true when sheet is set', () => {
-      const el = createElement('style', { sheet: {} });
+      const el = buildElement({ attrs: { sheet: {} }, tag: 'style' });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when sheet is null', () => {
-      const el = createElement('style', { sheet: null });
+      const el = buildElement({ attrs: { sheet: null }, tag: 'style' });
       expect(isLoaded(el)).toBe(false);
     });
   });
 
   describe('HTMLTrackElement', () => {
     it('should return true when readyState is 2 (loaded)', () => {
-      const el = createElement('track', { readyState: 2 });
+      const el = buildElement({ attrs: { readyState: 2 }, tag: 'track' });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when readyState is not 2', () => {
-      const el = createElement('track', { readyState: 0 });
+      const el = buildElement({ attrs: { readyState: 0 }, tag: 'track' });
       expect(isLoaded(el)).toBe(false);
     });
 
     it('should return false when readyState is 1', () => {
-      const el = createElement('track', { readyState: 1 });
+      const el = buildElement({ attrs: { readyState: 1 }, tag: 'track' });
       expect(isLoaded(el)).toBe(false);
     });
   });
 
   describe('generic element', () => {
     it('should return true when element has no loadable children', () => {
-      const el = createMockElement();
+      const el = buildElement();
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return true when all loadable children are loaded', () => {
-      const el = createMockElement();
-      createMockElement(el);
+      const el = buildElement();
+      buildElement({ parent: el });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when a loadable child is not loaded', () => {
-      const img = createElement('img', { complete: false, naturalWidth: 0 });
-      const el = createMockElement();
+      const img = buildElement({ attrs: { complete: false, naturalWidth: 0 }, tag: 'img' });
+      const el = buildElement();
       el.appendChild(img);
       expect(isLoaded(el)).toBe(false);
     });
@@ -554,54 +590,54 @@ describe('isElementVisibleInOffsetParent', () => {
   });
 
   it('should return false when offsetParent is null', () => {
-    const el = createElement('div', { offsetParent: null });
+    const el = buildElement({ attrs: { offsetParent: null }, tag: 'div' });
     expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return true when element is fully within offset parent', () => {
-    const parent = createMockElement();
+    const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 200, left: 0, right: 200, toJSON: vi.fn(), top: 0, width: 200, x: 0, y: 0 }));
-    const el = createElement('div', { offsetParent: parent });
+    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
     el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
     expect(isElementVisibleInOffsetParent(el)).toBe(true);
   });
 
   it('should return false when element extends above offset parent', () => {
-    const parent = createMockElement();
+    const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 150, left: 0, right: 200, toJSON: vi.fn(), top: 50, width: 200, x: 0, y: 50 }));
-    const el = createMockElement(parent);
+    const el = buildElement({ parent });
     el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
     expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return false when element extends below offset parent', () => {
-    const parent = createMockElement();
+    const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 200, toJSON: vi.fn(), top: 0, width: 200, x: 0, y: 0 }));
-    const el = createElement('div', { offsetParent: parent });
+    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
     el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 150, height: 140, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
     expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return false when element extends left of offset parent', () => {
-    const parent = createMockElement();
+    const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 150, left: 50, right: 200, toJSON: vi.fn(), top: 0, width: 150, x: 50, y: 0 }));
-    const el = createElement('div', { offsetParent: parent });
+    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
     el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
     expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return false when element extends right of offset parent', () => {
-    const parent = createMockElement();
+    const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
-    const el = createElement('div', { offsetParent: parent });
+    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
     el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 150, toJSON: vi.fn(), top: 10, width: 140, x: 10, y: 10 }));
     expect(isElementVisibleInOffsetParent(el)).toBe(false);
   });
 
   it('should return true when element exactly matches offset parent bounds', () => {
-    const parent = createMockElement();
+    const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
-    const el = createElement('div', { offsetParent: parent });
+    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
     el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
     expect(isElementVisibleInOffsetParent(el)).toBe(true);
   });
@@ -613,13 +649,13 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should return a cleanup function', () => {
-    const node = createMockElement();
+    const node = buildElement();
     const cleanup = onAncestorScrollOrResize(node, vi.fn());
     expect(typeof cleanup).toBe('function');
   });
 
   it('should add scroll and resize listeners to document, window, and the node', () => {
-    const node = createMockElement();
+    const node = buildElement();
     vi.spyOn(document, 'addEventListener');
     vi.spyOn(window, 'addEventListener');
     vi.spyOn(node, 'addEventListener');
@@ -635,9 +671,9 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should add listeners to ancestor nodes in the parent chain', () => {
-    const grandparent = createMockElement();
-    const parent = createMockElement(grandparent);
-    const node = createMockElement(parent);
+    const grandparent = buildElement();
+    const parent = buildElement({ parent: grandparent });
+    const node = buildElement({ parent });
 
     vi.spyOn(node, 'addEventListener');
     vi.spyOn(parent, 'addEventListener');
@@ -651,7 +687,7 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should remove all listeners when cleanup is called', () => {
-    const node = createMockElement();
+    const node = buildElement();
     const cleanup = onAncestorScrollOrResize(node, vi.fn());
 
     const documentRemoveEventListeners = vi.fn();
@@ -701,7 +737,7 @@ describe('onAncestorScrollOrResize', () => {
       return 0;
     });
 
-    const node = createMockElement();
+    const node = buildElement();
     const callback = vi.fn();
     onAncestorScrollOrResize(node, callback);
 
@@ -714,7 +750,7 @@ describe('onAncestorScrollOrResize', () => {
   it('should debounce multiple rapid event triggers', () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
 
-    const node = createMockElement();
+    const node = buildElement();
     const callback = vi.fn();
     onAncestorScrollOrResize(node, callback);
 
@@ -733,7 +769,7 @@ describe('onAncestorScrollOrResize', () => {
       return 0;
     });
 
-    const node = createMockElement();
+    const node = buildElement();
     const callback = vi.fn();
     onAncestorScrollOrResize(node, callback);
 
@@ -754,7 +790,7 @@ describe('onAncestorScrollOrResize', () => {
       return 0;
     });
 
-    const node = createMockElement();
+    const node = buildElement();
     const callback = vi.fn(() => {
       throw new Error('callback error');
     });
@@ -779,19 +815,22 @@ describe('onAncestorScrollOrResize', () => {
 
 describe('ensureLoaded', () => {
   it('should resolve immediately when element is already loaded', async () => {
-    const el = createMockElement();
+    const el = buildElement();
     await expect(ensureLoaded(el)).resolves.toBeUndefined();
   });
 
   it('should resolve immediately for a generic element with no loadable children', async () => {
-    const el = createMockElement();
+    const el = buildElement();
     await expect(ensureLoaded(el)).resolves.toBeUndefined();
   });
 
   it('should wait for load event on an unloaded image', async () => {
-    const el = createElement('img', {
-      complete: false,
-      naturalWidth: 0
+    const el = buildElement({
+      attrs: {
+        complete: false,
+        naturalWidth: 0
+      },
+      tag: 'img'
     });
 
     const promise = ensureLoaded(el);
@@ -801,9 +840,12 @@ describe('ensureLoaded', () => {
   });
 
   it('should wait for error event on an unloaded image', async () => {
-    const el = createElement('img', {
-      complete: false,
-      naturalWidth: 0
+    const el = buildElement({
+      attrs: {
+        complete: false,
+        naturalWidth: 0
+      },
+      tag: 'img'
     });
 
     const promise = ensureLoaded(el);
@@ -813,18 +855,21 @@ describe('ensureLoaded', () => {
   });
 
   it('should recursively ensure all loadable children are loaded for generic elements', async () => {
-    const script = createElement('script');
-    const el = createMockElement();
+    const script = buildElement({ tag: 'script' });
+    const el = buildElement();
     el.appendChild(script);
     await expect(ensureLoaded(el)).resolves.toBeUndefined();
   });
 
   it('should recursively wait for unloaded children inside a generic element', async () => {
-    const img = createElement('img', {
-      complete: false,
-      naturalWidth: 0
+    const img = buildElement({
+      attrs: {
+        complete: false,
+        naturalWidth: 0
+      },
+      tag: 'img'
     });
-    const el = createMockElement();
+    const el = buildElement();
     el.appendChild(img);
 
     const promise = ensureLoaded(el);
@@ -834,8 +879,11 @@ describe('ensureLoaded', () => {
   });
 
   it('should wait for load on an unloaded iframe', async () => {
-    const el = createElement('iframe', {
-      contentDocument: null
+    const el = buildElement({
+      attrs: {
+        contentDocument: null
+      },
+      tag: 'iframe'
     });
 
     const promise = ensureLoaded(el);
@@ -845,8 +893,11 @@ describe('ensureLoaded', () => {
   });
 
   it('should wait for load on an unloaded style element', async () => {
-    const el = createElement('style', {
-      sheet: null
+    const el = buildElement({
+      attrs: {
+        sheet: null
+      },
+      tag: 'style'
     });
 
     const promise = ensureLoaded(el);
@@ -856,19 +907,21 @@ describe('ensureLoaded', () => {
   });
 });
 
-function createElement(tag: keyof HTMLElementTagNameMap, attrs: GenericObject = {}): HTMLElement {
-  const el = createEl(tag);
-  const record = ensureGenericObject(el);
-
-  for (const [key, value] of Object.entries(attrs)) {
-    Object.defineProperty(record, key, { value });
-  }
-
-  return el;
+interface BuildElementParams {
+  attrs?: GenericObject;
+  parent?: HTMLElement | undefined;
+  tag?: keyof HTMLElementTagNameMap;
 }
 
-function createMockElement(parent?: HTMLElement): HTMLElement {
-  const el = createElement('div');
-  parent?.appendChild(el);
+function buildElement(params: BuildElementParams = {}): HTMLElement {
+  const { attrs = {}, parent, tag = 'div' } = params;
+  const el = createEl(tag);
+  const record = ensureGenericObject(el);
+  for (const [key, value] of Object.entries(attrs)) {
+    Object.defineProperty(record, key, { configurable: true, value, writable: true });
+  }
+  if (parent) {
+    parent.appendChild(el);
+  }
   return el;
 }

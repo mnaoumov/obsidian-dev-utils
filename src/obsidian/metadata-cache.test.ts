@@ -156,10 +156,10 @@ function createMockApp(): App {
     metadataCache: {
       computeFileMetadataAsync: vi.fn(),
       computeMetadataAsync: vi.fn(),
-      fileCache: {},
+      fileCache: castTo(Object.create(null)),
       getBacklinksForFile: vi.fn(),
       getFileCache: vi.fn(),
-      metadataCache: {},
+      metadataCache: castTo(Object.create(null)),
       onCleanCache: vi.fn((cb: () => void) => {
         cb();
       }),
@@ -176,21 +176,24 @@ function createMockApp(): App {
 }
 
 function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCache {
-  return strictProxy<FrontmatterLinkCache>({
+  return strictProxy<FrontmatterLinkCache & { position?: undefined; startOffset?: undefined }>({
     displayText: original,
     key,
     link: original,
-    original
+    original,
+    position: undefined,
+    startOffset: undefined
   });
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): FrontmatterLinkCache {
-  return strictProxy<FrontmatterLinkCacheWithOffsets>({
+  return strictProxy<FrontmatterLinkCacheWithOffsets & { position?: undefined }>({
     displayText: original,
     endOffset,
     key,
     link: original,
     original,
+    position: undefined,
     startOffset
   });
 }
@@ -676,7 +679,7 @@ describe('getFrontmatterSafe', () => {
   it('should return frontmatter from cache', async () => {
     const file = { deleted: true, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 0, size: 0 } };
     const mockFrontmatter = { title: 'Test' };
-    const mockCache = strictProxy<CachedMetadata>({ frontmatter: mockFrontmatter });
+    const mockCache = castTo<CachedMetadata>({ frontmatter: mockFrontmatter });
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 

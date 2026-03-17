@@ -6,10 +6,11 @@
  * `getObsidianDevUtilsState()` can access it through the strict proxy.
  */
 
-import type { GenericObject } from '../type-guards.ts';
+import { castTo } from '../object-utils.ts';
 
-const app = (globalThis as Partial<{ app: GenericObject }>).app;
+const record = castTo<Record<string, unknown>>(globalThis);
+const app = castTo<Record<string, unknown> | undefined>(record['app']);
 
 if (app && !('obsidianDevUtilsState' in app)) {
-  app.obsidianDevUtilsState = {};
+  app['obsidianDevUtilsState'] = {};
 }

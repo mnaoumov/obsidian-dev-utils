@@ -9,29 +9,35 @@ import {
 
 import type { GenericObject } from '../type-guards.ts';
 
-import {
-  noop,
-  noopAsync
-} from '../function.ts';
+import { noop } from '../function.ts';
 import { ensureGenericObject } from '../type-guards.ts';
-import {
-  DEFAULT_NS,
-  initI18N,
-  t
-} from './i18n/i18n.ts';
+import { DEFAULT_NS } from './i18n/i18n.ts';
 
 const HEAVY_IMPORT_TIMEOUT = 30_000;
 
-const mockAddResourceBundleFn = vi.fn();
-const mockInitFn = vi.fn(noopAsync);
-const mockTLibFn = vi.fn((selector: unknown) => {
-  if (typeof selector === 'function') {
-    return (selector as (translations: GenericObject) => unknown)({ test: 'translated-value' });
-  }
-  return 'mock-translated';
-});
-const mockInvokeAsyncSafelyFn = vi.fn((fn: () => Promise<unknown>) => {
-  fn().then(noop, noop);
+const {
+  mockAddResourceBundleFn,
+  mockInitFn,
+  mockInvokeAsyncSafelyFn,
+  mockTLibFn
+} = vi.hoisted(() => {
+  const mockAddResourceBundleFn = vi.fn();
+  const mockInitFn = vi.fn(() => Promise.resolve());
+  const mockTLibFn = vi.fn((selector: unknown) => {
+    if (typeof selector === 'function') {
+      return (selector as (translations: Record<string, unknown>) => unknown)({ test: 'translated-value' });
+    }
+    return 'mock-translated';
+  });
+  const mockInvokeAsyncSafelyFn = vi.fn((fn: () => Promise<unknown>) => {
+    fn().then(() => undefined, () => undefined);
+  });
+  return {
+    mockAddResourceBundleFn,
+    mockInitFn,
+    mockInvokeAsyncSafelyFn,
+    mockTLibFn
+  };
 });
 
 vi.mock('i18next', () => ({
@@ -84,7 +90,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
         noop();
       });
 
-      const freshT = t;
+      const { t: freshT } = await import('./i18n/i18n.ts');
 
       freshT(((translations: GenericObject) => translations['test']) as never);
 
@@ -104,6 +110,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should call init with correct options', async () => {
+      const { initI18N } = await import('./i18n/i18n.ts');
       const translationsMap = { en: { greeting: 'Hello' } };
 
       await initI18N(translationsMap as never, false);
@@ -121,6 +128,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should structure resources with DEFAULT_NS as key', async () => {
+      const { initI18N } = await import('./i18n/i18n.ts');
       const translationsMap = { en: { greeting: 'Hello' }, fr: { greeting: 'Bonjour' } };
 
       await initI18N(translationsMap as never, false);
@@ -134,6 +142,8 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should add en resource bundle after init', async () => {
+      const { initI18N } = await import('./i18n/i18n.ts');
+
       await initI18N({ en: { test: 'value' } } as never, false);
 
       expect(mockAddResourceBundleFn).toHaveBeenCalledWith(
@@ -146,6 +156,8 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should only initialize once (idempotent)', async () => {
+      const { initI18N } = await import('./i18n/i18n.ts');
+
       await initI18N({ en: { test: 'value' } } as never, false);
       expect(mockInitFn).toHaveBeenCalledTimes(1);
 
@@ -154,6 +166,8 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should default isAsync to true', async () => {
+      const { initI18N } = await import('./i18n/i18n.ts');
+
       await initI18N({ en: { test: 'value' } } as never);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
@@ -169,35 +183,35 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     });
 
     it('should call tLib with selector when no options provided', async () => {
-      const tFn = t;
+      const { initI18N, t: freshT } = await import('./i18n/i18n.ts');
       await initI18N({ en: { test: 'hello' } } as never, false);
       mockTLibFn.mockClear();
 
       const selector = (($: GenericObject): unknown => $['test']) as never;
-      tFn(selector);
+      freshT(selector);
 
       expect(mockTLibFn).toHaveBeenCalledTimes(1);
       expect(mockTLibFn).toHaveBeenCalledWith(selector);
     });
 
     it('should call tLib with selector and options when options provided', async () => {
-      const tFn = t;
+      const { initI18N, t: freshT } = await import('./i18n/i18n.ts');
       await initI18N({ en: { test: 'hello' } } as never, false);
       mockTLibFn.mockClear();
 
       const selector = (($: GenericObject): unknown => $['test']) as never;
       const options = { ns: ['translation' as const] };
-      tFn(selector, options as never);
+      freshT(selector, options as never);
 
       expect(mockTLibFn).toHaveBeenCalledTimes(1);
       expect(mockTLibFn).toHaveBeenCalledWith(selector, options);
     });
 
     it('should return the translated value from tLib', async () => {
-      const tFn = t;
+      const { initI18N, t: freshT } = await import('./i18n/i18n.ts');
       await initI18N({ en: { test: 'hello' } } as never, false);
 
-      const result = tFn((($: GenericObject): unknown => $['test']) as never);
+      const result = freshT((($: GenericObject): unknown => $['test']) as never);
 
       expect(result).toBe('translated-value');
     });

@@ -47,10 +47,12 @@ describe('getValidatorComponent', () => {
   it('should wrap ColorComponent with ValidatorElementWrapper', () => {
     const container = createDiv();
     const comp = new ColorComponent(container);
+    const colorPickerEl = createEl('input', { type: 'color' });
+    comp.colorPickerEl = colorPickerEl;
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
     assertNonNullable(result);
-    expect(result.validatorEl).toBe(comp.colorPickerEl);
+    expect(result.validatorEl).toBe(colorPickerEl);
   });
 
   it('should wrap DropdownComponent with ValidatorElementWrapper', () => {
@@ -106,8 +108,11 @@ describe('getValidatorComponent', () => {
     const container = createDiv();
     parent.appendChild(container);
     const comp = new ProgressBarComponent(container);
+    // Pre-assign progressBar so the strict proxy allows access
+    const progressBar = createDiv();
+    comp.progressBar = progressBar;
     // ProgressBarComponent.progressBar needs to be inside parent
-    parent.appendChild(comp.progressBar);
+    parent.appendChild(progressBar);
 
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();

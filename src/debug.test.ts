@@ -280,6 +280,17 @@ describe('Debug', () => {
   });
 
   describe('printWithStackTrace', () => {
+    let savedApp: unknown;
+
+    beforeEach(() => {
+      savedApp = castTo<Record<string, unknown>>(globalThis)['app'];
+      delete castTo<Record<string, unknown>>(globalThis)['app'];
+    });
+
+    afterEach(() => {
+      castTo<Record<string, unknown>>(globalThis)['app'] = savedApp;
+    });
+
     it('should call the debugger with message and args in Node environment (no window)', () => {
       debug.enable('print-test');
       const spy = castTo<Debugger>(vi.fn());
