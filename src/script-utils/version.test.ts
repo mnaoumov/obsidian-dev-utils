@@ -460,7 +460,7 @@ describe('publishGitHubRelease', () => {
         return Promise.resolve('https://github.com/user/repo');
       }
       if (cmdStr.includes('npm pack')) {
-        return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.0.tgz' }]));
+        return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.0.tgz' }], null, 2));
       }
       return Promise.resolve('');
     });
@@ -485,6 +485,19 @@ describe('publishGitHubRelease', () => {
       expect.arrayContaining(['npm', 'pack', '--pack-destination', 'dist', '--json']),
       expect.any(Object)
     );
+  });
+
+  it('should throw when npm pack output does not contain expected JSON', async () => {
+    mockReadFile.mockResolvedValue('# CHANGELOG\n\n');
+    mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
+      const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
+      if (cmdStr.includes('npm pack')) {
+        return Promise.resolve('some unexpected output without json');
+      }
+      return Promise.resolve('');
+    });
+    mockExistsSync.mockReturnValue(true);
+    await expect(publishGitHubRelease('1.0.0', false)).rejects.toThrow('Failed to find the start of the JSON array in the result output');
   });
 
   it('should filter out non-existent files', async () => {
@@ -632,7 +645,7 @@ describe('updateVersion', () => {
         return Promise.resolve('https://github.com/user/repo');
       }
       if (cmdStr.includes('npm pack')) {
-        return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.1.tgz' }]));
+        return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.1.tgz' }], null, 2));
       }
       return Promise.resolve('');
     });
