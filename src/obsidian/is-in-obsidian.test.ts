@@ -1,8 +1,7 @@
 import {
   describe,
   expect,
-  it,
-  vi
+  it
 } from 'vitest';
 
 import { castTo } from '../object-utils.ts';
