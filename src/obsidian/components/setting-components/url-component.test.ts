@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('UrlComponent', () => {
   function createComponent(): UrlComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new UrlComponent(container);
   }
 

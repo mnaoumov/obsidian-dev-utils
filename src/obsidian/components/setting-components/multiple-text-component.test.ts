@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('MultipleTextComponent', () => {
   function createComponent(): MultipleTextComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new MultipleTextComponent(container);
   }
 

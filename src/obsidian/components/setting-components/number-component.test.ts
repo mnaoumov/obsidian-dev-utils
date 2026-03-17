@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('NumberComponent', () => {
   function createComponent(): NumberComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new NumberComponent(container);
   }
 

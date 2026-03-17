@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('WeekComponent', () => {
   function createComponent(): WeekComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new WeekComponent(container);
   }
 

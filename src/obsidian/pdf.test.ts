@@ -30,7 +30,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
   let printDiv: HTMLDivElement;
 
   beforeEach(() => {
-    printDiv = document.createElement('div');
+    printDiv = createDiv();
     printDiv.remove = vi.fn() as () => void;
     document.body.createDiv = vi.fn((): HTMLDivElement => {
       document.body.appendChild(printDiv);
@@ -54,7 +54,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     try {
       Platform.isMobile = true;
 
-      const el = document.createElement('div');
+      const el = createDiv();
       await expect(printToPdf(el, {})).rejects.toThrow('Printing to PDF is not supported on mobile devices.');
     } finally {
       // eslint-disable-next-line require-atomic-updates -- Restoring a mock property in a finally block is intentional.
@@ -68,7 +68,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = document.createElement('span');
+    const el = createSpan();
 
     await printToPdf(el, {});
 
@@ -81,7 +81,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = document.createElement('div');
+    const el = createDiv();
 
     await printToPdf(el, {});
 
@@ -93,7 +93,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = document.createElement('div');
+    const el = createDiv();
 
     await printToPdf(el, { filepath: 'test.pdf', landscape: true });
 
@@ -115,7 +115,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = document.createElement('div');
+    const el = createDiv();
 
     await printToPdf(el, {});
 
@@ -137,7 +137,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = document.createElement('div');
+    const el = createDiv();
 
     await printToPdf(el, {});
 
@@ -149,7 +149,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = document.createElement('div');
+    const el = createDiv();
 
     await printToPdf(el, {});
 
@@ -164,7 +164,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       throw new Error('IPC error');
     });
 
-    const el = document.createElement('div');
+    const el = createDiv();
 
     await expect(printToPdf(el, {})).rejects.toThrow('IPC error');
 

@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('MultipleFileComponent', () => {
   function createComponent(): MultipleFileComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new MultipleFileComponent(container);
   }
 

@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('PasswordComponent', () => {
   function createComponent(): PasswordComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new PasswordComponent(container);
   }
 

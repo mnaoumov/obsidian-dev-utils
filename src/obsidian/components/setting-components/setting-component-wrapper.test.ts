@@ -21,9 +21,9 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('ensureWrapped', () => {
   it('should return existing wrapper if parent already has the CSS class', () => {
-    const parent = document.createElement('div');
+    const parent = createDiv();
     parent.classList.add('setting-component-wrapper');
-    const child = document.createElement('span');
+    const child = createSpan();
     parent.appendChild(child);
 
     const result = ensureWrapped(child);
@@ -31,9 +31,9 @@ describe('ensureWrapped', () => {
   });
 
   it('should create a new wrapper and move children into it', () => {
-    const grandparent = document.createElement('div');
-    const child1 = document.createElement('span');
-    const child2 = document.createElement('input');
+    const grandparent = createDiv();
+    const child1 = createSpan();
+    const child2 = createEl('input');
     grandparent.appendChild(child1);
     grandparent.appendChild(child2);
 
@@ -45,7 +45,7 @@ describe('ensureWrapped', () => {
   });
 
   it('should throw if element has no parent', () => {
-    const orphan = document.createElement('div');
+    const orphan = createDiv();
     expect(() => ensureWrapped(orphan)).toThrow('Element must be attached to the DOM');
   });
 });

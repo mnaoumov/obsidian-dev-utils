@@ -22,7 +22,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('TimeComponent', () => {
   function createComponent(): TimeComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new TimeComponent(container);
   }
 

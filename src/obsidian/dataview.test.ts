@@ -77,7 +77,7 @@ interface ParagraphOptions {
 }
 
 function createMockDv(): DataviewInlineApi {
-  const container = document.createElement('div');
+  const container = createDiv();
   document.body.appendChild(container);
 
   return strictProxy<DataviewInlineApi>({
@@ -90,7 +90,7 @@ function createMockDv(): DataviewInlineApi {
         _text: string,
         options?: ElOptions
       ) => {
-        const el = document.createElement(tag);
+        const el = createEl(tag);
         if (options?.attr) {
           for (const [k, v] of Object.entries(options.attr)) {
             el.setAttribute(k, v);
@@ -105,7 +105,7 @@ function createMockDv(): DataviewInlineApi {
     }),
     paragraph: vi.fn(
       (text: unknown, options?: ParagraphOptions) => {
-        const p = document.createElement('p');
+        const p = createEl('p');
         if (typeof text === 'string') {
           p.textContent = text;
         }

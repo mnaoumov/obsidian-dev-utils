@@ -21,7 +21,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
 
 describe('DateTimeComponent', () => {
   function createComponent(): DateTimeComponent {
-    const container = document.createElement('div');
+    const container = createDiv();
     return new DateTimeComponent(container);
   }
 
