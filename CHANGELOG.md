@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 51.1.6
+
+- fix: npm pack parsing
+
 ## 51.1.5
 
 - chore: temp write to file
