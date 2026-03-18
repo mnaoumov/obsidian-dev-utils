@@ -235,10 +235,10 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
  * Builds the Obsidian plugin in development mode using esbuild with watch.
  *
  * @param params - Optional build parameters (mode is set to Development automatically).
- * @returns A {@link Promise} that resolves when the dev build starts (keeps process alive for watch mode).
+ * @returns A {@link Promise} that resolves to a {@link CliTaskResult} indicating the build result.
  */
-export async function dev(params?: BuildParams): Promise<void> {
-  await buildObsidianPlugin({ ...params, mode: BuildMode.Development });
+export async function dev(params?: BuildParams): Promise<CliTaskResult> {
+  return await buildObsidianPlugin({ ...params, mode: BuildMode.Development });
 }
 
 /**
