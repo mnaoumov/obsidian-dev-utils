@@ -31,8 +31,8 @@ import { extractDefaultExportInterop } from '../../../object-utils.ts';
 import { ObsidianPluginRepoPaths } from '../../../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import { join } from '../../../path.ts';
 import { ensureNonNullable } from '../../../type-guards.ts';
-import { buildCompile } from '../../build.ts';
 import { CliTaskResult } from '../../cli-utils.ts';
+import { npmRun } from '../../npm-run.ts';
 import { readPackageJson } from '../../npm.ts';
 import { resolvePathFromRoot } from '../../root.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
@@ -131,7 +131,7 @@ export async function build(params?: BuildParams): Promise<void> {
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult} indicating the success or failure of the build.
  */
 export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Promise<CliTaskResult> {
-  await buildCompile();
+  await npmRun('build:compile');
   const envPath = resolvePathFromRoot('.env');
   if (envPath && existsSync(envPath)) {
     loadEnvFile(envPath);

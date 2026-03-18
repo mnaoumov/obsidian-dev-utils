@@ -20,7 +20,7 @@ import { join } from '../path.ts';
 import { trimStart } from '../string.ts';
 import { readdirPosix } from './fs.ts';
 import { readJson } from './json.ts';
-import { npmRun } from './npm-run.ts';
+import { npmRunOptional } from './npm-run.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 import {
   execFromRoot,
@@ -44,8 +44,12 @@ export async function buildClean(): Promise<void> {
  * @returns A {@link Promise} that resolves when the code compiles successfully.
  */
 export async function buildCompile(): Promise<void> {
-  await npmRun('build:compile:svelte');
-  await npmRun('build:compile:typescript');
+  if (!await npmRunOptional('build:compile:svelte')) {
+    await buildCompileSvelte();
+  }
+  if (!await npmRunOptional('build:compile:typescript')) {
+    await buildCompileTypeScript();
+  }
 }
 
 /**
