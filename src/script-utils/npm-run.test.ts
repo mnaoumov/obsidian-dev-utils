@@ -39,16 +39,16 @@ describe('npmRun', () => {
     expect(mockExecFromRoot).toHaveBeenCalledWith(['npm', 'run', 'build']);
   });
 
-  it('should run npx when command does not exist in package.json', async () => {
+  it('should throw when command does not exist in package.json', async () => {
     mockReadPackageJson.mockResolvedValue({ scripts: { build: 'tsc' } });
-    await npmRun('lint');
-    expect(mockExecFromRoot).toHaveBeenCalledWith(['npx', 'obsidian-dev-utils', 'lint']);
+    await expect(npmRun('lint')).rejects.toThrow('Command lint is not defined in the package.json');
+    expect(mockExecFromRoot).not.toHaveBeenCalled();
   });
 
-  it('should handle missing scripts section in package.json', async () => {
+  it('should throw when scripts section is missing in package.json', async () => {
     mockReadPackageJson.mockResolvedValue({});
-    await npmRun('build');
-    expect(mockExecFromRoot).toHaveBeenCalledWith(['npx', 'obsidian-dev-utils', 'build']);
+    await expect(npmRun('build')).rejects.toThrow('Command build is not defined in the package.json');
+    expect(mockExecFromRoot).not.toHaveBeenCalled();
   });
 });
 
