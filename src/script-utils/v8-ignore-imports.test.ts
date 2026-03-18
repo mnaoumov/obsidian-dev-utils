@@ -44,7 +44,7 @@ import { renameCssPlugin } from './bundlers/esbuild-impl/renameCssPlugin.ts';
 import { svelteWrapperPlugin } from './bundlers/esbuild-impl/svelteWrapperPlugin.ts';
 import * as Esbuild from './bundlers/esbuild.ts';
 import * as CommitlintConfig from './commitlint-config.ts';
-import { obsidianDevUtilsConfigs } from './linters/eslint-config.ts';
+import { defineEslintConfigs } from './linters/eslint-config.ts';
 import { obsidianDevUtilsConfig } from './linters/markdownlint-cli2-config.ts';
 import * as NanoStagedConfig from './nano-staged-config.ts';
 import * as ObsidianCli from './obsidian-cli.ts';
@@ -88,7 +88,7 @@ it('should load all v8-ignored modules so coverage processes their ignore commen
     fixSourceMapsPlugin,
     getDependenciesToBundle,
     obsidianDevUtilsConfig,
-    obsidianDevUtilsConfigs,
+    defineEslintConfigs(),
     preprocessPlugin,
     renameCssPlugin,
     svelteWrapperPlugin

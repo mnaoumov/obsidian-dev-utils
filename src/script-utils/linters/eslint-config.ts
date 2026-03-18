@@ -27,10 +27,7 @@ import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-imp
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
-import {
-  defineConfig,
-  globalIgnores
-} from 'eslint/config';
+import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
 import tseslint from 'typescript-eslint';
@@ -38,49 +35,117 @@ import tseslint from 'typescript-eslint';
 import { ObsidianPluginRepoPaths } from '../../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import { join } from '../../path.ts';
 import { getRootFolder } from '../root.ts';
-import { noUsedUnderscoreParams } from './eslint-rules/no-used-underscore-params.ts';
+import { obsidianDevUtilsPlugin } from './eslint-rules/obsidian-dev-utils-plugin.ts';
 
 /**
- * The list of TypeScript files to lint.
+ * The parameters for defining ESLint configurations.
  */
-export const typeScriptFiles = [
-  join(ObsidianPluginRepoPaths.Tests, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
-  join(ObsidianPluginRepoPaths.Mocks, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
-  join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
-  join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTsx),
-  join(ObsidianPluginRepoPaths.Scripts, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
-  ObsidianPluginRepoPaths.MarkdownlintCli2ConfigMts,
-  ObsidianPluginRepoPaths.CommitlintConfigTs,
-  ObsidianPluginRepoPaths.EslintConfigMts
-];
+export interface DefineEslintConfigsParams {
+  /**
+   * A function that builds custom ESLint configurations.
+   *
+   * @param context - The ESLint configuration context.
+   * @returns The custom ESLint configurations.
+   */
+  customConfigs?(context: EslintConfigContext): Linter.Config[];
+
+  /**
+   * A function that edits the ESLint configuration context.
+   *
+   * @param context - The ESLint configuration context.
+   */
+  editContext?(context: EslintConfigContext): void;
+}
 
 /**
- * ESLint configurations for TypeScript projects.
+ * The context for defining ESLint configurations.
  */
-export const obsidianDevUtilsConfigs: Linter.Config[] = defineConfig(
-  includeIgnoreFile(join(getRootFolder() ?? '', '.gitignore')),
-  globalIgnores([
-    join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyCjs),
-    join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyJs),
-    join(ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyMjs),
-    join(ObsidianPluginRepoPaths.Dist, ObsidianPluginRepoPaths.AnyPath)
-  ]),
-  ...getEslintConfigs(),
-  ...getTseslintConfigs(),
-  ...getStylisticConfigs(),
-  ...getImportXConfigs(),
-  ...getPerfectionistConfigs(),
-  ...getEslintImportResolverTypescriptConfigs(),
-  ...getEslintCommentsConfigs(),
-  ...getObsidianLintConfigs()
-);
+export class EslintConfigContext {
+  /**
+   * The root configuration files.
+   */
+  public readonly rootConfigFiles: string[] = [];
 
-function getEslintCommentsConfigs(): Linter.Config[] {
+  /**
+   * The script files.
+   */
+  public readonly scriptFiles: string[] = [];
+
+  /**
+   * The source files.
+   */
+  public readonly sourceFiles: string[] = [];
+
+  /**
+   * The test files.
+   */
+  public readonly testFiles: string[] = [];
+
+  /**
+   * The all files.
+   *
+   * @returns The all files.
+   */
+  public allFiles(): string[] {
+    return [...this.testFiles, ...this.scriptFiles, ...this.rootConfigFiles, ...this.sourceFiles];
+  }
+}
+
+/**
+ * Build ESLint configurations.
+ *
+ * This function builds ESLint configurations for TypeScript projects, integrating multiple ESLint plugins
+ *
+ * @param params - The parameters for defining ESLint configurations.
+ * @returns The ESLint configurations.
+ */
+export function defineEslintConfigs(params: DefineEslintConfigsParams = {}): Linter.Config[] {
+  const context = new EslintConfigContext();
+  context.rootConfigFiles.push(
+    ObsidianPluginRepoPaths.CommitlintConfigTs,
+    ObsidianPluginRepoPaths.EslintConfigMts,
+    ObsidianPluginRepoPaths.VitestConfigTs
+  );
+  context.scriptFiles.push(
+    join(ObsidianPluginRepoPaths.Scripts, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs)
+  );
+  context.sourceFiles.push(
+    join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
+    join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTsx)
+  );
+  context.testFiles.push(
+    join(ObsidianPluginRepoPaths.Tests, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
+    join(ObsidianPluginRepoPaths.Mocks, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
+    join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTestTs)
+  );
+
+  if (params.editContext) {
+    params.editContext(context);
+  }
+
+  const customConfigs = params.customConfigs?.(context) ?? [];
+
+  return defineConfig(
+    includeIgnoreFile(join(getRootFolder() ?? '', '.gitignore')),
+    ...getEslintConfigs(context),
+    ...getTseslintConfigs(context),
+    ...getStylisticConfigs(context),
+    ...getObsidianLintConfigs(context),
+    ...getImportXConfigs(context),
+    ...getPerfectionistConfigs(context),
+    ...getEslintImportResolverTypescriptConfigs(),
+    ...getEslintCommentsConfigs(context),
+    ...getObsidianDevUtilsPluginConfigs(context),
+    ...customConfigs
+  );
+}
+
+function getEslintCommentsConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
     {
       // eslint-disable-next-line import-x/no-named-as-default-member -- The default export name `recommended` is too confusing.
       extends: [commentsConfigs.recommended],
-      files: typeScriptFiles,
+      files: context.allFiles(),
       rules: {
         '@eslint-community/eslint-comments/require-description': 'error'
       }
@@ -88,11 +153,11 @@ function getEslintCommentsConfigs(): Linter.Config[] {
   ]);
 }
 
-function getEslintConfigs(): Linter.Config[] {
+function getEslintConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
     {
       extends: [eslint.configs.recommended],
-      files: typeScriptFiles,
+      files: context.allFiles(),
       rules: {
         'accessor-pairs': 'error',
         'array-callback-return': 'error',
@@ -255,12 +320,6 @@ function getEslintConfigs(): Linter.Config[] {
         'vars-on-top': 'error',
         'yoda': 'error'
       }
-    },
-    {
-      files: ['src/script-utils/linters/markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts'],
-      rules: {
-        'no-restricted-syntax': 'off'
-      }
     }
   ]);
 }
@@ -279,7 +338,7 @@ function getEslintImportResolverTypescriptConfigs(): Linter.Config[] {
   ]);
 }
 
-function getImportXConfigs(): Linter.Config[] {
+function getImportXConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
     {
       extends: [
@@ -288,7 +347,7 @@ function getImportXConfigs(): Linter.Config[] {
         eslintPluginImportXFlatConfigs.errors as Linter.Config,
         eslintPluginImportXFlatConfigs.warnings as Linter.Config
       ],
-      files: typeScriptFiles,
+      files: context.allFiles(),
       rules: {
         'import-x/consistent-type-specifier-style': 'error',
         'import-x/extensions': ['error', 'ignorePackages'],
@@ -330,15 +389,38 @@ function getImportXConfigs(): Linter.Config[] {
       }
     },
     {
-      files: ['scripts/**/*.ts', 'src/script-utils/**/*.ts'],
+      files: context.scriptFiles,
       rules: {
         'import-x/no-nodejs-modules': 'off'
+      }
+    },
+    {
+      files: [
+        ...context.rootConfigFiles,
+        join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs)
+      ],
+      rules: {
+        'import-x/no-default-export': 'off'
       }
     }
   ]);
 }
 
-function getObsidianLintConfigs(): Linter.Config[] {
+function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.Config[] {
+  return defineConfig([
+    {
+      files: context.allFiles(),
+      plugins: {
+        'obsidian-dev-utils': obsidianDevUtilsPlugin
+      },
+      rules: {
+        'obsidian-dev-utils/no-used-underscore-params': 'error'
+      }
+    }
+  ]);
+}
+
+function getObsidianLintConfigs(context: EslintConfigContext): Linter.Config[] {
   const obsidianRecommendedConfigs = Array.from(obsidianmd.configs?.['recommended'] as Iterable<Linter.Config>);
 
   const scopedObsidianRecommendedConfigs = obsidianRecommendedConfigs.map((config) => {
@@ -348,7 +430,7 @@ function getObsidianLintConfigs(): Linter.Config[] {
 
     return {
       ...config,
-      files: typeScriptFiles
+      files: context.sourceFiles
     };
   });
 
@@ -387,14 +469,14 @@ function getObsidianLintConfigs(): Linter.Config[] {
   ]);
 }
 
-function getPerfectionistConfigs(): Linter.Config[] {
+function getPerfectionistConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([{
     extends: [perfectionistConfigs['recommended-alphabetical']],
-    files: typeScriptFiles
+    files: context.allFiles()
   }]);
 }
 
-function getStylisticConfigs(): Linter.Config[] {
+function getStylisticConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
     {
       extends: [
@@ -406,7 +488,7 @@ function getStylisticConfigs(): Linter.Config[] {
           semi: true
         })
       ],
-      files: typeScriptFiles,
+      files: context.allFiles(),
       rules: {
         '@stylistic/indent': 'off',
         '@stylistic/indent-binary-ops': 'off',
@@ -446,7 +528,7 @@ function getStylisticConfigs(): Linter.Config[] {
   ]);
 }
 
-function getTseslintConfigs(): Linter.Config[] {
+function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
     {
       extends: [
@@ -455,7 +537,7 @@ function getTseslintConfigs(): Linter.Config[] {
         // eslint-disable-next-line import-x/no-named-as-default-member -- The default export name `_default` is too confusing.
         ...tseslint.configs.stylisticTypeChecked
       ],
-      files: typeScriptFiles,
+      files: context.allFiles(),
       languageOptions: {
         parserOptions: {
           ecmaFeatures: {
@@ -490,16 +572,6 @@ function getTseslintConfigs(): Linter.Config[] {
         ],
         '@typescript-eslint/prefer-readonly': 'error',
         'obsidian-dev-utils/no-used-underscore-params': 'error'
-      }
-    },
-    {
-      files: typeScriptFiles,
-      plugins: {
-        'obsidian-dev-utils': {
-          rules: {
-            'no-used-underscore-params': noUsedUnderscoreParams
-          }
-        } as ESLint.Plugin
       }
     },
     {

@@ -9,18 +9,8 @@ import {
 } from 'eslint/config';
 
 import { join } from '../src/path.ts';
-import {
-  obsidianDevUtilsConfigs,
-  typeScriptFiles
-} from '../src/script-utils/linters/eslint-config.ts';
+import { defineEslintConfigs } from '../src/script-utils/linters/eslint-config.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
-
-const testFiles = ['src/**/*.test.ts', 'src/test-helpers/**/*.ts'];
-const rootScriptFiles = ['commitlint.config.ts', 'eslint.config.mts'];
-const scriptFiles = [
-  ...rootScriptFiles,
-  'scripts/**/*.ts'
-];
 
 const noRestrictedSyntaxRules: Linter.RuleEntry = [
   'error',
@@ -54,173 +44,175 @@ const noRestrictedSyntaxRules: Linter.RuleEntry = [
   }
 ];
 
-export const configs: Linter.Config[] = defineConfig([
-  globalIgnores([
-    join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
-    ObsidianDevUtilsRepoPaths.DataviewTypes,
-    join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts),
-    `!${join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.Types, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts)}`,
-    ObsidianDevUtilsRepoPaths.Static
-  ]),
-  ...obsidianDevUtilsConfigs,
-  {
-    files: typeScriptFiles,
-    plugins: {
-      tsdoc: eslintPluginTsdoc
-    },
-    rules: {
-      'tsdoc/syntax': 'error'
-    }
-  },
-  {
-    files: typeScriptFiles,
-    rules: {
-      'no-restricted-syntax': noRestrictedSyntaxRules
-    }
-  },
-  {
-    ...jsdoc.configs['flat/recommended-typescript-error'],
-    files: typeScriptFiles
-  },
-  {
-    files: typeScriptFiles,
-    plugins: {
-      jsdoc
-    },
-    rules: {
-      'jsdoc/check-tag-names': [
-        'error',
-        {
-          definedTags: [
-            'packageDocumentation',
-            'remarks',
-            'typeParam'
-          ]
+export const configs: Linter.Config[] = defineEslintConfigs({
+  customConfigs(context) {
+    return defineConfig([
+      globalIgnores([
+        join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
+        ObsidianDevUtilsRepoPaths.DataviewTypes,
+        join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts),
+        `!${join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.Types, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts)}`,
+        ObsidianDevUtilsRepoPaths.Static
+      ]),
+      {
+        files: context.sourceFiles,
+        ignores: context.testFiles,
+        plugins: {
+          tsdoc: eslintPluginTsdoc
+        },
+        rules: {
+          'tsdoc/syntax': 'error'
         }
-      ],
-      'jsdoc/require-file-overview': [
-        'error',
-        {
-          tags: {
-            packageDocumentation: {
-              initialCommentsOnly: true,
-              mustExist: true,
-              preventDuplicates: true
-            }
-          }
+      },
+      {
+        files: context.allFiles(),
+        rules: {
+          'no-restricted-syntax': noRestrictedSyntaxRules
         }
-      ],
-      'jsdoc/require-jsdoc': [
-        'error',
-        {
-          contexts: [
+      },
+      {
+        ...jsdoc.configs['flat/recommended-typescript-error'],
+        files: context.sourceFiles,
+        ignores: context.testFiles
+      },
+      {
+        files: context.sourceFiles,
+        ignores: context.testFiles,
+        plugins: {
+          jsdoc
+        },
+        rules: {
+          'jsdoc/check-tag-names': [
+            'error',
             {
-              context: 'ExportNamedDeclaration > FunctionDeclaration'
-            },
-            {
-              context: 'ExportDefaultDeclaration > FunctionDeclaration'
-            },
-            {
-              context: 'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression'
-            },
-            {
-              context: 'ExportDefaultDeclaration > ArrowFunctionExpression'
-            },
-            {
-              context: 'ExportNamedDeclaration MethodDefinition:not([accessibility="private"])'
-            },
-            {
-              context: 'ExportDefaultDeclaration MethodDefinition:not([accessibility="private"])'
-            },
-            {
-              context: 'ExportNamedDeclaration > ClassDeclaration > ClassBody > PropertyDefinition:not([accessibility=\'private\'])'
-            },
-            {
-              context: 'ExportDefaultDeclaration > ClassDeclaration > ClassBody > PropertyDefinition:not([accessibility=\'private\'])'
-            },
-            {
-              context: 'ExportNamedDeclaration > ClassDeclaration > ClassBody > TSAbstractPropertyDefinition:not([accessibility=\'private\'])'
-            },
-            {
-              context: 'ExportDefaultDeclaration > ClassDeclaration > ClassBody > TSAbstractPropertyDefinition:not([accessibility=\'private\'])'
-            },
-            {
-              context: 'ExportNamedDeclaration > TSInterfaceDeclaration'
-            },
-            {
-              context: 'ExportNamedDeclaration > TSTypeAliasDeclaration'
-            },
-            {
-              context: 'ExportNamedDeclaration > TSEnumDeclaration'
-            },
-            {
-              context: 'ExportNamedDeclaration > ClassDeclaration'
-            },
-            {
-              context: 'ExportDefaultDeclaration > ClassDeclaration'
+              definedTags: [
+                'packageDocumentation',
+                'remarks',
+                'typeParam'
+              ]
             }
           ],
-          publicOnly: false,
-          require: {
-            ArrowFunctionExpression: false,
-            ClassDeclaration: false,
-            ClassExpression: false,
-            FunctionDeclaration: false,
-            MethodDefinition: false
+          'jsdoc/require-file-overview': [
+            'error',
+            {
+              tags: {
+                packageDocumentation: {
+                  initialCommentsOnly: true,
+                  mustExist: true,
+                  preventDuplicates: true
+                }
+              }
+            }
+          ],
+          'jsdoc/require-jsdoc': [
+            'error',
+            {
+              contexts: [
+                {
+                  context: 'ExportNamedDeclaration > FunctionDeclaration'
+                },
+                {
+                  context: 'ExportDefaultDeclaration > FunctionDeclaration'
+                },
+                {
+                  context: 'ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression'
+                },
+                {
+                  context: 'ExportDefaultDeclaration > ArrowFunctionExpression'
+                },
+                {
+                  context: 'ExportNamedDeclaration MethodDefinition:not([accessibility="private"])'
+                },
+                {
+                  context: 'ExportDefaultDeclaration MethodDefinition:not([accessibility="private"])'
+                },
+                {
+                  context: 'ExportNamedDeclaration > ClassDeclaration > ClassBody > PropertyDefinition:not([accessibility=\'private\'])'
+                },
+                {
+                  context: 'ExportDefaultDeclaration > ClassDeclaration > ClassBody > PropertyDefinition:not([accessibility=\'private\'])'
+                },
+                {
+                  context: 'ExportNamedDeclaration > ClassDeclaration > ClassBody > TSAbstractPropertyDefinition:not([accessibility=\'private\'])'
+                },
+                {
+                  context: 'ExportDefaultDeclaration > ClassDeclaration > ClassBody > TSAbstractPropertyDefinition:not([accessibility=\'private\'])'
+                },
+                {
+                  context: 'ExportNamedDeclaration > TSInterfaceDeclaration'
+                },
+                {
+                  context: 'ExportNamedDeclaration > TSTypeAliasDeclaration'
+                },
+                {
+                  context: 'ExportNamedDeclaration > TSEnumDeclaration'
+                },
+                {
+                  context: 'ExportNamedDeclaration > ClassDeclaration'
+                },
+                {
+                  context: 'ExportDefaultDeclaration > ClassDeclaration'
+                }
+              ],
+              publicOnly: false,
+              require: {
+                ArrowFunctionExpression: false,
+                ClassDeclaration: false,
+                ClassExpression: false,
+                FunctionDeclaration: false,
+                MethodDefinition: false
+              }
+            }
+          ],
+          'jsdoc/require-throws-type': 'off',
+          'jsdoc/tag-lines': [
+            'error',
+            'any',
+            {
+              startLines: 1
+            }
+          ]
+        },
+        settings: {
+          jsdoc: {
+            tagNamePreference: {
+              template: 'typeParam'
+            }
           }
         }
-      ],
-      'jsdoc/require-throws-type': 'off',
-      'jsdoc/tag-lines': [
-        'error',
-        'any',
-        {
-          startLines: 1
+      },
+      {
+        files: [ObsidianDevUtilsRepoPaths.PackageJson],
+        rules: {
+          'depend/ban-dependencies': ['error', { allowed: ['moment'] }]
         }
-      ]
-    },
-    settings: {
-      jsdoc: {
-        tagNamePreference: {
-          template: 'typeParam'
+      },
+      {
+        files: context.testFiles,
+        rules: {
+          '@typescript-eslint/no-unsafe-argument': 'off',
+          '@typescript-eslint/no-unsafe-assignment': 'off',
+          '@typescript-eslint/no-unsafe-call': 'off',
+          '@typescript-eslint/no-unsafe-member-access': 'off',
+          '@typescript-eslint/unbound-method': 'off',
+          'no-magic-numbers': 'off'
+        }
+      },
+      {
+        files: [ObsidianDevUtilsRepoPaths.MarkdownlintTypesMarkdownlintCli2ConfigSchemaDts],
+        rules: {
+          'no-restricted-syntax': 'off'
         }
       }
-    }
+    ]);
   },
-  {
-    files: ['package.json'],
-    rules: {
-      'depend/ban-dependencies': ['error', { allowed: ['moment'] }]
-    }
-  },
-  {
-    files: scriptFiles,
-    rules: {
-      'jsdoc/require-file-overview': 'off'
-    }
-  },
-  {
-    files: testFiles,
-    rules: {
-      '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/unbound-method': 'off',
-      'jsdoc/require-file-overview': 'off',
-      'jsdoc/require-jsdoc': 'off',
-      'jsdoc/require-param': 'off',
-      'jsdoc/require-param-description': 'off',
-      'jsdoc/require-returns': 'off',
-      'jsdoc/require-returns-description': 'off',
-      'no-magic-numbers': 'off',
-      'tsdoc/syntax': 'off'
-    }
-  },
-  {
-    files: rootScriptFiles,
-    rules: {
-      'import-x/no-default-export': 'off'
-    }
+
+  editContext(context) {
+    context.testFiles.push(
+      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.TestHelpers, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
+    );
+    context.scriptFiles.push(
+      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.ScriptUtils, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
+    );
   }
-]);
+});

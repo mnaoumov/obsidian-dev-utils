@@ -20,6 +20,9 @@ export enum ObsidianPluginRepoPaths {
   /** Any path recursively. */
   AnyPath = '**',
 
+  /** Any test TypeScript file. */
+  AnyTestTs = '*.test.ts',
+
   /** TypeScript file. */
   AnyTs = '*.ts',
 
@@ -141,5 +144,8 @@ export enum ObsidianPluginRepoPaths {
   TsConfigJson = 'tsconfig.json',
 
   /** Versions JSON file. */
-  VersionsJson = 'versions.json'
+  VersionsJson = 'versions.json',
+
+  /** Vitest configuration file. */
+  VitestConfigTs = 'vitest.config.ts'
 }
