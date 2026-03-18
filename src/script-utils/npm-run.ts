@@ -19,7 +19,7 @@ export async function npmRun(command: string): Promise<void> {
   if (isKnownCommand) {
     await execFromRoot(['npm', 'run', command]);
   } else {
-    await execFromRoot(['npx', 'obsidian-dev-utils', command]);
+    throw new Error(`Command ${command} is not defined in the package.json`);
   }
 }
 
