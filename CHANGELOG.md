@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 52.0.1
+
+- fix: dev script
+- fix: fail when no command
+
 ## 52.0.0
 
 - test: coverage
