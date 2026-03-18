@@ -13,6 +13,26 @@ import { trimStart } from '../string.ts';
 import { exec } from './exec.ts';
 
 /**
+ * Parameters for {@link evalObsidianCli}.
+ */
+export interface EvalObsidianCliParams<Args extends unknown[], Result> {
+  /**
+   * Additional arguments to pass after `app`. Must be JSON-serializable.
+   */
+  args?: Args;
+
+  /**
+   * The function to evaluate in the Obsidian context.
+   */
+  fn: (app: App, ...args: Args) => Promisable<Result>;
+
+  /**
+   * The path to the Obsidian vault.
+   */
+  vaultPath: string;
+}
+
+/**
  * Evaluates a function inside the running Obsidian instance
  * via the Obsidian CLI and returns the parsed result.
  *
@@ -23,15 +43,15 @@ import { exec } from './exec.ts';
  *
  * The result is `JSON.stringify`'d on the Obsidian side and parsed back.
  *
- * @param fn - A self-contained function to evaluate in the Obsidian context. Receives `app` as the first argument.
- * @param args - Additional arguments to pass after `app`. Must be JSON-serializable.
+ * @param params - The parameters for the function to evaluate.
  * @returns A {@link Promise} that resolves to the return value of `fn`.
  */
-export async function evalObsidianCli<Args extends unknown[], Result>(fn: (app: App, ...args: Args) => Promisable<Result>, ...args: Args): Promise<Result> {
+export async function evalObsidianCli<Args extends unknown[], Result>(params: EvalObsidianCliParams<Args, Result>): Promise<Result> {
+  const { args, fn, vaultPath } = params;
   const fnString = fn.toString();
-  const argsStr = args.length > 0 ? `, ...${JSON.stringify(args) as string}` : '';
+  const argsStr = args && args.length > 0 ? `, ...${JSON.stringify(args) as string}` : '';
   const expression = `await (${fnString})(app${argsStr})`;
-  const resultStr = await exec(['obsidian', 'eval', `code=(async () => JSON.stringify(${expression}))()`], { isQuiet: true });
+  const resultStr = await exec(['obsidian', 'eval', `code=(async () => JSON.stringify(${expression}))()`, vaultPath], { cwd: vaultPath, isQuiet: true });
   const resultJson = trimStart(resultStr, '=> ');
   return JSON.parse(resultJson) as Result;
 }

@@ -101,7 +101,13 @@ async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: str
   }
 
   try {
-    await evalObsidianCli((app, id) => app.plugins.enablePlugin(id), pluginId);
+    await evalObsidianCli({
+      args: [pluginId],
+      async fn(app, id) {
+        await app.plugins.enablePlugin(id);
+      },
+      vaultPath: obsidianConfigFolder
+    });
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
     const isNotFound = errorMessage.includes('ENOENT') || errorMessage.includes('not found') || errorMessage.includes('not recognized');
