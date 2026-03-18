@@ -18,7 +18,7 @@ const {
   mockCp,
   mockExecFromRoot,
   mockGlob,
-  mockNpmRun,
+  mockNpmRunOptional,
   mockReaddirPosix,
   mockReadJson,
   mockResolvePathFromRootSafe,
@@ -27,7 +27,7 @@ const {
   mockCp: vi.fn(),
   mockExecFromRoot: vi.fn(),
   mockGlob: vi.fn(),
-  mockNpmRun: vi.fn(),
+  mockNpmRunOptional: vi.fn(),
   mockReaddirPosix: vi.fn(),
   mockReadJson: vi.fn(),
   mockResolvePathFromRootSafe: vi.fn<(path: string) => string>(),
@@ -50,7 +50,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 });
 
 vi.mock('../script-utils/npm-run.ts', () => ({
-  npmRun: mockNpmRun
+  npmRunOptional: mockNpmRunOptional
 }));
 
 vi.mock('../script-utils/json.ts', () => ({
@@ -68,7 +68,7 @@ vi.mock('../debug.ts', () => ({
 beforeEach(() => {
   vi.resetAllMocks();
   mockExecFromRoot.mockResolvedValue('');
-  mockNpmRun.mockResolvedValue(undefined);
+  mockNpmRunOptional.mockResolvedValue(true);
   mockRm.mockResolvedValue(undefined);
   mockCp.mockResolvedValue(undefined);
   mockResolvePathFromRootSafe.mockImplementation((path: string) => `/root/${path}`);
@@ -84,8 +84,20 @@ describe('buildClean', () => {
 describe('buildCompile', () => {
   it('should run svelte and typescript compile steps', async () => {
     await buildCompile();
-    expect(mockNpmRun).toHaveBeenCalledWith('build:compile:svelte');
-    expect(mockNpmRun).toHaveBeenCalledWith('build:compile:typescript');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('build:compile:svelte');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('build:compile:typescript');
+  });
+
+  it('should fall back to internal implementations when npmRunOptional returns false', async () => {
+    mockNpmRunOptional.mockResolvedValue(false);
+    mockReadJson.mockResolvedValue({ include: ['src/**/*.ts'] });
+    mockGlob.mockReturnValue((async function* generateTsFiles(): AsyncGenerator<string, void> {
+      yield 'src/main.ts';
+    })());
+    await buildCompile();
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('build:compile:svelte');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('build:compile:typescript');
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['npx', 'tsc', '--build', '--force']);
   });
 });
 
