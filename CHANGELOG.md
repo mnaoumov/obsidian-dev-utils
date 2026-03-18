@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 52.0.3
+
+- refactor: cli calls
+- fix: add JSON.stringify
+
 ## 52.0.2
 
 - fix: cli
