@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 52.0.2
+
+- fix: cli
+
 ## 52.0.1
 
 - fix: dev script
