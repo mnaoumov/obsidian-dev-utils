@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 52.0.0
+
+- test: coverage
+- fix: build scripts
+
 ## 51.2.0
 
 - refactor: eslint configs
