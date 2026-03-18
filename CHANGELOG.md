@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 51.2.0
+
+- refactor: eslint configs
+- chore: update statics
+
 ## 51.1.8
 
 - fix: dep
