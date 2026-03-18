@@ -31,7 +31,7 @@ export async function evalObsidianCli<Args extends unknown[], Result>(fn: (app: 
   const fnString = fn.toString();
   const argsStr = args.length > 0 ? `, ...${JSON.stringify(args) as string}` : '';
   const expression = `await (${fnString})(app${argsStr})`;
-  const resultStr = await exec(['obsidian', 'eval', `code=(async () => ${expression})()`], { isQuiet: true });
+  const resultStr = await exec(['obsidian', 'eval', `code=(async () => JSON.stringify(${expression}))()`], { isQuiet: true });
   const resultJson = trimStart(resultStr, '=> ');
   return JSON.parse(resultJson) as Result;
 }
