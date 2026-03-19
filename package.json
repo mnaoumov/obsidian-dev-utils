@@ -633,6 +633,7 @@
     "spellcheck": "jiti scripts/spellcheck.ts",
     "test": "jiti scripts/test.ts",
     "test:coverage": "jiti scripts/test-coverage.ts",
+    "test:integration": "jiti scripts/test-integration.ts",
     "test:watch": "jiti scripts/test-watch.ts",
     "version": "jiti scripts/version.ts"
   },
