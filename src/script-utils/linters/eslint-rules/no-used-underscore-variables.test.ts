@@ -1,5 +1,3 @@
-import type { Rule } from 'eslint';
-
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import {
   afterAll,
@@ -7,7 +5,11 @@ import {
   it
 } from 'vitest';
 
-import { noUsedUnderscoreParams } from './no-used-underscore-params.ts';
+import {
+  MESSAGE_ID,
+  noUsedUnderscoreVariables
+} from './no-used-underscore-variables.ts';
+import { toRuleTesterModule } from './rule-tester-helper.ts';
 
 RuleTester.afterAll = afterAll;
 RuleTester.describe = describe;
@@ -15,26 +17,7 @@ RuleTester.it = it;
 
 const ruleTester = new RuleTester();
 
-/**
- * Casts an ESLint v10 `Rule.RuleModule` to the type expected by
- * `@typescript-eslint/rule-tester`. The types are incompatible at the type
- * level because typescript-eslint hasn't updated for ESLint v10 yet, but
- * they are compatible at runtime.
- *
- * @param rule - The ESLint rule module.
- * @returns The same rule, typed for the rule tester.
- */
-function toRuleTesterModule(rule: Rule.RuleModule): Parameters<typeof ruleTester.run>[1] {
-  // Bridge ESLint v10 Rule.RuleModule to @typescript-eslint/rule-tester's RuleModule.
-  // Structurally compatible but nominally incompatible until typescript-eslint updates.
-  const bridged: unknown = rule;
-
-  return bridged as Parameters<typeof ruleTester.run>[1];
-}
-
-const MESSAGE_ID = 'noUsedUnderscoreParams';
-
-ruleTester.run('no-used-underscore-params', toRuleTesterModule(noUsedUnderscoreParams), {
+ruleTester.run('no-used-underscore-variables', toRuleTesterModule(noUsedUnderscoreVariables), {
   invalid: [
     {
       code: 'function foo(_x: number) { return _x + 1; }',
@@ -58,6 +41,16 @@ ruleTester.run('no-used-underscore-params', toRuleTesterModule(noUsedUnderscoreP
       code: 'function foo(_x: number) { _x = 5; return _x; }',
       errors: [{ messageId: MESSAGE_ID }],
       name: 'underscore param reassigned and read'
+    },
+    {
+      code: 'function foo() { const _local = 1; return _local; }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'underscore local variable used in function body'
+    },
+    {
+      code: 'function foo() { let _count = 0; _count++; return _count; }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'underscore local variable mutated and read'
     }
   ],
   valid: [
@@ -78,8 +71,8 @@ ruleTester.run('no-used-underscore-params', toRuleTesterModule(noUsedUnderscoreP
       name: 'underscore param referenced only in type predicate annotation'
     },
     {
-      code: 'function foo() { const _local = 1; return _local; }',
-      name: 'underscore local variable (not a param) is ignored'
+      code: 'function foo() { const _unused = 1; return 2; }',
+      name: 'underscore local variable genuinely unused'
     }
   ]
 });

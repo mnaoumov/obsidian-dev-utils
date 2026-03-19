@@ -1,18 +1,20 @@
 /**
  * @packageDocumentation
  *
- * ESLint rule: no-used-underscore-params
+ * ESLint rule: no-used-underscore-variables
  *
- * Reports an error when a parameter with a `_` prefix is actually
- * referenced in the function body. The `_` prefix convention signals
- * "this parameter is intentionally unused" — if it IS used, the
- * prefix is misleading and should be removed.
+ * Reports an error when a parameter or local variable with a `_` prefix is
+ * actually referenced in the function body. The `_` prefix convention signals
+ * "this identifier is intentionally unused" — if it IS used, the prefix is
+ * misleading and should be removed.
  */
 import type { Rule } from 'eslint';
 
-const MESSAGE_ID = 'noUsedUnderscoreParams';
+export const MESSAGE_ID = 'noUsedUnderscoreVariables';
 
-export const noUsedUnderscoreParams: Rule.RuleModule = {
+const CHECKED_DEF_TYPES = new Set(['Parameter', 'Variable']);
+
+export const noUsedUnderscoreVariables: Rule.RuleModule = {
   create(context) {
     return {
       ':function'(node: Rule.Node): void {
@@ -23,26 +25,26 @@ export const noUsedUnderscoreParams: Rule.RuleModule = {
             continue;
           }
 
-          // Must be a parameter (not a local variable)
           const defNode = variable.defs[0];
-          if (defNode?.type !== 'Parameter') {
+          if (!defNode || !CHECKED_DEF_TYPES.has(defNode.type)) {
             continue;
           }
 
-          // Check if the parameter has references in the function body (not just
-          // In the return type annotation, e.g., type predicates like `asserts _obj is T`).
+          // For parameters, only count references inside the function body
+          // (not in type annotations like `asserts _obj is T`).
+          // For local variables, any read reference counts.
           const funcBody = (node as { body?: Rule.Node }).body;
           const bodyRange = funcBody?.range;
+          const isParam = defNode.type === 'Parameter';
           const hasBodyReferences = variable.references.some((ref) => {
             if (!ref.isRead()) {
               return false;
             }
-            // If we can determine the body range, only count refs inside it
-            if (bodyRange && ref.identifier.range) {
+            if (isParam && bodyRange && ref.identifier.range) {
               return ref.identifier.range[0] >= bodyRange[0]
                 && ref.identifier.range[1] <= bodyRange[1];
             }
-            // Fallback: count all reads
+            // Local variables or fallback: count all reads
             return true;
           });
           if (hasBodyReferences) {
@@ -58,10 +60,10 @@ export const noUsedUnderscoreParams: Rule.RuleModule = {
   },
   meta: {
     docs: {
-      description: 'Disallow `_`-prefixed parameters that are actually used in the function body'
+      description: 'Disallow `_`-prefixed parameters and local variables that are actually used'
     },
     messages: {
-      [MESSAGE_ID]: 'Parameter "{{ name }}" has a `_` prefix but is used. Remove the `_` prefix since the parameter is not unused (G10e).'
+      [MESSAGE_ID]: '"{{ name }}" has a `_` prefix but is used. Remove the `_` prefix since it is not unused (G10e).'
     },
     schema: [],
     type: 'problem'
