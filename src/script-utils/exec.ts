@@ -4,13 +4,18 @@
  * Contains utility functions for executing commands.
  */
 
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+
 import { spawn } from 'node:child_process';
 import process from 'node:process';
 
 import { getLibDebugger } from '../debug.ts';
 import { trimEnd } from '../string.ts';
 import { assertNonNullable } from '../type-guards.ts';
-import { toCommandLine } from './cli-utils.ts';
+import {
+  cmdEscapeCommandLine,
+  toCommandLine
+} from './cli-utils.ts';
 
 /**
  * A command part: either a plain string or an {@link ExecArg} with batched arguments.
@@ -152,7 +157,21 @@ export function exec(command: CommandPart[] | string, options: ExecOption = {}):
     if (batchResult) {
       return batchResult;
     }
-    command = toCommandLine(command.filter((part): part is string => typeof part === 'string'));
+    const args = command.filter((part): part is string => typeof part === 'string');
+    const commandLine = toCommandLine(args);
+
+    const maxCommandLength = getMaxCommandLength();
+    if (commandLine.length > maxCommandLength) {
+      return Promise.reject(
+        new Error(
+          `Command line is too long (${String(commandLine.length)} chars, max ${
+            String(maxCommandLength)
+          } on ${process.platform}). Consider splitting into smaller batches or use ExecArg.`
+        )
+      );
+    }
+
+    return execString(commandLine, options, args);
   }
 
   const maxCommandLength = getMaxCommandLength();
@@ -174,9 +193,11 @@ export function exec(command: CommandPart[] | string, options: ExecOption = {}):
  *
  * @param command - The command string.
  * @param options - The exec options.
+ * @param rawArgs - The original argument array (if available), used by the PowerShell
+ *   fallback path to quote arguments with PowerShell-native single quotes.
  * @returns A Promise resolving to the result.
  */
-function execString(command: string, options: ExecOption = {}): Promise<ExecResult | string> {
+function execString(command: string, options: ExecOption = {}, rawArgs?: string[]): Promise<ExecResult | string> {
   const {
     cwd = process.cwd(),
     isQuiet: quiet = false,
@@ -188,15 +209,7 @@ function execString(command: string, options: ExecOption = {}): Promise<ExecResu
   return new Promise((resolve, reject) => {
     getLibDebugger('Exec')(`Executing command: ${command}`);
 
-    const child = spawn(command, [], {
-      cwd,
-      env: {
-        DEBUG_COLORS: '1',
-        ...process.env
-      },
-      shell: true,
-      stdio: 'pipe'
-    });
+    const child = spawnViaShell(command, cwd, rawArgs);
 
     let stdout = '';
     let stderr = '';
@@ -264,6 +277,14 @@ function execString(command: string, options: ExecOption = {}): Promise<ExecResu
     });
   });
 }
+
+/**
+ * Default environment variables passed to child processes.
+ */
+const CHILD_ENV = {
+  DEBUG_COLORS: '1',
+  ...process.env
+};
 
 /**
  * Executes batched commands sequentially and concatenates stdout.
@@ -371,4 +392,41 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOption): Promis
  */
 function isExecArg(part: CommandPart): part is ExecArg {
   return typeof part === 'object' && 'batchedArgs' in part;
+}
+
+/**
+ * Spawns a child process via the appropriate shell.
+ *
+ * On Windows, if the command contains newlines (which `cmd.exe` cannot handle)
+ * and the raw args array is available, spawns the process directly without
+ * any shell — passing args via `CreateProcess`, which avoids all quoting issues.
+ *
+ * On Windows (cmd.exe path), applies `^`-escaping for cmd metacharacters.
+ *
+ * @param command - The command string to execute.
+ * @param cwd - The working directory.
+ * @param rawArgs - The original argument array (if available).
+ * @returns The spawned child process.
+ */
+function spawnViaShell(command: string, cwd: string, rawArgs?: string[]): ChildProcessWithoutNullStreams {
+  if (process.platform === 'win32' && command.includes('\n')) {
+    if (!rawArgs) {
+      throw new Error('Commands containing newlines cannot be executed through cmd.exe on Windows. Pass an argument array instead of a string.');
+    }
+    const [program, ...args] = rawArgs;
+    assertNonNullable(program, 'Command array must not be empty');
+    return spawn(program, args, {
+      cwd,
+      env: CHILD_ENV,
+      stdio: 'pipe'
+    });
+  }
+
+  const shellCommand = process.platform === 'win32' ? cmdEscapeCommandLine(command) : command;
+  return spawn(shellCommand, [], {
+    cwd,
+    env: CHILD_ENV,
+    shell: true,
+    stdio: 'pipe'
+  });
 }
