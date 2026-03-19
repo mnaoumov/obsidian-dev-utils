@@ -5,12 +5,12 @@
  */
 import type { ESLint } from 'eslint';
 
-import { noAsyncCallbackToAnyReturn } from './no-async-callback-to-any-return.ts';
-import { noUsedUnderscoreParams } from './no-used-underscore-params.ts';
+import { noAsyncCallbackToUnsafeReturn } from './no-async-callback-to-unsafe-return.ts';
+import { noUsedUnderscoreVariables } from './no-used-underscore-variables.ts';
 
 export const obsidianDevUtilsPlugin: ESLint.Plugin = {
   rules: {
-    'no-async-callback-to-any-return': noAsyncCallbackToAnyReturn,
-    'no-used-underscore-params': noUsedUnderscoreParams
+    'no-async-callback-to-unsafe-return': noAsyncCallbackToUnsafeReturn,
+    'no-used-underscore-variables': noUsedUnderscoreVariables
   }
 };

@@ -414,7 +414,7 @@ function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.
         'obsidian-dev-utils': obsidianDevUtilsPlugin
       },
       rules: {
-        'obsidian-dev-utils/no-used-underscore-params': 'error'
+        'obsidian-dev-utils/no-used-underscore-variables': 'error'
       }
     }
   ]);
@@ -572,8 +572,8 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
           }
         ],
         '@typescript-eslint/prefer-readonly': 'error',
-        'obsidian-dev-utils/no-async-callback-to-any-return': 'error',
-        'obsidian-dev-utils/no-used-underscore-params': 'error'
+        'obsidian-dev-utils/no-async-callback-to-unsafe-return': 'error',
+        'obsidian-dev-utils/no-used-underscore-variables': 'error'
       }
     },
     {

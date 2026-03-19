@@ -1,7 +1,7 @@
 /**
  * @packageDocumentation
  *
- * ESLint rule: no-async-callback-to-any-return
+ * ESLint rule: no-async-callback-to-unsafe-return
  *
  * Reports an error when an async function is passed as a callback argument
  * to a function parameter whose return type is `any` or `unknown`. Because
@@ -27,9 +27,9 @@ import type { Rule } from 'eslint';
 
 import ts from 'typescript';
 
-const MESSAGE_ID = 'noAsyncCallbackToAnyReturn';
+export const MESSAGE_ID = 'noAsyncCallbackToUnsafeReturn';
 
-// eslint-disable-next-line no-bitwise, @typescript-eslint/no-unsafe-enum-comparison -- Bitwise flag mask is idiomatic for TypeScript compiler API.
+// eslint-disable-next-line no-bitwise -- Bitwise flag mask is idiomatic for TypeScript compiler API.
 const UNSAFE_RETURN_FLAGS = ts.TypeFlags.Any | ts.TypeFlags.Unknown;
 
 /**
@@ -43,7 +43,7 @@ const UNSAFE_RETURN_FLAGS = ts.TypeFlags.Any | ts.TypeFlags.Unknown;
 function hasUnsafeReturnCallSignature(checker: ts.TypeChecker, type: ts.Type): boolean {
   for (const sig of type.getCallSignatures()) {
     const returnType = checker.getReturnTypeOfSignature(sig);
-    // eslint-disable-next-line no-bitwise, @typescript-eslint/no-unsafe-enum-comparison -- Bitwise flag check is idiomatic for TypeScript compiler API.
+    // eslint-disable-next-line no-bitwise -- Bitwise flag check is idiomatic for TypeScript compiler API.
     if (returnType.flags & UNSAFE_RETURN_FLAGS) {
       return true;
     }
@@ -63,7 +63,7 @@ function isAsyncFunctionNode(node: TSESTree.Node): node is TSESTree.ArrowFunctio
   return (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression') && node.async;
 }
 
-export const noAsyncCallbackToAnyReturn: Rule.RuleModule = {
+export const noAsyncCallbackToUnsafeReturn: Rule.RuleModule = {
   create(context) {
     const services = context.sourceCode.parserServices as ParserServicesWithTypeInformation;
     const checker = services.program.getTypeChecker();
@@ -106,7 +106,8 @@ export const noAsyncCallbackToAnyReturn: Rule.RuleModule = {
       description: 'Disallow passing async functions as callbacks to parameters with `any` or `unknown` return type'
     },
     messages: {
-      [MESSAGE_ID]: 'Async function passed as callback to a parameter with `any`/`unknown` return type. This may cause unhandled promise rejections. Wrap the call: `(...args) => { yourAsyncFn(...args); }`.'
+      [MESSAGE_ID]:
+        'Async function passed as callback to a parameter with `any`/`unknown` return type. This may cause unhandled promise rejections. Wrap the call: `(...args) => { yourAsyncFn(...args); }`.'
     },
     schema: [],
     type: 'problem'
