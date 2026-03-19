@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 52.2.0
+
+- feat: more advanced enabling
+
 ## 52.1.1
 
 - fix: cover functions without results
