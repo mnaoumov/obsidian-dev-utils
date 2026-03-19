@@ -490,6 +490,7 @@ function getStylisticConfigs(context: EslintConfigContext): Linter.Config[] {
       ],
       files: context.allFiles(),
       rules: {
+        '@stylistic/generator-star-spacing': 'off',
         '@stylistic/indent': 'off',
         '@stylistic/indent-binary-ops': 'off',
         '@stylistic/jsx-one-expression-per-line': 'off',
