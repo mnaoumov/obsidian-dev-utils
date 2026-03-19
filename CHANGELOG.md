@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 52.1.0
+
+- test: add integration tests
+- fix: Obsidian CLI
+
 ## 52.0.3
 
 - refactor: cli calls
