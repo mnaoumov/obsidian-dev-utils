@@ -4,14 +4,14 @@
  * This module provides utilities for interacting with the Obsidian CLI.
  */
 
-/* v8 ignore start -- Requires Obsidian CLI to be installed and running. */
-
 import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
 import { getFunctionExpressionString } from '../function.ts';
 import { trimStart } from '../string.ts';
 import { exec } from './exec.ts';
+
+const NO_OUTPUT = '(no output)';
 
 /**
  * Parameters for {@link evalObsidianCli}.
@@ -54,7 +54,9 @@ export async function evalObsidianCli<Args extends unknown[], Result>(params: Ev
   const expression = `await (${fnString})(app${argsStr})`;
   const resultStr = await exec(['obsidian', 'eval', `code=(async () => JSON.stringify(${expression}))()`, vaultPath], { cwd: vaultPath, isQuiet: true });
   const resultJson = trimStart(resultStr, '=> ');
+  if (resultJson === NO_OUTPUT) {
+    return undefined as Result;
+  }
+
   return JSON.parse(resultJson) as Result;
 }
-
-/* v8 ignore stop */
