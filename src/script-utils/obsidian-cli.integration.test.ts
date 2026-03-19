@@ -11,6 +11,7 @@ import {
   beforeAll,
   describe,
   expect,
+  expectTypeOf,
   it
 } from 'vitest';
 
@@ -120,5 +121,29 @@ ${name}`;
     }
     const result = await evalObsidianCli({ args: ['test'], fn: withTemplate, vaultPath });
     expect(result).toBe('hello\nworld\ntest');
+  });
+
+  it('should return void for a void function', async () => {
+    expectTypeOf(
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Testing void function.
+      await evalObsidianCli({
+        fn(_app: App): void {
+          // Cannot use `noop()` here because `evalObsidianCli()` does not accept functions with external imports.
+        },
+        vaultPath
+      })
+    ).toBeVoid();
+  });
+
+  it('should return void for an async void function', async () => {
+    expectTypeOf(
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Testing void function.
+      await evalObsidianCli({
+        async fn(_app: App): Promise<void> {
+          await Promise.resolve();
+        },
+        vaultPath
+      })
+    ).toBeVoid();
   });
 });
