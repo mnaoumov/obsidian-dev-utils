@@ -6,6 +6,7 @@ import {
 } from 'vitest';
 
 import {
+  getFunctionExpressionString,
   noop,
   noopAsync,
   omitAsyncReturnType,
@@ -13,6 +14,100 @@ import {
 } from './function.ts';
 
 describe('Function', () => {
+  describe('getFunctionExpressionString', () => {
+    it('should return the string as-is for a function declaration', () => {
+      function named(): void {
+        noop();
+      }
+      expect(getFunctionExpressionString(named)).toBe(named.toString());
+    });
+
+    it('should return the string as-is for an arrow function', () => {
+      // eslint-disable-next-line func-style -- Testing arrow function form.
+      const arrow = (): void => {
+        noop();
+      };
+      expect(getFunctionExpressionString(arrow)).toBe(arrow.toString());
+    });
+
+    it('should return the string as-is for an async function declaration', () => {
+      async function asyncNamed(): Promise<void> {
+        await noopAsync();
+      }
+      expect(getFunctionExpressionString(asyncNamed)).toBe(asyncNamed.toString());
+    });
+
+    it('should return the string as-is for an async arrow function', () => {
+      // eslint-disable-next-line func-style -- Testing arrow function form.
+      const asyncArrow = async (): Promise<void> => {
+        await noopAsync();
+      };
+      expect(getFunctionExpressionString(asyncArrow)).toBe(asyncArrow.toString());
+    });
+
+    it('should return the string as-is for an async arrow function without space', () => {
+      // eslint-disable-next-line func-style, @typescript-eslint/explicit-function-return-type -- Testing no-space async arrow form.
+      const asyncArrow = async () => noopAsync();
+      expect(getFunctionExpressionString(asyncArrow)).toBe(asyncArrow.toString());
+    });
+
+    it('should prefix with "function " for a shorthand method', () => {
+      const obj = {
+        method(): void {
+          noop();
+        }
+      };
+      expect(getFunctionExpressionString(obj.method)).toMatch(/^function method\(\)/);
+    });
+
+    it('should prefix with "async function " for an async shorthand method', () => {
+      const obj = {
+        async method(): Promise<void> {
+          await noopAsync();
+        }
+      };
+      expect(getFunctionExpressionString(obj.method)).toMatch(/^async function method\(\)/);
+    });
+
+    it('should prefix with "function " for a shorthand method named like "async1"', () => {
+      const obj = {
+        async1(): void {
+          noop();
+        }
+      };
+      expect(getFunctionExpressionString(obj.async1)).toMatch(/^function async1\(\)/);
+    });
+
+    it('should prefix with "function " for a shorthand method named like "function1"', () => {
+      const obj = {
+        function1(): void {
+          noop();
+        }
+      };
+      expect(getFunctionExpressionString(obj.function1)).toMatch(/^function function1\(\)/);
+    });
+
+    it('should prefix with "function " for a generator shorthand method', () => {
+      const obj = {
+        *gen(): Generator<number, void> {
+          yield 1;
+        }
+      };
+      const result = getFunctionExpressionString(obj.gen);
+      expect(result).toMatch(/^function \*gen\(\)/);
+    });
+
+    it('should prefix with "async function " for an async generator shorthand method', () => {
+      const obj = {
+        async *gen(): AsyncGenerator<number, void> {
+          yield 1;
+        }
+      };
+      const result = getFunctionExpressionString(obj.gen);
+      expect(result).toMatch(/^async function \*gen\(\)/);
+    });
+  });
+
   describe('noop', () => {
     it('should return undefined', () => {
       // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Need to test `void` as `undefined`.
