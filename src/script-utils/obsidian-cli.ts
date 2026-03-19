@@ -9,6 +9,7 @@
 import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
+import { getFunctionExpressionString } from '../function.ts';
 import { trimStart } from '../string.ts';
 import { exec } from './exec.ts';
 
@@ -48,7 +49,7 @@ export interface EvalObsidianCliParams<Args extends unknown[], Result> {
  */
 export async function evalObsidianCli<Args extends unknown[], Result>(params: EvalObsidianCliParams<Args, Result>): Promise<Result> {
   const { args, fn, vaultPath } = params;
-  const fnString = fn.toString();
+  const fnString = getFunctionExpressionString(fn);
   const argsStr = args && args.length > 0 ? `, ...${JSON.stringify(args) as string}` : '';
   const expression = `await (${fnString})(app${argsStr})`;
   const resultStr = await exec(['obsidian', 'eval', `code=(async () => JSON.stringify(${expression}))()`, vaultPath], { cwd: vaultPath, isQuiet: true });
