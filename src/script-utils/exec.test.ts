@@ -111,6 +111,45 @@ describe('exec', () => {
     }
   });
 
+  it('should reject when array command exceeds max length', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const longArg = 'a'.repeat(8192);
+      await expect(exec(['echo', longArg])).rejects.toThrow('Command line is too long');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should spawn directly without shell when command has newlines and raw args on Windows', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const child = createMockChild();
+      mockSpawn.mockReturnValue(child);
+      const promise = exec(['echo', 'line1\nline2'], { isQuiet: true });
+      child.stdout.end('line1\nline2');
+      child.stderr.end('');
+      child.emit('close', 0, null);
+      const result = await promise;
+      expect(result).toBe('line1\nline2');
+      expect(mockSpawn).toHaveBeenCalledWith('echo', ['line1\nline2'], expect.objectContaining({ stdio: 'pipe' }));
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should throw when command has newlines but no raw args on Windows', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      await expect(exec('echo line1\nline2')).rejects.toThrow('newlines');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
   it('should reject when more than one ExecArg is provided', async () => {
     await expect(
       exec(['cmd', { batchedArgs: ['a'] }, { batchedArgs: ['b'] }])
