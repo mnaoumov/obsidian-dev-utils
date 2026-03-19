@@ -20,11 +20,16 @@ const SHARED_COVERAGE = {
   reportsDirectory: './coverage'
 };
 
+const SHARED_EXCLUDE = ['node_modules', 'dist'];
+
+const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
+const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+
 export const config = defineConfig({
   resolve: SHARED_RESOLVE,
   test: {
     coverage: SHARED_COVERAGE,
-    exclude: ['node_modules', 'dist'],
+    exclude: SHARED_EXCLUDE,
     globals: false,
     onConsoleLog: (): false => false,
     projects: [
@@ -32,8 +37,9 @@ export const config = defineConfig({
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'node',
+          exclude: [...SHARED_EXCLUDE, INTEGRATION_TEST_FILES],
           include: ['src/script-utils/**/*.test.ts'],
-          name: 'script-utils',
+          name: 'unit-tests:script-utils',
           server: {
             deps: {
               inline: ['obsidian-typings']
@@ -46,15 +52,30 @@ export const config = defineConfig({
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'jsdom',
-          exclude: ['node_modules', 'dist', 'src/script-utils/**/*.test.ts'],
+          exclude: [...SHARED_EXCLUDE, 'src/script-utils/**/*.test.ts', INTEGRATION_TEST_FILES],
           include: ['src/**/*.test.ts'],
-          name: 'obsidian',
+          name: 'unit-tests:obsidian',
           server: {
             deps: {
               inline: ['obsidian-typings']
             }
           },
           setupFiles: ['obsidian-test-mocks/setup', './src/test-helpers/mocks/obsidian-typings/setup.ts', './src/test-helpers/setup.ts']
+        }
+      },
+      {
+        resolve: SHARED_RESOLVE,
+        test: {
+          environment: 'node',
+          include: [INTEGRATION_TEST_FILES],
+          name: 'integration-tests',
+          server: {
+            deps: {
+              inline: ['obsidian-typings']
+            }
+          },
+          setupFiles: [],
+          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
       }
     ]

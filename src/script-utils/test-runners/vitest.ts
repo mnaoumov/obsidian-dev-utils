@@ -9,6 +9,16 @@
 import { execFromRoot } from '../root.ts';
 
 /**
+ * The vitest project name glob that matches all unit test projects.
+ */
+const UNIT_TESTS_PROJECT_GLOB = 'unit-tests:*';
+
+/**
+ * The vitest project name for integration tests.
+ */
+const INTEGRATION_TESTS_PROJECT = 'integration-tests';
+
+/**
  * Options for running tests with coverage.
  */
 export interface TestCoverageOptions {
@@ -20,16 +30,16 @@ export interface TestCoverageOptions {
 }
 
 /**
- * Runs the test suite.
+ * Runs the unit test suite.
  *
  * @returns A {@link Promise} that resolves when the tests have completed.
  */
 export async function test(): Promise<void> {
-  await execFromRoot('vitest run');
+  await execFromRoot(`vitest run --project=${UNIT_TESTS_PROJECT_GLOB}`);
 }
 
 /**
- * Runs the test suite with coverage.
+ * Runs the unit test suite with coverage.
  *
  * @param options - Optional coverage configuration.
  * @returns A {@link Promise} that resolves when the tests have completed.
@@ -37,17 +47,26 @@ export async function test(): Promise<void> {
 export async function testCoverage(options?: TestCoverageOptions): Promise<void> {
   const threshold = String(options?.minCoverageInPercents ?? 0);
   await execFromRoot(
-    `vitest run --coverage --coverage.thresholds.lines=${threshold} --coverage.thresholds.functions=${threshold} --coverage.thresholds.branches=${threshold} --coverage.thresholds.statements=${threshold}`
+    `vitest run --project=${UNIT_TESTS_PROJECT_GLOB} --coverage --coverage.thresholds.lines=${threshold} --coverage.thresholds.functions=${threshold} --coverage.thresholds.branches=${threshold} --coverage.thresholds.statements=${threshold}`
   );
 }
 
 /**
- * Runs the test suite in watch mode.
+ * Runs the integration test suite.
+ *
+ * @returns A {@link Promise} that resolves when the tests have completed.
+ */
+export async function testIntegration(): Promise<void> {
+  await execFromRoot(`vitest run --project=${INTEGRATION_TESTS_PROJECT}`);
+}
+
+/**
+ * Runs the unit test suite in watch mode.
  *
  * @returns A {@link Promise} that resolves when the tests have completed.
  */
 export async function testWatch(): Promise<void> {
-  await execFromRoot('vitest');
+  await execFromRoot(`vitest --project=${UNIT_TESTS_PROJECT_GLOB}`);
 }
 
 /* v8 ignore stop */
