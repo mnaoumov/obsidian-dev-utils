@@ -10,7 +10,7 @@
  */
 import type { Rule } from 'eslint';
 
-/* v8 ignore start -- ESLint rule module; correctness is verified by running ESLint, not unit tests. */
+const MESSAGE_ID = 'noUsedUnderscoreParams';
 
 export const noUsedUnderscoreParams: Rule.RuleModule = {
   create(context) {
@@ -48,7 +48,7 @@ export const noUsedUnderscoreParams: Rule.RuleModule = {
           if (hasBodyReferences) {
             context.report({
               data: { name: variable.name },
-              message: 'Parameter "{{ name }}" has a `_` prefix but is used. Remove the `_` prefix since the parameter is not unused (G10e).',
+              messageId: MESSAGE_ID,
               node: defNode.name
             });
           }
@@ -60,9 +60,10 @@ export const noUsedUnderscoreParams: Rule.RuleModule = {
     docs: {
       description: 'Disallow `_`-prefixed parameters that are actually used in the function body'
     },
+    messages: {
+      [MESSAGE_ID]: 'Parameter "{{ name }}" has a `_` prefix but is used. Remove the `_` prefix since the parameter is not unused (G10e).'
+    },
     schema: [],
     type: 'problem'
   }
 };
-
-/* v8 ignore stop */

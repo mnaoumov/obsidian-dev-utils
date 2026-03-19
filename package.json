@@ -720,6 +720,7 @@
     "@commitlint/config-conventional": "latest",
     "@commitlint/types": "latest",
     "@types/markdown-it": "latest",
+    "@typescript-eslint/rule-tester": "latest",
     "@vitest/coverage-v8": "latest",
     "@vitest/runner": "4.1.0",
     "commitizen": "latest",
