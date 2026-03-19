@@ -639,8 +639,10 @@
   },
   "overrides": {
     "@antfu/utils": "9.2.0",
+    "@eslint/js": "latest",
     "dompurify": "3.0.1",
-    "esbuild": "$esbuild",
+    "esbuild": "latest",
+    "eslint": "latest",
     "eslint-plugin-import": "npm:eslint-plugin-import-x@latest"
   },
   "dependencies": {
