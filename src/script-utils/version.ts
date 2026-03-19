@@ -430,6 +430,8 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
   await npmRun('build');
   await npmRun('lint');
   await npmRunOptional('test');
+  await npmRunOptional('test:integration');
+  await npmRunOptional('test:coverage');
 
   const newVersion = await getNewVersion(versionUpdateType);
   await updateVersionInFiles(newVersion);
