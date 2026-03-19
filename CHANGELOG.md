@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 52.1.1
+
+- fix: cover functions without results
+
 ## 52.1.0
 
 - test: add integration tests
