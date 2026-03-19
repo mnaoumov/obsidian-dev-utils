@@ -18,6 +18,7 @@ import type {
 } from './type.ts';
 
 import { errorToString } from './error.ts';
+import { getFunctionExpressionString } from './function.ts';
 import { replaceAll } from './string.ts';
 import {
   assert,
@@ -719,7 +720,7 @@ function handleFunction(value: Function, functionTexts: string[], fullOptions: T
   }
   const index = functionTexts.length;
   const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full
-    ? String(value)
+    ? getFunctionExpressionString(value)
     : `function ${value.name || 'anonymous'}() { /* ... */ }`;
   functionTexts.push(functionText);
   return makePlaceholder(TokenSubstitutionKey.Function, index);
