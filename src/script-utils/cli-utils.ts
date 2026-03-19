@@ -155,24 +155,82 @@ class SuccessTaskResult extends CliTaskResult {
 }
 
 /**
- * Converts an array of command-line arguments into a single command-line string.
- * Handles escaping of special characters such as spaces, quotes, and newlines.
+ * Converts an array of command-line arguments into a single command-line string
+ * using the `CommandLineToArgvW` convention (the standard used by the
+ * Microsoft C runtime and most Windows programs).
+ *
+ * Implements the ArgvQuote algorithm from
+ * {@link https://learn.microsoft.com/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way | Everyone quotes command line arguments the wrong way}:
+ * backslashes before quotes and at the end of a quoted argument are doubled.
+ *
+ * This produces a shell-agnostic command line. Callers that route through
+ * a specific shell (cmd.exe, PowerShell, sh) must apply shell-specific
+ * escaping on top — see {@link cmdEscapeCommandLine}.
  *
  * @param args - The array of command-line arguments to convert.
  * @returns A string representing the command-line invocation.
  */
 export function toCommandLine(args: string[]): string {
-  return args
-    .map((arg) => {
-      if (/[\s"\n]/.test(arg)) {
-        let escapedArg = arg;
-        escapedArg = replaceAll(escapedArg, /"/g, '\\"');
-        escapedArg = replaceAll(escapedArg, /\n/g, '\\n');
-        return `"${escapedArg}"`;
-      }
-      return arg;
-    })
-    .join(' ');
+  return args.map((arg) => argvQuote(arg)).join(' ');
+}
+
+/**
+ * Quotes a single argument so that `CommandLineToArgvW` will decode it
+ * unchanged. Implements the ArgvQuote algorithm from
+ * {@link https://learn.microsoft.com/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way | Everyone quotes command line arguments the wrong way}.
+ *
+ * @param arg - The raw argument string.
+ * @returns The quoted argument string.
+ */
+function argvQuote(arg: string): string {
+  if (arg.length > 0 && !/[\s\t\n\v"]/.test(arg)) {
+    return arg;
+  }
+
+  const BACKSLASH_ESCAPE_FACTOR = 2;
+  let result = '"';
+  for (let i = 0; i < arg.length; i++) {
+    let numBackslashes = 0;
+    while (i < arg.length && arg[i] === '\\') {
+      i++;
+      numBackslashes++;
+    }
+
+    if (i === arg.length) {
+      result += '\\'.repeat(numBackslashes * BACKSLASH_ESCAPE_FACTOR);
+      break;
+    }
+
+    const ch = arg.charAt(i);
+    if (ch === '"') {
+      result += `${'\\'.repeat(numBackslashes * BACKSLASH_ESCAPE_FACTOR + 1)}"`;
+    } else {
+      result += '\\'.repeat(numBackslashes) + ch;
+    }
+  }
+
+  result += '"';
+  return result;
+}
+
+/**
+ * Matches `cmd.exe` metacharacters that must be `^`-escaped.
+ */
+const CMD_META_RE = /[()%!^"<>&|]/g;
+
+/**
+ * Escapes `cmd.exe` metacharacters with `^` so that `cmd.exe` passes them
+ * through literally. This is necessary because `cmd.exe`'s `"` handling
+ * differs from `CommandLineToArgvW` and cannot be relied upon.
+ *
+ * Apply this to a command line string that will be executed via `cmd.exe`
+ * (e.g., `spawn(cmd, [], { shell: true })` on Windows).
+ *
+ * @param commandLine - The already-quoted command line string.
+ * @returns The string with all cmd metacharacters `^`-escaped.
+ */
+export function cmdEscapeCommandLine(commandLine: string): string {
+  return replaceAll(commandLine, CMD_META_RE, '^$&');
 }
 
 /**
