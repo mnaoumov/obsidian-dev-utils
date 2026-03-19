@@ -16,7 +16,7 @@ export interface TestCoverageOptions {
    * Minimum coverage percentage required. If the actual coverage falls below
    * this threshold, the process exits with a non-zero code.
    */
-  minCoverage?: number;
+  minCoverageInPercents?: number;
 }
 
 /**
@@ -35,7 +35,7 @@ export async function test(): Promise<void> {
  * @returns A {@link Promise} that resolves when the tests have completed.
  */
 export async function testCoverage(options?: TestCoverageOptions): Promise<void> {
-  const threshold = String(options?.minCoverage ?? 0);
+  const threshold = String(options?.minCoverageInPercents ?? 0);
   await execFromRoot(
     `vitest run --coverage --coverage.thresholds.lines=${threshold} --coverage.thresholds.functions=${threshold} --coverage.thresholds.branches=${threshold} --coverage.thresholds.statements=${threshold}`
   );
