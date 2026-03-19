@@ -7,10 +7,19 @@
  */
 
 import { castTo } from '../object-utils.ts';
+import { setupObsidianTypingsMocks } from './mocks/obsidian-typings/setup.ts';
 
-const record = castTo<Record<string, unknown>>(globalThis);
-const app = castTo<Record<string, unknown> | undefined>(record['app']);
-
-if (app && !('obsidianDevUtilsState' in app)) {
-  app['obsidianDevUtilsState'] = {};
+function setup(): void {
+  setupObsidianTypingsMocks();
+  setupObsidianDevUtilsState();
 }
+
+function setupObsidianDevUtilsState(): void {
+  const record = castTo<Record<string, unknown>>(globalThis);
+  const app = castTo<Record<string, unknown> | undefined>(record['app']);
+  if (app && !('obsidianDevUtilsState' in app)) {
+    app['obsidianDevUtilsState'] = {};
+  }
+}
+
+setup();

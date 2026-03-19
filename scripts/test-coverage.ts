@@ -3,5 +3,8 @@ import { testCoverage } from '../src/script-utils/test-runners/vitest.ts';
 
 await wrapCliTask(async () => {
   const FULL_COVERAGE_IN_PERCENTS = 100;
-  await testCoverage({ minCoverageInPercents: FULL_COVERAGE_IN_PERCENTS });
+  await testCoverage({
+    minCoverageInPercents: FULL_COVERAGE_IN_PERCENTS,
+    projects: ['unit-tests:*']
+  });
 });

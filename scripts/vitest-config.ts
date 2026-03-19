@@ -20,8 +20,15 @@ const SHARED_COVERAGE = {
   reportsDirectory: './coverage'
 };
 
+const SHARED_SERVER = {
+  deps: {
+    inline: ['obsidian-typings']
+  }
+};
+
 const SHARED_EXCLUDE = ['node_modules', 'dist'];
 
+const SCRIPT_UTILS_TEST_FILES = 'src/script-utils/**/*.test.ts';
 const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
 const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 
@@ -38,13 +45,9 @@ export const config = defineConfig({
         test: {
           environment: 'node',
           exclude: [...SHARED_EXCLUDE, INTEGRATION_TEST_FILES],
-          include: ['src/script-utils/**/*.test.ts'],
+          include: [SCRIPT_UTILS_TEST_FILES],
           name: 'unit-tests:script-utils',
-          server: {
-            deps: {
-              inline: ['obsidian-typings']
-            }
-          },
+          server: SHARED_SERVER,
           setupFiles: []
         }
       },
@@ -52,15 +55,11 @@ export const config = defineConfig({
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'jsdom',
-          exclude: [...SHARED_EXCLUDE, 'src/script-utils/**/*.test.ts', INTEGRATION_TEST_FILES],
+          exclude: [...SHARED_EXCLUDE, SCRIPT_UTILS_TEST_FILES, INTEGRATION_TEST_FILES],
           include: ['src/**/*.test.ts'],
           name: 'unit-tests:obsidian',
-          server: {
-            deps: {
-              inline: ['obsidian-typings']
-            }
-          },
-          setupFiles: ['obsidian-test-mocks/setup', './src/test-helpers/mocks/obsidian-typings/setup.ts', './src/test-helpers/setup.ts']
+          server: SHARED_SERVER,
+          setupFiles: ['obsidian-test-mocks/setup', './src/test-helpers/setup.ts']
         }
       },
       {
@@ -69,11 +68,7 @@ export const config = defineConfig({
           environment: 'node',
           include: [INTEGRATION_TEST_FILES],
           name: 'integration-tests',
-          server: {
-            deps: {
-              inline: ['obsidian-typings']
-            }
-          },
+          server: SHARED_SERVER,
           setupFiles: [],
           testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
