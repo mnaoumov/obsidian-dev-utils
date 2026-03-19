@@ -104,7 +104,7 @@ async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: str
     await evalObsidianCli({
       args: [pluginId],
       async fn(app, id) {
-        await app.plugins.enablePlugin(id);
+        await app.plugins.enablePluginAndSave(id);
       },
       vaultPath: obsidianConfigFolder
     });
