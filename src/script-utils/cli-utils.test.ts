@@ -30,10 +30,13 @@ describe('toCommandLine', () => {
     [['arg1', 'arg2'], 'arg1 arg2'],
     [['hello world'], '"hello world"'],
     [['say "hi"'], '"say \\"hi\\""'],
-    [['line1\nline2'], '"line1\\nline2"'],
+    [['line1\nline2'], '"line1\nline2"'],
     [['no-special'], 'no-special'],
-    [[''], ''],
-    [['a', 'b c', 'd'], 'a "b c" d']
+    [[''], '""'],
+    [['a', 'b c', 'd'], 'a "b c" d'],
+    [['path\\'], 'path\\'],
+    [['path with\\spaces\\'], '"path with\\spaces\\\\"'],
+    [['she said, "you had me at hello"'], '"she said, \\"you had me at hello\\""']
   ])('should convert %j to %j', (args: string[], expected: string) => {
     expect(toCommandLine(args)).toBe(expected);
   });
