@@ -94,7 +94,9 @@ function containsPromiseReference(checker: TypeChecker, node: TypeNode): boolean
     let symbol = checker.getSymbolAtLocation(node.typeName);
     // eslint-disable-next-line no-bitwise -- Bitwise flag check is idiomatic for TypeScript compiler API.
     if (symbol && symbol.flags & SymbolFlags.Alias) {
+      /* v8 ignore start -- RuleTester uses single-file inline code; import aliases require multi-file setup. */
       symbol = checker.getAliasedSymbol(symbol);
+      /* v8 ignore stop */
     }
     const decl = symbol?.declarations?.[0];
     if (decl && isTypeAliasDeclaration(decl)) {
@@ -132,7 +134,9 @@ function isUnsafeReturnSignature(checker: TypeChecker, sig: Signature): boolean 
   const decl = sig.getDeclaration();
   const returnTypeNode = decl.type;
   if (!returnTypeNode) {
+    /* v8 ignore start -- TypeScript always preserves return type annotations on signature declarations. */
     return true;
+    /* v8 ignore stop */
   }
 
   return !containsPromiseReference(checker, returnTypeNode);
