@@ -10,9 +10,9 @@
  */
 import type { Rule } from 'eslint';
 
-export const MESSAGE_ID = 'noUsedUnderscoreVariables';
+import { assertNonNullable } from '../../../type-guards.ts';
 
-const CHECKED_DEF_TYPES = new Set(['FunctionName', 'Parameter', 'Variable']);
+export const MESSAGE_ID = 'noUsedUnderscoreVariables';
 
 export const noUsedUnderscoreVariables: Rule.RuleModule = {
   create(context) {
@@ -26,9 +26,7 @@ export const noUsedUnderscoreVariables: Rule.RuleModule = {
           }
 
           const defNode = variable.defs[0];
-          if (!defNode || !CHECKED_DEF_TYPES.has(defNode.type)) {
-            continue;
-          }
+          assertNonNullable(defNode, 'User-declared _-prefixed variables always have at least one definition');
 
           // For parameters, only count references inside the function body
           // (not in type annotations like `asserts _obj is T`).

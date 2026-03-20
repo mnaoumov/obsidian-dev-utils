@@ -56,6 +56,11 @@ ruleTester.run('no-used-underscore-variables', toRuleTesterModule(noUsedUndersco
       code: 'function foo() { function _inner() { return 1; } return _inner(); }',
       errors: [{ messageId: MESSAGE_ID }],
       name: 'underscore function declaration used in function body'
+    },
+    {
+      code: 'function foo() { class _C {} return new _C(); }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'underscore class declaration used in function body'
     }
   ],
   valid: [
@@ -82,6 +87,10 @@ ruleTester.run('no-used-underscore-variables', toRuleTesterModule(noUsedUndersco
     {
       code: 'function foo() { function _inner() {} }',
       name: 'underscore function declaration genuinely unused'
+    },
+    {
+      code: 'function foo() { class _C {} }',
+      name: 'underscore class declaration genuinely unused'
     }
   ]
 });
