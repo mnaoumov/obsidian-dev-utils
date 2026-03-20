@@ -72,6 +72,22 @@ ruleTester.run('no-async-callback-to-unsafe-return', toRuleTesterModule(noAsyncC
       `,
       errors: [{ messageId: MESSAGE_ID }],
       name: 'async arrow passed to method with => any return'
+    },
+    {
+      code: `
+        declare function onClick(fn: (evt: MouseEvent) => any | string): void;
+        onClick(async () => {});
+      `,
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'async arrow passed to callback with => any | string return (no promise handling)'
+    },
+    {
+      code: `
+        declare function onClick(fn: (evt: MouseEvent) => unknown | number): void;
+        onClick(async () => {});
+      `,
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'async arrow passed to callback with => unknown | number return (no promise handling)'
     }
   ],
   valid: [
@@ -116,6 +132,36 @@ ruleTester.run('no-async-callback-to-unsafe-return', toRuleTesterModule(noAsyncC
         takesOne(() => {}, async () => {});
       `,
       name: 'extra async arg beyond declared params (no param to check)'
+    },
+    {
+      code: `
+        type Awaitable<T> = T | PromiseLike<T>;
+        declare function beforeAll(fn: () => Awaitable<unknown>): void;
+        beforeAll(async () => {});
+      `,
+      name: 'async callback to => Awaitable<unknown> (type alias explicitly handles promises)'
+    },
+    {
+      code: `
+        declare function onDone(fn: () => unknown | Promise<void>): void;
+        onDone(async () => {});
+      `,
+      name: 'async callback to => unknown | Promise<void> (union explicitly includes Promise)'
+    },
+    {
+      code: `
+        declare function onDone(fn: () => any | Promise<void>): void;
+        onDone(async () => {});
+      `,
+      name: 'async callback to => any | Promise<void> (union explicitly includes Promise)'
+    },
+    {
+      code: `
+        type Awaitable<T> = T | PromiseLike<T>;
+        declare function beforeAll(fn: () => Awaitable<any>): void;
+        beforeAll(async () => {});
+      `,
+      name: 'async callback to => Awaitable<any> (type alias explicitly handles promises)'
     }
   ]
 });

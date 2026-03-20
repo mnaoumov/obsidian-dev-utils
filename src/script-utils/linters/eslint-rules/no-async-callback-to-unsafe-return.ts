@@ -24,32 +24,34 @@ import type {
   TSESTree
 } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
+import type {
+  Signature,
+  Type,
+  TypeChecker,
+  TypeNode
+} from 'typescript';
 
-import ts from 'typescript';
+import {
+  isIdentifier,
+  isTypeAliasDeclaration,
+  isTypeReferenceNode,
+  isUnionTypeNode,
+  SymbolFlags,
+  TypeFlags
+} from 'typescript';
 
 export const MESSAGE_ID = 'noAsyncCallbackToUnsafeReturn';
 
-// eslint-disable-next-line no-bitwise -- Bitwise flag mask is idiomatic for TypeScript compiler API.
-const UNSAFE_RETURN_FLAGS = ts.TypeFlags.Any | ts.TypeFlags.Unknown;
-
 /**
- * Checks whether the given TypeScript type is a function type whose return
- * type is `any` or `unknown`.
+ * Checks whether the given TypeScript type is a function type with an unsafe
+ * return type for async callbacks.
  *
  * @param checker - TypeScript type checker.
  * @param type - The type to inspect.
- * @returns `true` if the type has at least one call signature returning `any` or `unknown`.
+ * @returns `true` if the type has at least one call signature with an unsafe return.
  */
-function hasUnsafeReturnCallSignature(checker: ts.TypeChecker, type: ts.Type): boolean {
-  for (const sig of type.getCallSignatures()) {
-    const returnType = checker.getReturnTypeOfSignature(sig);
-    // eslint-disable-next-line no-bitwise -- Bitwise flag check is idiomatic for TypeScript compiler API.
-    if (returnType.flags & UNSAFE_RETURN_FLAGS) {
-      return true;
-    }
-  }
-
-  return false;
+function hasUnsafeReturnCallSignature(checker: TypeChecker, type: Type): boolean {
+  return type.getCallSignatures().some((sig) => isUnsafeReturnSignature(checker, sig));
 }
 
 /**
@@ -61,6 +63,79 @@ function hasUnsafeReturnCallSignature(checker: ts.TypeChecker, type: ts.Type): b
 function isAsyncFunctionNode(node: TSESTree.Node): node is TSESTree.ArrowFunctionExpression | TSESTree.FunctionExpression {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
   return (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression') && node.async;
+}
+
+// eslint-disable-next-line no-bitwise -- Bitwise flag mask is idiomatic for TypeScript compiler API.
+const UNSAFE_RETURN_FLAGS = TypeFlags.Any | TypeFlags.Unknown;
+
+const PROMISE_TYPE_NAMES = new Set(['Promise', 'PromiseLike']);
+
+/**
+ * Checks whether a type node contains a reference to `Promise` or `PromiseLike`,
+ * either directly or through a type alias. This indicates the caller explicitly
+ * accounts for promise returns.
+ *
+ * @param checker - TypeScript type checker.
+ * @param node - The type node to inspect.
+ * @returns `true` if the node references `Promise` or `PromiseLike`.
+ */
+function containsPromiseReference(checker: TypeChecker, node: TypeNode): boolean {
+  if (isUnionTypeNode(node)) {
+    return node.types.some((member) => containsPromiseReference(checker, member));
+  }
+
+  if (isTypeReferenceNode(node)) {
+    const name = isIdentifier(node.typeName) ? node.typeName.text : '';
+    if (PROMISE_TYPE_NAMES.has(name)) {
+      return true;
+    }
+
+    // Resolve type alias (following imports) and check its definition body
+    let symbol = checker.getSymbolAtLocation(node.typeName);
+    // eslint-disable-next-line no-bitwise -- Bitwise flag check is idiomatic for TypeScript compiler API.
+    if (symbol && symbol.flags & SymbolFlags.Alias) {
+      symbol = checker.getAliasedSymbol(symbol);
+    }
+    const decl = symbol?.declarations?.[0];
+    if (decl && isTypeAliasDeclaration(decl)) {
+      return containsPromiseReference(checker, decl.type);
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Checks whether a call signature has an unsafe return type (`any` or `unknown`)
+ * without explicitly accounting for promises.
+ *
+ * Flags bare `any`, `unknown`, and unions like `any | string` that resolve to
+ * `any`/`unknown` without including `Promise`/`PromiseLike`. Does NOT flag type
+ * aliases like `Awaitable<T>` or unions like `any | Promise<any>` that explicitly
+ * handle promise returns.
+ *
+ * @param checker - TypeScript type checker.
+ * @param sig - The call signature to inspect.
+ * @returns `true` if the return type is unsafe for async callbacks.
+ */
+function isUnsafeReturnSignature(checker: TypeChecker, sig: Signature): boolean {
+  const returnType = checker.getReturnTypeOfSignature(sig);
+
+  // eslint-disable-next-line no-bitwise -- Bitwise flag check is idiomatic for TypeScript compiler API.
+  if (!(returnType.flags & UNSAFE_RETURN_FLAGS)) {
+    return false;
+  }
+
+  // Check the syntactic return type annotation. If it contains a reference to
+  // Promise/PromiseLike (directly or via a type alias), the caller explicitly
+  // Handles async returns and should not be flagged.
+  const decl = sig.getDeclaration();
+  const returnTypeNode = decl.type;
+  if (!returnTypeNode) {
+    return true;
+  }
+
+  return !containsPromiseReference(checker, returnTypeNode);
 }
 
 export const noAsyncCallbackToUnsafeReturn: Rule.RuleModule = {
