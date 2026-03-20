@@ -51,6 +51,11 @@ ruleTester.run('no-used-underscore-variables', toRuleTesterModule(noUsedUndersco
       code: 'function foo() { let _count = 0; _count++; return _count; }',
       errors: [{ messageId: MESSAGE_ID }],
       name: 'underscore local variable mutated and read'
+    },
+    {
+      code: 'function foo() { function _inner() { return 1; } return _inner(); }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'underscore function declaration used in function body'
     }
   ],
   valid: [
@@ -73,6 +78,10 @@ ruleTester.run('no-used-underscore-variables', toRuleTesterModule(noUsedUndersco
     {
       code: 'function foo() { const _unused = 1; return 2; }',
       name: 'underscore local variable genuinely unused'
+    },
+    {
+      code: 'function foo() { function _inner() {} }',
+      name: 'underscore function declaration genuinely unused'
     }
   ]
 });

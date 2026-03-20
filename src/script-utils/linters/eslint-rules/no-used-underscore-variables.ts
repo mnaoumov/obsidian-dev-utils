@@ -12,7 +12,7 @@ import type { Rule } from 'eslint';
 
 export const MESSAGE_ID = 'noUsedUnderscoreVariables';
 
-const CHECKED_DEF_TYPES = new Set(['Parameter', 'Variable']);
+const CHECKED_DEF_TYPES = new Set(['FunctionName', 'Parameter', 'Variable']);
 
 export const noUsedUnderscoreVariables: Rule.RuleModule = {
   create(context) {
