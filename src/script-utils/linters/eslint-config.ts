@@ -29,6 +29,7 @@ import obsidianmd from 'eslint-plugin-obsidianmd';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
+import { existsSync } from 'node:fs';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
 import tseslint from 'typescript-eslint';
 
@@ -126,7 +127,7 @@ export function defineEslintConfigs(params: DefineEslintConfigsParams = {}): Lin
   const customConfigs = params.customConfigs?.(context) ?? [];
 
   return defineConfig(
-    includeIgnoreFile(join(getRootFolder() ?? '', '.gitignore')),
+    ...getGitIgnoreConfigs(),
     ...getEslintConfigs(context),
     ...getTseslintConfigs(context),
     ...getStylisticConfigs(context),
@@ -336,6 +337,14 @@ function getEslintImportResolverTypescriptConfigs(): Linter.Config[] {
       }
     }
   ]);
+}
+
+function getGitIgnoreConfigs(): Linter.Config[] {
+  const gitignorePath = join(getRootFolder() ?? '', '.gitignore');
+  if (!existsSync(gitignorePath)) {
+    return [];
+  }
+  return [includeIgnoreFile(gitignorePath)];
 }
 
 function getImportXConfigs(context: EslintConfigContext): Linter.Config[] {
