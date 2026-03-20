@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 52.3.0
+
+- fix: check if .gitignore exists
+- chore: new eslint rule
+
 ## 52.2.0
 
 - feat: more advanced enabling
