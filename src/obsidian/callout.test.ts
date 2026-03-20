@@ -310,6 +310,7 @@ describe('renderCallout', () => {
   it('should render string content when loadContent is invoked', async () => {
     const dv = createMockDv();
 
+    // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
       const abortController = new AbortController();
       await params.operationFn(abortController.signal);
@@ -341,6 +342,7 @@ describe('renderCallout', () => {
     const dv = createMockDv();
     const contentFn = vi.fn(() => 'Dynamic Content');
 
+    // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
       const abortController = new AbortController();
       await params.operationFn(abortController.signal);
@@ -368,6 +370,7 @@ describe('renderCallout', () => {
   it('should use the rendered paragraph as fallback when contentProvider returns undefined', async () => {
     const dv = createMockDv();
 
+    // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (options: AddToQueueParams) => {
       const abortController = new AbortController();
       await options.operationFn(abortController.signal);
