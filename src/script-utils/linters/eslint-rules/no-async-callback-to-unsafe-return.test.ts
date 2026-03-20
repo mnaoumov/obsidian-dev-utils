@@ -162,6 +162,13 @@ ruleTester.run('no-async-callback-to-unsafe-return', toRuleTesterModule(noAsyncC
         beforeAll(async () => {});
       `,
       name: 'async callback to => Awaitable<any> (type alias explicitly handles promises)'
+    },
+    {
+      code: `
+        declare function run(fn: Function): void;
+        run(async () => {});
+      `,
+      name: 'async callback to Function type (no call signatures to check)'
     }
   ]
 });
