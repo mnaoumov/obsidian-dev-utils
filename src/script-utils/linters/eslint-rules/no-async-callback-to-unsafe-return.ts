@@ -40,6 +40,8 @@ import {
   TypeFlags
 } from 'typescript';
 
+import { assertNonNullable } from '../../../type-guards.ts';
+
 export const MESSAGE_ID = 'noAsyncCallbackToUnsafeReturn';
 
 /**
@@ -85,19 +87,21 @@ function containsPromiseReference(checker: TypeChecker, node: TypeNode): boolean
   }
 
   if (isTypeReferenceNode(node)) {
+    /* v8 ignore start -- Qualified names (e.g., ns.Promise) and import aliases require multi-file setup not available in RuleTester. */
     const name = isIdentifier(node.typeName) ? node.typeName.text : '';
+    /* v8 ignore stop */
     if (PROMISE_TYPE_NAMES.has(name)) {
       return true;
     }
 
     // Resolve type alias (following imports) and check its definition body
     let symbol = checker.getSymbolAtLocation(node.typeName);
+    /* v8 ignore start -- Import aliases require multi-file setup not available in RuleTester. */
     // eslint-disable-next-line no-bitwise -- Bitwise flag check is idiomatic for TypeScript compiler API.
     if (symbol && symbol.flags & SymbolFlags.Alias) {
-      /* v8 ignore start -- RuleTester uses single-file inline code; import aliases require multi-file setup. */
       symbol = checker.getAliasedSymbol(symbol);
-      /* v8 ignore stop */
     }
+    /* v8 ignore stop */
     const decl = symbol?.declarations?.[0];
     if (decl && isTypeAliasDeclaration(decl)) {
       return containsPromiseReference(checker, decl.type);
@@ -133,11 +137,7 @@ function isUnsafeReturnSignature(checker: TypeChecker, sig: Signature): boolean 
   // Handles async returns and should not be flagged.
   const decl = sig.getDeclaration();
   const returnTypeNode = decl.type;
-  if (!returnTypeNode) {
-    /* v8 ignore start -- TypeScript always preserves return type annotations on signature declarations. */
-    return true;
-    /* v8 ignore stop */
-  }
+  assertNonNullable(returnTypeNode, 'Signature declarations with any/unknown return always have a return type annotation');
 
   return !containsPromiseReference(checker, returnTypeNode);
 }
