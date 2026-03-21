@@ -321,6 +321,12 @@ function getEslintConfigs(context: EslintConfigContext): Linter.Config[] {
         'vars-on-top': 'error',
         'yoda': 'error'
       }
+    },
+    {
+      files: context.testFiles,
+      rules: {
+        'no-magic-numbers': 'off'
+      }
     }
   ]);
 }
