@@ -607,6 +607,7 @@
     "dist/",
     "!dist/*.tgz",
     "LICENSE",
+    "patches/",
     "README.md",
     "scripts/postinstall.mjs"
   ],
