@@ -34,7 +34,6 @@ import type {
   PluginTypesBase
 } from './plugin-types-base.ts';
 
-import { AsyncEvents } from '../../async-events.ts';
 import {
   convertAsyncToSync,
   invokeAsyncSafely
@@ -136,7 +135,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   }
 
   private _isOpen = false;
-  private readonly asyncEvents: AsyncEvents;
   private readonly asyncEventsComponent: AsyncEventsComponent;
   private readonly saveSettingsDebounced: Debouncer<[], void>;
 
@@ -157,7 +155,6 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       this.saveSettingsDebounceTimeoutInMilliseconds
     );
     this.asyncEventsComponent = new AsyncEventsComponent();
-    this.asyncEvents = new AsyncEvents();
   }
 
   /**
@@ -450,7 +447,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     callback: (...args: Args) => Promisable<void>,
     thisArg?: unknown
   ): AsyncEventRef {
-    return this.asyncEvents.on(name, callback, thisArg);
+    return this.asyncEventsComponent.asyncEvents.on(name, callback, thisArg);
   }
 
   private async onSaveSettings(
@@ -468,7 +465,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
 
   private async updateValidations(validationMessages: Record<ExtractPluginSettingsPropertyNames<PluginTypes>, string>): Promise<void> {
     for (const [propertyName, validationMessage] of Object.entries(validationMessages)) {
-      await this.asyncEvents.triggerAsync('validationMessageChanged', propertyName, validationMessage);
+      await this.asyncEventsComponent.asyncEvents.triggerAsync('validationMessageChanged', propertyName, validationMessage);
     }
   }
 }
