@@ -8,10 +8,17 @@ import { Component } from 'obsidian';
 
 import type { AsyncEventRef } from '../../async-events.ts';
 
+import { AsyncEvents } from '../../async-events.ts';
+
 /**
  * A component that can register async events.
  */
 export class AsyncEventsComponent extends Component {
+  /**
+   * The async events.
+   */
+  public readonly asyncEvents = new AsyncEvents();
+
   /**
    * Registers an async event.
    *

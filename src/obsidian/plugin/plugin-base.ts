@@ -38,13 +38,13 @@ import {
   SilentError
 } from '../../error.ts';
 import { noopAsync } from '../../function.ts';
+import { AllWindowsEventHandler } from '../components/all-windows-event-handler.ts';
 import { registerAsyncEvent } from '../components/async-events-component.ts';
 import {
   initI18N,
   t
 } from '../i18n/i18n.ts';
 import { defaultTranslationsMap } from '../i18n/locales/translationsMap.ts';
-import { getAllDomWindows } from '../workspace.ts';
 import {
   initDebugController,
   initPluginContext
@@ -180,30 +180,6 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   /**
-   * Registers a DOM window handler.
-   *
-   * @param domWindowHandler - The DOM window handler.
-   */
-  public registerDomWindowHandler(domWindowHandler: (win: Window) => void): void {
-    const mainWindow = window;
-    domWindowHandler(mainWindow);
-
-    this.app.workspace.onLayoutReady(() => {
-      for (const win of getAllDomWindows(this.app)) {
-        if (win === mainWindow) {
-          continue;
-        }
-
-        domWindowHandler(win);
-      }
-
-      this.registerEvent(this.app.workspace.on('window-open', (workspaceWindow) => {
-        domWindowHandler(workspaceWindow.win);
-      }));
-    });
-  }
-
-  /**
    * Registers a callback to be executed when a lifecycle event is triggered.
    *
    * @param name - The name of the event.
@@ -213,42 +189,6 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     invokeAsyncSafely(async () => {
       await this.waitForLifecycleEvent(name);
       await callback();
-    });
-  }
-
-  /**
-   * Registers a DOM event for all popup window documents.
-   *
-   * @typeParam DocumentEventType - The type of the event.
-   * @param type - The type of the event.
-   * @param callback - The callback to execute.
-   * @param options - The options for the event.
-   */
-  public registerPopupDocumentDomEvent<DocumentEventType extends keyof DocumentEventMap>(
-    type: DocumentEventType,
-    callback: (this: HTMLElement, evt: DocumentEventMap[DocumentEventType]) => unknown,
-    options?: AddEventListenerOptions | boolean
-  ): void {
-    this.registerDomWindowHandler((win) => {
-      this.registerDomEvent(win.document, type, callback, options);
-    });
-  }
-
-  /**
-   * Registers a DOM event for all popup windows.
-   *
-   * @typeParam WindowEventType - The type of the event.
-   * @param type - The type of the event.
-   * @param callback - The callback to execute.
-   * @param options - The options for the event.
-   */
-  public registerPopupWindowDomEvent<WindowEventType extends keyof WindowEventMap>(
-    type: WindowEventType,
-    callback: (this: HTMLElement, evt: WindowEventMap[WindowEventType]) => unknown,
-    options?: AddEventListenerOptions | boolean
-  ): void {
-    this.registerDomWindowHandler((win) => {
-      this.registerDomEvent(win, type, callback, options);
     });
   }
 
@@ -326,7 +266,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
    */
   protected async onloadImpl(): Promise<void> {
     initPluginContext(this.app, this.manifest.id);
-    this.registerDomWindowHandler((win) => {
+    new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
       initDebugController(win);
     });
     await initI18N<PluginTypes>(this.createTranslationsMap());
