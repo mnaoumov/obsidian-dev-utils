@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 53.1.0
+
+- chore: allow magic numbers in test files
+
 ## 53.0.0
 
 - refactor: extract multi-window handling into AllWindowsEventHandler
