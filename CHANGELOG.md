@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 53.0.0
+
+- refactor: extract multi-window handling into AllWindowsEventHandler
+- refactor: expose AsyncEventComponent.asyncEvents
+
 ## 52.3.0
 
 - fix: check if .gitignore exists
