@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 53.1.1
+
+- chore: package patches
+
 ## 53.1.0
 
 - chore: allow magic numbers in test files
