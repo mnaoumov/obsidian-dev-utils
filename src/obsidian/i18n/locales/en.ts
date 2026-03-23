@@ -14,7 +14,7 @@ export const en = {
       operation: 'Operation',
       runningFor: 'Running for',
       terminateOperation: 'You can terminate the operation by clicking the button below, but be aware it might leave the vault in an inconsistent state.',
-      timedOut: 'The operation timed out after {{duration}} milliseconds.'
+      timedOut: 'The operation timed out after {{duration, number}} milliseconds.'
     },
     buttons: {
       cancel: 'Cancel',
@@ -26,7 +26,7 @@ export const en = {
     dataview: {
       itemsPerPage: 'Items per page:',
       jumpToPage: 'Jump to page:',
-      pageHeader: 'Page {{pageNumber}} of {{totalPages}}, Total items: {{totalItems}}'
+      pageHeader: 'Page {{pageNumber, number}} of {{totalPages, number}}, Total items: {{totalItems, number}}'
     },
     metadataCache: {
       getBacklinksForFilePath: 'Get backlinks for {{filePath}}'
@@ -42,7 +42,7 @@ export const en = {
       handleDelete: 'Handle delete: {{filePath}}',
       handleOrphanedRenames: 'Handle orphaned renames',
       handleRename: 'Handle rename: {{oldPath}} -> {{newPath}}',
-      updatedLinks: 'Updated {{linksCount}} links in {{filesCount}} files.'
+      updatedLinks: 'Updated {{linksCount, number}} links in {{filesCount, number}} files.'
     },
     vault: {
       processFile: 'Process file {{filePath}}'
