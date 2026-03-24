@@ -699,6 +699,7 @@
     "monkey-around": "latest",
     "npm-run-all2": "latest",
     "obsidian": "latest",
+    "obsidian-integration-testing": "latest",
     "obsidian-typings": "obsidian-public-latest",
     "path-browserify": "latest",
     "postcss": "latest",

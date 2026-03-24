@@ -18,13 +18,13 @@ import {
   readFile,
   writeFile
 } from 'node:fs/promises';
+import { evalInObsidian } from 'obsidian-integration-testing';
 
 import { getLibDebugger } from '../../../debug.ts';
 import {
   join,
   toPosixPath
 } from '../../../path.ts';
-import { evalObsidianCli } from '../../obsidian-cli.ts';
 
 /**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
@@ -101,10 +101,11 @@ async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: str
   }
 
   try {
-    await evalObsidianCli({
+    await evalInObsidian({
       args: { pluginId },
-      async fn(args) {
-        await args.app.plugins.enablePluginAndSave(args.pluginId);
+      // eslint-disable-next-line no-shadow -- No actual shadowing as the function is executed externally.
+      async fn({ app, pluginId }) {
+        await app.plugins.enablePluginAndSave(pluginId);
       },
       vaultPath: obsidianConfigFolder
     });
