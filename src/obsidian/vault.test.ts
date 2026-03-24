@@ -151,18 +151,21 @@ describe('getAvailablePath', () => {
   it('should call vault.getAvailablePath with correct base and extension', () => {
     vi.spyOn(app.vault, 'getAvailablePath');
     getAvailablePath(app, 'folder/note.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.getAvailablePath)).toHaveBeenCalledWith('folder/note', 'md');
   });
 
   it('should handle paths with no extension', () => {
     vi.spyOn(app.vault, 'getAvailablePath');
     getAvailablePath(app, 'folder/readme');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.getAvailablePath)).toHaveBeenCalledWith('folder/readme', '');
   });
 
   it('should handle paths with multiple dots', () => {
     vi.spyOn(app.vault, 'getAvailablePath');
     getAvailablePath(app, 'folder/my.note.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.getAvailablePath)).toHaveBeenCalledWith('folder/my.note', 'md');
   });
 
@@ -251,6 +254,7 @@ describe('createFolderSafe', () => {
     vi.spyOn(app.vault, 'createFolder');
     const result = await createFolderSafe(app, 'new-folder');
     expect(result).toBe(true);
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalledWith('new-folder');
   });
 
@@ -287,6 +291,7 @@ describe('copySafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'copy');
     const result = await copySafe(app, 'source.md', 'dest/target.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.copy)).toHaveBeenCalled();
     expect(typeof result).toBe('string');
   });
@@ -295,6 +300,7 @@ describe('copySafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder');
     await copySafe(app, 'source.md', 'newdir/target.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
   });
 
@@ -443,6 +449,7 @@ describe('saveNote', () => {
     mockApp.vault.setVaultAbstractFile__('data.json', mockNonMdFile);
     vi.spyOn(app.workspace, 'getLeavesOfType');
     await saveNote(app, 'data.json');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.workspace.getLeavesOfType)).not.toHaveBeenCalled();
   });
 
@@ -460,6 +467,7 @@ describe('saveNote', () => {
     ]);
 
     await saveNote(app, 'note.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(view.save)).toHaveBeenCalled();
   });
 
@@ -477,6 +485,7 @@ describe('saveNote', () => {
     ]);
 
     await saveNote(app, 'note.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(view.save)).not.toHaveBeenCalled();
   });
 
@@ -492,6 +501,7 @@ describe('saveNote', () => {
     ]);
 
     await saveNote(app, 'note.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(view.save)).not.toHaveBeenCalled();
   });
 });
@@ -656,6 +666,7 @@ describe('renameSafe', () => {
   it('should not rename if old and new paths are the same', async () => {
     vi.spyOn(app.fileManager, 'renameFile');
     const result = await renameSafe(app, 'source.md', 'source.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.fileManager.renameFile)).not.toHaveBeenCalled();
     expect(result).toBe('source.md');
   });
@@ -668,6 +679,7 @@ describe('renameSafe', () => {
     // GetSafeRenamePath returns getAvailablePath result
     // Then oldAbstractFile.path.toLowerCase() === newAvailablePath.toLowerCase() is checked
     expect(result).toBe('Source.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.fileManager.renameFile)).toHaveBeenCalled();
   });
 
@@ -676,6 +688,7 @@ describe('renameSafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder');
     await renameSafe(app, 'source.md', 'dest/target.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
   });
 
@@ -721,6 +734,7 @@ describe('getOrCreateAbstractFileSafe', () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new-file');
     vi.spyOn(app.vault, 'create');
     const result = await getOrCreateAbstractFileSafe(app, 'new-file.md', FileSystemType.File);
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.create)).toHaveBeenCalled();
     expect(result).toBeDefined();
   });
@@ -736,6 +750,7 @@ describe('getOrCreateAbstractFileSafe', () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new-folder');
     vi.spyOn(app.vault, 'createFolder');
     const result = await getOrCreateAbstractFileSafe(app, 'new-folder', FileSystemType.Folder);
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
     expect(result).toBeDefined();
   });
@@ -760,6 +775,7 @@ describe('getOrCreateFileSafe', () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new');
     vi.spyOn(app.vault, 'create');
     await getOrCreateFileSafe(app, 'new.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.create)).toHaveBeenCalled();
   });
 });
@@ -776,6 +792,7 @@ describe('getOrCreateFolderSafe', () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new-folder');
     vi.spyOn(app.vault, 'createFolder');
     await getOrCreateFolderSafe(app, 'new-folder');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
   });
 });
@@ -797,6 +814,7 @@ describe('invokeWithFileSystemLock', () => {
   it('should call vault.process with the file', async () => {
     vi.spyOn(app.vault, 'process');
     await invokeWithFileSystemLock(app, 'locked.md', vi.fn());
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
@@ -812,6 +830,7 @@ describe('invokeWithFileSystemLock', () => {
     vi.spyOn(app.vault, 'process');
     await invokeWithFileSystemLock(app, 'locked.md', vi.fn());
     // The process function should return the same content
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const call = vi.mocked(app.vault.process).mock.calls[0];
     expect(call).toBeDefined();
     if (call) {
@@ -866,6 +885,7 @@ describe('createTempFile', () => {
   it('should create file and return cleanup function', async () => {
     vi.spyOn(app.vault, 'create');
     const cleanup = await createTempFile(app, 'new.md');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.create)).toHaveBeenCalledWith('new.md', '');
     expect(typeof cleanup).toBe('function');
   });
@@ -894,6 +914,7 @@ describe('createTempFile', () => {
     // Set up the file in fileMap for cleanup to find it
     mockApp.vault.setVaultAbstractFile__('new.md', mockCreatedFile);
     await cleanup();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.fileManager.trashFile)).toHaveBeenCalledWith(createdFile);
   });
 
@@ -909,6 +930,7 @@ describe('createTempFile', () => {
     mockApp.vault.setVaultAbstractFile__('new.md', mockCreatedFile);
     createdFile.deleted = true;
     await cleanup();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.fileManager.trashFile)).not.toHaveBeenCalled();
   });
 });
@@ -934,6 +956,7 @@ describe('createTempFolder', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
 
     const cleanup = await createTempFolder(app, 'new-folder');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalledWith('new-folder');
     expect(typeof cleanup).toBe('function');
   });
@@ -949,6 +972,7 @@ describe('createTempFolder', () => {
     const folder = mockFolder.asOriginalType2__();
     mockApp.vault.setVaultAbstractFile__('temp', mockFolder);
     await cleanup();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.fileManager.trashFile)).toHaveBeenCalledWith(folder);
   });
 
@@ -963,6 +987,7 @@ describe('createTempFolder', () => {
     mockApp.vault.setVaultAbstractFile__('temp', mockFolder);
     folder.deleted = true;
     await cleanup();
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.fileManager.trashFile)).not.toHaveBeenCalled();
   });
 });
@@ -1010,7 +1035,7 @@ describe('processFile', () => {
     });
 
     await processFile(app, 'note.md', 'new content');
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
@@ -1088,7 +1113,7 @@ describe('processFile', () => {
     vi.spyOn(app.workspace, 'on');
 
     await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: true });
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.workspace.on)).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
   });
 
@@ -1131,7 +1156,7 @@ describe('processFile', () => {
     vi.spyOn(app.workspace, 'on');
 
     await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: false });
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.workspace.on)).not.toHaveBeenCalled();
   });
 
@@ -1142,7 +1167,7 @@ describe('processFile', () => {
     vi.spyOn(app.workspace, 'on');
 
     await expect(processFile(app, 'note.md', 'new content')).rejects.toThrow('Timeout');
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(app.workspace.on)).toHaveBeenCalled();
   });
 
@@ -1173,7 +1198,7 @@ describe('trashSafe', () => {
     app = mockApp.asOriginalType__();
     vi.spyOn(app.fileManager, 'trashFile');
     await trashSafe(app, 'nonexistent.md');
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
@@ -1182,7 +1207,7 @@ describe('trashSafe', () => {
     app = mockApp.asOriginalType__();
     vi.spyOn(app.fileManager, 'trashFile');
     await trashSafe(app, 'note.md');
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.fileManager.trashFile).toHaveBeenCalled();
   });
 
@@ -1211,7 +1236,7 @@ describe('deleteEmptyFolder', () => {
     app = mockApp.asOriginalType__();
     vi.spyOn(app.fileManager, 'trashFile');
     await deleteEmptyFolder(app, null);
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
@@ -1222,7 +1247,7 @@ describe('deleteEmptyFolder', () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: ['my-folder/note.md'], folders: [] });
     await deleteEmptyFolder(app, 'my-folder');
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
@@ -1233,7 +1258,7 @@ describe('deleteEmptyFolder', () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
     await deleteEmptyFolder(app, 'my-folder');
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.fileManager.trashFile).toHaveBeenCalled();
   });
 });
@@ -1244,7 +1269,7 @@ describe('deleteEmptyFolderHierarchy', () => {
     app = mockApp.asOriginalType__();
     vi.spyOn(app.fileManager, 'trashFile');
     await deleteEmptyFolderHierarchy(app, null);
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
@@ -1255,7 +1280,7 @@ describe('deleteEmptyFolderHierarchy', () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: ['my-folder/note.md'], folders: [] });
     await deleteEmptyFolderHierarchy(app, 'my-folder');
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 
@@ -1266,7 +1291,7 @@ describe('deleteEmptyFolderHierarchy', () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
     await deleteEmptyFolderHierarchy(app, 'parent/child');
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.fileManager.trashFile).toHaveBeenCalled();
   });
 });

@@ -152,6 +152,7 @@ describe('getRenderedContainer', () => {
 
     await getRenderedContainer(dv, vi.fn());
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.paragraph).toHaveBeenCalledWith('');
   });
 
@@ -164,6 +165,7 @@ describe('getRenderedContainer', () => {
 
     const result = await getRenderedContainer(dv, renderer);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.paragraph).toHaveBeenCalledWith(expect.stringContaining('Error: test error'));
     expect(result).toBeInstanceOf(HTMLParagraphElement);
   });
@@ -223,6 +225,7 @@ describe('insertCodeBlock', () => {
 
     insertCodeBlock(dv, 'js', 'const x = 1;');
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.paragraph).toHaveBeenCalledWith('```js\nconst x = 1;\n```');
   });
 
@@ -231,6 +234,7 @@ describe('insertCodeBlock', () => {
 
     insertCodeBlock(dv, 'python', 'print("hello")');
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const call = vi.mocked(dv.paragraph).mock.calls[0];
     const text = call?.[0] as string;
     expect(text.startsWith('```python')).toBe(true);
@@ -243,6 +247,7 @@ describe('insertCodeBlock', () => {
 
     insertCodeBlock(dv, 'md', codeWithFence);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const call = vi.mocked(dv.paragraph).mock.calls[0];
     const text = call?.[0] as string;
     expect(text.startsWith('````md')).toBe(true);
@@ -255,6 +260,7 @@ describe('insertCodeBlock', () => {
 
     insertCodeBlock(dv, 'md', codeWithFence);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const call = vi.mocked(dv.paragraph).mock.calls[0];
     const text = call?.[0] as string;
     expect(text.startsWith('`````md')).toBe(true);
@@ -266,6 +272,7 @@ describe('insertCodeBlock', () => {
 
     insertCodeBlock(dv, 'text', '');
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.paragraph).toHaveBeenCalledWith('```text\n\n```');
   });
 
@@ -275,6 +282,7 @@ describe('insertCodeBlock', () => {
 
     insertCodeBlock(dv, 'md', codeWithMixedFences);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const call = vi.mocked(dv.paragraph).mock.calls[0];
     const text = call?.[0] as string;
     // The longest fence in the code is 5 backticks, so the result should be 6
@@ -293,6 +301,7 @@ describe('renderIframe', () => {
 
     renderIframe({ dv, relativePathOrFile: 'test.html' });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.el).toHaveBeenCalledWith('iframe', '', {
       attr: {
         height: '600px',
@@ -312,6 +321,7 @@ describe('renderIframe', () => {
       width: '50%'
     });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.el).toHaveBeenCalledWith('iframe', '', {
       attr: {
         height: '400px',
@@ -326,6 +336,7 @@ describe('renderIframe', () => {
 
     renderIframe({ dv, relativePathOrFile: 'file.html' });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.current).toHaveBeenCalled();
   });
 });
@@ -340,6 +351,7 @@ describe('renderPaginatedList', () => {
 
     await renderPaginatedList({ dv, rows: [] });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.paragraph).toHaveBeenCalledWith('No items found');
   });
 
@@ -349,6 +361,7 @@ describe('renderPaginatedList', () => {
 
     await renderPaginatedList({ dv, rows });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.list).toHaveBeenCalled();
   });
 
@@ -371,6 +384,7 @@ describe('renderPaginatedList', () => {
 
     // Default is 10 items per page, dv.list should be called with first 10 items
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const listCall = vi.mocked(dv.list).mock.calls[0];
     expect(listCall).toBeDefined();
     const passedRows = listCall?.[0] as string[];
@@ -385,6 +399,7 @@ describe('renderPaginatedList', () => {
 
     // Should use first option (5) as items per page
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const listCall = vi.mocked(dv.list).mock.calls[0];
     const passedRows = listCall?.[0] as string[];
     expect(passedRows).toHaveLength(5);
@@ -484,6 +499,7 @@ describe('renderPaginatedTable', () => {
 
     await renderPaginatedTable({ dv, headers: ['Name'], rows: [] });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.paragraph).toHaveBeenCalledWith('No items found');
   });
 
@@ -493,6 +509,7 @@ describe('renderPaginatedTable', () => {
 
     await renderPaginatedTable({ dv, headers: ['Name'], rows });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.table).toHaveBeenCalledWith(['Name'], expect.anything());
   });
 
@@ -514,6 +531,7 @@ describe('renderPaginatedTable', () => {
 
     await renderPaginatedTable({ dv, headers: ['Name'], rows });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const tableCall = vi.mocked(dv.table).mock.calls[0];
     const passedRows = tableCall?.[1] as string[][];
     expect(passedRows).toHaveLength(10);
@@ -532,6 +550,7 @@ describe('renderPaginatedTable', () => {
       rows
     });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const tableCall = vi.mocked(dv.table).mock.calls[0];
     const passedRows = tableCall?.[1] as string[][];
     expect(passedRows).toHaveLength(3);
@@ -606,6 +625,7 @@ describe('renderPaginated page navigation', () => {
 
     // Click the Next link
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(dv.list).mockClear();
     const event = new PointerEvent('click', { bubbles: true, cancelable: true });
     // The convertAsyncToSync mock makes the handler the async function itself,
@@ -619,8 +639,10 @@ describe('renderPaginated page navigation', () => {
       setTimeout(resolve, 0);
     });
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.list).toHaveBeenCalledOnce();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.list).toHaveBeenCalledWith(rows.slice(10, 20));
   });
 
@@ -672,7 +694,7 @@ describe('renderPaginated page navigation', () => {
     const event = new PointerEvent('click', { bubbles: true, cancelable: true });
     vi.spyOn(event, 'preventDefault');
     (firstLink as HTMLAnchorElement | null)?.onclick?.(event);
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(event.preventDefault)).toHaveBeenCalled();
   });
 
@@ -689,13 +711,14 @@ describe('renderPaginated page navigation', () => {
   it('should handle renderer error in paginated rendering', async () => {
     const dv = createMockDv();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(dv.list).mockRejectedValueOnce(new Error('render error'));
     const rows = ['item1', 'item2'];
 
     await renderPaginatedList({ dv, rows });
 
     // The error should be caught and displayed via dv.paragraph
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.paragraph).toHaveBeenCalledWith(
       expect.stringContaining('Error: render error')
     );
@@ -705,6 +728,7 @@ describe('renderPaginated page navigation', () => {
     const dv = createMockDv();
     const originalContainer = dv.container;
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(dv.list).mockRejectedValueOnce(new Error('render error'));
     const rows = ['item1'];
 
@@ -724,6 +748,7 @@ describe('renderPaginated page navigation', () => {
 
     // Change items per page to 20
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(dv.list).mockClear();
     assertNonNullable(select);
     select.value = '20';
@@ -736,8 +761,10 @@ describe('renderPaginated page navigation', () => {
 
     // Dv.list should have been called again with 20 items (all 30 items sliced to first 20)
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.list).toHaveBeenCalled();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const listCall = vi.mocked(dv.list).mock.calls[0];
     const passedRows = listCall?.[0] as string[];
     expect(passedRows).toHaveLength(20);
@@ -754,6 +781,7 @@ describe('renderPaginated page navigation', () => {
 
     // Set value to page 2 and press Enter
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(dv.list).mockClear();
     (input as HTMLInputElement).value = '2';
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Enter' });
@@ -765,8 +793,10 @@ describe('renderPaginated page navigation', () => {
 
     // Dv.list should have been called with second page items (items 10-19)
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.list).toHaveBeenCalled();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const listCall = vi.mocked(dv.list).mock.calls[0];
     const passedRows = listCall?.[0] as string[];
     expect(passedRows).toHaveLength(10);
@@ -782,6 +812,7 @@ describe('renderPaginated page navigation', () => {
     const input = dv.container.querySelector('input[type="number"]');
     expect(input).not.toBeNull();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(dv.list).mockClear();
     (input as HTMLInputElement).value = '2';
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Tab' });
@@ -793,6 +824,7 @@ describe('renderPaginated page navigation', () => {
 
     // Dv.list should NOT have been called again
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.list).not.toHaveBeenCalled();
   });
 
@@ -838,6 +870,7 @@ describe('renderPaginated page navigation', () => {
     const input = dv.container.querySelector('input[type="number"]');
     expect(input).not.toBeNull();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(dv.list).mockClear();
     (input as HTMLInputElement).value = '99';
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Enter' });
@@ -848,7 +881,7 @@ describe('renderPaginated page navigation', () => {
     });
 
     // Dv.list should NOT have been called because page 99 is out of range
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(dv.list).not.toHaveBeenCalled();
   });
 });

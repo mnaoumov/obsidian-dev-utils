@@ -53,7 +53,7 @@ describe('Function', () => {
 
     it('should prefix with "function " for a shorthand method', () => {
       const obj = {
-        method(): void {
+        method(this: void): void {
           noop();
         }
       };
@@ -62,7 +62,7 @@ describe('Function', () => {
 
     it('should prefix with "async function " for an async shorthand method', () => {
       const obj = {
-        async method(): Promise<void> {
+        async method(this: void): Promise<void> {
           await noopAsync();
         }
       };
@@ -71,7 +71,7 @@ describe('Function', () => {
 
     it('should prefix with "function " for a shorthand method named like "async1"', () => {
       const obj = {
-        async1(): void {
+        async1(this: void): void {
           noop();
         }
       };
@@ -80,7 +80,7 @@ describe('Function', () => {
 
     it('should prefix with "function " for a shorthand method named like "function1"', () => {
       const obj = {
-        function1(): void {
+        function1(this: void): void {
           noop();
         }
       };
@@ -89,7 +89,7 @@ describe('Function', () => {
 
     it('should prefix with "function " for a generator shorthand method', () => {
       const obj = {
-        *gen(): Generator<number, void> {
+        *gen(this: void): Generator<number, void> {
           yield 1;
         }
       };
@@ -99,7 +99,7 @@ describe('Function', () => {
 
     it('should prefix with "async function " for an async generator shorthand method', () => {
       const obj = {
-        async *gen(): AsyncGenerator<number, void> {
+        async *gen(this: void): AsyncGenerator<number, void> {
           yield 1;
         }
       };

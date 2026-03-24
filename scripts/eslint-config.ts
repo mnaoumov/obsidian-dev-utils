@@ -200,6 +200,7 @@ function getTsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
     }
   ]);
 }
+
 export const configs: Linter.Config[] = defineEslintConfigs({
   customConfigs(context) {
     return defineConfig([

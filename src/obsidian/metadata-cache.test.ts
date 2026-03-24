@@ -339,7 +339,7 @@ describe('getAllLinks', () => {
 describe('ensureMetadataCacheReady', () => {
   it('should resolve when onCleanCache calls the callback', async () => {
     await ensureMetadataCacheReady(app);
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.onCleanCache).toHaveBeenCalledOnce();
   });
 
@@ -348,7 +348,7 @@ describe('ensureMetadataCacheReady', () => {
       setTimeout(cb, 0);
     });
     await ensureMetadataCacheReady(app);
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.onCleanCache).toHaveBeenCalledOnce();
   });
 });
@@ -357,12 +357,14 @@ describe('parseMetadata', () => {
   it('should encode string and call computeMetadataAsync', async () => {
     const mockCache: CachedMetadata = { links: [] };
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.computeMetadataAsync).mockResolvedValue(mockCache);
 
     const result = await parseMetadata(app, 'test string');
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.computeMetadataAsync).toHaveBeenCalledOnce();
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const callArg = vi.mocked(app.metadataCache.computeMetadataAsync).mock.calls[0]?.[0];
     assertNonNullable(callArg);
     const decoded = new TextDecoder().decode(callArg);
@@ -371,6 +373,7 @@ describe('parseMetadata', () => {
   });
 
   it('should return empty object when computeMetadataAsync returns null', async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.computeMetadataAsync).mockResolvedValue(undefined);
 
     const result = await parseMetadata(app, 'test');
@@ -454,7 +457,7 @@ describe('registerFiles', () => {
     const file = strictProxy<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
     registerFiles(app, [file]);
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.uniqueFileLookup.add).toHaveBeenCalledWith('note.md', file);
   });
 
@@ -472,7 +475,7 @@ describe('registerFiles', () => {
     registerFiles(app, [folder]);
 
     expect(app.vault.getAbstractFileByPath('folder')).toBe(folder);
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.uniqueFileLookup.add).not.toHaveBeenCalled();
   });
 });
@@ -493,6 +496,7 @@ describe('unregisterFiles', () => {
 
     unregisterFiles(app, [file]);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.uniqueFileLookup.remove).toHaveBeenCalledWith('note.md', file);
   });
 
@@ -512,7 +516,7 @@ describe('unregisterFiles', () => {
     unregisterFiles(app, [folder]);
 
     expect(app.vault.getAbstractFileByPath('folder')).toBeNull();
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.uniqueFileLookup.remove).not.toHaveBeenCalled();
   });
 
@@ -579,10 +583,12 @@ describe('getBacklinksForFileOrPath', () => {
   it('should call getBacklinksForFile and return result', () => {
     const mockBacklinks = { data: new Map() };
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(mockBacklinks as ReturnType<typeof app.metadataCache.getBacklinksForFile>);
 
     const result = getBacklinksForFileOrPath(app, 'test.md');
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.getBacklinksForFile).toHaveBeenCalled();
     expect(result).toBe(mockBacklinks);
   });
@@ -608,6 +614,7 @@ describe('getCacheSafe', () => {
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
 
     const result = await getCacheSafe(app, file as never);
@@ -620,12 +627,14 @@ describe('getCacheSafe', () => {
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.computeFileMetadataAsync).mockResolvedValue(undefined);
 
     const result = await getCacheSafe(app, file as never);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.computeFileMetadataAsync).toHaveBeenCalledWith(file);
     expect(result).toBe(mockCache);
   });
@@ -638,10 +647,12 @@ describe('getCacheSafe', () => {
     app.metadataCache.fileCache['note.md'] = { hash: 'abc', mtime: 100, size: 50 };
     app.metadataCache.metadataCache['abc'] = mockCache;
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
 
     const result = await getCacheSafe(app, file as never);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(app.metadataCache.computeFileMetadataAsync).not.toHaveBeenCalled();
     expect(result).toBe(mockCache);
   });
@@ -651,6 +662,7 @@ describe('getCacheSafe', () => {
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getFileCache).mockImplementation(() => {
       throw new Error('cache error');
     });
@@ -683,6 +695,7 @@ describe('getFrontmatterSafe', () => {
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
 
     const result = await getFrontmatterSafe(app, file as never);
@@ -695,6 +708,7 @@ describe('getFrontmatterSafe', () => {
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
 
     const result = await getFrontmatterSafe(app, file as never);
@@ -751,6 +765,7 @@ describe('getBacklinksForFileSafe', () => {
     const mockResult = { get: vi.fn(), keys: vi.fn().mockReturnValue([]) };
     const safeFn = vi.fn().mockResolvedValue(mockResult);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = safeFn;
 
     const result = await getBacklinksForFileSafe(app, 'test.md');
@@ -780,6 +795,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFn();
     const backlinksDict = createBacklinksDict({});
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(backlinksDict);
 
     const result = await getBacklinksForFileSafe(app, 'test.md');
@@ -790,6 +806,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFn();
     const refLink = makeReferenceCache('[[target]]', 10);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
       createBacklinksDict({ 'source.md': [refLink] })
     );
@@ -803,6 +820,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFn();
     const refLink = makeReferenceCache('[[target]]', 10);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
       createBacklinksDict({ 'source.md': [refLink] })
     );
@@ -820,6 +838,7 @@ describe('getBacklinksForFileSafe', () => {
       keys: (): string[] => ['source.md']
     };
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(castTo<ReturnType<typeof app.metadataCache.getBacklinksForFile>>(backlinksDict));
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
     mockedReadSafe.mockResolvedValue('some content');
@@ -834,6 +853,7 @@ describe('getBacklinksForFileSafe', () => {
     const content = '0123456789[[target]]more text';
     const refLink = makeReferenceCache('[[target]]', 10);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
       createBacklinksDict({ 'source.md': [refLink] })
     );
@@ -855,6 +875,7 @@ describe('getBacklinksForFileSafe', () => {
     const content = '0123456789XXMISMATCHX more text';
     const refLink = makeReferenceCache('[[target]]', 10);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
       createBacklinksDict({ 'source.md': [refLink] })
     );
@@ -870,6 +891,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFn();
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
       createBacklinksDict({ 'source.md': [fmLink] })
     );
@@ -890,6 +912,7 @@ describe('getBacklinksForFileSafe', () => {
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
       createBacklinksDict({ 'source.md': [fmLink] })
     );
@@ -910,6 +933,7 @@ describe('getBacklinksForFileSafe', () => {
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
       createBacklinksDict({ 'source.md': [fmLink] })
     );
@@ -925,6 +949,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFn();
     const unknownLink = { link: 'something', original: 'something' };
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
       createBacklinksDict({ 'source.md': [unknownLink] })
     );
