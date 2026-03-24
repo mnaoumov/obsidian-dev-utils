@@ -618,7 +618,7 @@ describe('ObjectUtils', () => {
         noop();
       }
       Object.defineProperty(AnonymousCtor, 'name', { value: '' });
-      const obj = ensureGenericObject(Object.create<object>(AnonymousCtor.prototype as object));
+      const obj = ensureGenericObject(Object.create(AnonymousCtor.prototype as object));
       obj['a'] = 1;
       obj['self'] = obj;
       expect(() => toJson(obj)).toThrow('starting at object with constructor \'Object\'');
