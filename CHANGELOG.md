@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 53.1.2
+
+- refactor: extract evalInObsidian
+- chore: update libs
+
 ## 53.1.1
 
 - chore: package patches
