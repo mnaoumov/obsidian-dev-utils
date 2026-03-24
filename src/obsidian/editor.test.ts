@@ -76,6 +76,7 @@ describe('lockEditor', () => {
     expect(mocks.mockReadOnlyOf).toHaveBeenCalledWith(true);
     expect(mocks.mockEditableOf).toHaveBeenCalledWith(false);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(1);
   });
 
@@ -90,6 +91,7 @@ describe('lockEditor', () => {
     const editor = createMockEditor();
     lockEditor(editor);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const dispatch = vi.mocked(editor.cm.dispatch);
     const dispatchCall = dispatch.mock.calls[0];
     assertNonNullable(dispatchCall);
@@ -109,6 +111,7 @@ describe('unlockEditor', () => {
     expect(mocks.mockReadOnlyOf).toHaveBeenCalledWith(false);
     expect(mocks.mockEditableOf).toHaveBeenCalledWith(true);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(1);
   });
 
@@ -135,7 +138,7 @@ describe('ensureCompartment', () => {
     expect(mocks.mockReconfigure).toHaveBeenCalledTimes(2);
 
     // Verify dispatch was called twice (once for lock, once for unlock)
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(2);
   });
 
@@ -147,9 +150,9 @@ describe('ensureCompartment', () => {
     lockEditor(editor2);
 
     // Each editor should trigger its own dispatch
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(editor1.cm.dispatch).toHaveBeenCalledTimes(1);
-
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(editor2.cm.dispatch).toHaveBeenCalledTimes(1);
   });
 });
