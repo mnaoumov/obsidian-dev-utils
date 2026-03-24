@@ -47,7 +47,6 @@ import * as CommitlintConfig from './commitlint-config.ts';
 import { defineEslintConfigs } from './linters/eslint-config.ts';
 import { obsidianDevUtilsConfig } from './linters/markdownlint-cli2-config.ts';
 import * as NanoStagedConfig from './nano-staged-config.ts';
-import * as ObsidianCli from './obsidian-cli.ts';
 
 /* eslint-enable import-x/no-namespace -- Namespace import needed to force v8 to load type-only module for coverage. */
 
@@ -72,7 +71,6 @@ it('should load all v8-ignored modules so coverage processes their ignore commen
     Markdown,
     NanoStagedConfig,
     NonEditorCommandBase,
-    ObsidianCli,
     PluginBase,
     PluginSettingsManagerBase,
     PluginSettingsTabBase,
