@@ -120,7 +120,7 @@ function wrapProxy<T>(value: unknown): T {
   }
   Object.defineProperty(value, STRICT_PROXY_MARKER, { value: true });
 
-  const proxiedChildren = new Map<string | symbol, unknown>();
+  const proxiedChildren = new Map<string | symbol>();
 
   return new Proxy(value, {
     get(target, prop, receiver): unknown {
