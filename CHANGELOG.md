@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 53.1.3
+
+- chore: update libs
+- chore: move package to deps
+
 ## 53.1.2
 
 - refactor: extract evalInObsidian
