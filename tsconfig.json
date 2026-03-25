@@ -18,6 +18,7 @@
     "skipLibCheck": false,
     "target": "ES2024",
     "types": [
+      "@total-typescript/ts-reset",
       "node",
       "obsidian-typings"
     ],
