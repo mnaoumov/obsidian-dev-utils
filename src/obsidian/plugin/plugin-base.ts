@@ -44,7 +44,7 @@ import {
   initI18N,
   t
 } from '../i18n/i18n.ts';
-import { defaultTranslationsMap } from '../i18n/locales/translationsMap.ts';
+import { defaultTranslationsMap } from '../i18n/locales/translations-map.ts';
 import {
   initDebugController,
   initPluginContext

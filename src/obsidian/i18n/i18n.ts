@@ -28,7 +28,7 @@ import { en } from './locales/en.ts';
 import {
   DEFAULT_LANGUAGE,
   defaultTranslationsMap
-} from './locales/translationsMap.ts';
+} from './locales/translations-map.ts';
 
 /**
  * The default namespace.

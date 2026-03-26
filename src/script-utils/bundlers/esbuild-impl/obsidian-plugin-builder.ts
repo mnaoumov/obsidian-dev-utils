@@ -35,13 +35,13 @@ import { CliTaskResult } from '../../cli-utils.ts';
 import { npmRun } from '../../npm-run.ts';
 import { readPackageJson } from '../../npm.ts';
 import { resolvePathFromRoot } from '../../root.ts';
-import { copyToObsidianPluginsFolderPlugin } from './copyToObsidianPluginsFolderPlugin.ts';
-import { customEsbuildOptionsPlugin } from './customEsbuildOptionsPlugin.ts';
-import { fixEsmPlugin } from './fixEsmPlugin.ts';
-import { fixSourceMapsPlugin } from './fixSourceMapsPlugin.ts';
-import { preprocessPlugin } from './preprocessPlugin.ts';
-import { renameCssPlugin } from './renameCssPlugin.ts';
-import { svelteWrapperPlugin } from './svelteWrapperPlugin.ts';
+import { copyToObsidianPluginsFolderPlugin } from './copy-to-obsidian-plugins-folder-plugin.ts';
+import { customEsbuildOptionsPlugin } from './custom-esbuild-options-plugin.ts';
+import { fixEsmPlugin } from './fix-esm-plugin.ts';
+import { fixSourceMapsPlugin } from './fix-source-maps-plugin.ts';
+import { preprocessPlugin } from './preprocess-plugin.ts';
+import { renameCssPlugin } from './rename-css-plugin.ts';
+import { svelteWrapperPlugin } from './svelte-wrapper-plugin.ts';
 
 const sassPlugin = extractDefaultExportInterop(sassPlugin_);
 

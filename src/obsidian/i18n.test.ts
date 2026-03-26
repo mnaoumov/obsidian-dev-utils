@@ -67,7 +67,7 @@ vi.mock('../obsidian/i18n/locales/en.ts', () => ({
   en: { obsidianDevUtils: { test: 'english-value' } }
 }));
 
-vi.mock('../obsidian/i18n/locales/translationsMap.ts', () => ({
+vi.mock('../obsidian/i18n/locales/translations-map.ts', () => ({
   DEFAULT_LANGUAGE: 'en',
   defaultTranslationsMap: { en: { obsidianDevUtils: { test: 'english-value' } } }
 }));
