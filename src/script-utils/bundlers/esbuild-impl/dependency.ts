@@ -31,7 +31,7 @@ import {
   banner,
   invokeEsbuild
 } from './obsidian-plugin-builder.ts';
-import { preprocessPlugin } from './preprocessPlugin.ts';
+import { preprocessPlugin } from './preprocess-plugin.ts';
 
 const esmRequire = createRequire(import.meta.url);
 
