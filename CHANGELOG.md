@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 54.0.0
+
+- refactor: rename camelCase files to kebab-case per G10f
+
 ## 53.1.4
 
 - chore: move better-typescript-lib
