@@ -277,6 +277,30 @@ function getEslintConfigs(context: EslintConfigContext): Linter.Config[] {
           {
             message: 'Do not use anonymous inline object types in type annotations. Define a named interface instead.',
             selector: 'TSTypeAnnotation TSTypeLiteral'
+          },
+          {
+            message: 'Do not use double type assertions (as X as Y) (G10e).',
+            selector: 'TSAsExpression > TSAsExpression'
+          },
+          {
+            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only (G10e).',
+            selector: 'MethodDefinition[key.name=/^_/]:not([override=true])'
+          },
+          {
+            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only (G10e).',
+            selector: 'FunctionDeclaration[id.name=/^_/]'
+          },
+          {
+            message: 'Do not rename imports with "Mock" in the alias. Mock classes are the canonical types — use the original name.',
+            selector: 'ImportSpecifier[local.name=/Mock/]:not([imported.name=/Mock/])'
+          },
+          {
+            message: 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading (G10a).',
+            selector: 'ImportExpression'
+          },
+          {
+            message: 'Do not use `declare` on class properties. Initialize the property or use a regular type annotation.',
+            selector: 'PropertyDefinition[declare=true]'
           }
         ],
         'no-return-assign': 'error',

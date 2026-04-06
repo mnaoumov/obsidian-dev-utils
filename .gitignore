@@ -37,4 +37,4 @@ _dependencies.ts
 package.json
 !/package.json
 
-/.claude/settings.local.json
+.claude/settings.local.json
