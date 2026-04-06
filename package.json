@@ -642,7 +642,8 @@
     "dompurify": "3.0.1",
     "esbuild": "latest",
     "eslint": "latest",
-    "eslint-plugin-import": "npm:eslint-plugin-import-x@latest"
+    "eslint-plugin-import": "npm:eslint-plugin-import-x@latest",
+    "typescript": "latest"
   },
   "dependencies": {
     "@codemirror/state": "6.5.0",
