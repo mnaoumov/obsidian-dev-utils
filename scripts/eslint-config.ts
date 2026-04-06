@@ -142,44 +142,8 @@ function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
   ]);
 }
 
-function getNoRestrictedSyntaxRulesConfigs(context: EslintConfigContext): Linter.Config[] {
+function getNoRestrictedSyntaxOverrideConfigs(): Linter.Config[] {
   return defineConfig([
-    {
-      files: context.allFiles(),
-      rules: {
-        'no-restricted-syntax': [
-          'error',
-          {
-            message: 'Do not use definite assignment assertions (!). Initialize the field or make it optional (G10e).',
-            selector: 'PropertyDefinition[definite=true]'
-          },
-          {
-            message: 'Do not use definite assignment assertions (!) on abstract fields (G10e).',
-            selector: 'TSAbstractPropertyDefinition[definite=true]'
-          },
-          {
-            message: 'Do not use double type assertions (as X as Y). Use strictProxy<T>() or ensureGenericObject() instead (G10e).',
-            selector: 'TSAsExpression > TSAsExpression'
-          },
-          {
-            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only (G10e).',
-            selector: 'MethodDefinition[key.name=/^_/]'
-          },
-          {
-            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only (G10e).',
-            selector: 'FunctionDeclaration[id.name=/^_/]'
-          },
-          {
-            message: 'Do not rename imports with "Mock" in the alias. Mock classes are the canonical types — use the original name.',
-            selector: 'ImportSpecifier[local.name=/Mock/]:not([imported.name=/Mock/])'
-          },
-          {
-            message: 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading (G10a).',
-            selector: 'ImportExpression'
-          }
-        ]
-      }
-    },
     {
       files: [ObsidianDevUtilsRepoPaths.MarkdownlintTypesMarkdownlintCli2ConfigSchemaDts],
       rules: {
@@ -207,7 +171,7 @@ export const configs: Linter.Config[] = defineEslintConfigs({
       ...getIgnoreConfigs(),
       ...getTsdocsConfigs(context),
       ...getJsdocsConfigs(context),
-      ...getNoRestrictedSyntaxRulesConfigs(context),
+      ...getNoRestrictedSyntaxOverrideConfigs(),
       {
         files: [ObsidianDevUtilsRepoPaths.PackageJson],
         rules: {
