@@ -12,6 +12,7 @@
       "DOM",
       "ES2024"
     ],
+    "libReplacement": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
