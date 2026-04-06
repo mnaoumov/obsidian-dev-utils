@@ -4,7 +4,8 @@ import type {
   EventRef,
   Workspace,
   WorkspaceContainer,
-  WorkspaceLeaf
+  WorkspaceLeaf,
+  WorkspaceWindow
 } from 'obsidian';
 import type { PartialDeep } from 'type-fest';
 
@@ -19,19 +20,21 @@ import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { AllWindowsEventHandler } from './all-windows-event-handler.ts';
 
+interface CreateMockAppParams {
+  domWindows?: Window[];
+  onLayoutReady?: (callback: () => void) => void;
+  onWindowOpen?: Workspace['on'];
+}
+
 interface MockComponent {
   component: Component;
   registerDomEvent: ReturnType<typeof vi.fn>;
   registerEvent: ReturnType<typeof vi.fn>;
 }
 
-type WindowOpenCallback = (workspaceWindow: { win: Window }) => void;
+type WindowOpenCallback = (workspaceWindow: WorkspaceWindow) => void;
 
-function createMockApp(params: {
-  domWindows?: Window[];
-  onLayoutReady?: (callback: () => void) => void;
-  onWindowOpen?: Workspace['on'];
-}): App {
+function createMockApp(params: CreateMockAppParams): App {
   const {
     domWindows = [],
     onLayoutReady = (cb: () => void): void => {

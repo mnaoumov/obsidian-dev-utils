@@ -634,7 +634,7 @@ describe('Async', () => {
     });
 
     it('should provide TimeoutContext with correct operationName', async () => {
-      let capturedCtx: { operationName: string } | null = null;
+      let capturedCtx: null | TimeoutContext = null;
 
       try {
         await runWithTimeout({
@@ -658,7 +658,7 @@ describe('Async', () => {
     });
 
     it('should set operationName on the captured TimeoutContext', async () => {
-      let capturedCtx: { operationName: string } | null = null;
+      let capturedCtx: null | TimeoutContext = null;
 
       try {
         await runWithTimeout({
