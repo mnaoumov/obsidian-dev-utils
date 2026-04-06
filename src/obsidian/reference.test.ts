@@ -21,6 +21,17 @@ import {
   sortReferences
 } from './reference.ts';
 
+interface FrontmatterLinkCacheEx extends FrontmatterLinkCache {
+  endOffset?: undefined;
+  isCanvas?: undefined;
+  position?: undefined;
+  startOffset?: undefined;
+}
+
+interface FrontmatterLinkCacheWithOffsetsEx extends FrontmatterLinkCacheWithOffsets {
+  position?: undefined;
+}
+
 function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
   return strictProxy<CanvasReference>({
     displayText: 'link',
@@ -34,7 +45,7 @@ function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
 }
 
 function makeFrontmatterLink(original: string, key: string): Reference {
-  return strictProxy<{ endOffset?: undefined; isCanvas?: undefined; position?: undefined; startOffset?: undefined } & FrontmatterLinkCache>({
+  return strictProxy<FrontmatterLinkCacheEx>({
     displayText: original,
     endOffset: undefined,
     isCanvas: undefined,
@@ -47,7 +58,7 @@ function makeFrontmatterLink(original: string, key: string): Reference {
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): Reference {
-  return strictProxy<{ position?: undefined } & FrontmatterLinkCacheWithOffsets>({
+  return strictProxy<FrontmatterLinkCacheWithOffsetsEx>({
     displayText: original,
     endOffset,
     key,

@@ -149,6 +149,15 @@ const mockedRetryWithTimeoutNotice = vi.mocked(retryWithTimeoutNotice);
 const mockedReadSafe = vi.mocked(readSafe);
 const mockedParseFrontmatter = vi.mocked(parseFrontmatter);
 
+interface FrontmatterLinkCacheEx extends FrontmatterLinkCache {
+  position?: undefined;
+  startOffset?: undefined;
+}
+
+interface FrontmatterLinkCacheWithOffsetsEx extends FrontmatterLinkCacheWithOffsets {
+  position?: undefined;
+}
+
 function createMockApp(): App {
   const fileMap: Record<string, TAbstractFile> = {};
 
@@ -176,7 +185,7 @@ function createMockApp(): App {
 }
 
 function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCache {
-  return strictProxy<{ position?: undefined; startOffset?: undefined } & FrontmatterLinkCache>({
+  return strictProxy<FrontmatterLinkCacheEx>({
     displayText: original,
     key,
     link: original,
@@ -187,7 +196,7 @@ function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCach
 }
 
 function makeFrontmatterLinkWithOffsets(original: string, key: string, startOffset: number, endOffset: number): FrontmatterLinkCache {
-  return strictProxy<{ position?: undefined } & FrontmatterLinkCacheWithOffsets>({
+  return strictProxy<FrontmatterLinkCacheWithOffsetsEx>({
     displayText: original,
     endOffset,
     key,

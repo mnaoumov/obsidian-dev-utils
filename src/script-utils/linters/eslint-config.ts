@@ -18,6 +18,7 @@ import type {
 
 /* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
 import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
+// eslint-disable-next-line import-x/named -- False positive: CJS .d.cts uses `export = types` hiding named exports from static analysis.
 import { includeIgnoreFile } from '@eslint/compat';
 import eslint from '@eslint/js';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
