@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 54.0.1
+
+- fix: increase type-check test timeout from 30s to 60s
+- fix: build
+- chore: lint
+- fix: compilation
+- chore: update libs
+- chore: sort
+- chore: update libs
+- chore: unify rules
+
 ## 54.0.0
 
 - refactor: rename camelCase files to kebab-case per G10f
