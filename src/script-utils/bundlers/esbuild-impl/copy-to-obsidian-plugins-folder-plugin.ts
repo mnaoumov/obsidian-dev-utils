@@ -22,6 +22,7 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 
 import { getLibDebugger } from '../../../debug.ts';
 import {
+  dirname,
   join,
   toPosixPath
 } from '../../../path.ts';
@@ -107,7 +108,7 @@ async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: str
       async fn({ app, pluginId }) {
         await app.plugins.enablePluginAndSave(pluginId);
       },
-      vaultPath: obsidianConfigFolder
+      vaultPath: dirname(obsidianConfigFolder)
     });
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
