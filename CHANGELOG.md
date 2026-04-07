@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 54.0.2
+
+- chore: update libs
+- fix: pass vault root path instead of .obsidian folder
+
 ## 54.0.1
 
 - fix: increase type-check test timeout from 30s to 60s
