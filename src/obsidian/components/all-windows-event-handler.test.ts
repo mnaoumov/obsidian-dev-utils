@@ -121,8 +121,9 @@ describe('AllWindowsEventHandler', () => {
       new AllWindowsEventHandler(app, mock.component).registerAllWindowsHandler(handler);
 
       expect(windowOpenCallback).toBeDefined();
-      const newWin = strictProxy<Window>({});
-      windowOpenCallback?.({ win: newWin });
+      const newWin = strictProxy<PartialDeep<Window>>({});
+      const workspaceWindow = strictProxy<WorkspaceWindow>({ win: newWin });
+      windowOpenCallback?.(workspaceWindow);
       expect(handler).toHaveBeenCalledWith(newWin);
     });
 
