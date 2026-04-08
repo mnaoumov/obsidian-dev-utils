@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module provides a helper type for the information about a code block in a markdown file.
  */

@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Provides a utility to execute an asynchronous function with a notice.
  */

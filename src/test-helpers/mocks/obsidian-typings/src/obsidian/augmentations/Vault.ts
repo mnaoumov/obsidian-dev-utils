@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Bridges Obsidian Vault API methods missing from the mock implementation.
  * Adds stub implementations of `getAvailablePath`, `exists`, and

@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module extracts the `DomEventsHandlersConstructor` from Obsidian's runtime
  * by temporarily opening a markdown file in preview mode and intercepting the

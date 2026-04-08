@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * ESLint configuration for TypeScript projects with various plugins.
  *

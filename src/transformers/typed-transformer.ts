@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * A base class for transformers that can transform and restore a specific type.
  */

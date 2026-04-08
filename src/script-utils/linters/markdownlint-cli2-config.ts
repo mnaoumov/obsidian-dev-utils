@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Default markdownlint-cli2 configuration for the Obsidian Dev Utils.
  */

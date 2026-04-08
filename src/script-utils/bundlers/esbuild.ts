@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Public API for the esbuild bundler. Re-exports the main build functions.
  */

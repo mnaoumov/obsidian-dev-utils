@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This file defines the `i18n` module for `i18next`.
  */

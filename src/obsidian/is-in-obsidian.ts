@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Checks whether the code is running inside an Obsidian environment.
  */

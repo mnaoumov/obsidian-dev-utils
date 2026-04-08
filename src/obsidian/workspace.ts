@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module provides additional utilities for working with the Obsidian {@link Workspace}.
  */

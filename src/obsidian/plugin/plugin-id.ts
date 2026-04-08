@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Holder for the plugin ID.
  */

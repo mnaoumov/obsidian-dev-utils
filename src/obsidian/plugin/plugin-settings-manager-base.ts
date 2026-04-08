@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Plugin settings manager base class.
  */

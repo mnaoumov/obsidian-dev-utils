@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Typescript equivalent of the markdownlint-cli2 configuration schema.
  */

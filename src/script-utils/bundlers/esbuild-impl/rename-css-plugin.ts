@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Rename CSS esbuild plugin.
  */

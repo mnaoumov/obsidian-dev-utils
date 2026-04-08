@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Vitest setup file for obsidian-dev-utils tests.
  * Initializes `obsidianDevUtilsState` on the global app so that

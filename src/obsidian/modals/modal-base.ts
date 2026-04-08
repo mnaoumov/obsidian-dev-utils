@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module exports a base class for displaying modals in Obsidian.
  */

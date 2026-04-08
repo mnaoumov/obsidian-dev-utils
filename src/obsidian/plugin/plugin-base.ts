@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Base class for Obsidian plugins providing utility methods for settings management, error handling, and notifications.
  *

@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Utility for displaying confirm modals in Obsidian.
  *

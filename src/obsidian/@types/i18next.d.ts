@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This file defines the `i18next` type options for the `obsidian` module.
  */

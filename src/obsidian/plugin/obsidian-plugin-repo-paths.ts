@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This file defines an enumeration for common file and folder paths used in Obsidian plugin development.
  */

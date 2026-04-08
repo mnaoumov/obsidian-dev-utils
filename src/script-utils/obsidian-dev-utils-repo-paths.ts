@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module defines an enumeration of common file paths and patterns used in the Obsidian development utilities repository.
  * These paths are used throughout the build process and other utilities, ensuring consistency and reducing the likelihood

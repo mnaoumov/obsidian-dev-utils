@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * A transformer that can transform a TwoWayMap to an array of entries and back.
  */

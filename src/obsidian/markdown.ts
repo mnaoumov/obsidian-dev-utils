@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module provides utility functions for processing Markdown content in Obsidian.
  */

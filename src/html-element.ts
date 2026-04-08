@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Helpers for working with HTML elements.
  */

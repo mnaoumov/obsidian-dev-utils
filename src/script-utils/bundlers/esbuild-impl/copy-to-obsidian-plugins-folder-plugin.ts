@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module defines an esbuild plugin that automatically copies the build output
  * to the Obsidian plugins folder during development. This plugin helps streamline

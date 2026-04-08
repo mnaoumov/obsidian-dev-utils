@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * A transformer that can transform Date to an ISO string and back.
  */

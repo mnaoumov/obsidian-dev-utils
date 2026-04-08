@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Wraps an element in a setting component wrapper.
  */

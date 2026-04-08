@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module provides utilities for managing dependencies during the esbuild process.
  * It includes functions to determine which dependencies should be skipped and which

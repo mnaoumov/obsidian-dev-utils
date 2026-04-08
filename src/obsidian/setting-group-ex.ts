@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Extends the SettingGroup class with additional methods for adding settings.
  */

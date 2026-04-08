@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * A transformer that can transform a Map to an array of entries and back.
  */

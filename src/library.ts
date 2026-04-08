@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Helpers for working with the `obsidian-dev-utils` library.
  */

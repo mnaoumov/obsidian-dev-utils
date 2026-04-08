@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Bridges the `listEl` property from `obsidian-typings` onto the mock
  * `SettingGroup` via the internal `listEl__` field.

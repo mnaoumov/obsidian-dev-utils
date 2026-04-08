@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Types helpers for plugin types.
  */

@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Mock and spy utilities for test files. Provides helpers to spy on methods
  * with access to original implementations, create strictly-typed mock objects

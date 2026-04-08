@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Lint markdown documentation using `markdownlint-cli2` and `linkinator`.
  */

@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * ESLint rule: no-used-underscore-variables
  *

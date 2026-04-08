@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Svelte wrapper esbuild plugin.
  */
