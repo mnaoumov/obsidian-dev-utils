@@ -278,10 +278,10 @@ export function replaceAll<CapturedGroupArgs extends string[]>(
       const item = args[i];
       if (typeof item === 'string') {
         replaceArgs.capturedGroupArgs.push(item);
+        /* v8 ignore start -- v8 tracks the implicit else branch that never happens. */
       } else if (typeof item === 'undefined') {
+        /* v8 ignore stop */
         replaceArgs.missingGroupIndices.push(i);
-      } else {
-        throw new Error(`Unexpected argument type: ${typeof item}`);
       }
     }
 
