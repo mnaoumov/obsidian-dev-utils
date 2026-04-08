@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module provides functions for managing version updates in a project.
  * It includes tasks such as validating version update types, checking the state

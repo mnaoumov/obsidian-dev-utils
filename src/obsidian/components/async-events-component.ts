@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Contains a component and a helper function to register async events.
  */

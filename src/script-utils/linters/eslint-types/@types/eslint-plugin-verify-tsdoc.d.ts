@@ -1,5 +1,7 @@
 /**
- * @packageDocumentation eslint-plugin-verify-tsdoc
+ * @file
+ *
+ * Fixed typings for the `eslint-plugin-verify-tsdoc` package.
  *
  * @see {@link https://www.npmjs.com/package/eslint-plugin-verify-tsdoc} for more information.
  */

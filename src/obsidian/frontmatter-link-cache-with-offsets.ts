@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module provides a type for frontmatter link cache with offsets.
  */

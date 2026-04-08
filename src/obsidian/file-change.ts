@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Contains utility types and functions for handling file changes in Obsidian.
  */

@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Contains utility functions for looping in Obsidian.
  */

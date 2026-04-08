@@ -1,3 +1,9 @@
+/**
+ * @file
+ *
+ * ESLint configuration.
+ */
+
 import type { Linter } from 'eslint';
 
 // eslint-disable-next-line import-x/no-rename-default, import-x/no-named-as-default -- The default export name `index` is too confusing.
@@ -44,7 +50,6 @@ function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
           'error',
           {
             definedTags: [
-              'packageDocumentation',
               'remarks',
               'typeParam'
             ]
@@ -54,7 +59,7 @@ function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
           'error',
           {
             tags: {
-              packageDocumentation: {
+              file: {
                 initialCommentsOnly: true,
                 mustExist: true,
                 preventDuplicates: true

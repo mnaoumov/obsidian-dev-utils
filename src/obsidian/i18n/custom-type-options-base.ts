@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This file defines a custom type options base for `i18next`.
  */

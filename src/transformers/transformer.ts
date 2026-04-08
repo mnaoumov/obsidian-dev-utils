@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * A base class for transformers.
  */

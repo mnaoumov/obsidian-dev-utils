@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Utility for displaying alert modals in Obsidian.
  *

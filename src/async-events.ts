@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Async event emitter.
  */

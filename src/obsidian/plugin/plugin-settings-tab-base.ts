@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module defines a base class for creating plugin setting tabs in Obsidian.
  * It provides a utility method to bind value components to plugin settings and handle changes.

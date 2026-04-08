@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * ESLint rule: no-async-callback-to-unsafe-return
  *

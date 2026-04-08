@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * A transformer that skips private properties.
  */

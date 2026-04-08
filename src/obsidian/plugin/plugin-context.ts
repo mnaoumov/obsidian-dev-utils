@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Initializes the plugin context and sets up the plugin ID.
  */

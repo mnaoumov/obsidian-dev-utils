@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Extends the Setting class with additional methods for adding components.
  */

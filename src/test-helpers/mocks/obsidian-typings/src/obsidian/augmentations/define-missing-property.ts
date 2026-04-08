@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Helper to define properties on mock prototypes without overriding
  * existing properties. This prevents accidentally clobbering properties

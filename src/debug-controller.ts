@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Provides the interface for controlling debug output through namespace management.
  *

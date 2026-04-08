@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Base classes for editor commands.
  */

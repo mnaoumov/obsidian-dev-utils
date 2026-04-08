@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Text based component utilities.
  */

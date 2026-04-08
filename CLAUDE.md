@@ -65,7 +65,7 @@ Every source file follows this pattern:
 
 ```typescript
 /**
- * @packageDocumentation
+ * @file
  *
  * Brief description of module purpose.
  */
@@ -88,7 +88,7 @@ export function myFunction(param: Type): ReturnType {
 ### Documentation
 
 - Every exported function/class requires JSDoc with `@param` and `@returns` tags
-- Every file requires a `@packageDocumentation` JSDoc comment at the top
+- Every file requires a `@file` JSDoc comment at the top
 - Test files and mock files are exempt from documentation requirements
 
 ### Imports

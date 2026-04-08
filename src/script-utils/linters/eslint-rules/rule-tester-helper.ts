@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Helper for bridging ESLint v10 rule types with `@typescript-eslint/rule-tester`.
  */

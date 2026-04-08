@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Contains a component that allows the user to enter a telephone number.
  */

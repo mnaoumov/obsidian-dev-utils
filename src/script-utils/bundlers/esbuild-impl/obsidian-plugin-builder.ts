@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module provides functionality to build and bundle an Obsidian plugin using esbuild.
  * It includes functions to handle the build process based on different build modes (development or production),

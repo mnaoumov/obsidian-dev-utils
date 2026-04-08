@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Bridges the `deleted` property from the Obsidian API onto the mock
  * `TAbstractFile` via the internal `deleted__` field.

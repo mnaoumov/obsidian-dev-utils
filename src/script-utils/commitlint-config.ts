@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Shared commitlint configuration for Conventional Commits.
  */

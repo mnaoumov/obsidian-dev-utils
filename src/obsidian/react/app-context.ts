@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Passes obsidian {@link App} instance to React components.
  */

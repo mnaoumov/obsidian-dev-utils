@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Contains utility functions for enqueuing and processing functions in Obsidian.
  */

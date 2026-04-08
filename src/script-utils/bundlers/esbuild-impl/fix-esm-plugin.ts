@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module defines a custom esbuild plugin that fixes the `require` statement for ESM modules.
  */

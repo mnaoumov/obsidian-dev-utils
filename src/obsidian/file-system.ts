@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This module provides utility functions for working with {@link TAbstractFile}, {@link TFile}, and {@link TFolder} instances in Obsidian.
  */

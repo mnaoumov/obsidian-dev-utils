@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * This file defines a default translations base for `i18next`.
  */

@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Bridges the `insensitive` property from `obsidian-typings` DataAdapterEx
  * onto the mock CapacitorAdapter via `insensitive__` from InMemoryAdapter.

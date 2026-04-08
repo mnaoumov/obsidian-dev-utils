@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Utility for displaying a prompt modal in Obsidian.
  *

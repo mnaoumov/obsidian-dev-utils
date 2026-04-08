@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Linting utility for ESLint configuration with support for automatic fixing.
  *

@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Validation utilities.
  */

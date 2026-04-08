@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Utilities for working with MarkdownView
  */

@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Vitest setup file that imports obsidian-typings mock augmentations.
  * These augmentations patch mock prototypes to bridge obsidian-typings

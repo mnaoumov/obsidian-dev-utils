@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Tri-state checkbox component.
  */

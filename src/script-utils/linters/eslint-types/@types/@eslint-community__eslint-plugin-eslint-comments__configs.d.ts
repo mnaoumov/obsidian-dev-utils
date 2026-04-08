@@ -1,5 +1,7 @@
 /**
- * @packageDocumentation \@eslint-community/eslint-plugin-eslint-comments/configs
+ * @file
+ *
+ * Fixed typings for the `@eslint-community/eslint-plugin-eslint-comments/configs` package.
  *
  * @see {@link https://www.npmjs.com/package/@eslint-community/eslint-plugin-eslint-comments} for more information.
  */

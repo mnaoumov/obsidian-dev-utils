@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Shared nano-staged configuration for pre-commit hooks.
  */

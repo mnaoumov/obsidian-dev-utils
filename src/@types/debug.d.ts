@@ -1,6 +1,9 @@
 /**
- * @packageDocumentation debug
+ * @file
+ *
  * Fixed typings for the `debug` package.
+ *
+ * @see {@link https://www.npmjs.com/package/debug} for more information.
  */
 
 export {};

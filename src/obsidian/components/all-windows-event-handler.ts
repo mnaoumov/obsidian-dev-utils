@@ -1,5 +1,5 @@
 /**
- * @packageDocumentation
+ * @file
  *
  * Handles registering DOM events and handlers for all windows (main window and all existing/future popup windows) and their documents.
  */
