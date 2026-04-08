@@ -419,7 +419,7 @@ describe('replaceAll', () => {
   });
 
   it('should handle regex with capture groups', () => {
-    const result = replaceAll('2024-01-15', /(?<Year>\d{4})-(?<Month>\d{2})-(?<Day>\d{2})/g, (_common, year, month, day) => {
+    const result = replaceAll('2024-01-15', /(?<Year>\d{4})-(?<Month>\d{2})-(?<Day>\d{2})/g, ({ capturedGroupArgs: [year = '', month = '', day = ''] }) => {
       return `${day}/${month}/${year}`;
     });
     expect(result).toBe('15/01/2024');
@@ -450,7 +450,7 @@ describe('replaceAllAsync', () => {
   });
 
   it('should replace all occurrences asynchronously with a function replacer', async () => {
-    const result = await replaceAllAsync('hello world', /\w+/g, async (_abortSignal, { substring }) => {
+    const result = await replaceAllAsync('hello world', /\w+/g, async ({ substring }) => {
       return substring.toUpperCase();
     });
     expect(result).toBe('HELLO WORLD');
@@ -476,8 +476,8 @@ describe('replaceAllAsync', () => {
   });
 
   it('should handle undefined replacer', async () => {
-    const result = await replaceAllAsync('foobar', /foo|bar/g, (_abortSignal, common) => {
-      if (common.substring === 'foo') {
+    const result = await replaceAllAsync('foobar', /foo|bar/g, ({ substring }) => {
+      if (substring === 'foo') {
         return;
       }
 
@@ -564,16 +564,13 @@ describe('getLfNormalizedOffsetToOriginalOffsetMapper', () => {
 
 describe('replaceAll - missingGroupIndices and named groups', () => {
   it('should populate missingGroupIndices for undefined capture groups', () => {
-    const missingIndices: number[][] = [];
+    const missingIndices: number[] = [];
     // Regex with optional groups: one matches, one does not
-    replaceAll('test', /(?:(?<Group1>x)|(?<Group2>t))/g, (common, _g1, _g2) => {
-      missingIndices.push([...common.missingGroupIndices]);
-      return common.substring;
+    replaceAll('test', /(?:(?<Group1>x)|(?<Group2>t))/g, ({ missingGroupIndices, substring }) => {
+      missingIndices.push(...missingGroupIndices);
+      return substring;
     });
-    // 't' matches group 2 but not group 1, so group index 0 is missing
-    // 'e' does not match, 's' does not match
-    // 't' matches group 2 but not group 1, so group index 0 is missing
-    expect(missingIndices).toEqual([[0], [0]]);
+    expect(missingIndices).toEqual([0, 0]);
   });
 
   it('should pass named groups when regex has named capture groups', () => {

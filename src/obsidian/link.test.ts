@@ -30,6 +30,7 @@ import {
   assertNonNullable,
   ensureNonNullable
 } from '../type-guards.ts';
+import { resolveValue } from '../value-provider.ts';
 import {
   applyContentChanges,
   applyFileChanges
@@ -2464,7 +2465,7 @@ describe('app-dependent functions', () => {
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
           }
         }
       );
@@ -2495,7 +2496,7 @@ describe('app-dependent functions', () => {
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, 'different content');
+            await resolveValue(changesProvider, { abortSignal, content: 'different content' });
           }
         }
       );
@@ -2535,7 +2536,7 @@ describe('app-dependent functions', () => {
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
           }
         }
       );
@@ -2576,7 +2577,7 @@ describe('app-dependent functions', () => {
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
           }
         }
       );
@@ -2699,7 +2700,7 @@ describe('app-dependent functions', () => {
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
           }
         }
       );
@@ -2729,7 +2730,7 @@ describe('app-dependent functions', () => {
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '# Note\n[[target]]');
+            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
           }
         }
       );
@@ -2811,7 +2812,7 @@ describe('app-dependent functions', () => {
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '{"nodes":[]}');
+            await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
           }
         }
       );
@@ -2855,7 +2856,7 @@ describe('app-dependent functions', () => {
         async (_theApp, _pathOrFile, changesProvider) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await (changesProvider as (...args: unknown[]) => Promise<unknown>)(abortSignal, '{"nodes":[]}');
+            await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
           }
         }
       );

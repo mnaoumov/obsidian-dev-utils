@@ -31,7 +31,7 @@ export function changeExtensionPlugin(extension: string): Plugin {
 
           const newPath = replaceAll(file.path, /\.js$/g, extension);
 
-          let newText = replaceAll(file.text, /require\(["'](?<ImportPath>.+?)["']\)/g, (_, importPath) => {
+          let newText = replaceAll(file.text, /require\(["'](?<ImportPath>.+?)["']\)/g, ({ capturedGroupArgs: [importPath = ''] }) => {
             if (importPath.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
               return 'undefined';
             }
@@ -40,7 +40,7 @@ export function changeExtensionPlugin(extension: string): Plugin {
             return `require('${fixedImportPath}')`;
           });
 
-          newText = replaceAll(newText, /from "(?<ImportPath>.+?)"/g, (_, importPath) => {
+          newText = replaceAll(newText, /from "(?<ImportPath>.+?)"/g, ({ capturedGroupArgs: [importPath = ''] }) => {
             if (importPath.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
               return 'undefined';
             }

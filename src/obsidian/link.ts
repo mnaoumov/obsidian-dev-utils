@@ -787,7 +787,7 @@ export async function editLinks(
   linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
   processOptions: ProcessOptions = {}
 ): Promise<void> {
-  await applyFileChanges(app, pathOrFile, async (abortSignal, content) => {
+  await applyFileChanges(app, pathOrFile, async ({ abortSignal, content }) => {
     const cache = await getCacheSafe(app, pathOrFile);
     abortSignal.throwIfAborted();
     const file = getFile(app, pathOrFile);
@@ -974,7 +974,7 @@ export function parseLinks(str: string): ParseLinkResult[] {
   const DUMMY_CHARACTER = '@';
 
   const EMBED_INSIDE_LINK_REG_EXP = /\[(?<LinkAlias>!\[.*?\]\(.+?\))\]\((?<Link>.+?)\)/g;
-  const noInsideEmbedsLinksStr = replaceAll(str, EMBED_INSIDE_LINK_REG_EXP, (_, linkAlias, link) => {
+  const noInsideEmbedsLinksStr = replaceAll(str, EMBED_INSIDE_LINK_REG_EXP, ({ capturedGroupArgs: [linkAlias = '', link = ''] }) => {
     const dummyAlias = DUMMY_CHARACTER.repeat(linkAlias.length);
     return `[${dummyAlias}](${link})`;
   });
@@ -1194,12 +1194,16 @@ export function testWikilink(link: string): boolean {
  * ```
  */
 export function unescapeAlias(escapedAlias: string): string {
-  return replaceAll(escapedAlias, /(?<Backslashes>\\+)(?<SpecialCharacter>[!"#$%&'()*+,-./:;<=>?@[\\\]^_`{|}~])/g, (_, backslashes, specialChar) => {
-    const ESCAPED_BACKSLASH_LENGTH = 2;
-    const backslashCount = backslashes.length;
-    const keepCount = Math.floor(backslashCount / ESCAPED_BACKSLASH_LENGTH);
-    return '\\'.repeat(keepCount) + specialChar;
-  });
+  return replaceAll(
+    escapedAlias,
+    /(?<Backslashes>\\+)(?<SpecialCharacter>[!"#$%&'()*+,-./:;<=>?@[\\\]^_`{|}~])/g,
+    ({ capturedGroupArgs: [backslashes = '', specialChar = ''] }) => {
+      const ESCAPED_BACKSLASH_LENGTH = 2;
+      const backslashCount = backslashes.length;
+      const keepCount = Math.floor(backslashCount / ESCAPED_BACKSLASH_LENGTH);
+      return '\\'.repeat(keepCount) + specialChar;
+    }
+  );
 }
 
 /**
@@ -1375,20 +1379,20 @@ function extractTextLinks(str: string, startOffset: number, endOffset: number, t
   }
 
   const textPart = str.slice(startOffset, endOffset + 1);
-  replaceAll(textPart, /(?<Url>\S+)/g, (args, url) => {
+  replaceAll(textPart, /(?<Url>\S+)/g, ({ capturedGroupArgs: [url = ''], offset }) => {
     if (!isUrl(url)) {
       return;
     }
 
     textLinks.push({
       encodedUrl: encodeUrl(url),
-      endOffset: startOffset + args.offset + url.length,
+      endOffset: startOffset + offset + url.length,
       hasAngleBrackets: false,
       isEmbed: false,
       isExternal: true,
       isWikilink: false,
       raw: url,
-      startOffset: startOffset + args.offset,
+      startOffset: startOffset + offset,
       url
     });
   });

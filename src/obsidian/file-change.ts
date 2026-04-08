@@ -27,7 +27,10 @@ import type {
   CanvasReference,
   CanvasTextNodeReference
 } from './reference.ts';
-import type { ProcessOptions } from './vault.ts';
+import type {
+  ContentArgs,
+  ProcessOptions
+} from './vault.ts';
 
 import { getLibDebugger } from '../debug.ts';
 import { printError } from '../error.ts';
@@ -105,11 +108,11 @@ export async function applyContentChanges(
   abortSignal: AbortSignal,
   content: string,
   path: string,
-  changesProvider: ValueProvider<FileChange[] | null, [content: string]>,
+  changesProvider: ValueProvider<FileChange[] | null, ContentArgs>,
   shouldRetryOnInvalidChanges = true
 ): Promise<null | string> {
   abortSignal.throwIfAborted();
-  let changes = await resolveValue(changesProvider, abortSignal, content);
+  let changes = await resolveValue(changesProvider, { abortSignal, content });
   abortSignal.throwIfAborted();
   if (changes === null) {
     return null;
@@ -145,11 +148,11 @@ export async function applyContentChanges(
 export async function applyFileChanges(
   app: App,
   pathOrFile: PathOrFile,
-  changesProvider: ValueProvider<FileChange[] | null, [content: string]>,
+  changesProvider: ValueProvider<FileChange[] | null, ContentArgs>,
   processOptions: ProcessOptions = {},
   shouldRetryOnInvalidChanges = true
 ): Promise<void> {
-  await process(app, pathOrFile, async (abortSignal, content) => {
+  await process(app, pathOrFile, async ({ abortSignal, content }) => {
     if (isCanvasFile(app, pathOrFile)) {
       return await applyCanvasChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
     }
@@ -239,10 +242,10 @@ async function applyCanvasChanges(
   abortSignal: AbortSignal,
   content: string,
   path: string,
-  changesProvider: ValueProvider<FileChange[] | null, [content: string]>,
+  changesProvider: ValueProvider<FileChange[] | null, ContentArgs>,
   shouldRetryOnInvalidChanges = true
 ): Promise<null | string> {
-  const changes = await resolveValue(changesProvider, abortSignal, content);
+  const changes = await resolveValue(changesProvider, { abortSignal, content });
   abortSignal.throwIfAborted();
   if (changes === null) {
     return null;

@@ -14,7 +14,11 @@ import { abortSignalNever } from './abort-controller.ts';
  * @typeParam Value - The type of the value provided.
  * @typeParam Args - The types of arguments passed to the function if the provider is a function.
  */
-export type ValueProvider<Value, Args extends unknown[] = []> = ((abortSignal: AbortSignal, ...args: Args) => Promisable<Value>) | Value;
+export type ValueProvider<Value, Args extends object = object> = ((args: Args & CommonArgs) => Promisable<Value>) | Value;
+
+interface CommonArgs {
+  abortSignal: AbortSignal;
+}
 
 /**
  * Resolves a value from a value provider, which can be either a direct value or a function that returns a value.
@@ -22,19 +26,17 @@ export type ValueProvider<Value, Args extends unknown[] = []> = ((abortSignal: A
  * @typeParam Args - The types of arguments passed to the function if the provider is a function.
  * @typeParam Value - The type of the value provided.
  * @param provider - The value provider to resolve.
- * @param abortSignal - The abort signal to control the execution of the function.
  * @param args - The arguments to pass to the function if the provider is a function.
  * @returns A {@link Promise} that resolves with the value provided by the value provider.
  */
-export async function resolveValue<Value, Args extends unknown[]>(
+export async function resolveValue<Value, Args extends object = object>(
   provider: ValueProvider<Value, Args>,
-  abortSignal?: AbortSignal,
-  ...args: Args
+  args: Args & Partial<CommonArgs>
 ): Promise<Value> {
-  abortSignal ??= abortSignalNever();
-  abortSignal.throwIfAborted();
+  const fullArgs = { ...args, abortSignal: args.abortSignal ?? abortSignalNever() };
+  fullArgs.abortSignal.throwIfAborted();
   if (isFunction(provider)) {
-    return await provider(abortSignal, ...args);
+    return await provider(fullArgs);
   }
   return provider;
 }
@@ -47,6 +49,6 @@ export async function resolveValue<Value, Args extends unknown[]>(
  * @param value - The value provider to check.
  * @returns `true` if the value provider is a function, otherwise `false`.
  */
-function isFunction<Value, Args extends unknown[]>(value: ValueProvider<Value, Args>): value is (abortSignal: AbortSignal, ...args: Args) => Promisable<Value> {
+function isFunction<Value, Args extends object = object>(value: ValueProvider<Value, Args>): value is (args: Args & CommonArgs) => Promisable<Value> {
   return typeof value === 'function';
 }

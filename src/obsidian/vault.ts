@@ -64,6 +64,13 @@ import {
 import { t } from './i18n/i18n.ts';
 
 /**
+ * Arguments for {@link process}.
+ */
+export interface ContentArgs {
+  readonly content: string;
+}
+
+/**
  * Options for {@link process}.
  */
 export interface ProcessOptions extends RetryOptions {
@@ -505,7 +512,7 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
 export async function process(
   app: App,
   pathOrFile: PathOrFile,
-  newContentProvider: ValueProvider<null | string, [string]>,
+  newContentProvider: ValueProvider<null | string, ContentArgs>,
   options: ProcessOptions = {}
 ): Promise<void> {
   const DEFAULT_RETRY_OPTIONS = {
@@ -548,7 +555,7 @@ export async function process(
           return handleMissingFile();
         }
 
-        const newContent = await resolveValue(newContentProvider, abortSignal, oldContent);
+        const newContent = await resolveValue(newContentProvider, { abortSignal, content: oldContent });
         abortSignal.throwIfAborted();
 
         if (newContent === null) {
