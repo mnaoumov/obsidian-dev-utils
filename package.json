@@ -720,6 +720,7 @@
     "@commitlint/cli": "latest",
     "@commitlint/config-conventional": "latest",
     "@commitlint/types": "latest",
+    "@eslint/config-helpers": "latest",
     "@total-typescript/ts-reset": "latest",
     "@types/markdown-it": "latest",
     "@typescript-eslint/rule-tester": "latest",
