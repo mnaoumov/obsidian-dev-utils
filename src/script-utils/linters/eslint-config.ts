@@ -18,8 +18,10 @@ import type {
 
 /* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
 import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
-// eslint-disable-next-line import-x/named -- False positive: CJS .d.cts uses `export = types` hiding named exports from static analysis.
+// eslint-disable-next-line import-x/named -- see bug https://github.com/eslint/rewrite/issues/425
 import { includeIgnoreFile } from '@eslint/compat';
+// eslint-disable-next-line import-x/named -- see bug https://github.com/eslint/rewrite/issues/425
+import { defineConfig } from '@eslint/config-helpers';
 import eslint from '@eslint/js';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import stylistic from '@stylistic/eslint-plugin';
@@ -28,7 +30,6 @@ import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-imp
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
-import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import { existsSync } from 'node:fs';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
