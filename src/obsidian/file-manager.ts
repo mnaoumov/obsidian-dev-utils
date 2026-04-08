@@ -106,7 +106,7 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(
     throw new Error(`File ${getPath(app, pathOrFile)} is not a markdown file.`);
   }
 
-  await process(app, pathOrFile, async (abortSignal, content) => {
+  await process(app, pathOrFile, async ({ abortSignal, content }) => {
     abortSignal.throwIfAborted();
 
     const oldFrontmatter = parseFrontmatter<CustomFrontmatter>(content);

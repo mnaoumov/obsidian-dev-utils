@@ -18,12 +18,17 @@ import { resolveValue } from './value-provider.ts';
 /**
  * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
  */
-export type AsyncReplacer<ReplaceGroupArgs extends string[]> = ValueProvider<StringReplacement, [ReplaceCommonArgs, ...ReplaceGroupArgs]>;
+export type AsyncReplacer<CapturedGroupArgs extends string[]> = ValueProvider<StringReplacement, ReplaceArgs<CapturedGroupArgs>>;
 
 /**
  * Common arguments for the `replaceAll`/`replaceAllAsync` functions.
  */
-export interface ReplaceCommonArgs {
+export interface ReplaceArgs<CapturedGroupArgs extends string[]> {
+  /**
+   * Captured group arguments.
+   */
+  capturedGroupArgs: CapturedGroupArgs;
+
   /**
    * Groups of the match.
    */
@@ -53,7 +58,7 @@ export interface ReplaceCommonArgs {
 /**
  * A synchronous function that generates replacement strings, or a string to replace with.
  */
-export type Replacer<ReplaceGroupArgs extends string[]> = ((...args: [ReplaceCommonArgs, ...ReplaceGroupArgs]) => StringReplacement) | StringReplacement;
+export type Replacer<CapturedGroupArgs extends string[]> = ((args: ReplaceArgs<CapturedGroupArgs>) => StringReplacement) | StringReplacement;
 
 type StringReplacement = MaybeReturn<string>;
 
@@ -237,10 +242,10 @@ export function replace(str: string, replacementsMap: Record<string, string>): s
  * @param replacer - A replacer function that generates replacement strings, or a string to replace with.
  * @returns The string with all replacements made.
  */
-export function replaceAll<ReplaceGroupArgs extends string[]>(
+export function replaceAll<CapturedGroupArgs extends string[]>(
   str: string,
   searchValue: RegExp | string,
-  replacer: Replacer<ReplaceGroupArgs>
+  replacer: Replacer<CapturedGroupArgs>
 ): string {
   if (typeof replacer === 'undefined') {
     return str;
@@ -259,7 +264,9 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
     const hasGroupsArg = typeof args.at(-1) === 'object';
     const sourceIndex = hasGroupsArg ? args.length - SOURCE_INDEX_OFFSET_FOR_GROUP_ARG : args.length - 1;
 
-    const commonArgs: ReplaceCommonArgs = {
+    const replaceArgs: ReplaceArgs<CapturedGroupArgs> = {
+      // eslint-disable-next-line no-restricted-syntax -- Can't avoid.
+      capturedGroupArgs: [] as unknown[] as CapturedGroupArgs,
       groups: hasGroupsArg ? args.at(-1) as Record<string, string | undefined> : undefined,
       missingGroupIndices: [],
       offset: args.at(sourceIndex - 1) as number,
@@ -267,24 +274,18 @@ export function replaceAll<ReplaceGroupArgs extends string[]>(
       substring
     };
 
-    const groupArgs = args.slice(0, sourceIndex - 1).map((arg, index): string => {
-      if (typeof arg === 'string') {
-        return arg;
+    for (let i = 0; i < sourceIndex - 1; i++) {
+      const item = args[i];
+      if (typeof item === 'string') {
+        replaceArgs.capturedGroupArgs.push(item);
+      } else if (typeof item === 'undefined') {
+        replaceArgs.missingGroupIndices.push(i);
+      } else {
+        throw new Error(`Unexpected argument type: ${typeof item}`);
       }
+    }
 
-      /* v8 ignore start -- It incorrectly reports this as uncovered, but it is covered by `should populate missingGroupIndices for undefined capture groups` test. */
-      if (typeof arg === 'undefined') {
-        /* v8 ignore stop */
-        commonArgs.missingGroupIndices.push(index);
-        return '';
-      }
-
-      /* v8 ignore start -- Never happens. */
-      throw new Error(`Unexpected argument type: ${typeof arg}`);
-      /* v8 ignore stop */
-    }) as ReplaceGroupArgs;
-
-    return (replacer(commonArgs, ...groupArgs) as string | undefined) ?? commonArgs.substring;
+    return (replacer(replaceArgs) as string | undefined) ?? replaceArgs.substring;
   });
 }
 
@@ -312,8 +313,8 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(
 
   const replacementAsyncFns: (() => Promise<StringReplacement>)[] = [];
 
-  replaceAll<ReplaceGroupArgs>(str, searchValue, (commonArgs, ...groupArgs) => {
-    replacementAsyncFns.push(() => resolveValue(replacer, abortSignal, commonArgs, ...groupArgs));
+  replaceAll<ReplaceGroupArgs>(str, searchValue, (args) => {
+    replacementAsyncFns.push(() => resolveValue(replacer, { abortSignal, ...args }));
     return '';
   });
 

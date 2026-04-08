@@ -13,6 +13,7 @@ import type { GenericObject } from '../type-guards.ts';
 
 import { deepEqual } from '../object-utils.ts';
 import { ensureNonNullable } from '../type-guards.ts';
+import { resolveValue } from '../value-provider.ts';
 import {
   addAlias,
   deleteAlias,
@@ -52,8 +53,6 @@ vi.mock('../obsidian/vault.ts', () => ({
   process: vi.fn()
 }));
 
-type ProcessFn = (abortSignal: AbortSignal, content: string) => Promise<null | string>;
-
 let app: AppOriginal;
 
 beforeEach(() => {
@@ -66,7 +65,7 @@ describe('addAlias', () => {
     vi.mocked(isMarkdownFile).mockReturnValue(true);
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, '---\n---\ncontent');
+      await resolveValue(fn, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
     vi.mocked(deepEqual).mockReturnValue(false);
@@ -106,7 +105,7 @@ describe('addAlias', () => {
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, '---\n---\ncontent');
+      await resolveValue(fn, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
 
     await addAlias(app, 'note.md', 'my-alias');
@@ -120,7 +119,7 @@ describe('addAlias', () => {
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, '---\naliases: existing-alias\n---\ncontent');
+      await resolveValue(fn, { abortSignal: controller.signal, content: '---\naliases: existing-alias\n---\ncontent' });
     });
 
     await addAlias(app, 'note.md', 'existing-alias');
@@ -134,7 +133,7 @@ describe('deleteAlias', () => {
     vi.mocked(isMarkdownFile).mockReturnValue(true);
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, '---\naliases: some-alias\n---\ncontent');
+      await resolveValue(fn, { abortSignal: controller.signal, content: '---\naliases: some-alias\n---\ncontent' });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({ aliases: ['some-alias'] });
     vi.mocked(deepEqual).mockReturnValue(false);
@@ -161,7 +160,7 @@ describe('deleteAlias', () => {
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, '---\naliases:\n  - keep\n  - remove\n---\ncontent');
+      await resolveValue(fn, { abortSignal: controller.signal, content: '---\naliases:\n  - keep\n  - remove\n---\ncontent' });
     });
 
     await deleteAlias(app, 'note.md', 'remove');
@@ -174,7 +173,7 @@ describe('deleteAlias', () => {
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, '---\naliases: only\n---\ncontent');
+      await resolveValue(fn, { abortSignal: controller.signal, content: '---\naliases: only\n---\ncontent' });
     });
 
     await deleteAlias(app, 'note.md', 'only');
@@ -186,7 +185,7 @@ describe('deleteAlias', () => {
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, '---\n---\ncontent');
+      await resolveValue(fn, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
 
     await deleteAlias(app, 'note.md', 'my-alias');
@@ -209,7 +208,7 @@ describe('processFrontmatter', () => {
   it('should call process with the file', async () => {
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, '---\n---\ncontent');
+      await resolveValue(fn, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
@@ -224,7 +223,7 @@ describe('processFrontmatter', () => {
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      resultContent = await (fn as ProcessFn)(controller.signal, '---\n---\ncontent');
+      resultContent = await resolveValue(fn, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
@@ -239,7 +238,7 @@ describe('processFrontmatter', () => {
     vi.mocked(deepEqual).mockReturnValue(true);
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      resultContent = await (fn as ProcessFn)(controller.signal, content);
+      resultContent = await resolveValue(fn, { abortSignal: controller.signal, content });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({ title: 'test' });
 
@@ -253,7 +252,7 @@ describe('processFrontmatter', () => {
     vi.mocked(deepEqual).mockReturnValue(false);
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, content);
+      await resolveValue(fn, { abortSignal: controller.signal, content });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({ title: 'old' });
     vi.mocked(setFrontmatter).mockReturnValue('---\ntitle: new\n---\ncontent');
@@ -267,7 +266,7 @@ describe('processFrontmatter', () => {
   it('should pass processOptions to process', async () => {
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, '---\n---\ncontent');
+      await resolveValue(fn, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
 

@@ -14,6 +14,7 @@ import type {
 
 import type { ValueProvider } from '../value-provider.ts';
 import type { CodeBlockMarkdownInformation } from './code-block-markdown-information.ts';
+import type { ContentArgs } from './vault.ts';
 
 import { abortSignalAny } from '../abort-controller.ts';
 import { requestAnimationFrameAsync } from '../async.ts';
@@ -100,7 +101,7 @@ export interface ReplaceCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
    * Provides a new code block.
    */
-  readonly codeBlockProvider: ValueProvider<string, [string]>;
+  readonly codeBlockProvider: ValueProvider<string, ContentArgs>;
 
   /**
    * Whether to keep the gap when the new code block is empty. Default is `false`.
@@ -228,7 +229,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
 export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promise<void> {
   const { app, ctx, lineOffset = 0, text } = params;
 
-  await process(app, ctx.sourcePath, async (_abortSignal, content) => {
+  await process(app, ctx.sourcePath, async ({ content }) => {
     const markdownInfo = await getCodeBlockMarkdownInfo(params);
     assertNonNullable(markdownInfo, 'Could not uniquely identify the code block.');
 
@@ -249,7 +250,7 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
 export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Promise<void> {
   const { app, ctx, lineOffset = 0, text } = params;
 
-  await process(app, ctx.sourcePath, async (_abortSignal, content) => {
+  await process(app, ctx.sourcePath, async ({ content }) => {
     const markdownInfo = await getCodeBlockMarkdownInfo(params);
     if (!markdownInfo) {
       throw new Error('Could not uniquely identify the code block.');
@@ -286,7 +287,7 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
   const { app, codeBlockProvider, ctx } = params;
   params.abortSignal?.throwIfAborted();
 
-  await process(app, ctx.sourcePath, async (abortSignal, content) => {
+  await process(app, ctx.sourcePath, async ({ abortSignal, content }) => {
     abortSignal = abortSignalAny(abortSignal, params.abortSignal);
     abortSignal.throwIfAborted();
     const markdownInfo = await getCodeBlockMarkdownInfo(params);
@@ -303,7 +304,7 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
       oldCodeBlock = unindent(oldCodeBlock, markdownInfo.linePrefix);
     }
 
-    let newCodeBlock = await resolveValue(codeBlockProvider, abortSignal, oldCodeBlock);
+    let newCodeBlock = await resolveValue(codeBlockProvider, { abortSignal, content: oldCodeBlock });
     abortSignal.throwIfAborted();
     if ((newCodeBlock || params.shouldKeepGapWhenEmpty) && params.shouldPreserveLinePrefix) {
       newCodeBlock = indent(newCodeBlock, markdownInfo.linePrefix);

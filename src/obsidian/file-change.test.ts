@@ -14,12 +14,15 @@ import {
 } from 'vitest';
 
 import type { GenericObject } from '../type-guards.ts';
+import type { ValueProvider } from '../value-provider.ts';
 import type { FileChange } from './file-change.ts';
+import type { ContentArgs } from './vault.ts';
 
 import { getLibDebugger } from '../debug.ts';
 import { printError } from '../error.ts';
 import { noop } from '../function.ts';
 import { assertNonNullable } from '../type-guards.ts';
+import { resolveValue } from '../value-provider.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -58,13 +61,11 @@ vi.mock('../obsidian/frontmatter.ts', async (importOriginal) => {
 });
 
 vi.mock('../obsidian/vault.ts', () => ({
-  process: vi.fn(async (_app: unknown, _pathOrFile: unknown, fn: unknown) => {
+  process: vi.fn(async (_app: unknown, _pathOrFile: unknown, newContentProvider: unknown) => {
     const controller = new AbortController();
-    await (fn as (signal: AbortSignal, content: string) => Promise<null | string>)(controller.signal, 'test content');
+    await resolveValue(newContentProvider as ValueProvider<null | string, ContentArgs>, { abortSignal: controller.signal, content: 'test content' });
   })
 }));
-
-type ProcessFn = (signal: AbortSignal, content: string) => Promise<null | string>;
 
 let app: AppOriginal;
 
@@ -422,7 +423,8 @@ describe('applyContentChanges', () => {
 
   it('should accept a function as changesProvider', async () => {
     const content = 'Hello [[old]] world';
-    const provider = vi.fn((_signal: AbortSignal, c: string) => {
+
+    const provider = vi.fn(({ content: c }: ContentArgs) => {
       expect(c).toBe(content);
       return [makeContentChange('[[old]]', '[[new]]', 6)];
     });
@@ -496,9 +498,9 @@ describe('applyFileChanges', () => {
     vi.mocked(isCanvasFile).mockReturnValue(false);
     const changes = [makeContentChange('test', 'replaced', 0)];
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, 'test content');
+      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: 'test content' });
     });
 
     await applyFileChanges(app, 'test.md', changes);
@@ -513,9 +515,9 @@ describe('applyFileChanges', () => {
     });
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, canvasContent);
+      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
     });
 
     await applyFileChanges(app, 'drawing.canvas', changes);
@@ -538,9 +540,9 @@ describe('canvas changes via applyFileChanges', () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
     await applyFileChanges(app, 'test.canvas', changes);
@@ -562,9 +564,9 @@ describe('canvas changes via applyFileChanges', () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
     await applyFileChanges(app, 'test.canvas', changes);
@@ -579,9 +581,9 @@ describe('canvas changes via applyFileChanges', () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 5)];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
     await applyFileChanges(app, 'test.canvas', changes);
@@ -591,9 +593,9 @@ describe('canvas changes via applyFileChanges', () => {
   it('should return null when changesProvider returns null for canvas', async () => {
     let resultContent: null | string = 'not null';
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      resultContent = await (fn as ProcessFn)(controller.signal, '{}');
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '{}' });
     });
 
     await applyFileChanges(app, 'test.canvas', null as never);
@@ -611,9 +613,9 @@ describe('canvas changes via applyFileChanges', () => {
       noop();
     });
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
+      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
     await applyFileChanges(app, 'test.canvas', changes);
@@ -629,9 +631,9 @@ describe('canvas changes via applyFileChanges', () => {
     const changes = [makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 6)];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
     await applyFileChanges(app, 'test.canvas', changes);
@@ -656,9 +658,9 @@ describe('canvas changes via applyFileChanges', () => {
     ];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
     await applyFileChanges(app, 'test.canvas', changes);
@@ -676,9 +678,9 @@ describe('canvas changes via applyFileChanges', () => {
   it('should handle invalid JSON canvas content by throwing', async () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      await (fn as ProcessFn)(controller.signal, 'not valid json');
+      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: 'not valid json' });
     });
 
     // When JSON is invalid, it is parsed as {} without a nodes property,
@@ -698,9 +700,9 @@ describe('canvas changes via applyFileChanges', () => {
       noop();
     });
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
+    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
       const controller = new AbortController();
-      resultContent = await (fn as ProcessFn)(controller.signal, JSON.stringify(canvasData));
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
     await applyFileChanges(app, 'test.canvas', changes);

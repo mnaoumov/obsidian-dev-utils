@@ -548,7 +548,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
   const plainObject = toPlainObject(value, '', 0, true, fullOptions, functionTexts, usedObjects);
   let json = ensureNonNullable(JSON.stringify(plainObject, null, fullOptions.space));
-  json = replaceAll(json, /"\[\[(?<Key>[A-Za-z]+)(?<Index>\d*)\]\]"/g, (_, key, indexStr) =>
+  json = replaceAll(json, /"\[\[(?<Key>[A-Za-z]+)(?<Index>\d*)\]\]"/g, ({ capturedGroupArgs: [key = '', indexStr = ''] }) =>
     applySubstitutions({
       functionTexts,
       index: indexStr ? parseInt(indexStr, 10) : 0,
