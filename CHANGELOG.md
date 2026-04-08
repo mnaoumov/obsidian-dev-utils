@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 55.0.0
+
+- fix: build
+- refactor: exclude impossible case
+- refactor: better syntax for provider/replace
+- chore: switch to @file
+- refactor: undo workaround
+- chore: remove unused package types
+
 ## 54.0.3
 
 - fix: workaround for eslint bug <https://github.com/eslint/rewrite/issues/425>
