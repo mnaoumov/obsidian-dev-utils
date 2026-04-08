@@ -53,7 +53,7 @@ describe('resolveValue', () => {
     });
 
     it('should return the correct result when an abort signal is provided', async () => {
-      const provider = vi.fn((_signal: AbortSignal): string => 'ok');
+      const provider = vi.fn((): string => 'ok');
       const controller = new AbortController();
       const result = await resolveValue(provider, { abortSignal: controller.signal });
       expect(result).toBe('ok');
