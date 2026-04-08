@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 54.0.3
+
+- fix: workaround for eslint bug <https://github.com/eslint/rewrite/issues/425>
+
 ## 54.0.2
 
 - chore: update libs
