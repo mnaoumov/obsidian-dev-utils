@@ -31,7 +31,7 @@
 
 ## 54.0.0
 
-- refactor: rename camelCase files to kebab-case per G10f
+- refactor: rename camelCase files to kebab-case
 
 ## 53.1.4
 
