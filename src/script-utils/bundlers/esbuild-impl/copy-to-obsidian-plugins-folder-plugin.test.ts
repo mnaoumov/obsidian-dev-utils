@@ -15,6 +15,10 @@ import { strictProxy } from '../../../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../../../type-guards.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copy-to-obsidian-plugins-folder-plugin.ts';
 
+interface EvalInObsidianCall {
+  vaultPath: string;
+}
+
 vi.mock('node:fs', () => ({
   existsSync: vi.fn().mockReturnValue(true)
 }));
@@ -65,7 +69,7 @@ describe('copyToObsidianPluginsFolderPlugin', () => {
 
     expect(mockEvalInObsidian).toHaveBeenCalledTimes(2);
 
-    for (const call of mockEvalInObsidian.mock.calls as { vaultPath: string }[][]) {
+    for (const call of mockEvalInObsidian.mock.calls as EvalInObsidianCall[][]) {
       expect(call[0]?.vaultPath).toBe(EXPECTED_VAULT_ROOT);
     }
   });

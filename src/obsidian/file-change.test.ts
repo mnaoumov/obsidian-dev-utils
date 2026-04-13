@@ -38,6 +38,10 @@ import { isCanvasFile } from './file-system.ts';
 import { parseFrontmatter } from './frontmatter.ts';
 import { process } from './vault.ts';
 
+interface PathHolder {
+  path: string;
+}
+
 vi.mock('../debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
 }));
@@ -47,7 +51,7 @@ vi.mock('../error.ts', () => ({
 }));
 
 vi.mock('../obsidian/file-system.ts', () => ({
-  getPath: vi.fn((_app: unknown, p: unknown) => typeof p === 'string' ? p : (p as { path: string }).path),
+  getPath: vi.fn((_app: unknown, p: unknown) => typeof p === 'string' ? p : (p as PathHolder).path),
   isCanvasFile: vi.fn(() => false)
 }));
 

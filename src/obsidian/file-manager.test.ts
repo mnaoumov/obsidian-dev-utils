@@ -29,6 +29,10 @@ import {
 } from './frontmatter.ts';
 import { process } from './vault.ts';
 
+interface PathHolder {
+  path: string;
+}
+
 vi.mock('../object-utils.ts', () => ({
   deepEqual: vi.fn(() => false)
 }));
@@ -40,7 +44,7 @@ vi.mock('../obsidian/file-system.ts', () => ({
     }
     return pathOrFile;
   }),
-  getPath: vi.fn((_app: unknown, p: unknown) => typeof p === 'string' ? p : (p as { path: string }).path),
+  getPath: vi.fn((_app: unknown, p: unknown) => typeof p === 'string' ? p : (p as PathHolder).path),
   isMarkdownFile: vi.fn(() => true)
 }));
 

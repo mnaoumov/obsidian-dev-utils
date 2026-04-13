@@ -55,6 +55,10 @@ import {
   saveNote
 } from './vault.ts';
 
+interface PathHolder {
+  path: string;
+}
+
 vi.mock('../obsidian/app.ts', () => ({
   getObsidianDevUtilsState: vi.fn((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }))
 }));
@@ -96,7 +100,7 @@ vi.mock('../obsidian/file-system.ts', () => ({
     return pathOrFile;
   }),
   getFolder: vi.fn((_app: unknown, path: string) => ({ children: [], deleted: false, path })),
-  getPath: vi.fn((_app: unknown, pathOrFile: unknown) => typeof pathOrFile === 'string' ? pathOrFile : (pathOrFile as { path: string }).path),
+  getPath: vi.fn((_app: unknown, pathOrFile: unknown) => typeof pathOrFile === 'string' ? pathOrFile : (pathOrFile as PathHolder).path),
   isFile: vi.fn((file: unknown) => file !== null && typeof file === 'object' && 'name' in (file as GenericObject) && !('children' in (file as GenericObject)))
 }));
 

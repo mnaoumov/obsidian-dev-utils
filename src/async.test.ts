@@ -679,7 +679,7 @@ describe('Async', () => {
       }
 
       assertNonNullable(capturedCtx);
-      expect((capturedCtx as { operationName: string }).operationName).toBe('myOperation');
+      expect(capturedCtx.operationName).toBe('myOperation');
     });
 
     it('should return the result when onTimeout does not terminate', async () => {
