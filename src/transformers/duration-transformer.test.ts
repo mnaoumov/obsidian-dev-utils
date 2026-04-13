@@ -7,6 +7,10 @@ import {
 
 import { DurationTransformer } from './duration-transformer.ts';
 
+interface WrappedDuration {
+  time: moment.Duration;
+}
+
 describe('DurationTransformer', () => {
   const transformer = new DurationTransformer();
 
@@ -98,7 +102,7 @@ describe('DurationTransformer', () => {
           transformedValue: 'PT1H'
         }
       };
-      const result = transformer.transformObjectRecursively(wrapped) as { time: moment.Duration };
+      const result = transformer.transformObjectRecursively(wrapped) as WrappedDuration;
       expect(result.time.asHours()).toBe(1);
     });
   });

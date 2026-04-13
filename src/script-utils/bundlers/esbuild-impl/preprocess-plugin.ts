@@ -38,6 +38,10 @@ interface RequirePatched extends NodeJS.Require {
   __isPatched: boolean;
 }
 
+interface UrlModule {
+  pathToFileURL: typeof pathToFileURL;
+}
+
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
  *
@@ -56,7 +60,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
       [replaceAll('import(dot)meta(dot)url', '(dot)', '.')]: (): string => {
         if (typeof __filename === 'string') {
           const localRequire = require;
-          const url = localRequire('node:url') as { pathToFileURL: typeof pathToFileURL };
+          const url = localRequire('node:url') as UrlModule;
           if (typeof url.pathToFileURL === 'function') {
             return url.pathToFileURL(__filename).href;
           }

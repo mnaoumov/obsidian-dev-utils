@@ -279,6 +279,10 @@ function getEslintConfigs(context: EslintConfigContext): Linter.Config[] {
             selector: 'TSTypeAnnotation TSTypeLiteral'
           },
           {
+            message: 'Do not use anonymous inline object types in type assertions. Define a named interface instead.',
+            selector: 'TSAsExpression TSTypeLiteral'
+          },
+          {
             message: 'Do not use double type assertions (as X as Y) (G10e).',
             selector: 'TSAsExpression > TSAsExpression'
           },

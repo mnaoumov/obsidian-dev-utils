@@ -50,6 +50,10 @@ import {
   resolvePathFromRootSafe
 } from './root.ts';
 
+interface NpmPackResult {
+  filename: string;
+}
+
 /**
  * The default pre-release identifier used for pre-release versions.
  */
@@ -299,7 +303,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
       throw new Error('Failed to find the start of the JSON array in the result output');
     }
     resultOutput = resultOutput.slice(index);
-    const result = JSON.parse(resultOutput) as [{ filename: string }];
+    const result = JSON.parse(resultOutput) as [NpmPackResult];
     filePaths = [
       join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename),
       join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.StylesCss)

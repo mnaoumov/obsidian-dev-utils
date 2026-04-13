@@ -27,6 +27,10 @@ import {
 } from './dataview.ts';
 import { getFile } from './file-system.ts';
 
+interface PathHolder {
+  path: string;
+}
+
 vi.mock('../async.ts', () => ({
   convertAsyncToSync: vi.fn((fn: (...args: unknown[]) => Promise<unknown>) => fn)
 }));
@@ -40,7 +44,7 @@ vi.mock('../error.ts', () => ({
 
 vi.mock('../obsidian/file-system.ts', () => ({
   getFile: vi.fn((_app: unknown, path: unknown) => ({ path })),
-  getPath: vi.fn((_app: unknown, path: unknown) => typeof path === 'string' ? path : (path as { path: string }).path)
+  getPath: vi.fn((_app: unknown, path: unknown) => typeof path === 'string' ? path : (path as PathHolder).path)
 }));
 
 vi.mock('../obsidian/resource-url.ts', () => ({
