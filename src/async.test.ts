@@ -43,7 +43,10 @@ import {
   noop,
   noopAsync
 } from './function.ts';
-import { assertNonNullable } from './type-guards.ts';
+import {
+  assertNonNullable,
+  ensureNonNullable
+} from './type-guards.ts';
 
 describe('Async', () => {
   describe('sleep', () => {
@@ -678,7 +681,7 @@ describe('Async', () => {
         // Expected
       }
 
-      assertNonNullable(capturedCtx);
+      capturedCtx = ensureNonNullable(capturedCtx as null | TimeoutContext);
       expect(capturedCtx.operationName).toBe('myOperation');
     });
 
