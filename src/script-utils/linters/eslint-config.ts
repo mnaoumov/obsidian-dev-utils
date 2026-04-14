@@ -620,6 +620,15 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
       }
     },
     {
+      files: context.testFiles,
+      rules: {
+        '@typescript-eslint/dot-notation': ['error', {
+          allowPrivateClassPropertyAccess: true,
+          allowProtectedClassPropertyAccess: true
+        }]
+      }
+    },
+    {
       settings: {
         react: {
           version: 'detect'
