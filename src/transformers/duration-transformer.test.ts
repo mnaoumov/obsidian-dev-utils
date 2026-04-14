@@ -5,6 +5,8 @@ import {
   it
 } from 'vitest';
 
+import type { GenericObject } from '../type-guards.ts';
+
 import { DurationTransformer } from './duration-transformer.ts';
 
 interface WrappedDuration {
@@ -102,7 +104,7 @@ describe('DurationTransformer', () => {
           transformedValue: 'PT1H'
         }
       };
-      const result = transformer.transformObjectRecursively(wrapped) as WrappedDuration;
+      const result = transformer.transformObjectRecursively(wrapped) as GenericObject<WrappedDuration>;
       expect(result.time.asHours()).toBe(1);
     });
   });

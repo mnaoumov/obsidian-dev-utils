@@ -20,7 +20,7 @@ import { insertAt } from '../string.ts';
  *
  * @typeParam CustomFrontmatter - The type of custom front matter.
  */
-export type CombinedFrontmatter<CustomFrontmatter> = CustomFrontmatter & GenericObject & ObsidianFrontmatter;
+export type CombinedFrontmatter<CustomFrontmatter> = GenericObject<CustomFrontmatter & ObsidianFrontmatter>;
 
 /**
  * A front matter of an Obsidian file.

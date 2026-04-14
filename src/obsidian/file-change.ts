@@ -251,7 +251,7 @@ async function applyCanvasChanges(
     return null;
   }
 
-  const canvasData = parseJsonSafe(content) as CanvasData;
+  const canvasData = parseJsonSafe(content) as GenericObject<CanvasData>;
 
   const canvasTextChanges = new Map<number, CanvasTextNodeChange[]>();
 
