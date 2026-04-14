@@ -283,15 +283,15 @@ function getEslintConfigs(context: EslintConfigContext): Linter.Config[] {
             selector: 'TSAsExpression TSTypeLiteral'
           },
           {
-            message: 'Do not use double type assertions (as X as Y) (G10e).',
+            message: 'Do not use double type assertions (as X as Y).',
             selector: 'TSAsExpression > TSAsExpression'
           },
           {
-            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only (G10e).',
+            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only.',
             selector: 'MethodDefinition[key.name=/^_/]:not([override=true])'
           },
           {
-            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only (G10e).',
+            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only.',
             selector: 'FunctionDeclaration[id.name=/^_/]'
           },
           {
@@ -299,7 +299,7 @@ function getEslintConfigs(context: EslintConfigContext): Linter.Config[] {
             selector: 'ImportSpecifier[local.name=/Mock/]:not([imported.name=/Mock/])'
           },
           {
-            message: 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading (G10a).',
+            message: 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading.',
             selector: 'ImportExpression'
           },
           {
