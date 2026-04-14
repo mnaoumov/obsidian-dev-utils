@@ -625,7 +625,8 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
         '@typescript-eslint/dot-notation': ['error', {
           allowPrivateClassPropertyAccess: true,
           allowProtectedClassPropertyAccess: true
-        }]
+        }],
+        '@typescript-eslint/unbound-method': 'off'
       }
     },
     {
