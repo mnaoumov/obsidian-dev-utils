@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 55.1.0
+
+- chore: update libs
+- fix(test): use ensureNonNullable
+- refactor: make GenericObject generic
+- refactor: extract strictProxy to its own module
+- fix(lint): forbid as anonymous type
+- chore: remove global rule references from changelog Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+
 ## 55.0.0
 
 - fix: build
