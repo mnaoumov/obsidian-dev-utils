@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 55.3.0
+
+- feat: disable unbound-method checks in tests
+
 ## 55.2.0
 
 - feat: allow bracket notation in tests
