@@ -9,7 +9,7 @@ import { noop } from './function.ts';
 /**
  * A type that represents a generic object.
  */
-export type GenericObject = Record<string, unknown>;
+export type GenericObject<T = unknown> = Record<string | symbol, unknown> & T;
 
 type NullableConstraint<T> = null extends T ? unknown : undefined extends T ? unknown : never;
 
@@ -33,7 +33,7 @@ export function assert(condition: boolean, errorOrMessage: Error | string): asse
  *
  * @param _obj - The value to assert.
  */
-export function assertGenericObject(_obj: object): asserts _obj is GenericObject {
+export function assertGenericObject<T>(_obj: T): asserts _obj is GenericObject<T> {
   noop();
 }
 
@@ -63,8 +63,8 @@ export function assertNonNullable<T extends NullableConstraint<T>>(value: T, err
  * @param obj - The value to ensure.
  * @returns The value as a generic object.
  */
-export function ensureGenericObject<T>(obj: T): GenericObject & T {
-  return obj as GenericObject & T;
+export function ensureGenericObject<T>(obj: T): GenericObject<T> {
+  return obj as GenericObject<T>;
 }
 
 /**
