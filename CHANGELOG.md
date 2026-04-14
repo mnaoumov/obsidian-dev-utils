@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 55.2.0
+
+- feat: allow bracket notation in tests
+- fix: remove global rule ID references from ESLint error messages
+
 ## 55.1.0
 
 - chore: update libs
