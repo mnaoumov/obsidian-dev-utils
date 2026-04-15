@@ -9,6 +9,7 @@ import {
   cp,
   glob
 } from 'node:fs/promises';
+import { relative } from 'node:path';
 
 import { toArray } from '../../async.ts';
 import { getLibDebugger } from '../../debug.ts';
@@ -86,8 +87,9 @@ export async function lint(params?: LintParams): Promise<void> {
   await execFromRoot(['npx', 'markdownlint-cli2', ...(shouldFix ? ['--fix'] : []), { batchedArgs: targets }]);
 
   /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
+  const rootFolder = getRootFolder() ?? process.cwd();
   const mdFiles = paths?.length
-    ? paths
+    ? paths.map((p) => relative(rootFolder, p).replace(/\\/g, '/') || p)
     : await toArray(glob(['**/*.md'], {
       exclude: [
         '.git/**',
