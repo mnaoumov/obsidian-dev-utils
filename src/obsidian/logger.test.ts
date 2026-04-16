@@ -5,6 +5,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import { invokeAsyncAndLog } from './logger.ts';
 
 vi.mock('../debug.ts', () => ({
@@ -46,6 +47,7 @@ describe('invokeAsyncAndLog', () => {
   it('should throw if aborted during execution', async () => {
     const controller = new AbortController();
     const fn = vi.fn(async (): Promise<void> => {
+      await noopAsync();
       controller.abort('mid-execution');
     });
     await expect(invokeAsyncAndLog('test', fn, controller.signal)).rejects.toThrow();

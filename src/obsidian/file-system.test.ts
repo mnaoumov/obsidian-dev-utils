@@ -17,6 +17,7 @@ import {
   it
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
@@ -56,6 +57,7 @@ import {
 let app: AppOriginal;
 
 beforeEach(async () => {
+  await noopAsync();
   app = App.createConfigured__().asOriginalType__();
 });
 
@@ -392,6 +394,7 @@ describe('getAbstractFileOrNull', () => {
   describe('should return the file when found by path', () => {
     let result: ReturnType<typeof getAbstractFileOrNull>;
     beforeAll(async () => {
+      await noopAsync();
       app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
       result = getAbstractFileOrNull(app, 'note.md');
     });
@@ -445,6 +448,7 @@ describe('getFileOrNull', () => {
   describe('should return the file when found', () => {
     let result: ReturnType<typeof getFileOrNull>;
     beforeAll(async () => {
+      await noopAsync();
       app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
       result = getFileOrNull(app, 'note.md');
     });
@@ -501,6 +505,7 @@ describe('getFolderOrNull', () => {
   describe('should return the folder when found', () => {
     let result: ReturnType<typeof getFolderOrNull>;
     beforeAll(async () => {
+      await noopAsync();
       app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
       result = getFolderOrNull(app, 'my-folder');
     });

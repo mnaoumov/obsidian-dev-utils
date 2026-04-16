@@ -5,6 +5,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import {
   around,
@@ -91,7 +92,10 @@ describe('invokeWithPatchAsync', () => {
     const result = await invokeWithPatchAsync(
       obj,
       { greet: (next: TestObjGreet) => (name: string): string => `async: ${next(name)}` },
-      async () => obj.greet('test')
+      async () => {
+        await noopAsync();
+        return obj.greet('test');
+      }
     );
     expect(result).toBe('async: hello test');
   });
@@ -101,7 +105,10 @@ describe('invokeWithPatchAsync', () => {
     await invokeWithPatchAsync(
       obj,
       { greet: (next: TestObjGreet) => (name: string): string => `async: ${next(name)}` },
-      async () => obj.greet('test')
+      async () => {
+        await noopAsync();
+        return obj.greet('test');
+      }
     );
     expect(obj.greet('test')).toBe('hello test');
   });
@@ -112,6 +119,7 @@ describe('invokeWithPatchAsync', () => {
       obj,
       { greet: (next: TestObjGreet) => (name: string): string => `async: ${next(name)}` },
       async (): Promise<never> => {
+        await noopAsync();
         throw new Error('async boom');
       }
     )).rejects.toThrow('async boom');

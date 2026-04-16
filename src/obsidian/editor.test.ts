@@ -12,6 +12,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
@@ -70,6 +71,7 @@ describe('lockEditor', () => {
   });
 
   it('should dispatch readOnly true and editable false', async () => {
+    await noopAsync();
     const editor = createMockEditor();
     lockEditor(editor);
 
@@ -81,6 +83,7 @@ describe('lockEditor', () => {
   });
 
   it('should create a compartment on first call', async () => {
+    await noopAsync();
     const editor = createMockEditor();
     lockEditor(editor);
 
@@ -88,6 +91,7 @@ describe('lockEditor', () => {
   });
 
   it('should dispatch effects from compartment reconfigure', async () => {
+    await noopAsync();
     const editor = createMockEditor();
     lockEditor(editor);
 
@@ -105,6 +109,7 @@ describe('unlockEditor', () => {
   });
 
   it('should dispatch readOnly false and editable true', async () => {
+    await noopAsync();
     const editor = createMockEditor();
     unlockEditor(editor);
 
@@ -116,6 +121,7 @@ describe('unlockEditor', () => {
   });
 
   it('should create a compartment on first call', async () => {
+    await noopAsync();
     const editor = createMockEditor();
     unlockEditor(editor);
 
@@ -129,6 +135,7 @@ describe('ensureCompartment', () => {
   });
 
   it('should reuse the same compartment for repeated calls on the same editor', async () => {
+    await noopAsync();
     const editor = createMockEditor();
 
     lockEditor(editor);
@@ -143,6 +150,7 @@ describe('ensureCompartment', () => {
   });
 
   it('should create different compartments for different editors', async () => {
+    await noopAsync();
     const editor1 = createMockEditor();
     const editor2 = createMockEditor();
 

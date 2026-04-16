@@ -24,6 +24,7 @@ import {
 import type { GenericObject } from '../type-guards.ts';
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
 
+import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
@@ -850,6 +851,7 @@ describe('readSafe error paths (invokeFileActionSafe catch)', () => {
 
   it('should return null when read throws and file is subsequently deleted', async () => {
     vi.spyOn(app.vault, 'read').mockImplementation(async () => {
+      await noopAsync();
       // Simulate file being deleted during read
       mockApp.vault.deleteVaultAbstractFile__('note.md');
       throw new Error('File deleted');
@@ -1031,6 +1033,7 @@ describe('processFile', () => {
     // Vault.read returns 'old content', vault.process calls fn with '' by default
     // We need vault.process to call fn with the same content readSafe returns
     vi.spyOn(app.vault, 'process').mockImplementation(async (_file, fn) => {
+      await noopAsync();
       return fn('old content');
     });
 
@@ -1048,6 +1051,7 @@ describe('processFile', () => {
     });
     // Vault.read returns 'old content' but vault.process sees 'changed content'
     vi.spyOn(app.vault, 'process').mockImplementation(async (_file, fn) => {
+      await noopAsync();
       return fn('changed content');
     });
 
@@ -1088,6 +1092,7 @@ describe('processFile', () => {
 
     // ReadSafe succeeds, but file disappears before the second invokeFileActionSafe
     vi.spyOn(app.vault, 'read').mockImplementation(async () => {
+      await noopAsync();
       // Delete file during read so subsequent getFileOrNull returns null
       mockApp.vault.deleteVaultAbstractFile__('note.md');
       return 'old content';

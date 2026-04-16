@@ -275,6 +275,7 @@ describe('AsyncEvents', () => {
     it('should catch errors from async callbacks and defer via window.setTimeout', async () => {
       const error = new Error('async error');
       events.on('test', async () => {
+        await noopAsync();
         throw error;
       });
       await events.triggerAsync('test');
@@ -284,6 +285,7 @@ describe('AsyncEvents', () => {
     it('should rethrow the async error from the deferred function', async () => {
       const error = new Error('async error');
       events.on('test', async () => {
+        await noopAsync();
         throw error;
       });
       await events.triggerAsync('test');
@@ -297,6 +299,7 @@ describe('AsyncEvents', () => {
 
     it('should continue calling remaining async listeners even if one throws', async () => {
       const callback1 = vi.fn(async () => {
+        await noopAsync();
         throw new Error('oops');
       });
       const callback2 = vi.fn(noopAsync);
@@ -367,6 +370,7 @@ describe('AsyncEvents', () => {
       const context = { name: 'async-ctx' };
       let receivedThis: unknown;
       const ref = events.on('test', async function fn(this: unknown): Promise<void> {
+        await noopAsync();
         // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
@@ -377,6 +381,7 @@ describe('AsyncEvents', () => {
     it('should catch async errors and defer via window.setTimeout', async () => {
       const error = new Error('async try error');
       const ref = events.on('test', async () => {
+        await noopAsync();
         throw error;
       });
       await events.tryTriggerAsync(ref, []);
@@ -386,6 +391,7 @@ describe('AsyncEvents', () => {
     it('should rethrow the async error from the deferred function in tryTriggerAsync', async () => {
       const error = new Error('async try error');
       const ref = events.on('test', async () => {
+        await noopAsync();
         throw error;
       });
       await events.tryTriggerAsync(ref, []);

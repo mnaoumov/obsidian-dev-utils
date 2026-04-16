@@ -17,6 +17,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../../../function.ts';
 import { assertNonNullable } from '../../../type-guards.ts';
 import { getValidatorComponent } from './validator-component.ts';
 
@@ -169,6 +170,7 @@ describe('getValidatorComponent', () => {
   });
 
   it('should handle focusout on overlay element when not focused', async () => {
+    await noopAsync();
     vi.useFakeTimers();
     const parent = createDiv();
     const el = createDiv();

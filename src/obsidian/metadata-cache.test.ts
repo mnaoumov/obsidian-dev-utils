@@ -22,6 +22,7 @@ import type { GenericObject } from '../type-guards.ts';
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
 import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-with-offsets.ts';
 
+import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import {
@@ -570,13 +571,17 @@ describe('tempRegisterFilesAndRun', () => {
 describe('tempRegisterFilesAndRunAsync', () => {
   it('should run the async function and return its result', async () => {
     const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
-    const result = await tempRegisterFilesAndRunAsync(app, [file], async () => 'hello');
+    const result = await tempRegisterFilesAndRunAsync(app, [file], async () => {
+      await noopAsync();
+      return 'hello';
+    });
     expect(result).toBe('hello');
   });
 
   it('should still unregister files even when fn rejects', async () => {
     const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     await expect(tempRegisterFilesAndRunAsync(app, [file], async () => {
+      await noopAsync();
       throw new Error('async error');
     })).rejects.toThrow('async error');
   });
