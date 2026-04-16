@@ -159,6 +159,7 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   }
 
   if (!isInObsidian()) {
+    // eslint-disable-next-line no-console -- Valid usage.
     console.debug(message, ...args);
     return;
   }
@@ -177,6 +178,7 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
   const stackLines = ensureNonNullable(new Error().stack).split('\n');
   stackLines.splice(0, CALLER_LINE_INDEX + framesToSkip);
 
+  // eslint-disable-next-line no-console -- Valid usage.
   console.debug(message, ...args, '\n\n---\nLogger stack trace:\n', makeStackTraceError(stackLines.join('\n')));
 }
 

@@ -2769,7 +2769,6 @@ describe('app-dependent functions', () => {
         shouldUseLeadingSlashForAbsolutePaths: true
       }));
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
       expect(mockPlugin.register).toHaveBeenCalled();
 
       const result = generateMarkdownLink({

@@ -239,7 +239,9 @@ describe('Debug', () => {
       debug.enable('log-test-ns');
       const dbg = getDebugger('log-test-ns');
       dbg('test message %s', 'arg1');
+      // eslint-disable-next-line no-console -- Valid usage.
       expect(vi.mocked(console.debug)).toHaveBeenCalled();
+      // eslint-disable-next-line no-console -- Valid usage.
       const callArgs = vi.mocked(console.debug).mock.calls[0];
       assertNonNullable(callArgs);
       expect(callArgs[0]).toContain('test message');
@@ -250,6 +252,7 @@ describe('Debug', () => {
       debug.enable('');
       const dbg = getDebugger('disabled-log-ns');
       dbg('should not appear');
+      // eslint-disable-next-line no-console -- Valid usage.
       expect(vi.mocked(console.debug)).not.toHaveBeenCalled();
     });
 
@@ -258,6 +261,7 @@ describe('Debug', () => {
       debug.enable('');
       const dbg = getDebugger('direct-log-disabled-ns');
       dbg.log('direct call test');
+      // eslint-disable-next-line no-console -- Valid usage.
       expect(vi.mocked(console.debug)).not.toHaveBeenCalled();
     });
   });
@@ -345,6 +349,7 @@ describe('Debug', () => {
       vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('show-msg-plugin');
       showInitialDebugMessage('show-msg-plugin');
+      // eslint-disable-next-line no-console -- Valid usage.
       expect(vi.mocked(console.debug)).toHaveBeenCalled();
     });
 
@@ -352,6 +357,7 @@ describe('Debug', () => {
       vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('my-plugin-for-msg');
       showInitialDebugMessage('my-plugin-for-msg');
+      // eslint-disable-next-line no-console -- Valid usage.
       const allArgs = vi.mocked(console.debug).mock.calls.flat().join(' ');
       expect(allArgs).toContain('my-plugin-for-msg');
     });
@@ -360,6 +366,7 @@ describe('Debug', () => {
       vi.spyOn(console, 'debug').mockImplementation(noop);
       debug.enable('enabled-plugin');
       showInitialDebugMessage('enabled-plugin');
+      // eslint-disable-next-line no-console -- Valid usage.
       const allArgs = vi.mocked(console.debug).mock.calls.flat().join(' ');
       expect(allArgs).toContain('enabled');
     });

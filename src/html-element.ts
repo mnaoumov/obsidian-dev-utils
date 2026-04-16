@@ -119,7 +119,6 @@ export async function createSpanAsync(
  */
 export async function createSvgAsync<K extends keyof SVGElementTagNameMap>(
   tag: K,
-  // eslint-disable-next-line no-undef -- Workaround until https://github.com/obsidianmd/eslint-plugin/pull/89 is merged.
   o?: string | SvgElementInfo,
   callback?: (el: SVGElementTagNameMap[K]) => Promisable<void>
 ): Promise<SVGElementTagNameMap[K]> {

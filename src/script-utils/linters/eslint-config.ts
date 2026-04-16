@@ -128,7 +128,7 @@ export function defineEslintConfigs(params: DefineEslintConfigsParams = {}): Lin
 
   return defineConfig(
     ...getGitIgnoreConfigs(),
-    // obsidianmd configs run first so our stricter rules override their relaxed defaults
+    // Obsidianmd configs run first so our stricter rules override their relaxed defaults
     ...getObsidianLintConfigs(context),
     ...getEslintConfigs(context),
     ...getTseslintConfigs(context),
