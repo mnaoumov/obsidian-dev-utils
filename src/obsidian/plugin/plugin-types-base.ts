@@ -1,26 +1,31 @@
 /**
  * @file
  *
- * Types helpers for plugin types.
+ * @deprecated This module is deprecated. The plugin architecture no longer requires PluginTypes.
+ * PluginBase is now non-generic, and PluginSettingsManagerBase/PluginSettingsTabBase
+ * are generic over the settings type directly.
  */
 
 /* v8 ignore start -- Interface-only module; no runtime code to test. */
-
-import type { ReadonlyDeep } from 'type-fest';
+/* eslint-disable @typescript-eslint/no-deprecated -- This file defines deprecated types that reference each other. */
 
 import type {
   PropertyValues,
   StringKeys
 } from '../../type.ts';
 import type { DefaultTranslationsBase } from '../i18n/default-translations-base.ts';
+import type {
+  PluginSettingsComponentBase,
+  PluginSettingsState,
+  ReadonlyPluginSettingsState
+} from './components/plugin-settings-component.ts';
 import type { PluginBase } from './plugin-base.ts';
-import type { PluginSettingsManagerBase } from './plugin-settings-manager-base.ts';
 import type { PluginSettingsTabBase } from './plugin-settings-tab-base.ts';
-import type { PluginSettingsWrapper } from './plugin-settings-wrapper.ts';
 
 /**
  * Extracts the plugin from the plugin types.
  *
+ * @deprecated Use `PluginBase` directly — PluginBase is no longer generic.
  * @typeParam PluginTypes - The plugin types.
  */
 export type ExtractPlugin<PluginTypes extends PluginTypesBase> = PluginTypes['plugin'];
@@ -28,6 +33,7 @@ export type ExtractPlugin<PluginTypes extends PluginTypesBase> = PluginTypes['pl
 /**
  * Extracts the plugin settings from the plugin types.
  *
+ * @deprecated Use the settings type directly.
  * @typeParam PluginTypes - The plugin types.
  */
 export type ExtractPluginSettings<PluginTypes extends PluginTypesBase> = PluginTypes['pluginSettings'];
@@ -35,6 +41,7 @@ export type ExtractPluginSettings<PluginTypes extends PluginTypesBase> = PluginT
 /**
  * Extracts the plugin settings manager from the plugin types.
  *
+ * @deprecated Use `PluginSettingsComponentBase<YourSettings>` directly.
  * @typeParam PluginTypes - The plugin types.
  */
 export type ExtractPluginSettingsManager<PluginTypes extends PluginTypesBase> = PluginTypes['pluginSettingsManager'];
@@ -42,6 +49,7 @@ export type ExtractPluginSettingsManager<PluginTypes extends PluginTypesBase> = 
 /**
  * Extracts the plugin settings property names from the plugin types.
  *
+ * @deprecated Use `StringKeys<YourSettings>` directly.
  * @typeParam PluginTypes - The plugin types.
  */
 export type ExtractPluginSettingsPropertyNames<PluginTypes extends PluginTypesBase> = StringKeys<ExtractPluginSettings<PluginTypes>>;
@@ -49,35 +57,39 @@ export type ExtractPluginSettingsPropertyNames<PluginTypes extends PluginTypesBa
 /**
  * Extracts the plugin settings property values from the plugin types.
  *
+ * @deprecated Use `PropertyValues<YourSettings>` directly.
  * @typeParam PluginTypes - The plugin types.
  */
 export type ExtractPluginSettingsPropertyValues<PluginTypes extends PluginTypesBase> = PropertyValues<ExtractPluginSettings<PluginTypes>>;
 
 /**
+ * Extracts the plugin settings wrapper from the plugin types.
+ *
+ * @deprecated Use `PluginSettingsState<YourSettings>` directly.
+ * @typeParam PluginTypes - The plugin types.
+ */
+export type ExtractPluginSettingsState<PluginTypes extends PluginTypesBase> = PluginSettingsState<ExtractPluginSettings<PluginTypes>>;
+
+/**
  * Extracts the plugin settings tab from the plugin types.
  *
+ * @deprecated Use `PluginSettingsTabBase<YourSettings>` directly.
  * @typeParam PluginTypes - The plugin types.
  */
 export type ExtractPluginSettingsTab<PluginTypes extends PluginTypesBase> = PluginTypes['pluginSettingsTab'];
 
 /**
- * Extracts the plugin settings wrapper from the plugin types.
- *
- * @typeParam PluginTypes - The plugin types.
- */
-export type ExtractPluginSettingsWrapper<PluginTypes extends PluginTypesBase> = PluginSettingsWrapper<ExtractPluginSettings<PluginTypes>>;
-
-/**
  * Extracts the readonly plugin settings wrapper from the plugin types.
  *
+ * @deprecated Use `ReadonlyPluginSettingsState<YourSettings>` directly.
  * @typeParam PluginTypes - The plugin types.
  */
-export type ExtractReadonlyPluginSettingsWrapper<PluginTypes extends PluginTypesBase> = ReadonlyDeep<ExtractPluginSettingsWrapper<PluginTypes>>;
+export type ExtractReadonlyPluginSettingsState<PluginTypes extends PluginTypesBase> = ReadonlyPluginSettingsState<ExtractPluginSettings<PluginTypes>>;
 
 /**
  * A base type for plugin types.
  *
- * An interface is used only for type inference.
+ * @deprecated The PluginTypes pattern is no longer needed. PluginBase is non-generic.
  */
 export interface PluginTypesBase {
   /**
@@ -88,7 +100,7 @@ export interface PluginTypesBase {
   /**
    * A plugin.
    */
-  plugin: PluginBase<PluginTypesBase>;
+  plugin: PluginBase;
 
   /**
    * A plugin settings.
@@ -98,14 +110,15 @@ export interface PluginTypesBase {
   /**
    * A plugin settings manager.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown`, `PluginTypeBase` don't work, getting compiler errors.
-  pluginSettingsManager: PluginSettingsManagerBase<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Backward compatibility.
+  pluginSettingsManager: PluginSettingsComponentBase<any>;
 
   /**
    * A plugin settings tab.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown`, `PluginTypeBase` don't work, getting compiler errors.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Backward compatibility.
   pluginSettingsTab: PluginSettingsTabBase<any>;
 }
+/* eslint-enable @typescript-eslint/no-deprecated -- Re-enable after deprecated type definitions. */
 
 /* v8 ignore stop */

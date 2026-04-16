@@ -4,7 +4,10 @@
  * Initializes the plugin context and sets up the plugin ID.
  */
 
-import type { App } from 'obsidian';
+import type {
+  App,
+  Component
+} from 'obsidian';
 
 import { compareVersions } from 'compare-versions';
 
@@ -27,7 +30,7 @@ import {
 } from './plugin-id.ts';
 
 interface PluginContextWindow {
-  DEBUG: DebugController;
+  DEBUG: DebugController | undefined;
 }
 
 const STYLES_ID = `${LIBRARY_NAME}-styles`;
@@ -46,10 +49,19 @@ export function addPluginCssClasses(el: HTMLElement, ...cssClasses: string[]): v
  * Initializes the debug controller.
  *
  * @param win - The window to initialize the debug controller for.
+ * @param component - The component to register cleanup on.
  */
-export function initDebugController(win: Window): void {
+export function initDebugController(win: Window, component: Component): void {
   const pluginContextWindow = win as Partial<PluginContextWindow>;
-  pluginContextWindow.DEBUG = getDebugController();
+  const oldDebug = pluginContextWindow.DEBUG;
+  const newDebug = getDebugController();
+  pluginContextWindow.DEBUG = newDebug;
+
+  component.register(() => {
+    if (pluginContextWindow.DEBUG === newDebug) {
+      pluginContextWindow.DEBUG = oldDebug;
+    }
+  });
 }
 
 /**

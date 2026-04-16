@@ -1,253 +1,147 @@
 /**
  * @file
  *
- * Base class for Obsidian plugins providing utility methods for settings management, error handling, and notifications.
+ * Base class for Obsidian plugins using a component-based architecture.
  *
- * This class simplifies the process of managing plugin settings, displaying notifications, and handling errors.
- * Subclasses should implement methods to create default settings and settings tabs, and complete plugin-specific
- * loading tasks.
+ * PluginBase registers universal components (context, i18n, error handling, abort signal, lifecycle events, debug).
+ * Subclasses add their own components via {@link registerComponent} in their constructor.
+ * Any universal component can be replaced by calling {@link registerComponent} with a new instance of the same class.
  */
 
-/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
-
-import type { ReadonlyDeep } from 'type-fest';
+import type {
+  App,
+  PluginManifest
+} from 'obsidian';
+import type { Promisable } from 'type-fest';
 
 import {
-  Notice,
+  Component,
   Plugin as ObsidianPlugin
 } from 'obsidian';
 
-import type { TranslationsMap } from '../i18n/i18n.ts';
-import type {
-  ExtractPluginSettings,
-  ExtractPluginSettingsManager,
-  ExtractPluginSettingsTab,
-  ExtractReadonlyPluginSettingsWrapper,
-  PluginTypesBase
-} from './plugin-types-base.ts';
+import type { PluginSettingsComponentBase } from './components/plugin-settings-component.ts';
 
-import { AsyncEvents } from '../../async-events.ts';
 import {
   convertAsyncToSync,
-  invokeAsyncSafely,
   invokeAsyncSafelyAfterDelay
 } from '../../async.ts';
-import { getDebugger } from '../../debug.ts';
-import {
-  registerAsyncErrorEventHandler,
-  SilentError
-} from '../../error.ts';
 import { noopAsync } from '../../function.ts';
-import { AllWindowsEventHandler } from '../components/all-windows-event-handler.ts';
-import { registerAsyncEvent } from '../components/async-events-component.ts';
-import {
-  initI18N,
-  t
-} from '../i18n/i18n.ts';
-import { defaultTranslationsMap } from '../i18n/locales/translations-map.ts';
-import {
-  initDebugController,
-  initPluginContext
-} from './plugin-context.ts';
-
-type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
+import { assertNonNullable } from '../../type-guards.ts';
+import { AbortSignalComponent } from './components/abort-signal-component.ts';
+import { AsyncErrorHandlerComponent } from './components/async-error-handler-component.ts';
+import { ConsoleDebugComponent } from './components/console-debug-component.ts';
+import { I18nComponent } from './components/i18n-component.ts';
+import { LifecycleEventsComponent } from './components/lifecycle-events-component.ts';
+import { PluginContextComponent } from './components/plugin-context-component.ts';
+import { PluginNoticeComponent } from './components/plugin-notice-component.ts';
+import { EmptyPluginSettingsComponent } from './components/plugin-settings-component.ts';
 
 /**
- * Base class for creating Obsidian plugins with built-in support for settings management, error handling, and notifications.
+ * Params for {@link PluginBase.registerComponent}.
  *
- * @typeParam PluginTypes - Plugin-specific types.
+ * @typeParam T - The component type.
  */
-export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends ObsidianPlugin {
+export interface RegisterComponentParams<T extends Component = Component> {
   /**
-   * The events of the plugin.
+   * The component to register.
    */
-  public readonly events = new AsyncEvents();
-
-  /**
-   * Gets the AbortSignal used for aborting long-running operations.
-   *
-   * @returns The abort signal.
-   * @throws If the abort signal is not defined.
-   */
-  public get abortSignal(): AbortSignal {
-    if (!this._abortSignal) {
-      throw new Error('Abort signal not defined');
-    }
-    return this._abortSignal;
-  }
+  readonly component: T;
 
   /**
-   * Gets the readonly plugin settings.
-   *
-   * @returns The readonly plugin settings.
+   * Optional key. Defaults to the component's constructor name.
    */
-  public get settings(): ReadonlyDeep<ExtractPluginSettings<PluginTypes>> {
-    return this.settingsManager.settingsWrapper.safeSettings as ReadonlyDeep<ExtractPluginSettings<PluginTypes>>;
-  }
+  readonly key?: string;
 
   /**
-   * Gets the plugin settings manager.
-   *
-   * @returns The plugin settings manager.
+   * Whether this component should be loaded before the plugin's `onloadImpl()` runs.
+   * Components marked with this flag are force-loaded during `onload()`, ensuring they are
+   * fully initialized before plugin logic executes.
    */
-  public get settingsManager(): ExtractPluginSettingsManager<PluginTypes> {
-    if (!this._settingsManager) {
-      throw new Error('Settings manager not defined');
-    }
+  readonly shouldPreload?: boolean;
+}
 
-    return this._settingsManager;
-  }
+/**
+ * Base class for creating Obsidian plugins with a component-based architecture.
+ *
+ * Registers universal components automatically. Subclasses add or replace components
+ * via {@link registerComponent} in their constructor.
+ */
+export abstract class PluginBase extends ObsidianPlugin {
+  /**
+   * The abort signal component. Aborted when the plugin is unloaded.
+   */
+  protected readonly abortSignalComponent: AbortSignalComponent;
 
   /**
-   * Gets the plugin settings tab.
-   *
-   * @returns The plugin settings tab.
+   * The console debug component. Provides namespaced debug logging.
    */
-  public get settingsTab(): ExtractPluginSettingsTab<PluginTypes> {
-    if (!this._settingsTab) {
-      throw new Error('Settings tab not defined');
-    }
-
-    return this._settingsTab;
-  }
-
-  private _abortSignal?: AbortSignal;
-  private _settingsManager: ExtractPluginSettingsManager<PluginTypes> | null = null;
-  private _settingsTab: ExtractPluginSettingsTab<PluginTypes> | null = null;
-  private readonly lifecycleEventNames = new Set<LifecycleEventName>();
-  private notice?: Notice;
+  protected readonly consoleDebugComponent: ConsoleDebugComponent;
 
   /**
-   * Logs a message to the console.
-   *
-   * Use instead of `console.debug()`.
-   *
-   * Those messages are not shown by default, but they can be shown by enabling `your-plugin-id` debugger namespace.
-   *
-   * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md} for more information.
-   *
-   * @param message - The message to log.
-   * @param args - The arguments to log.
+   * The lifecycle events component. Provides load, layoutReady, and unload events.
    */
-  public consoleDebug(message: string, ...args: unknown[]): void {
-    // Skip the `consoleDebug()` call itself
-    const FRAMES_TO_SKIP = 1;
-    const pluginDebugger = getDebugger(this.manifest.id, FRAMES_TO_SKIP);
-    pluginDebugger(message, ...args);
+  protected readonly lifecycleEventsComponent: LifecycleEventsComponent;
+
+  /**
+   * The notice component. Displays notices to the user.
+   */
+  protected readonly noticeComponent: PluginNoticeComponent;
+
+  /**
+   * The settings component. Manages plugin settings lifecycle.
+   */
+  protected readonly settingsComponent: PluginSettingsComponentBase<object>;
+
+  private readonly componentsMap = new Map<string, Component>();
+  private readonly preloadKeys = new Set<string>();
+
+  /**
+   * Creates a new PluginBase.
+   *
+   * @param app - The Obsidian app instance.
+   * @param manifest - The plugin manifest.
+   */
+  public constructor(app: App, manifest: PluginManifest) {
+    super(app, manifest);
+
+    this.registerComponent({ component: new PluginContextComponent(app, manifest.id), shouldPreload: true });
+    this.registerComponent({ component: new I18nComponent(), shouldPreload: true });
+    this.noticeComponent = this.registerComponent({ component: new PluginNoticeComponent(manifest.name) });
+    this.registerComponent({ component: new AsyncErrorHandlerComponent(this.noticeComponent) });
+    this.abortSignalComponent = this.registerComponent({ component: new AbortSignalComponent(manifest.id) });
+    this.consoleDebugComponent = this.registerComponent({ component: new ConsoleDebugComponent(manifest.id) });
+    this.lifecycleEventsComponent = this.registerComponent({ component: new LifecycleEventsComponent(app) });
+    this.settingsComponent = this.registerComponent({ component: new EmptyPluginSettingsComponent(), shouldPreload: true });
   }
 
   /**
    * Called when the external settings change.
    *
-   * Usually, you don't need to override this method. Consider using {@link onLoadSettings} instead.
-   *
-   * If you still need to override this method, make sure to call `await super.onExternalSettingsChange()` first.
+   * Override in subclass if needed. Make sure to call `await super.onExternalSettingsChange()` first.
    */
   public override async onExternalSettingsChange(): Promise<void> {
     await super.onExternalSettingsChange?.();
-    await this._settingsManager?.loadFromFile(false);
+    await this.settingsComponent.onExternalSettingsChange();
   }
 
   /**
-   * Called when the plugin is loaded
+   * Called when the plugin is loaded. Force-loads components that must be ready
+   * before plugin logic, then calls `onloadImpl()`.
    *
-   * Usually, you don't need to override this method. Consider using {@link onloadImpl} instead.
-   *
-   * If you still need to override this method, make sure to call `await super.onload()` first.
+   * Usually, you don't need to override this method. Override {@link onloadImpl} instead.
    */
   public override async onload(): Promise<void> {
     await super.onload();
-    await this.onloadImpl();
-    invokeAsyncSafelyAfterDelay(this.afterLoad.bind(this));
-  }
 
-  /**
-   * Called when the plugin is unloaded.
-   *
-   * Usually, you don't need to override this method. Consider using {@link onunloadImpl} instead.
-   *
-   * If you still need to override this method, make sure to call `super.onunload()` first.
-   */
-  public override onunload(): void {
-    super.onunload();
-    invokeAsyncSafely(async () => {
-      try {
-        await this.onunloadImpl();
-      } finally {
-        await this.triggerLifecycleEvent('unload');
-      }
-    });
-  }
-
-  /**
-   * Registers a callback to be executed when a lifecycle event is triggered.
-   *
-   * @param name - The name of the event.
-   * @param callback - The callback to execute.
-   */
-  public registerForLifecycleEvent(name: LifecycleEventName, callback: () => Promise<void>): void {
-    invokeAsyncSafely(async () => {
-      await this.waitForLifecycleEvent(name);
-      await callback();
-    });
-  }
-
-  /**
-   * Waits for a lifecycle event to be triggered.
-   *
-   * If you `await` this method during lifecycle event, it might cause a deadlock.
-   *
-   * Consider wrapping this call with {@link invokeAsyncSafely}.
-   *
-   * @param name - The name of the event.
-   * @returns A {@link Promise} that resolves when the event is triggered.
-   */
-  public async waitForLifecycleEvent(name: LifecycleEventName): Promise<void> {
-    if (this.lifecycleEventNames.has(name)) {
-      return;
+    for (const key of this.preloadKeys) {
+      const component = this.componentsMap.get(key);
+      assertNonNullable(component, `Component with key '${key}' not found`);
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Component.load() returns void|Promise at runtime despite void typing.
+      await (component.load() as Promisable<void>);
     }
 
-    await new Promise<void>((resolve) => {
-      this.events.once(name, () => {
-        resolve();
-      });
-    });
-  }
-
-  /**
-   * Creates the plugin settings manager. This method must be implemented by subclasses.
-   *
-   * @returns The plugin settings manager.
-   */
-  protected createSettingsManager(): ExtractPluginSettingsManager<PluginTypes> | null {
-    return null;
-  }
-
-  /**
-   * Creates a plugin settings tab.
-   *
-   * @returns The settings tab or `null` if not applicable.
-   */
-  protected createSettingsTab(): ExtractPluginSettingsTab<PluginTypes> | null {
-    return null;
-  }
-
-  /**
-   * Creates a translations map.
-   *
-   * @returns The translations map.
-   */
-  protected createTranslationsMap(): TranslationsMap<PluginTypes> {
-    return defaultTranslationsMap;
-  }
-
-  /**
-   * Called when an async error occurs.
-   *
-   * @param _asyncError - The async error.
-   */
-  protected handleAsyncError(_asyncError: unknown): void {
-    this.showNotice(t(($) => $.obsidianDevUtils.notices.unhandledError));
+    await this.onloadImpl();
+    invokeAsyncSafelyAfterDelay(this.afterLoad.bind(this));
   }
 
   /**
@@ -258,90 +152,45 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
   }
 
   /**
-   * Executed when the plugin is loaded.
-   *
-   * If this method fails, the plugin will be automatically unloaded.
+   * Called after all pre-load components are initialized. Override this to add plugin-specific logic.
    *
    * @remarks It is important to call `super.onloadImpl()` in overridden method.
    */
   protected async onloadImpl(): Promise<void> {
-    initPluginContext(this.app, this.manifest.id);
-    new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
-      initDebugController(win);
-    });
-    await initI18N<PluginTypes>(this.createTranslationsMap());
-
-    this.register(registerAsyncErrorEventHandler(this.handleAsyncError.bind(this)));
-
-    this._settingsManager = this.createSettingsManager();
-    if (this._settingsManager) {
-      registerAsyncEvent(this, this._settingsManager.on('loadSettings', this.onLoadSettings.bind(this)));
-      registerAsyncEvent(this, this._settingsManager.on('saveSettings', this.onSaveSettings.bind(this)));
-    }
-
-    await this._settingsManager?.loadFromFile(true);
-    this._settingsTab = this.createSettingsTab();
-    if (this._settingsTab) {
-      this.addSettingTab(this._settingsTab);
-    }
-
-    const abortController = new AbortController();
-    this._abortSignal = abortController.signal;
-    this.register(() => {
-      abortController.abort(new SilentError(`Plugin ${this.manifest.id} had been unloaded`));
-    });
-  }
-
-  /**
-   * Called when the plugin settings are loaded or reloaded.
-   *
-   * @param _loadedSettings - The loaded settings wrapper.
-   * @param _isInitialLoad - Whether the settings are being loaded for the first time.
-   */
-  protected async onLoadSettings(_loadedSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>, _isInitialLoad: boolean): Promise<void> {
     await noopAsync();
   }
 
   /**
-   * Called when the plugin settings are saved.
+   * Registers a component with the plugin. If a component with the same key is already registered,
+   * the old component is removed and replaced.
    *
-   * @param _newSettings - The new settings.
-   * @param _oldSettings - The old settings.
-   * @param _context - The context.
+   * @typeParam T - The component type.
+   * @param params - The registration params.
+   * @returns The registered component.
    */
-  protected async onSaveSettings(
-    _newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
-    _oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
-    _context: unknown
-  ): Promise<void> {
-    await noopAsync();
-  }
+  protected registerComponent<T extends Component>(params: RegisterComponentParams<T>): T {
+    const resolvedKey = params.key ?? params.component.constructor.name;
+    const oldComponent = this.componentsMap.get(resolvedKey);
+    if (oldComponent) {
+      this.removeChild(oldComponent);
+    }
+    this.componentsMap.set(resolvedKey, params.component);
+    this.addChild(params.component);
 
-  /**
-   * Called when the plugin is unloaded.
-   */
-  protected async onunloadImpl(): Promise<void> {
-    await noopAsync();
-  }
-
-  /**
-   * Displays a notice message to the user.
-   *
-   * @param message - The message to display.
-   */
-  protected showNotice(message: string): void {
-    if (this.notice) {
-      this.notice.hide();
+    if (params.shouldPreload) {
+      this.preloadKeys.add(resolvedKey);
+    } else {
+      this.preloadKeys.delete(resolvedKey);
     }
 
-    this.notice = new Notice(`${this.manifest.name}\n${message}`);
+    return params.component;
   }
 
   private async afterLoad(): Promise<void> {
-    if (this.abortSignal.aborted) {
+    if (this.abortSignalComponent.abortSignal.aborted) {
       return;
     }
-    await this.triggerLifecycleEvent('load');
+    await this.lifecycleEventsComponent.triggerLifecycleEvent('load');
     this.app.workspace.onLayoutReady(convertAsyncToSync(this.onLayoutReadyBase.bind(this)));
   }
 
@@ -349,13 +198,7 @@ export abstract class PluginBase<PluginTypes extends PluginTypesBase> extends Ob
     try {
       await this.onLayoutReady();
     } finally {
-      await this.triggerLifecycleEvent('layoutReady');
+      await this.lifecycleEventsComponent.triggerLifecycleEvent('layoutReady');
     }
   }
-
-  private async triggerLifecycleEvent(name: LifecycleEventName): Promise<void> {
-    this.lifecycleEventNames.add(name);
-    await this.events.triggerAsync(name);
-  }
 }
-/* v8 ignore stop */

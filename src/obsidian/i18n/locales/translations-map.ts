@@ -4,7 +4,6 @@
  * This file defines the translations map for the `i18n` module.
  */
 
-import type { PluginTypesBase } from '../../plugin/plugin-types-base.ts';
 import type { TranslationsMap } from '../i18n.ts';
 
 import { en } from './en.ts';
@@ -21,4 +20,4 @@ const translationsMapImpl = {
 /**
  * The default translations map.
  */
-export const defaultTranslationsMap: TranslationsMap<PluginTypesBase> = translationsMapImpl;
+export const defaultTranslationsMap: TranslationsMap = translationsMapImpl;

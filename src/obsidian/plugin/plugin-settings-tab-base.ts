@@ -5,9 +5,10 @@
  * It provides a utility method to bind value components to plugin settings and handle changes.
  */
 
-/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
-
-import type { Debouncer } from 'obsidian';
+import type {
+  Debouncer,
+  Plugin
+} from 'obsidian';
 import type {
   ConditionalKeys,
   Promisable,
@@ -24,15 +25,10 @@ import type { AsyncEventRef } from '../../async-events.ts';
 import type { StringKeys } from '../../type.ts';
 import type { ValueComponentWithChangeTracking } from '../components/setting-components/value-component-with-change-tracking.ts';
 import type { ValidationMessageHolder } from '../validation.ts';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `PluginSettingsManagerBase` to use it in the tsdocs.
-import type { PluginSettingsManagerBase } from './plugin-settings-manager-base.ts';
 import type {
-  ExtractPlugin,
-  ExtractPluginSettings,
-  ExtractPluginSettingsPropertyNames,
-  ExtractReadonlyPluginSettingsWrapper,
-  PluginTypesBase
-} from './plugin-types-base.ts';
+  PluginSettingsComponentBase,
+  ReadonlyPluginSettingsState
+} from './components/plugin-settings-component.ts';
 
 import {
   convertAsyncToSync,
@@ -52,7 +48,7 @@ import { isValidationMessageHolder } from '../validation.ts';
 import { addPluginCssClasses } from './plugin-context.ts';
 
 /**
- * A context passed to the {@link PluginSettingsManagerBase.saveToFile} method.
+ * A context passed to the {@link PluginSettingsComponentBase.saveToFile} method.
  */
 export const SAVE_TO_FILE_CONTEXT = 'PluginSettingsTab';
 
@@ -109,12 +105,27 @@ export interface BindOptionsExtended<
 }
 
 /**
+ * Params for creating a {@link PluginSettingsTabBase}.
+ */
+export interface PluginSettingsTabBaseParams<PluginSettings extends object> {
+  /**
+   * The plugin instance (needed by Obsidian's PluginSettingTab).
+   */
+  readonly plugin: Plugin;
+
+  /**
+   * The settings component.
+   */
+  readonly settingsComponent: PluginSettingsComponentBase<PluginSettings>;
+}
+
+/**
  * Base class for creating plugin settings tabs in Obsidian.
  * Provides a method for binding value components to plugin settings and handling changes.
  *
- * @typeParam PluginTypes - Plugin-specific types.
+ * @typeParam PluginSettings - The plugin settings type.
  */
-export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase> extends PluginSettingTab {
+export abstract class PluginSettingsTabBase<PluginSettings extends object> extends PluginSettingTab {
   /**
    * Whether the plugin settings tab is open.
    *
@@ -123,6 +134,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   public get isOpen(): boolean {
     return this._isOpen;
   }
+
+  /**
+   * The settings manager.
+   */
+  protected readonly settingsComponent: PluginSettingsComponentBase<PluginSettings>;
 
   /**
    * A debounce timeout for saving settings.
@@ -138,20 +154,21 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   private readonly asyncEventsComponent: AsyncEventsComponent;
   private readonly saveSettingsDebounced: Debouncer<[], void>;
 
-  private get pluginSettings(): ExtractPluginSettings<PluginTypes> {
-    return this.plugin.settingsManager.settingsWrapper.settings as ExtractPluginSettings<PluginTypes>;
+  private get pluginSettings(): PluginSettings {
+    return this.settingsComponent.settingsState.inputValues as PluginSettings;
   }
 
   /**
    * Creates a new plugin settings tab.
    *
-   * @param plugin - The plugin.
+   * @param params - The params.
    */
-  public constructor(public override plugin: ExtractPlugin<PluginTypes>) {
-    super(plugin.app, plugin);
+  public constructor(params: PluginSettingsTabBaseParams<PluginSettings>) {
+    super(params.plugin.app, params.plugin);
+    this.settingsComponent = params.settingsComponent;
     addPluginCssClasses(this.containerEl, CssClass.PluginSettingsTab);
     this.saveSettingsDebounced = debounce(
-      convertAsyncToSync(() => this.plugin.settingsManager.saveToFile(SAVE_TO_FILE_CONTEXT)),
+      convertAsyncToSync(() => this.settingsComponent.saveToFile(SAVE_TO_FILE_CONTEXT)),
       this.saveSettingsDebounceTimeoutInMilliseconds
     );
     this.asyncEventsComponent = new AsyncEventsComponent();
@@ -172,7 +189,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     TValueComponent
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
-    propertyName: ConditionalKeys<ExtractPluginSettings<PluginTypes>, UIValue>,
+    propertyName: ConditionalKeys<PluginSettings, UIValue>,
     options?: BindOptions<UIValue>
   ): TValueComponent;
   /**
@@ -189,11 +206,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   public bind<
     UIValue,
     TValueComponent,
-    PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>
+    PropertyName extends StringKeys<PluginSettings>
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     propertyName: PropertyName,
-    options: BindOptionsExtended<ExtractPluginSettings<PluginTypes>, UIValue, PropertyName>
+    options: BindOptionsExtended<PluginSettings, UIValue, PropertyName>
   ): TValueComponent;
   /**
    * Binds a value component to a plugin setting.
@@ -209,13 +226,12 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   public bind<
     UIValue,
     TValueComponent,
-    PropertyName extends StringKeys<ExtractPluginSettings<PluginTypes>>
+    PropertyName extends StringKeys<PluginSettings>
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     propertyName: PropertyName,
-    options?: BindOptions<ExtractPluginSettings<PluginTypes>[PropertyName]>
+    options?: BindOptions<PluginSettings[PropertyName]>
   ): TValueComponent {
-    type PluginSettings = ExtractPluginSettings<PluginTypes>;
     type PropertyType = PluginSettings[PropertyName];
     const DEFAULT_OPTIONS: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = {
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
@@ -233,7 +249,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
 
     const readonlyValue = this.pluginSettings[propertyName] as ReadonlyDeep<PropertyType>;
-    const defaultValue = (this.plugin.settingsManager.defaultSettings as PluginSettings)[propertyName] as PropertyType;
+    const defaults = this.settingsComponent.defaultSettings as PluginSettings;
+    const defaultValue = defaults[propertyName] as PropertyType;
     const defaultComponentValue = optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>);
     textBasedComponent?.setPlaceholderValue(defaultComponentValue);
 
@@ -302,7 +319,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       }
 
       if (shouldSetProperty) {
-        validationMessage = await this.plugin.settingsManager.setProperty(propertyName, newValue);
+        validationMessage = await this.settingsComponent.setProperty(propertyName, newValue as PluginSettings[PropertyName]);
         if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && deepEqual(newValue, defaultValue)) {
           shouldEmptyOnBlur = true;
         }
@@ -327,7 +344,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
       });
     });
 
-    validationMessage = this.plugin.settingsManager.settingsWrapper.validationMessages[propertyName] ?? '';
+    const validationMessages = this.settingsComponent.settingsState.validationMessages as Record<string, string>;
+    validationMessage = validationMessages[propertyName] ?? '';
     updateValidatorElDebounced();
 
     return valueComponent;
@@ -380,8 +398,8 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
     this.containerEl.empty();
     this._isOpen = true;
     this.asyncEventsComponent.load();
-    this.asyncEventsComponent.registerAsyncEvent(this.plugin.settingsManager.on('loadSettings', this.onLoadSettings.bind(this)));
-    this.asyncEventsComponent.registerAsyncEvent(this.plugin.settingsManager.on('saveSettings', this.onSaveSettings.bind(this)));
+    this.asyncEventsComponent.registerAsyncEvent(this.settingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
+    this.asyncEventsComponent.registerAsyncEvent(this.settingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
   }
 
   /**
@@ -402,7 +420,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    * @returns A {@link Promise} that resolves when the settings tab is hidden.
    */
   public async hideAsync(): Promise<void> {
-    await this.plugin.settingsManager.saveToFile(SAVE_TO_FILE_CONTEXT);
+    await this.settingsComponent.saveToFile(SAVE_TO_FILE_CONTEXT);
   }
 
   /**
@@ -415,11 +433,11 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   /**
    * Called when the plugin settings are loaded.
    *
-   * @param _loadedSettings - The loaded settings.
+   * @param _loadedState - The loaded settings state.
    * @param _isInitialLoad - Whether the settings are being loaded for the first time.
    * @returns A {@link Promise} that resolves when the settings are loaded.
    */
-  protected async onLoadSettings(_loadedSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>, _isInitialLoad: boolean): Promise<void> {
+  protected async onLoadSettings(_loadedState: ReadonlyPluginSettingsState<PluginSettings>, _isInitialLoad: boolean): Promise<void> {
     this.display();
     await noopAsync();
   }
@@ -430,7 +448,7 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
    * @returns A {@link Promise} that resolves when the settings are revalidated.
    */
   protected async revalidate(): Promise<void> {
-    const validationMessages = await this.plugin.settingsManager.revalidate();
+    const validationMessages = await this.settingsComponent.revalidate();
     await this.updateValidations(validationMessages);
   }
 
@@ -451,22 +469,21 @@ export abstract class PluginSettingsTabBase<PluginTypes extends PluginTypesBase>
   }
 
   private async onSaveSettings(
-    newSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
-    _oldSettings: ExtractReadonlyPluginSettingsWrapper<PluginTypes>,
+    newState: ReadonlyPluginSettingsState<PluginSettings>,
+    _oldState: ReadonlyPluginSettingsState<PluginSettings>,
     context: unknown
   ): Promise<void> {
     if (context === SAVE_TO_FILE_CONTEXT) {
-      await this.updateValidations(newSettings.validationMessages as Record<ExtractPluginSettingsPropertyNames<PluginTypes>, string>);
+      await this.updateValidations(newState.validationMessages as Record<StringKeys<PluginSettings>, string>);
       return;
     }
 
     this.display();
   }
 
-  private async updateValidations(validationMessages: Record<ExtractPluginSettingsPropertyNames<PluginTypes>, string>): Promise<void> {
+  private async updateValidations(validationMessages: Record<StringKeys<PluginSettings>, string>): Promise<void> {
     for (const [propertyName, validationMessage] of Object.entries(validationMessages)) {
       await this.asyncEventsComponent.asyncEvents.triggerAsync('validationMessageChanged', propertyName, validationMessage);
     }
   }
 }
-/* v8 ignore stop */

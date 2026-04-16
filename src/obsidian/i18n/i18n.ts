@@ -9,11 +9,7 @@ import type {
   SelectorOptions,
   TFunction
 } from 'i18next';
-import type {
-  LiteralToPrimitiveDeep,
-  PartialDeep,
-  ReadonlyDeep
-} from 'type-fest';
+import type { ReadonlyDeep } from 'type-fest';
 
 import i18next, {
   init,
@@ -21,7 +17,7 @@ import i18next, {
 } from 'i18next';
 import { getLanguage } from 'obsidian';
 
-import type { PluginTypesBase } from '../plugin/plugin-types-base.ts';
+import type { DefaultTranslationsBase } from './default-translations-base.ts';
 
 import { invokeAsyncSafely } from '../../async.ts';
 import { en } from './locales/en.ts';
@@ -36,19 +32,9 @@ import {
 export const DEFAULT_NS = 'translation';
 
 /**
- * The full translations.
- */
-export type FullTranslations<PluginTypes extends PluginTypesBase> = LiteralToPrimitiveDeep<PluginTypes['defaultTranslations']>;
-
-/**
- * The translations.
- */
-export type Translations<PluginTypes extends PluginTypesBase> = PartialDeep<FullTranslations<PluginTypes>>;
-
-/**
  * The translations map.
  */
-export type TranslationsMap<PluginTypes extends PluginTypesBase> = Record<string, Translations<PluginTypes>>;
+export type TranslationsMap = Record<string, Record<string, unknown>>;
 
 let isInitialized = false;
 
@@ -59,12 +45,11 @@ interface TOptions extends SelectorOptions<[typeof DEFAULT_NS]> {
 /**
  * Initializes the `i18n` module.
  *
- * @typeParam PluginTypes - The plugin types.
  * @param translationsMap - The translations map.
  * @param isAsync - Whether the initialization is asynchronous.
  * @returns A {@link Promise} that resolves when the `i18n` module is initialized.
  */
-export async function initI18N<PluginTypes extends PluginTypesBase>(translationsMap: TranslationsMap<PluginTypes>, isAsync = true): Promise<void> {
+export async function initI18N(translationsMap: TranslationsMap, isAsync = true): Promise<void> {
   if (isInitialized) {
     return;
   }
@@ -82,7 +67,7 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
       Object.entries(translationsMap).map(([language, translations]) => [
         language,
         {
-          [DEFAULT_NS]: translations as PluginTypes['defaultTranslations']
+          [DEFAULT_NS]: translations
         }
       ])
     ),
@@ -94,7 +79,7 @@ export async function initI18N<PluginTypes extends PluginTypesBase>(translations
 }
 
 function tImpl(
-  selector: SelectorFn<ReadonlyDeep<Translations<PluginTypesBase>>, string, SelectorOptions<[typeof DEFAULT_NS]>>,
+  selector: SelectorFn<ReadonlyDeep<DefaultTranslationsBase>, string, SelectorOptions<[typeof DEFAULT_NS]>>,
   options?: TOptions
 ): string {
   if (!isInitialized) {
