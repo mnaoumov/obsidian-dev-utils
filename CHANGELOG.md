@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 55.4.0
+
+- chore: update libs
+- feat: enable require-await, ban-ts-comment, and prefer-const
+
 ## 55.3.0
 
 - feat: disable unbound-method checks in tests
