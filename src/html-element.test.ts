@@ -662,17 +662,13 @@ describe('onAncestorScrollOrResize', () => {
 
     onAncestorScrollOrResize(node, vi.fn());
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(document.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(document.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
 
     expect(vi.mocked(window.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
 
     expect(vi.mocked(window.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(node.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(node.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
   });
 
@@ -687,11 +683,8 @@ describe('onAncestorScrollOrResize', () => {
 
     onAncestorScrollOrResize(node, vi.fn());
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(node.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(parent.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(grandparent.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
   });
 

@@ -496,7 +496,6 @@ describe('loop', () => {
     });
 
     expect(requestAnimationFrameAsync).toHaveBeenCalled();
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(performance.now).mockRestore();
   });
 
@@ -518,9 +517,7 @@ describe('loop', () => {
     });
 
     // Notice.setMessage should have been called with the string message (not a fragment)
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(Notice.prototype.setMessage)).toHaveBeenCalledWith('progress message');
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(Notice.prototype.setMessage).mockRestore();
   });
 
@@ -544,12 +541,10 @@ describe('loop', () => {
     // When shouldShowProgressBar is false, notice is created but setMessage with
     // Fragment is NOT called (it returns early). setMessage is only called with
     // The string message for each item.
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     for (const call of vi.mocked(Notice.prototype.setMessage).mock.calls) {
       expect(typeof call[0]).toBe('string');
     }
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(Notice.prototype.setMessage).mockRestore();
   });
 });

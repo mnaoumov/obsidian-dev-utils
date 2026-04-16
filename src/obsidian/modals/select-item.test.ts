@@ -86,7 +86,6 @@ describe('selectItem', () => {
       itemTextFunc: (item: string) => item.toUpperCase()
     });
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string> | undefined;
     assertNonNullable(modal);
     modal.selectSuggestion(strictProxy<FuzzyMatch<string>>({ item: 'b' }), castTo<MouseEvent>(new Event('click')));
@@ -94,7 +93,6 @@ describe('selectItem', () => {
     const result = await promise;
     expect(result).toBe('b');
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(FuzzySuggestModal.prototype.open).mockRestore();
     vi.useRealTimers();
   });
@@ -114,7 +112,6 @@ describe('selectItem', () => {
       itemTextFunc: (item: string) => item
     });
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string> | undefined;
     assertNonNullable(modal);
     expect(modal.getItems()).toEqual(['x', 'y', 'z']);
@@ -125,7 +122,6 @@ describe('selectItem', () => {
     const result = await promise;
     expect(result).toBeNull();
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     vi.mocked(FuzzySuggestModal.prototype.open).mockRestore();
     vi.useRealTimers();
   });

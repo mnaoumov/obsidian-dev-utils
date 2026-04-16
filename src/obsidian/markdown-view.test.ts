@@ -41,7 +41,6 @@ describe('getFullContentHtml', () => {
     const cm = view.editor.cm;
     getFullContentHtml(view);
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(cm.measure).toHaveBeenCalledTimes(2);
   });
 

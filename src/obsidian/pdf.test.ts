@@ -72,7 +72,6 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
     await printToPdf(el, {});
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(document.body.createDiv).toHaveBeenCalledWith('print');
     expect(printDiv.contains(el)).toBe(true);
   });
@@ -154,7 +153,6 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
     await printToPdf(el, {});
 
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(printDiv.remove)).toHaveBeenCalled();
   });
 
@@ -169,7 +167,6 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     const el = createDiv();
 
     await expect(printToPdf(el, {})).rejects.toThrow('IPC error');
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(vi.mocked(printDiv.remove)).toHaveBeenCalled();
   });
 });

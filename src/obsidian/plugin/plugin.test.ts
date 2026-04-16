@@ -37,16 +37,13 @@ describe('Plugin', () => {
   it('should reload plugin by disabling and re-enabling', async () => {
     const plugin = createMockPlugin();
     await reloadPlugin(plugin);
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(plugin.app.plugins.disablePlugin).toHaveBeenCalledWith('test-plugin');
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(plugin.app.plugins.enablePlugin).toHaveBeenCalledWith('test-plugin');
   });
 
   it('should show error and disable plugin', async () => {
     const plugin = createMockPlugin();
     await showErrorAndDisablePlugin(plugin, 'Test error');
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Valid usage.
     expect(plugin.app.plugins.disablePlugin).toHaveBeenCalledWith('test-plugin');
   });
 });
