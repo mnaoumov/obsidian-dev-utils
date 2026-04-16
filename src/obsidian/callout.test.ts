@@ -12,6 +12,7 @@ import {
 import type { GenericObject } from '../type-guards.ts';
 import type { AddToQueueParams } from './queue.ts';
 
+import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
@@ -82,6 +83,7 @@ vi.mock('../object-utils.ts', async (importOriginal) => ({
 
 vi.mock('../value-provider.ts', () => ({
   resolveValue: vi.fn(async (provider: unknown) => {
+    await noopAsync();
     if (typeof provider === 'function') {
       return (provider as () => unknown)();
     }
@@ -171,6 +173,7 @@ describe('renderCallout', () => {
   });
 
   it('should create a callout paragraph with FoldableCollapsed modifier by default', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -180,6 +183,7 @@ describe('renderCallout', () => {
   });
 
   it('should create a callout paragraph with Default mode (no modifier)', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.Default });
@@ -189,6 +193,7 @@ describe('renderCallout', () => {
   });
 
   it('should create a callout paragraph with FoldableExpanded modifier', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.FoldableExpanded });
@@ -198,6 +203,7 @@ describe('renderCallout', () => {
   });
 
   it('should use the specified type in the callout', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, type: 'WARNING' });
@@ -207,6 +213,7 @@ describe('renderCallout', () => {
   });
 
   it('should use the specified header in the callout', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, header: 'My Header' });
@@ -216,6 +223,7 @@ describe('renderCallout', () => {
   });
 
   it('should show "Loading..." initially in the content div', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -228,6 +236,7 @@ describe('renderCallout', () => {
   });
 
   it('should set up an IntersectionObserver and observe the content div', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -242,6 +251,7 @@ describe('renderCallout', () => {
   });
 
   it('should call addToQueue when IntersectionObserver fires with isIntersecting', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -268,6 +278,7 @@ describe('renderCallout', () => {
   });
 
   it('should not call addToQueue when entry is not intersecting', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never });
@@ -286,6 +297,7 @@ describe('renderCallout', () => {
   });
 
   it('should pass abortSignal to addToQueue when provided', async () => {
+    await noopAsync();
     const dv = createMockDv();
     const abortController = new AbortController();
 
@@ -399,6 +411,7 @@ describe('renderCallout', () => {
   });
 
   it('should combine custom type, header, and FoldableExpanded mode correctly', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({
@@ -435,6 +448,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
   });
 
   it('should produce "-" modifier for FoldableCollapsed mode', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.FoldableCollapsed });
@@ -446,6 +460,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
   });
 
   it('should produce "+" modifier for FoldableExpanded mode', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.FoldableExpanded });
@@ -457,6 +472,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
   });
 
   it('should produce no modifier for Default mode', async () => {
+    await noopAsync();
     const dv = createMockDv();
 
     renderCallout({ dv: dv as never, mode: CalloutMode.Default });

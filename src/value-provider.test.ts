@@ -5,6 +5,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from './function.ts';
 import { assertNonNullable } from './type-guards.ts';
 import { resolveValue } from './value-provider.ts';
 
@@ -63,6 +64,7 @@ describe('resolveValue', () => {
   describe('async function provider', () => {
     it('should return the resolved value of the async function', async () => {
       const provider = vi.fn(async (): Promise<string> => {
+        await noopAsync();
         return 'async-result';
       });
       const result = await resolveValue(provider, {});
@@ -71,6 +73,7 @@ describe('resolveValue', () => {
 
     it('should call the async function exactly once', async () => {
       const provider = vi.fn(async (): Promise<string> => {
+        await noopAsync();
         return 'async-result';
       });
       await resolveValue(provider, {});

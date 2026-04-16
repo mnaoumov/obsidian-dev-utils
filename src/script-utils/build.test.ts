@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import {
   buildClean,
   buildCompile,
@@ -92,6 +93,7 @@ describe('buildCompile', () => {
     mockNpmRunOptional.mockResolvedValue(false);
     mockReadJson.mockResolvedValue({ include: ['src/**/*.ts'] });
     mockGlob.mockReturnValue((async function* generateTsFiles(): AsyncGenerator<string, void> {
+      await noopAsync();
       yield 'src/main.ts';
     })());
     await buildCompile();
@@ -112,6 +114,7 @@ describe('buildCompileSvelte', () => {
   it('should skip when no svelte files found', async () => {
     mockReadJson.mockResolvedValue({ include: ['src/**/*.ts'] });
     mockGlob.mockReturnValue((async function* generateTsFiles(): AsyncGenerator<string, void> {
+      await noopAsync();
       yield 'src/main.ts';
     })());
     await buildCompileSvelte();
@@ -130,6 +133,7 @@ describe('buildCompileSvelte', () => {
   it('should run svelte-check when svelte files exist', async () => {
     mockReadJson.mockResolvedValue({ exclude: ['node_modules/**'], include: ['src/**/*'] });
     mockGlob.mockReturnValue((async function* generateSvelteFiles(): AsyncGenerator<string, void> {
+      await noopAsync();
       yield 'src/Component.svelte';
     })());
     await buildCompileSvelte();

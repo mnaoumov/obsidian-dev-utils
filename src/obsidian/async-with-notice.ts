@@ -121,8 +121,8 @@ export async function runWithTimeoutNotice<Result>(params: RunWithTimeoutNoticeP
 function onTimeoutNotice(ctx: TimeoutContext): void {
   const startTime = Math.trunc(performance.now() - ctx.duration);
   let runningTimeEl: HTMLSpanElement;
-  let intervalId: number;
   const SECOND_IN_MILLISECONDS = 1000;
+  const cleanup = { intervalId: 0 };
 
   const notice = new Notice(createFragment((f) => {
     if (ctx.operationName) {
@@ -146,16 +146,16 @@ function onTimeoutNotice(ctx: TimeoutContext): void {
     });
     button.addEventListener('click', () => {
       ctx.terminateOperation();
-      clearInterval(intervalId);
+      clearInterval(cleanup.intervalId);
       notice.hide();
     });
   }));
 
   updateRunningTime();
-  intervalId = window.setInterval(updateRunningTime, SECOND_IN_MILLISECONDS);
+  cleanup.intervalId = window.setInterval(updateRunningTime, SECOND_IN_MILLISECONDS);
 
   ctx.onOperationCompleted(() => {
-    clearInterval(intervalId);
+    clearInterval(cleanup.intervalId);
     notice.hide();
   });
 

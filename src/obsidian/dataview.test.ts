@@ -13,7 +13,10 @@ import {
 
 import type { DataviewInlineApi } from './dataview.ts';
 
-import { noop } from '../function.ts';
+import {
+  noop,
+  noopAsync
+} from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
@@ -105,6 +108,7 @@ function createMockDv(): DataviewInlineApi {
       }
     )),
     list: vi.fn(async () => {
+      await noopAsync();
       noop();
     }),
     paragraph: vi.fn(
@@ -118,6 +122,7 @@ function createMockDv(): DataviewInlineApi {
       }
     ),
     table: vi.fn(async () => {
+      await noopAsync();
       noop();
     })
   });
@@ -569,6 +574,7 @@ describe('reloadCurrentFileCache', () => {
   it('should call DataviewAPI.index.reload', async () => {
     const dv = createMockDv();
     const reloadFn = vi.fn(async () => {
+      await noopAsync();
       noop();
     });
     vi.stubGlobal('DataviewAPI', {
@@ -593,6 +599,7 @@ describe('reloadCurrentFileCache', () => {
   it('should pass the file from dv.current().file.path to getFile', async () => {
     const dv = createMockDv();
     const reloadFn = vi.fn(async () => {
+      await noopAsync();
       noop();
     });
     vi.stubGlobal('DataviewAPI', {

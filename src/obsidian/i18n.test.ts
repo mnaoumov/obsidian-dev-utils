@@ -9,7 +9,10 @@ import {
 
 import type { GenericObject } from '../type-guards.ts';
 
-import { noop } from '../function.ts';
+import {
+  noop,
+  noopAsync
+} from '../function.ts';
 import { ensureGenericObject } from '../type-guards.ts';
 import { DEFAULT_NS } from './i18n/i18n.ts';
 
@@ -80,6 +83,7 @@ async function reloadI18N(): Promise<typeof import('./i18n/i18n.ts')> {
 describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
   describe('DEFAULT_NS', () => {
     it('should export DEFAULT_NS as "translation"', async () => {
+      await noopAsync();
       expect(DEFAULT_NS).toBe('translation');
     });
   });

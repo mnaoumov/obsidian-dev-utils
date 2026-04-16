@@ -480,6 +480,14 @@ function getObsidianLintConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
     ...scopedObsidianRecommendedConfigs,
     {
+      files: context.sourceFiles,
+      rules: {
+        '@typescript-eslint/ban-ts-comment': 'error',
+        '@typescript-eslint/require-await': 'error',
+        'prefer-const': 'error'
+      }
+    },
+    {
       plugins: {
         obsidianmd: obsidianmd as ESLint.Plugin
       }

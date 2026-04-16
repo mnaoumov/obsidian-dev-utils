@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import { lint } from './linters/markdownlint.ts';
 
 const {
@@ -57,6 +58,7 @@ beforeEach(() => {
   mockCp.mockResolvedValue(undefined);
   mockResolvePathFromRootSafe.mockImplementation((path: string) => `/root/${path}`);
   mockGlob.mockReturnValue((async function* generateMdFiles(): AsyncGenerator<string, void> {
+    await noopAsync();
     yield 'README.md';
   })());
 });
@@ -106,6 +108,7 @@ describe('lint', () => {
   it('should handle multiple markdown files from glob', async () => {
     mockExistsSync.mockReturnValue(true);
     mockGlob.mockReturnValue((async function* generateMultipleMdFiles(): AsyncGenerator<string, void> {
+      await noopAsync();
       yield 'README.md';
       yield 'CHANGELOG.md';
       yield 'docs/guide.md';

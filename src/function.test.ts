@@ -100,6 +100,7 @@ describe('Function', () => {
     it('should prefix with "async function " for an async generator shorthand method', () => {
       const obj = {
         async *gen(this: void): AsyncGenerator<number, void> {
+          await noopAsync();
           yield 1;
         }
       };
@@ -151,7 +152,10 @@ describe('Function', () => {
 
   describe('omitAsyncReturnType', () => {
     it('should call the wrapped async function with correct arguments', async () => {
-      const fn = vi.fn(async (_a: number) => 'result');
+      const fn = vi.fn(async (_a: number) => {
+        await noopAsync();
+        return 'result';
+      });
       const wrapped = omitAsyncReturnType(fn);
       await wrapped(5);
       expect(fn).toHaveBeenCalledWith(5);

@@ -4,6 +4,7 @@ import {
   it
 } from 'vitest';
 
+import { noopAsync } from './function.ts';
 import { castTo } from './object-utils.ts';
 import {
   ensureEndsWith,
@@ -451,13 +452,17 @@ describe('replaceAllAsync', () => {
 
   it('should replace all occurrences asynchronously with a function replacer', async () => {
     const result = await replaceAllAsync('hello world', /\w+/g, async ({ substring }) => {
+      await noopAsync();
       return substring.toUpperCase();
     });
     expect(result).toBe('HELLO WORLD');
   });
 
   it('should handle no matches', async () => {
-    const result = await replaceAllAsync('hello', 'xyz', async () => 'abc');
+    const result = await replaceAllAsync('hello', 'xyz', async () => {
+      await noopAsync();
+      return 'abc';
+    });
     expect(result).toBe('hello');
   });
 

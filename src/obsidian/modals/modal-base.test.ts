@@ -13,6 +13,7 @@ import {
 
 import type { ModalParamsBase } from './modal-base.ts';
 
+import { noopAsync } from '../../function.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import {
   ModalBase,
@@ -46,6 +47,7 @@ describe('ModalBase', () => {
   });
 
   it('should create a modal and apply plugin css classes', async () => {
+    await noopAsync();
     const resolve = vi.fn();
     const modal = new TestModal({ app }, resolve, 'test-modal-class');
     expect(addPluginCssClasses).toHaveBeenCalledWith(modal.containerEl, 'test-modal-class');

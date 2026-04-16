@@ -19,7 +19,10 @@ import {
   emitAsyncErrorEvent,
   getStackTrace
 } from '../error.ts';
-import { noop } from '../function.ts';
+import {
+  noop,
+  noopAsync
+} from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { mockImplementation } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
@@ -145,6 +148,7 @@ describe('loop', () => {
   it('should stop processing when abortSignal is aborted mid-loop', async () => {
     const controller = new AbortController();
     const processItem = vi.fn(async () => {
+      await noopAsync();
       controller.abort();
     });
 
@@ -317,6 +321,7 @@ describe('loop', () => {
   it('should handle async processItem functions', async () => {
     const results: string[] = [];
     const processItem = vi.fn(async (item: string) => {
+      await noopAsync();
       results.push(item);
     });
 
