@@ -128,10 +128,11 @@ export function defineEslintConfigs(params: DefineEslintConfigsParams = {}): Lin
 
   return defineConfig(
     ...getGitIgnoreConfigs(),
+    // obsidianmd configs run first so our stricter rules override their relaxed defaults
+    ...getObsidianLintConfigs(context),
     ...getEslintConfigs(context),
     ...getTseslintConfigs(context),
     ...getStylisticConfigs(context),
-    ...getObsidianLintConfigs(context),
     ...getImportXConfigs(context),
     ...getPerfectionistConfigs(context),
     ...getEslintImportResolverTypescriptConfigs(),
@@ -479,14 +480,6 @@ function getObsidianLintConfigs(context: EslintConfigContext): Linter.Config[] {
 
   return defineConfig([
     ...scopedObsidianRecommendedConfigs,
-    {
-      files: context.sourceFiles,
-      rules: {
-        '@typescript-eslint/ban-ts-comment': 'error',
-        '@typescript-eslint/require-await': 'error',
-        'prefer-const': 'error'
-      }
-    },
     {
       plugins: {
         obsidianmd: obsidianmd as ESLint.Plugin
