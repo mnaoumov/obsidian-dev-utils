@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 55.4.1
+
+- chore: lint
+- fix: re-enable rules disabled by eslint-plugin-obsidianmd
+
 ## 55.4.0
 
 - chore: update libs
