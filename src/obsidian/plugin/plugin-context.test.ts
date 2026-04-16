@@ -1,4 +1,7 @@
-import type { App as AppOriginal } from 'obsidian';
+import type {
+  App as AppOriginal,
+  Component
+} from 'obsidian';
 
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
@@ -81,9 +84,14 @@ describe('initDebugController', () => {
   });
 
   it('should set DEBUG on window', () => {
-    const win = strictProxy<Window>({});
-    initDebugController(win);
+    const win = {} as Window;
+    const registerFn = vi.fn();
+    const mockComponent = strictProxy<Component>({
+      register: registerFn
+    });
+    initDebugController(win, mockComponent);
     expect(ensureGenericObject(win)['DEBUG']).toBeDefined();
+    expect(registerFn).toHaveBeenCalled();
     expect(mocks.getDebugController).toHaveBeenCalled();
   });
 });

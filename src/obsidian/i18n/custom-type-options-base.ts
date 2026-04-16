@@ -6,16 +6,16 @@
 
 /* v8 ignore start -- Interface-only module; no runtime code to test. */
 
-import type { PluginTypesBase } from '../plugin/plugin-types-base.ts';
+import type { DefaultTranslationsBase } from './default-translations-base.ts';
 
 import { DEFAULT_NS } from './i18n.ts';
 
 /**
  * A custom type options base for `i18next`.
  *
- * @typeParam PluginTypes - The plugin types.
+ * @typeParam DefaultTranslations - The default translations type.
  */
-export interface CustomTypeOptionsBase<PluginTypes extends PluginTypesBase> {
+export interface CustomTypeOptionsBase<DefaultTranslations extends DefaultTranslationsBase> {
   /**
    * The default namespace.
    */
@@ -29,19 +29,19 @@ export interface CustomTypeOptionsBase<PluginTypes extends PluginTypesBase> {
   /**
    * The resources.
    */
-  resources: CustomTypeOptionsResources<PluginTypes>;
+  resources: CustomTypeOptionsResources<DefaultTranslations>;
 }
 
 /**
  * The resources for `i18next` custom type options.
  *
- * @typeParam PluginTypes - The plugin types.
+ * @typeParam DefaultTranslations - The default translations type.
  */
-export interface CustomTypeOptionsResources<PluginTypes extends PluginTypesBase> {
+export interface CustomTypeOptionsResources<DefaultTranslations extends DefaultTranslationsBase> {
   /**
    * The default namespace.
    */
-  [DEFAULT_NS]: PluginTypes['defaultTranslations'];
+  [DEFAULT_NS]: DefaultTranslations;
 }
 
 /* v8 ignore stop */

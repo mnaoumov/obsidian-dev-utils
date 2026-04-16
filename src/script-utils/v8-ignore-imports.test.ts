@@ -26,9 +26,7 @@ import * as CustomTypeOptionsBase from '../obsidian/i18n/custom-type-options-bas
 import * as DefaultTranslationsBase from '../obsidian/i18n/default-translations-base.ts';
 import * as Markdown from '../obsidian/markdown.ts';
 import * as PluginBase from '../obsidian/plugin/plugin-base.ts';
-import * as PluginSettingsManagerBase from '../obsidian/plugin/plugin-settings-manager-base.ts';
 import * as PluginSettingsTabBase from '../obsidian/plugin/plugin-settings-tab-base.ts';
-import * as PluginSettingsWrapper from '../obsidian/plugin/plugin-settings-wrapper.ts';
 import * as PluginTypesBase from '../obsidian/plugin/plugin-types-base.ts';
 import * as AppContext from '../obsidian/react/app-context.ts';
 import * as RenameDeleteHandler from '../obsidian/rename-delete-handler.ts';
@@ -72,9 +70,7 @@ it('should load all v8-ignored modules so coverage processes their ignore commen
     NanoStagedConfig,
     NonEditorCommandBase,
     PluginBase,
-    PluginSettingsManagerBase,
     PluginSettingsTabBase,
-    PluginSettingsWrapper,
     PluginTypesBase,
     RenameDeleteHandler,
     StateFieldSpec,
