@@ -7,6 +7,7 @@
  */
 
 import { mockCapacitorAdapter } from './src/obsidian/augmentations/CapacitorAdapter.ts';
+import { mockComponent } from './src/obsidian/augmentations/Component.ts';
 import { mockFileSystemAdapter } from './src/obsidian/augmentations/FileSystemAdapter.ts';
 import { mockSettingGroup } from './src/obsidian/augmentations/SettingGroup.ts';
 import { mockTAbstractFile } from './src/obsidian/augmentations/TAbstractFile.ts';
@@ -14,6 +15,7 @@ import { mockVault } from './src/obsidian/augmentations/Vault.ts';
 
 export function setupObsidianTypingsMocks(): void {
   mockCapacitorAdapter();
+  mockComponent();
   mockFileSystemAdapter();
   mockSettingGroup();
   mockTAbstractFile();

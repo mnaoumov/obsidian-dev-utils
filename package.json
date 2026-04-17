@@ -701,6 +701,7 @@
     "eslint-import-resolver-typescript": "latest",
     "eslint-plugin-import-x": "latest",
     "eslint-plugin-jsdoc": "latest",
+    "eslint-plugin-no-unsanitized": "^4.1.5",
     "eslint-plugin-obsidianmd": "latest",
     "eslint-plugin-perfectionist": "latest",
     "eslint-plugin-tsdoc": "latest",
