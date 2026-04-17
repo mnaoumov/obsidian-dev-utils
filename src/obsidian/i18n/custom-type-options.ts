@@ -6,7 +6,7 @@
 
 /* v8 ignore start -- Interface-only module; no runtime code to test. */
 
-import type { DefaultTranslationsBase } from './default-translations-base.ts';
+import type { DefaultTranslationsBase } from './default-translations.ts';
 
 import { DEFAULT_NS } from './i18n.ts';
 

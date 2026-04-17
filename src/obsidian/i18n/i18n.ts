@@ -17,7 +17,7 @@ import i18next, {
 } from 'i18next';
 import { getLanguage } from 'obsidian';
 
-import type { DefaultTranslationsBase } from './default-translations-base.ts';
+import type { DefaultTranslationsBase } from './default-translations.ts';
 
 import { invokeAsyncSafely } from '../../async.ts';
 import { en } from './locales/en.ts';

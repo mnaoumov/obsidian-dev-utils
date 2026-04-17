@@ -17,7 +17,7 @@ import { CssClass } from '../../css-class.ts';
 import {
   ModalBase,
   showModal
-} from './modal-base.ts';
+} from './modal.ts';
 
 /**
  * Options for {@link alert}.

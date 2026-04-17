@@ -236,11 +236,13 @@ Reviewed plugin source code across simple/medium/complex plugins:
 | Complex (settings + commands) | 6+ feature files | ~51% | Command pattern adds ~30 LOC each |
 
 **Boilerplate files that are 100% ceremony in every plugin:**
+
 - `main.ts` (3-4 lines, always identical)
 - `PluginTypes.ts` (7-13 lines, always identical structure)
 - `PluginSettingsManager.ts` (11 lines, just returns `new PluginSettings()`)
 
 **Current universal features in PluginBase:**
+
 - Lifecycle: onloadImpl, onLayoutReady, onunloadImpl, load/layoutReady/unload events
 - Settings: createSettingsManager, createSettingsTab, onLoadSettings, onSaveSettings
 - Utilities: consoleDebug, showNotice, abortSignal
@@ -254,6 +256,7 @@ Reviewed plugin source code across simple/medium/complex plugins:
 ##### 1. Simplest possible plugin (no settings)
 
 **Current (3 files, ~26 LOC boilerplate):**
+
 ```typescript
 // main.ts (boilerplate)
 // PluginTypes.ts (boilerplate)
@@ -267,6 +270,7 @@ export class Plugin extends PluginBase<PluginTypes> {
 ```
 
 **Proposed (1 file + main.ts):**
+
 ```typescript
 // Plugin.ts
 export class Plugin extends PluginBase {
@@ -276,13 +280,15 @@ export class Plugin extends PluginBase {
   }
 }
 ```
+
 - No PluginTypes interface needed — PluginBase is non-generic
 - main.ts still needed (Obsidian requires `export default Plugin`)
 
 ##### 2. Plugin with settings
 
 **Current (6 files):**
-```
+
+```text
 main.ts                    — boilerplate
 PluginTypes.ts             — boilerplate (13 LOC)
 PluginSettings.ts          — data class
@@ -292,13 +298,15 @@ Plugin.ts                  — orchestration + createSettingsManager + createSet
 ```
 
 **Proposed (3 files):**
-```
+
+```text
 main.ts                    — boilerplate (unavoidable, Obsidian requirement)
 PluginSettings.ts          — data class + validation + persistence (extends PluginSettingsBase)
 Plugin.ts                  — orchestration
 ```
 
 The settings tab is built declaratively from metadata on the settings class:
+
 ```typescript
 // PluginSettings.ts
 export class PluginSettings extends PluginSettingsBase {
@@ -311,6 +319,7 @@ export class PluginSettings extends PluginSettingsBase {
 ```
 
 Or, if decorators are too magical, a static method approach:
+
 ```typescript
 export class PluginSettings extends PluginSettingsBase {
   public autoRefreshIntervalInSeconds = 10;
@@ -326,6 +335,7 @@ export class PluginSettings extends PluginSettingsBase {
 ```
 
 Settings tab is auto-generated from settings properties by default but can be customized:
+
 ```typescript
 // Plugin.ts
 export class Plugin extends PluginBase {
@@ -343,6 +353,7 @@ export class Plugin extends PluginBase {
 ##### 3. Plugin with custom settings tab
 
 For plugins that need custom UI (code highlighters, secret fields, grouped sections):
+
 ```typescript
 // PluginSettingsTab.ts
 export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
@@ -354,12 +365,14 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
   }
 }
 ```
+
 - Generic is just `<PluginSettings>`, not `<PluginTypes>`
 - `bind()` API stays the same — it's one of the best parts of the current design
 
 ##### 4. Component-based architecture
 
 **Universal features PluginBase provides automatically:**
+
 - "Open settings" command (registered if settings exist)
 - consoleDebug with plugin namespace
 - abortSignal for lifecycle management
@@ -367,6 +380,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
 - Error handling with user-visible notice
 
 **Features that become opt-in components:**
+
 ```typescript
 export class Plugin extends PluginBase {
   constructor(app: App, manifest: PluginManifest) {
@@ -379,6 +393,7 @@ export class Plugin extends PluginBase {
 ```
 
 Each component is independently testable:
+
 ```typescript
 // In tests — no Plugin mock needed
 const settings = new PluginSettings();
@@ -390,12 +405,14 @@ expect(checker.lastCheckTime).toBeDefined();
 ##### 5. Command simplification
 
 **Current (2 classes per command, ~30 LOC):**
+
 ```typescript
 class CheckEmailsInvocation extends CommandInvocationBase<Plugin> { ... }
 export class CheckEmailsCommand extends NonEditorCommandBase<Plugin> { ... }
 ```
 
 **Proposed (inline registration):**
+
 ```typescript
 // In Plugin.onloadImpl()
 this.addCommand({
@@ -405,6 +422,7 @@ this.addCommand({
   callback: () => this.emailChecker.checkEmails()
 });
 ```
+
 For editor commands that need more structure, keep the class pattern as opt-in.
 
 #### Summary of changes
@@ -423,33 +441,39 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 #### Implementation plan (incremental PRs)
 
 ##### PR 1 (non-breaking): Internal testability refactor
+
 - Break `plugin` dependency in manager/tab internals
 - Add tests for all base classes
 - Remove v8 ignore comments
 - No consumer-facing API changes
 
 ##### PR 2 (breaking): Simplify generics + eliminate PluginTypes
+
 - PluginBase becomes non-generic
-- PluginSettingsManagerBase<S> and PluginSettingsTabBase<S>
+- `PluginSettingsManagerBase<S>` and `PluginSettingsTabBase<S>`
 - Delete plugin-types-base.ts and Extract* helpers
 - Migration: delete PluginTypes.ts, update extends clauses
 
 ##### PR 3 (breaking): Merge settings triple + auto-generate tab
+
 - PluginSettingsBase = data + validation + persistence
 - Default settings tab auto-generated from properties
 - Custom tab still supported via override
 - Migration: merge 3 files into 1, update Plugin class
 
 ##### PR 4 (breaking): Command simplification
+
 - Keep `addCommand()` as the primary API (it's already Obsidian-native)
 - Deprecate CommandInvocationBase / CommandBase classes
 - Migration: inline simple commands, keep classes for complex ones
 
 ##### PR 5 (optional): Decorator-based settings metadata
+
 - `@setting()` decorator for auto-generating tab UI
 - Only if the simpler approaches prove insufficient
 
 ##### Migration tooling
+
 - Provide a codemod script (`jscodeshift` transform) for PRs 2-4
 - Each PR gets its own migration guide
 - Major version bump covers all breaking PRs
@@ -467,12 +491,14 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 ## Progress
 
 ### Library refactoring (DONE)
+
 - Branch: `refactor/plugin-architecture-v2`
 - All changes compile (0 TypeScript errors)
 - All 2795 tests pass
 - Lint clean, formatted
 
 ### Key changes made
+
 1. **PluginBase** — now non-generic (was `PluginBase<PluginTypes>`), uses component-based architecture
 2. **PluginSettingsManagerBase** — deleted; all logic merged into `PluginSettingsComponentBase<PluginSettings>` in `src/obsidian/plugin/components/plugin-settings-component.ts`
 3. **PluginSettingsTabBase** — generic over `<PluginSettings extends object>` (was `<PluginTypes>`), takes `{plugin, settingsComponent}` params
@@ -480,11 +506,13 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 5. **plugin-types-base.ts** — kept but all types marked `@deprecated` with eslint-disable
 
 ### Plugin migrations (IN PROGRESS)
+
 - **obsidian-edit-link-alias** — migrated (simple, no settings). Deleted PluginTypes.ts, removed generic from Plugin.
 - **obsidian-new-note-fixer** — migrated (medium, with settings). Updated manager/tab constructors, deleted PluginTypes.ts.
 - **Remaining ~21 plugins** — not yet migrated, awaiting approval of approach
 
 ### Migration pattern for consuming plugins
+
 1. Delete `PluginTypes.ts`
 2. `Plugin.ts`: Remove `<PluginTypes>` from `extends PluginBase<PluginTypes>` → `extends PluginBase`
 3. `PluginSettingsManager.ts` → rename to `PluginSettingsComponent.ts`: Change `PluginSettingsManagerBase<PluginTypes>` → `PluginSettingsComponentBase<PluginSettings>`, constructor takes `params: PluginSettingsComponentParams`
@@ -498,6 +526,7 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 ### Q1: i18n decoupling approach (auto-selected: B)
 
 The i18n system uses `PluginTypes` for type-safe translations. Two options:
+
 - A) Keep i18n coupled to a generic parameter (simpler, but PluginBase stays generic)
 - B) Decouple i18n from PluginTypes entirely — `initI18N()` takes a plain `TranslationsMap` without generic constraints
 - **Auto-selected B** because only 2/23 plugins use custom translations, and making PluginBase non-generic is the primary goal.

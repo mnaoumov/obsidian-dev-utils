@@ -9,11 +9,13 @@
 import type {
   App,
   Command,
+  Component,
   IconName,
   Plugin
 } from 'obsidian';
 
 import { invokeAsyncSafely } from '../../async.ts';
+import { noopAsync } from '../../function.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 
 /**
@@ -108,10 +110,14 @@ export abstract class CommandBase<TPlugin extends Plugin> implements Command {
   }
 
   /**
-   * Registers the command.
+   * Called by {@link CommandComponent} after the command has been added to Obsidian.
+   * Subclasses override this to register additional event listeners (e.g., menu events).
+   *
+   * @param _owner - The component that owns this command's lifecycle.
+   * @returns A {@link Promise} that resolves when registration is complete.
    */
-  public register(): void {
-    this.plugin.addCommand(this);
+  public async onRegistered(_owner: Component): Promise<void> {
+    await noopAsync();
   }
 }
 

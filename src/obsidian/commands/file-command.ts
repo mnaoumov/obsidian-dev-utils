@@ -14,7 +14,7 @@ import type {
 
 import { TFile } from 'obsidian';
 
-import type { AbstractFileCommandBaseParams } from './abstract-file-command-base.ts';
+import type { AbstractFileCommandBaseParams } from './abstract-file-command.ts';
 
 import {
   asArrayOfFiles,
@@ -26,7 +26,7 @@ import {
   AbstractFileCommandBase,
   AbstractFileCommandInvocationBase,
   AbstractFilesCommandInvocationBase
-} from './abstract-file-command-base.ts';
+} from './abstract-file-command.ts';
 
 /**
  * Base class for file command invocations.
