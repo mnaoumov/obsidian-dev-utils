@@ -14,20 +14,19 @@ import * as DebugController from '../debug-controller.ts';
 import * as AttachmentPath from '../obsidian/attachment-path.ts';
 import * as Backlink from '../obsidian/backlink.ts';
 import * as CodeBlockMarkdownInformation from '../obsidian/code-block-markdown-information.ts';
-import * as AbstractFileCommandBase from '../obsidian/commands/abstract-file-command-base.ts';
-import * as CommandBase from '../obsidian/commands/command-base.ts';
-import * as EditorCommandBase from '../obsidian/commands/editor-command-base.ts';
-import * as FileCommandBase from '../obsidian/commands/file-command-base.ts';
-import * as FolderCommandBase from '../obsidian/commands/folder-command-base.ts';
-import * as NonEditorCommandBase from '../obsidian/commands/non-editor-command-base.ts';
+import * as AbstractFileCommandBase from '../obsidian/commands/abstract-file-command.ts';
+import * as CommandBase from '../obsidian/commands/command.ts';
+import * as EditorCommandBase from '../obsidian/commands/editor-command.ts';
+import * as FileCommandBase from '../obsidian/commands/file-command.ts';
+import * as FolderCommandBase from '../obsidian/commands/folder-command.ts';
+import * as NonEditorCommandBase from '../obsidian/commands/non-editor-command.ts';
 import * as ValueComponentWithChangeTracking from '../obsidian/components/setting-components/value-component-with-change-tracking.ts';
 import * as GetDomEventsHandlersConstructor from '../obsidian/constructors/getDomEventsHandlersConstructor.ts';
-import * as CustomTypeOptionsBase from '../obsidian/i18n/custom-type-options-base.ts';
-import * as DefaultTranslationsBase from '../obsidian/i18n/default-translations-base.ts';
+import * as CustomTypeOptionsBase from '../obsidian/i18n/custom-type-options.ts';
+import * as DefaultTranslationsBase from '../obsidian/i18n/default-translations.ts';
 import * as Markdown from '../obsidian/markdown.ts';
-import * as PluginBase from '../obsidian/plugin/plugin-base.ts';
-import * as PluginSettingsTabBase from '../obsidian/plugin/plugin-settings-tab-base.ts';
-import * as PluginTypesBase from '../obsidian/plugin/plugin-types-base.ts';
+import * as PluginSettingsTabBase from '../obsidian/plugin/plugin-settings-tab.ts';
+import * as PluginBase from '../obsidian/plugin/plugin.ts';
 import * as AppContext from '../obsidian/react/app-context.ts';
 import * as RenameDeleteHandler from '../obsidian/rename-delete-handler.ts';
 import { changeExtensionPlugin } from './bundlers/esbuild-impl/change-extension-plugin.ts';
@@ -71,7 +70,6 @@ it('should load all v8-ignored modules so coverage processes their ignore commen
     NonEditorCommandBase,
     PluginBase,
     PluginSettingsTabBase,
-    PluginTypesBase,
     RenameDeleteHandler,
     StateFieldSpec,
     ValueComponentWithChangeTracking,

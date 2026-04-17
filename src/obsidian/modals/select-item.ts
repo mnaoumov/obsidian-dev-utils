@@ -17,7 +17,7 @@ import type { PromiseResolve } from '../../async.ts';
 
 import { CssClass } from '../../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
-import { showModal } from './modal-base.ts';
+import { showModal } from './modal.ts';
 
 /**
  * Options for {@link selectItem}.

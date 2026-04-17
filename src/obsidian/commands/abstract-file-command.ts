@@ -7,6 +7,7 @@
 /* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
 
 import type {
+  Component,
   IconName,
   Menu,
   Plugin,
@@ -14,10 +15,10 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
-import type { CommandBaseParams } from './command-base.ts';
+import type { CommandBaseParams } from './command.ts';
 
-import { CommandInvocationBase } from './command-base.ts';
-import { NonEditorCommandBase } from './non-editor-command-base.ts';
+import { CommandInvocationBase } from './command.ts';
+import { NonEditorCommandBase } from './non-editor-command.ts';
 
 /**
  * Options for creating an abstract file command.
@@ -211,12 +212,15 @@ export abstract class AbstractFileCommandBase<TPlugin extends Plugin = Plugin> e
   }
 
   /**
-   * Registers the command.
+   * Called by {@link CommandComponent} after the command has been added to Obsidian.
+   * Registers file-menu and files-menu event listeners.
+   *
+   * @param owner - The component that owns this command's lifecycle.
    */
-  public override register(): void {
-    super.register();
-    this.plugin.registerEvent(this.app.workspace.on('file-menu', this.handleAbstractFileMenu.bind(this)));
-    this.plugin.registerEvent(this.app.workspace.on('files-menu', this.handleAbstractFilesMenu.bind(this)));
+  public override async onRegistered(owner: Component): Promise<void> {
+    await super.onRegistered(owner);
+    owner.registerEvent(this.app.workspace.on('file-menu', this.handleAbstractFileMenu.bind(this)));
+    owner.registerEvent(this.app.workspace.on('files-menu', this.handleAbstractFilesMenu.bind(this)));
   }
 
   /**

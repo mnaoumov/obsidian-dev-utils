@@ -17,9 +17,13 @@ vi.mock('../../error.ts', () => ({
   printError: vi.fn()
 }));
 
-vi.mock('obsidian', () => ({
-  Notice: vi.fn()
-}));
+vi.mock('obsidian', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('obsidian')>();
+  return {
+    ...actual,
+    Notice: vi.fn()
+  };
+});
 
 describe('Plugin', () => {
   function createMockPlugin(): Plugin {

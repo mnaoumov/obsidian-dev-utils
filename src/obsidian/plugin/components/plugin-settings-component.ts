@@ -39,7 +39,7 @@ import { MapTransformer } from '../../../transformers/map-transformer.ts';
 import { SetTransformer } from '../../../transformers/set-transformer.ts';
 import { SkipPrivatePropertyTransformer } from '../../../transformers/skip-private-property-transformer.ts';
 import { TwoWayMapTransformer } from '../../../transformers/two-way-map-transformer.ts';
-import { AsyncComponentBase } from '../../components/async-component-base.ts';
+import { AsyncComponentBase } from '../../components/async-component.ts';
 import { registerAsyncEvent } from '../../components/async-events-component.ts';
 
 const defaultTransformer = new GroupTransformer([

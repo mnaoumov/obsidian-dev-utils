@@ -7,6 +7,7 @@
 /* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
 
 import type {
+  Component,
   Editor,
   IconName,
   MarkdownFileInfo,
@@ -15,12 +16,12 @@ import type {
   TFile
 } from 'obsidian';
 
-import type { CommandBaseParams } from './command-base.ts';
+import type { CommandBaseParams } from './command.ts';
 
 import {
   CommandBase,
   CommandInvocationBase
-} from './command-base.ts';
+} from './command.ts';
 
 /**
  * Options for creating an editor command.
@@ -127,11 +128,14 @@ export abstract class EditorCommandBase<TPlugin extends Plugin> extends CommandB
   }
 
   /**
-   * Registers the command.
+   * Called by {@link CommandComponent} after the command has been added to Obsidian.
+   * Registers the editor-menu event listener.
+   *
+   * @param owner - The component that owns this command's lifecycle.
    */
-  public override register(): void {
-    super.register();
-    this.plugin.registerEvent(this.app.workspace.on('editor-menu', this.handleEditorMenu.bind(this)));
+  public override async onRegistered(owner: Component): Promise<void> {
+    await super.onRegistered(owner);
+    owner.registerEvent(this.app.workspace.on('editor-menu', this.handleEditorMenu.bind(this)));
   }
 
   /**

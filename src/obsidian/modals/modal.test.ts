@@ -11,14 +11,14 @@ import {
   vi
 } from 'vitest';
 
-import type { ModalParamsBase } from './modal-base.ts';
+import type { ModalParamsBase } from './modal.ts';
 
 import { noopAsync } from '../../function.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import {
   ModalBase,
   showModal
-} from './modal-base.ts';
+} from './modal.ts';
 
 let app: AppOriginal;
 

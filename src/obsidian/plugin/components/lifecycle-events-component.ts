@@ -11,7 +11,7 @@ import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from '../../../async.ts';
-import { AsyncComponentBase } from '../../components/async-component-base.ts';
+import { AsyncComponentBase } from '../../components/async-component.ts';
 
 /**
  * The name of a lifecycle event.

@@ -11,9 +11,9 @@ import type { Plugin } from 'obsidian';
 import type {
   CommandBaseParams,
   CommandInvocationBase
-} from './command-base.ts';
+} from './command.ts';
 
-import { CommandBase } from './command-base.ts';
+import { CommandBase } from './command.ts';
 
 /**
  * Base class for non-editor commands.
