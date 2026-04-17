@@ -94,6 +94,44 @@ describe('initDebugController', () => {
     expect(registerFn).toHaveBeenCalled();
     expect(mocks.getDebugController).toHaveBeenCalled();
   });
+
+  it('should restore old DEBUG on cleanup when DEBUG is still ours', () => {
+    const oldDebug = { old: true };
+    const win: Window = { DEBUG: oldDebug } as never;
+    const registerFn = vi.fn();
+    const mockComponent = strictProxy<Component>({
+      register: registerFn
+    });
+    initDebugController(win, mockComponent);
+    const winObj = ensureGenericObject(win);
+
+    // The cleanup function was registered
+    const cleanupFn = registerFn.mock.calls[0]?.[0] as () => void;
+
+    // DEBUG is still ours, so cleanup should restore old value
+    cleanupFn();
+    expect(winObj['DEBUG']).toBe(oldDebug);
+  });
+
+  it('should not restore old DEBUG on cleanup when DEBUG was changed by another plugin', () => {
+    const win = {} as Window;
+    const registerFn = vi.fn();
+    const mockComponent = strictProxy<Component>({
+      register: registerFn
+    });
+    initDebugController(win, mockComponent);
+    const winObj = ensureGenericObject(win);
+
+    const cleanupFn = registerFn.mock.calls[0]?.[0] as () => void;
+
+    // Simulate another plugin changing DEBUG
+    const anotherDebug = { another: true };
+    winObj['DEBUG'] = anotherDebug;
+
+    cleanupFn();
+    // Should NOT restore, since DEBUG was changed by someone else
+    expect(winObj['DEBUG']).toBe(anotherDebug);
+  });
 });
 
 describe('initPluginContext', () => {
