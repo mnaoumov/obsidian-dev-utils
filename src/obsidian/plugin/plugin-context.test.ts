@@ -5,6 +5,7 @@ import type {
 
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -139,18 +140,17 @@ describe('initPluginContext', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('should set plugin id and show debug message', () => {
     mocks.compareVersions.mockReturnValue(1);
-    const mockStyleEl = {};
-    const mockHead = {
-      createEl: vi.fn(() => mockStyleEl),
-      querySelector: vi.fn(() => null)
-    };
-    vi.stubGlobal('document', { head: mockHead });
+    vi.spyOn(activeDocument.head, 'querySelector').mockReturnValue(null);
+    vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style') as never);
     initPluginContext(app, 'my-plugin');
     expect(mocks.setPluginId).toHaveBeenCalledWith('my-plugin');
     expect(mocks.showInitialDebugMessage).toHaveBeenCalledWith('my-plugin');
-    vi.unstubAllGlobals();
   });
 
   it('should skip style injection when version is not newer', () => {
@@ -162,32 +162,23 @@ describe('initPluginContext', () => {
   it('should remove old styles and inject new ones when version is newer', () => {
     mocks.compareVersions.mockReturnValue(1);
     const oldStyleEl = { remove: vi.fn() };
-    const newStyleEl = {};
-    const mockHead = {
-      createEl: vi.fn(() => newStyleEl),
-      querySelector: vi.fn(() => oldStyleEl)
-    };
-    vi.stubGlobal('document', { head: mockHead });
+    vi.spyOn(activeDocument.head, 'querySelector').mockReturnValue(oldStyleEl as never);
+    const createElSpy = vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style') as never);
     initPluginContext(app, 'my-plugin');
     expect(oldStyleEl.remove).toHaveBeenCalled();
-    expect(mockHead.createEl).toHaveBeenCalledWith('style', {
+    expect(createElSpy).toHaveBeenCalledWith('style', {
       attr: { id: 'obsidian-dev-utils-styles' },
       text: '.test { color: red; }'
     });
-    vi.unstubAllGlobals();
   });
 
   it('should update lastLibraryVersion when version is newer', () => {
     mocks.compareVersions.mockReturnValue(1);
     const wrapper = { value: '0.0.0' };
     mocks.getObsidianDevUtilsState.mockReturnValue(wrapper);
-    const mockHead = {
-      createEl: vi.fn(() => ({})),
-      querySelector: vi.fn(() => null)
-    };
-    vi.stubGlobal('document', { head: mockHead });
+    vi.spyOn(activeDocument.head, 'querySelector').mockReturnValue(null);
+    vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style') as never);
     initPluginContext(app, 'my-plugin');
     expect(wrapper.value).toBe('1.0.0');
-    vi.unstubAllGlobals();
   });
 });

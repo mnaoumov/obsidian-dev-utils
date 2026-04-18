@@ -16,12 +16,11 @@ describe('AsyncEvents', () => {
 
   beforeEach(() => {
     events = new AsyncEvents();
-    vi.stubGlobal('window', { setTimeout: vi.fn() });
+    vi.spyOn(activeWindow, 'setTimeout').mockReturnValue(0 as never);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.unstubAllGlobals();
   });
 
   describe('on / trigger', () => {
