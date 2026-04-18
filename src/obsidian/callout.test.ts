@@ -130,7 +130,7 @@ function createMockDv(): MockDv {
     paragraph: vi.fn((text: unknown, options?: ParagraphOptions) => {
       const p = createEl('p');
       if (typeof text === 'string') {
-        // eslint-disable-next-line @microsoft/sdl/no-inner-html -- test setup
+        // eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- test setup
         p.innerHTML = text;
       } else if (text instanceof Node) {
         p.appendChild(text);
@@ -151,6 +151,7 @@ describe('renderCallout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
     globalThis.IntersectionObserver = castTo<typeof IntersectionObserver>(
       vi.fn(function MockIntersectionObserver(this: IntersectionObserver, callback: IntersectionObserverCallback) {
         intersectionCallback = callback;
@@ -430,6 +431,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
     globalThis.IntersectionObserver = castTo<typeof IntersectionObserver>(vi.fn(function MockIntersectionObserver(this: IntersectionObserver) {
       Object.assign(this, {
         disconnect: vi.fn(),

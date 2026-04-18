@@ -187,7 +187,7 @@ describe('getValidatorComponent', () => {
   it('should skip blur when element is still active during focusout', () => {
     vi.useFakeTimers();
     const parent = createDiv();
-    document.body.appendChild(parent);
+    activeDocument.body.appendChild(parent);
     const el = createDiv();
     el.tabIndex = 0;
     parent.appendChild(el);
@@ -199,7 +199,7 @@ describe('getValidatorComponent', () => {
     el.dispatchEvent(new Event('focusout'));
     vi.advanceTimersByTime(1);
     vi.useRealTimers();
-    document.body.removeChild(parent);
+    activeDocument.body.removeChild(parent);
   });
 
   it('should use element with tabindex if present', () => {

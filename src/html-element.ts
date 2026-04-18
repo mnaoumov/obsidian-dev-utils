@@ -138,14 +138,14 @@ export async function ensureLoaded(el: Element): Promise<void> {
     return;
   }
   if (
-    el instanceof HTMLBodyElement
-    || el instanceof HTMLImageElement
-    || el instanceof HTMLIFrameElement
-    || el instanceof HTMLEmbedElement
-    || el instanceof HTMLLinkElement
-    || el instanceof HTMLObjectElement
-    || el instanceof HTMLStyleElement
-    || el instanceof HTMLTrackElement
+    el.instanceOf(HTMLBodyElement)
+    || el.instanceOf(HTMLImageElement)
+    || el.instanceOf(HTMLIFrameElement)
+    || el.instanceOf(HTMLEmbedElement)
+    || el.instanceOf(HTMLLinkElement)
+    || el.instanceOf(HTMLObjectElement)
+    || el.instanceOf(HTMLStyleElement)
+    || el.instanceOf(HTMLTrackElement)
   ) {
     await new Promise((resolve) => {
       el.addEventListener('load', resolve);
@@ -208,39 +208,39 @@ export function isElementVisibleInOffsetParent(el: HTMLElement): boolean {
  * @returns `true` if the element is loaded, `false` otherwise.
  */
 export function isLoaded(el: Element): boolean {
-  if (el instanceof HTMLBodyElement) {
-    return document.readyState === 'complete' || document.readyState === 'interactive';
+  if (el.instanceOf(HTMLBodyElement)) {
+    return activeDocument.readyState === 'complete' || activeDocument.readyState === 'interactive';
   }
 
-  if (el instanceof HTMLImageElement) {
+  if (el.instanceOf(HTMLImageElement)) {
     return el.complete && el.naturalWidth > 0;
   }
 
-  if (el instanceof HTMLIFrameElement) {
+  if (el.instanceOf(HTMLIFrameElement)) {
     return !!el.contentDocument;
   }
 
-  if (el instanceof HTMLEmbedElement) {
+  if (el.instanceOf(HTMLEmbedElement)) {
     return !!el.getSVGDocument();
   }
 
-  if (el instanceof HTMLLinkElement) {
+  if (el.instanceOf(HTMLLinkElement)) {
     return el.rel === 'stylesheet' ? el.sheet !== null : true;
   }
 
-  if (el instanceof HTMLObjectElement) {
+  if (el.instanceOf(HTMLObjectElement)) {
     return !!el.contentDocument || !!el.getSVGDocument();
   }
 
-  if (el instanceof HTMLScriptElement) {
+  if (el.instanceOf(HTMLScriptElement)) {
     return true;
   }
 
-  if (el instanceof HTMLStyleElement) {
+  if (el.instanceOf(HTMLStyleElement)) {
     return !!el.sheet;
   }
 
-  if (el instanceof HTMLTrackElement) {
+  if (el.instanceOf(HTMLTrackElement)) {
     const READY_STATE_LOADED = 2;
     return el.readyState === READY_STATE_LOADED;
   }
@@ -257,8 +257,8 @@ export function isLoaded(el: Element): boolean {
  */
 export function onAncestorScrollOrResize(node: Node, callback: () => void): () => void {
   const ancestors: EventTarget[] = [];
-  ancestors.push(document);
-  ancestors.push(window);
+  ancestors.push(activeDocument);
+  ancestors.push(activeWindow);
 
   let currentNode: Node | null = node;
 

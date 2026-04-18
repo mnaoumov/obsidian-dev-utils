@@ -133,6 +133,7 @@ export function getStackTrace(framesToSkip = 0): string {
  * @param console - The console to print to (default: `globalThis.console`).
  */
 export function printError(error: unknown, console?: Console): void {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
   console ??= globalThis.console;
   console.error(errorToString(error));
 }

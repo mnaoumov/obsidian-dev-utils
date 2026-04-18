@@ -65,7 +65,7 @@ export class AllWindowsEventHandler {
    * @param allWindowsHandler - The handler for all windows.
    */
   public registerAllWindowsHandler(allWindowsHandler: (win: Window) => void): void {
-    const mainWindow = window;
+    const mainWindow = activeWindow;
     allWindowsHandler(mainWindow);
 
     this.app.workspace.onLayoutReady(() => {

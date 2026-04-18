@@ -17,6 +17,7 @@ import {
 import type { ValueComponentWithChangeTracking } from '../components/setting-components/value-component-with-change-tracking.ts';
 import type { PluginSettingsComponentBase } from './components/plugin-settings-component.ts';
 
+import { noop } from '../../function.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import {
   PluginSettingsTabBase,
@@ -613,7 +614,9 @@ describe('PluginSettingsTabBase', () => {
       // Which should hit the shouldSkipOnChange early return
       mockComponent.empty = vi.fn(() => {
         // Simulate that empty() triggers onChange callback
-        changeCallback?.('').catch(() => {/* Noop - error handled elsewhere */});
+        changeCallback?.('').catch(() => {
+          noop();
+        });
       }) as never;
 
       tab.bind(mockComponent, 'name' as never);

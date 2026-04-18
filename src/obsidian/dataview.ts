@@ -113,7 +113,7 @@ export type PageFiles = ArrayOrDataArray<PageFile>;
  * @returns A {@link Promise} that resolves when the cache is reloaded.
  */
 export async function reloadCurrentFileCache(dv: DataviewInlineApi): Promise<void> {
-  await window.DataviewAPI?.index.reload(getFile(dv.app, dv.current().file.path));
+  await activeWindow.DataviewAPI?.index.reload(getFile(dv.app, dv.current().file.path));
 }
 
 const paginationCss = `

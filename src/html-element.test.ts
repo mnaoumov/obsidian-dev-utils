@@ -52,6 +52,7 @@ describe('createDivAsync', () => {
 
   it('should call createDiv with the provided options', async () => {
     const spy = vi.spyOn(
+      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
       globalThis,
       'createDiv'
     );
@@ -98,6 +99,7 @@ describe('createElAsync', () => {
 
   it('should call createEl with the tag and options', async () => {
     const spy = vi.spyOn(
+      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
       globalThis,
       'createEl'
     );
@@ -144,6 +146,7 @@ describe('createSpanAsync', () => {
 
   it('should call createSpan with the provided options', async () => {
     const spy = vi.spyOn(
+      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
       globalThis,
       'createSpan'
     );
@@ -226,6 +229,7 @@ describe('createSvgAsync', () => {
 
   it('should call createSvg with the tag and options', async () => {
     const spy = vi.spyOn(
+      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
       globalThis,
       'createSvg'
     );
@@ -378,19 +382,19 @@ describe('isLoaded', () => {
     });
 
     it('should return true when document.readyState is complete', () => {
-      const el = document.body;
+      const el = activeDocument.body;
       vi.stubGlobal('document', { readyState: 'complete' });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return true when document.readyState is interactive', () => {
-      const el = document.body;
+      const el = activeDocument.body;
       vi.stubGlobal('document', { readyState: 'interactive' });
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when document.readyState is loading', () => {
-      const el = document.body;
+      const el = activeDocument.body;
       vi.stubGlobal('document', { readyState: 'loading' });
       expect(isLoaded(el)).toBe(false);
     });
@@ -656,18 +660,18 @@ describe('onAncestorScrollOrResize', () => {
 
   it('should add scroll and resize listeners to document, window, and the node', () => {
     const node = buildElement();
-    vi.spyOn(document, 'addEventListener');
-    vi.spyOn(window, 'addEventListener');
+    vi.spyOn(activeDocument, 'addEventListener');
+    vi.spyOn(activeWindow, 'addEventListener');
     vi.spyOn(node, 'addEventListener');
 
     onAncestorScrollOrResize(node, vi.fn());
 
-    expect(vi.mocked(document.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
-    expect(vi.mocked(document.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
+    expect(vi.mocked(activeDocument.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(vi.mocked(activeDocument.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
 
-    expect(vi.mocked(window.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
+    expect(vi.mocked(activeWindow.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
 
-    expect(vi.mocked(window.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
+    expect(vi.mocked(activeWindow.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
     expect(vi.mocked(node.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
     expect(vi.mocked(node.addEventListener)).toHaveBeenCalledWith('resize', expect.any(Function), { capture: true });
   });
@@ -693,9 +697,9 @@ describe('onAncestorScrollOrResize', () => {
     const cleanup = onAncestorScrollOrResize(node, vi.fn());
 
     const documentRemoveEventListeners = vi.fn();
-    document.removeEventListener = documentRemoveEventListeners;
+    activeDocument.removeEventListener = documentRemoveEventListeners;
     const windowRemoveEventListeners = vi.fn();
-    window.removeEventListener = windowRemoveEventListeners;
+    activeWindow.removeEventListener = windowRemoveEventListeners;
     const nodeRemoveEventListeners = vi.fn();
     node.removeEventListener = nodeRemoveEventListeners;
 
@@ -734,7 +738,7 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should invoke the callback via requestAnimationFrame when a scroll event fires', () => {
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       cb(0);
       return 0;
     });
@@ -745,12 +749,12 @@ describe('onAncestorScrollOrResize', () => {
 
     node.dispatchEvent(new Event('scroll'));
 
-    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalled();
+    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalled();
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
   it('should debounce multiple rapid event triggers', () => {
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
+    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
 
     const node = buildElement();
     const callback = vi.fn();
@@ -762,11 +766,11 @@ describe('onAncestorScrollOrResize', () => {
     node.dispatchEvent(new Event('scroll'));
 
     // RequestAnimationFrame should only be called once because isEventTriggered guards
-    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalledTimes(1);
   });
 
   it('should allow new events after requestAnimationFrame callback completes', () => {
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       cb(0);
       return 0;
     });
@@ -781,13 +785,13 @@ describe('onAncestorScrollOrResize', () => {
 
     // Second event after first completes
     node.dispatchEvent(new Event('scroll'));
-    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalledTimes(2);
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
   it('should reset isEventTriggered even if callback throws', () => {
     const rafCallbacks: FrameRequestCallback[] = [];
-    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       rafCallbacks.push(cb);
       return 0;
     });
@@ -800,7 +804,7 @@ describe('onAncestorScrollOrResize', () => {
 
     // First scroll queues a raf callback
     node.dispatchEvent(new Event('scroll'));
-    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalledTimes(1);
 
     // Execute the raf callback — it throws but try/finally should reset isEventTriggered
     const firstCallback = rafCallbacks[0];
@@ -811,7 +815,7 @@ describe('onAncestorScrollOrResize', () => {
 
     // If isEventTriggered was properly reset, a second scroll should queue another raf
     node.dispatchEvent(new Event('scroll'));
-    expect(vi.mocked(window.requestAnimationFrame)).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalledTimes(2);
   });
 });
 

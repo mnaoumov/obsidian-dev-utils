@@ -34,7 +34,7 @@ export async function printToPdf(el: HTMLElement, options: Partial<PrintToPdfOpt
     throw new Error('Printing to PDF is not supported on mobile devices.');
   }
 
-  const printDiv = document.body.createDiv('print');
+  const printDiv = activeDocument.body.createDiv('print');
   printDiv.appendChild(el);
   await ensureLoaded(printDiv);
 
@@ -54,8 +54,8 @@ export async function printToPdf(el: HTMLElement, options: Partial<PrintToPdfOpt
 
   try {
     await new Promise((resolve) => {
-      window.electron.ipcRenderer.once(ELECTRON_PRINT_TO_PDF_CHANNEL, resolve);
-      window.electron.ipcRenderer.send(ELECTRON_PRINT_TO_PDF_CHANNEL, fullOptions);
+      activeWindow.electron.ipcRenderer.once(ELECTRON_PRINT_TO_PDF_CHANNEL, resolve);
+      activeWindow.electron.ipcRenderer.send(ELECTRON_PRINT_TO_PDF_CHANNEL, fullOptions);
     });
   } finally {
     printDiv.remove();

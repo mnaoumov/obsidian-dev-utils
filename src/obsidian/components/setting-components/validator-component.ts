@@ -69,7 +69,7 @@ class OverlayValidatorComponent implements ValidatorComponent {
       tabIndexEl.focus();
     });
     this.el.addEventListener('focusout', () => {
-      window.setTimeout(() => {
+      activeWindow.setTimeout(() => {
         if (this.isElementOrDescendantActive()) {
           return;
         }
@@ -84,7 +84,7 @@ class OverlayValidatorComponent implements ValidatorComponent {
   }
 
   private isElementOrDescendantActive(): boolean {
-    return this.el.contains(document.activeElement);
+    return this.el.contains(activeDocument.activeElement);
   }
 }
 

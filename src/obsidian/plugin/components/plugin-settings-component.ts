@@ -646,7 +646,10 @@ export class EmptyPluginSettingsComponent extends PluginSettingsComponentBase<ob
   public constructor(params?: PluginSettingsComponentParams) {
     super(
       params ?? {
-        loadData: async (): Promise<object> => ({}),
+        loadData: async (): Promise<object> => {
+          await noopAsync();
+          return {};
+        },
         saveData: noopAsync
       }
     );

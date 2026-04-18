@@ -644,7 +644,7 @@ export async function setImmediateAsync(): Promise<void> {
  */
 export async function setTimeoutAsync(delay?: number): Promise<void> {
   await new Promise((resolve) => {
-    setTimeout(resolve, delay);
+    activeWindow.setTimeout(resolve, delay);
   });
 }
 

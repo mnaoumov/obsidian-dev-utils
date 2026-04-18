@@ -32,8 +32,8 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
   beforeEach(() => {
     printDiv = createDiv();
     printDiv.remove = vi.fn() as () => void;
-    document.body.createDiv = vi.fn((): HTMLDivElement => {
-      document.body.appendChild(printDiv);
+    activeDocument.body.createDiv = vi.fn((): HTMLDivElement => {
+      activeDocument.body.appendChild(printDiv);
       return printDiv;
     });
 
@@ -72,7 +72,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
     await printToPdf(el, {});
 
-    expect(document.body.createDiv).toHaveBeenCalledWith('print');
+    expect(activeDocument.body.createDiv).toHaveBeenCalledWith('print');
     expect(printDiv.contains(el)).toBe(true);
   });
 

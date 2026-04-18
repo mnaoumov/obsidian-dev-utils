@@ -465,7 +465,7 @@ function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.
 }
 
 function getObsidianLintConfigs(context: EslintConfigContext): Linter.Config[] {
-  const obsidianRecommendedConfigs = Array.from(obsidianmd.configs?.['recommended'] as Iterable<Linter.Config>);
+  const obsidianRecommendedConfigs = obsidianmd.configs.recommended;
 
   const scopedObsidianRecommendedConfigs = obsidianRecommendedConfigs.map((config) => {
     if (config.files?.includes('package.json')) {
