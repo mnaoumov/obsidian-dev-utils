@@ -640,7 +640,7 @@ describe('Async', () => {
       await expect(runWithTimeout({
         operationFn: async () => {
           await new Promise((resolve) => {
-            setTimeout(resolve, 10000);
+            activeWindow.setTimeout(resolve, 10000);
           });
           return 'late';
         },
@@ -667,7 +667,7 @@ describe('Async', () => {
         onTimeout,
         operationFn: async () => {
           await new Promise((resolve) => {
-            setTimeout(resolve, 10000);
+            activeWindow.setTimeout(resolve, 10000);
           });
           return 'late';
         },
@@ -685,7 +685,7 @@ describe('Async', () => {
           onTimeout,
           operationFn: async () => {
             await new Promise((resolve) => {
-              setTimeout(resolve, 10000);
+              activeWindow.setTimeout(resolve, 10000);
             });
             return 'late';
           },
@@ -708,7 +708,7 @@ describe('Async', () => {
           onTimeout,
           operationFn: async () => {
             await new Promise((resolve) => {
-              setTimeout(resolve, 10000);
+              activeWindow.setTimeout(resolve, 10000);
             });
             return 'late';
           },
@@ -737,7 +737,7 @@ describe('Async', () => {
           },
           operationFn: async () => {
             await new Promise((resolve) => {
-              setTimeout(resolve, 10000);
+              activeWindow.setTimeout(resolve, 10000);
             });
           },
           operationName: 'myOperation',
@@ -761,7 +761,7 @@ describe('Async', () => {
           },
           operationFn: async () => {
             await new Promise((resolve) => {
-              setTimeout(resolve, 10000);
+              activeWindow.setTimeout(resolve, 10000);
             });
           },
           operationName: 'myOperation',
@@ -784,7 +784,7 @@ describe('Async', () => {
         },
         async operationFn() {
           await new Promise((resolve) => {
-            setTimeout(resolve, 100);
+            activeWindow.setTimeout(resolve, 100);
           });
           return 'finished';
         },
@@ -805,7 +805,7 @@ describe('Async', () => {
         },
         async operationFn() {
           await new Promise((resolve) => {
-            setTimeout(resolve, 100);
+            activeWindow.setTimeout(resolve, 100);
           });
           return 'finished';
         },
@@ -837,7 +837,7 @@ describe('Async', () => {
           operationFn: async (abortSignal) => {
             receivedSignal = abortSignal;
             await new Promise((resolve) => {
-              setTimeout(resolve, 10000);
+              activeWindow.setTimeout(resolve, 10000);
             });
             return 'late';
           },
@@ -1135,7 +1135,7 @@ describe('Async', () => {
 
       // Wait for microtasks to flush
       await new Promise((resolve) => {
-        setTimeout(resolve, 50);
+        activeWindow.setTimeout(resolve, 50);
       });
 
       expect(handler).toHaveBeenCalledTimes(1);
@@ -1162,7 +1162,7 @@ describe('Async', () => {
       invokeAsyncSafelyAfterDelay(fn, 50);
 
       await new Promise((resolve) => {
-        setTimeout(resolve, 150);
+        activeWindow.setTimeout(resolve, 150);
       });
 
       expect(fn).toHaveBeenCalledTimes(1);
@@ -1193,7 +1193,7 @@ describe('Async', () => {
       }, 10);
 
       await new Promise((resolve) => {
-        setTimeout(resolve, 100);
+        activeWindow.setTimeout(resolve, 100);
       });
 
       expect(receivedSignal).not.toBeNull();
@@ -1208,7 +1208,7 @@ describe('Async', () => {
       }, 10);
 
       await new Promise((resolve) => {
-        setTimeout(resolve, 100);
+        activeWindow.setTimeout(resolve, 100);
       });
 
       expect(receivedSignal).toBeInstanceOf(AbortSignal);
@@ -1222,7 +1222,7 @@ describe('Async', () => {
       invokeAsyncSafelyAfterDelay(fn);
 
       await new Promise((resolve) => {
-        setTimeout(resolve, 100);
+        activeWindow.setTimeout(resolve, 100);
       });
 
       expect(fn).toHaveBeenCalledTimes(1);
@@ -1259,7 +1259,7 @@ describe('Async', () => {
       syncFn(5, 'hello');
 
       await new Promise((resolve) => {
-        setTimeout(resolve, 50);
+        activeWindow.setTimeout(resolve, 50);
       });
 
       expect(asyncFn).toHaveBeenCalledWith(5, 'hello');
@@ -1290,7 +1290,7 @@ describe('Async', () => {
       syncFn();
 
       await new Promise((resolve) => {
-        setTimeout(resolve, 50);
+        activeWindow.setTimeout(resolve, 50);
       });
 
       expect(handler).toHaveBeenCalledTimes(1);
@@ -1302,7 +1302,7 @@ describe('Async', () => {
     it('should resolve early when abortSignal is aborted', async () => {
       const controller = new AbortController();
 
-      setTimeout(() => {
+      activeWindow.setTimeout(() => {
         controller.abort(new Error('aborted'));
       }, 50);
 
@@ -1317,7 +1317,7 @@ describe('Async', () => {
     it('should throw when shouldThrowOnAbort is true and signal is aborted', async () => {
       const controller = new AbortController();
 
-      setTimeout(() => {
+      activeWindow.setTimeout(() => {
         controller.abort(new Error('abort reason'));
       }, 50);
 
@@ -1327,7 +1327,7 @@ describe('Async', () => {
     it('should not throw when shouldThrowOnAbort is false and signal is aborted', async () => {
       const controller = new AbortController();
 
-      setTimeout(() => {
+      activeWindow.setTimeout(() => {
         controller.abort(new Error('abort reason'));
       }, 50);
 
@@ -1348,7 +1348,7 @@ describe('Async', () => {
 
     it('should throw when shouldThrowOnAbort is true and signal is aborted before timeout', async () => {
       const controller = new AbortController();
-      setTimeout(() => {
+      activeWindow.setTimeout(() => {
         controller.abort(new Error('aborted early'));
       }, 10);
 

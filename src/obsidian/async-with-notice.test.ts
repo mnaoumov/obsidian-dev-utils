@@ -27,6 +27,8 @@ import {
 } from './async-with-notice.ts';
 import { t } from './i18n/i18n.ts';
 
+/* eslint-disable obsidianmd/prefer-active-doc -- Actively use globalThis. */
+
 vi.mock('../async.ts', () => ({
   retryWithTimeout: vi.fn(async (options: GenericObject) => {
     if (typeof options['_captureOnTimeout'] === 'function') {
@@ -739,3 +741,5 @@ describe('AsyncWithNotice', () => {
     });
   });
 });
+
+/* eslint-enable obsidianmd/prefer-active-doc -- Actively use globalThis. */

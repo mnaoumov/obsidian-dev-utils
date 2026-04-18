@@ -82,7 +82,7 @@ export function abortSignalTimeout(timeoutInMilliseconds: number): AbortSignal {
   }
 
   const abortController = new AbortController();
-  window.setTimeout(() => {
+  activeWindow.setTimeout(() => {
     abortController.abort(new Error(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`));
   }, timeoutInMilliseconds);
   return abortController.signal;

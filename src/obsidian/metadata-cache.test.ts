@@ -358,7 +358,7 @@ describe('ensureMetadataCacheReady', () => {
 
   it('should wait for async resolution of onCleanCache', async () => {
     app.metadataCache.onCleanCache = vi.fn((cb: () => void) => {
-      setTimeout(cb, 0);
+      activeWindow.setTimeout(cb, 0);
     });
     await ensureMetadataCacheReady(app);
     expect(app.metadataCache.onCleanCache).toHaveBeenCalledOnce();

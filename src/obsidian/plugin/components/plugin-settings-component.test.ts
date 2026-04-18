@@ -8,6 +8,7 @@ import {
 
 import type { PluginSettingsComponentParams } from './plugin-settings-component.ts';
 
+import { noop } from '../../../function.ts';
 import {
   EmptyPluginSettingsComponent,
   PluginSettingsComponentBase
@@ -73,7 +74,9 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should handle non-object data on load', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {/* Noop */});
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
+      noop();
+    });
     const component = new TestSettingsComponent(createParams('invalid'));
     await component.onload();
     expect(component.settings).toEqual({ count: 0, name: 'default' });

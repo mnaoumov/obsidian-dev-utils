@@ -18,6 +18,8 @@ import {
 import { castTo } from './object-utils.ts';
 import { assertNonNullable } from './type-guards.ts';
 
+/* eslint-disable obsidianmd/prefer-active-doc -- Actively use globalThis. */
+
 type WindowEx = typeof globalThis & Window;
 
 describe('INFINITE_TIMEOUT', () => {
@@ -63,7 +65,7 @@ describe('abortSignalTimeout', () => {
   it('should abort after the specified timeout elapses', async () => {
     const signal = abortSignalTimeout(50);
     await new Promise((resolve) => {
-      setTimeout(resolve, 100);
+      activeWindow.setTimeout(resolve, 100);
     });
     expect(signal.aborted).toBe(true);
   });
@@ -534,3 +536,5 @@ function restoreOriginalWindow(originalWindow?: WindowEx): void {
     globalThis.window = originalWindow;
   }
 }
+
+/* eslint-enable obsidianmd/prefer-active-doc -- Actively use globalThis. */

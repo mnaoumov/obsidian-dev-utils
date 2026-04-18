@@ -95,7 +95,7 @@ export function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
     throw new Error('Invalid data URL');
   }
 
-  const raw = window.atob(base64);
+  const raw = activeWindow.atob(base64);
   const rawLength = raw.length;
 
   const uInt8Array = new Uint8Array(rawLength);

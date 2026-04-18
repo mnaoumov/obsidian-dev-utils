@@ -7,5 +7,5 @@
   "isDesktopOnly": true,
   "name": "Dev Utils",
   "version": "1.0.0",
-  "minAppVersion": "1.9.14"
+  "minAppVersion": "1.11.0"
 }

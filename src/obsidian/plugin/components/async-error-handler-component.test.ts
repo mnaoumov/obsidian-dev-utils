@@ -5,6 +5,7 @@ import {
   vi
 } from 'vitest';
 
+import { noop } from '../../../function.ts';
 import { AsyncErrorHandlerComponent } from './async-error-handler-component.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
@@ -47,7 +48,9 @@ describe('AsyncErrorHandlerComponent', () => {
     const component = new AsyncErrorHandlerComponent(noticeComponent);
 
     // eslint-disable-next-line func-style -- must be reassigned inside mockImplementation
-    let errorHandler: (error: unknown) => void = () => {/* Placeholder */};
+    let errorHandler: (error: unknown) => void = () => {
+      noop();
+    };
     mocks.registerAsyncErrorEventHandler.mockImplementation(
       ((handler: (error: unknown) => void) => {
         errorHandler = handler;
