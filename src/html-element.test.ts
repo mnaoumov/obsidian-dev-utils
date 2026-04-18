@@ -378,24 +378,24 @@ describe('getZIndex', () => {
 describe('isLoaded', () => {
   describe('HTMLBodyElement', () => {
     afterEach(() => {
-      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
     });
 
     it('should return true when document.readyState is complete', () => {
       const el = activeDocument.body;
-      vi.stubGlobal('document', { readyState: 'complete' });
+      vi.spyOn(activeDocument, 'readyState', 'get').mockReturnValue('complete');
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return true when document.readyState is interactive', () => {
       const el = activeDocument.body;
-      vi.stubGlobal('document', { readyState: 'interactive' });
+      vi.spyOn(activeDocument, 'readyState', 'get').mockReturnValue('interactive');
       expect(isLoaded(el)).toBe(true);
     });
 
     it('should return false when document.readyState is loading', () => {
       const el = activeDocument.body;
-      vi.stubGlobal('document', { readyState: 'loading' });
+      vi.spyOn(activeDocument, 'readyState', 'get').mockReturnValue('loading');
       expect(isLoaded(el)).toBe(false);
     });
   });
