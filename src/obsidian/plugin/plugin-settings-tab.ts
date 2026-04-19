@@ -117,7 +117,7 @@ export interface PluginSettingsTabBaseParams<PluginSettings extends object> {
   /**
    * The settings component.
    */
-  readonly settingsComponent: PluginSettingsComponentBase<PluginSettings>;
+  readonly pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
 }
 
 /**
@@ -139,7 +139,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   /**
    * The settings manager.
    */
-  protected readonly settingsComponent: PluginSettingsComponentBase<PluginSettings>;
+  protected readonly pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
 
   /**
    * A debounce timeout for saving settings.
@@ -156,7 +156,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   private readonly saveSettingsDebounced: Debouncer<[], void>;
 
   private get pluginSettings(): PluginSettings {
-    return this.settingsComponent.settingsState.inputValues as PluginSettings;
+    return this.pluginSettingsComponent.settingsState.inputValues as PluginSettings;
   }
 
   /**
@@ -166,10 +166,10 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    */
   public constructor(params: PluginSettingsTabBaseParams<PluginSettings>) {
     super(params.plugin.app, params.plugin);
-    this.settingsComponent = params.settingsComponent;
+    this.pluginSettingsComponent = params.pluginSettingsComponent;
     addPluginCssClasses(this.containerEl, CssClass.PluginSettingsTab);
     this.saveSettingsDebounced = debounce(
-      convertAsyncToSync(() => this.settingsComponent.saveToFile(SAVE_TO_FILE_CONTEXT)),
+      convertAsyncToSync(() => this.pluginSettingsComponent.saveToFile(SAVE_TO_FILE_CONTEXT)),
       this.saveSettingsDebounceTimeoutInMilliseconds
     );
     this.asyncEventsComponent = new AsyncEventsComponent();
@@ -250,7 +250,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
 
     const readonlyValue = this.pluginSettings[propertyName] as ReadonlyDeep<PropertyType>;
-    const defaults = this.settingsComponent.defaultSettings as PluginSettings;
+    const defaults = this.pluginSettingsComponent.defaultSettings as PluginSettings;
     const defaultValue = defaults[propertyName] as PropertyType;
     const defaultComponentValue = optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>);
     textBasedComponent?.setPlaceholderValue(defaultComponentValue);
@@ -320,7 +320,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       }
 
       if (shouldSetProperty) {
-        validationMessage = await this.settingsComponent.setProperty(propertyName, newValue as PluginSettings[PropertyName]);
+        validationMessage = await this.pluginSettingsComponent.setProperty(propertyName, newValue as PluginSettings[PropertyName]);
         if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && deepEqual(newValue, defaultValue)) {
           shouldEmptyOnBlur = true;
         }
@@ -345,7 +345,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       });
     });
 
-    const validationMessages = this.settingsComponent.settingsState.validationMessages as Record<string, string>;
+    const validationMessages = this.pluginSettingsComponent.settingsState.validationMessages as Record<string, string>;
     validationMessage = validationMessages[propertyName] ?? '';
     updateValidatorElDebounced();
 
@@ -399,8 +399,8 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     this.containerEl.empty();
     this._isOpen = true;
     this.asyncEventsComponent.load();
-    this.asyncEventsComponent.registerAsyncEvent(this.settingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
-    this.asyncEventsComponent.registerAsyncEvent(this.settingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
+    this.asyncEventsComponent.registerAsyncEvent(this.pluginSettingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
+    this.asyncEventsComponent.registerAsyncEvent(this.pluginSettingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
   }
 
   /**
@@ -421,7 +421,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * @returns A {@link Promise} that resolves when the settings tab is hidden.
    */
   public async hideAsync(): Promise<void> {
-    await this.settingsComponent.saveToFile(SAVE_TO_FILE_CONTEXT);
+    await this.pluginSettingsComponent.saveToFile(SAVE_TO_FILE_CONTEXT);
   }
 
   /**
@@ -449,7 +449,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * @returns A {@link Promise} that resolves when the settings are revalidated.
    */
   protected async revalidate(): Promise<void> {
-    const validationMessages = await this.settingsComponent.revalidate();
+    const validationMessages = await this.pluginSettingsComponent.revalidate();
     await this.updateValidations(validationMessages);
   }
 
