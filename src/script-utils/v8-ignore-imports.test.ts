@@ -14,12 +14,6 @@ import * as DebugController from '../debug-controller.ts';
 import * as AttachmentPath from '../obsidian/attachment-path.ts';
 import * as Backlink from '../obsidian/backlink.ts';
 import * as CodeBlockMarkdownInformation from '../obsidian/code-block-markdown-information.ts';
-import * as AbstractFileCommandBase from '../obsidian/commands/abstract-file-command.ts';
-import * as CommandBase from '../obsidian/commands/command.ts';
-import * as EditorCommandBase from '../obsidian/commands/editor-command.ts';
-import * as FileCommandBase from '../obsidian/commands/file-command.ts';
-import * as FolderCommandBase from '../obsidian/commands/folder-command.ts';
-import * as NonEditorCommandBase from '../obsidian/commands/non-editor-command.ts';
 import * as ValueComponentWithChangeTracking from '../obsidian/components/setting-components/value-component-with-change-tracking.ts';
 import * as GetDomEventsHandlersConstructor from '../obsidian/constructors/getDomEventsHandlersConstructor.ts';
 import * as CustomTypeOptionsBase from '../obsidian/i18n/custom-type-options.ts';
@@ -49,25 +43,19 @@ import * as NanoStagedConfig from './nano-staged-config.ts';
 
 it('should load all v8-ignored modules so coverage processes their ignore comments', () => {
   const modules = [
-    AbstractFileCommandBase,
     AppContext,
     AttachmentPath,
     Backlink,
     BuildMode,
     CodeBlockMarkdownInformation,
-    CommandBase,
     CommitlintConfig,
     CustomTypeOptionsBase,
     DebugController,
     DefaultTranslationsBase,
-    EditorCommandBase,
     Esbuild,
-    FileCommandBase,
-    FolderCommandBase,
     GetDomEventsHandlersConstructor,
     Markdown,
     NanoStagedConfig,
-    NonEditorCommandBase,
     PluginBase,
     PluginSettingsTabBase,
     RenameDeleteHandler,

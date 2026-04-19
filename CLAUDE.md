@@ -505,6 +505,18 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 4. **i18n** — decoupled from PluginTypes, `TranslationsMap` is now a plain `Record<string, Record<string, unknown>>`
 5. **plugin-types-base.ts** — kept but all types marked `@deprecated` with eslint-disable
 
+### Command architecture refactor (DONE)
+
+- Replaced old `src/obsidian/commands/` (6 files, all v8-ignored) with `src/obsidian/command-handlers/` (8 source files + 9 test files)
+- **Eliminated 14 invocation classes** — merged canExecute/execute into handler classes directly
+- **Removed `TPlugin` generic** from all command classes — handlers take `pluginName: string`, no `Plugin` or `App` God objects
+- **Separated concerns via interfaces**: `ActiveFileProvider`, `MenuEventRegistrar` — injected via `CommandHandlerRegistrationContext` during `onRegistered()`
+- **Concrete App implementations**: `AppActiveFileProvider`, `AppMenuEventRegistrar` — consumers and `CommandHandlerComponent` use these
+- **Handlers don't implement `Command`** — `CommandHandler.buildCommand()` returns a plain `Command` object for Obsidian, eliminating `originalId`/`originalName` workaround
+- **Renamed classes**: `CommandBase` → `CommandHandler`, `NonEditorCommandBase` → `GlobalCommandHandler`, `EditorCommandBase` → `EditorCommandHandler`, `FileCommandBase` → `FileCommandHandler`, `FolderCommandBase` → `FolderCommandHandler`, `CommandComponent` → `CommandHandlerComponent`
+- **44 new tests**, all passing. No v8 ignore comments in command-handler files.
+- All 2935 tests pass, lint/format/spellcheck clean
+
 ### Plugin migrations (IN PROGRESS)
 
 - **obsidian-edit-link-alias** — migrated (simple, no settings). Deleted PluginTypes.ts, removed generic from Plugin.
