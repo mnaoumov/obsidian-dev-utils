@@ -40,6 +40,7 @@ import {
   noopAsync
 } from '../../function.ts';
 import { deepEqual } from '../../object-utils.ts';
+import { assertNonNullable } from '../../type-guards.ts';
 import { AsyncEventsComponent } from '../components/async-events-component.ts';
 import { ensureWrapped } from '../components/setting-components/setting-component-wrapper.ts';
 import { getTextBasedComponentValue } from '../components/setting-components/text-based-component.ts';
@@ -373,6 +374,8 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
         return;
       }
 
+      assertNonNullable(tooltipContentEl);
+
       if (validationMessage === '') {
         validatorEl.setCustomValidity('');
         validatorEl.checkValidity();
@@ -381,11 +384,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
       validatorEl.setCustomValidity(validationMessage);
       if (optionsExt.shouldShowValidationMessage) {
-        /* v8 ignore start -- tooltipContentEl is always non-null when validatorEl is non-null, both are set in the same block. */
-        if (tooltipContentEl) {
-          /* v8 ignore stop */
-          tooltipContentEl.textContent = validationMessage;
-        }
+        tooltipContentEl.textContent = validationMessage;
         tooltipEl?.toggle(!!validationMessage);
       } else if (validationMessage) {
         setTooltip(validatorEl, validationMessage);
