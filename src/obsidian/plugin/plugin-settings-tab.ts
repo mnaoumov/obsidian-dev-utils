@@ -381,7 +381,9 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
       validatorEl.setCustomValidity(validationMessage);
       if (optionsExt.shouldShowValidationMessage) {
+        /* v8 ignore start -- tooltipContentEl is always non-null when validatorEl is non-null, both are set in the same block. */
         if (tooltipContentEl) {
+          /* v8 ignore stop */
           tooltipContentEl.textContent = validationMessage;
         }
         tooltipEl?.toggle(!!validationMessage);
