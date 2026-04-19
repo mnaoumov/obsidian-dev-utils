@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 56.0.0
+
+- fix!: better config for obsidianmd-plugin
+- refactor!: plugins/commands
+- chore: use relative paths for md lint
+
 ## 55.4.1
 
 - chore: lint
