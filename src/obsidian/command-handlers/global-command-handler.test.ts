@@ -76,4 +76,19 @@ describe('GlobalCommandHandler', () => {
     expect(result).toBe(true);
     expect(handler.executeFn).toHaveBeenCalledOnce();
   });
+
+  it('should use default canExecute returning true', () => {
+    class DefaultCanExecuteHandler extends GlobalCommandHandler {
+      public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+
+      protected override async execute(): Promise<void> {
+        await this.executeFn();
+      }
+    }
+
+    const handler = new DefaultCanExecuteHandler(createParams());
+    const command = handler.buildCommand();
+
+    expect(command.checkCallback?.(true)).toBe(true);
+  });
 });
