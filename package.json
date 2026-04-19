@@ -221,24 +221,24 @@
         "types": "./dist/lib/cjs/obsidian/@types/dataview/util/*.d.cts"
       }
     },
-    "./obsidian/commands": {
+    "./obsidian/command-handlers": {
       "import": {
-        "types": "./dist/lib/esm/obsidian/commands/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/commands/index.mjs"
+        "types": "./dist/lib/esm/obsidian/command-handlers/index.d.mts",
+        "default": "./dist/lib/esm/obsidian/command-handlers/index.mjs"
       },
       "require": {
-        "types": "./dist/lib/cjs/obsidian/commands/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/commands/index.cjs"
+        "types": "./dist/lib/cjs/obsidian/command-handlers/index.d.cts",
+        "default": "./dist/lib/cjs/obsidian/command-handlers/index.cjs"
       }
     },
-    "./obsidian/commands/*": {
+    "./obsidian/command-handlers/*": {
       "import": {
-        "types": "./dist/lib/esm/obsidian/commands/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/commands/*.mjs"
+        "types": "./dist/lib/esm/obsidian/command-handlers/*.d.mts",
+        "default": "./dist/lib/esm/obsidian/command-handlers/*.mjs"
       },
       "require": {
-        "types": "./dist/lib/cjs/obsidian/commands/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/commands/*.cjs"
+        "types": "./dist/lib/cjs/obsidian/command-handlers/*.d.cts",
+        "default": "./dist/lib/cjs/obsidian/command-handlers/*.cjs"
       }
     },
     "./obsidian/components": {
