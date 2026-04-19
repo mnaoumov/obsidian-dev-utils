@@ -115,16 +115,16 @@ function stubRequestAnimationFrame(): void {
 describe('PluginSettingsTabBase', () => {
   it('should create with correct params', () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     expect(tab).toBeDefined();
     expect(tab.isOpen).toBe(false);
   });
 
   it('should set isOpen to true on display', () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
 
     tab.display();
 
@@ -134,8 +134,8 @@ describe('PluginSettingsTabBase', () => {
 
   it('should set isOpen to false on hide', () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
 
     tab.display();
     expect(tab.isOpen).toBe(true);
@@ -146,12 +146,12 @@ describe('PluginSettingsTabBase', () => {
 
   it('should save settings on hideAsync', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
 
     await tab.hideAsync();
 
-    expect(settingsComponent.saveToFile).toHaveBeenCalledWith(SAVE_TO_FILE_CONTEXT);
+    expect(pluginSettingsComponent.saveToFile).toHaveBeenCalledWith(SAVE_TO_FILE_CONTEXT);
   });
 
   it('should open settings tab via show()', () => {
@@ -160,8 +160,8 @@ describe('PluginSettingsTabBase', () => {
       setting: { openTab }
     });
     const plugin = createMockPlugin(appWithSetting);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
 
     tab.show();
 
@@ -170,8 +170,8 @@ describe('PluginSettingsTabBase', () => {
 
   it('should bind a value component to a setting', () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     const onChange = vi.fn();
@@ -191,8 +191,8 @@ describe('PluginSettingsTabBase', () => {
 
   it('should call onChanged callback when value changes', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -212,39 +212,39 @@ describe('PluginSettingsTabBase', () => {
       await changeCallback('newValue');
     }
 
-    expect(settingsComponent.setProperty).toHaveBeenCalledWith('name', 'newValue');
+    expect(pluginSettingsComponent.setProperty).toHaveBeenCalledWith('name', 'newValue');
   });
 
   it('should register loadSettings and saveSettings event handlers on display', () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
 
     tab.display();
 
-    expect(settingsComponent.on).toHaveBeenCalledWith('loadSettings', expect.any(Function));
-    expect(settingsComponent.on).toHaveBeenCalledWith('saveSettings', expect.any(Function));
+    expect(pluginSettingsComponent.on).toHaveBeenCalledWith('loadSettings', expect.any(Function));
+    expect(pluginSettingsComponent.on).toHaveBeenCalledWith('saveSettings', expect.any(Function));
   });
 
   it('should revalidate settings', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     await tab['revalidate']();
 
-    expect(settingsComponent.revalidate).toHaveBeenCalled();
+    expect(pluginSettingsComponent.revalidate).toHaveBeenCalled();
   });
 
   it('should use placeholder for default values with text-based component', () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     // When value equals default, text-based component should be emptied
-    (settingsComponent.settingsState.inputValues as TestSettings).name = 'default';
+    (pluginSettingsComponent.settingsState.inputValues as TestSettings).name = 'default';
 
     const mockComponent = createTextBasedMockComponent();
 
@@ -254,8 +254,8 @@ describe('PluginSettingsTabBase', () => {
 
   it('should handle onChange with value converter returning validation message', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -279,13 +279,13 @@ describe('PluginSettingsTabBase', () => {
     }
 
     // SetProperty should NOT have been called since validation failed
-    expect(settingsComponent.setProperty).not.toHaveBeenCalled();
+    expect(pluginSettingsComponent.setProperty).not.toHaveBeenCalled();
   });
 
   it('should handle onChange with text-based component that resets to default when empty', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -302,13 +302,13 @@ describe('PluginSettingsTabBase', () => {
       await changeCallback('');
     }
 
-    expect(settingsComponent.setProperty).toHaveBeenCalledWith('name', 'default');
+    expect(pluginSettingsComponent.setProperty).toHaveBeenCalledWith('name', 'default');
   });
 
   it('should handle onChange with skipOnChange flag', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -325,14 +325,14 @@ describe('PluginSettingsTabBase', () => {
     // First call sets things up
     if (changeCallback) {
       await changeCallback('value1');
-      expect(settingsComponent.setProperty).toHaveBeenCalledTimes(1);
+      expect(pluginSettingsComponent.setProperty).toHaveBeenCalledTimes(1);
     }
   });
 
   it('should handle bind with validatorEl', () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     const parentEl = document.createElement('div');
@@ -352,8 +352,8 @@ describe('PluginSettingsTabBase', () => {
 
   it('should handle bind with shouldShowValidationMessage=false', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     const parentEl = document.createElement('div');
@@ -371,7 +371,7 @@ describe('PluginSettingsTabBase', () => {
       validatorEl
     } as never;
 
-    vi.mocked(settingsComponent.setProperty).mockResolvedValue('Some error');
+    vi.mocked(pluginSettingsComponent.setProperty).mockResolvedValue('Some error');
 
     tab.bind(mockComponent, 'name' as never, { shouldShowValidationMessage: false });
 
@@ -382,12 +382,12 @@ describe('PluginSettingsTabBase', () => {
 
   it('should handle onSaveSettings with SAVE_TO_FILE_CONTEXT', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     // Get the saveSettings callback
-    const onCalls: EventListenerEntry[] = vi.mocked(settingsComponent.on).mock.calls as never;
+    const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls as never;
     const onCall = onCalls.find((call) => call[0] === 'saveSettings');
     const saveSettingsCallback = onCall?.[1] as (
       newState: unknown,
@@ -404,12 +404,12 @@ describe('PluginSettingsTabBase', () => {
 
   it('should call display when onSaveSettings is called with non-tab context', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
     tab.displayCalled = false;
 
-    const onCalls: EventListenerEntry[] = vi.mocked(settingsComponent.on).mock.calls as never;
+    const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls as never;
     const onCall = onCalls.find((call) => call[0] === 'saveSettings');
     const saveSettingsCallback = onCall?.[1] as (
       newState: unknown,
@@ -426,12 +426,12 @@ describe('PluginSettingsTabBase', () => {
 
   it('should call display when onLoadSettings is triggered', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
     tab.displayCalled = false;
 
-    const onCalls: EventListenerEntry[] = vi.mocked(settingsComponent.on).mock.calls as never;
+    const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls as never;
     const onCall = onCalls.find((call) => call[0] === 'loadSettings');
     const loadSettingsCallback = onCall?.[1] as (
       loadedState: unknown,
@@ -444,8 +444,8 @@ describe('PluginSettingsTabBase', () => {
 
   it('should handle bind with text component and shouldEmptyOnBlur', async () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -466,8 +466,8 @@ describe('PluginSettingsTabBase', () => {
 
   it('should handle saveSettingsDebounceTimeoutInMilliseconds getter', () => {
     const plugin = createMockPlugin(app);
-    const settingsComponent = createMockSettingsComponent();
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     const timeout = tab['saveSettingsDebounceTimeoutInMilliseconds'];
     const EXPECTED_DEFAULT = 2_000;
     expect(timeout).toBe(EXPECTED_DEFAULT);
@@ -478,8 +478,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       const parentEl = document.createElement('div');
@@ -520,8 +520,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       const parentEl = document.createElement('div');
@@ -555,8 +555,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       const parentEl = document.createElement('div');
@@ -574,7 +574,7 @@ describe('PluginSettingsTabBase', () => {
         validatorEl
       } as never;
 
-      vi.mocked(settingsComponent.setProperty).mockResolvedValue('Validation error');
+      vi.mocked(pluginSettingsComponent.setProperty).mockResolvedValue('Validation error');
 
       tab.bind(mockComponent, 'name' as never, { shouldShowValidationMessage: false });
 
@@ -594,8 +594,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -643,8 +643,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -680,8 +680,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -716,8 +716,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       const parentEl = document.createElement('div');
@@ -735,7 +735,7 @@ describe('PluginSettingsTabBase', () => {
         validatorEl
       } as never;
 
-      vi.mocked(settingsComponent.setProperty).mockResolvedValue('Error message');
+      vi.mocked(pluginSettingsComponent.setProperty).mockResolvedValue('Error message');
 
       // ShouldShowValidationMessage defaults to true
       tab.bind(mockComponent, 'name' as never);
@@ -755,8 +755,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       const parentEl = document.createElement('div');
@@ -792,8 +792,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -833,8 +833,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       const parentEl = document.createElement('div');
@@ -853,7 +853,7 @@ describe('PluginSettingsTabBase', () => {
       } as never;
 
       // No validation error
-      vi.mocked(settingsComponent.setProperty).mockResolvedValue('');
+      vi.mocked(pluginSettingsComponent.setProperty).mockResolvedValue('');
 
       tab.bind(mockComponent, 'name' as never, { shouldShowValidationMessage: false });
 
@@ -871,7 +871,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     // Create a special settings component where validationMessages has no 'name' key
     const listeners = new Map<string, ((...args: unknown[]) => void)[]>();
-    const settingsComponent = {
+    const pluginSettingsComponent = {
       defaultSettings: { enabled: false, name: 'default' },
       on: vi.fn((name: string, callback: (...args: unknown[]) => void) => {
         const existing = listeners.get(name) ?? [];
@@ -890,7 +890,7 @@ describe('PluginSettingsTabBase', () => {
       }
     } as never;
 
-    const tab = new TestSettingsTab({ plugin, settingsComponent });
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
     const mockComponent: ValueComponentWithChangeTracking<string> = {
@@ -906,8 +906,8 @@ describe('PluginSettingsTabBase', () => {
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
-      const settingsComponent = createMockSettingsComponent();
-      const tab = new TestSettingsTab({ plugin, settingsComponent });
+      const pluginSettingsComponent = createMockSettingsComponent();
+      const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
       const parentEl = document.createElement('div');
@@ -924,7 +924,7 @@ describe('PluginSettingsTabBase', () => {
       tab.bind(mockComponent, 'name' as never);
 
       // Trigger the validationMessageChanged event through updateValidations
-      const saveSettingsCall = vi.mocked(settingsComponent.on).mock.calls.find(
+      const saveSettingsCall = vi.mocked(pluginSettingsComponent.on).mock.calls.find(
         (call: unknown[]) => call[0] === 'saveSettings'
       );
       const saveSettingsCallback = saveSettingsCall?.[1] as (
