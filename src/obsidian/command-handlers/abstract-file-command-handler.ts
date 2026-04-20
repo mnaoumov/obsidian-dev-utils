@@ -10,6 +10,7 @@ import type {
   TAbstractFile,
   WorkspaceLeaf
 } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
 import type {
   ActiveFileProvider,
@@ -218,7 +219,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    *
    * @param abstractFile - The file or folder.
    */
-  protected abstract executeAbstractFile(abstractFile: TAbstractFile): Promise<void>;
+  protected abstract executeAbstractFile(abstractFile: TAbstractFile): Promisable<void>;
 
   /**
    * Executes the command for multiple abstract files.

@@ -9,6 +9,7 @@ import type {
   TFolder,
   WorkspaceLeaf
 } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
 import type { AbstractFileCommandHandlerParams } from './abstract-file-command-handler.ts';
 
@@ -99,7 +100,7 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
    *
    * @param folder - The folder.
    */
-  protected abstract executeFolder(folder: TFolder): Promise<void>;
+  protected abstract executeFolder(folder: TFolder): Promisable<void>;
 
   /**
    * Executes the command for multiple folders.

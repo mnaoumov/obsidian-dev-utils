@@ -9,6 +9,7 @@ import type {
   TFile,
   WorkspaceLeaf
 } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
 import type { AbstractFileCommandHandlerParams } from './abstract-file-command-handler.ts';
 
@@ -99,7 +100,7 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    *
    * @param file - The file.
    */
-  protected abstract executeFile(file: TFile): Promise<void>;
+  protected abstract executeFile(file: TFile): Promisable<void>;
 
   /**
    * Executes the command for multiple files.

@@ -11,6 +11,7 @@ import type {
   MarkdownFileInfo,
   Menu
 } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
 import type {
   CommandHandlerParams,
@@ -147,7 +148,7 @@ export abstract class EditorCommandHandler extends CommandHandler {
    * @param editor - The editor instance.
    * @param ctx - The markdown file context.
    */
-  protected abstract executeEditor(editor: Editor, ctx: MarkdownFileInfo): Promise<void>;
+  protected abstract executeEditor(editor: Editor, ctx: MarkdownFileInfo): Promisable<void>;
 
   /**
    * Checks whether the command should appear in the command palette.

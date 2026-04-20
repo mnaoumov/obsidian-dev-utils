@@ -506,7 +506,7 @@ describe('loop', () => {
   it('should set notice message when shouldShowProgressBar is false and notice exists', async () => {
     // Make invokeAsyncSafely actually await the function so the notice gets created
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => Promise<unknown>) => {
+    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
       await fn();
     });
 
@@ -528,7 +528,7 @@ describe('loop', () => {
   it('should return early from showNotice when shouldShowProgressBar is false', async () => {
     // Make invokeAsyncSafely actually await so the notice is created
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => Promise<unknown>) => {
+    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
       await fn();
     });
 
