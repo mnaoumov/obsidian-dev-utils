@@ -28,7 +28,6 @@ import {
 } from '../../async.ts';
 import { printError } from '../../error.ts';
 import { noopAsync } from '../../function.ts';
-import { assertNonNullable } from '../../type-guards.ts';
 import { AbortSignalComponent } from './components/abort-signal-component.ts';
 import { AsyncErrorHandlerComponent } from './components/async-error-handler-component.ts';
 import { ConsoleDebugComponent } from './components/console-debug-component.ts';
@@ -50,16 +49,15 @@ export interface RegisterComponentParams<T extends Component = Component> {
   readonly component: T;
 
   /**
-   * Optional key. Defaults to the component's constructor name.
-   */
-  readonly key?: string;
-
-  /**
    * Whether this component should be loaded before the plugin's `onloadImpl()` runs.
    * Components marked with this flag are force-loaded during `onload()`, ensuring they are
    * fully initialized before plugin logic executes.
    */
   readonly shouldPreload?: boolean;
+}
+
+interface ComponentClassWithKey {
+  COMPONENT_KEY: symbol;
 }
 
 /**
@@ -94,8 +92,8 @@ export abstract class PluginBase extends ObsidianPlugin {
    */
   protected readonly settingsComponent: PluginSettingsComponentBase<object>;
 
-  private readonly componentsMap = new Map<string, Component>();
-  private readonly preloadKeys = new Set<string>();
+  private readonly preloadComponents: Component[] = [];
+  private readonly singletonComponents = new Map<symbol, Component>();
 
   /**
    * Creates a new PluginBase.
@@ -135,9 +133,7 @@ export abstract class PluginBase extends ObsidianPlugin {
   public override async onload(): Promise<void> {
     await super.onload();
 
-    for (const key of this.preloadKeys) {
-      const component = this.componentsMap.get(key);
-      assertNonNullable(component, `Component with key '${key}' not found`);
+    for (const component of this.preloadComponents) {
       // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Component.load() returns void|Promise at runtime despite void typing.
       await (component.load() as Promisable<void>);
     }
@@ -163,26 +159,35 @@ export abstract class PluginBase extends ObsidianPlugin {
   }
 
   /**
-   * Registers a component with the plugin. If a component with the same key is already registered,
-   * the old component is removed and replaced.
+   * Registers a component with the plugin.
+   *
+   * If the component's class defines a static `COMPONENT_KEY` symbol, it is treated as a singleton —
+   * registering another component with the same key replaces the previous one.
+   * Components without a `COMPONENT_KEY` are multi-instance and simply added.
    *
    * @typeParam T - The component type.
    * @param params - The registration params.
    * @returns The registered component.
    */
   protected registerComponent<T extends Component>(params: RegisterComponentParams<T>): T {
-    const resolvedKey = params.key ?? params.component.constructor.name;
-    const oldComponent = this.componentsMap.get(resolvedKey);
-    if (oldComponent) {
-      this.removeChild(oldComponent);
+    const singletonKey = (params.component.constructor as Partial<ComponentClassWithKey>).COMPONENT_KEY;
+
+    if (singletonKey) {
+      const oldComponent = this.singletonComponents.get(singletonKey);
+      if (oldComponent) {
+        this.removeChild(oldComponent);
+        const preloadIndex = this.preloadComponents.indexOf(oldComponent);
+        if (preloadIndex !== -1) {
+          this.preloadComponents.splice(preloadIndex, 1);
+        }
+      }
+      this.singletonComponents.set(singletonKey, params.component);
     }
-    this.componentsMap.set(resolvedKey, params.component);
+
     this.addChild(params.component);
 
     if (params.shouldPreload) {
-      this.preloadKeys.add(resolvedKey);
-    } else {
-      this.preloadKeys.delete(resolvedKey);
+      this.preloadComponents.push(params.component);
     }
 
     return params.component;

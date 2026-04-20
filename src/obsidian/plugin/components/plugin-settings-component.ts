@@ -52,11 +52,6 @@ const defaultTransformer = new GroupTransformer([
 ]);
 
 /**
- * Component key used by {@link registerComponent} to identify settings components.
- */
-export const PLUGIN_SETTINGS_COMPONENT_KEY = 'PluginSettingsComponent';
-
-/**
  * Params for creating a {@link PluginSettingsComponentBase}.
  */
 export interface PluginSettingsComponentParams {
@@ -141,7 +136,7 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
   /**
    * Component key for {@link registerComponent} replacement.
    */
-  public static readonly COMPONENT_KEY = PLUGIN_SETTINGS_COMPONENT_KEY;
+  public static readonly COMPONENT_KEY = Symbol(PluginSettingsComponentBase.name);
 
   /**
    * Gets the readonly default settings.

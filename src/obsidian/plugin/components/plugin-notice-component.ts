@@ -13,6 +13,11 @@ import {
  * Manages showing plugin notices. Automatically hides the previous notice when a new one is shown.
  */
 export class PluginNoticeComponent extends Component {
+  /**
+   * The singleton key for the {@link PluginNoticeComponent} class.
+   */
+  public static readonly COMPONENT_KEY = Symbol(PluginNoticeComponent.name);
+
   private notice?: Notice;
 
   /**

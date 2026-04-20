@@ -25,6 +25,11 @@ export type LifecycleEventName = 'layoutReady' | 'load' | 'unload';
  */
 export class LifecycleEventsComponent extends AsyncComponentBase {
   /**
+   * The singleton key for the {@link LifecycleEventsComponent} class.
+   */
+  public static readonly COMPONENT_KEY = Symbol(LifecycleEventsComponent.name);
+
+  /**
    * The async events instance.
    */
   public readonly events = new AsyncEvents();

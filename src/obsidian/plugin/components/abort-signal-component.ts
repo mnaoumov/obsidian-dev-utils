@@ -13,6 +13,11 @@ import { SilentError } from '../../../error.ts';
  */
 export class AbortSignalComponent extends Component {
   /**
+   * The singleton key for the {@link AbortSignalComponent} class.
+   */
+  public static readonly COMPONENT_KEY = Symbol(AbortSignalComponent.name);
+
+  /**
    * The abort signal.
    */
   public readonly abortSignal: AbortSignal;
