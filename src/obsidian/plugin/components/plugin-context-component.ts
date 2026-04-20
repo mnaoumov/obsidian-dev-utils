@@ -19,6 +19,11 @@ import {
  */
 export class PluginContextComponent extends Component {
   /**
+   * The singleton key for the {@link PluginContextComponent} class.
+   */
+  public static readonly COMPONENT_KEY = Symbol(PluginContextComponent.name);
+
+  /**
    * Creates a new plugin context component.
    *
    * @param app - The Obsidian app instance.

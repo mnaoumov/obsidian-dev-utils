@@ -15,6 +15,11 @@ import { PluginNoticeComponent } from './plugin-notice-component.ts';
  */
 export class AsyncErrorHandlerComponent extends Component {
   /**
+   * The singleton key for the {@link AsyncErrorHandlerComponent} class.
+   */
+  public static readonly COMPONENT_KEY = Symbol(AsyncErrorHandlerComponent.name);
+
+  /**
    * Creates a new async error handler component.
    *
    * @param noticeComponent - The notice component used to display error messages.

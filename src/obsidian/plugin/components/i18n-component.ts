@@ -15,6 +15,11 @@ import { defaultTranslationsMap } from '../../i18n/locales/translations-map.ts';
  */
 export class I18nComponent extends AsyncComponentBase {
   /**
+   * The singleton key for the {@link I18nComponent} class.
+   */
+  public static readonly COMPONENT_KEY = Symbol(I18nComponent.name);
+
+  /**
    * Creates a new i18n component.
    *
    * @param translationsMap - The translations map. Defaults to the built-in translations.

@@ -17,6 +17,11 @@ import { getDebugger } from '../../../debug.ts';
  */
 export class ConsoleDebugComponent extends Component {
   /**
+   * The singleton key for the {@link ConsoleDebugComponent} class.
+   */
+  public static readonly COMPONENT_KEY = Symbol(ConsoleDebugComponent.name);
+
+  /**
    * Creates a new console debug component.
    *
    * @param pluginId - The plugin ID (used as the debugger namespace).

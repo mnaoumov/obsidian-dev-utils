@@ -169,39 +169,61 @@ describe('PluginBase', () => {
     expect(spy).toHaveBeenCalled();
   });
 
-  it('should replace component with same key when registering', () => {
+  it('should replace singleton component with same COMPONENT_KEY', () => {
+    const KEY = Symbol('TestSingleton');
+
+    class SingletonComponent1 extends Component {
+      public static readonly COMPONENT_KEY = KEY;
+    }
+
+    class SingletonComponent2 extends Component {
+      public static readonly COMPONENT_KEY = KEY;
+    }
+
+    const plugin = new TestPlugin(app, manifest);
+    const component1 = new SingletonComponent1();
+    const component2 = new SingletonComponent2();
+
+    const result1 = plugin['registerComponent']({ component: component1 });
+    expect(result1).toBe(component1);
+
+    const result2 = plugin['registerComponent']({ component: component2 });
+    expect(result2).toBe(component2);
+
+    expect(plugin['singletonComponents'].get(KEY)).toBe(component2);
+  });
+
+  it('should not replace multi-instance components without COMPONENT_KEY', () => {
     const plugin = new TestPlugin(app, manifest);
     const component1 = new Component();
     const component2 = new Component();
 
-    const result1 = plugin['registerComponent']({ component: component1, key: 'myKey' });
-    expect(result1).toBe(component1);
+    plugin['registerComponent']({ component: component1 });
+    plugin['registerComponent']({ component: component2 });
 
-    const result2 = plugin['registerComponent']({ component: component2, key: 'myKey' });
-    expect(result2).toBe(component2);
+    // Both should be added as children (not replaced)
+    const children = plugin._children;
+    expect(children).toContain(component1);
+    expect(children).toContain(component2);
   });
 
-  it('should use constructor name as default key', () => {
-    const plugin = new TestPlugin(app, manifest);
-    const component = new Component();
+  it('should handle preload for singleton replacement', () => {
+    const KEY = Symbol('TestPreload');
 
-    plugin['registerComponent']({ component });
-    // Registering again with same class should replace
-    const replacement = new Component();
+    class PreloadComponent extends Component {
+      public static readonly COMPONENT_KEY = KEY;
+    }
+
+    const plugin = new TestPlugin(app, manifest);
+    const component = new PreloadComponent();
+
+    plugin['registerComponent']({ component, shouldPreload: true });
+    expect(plugin['preloadComponents']).toContain(component);
+
+    // Replacing singleton should remove old from preload
+    const replacement = new PreloadComponent();
     plugin['registerComponent']({ component: replacement });
-  });
-
-  it('should handle preload flag', () => {
-    const plugin = new TestPlugin(app, manifest);
-    const component = new Component();
-
-    plugin['registerComponent']({ component, key: 'preloaded', shouldPreload: true });
-    expect(plugin['preloadKeys'].has('preloaded')).toBe(true);
-
-    // Replacing without shouldPreload should remove from preload
-    const replacement = new Component();
-    plugin['registerComponent']({ component: replacement, key: 'preloaded' });
-    expect(plugin['preloadKeys'].has('preloaded')).toBe(false);
+    expect(plugin['preloadComponents']).not.toContain(component);
   });
 
   it('should not call onLayoutReady when aborted before afterLoad', async () => {
