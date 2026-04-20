@@ -23,6 +23,10 @@ interface TestSettings {
   name: string;
 }
 
+interface TestStorage extends PluginSettingsComponentParams {
+  data: unknown;
+}
+
 class TestSettingsComponent extends PluginSettingsComponentBase<TestSettings> {
   protected override createDefaultSettings(): TestSettings {
     return {
@@ -46,6 +50,31 @@ function createParams(data?: unknown): PluginSettingsComponentParams {
 describe('PluginSettingsComponentBase', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('should bind loadData/saveData to the params object', async () => {
+    const storage: TestStorage = {
+      data: { count: 42, name: 'bound' },
+      loadData(): Promise<unknown> {
+        return Promise.resolve(this.data);
+      },
+      saveData(d: unknown): Promise<void> {
+        this.data = d;
+        return Promise.resolve();
+      }
+    };
+
+    const component = new TestSettingsComponent(storage);
+    await component.onload();
+
+    expect(component.settings.count).toBe(42);
+    expect(component.settings.name).toBe('bound');
+
+    await component.editAndSave((settings) => {
+      settings.name = 'updated';
+    });
+
+    expect((storage.data as TestSettings).name).toBe('updated');
   });
 
   it('should have default settings after construction', () => {
