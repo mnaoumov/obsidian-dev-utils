@@ -27,6 +27,7 @@ import type { ValueComponentWithChangeTracking } from '../components/setting-com
 import type { ValidationMessageHolder } from '../validation.ts';
 import type {
   PluginSettingsComponentBase,
+  ReadonlyPluginSettings,
   ReadonlyPluginSettingsState
 } from './components/plugin-settings-component.ts';
 
@@ -155,8 +156,8 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   private readonly asyncEventsComponent: AsyncEventsComponent;
   private readonly saveSettingsDebounced: Debouncer<[], void>;
 
-  private get pluginSettings(): PluginSettings {
-    return this.pluginSettingsComponent.settingsState.inputValues as PluginSettings;
+  private get pluginSettings(): ReadonlyPluginSettings<PluginSettings> {
+    return this.pluginSettingsComponent.settingsState.inputValues;
   }
 
   /**
@@ -249,7 +250,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
 
-    const readonlyValue = this.pluginSettings[propertyName] as ReadonlyDeep<PropertyType>;
+    const readonlyValue = this.getPluginSettingsProperty(propertyName);
     const defaults = this.pluginSettingsComponent.defaultSettings as PluginSettings;
     const defaultValue = defaults[propertyName] as PropertyType;
     const defaultComponentValue = optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>);
@@ -303,7 +304,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
       shouldEmptyOnBlur = false;
 
-      const oldValue = this.pluginSettings[propertyName];
+      const oldValue = this.getPluginSettingsProperty(propertyName);
       let newValue: PropertyType | undefined = undefined;
       let shouldSetProperty = true;
       shouldRevertToDefaultValueOnBlur = !!textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty;
@@ -451,6 +452,13 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   protected async revalidate(): Promise<void> {
     const validationMessages = await this.pluginSettingsComponent.revalidate();
     await this.updateValidations(validationMessages);
+  }
+
+  private getPluginSettingsProperty<PropertyName extends StringKeys<PluginSettings>>(
+    propertyName: PropertyName
+  ): ReadonlyDeep<PluginSettings[PropertyName]> {
+    const settings = this.pluginSettings as PluginSettings;
+    return settings[propertyName] as ReadonlyDeep<PluginSettings[PropertyName]>;
   }
 
   private on(
