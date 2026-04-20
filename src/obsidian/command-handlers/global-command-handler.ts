@@ -5,6 +5,7 @@
  */
 
 import type { Command } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
 import type { CommandHandlerParams } from './command-handler.ts';
 
@@ -52,7 +53,7 @@ export abstract class GlobalCommandHandler extends CommandHandler {
   /**
    * Executes the command.
    */
-  protected abstract execute(): Promise<void>;
+  protected abstract execute(): Promisable<void>;
 
   private checkCallback(checking: boolean): boolean {
     if (!this.canExecute()) {

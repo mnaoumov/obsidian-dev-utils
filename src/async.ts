@@ -256,10 +256,20 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue?: T): Pr
  * @param asyncFn - The asynchronous function to invoke safely.
  * @param stackTrace - The stack trace of the source function.
  */
-export function invokeAsyncSafely(asyncFn: () => Promise<unknown>, stackTrace?: string): void {
+export function invokeAsyncSafely(asyncFn: () => Promisable<unknown>, stackTrace?: string): void {
   stackTrace ??= getStackTrace(1);
-  // eslint-disable-next-line no-void -- We need to fire-and-forget.
-  void addErrorHandler(asyncFn, stackTrace);
+
+  let result: unknown;
+  try {
+    result = asyncFn();
+  } catch (error) {
+    // eslint-disable-next-line no-void -- We need to fire-and-forget.
+    void addErrorHandler(() => Promise.reject(error as Error), stackTrace);
+  }
+  if (result instanceof Promise) {
+    // eslint-disable-next-line no-void -- We need to fire-and-forget.
+    void addErrorHandler(() => result, stackTrace);
+  }
 }
 
 /**

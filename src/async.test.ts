@@ -1141,6 +1141,31 @@ describe('Async', () => {
       expect(handler).toHaveBeenCalledTimes(1);
       unregister();
     });
+
+    it('should not throw when a sync function succeeds', () => {
+      expect(() => {
+        invokeAsyncSafely(() => {
+          // Sync success — no promise returned
+        });
+      }).not.toThrow();
+    });
+
+    it('should emit async error event when a sync function throws', async () => {
+      const handler = vi.fn();
+      const unregister = registerAsyncErrorEventHandler(handler);
+
+      invokeAsyncSafely(() => {
+        throw new Error('sync invoke error');
+      });
+
+      // Wait for microtasks to flush
+      await new Promise((resolve) => {
+        activeWindow.setTimeout(resolve, 50);
+      });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      unregister();
+    });
   });
 
   describe('invokeAsyncSafelyAfterDelay', () => {
