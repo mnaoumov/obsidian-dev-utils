@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 56.0.2
+
+- fix: bind loadData/saveData
+
 ## 56.0.1
 
 - fix!: switch to ReadonlyPluginSettings
