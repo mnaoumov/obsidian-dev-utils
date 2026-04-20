@@ -99,6 +99,13 @@ export interface PluginSettingsState<PluginSettings extends object> {
 }
 
 /**
+ * Readonly version of {@link PluginSettings}.
+ *
+ * @typeParam PluginSettings - The type of the plugin settings.
+ */
+export type ReadonlyPluginSettings<PluginSettings extends object> = ReadonlyDeep<PluginSettings>;
+
+/**
  * Readonly version of {@link PluginSettingsState} for use in event callbacks and public getters.
  *
  * @typeParam PluginSettings - The type of the plugin settings.
