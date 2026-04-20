@@ -184,8 +184,8 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
    */
   public constructor(params: PluginSettingsComponentParams) {
     super();
-    this.loadDataFn = params.loadData;
-    this.saveDataFn = params.saveData;
+    this.loadDataFn = params.loadData.bind(params);
+    this.saveDataFn = params.saveData.bind(params);
     this.defaultSettings = this.createDefaultSettings() as ReadonlyDeep<PluginSettings>;
     this.currentState = this.createDefaultState();
     this.lastSavedState = this.createDefaultState();
