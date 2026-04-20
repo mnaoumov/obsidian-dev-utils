@@ -1166,6 +1166,21 @@ describe('Async', () => {
       expect(handler).toHaveBeenCalledTimes(1);
       unregister();
     });
+
+    it('should emit async error event when a non-async function returns a rejecting promise', async () => {
+      const handler = vi.fn();
+      const unregister = registerAsyncErrorEventHandler(handler);
+
+      invokeAsyncSafely(() => Promise.reject(new Error('rejected promise')));
+
+      // Wait for microtasks to flush
+      await new Promise((resolve) => {
+        activeWindow.setTimeout(resolve, 50);
+      });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      unregister();
+    });
   });
 
   describe('invokeAsyncSafelyAfterDelay', () => {
