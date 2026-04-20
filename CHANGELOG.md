@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 56.0.1
+
+- fix!: switch to ReadonlyPluginSettings
+- refactor!: rename pluginSettingsComponent
+
 ## 56.0.0
 
 - fix!: better config for obsidianmd-plugin
