@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 57.0.0
+
+- test: add coverage for invokeAsyncSafely
+- refactor: extract OpenSettingsCommandHandler
+- feat: allow invokeAsyncSafely to accept sync functions returning Promisable
+- refactor!: replace string-keyed component map with symbol-based
+
 ## 56.0.2
 
 - fix: bind loadData/saveData
