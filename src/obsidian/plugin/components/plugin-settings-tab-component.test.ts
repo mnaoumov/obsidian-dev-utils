@@ -1,7 +1,4 @@
-import type {
-  Command,
-  Plugin
-} from 'obsidian';
+import type { Plugin } from 'obsidian';
 
 import {
   describe,
@@ -10,7 +7,12 @@ import {
   vi
 } from 'vitest';
 
+import type { PluginSettingsTabBase } from '../plugin-settings-tab.ts';
+
 import { strictProxy } from '../../../test-helpers/mock-implementation.ts';
+import { assertNonNullable } from '../../../type-guards.ts';
+import { CommandHandlerComponent } from '../../command-handlers/command-handler-component.ts';
+import { OpenSettingsCommandHandler } from '../../command-handlers/open-settings-command-handler.ts';
 import { PluginSettingsTabComponent } from './plugin-settings-tab-component.ts';
 
 describe('PluginSettingsTabComponent', () => {
@@ -18,45 +20,37 @@ describe('PluginSettingsTabComponent', () => {
     return strictProxy<Plugin>({
       addCommand: vi.fn(),
       addSettingTab: vi.fn(),
-      app: {
-        setting: {
-          open: vi.fn(),
-          openTabById: vi.fn()
-        }
-      },
-      manifest: { id: 'test-plugin' }
+      manifest: { id: 'test-plugin', name: 'Test Plugin' }
     });
   }
 
-  it('should register settings tab and open-settings command on load', () => {
+  function createMockSettingsTab(): PluginSettingsTabBase<object> {
+    return strictProxy<PluginSettingsTabBase<object>>({
+      show: vi.fn()
+    });
+  }
+
+  it('should register settings tab on load', () => {
     const plugin = createMockPlugin();
-    const settingsTab = {} as never;
+    const settingsTab = createMockSettingsTab();
     const component = new PluginSettingsTabComponent(plugin, settingsTab);
 
     component.onload();
 
     expect(plugin.addSettingTab).toHaveBeenCalledWith(settingsTab);
-    expect(plugin.addCommand).toHaveBeenCalledWith(
-      expect.objectContaining({
-        icon: 'settings',
-        id: 'open-settings',
-        name: 'Open settings'
-      })
-    );
   });
 
-  it('should open settings when open-settings command is executed', () => {
+  it('should add CommandHandlerComponent with OpenSettingsCommandHandler as child', () => {
     const plugin = createMockPlugin();
-    const settingsTab = {} as never;
+    const settingsTab = createMockSettingsTab();
     const component = new PluginSettingsTabComponent(plugin, settingsTab);
 
     component.onload();
 
-    const addCommandCalls: Command[][] = vi.mocked(plugin.addCommand).mock.calls as never;
-    const command = addCommandCalls[0]?.[0];
-    command?.callback?.();
-
-    expect(plugin.app.setting.openTabById).toHaveBeenCalledWith('test-plugin');
-    expect(plugin.app.setting.open).toHaveBeenCalled();
+    const children = component._children;
+    const commandHandlerChild = children.find((child) => child instanceof CommandHandlerComponent);
+    assertNonNullable(commandHandlerChild);
+    expect(commandHandlerChild).toBeInstanceOf(CommandHandlerComponent);
+    expect(commandHandlerChild.handler).toBeInstanceOf(OpenSettingsCommandHandler);
   });
 });

@@ -11,6 +11,9 @@ import { Component } from 'obsidian';
 
 import type { PluginSettingsTabBase } from '../plugin-settings-tab.ts';
 
+import { CommandHandlerComponent } from '../../command-handlers/command-handler-component.ts';
+import { OpenSettingsCommandHandler } from '../../command-handlers/open-settings-command-handler.ts';
+
 /**
  * Wraps a {@link PluginSettingsTabBase} and registers it with Obsidian on load.
  * Also registers an "Open Settings" command to open the settings tab from the command palette.
@@ -34,14 +37,6 @@ export class PluginSettingsTabComponent extends Component {
    */
   public override onload(): void {
     this.plugin.addSettingTab(this.settingsTab);
-    this.plugin.addCommand({
-      callback: () => {
-        this.plugin.app.setting.openTabById(this.plugin.manifest.id);
-        this.plugin.app.setting.open();
-      },
-      icon: 'settings',
-      id: 'open-settings',
-      name: 'Open settings'
-    });
+    this.addChild(new CommandHandlerComponent(this.plugin, new OpenSettingsCommandHandler(this.plugin.manifest.name, this.settingsTab)));
   }
 }
