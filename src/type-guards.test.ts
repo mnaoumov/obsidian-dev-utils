@@ -54,6 +54,7 @@ describe('TypeGuards', () => {
   describe('assertNonNullable', () => {
     it('should not throw for a defined value', () => {
       expect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- Assertion needed to satisfy NullableConstraint generic.
         assertNonNullable('hello' as string | undefined);
       }).not.toThrow();
     });
@@ -111,6 +112,7 @@ describe('TypeGuards', () => {
 
   describe('ensureNonNullable', () => {
     it('should return the value when not null or undefined', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- Assertion needed to satisfy NullableConstraint generic.
       expect(ensureNonNullable('hello' as string | undefined)).toBe('hello');
     });
 

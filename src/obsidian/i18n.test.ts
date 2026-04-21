@@ -122,7 +122,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       const { initI18N } = await reloadI18N();
       const translationsMap = { en: { greeting: 'Hello' } };
 
-      await initI18N(translationsMap as never, false);
+      await initI18N(translationsMap, false);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
       const callArgs = (mockInitFn.mock.calls[0] as unknown[])[0] as object;
@@ -140,7 +140,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       const { initI18N } = await reloadI18N();
       const translationsMap = { en: { greeting: 'Hello' }, fr: { greeting: 'Bonjour' } };
 
-      await initI18N(translationsMap as never, false);
+      await initI18N(translationsMap, false);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
       const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
@@ -153,7 +153,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     it('should add en resource bundle after init', async () => {
       const { initI18N } = await reloadI18N();
 
-      await initI18N({ en: { test: 'value' } } as never, false);
+      await initI18N({ en: { test: 'value' } }, false);
 
       expect(mockAddResourceBundleFn).toHaveBeenCalledWith(
         'en',
@@ -167,17 +167,17 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     it('should only initialize once (idempotent)', async () => {
       const { initI18N } = await reloadI18N();
 
-      await initI18N({ en: { test: 'value' } } as never, false);
+      await initI18N({ en: { test: 'value' } }, false);
       expect(mockInitFn).toHaveBeenCalledTimes(1);
 
-      await initI18N({ en: { test: 'other-value' } } as never, false);
+      await initI18N({ en: { test: 'other-value' } }, false);
       expect(mockInitFn).toHaveBeenCalledTimes(1);
     });
 
     it('should default isAsync to true', async () => {
       const { initI18N } = await reloadI18N();
 
-      await initI18N({ en: { test: 'value' } } as never);
+      await initI18N({ en: { test: 'value' } });
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
       const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
@@ -193,7 +193,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
     it('should call tLib with selector when no options provided', async () => {
       const { initI18N, t: freshT } = await reloadI18N();
-      await initI18N({ en: { test: 'hello' } } as never, false);
+      await initI18N({ en: { test: 'hello' } }, false);
       mockTLibFn.mockClear();
 
       const selector = (($: GenericObject): unknown => $['test']) as never;
@@ -205,7 +205,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
     it('should call tLib with selector and options when options provided', async () => {
       const { initI18N, t: freshT } = await reloadI18N();
-      await initI18N({ en: { test: 'hello' } } as never, false);
+      await initI18N({ en: { test: 'hello' } }, false);
       mockTLibFn.mockClear();
 
       const selector = (($: GenericObject): unknown => $['test']) as never;
@@ -218,7 +218,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
     it('should return the translated value from tLib', async () => {
       const { initI18N, t: freshT } = await reloadI18N();
-      await initI18N({ en: { test: 'hello' } } as never, false);
+      await initI18N({ en: { test: 'hello' } }, false);
 
       const result = freshT((($: GenericObject): unknown => $['test']) as never);
 

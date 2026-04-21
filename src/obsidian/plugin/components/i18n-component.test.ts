@@ -29,7 +29,7 @@ describe('I18nComponent', () => {
 
   it('should initialize i18n with custom translations on load', async () => {
     const customMap = { fr: { hello: 'bonjour' } };
-    const component = new I18nComponent(customMap as never);
+    const component = new I18nComponent(customMap);
     await component.onload();
     expect(mocks.initI18N).toHaveBeenCalledWith(customMap);
   });

@@ -16,7 +16,7 @@ describe('AsyncEvents', () => {
 
   beforeEach(() => {
     events = new AsyncEvents();
-    vi.spyOn(activeWindow, 'setTimeout').mockReturnValue(0 as never);
+    vi.spyOn(activeWindow, 'setTimeout').mockReturnValue(0);
   });
 
   afterEach(() => {

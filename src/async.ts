@@ -263,8 +263,8 @@ export function invokeAsyncSafely(asyncFn: () => Promisable<unknown>, stackTrace
   try {
     result = asyncFn();
   } catch (error) {
-    // eslint-disable-next-line no-void -- We need to fire-and-forget.
-    void addErrorHandler(() => Promise.reject(error as Error), stackTrace);
+    // eslint-disable-next-line no-void, @typescript-eslint/prefer-promise-reject-errors -- We need to fire-and-forget. Re-rejecting the original caught error as-is.
+    void addErrorHandler(() => Promise.reject(error), stackTrace);
   }
   if (result instanceof Promise) {
     // eslint-disable-next-line no-void -- We need to fire-and-forget.

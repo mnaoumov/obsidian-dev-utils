@@ -332,7 +332,7 @@ describe('PluginSettingsComponentBase', () => {
         this.registerLegacySettingsConverter(
           class {
             public legacyOnlyField = 'old';
-          } as never,
+          },
           () => {
             // Converter does nothing, but legacyOnlyField should be cleaned up
           }
@@ -357,7 +357,7 @@ describe('PluginSettingsComponentBase', () => {
         this.registerLegacySettingsConverter(
           class {
             public legacyField = '';
-          } as never,
+          },
           () => {
             // No-op converter
           }

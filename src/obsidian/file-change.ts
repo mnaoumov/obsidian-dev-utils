@@ -439,7 +439,7 @@ async function applyFrontmatterChangesWithOffsets(
           }
         }
       }
-    } as ContentChange));
+    }));
 
     const newPropertyValue = await applyContentChanges(abortSignal, propertyValue, `${path}.frontmatter.${key}.VIRTUAL_FILE.md`, contentChanges);
     /* v8 ignore start -- Inner applyContentChanges uses validated offsets, so null is not expected. */

@@ -80,7 +80,7 @@ describe('TwoWayMapTransformer', () => {
 
     it('should convert an empty entries array to a TwoWayMap without any keys', () => {
       const result = transformer.restoreValue([]);
-      expect(result.hasKey('anything' as never)).toBe(false);
+      expect(result.hasKey('anything')).toBe(false);
     });
   });
 

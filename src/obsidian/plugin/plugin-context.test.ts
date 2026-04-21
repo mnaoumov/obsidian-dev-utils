@@ -147,7 +147,7 @@ describe('initPluginContext', () => {
   it('should set plugin id and show debug message', () => {
     mocks.compareVersions.mockReturnValue(1);
     vi.spyOn(activeDocument.head, 'querySelector').mockReturnValue(null);
-    vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style') as never);
+    vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style'));
     initPluginContext(app, 'my-plugin');
     expect(mocks.setPluginId).toHaveBeenCalledWith('my-plugin');
     expect(mocks.showInitialDebugMessage).toHaveBeenCalledWith('my-plugin');
@@ -163,7 +163,7 @@ describe('initPluginContext', () => {
     mocks.compareVersions.mockReturnValue(1);
     const oldStyleEl = { remove: vi.fn() };
     vi.spyOn(activeDocument.head, 'querySelector').mockReturnValue(oldStyleEl as never);
-    const createElSpy = vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style') as never);
+    const createElSpy = vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style'));
     initPluginContext(app, 'my-plugin');
     expect(oldStyleEl.remove).toHaveBeenCalled();
     expect(createElSpy).toHaveBeenCalledWith('style', {
@@ -177,7 +177,7 @@ describe('initPluginContext', () => {
     const wrapper = { value: '0.0.0' };
     mocks.getObsidianDevUtilsState.mockReturnValue(wrapper);
     vi.spyOn(activeDocument.head, 'querySelector').mockReturnValue(null);
-    vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style') as never);
+    vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style'));
     initPluginContext(app, 'my-plugin');
     expect(wrapper.value).toBe('1.0.0');
   });

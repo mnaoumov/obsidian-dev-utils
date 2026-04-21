@@ -2125,7 +2125,7 @@ describe('app-dependent functions', () => {
         app,
         displayText: 'completely-different-text',
         newSourcePathOrFile: 'note.md',
-        oldTargetPath: '' as never,
+        oldTargetPath: '',
         targetPathOrFile: 'target.md'
       });
       expect(result).toBe(false);
@@ -2185,7 +2185,7 @@ describe('app-dependent functions', () => {
         app,
         link,
         newSourcePathOrFile: 'note.md',
-        newTargetPathOrFile: '' as never
+        newTargetPathOrFile: ''
       });
       expect(result).toBe('[[target]]');
     });

@@ -24,7 +24,7 @@ function makeFrontmatterLink(original: string, key: string): FrontmatterLinkCach
     key,
     link: original,
     original
-  } as FrontmatterLinkCache;
+  };
 }
 
 describe('isFrontmatterLinkCacheWithOffsets', () => {

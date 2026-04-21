@@ -14,7 +14,7 @@ import { ensureNonNullable } from './type-guards.ts';
  * @returns The key of the enum value.
  */
 export function getEnumKey<T extends Record<string, string>>(enumType: T, value: T[keyof T]): keyof T {
-  return ensureNonNullable(Object.keys(enumType).find((k) => enumType[k] === value), `Invalid enum value: ${value}`) as keyof T;
+  return ensureNonNullable(Object.keys(enumType).find((k) => enumType[k] === value), `Invalid enum value: ${value}`);
 }
 
 /**

@@ -316,8 +316,10 @@ describe('ObjectUtils', () => {
     });
 
     it.each([
+      /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion -- Assertions needed for extractDefaultExportInterop generic. */
       [42 as unknown, 42],
       [null as unknown, null]
+      /* eslint-enable @typescript-eslint/no-unnecessary-type-assertion -- Re-enable after array items. */
     ])('should return primitives directly %j → %j', (input, expected) => {
       expect(extractDefaultExportInterop(input)).toBe(expected);
     });
@@ -657,6 +659,7 @@ describe('ObjectUtils', () => {
   describe('assertNonNullable', () => {
     it('should not throw for a non-null, non-undefined value', () => {
       expect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- Assertion needed to satisfy NullableConstraint generic.
         assertNonNullable('hello' as string | undefined);
       }).not.toThrow();
     });

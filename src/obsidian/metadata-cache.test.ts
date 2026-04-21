@@ -220,7 +220,7 @@ function makeReferenceCache(original: string, startOffset: number): ReferenceCac
       end: { col: 0, line: 0, offset: startOffset + original.length },
       start: { col: 0, line: 0, offset: startOffset }
     }
-  } as ReferenceCache;
+  };
 }
 
 function setVaultEntry(targetApp: App, path: string, value: TAbstractFile): void {
@@ -620,7 +620,7 @@ describe('getCacheSafe', () => {
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
-    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
+    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache);
 
     const result = await getCacheSafe(app, file as never);
     expect(result).toBe(mockCache);
@@ -632,7 +632,7 @@ describe('getCacheSafe', () => {
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
-    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
+    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache);
     vi.mocked(app.metadataCache.computeFileMetadataAsync).mockResolvedValue(undefined);
 
     const result = await getCacheSafe(app, file as never);
@@ -649,7 +649,7 @@ describe('getCacheSafe', () => {
     app.metadataCache.fileCache['note.md'] = { hash: 'abc', mtime: 100, size: 50 };
     app.metadataCache.metadataCache['abc'] = mockCache;
 
-    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
+    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache);
 
     const result = await getCacheSafe(app, file as never);
 
@@ -694,7 +694,7 @@ describe('getFrontmatterSafe', () => {
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
-    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
+    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache);
 
     const result = await getFrontmatterSafe(app, file as never);
     expect(result).toBe(mockFrontmatter);
@@ -706,7 +706,7 @@ describe('getFrontmatterSafe', () => {
 
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
 
-    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache as ReturnType<typeof app.metadataCache.getFileCache>);
+    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache);
 
     const result = await getFrontmatterSafe(app, file as never);
     expect(result).toEqual({});
@@ -804,7 +804,7 @@ describe('getBacklinksForFileSafe', () => {
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
       createBacklinksDict({ 'source.md': [refLink] })
     );
-    mockedGetFileOrNull.mockReturnValue(null as never);
+    mockedGetFileOrNull.mockReturnValue(null);
 
     await getBacklinksForFileSafe(app, 'target.md');
     expect(mockedGetFileOrNull).toHaveBeenCalled();
@@ -818,7 +818,7 @@ describe('getBacklinksForFileSafe', () => {
       createBacklinksDict({ 'source.md': [refLink] })
     );
     mockedGetFileOrNull.mockReturnValue({ path: 'source.md' } as never);
-    mockedReadSafe.mockResolvedValue(null as never);
+    mockedReadSafe.mockResolvedValue(null);
 
     await getBacklinksForFileSafe(app, 'target.md');
     expect(mockedReadSafe).toHaveBeenCalled();
