@@ -757,5 +757,8 @@
     "patch-package": "latest",
     "vitest": "latest",
     "yaml": "latest"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }
