@@ -31,7 +31,7 @@ export interface ExecArg {
   /**
    * The arguments to batch.
    */
-  batchedArgs: string[];
+  readonly batchedArgs: readonly string[];
 }
 
 /**
@@ -41,7 +41,7 @@ export interface ExecDetailedOptions extends ExecOption {
   /**
    * Must be `true` to receive detailed results.
    */
-  withDetails: true;
+  readonly shouldIncludeDetails: true;
 }
 
 /**
@@ -86,22 +86,22 @@ export interface ExecResult {
   /**
    * An exit code of the command. A value of `null` indicates that the process did not exit normally.
    */
-  exitCode: null | number;
+  readonly exitCode: null | number;
 
   /**
    * A signal that caused the process to be terminated. A value of `null` indicates that no signal was received.
    */
-  exitSignal: NodeJS.Signals | null;
+  readonly exitSignal: NodeJS.Signals | null;
 
   /**
    * A standard error output from the command.
    */
-  stderr: string;
+  readonly stderr: string;
 
   /**
    * A standard output from the command.
    */
-  stdout: string;
+  readonly stdout: string;
 }
 
 /**
@@ -111,7 +111,7 @@ export interface ExecSimpleOptions extends ExecOption {
   /**
    * Must be `false` or omitted to receive only stdout.
    */
-  withDetails?: false;
+  readonly shouldIncludeDetails?: false;
 }
 
 /**
@@ -202,7 +202,7 @@ function execString(command: string, options: ExecOption = {}, rawArgs?: string[
     cwd = process.cwd(),
     isQuiet: quiet = false,
     shouldIgnoreExitCode: ignoreExitCode = false,
-    shouldIncludeDetails: withDetails = false,
+    shouldIncludeDetails = false,
     stdin = ''
   } = options;
 
@@ -245,7 +245,7 @@ function execString(command: string, options: ExecOption = {}, rawArgs?: string[
         return;
       }
 
-      if (!withDetails) {
+      if (!shouldIncludeDetails) {
         resolve(stdout);
         return;
       }
@@ -263,7 +263,7 @@ function execString(command: string, options: ExecOption = {}, rawArgs?: string[
         return;
       }
 
-      if (!withDetails) {
+      if (!shouldIncludeDetails) {
         resolve(stdout);
         return;
       }
