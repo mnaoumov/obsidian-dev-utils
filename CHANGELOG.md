@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 57.0.1
+
+- chore: enforce Node.js >= 22 via engines, .npmrc, and .nvmrc
+- chore: lint
+- chore: update libs
+- refactor(exec): add readonly modifiers and rename withDetails
+
 ## 57.0.0
 
 - test: add coverage for invokeAsyncSafely
