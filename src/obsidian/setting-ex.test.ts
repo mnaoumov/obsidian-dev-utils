@@ -115,7 +115,7 @@ describe('SettingEx', () => {
   describe('addComponentClass', () => {
     it('should create component and add it via addComponentSafe', () => {
       const cb = vi.fn();
-      const result = settingEx.addComponentClass(mocks.MockComponent as never, cb);
+      const result = settingEx.addComponentClass(mocks.MockComponent, cb);
       expect(result).toBe(settingEx);
       expect(cb).toHaveBeenCalledWith(expect.any(mocks.MockComponent));
       expect(settingEx.components).toHaveLength(1);
@@ -126,7 +126,7 @@ describe('SettingEx', () => {
     it('should use addComponent when requireApiVersion 1.11.0 is true and 0.16.0 is true', () => {
       mocks.requireApiVersion.mockReturnValue(true);
       const cb = vi.fn();
-      settingEx.addComponentClass(mocks.MockComponent as never, cb);
+      settingEx.addComponentClass(mocks.MockComponent, cb);
       expect(cb).toHaveBeenCalled();
       expect(settingEx.components).toHaveLength(1);
     });
@@ -134,7 +134,7 @@ describe('SettingEx', () => {
     it('should use addComponent inner branch when requireApiVersion 0.16.0 is false', () => {
       mocks.requireApiVersion.mockImplementation((version: string) => version !== '0.16.0');
       const cb = vi.fn();
-      settingEx.addComponentClass(mocks.MockComponent as never, cb);
+      settingEx.addComponentClass(mocks.MockComponent, cb);
       expect(cb).toHaveBeenCalled();
       expect(settingEx.components).toHaveLength(1);
     });
@@ -142,7 +142,7 @@ describe('SettingEx', () => {
     it('should push to components directly when requireApiVersion 1.11.0 is false', () => {
       mocks.requireApiVersion.mockReturnValue(false);
       const cb = vi.fn();
-      settingEx.addComponentClass(mocks.MockComponent as never, cb);
+      settingEx.addComponentClass(mocks.MockComponent, cb);
       expect(cb).toHaveBeenCalled();
       expect(settingEx.components).toHaveLength(1);
     });

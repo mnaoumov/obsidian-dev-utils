@@ -130,7 +130,7 @@ beforeEach(() => {
   const appMock = App.createConfigured__();
   appMock.workspace.onLayoutReady = vi.fn((cb: () => void) => {
     cb();
-  }) as never;
+  });
   app = appMock.asOriginalType__();
 });
 

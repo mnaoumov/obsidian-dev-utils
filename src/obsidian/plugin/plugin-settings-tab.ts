@@ -252,7 +252,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
     const readonlyValue = this.getPluginSettingsProperty(propertyName);
     const defaults = this.pluginSettingsComponent.defaultSettings as PluginSettings;
-    const defaultValue = defaults[propertyName] as PropertyType;
+    const defaultValue = defaults[propertyName];
     const defaultComponentValue = optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>);
     textBasedComponent?.setPlaceholderValue(defaultComponentValue);
 
@@ -329,7 +329,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
       updateValidatorElDebounced();
       if (shouldSetProperty) {
-        await optionsExt.onChanged(newValue as ReadonlyDeep<PropertyType>, oldValue as ReadonlyDeep<PropertyType>);
+        await optionsExt.onChanged(newValue as ReadonlyDeep<PropertyType>, oldValue);
       }
       this.saveSettingsDebounced();
     });

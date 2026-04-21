@@ -341,7 +341,7 @@ export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
   const keys: StringKeys<T>[] = [];
   let current: null | object = obj;
   while (current) {
-    const descriptors = Object.getOwnPropertyDescriptors(current) as Record<string, PropertyDescriptor>;
+    const descriptors = Object.getOwnPropertyDescriptors(current);
     for (const [key, descriptor] of Object.entries(descriptors)) {
       if (key === '__proto__') {
         continue;
@@ -471,7 +471,7 @@ export function removeUndefinedProperties<Type extends object, const KeysToKeep 
  */
 export function removeUndefinedProperties<Type extends object>(obj: Type, keysToKeep?: readonly string[]): Type {
   for (const [key, value] of Object.entries(obj) as [StringKeys<Type>, unknown][]) {
-    if (value === undefined && !keysToKeep?.includes(key as string)) {
+    if (value === undefined && !keysToKeep?.includes(key)) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
       delete obj[key];
     }

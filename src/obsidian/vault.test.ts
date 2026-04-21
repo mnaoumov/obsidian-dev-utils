@@ -816,7 +816,7 @@ describe('invokeWithFileSystemLock', () => {
     const call = vi.mocked(app.vault.process).mock.calls[0];
     expect(call).toBeDefined();
     if (call) {
-      const processFn = call[1] as (data: string) => string;
+      const processFn = call[1];
       expect(processFn('test content')).toBe('test content');
     }
   });
@@ -1109,8 +1109,8 @@ describe('processFile', () => {
 
     let capturedCallback: ((leaf: unknown) => void) | undefined;
     vi.spyOn(app.workspace, 'on').mockImplementation((name: string, callback: (...data: unknown[]) => unknown, _ctx?: unknown) => {
-      capturedCallback = callback as (leaf: unknown) => void;
-      return { e: app.workspace, fn: callback, name } as never;
+      capturedCallback = callback;
+      return { e: app.workspace, fn: callback, name };
     });
 
     await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: true });

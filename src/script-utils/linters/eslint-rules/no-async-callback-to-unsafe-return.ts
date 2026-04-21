@@ -171,7 +171,7 @@ export const noAsyncCallbackToUnsafeReturn: Rule.RuleModule = {
             if (hasUnsafeReturnCallSignature(checker, paramType)) {
               context.report({
                 messageId: MESSAGE_ID,
-                node: arg as Rule.Node
+                node: arg
               });
               break;
             }

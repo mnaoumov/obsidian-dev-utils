@@ -151,7 +151,7 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
    * @returns The readonly effective settings.
    */
   public get settings(): ReadonlyDeep<PluginSettings> {
-    return this.settingsState.effectiveValues as ReadonlyDeep<PluginSettings>;
+    return this.settingsState.effectiveValues;
   }
 
   /**

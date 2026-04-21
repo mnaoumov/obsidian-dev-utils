@@ -530,7 +530,7 @@ function getFileInternal(app: App, path: string, isCaseInsensitive?: boolean): n
     return app.vault.getAbstractFileByPathInsensitive(path);
   }
 
-  return app.vault.getAbstractFileByPath(path) as null | TFile;
+  return app.vault.getAbstractFileByPath(path);
 }
 
 function getResolvedPath(path: string): string {

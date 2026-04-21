@@ -18,6 +18,7 @@ const {
   mockExecFromRoot: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
   mockLoadEnvFile: vi.fn(),
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- Assertion needed for dynamic property access.
   mockProcess: { env: {} as Record<string, string | undefined> },
   mockResolvePathFromRoot: vi.fn<(path: string) => null | string>()
 }));

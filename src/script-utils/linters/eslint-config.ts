@@ -11,10 +11,7 @@
 
 /* v8 ignore start -- Declarative ESLint rule/plugin configuration; correctness is verified by running ESLint, not unit tests. */
 
-import type {
-  ESLint,
-  Linter
-} from 'eslint';
+import type { Linter } from 'eslint';
 
 /* eslint-disable no-magic-numbers -- We disabled magic numbers because they are used all over the configs. */
 import commentsConfigs from '@eslint-community/eslint-plugin-eslint-comments/configs';
@@ -386,10 +383,10 @@ function getImportXConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
     {
       extends: [
-        eslintPluginImportXFlatConfigs.recommended as Linter.Config,
-        eslintPluginImportXFlatConfigs.typescript as Linter.Config,
-        eslintPluginImportXFlatConfigs.errors as Linter.Config,
-        eslintPluginImportXFlatConfigs.warnings as Linter.Config
+        eslintPluginImportXFlatConfigs.recommended,
+        eslintPluginImportXFlatConfigs.typescript,
+        eslintPluginImportXFlatConfigs.errors,
+        eslintPluginImportXFlatConfigs.warnings
       ],
       files: context.allFiles(),
       rules: {
@@ -482,7 +479,7 @@ function getObsidianLintConfigs(context: EslintConfigContext): Linter.Config[] {
     ...scopedObsidianRecommendedConfigs,
     {
       plugins: {
-        obsidianmd: obsidianmd as ESLint.Plugin
+        obsidianmd
       }
     },
     {

@@ -602,7 +602,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '{}' });
     });
 
-    await applyFileChanges(app, 'test.canvas', null as never);
+    await applyFileChanges(app, 'test.canvas', null);
     expect(resultContent).toBeNull();
   });
 
