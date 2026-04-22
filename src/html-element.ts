@@ -288,7 +288,7 @@ export function onAncestorScrollOrResize(node: Node, callback: () => void): () =
 
     isEventTriggered = true;
 
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       try {
         callback();
       } finally {

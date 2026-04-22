@@ -81,9 +81,10 @@ export function initPluginContext(app: App, pluginId: string): void {
 
   lastLibraryVersionWrapper.value = LIBRARY_VERSION;
 
-  activeDocument.head.querySelector(`#${STYLES_ID}`)?.remove();
-  // eslint-disable-next-line obsidianmd/no-forbidden-elements -- We need to create a style element to apply the library styles.
-  activeDocument.head.createEl('style', {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
+  document.head.querySelector(`#${STYLES_ID}`)?.remove();
+  // eslint-disable-next-line obsidianmd/no-forbidden-elements, obsidianmd/prefer-active-doc -- We need to create a style element to apply the library styles.
+  document.head.createEl('style', {
     attr: {
       id: STYLES_ID
     },

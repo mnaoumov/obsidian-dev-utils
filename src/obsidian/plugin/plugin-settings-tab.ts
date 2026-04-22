@@ -291,7 +291,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     let shouldSkipOnChange = false;
     const UPDATE_VALIDATOR_EL_TIMEOUT_IN_MILLISECONDS = 100;
     const updateValidatorElDebounced = debounce(() => {
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         updateValidatorEl();
       });
     }, UPDATE_VALIDATOR_EL_TIMEOUT_IN_MILLISECONDS);
@@ -341,7 +341,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       updateValidatorElDebounced();
     });
     validatorEl?.addEventListener('click', () => {
-      requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
         updateValidatorElDebounced();
       });
     });

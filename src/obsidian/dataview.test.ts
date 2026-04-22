@@ -627,7 +627,7 @@ describe('renderPaginated page navigation', () => {
     // The handler is async (because our convertAsyncToSync mock returns the async fn),
     // So we need to let it settle before asserting.
     await new Promise((resolve) => {
-      activeWindow.setTimeout(resolve, 0);
+      window.setTimeout(resolve, 0);
     });
 
     expect(dv.list).toHaveBeenCalledOnce();
@@ -740,7 +740,7 @@ describe('renderPaginated page navigation', () => {
     // The handler is async, dispatch triggers it; we await a microtick for it to complete
     select.dispatchEvent(changeEvent);
     await new Promise((resolve) => {
-      activeWindow.setTimeout(resolve, 0);
+      window.setTimeout(resolve, 0);
     });
 
     // Dv.list should have been called again with 20 items (all 30 items sliced to first 20)
@@ -769,7 +769,7 @@ describe('renderPaginated page navigation', () => {
     assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
     await new Promise((resolve) => {
-      activeWindow.setTimeout(resolve, 0);
+      window.setTimeout(resolve, 0);
     });
 
     // Dv.list should have been called with second page items (items 10-19)
@@ -797,7 +797,7 @@ describe('renderPaginated page navigation', () => {
     assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
     await new Promise((resolve) => {
-      activeWindow.setTimeout(resolve, 0);
+      window.setTimeout(resolve, 0);
     });
 
     // Dv.list should NOT have been called again
@@ -820,7 +820,7 @@ describe('renderPaginated page navigation', () => {
     assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
     await new Promise((resolve) => {
-      activeWindow.setTimeout(resolve, 0);
+      window.setTimeout(resolve, 0);
     });
 
     // On page 5, there should be a leading "..." since pageNumber (5) > MORE_PAGE_NUMBER (3)
@@ -853,7 +853,7 @@ describe('renderPaginated page navigation', () => {
     assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
     await new Promise((resolve) => {
-      activeWindow.setTimeout(resolve, 0);
+      window.setTimeout(resolve, 0);
     });
 
     // Dv.list should NOT have been called because page 99 is out of range

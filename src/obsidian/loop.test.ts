@@ -73,7 +73,7 @@ describe('loop', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(
-      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis,
       'sleep'
     ).mockImplementation(sleepImmediate);
@@ -279,7 +279,7 @@ describe('loop', () => {
     const items = ['a', 'b', 'c', 'd', 'e'];
 
     let capturedProgressEl: HTMLProgressElement | null = null;
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     const createElSpy = mockImplementation(globalThis, 'createEl', (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
       const el = originalImplementation(tag);
       if (tag === 'progress') {
@@ -406,7 +406,7 @@ describe('loop', () => {
 
   it('should increment progress bar value for each processed item', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     const createElSpy = mockImplementation(globalThis, 'createEl', (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
       const el = originalImplementation(tag);
       if (tag === 'progress') {
@@ -441,7 +441,7 @@ describe('loop', () => {
 
   it('should still increment progress bar value even when processItem throws', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     const createElSpy = mockImplementation(globalThis, 'createEl', (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
       const el = originalImplementation(tag);
       if (tag === 'progress') {

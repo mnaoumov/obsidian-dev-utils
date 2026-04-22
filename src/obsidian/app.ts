@@ -48,7 +48,7 @@ export class ValueWrapper<T> {
  * @deprecated Usage of this function is not recommended. Pass the {@link App} instance to the function instead when possible.
  */
 export function getApp(): App {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   const app = (globalThis as Partial<AppWrapper>).app;
 
   if (app) {
@@ -56,7 +56,7 @@ export function getApp(): App {
   }
 
   try {
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     return globalThis.require('obsidian/app') as App;
   } catch {
     throw new Error('Obsidian App global instance not found');
@@ -72,7 +72,7 @@ export function getApp(): App {
  * @returns The ValueWrapper object that stores the shared state.
  */
 export function getObsidianDevUtilsState<T>(app: App | null, key: string, defaultValue: T): ValueWrapper<T> {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   const holder = app ?? getAppOrNull() ?? globalThis;
   const sharedStateWrapper = holder as Partial<ObsidianDevUtilsStateWrapper>;
   sharedStateWrapper.obsidianDevUtilsState ??= {};

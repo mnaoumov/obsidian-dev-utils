@@ -52,7 +52,7 @@ describe('createDivAsync', () => {
 
   it('should call createDiv with the provided options', async () => {
     const spy = vi.spyOn(
-      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis,
       'createDiv'
     );
@@ -99,7 +99,7 @@ describe('createElAsync', () => {
 
   it('should call createEl with the tag and options', async () => {
     const spy = vi.spyOn(
-      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis,
       'createEl'
     );
@@ -146,7 +146,7 @@ describe('createSpanAsync', () => {
 
   it('should call createSpan with the provided options', async () => {
     const spy = vi.spyOn(
-      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis,
       'createSpan'
     );
@@ -229,7 +229,7 @@ describe('createSvgAsync', () => {
 
   it('should call createSvg with the tag and options', async () => {
     const spy = vi.spyOn(
-      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis,
       'createSvg'
     );
@@ -737,8 +737,9 @@ describe('onAncestorScrollOrResize', () => {
     );
   });
 
-  it('should invoke the callback via requestAnimationFrame when a scroll event fires', () => {
-    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+  it('should invoke the callback via window.requestAnimationFrame when a scroll event fires', () => {
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access window.
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       cb(0);
       return 0;
     });
@@ -749,28 +750,30 @@ describe('onAncestorScrollOrResize', () => {
 
     node.dispatchEvent(new Event('scroll'));
 
-    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalled();
+    expect(vi.mocked(activeWindow.window.requestAnimationFrame)).toHaveBeenCalled();
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
   it('should debounce multiple rapid event triggers', () => {
-    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access window.
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
 
     const node = buildElement();
     const callback = vi.fn();
     onAncestorScrollOrResize(node, callback);
 
-    // Trigger scroll multiple times before requestAnimationFrame fires
+    // Trigger scroll multiple times before window.requestAnimationFrame fires
     node.dispatchEvent(new Event('scroll'));
     node.dispatchEvent(new Event('scroll'));
     node.dispatchEvent(new Event('scroll'));
 
     // RequestAnimationFrame should only be called once because isEventTriggered guards
-    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(activeWindow.window.requestAnimationFrame)).toHaveBeenCalledTimes(1);
   });
 
-  it('should allow new events after requestAnimationFrame callback completes', () => {
-    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+  it('should allow new events after window.requestAnimationFrame callback completes', () => {
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access window.
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       cb(0);
       return 0;
     });
@@ -785,13 +788,14 @@ describe('onAncestorScrollOrResize', () => {
 
     // Second event after first completes
     node.dispatchEvent(new Event('scroll'));
-    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(activeWindow.window.requestAnimationFrame)).toHaveBeenCalledTimes(2);
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
   it('should reset isEventTriggered even if callback throws', () => {
     const rafCallbacks: FrameRequestCallback[] = [];
-    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access window.
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       rafCallbacks.push(cb);
       return 0;
     });
@@ -804,7 +808,7 @@ describe('onAncestorScrollOrResize', () => {
 
     // First scroll queues a raf callback
     node.dispatchEvent(new Event('scroll'));
-    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(activeWindow.window.requestAnimationFrame)).toHaveBeenCalledTimes(1);
 
     // Execute the raf callback — it throws but try/finally should reset isEventTriggered
     const firstCallback = rafCallbacks[0];
@@ -815,7 +819,7 @@ describe('onAncestorScrollOrResize', () => {
 
     // If isEventTriggered was properly reset, a second scroll should queue another raf
     node.dispatchEvent(new Event('scroll'));
-    expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(activeWindow.window.requestAnimationFrame)).toHaveBeenCalledTimes(2);
   });
 });
 

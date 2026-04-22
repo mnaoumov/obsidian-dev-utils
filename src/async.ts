@@ -478,7 +478,7 @@ export async function queueMicrotaskAsync(): Promise<void> {
  */
 export async function requestAnimationFrameAsync(): Promise<void> {
   return new Promise((resolve) => {
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       resolve();
     });
   });
@@ -654,7 +654,7 @@ export async function setImmediateAsync(): Promise<void> {
  */
 export async function setTimeoutAsync(delay?: number): Promise<void> {
   await new Promise((resolve) => {
-    activeWindow.setTimeout(resolve, delay);
+    window.setTimeout(resolve, delay);
   });
 }
 

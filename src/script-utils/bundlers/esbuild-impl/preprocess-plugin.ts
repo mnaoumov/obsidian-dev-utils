@@ -118,7 +118,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 }
 
 function initCjs(): void {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   const globalThisRecord = globalThis as GenericObject;
   globalThisRecord['__name'] ??= name;
   const originalRequire = require as (NodeJS.Require & Partial<RequirePatched> | undefined);
@@ -198,12 +198,12 @@ function initCjs(): void {
       return originalRequire?.(id);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-deprecated, obsidianmd/prefer-active-doc  -- Need access to app. Actively use globalThis.
+    // eslint-disable-next-line @typescript-eslint/no-deprecated, obsidianmd/no-global-this  -- Need access to app. Actively use globalThis.
     if (globalThis.app.isMobile) {
       if (id === 'process' || id === 'node:process') {
         // eslint-disable-next-line no-console -- Valid usage.
         console.debug(`The most likely you can safely ignore this error. Module not found: ${id}. Fake process object is returned instead.`);
-        // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+        // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
         return globalThis.process;
       }
     } else {
@@ -220,7 +220,7 @@ function initCjs(): void {
 }
 
 function initEsm(): void {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   if ((globalThis.process as NodeJS.Process | undefined)) {
     return;
   }
@@ -233,7 +233,7 @@ function initEsm(): void {
     env: {},
     platform: 'android'
   };
-  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   globalThis.process = browserProcess as NodeJS.Process;
 }
 

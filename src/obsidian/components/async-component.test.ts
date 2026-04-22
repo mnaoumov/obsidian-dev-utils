@@ -43,7 +43,7 @@ describe('AsyncComponentBase', () => {
     class SlowChild extends AsyncComponentBase {
       public override async onload(): Promise<void> {
         await new Promise<void>((resolve) => {
-          activeWindow.setTimeout(resolve, 10);
+          window.setTimeout(resolve, 10);
         });
         order.push('child');
       }
