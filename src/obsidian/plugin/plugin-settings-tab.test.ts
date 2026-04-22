@@ -1,5 +1,3 @@
-/* eslint-disable obsidianmd/prefer-active-doc -- test file uses jsdom document, not Obsidian's activeDocument */
-
 import type {
   App as AppOriginal,
   Plugin
@@ -106,7 +104,7 @@ beforeEach(() => {
 });
 
 function stubRequestAnimationFrame(): void {
-  vi.stubGlobal('requestAnimationFrame', (cb: () => void) => {
+  vi.stubGlobal('window.requestAnimationFrame', (cb: () => void) => {
     cb();
     return 0;
   });
@@ -335,8 +333,8 @@ describe('PluginSettingsTabBase', () => {
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
-    const parentEl = document.createElement('div');
-    const validatorEl = document.createElement('input');
+    const parentEl = createDiv();
+    const validatorEl = createEl('input');
     parentEl.appendChild(validatorEl);
     validatorEl.isActiveElement = vi.fn(() => false);
 
@@ -356,8 +354,8 @@ describe('PluginSettingsTabBase', () => {
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.display();
 
-    const parentEl = document.createElement('div');
-    const validatorEl = document.createElement('input');
+    const parentEl = createDiv();
+    const validatorEl = createEl('input');
     parentEl.appendChild(validatorEl);
     validatorEl.isActiveElement = vi.fn(() => false);
 
@@ -482,8 +480,8 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
-      const parentEl = document.createElement('div');
-      const validatorEl = document.createElement('input');
+      const parentEl = createDiv();
+      const validatorEl = createEl('input');
       parentEl.appendChild(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
@@ -505,7 +503,7 @@ describe('PluginSettingsTabBase', () => {
 
       if (changeCallback) {
         await changeCallback('newValue');
-        // Advance debounce timer and run requestAnimationFrame
+        // Advance debounce timer and run window.requestAnimationFrame
         vi.advanceTimersByTime(200);
         await vi.runAllTimersAsync();
       }
@@ -524,8 +522,8 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
-      const parentEl = document.createElement('div');
-      const validatorEl = document.createElement('input');
+      const parentEl = createDiv();
+      const validatorEl = createEl('input');
       parentEl.appendChild(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
@@ -559,8 +557,8 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
-      const parentEl = document.createElement('div');
-      const validatorEl = document.createElement('input');
+      const parentEl = createDiv();
+      const validatorEl = createEl('input');
       parentEl.appendChild(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
@@ -712,7 +710,7 @@ describe('PluginSettingsTabBase', () => {
 
   it('should handle updateValidatorEl with validationMessage and shouldShowValidationMessage=true with tooltipEl', async () => {
     vi.useFakeTimers();
-    // Mock requestAnimationFrame to execute callback synchronously
+    // Mock window.requestAnimationFrame to execute callback synchronously
     stubRequestAnimationFrame();
     try {
       const plugin = createMockPlugin(app);
@@ -720,8 +718,8 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
-      const parentEl = document.createElement('div');
-      const validatorEl = document.createElement('input');
+      const parentEl = createDiv();
+      const validatorEl = createEl('input');
       parentEl.appendChild(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
@@ -759,8 +757,8 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
-      const parentEl = document.createElement('div');
-      const validatorEl = document.createElement('input');
+      const parentEl = createDiv();
+      const validatorEl = createEl('input');
       parentEl.appendChild(validatorEl);
       // IsActiveElement returns true - should NOT trigger empty/revert logic
       validatorEl.isActiveElement = vi.fn(() => true);
@@ -837,8 +835,8 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
-      const parentEl = document.createElement('div');
-      const validatorEl = document.createElement('input');
+      const parentEl = createDiv();
+      const validatorEl = createEl('input');
       parentEl.appendChild(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
@@ -910,8 +908,8 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
-      const parentEl = document.createElement('div');
-      const validatorEl = document.createElement('input');
+      const parentEl = createDiv();
+      const validatorEl = createEl('input');
       parentEl.appendChild(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
@@ -958,4 +956,3 @@ function createTextBasedMockComponent(): TextBasedMockComponentShape & ValueComp
   };
   return mockComponent as never;
 }
-/* eslint-enable obsidianmd/prefer-active-doc -- re-enable after file-level disable */

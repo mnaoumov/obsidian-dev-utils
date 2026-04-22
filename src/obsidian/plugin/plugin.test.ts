@@ -235,7 +235,7 @@ describe('PluginBase', () => {
     // AfterLoad checks abortSignal.aborted and returns early
     const WAIT_MS = 50;
     await new Promise<void>((resolve) => {
-      activeWindow.setTimeout(resolve, WAIT_MS);
+      window.setTimeout(resolve, WAIT_MS);
     });
     expect(plugin.onLayoutReadyCalled).toBe(false);
   });

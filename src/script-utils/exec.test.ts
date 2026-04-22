@@ -188,7 +188,7 @@ describe('exec', () => {
         const child = children[callIndex];
         assertNonNullable(child);
         callIndex++;
-        // eslint-disable-next-line obsidianmd/prefer-active-window-timers -- Node-only test environment; activeWindow is not available.
+        // eslint-disable-next-line obsidianmd/prefer-window-timers -- Node-only test environment; activeWindow is not available.
         setTimeout(() => {
           child.stdout.push(Buffer.from(`out${String(callIndex)}`));
           child.stdout.end();
@@ -218,7 +218,7 @@ describe('exec', () => {
         const child = children[callIndex];
         assertNonNullable(child);
         callIndex++;
-        // eslint-disable-next-line obsidianmd/prefer-active-window-timers -- Node-only test environment; activeWindow is not available.
+        // eslint-disable-next-line obsidianmd/prefer-window-timers -- Node-only test environment; activeWindow is not available.
         setTimeout(() => {
           child.stdout.push(Buffer.from(`batch${String(callIndex)}`));
           child.stdout.end();

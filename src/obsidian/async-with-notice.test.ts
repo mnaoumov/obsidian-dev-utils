@@ -27,8 +27,6 @@ import {
 } from './async-with-notice.ts';
 import { t } from './i18n/i18n.ts';
 
-/* eslint-disable obsidianmd/prefer-active-doc -- Actively use globalThis. */
-
 vi.mock('../async.ts', () => ({
   retryWithTimeout: vi.fn(async (options: GenericObject) => {
     if (typeof options['_captureOnTimeout'] === 'function') {
@@ -91,8 +89,10 @@ interface CreateFragmentGlobalResult {
  */
 function setupCreateFragmentGlobal(): CreateFragmentGlobalResult {
   let lastFragment: DocumentFragment | null = null;
+  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   const originalCreateFragment = globalThis.createFragment;
 
+  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   globalThis.createFragment = vi.fn((cb?: (f: DocumentFragment) => void): DocumentFragment => {
     const fragment = originalCreateFragment(cb);
     lastFragment = fragment;
@@ -101,6 +101,7 @@ function setupCreateFragmentGlobal(): CreateFragmentGlobalResult {
 
   return {
     cleanup: (): void => {
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis.createFragment = originalCreateFragment;
     },
     getLastFragment: (): DocumentFragment | null => lastFragment
@@ -536,6 +537,7 @@ describe('AsyncWithNotice', () => {
       });
 
       const { cleanup } = setupCreateFragmentGlobal();
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       vi.spyOn(globalThis, 'clearInterval');
 
       onTimeout(ctx);
@@ -548,8 +550,9 @@ describe('AsyncWithNotice', () => {
       assertNonNullable(callback);
       callback();
 
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       expect(vi.mocked(globalThis.clearInterval)).toHaveBeenCalled();
-
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       vi.mocked(globalThis.clearInterval).mockRestore();
       cleanup();
     });
@@ -559,12 +562,14 @@ describe('AsyncWithNotice', () => {
       const ctx = createMockTimeoutContext();
 
       const { cleanup } = setupCreateFragmentGlobal();
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       vi.spyOn(globalThis, 'setInterval');
 
       onTimeout(ctx);
 
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       expect(vi.mocked(globalThis.setInterval)).toHaveBeenCalledWith(expect.any(Function), 1000);
-
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       vi.mocked(globalThis.setInterval).mockRestore();
       cleanup();
     });
@@ -574,6 +579,7 @@ describe('AsyncWithNotice', () => {
       const ctx = createMockTimeoutContext();
 
       const { cleanup, getLastFragment } = setupCreateFragmentGlobal();
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       vi.spyOn(globalThis, 'clearInterval');
 
       onTimeout(ctx);
@@ -583,8 +589,10 @@ describe('AsyncWithNotice', () => {
       expect(button).not.toBeNull();
       button?.click();
 
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       expect(vi.mocked(globalThis.clearInterval)).toHaveBeenCalled();
 
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       vi.mocked(globalThis.clearInterval).mockRestore();
       cleanup();
     });
@@ -741,5 +749,3 @@ describe('AsyncWithNotice', () => {
     });
   });
 });
-
-/* eslint-enable obsidianmd/prefer-active-doc -- Actively use globalThis. */

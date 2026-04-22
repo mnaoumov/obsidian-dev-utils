@@ -18,8 +18,7 @@ import {
 import { castTo } from './object-utils.ts';
 import { assertNonNullable } from './type-guards.ts';
 
-/* eslint-disable obsidianmd/prefer-active-doc -- Actively use globalThis. */
-
+// eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
 type WindowEx = typeof globalThis & Window;
 
 describe('INFINITE_TIMEOUT', () => {
@@ -65,7 +64,7 @@ describe('abortSignalTimeout', () => {
   it('should abort after the specified timeout elapses', async () => {
     const signal = abortSignalTimeout(50);
     await new Promise((resolve) => {
-      activeWindow.setTimeout(resolve, 100);
+      window.setTimeout(resolve, 100);
     });
     expect(signal.aborted).toBe(true);
   });
@@ -98,7 +97,9 @@ describe('abortSignalTimeout', () => {
     });
 
     it('should not be aborted before timeout elapses (fallback)', () => {
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       const originalWindow = globalThis.window;
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
@@ -112,7 +113,9 @@ describe('abortSignalTimeout', () => {
     });
 
     it('should abort after the specified timeout using window.setTimeout (fallback)', () => {
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       const originalWindow = globalThis.window;
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
@@ -127,7 +130,9 @@ describe('abortSignalTimeout', () => {
     });
 
     it('should set reason to an Error instance after timeout (fallback)', () => {
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       const originalWindow = globalThis.window;
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
@@ -142,7 +147,9 @@ describe('abortSignalTimeout', () => {
     });
 
     it('should set the correct timeout message after timeout (fallback)', () => {
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       const originalWindow = globalThis.window;
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
@@ -157,7 +164,9 @@ describe('abortSignalTimeout', () => {
     });
 
     it('should not abort before the timeout elapses (fallback)', () => {
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       const originalWindow = globalThis.window;
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       globalThis.window = globalThis as WindowEx;
 
       vi.useFakeTimers();
@@ -531,10 +540,10 @@ describe('waitForAbort', () => {
 
 function restoreOriginalWindow(originalWindow?: WindowEx): void {
   if (originalWindow === undefined) {
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     delete (globalThis as Partial<typeof globalThis>).window;
   } else {
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     globalThis.window = originalWindow;
   }
 }
-
-/* eslint-enable obsidianmd/prefer-active-doc -- Actively use globalThis. */

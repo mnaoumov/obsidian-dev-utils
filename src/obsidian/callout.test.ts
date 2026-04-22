@@ -151,7 +151,7 @@ describe('renderCallout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     globalThis.IntersectionObserver = castTo<typeof IntersectionObserver>(
       vi.fn(function MockIntersectionObserver(this: IntersectionObserver, callback: IntersectionObserverCallback) {
         intersectionCallback = callback;
@@ -431,7 +431,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     globalThis.IntersectionObserver = castTo<typeof IntersectionObserver>(vi.fn(function MockIntersectionObserver(this: IntersectionObserver) {
       Object.assign(this, {
         disconnect: vi.fn(),

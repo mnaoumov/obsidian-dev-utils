@@ -146,8 +146,10 @@ describe('initPluginContext', () => {
 
   it('should set plugin id and show debug message', () => {
     mocks.compareVersions.mockReturnValue(1);
-    vi.spyOn(activeDocument.head, 'querySelector').mockReturnValue(null);
-    vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style'));
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
+    vi.spyOn(document.head, 'querySelector').mockReturnValue(null);
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
+    vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext(app, 'my-plugin');
     expect(mocks.setPluginId).toHaveBeenCalledWith('my-plugin');
     expect(mocks.showInitialDebugMessage).toHaveBeenCalledWith('my-plugin');
@@ -162,8 +164,10 @@ describe('initPluginContext', () => {
   it('should remove old styles and inject new ones when version is newer', () => {
     mocks.compareVersions.mockReturnValue(1);
     const oldStyleEl = { remove: vi.fn() };
-    vi.spyOn(activeDocument.head, 'querySelector').mockReturnValue(oldStyleEl as never);
-    const createElSpy = vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style'));
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
+    vi.spyOn(document.head, 'querySelector').mockReturnValue(oldStyleEl as never);
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
+    const createElSpy = vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext(app, 'my-plugin');
     expect(oldStyleEl.remove).toHaveBeenCalled();
     expect(createElSpy).toHaveBeenCalledWith('style', {
@@ -176,8 +180,10 @@ describe('initPluginContext', () => {
     mocks.compareVersions.mockReturnValue(1);
     const wrapper = { value: '0.0.0' };
     mocks.getObsidianDevUtilsState.mockReturnValue(wrapper);
-    vi.spyOn(activeDocument.head, 'querySelector').mockReturnValue(null);
-    vi.spyOn(activeDocument.head, 'createEl').mockReturnValue(activeDocument.createElement('style'));
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
+    vi.spyOn(document.head, 'querySelector').mockReturnValue(null);
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
+    vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext(app, 'my-plugin');
     expect(wrapper.value).toBe('1.0.0');
   });

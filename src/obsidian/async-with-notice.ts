@@ -146,16 +146,16 @@ function onTimeoutNotice(ctx: TimeoutContext): void {
     });
     button.addEventListener('click', () => {
       ctx.terminateOperation();
-      activeWindow.clearInterval(cleanup.intervalId);
+      window.clearInterval(cleanup.intervalId);
       notice.hide();
     });
   }));
 
   updateRunningTime();
-  cleanup.intervalId = activeWindow.setInterval(updateRunningTime, SECOND_IN_MILLISECONDS);
+  cleanup.intervalId = window.setInterval(updateRunningTime, SECOND_IN_MILLISECONDS);
 
   ctx.onOperationCompleted(() => {
-    activeWindow.clearInterval(cleanup.intervalId);
+    window.clearInterval(cleanup.intervalId);
     notice.hide();
   });
 

@@ -15,7 +15,7 @@ function setup(): void {
 }
 
 function setupObsidianDevUtilsState(): void {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   const record = castTo<Record<string, unknown>>(globalThis);
   const app = castTo<Record<string, unknown> | undefined>(record['app']);
   if (app && !('obsidianDevUtilsState' in app)) {

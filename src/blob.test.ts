@@ -79,7 +79,7 @@ class MockImage {
 
 describe('dataUrlToArrayBuffer', () => {
   beforeEach(() => {
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     vi.stubGlobal('window', { atob: globalThis.atob });
   });
 
@@ -238,7 +238,7 @@ describe('blobToJpegArrayBuffer', () => {
   beforeEach(() => {
     vi.stubGlobal('FileReader', MockFileReader);
     vi.stubGlobal('Image', MockImage);
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Actively use globalThis.
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
     vi.stubGlobal('window', { atob: globalThis.atob });
 
     mockToDataURL = vi.fn().mockReturnValue('data:image/jpeg;base64,/9j/4AAQ');
