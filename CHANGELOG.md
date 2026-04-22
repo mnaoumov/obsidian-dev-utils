@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 57.0.2
+
+- chore: lint
+- chore: update libs
+
 ## 57.0.1
 
 - chore: enforce Node.js >= 22 via engines, .npmrc, and .nvmrc
