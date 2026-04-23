@@ -10,7 +10,7 @@
 
 import type { PartialDeep } from 'type-fest';
 
-const STRICT_PROXY_MARKER = Symbol('strictProxy');
+const STRICT_PROXY_TARGET_SYMBOL = Symbol.for('strictProxyTarget');
 
 const PASSTHROUGH_PROPS = new Set<string | symbol>([
   Symbol.iterator,
@@ -19,6 +19,27 @@ const PASSTHROUGH_PROPS = new Set<string | symbol>([
   'then',
   'toJSON'
 ]);
+
+/**
+ * Bypasses strict proxy to access the underlying object.
+ *
+ * If the object is wrapped in a strict proxy, returns the unwrapped target.
+ * Otherwise, returns the object as-is. This allows safely accessing
+ * optional properties without triggering the proxy's error on missing props.
+ *
+ * @typeParam T - The object type.
+ * @param obj - The object to bypass.
+ * @returns The unwrapped object.
+ */
+export function bypassStrictProxy<T>(obj: T): T {
+  if (!isObjectLike(obj)) {
+    return obj;
+  }
+  if (!(STRICT_PROXY_TARGET_SYMBOL in obj)) {
+    return obj;
+  }
+  return obj[STRICT_PROXY_TARGET_SYMBOL] as T;
+}
 
 /**
  * Creates a strictly-typed mock object from a partial implementation.
@@ -68,10 +89,10 @@ function wrapProxy<T>(value: unknown): T {
     return value as T;
   }
 
-  if (STRICT_PROXY_MARKER in value) {
+  if (STRICT_PROXY_TARGET_SYMBOL in value) {
     return value as T;
   }
-  Object.defineProperty(value, STRICT_PROXY_MARKER, { value: true });
+  Object.defineProperty(value, STRICT_PROXY_TARGET_SYMBOL, { value });
 
   const proxiedChildren = new Map<string | symbol>();
 

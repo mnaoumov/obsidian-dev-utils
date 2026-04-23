@@ -4,7 +4,10 @@ import {
   it
 } from 'vitest';
 
-import { strictProxy } from './strict-proxy.ts';
+import {
+  bypassStrictProxy,
+  strictProxy
+} from './strict-proxy.ts';
 import { ensureGenericObject } from './type-guards.ts';
 
 interface Nested {
@@ -112,5 +115,37 @@ describe('strictProxy', () => {
   it('should call provided functions correctly', () => {
     const proxy = strictProxy<TestObj>({ fn: () => 'result' });
     expect(proxy.fn()).toBe('result');
+  });
+});
+
+describe('bypassStrictProxy', () => {
+  it('should return non-object values as-is', () => {
+    expect(bypassStrictProxy('hello')).toBe('hello');
+    expect(bypassStrictProxy(42)).toBe(42);
+    expect(bypassStrictProxy(null)).toBeNull();
+    // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Testing void return for undefined input.
+    const undefinedResult: undefined = bypassStrictProxy(undefined);
+    expect(undefinedResult).toBeUndefined();
+  });
+
+  it('should return non-proxied objects as-is', () => {
+    const obj = { name: 'test' };
+    expect(bypassStrictProxy(obj)).toBe(obj);
+  });
+
+  it('should unwrap a strict proxy to the underlying object', () => {
+    const original = { name: 'test' };
+    const proxy = strictProxy<TestObj>(original);
+    const unwrapped = bypassStrictProxy(proxy);
+    expect(unwrapped).toBe(original);
+    expect(unwrapped).not.toBe(proxy);
+  });
+
+  it('should allow accessing missing properties on unwrapped object', () => {
+    const proxy = strictProxy<TestObj>({ name: 'test' });
+    expect(() => proxy.fn).toThrow();
+
+    const unwrapped = bypassStrictProxy(proxy);
+    expect((unwrapped as Partial<TestObj>).fn).toBeUndefined();
   });
 });
