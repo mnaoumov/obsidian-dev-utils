@@ -14,6 +14,8 @@ import {
   vi
 } from 'vitest';
 
+import type { LayoutReadyComponent } from './components/layout-ready-component.ts';
+
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import {
   PluginBase,
@@ -79,6 +81,26 @@ vi.mock('compare-versions', () => ({
   compareVersions: vi.fn(() => 1)
 }));
 
+vi.mock('../../async.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../async.ts')>();
+  return {
+    ...actual,
+    invokeAsyncSafelyAfterDelay: vi.fn((
+      asyncFn: (abortSignal: AbortSignal) => Promise<void>,
+      _delayInMilliseconds?: number,
+      _stackTrace?: string,
+      abortSignal?: AbortSignal
+    ) => {
+      if (abortSignal?.aborted) {
+        return;
+      }
+      asyncFn(abortSignal ?? new AbortController().signal).catch(() => {
+        /* Swallow errors in test mock. */
+      });
+    })
+  };
+});
+
 let app: AppOriginal;
 
 const manifest: PluginManifest = {
@@ -90,9 +112,22 @@ const manifest: PluginManifest = {
   version: '1.0.0'
 };
 
+class LayoutReadyChild extends Component implements LayoutReadyComponent {
+  public layoutReadyCalled = false;
+
+  public async onLayoutReady(): Promise<void> {
+    await Promise.resolve();
+    this.layoutReadyCalled = true;
+  }
+}
+
 class TestPlugin extends PluginBase {
-  public onLayoutReadyCalled = false;
-  public onloadImplCalled = false;
+  public readonly layoutReadyChild: LayoutReadyChild;
+
+  public constructor(appInstance: AppOriginal, pluginManifest: PluginManifest) {
+    super(appInstance, pluginManifest);
+    this.layoutReadyChild = this.addChild(new LayoutReadyChild());
+  }
 
   public getAbortSignalComponent(): typeof this.abortSignalComponent {
     return this.abortSignalComponent;
@@ -102,26 +137,12 @@ class TestPlugin extends PluginBase {
     return this.consoleDebugComponent;
   }
 
-  public getLifecycleEventsComponent(): typeof this.lifecycleEventsComponent {
-    return this.lifecycleEventsComponent;
-  }
-
   public getNoticeComponent(): typeof this.noticeComponent {
     return this.noticeComponent;
   }
 
   public getSettingsComponent(): typeof this.settingsComponent {
     return this.settingsComponent;
-  }
-
-  protected override async onLayoutReady(): Promise<void> {
-    await super.onLayoutReady();
-    this.onLayoutReadyCalled = true;
-  }
-
-  protected override async onloadImpl(): Promise<void> {
-    await super.onloadImpl();
-    this.onloadImplCalled = true;
   }
 }
 
@@ -139,30 +160,33 @@ describe('PluginBase', () => {
     const plugin = new TestPlugin(app, manifest);
     expect(plugin.getAbortSignalComponent()).toBeDefined();
     expect(plugin.getConsoleDebugComponent()).toBeDefined();
-    expect(plugin.getLifecycleEventsComponent()).toBeDefined();
     expect(plugin.getNoticeComponent()).toBeDefined();
     expect(plugin.getSettingsComponent()).toBeDefined();
   });
 
-  it('should call onloadImpl during onload', async () => {
+  it('should call onLayoutReady on children implementing LayoutReadyComponent', async () => {
     const plugin = new TestPlugin(app, manifest);
-    await plugin.onload();
-    expect(plugin.onloadImplCalled).toBe(true);
+    await plugin.load();
+
+    await vi.waitFor(() => {
+      expect(plugin.layoutReadyChild.layoutReadyCalled).toBe(true);
+    });
   });
 
-  it('should trigger lifecycle events and layout ready after load', async () => {
+  it('should skip children without onLayoutReady', async () => {
     const plugin = new TestPlugin(app, manifest);
-    await plugin.onload();
+    plugin.addChild(new Component());
 
-    // Wait for the deferred afterLoad to complete
+    await plugin.load();
+
     await vi.waitFor(() => {
-      expect(plugin.onLayoutReadyCalled).toBe(true);
+      expect(plugin.layoutReadyChild.layoutReadyCalled).toBe(true);
     });
   });
 
   it('should delegate onExternalSettingsChange to settings component', async () => {
     const plugin = new TestPlugin(app, manifest);
-    await plugin.onload();
+    await plugin.load();
 
     const spy = vi.spyOn(plugin.getSettingsComponent(), 'onExternalSettingsChange');
     await plugin.onExternalSettingsChange();
@@ -184,10 +208,10 @@ describe('PluginBase', () => {
     const component1 = new SingletonComponent1();
     const component2 = new SingletonComponent2();
 
-    const result1 = plugin['registerComponent']({ component: component1 });
+    const result1 = plugin.addChild(component1);
     expect(result1).toBe(component1);
 
-    const result2 = plugin['registerComponent']({ component: component2 });
+    const result2 = plugin.addChild(component2);
     expect(result2).toBe(component2);
 
     expect(plugin['singletonComponents'].get(KEY)).toBe(component2);
@@ -198,8 +222,8 @@ describe('PluginBase', () => {
     const component1 = new Component();
     const component2 = new Component();
 
-    plugin['registerComponent']({ component: component1 });
-    plugin['registerComponent']({ component: component2 });
+    plugin.addChild(component1);
+    plugin.addChild(component2);
 
     // Both should be added as children (not replaced)
     const children = plugin._children;
@@ -207,54 +231,49 @@ describe('PluginBase', () => {
     expect(children).toContain(component2);
   });
 
-  it('should handle preload for singleton replacement', () => {
-    const KEY = Symbol('TestPreload');
+  it('should handle singleton replacement during construction', () => {
+    const KEY = Symbol('TestSingletonReplacement');
 
-    class PreloadComponent extends Component {
+    class ReplacementComponent extends Component {
       public static readonly COMPONENT_KEY = KEY;
     }
 
     const plugin = new TestPlugin(app, manifest);
-    const component = new PreloadComponent();
+    const component = new ReplacementComponent();
+    plugin.addChild(component);
 
-    plugin['registerComponent']({ component, shouldPreload: true });
-    expect(plugin['preloadComponents']).toContain(component);
+    const replacement = new ReplacementComponent();
+    plugin.addChild(replacement);
 
-    // Replacing singleton should remove old from preload
-    const replacement = new PreloadComponent();
-    plugin['registerComponent']({ component: replacement });
-    expect(plugin['preloadComponents']).not.toContain(component);
+    expect(plugin['singletonComponents'].get(KEY)).toBe(replacement);
+    expect(plugin._children).not.toContain(component);
+    expect(plugin._children).toContain(replacement);
   });
 
-  it('should not call onLayoutReady when aborted before afterLoad', async () => {
+  it('should bypass singleton logic when addChild is called after load', async () => {
+    const KEY = Symbol('TestPostLoad');
+
+    class PostLoadComponent extends Component {
+      public static readonly COMPONENT_KEY = KEY;
+    }
+
+    const plugin = new TestPlugin(app, manifest);
+    await plugin.load();
+
+    const component = new PostLoadComponent();
+    plugin.addChild(component);
+
+    expect(plugin['singletonComponents'].has(KEY)).toBe(false);
+  });
+
+  it('should not call onLayoutReady when aborted before load', async () => {
     const plugin = new TestPlugin(app, manifest);
     plugin.getAbortSignalComponent().onunload();
 
-    await plugin.onload();
+    await plugin.load();
 
-    // AfterLoad checks abortSignal.aborted and returns early
-    const WAIT_MS = 50;
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, WAIT_MS);
-    });
-    expect(plugin.onLayoutReadyCalled).toBe(false);
-  });
-
-  it('should trigger layoutReady lifecycle event even when onLayoutReady throws', async () => {
-    class ThrowingPlugin extends TestPlugin {
-      protected override async onLayoutReady(): Promise<void> {
-        await Promise.reject(new Error('layout ready error'));
-      }
-    }
-
-    const plugin = new ThrowingPlugin(app, manifest);
-    await plugin.onload();
-
-    // Wait for afterLoad to fire
-    await vi.waitFor(() => {
-      // The layoutReady event should still be triggered in the finally block
-      expect(plugin.getLifecycleEventsComponent().events).toBeDefined();
-    });
+    await Promise.resolve();
+    expect(plugin.layoutReadyChild.layoutReadyCalled).toBe(false);
   });
 });
 
