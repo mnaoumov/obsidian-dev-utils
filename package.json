@@ -717,7 +717,7 @@
     "monkey-around": "latest",
     "npm-run-all2": "latest",
     "obsidian": "latest",
-    "obsidian-integration-testing": "latest",
+    "obsidian-integration-testing": "^1.2.0",
     "obsidian-typings": "obsidian-public-latest",
     "path-browserify": "latest",
     "postcss": "latest",
@@ -753,7 +753,7 @@
     "jsdom": "latest",
     "moment": "latest",
     "nano-staged": "latest",
-    "obsidian-test-mocks": "latest",
+    "obsidian-test-mocks": "^1.1.1",
     "patch-package": "latest",
     "vitest": "latest",
     "yaml": "latest"
