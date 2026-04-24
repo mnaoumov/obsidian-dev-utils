@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 58.0.0
+
+- chore: update libs
+- refactor!: simplify PluginBase to IoC container with children-first loading
+
 ## 57.0.2
 
 - chore: lint
