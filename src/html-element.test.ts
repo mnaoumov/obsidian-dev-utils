@@ -738,7 +738,6 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should invoke the callback via window.requestAnimationFrame when a scroll event fires', () => {
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access window.
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       cb(0);
       return 0;
@@ -755,7 +754,6 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should debounce multiple rapid event triggers', () => {
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access window.
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
 
     const node = buildElement();
@@ -772,7 +770,6 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should allow new events after window.requestAnimationFrame callback completes', () => {
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access window.
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       cb(0);
       return 0;
@@ -794,7 +791,7 @@ describe('onAncestorScrollOrResize', () => {
 
   it('should reset isEventTriggered even if callback throws', () => {
     const rafCallbacks: FrameRequestCallback[] = [];
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access window.
+
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       rafCallbacks.push(cb);
       return 0;

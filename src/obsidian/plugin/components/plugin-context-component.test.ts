@@ -21,7 +21,7 @@ vi.mock('../../components/all-windows-event-handler.ts', () => {
   class MockAllWindowsEventHandler {
     public registerAllWindowsHandler(handler: (win: Window) => void): void {
       mocks.registerAllWindowsHandler(handler);
-      // eslint-disable-next-line obsidianmd/prefer-active-doc -- Test file uses jsdom window, not Obsidian's activeDocument.
+
       handler(window);
     }
   }
@@ -50,7 +50,7 @@ describe('PluginContextComponent', () => {
   it('should register debug controller for all windows', () => {
     const component = new PluginContextComponent(app, 'test-plugin');
     component.onload();
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Test file uses jsdom window, not Obsidian's activeDocument.
+
     expect(mocks.initDebugController).toHaveBeenCalledWith(window, component);
   });
 });
