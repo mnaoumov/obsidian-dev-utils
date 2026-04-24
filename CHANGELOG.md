@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 58.0.1
+
+- chore: update libs
+
 ## 58.0.0
 
 - chore: update libs
