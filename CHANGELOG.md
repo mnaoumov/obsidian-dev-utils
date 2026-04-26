@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 59.0.1
+
+- refactor: rename constructor params
+
 ## 59.0.0
 
 - refactor!: constructors
