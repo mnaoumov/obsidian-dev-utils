@@ -109,7 +109,7 @@ export interface BindOptionsExtended<
 /**
  * Params for creating a {@link PluginSettingsTabBase}.
  */
-export interface PluginSettingsTabBaseParams<PluginSettings extends object> {
+export interface PluginSettingsTabBaseConstructorParams<PluginSettings extends object> {
   /**
    * The plugin instance (needed by Obsidian's PluginSettingTab).
    */
@@ -165,7 +165,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    *
    * @param params - The params.
    */
-  public constructor(params: PluginSettingsTabBaseParams<PluginSettings>) {
+  public constructor(params: PluginSettingsTabBaseConstructorParams<PluginSettings>) {
     super(params.plugin.app, params.plugin);
     this.pluginSettingsComponent = params.pluginSettingsComponent;
     addPluginCssClasses(this.containerEl, CssClass.PluginSettingsTab);
