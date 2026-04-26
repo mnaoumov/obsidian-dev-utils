@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 59.0.0
+
+- refactor!: constructors
+
 ## 58.0.1
 
 - chore: update libs
