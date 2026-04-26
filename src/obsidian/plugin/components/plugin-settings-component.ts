@@ -54,7 +54,7 @@ const defaultTransformer = new GroupTransformer([
 /**
  * Params for creating a {@link PluginSettingsComponentBase}.
  */
-export interface PluginSettingsComponentParams {
+export interface PluginSettingsComponentConstructorParams {
   /**
    * A function to load data from the plugin's data file.
    *
@@ -177,7 +177,7 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
    *
    * @param params - The params for loading/saving data.
    */
-  public constructor(params: PluginSettingsComponentParams) {
+  public constructor(params: PluginSettingsComponentConstructorParams) {
     super();
     this.loadDataFn = params.loadData.bind(params);
     this.saveDataFn = params.saveData.bind(params);
@@ -645,7 +645,7 @@ export class EmptyPluginSettingsComponent extends PluginSettingsComponentBase<ob
    *
    * @param params - The params. Uses no-op load/save by default.
    */
-  public constructor(params?: PluginSettingsComponentParams) {
+  public constructor(params?: PluginSettingsComponentConstructorParams) {
     super(
       params ?? {
         loadData: async (): Promise<object> => {

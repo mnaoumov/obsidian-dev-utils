@@ -72,7 +72,17 @@ export interface FullRenderParams {
   readonly sourcePath?: string;
 }
 
+interface FixedZIndexDomEventsHandlersInfoConstructorParams {
+  readonly app: App;
+  readonly el: HTMLElement;
+  readonly path: string;
+}
+
 class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
+  public readonly app: App;
+  public readonly el: HTMLElement;
+  public readonly path: string;
+
   public get hoverPopover(): HoverPopover | null {
     return this._hoverPopover;
   }
@@ -90,12 +100,16 @@ class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
 
   private zIndex?: number;
 
-  public constructor(public readonly app: App, public readonly path: string, el: HTMLElement) {
-    if (el.isConnected) {
-      this.updateZIndex(el);
+  public constructor(params: FixedZIndexDomEventsHandlersInfoConstructorParams) {
+    this.app = params.app;
+    this.path = params.path;
+    this.el = params.el;
+
+    if (this.el.isConnected) {
+      this.updateZIndex(this.el);
     } else {
-      el.onNodeInserted(() => {
-        this.updateZIndex(el);
+      this.el.onNodeInserted(() => {
+        this.updateZIndex(this.el);
       });
     }
   }
@@ -170,7 +184,13 @@ export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath
   domEventsHandlersConstructor ??= await getDomEventsHandlersConstructor(app);
   MarkdownPreviewRenderer.registerDomEvents(
     el,
-    new domEventsHandlersConstructor(new FixedZIndexDomEventsHandlersInfo(app, sourcePath ?? '', el))
+    new domEventsHandlersConstructor(
+      new FixedZIndexDomEventsHandlersInfo({
+        app,
+        el,
+        path: sourcePath ?? ''
+      })
+    )
   );
 }
 

@@ -17,11 +17,11 @@ interface CreateHandlerResult {
 
 describe('OpenSettingsCommandHandler', () => {
   function createHandler(): CreateHandlerResult {
-    const settingsTab = strictProxy<PluginSettingsTabBase<object>>({
+    const pluginSettingsTab = strictProxy<PluginSettingsTabBase<object>>({
       show: vi.fn()
     });
-    const handler = new OpenSettingsCommandHandler('Test Plugin', settingsTab);
-    return { handler, settingsTab };
+    const handler = new OpenSettingsCommandHandler({ pluginName: 'Test Plugin', pluginSettingsTab });
+    return { handler, settingsTab: pluginSettingsTab };
   }
 
   it('should have correct id, name, and icon', () => {

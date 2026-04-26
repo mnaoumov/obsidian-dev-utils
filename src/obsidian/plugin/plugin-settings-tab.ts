@@ -262,7 +262,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     if (validatorEl) {
       const wrapper = ensureWrapped(validatorEl);
       tooltipEl = wrapper.createDiv();
-      addPluginCssClasses(tooltipEl, CssClass.Tooltip, CssClass.TooltipValidator);
+      addPluginCssClasses(tooltipEl, [CssClass.Tooltip, CssClass.TooltipValidator]);
       tooltipContentEl = tooltipEl.createSpan();
       const tooltipArrowEl = tooltipEl.createDiv();
       addPluginCssClasses(tooltipArrowEl, CssClass.TooltipArrow);

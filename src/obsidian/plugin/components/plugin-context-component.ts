@@ -14,6 +14,11 @@ import {
   initPluginContext
 } from '../plugin-context.ts';
 
+interface PluginContextComponentConstructorParams {
+  readonly app: App;
+  readonly pluginId: string;
+}
+
 /**
  * Initializes plugin context (plugin ID, debug controller, library styles) on load.
  */
@@ -22,18 +27,18 @@ export class PluginContextComponent extends Component {
    * The singleton key for the {@link PluginContextComponent} class.
    */
   public static readonly COMPONENT_KEY = Symbol(PluginContextComponent.name);
+  private readonly app: App;
+  private readonly pluginId: string;
 
   /**
    * Creates a new plugin context component.
    *
-   * @param app - The Obsidian app instance.
-   * @param pluginId - The plugin ID.
+   * @param params - The constructor parameters.
    */
-  public constructor(
-    private readonly app: App,
-    private readonly pluginId: string
-  ) {
+  public constructor(params: PluginContextComponentConstructorParams) {
     super();
+    this.app = params.app;
+    this.pluginId = params.pluginId;
   }
 
   /**

@@ -63,7 +63,7 @@ describe('alert', () => {
   it('should show an alert with custom css class', async () => {
     await alert({
       app,
-      cssClass: 'custom-alert',
+      cssClasses: ['custom-alert'],
       message: 'Test message'
     });
   });

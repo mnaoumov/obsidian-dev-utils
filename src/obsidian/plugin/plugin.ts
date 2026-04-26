@@ -76,7 +76,7 @@ export abstract class PluginBase extends ObsidianPlugin {
   public constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
 
-    this.addChild(new PluginContextComponent(app, manifest.id));
+    this.addChild(new PluginContextComponent({ app, pluginId: manifest.id }));
     this.addChild(new I18nComponent());
     this.noticeComponent = this.addChild(new PluginNoticeComponent(manifest.name));
     this.addChild(new AsyncErrorHandlerComponent(this.noticeComponent));
