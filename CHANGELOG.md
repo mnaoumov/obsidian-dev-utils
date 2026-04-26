@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 59.0.2
+
+- chore: move to dep
+
 ## 59.0.1
 
 - refactor: rename constructor params
