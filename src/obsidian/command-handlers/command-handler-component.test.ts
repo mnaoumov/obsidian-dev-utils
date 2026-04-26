@@ -67,8 +67,8 @@ function createParams(overrides?: Partial<CommandHandlerParams>): CommandHandler
 describe('CommandHandlerComponent', () => {
   it('should call plugin.addCommand with built command on load', async () => {
     const plugin = createMockPlugin();
-    const handler = new TestHandler(createParams());
-    const component = new CommandHandlerComponent(plugin, handler);
+    const commandHandler = new TestHandler(createParams());
+    const component = new CommandHandlerComponent({ commandHandler, plugin });
 
     await component.onload();
 
@@ -82,14 +82,14 @@ describe('CommandHandlerComponent', () => {
 
   it('should provide registration context with activeFileProvider and menuEventRegistrar', async () => {
     const plugin = createMockPlugin();
-    const handler = new TestHandler(createParams());
-    const component = new CommandHandlerComponent(plugin, handler);
+    const commandHandler = new TestHandler(createParams());
+    const component = new CommandHandlerComponent({ commandHandler, plugin });
 
     await component.onload();
 
-    expect(handler.registeredContext).toBeDefined();
-    expect(handler.registeredContext?.activeFileProvider).toBeDefined();
-    expect(handler.registeredContext?.menuEventRegistrar).toBeDefined();
+    expect(commandHandler.registeredContext).toBeDefined();
+    expect(commandHandler.registeredContext?.activeFileProvider).toBeDefined();
+    expect(commandHandler.registeredContext?.menuEventRegistrar).toBeDefined();
   });
 
   it('should not mutate handler id/name after addCommand', async () => {
@@ -108,13 +108,13 @@ describe('CommandHandlerComponent', () => {
       }
     });
 
-    const handler = new TestHandler(createParams({ id: 'original-id', name: 'Original Name' }));
-    const component = new CommandHandlerComponent(plugin, handler);
+    const commandHandler = new TestHandler(createParams({ id: 'original-id', name: 'Original Name' }));
+    const component = new CommandHandlerComponent({ commandHandler, plugin });
 
     await component.onload();
 
     // Handler should be unaffected
-    expect(handler.id).toBe('original-id');
-    expect(handler.name).toBe('Original Name');
+    expect(commandHandler.id).toBe('original-id');
+    expect(commandHandler.name).toBe('Original Name');
   });
 });

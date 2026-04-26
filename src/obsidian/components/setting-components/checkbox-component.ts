@@ -52,7 +52,7 @@ export class CheckboxComponent extends ValueComponent<boolean> implements Valida
    */
   public constructor(containerEl: HTMLElement) {
     super();
-    addPluginCssClasses(containerEl, CssClass.CheckboxComponent);
+    addPluginCssClasses(containerEl, [CssClass.CheckboxComponent]);
     this.inputEl = containerEl.createEl('input', { type: 'checkbox' });
     this.inputEl.addEventListener('change', this.onChanged.bind(this));
   }

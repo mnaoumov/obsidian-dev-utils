@@ -42,13 +42,13 @@ beforeEach(() => {
 
 describe('PluginContextComponent', () => {
   it('should initialize plugin context on load', () => {
-    const component = new PluginContextComponent(app, 'test-plugin');
+    const component = new PluginContextComponent({ app, pluginId: 'test-plugin' });
     component.onload();
     expect(mocks.initPluginContext).toHaveBeenCalledWith(app, 'test-plugin');
   });
 
   it('should register debug controller for all windows', () => {
-    const component = new PluginContextComponent(app, 'test-plugin');
+    const component = new PluginContextComponent({ app, pluginId: 'test-plugin' });
     component.onload();
 
     expect(mocks.initDebugController).toHaveBeenCalledWith(window, component);

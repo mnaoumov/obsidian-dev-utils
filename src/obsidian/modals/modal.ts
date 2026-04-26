@@ -19,32 +19,42 @@ export interface ModalParamsBase {
   /**
    * An Obsidian app instance.
    */
-  app: App;
+  readonly app: App;
 
   /**
    * A CSS class to apply to the modal.
    */
-  cssClass?: string;
+  readonly cssClasses?: string[];
 }
 
 /**
  * A base class for displaying modals in Obsidian.
  */
-export abstract class ModalBase<Value, Options extends ModalParamsBase> extends Modal {
+export abstract class ModalBase<Value> extends Modal {
   /**
    * Creates a new modal.
    *
-   * @param options - The options.
+   * @param params - The options.
    * @param resolve - The resolve function.
-   * @param modalCssClass - The modal CSS class.
    */
-  public constructor(options: Options, protected resolve: PromiseResolve<Value>, modalCssClass: string) {
-    super(options.app);
-    addPluginCssClasses(this.containerEl, modalCssClass);
-    if (options.cssClass) {
-      this.containerEl.addClass(options.cssClass);
-    }
+  public constructor(params: ModalParamsBase, protected readonly resolve: PromiseResolve<Value>) {
+    super(params.app);
+    addPluginCssClasses(this.containerEl, params.cssClasses);
   }
+}
+
+/**
+ * Adds a CSS class to the modal parameters.
+ *
+ * @param params - The modal parameters.
+ * @param cssClass - The CSS class to add.
+ * @returns The modal parameters with the CSS class added.
+ */
+export function addCssClass(params: ModalParamsBase, cssClass: string): ModalParamsBase {
+  return {
+    ...params,
+    cssClasses: [...(params.cssClasses ?? []), cssClass]
+  };
 }
 
 /**
@@ -53,8 +63,8 @@ export abstract class ModalBase<Value, Options extends ModalParamsBase> extends 
  * @param modalCreator - A function that creates a modal.
  * @returns A {@link Promise} that resolves when the modal is closed.
  */
-export async function showModal<T>(modalCreator: (resolve: PromiseResolve<T>) => Modal): Promise<T> {
-  return await new Promise<T>((resolve) => {
+export async function showModal<Value>(modalCreator: (resolve: PromiseResolve<Value>) => Modal): Promise<Value> {
+  return await new Promise<Value>((resolve) => {
     const modal = modalCreator(resolve);
     modal.open();
   });

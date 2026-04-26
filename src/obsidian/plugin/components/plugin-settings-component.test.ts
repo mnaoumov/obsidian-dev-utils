@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import type { PluginSettingsComponentParams } from './plugin-settings-component.ts';
+import type { PluginSettingsComponentConstructorParams } from './plugin-settings-component.ts';
 
 import { noop } from '../../../function.ts';
 import {
@@ -23,7 +23,7 @@ interface TestSettings {
   name: string;
 }
 
-interface TestStorage extends PluginSettingsComponentParams {
+interface TestStorage extends PluginSettingsComponentConstructorParams {
   data: unknown;
 }
 
@@ -36,7 +36,7 @@ class TestSettingsComponent extends PluginSettingsComponentBase<TestSettings> {
   }
 }
 
-function createParams(data?: unknown): PluginSettingsComponentParams {
+function createParams(data?: unknown): PluginSettingsComponentConstructorParams {
   let storedData: unknown = data;
   return {
     loadData: vi.fn(() => Promise.resolve(storedData)),

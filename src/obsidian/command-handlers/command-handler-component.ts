@@ -15,32 +15,38 @@ import { AsyncComponentBase } from '../components/async-component.ts';
 import { AppActiveFileProvider } from './app-active-file-provider.ts';
 import { AppMenuEventRegistrar } from './app-menu-event-registrar.ts';
 
+interface CommandHandlerComponentConstructorParams {
+  readonly commandHandler: CommandHandler;
+  readonly plugin: Plugin;
+}
+
 /**
  * Wraps a {@link CommandHandler} and registers it with Obsidian on load.
  */
 export class CommandHandlerComponent extends AsyncComponentBase {
+  private readonly commandHandler: CommandHandler;
+  private readonly plugin: Plugin;
+
   /**
    * Creates a new command handler component.
    *
-   * @param plugin - The Obsidian plugin instance.
-   * @param handler - The command handler to register.
+   * @param params - The constructor parameters.
    */
-  public constructor(
-    private readonly plugin: Plugin,
-    public readonly handler: CommandHandler
-  ) {
+  public constructor(params: CommandHandlerComponentConstructorParams) {
     super();
+    this.plugin = params.plugin;
+    this.commandHandler = params.commandHandler;
   }
 
   /**
    * Registers the command with Obsidian and provides runtime context to the handler.
    */
   public override async onload(): Promise<void> {
-    this.plugin.addCommand(this.handler.buildCommand());
+    this.plugin.addCommand(this.commandHandler.buildCommand());
     const context: CommandHandlerRegistrationContext = {
       activeFileProvider: new AppActiveFileProvider(this.plugin.app),
       menuEventRegistrar: new AppMenuEventRegistrar(this.plugin.app, this)
     };
-    await this.handler.onRegistered(context);
+    await this.commandHandler.onRegistered(context);
   }
 }

@@ -15,6 +15,7 @@ import type { PromiseResolve } from '../../async.ts';
 import { CssClass } from '../../css-class.ts';
 import { t } from '../i18n/i18n.ts';
 import {
+  addCssClass,
   ModalBase,
   showModal
 } from './modal.ts';
@@ -54,21 +55,19 @@ export interface ConfirmParams {
   readonly title?: DocumentFragment | string;
 }
 
-class ConfirmModal extends ModalBase<boolean, ConfirmParams> {
+class ConfirmModal extends ModalBase<boolean> {
+  private readonly cancelButtonText: string;
   private isConfirmed = false;
-  private readonly params: Required<ConfirmParams>;
+  private readonly message: DocumentFragment | string;
+  private readonly okButtonText: string;
+  private readonly title: DocumentFragment | string;
 
   public constructor(params: ConfirmParams, resolve: PromiseResolve<boolean>) {
-    super(params, resolve, CssClass.ConfirmModal);
-    const DEFAULT_OPTIONS: Required<ConfirmParams> = {
-      app: params.app,
-      cancelButtonText: t(($) => $.obsidianDevUtils.buttons.cancel),
-      cssClass: '',
-      message: params.message,
-      okButtonText: t(($) => $.obsidianDevUtils.buttons.ok),
-      title: ''
-    };
-    this.params = { ...DEFAULT_OPTIONS, ...params };
+    super(addCssClass(params, CssClass.ConfirmModal), resolve);
+    this.cancelButtonText = params.cancelButtonText ?? t(($) => $.obsidianDevUtils.buttons.cancel);
+    this.message = params.message;
+    this.okButtonText = params.okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok);
+    this.title = params.title ?? '';
   }
 
   public override onClose(): void {
@@ -78,10 +77,10 @@ class ConfirmModal extends ModalBase<boolean, ConfirmParams> {
 
   public override onOpen(): void {
     super.onOpen();
-    this.titleEl.setText(this.params.title);
-    this.contentEl.createEl('p', { text: this.params.message });
+    this.titleEl.setText(this.title);
+    this.contentEl.createEl('p', { text: this.message });
     const okButton = new ButtonComponent(this.contentEl);
-    okButton.setButtonText(this.params.okButtonText);
+    okButton.setButtonText(this.okButtonText);
     okButton.setCta();
     okButton.onClick(() => {
       this.isConfirmed = true;
@@ -90,7 +89,7 @@ class ConfirmModal extends ModalBase<boolean, ConfirmParams> {
     okButton.setClass(CssClass.OkButton);
 
     const cancelButton = new ButtonComponent(this.contentEl);
-    cancelButton.setButtonText(this.params.cancelButtonText);
+    cancelButton.setButtonText(this.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
     cancelButton.setClass(CssClass.CancelButton);
   }

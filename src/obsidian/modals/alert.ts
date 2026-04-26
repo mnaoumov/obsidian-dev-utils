@@ -6,33 +6,23 @@
  * This module exports a function to display a modal with a message in Obsidian. The modal includes an "OK" button to close it.
  */
 
-import type { App } from 'obsidian';
-
 import { t } from 'i18next';
 import { ButtonComponent } from 'obsidian';
 
 import type { PromiseResolve } from '../../async.ts';
+import type { ModalParamsBase } from './modal.ts';
 
 import { CssClass } from '../../css-class.ts';
 import {
+  addCssClass,
   ModalBase,
   showModal
 } from './modal.ts';
 
 /**
- * Options for {@link alert}.
+ * Parameters for {@link AlertModal}.
  */
-export interface AlertParams {
-  /**
-   * An Obsidian app instance.
-   */
-  readonly app: App;
-
-  /**
-   * A CSS class to apply to the modal.
-   */
-  readonly cssClass?: string;
-
+export interface AlertParams extends ModalParamsBase {
   /**
    * A message to display in the modal.
    */
@@ -49,19 +39,16 @@ export interface AlertParams {
   readonly title?: DocumentFragment | string;
 }
 
-class AlertModal extends ModalBase<void, AlertParams> {
-  private readonly params: Required<AlertParams>;
+class AlertModal extends ModalBase<void> {
+  private readonly message: DocumentFragment | string;
+  private readonly okButtonText: string;
+  private readonly title: DocumentFragment | string;
 
   public constructor(params: AlertParams, resolve: PromiseResolve<void>) {
-    super(params, resolve, CssClass.AlertModal);
-    const DEFAULT_OPTIONS: Required<AlertParams> = {
-      app: params.app,
-      cssClass: '',
-      message: params.message,
-      okButtonText: t(($) => $.obsidianDevUtils.buttons.ok),
-      title: ''
-    };
-    this.params = { ...DEFAULT_OPTIONS, ...params };
+    super(addCssClass(params, CssClass.AlertModal), resolve);
+    this.message = params.message;
+    this.okButtonText = params.okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok);
+    this.title = params.title ?? '';
   }
 
   public override onClose(): void {
@@ -71,10 +58,10 @@ class AlertModal extends ModalBase<void, AlertParams> {
 
   public override onOpen(): void {
     super.onOpen();
-    this.titleEl.setText(this.params.title);
-    this.contentEl.createEl('p', { text: this.params.message });
+    this.titleEl.setText(this.title);
+    this.contentEl.createEl('p', { text: this.message });
     const okButton = new ButtonComponent(this.contentEl);
-    okButton.setButtonText(this.params.okButtonText);
+    okButton.setButtonText(this.okButtonText);
     okButton.setCta();
     okButton.onClick(this.close.bind(this));
     okButton.setClass(CssClass.OkButton);

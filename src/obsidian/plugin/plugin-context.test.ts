@@ -71,11 +71,25 @@ describe('addPluginCssClasses', () => {
     vi.clearAllMocks();
   });
 
-  it('should add library name, plugin id, and custom css classes', () => {
+  it('should add library name, plugin id, and custom css class string', () => {
     const addClass = vi.fn();
     const el = strictProxy<HTMLElement>({ addClass });
     addPluginCssClasses(el, 'custom-class');
     expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin', 'custom-class');
+  });
+
+  it('should add library name, plugin id, and custom css classes array', () => {
+    const addClass = vi.fn();
+    const el = strictProxy<HTMLElement>({ addClass });
+    addPluginCssClasses(el, ['class-a', 'class-b']);
+    expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin', 'class-a', 'class-b');
+  });
+
+  it('should add only library name and plugin id when no css classes provided', () => {
+    const addClass = vi.fn();
+    const el = strictProxy<HTMLElement>({ addClass });
+    addPluginCssClasses(el);
+    expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin');
   });
 });
 

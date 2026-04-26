@@ -25,6 +25,7 @@ import { CssClass } from '../../css-class.ts';
 import { noop } from '../../function.ts';
 import { t } from '../i18n/i18n.ts';
 import {
+  addCssClass,
   ModalBase,
   showModal
 } from './modal.ts';
@@ -72,23 +73,22 @@ export interface PromptParams {
   readonly valueValidator?: (value: string) => Promisable<MaybeReturn<string>>;
 }
 
-class PromptModal extends ModalBase<null | string, PromptParams> {
+class PromptModal extends ModalBase<null | string> {
+  private readonly cancelButtonText: string;
   private isOkClicked = false;
-  private readonly params: Required<PromptParams>;
+  private readonly okButtonText: string;
+  private readonly placeholder: string;
+  private readonly title: DocumentFragment | string;
   private value: string;
+  private readonly valueValidator: (value: string) => Promisable<MaybeReturn<string>>;
 
   public constructor(params: PromptParams, resolve: PromiseResolve<null | string>) {
-    super(params, resolve, CssClass.PromptModal);
-    const DEFAULT_OPTIONS: Required<PromptParams> = {
-      app: params.app,
-      cancelButtonText: t(($) => $.obsidianDevUtils.buttons.cancel),
-      defaultValue: '',
-      okButtonText: t(($) => $.obsidianDevUtils.buttons.ok),
-      placeholder: '',
-      title: '',
-      valueValidator: noop
-    };
-    this.params = { ...DEFAULT_OPTIONS, ...params };
+    super(addCssClass(params, CssClass.PromptModal), resolve);
+    this.cancelButtonText = params.cancelButtonText ?? t(($) => $.obsidianDevUtils.buttons.cancel);
+    this.okButtonText = params.okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok);
+    this.placeholder = params.placeholder ?? '';
+    this.title = params.title ?? '';
+    this.valueValidator = params.valueValidator ?? noop;
     this.value = params.defaultValue ?? '';
   }
 
@@ -99,19 +99,19 @@ class PromptModal extends ModalBase<null | string, PromptParams> {
 
   public override onOpen(): void {
     super.onOpen();
-    this.titleEl.setText(this.params.title);
+    this.titleEl.setText(this.title);
     const textComponent = new TextComponent(this.contentEl);
     const inputEl = textComponent.inputEl;
 
     const validate = async (): Promise<void> => {
-      const errorMessage = await this.params.valueValidator(inputEl.value) as string | undefined;
+      const errorMessage = await this.valueValidator(inputEl.value) as string | undefined;
       inputEl.setCustomValidity(errorMessage ?? '');
       inputEl.reportValidity();
     };
 
     textComponent.setValue(this.value);
     textComponent.inputEl.select();
-    textComponent.setPlaceholder(this.params.placeholder);
+    textComponent.setPlaceholder(this.placeholder);
     inputEl.addClass(CssClass.TextBox);
     textComponent.onChange((newValue) => {
       this.value = newValue;
@@ -127,14 +127,14 @@ class PromptModal extends ModalBase<null | string, PromptParams> {
     inputEl.addEventListener('focus', convertAsyncToSync(validate));
     invokeAsyncSafely(validate);
     const okButton = new ButtonComponent(this.contentEl);
-    okButton.setButtonText(this.params.okButtonText);
+    okButton.setButtonText(this.okButtonText);
     okButton.setCta();
     okButton.onClick((event) => {
       this.handleOk(event, textComponent);
     });
     okButton.setClass(CssClass.OkButton);
     const cancelButton = new ButtonComponent(this.contentEl);
-    cancelButton.setButtonText(this.params.cancelButtonText);
+    cancelButton.setButtonText(this.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
     cancelButton.setClass(CssClass.CancelButton);
   }

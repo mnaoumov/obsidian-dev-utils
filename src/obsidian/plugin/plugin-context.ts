@@ -41,8 +41,14 @@ const STYLES_ID = `${LIBRARY_NAME}-styles`;
  * @param el - The element to set the CSS class of.
  * @param cssClasses - The CSS classes to set.
  */
-export function addPluginCssClasses(el: HTMLElement, ...cssClasses: string[]): void {
-  el.addClass(CssClass.LibraryName, getPluginId(), ...cssClasses);
+export function addPluginCssClasses(el: HTMLElement, cssClasses?: string | string[]): void {
+  const cssClassesArr = [CssClass.LibraryName, getPluginId()];
+  if (Array.isArray(cssClasses)) {
+    cssClassesArr.push(...cssClasses);
+  } else if (typeof cssClasses === 'string') {
+    cssClassesArr.push(cssClasses);
+  }
+  el.addClass(...cssClassesArr);
 }
 
 /**

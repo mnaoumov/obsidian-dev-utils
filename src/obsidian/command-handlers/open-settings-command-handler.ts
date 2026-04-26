@@ -8,29 +8,36 @@ import type { PluginSettingsTabBase } from '../plugin/plugin-settings-tab.ts';
 
 import { GlobalCommandHandler } from './global-command-handler.ts';
 
+interface OpenSettingsCommandHandlerConstructorParams {
+  readonly pluginName: string;
+  readonly pluginSettingsTab: PluginSettingsTabBase<object>;
+}
+
 /**
  * A command handler that opens the settings tab for a plugin.
  */
 export class OpenSettingsCommandHandler extends GlobalCommandHandler {
+  private readonly pluginSettingsTab: PluginSettingsTabBase<object>;
+
   /**
    * Constructs a new instance.
    *
-   * @param pluginName - The name of the plugin.
-   * @param settingsTab - The settings tab to open.
+   * @param params - The constructor parameters.
    */
-  public constructor(pluginName: string, private readonly settingsTab: PluginSettingsTabBase<object>) {
+  public constructor(params: OpenSettingsCommandHandlerConstructorParams) {
     super({
       icon: 'settings',
       id: 'open-settings',
       name: 'Open settings',
-      pluginName
+      pluginName: params.pluginName
     });
+    this.pluginSettingsTab = params.pluginSettingsTab;
   }
 
   /**
    * Executes the command.
    */
   public override execute(): void {
-    this.settingsTab.show();
+    this.pluginSettingsTab.show();
   }
 }
