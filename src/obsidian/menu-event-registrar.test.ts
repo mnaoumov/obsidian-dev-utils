@@ -17,8 +17,8 @@ import {
   vi
 } from 'vitest';
 
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
-import { AppMenuEventRegistrar } from './app-menu-event-registrar.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
+import { AppMenuEventRegistrar } from './menu-event-registrar.ts';
 
 interface Mocks {
   app: AppOriginal;

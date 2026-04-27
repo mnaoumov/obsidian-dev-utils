@@ -4,10 +4,7 @@
  * Tests for {@link CommandHandlerComponent}.
  */
 
-import type {
-  Command,
-  Plugin as PluginOriginal
-} from 'obsidian';
+import type { Command } from 'obsidian';
 
 import {
   describe,
@@ -16,12 +13,15 @@ import {
   vi
 } from 'vitest';
 
+import type { ActiveFileProvider } from '../active-file-provider.ts';
+import type { CommandRegistrar } from '../command-registrar.ts';
+import type { MenuEventRegistrar } from '../menu-event-registrar.ts';
 import type {
   CommandHandlerParams,
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
-import { castTo } from '../../object-utils.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { CommandHandlerComponent } from './command-handler-component.ts';
 import { CommandHandler } from './command-handler.ts';
 
@@ -42,16 +42,18 @@ class TestHandler extends CommandHandler {
   }
 }
 
-function createMockPlugin(): PluginOriginal {
-  return castTo<PluginOriginal>({
-    addCommand: vi.fn(),
-    app: {
-      workspace: {
-        getActiveFile: vi.fn(() => null),
-        on: vi.fn()
-      }
-    }
+function createMockActiveFileProvider(): ActiveFileProvider {
+  return strictProxy<ActiveFileProvider>({});
+}
+
+function createMockCommandRegistrar(): CommandRegistrar {
+  return strictProxy<CommandRegistrar>({
+    addCommand: vi.fn()
   });
+}
+
+function createMockMenuEventRegistrar(): MenuEventRegistrar {
+  return strictProxy<MenuEventRegistrar>({});
 }
 
 function createParams(overrides?: Partial<CommandHandlerParams>): CommandHandlerParams {
@@ -66,13 +68,18 @@ function createParams(overrides?: Partial<CommandHandlerParams>): CommandHandler
 
 describe('CommandHandlerComponent', () => {
   it('should call plugin.addCommand with built command on load', async () => {
-    const plugin = createMockPlugin();
     const commandHandler = new TestHandler(createParams());
-    const component = new CommandHandlerComponent({ commandHandler, plugin });
+    const commandRegistrar = createMockCommandRegistrar();
+    const component = new CommandHandlerComponent({
+      activeFileProvider: createMockActiveFileProvider(),
+      commandHandler,
+      commandRegistrar,
+      menuEventRegistrar: createMockMenuEventRegistrar()
+    });
 
     await component.onload();
 
-    expect(plugin.addCommand).toHaveBeenCalledWith(
+    expect(commandRegistrar.addCommand).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'test-cmd',
         name: 'Test Command'
@@ -81,9 +88,13 @@ describe('CommandHandlerComponent', () => {
   });
 
   it('should provide registration context with activeFileProvider and menuEventRegistrar', async () => {
-    const plugin = createMockPlugin();
     const commandHandler = new TestHandler(createParams());
-    const component = new CommandHandlerComponent({ commandHandler, plugin });
+    const component = new CommandHandlerComponent({
+      activeFileProvider: createMockActiveFileProvider(),
+      commandHandler,
+      commandRegistrar: createMockCommandRegistrar(),
+      menuEventRegistrar: createMockMenuEventRegistrar()
+    });
 
     await component.onload();
 
@@ -98,18 +109,16 @@ describe('CommandHandlerComponent', () => {
       cmd.id = 'modified-id';
       cmd.name = 'Modified Name';
     });
-    const plugin = castTo<PluginOriginal>({
-      addCommand,
-      app: {
-        workspace: {
-          getActiveFile: vi.fn(() => null),
-          on: vi.fn()
-        }
-      }
-    });
 
+    const commandRegistrar = createMockCommandRegistrar();
+    vi.mocked(commandRegistrar.addCommand).mockImplementation(addCommand);
     const commandHandler = new TestHandler(createParams({ id: 'original-id', name: 'Original Name' }));
-    const component = new CommandHandlerComponent({ commandHandler, plugin });
+    const component = new CommandHandlerComponent({
+      activeFileProvider: createMockActiveFileProvider(),
+      commandHandler,
+      commandRegistrar,
+      menuEventRegistrar: createMockMenuEventRegistrar()
+    });
 
     await component.onload();
 

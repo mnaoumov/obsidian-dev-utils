@@ -12,8 +12,8 @@ import type {
 } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
+import type { ActiveFileProvider } from '../active-file-provider.ts';
 import type {
-  ActiveFileProvider,
   CommandHandlerParams,
   CommandHandlerRegistrationContext
 } from './command-handler.ts';

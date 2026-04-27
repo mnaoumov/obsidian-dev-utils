@@ -17,10 +17,8 @@ import {
   vi
 } from 'vitest';
 
-import type {
-  CommandHandlerRegistrationContext,
-  EditorMenuEventHandler
-} from './command-handler.ts';
+import type { EditorMenuEventHandler } from '../menu-event-registrar.ts';
+import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 import type { EditorCommandHandlerParams } from './editor-command-handler.ts';
 
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
