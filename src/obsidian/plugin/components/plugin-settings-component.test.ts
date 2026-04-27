@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import type { PluginSettingsComponentConstructorParams } from './plugin-settings-component.ts';
+import type { DataHandler } from '../../data-handler.ts';
 
 import { noop } from '../../../function.ts';
 import {
@@ -23,8 +23,23 @@ interface TestSettings {
   name: string;
 }
 
-interface TestStorage extends PluginSettingsComponentConstructorParams {
-  data: unknown;
+class MockDataHandler implements DataHandler {
+  public loadData = vi.fn(() => Promise.resolve(this.data));
+
+  private _data: unknown;
+
+  public saveData = vi.fn((d: unknown) => {
+    this._data = d;
+    return Promise.resolve();
+  });
+
+  public get data(): unknown {
+    return this._data;
+  }
+
+  public constructor(data: unknown) {
+    this._data = data;
+  }
 }
 
 class TestSettingsComponent extends PluginSettingsComponentBase<TestSettings> {
@@ -36,35 +51,15 @@ class TestSettingsComponent extends PluginSettingsComponentBase<TestSettings> {
   }
 }
 
-function createParams(data?: unknown): PluginSettingsComponentConstructorParams {
-  let storedData: unknown = data;
-  return {
-    loadData: vi.fn(() => Promise.resolve(storedData)),
-    saveData: vi.fn((d: unknown) => {
-      storedData = d;
-      return Promise.resolve();
-    })
-  };
-}
-
 describe('PluginSettingsComponentBase', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should bind loadData/saveData to the params object', async () => {
-    const storage: TestStorage = {
-      data: { count: 42, name: 'bound' },
-      loadData(): Promise<unknown> {
-        return Promise.resolve(this.data);
-      },
-      saveData(d: unknown): Promise<void> {
-        this.data = d;
-        return Promise.resolve();
-      }
-    };
+    const dataHandler = new MockDataHandler({ count: 42, name: 'bound' });
 
-    const component = new TestSettingsComponent(storage);
+    const component = new TestSettingsComponent(dataHandler);
     await component.onload();
 
     expect(component.settings.count).toBe(42);
@@ -74,30 +69,30 @@ describe('PluginSettingsComponentBase', () => {
       settings.name = 'updated';
     });
 
-    expect((storage.data as TestSettings).name).toBe('updated');
+    expect((dataHandler.data as TestSettings).name).toBe('updated');
   });
 
   it('should have default settings after construction', () => {
-    const component = new TestSettingsComponent(createParams());
+    const component = new TestSettingsComponent(new MockDataHandler({}));
     expect(component.defaultSettings).toEqual({ count: 0, name: 'default' });
     expect(component.settings).toEqual({ count: 0, name: 'default' });
   });
 
   it('should load settings from file on onload', async () => {
-    const component = new TestSettingsComponent(createParams({ count: 5, name: 'loaded' }));
+    const component = new TestSettingsComponent(new MockDataHandler({ count: 5, name: 'loaded' }));
     await component.onload();
     expect(component.settings.count).toBe(5);
     expect(component.settings.name).toBe('loaded');
   });
 
   it('should handle null data on load', async () => {
-    const component = new TestSettingsComponent(createParams(null));
+    const component = new TestSettingsComponent(new MockDataHandler(null));
     await component.onload();
     expect(component.settings).toEqual({ count: 0, name: 'default' });
   });
 
   it('should handle undefined data on load', async () => {
-    const component = new TestSettingsComponent(createParams(undefined));
+    const component = new TestSettingsComponent(new MockDataHandler(undefined));
     await component.onload();
     expect(component.settings).toEqual({ count: 0, name: 'default' });
   });
@@ -106,7 +101,7 @@ describe('PluginSettingsComponentBase', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
     });
-    const component = new TestSettingsComponent(createParams('invalid'));
+    const component = new TestSettingsComponent(new MockDataHandler('invalid'));
     await component.onload();
     expect(component.settings).toEqual({ count: 0, name: 'default' });
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid settings'));
@@ -114,7 +109,7 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should set a property and return validation message', async () => {
-    const component = new TestSettingsComponent(createParams());
+    const component = new TestSettingsComponent(new MockDataHandler({}));
     await component.onload();
     const message = await component.setProperty('name', 'updated');
     expect(message).toBe('');
@@ -137,7 +132,7 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(createParams());
+    const component = new ValidatingComponent(new MockDataHandler({}));
     await component.onload();
 
     const message = await component.setProperty('count', -1);
@@ -147,29 +142,29 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should save to file when settings changed', async () => {
-    const params = createParams();
-    const component = new TestSettingsComponent(params);
+    const dataHandler = new MockDataHandler({});
+    const component = new TestSettingsComponent(new MockDataHandler({}));
     await component.onload();
 
     await component.setProperty('name', 'changed');
     await component.saveToFile();
 
-    expect(params.saveData).toHaveBeenCalled();
+    expect(dataHandler.saveData).toHaveBeenCalled();
   });
 
   it('should not save to file when settings unchanged', async () => {
-    const params = createParams({ count: 0, name: 'default' });
-    const component = new TestSettingsComponent(params);
+    const dataHandler = new MockDataHandler({ count: 0, name: 'default' });
+    const component = new TestSettingsComponent(dataHandler);
     await component.onload();
 
-    vi.mocked(params.saveData).mockClear();
+    vi.mocked(dataHandler.saveData).mockClear();
     await component.saveToFile();
 
-    expect(params.saveData).not.toHaveBeenCalled();
+    expect(dataHandler.saveData).not.toHaveBeenCalled();
   });
 
   it('should trigger loadSettings event on load', async () => {
-    const component = new TestSettingsComponent(createParams());
+    const component = new TestSettingsComponent(new MockDataHandler({}));
     const callback = vi.fn();
     component.on('loadSettings', callback);
     await component.onload();
@@ -180,7 +175,7 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should trigger saveSettings event on save', async () => {
-    const component = new TestSettingsComponent(createParams());
+    const component = new TestSettingsComponent(new MockDataHandler({}));
     await component.onload();
 
     const callback = vi.fn();
@@ -193,11 +188,11 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should handle onExternalSettingsChange', async () => {
-    const params = createParams({ count: 1, name: 'initial' });
-    const component = new TestSettingsComponent(params);
+    const dataHandler = new MockDataHandler({ count: 1, name: 'initial' });
+    const component = new TestSettingsComponent(dataHandler);
     await component.onload();
 
-    vi.mocked(params.loadData).mockResolvedValue({ count: 2, name: 'external' });
+    vi.mocked(dataHandler.loadData).mockResolvedValue({ count: 2, name: 'external' });
     await component.onExternalSettingsChange();
 
     expect(component.settings.count).toBe(2);
@@ -205,15 +200,15 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should editAndSave', async () => {
-    const params = createParams();
-    const component = new TestSettingsComponent(params);
+    const dataHandler = new MockDataHandler({});
+    const component = new TestSettingsComponent(dataHandler);
     await component.onload();
 
     await component.editAndSave((settings) => {
       settings.name = 'edited';
     });
 
-    expect(params.saveData).toHaveBeenCalled();
+    expect(dataHandler.saveData).toHaveBeenCalled();
     expect(component.settings.name).toBe('edited');
   });
 
@@ -233,7 +228,7 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(createParams());
+    const component = new ValidatingComponent(new MockDataHandler({}));
     await component.onload();
 
     const settings: TestSettings = { count: -5, name: 'test' };
@@ -258,7 +253,7 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(createParams());
+    const component = new ValidatingComponent(new MockDataHandler({}));
     await component.onload();
 
     const original: TestSettings = { count: -1, name: 'test' };
@@ -285,7 +280,7 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(createParams());
+    const component = new ValidatingComponent(new MockDataHandler({}));
     await component.onload();
 
     await component.setProperty('name', '');
@@ -317,7 +312,7 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new LegacyComponent(createParams({ oldName: 'migrated' }));
+    const component = new LegacyComponent(new MockDataHandler({ oldName: 'migrated' }));
     await component.onload();
     expect(component.settings.name).toBe('migrated');
   });
@@ -341,7 +336,7 @@ describe('PluginSettingsComponentBase', () => {
     }
 
     // Data has a legacy key that is in legacySettingsKeys but not in pluginSettingKeys
-    const component = new LegacyComponent(createParams({ count: 1, legacyOnlyField: 'stale', name: 'test' }));
+    const component = new LegacyComponent(new MockDataHandler({ count: 1, legacyOnlyField: 'stale', name: 'test' }));
     await component.onload();
     expect(component.settings.count).toBe(1);
     expect(component.settings.name).toBe('test');
@@ -366,26 +361,26 @@ describe('PluginSettingsComponentBase', () => {
     }
 
     // Data has 'unknownField' which is NOT in pluginSettingKeys and NOT in legacySettingsKeys
-    const component = new LegacyComponent(createParams({ count: 1, name: 'test', unknownField: 'should-stay' }));
+    const component = new LegacyComponent(new MockDataHandler({ count: 1, name: 'test', unknownField: 'should-stay' }));
     await component.onload();
     expect(component.settings.count).toBe(1);
   });
 
   it('should ignore unknown properties in raw record', async () => {
-    const component = new TestSettingsComponent(createParams({ count: 1, name: 'test', unknownProp: 'ignored' }));
+    const component = new TestSettingsComponent(new MockDataHandler({ count: 1, name: 'test', unknownProp: 'ignored' }));
     await component.onload();
     expect(component.settings.count).toBe(1);
   });
 
   it('should warn about type mismatches in raw record', async () => {
-    const component = new TestSettingsComponent(createParams({ count: 'not-a-number', name: 'test' }));
+    const component = new TestSettingsComponent(new MockDataHandler({ count: 'not-a-number', name: 'test' }));
     await component.onload();
     // Should still load the value but log a debug warning
     expect(component.settings.name).toBe('test');
   });
 
   it('should save normalized data when loaded record differs from raw', async () => {
-    const params = createParams({ count: 5, extraField: 'removed', name: 'test' });
+    const params = new MockDataHandler({ count: 5, extraField: 'removed', name: 'test' });
     const component = new TestSettingsComponent(params);
     await component.onload();
     // SaveData should have been called because the normalized record differs from the raw one
@@ -393,13 +388,13 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should validate with empty validators returning no errors', async () => {
-    const component = new TestSettingsComponent(createParams());
+    const component = new TestSettingsComponent(new MockDataHandler({}));
     const result = await component.validate({ count: 1, name: 'valid' });
     expect(result).toEqual({});
   });
 
   it('should return false for non-string property names in isValidPropertyName', () => {
-    const component = new TestSettingsComponent(createParams());
+    const component = new TestSettingsComponent(new MockDataHandler({}));
     // Access the private method to test the non-string guard
     const result = component['isValidPropertyName'](123);
     expect(result).toBe(false);
@@ -421,7 +416,7 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(createParams());
+    const component = new ValidatingComponent(new MockDataHandler({}));
     await component.onload();
 
     // Valid value - validator returns empty string
@@ -430,7 +425,7 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should use input value for effective when no validation error', async () => {
-    const component = new TestSettingsComponent(createParams());
+    const component = new TestSettingsComponent(new MockDataHandler({}));
     await component.onload();
 
     // Set a valid property - effective should equal input, not default
@@ -456,7 +451,7 @@ describe('PluginSettingsComponentBase', () => {
     }
 
     // Load from file with an invalid count
-    const component = new ValidatingComponent(createParams({ count: -5, name: 'test' }));
+    const component = new ValidatingComponent(new MockDataHandler({ count: -5, name: 'test' }));
     await component.onload();
 
     // Input should have the raw value, effective should have the default
@@ -473,8 +468,7 @@ describe('EmptyPluginSettingsComponent', () => {
   });
 
   it('should create with custom params', () => {
-    const params = createParams();
-    const component = new EmptyPluginSettingsComponent(params);
+    const component = new EmptyPluginSettingsComponent();
     expect(component.defaultSettings).toEqual({});
   });
 
