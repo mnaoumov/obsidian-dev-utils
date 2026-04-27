@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 61.0.0
+
+- feat: extract data-handler
+
 ## 60.0.0
 
 - refactor: multiple command handlers at once
