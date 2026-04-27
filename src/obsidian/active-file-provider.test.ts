@@ -16,8 +16,8 @@ import {
   vi
 } from 'vitest';
 
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
-import { AppActiveFileProvider } from './app-active-file-provider.ts';
+import { strictProxy } from '../test-helpers/mock-implementation.ts';
+import { AppActiveFileProvider } from './active-file-provider.ts';
 
 describe('AppActiveFileProvider', () => {
   it('should return the active file from workspace', () => {

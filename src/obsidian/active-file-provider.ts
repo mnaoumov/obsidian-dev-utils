@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * App-backed implementation of {@link ActiveFileProvider}.
+ * Provider for the currently active file.
  */
 
 import type {
@@ -9,7 +9,19 @@ import type {
   TFile
 } from 'obsidian';
 
-import type { ActiveFileProvider } from './command-handler.ts';
+/**
+ * Provides access to the currently active file.
+ */
+
+/** */
+export interface ActiveFileProvider {
+  /**
+   * Gets the currently active file.
+   *
+   * @returns The active file, or `null` if no file is active.
+   */
+  getActiveFile(): null | TFile;
+}
 
 /**
  * {@link ActiveFileProvider} backed by Obsidian's {@link App}.

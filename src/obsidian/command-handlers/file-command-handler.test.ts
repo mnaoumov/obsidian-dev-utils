@@ -23,13 +23,13 @@ import {
   vi
 } from 'vitest';
 
-import type { AbstractFileCommandHandlerParams } from './abstract-file-command-handler.ts';
+import type { ActiveFileProvider } from '../active-file-provider.ts';
 import type {
-  ActiveFileProvider,
-  CommandHandlerRegistrationContext,
   FileMenuEventHandler,
   FilesMenuEventHandler
-} from './command-handler.ts';
+} from '../menu-event-registrar.ts';
+import type { AbstractFileCommandHandlerParams } from './abstract-file-command-handler.ts';
+import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';

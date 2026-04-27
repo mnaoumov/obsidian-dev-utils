@@ -663,6 +663,7 @@
     "esbuild": "latest",
     "eslint": "latest",
     "eslint-plugin-import": "npm:eslint-plugin-import-x@latest",
+    "urlpattern-polyfill": "npm:dry-uninstall",
     "typescript": "latest"
   },
   "dependencies": {

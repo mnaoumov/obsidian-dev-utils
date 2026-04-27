@@ -139,6 +139,7 @@
     "Unescapes",
     "unregisters",
     "unstub",
+    "urlpattern",
     "vararg",
     "varargs",
     "vectorize",
