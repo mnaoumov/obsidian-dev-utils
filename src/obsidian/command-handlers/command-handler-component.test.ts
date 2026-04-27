@@ -72,7 +72,7 @@ describe('CommandHandlerComponent', () => {
     const commandRegistrar = createMockCommandRegistrar();
     const component = new CommandHandlerComponent({
       activeFileProvider: createMockActiveFileProvider(),
-      commandHandler,
+      commandHandlers: [commandHandler],
       commandRegistrar,
       menuEventRegistrar: createMockMenuEventRegistrar()
     });
@@ -91,7 +91,7 @@ describe('CommandHandlerComponent', () => {
     const commandHandler = new TestHandler(createParams());
     const component = new CommandHandlerComponent({
       activeFileProvider: createMockActiveFileProvider(),
-      commandHandler,
+      commandHandlers: [commandHandler],
       commandRegistrar: createMockCommandRegistrar(),
       menuEventRegistrar: createMockMenuEventRegistrar()
     });
@@ -115,7 +115,7 @@ describe('CommandHandlerComponent', () => {
     const commandHandler = new TestHandler(createParams({ id: 'original-id', name: 'Original Name' }));
     const component = new CommandHandlerComponent({
       activeFileProvider: createMockActiveFileProvider(),
-      commandHandler,
+      commandHandlers: [commandHandler],
       commandRegistrar,
       menuEventRegistrar: createMockMenuEventRegistrar()
     });
