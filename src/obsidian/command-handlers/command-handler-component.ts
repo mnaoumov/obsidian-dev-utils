@@ -16,7 +16,7 @@ import { AsyncComponentBase } from '../components/async-component.ts';
 
 interface CommandHandlerComponentConstructorParams {
   readonly activeFileProvider: ActiveFileProvider;
-  readonly commandHandler: CommandHandler;
+  readonly commandHandlers: CommandHandler[];
   readonly commandRegistrar: CommandRegistrar;
   readonly menuEventRegistrar: MenuEventRegistrar;
 }
@@ -26,7 +26,7 @@ interface CommandHandlerComponentConstructorParams {
  */
 export class CommandHandlerComponent extends AsyncComponentBase {
   private readonly activeFileProvider: ActiveFileProvider;
-  private readonly commandHandler: CommandHandler;
+  private readonly commandHandlers: CommandHandler[];
   private readonly commandRegistrar: CommandRegistrar;
   private readonly menuEventRegistrar: MenuEventRegistrar;
 
@@ -37,7 +37,7 @@ export class CommandHandlerComponent extends AsyncComponentBase {
    */
   public constructor(params: CommandHandlerComponentConstructorParams) {
     super();
-    this.commandHandler = params.commandHandler;
+    this.commandHandlers = params.commandHandlers;
     this.activeFileProvider = params.activeFileProvider;
     this.menuEventRegistrar = params.menuEventRegistrar;
     this.commandRegistrar = params.commandRegistrar;
@@ -47,11 +47,14 @@ export class CommandHandlerComponent extends AsyncComponentBase {
    * Registers the command with Obsidian and provides runtime context to the handler.
    */
   public override async onload(): Promise<void> {
-    this.commandRegistrar.addCommand(this.commandHandler.buildCommand());
     const context: CommandHandlerRegistrationContext = {
       activeFileProvider: this.activeFileProvider,
       menuEventRegistrar: this.menuEventRegistrar
     };
-    await this.commandHandler.onRegistered(context);
+
+    for (const commandHandler of this.commandHandlers) {
+      this.commandRegistrar.addCommand(commandHandler.buildCommand());
+      await commandHandler.onRegistered(context);
+    }
   }
 }

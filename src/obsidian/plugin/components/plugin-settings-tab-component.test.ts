@@ -7,9 +7,6 @@ import {
   vi
 } from 'vitest';
 
-import type { ActiveFileProvider } from '../../active-file-provider.ts';
-import type { CommandRegistrar } from '../../command-registrar.ts';
-import type { MenuEventRegistrar } from '../../menu-event-registrar.ts';
 import type { PluginSettingsTabBase } from '../plugin-settings-tab.ts';
 
 import { strictProxy } from '../../../test-helpers/mock-implementation.ts';
@@ -42,27 +39,10 @@ describe('PluginSettingsTabComponent', () => {
     });
   }
 
-  function createMockActiveFileProvider(): ActiveFileProvider {
-    return strictProxy<ActiveFileProvider>({});
-  }
-
-  function createMockMenuEventRegistrar(): MenuEventRegistrar {
-    return strictProxy<MenuEventRegistrar>({});
-  }
-
-  function createMockCommandRegistrar(): CommandRegistrar {
-    return strictProxy<CommandRegistrar>({
-      addCommand: vi.fn()
-    });
-  }
-
   it('should register settings tab on load', () => {
     const plugin = createMockPlugin();
     const pluginSettingsTab = createMockSettingsTab();
     const component = new PluginSettingsTabComponent({
-      activeFileProvider: createMockActiveFileProvider(),
-      commandRegistrar: createMockCommandRegistrar(),
-      menuEventRegistrar: createMockMenuEventRegistrar(),
       plugin,
       pluginSettingsTab
     });
@@ -76,9 +56,6 @@ describe('PluginSettingsTabComponent', () => {
     const plugin = createMockPlugin();
     const pluginSettingsTab = createMockSettingsTab();
     const component = new PluginSettingsTabComponent({
-      activeFileProvider: createMockActiveFileProvider(),
-      commandRegistrar: createMockCommandRegistrar(),
-      menuEventRegistrar: createMockMenuEventRegistrar(),
       plugin,
       pluginSettingsTab
     });
