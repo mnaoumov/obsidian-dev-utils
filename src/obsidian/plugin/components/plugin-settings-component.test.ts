@@ -143,7 +143,7 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should save to file when settings changed', async () => {
     const dataHandler = new MockDataHandler({});
-    const component = new TestSettingsComponent(new MockDataHandler({}));
+    const component = new TestSettingsComponent(dataHandler);
     await component.onload();
 
     await component.setProperty('name', 'changed');

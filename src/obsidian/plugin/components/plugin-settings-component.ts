@@ -112,9 +112,11 @@ class EmptyDataHandler implements DataHandler {
     return {};
   }
 
+  /* v8 ignore start -- unreachable because EmptyPluginSettingsComponent has no properties to change, so saveToFile always short-circuits. */
   public async saveData(): Promise<void> {
     await noopAsync();
   }
+  /* v8 ignore stop */
 }
 
 /**
