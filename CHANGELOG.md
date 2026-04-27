@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 60.0.0
+
+- refactor: multiple command handlers at once
+
 ## 59.0.2
 
 - chore: move to dep
