@@ -20,6 +20,7 @@ import type {
   MaybeReturn,
   StringKeys
 } from '../../../type.ts';
+import type { DataHandler } from '../../data-handler.ts';
 
 import { AsyncEvents } from '../../../async-events.ts';
 import { getLibDebugger } from '../../../debug.ts';
@@ -50,25 +51,6 @@ const defaultTransformer = new GroupTransformer([
   new SetTransformer(),
   new TwoWayMapTransformer()
 ]);
-
-/**
- * Params for creating a {@link PluginSettingsComponentBase}.
- */
-export interface PluginSettingsComponentConstructorParams {
-  /**
-   * A function to load data from the plugin's data file.
-   *
-   * @returns The loaded data.
-   */
-  readonly loadData: () => Promise<unknown>;
-
-  /**
-   * A function to save data to the plugin's data file.
-   *
-   * @param data - The data to save.
-   */
-  readonly saveData: (data: unknown) => Promise<void>;
-}
 
 /**
  * A snapshot of plugin settings state, including raw input values, effective (validated) values,
@@ -124,6 +106,17 @@ type PropertyValues<PluginSettings extends object> = PluginSettings[PropertyName
 
 type ValidationResult<PluginSettings extends object> = Partial<Record<StringKeys<PluginSettings>, string>>;
 
+class EmptyDataHandler implements DataHandler {
+  public async loadData(): Promise<unknown> {
+    await noopAsync();
+    return {};
+  }
+
+  public async saveData(): Promise<void> {
+    await noopAsync();
+  }
+}
+
 /**
  * Base class for plugin settings components.
  *
@@ -167,20 +160,16 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
   private currentState: PluginSettingsState<PluginSettings>;
   private lastSavedState: PluginSettingsState<PluginSettings>;
   private readonly legacySettingsConverters: ((record: GenericObject) => void)[] = [];
-  private readonly loadDataFn: () => Promise<unknown>;
   private readonly propertyNames: PropertyNames<PluginSettings>[];
-  private readonly saveDataFn: (data: unknown) => Promise<void>;
   private readonly validators = new Map<PropertyNames<PluginSettings>, SettingsValidator<PluginSettings>>();
 
   /**
    * Creates a new plugin settings component.
    *
-   * @param params - The params for loading/saving data.
+   * @param dataHandler - The data handler.
    */
-  public constructor(params: PluginSettingsComponentConstructorParams) {
+  public constructor(private readonly dataHandler: DataHandler) {
     super();
-    this.loadDataFn = params.loadData.bind(params);
-    this.saveDataFn = params.saveData.bind(params);
     this.defaultSettings = this.createDefaultSettings() as ReadonlyDeep<PluginSettings>;
     this.currentState = this.createDefaultState();
     this.lastSavedState = this.createDefaultState();
@@ -238,7 +227,7 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
    * @returns A {@link Promise} that resolves when the settings are loaded.
    */
   public async loadFromFile(isInitialLoad: boolean): Promise<void> {
-    const data = await this.loadDataFn();
+    const data = await this.dataHandler.loadData();
     this.lastSavedState = this.createDefaultState();
     this.currentState = this.createDefaultState();
 
@@ -609,7 +598,7 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
   }
 
   private async saveToFileImpl(): Promise<void> {
-    await this.saveDataFn(await this.settingsToRawRecord(this.currentState.inputValues));
+    await this.dataHandler.saveData(await this.settingsToRawRecord(this.currentState.inputValues));
   }
 
   private setPropertyImpl(
@@ -642,19 +631,9 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
 export class EmptyPluginSettingsComponent extends PluginSettingsComponentBase<object> {
   /**
    * Creates a new empty plugin settings component.
-   *
-   * @param params - The params. Uses no-op load/save by default.
    */
-  public constructor(params?: PluginSettingsComponentConstructorParams) {
-    super(
-      params ?? {
-        loadData: async (): Promise<object> => {
-          await noopAsync();
-          return {};
-        },
-        saveData: noopAsync
-      }
-    );
+  public constructor() {
+    super(new EmptyDataHandler());
   }
 
   /**
