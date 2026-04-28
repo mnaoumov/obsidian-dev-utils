@@ -63,7 +63,8 @@ function createMockContext(): MockContext {
         },
         registerFileMenuEventHandler: vi.fn(),
         registerFilesMenuEventHandler: vi.fn()
-      }
+      },
+      pluginName: 'Test Plugin'
     },
     editorMenuHandlers
   };
@@ -82,7 +83,6 @@ function createParams(overrides?: Partial<EditorCommandHandlerParams>): EditorCo
     icon: 'test-icon',
     id: 'test-editor-cmd',
     name: 'Test Editor Command',
-    pluginName: 'Test Plugin',
     ...overrides
   };
 }
@@ -202,7 +202,7 @@ describe('EditorCommandHandler', () => {
   });
 
   it('should use pluginName as default section', async () => {
-    const handler = new TestEditorHandler(createParams({ pluginName: 'My Plugin' }));
+    const handler = new TestEditorHandler(createParams());
     handler.shouldAddToEditorMenuFn.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
     await handler.onRegistered(context);

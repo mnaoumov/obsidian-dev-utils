@@ -19,6 +19,7 @@ interface CommandHandlerComponentConstructorParams {
   readonly commandHandlers: CommandHandler[];
   readonly commandRegistrar: CommandRegistrar;
   readonly menuEventRegistrar: MenuEventRegistrar;
+  readonly pluginName: string;
 }
 
 /**
@@ -29,6 +30,7 @@ export class CommandHandlerComponent extends AsyncComponentBase {
   private readonly commandHandlers: CommandHandler[];
   private readonly commandRegistrar: CommandRegistrar;
   private readonly menuEventRegistrar: MenuEventRegistrar;
+  private readonly pluginName: string;
 
   /**
    * Creates a new command handler component.
@@ -41,6 +43,7 @@ export class CommandHandlerComponent extends AsyncComponentBase {
     this.activeFileProvider = params.activeFileProvider;
     this.menuEventRegistrar = params.menuEventRegistrar;
     this.commandRegistrar = params.commandRegistrar;
+    this.pluginName = params.pluginName;
   }
 
   /**
@@ -49,7 +52,8 @@ export class CommandHandlerComponent extends AsyncComponentBase {
   public override async onload(): Promise<void> {
     const context: CommandHandlerRegistrationContext = {
       activeFileProvider: this.activeFileProvider,
-      menuEventRegistrar: this.menuEventRegistrar
+      menuEventRegistrar: this.menuEventRegistrar,
+      pluginName: this.pluginName
     };
 
     for (const commandHandler of this.commandHandlers) {

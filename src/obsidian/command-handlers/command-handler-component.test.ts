@@ -62,7 +62,6 @@ function createParams(overrides?: Partial<CommandHandlerParams>): CommandHandler
     icon: 'test-icon',
     id: 'test-cmd',
     name: 'Test Command',
-    pluginName: 'Test Plugin',
     ...overrides
   };
 }
@@ -75,7 +74,8 @@ describe('CommandHandlerComponent', () => {
       activeFileProvider: createMockActiveFileProvider(),
       commandHandlers: [commandHandler],
       commandRegistrar,
-      menuEventRegistrar: createMockMenuEventRegistrar()
+      menuEventRegistrar: createMockMenuEventRegistrar(),
+      pluginName: 'Test Plugin'
     });
 
     await component.onload();
@@ -94,7 +94,8 @@ describe('CommandHandlerComponent', () => {
       activeFileProvider: createMockActiveFileProvider(),
       commandHandlers: [commandHandler],
       commandRegistrar: createMockCommandRegistrar(),
-      menuEventRegistrar: createMockMenuEventRegistrar()
+      menuEventRegistrar: createMockMenuEventRegistrar(),
+      pluginName: 'Test Plugin'
     });
 
     await component.onload();
@@ -118,7 +119,8 @@ describe('CommandHandlerComponent', () => {
       activeFileProvider: createMockActiveFileProvider(),
       commandHandlers: [commandHandler],
       commandRegistrar,
-      menuEventRegistrar: createMockMenuEventRegistrar()
+      menuEventRegistrar: createMockMenuEventRegistrar(),
+      pluginName: 'Test Plugin'
     });
 
     await component.onload();
@@ -135,7 +137,8 @@ describe('CommandHandlerComponent', () => {
       activeFileProvider: createMockActiveFileProvider(),
       commandHandlers: [commandHandler],
       commandRegistrar,
-      menuEventRegistrar: createMockMenuEventRegistrar()
+      menuEventRegistrar: createMockMenuEventRegistrar(),
+      pluginName: 'Test Plugin'
     });
 
     await component.load();

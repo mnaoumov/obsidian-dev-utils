@@ -78,7 +78,8 @@ function createMockContext(activeFile?: TFolderOriginal): MockContext {
         registerFilesMenuEventHandler: (handler: FilesMenuEventHandler): void => {
           filesMenuHandlers.push(handler);
         }
-      }
+      },
+      pluginName: 'Test Plugin'
     },
     fileMenuHandlers,
     filesMenuHandlers
@@ -94,7 +95,6 @@ function createParams(overrides?: Partial<AbstractFileCommandHandlerParams>): Ab
     icon: 'folder-icon',
     id: 'test-folder-cmd',
     name: 'Test Folder Command',
-    pluginName: 'Test Plugin',
     ...overrides
   };
 }
@@ -127,7 +127,8 @@ describe('FolderCommandHandler', () => {
           registerEditorMenuEventHandler: vi.fn(),
           registerFileMenuEventHandler: vi.fn(),
           registerFilesMenuEventHandler: vi.fn()
-        }
+        },
+        pluginName: 'Test Plugin'
       });
 
       // Active file is not a folder, so command palette should not work

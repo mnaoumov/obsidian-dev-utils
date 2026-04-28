@@ -19,6 +19,7 @@ import type {
 } from './command-handler.ts';
 
 import { invokeAsyncSafely } from '../../async.ts';
+import { ensureNonNullable } from '../../type-guards.ts';
 import { GlobalCommandHandler } from './global-command-handler.ts';
 
 /**
@@ -131,14 +132,23 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
     return this._shouldAddCommandToSubmenu;
   }
 
+  private _activeFileProvider?: ActiveFileProvider;
   private readonly _fileMenuItemName?: string | undefined;
   private readonly _fileMenuSection?: string | undefined;
   private readonly _fileMenuSubmenuIcon?: IconName | undefined;
   private readonly _filesMenuItemName?: string | undefined;
   private readonly _filesMenuSection?: string | undefined;
   private readonly _filesMenuSubmenuIcon?: IconName | undefined;
+  private _pluginName?: string;
   private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
-  private activeFileProvider?: ActiveFileProvider;
+
+  private get activeFileProvider(): ActiveFileProvider {
+    return ensureNonNullable(this._activeFileProvider);
+  }
+
+  private get pluginName(): string {
+    return ensureNonNullable(this._pluginName);
+  }
 
   /**
    * Creates a new abstract file command handler.
@@ -163,7 +173,8 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    */
   public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
     await super.onRegistered(context);
-    this.activeFileProvider = context.activeFileProvider;
+    this._activeFileProvider = context.activeFileProvider;
+    this._pluginName = context.pluginName;
     context.menuEventRegistrar.registerFileMenuEventHandler(this.handleAbstractFileMenu.bind(this));
     context.menuEventRegistrar.registerFilesMenuEventHandler(this.handleAbstractFilesMenu.bind(this));
   }
@@ -268,7 +279,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   }
 
   private getActiveFile(): null | TAbstractFile {
-    return this.activeFileProvider?.getActiveFile() ?? null;
+    return this.activeFileProvider.getActiveFile() ?? null;
   }
 
   private handleAbstractFileMenu(menu: Menu, abstractFile: TAbstractFile, source: string, leaf?: WorkspaceLeaf): void {

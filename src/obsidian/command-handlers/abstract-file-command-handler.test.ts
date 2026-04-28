@@ -71,7 +71,8 @@ function createMockContext(activeFile?: TFileOriginal): MockContext {
         registerFilesMenuEventHandler: (handler: FilesMenuEventHandler): void => {
           filesMenuHandlers.push(handler);
         }
-      }
+      },
+      pluginName: 'Test Plugin'
     },
     fileMenuHandlers,
     filesMenuHandlers
@@ -87,7 +88,6 @@ function createParams(overrides?: Partial<AbstractFileCommandHandlerParams>): Ab
     icon: 'file-icon',
     id: 'test-file-cmd',
     name: 'Test File Command',
-    pluginName: 'Test Plugin',
     ...overrides
   };
 }

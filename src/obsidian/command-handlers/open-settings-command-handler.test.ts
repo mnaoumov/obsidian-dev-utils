@@ -20,7 +20,7 @@ describe('OpenSettingsCommandHandler', () => {
     const pluginSettingsTab = strictProxy<PluginSettingsTabBase<object>>({
       show: vi.fn()
     });
-    const handler = new OpenSettingsCommandHandler({ pluginName: 'Test Plugin', pluginSettingsTab });
+    const handler = new OpenSettingsCommandHandler(pluginSettingsTab);
     return { handler, settingsTab: pluginSettingsTab };
   }
 

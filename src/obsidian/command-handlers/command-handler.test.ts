@@ -32,7 +32,6 @@ function createParams(overrides?: Partial<CommandHandlerParams>): CommandHandler
     icon: 'test-icon',
     id: 'test-id',
     name: 'Test Command',
-    pluginName: 'Test Plugin',
     ...overrides
   };
 }
@@ -44,17 +43,6 @@ describe('CommandHandler', () => {
     expect(handler.icon).toBe('test-icon');
     expect(handler.id).toBe('test-id');
     expect(handler.name).toBe('Test Command');
-  });
-
-  it('should expose pluginName as protected field via subclass', () => {
-    class ExposingHandler extends TestCommandHandler {
-      public getPluginName(): string {
-        return this.pluginName;
-      }
-    }
-
-    const handler = new ExposingHandler(createParams({ pluginName: 'My Plugin' }));
-    expect(handler.getPluginName()).toBe('My Plugin');
   });
 
   it('should build a command from handler properties', () => {
@@ -78,7 +66,8 @@ describe('CommandHandler', () => {
         registerEditorMenuEventHandler: vi.fn(),
         registerFileMenuEventHandler: vi.fn(),
         registerFilesMenuEventHandler: vi.fn()
-      }
+      },
+      pluginName: 'Test Plugin'
     })).resolves.toBeUndefined();
   });
 });
