@@ -33,7 +33,6 @@ function createParams(overrides?: Partial<CommandHandlerParams>): CommandHandler
     icon: 'test-icon',
     id: 'test-id',
     name: 'Test Command',
-    pluginName: 'Test Plugin',
     ...overrides
   };
 }

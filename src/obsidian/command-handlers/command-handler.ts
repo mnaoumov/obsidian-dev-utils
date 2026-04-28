@@ -32,11 +32,6 @@ export interface CommandHandlerParams {
    * The display name of the command.
    */
   readonly name: string;
-
-  /**
-   * The name of the plugin that owns this command.
-   */
-  readonly pluginName: string;
 }
 
 /**
@@ -52,6 +47,11 @@ export interface CommandHandlerRegistrationContext {
    * Registrar for menu event handlers.
    */
   readonly menuEventRegistrar: MenuEventRegistrar;
+
+  /**
+   * The name of the plugin that owns this command.
+   */
+  readonly pluginName: string;
 }
 
 /**
@@ -77,11 +77,6 @@ export abstract class CommandHandler {
   public readonly name: string;
 
   /**
-   * The name of the plugin that owns this command.
-   */
-  protected readonly pluginName: string;
-
-  /**
    * Creates a new command handler.
    *
    * @param params - The parameters for the command handler.
@@ -90,7 +85,6 @@ export abstract class CommandHandler {
     this.icon = params.icon;
     this.id = params.id;
     this.name = params.name;
-    this.pluginName = params.pluginName;
   }
 
   /**

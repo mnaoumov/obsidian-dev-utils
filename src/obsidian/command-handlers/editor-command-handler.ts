@@ -19,6 +19,7 @@ import type {
 } from './command-handler.ts';
 
 import { invokeAsyncSafely } from '../../async.ts';
+import { ensureNonNullable } from '../../type-guards.ts';
 import { CommandHandler } from './command-handler.ts';
 
 /**
@@ -92,7 +93,12 @@ export abstract class EditorCommandHandler extends CommandHandler {
   private readonly _editorMenuItemName?: string | undefined;
   private readonly _editorMenuSection?: string | undefined;
   private readonly _editorMenuSubmenuIcon?: IconName | undefined;
+  private _pluginName?: string;
+
   private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
+  private get pluginName(): string {
+    return ensureNonNullable(this._pluginName);
+  }
 
   /**
    * Creates a new editor command handler.
@@ -128,6 +134,7 @@ export abstract class EditorCommandHandler extends CommandHandler {
    */
   public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
     await super.onRegistered(context);
+    this._pluginName = context.pluginName;
     context.menuEventRegistrar.registerEditorMenuEventHandler(this.handleEditorMenu.bind(this));
   }
 
