@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 61.0.1
+
+- chore: update libs
+
 ## 61.0.0
 
 - feat: extract data-handler
