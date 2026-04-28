@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 62.0.0
+
+- refactor!: move plugin name to component
+- chore: update libs
+
 ## 61.1.0
 
 - feat: add more registrars
