@@ -217,7 +217,7 @@ describe('EditorCommandHandler', () => {
         setTitle: vi.fn().mockReturnThis()
       };
       cb(item);
-      expect(item.setSection).toHaveBeenCalledWith('My Plugin');
+      expect(item.setSection).toHaveBeenCalledWith('Test Plugin');
       return menu;
     });
     Object.assign(menu, { addItem });
