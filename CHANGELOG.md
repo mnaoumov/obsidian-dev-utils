@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 61.1.0
+
+- feat: add more registrars
+
 ## 61.0.1
 
 - chore: update libs
