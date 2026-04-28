@@ -186,6 +186,10 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    * @returns Whether the command can execute.
    */
   protected override canExecute(): boolean {
+    if (!this._activeFileProvider) {
+      return false;
+    }
+
     if (!this.shouldAddToCommandPalette()) {
       return false;
     }
