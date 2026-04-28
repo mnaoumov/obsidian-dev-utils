@@ -48,7 +48,8 @@ function createMockActiveFileProvider(): ActiveFileProvider {
 
 function createMockCommandRegistrar(): CommandRegistrar {
   return strictProxy<CommandRegistrar>({
-    addCommand: vi.fn()
+    addCommand: vi.fn(),
+    removeCommand: vi.fn()
   });
 }
 
@@ -125,5 +126,21 @@ describe('CommandHandlerComponent', () => {
     // Handler should be unaffected
     expect(commandHandler.id).toBe('original-id');
     expect(commandHandler.name).toBe('Original Name');
+  });
+
+  it('should call removeCommand on unload', async () => {
+    const commandHandler = new TestHandler(createParams({ id: 'my-cmd' }));
+    const commandRegistrar = createMockCommandRegistrar();
+    const component = new CommandHandlerComponent({
+      activeFileProvider: createMockActiveFileProvider(),
+      commandHandlers: [commandHandler],
+      commandRegistrar,
+      menuEventRegistrar: createMockMenuEventRegistrar()
+    });
+
+    await component.load();
+    component.unload();
+
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
   });
 });

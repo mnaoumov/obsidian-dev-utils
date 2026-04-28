@@ -33,4 +33,14 @@ describe('PluginCommandRegistrar', () => {
 
     expect(addCommand).toHaveBeenCalledWith(command);
   });
+
+  it('should delegate removeCommand to the plugin', () => {
+    const removeCommand = vi.fn();
+    const plugin = strictProxy<PluginOriginal>({ removeCommand });
+    const registrar = new PluginCommandRegistrar(plugin);
+
+    registrar.removeCommand('test-command');
+
+    expect(removeCommand).toHaveBeenCalledWith('test-command');
+  });
 });
