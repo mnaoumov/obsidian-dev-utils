@@ -13,7 +13,19 @@ import type {
  * A registrar for commands.
  */
 export interface CommandRegistrar {
+  /**
+   * Adds a command to the registrar.
+   *
+   * @param command - The command to add.
+   */
   addCommand(command: Command): void;
+
+  /**
+   * Removes a command from the registrar.
+   *
+   * @param commandId - The ID of the command to remove.
+   */
+  removeCommand(commandId: string): void;
 }
 
 /**
@@ -34,5 +46,14 @@ export class PluginCommandRegistrar implements CommandRegistrar {
    */
   public addCommand(command: Command): void {
     this.plugin.addCommand(command);
+  }
+
+  /**
+   * Removes a command from the plugin.
+   *
+   * @param commandId - The ID of the command to remove.
+   */
+  public removeCommand(commandId: string): void {
+    this.plugin.removeCommand(commandId);
   }
 }

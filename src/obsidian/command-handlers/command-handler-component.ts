@@ -53,7 +53,11 @@ export class CommandHandlerComponent extends AsyncComponentBase {
     };
 
     for (const commandHandler of this.commandHandlers) {
-      this.commandRegistrar.addCommand(commandHandler.buildCommand());
+      const command = commandHandler.buildCommand();
+      this.commandRegistrar.addCommand(command);
+      this.register(() => {
+        this.commandRegistrar.removeCommand(command.id);
+      });
       await commandHandler.onRegistered(context);
     }
   }
