@@ -48,6 +48,7 @@ export class MultipleEmailComponent extends TypedTextComponent<readonly string[]
    * @param value - The email address to convert.
    * @returns The string.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces default String() conversion with custom formatting.
   public override valueToString(value: readonly string[]): string {
     return value.join(', ');
   }

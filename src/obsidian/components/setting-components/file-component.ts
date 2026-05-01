@@ -36,6 +36,7 @@ export class FileComponent extends TypedTextComponent<File | null> {
    *
    * @returns The value of the component.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces default String() conversion with custom formatting.
   public override getValue(): File | null {
     return this.inputEl.files?.[0] ?? null;
   }
@@ -55,6 +56,7 @@ export class FileComponent extends TypedTextComponent<File | null> {
    * @param value - The file to convert.
    * @returns The string.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces default String() conversion with custom formatting.
   public override valueToString(value: File | null): string {
     return value?.name ?? '';
   }

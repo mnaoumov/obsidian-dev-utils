@@ -47,7 +47,8 @@ class TestFolderHandler extends FolderCommandHandler {
   public canExecuteFn = vi.fn(() => true);
   public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
-  protected override canExecuteFolder(_folder: TFolderOriginal): boolean {
+  protected override canExecuteFolder(folder: TFolderOriginal): boolean {
+    super.canExecuteFolder(folder);
     return this.canExecuteFn();
   }
 
@@ -55,7 +56,8 @@ class TestFolderHandler extends FolderCommandHandler {
     await this.executeFn();
   }
 
-  protected override shouldAddToFolderMenu(_folder: TFolderOriginal, _source: string, _leaf?: WorkspaceLeafOriginal): boolean {
+  protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+    super.shouldAddToFolderMenu(folder, source, leaf);
     return true;
   }
 }
@@ -188,7 +190,8 @@ describe('FolderCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToFolderMenu(): boolean {
+        protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFolderMenu(folder, source, leaf);
           return true;
         }
       }
@@ -211,6 +214,7 @@ describe('FolderCommandHandler', () => {
         }
 
         protected override canExecuteFolder(folder: TFolderOriginal): boolean {
+          super.canExecuteFolder(folder);
           return folder.path !== 'blocked';
         }
 
@@ -251,11 +255,13 @@ describe('FolderCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToFolderMenu(): boolean {
+        protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFolderMenu(folder, source, leaf);
           return true;
         }
 
-        protected override shouldAddToFoldersMenu(): boolean {
+        protected override shouldAddToFoldersMenu(folders: TFolderOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFoldersMenu(folders, source, leaf);
           return true;
         }
       }
@@ -296,7 +302,8 @@ describe('FolderCommandHandler', () => {
           executedFolders.push(folder.path);
         }
 
-        protected override shouldAddToFolderMenu(): boolean {
+        protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFolderMenu(folder, source, leaf);
           return true;
         }
       }
@@ -323,11 +330,13 @@ describe('FolderCommandHandler', () => {
           executedFolders.push(folder.path);
         }
 
-        protected override shouldAddToFolderMenu(): boolean {
+        protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFolderMenu(folder, source, leaf);
           return true;
         }
 
-        protected override shouldAddToFoldersMenu(): boolean {
+        protected override shouldAddToFoldersMenu(folders: TFolderOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFoldersMenu(folders, source, leaf);
           return true;
         }
       }
@@ -371,7 +380,8 @@ describe('FolderCommandHandler', () => {
           await this.executeFolders(folders);
         }
 
-        protected override canExecuteFolder(): boolean {
+        protected override canExecuteFolder(folder: TFolderOriginal): boolean {
+          super.canExecuteFolder(folder);
           return true;
         }
 

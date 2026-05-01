@@ -42,6 +42,7 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    * @param abstractFile - The file or folder.
    * @returns Whether the command can execute.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally narrows abstract file to TFile check.
   protected override canExecuteAbstractFile(abstractFile: TAbstractFile): boolean {
     return isFile(abstractFile) && this.canExecuteFile(abstractFile);
   }
@@ -52,6 +53,7 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    * @param abstractFiles - The files or folders.
    * @returns Whether the command can execute.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally narrows abstract files to TFile[] check.
   protected override canExecuteAbstractFiles(abstractFiles: TAbstractFile[]): boolean {
     return abstractFiles.every((f) => isFile(f)) && this.canExecuteFiles(asArrayOfFiles(abstractFiles));
   }
@@ -91,6 +93,7 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    *
    * @param abstractFiles - The files or folders.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces parent with TFile-specific delegation.
   protected override async executeAbstractFiles(abstractFiles: TAbstractFile[]): Promise<void> {
     await this.executeFiles(asArrayOfFiles(abstractFiles));
   }
@@ -122,6 +125,7 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    * @param leaf - The workspace leaf, if available.
    * @returns Whether to add to the file menu.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally narrows to TFile before delegating.
   protected override shouldAddToAbstractFileMenu(abstractFile: TAbstractFile, source: string, leaf?: WorkspaceLeaf): boolean {
     if (!isFile(abstractFile)) {
       return false;
@@ -137,6 +141,7 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    * @param leaf - The workspace leaf, if available.
    * @returns Whether to add to the files menu.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally narrows to TFile[] before delegating.
   protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFile[], source: string, leaf?: WorkspaceLeaf): boolean {
     if (!abstractFiles.every((f) => isFile(f))) {
       return false;

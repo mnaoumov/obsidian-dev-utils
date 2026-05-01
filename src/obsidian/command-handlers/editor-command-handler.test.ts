@@ -35,7 +35,8 @@ class TestEditorHandler extends EditorCommandHandler {
   public shouldAddToCommandPaletteFn = vi.fn(() => true);
   public shouldAddToEditorMenuFn = vi.fn(() => false);
 
-  protected override canExecuteEditor(_editor: EditorOriginal, _ctx: MarkdownFileInfoOriginal): boolean {
+  protected override canExecuteEditor(editor: EditorOriginal, ctx: MarkdownFileInfoOriginal): boolean {
+    super.canExecuteEditor(editor, ctx);
     return this.canExecuteFn();
   }
 
@@ -44,10 +45,12 @@ class TestEditorHandler extends EditorCommandHandler {
   }
 
   protected override shouldAddToCommandPalette(): boolean {
+    super.shouldAddToCommandPalette();
     return this.shouldAddToCommandPaletteFn();
   }
 
-  protected override shouldAddToEditorMenu(_editor: EditorOriginal, _ctx: MarkdownFileInfoOriginal): boolean {
+  protected override shouldAddToEditorMenu(editor: EditorOriginal, ctx: MarkdownFileInfoOriginal): boolean {
+    super.shouldAddToEditorMenu(editor, ctx);
     return this.shouldAddToEditorMenuFn();
   }
 }

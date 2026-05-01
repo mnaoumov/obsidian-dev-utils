@@ -39,6 +39,7 @@ export class AbortSignalComponent extends Component {
    * Aborts the signal on unload.
    */
   public override onunload(): void {
+    super.onunload();
     this.abortController.abort(new SilentError(`Plugin ${this.pluginId} had been unloaded`));
   }
 }
