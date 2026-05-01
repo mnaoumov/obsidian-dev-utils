@@ -20,6 +20,7 @@ class TestGlobalHandler extends GlobalCommandHandler {
   public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
   protected override canExecute(): boolean {
+    super.canExecute();
     return this.canExecuteFn();
   }
 

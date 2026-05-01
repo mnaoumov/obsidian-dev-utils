@@ -50,6 +50,7 @@ export class CommandHandlerComponent extends AsyncComponentBase {
    * Registers the command with Obsidian and provides runtime context to the handler.
    */
   public override async onload(): Promise<void> {
+    await super.onload();
     const context: CommandHandlerRegistrationContext = {
       activeFileProvider: this.activeFileProvider,
       menuEventRegistrar: this.menuEventRegistrar,

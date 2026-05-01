@@ -40,7 +40,8 @@ class TestAbstractFileHandler extends AbstractFileCommandHandler {
   public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
   public shouldAddToMenuFn = vi.fn(() => false);
 
-  protected override canExecuteAbstractFile(_abstractFile: TAbstractFileOriginal): boolean {
+  protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+    super.canExecuteAbstractFile(abstractFile);
     return this.canExecuteFn();
   }
 
@@ -48,7 +49,8 @@ class TestAbstractFileHandler extends AbstractFileCommandHandler {
     await this.executeFn();
   }
 
-  protected override shouldAddToAbstractFileMenu(_abstractFile: TAbstractFileOriginal, _source: string, _leaf?: WorkspaceLeafOriginal): boolean {
+  protected override shouldAddToAbstractFileMenu(abstractFile: TAbstractFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+    super.shouldAddToAbstractFileMenu(abstractFile, source, leaf);
     return this.shouldAddToMenuFn();
   }
 }
@@ -190,7 +192,8 @@ describe('AbstractFileCommandHandler', () => {
     it('should execute files sequentially by default', async () => {
       const executionOrder: string[] = [];
       class SequentialHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return true;
         }
 
@@ -199,7 +202,8 @@ describe('AbstractFileCommandHandler', () => {
           executionOrder.push(abstractFile.path);
         }
 
-        protected override shouldAddToAbstractFilesMenu(): boolean {
+        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
           return true;
         }
       }
@@ -240,7 +244,8 @@ describe('AbstractFileCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToAbstractFilesMenu(): boolean {
+        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
           return true;
         }
       }
@@ -339,7 +344,8 @@ describe('AbstractFileCommandHandler', () => {
   describe('multi-file menu', () => {
     it('should not add items when shouldAddToAbstractFilesMenu returns false', async () => {
       class NoFilesMenuHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return true;
         }
 
@@ -361,7 +367,8 @@ describe('AbstractFileCommandHandler', () => {
 
     it('should set section submenu for multi-file menu when shouldAddCommandToSubmenu is true', async () => {
       class FilesSubmenuHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return true;
         }
 
@@ -369,7 +376,8 @@ describe('AbstractFileCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToAbstractFilesMenu(): boolean {
+        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
           return true;
         }
       }
@@ -395,7 +403,8 @@ describe('AbstractFileCommandHandler', () => {
 
     it('should fall back to file menu section and icon for multi-file submenu', async () => {
       class FilesSubmenuHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return true;
         }
 
@@ -403,7 +412,8 @@ describe('AbstractFileCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToAbstractFilesMenu(): boolean {
+        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
           return true;
         }
       }
@@ -429,7 +439,8 @@ describe('AbstractFileCommandHandler', () => {
 
     it('should use filesMenuItemName for multi-file menu item title', async () => {
       class FilesMenuHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return true;
         }
 
@@ -437,7 +448,8 @@ describe('AbstractFileCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToAbstractFilesMenu(): boolean {
+        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
           return true;
         }
       }
@@ -468,7 +480,8 @@ describe('AbstractFileCommandHandler', () => {
 
     it('should fall back to fileMenuItemName then command name for multi-file title', async () => {
       class FilesMenuHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return true;
         }
 
@@ -476,7 +489,8 @@ describe('AbstractFileCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToAbstractFilesMenu(): boolean {
+        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
           return true;
         }
       }
@@ -507,7 +521,8 @@ describe('AbstractFileCommandHandler', () => {
 
     it('should not add multi-file menu items when canExecuteAbstractFiles returns false', async () => {
       class FailCanExecuteHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return false;
         }
 
@@ -515,7 +530,8 @@ describe('AbstractFileCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToAbstractFilesMenu(): boolean {
+        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
           return true;
         }
       }
@@ -535,7 +551,8 @@ describe('AbstractFileCommandHandler', () => {
       const executionOrder: string[] = [];
 
       class ClickableFilesHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return true;
         }
 
@@ -544,7 +561,8 @@ describe('AbstractFileCommandHandler', () => {
           executionOrder.push(abstractFile.path);
         }
 
-        protected override shouldAddToAbstractFilesMenu(): boolean {
+        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
           return true;
         }
       }
@@ -582,7 +600,8 @@ describe('AbstractFileCommandHandler', () => {
   describe('shouldAddToCommandPalette', () => {
     it('should return false from command palette when shouldAddToCommandPalette returns false', async () => {
       class NoPaletteHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return true;
         }
 
@@ -591,6 +610,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override shouldAddToCommandPalette(): boolean {
+          super.shouldAddToCommandPalette();
           return false;
         }
       }
@@ -611,6 +631,7 @@ describe('AbstractFileCommandHandler', () => {
 
       class NullFileHandler extends AbstractFileCommandHandler {
         protected override canExecute(): boolean {
+          super.canExecute();
           return true;
         }
 
@@ -655,7 +676,8 @@ describe('AbstractFileCommandHandler', () => {
 
     it('should use empty string for filesMenuSubmenuIcon when neither icon is provided', async () => {
       class FilesSubmenuHandler extends AbstractFileCommandHandler {
-        protected override canExecuteAbstractFile(): boolean {
+        protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
+          super.canExecuteAbstractFile(abstractFile);
           return true;
         }
 
@@ -663,7 +685,8 @@ describe('AbstractFileCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToAbstractFilesMenu(): boolean {
+        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
           return true;
         }
       }

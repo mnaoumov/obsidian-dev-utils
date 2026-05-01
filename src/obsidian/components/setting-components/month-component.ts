@@ -78,6 +78,7 @@ export class MonthComponent extends TypedRangeTextComponent<IsoMonth> {
    * @param value - The month to convert.
    * @returns The string.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces default String() conversion with custom formatting.
   public override valueToString(value: IsoMonth): string {
     const date = moment().year(value.year).month(value.month - 1);
     return date.format(DATE_FORMAT);

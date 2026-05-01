@@ -47,7 +47,8 @@ class TestFileHandler extends FileCommandHandler {
   public canExecuteFn = vi.fn(() => true);
   public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
-  protected override canExecuteFile(_file: TFileOriginal): boolean {
+  protected override canExecuteFile(file: TFileOriginal): boolean {
+    super.canExecuteFile(file);
     return this.canExecuteFn();
   }
 
@@ -55,7 +56,8 @@ class TestFileHandler extends FileCommandHandler {
     await this.executeFn();
   }
 
-  protected override shouldAddToFileMenu(_file: TFileOriginal, _source: string, _leaf?: WorkspaceLeafOriginal): boolean {
+  protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+    super.shouldAddToFileMenu(file, source, leaf);
     return true;
   }
 }
@@ -180,7 +182,8 @@ describe('FileCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToFileMenu(): boolean {
+        protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFileMenu(file, source, leaf);
           return true;
         }
       }
@@ -203,6 +206,7 @@ describe('FileCommandHandler', () => {
         }
 
         protected override canExecuteFile(file: TFileOriginal): boolean {
+          super.canExecuteFile(file);
           return file.path !== 'blocked.md';
         }
 
@@ -243,11 +247,13 @@ describe('FileCommandHandler', () => {
           await Promise.resolve();
         }
 
-        protected override shouldAddToFileMenu(): boolean {
+        protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFileMenu(file, source, leaf);
           return true;
         }
 
-        protected override shouldAddToFilesMenu(): boolean {
+        protected override shouldAddToFilesMenu(files: TFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFilesMenu(files, source, leaf);
           return true;
         }
       }
@@ -288,7 +294,8 @@ describe('FileCommandHandler', () => {
           executedFiles.push(file.path);
         }
 
-        protected override shouldAddToFileMenu(): boolean {
+        protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFileMenu(file, source, leaf);
           return true;
         }
       }
@@ -316,11 +323,13 @@ describe('FileCommandHandler', () => {
           executedFiles.push(file.path);
         }
 
-        protected override shouldAddToFileMenu(): boolean {
+        protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFileMenu(file, source, leaf);
           return true;
         }
 
-        protected override shouldAddToFilesMenu(): boolean {
+        protected override shouldAddToFilesMenu(files: TFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
+          super.shouldAddToFilesMenu(files, source, leaf);
           return true;
         }
       }
@@ -364,7 +373,8 @@ describe('FileCommandHandler', () => {
           await this.executeFiles(files);
         }
 
-        protected override canExecuteFile(): boolean {
+        protected override canExecuteFile(file: TFileOriginal): boolean {
+          super.canExecuteFile(file);
           return true;
         }
 

@@ -32,6 +32,7 @@ export class AsyncErrorHandlerComponent extends Component {
    * Registers the error handler.
    */
   public override onload(): void {
+    super.onload();
     this.register(registerAsyncErrorEventHandler(this.handleAsyncError.bind(this)));
   }
 

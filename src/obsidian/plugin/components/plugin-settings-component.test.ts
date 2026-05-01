@@ -123,6 +123,7 @@ describe('PluginSettingsComponentBase', () => {
       }
 
       protected override registerValidators(): void {
+        super.registerValidators();
         this.registerValidator('count', (value) => {
           if (value < 0) {
             return 'Count must be non-negative';
@@ -219,6 +220,7 @@ describe('PluginSettingsComponentBase', () => {
       }
 
       protected override registerValidators(): void {
+        super.registerValidators();
         this.registerValidator('count', (value) => {
           if (value < 0) {
             return 'Invalid';
@@ -244,6 +246,7 @@ describe('PluginSettingsComponentBase', () => {
       }
 
       protected override registerValidators(): void {
+        super.registerValidators();
         this.registerValidator('count', (value) => {
           if (value < 0) {
             return 'Invalid';
@@ -271,6 +274,7 @@ describe('PluginSettingsComponentBase', () => {
       }
 
       protected override registerValidators(): void {
+        super.registerValidators();
         this.registerValidator('name', (value) => {
           if (value === '') {
             return 'Name required';
@@ -300,6 +304,7 @@ describe('PluginSettingsComponentBase', () => {
       }
 
       protected override registerLegacySettingsConverters(): void {
+        super.registerLegacySettingsConverters();
         this.registerLegacySettingsConverter(
           LegacySettings,
           (legacy) => {
@@ -324,6 +329,7 @@ describe('PluginSettingsComponentBase', () => {
       }
 
       protected override registerLegacySettingsConverters(): void {
+        super.registerLegacySettingsConverters();
         this.registerLegacySettingsConverter(
           class {
             public legacyOnlyField = 'old';
@@ -349,6 +355,7 @@ describe('PluginSettingsComponentBase', () => {
       }
 
       protected override registerLegacySettingsConverters(): void {
+        super.registerLegacySettingsConverters();
         this.registerLegacySettingsConverter(
           class {
             public legacyField = '';
@@ -407,6 +414,7 @@ describe('PluginSettingsComponentBase', () => {
       }
 
       protected override registerValidators(): void {
+        super.registerValidators();
         this.registerValidator('count', (value) => {
           if (value < 0) {
             return 'Count must be non-negative';
@@ -441,6 +449,7 @@ describe('PluginSettingsComponentBase', () => {
       }
 
       protected override registerValidators(): void {
+        super.registerValidators();
         this.registerValidator('count', (value) => {
           if (value < 0) {
             return 'Must be non-negative';

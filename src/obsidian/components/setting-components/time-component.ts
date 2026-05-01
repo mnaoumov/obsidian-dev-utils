@@ -49,6 +49,7 @@ export class TimeComponent extends TypedRangeTextComponent<moment.Duration> {
    * @param value - The time to convert.
    * @returns The string.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces default String() conversion with custom formatting.
   public override valueToString(value: moment.Duration): string {
     let format: string;
     if (value.milliseconds() > 0) {

@@ -45,6 +45,7 @@ export class PluginContextComponent extends Component {
    * Initializes the plugin context and debug controller.
    */
   public override onload(): void {
+    super.onload();
     initPluginContext(this.app, this.pluginId);
     new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
       initDebugController(win, this);

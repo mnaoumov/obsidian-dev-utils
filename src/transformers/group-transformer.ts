@@ -49,6 +49,7 @@ export class GroupTransformer extends Transformer {
    * @param transformerId - The id of the transformer to get.
    * @returns The transformer with the given id.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces parent lookup with search across child transformers.
   public override getTransformer(transformerId: string): Transformer {
     return ensureNonNullable(this.transformers.find((t) => t.id === transformerId), `No transformer with id ${transformerId} found`);
   }
@@ -74,6 +75,7 @@ export class GroupTransformer extends Transformer {
    * @param key - The key of the value to get the transformer id for.
    * @returns The id of the transformer that can transform the given value.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces parent lookup with composite transformer search.
   protected override getTransformerId(value: unknown, key: string): null | string {
     const transformer = this.getFirstTransformerThatCanTransform(value, key);
     if (transformer === null) {

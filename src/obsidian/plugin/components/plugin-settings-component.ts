@@ -325,6 +325,7 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
    * Loads settings from file and registers event handlers.
    */
   public override async onload(): Promise<void> {
+    await super.onload();
     registerAsyncEvent(this, this.on('loadSettings', this.onLoadSettings.bind(this)));
     registerAsyncEvent(this, this.on('saveSettings', this.onSaveSettings.bind(this)));
     await this.loadFromFile(true);

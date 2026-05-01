@@ -22,7 +22,7 @@ export abstract class AsyncComponentBase extends Component {
    * Unlike Component's `load()` which runs `onload()` and children concurrently,
    * this awaits `onload()` first, then loads children in order.
    */
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Obsidian's load() handles async returns at runtime.
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises, obsidian-dev-utils/require-super-call -- Obsidian's load() handles async returns at runtime. Intentionally replaces synchronous Component.load() with async loadAsync().
   public override async load(): Promise<void> {
     await loadAsync(this);
   }
@@ -32,7 +32,7 @@ export abstract class AsyncComponentBase extends Component {
    *
    * @returns A {@link Promise} that resolves when initialization is complete.
    */
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Intentional async override; called from our own async load().
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises, obsidian-dev-utils/require-super-call -- Intentional async override; called from our own async load(). Base hook providing async default for subclasses.
   public override async onload(): Promise<void> {
     await Promise.resolve();
   }

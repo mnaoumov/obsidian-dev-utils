@@ -185,6 +185,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    *
    * @returns Whether the command can execute.
    */
+  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces trivial parent default.
   protected override canExecute(): boolean {
     if (!this._activeFileProvider) {
       return false;
