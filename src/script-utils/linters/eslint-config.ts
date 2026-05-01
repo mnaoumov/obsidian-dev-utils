@@ -455,6 +455,7 @@ function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.
         'obsidian-dev-utils': obsidianDevUtilsPlugin
       },
       rules: {
+        'obsidian-dev-utils/no-async-callback-to-unsafe-return': 'error',
         'obsidian-dev-utils/no-used-underscore-variables': 'error',
         'obsidian-dev-utils/require-super-call': 'error'
       }
