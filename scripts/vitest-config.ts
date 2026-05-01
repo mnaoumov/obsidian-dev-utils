@@ -59,7 +59,7 @@ export const config = defineConfig({
           include: ['src/**/*.test.ts'],
           name: 'unit-tests:obsidian',
           server: SHARED_SERVER,
-          setupFiles: ['obsidian-test-mocks/setup', './src/test-helpers/setup.ts']
+          setupFiles: ['obsidian-test-mocks/vitest-setup', './src/test-helpers/setup.ts']
         }
       },
       {
