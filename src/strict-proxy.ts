@@ -50,6 +50,7 @@ export function bypassStrictProxy<T>(obj: T): T {
  * - Passthrough for well-known props (`then`, `toJSON`, `Symbol.iterator`, etc.).
  * - Recursive proxying of nested plain objects.
  *
+ * @typeParam T - The target type to mock.
  * @param partial - A partial object containing only the mocked members.
  * @returns A proxy typed as `T` that throws on unmocked property access.
  */
@@ -80,6 +81,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 /**
  * Wraps a value in a strict proxy. Idempotent — double-wrapping is a no-op.
  *
+ * @typeParam T - The target type for the proxy.
  * @param value - The value to wrap.
  * @returns The proxied value typed as `T`.
  */

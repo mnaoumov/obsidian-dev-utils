@@ -9,6 +9,7 @@ import { ensureNonNullable } from './type-guards.ts';
 /**
  * Get the key of an enum value.
  *
+ * @typeParam T - The enum type.
  * @param enumType - The enum type.
  * @param value - The value to get the key of.
  * @returns The key of the enum value.
@@ -20,6 +21,7 @@ export function getEnumKey<T extends Record<string, string>>(enumType: T, value:
 /**
  * Get the value of an enum key.
  *
+ * @typeParam T - The enum type.
  * @param enumType - The enum type.
  * @param key - The key to get the value of.
  * @returns The value of the enum key.

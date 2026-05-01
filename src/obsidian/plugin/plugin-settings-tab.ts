@@ -56,6 +56,8 @@ export const SAVE_TO_FILE_CONTEXT = 'PluginSettingsTab';
 
 /**
  * Options for `PluginSettingsTabBase.bind`.
+ *
+ * @typeParam T - The type of the settings property value.
  */
 export interface BindOptions<T> {
   /**
@@ -83,6 +85,10 @@ export interface BindOptions<T> {
 
 /**
  * Extended options for `PluginSettingsTabBase.bind`.
+ *
+ * @typeParam PluginSettings - The plugin settings type.
+ * @typeParam UIValue - The type of the UI component's value.
+ * @typeParam PropertyName - The settings property name being bound.
  */
 export interface BindOptionsExtended<
   PluginSettings extends object,
@@ -108,6 +114,8 @@ export interface BindOptionsExtended<
 
 /**
  * Params for creating a {@link PluginSettingsTabBase}.
+ *
+ * @typeParam PluginSettings - The plugin settings type.
  */
 export interface PluginSettingsTabBaseConstructorParams<PluginSettings extends object> {
   /**

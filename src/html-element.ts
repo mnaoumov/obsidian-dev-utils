@@ -66,6 +66,7 @@ export async function createDivAsync(
 /**
  * Creates an element asynchronously.
  *
+ * @typeParam K - The tag name key from `HTMLElementTagNameMap`.
  * @param tag - The tag name of the element to create.
  * @param o - The element information.
  * @param callback - The callback to call when the element is created.
@@ -112,6 +113,7 @@ export async function createSpanAsync(
 /**
  * Creates a svg asynchronously.
  *
+ * @typeParam K - The tag name key from `SVGElementTagNameMap`.
  * @param tag - The tag name of the svg to create.
  * @param o - The svg information.
  * @param callback - The callback to call when the svg is created.

@@ -26,6 +26,8 @@ interface ObsidianDevUtilsStateWrapper {
 
 /**
  * Wrapper type for storing shared state in the Obsidian app.
+ *
+ * @typeParam T - The type of the wrapped value.
  */
 export class ValueWrapper<T> {
   /**
@@ -66,6 +68,7 @@ export function getApp(): App {
 /**
  * Retrieves or creates a shared state wrapper object for a given key in the Obsidian app.
  *
+ * @typeParam T - The type of the shared state value.
  * @param app - The Obsidian app instance.
  * @param key - The key to store or retrieve the shared state.
  * @param defaultValue - The default value to use if the shared state does not exist.

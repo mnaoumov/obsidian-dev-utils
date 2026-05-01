@@ -79,6 +79,7 @@ export interface ObsidianPublishFrontmatter {
 /**
  * Parses the front matter of a given content string.
  *
+ * @typeParam CustomFrontmatter - The type of the custom front matter.
  * @param content - The content string to parse.
  * @returns The parsed front matter.
  */
