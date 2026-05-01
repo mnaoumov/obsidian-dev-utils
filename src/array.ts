@@ -7,6 +7,7 @@
 /**
  * Filter an array in place.
  *
+ * @typeParam T - The type of the array elements.
  * @param arr - The array to filter.
  * @param predicate - The predicate to filter the array.
  */
@@ -29,6 +30,7 @@ export function filterInPlace<T>(arr: T[], predicate: (value: T, index: number, 
 /**
  * Remove duplicates from an array.
  *
+ * @typeParam T - The type of the array elements.
  * @param arr - The array to remove duplicates from.
  * @returns The array with duplicates removed.
  */

@@ -43,13 +43,13 @@ declare global {
 
 /**
  * A combined page type, which includes the front matter and the SMarkdownPage.
+ *
+ * @typeParam CustomFrontmatter - The type of the custom front matter.
  */
 export type CombinedPage<CustomFrontmatter = unknown> = CombinedFrontmatter<CustomFrontmatter> & SMarkdownPage;
 
 /**
  * Extended interface for the Dataview Inline API, providing additional methods for custom page types and array handling.
- *
- * @typeParam CustomPage - The type of the custom page. Defaults to `SMarkdownPage`.
  */
 export interface DataviewInlineApi extends DataviewInlineApiOriginal {
   /**
@@ -145,6 +145,8 @@ const paginationCss = `
 
 /**
  * Array or DataArray type.
+ *
+ * @typeParam T - The type of the elements.
  */
 export type ArrayOrDataArray<T> = DataArray<T> | T[];
 
@@ -175,6 +177,8 @@ export interface RenderIframeParams {
 
 /**
  * Options for {@link renderPaginatedList}.
+ *
+ * @typeParam T - The type of the list items.
  */
 export interface RenderPaginatedListParams<T> {
   /**
@@ -195,6 +199,8 @@ export interface RenderPaginatedListParams<T> {
 
 /**
  * Options for {@link renderPaginated}.
+ *
+ * @typeParam T - The type of the items to paginate.
  */
 export interface RenderPaginatedParams<T> {
   /**
@@ -223,6 +229,8 @@ export interface RenderPaginatedParams<T> {
 
 /**
  * Options for {@link renderPaginatedTable}.
+ *
+ * @typeParam T - The type of the table row data.
  */
 export interface RenderPaginatedTableParams<T> {
   /**

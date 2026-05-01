@@ -55,6 +55,7 @@ function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
             ]
           }
         ],
+        'jsdoc/check-template-names': 'error',
         'jsdoc/require-file-overview': [
           'error',
           {
@@ -127,6 +128,8 @@ function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
             }
           }
         ],
+        'jsdoc/require-template': 'error',
+        'jsdoc/require-template-description': 'error',
         'jsdoc/require-throws-type': 'off',
         'jsdoc/tag-lines': [
           'error',

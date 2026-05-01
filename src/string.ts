@@ -17,11 +17,15 @@ import { resolveValue } from './value-provider.ts';
 
 /**
  * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
+ *
+ * @typeParam CapturedGroupArgs - The types of the captured group arguments.
  */
 export type AsyncReplacer<CapturedGroupArgs extends string[]> = ValueProvider<StringReplacement, ReplaceArgs<CapturedGroupArgs>>;
 
 /**
  * Common arguments for the `replaceAll`/`replaceAllAsync` functions.
+ *
+ * @typeParam CapturedGroupArgs - The types of the captured group arguments.
  */
 export interface ReplaceArgs<CapturedGroupArgs extends string[]> {
   /**
@@ -57,6 +61,8 @@ export interface ReplaceArgs<CapturedGroupArgs extends string[]> {
 
 /**
  * A synchronous function that generates replacement strings, or a string to replace with.
+ *
+ * @typeParam CapturedGroupArgs - The types of the captured group arguments.
  */
 export type Replacer<CapturedGroupArgs extends string[]> = ((args: ReplaceArgs<CapturedGroupArgs>) => StringReplacement) | StringReplacement;
 
@@ -236,7 +242,7 @@ export function replace(str: string, replacementsMap: Record<string, string>): s
 /**
  * Replaces all occurrences of a search string or pattern with the results of an replacer function.
  *
- * @typeParam ReplaceGroupArgs - The type of additional arguments passed to the replacer function.
+ * @typeParam CapturedGroupArgs - The types of the captured group arguments.
  * @param str - The string in which to perform replacements.
  * @param searchValue - The string or regular expression to search for.
  * @param replacer - A replacer function that generates replacement strings, or a string to replace with.
@@ -292,7 +298,7 @@ export function replaceAll<CapturedGroupArgs extends string[]>(
 /**
  * Asynchronously replaces all occurrences of a search string or pattern with the results of an asynchronous replacer function.
  *
- * @typeParam ReplaceGroupArgs - The type of additional arguments passed to the replacer function.
+ * @typeParam ReplaceGroupArgs - The types of the captured group arguments.
  * @param str - The string in which to perform replacements.
  * @param searchValue - The string or regular expression to search for.
  * @param replacer - A synchronous/asynchronous function that generates replacement strings, or a string to replace with.

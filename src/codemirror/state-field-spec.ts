@@ -15,6 +15,8 @@ import type {
 
 /**
  * A specification for a state field.
+ *
+ * @typeParam Value - The type of the state field value.
  */
 export interface StateFieldSpec<Value> {
   /**

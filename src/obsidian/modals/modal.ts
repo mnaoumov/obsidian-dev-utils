@@ -29,6 +29,8 @@ export interface ModalParamsBase {
 
 /**
  * A base class for displaying modals in Obsidian.
+ *
+ * @typeParam Value - The type of the value resolved by the modal.
  */
 export abstract class ModalBase<Value> extends Modal {
   /**
@@ -60,6 +62,7 @@ export function addCssClass(params: ModalParamsBase, cssClass: string): ModalPar
 /**
  * Displays a modal in Obsidian.
  *
+ * @typeParam Value - The type of the value resolved by the modal.
  * @param modalCreator - A function that creates a modal.
  * @returns A {@link Promise} that resolves when the modal is closed.
  */

@@ -55,6 +55,8 @@ export interface RetryWithTimeoutNoticeParams {
 
 /**
  * Options for {@link runWithTimeout}.
+ *
+ * @typeParam Result - The type of the result from the operation function.
  */
 export interface RunWithTimeoutNoticeParams<Result> {
   /**
@@ -107,7 +109,7 @@ export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParam
 /**
  * Executes a function with a timeout and displays a notice if the function times out.
  *
- * @typeParam R - The type of the result from the asynchronous function.
+ * @typeParam Result - The type of the result from the asynchronous function.
  * @param params - The parameters for the function.
  * @returns The result of the function.
  */

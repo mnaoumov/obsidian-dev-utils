@@ -21,6 +21,8 @@ import { showModal } from './modal.ts';
 
 /**
  * Options for {@link selectItem}.
+ *
+ * @typeParam T - The type of the selectable items.
  */
 export interface SelectItemParams<T> {
   /**
@@ -95,6 +97,7 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
 /**
  * Displays a selection modal in Obsidian for choosing an item from a list.
  *
+ * @typeParam T - The type of the selectable items.
  * @param params - The parameters for the selection modal.
  * @returns A {@link Promise} that resolves with the selected item or `null` if no item was selected.
  */

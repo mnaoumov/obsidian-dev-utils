@@ -8,6 +8,8 @@ import { noop } from './function.ts';
 
 /**
  * A type that represents a generic object.
+ *
+ * @typeParam T - The base type to intersect with.
  */
 export type GenericObject<T = unknown> = Record<string | symbol, unknown> & T;
 
@@ -31,6 +33,7 @@ export function assert(condition: boolean, errorOrMessage: Error | string): asse
 /**
  * Asserts that a value is a generic object, narrowing its type in place.
  *
+ * @typeParam T - The type of the value.
  * @param _obj - The value to assert.
  */
 export function assertGenericObject<T>(_obj: T): asserts _obj is GenericObject<T> {
@@ -60,6 +63,7 @@ export function assertNonNullable<T extends NullableConstraint<T>>(value: T, err
 /**
  * Ensures that a value is a generic object, returning it with narrowed type.
  *
+ * @typeParam T - The type of the value.
  * @param obj - The value to ensure.
  * @returns The value as a generic object.
  */

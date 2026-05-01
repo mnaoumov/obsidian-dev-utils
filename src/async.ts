@@ -360,6 +360,8 @@ export interface RetryWithTimeoutParams {
 
 /**
  * Options for {@link runWithTimeout}.
+ *
+ * @typeParam Result - The type of the result returned by the operation function.
  */
 export interface RunWithTimeoutParams<Result> {
   /**

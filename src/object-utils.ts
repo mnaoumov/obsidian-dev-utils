@@ -165,12 +165,17 @@ type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string
 /**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
  *
+ * @typeParam T - The target object type.
+ * @typeParam U - The source object type.
  * @param target - The target object to assign properties to.
  * @param source - The source object to assign properties from.
  * @returns The target object with the assigned properties.
  */
 export function assignWithNonEnumerableProperties<T extends object, U>(target: T, source: U): T & U;
 /**
+ * @typeParam T - The target object type.
+ * @typeParam U - The first source object type.
+ * @typeParam V - The second source object type.
  * @param target - The target object to assign properties to.
  * @param source1 - The first source object to assign properties from.
  * @param source2 - The second source object to assign properties from.
@@ -180,6 +185,10 @@ export function assignWithNonEnumerableProperties<T extends object, U, V>(target
 /**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
  *
+ * @typeParam T - The target object type.
+ * @typeParam U - The first source object type.
+ * @typeParam V - The second source object type.
+ * @typeParam W - The third source object type.
  * @param target - The target object to assign properties to.
  * @param source1 - The first source object to assign properties from.
  * @param source2 - The second source object to assign properties from.
@@ -200,6 +209,7 @@ export function assignWithNonEnumerableProperties(target: object, ...sources: ob
 /**
  * Casts a value to a specific type.
  *
+ * @typeParam T - The target type to cast to.
  * @param value - The value to cast.
  * @returns The value as the specified type.
  */
@@ -210,6 +220,7 @@ export function castTo<T>(value: unknown): T {
 /**
  * Clones an object, including non-enumerable properties.
  *
+ * @typeParam T - The type of the object.
  * @param obj - The object to clone.
  * @returns A new object with the same properties as the original object, including non-enumerable properties.
  */
@@ -305,6 +316,7 @@ export function deleteProperty<T extends object>(obj: T, propertyName: keyof T):
  *
  * Useful to handle incorrect default export interop between ESM and CJS.
  *
+ * @typeParam T - The type of the default export.
  * @param module - The module to extract the default export from.
  * @returns The default export.
  */
@@ -323,6 +335,7 @@ export function extractDefaultExportInterop<T>(module: ModuleWithDefaultExport<T
 /**
  * Gets all entries of an object.
  *
+ * @typeParam T - The type of the object.
  * @param obj - The object to get the entries of.
  * @returns An array of all entries of the object.
  */
@@ -334,6 +347,7 @@ export function getAllEntries<T extends object>(obj: T): [StringKeys<T>, T[Strin
  * Gets all keys of an object.
  * Includes fields and properties.
  *
+ * @typeParam T - The type of the object.
  * @param obj - The object to get the keys of.
  * @returns An array of all keys of the object.
  */
@@ -464,7 +478,6 @@ export function removeUndefinedProperties<Type extends object, const KeysToKeep 
  * Removes all `undefined` properties from an object.
  *
  * @typeParam Type - The type of the object.
- * @typeParam KeysToKeep - The keys to keep.
  * @param obj - The object to remove `undefined` properties from.
  * @param keysToKeep - The keys to keep.
  * @returns The object with all `undefined` properties removed.

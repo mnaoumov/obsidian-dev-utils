@@ -25,6 +25,8 @@ import { addPluginCssClasses } from './plugin/plugin-context.ts';
 
 /**
  * Options for {@link loop}.
+ *
+ * @typeParam T - The type of the items to loop over.
  */
 export interface LoopParams<T> {
   /**
@@ -92,6 +94,7 @@ export interface LoopParams<T> {
 /**
  * Loops over a list of items and processes each item.
  *
+ * @typeParam T - The type of the items to loop over.
  * @param params - The parameters for the loop.
  */
 export async function loop<T>(params: LoopParams<T>): Promise<void> {

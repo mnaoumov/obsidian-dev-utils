@@ -7,6 +7,8 @@
 /**
  * A map that allows you to look up a value by its key and vice versa.
  *
+ * @typeParam Key - The type of the keys.
+ * @typeParam Value - The type of the values.
  * @example
  * ```ts
  * const map = new TwoWayMap<string, number>();
