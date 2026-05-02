@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 62.1.0
+
+- feat: validate generic types
+- feat: rule that forces super.method()
+- chore: update libs
+
 ## 62.0.0
 
 - refactor!: move plugin name to component
