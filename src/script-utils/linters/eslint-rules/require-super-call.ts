@@ -33,6 +33,11 @@ import {
   SyntaxKind
 } from 'typescript';
 
+import {
+  assert,
+  assertNonNullable
+} from '../../../type-guards.ts';
+
 export const MESSAGE_ID = 'requireSuperCall';
 
 interface OverrideMethodInfo {
@@ -122,9 +127,7 @@ export const requireSuperCall: Rule.RuleModule = {
  * @returns `true` if the declaration is abstract.
  */
 function checkIsAbstract(decl: Declaration): boolean {
-  if (!canHaveModifiers(decl)) {
-    return false;
-  }
+  assert(canHaveModifiers(decl), 'Expected method declaration to support modifiers');
 
   const modifiers = getModifiers(decl);
   return modifiers?.some((mod) => mod.kind === SyntaxKind.AbstractKeyword) ?? false;
@@ -148,15 +151,15 @@ function checkIsParentMethodAbstract(
   const classDecl = methodNode.parent.parent;
   const tsClassNode = services.esTreeNodeToTSNodeMap.get(classDecl);
   const classType = checker.getTypeAtLocation(tsClassNode);
-  const baseTypes = classType.getBaseTypes() ?? [];
+  const baseTypes = classType.getBaseTypes();
+  assertNonNullable(baseTypes, 'Expected class with override method to have base types');
 
   for (const baseType of baseTypes) {
     const prop = baseType.getProperty(methodName);
-    if (!prop) {
-      continue;
-    }
+    assertNonNullable(prop, `Expected base type to have property '${methodName}'`);
 
-    const declarations = prop.getDeclarations() ?? [];
+    const declarations = prop.getDeclarations();
+    assertNonNullable(declarations, `Expected property '${methodName}' to have declarations`);
     for (const decl of declarations) {
       if (checkIsAbstract(decl)) {
         return true;

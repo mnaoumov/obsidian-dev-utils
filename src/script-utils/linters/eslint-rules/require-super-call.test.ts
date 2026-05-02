@@ -250,6 +250,17 @@ ruleTester.run('require-super-call', toRuleTesterModule(requireSuperCall), {
         }
       `,
       name: 'override of concrete method in chain with abstract grandparent'
+    },
+    {
+      code: `
+        class Parent { 'my-method'(): void {} }
+        class Child extends Parent {
+          public override 'my-method'(): void {
+            console.log('string literal key');
+          }
+        }
+      `,
+      name: 'override with string literal method key (non-Identifier, skipped by rule)'
     }
   ]
 });
