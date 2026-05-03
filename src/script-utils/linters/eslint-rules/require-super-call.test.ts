@@ -1,11 +1,15 @@
+import type { Rule } from 'eslint';
+
 import { RuleTester } from '@typescript-eslint/rule-tester';
 import {
   afterAll,
   describe,
+  expect,
   it,
   vi
 } from 'vitest';
 
+import { strictProxy } from '../../../strict-proxy.ts';
 import {
   MESSAGE_ID,
   requireSuperCall
@@ -28,6 +32,106 @@ const ruleTester = new RuleTester({
       }
     }
   }
+});
+
+interface MockBaseType {
+  getProperty(name: string): MockBaseTypeProperty | undefined;
+}
+
+interface MockBaseTypeProperty {
+  getDeclarations(): undefined | unknown[];
+}
+
+interface MockRuleContextResult {
+  report: ReturnType<typeof vi.fn>;
+  visitors: Record<string, (node: Rule.Node) => void>;
+}
+
+interface MockTypeCheckerOverrides {
+  getBaseTypes?: () => MockBaseType[] | undefined;
+}
+
+/**
+ * Creates a mock ESLint context and AST nodes for testing the rule's behavior
+ * when the TypeScript type checker cannot fully resolve types.
+ *
+ * @param typeCheckerOverrides - Overrides for the mock type checker behavior.
+ * @returns The mock context, visitor functions, and report spy.
+ */
+function createMockRuleContext(typeCheckerOverrides: MockTypeCheckerOverrides): MockRuleContextResult {
+  const report = vi.fn();
+
+  const classDecl = {};
+  const tsNode = {};
+  const esTreeNodeToTSNodeMap = new Map();
+  esTreeNodeToTSNodeMap.set(classDecl, tsNode);
+
+  const classType = {
+    getBaseTypes: typeCheckerOverrides.getBaseTypes ?? ((): undefined => undefined)
+  };
+
+  const context = strictProxy<Rule.RuleContext>({
+    report,
+    sourceCode: strictProxy<Rule.RuleContext['sourceCode']>({
+      parserServices: {
+        esTreeNodeToTSNodeMap,
+        program: {
+          getTypeChecker: () =>
+            strictProxy({
+              getTypeAtLocation: () => classType
+            })
+        }
+      }
+    })
+  });
+
+  const visitors = requireSuperCall.create(context) as Record<string, (node: Rule.Node) => void>;
+
+  const methodNode = strictProxy<Rule.Node>({
+    key: { name: 'method', type: 'Identifier' },
+    override: true,
+    parent: { parent: classDecl }
+  });
+
+  visitors['MethodDefinition'](methodNode);
+
+  return { report, visitors };
+}
+
+describe('require-super-call (unresolvable types)', () => {
+  it('should report when getBaseTypes() returns undefined', () => {
+    const { report, visitors } = createMockRuleContext({
+      getBaseTypes: (): undefined => undefined
+    });
+
+    visitors['MethodDefinition:exit'](strictProxy<Rule.Node>({}));
+
+    expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
+  });
+
+  it('should report when getProperty() returns undefined', () => {
+    const { report, visitors } = createMockRuleContext({
+      getBaseTypes: (): MockBaseType[] => [{ getProperty: (): undefined => undefined }]
+    });
+
+    visitors['MethodDefinition:exit'](strictProxy<Rule.Node>({}));
+
+    expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
+  });
+
+  it('should report when getDeclarations() returns undefined', () => {
+    const { report, visitors } = createMockRuleContext({
+      getBaseTypes: (): MockBaseType[] => [{
+        getProperty: (): MockBaseTypeProperty => ({
+          getDeclarations: (): undefined => undefined
+        })
+      }]
+    });
+
+    visitors['MethodDefinition:exit'](strictProxy<Rule.Node>({}));
+
+    expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
+  });
 });
 
 ruleTester.run('require-super-call', toRuleTesterModule(requireSuperCall), {
