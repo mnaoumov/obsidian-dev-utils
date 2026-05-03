@@ -33,10 +33,7 @@ import {
   SyntaxKind
 } from 'typescript';
 
-import {
-  assert,
-  assertNonNullable
-} from '../../../type-guards.ts';
+import { assert } from '../../../type-guards.ts';
 
 export const MESSAGE_ID = 'requireSuperCall';
 
@@ -152,14 +149,24 @@ function checkIsParentMethodAbstract(
   const tsClassNode = services.esTreeNodeToTSNodeMap.get(classDecl);
   const classType = checker.getTypeAtLocation(tsClassNode);
   const baseTypes = classType.getBaseTypes();
-  assertNonNullable(baseTypes, 'Expected class with override method to have base types');
+
+  if (!baseTypes) {
+    return false;
+  }
 
   for (const baseType of baseTypes) {
     const prop = baseType.getProperty(methodName);
-    assertNonNullable(prop, `Expected base type to have property '${methodName}'`);
+
+    if (!prop) {
+      continue;
+    }
 
     const declarations = prop.getDeclarations();
-    assertNonNullable(declarations, `Expected property '${methodName}' to have declarations`);
+
+    if (!declarations) {
+      continue;
+    }
+
     for (const decl of declarations) {
       if (checkIsAbstract(decl)) {
         return true;
