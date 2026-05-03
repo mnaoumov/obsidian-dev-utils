@@ -1,3 +1,4 @@
+import type { TSESTree } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
@@ -10,6 +11,7 @@ import {
 } from 'vitest';
 
 import { strictProxy } from '../../../strict-proxy.ts';
+import { assertNonNullable } from '../../../type-guards.ts';
 import {
   MESSAGE_ID,
   requireSuperCall
@@ -44,7 +46,7 @@ interface MockBaseTypeProperty {
 
 interface MockRuleContextResult {
   report: ReturnType<typeof vi.fn>;
-  visitors: Record<string, (node: Rule.Node) => void>;
+  visitMethodDefinitionExit: (node: Rule.Node) => void;
 }
 
 interface MockTypeCheckerOverrides {
@@ -87,40 +89,45 @@ function createMockRuleContext(typeCheckerOverrides: MockTypeCheckerOverrides): 
 
   const visitors = requireSuperCall.create(context) as Record<string, (node: Rule.Node) => void>;
 
-  const methodNode = strictProxy<Rule.Node>({
-    key: { name: 'method', type: 'Identifier' },
+  const methodNode = strictProxy<TSESTree.MethodDefinition>({
+    key: strictProxy<TSESTree.Identifier>({ name: 'method', type: 'Identifier' as TSESTree.Identifier['type'] }),
     override: true,
     parent: { parent: classDecl }
   });
 
-  visitors['MethodDefinition'](methodNode);
+  const methodDefinitionVisitor = visitors['MethodDefinition'];
+  assertNonNullable(methodDefinitionVisitor);
+  methodDefinitionVisitor(methodNode as Rule.Node);
 
-  return { report, visitors };
+  const visitMethodDefinitionExit = visitors['MethodDefinition:exit'];
+  assertNonNullable(visitMethodDefinitionExit);
+
+  return { report, visitMethodDefinitionExit };
 }
 
 describe('require-super-call (unresolvable types)', () => {
   it('should report when getBaseTypes() returns undefined', () => {
-    const { report, visitors } = createMockRuleContext({
+    const { report, visitMethodDefinitionExit } = createMockRuleContext({
       getBaseTypes: (): undefined => undefined
     });
 
-    visitors['MethodDefinition:exit'](strictProxy<Rule.Node>({}));
+    visitMethodDefinitionExit(strictProxy<Rule.Node>({}));
 
     expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
   });
 
   it('should report when getProperty() returns undefined', () => {
-    const { report, visitors } = createMockRuleContext({
+    const { report, visitMethodDefinitionExit } = createMockRuleContext({
       getBaseTypes: (): MockBaseType[] => [{ getProperty: (): undefined => undefined }]
     });
 
-    visitors['MethodDefinition:exit'](strictProxy<Rule.Node>({}));
+    visitMethodDefinitionExit(strictProxy<Rule.Node>({}));
 
     expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
   });
 
   it('should report when getDeclarations() returns undefined', () => {
-    const { report, visitors } = createMockRuleContext({
+    const { report, visitMethodDefinitionExit } = createMockRuleContext({
       getBaseTypes: (): MockBaseType[] => [{
         getProperty: (): MockBaseTypeProperty => ({
           getDeclarations: (): undefined => undefined
@@ -128,7 +135,7 @@ describe('require-super-call (unresolvable types)', () => {
       }]
     });
 
-    visitors['MethodDefinition:exit'](strictProxy<Rule.Node>({}));
+    visitMethodDefinitionExit(strictProxy<Rule.Node>({}));
 
     expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
   });
