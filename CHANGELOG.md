@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 62.2.0
+
+- fix(eslint): handle unresolvable base types in require-super-call rule
+- chore: update libs
+
 ## 62.1.0
 
 - feat: validate generic types
