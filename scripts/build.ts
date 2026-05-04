@@ -6,8 +6,8 @@ import { execFromRoot } from '../src/script-utils/root.ts';
 
 const BUILD_STEPS = [
   'build:clean',
-  'build:compile:typescript',
   'build:generate-index',
+  'build:compile:typescript',
   'build:types',
   'build:lib',
   'build:generate-exports',
