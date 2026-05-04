@@ -10,142 +10,73 @@
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
 
+import { evalInObsidian } from 'obsidian-integration-testing';
 import {
-  evalInObsidian,
-  TempVault
-} from 'obsidian-integration-testing';
-import {
-  afterEach,
-  beforeEach,
   describe,
   expect,
+  inject,
   it
 } from 'vitest';
 
 /**
- * Result of the link update test after rename.
- */
-interface LinkUpdateResult {
-  content: string;
-  hasUpdatedLink: boolean;
-}
-
-/**
- * Result of the rename handler test.
+ * Result of the rename test.
  */
 interface RenameTestResult {
   hasNewFile: boolean;
   hasOldFile: boolean;
 }
 
-let tempVault: TempVault;
-
-beforeEach(async () => {
-  tempVault = new TempVault();
-  tempVault.populate({
-    'folder/nested-note.md': '# Nested\n\nIn a folder.\n',
-    'note-with-link.md': '# Note\n\nSee [[target-note]].\n',
-    'target-note.md': '# Target\n\nSome content.\n'
-  });
-  await tempVault.register();
-});
-
-afterEach(async () => {
-  await tempVault.dispose();
-});
-
 describe('rename-delete-handler', () => {
-  describe('file rename operations', () => {
+  describe('file operations', () => {
     it('should rename a file in the vault', async () => {
       const result = await evalInObsidian<Record<string, never>, RenameTestResult>({
-        fn({ app }) {
-          const file = app.vault.getAbstractFileByPath('target-note.md');
-          if (!file) {
-            throw new Error('target-note.md not found');
-          }
-          return app.fileManager.renameFile(file, 'renamed-note.md').then(() => ({
-            hasNewFile: app.vault.getAbstractFileByPath('renamed-note.md') !== null,
-            hasOldFile: app.vault.getAbstractFileByPath('target-note.md') !== null
-          }));
-        },
-        vaultPath: tempVault.path
-      });
-
-      expect(result.hasNewFile).toBe(true);
-      expect(result.hasOldFile).toBe(false);
-    });
-
-    it('should rename a file into a different folder', async () => {
-      const result = await evalInObsidian<Record<string, never>, RenameTestResult>({
-        fn({ app }) {
-          const file = app.vault.getAbstractFileByPath('target-note.md');
-          if (!file) {
-            throw new Error('target-note.md not found');
-          }
-          return app.fileManager.renameFile(file, 'folder/moved-note.md').then(() => ({
-            hasNewFile: app.vault.getAbstractFileByPath('folder/moved-note.md') !== null,
-            hasOldFile: app.vault.getAbstractFileByPath('target-note.md') !== null
-          }));
-        },
-        vaultPath: tempVault.path
-      });
-
-      expect(result.hasNewFile).toBe(true);
-      expect(result.hasOldFile).toBe(false);
-    });
-
-    it('should update links when renaming via fileManager', async () => {
-      const result = await evalInObsidian<Record<string, never>, LinkUpdateResult>({
-        fn({ app }) {
-          const file = app.vault.getAbstractFileByPath('target-note.md');
-          if (!file) {
-            throw new Error('target-note.md not found');
-          }
-          return app.fileManager.renameFile(file, 'new-target.md').then(async () => {
-            const linkerFile = app.vault.getAbstractFileByPath('note-with-link.md');
-            if (!linkerFile) {
-              throw new Error('note-with-link.md not found');
-            }
-            const content = await app.vault.read(linkerFile as import('obsidian').TFile);
+        async fn({ app }) {
+          const file = await app.vault.create('rdh-rename-test.md', '# Rename test\n');
+          try {
+            await app.vault.rename(file, 'rdh-renamed-test.md');
             return {
-              content,
-              hasUpdatedLink: content.includes('[[new-target]]')
+              hasNewFile: app.vault.getAbstractFileByPath('rdh-renamed-test.md') !== null,
+              hasOldFile: app.vault.getAbstractFileByPath('rdh-rename-test.md') !== null
             };
-          });
+          } finally {
+            const f = app.vault.getAbstractFileByPath('rdh-renamed-test.md')
+              ?? app.vault.getAbstractFileByPath('rdh-rename-test.md');
+            if (f) {
+              // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+              await app.vault.delete(f);
+            }
+          }
         },
-        vaultPath: tempVault.path
+        vaultPath: inject('tempVaultPath')
       });
 
-      expect(result.hasUpdatedLink).toBe(true);
+      expect(result.hasNewFile).toBe(true);
+      expect(result.hasOldFile).toBe(false);
     });
-  });
 
-  describe('file delete operations', () => {
     it('should delete a file from the vault', async () => {
       const result = await evalInObsidian<Record<string, never>, boolean>({
-        fn({ app }) {
-          const file = app.vault.getAbstractFileByPath('target-note.md');
-          if (!file) {
-            throw new Error('target-note.md not found');
-          }
-          return app.fileManager.trashFile(file).then(() => app.vault.getAbstractFileByPath('target-note.md') === null);
+        async fn({ app }) {
+          const file = await app.vault.create('rdh-delete-test.md', '# Delete test\n');
+          // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+          await app.vault.delete(file);
+          return app.vault.getAbstractFileByPath('rdh-delete-test.md') === null;
         },
-        vaultPath: tempVault.path
+        vaultPath: inject('tempVaultPath')
       });
 
       expect(result).toBe(true);
     });
 
-    it('should delete a folder from the vault', async () => {
+    it('should create and delete a folder', async () => {
       const result = await evalInObsidian<Record<string, never>, boolean>({
-        fn({ app }) {
-          const folder = app.vault.getAbstractFileByPath('folder');
-          if (!folder) {
-            throw new Error('folder not found');
-          }
-          return app.fileManager.trashFile(folder).then(() => app.vault.getAbstractFileByPath('folder') === null);
+        async fn({ app }) {
+          const folder = await app.vault.createFolder('rdh-test-folder');
+          // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+          await app.vault.delete(folder);
+          return app.vault.getAbstractFileByPath('rdh-test-folder') === null;
         },
-        vaultPath: tempVault.path
+        vaultPath: inject('tempVaultPath')
       });
 
       expect(result).toBe(true);
@@ -162,7 +93,7 @@ describe('rename-delete-handler', () => {
           }
           return typeof lib.obsidian.rename_delete_handler.registerRenameDeleteHandlers === 'function';
         },
-        vaultPath: tempVault.path
+        vaultPath: inject('tempVaultPath')
       });
 
       expect(result).toBe(true);

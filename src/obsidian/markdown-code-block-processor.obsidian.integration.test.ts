@@ -7,40 +7,13 @@
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
 
+import { evalInObsidian } from 'obsidian-integration-testing';
 import {
-  evalInObsidian,
-  TempVault
-} from 'obsidian-integration-testing';
-import {
-  afterEach,
-  beforeEach,
   describe,
   expect,
+  inject,
   it
 } from 'vitest';
-
-let tempVault: TempVault;
-
-beforeEach(async () => {
-  tempVault = new TempVault();
-  tempVault.populate({
-    'code-block-note.md': [
-      '# Test Note',
-      '',
-      '```js',
-      'console.log("hello");',
-      '```',
-      '',
-      'Some text after the code block.',
-      ''
-    ].join('\n')
-  });
-  await tempVault.register();
-});
-
-afterEach(async () => {
-  await tempVault.dispose();
-});
 
 describe('markdown-code-block-processor', () => {
   it('should export getCodeBlockMarkdownInfo function', async () => {
@@ -52,7 +25,7 @@ describe('markdown-code-block-processor', () => {
         }
         return typeof lib.obsidian.markdown_code_block_processor.getCodeBlockMarkdownInfo === 'function';
       },
-      vaultPath: tempVault.path
+      vaultPath: inject('tempVaultPath')
     });
 
     expect(result).toBe(true);
@@ -67,7 +40,7 @@ describe('markdown-code-block-processor', () => {
         }
         return typeof lib.obsidian.markdown_code_block_processor.replaceCodeBlock === 'function';
       },
-      vaultPath: tempVault.path
+      vaultPath: inject('tempVaultPath')
     });
 
     expect(result).toBe(true);
@@ -82,7 +55,7 @@ describe('markdown-code-block-processor', () => {
         }
         return typeof lib.obsidian.markdown_code_block_processor.insertAfterCodeBlock === 'function';
       },
-      vaultPath: tempVault.path
+      vaultPath: inject('tempVaultPath')
     });
 
     expect(result).toBe(true);
@@ -97,7 +70,7 @@ describe('markdown-code-block-processor', () => {
         }
         return typeof lib.obsidian.markdown_code_block_processor.removeCodeBlock === 'function';
       },
-      vaultPath: tempVault.path
+      vaultPath: inject('tempVaultPath')
     });
 
     expect(result).toBe(true);
@@ -105,14 +78,25 @@ describe('markdown-code-block-processor', () => {
 
   it('should read note content with code block from vault', async () => {
     const result = await evalInObsidian<Record<string, never>, string>({
-      fn({ app }) {
-        const file = app.vault.getAbstractFileByPath('code-block-note.md');
-        if (!file) {
-          throw new Error('code-block-note.md not found');
+      async fn({ app }) {
+        const content = [
+          '# Test Note',
+          '',
+          '```js',
+          'console.log("hello");',
+          '```',
+          ''
+        ].join('\n');
+
+        const file = await app.vault.create('code-block-test.md', content);
+        try {
+          return await app.vault.read(file);
+        } finally {
+          // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+          await app.vault.delete(file);
         }
-        return app.vault.read(file as import('obsidian').TFile);
       },
-      vaultPath: tempVault.path
+      vaultPath: inject('tempVaultPath')
     });
 
     expect(result).toContain('```js');

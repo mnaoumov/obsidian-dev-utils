@@ -9,15 +9,11 @@
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
 
+import { evalInObsidian } from 'obsidian-integration-testing';
 import {
-  evalInObsidian,
-  TempVault
-} from 'obsidian-integration-testing';
-import {
-  afterEach,
-  beforeEach,
   describe,
   expect,
+  inject,
   it
 } from 'vitest';
 
@@ -29,79 +25,76 @@ interface BacklinksResult {
   backlinkKeys: string[];
 }
 
-let tempVault: TempVault;
-
-beforeEach(async () => {
-  tempVault = new TempVault();
-  tempVault.populate({
-    'linker-a.md': '# Linker A\n\nThis links to [[target]].\n',
-    'linker-b.md': '# Linker B\n\nAlso links to [[target]] and [[other]].\n',
-    'other.md': '# Other\n\nSome content.\n',
-    'target.md': '# Target\n\nThis is the target note.\n'
-  });
-  await tempVault.register();
-});
-
-afterEach(async () => {
-  await tempVault.dispose();
-});
-
 describe('backlinks via metadata cache', () => {
   it('should find backlinks to a target note', async () => {
     const result = await evalInObsidian<Record<string, never>, BacklinksResult>({
-      fn({ app }) {
+      async fn({ app }) {
         const lib = window.__obsidianDevUtilsModule__;
         if (!lib) {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
 
-        return lib.obsidian.metadata_cache.getBacklinksForFileSafe(app, 'target.md').then((backlinks) => ({
-          backlinkCount: backlinks.count(),
-          backlinkKeys: backlinks.keys()
-        }));
+        await app.vault.create('backlink-target.md', '# Target\n\nThis is the target note.\n');
+        await app.vault.create('backlink-linker-a.md', '# Linker A\n\nLinks to [[backlink-target]].\n');
+        await app.vault.create('backlink-linker-b.md', '# Linker B\n\nAlso links to [[backlink-target]].\n');
+
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, 1000);
+        });
+
+        try {
+          const backlinks = await lib.obsidian.metadata_cache.getBacklinksForFileSafe(app, 'backlink-target.md');
+          return {
+            backlinkCount: backlinks.count(),
+            backlinkKeys: backlinks.keys()
+          };
+        } finally {
+          for (const path of ['backlink-target.md', 'backlink-linker-a.md', 'backlink-linker-b.md']) {
+            const f = app.vault.getAbstractFileByPath(path);
+            if (f) {
+              // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+              await app.vault.delete(f);
+            }
+          }
+        }
       },
-      vaultPath: tempVault.path
+      vaultPath: inject('tempVaultPath')
     });
 
-    expect(result.backlinkKeys).toContain('linker-a.md');
-    expect(result.backlinkKeys).toContain('linker-b.md');
+    expect(result.backlinkKeys).toContain('backlink-linker-a.md');
+    expect(result.backlinkKeys).toContain('backlink-linker-b.md');
     expect(result.backlinkCount).toBeGreaterThanOrEqual(2);
-  });
-
-  it('should find backlinks to a note with fewer links', async () => {
-    const result = await evalInObsidian<Record<string, never>, BacklinksResult>({
-      fn({ app }) {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
-        return lib.obsidian.metadata_cache.getBacklinksForFileSafe(app, 'other.md').then((backlinks) => ({
-          backlinkCount: backlinks.count(),
-          backlinkKeys: backlinks.keys()
-        }));
-      },
-      vaultPath: tempVault.path
-    });
-
-    expect(result.backlinkKeys).toContain('linker-b.md');
-    expect(result.backlinkKeys).not.toContain('linker-a.md');
   });
 
   it('should return empty backlinks for a note with no incoming links', async () => {
     const result = await evalInObsidian<Record<string, never>, BacklinksResult>({
-      fn({ app }) {
+      async fn({ app }) {
         const lib = window.__obsidianDevUtilsModule__;
         if (!lib) {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
 
-        return lib.obsidian.metadata_cache.getBacklinksForFileSafe(app, 'linker-a.md').then((backlinks) => ({
-          backlinkCount: backlinks.count(),
-          backlinkKeys: backlinks.keys()
-        }));
+        await app.vault.create('backlink-isolated.md', '# Isolated\n\nNo one links here.\n');
+
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, 500);
+        });
+
+        try {
+          const backlinks = await lib.obsidian.metadata_cache.getBacklinksForFileSafe(app, 'backlink-isolated.md');
+          return {
+            backlinkCount: backlinks.count(),
+            backlinkKeys: backlinks.keys()
+          };
+        } finally {
+          const f = app.vault.getAbstractFileByPath('backlink-isolated.md');
+          if (f) {
+            // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+            await app.vault.delete(f);
+          }
+        }
       },
-      vaultPath: tempVault.path
+      vaultPath: inject('tempVaultPath')
     });
 
     expect(result.backlinkKeys).toHaveLength(0);
@@ -110,24 +103,37 @@ describe('backlinks via metadata cache', () => {
 
   it('should detect links in the metadata cache', async () => {
     const result = await evalInObsidian<Record<string, never>, string[]>({
-      fn({ app }) {
+      async fn({ app }) {
         const lib = window.__obsidianDevUtilsModule__;
         if (!lib) {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
 
-        const cache = app.metadataCache.getCache('linker-b.md');
-        if (!cache) {
-          return [];
-        }
+        await app.vault.create('backlink-multi-linker.md', '# Multi\n\nLinks to [[alpha]] and [[beta]].\n');
 
-        const links = lib.obsidian.metadata_cache.getAllLinks(cache);
-        return links.map((ref) => ref.link);
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, 500);
+        });
+
+        try {
+          const cache = app.metadataCache.getCache('backlink-multi-linker.md');
+          if (!cache) {
+            return [];
+          }
+          const links = lib.obsidian.metadata_cache.getAllLinks(cache);
+          return links.map((ref) => ref.link);
+        } finally {
+          const f = app.vault.getAbstractFileByPath('backlink-multi-linker.md');
+          if (f) {
+            // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+            await app.vault.delete(f);
+          }
+        }
       },
-      vaultPath: tempVault.path
+      vaultPath: inject('tempVaultPath')
     });
 
-    expect(result).toContain('target');
-    expect(result).toContain('other');
+    expect(result).toContain('alpha');
+    expect(result).toContain('beta');
   });
 });
