@@ -102,17 +102,18 @@ describe('markdown', () => {
   describe('fullRender', () => {
     it('should render markdown into an element', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        fn({ app }) {
+        async fn({ app }) {
           const lib = window.__obsidianDevUtilsModule__;
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
           const el = createDiv();
-          return lib.obsidian.markdown.fullRender({
+          await lib.obsidian.markdown.fullRender({
             app,
             el,
             markdown: 'Hello **world**'
-          }).then(() => el.innerHTML);
+          });
+          return el.innerHTML;
         },
         vaultPath: inject('tempVaultPath')
       });

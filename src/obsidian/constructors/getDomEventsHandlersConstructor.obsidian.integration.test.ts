@@ -36,13 +36,13 @@ const REPEAT_COUNT = 20;
 describe('getDomEventsHandlersConstructor', () => {
   it('should extract the constructor from a live Obsidian vault', async () => {
     const result = await evalInObsidian<Record<string, never>, boolean>({
-      fn({ app }) {
+      async fn({ app }) {
         const lib = window.__obsidianDevUtilsModule__;
         if (!lib) {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
-        return lib.obsidian.constructors.getDomEventsHandlersConstructor.getDomEventsHandlersConstructor(app)
-          .then((ctor) => typeof ctor === 'function');
+        const ctor = await lib.obsidian.constructors.getDomEventsHandlersConstructor.getDomEventsHandlersConstructor(app);
+        return typeof ctor === 'function';
       },
       vaultPath: inject('tempVaultPath')
     });
