@@ -28,6 +28,7 @@
   "include": [
     "./commitlint.config.ts",
     "./eslint.config.mts",
+    "./integration-test-plugin/**/*.ts",
     "./scripts/**/*.ts",
     "./src/**/*.ts",
     "./vitest.config.ts"

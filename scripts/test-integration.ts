@@ -3,6 +3,6 @@ import { test } from '../src/script-utils/test-runners/vitest.ts';
 
 await wrapCliTask(async () => {
   await test({
-    projects: ['integration-tests']
+    projects: ['integration-tests', 'obsidian-integration-tests']
   });
 });
