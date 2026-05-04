@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 62.3.0
+
+- fix(build): run generate-index before TypeScript compilation
+- test: simplify getDomEventsHandlersConstructor integration test
+- fix(test): update list HTML assertion
+- fix(test): use global vault and async/await in obsidian integration tests
+- chore: update libs
+- test: add Obsidian integration test infrastructure and initial tests
+- chore: update libs
+
 ## 62.2.0
 
 - fix(eslint): handle unresolvable base types in require-super-call rule
