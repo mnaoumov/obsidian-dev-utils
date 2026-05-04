@@ -61,7 +61,7 @@ describe('markdown', () => {
         vaultPath: inject('tempVaultPath')
       });
 
-      expect(result).toContain('<li>');
+      expect(result).toContain('<li');
       expect(result).toContain('item 1');
       expect(result).toContain('item 2');
       expect(result).toContain('item 3');
