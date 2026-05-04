@@ -517,6 +517,17 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 - **44 new tests**, all passing. No v8 ignore comments in command-handler files.
 - All 2935 tests pass, lint/format/spellcheck clean
 
+### Obsidian integration tests (IN PROGRESS)
+
+- Infrastructure: test harness plugin (`integration-test-plugin/`), build script, vitest global setup, vitest config project
+- `getDomEventsHandlersConstructor` — 2 tests (basic extraction + consistency)
+- `markdown` — 6 tests (markdownToHtml variants + fullRender)
+- `attachment-path` — 4 tests (getAttachmentFolderPath, getAvailablePathForAttachments, hasOwnAttachmentFolder)
+- `rename-delete-handler` — 5 tests (rename, move, link update, delete, export check)
+- `markdown-code-block-processor` — 5 tests (export checks + vault read)
+- `backlink` (via metadata-cache) — 4 tests (backlink retrieval, getAllLinks)
+- All tests use `obsidian-integration-testing` library with `evalInObsidian` + `TempVault`
+
 ### Plugin migrations (IN PROGRESS)
 
 - **obsidian-edit-link-alias** — migrated (simple, no settings). Deleted PluginTypes.ts, removed generic from Plugin.

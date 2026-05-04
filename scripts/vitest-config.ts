@@ -30,6 +30,7 @@ const SHARED_EXCLUDE = ['node_modules', 'dist'];
 
 const SCRIPT_UTILS_TEST_FILES = 'src/script-utils/**/*.test.ts';
 const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
+const OBSIDIAN_INTEGRATION_TEST_FILES = 'src/**/*.obsidian.integration.test.ts';
 const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 
 export const config = defineConfig({
@@ -66,9 +67,20 @@ export const config = defineConfig({
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'node',
+          exclude: [...SHARED_EXCLUDE, OBSIDIAN_INTEGRATION_TEST_FILES],
           include: [INTEGRATION_TEST_FILES],
           name: 'integration-tests',
           server: SHARED_SERVER,
+          setupFiles: [],
+          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+        }
+      },
+      {
+        test: {
+          environment: 'node',
+          globalSetup: ['./scripts/integration-test-obsidian-global-setup.ts'],
+          include: [OBSIDIAN_INTEGRATION_TEST_FILES],
+          name: 'obsidian-integration-tests',
           setupFiles: [],
           testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
