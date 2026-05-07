@@ -91,7 +91,7 @@ describe('rename-delete-handler', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return typeof lib.obsidian.rename_delete_handler.registerRenameDeleteHandlers === 'function';
+          return typeof lib.obsidian['rename-delete-handler'].registerRenameDeleteHandlers === 'function';
         },
         vaultPath: inject('tempVaultPath')
       });

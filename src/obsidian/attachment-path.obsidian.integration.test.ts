@@ -24,7 +24,7 @@ describe('attachment-path', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian.attachment_path.getAttachmentFolderPath(app, 'test-note.md');
+          return lib.obsidian['attachment-path'].getAttachmentFolderPath(app, 'test-note.md');
         },
         vaultPath: inject('tempVaultPath')
       });
@@ -42,7 +42,7 @@ describe('attachment-path', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian.attachment_path.getAvailablePathForAttachments({
+          return lib.obsidian['attachment-path'].getAvailablePathForAttachments({
             app,
             attachmentFileBaseName: 'test-image',
             attachmentFileExtension: 'png',
@@ -68,7 +68,7 @@ describe('attachment-path', () => {
           const checkedLib = lib;
 
           function getPath(): Promise<string> {
-            return checkedLib.obsidian.attachment_path.getAvailablePathForAttachments({
+            return checkedLib.obsidian['attachment-path'].getAvailablePathForAttachments({
               app,
               attachmentFileBaseName: 'unique-test',
               attachmentFileExtension: 'txt',
@@ -97,7 +97,7 @@ describe('attachment-path', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian.attachment_path.hasOwnAttachmentFolder(app, 'test-note.md');
+          return lib.obsidian['attachment-path'].hasOwnAttachmentFolder(app, 'test-note.md');
         },
         vaultPath: inject('tempVaultPath')
       });
