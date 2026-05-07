@@ -11,27 +11,40 @@ await prompt({
   title: 'Enter your name'
 });
 
-import { Prompt } from 'obsidian-dev-utils/obsidian/modal';
-await Prompt.prompt({
+import { prompt } from 'obsidian-dev-utils/obsidian/modal';
+await prompt.prompt({
   app,
   title: 'Enter your name'
 });
 
-import { Modal } from 'obsidian-dev-utils/obsidian';
-await Modal.Prompt.prompt({
+import { modal } from 'obsidian-dev-utils/obsidian';
+await modal.prompt.prompt({
   app,
   title: 'Enter your name'
 });
 
 import { obsidian } from 'obsidian-dev-utils';
-await obsidian.Modal.Prompt.prompt({
+await obsidian.modal.prompt.prompt({
   app,
   title: 'Enter your name'
 });
 
 import * as obsidianDevUtils from 'obsidian-dev-utils';
-await obsidianDevUtils.obsidian.Modal.Prompt.prompt({
+await obsidianDevUtils.obsidian.modal.prompt.prompt({
   app,
   title: 'Enter your name'
 });
+```
+
+For files/folders that use `kebab-case` names, namespace-style imports require bracket notation because kebab-case names are not valid JavaScript identifiers:
+
+```typescript
+import * as obsidian from 'obsidian-dev-utils/obsidian';
+await obsidian['file-manager'].addAlias(app, file, 'new-alias');
+
+import { obsidian } from 'obsidian-dev-utils';
+await obsidian['file-manager'].addAlias(app, file, 'new-alias');
+
+import * as obsidianDevUtils from 'obsidian-dev-utils';
+await obsidianDevUtils.obsidian['file-manager'].addAlias(app, file, 'new-alias');
 ```
