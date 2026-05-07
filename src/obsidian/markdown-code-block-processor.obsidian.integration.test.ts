@@ -23,7 +23,7 @@ describe('markdown-code-block-processor', () => {
         if (!lib) {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
-        return typeof lib.obsidian.markdown_code_block_processor.getCodeBlockMarkdownInfo === 'function';
+        return typeof lib.obsidian['markdown-code-block-processor'].getCodeBlockMarkdownInfo === 'function';
       },
       vaultPath: inject('tempVaultPath')
     });
@@ -38,7 +38,7 @@ describe('markdown-code-block-processor', () => {
         if (!lib) {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
-        return typeof lib.obsidian.markdown_code_block_processor.replaceCodeBlock === 'function';
+        return typeof lib.obsidian['markdown-code-block-processor'].replaceCodeBlock === 'function';
       },
       vaultPath: inject('tempVaultPath')
     });
@@ -53,7 +53,7 @@ describe('markdown-code-block-processor', () => {
         if (!lib) {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
-        return typeof lib.obsidian.markdown_code_block_processor.insertAfterCodeBlock === 'function';
+        return typeof lib.obsidian['markdown-code-block-processor'].insertAfterCodeBlock === 'function';
       },
       vaultPath: inject('tempVaultPath')
     });
@@ -68,7 +68,7 @@ describe('markdown-code-block-processor', () => {
         if (!lib) {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
-        return typeof lib.obsidian.markdown_code_block_processor.removeCodeBlock === 'function';
+        return typeof lib.obsidian['markdown-code-block-processor'].removeCodeBlock === 'function';
       },
       vaultPath: inject('tempVaultPath')
     });

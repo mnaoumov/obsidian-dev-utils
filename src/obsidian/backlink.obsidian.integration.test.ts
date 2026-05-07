@@ -43,7 +43,7 @@ describe('backlinks via metadata cache', () => {
         });
 
         try {
-          const backlinks = await lib.obsidian.metadata_cache.getBacklinksForFileSafe(app, 'backlink-target.md');
+          const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe(app, 'backlink-target.md');
           return {
             backlinkCount: backlinks.count(),
             backlinkKeys: backlinks.keys()
@@ -81,7 +81,7 @@ describe('backlinks via metadata cache', () => {
         });
 
         try {
-          const backlinks = await lib.obsidian.metadata_cache.getBacklinksForFileSafe(app, 'backlink-isolated.md');
+          const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe(app, 'backlink-isolated.md');
           return {
             backlinkCount: backlinks.count(),
             backlinkKeys: backlinks.keys()
@@ -120,7 +120,7 @@ describe('backlinks via metadata cache', () => {
           if (!cache) {
             return [];
           }
-          const links = lib.obsidian.metadata_cache.getAllLinks(cache);
+          const links = lib.obsidian['metadata-cache'].getAllLinks(cache);
           return links.map((ref) => ref.link);
         } finally {
           const f = app.vault.getAbstractFileByPath('backlink-multi-linker.md');

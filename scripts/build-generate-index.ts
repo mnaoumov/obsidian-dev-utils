@@ -11,7 +11,6 @@ import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import { generate } from '../src/script-utils/code-generator.ts';
 import { readdirPosix } from '../src/script-utils/fs.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
-import { makeValidVariableName } from '../src/string.ts';
 
 await wrapCliTask(async () => {
   await generateIndex(ObsidianDevUtilsRepoPaths.Src);
@@ -78,5 +77,5 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
     return;
   }
 
-  return `export * as ${makeValidVariableName(name)} from '${sourceFile}';`;
+  return `export * as '${name}' from '${sourceFile}';`;
 }
