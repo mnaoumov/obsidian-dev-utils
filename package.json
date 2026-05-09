@@ -671,6 +671,7 @@
     "@codemirror/view": "6.38.6",
     "@eslint-community/eslint-plugin-eslint-comments": "latest",
     "@eslint/compat": "latest",
+    "@eslint/config-helpers": "latest",
     "@eslint/js": "latest",
     "@lezer/common": "1.2.3",
     "@stylistic/eslint-plugin": "latest",
