@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 63.0.0
+
+- docs: update examples
+- chore: export as is without escaping
+
 ## 62.3.0
 
 - fix(build): run generate-index before TypeScript compilation
