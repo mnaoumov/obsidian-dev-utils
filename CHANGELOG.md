@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 63.0.1
+
+- chore: update libs
+
 ## 63.0.0
 
 - docs: update examples
