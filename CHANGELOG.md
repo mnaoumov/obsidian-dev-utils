@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 63.1.0
+
+- chore: add attestation
+- docs: update link
+
 ## 63.0.1
 
 - chore: update libs
