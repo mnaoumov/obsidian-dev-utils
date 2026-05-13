@@ -178,7 +178,7 @@ import { updateVersion } from 'obsidian-dev-utils/script-utils/version';
 
 Runs build checks before updating the version and releases if all checks pass.
 
-If you use `beta` as version update type for your Obsidian plugin, the plugin will be deployed compatible to install with [BRAT](https://obsidian.md/plugins?id=obsidian42-brat).
+If you use `beta` as version update type for your Obsidian plugin, the plugin will be deployed compatible to install with [BRAT](https://community.obsidian.md/plugins/obsidian42-brat).
 
 Additionally, the script fetches the latest stable Obsidian version, which is used to update the `minAppVersion` in `manifest.json` and to add a new entry to `versions.json`.
 
