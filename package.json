@@ -1,7 +1,7 @@
 {
   "name": "obsidian-dev-utils",
   "version": "63.0.1",
-  "description": "This is the collection of useful functions that you can use for your Obsidian plugin development",
+  "description": "This is the collection of useful functions that you can use for your Obsidian plugin development.",
   "keywords": [
     "obsidian"
   ],
@@ -723,7 +723,7 @@
     "monkey-around": "^3.0.0",
     "npm-run-all2": "^8.0.4",
     "obsidian": "^1.12.3",
-    "obsidian-integration-testing": "^4.1.0",
+    "obsidian-integration-testing": "^4.1.1",
     "obsidian-typings": "obsidian-public-latest",
     "path-browserify": "^1.0.1",
     "postcss": "^8.5.14",
@@ -760,7 +760,7 @@
     "jsdom": "^29.1.1",
     "moment": "^2.30.1",
     "nano-staged": "^1.0.2",
-    "obsidian-integration-testing": "^4.1.0",
+    "obsidian-integration-testing": "^4.1.1",
     "obsidian-test-mocks": "^2.0.1",
     "patch-package": "^8.0.1",
     "vitest": "^4.1.6",
