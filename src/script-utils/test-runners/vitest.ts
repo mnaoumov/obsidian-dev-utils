@@ -16,7 +16,7 @@ export interface TestCoverageParams extends TestParams {
    * Minimum coverage percentage required. If the actual coverage falls below
    * this threshold, the process exits with a non-zero code.
    */
-  minCoverageInPercents?: number;
+  readonly minCoverageInPercents?: number;
 }
 
 /**
@@ -26,7 +26,7 @@ export interface TestParams {
   /**
    * The projects to run.
    */
-  projects?: string[];
+  readonly projects?: string[];
 }
 
 /**

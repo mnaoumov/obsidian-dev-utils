@@ -10,7 +10,7 @@ import { existsSync } from 'node:fs';
 import type {
   CommandPart,
   ExecDetailedOptions,
-  ExecOption,
+  ExecOptions,
   ExecResult,
   ExecSimpleOptions
 } from './exec.ts';
@@ -62,7 +62,7 @@ export function execFromRoot(command: CommandPart[] | string, options: ExecDetai
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: CommandPart[] | string, options: ExecOption = {}): Promise<ExecResult | string> {
+export function execFromRoot(command: CommandPart[] | string, options: ExecOptions = {}): Promise<ExecResult | string> {
   let root = getRootFolder(options.cwd);
 
   if (!root) {

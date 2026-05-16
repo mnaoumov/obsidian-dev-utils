@@ -37,7 +37,7 @@ export interface ExecArg {
 /**
  * Options for {@link exec} that return detailed results.
  */
-export interface ExecDetailedOptions extends ExecOption {
+export interface ExecDetailedOptions extends ExecOptions {
   /**
    * Must be `true` to receive detailed results.
    */
@@ -47,7 +47,7 @@ export interface ExecDetailedOptions extends ExecOption {
 /**
  * Options for executing a command.
  */
-export interface ExecOption {
+export interface ExecOptions {
   /**
    * A current working folder for the command execution.
    */
@@ -107,7 +107,7 @@ export interface ExecResult {
 /**
  * Options for {@link exec} that return only stdout.
  */
-export interface ExecSimpleOptions extends ExecOption {
+export interface ExecSimpleOptions extends ExecOptions {
   /**
    * Must be `false` or omitted to receive only stdout.
    */
@@ -151,7 +151,7 @@ export function exec(command: CommandPart[] | string, options: ExecDetailedOptio
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export function exec(command: CommandPart[] | string, options: ExecOption = {}): Promise<ExecResult | string> {
+export function exec(command: CommandPart[] | string, options: ExecOptions = {}): Promise<ExecResult | string> {
   if (Array.isArray(command)) {
     const batchResult = handleBatchedCommand(command, options);
     if (batchResult) {
@@ -197,7 +197,7 @@ export function exec(command: CommandPart[] | string, options: ExecOption = {}):
  *   fallback path to quote arguments with PowerShell-native single quotes.
  * @returns A Promise resolving to the result.
  */
-function execString(command: string, options: ExecOption = {}, rawArgs?: string[]): Promise<ExecResult | string> {
+function execString(command: string, options: ExecOptions = {}, rawArgs?: string[]): Promise<ExecResult | string> {
   const {
     cwd = process.cwd(),
     isQuiet: quiet = false,
@@ -294,7 +294,7 @@ const CHILD_ENV = {
  * @param options - The exec options.
  * @returns A Promise resolving to the concatenated result.
  */
-async function executeBatches(baseCommand: string, batches: string[][], options: ExecOption): Promise<ExecResult | string> {
+async function executeBatches(baseCommand: string, batches: string[][], options: ExecOptions): Promise<ExecResult | string> {
   const results: string[] = [];
 
   for (const batch of batches) {
@@ -332,7 +332,7 @@ function getMaxCommandLength(): number {
  * @param options - The exec options.
  * @returns A Promise if batching is handled, or `undefined`.
  */
-function handleBatchedCommand(parts: CommandPart[], options: ExecOption): Promise<ExecResult | string> | undefined {
+function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promise<ExecResult | string> | undefined {
   const execArgs = parts.filter(isExecArg);
   if (execArgs.length === 0) {
     return undefined;

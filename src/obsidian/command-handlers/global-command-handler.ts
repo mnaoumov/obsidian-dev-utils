@@ -7,7 +7,7 @@
 import type { Command } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
-import type { CommandHandlerParams } from './command-handler.ts';
+import type { CommandHandlerConstructorParams } from './command-handler.ts';
 
 import { invokeAsyncSafely } from '../../async.ts';
 import { CommandHandler } from './command-handler.ts';
@@ -23,7 +23,7 @@ export abstract class GlobalCommandHandler extends CommandHandler {
    *
    * @param params - The parameters for the command handler.
    */
-  public constructor(params: CommandHandlerParams) {
+  public constructor(params: CommandHandlerConstructorParams) {
     super(params);
   }
 

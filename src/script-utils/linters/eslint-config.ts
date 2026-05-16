@@ -45,14 +45,14 @@ export interface DefineEslintConfigsParams {
    * @param context - The ESLint configuration context.
    * @returns The custom ESLint configurations.
    */
-  customConfigs?(context: EslintConfigContext): Linter.Config[];
+  readonly customConfigs?: (context: EslintConfigContext) => Linter.Config[];
 
   /**
    * A function that edits the ESLint configuration context.
    *
    * @param context - The ESLint configuration context.
    */
-  editContext?(context: EslintConfigContext): void;
+  readonly editContext?: (context: EslintConfigContext) => void;
 }
 
 /**

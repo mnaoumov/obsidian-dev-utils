@@ -11,7 +11,7 @@ import {
   vi
 } from 'vitest';
 
-import type { CommandHandlerParams } from './command-handler.ts';
+import type { CommandHandlerConstructorParams } from './command-handler.ts';
 
 import { GlobalCommandHandler } from './global-command-handler.ts';
 
@@ -29,7 +29,7 @@ class TestGlobalHandler extends GlobalCommandHandler {
   }
 }
 
-function createParams(overrides?: Partial<CommandHandlerParams>): CommandHandlerParams {
+function createParams(overrides?: Partial<CommandHandlerConstructorParams>): CommandHandlerConstructorParams {
   return {
     icon: 'test-icon',
     id: 'test-id',

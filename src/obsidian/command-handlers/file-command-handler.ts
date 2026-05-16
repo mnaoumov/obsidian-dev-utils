@@ -11,7 +11,7 @@ import type {
 } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
-import type { AbstractFileCommandHandlerParams } from './abstract-file-command-handler.ts';
+import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 
 import {
   asArrayOfFiles,
@@ -32,7 +32,7 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    *
    * @param params - The parameters for the file command handler.
    */
-  public constructor(params: AbstractFileCommandHandlerParams) {
+  public constructor(params: AbstractFileCommandHandlerConstructorParams) {
     super(params);
   }
 

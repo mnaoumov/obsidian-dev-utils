@@ -33,12 +33,12 @@ export interface LintParams {
   /**
    * Optional file paths to lint. If omitted, lints the entire project.
    */
-  paths?: string[] | undefined;
+  readonly paths?: string[] | undefined;
 
   /**
    * Whether to fix linting issues automatically.
    */
-  shouldFix?: boolean | undefined;
+  readonly shouldFix?: boolean | undefined;
 }
 
 /**

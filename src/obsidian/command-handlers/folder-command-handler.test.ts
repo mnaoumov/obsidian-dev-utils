@@ -28,7 +28,7 @@ import type {
   FileMenuEventHandler,
   FilesMenuEventHandler
 } from '../menu-event-registrar.ts';
-import type { AbstractFileCommandHandlerParams } from './abstract-file-command-handler.ts';
+import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
 import { castTo } from '../../object-utils.ts';
@@ -92,7 +92,7 @@ function createMockTFolder(path: string): TFolderOriginal {
   return TFolder.create__(castTo(app.vault), path).asOriginalType2__();
 }
 
-function createParams(overrides?: Partial<AbstractFileCommandHandlerParams>): AbstractFileCommandHandlerParams {
+function createParams(overrides?: Partial<AbstractFileCommandHandlerConstructorParams>): AbstractFileCommandHandlerConstructorParams {
   return {
     icon: 'folder-icon',
     id: 'test-folder-cmd',

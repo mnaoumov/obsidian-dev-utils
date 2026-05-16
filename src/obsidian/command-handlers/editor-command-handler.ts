@@ -14,7 +14,7 @@ import type {
 import type { Promisable } from 'type-fest';
 
 import type {
-  CommandHandlerParams,
+  CommandHandlerConstructorParams,
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
@@ -25,7 +25,7 @@ import { CommandHandler } from './command-handler.ts';
 /**
  * Parameters for creating an editor command handler.
  */
-export interface EditorCommandHandlerParams extends CommandHandlerParams {
+export interface EditorCommandHandlerConstructorParams extends CommandHandlerConstructorParams {
   /**
    * The item name to use in the editor menu.
    */
@@ -105,7 +105,7 @@ export abstract class EditorCommandHandler extends CommandHandler {
    *
    * @param params - The parameters for the editor command handler.
    */
-  public constructor(params: EditorCommandHandlerParams) {
+  public constructor(params: EditorCommandHandlerConstructorParams) {
     super(params);
     this._editorMenuItemName = params.editorMenuItemName;
     this._editorMenuSection = params.editorMenuSection;

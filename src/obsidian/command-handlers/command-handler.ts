@@ -17,7 +17,7 @@ import { noopAsync } from '../../function.ts';
 /**
  * Parameters for creating a command handler.
  */
-export interface CommandHandlerParams {
+export interface CommandHandlerConstructorParams {
   /**
    * The icon for the command.
    */
@@ -81,7 +81,7 @@ export abstract class CommandHandler {
    *
    * @param params - The parameters for the command handler.
    */
-  public constructor(params: CommandHandlerParams) {
+  public constructor(params: CommandHandlerConstructorParams) {
     this.icon = params.icon;
     this.id = params.id;
     this.name = params.name;

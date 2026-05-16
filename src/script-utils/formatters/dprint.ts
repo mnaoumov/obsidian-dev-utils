@@ -25,12 +25,12 @@ export interface FormatParams {
   /**
    * Optional file paths to format. If omitted, formats the entire project.
    */
-  paths?: string[] | undefined;
+  readonly paths?: string[] | undefined;
 
   /**
    * Whether to rewrite the source code.
    */
-  rewrite?: boolean | undefined;
+  readonly rewrite?: boolean | undefined;
 }
 
 /**
