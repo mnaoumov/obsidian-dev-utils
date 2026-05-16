@@ -9,7 +9,7 @@ import type {
   Reference
 } from 'obsidian';
 
-import { isFrontmatterLinkCache } from 'obsidian-typings/implementations';
+import { isFrontmatterLinkCache } from '@obsidian-typings/obsidian-public-latest/implementations';
 
 /**
  * Type for frontmatter link cache with offsets.

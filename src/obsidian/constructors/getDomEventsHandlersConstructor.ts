@@ -8,11 +8,11 @@
 
 /* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
 
-import type { App } from 'obsidian';
 import type {
   DomEventsHandlers,
   ExtractConstructor
-} from 'obsidian-typings';
+} from '@obsidian-typings/obsidian-public-latest';
+import type { App } from 'obsidian';
 
 import { MarkdownPreviewRenderer } from 'obsidian';
 

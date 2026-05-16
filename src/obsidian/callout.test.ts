@@ -119,7 +119,7 @@ interface MockDv {
 }
 
 interface ParagraphOptions {
-  container?: HTMLElement;
+  readonly container?: HTMLElement;
 }
 
 function createMockDv(): MockDv {

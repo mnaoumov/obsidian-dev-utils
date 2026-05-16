@@ -6,21 +6,21 @@
 
 /* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
 
-import type { App } from 'obsidian';
 import type {
   DomEventsHandlers,
   DomEventsHandlersInfo,
   EmbedCreator
-} from 'obsidian-typings';
-import type { ExtractConstructor } from 'obsidian-typings/implementations';
+} from '@obsidian-typings/obsidian-public-latest';
+import type { ExtractConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
+import type { App } from 'obsidian';
 
+import { InternalPluginName } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   Component,
   HoverPopover,
   MarkdownPreviewRenderer,
   MarkdownRenderer
 } from 'obsidian';
-import { InternalPluginName } from 'obsidian-typings/implementations';
 
 import type { PathOrAbstractFile } from './file-system.ts';
 

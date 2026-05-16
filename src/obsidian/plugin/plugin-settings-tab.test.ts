@@ -74,7 +74,7 @@ function createMockPlugin(appInstance: AppOriginal): Plugin {
   return strictProxy<Plugin>({
     app: appInstance,
     manifest: { id: 'test-plugin' }
-  } as never);
+  });
 }
 
 function createMockSettingsComponent(): PluginSettingsComponentBase<TestSettings> {

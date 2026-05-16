@@ -540,7 +540,7 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 2. `Plugin.ts`: Remove `<PluginTypes>` from `extends PluginBase<PluginTypes>` → `extends PluginBase`
 3. `PluginSettingsManager.ts` → rename to `PluginSettingsComponent.ts`: Change `PluginSettingsManagerBase<PluginTypes>` → `PluginSettingsComponentBase<PluginSettings>`, constructor takes `params: PluginSettingsComponentParams`
 4. `PluginSettingsTab.ts`: Change `PluginSettingsTabBase<PluginTypes>` → `PluginSettingsTabBase<PluginSettings>`, constructor takes `params: PluginSettingsTabBaseParams<PluginSettings>`
-5. In Plugin constructor: `this.settingsComponent = this.registerComponent(new PluginSettingsComponent(new PluginDataHandler(this)),)`
+5. In Plugin constructor: `this.settingsComponent = this.addChild(new PluginSettingsComponent(new PluginDataHandler(this)))`
 6. `Plugin.createSettingsTab()`: Pass `{plugin: this, settingsComponent: this.settingsComponent}`
 7. `this.settings` returns `ReadonlyDeep<object>` — cast to your settings type where needed
 

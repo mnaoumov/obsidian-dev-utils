@@ -4,8 +4,9 @@
  * Base class for Obsidian plugins using a component-based architecture.
  *
  * PluginBase registers universal components (context, i18n, error handling, abort signal, lifecycle events, debug).
- * Subclasses add their own components via {@link registerComponent} in their constructor.
- * Any universal component can be replaced by calling {@link registerComponent} with a new instance of the same class.
+ * Subclasses add their own components via {@link PluginBase.addChild} in their constructor.
+ * Any universal component can be replaced by calling {@link PluginBase.addChild} with a new instance of the same class
+ * (singleton replacement is automatic for components whose class defines a static `COMPONENT_KEY`).
  */
 
 import type {
@@ -42,7 +43,7 @@ interface ComponentClassWithKey {
  * Base class for creating Obsidian plugins with a component-based architecture.
  *
  * Registers universal components automatically. Subclasses add or replace components
- * via {@link registerComponent} in their constructor.
+ * via {@link PluginBase.addChild} in their constructor.
  */
 export abstract class PluginBase extends ObsidianPlugin {
   /**

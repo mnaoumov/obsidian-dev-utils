@@ -1,3 +1,4 @@
+import type { InternalPlugins } from '@obsidian-typings/obsidian-public-latest';
 import type {
   App as AppOriginal,
   CachedMetadata,
@@ -6,7 +7,6 @@ import type {
   Reference,
   TFile as TFileOriginal
 } from 'obsidian';
-import type { InternalPlugins } from 'obsidian-typings';
 import type { PartialDeep } from 'type-fest';
 
 import {

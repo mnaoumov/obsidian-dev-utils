@@ -11,16 +11,16 @@ import type {
 } from 'obsidian';
 
 import {
+  getDataAdapterEx,
+  parentFolderPath,
+  ViewType
+} from '@obsidian-typings/obsidian-public-latest/implementations';
+import {
   MarkdownView,
   TAbstractFile,
   TFile,
   TFolder
 } from 'obsidian';
-import {
-  getDataAdapterEx,
-  parentFolderPath,
-  ViewType
-} from 'obsidian-typings/implementations';
 
 import type { RetryOptions } from '../async.ts';
 import type { ValueProvider } from '../value-provider.ts';
