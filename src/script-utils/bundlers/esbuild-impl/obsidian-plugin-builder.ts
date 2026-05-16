@@ -237,6 +237,7 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
  * @param params - Optional build parameters (mode is set to Development automatically).
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult} indicating the build result.
  */
+// eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Intentionally shares BuildParams with build().
 export async function dev(params?: BuildParams): Promise<CliTaskResult> {
   return await buildObsidianPlugin({ ...params, mode: BuildMode.Development });
 }
