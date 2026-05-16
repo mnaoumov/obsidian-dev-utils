@@ -37,8 +37,11 @@ import { assert } from '../../../type-guards.ts';
 
 export const MESSAGE_ID = 'requireSuperCall';
 
+type MethodKind = 'get' | 'method' | 'set';
+
 interface OverrideMethodInfo {
   hasSuperCall: boolean;
+  kind: MethodKind;
   methodName: string;
   node: TSESTree.MethodDefinition;
   reportNode: Rule.Node;
@@ -51,14 +54,36 @@ export const requireSuperCall: Rule.RuleModule = {
     const methodStack: OverrideMethodInfo[] = [];
 
     return {
+      'AssignmentExpression'(node: Rule.Node): void {
+        const current = methodStack[methodStack.length - 1];
+        if (current?.kind !== 'set') {
+          return;
+        }
+
+        const assignNode = node as TSESTree.AssignmentExpression;
+        if (checkIsSuperPropertyAccess(assignNode.left, current.methodName)) {
+          current.hasSuperCall = true;
+        }
+      },
       'CallExpression'(node: Rule.Node): void {
         const current = methodStack[methodStack.length - 1];
-        if (!current) {
+        if (current?.kind !== 'method') {
           return;
         }
 
         const callNode = node as TSESTree.CallExpression;
         if (checkIsSuperMethodCall(callNode, current.methodName)) {
+          current.hasSuperCall = true;
+        }
+      },
+      'MemberExpression'(node: Rule.Node): void {
+        const current = methodStack[methodStack.length - 1];
+        if (current?.kind !== 'get') {
+          return;
+        }
+
+        const memberNode = node as TSESTree.MemberExpression;
+        if (checkIsSuperPropertyAccess(memberNode, current.methodName)) {
           current.hasSuperCall = true;
         }
       },
@@ -74,8 +99,11 @@ export const requireSuperCall: Rule.RuleModule = {
           return;
         }
 
+        const kind = methodNode.kind === 'get' || methodNode.kind === 'set' ? methodNode.kind : 'method';
+
         methodStack.push({
           hasSuperCall: false,
+          kind,
           methodName: methodNode.key.name,
           node: methodNode,
           reportNode: node
@@ -98,7 +126,7 @@ export const requireSuperCall: Rule.RuleModule = {
         }
 
         context.report({
-          data: { methodName: info.methodName },
+          data: { kind: info.kind, methodName: info.methodName },
           messageId: MESSAGE_ID,
           node: info.reportNode
         });
@@ -110,7 +138,7 @@ export const requireSuperCall: Rule.RuleModule = {
       description: 'Require `override` methods to call `super.methodName()`'
     },
     messages: {
-      [MESSAGE_ID]: 'Override method `{{ methodName }}` must call `super.{{ methodName }}()`.'
+      [MESSAGE_ID]: 'Override {{ kind }} `{{ methodName }}` must access `super.{{ methodName }}`.'
     },
     schema: [],
     type: 'problem'
@@ -191,5 +219,21 @@ function checkIsSuperMethodCall(node: TSESTree.CallExpression, methodName: strin
     && callee.object.type === 'Super'
     && callee.property.type === 'Identifier'
     && callee.property.name === methodName;
+  /* eslint-enable @typescript-eslint/no-unsafe-enum-comparison -- Re-enable after multi-line string comparison block. */
+}
+
+/**
+ * Checks whether a node is a `super.propertyName` member expression.
+ *
+ * @param node - The AST node to check (MemberExpression or AssignmentExpression left-hand side).
+ * @param propertyName - The expected property name.
+ * @returns `true` if the node is a matching super property access.
+ */
+function checkIsSuperPropertyAccess(node: TSESTree.Node, propertyName: string): boolean {
+  /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values. */
+  return node.type === 'MemberExpression'
+    && node.object.type === 'Super'
+    && node.property.type === 'Identifier'
+    && node.property.name === propertyName;
   /* eslint-enable @typescript-eslint/no-unsafe-enum-comparison -- Re-enable after multi-line string comparison block. */
 }
