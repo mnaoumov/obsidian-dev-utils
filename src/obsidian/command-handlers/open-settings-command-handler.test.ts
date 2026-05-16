@@ -1,3 +1,8 @@
+import type {
+  App as AppOriginal,
+  SettingTab as SettingTabOriginal
+} from 'obsidian';
+
 import {
   describe,
   expect,
@@ -5,23 +10,29 @@ import {
   vi
 } from 'vitest';
 
-import type { PluginSettingsTabBase } from '../plugin/plugin-settings-tab.ts';
-
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { OpenSettingsCommandHandler } from './open-settings-command-handler.ts';
 
 interface CreateHandlerResult {
   handler: OpenSettingsCommandHandler;
-  settingsTab: PluginSettingsTabBase<object>;
+  open: ReturnType<typeof vi.fn>;
+  openTab: ReturnType<typeof vi.fn>;
+  settingTab: SettingTabOriginal;
 }
 
 describe('OpenSettingsCommandHandler', () => {
   function createHandler(): CreateHandlerResult {
-    const pluginSettingsTab = strictProxy<PluginSettingsTabBase<object>>({
-      show: vi.fn()
+    const settingTab = strictProxy<SettingTabOriginal>({});
+    const open = vi.fn();
+    const openTab = vi.fn();
+    const app = strictProxy<AppOriginal>({
+      setting: { open, openTab }
     });
-    const handler = new OpenSettingsCommandHandler(pluginSettingsTab);
-    return { handler, settingsTab: pluginSettingsTab };
+    const handler = new OpenSettingsCommandHandler({
+      app,
+      settingTab
+    });
+    return { handler, open, openTab, settingTab };
   }
 
   it('should have correct id, name, and icon', () => {
@@ -40,25 +51,26 @@ describe('OpenSettingsCommandHandler', () => {
     expect(command.checkCallback).toBeTypeOf('function');
   });
 
-  it('should call settingsTab.show() when executed', () => {
-    const { handler, settingsTab } = createHandler();
+  it('should call app.setting.open() and openTab() when executed', () => {
+    const { handler, open, openTab, settingTab } = createHandler();
     handler.execute();
-    expect(settingsTab.show).toHaveBeenCalled();
+    expect(open).toHaveBeenCalled();
+    expect(openTab).toHaveBeenCalledWith(settingTab);
   });
 
   it('should execute via checkCallback with checking=false', () => {
-    const { handler, settingsTab } = createHandler();
+    const { handler, open } = createHandler();
     const command = handler.buildCommand();
     const result = command.checkCallback?.(false);
     expect(result).toBe(true);
-    expect(settingsTab.show).toHaveBeenCalled();
+    expect(open).toHaveBeenCalled();
   });
 
   it('should return true from checkCallback with checking=true without executing', () => {
-    const { handler, settingsTab } = createHandler();
+    const { handler, open } = createHandler();
     const command = handler.buildCommand();
     const result = command.checkCallback?.(true);
     expect(result).toBe(true);
-    expect(settingsTab.show).not.toHaveBeenCalled();
+    expect(open).not.toHaveBeenCalled();
   });
 });
