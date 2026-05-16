@@ -19,9 +19,9 @@
     "skipLibCheck": false,
     "target": "ES2024",
     "types": [
+      "@obsidian-typings/obsidian-public-latest",
       "@total-typescript/ts-reset",
-      "node",
-      "obsidian-typings"
+      "node"
     ],
     "verbatimModuleSyntax": true
   },
