@@ -91,6 +91,7 @@ function createMockRuleContext(typeCheckerOverrides: MockTypeCheckerOverrides): 
 
   const methodNode = strictProxy<TSESTree.MethodDefinition>({
     key: strictProxy<TSESTree.Identifier>({ name: 'method', type: 'Identifier' as TSESTree.Identifier['type'] }),
+    kind: 'method',
     override: true,
     parent: { parent: classDecl }
   });
@@ -208,6 +209,44 @@ ruleTester.run('require-super-call', toRuleTesterModule(requireSuperCall), {
       `,
       errors: [{ messageId: MESSAGE_ID }],
       name: 'override of parent returning literal without super call'
+    },
+    {
+      code: `
+        class Parent { get value(): number { return 0; } }
+        class Child extends Parent {
+          public override get value(): number {
+            return 42;
+          }
+        }
+      `,
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'override getter without super.prop access'
+    },
+    {
+      code: `
+        class Parent { set value(v: number) {} }
+        class Child extends Parent {
+          private _v = 0;
+          public override set value(v: number) {
+            this._v = v;
+          }
+        }
+      `,
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'override setter with non-super assignment'
+    },
+    {
+      code: `
+        class Parent { get value(): number { return 0; } }
+        class Child extends Parent {
+          private _x = 0;
+          public override get value(): number {
+            return this._x;
+          }
+        }
+      `,
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'override getter with non-super member access'
     }
   ],
   valid: [
@@ -372,6 +411,53 @@ ruleTester.run('require-super-call', toRuleTesterModule(requireSuperCall), {
         }
       `,
       name: 'override with string literal method key (non-Identifier, skipped by rule)'
+    },
+    {
+      code: `
+        class Parent { get value(): number { return 0; } }
+        class Child extends Parent {
+          public override get value(): number {
+            return super.value + 1;
+          }
+        }
+      `,
+      name: 'override getter with super.prop access'
+    },
+    {
+      code: `
+        class Parent { set value(v: number) {} }
+        class Child extends Parent {
+          public override set value(v: number) {
+            super.value = v * 2;
+          }
+        }
+      `,
+      name: 'override setter with super.prop assignment'
+    },
+    {
+      code: `
+        class Parent { get value(): number { return 0; } }
+        class Child extends Parent {
+          public override get value(): number {
+            const base = super.value;
+            return base + 1;
+          }
+        }
+      `,
+      name: 'override getter with super.prop assigned to variable'
+    },
+    {
+      code: `
+        class Parent { method(): void {} }
+        class Child extends Parent {
+          private x = 0;
+          public override method(): void {
+            this.x = 1;
+            super.method();
+          }
+        }
+      `,
+      name: 'override method with assignment does not trigger setter logic'
     }
   ]
 });
