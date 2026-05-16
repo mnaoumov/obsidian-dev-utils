@@ -14,7 +14,7 @@ export interface SpellcheckParams {
   /**
    * Optional file paths to check. If omitted, checks the entire project.
    */
-  paths?: string[] | undefined;
+  readonly paths?: string[] | undefined;
 }
 
 /**

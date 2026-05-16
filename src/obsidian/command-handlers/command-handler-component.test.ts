@@ -17,7 +17,7 @@ import type { ActiveFileProvider } from '../active-file-provider.ts';
 import type { CommandRegistrar } from '../command-registrar.ts';
 import type { MenuEventRegistrar } from '../menu-event-registrar.ts';
 import type {
-  CommandHandlerParams,
+  CommandHandlerConstructorParams,
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
@@ -57,7 +57,7 @@ function createMockMenuEventRegistrar(): MenuEventRegistrar {
   return strictProxy<MenuEventRegistrar>({});
 }
 
-function createParams(overrides?: Partial<CommandHandlerParams>): CommandHandlerParams {
+function createParams(overrides?: Partial<CommandHandlerConstructorParams>): CommandHandlerConstructorParams {
   return {
     icon: 'test-icon',
     id: 'test-cmd',

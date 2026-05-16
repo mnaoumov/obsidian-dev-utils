@@ -19,7 +19,7 @@ import {
 
 import type { EditorMenuEventHandler } from '../menu-event-registrar.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
-import type { EditorCommandHandlerParams } from './editor-command-handler.ts';
+import type { EditorCommandHandlerConstructorParams } from './editor-command-handler.ts';
 
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { EditorCommandHandler } from './editor-command-handler.ts';
@@ -81,7 +81,7 @@ function createMockEditor(): EditorOriginal {
   return strictProxy<EditorOriginal>({});
 }
 
-function createParams(overrides?: Partial<EditorCommandHandlerParams>): EditorCommandHandlerParams {
+function createParams(overrides?: Partial<EditorCommandHandlerConstructorParams>): EditorCommandHandlerConstructorParams {
   return {
     icon: 'test-icon',
     id: 'test-editor-cmd',

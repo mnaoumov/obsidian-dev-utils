@@ -14,7 +14,7 @@ import type { Promisable } from 'type-fest';
 
 import type { ActiveFileProvider } from '../active-file-provider.ts';
 import type {
-  CommandHandlerParams,
+  CommandHandlerConstructorParams,
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
@@ -25,7 +25,7 @@ import { GlobalCommandHandler } from './global-command-handler.ts';
 /**
  * Parameters for creating an abstract file command handler.
  */
-export interface AbstractFileCommandHandlerParams extends CommandHandlerParams {
+export interface AbstractFileCommandHandlerConstructorParams extends CommandHandlerConstructorParams {
   /**
    * The item name to use in the single-file menu.
    */
@@ -155,7 +155,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    *
    * @param params - The parameters for the abstract file command handler.
    */
-  public constructor(params: AbstractFileCommandHandlerParams) {
+  public constructor(params: AbstractFileCommandHandlerConstructorParams) {
     super(params);
     this._fileMenuItemName = params.fileMenuItemName;
     this._fileMenuSection = params.fileMenuSection;

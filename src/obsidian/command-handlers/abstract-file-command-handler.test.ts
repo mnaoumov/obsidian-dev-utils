@@ -23,7 +23,7 @@ import type {
   FileMenuEventHandler,
   FilesMenuEventHandler
 } from '../menu-event-registrar.ts';
-import type { AbstractFileCommandHandlerParams } from './abstract-file-command-handler.ts';
+import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
@@ -85,7 +85,7 @@ function createMockFile(): TFileOriginal {
   return strictProxy<TFileOriginal>({ path: 'test.md' });
 }
 
-function createParams(overrides?: Partial<AbstractFileCommandHandlerParams>): AbstractFileCommandHandlerParams {
+function createParams(overrides?: Partial<AbstractFileCommandHandlerConstructorParams>): AbstractFileCommandHandlerConstructorParams {
   return {
     icon: 'file-icon',
     id: 'test-file-cmd',
