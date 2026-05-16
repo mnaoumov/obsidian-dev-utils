@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 64.0.0
+
+- test: mock app.setting in open-settings-command-handler tests
+- fix!: open settings
+- chore: update libs
+- build: replace commitizen with czg
+- chore: add CONTRIBUTING
+
 ## 63.1.0
 
 - chore: add attestation
