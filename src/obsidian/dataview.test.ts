@@ -76,11 +76,11 @@ vi.mock('../obsidian/i18n/i18n.ts', () => ({
 }));
 
 interface ElOptions {
-  attr?: Record<string, string>;
+  readonly attr?: Record<string, string>;
 }
 
 interface ParagraphOptions {
-  container?: HTMLElement;
+  readonly container?: HTMLElement;
 }
 
 function createMockDv(): DataviewInlineApi {
