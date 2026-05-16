@@ -32,6 +32,7 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    *
    * @param params - The parameters for the file command handler.
    */
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Inherits parent's params type.
   public constructor(params: AbstractFileCommandHandlerConstructorParams) {
     super(params);
   }

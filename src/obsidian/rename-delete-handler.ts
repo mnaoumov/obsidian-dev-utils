@@ -5,6 +5,10 @@
  */
 
 import type {
+  LinkUpdate,
+  LinkUpdatesHandler
+} from '@obsidian-typings/obsidian-public-latest';
+import type {
   App,
   CachedMetadata,
   FileManager,
@@ -13,21 +17,17 @@ import type {
   TAbstractFile,
   TFile
 } from 'obsidian';
-import type {
-  LinkUpdate,
-  LinkUpdatesHandler
-} from 'obsidian-typings';
 
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
+import {
+  getDataAdapterEx,
+  InternalPluginName
+} from '@obsidian-typings/obsidian-public-latest/implementations';
 import { t } from 'i18next';
 import {
   Notice,
   Vault
 } from 'obsidian';
-/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
-import {
-  getDataAdapterEx,
-  InternalPluginName
-} from 'obsidian-typings/implementations';
 
 import type {
   UpdateLinkParams,
@@ -174,7 +174,7 @@ interface InterruptedRename {
   oldPath: string;
 }
 
-interface RenameHandlerParams {
+interface RenameHandlerConstructorParams {
   readonly abortSignal: AbortSignal;
   readonly app: App;
   readonly handledRenames: HandledRenames;
@@ -187,7 +187,7 @@ interface RenameHandlerParams {
   readonly settingsManager: SettingsManager;
 }
 
-interface RenameMapParams {
+interface RenameMapConstructorParams {
   readonly abortSignal: AbortSignal;
   readonly app: App;
   readonly newPath: string;
@@ -569,7 +569,7 @@ class RenameHandler {
   private readonly oldPathLinks: Reference[];
   private readonly settingsManager: SettingsManager;
 
-  public constructor(params: RenameHandlerParams) {
+  public constructor(params: RenameHandlerConstructorParams) {
     this.app = params.app;
     this.oldPath = params.oldPath;
     this.newPath = params.newPath;
@@ -817,7 +817,7 @@ class RenameMap {
   private readonly oldPathLinks: Reference[];
   private readonly settingsManager: SettingsManager;
 
-  public constructor(params: RenameMapParams) {
+  public constructor(params: RenameMapConstructorParams) {
     this.abortSignal = params.abortSignal;
     this.app = params.app;
     this.settingsManager = params.settingsManager;

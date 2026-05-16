@@ -240,7 +240,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   >(
     valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
     propertyName: PropertyName,
-    options?: BindOptions<PluginSettings[PropertyName]>
+    options?: BindOptions<PluginSettings[PropertyName]> // eslint-disable-line obsidian-dev-utils/params-options-name-match -- BindOptions is a generic utility shared across binding methods.
   ): TValueComponent {
     type PropertyType = PluginSettings[PropertyName];
     const DEFAULT_OPTIONS: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = {

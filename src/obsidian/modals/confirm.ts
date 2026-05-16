@@ -21,7 +21,7 @@ import {
 } from './modal.ts';
 
 /**
- * Options for {@link confirm}.
+ * Parameters for {@link confirm}.
  */
 export interface ConfirmParams {
   /**

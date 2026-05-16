@@ -23,6 +23,7 @@ export abstract class GlobalCommandHandler extends CommandHandler {
    *
    * @param params - The parameters for the command handler.
    */
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Inherits parent's params type.
   public constructor(params: CommandHandlerConstructorParams) {
     super(params);
   }
