@@ -16,12 +16,12 @@ import type {
 import type { Promisable } from 'type-fest';
 import type { Node } from 'unist';
 
+import { InternalPluginName } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   normalizePath,
   parseLinktext,
   requireApiVersion
 } from 'obsidian';
-import { InternalPluginName } from 'obsidian-typings/implementations';
 import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';

@@ -5,6 +5,7 @@ import type {
   Editor
 } from 'obsidian';
 
+import { getDataAdapterEx } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   App,
   MarkdownView,
@@ -12,7 +13,6 @@ import {
   TFolder,
   WorkspaceLeaf
 } from 'obsidian-test-mocks/obsidian';
-import { getDataAdapterEx } from 'obsidian-typings/implementations';
 import {
   beforeEach,
   describe,

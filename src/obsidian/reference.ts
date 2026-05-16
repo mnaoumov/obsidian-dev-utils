@@ -12,7 +12,7 @@ import type {
 import {
   isFrontmatterLinkCache,
   isReferenceCache
-} from 'obsidian-typings/implementations';
+} from '@obsidian-typings/obsidian-public-latest/implementations';
 
 import type { FileChange } from './file-change.ts';
 

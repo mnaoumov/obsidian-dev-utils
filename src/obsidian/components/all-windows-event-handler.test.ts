@@ -21,9 +21,9 @@ import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { AllWindowsEventHandler } from './all-windows-event-handler.ts';
 
 interface CreateMockAppParams {
-  domWindows?: Window[];
-  onLayoutReady?: (callback: () => void) => void;
-  onWindowOpen?: Workspace['on'];
+  readonly domWindows?: Window[];
+  readonly onLayoutReady?: (callback: () => void) => void;
+  readonly onWindowOpen?: Workspace['on'];
 }
 
 interface MockComponent {

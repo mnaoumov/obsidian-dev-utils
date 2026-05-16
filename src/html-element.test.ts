@@ -915,9 +915,9 @@ describe('ensureLoaded', () => {
 });
 
 interface BuildElementParams {
-  attrs?: GenericObject;
-  parent?: HTMLElement | undefined;
-  tag?: keyof HTMLElementTagNameMap;
+  readonly attrs?: GenericObject;
+  readonly parent?: HTMLElement | undefined;
+  readonly tag?: keyof HTMLElementTagNameMap;
 }
 
 function buildElement(params: BuildElementParams = {}): HTMLElement {

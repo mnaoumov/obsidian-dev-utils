@@ -6,8 +6,8 @@
 
 import type { App } from 'obsidian';
 
+import { getDataAdapterEx } from '@obsidian-typings/obsidian-public-latest/implementations';
 import { Platform } from 'obsidian';
-import { getDataAdapterEx } from 'obsidian-typings/implementations';
 
 import { toPosixPath } from '../path.ts';
 

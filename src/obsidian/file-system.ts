@@ -7,18 +7,18 @@
 import type { App } from 'obsidian';
 
 import {
+  createTFileInstance,
+  createTFolderInstance,
+  getDataAdapterEx,
+  parentFolderPath
+} from '@obsidian-typings/obsidian-public-latest/implementations';
+import {
   normalizePath,
   TAbstractFile,
   TFile,
   TFolder,
   Vault
 } from 'obsidian';
-import {
-  createTFileInstance,
-  createTFolderInstance,
-  getDataAdapterEx,
-  parentFolderPath
-} from 'obsidian-typings/implementations';
 
 import {
   extname,

@@ -15,7 +15,7 @@ import type { CanvasData } from 'obsidian/canvas.d.ts';
 import {
   isFrontmatterLinkCache,
   isReferenceCache
-} from 'obsidian-typings/implementations';
+} from '@obsidian-typings/obsidian-public-latest/implementations';
 
 import type { GenericObject } from '../type-guards.ts';
 import type { ValueProvider } from '../value-provider.ts';

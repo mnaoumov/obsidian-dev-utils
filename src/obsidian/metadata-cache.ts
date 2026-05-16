@@ -4,20 +4,20 @@
  * This module provides utility functions for working with the metadata cache in Obsidian.
  */
 
+import type { CustomArrayDict } from '@obsidian-typings/obsidian-public-latest';
 import type {
   App,
   CachedMetadata,
   Reference,
   TAbstractFile
 } from 'obsidian';
-import type { CustomArrayDict } from 'obsidian-typings';
 
 import {
   CustomArrayDictImpl,
   isFrontmatterLinkCache,
   isReferenceCache,
   parentFolderPath
-} from 'obsidian-typings/implementations';
+} from '@obsidian-typings/obsidian-public-latest/implementations';
 
 import type { RetryOptions } from '../async.ts';
 import type { PathOrFile } from './file-system.ts';

@@ -12,7 +12,7 @@ import type {
   Vault
 } from 'obsidian';
 
-import { parentFolderPath } from 'obsidian-typings/implementations';
+import { parentFolderPath } from '@obsidian-typings/obsidian-public-latest/implementations';
 
 import type { PathOrFile } from './file-system.ts';
 

@@ -1,3 +1,4 @@
+import type { CustomArrayDict } from '@obsidian-typings/obsidian-public-latest';
 import type {
   App,
   CachedMetadata,
@@ -7,9 +8,8 @@ import type {
   TAbstractFile,
   TFolder
 } from 'obsidian';
-import type { CustomArrayDict } from 'obsidian-typings';
 
-import { CustomArrayDictImpl } from 'obsidian-typings/implementations';
+import { CustomArrayDictImpl } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   beforeEach,
   describe,

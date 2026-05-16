@@ -129,7 +129,7 @@ class EmptyDataHandler implements DataHandler {
  */
 export abstract class PluginSettingsComponentBase<PluginSettings extends object> extends AsyncComponentBase {
   /**
-   * Component key for {@link registerComponent} replacement.
+   * Component key for singleton replacement via {@link PluginBase.addChild}.
    */
   public static readonly COMPONENT_KEY = Symbol(PluginSettingsComponentBase.name);
 
