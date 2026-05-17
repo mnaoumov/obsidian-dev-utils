@@ -47,7 +47,7 @@ The most important methods in the execution order:
 - `onunload()` - usually you don't need to override it.
 - `onunloadImpl()`
 
-## [PluginSettingsComponentBase](../src/obsidian/plugin/components/plugin-settings-component.ts)
+## [PluginSettingsComponentBase](../src/obsidian/components/plugin-settings-component.ts)
 
 ```ts
 export class FooPluginSettingsComponent extends PluginSettingsComponentBase<FooPluginSettings> {
