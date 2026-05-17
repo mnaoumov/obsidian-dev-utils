@@ -118,7 +118,7 @@ vi.mock('../obsidian/frontmatter-link-cache-with-offsets.ts', () => ({
   })
 }));
 
-vi.mock('obsidian-typings/implementations', async (importOriginal) => {
+vi.mock('@obsidian-typings/obsidian-public-latest/implementations', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual as object,

@@ -19,7 +19,7 @@ declare global {
   }
 }
 
-declare module 'obsidian-typings' {
+declare module '@obsidian-typings/obsidian-public-latest' {
   interface PluginsPluginsRecord {
     dataview?: Plugin & {
       api: DataviewApi;
