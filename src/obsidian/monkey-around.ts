@@ -4,10 +4,10 @@
  * Improved type-safe wrapper of {@link https://www.npmjs.com/package/monkey-around} library.
  */
 
-import type { Component } from 'obsidian';
 import type { ConditionalKeys } from 'type-fest';
 
 import { around as originalAround } from 'monkey-around';
+import { Component } from 'obsidian';
 
 import type { GenericObject } from '../type-guards.ts';
 
@@ -29,6 +29,43 @@ type Uninstaller = () => void;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type as a generic restriction.
 type WrapperFactory<T extends Function | undefined> = (next: T) => T;
+
+/**
+ * A component that applies a patch to an object during its lifecycle.
+ * The patch is automatically installed when the component loads and removed when it unloads.
+ *
+ * @typeParam Obj - The object to patch.
+ */
+export class PatchComponent<Obj extends object> extends Component {
+  /**
+   * Creates a new patch component.
+   *
+   * @param obj - The object to patch.
+   * @param factories - The factories to apply to the object.
+   */
+  public constructor(private readonly obj: Obj, private readonly factories: Factories<Obj>) {
+    super();
+  }
+
+  /**
+   * Installs the patch when the component loads.
+   */
+  public override onload(): void {
+    super.onload();
+    const uninstaller = around(this.obj, this.factories);
+    let isUninstalled = false;
+    this.register(() => {
+      if (isUninstalled) {
+        return;
+      }
+      try {
+        uninstaller();
+      } finally {
+        isUninstalled = true;
+      }
+    });
+  }
+}
 
 /**
  * Applies a patch to the object.
@@ -92,21 +129,6 @@ export async function invokeWithPatchAsync<Obj extends object, Result>(obj: Obj,
  * @param factories - The factories to apply to the object.
  * @returns The uninstaller.
  */
-export function registerPatch<Obj extends object>(component: Component, obj: Obj, factories: Factories<Obj>): Uninstaller {
-  const uninstaller = around(obj, factories);
-  let isUninstalled = false;
-
-  function uninstallerWrapper(): void {
-    if (isUninstalled) {
-      return;
-    }
-    try {
-      uninstaller();
-    } finally {
-      isUninstalled = true;
-    }
-  }
-
-  component.register(uninstallerWrapper);
-  return uninstaller;
+export function registerPatch<Obj extends object>(component: Component, obj: Obj, factories: Factories<Obj>): PatchComponent<Obj> {
+  return component.addChild(new PatchComponent<Obj>(obj, factories));
 }
