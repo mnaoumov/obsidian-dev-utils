@@ -53,17 +53,7 @@ export class PatchComponent<Obj extends object> extends Component {
   public override onload(): void {
     super.onload();
     const uninstaller = around(this.obj, this.factories);
-    let isUninstalled = false;
-    this.register(() => {
-      if (isUninstalled) {
-        return;
-      }
-      try {
-        uninstaller();
-      } finally {
-        isUninstalled = true;
-      }
-    });
+    this.register(uninstaller);
   }
 }
 
