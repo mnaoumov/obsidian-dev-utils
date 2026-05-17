@@ -11,6 +11,7 @@
 
 import type {
   App,
+  Constructor,
   PluginManifest
 } from 'obsidian';
 
@@ -20,11 +21,8 @@ import {
   Plugin as ObsidianPlugin
 } from 'obsidian';
 
-import type { LayoutReadyComponent } from '../components/layout-ready-component.ts';
-
-import { invokeAsyncSafelyAfterDelay } from '../../async.ts';
 import { printError } from '../../error.ts';
-import { bypassStrictProxy } from '../../strict-proxy.ts';
+import { ensureNonNullable } from '../../type-guards.ts';
 import { AbortSignalComponent } from '../components/abort-signal-component.ts';
 import { loadChildrenFirstAsync } from '../components/async-component.ts';
 import { AsyncErrorHandlerComponent } from '../components/async-error-handler-component.ts';
@@ -48,18 +46,30 @@ interface ComponentClassWithKey {
 export abstract class PluginBase extends ObsidianPlugin {
   /**
    * The abort signal component. Aborted when the plugin is unloaded.
+   *
+   * @returns the abort signal component.
    */
-  protected readonly abortSignalComponent: AbortSignalComponent;
+  protected get abortSignalComponent(): AbortSignalComponent {
+    return ensureNonNullable(this.getRegisteredComponent(AbortSignalComponent));
+  }
 
   /**
    * The console debug component. Provides namespaced debug logging.
+   *
+   * @returns The console debug component.
    */
-  protected readonly consoleDebugComponent: ConsoleDebugComponent;
+  protected get consoleDebugComponent(): ConsoleDebugComponent {
+    return ensureNonNullable(this.getRegisteredComponent(ConsoleDebugComponent));
+  }
 
   /**
    * The notice component. Displays notices to the user.
+   *
+   * @returns The notice component.
    */
-  protected readonly noticeComponent: PluginNoticeComponent;
+  protected get noticeComponent(): PluginNoticeComponent {
+    return ensureNonNullable(this.getRegisteredComponent(PluginNoticeComponent));
+  }
 
   private readonly singletonComponents = new Map<symbol, Component>();
 
@@ -74,10 +84,10 @@ export abstract class PluginBase extends ObsidianPlugin {
 
     this.addChild(new PluginContextComponent({ app, pluginId: manifest.id }));
     this.addChild(new I18nComponent());
-    this.noticeComponent = this.addChild(new PluginNoticeComponent(manifest.name));
+    this.addChild(new PluginNoticeComponent(manifest.name));
     this.addChild(new AsyncErrorHandlerComponent(this.noticeComponent));
-    this.abortSignalComponent = this.addChild(new AbortSignalComponent(manifest.id));
-    this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(manifest.id));
+    this.addChild(new AbortSignalComponent(manifest.id));
+    this.addChild(new ConsoleDebugComponent(manifest.id));
   }
 
   /**
@@ -115,18 +125,6 @@ export abstract class PluginBase extends ObsidianPlugin {
   // eslint-disable-next-line @typescript-eslint/no-misused-promises, obsidian-dev-utils/require-super-call -- Obsidian's load() handles async returns at runtime. Intentionally replaces Component.load() with children-first async loading.
   public override async load(): Promise<void> {
     await loadChildrenFirstAsync(this);
-    this.app.workspace.onLayoutReady(() => {
-      invokeAsyncSafelyAfterDelay(
-        async () => {
-          for (const child of this._children) {
-            await (bypassStrictProxy(child) as Partial<LayoutReadyComponent>).onLayoutReady?.();
-          }
-        },
-        0,
-        undefined,
-        this.abortSignalComponent.abortSignal
-      );
-    });
   }
 
   /**
@@ -136,16 +134,21 @@ export abstract class PluginBase extends ObsidianPlugin {
    */
   public override async onExternalSettingsChange(): Promise<void> {
     await super.onExternalSettingsChange?.();
-    const pluginSettingsComponent = this.singletonComponents.get(PluginSettingsComponentBase.COMPONENT_KEY);
-    if (!pluginSettingsComponent) {
-      return;
+    await this.getRegisteredComponent(PluginSettingsComponentBase)?.onExternalSettingsChange();
+  }
+
+  private getRegisteredComponent<TComponent>(componentClassWithKey: ComponentClassWithKey & Constructor<TComponent>): null | TComponent {
+    const key = componentClassWithKey.COMPONENT_KEY;
+    const registeredComponent = this.singletonComponents.get(key);
+    if (!registeredComponent) {
+      return null;
     }
 
-    if (!(pluginSettingsComponent instanceof PluginSettingsComponentBase)) {
-      throw new Error('Incompatible PluginSettingsComponent is registered');
+    if (!(registeredComponent instanceof componentClassWithKey)) {
+      throw new Error(`Incompatible ${String(key)} is registered`);
     }
 
-    await pluginSettingsComponent.onExternalSettingsChange();
+    return registeredComponent;
   }
 }
 
