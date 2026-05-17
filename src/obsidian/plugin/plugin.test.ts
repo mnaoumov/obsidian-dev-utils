@@ -4,7 +4,6 @@ import type {
   PluginManifest
 } from 'obsidian';
 
-import { Component } from 'obsidian';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -17,6 +16,7 @@ import {
 import type { LayoutReadyComponent } from './components/layout-ready-component.ts';
 
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { DisposableComponent } from '../components/disposable-component.ts';
 import {
   PluginBase,
   reloadPlugin,
@@ -112,7 +112,7 @@ const manifest: PluginManifest = {
   version: '1.0.0'
 };
 
-class LayoutReadyChild extends Component implements LayoutReadyComponent {
+class LayoutReadyChild extends DisposableComponent implements LayoutReadyComponent {
   public layoutReadyCalled = false;
 
   public async onLayoutReady(): Promise<void> {
@@ -175,7 +175,7 @@ describe('PluginBase', () => {
 
   it('should skip children without onLayoutReady', async () => {
     const plugin = new TestPlugin(app, manifest);
-    plugin.addChild(new Component());
+    plugin.addChild(new DisposableComponent());
 
     await plugin.load();
 
@@ -196,11 +196,11 @@ describe('PluginBase', () => {
   it('should replace singleton component with same COMPONENT_KEY', () => {
     const KEY = Symbol('TestSingleton');
 
-    class SingletonComponent1 extends Component {
+    class SingletonComponent1 extends DisposableComponent {
       public static readonly COMPONENT_KEY = KEY;
     }
 
-    class SingletonComponent2 extends Component {
+    class SingletonComponent2 extends DisposableComponent {
       public static readonly COMPONENT_KEY = KEY;
     }
 
@@ -219,8 +219,8 @@ describe('PluginBase', () => {
 
   it('should not replace multi-instance components without COMPONENT_KEY', () => {
     const plugin = new TestPlugin(app, manifest);
-    const component1 = new Component();
-    const component2 = new Component();
+    const component1 = new DisposableComponent();
+    const component2 = new DisposableComponent();
 
     plugin.addChild(component1);
     plugin.addChild(component2);
@@ -234,7 +234,7 @@ describe('PluginBase', () => {
   it('should handle singleton replacement during construction', () => {
     const KEY = Symbol('TestSingletonReplacement');
 
-    class ReplacementComponent extends Component {
+    class ReplacementComponent extends DisposableComponent {
       public static readonly COMPONENT_KEY = KEY;
     }
 
@@ -253,7 +253,7 @@ describe('PluginBase', () => {
   it('should bypass singleton logic when addChild is called after load', async () => {
     const KEY = Symbol('TestPostLoad');
 
-    class PostLoadComponent extends Component {
+    class PostLoadComponent extends DisposableComponent {
       public static readonly COMPONENT_KEY = KEY;
     }
 

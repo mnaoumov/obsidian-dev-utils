@@ -4,16 +4,15 @@
  * Component that handles async errors by showing a notice to the user.
  */
 
-import { Component } from 'obsidian';
-
 import { registerAsyncErrorEventHandler } from '../../../error.ts';
+import { DisposableComponent } from '../../components/disposable-component.ts';
 import { t } from '../../i18n/i18n.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 /**
  * Registers a global async error handler that shows a notice to the user.
  */
-export class AsyncErrorHandlerComponent extends Component {
+export class AsyncErrorHandlerComponent extends DisposableComponent {
   /**
    * The singleton key for the {@link AsyncErrorHandlerComponent} class.
    */

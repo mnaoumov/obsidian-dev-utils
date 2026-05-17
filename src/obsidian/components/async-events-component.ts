@@ -9,11 +9,12 @@ import { Component } from 'obsidian';
 import type { AsyncEventRef } from '../../async-events.ts';
 
 import { AsyncEvents } from '../../async-events.ts';
+import { DisposableComponent } from './disposable-component.ts';
 
 /**
  * A component that can register async events.
  */
-export class AsyncEventsComponent extends Component {
+export class AsyncEventsComponent extends DisposableComponent {
   /**
    * The async events.
    */

@@ -4,15 +4,14 @@
  * Component that manages displaying notices to the user.
  */
 
-import {
-  Component,
-  Notice
-} from 'obsidian';
+import { Notice } from 'obsidian';
+
+import { DisposableComponent } from '../../components/disposable-component.ts';
 
 /**
  * Manages showing plugin notices. Automatically hides the previous notice when a new one is shown.
  */
-export class PluginNoticeComponent extends Component {
+export class PluginNoticeComponent extends DisposableComponent {
   /**
    * The singleton key for the {@link PluginNoticeComponent} class.
    */

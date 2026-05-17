@@ -4,9 +4,8 @@
  * Component that provides namespaced console debug logging.
  */
 
-import { Component } from 'obsidian';
-
 import { getDebugger } from '../../../debug.ts';
+import { DisposableComponent } from '../../components/disposable-component.ts';
 
 /**
  * Provides a namespaced `consoleDebug()` method for logging.
@@ -15,7 +14,7 @@ import { getDebugger } from '../../../debug.ts';
  *
  * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md} for more information.
  */
-export class ConsoleDebugComponent extends Component {
+export class ConsoleDebugComponent extends DisposableComponent {
   /**
    * The singleton key for the {@link ConsoleDebugComponent} class.
    */

@@ -4,14 +4,13 @@
  * Component that provides an AbortSignal for cancelling long-running operations on plugin unload.
  */
 
-import { Component } from 'obsidian';
-
 import { SilentError } from '../../../error.ts';
+import { DisposableComponent } from '../../components/disposable-component.ts';
 
 /**
  * Provides an {@link AbortSignal} that is aborted when the component is unloaded.
  */
-export class AbortSignalComponent extends Component {
+export class AbortSignalComponent extends DisposableComponent {
   /**
    * The singleton key for the {@link AbortSignalComponent} class.
    */
