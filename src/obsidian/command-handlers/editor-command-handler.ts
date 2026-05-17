@@ -81,21 +81,13 @@ export abstract class EditorCommandHandler extends CommandHandler {
     return this._editorMenuSubmenuIcon;
   }
 
-  /**
-   * Gets whether to add the command to a submenu.
-   *
-   * @returns Whether to add to a submenu.
-   */
-  protected get shouldAddCommandToSubmenu(): boolean | undefined {
-    return this._shouldAddCommandToSubmenu;
-  }
-
   private readonly _editorMenuItemName?: string | undefined;
+
   private readonly _editorMenuSection?: string | undefined;
   private readonly _editorMenuSubmenuIcon?: IconName | undefined;
   private _pluginName?: string;
-
   private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
+
   private get pluginName(): string {
     return ensureNonNullable(this._pluginName);
   }
@@ -158,6 +150,15 @@ export abstract class EditorCommandHandler extends CommandHandler {
   protected abstract executeEditor(editor: Editor, ctx: MarkdownFileInfo): Promisable<void>;
 
   /**
+   * Gets whether to add the command to a submenu.
+   *
+   * @returns Whether to add to a submenu.
+   */
+  protected shouldAddCommandToSubmenu(): boolean | undefined {
+    return this._shouldAddCommandToSubmenu;
+  }
+
+  /**
    * Checks whether the command should appear in the command palette.
    *
    * @returns Whether to add to the command palette.
@@ -203,7 +204,7 @@ export abstract class EditorCommandHandler extends CommandHandler {
     }
 
     const section = this.editorMenuSection ?? this.pluginName;
-    if (this.shouldAddCommandToSubmenu) {
+    if (this.shouldAddCommandToSubmenu()) {
       menu.setSectionSubmenu(section, {
         icon: this.editorMenuSubmenuIcon ?? '',
         title: section

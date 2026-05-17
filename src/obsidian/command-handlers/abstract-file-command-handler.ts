@@ -123,16 +123,8 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
     return this._filesMenuSubmenuIcon;
   }
 
-  /**
-   * Gets whether to add the command to a submenu.
-   *
-   * @returns Whether to add to a submenu.
-   */
-  protected get shouldAddCommandToSubmenu(): boolean | undefined {
-    return this._shouldAddCommandToSubmenu;
-  }
-
   private _activeFileProvider?: ActiveFileProvider;
+
   private readonly _fileMenuItemName?: string | undefined;
   private readonly _fileMenuSection?: string | undefined;
   private readonly _fileMenuSubmenuIcon?: IconName | undefined;
@@ -141,7 +133,6 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   private readonly _filesMenuSubmenuIcon?: IconName | undefined;
   private _pluginName?: string;
   private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
-
   private get activeFileProvider(): ActiveFileProvider {
     return ensureNonNullable(this._activeFileProvider);
   }
@@ -250,6 +241,15 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   }
 
   /**
+   * Gets whether to add the command to a submenu.
+   *
+   * @returns Whether to add to a submenu.
+   */
+  protected shouldAddCommandToSubmenu(): boolean | undefined {
+    return this._shouldAddCommandToSubmenu;
+  }
+
+  /**
    * Checks whether the command should appear in the single-file context menu.
    *
    * @param _abstractFile - The file or folder.
@@ -297,7 +297,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
     }
 
     const section = this.fileMenuSection ?? this.pluginName;
-    if (this.shouldAddCommandToSubmenu) {
+    if (this.shouldAddCommandToSubmenu()) {
       menu.setSectionSubmenu(section, {
         icon: this.fileMenuSubmenuIcon ?? '',
         title: section
@@ -325,7 +325,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
     }
 
     const section = this.filesMenuSection ?? this.fileMenuSection ?? this.pluginName;
-    if (this.shouldAddCommandToSubmenu) {
+    if (this.shouldAddCommandToSubmenu()) {
       menu.setSectionSubmenu(section, {
         icon: this.filesMenuSubmenuIcon ?? this.fileMenuSubmenuIcon ?? '',
         title: section
