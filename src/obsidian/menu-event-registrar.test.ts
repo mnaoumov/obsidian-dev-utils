@@ -6,7 +6,6 @@
 
 import type {
   App as AppOriginal,
-  Component as ComponentOriginal,
   EventRef as EventRefOriginal
 } from 'obsidian';
 
@@ -22,7 +21,6 @@ import { AppMenuEventRegistrar } from './menu-event-registrar.ts';
 
 interface Mocks {
   app: AppOriginal;
-  component: ComponentOriginal;
   registeredEvents: string[];
 }
 
@@ -39,41 +37,40 @@ function createMocks(): Mocks {
     }
   });
 
-  const component = strictProxy<ComponentOriginal>({
-    registerEvent: vi.fn()
-  });
-
-  return { app, component, registeredEvents };
+  return { app, registeredEvents };
 }
 
 describe('AppMenuEventRegistrar', () => {
   it('should register editor-menu event', () => {
-    const { app, component, registeredEvents } = createMocks();
-    const registrar = new AppMenuEventRegistrar(app, component);
+    const { app, registeredEvents } = createMocks();
+    const registrar = new AppMenuEventRegistrar(app);
+    const registerEventSpy = vi.spyOn(registrar, 'registerEvent');
 
     registrar.registerEditorMenuEventHandler(vi.fn());
 
     expect(registeredEvents).toContain('editor-menu');
-    expect(component.registerEvent).toHaveBeenCalledOnce();
+    expect(registerEventSpy).toHaveBeenCalledOnce();
   });
 
   it('should register file-menu event', () => {
-    const { app, component, registeredEvents } = createMocks();
-    const registrar = new AppMenuEventRegistrar(app, component);
+    const { app, registeredEvents } = createMocks();
+    const registrar = new AppMenuEventRegistrar(app);
+    const registerEventSpy = vi.spyOn(registrar, 'registerEvent');
 
     registrar.registerFileMenuEventHandler(vi.fn());
 
     expect(registeredEvents).toContain('file-menu');
-    expect(component.registerEvent).toHaveBeenCalledOnce();
+    expect(registerEventSpy).toHaveBeenCalledOnce();
   });
 
   it('should register files-menu event', () => {
-    const { app, component, registeredEvents } = createMocks();
-    const registrar = new AppMenuEventRegistrar(app, component);
+    const { app, registeredEvents } = createMocks();
+    const registrar = new AppMenuEventRegistrar(app);
+    const registerEventSpy = vi.spyOn(registrar, 'registerEvent');
 
     registrar.registerFilesMenuEventHandler(vi.fn());
 
     expect(registeredEvents).toContain('files-menu');
-    expect(component.registerEvent).toHaveBeenCalledOnce();
+    expect(registerEventSpy).toHaveBeenCalledOnce();
   });
 });

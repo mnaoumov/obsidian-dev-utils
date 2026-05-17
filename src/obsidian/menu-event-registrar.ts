@@ -6,13 +6,14 @@
 
 import type {
   App,
-  Component,
   Editor,
   MarkdownFileInfo,
   Menu,
   TAbstractFile,
   WorkspaceLeaf
 } from 'obsidian';
+
+import { Component } from 'obsidian';
 
 /**
  * Handler for the editor context menu event.
@@ -76,17 +77,15 @@ export interface MenuEventRegistrar {
  *
  * Event handlers are registered with the provided {@link Component} for lifecycle management.
  */
-export class AppMenuEventRegistrar implements MenuEventRegistrar {
+export class AppMenuEventRegistrar extends Component implements MenuEventRegistrar {
   /**
    * Creates a new app-backed menu event registrar.
    *
    * @param app - The Obsidian app instance.
-   * @param component - The component for lifecycle management.
    */
-  public constructor(
-    private readonly app: App,
-    private readonly component: Component
-  ) {}
+  public constructor(private readonly app: App) {
+    super();
+  }
 
   /**
    * Registers a handler for the editor context menu event.
@@ -94,7 +93,7 @@ export class AppMenuEventRegistrar implements MenuEventRegistrar {
    * @param handler - The handler to register.
    */
   public registerEditorMenuEventHandler(handler: EditorMenuEventHandler): void {
-    this.component.registerEvent(this.app.workspace.on('editor-menu', handler));
+    this.registerEvent(this.app.workspace.on('editor-menu', handler));
   }
 
   /**
@@ -103,7 +102,7 @@ export class AppMenuEventRegistrar implements MenuEventRegistrar {
    * @param handler - The handler to register.
    */
   public registerFileMenuEventHandler(handler: FileMenuEventHandler): void {
-    this.component.registerEvent(this.app.workspace.on('file-menu', handler));
+    this.registerEvent(this.app.workspace.on('file-menu', handler));
   }
 
   /**
@@ -112,6 +111,6 @@ export class AppMenuEventRegistrar implements MenuEventRegistrar {
    * @param handler - The handler to register.
    */
   public registerFilesMenuEventHandler(handler: FilesMenuEventHandler): void {
-    this.component.registerEvent(this.app.workspace.on('files-menu', handler));
+    this.registerEvent(this.app.workspace.on('files-menu', handler));
   }
 }
