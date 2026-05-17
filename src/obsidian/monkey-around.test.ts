@@ -1,16 +1,16 @@
+import { Component } from 'obsidian';
 import {
   describe,
   expect,
-  it,
-  vi
+  it
 } from 'vitest';
 
 import { noopAsync } from '../function.ts';
-import { strictProxy } from '../test-helpers/mock-implementation.ts';
 import {
   around,
   invokeWithPatch,
   invokeWithPatchAsync,
+  PatchComponent,
   registerPatch
 } from './monkey-around.ts';
 
@@ -127,46 +127,69 @@ describe('invokeWithPatchAsync', () => {
   });
 });
 
-describe('registerPatch', () => {
-  it('should apply patch and register uninstaller on component', () => {
+describe('PatchComponent', () => {
+  it('should apply patch when loaded', () => {
     const obj = createTestObj();
-    const registerFn = vi.fn();
-    const component = strictProxy<import('obsidian').Component>({ register: registerFn });
-    registerPatch(component, obj, {
-      greet: (next: TestObjGreet) => (name: string): string => `registered: ${next(name)}`
+    const patchComponent = new PatchComponent(obj, {
+      greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
     });
-    expect(obj.greet('test')).toBe('registered: hello test');
-    expect(registerFn).toHaveBeenCalledTimes(1);
+
+    expect(obj.greet('test')).toBe('hello test');
+    patchComponent.load();
+    expect(obj.greet('test')).toBe('patched: hello test');
   });
 
-  it('should uninstall patch when component uninstaller is called', () => {
+  it('should remove patch when unloaded', () => {
     const obj = createTestObj();
-    let registeredFn: (() => void) | undefined;
-    const component = strictProxy<import('obsidian').Component>({
-      register: (fn: () => void): void => {
-        registeredFn = fn;
-      }
+    const patchComponent = new PatchComponent(obj, {
+      greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
     });
-    registerPatch(component, obj, {
-      greet: (next: TestObjGreet) => (name: string): string => `registered: ${next(name)}`
-    });
-    expect(obj.greet('x')).toBe('registered: hello x');
-    registeredFn?.();
+
+    patchComponent.load();
+    expect(obj.greet('x')).toBe('patched: hello x');
+    patchComponent.unload();
     expect(obj.greet('x')).toBe('hello x');
   });
 
-  it('should be safe to call uninstaller wrapper twice', () => {
+  it('should be safe to unload twice', () => {
     const obj = createTestObj();
-    let registeredFn: (() => void) | undefined;
-    const component = strictProxy<import('obsidian').Component>({
-      register: (fn: () => void): void => {
-        registeredFn = fn;
-      }
+    const patchComponent = new PatchComponent(obj, {
+      greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
     });
-    registerPatch(component, obj, {
+
+    patchComponent.load();
+    patchComponent.unload();
+    expect(() => {
+      patchComponent.unload();
+    }).not.toThrow();
+  });
+});
+
+describe('registerPatch', () => {
+  it('should apply patch and add child component', () => {
+    const obj = createTestObj();
+    const parent = new Component();
+    parent.load();
+
+    const patchComponent = registerPatch(parent, obj, {
       greet: (next: TestObjGreet) => (name: string): string => `registered: ${next(name)}`
     });
-    registeredFn?.();
-    expect(() => registeredFn?.()).not.toThrow();
+
+    expect(patchComponent).toBeInstanceOf(PatchComponent);
+    expect(obj.greet('test')).toBe('registered: hello test');
+  });
+
+  it('should remove patch when parent component is unloaded', () => {
+    const obj = createTestObj();
+    const parent = new Component();
+    parent.load();
+
+    registerPatch(parent, obj, {
+      greet: (next: TestObjGreet) => (name: string): string => `registered: ${next(name)}`
+    });
+
+    expect(obj.greet('x')).toBe('registered: hello x');
+    parent.unload();
+    expect(obj.greet('x')).toBe('hello x');
   });
 });
