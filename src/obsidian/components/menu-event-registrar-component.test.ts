@@ -16,8 +16,8 @@ import {
   vi
 } from 'vitest';
 
-import { strictProxy } from '../test-helpers/mock-implementation.ts';
-import { MenuEventRegistrarComponent } from './components/AppMenuEventRegistrarComponent.ts';
+import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { MenuEventRegistrarComponent } from './menu-event-registrar-component.ts';
 
 interface Mocks {
   app: AppOriginal;
@@ -40,7 +40,7 @@ function createMocks(): Mocks {
   return { app, registeredEvents };
 }
 
-describe('AppMenuEventRegistrar', () => {
+describe('MenuEventRegistrarComponent', () => {
   it('should register editor-menu event', () => {
     const { app, registeredEvents } = createMocks();
     const registrar = new MenuEventRegistrarComponent(app);
