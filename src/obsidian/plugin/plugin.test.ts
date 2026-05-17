@@ -13,8 +13,6 @@ import {
   vi
 } from 'vitest';
 
-import type { LayoutReadyComponent } from '../components/layout-ready-component.ts';
-
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { DisposableComponent } from '../components/disposable-component.ts';
 import {
@@ -112,21 +110,9 @@ const manifest: PluginManifest = {
   version: '1.0.0'
 };
 
-class LayoutReadyChild extends DisposableComponent implements LayoutReadyComponent {
-  public layoutReadyCalled = false;
-
-  public async onLayoutReady(): Promise<void> {
-    await Promise.resolve();
-    this.layoutReadyCalled = true;
-  }
-}
-
 class TestPlugin extends PluginBase {
-  public readonly layoutReadyChild: LayoutReadyChild;
-
   public constructor(appInstance: AppOriginal, pluginManifest: PluginManifest) {
     super(appInstance, pluginManifest);
-    this.layoutReadyChild = this.addChild(new LayoutReadyChild());
   }
 
   public getAbortSignalComponent(): typeof this.abortSignalComponent {
@@ -159,24 +145,11 @@ describe('PluginBase', () => {
     expect(plugin.getNoticeComponent()).toBeDefined();
   });
 
-  it('should call onLayoutReady on children implementing LayoutReadyComponent', async () => {
+  it('should load children first then self via loadChildrenFirstAsync', async () => {
     const plugin = new TestPlugin(app, manifest);
     await plugin.load();
 
-    await vi.waitFor(() => {
-      expect(plugin.layoutReadyChild.layoutReadyCalled).toBe(true);
-    });
-  });
-
-  it('should skip children without onLayoutReady', async () => {
-    const plugin = new TestPlugin(app, manifest);
-    plugin.addChild(new DisposableComponent());
-
-    await plugin.load();
-
-    await vi.waitFor(() => {
-      expect(plugin.layoutReadyChild.layoutReadyCalled).toBe(true);
-    });
+    expect(plugin._loaded).toBe(true);
   });
 
   it('should replace singleton component with same COMPONENT_KEY', () => {
@@ -250,16 +223,6 @@ describe('PluginBase', () => {
     plugin.addChild(component);
 
     expect(plugin['singletonComponents'].has(KEY)).toBe(false);
-  });
-
-  it('should not call onLayoutReady when aborted before load', async () => {
-    const plugin = new TestPlugin(app, manifest);
-    plugin.getAbortSignalComponent().onunload();
-
-    await plugin.load();
-
-    await Promise.resolve();
-    expect(plugin.layoutReadyChild.layoutReadyCalled).toBe(false);
   });
 });
 

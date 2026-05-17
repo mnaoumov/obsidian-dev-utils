@@ -12,11 +12,11 @@ const mocks = vi.hoisted(() => ({
   initI18N: vi.fn()
 }));
 
-vi.mock('../../i18n/i18n.ts', () => ({
+vi.mock('../i18n/i18n.ts', () => ({
   initI18N: mocks.initI18N
 }));
 
-vi.mock('../../i18n/locales/translations-map.ts', () => ({
+vi.mock('../i18n/locales/translations-map.ts', () => ({
   defaultTranslationsMap: mocks.defaultTranslationsMap
 }));
 

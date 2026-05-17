@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   registerAllWindowsHandler: vi.fn()
 }));
 
-vi.mock('../../components/all-windows-event-component.ts', () => {
+vi.mock('./all-windows-event-component.ts', () => {
   class MockAllWindowsEventComponent {
     public registerAllWindowsHandler(handler: (win: Window) => void): void {
       mocks.registerAllWindowsHandler(handler);
@@ -28,7 +28,7 @@ vi.mock('../../components/all-windows-event-component.ts', () => {
   return { AllWindowsEventComponent: MockAllWindowsEventComponent };
 });
 
-vi.mock('../plugin-context.ts', () => ({
+vi.mock('../plugin/plugin-context.ts', () => ({
   initDebugController: mocks.initDebugController,
   initPluginContext: mocks.initPluginContext
 }));

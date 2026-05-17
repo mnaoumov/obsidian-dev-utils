@@ -22,11 +22,11 @@ const mocks = vi.hoisted(() => ({
   )
 }));
 
-vi.mock('../../../error.ts', () => ({
+vi.mock('../../error.ts', () => ({
   registerAsyncErrorEventHandler: mocks.registerAsyncErrorEventHandler
 }));
 
-vi.mock('../../i18n/i18n.ts', () => ({
+vi.mock('../i18n/i18n.ts', () => ({
   t: mocks.t
 }));
 

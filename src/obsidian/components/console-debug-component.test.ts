@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   getDebugger: vi.fn(() => vi.fn())
 }));
 
-vi.mock('../../../debug.ts', () => ({
+vi.mock('../../debug.ts', () => ({
   getDebugger: mocks.getDebugger
 }));
 
