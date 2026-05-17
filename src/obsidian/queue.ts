@@ -41,7 +41,7 @@ export interface AddToQueueAndWaitParams {
   /**
    * The function to add.
    */
-  readonly operationFn: (abortSignal: AbortSignal) => Promisable<void>;
+  operationFn(this: void, abortSignal: AbortSignal): Promisable<void>;
 
   /**
    * Optional name of the operation.
@@ -81,7 +81,7 @@ export interface AddToQueueParams {
   /**
    * The function to add.
    */
-  readonly operationFn: (abortSignal: AbortSignal) => Promisable<void>;
+  operationFn(this: void, abortSignal: AbortSignal): Promisable<void>;
 
   /**
    * Optional name of the operation.

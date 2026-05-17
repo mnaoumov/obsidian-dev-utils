@@ -21,7 +21,7 @@ import { AllWindowsEventComponent } from './all-windows-event-component.ts';
 
 interface CreateMockAppParams {
   readonly domWindows?: Window[];
-  readonly onLayoutReady?: (callback: () => void) => void;
+  onLayoutReady?(callback: () => void): void;
   readonly onWindowOpen?: Workspace['on'];
 }
 

@@ -70,7 +70,7 @@ export interface PromptParams {
    * @param value - The input value to validate.
    * @returns an error message if the value is invalid, or `null` if the value is valid.
    */
-  readonly valueValidator?: (value: string) => Promisable<MaybeReturn<string>>;
+  valueValidator?(this: void, value: string): Promisable<MaybeReturn<string>>;
 }
 
 class PromptModal extends ModalBase<null | string> {

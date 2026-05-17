@@ -45,14 +45,14 @@ export interface DefineEslintConfigsParams {
    * @param context - The ESLint configuration context.
    * @returns The custom ESLint configurations.
    */
-  readonly customConfigs?: (context: EslintConfigContext) => Linter.Config[];
+  customConfigs?(context: EslintConfigContext): Linter.Config[];
 
   /**
    * A function that edits the ESLint configuration context.
    *
    * @param context - The ESLint configuration context.
    */
-  readonly editContext?: (context: EslintConfigContext) => void;
+  editContext?(context: EslintConfigContext): void;
 }
 
 /**
@@ -596,6 +596,7 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
       rules: {
         '@typescript-eslint/explicit-function-return-type': 'error',
         '@typescript-eslint/explicit-member-accessibility': 'error',
+        '@typescript-eslint/method-signature-style': ['error', 'method'],
         '@typescript-eslint/no-invalid-void-type': ['error', {
           allowAsThisParameter: true
         }],

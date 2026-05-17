@@ -63,7 +63,7 @@ export interface BindOptions<T> {
   /**
    * A callback function that is called when the value of the component changes.
    */
-  readonly onChanged?: (newValue: ReadonlyDeep<T>, oldValue: ReadonlyDeep<T>) => Promisable<void>;
+  onChanged?(newValue: ReadonlyDeep<T>, oldValue: ReadonlyDeep<T>): Promisable<void>;
 
   /**
    * Whether to reset the setting when the component value is empty. Default is `true`.
@@ -101,7 +101,7 @@ export interface BindOptionsExtended<
    * @param uiValue - The value of the UI component.
    * @returns The value to set on the plugin settings.
    */
-  readonly componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[PropertyName] | ValidationMessageHolder;
+  componentToPluginSettingsValueConverter(uiValue: UIValue): PluginSettings[PropertyName] | ValidationMessageHolder;
 
   /**
    * Converts the plugin settings value to the value used by the UI component.
@@ -109,7 +109,7 @@ export interface BindOptionsExtended<
    * @param pluginSettingsValue - The value of the property in the plugin settings.
    * @returns The value to set on the UI component.
    */
-  readonly pluginSettingsToComponentValueConverter: (pluginSettingsValue: ReadonlyDeep<PluginSettings[PropertyName]>) => UIValue;
+  pluginSettingsToComponentValueConverter(pluginSettingsValue: ReadonlyDeep<PluginSettings[PropertyName]>): UIValue;
 }
 
 /**

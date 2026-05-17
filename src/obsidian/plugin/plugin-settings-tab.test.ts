@@ -39,7 +39,7 @@ vi.mock('./plugin-context.ts', () => ({
 
 interface EventListenerEntry {
   0: string;
-  1: (...args: unknown[]) => unknown;
+  1(...args: unknown[]): unknown;
 }
 
 interface MockValueComponentBase {
@@ -386,7 +386,7 @@ describe('PluginSettingsTabBase', () => {
     tab.display();
 
     // Get the saveSettings callback
-    const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls as never;
+    const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls;
     const onCall = onCalls.find((call) => call[0] === 'saveSettings');
     const saveSettingsCallback = onCall?.[1] as (
       newState: unknown,
@@ -408,7 +408,7 @@ describe('PluginSettingsTabBase', () => {
     tab.display();
     tab.displayCalled = false;
 
-    const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls as never;
+    const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls;
     const onCall = onCalls.find((call) => call[0] === 'saveSettings');
     const saveSettingsCallback = onCall?.[1] as (
       newState: unknown,
@@ -430,7 +430,7 @@ describe('PluginSettingsTabBase', () => {
     tab.display();
     tab.displayCalled = false;
 
-    const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls as never;
+    const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls;
     const onCall = onCalls.find((call) => call[0] === 'loadSettings');
     const loadSettingsCallback = onCall?.[1] as (
       loadedState: unknown,

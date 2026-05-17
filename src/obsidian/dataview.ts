@@ -219,7 +219,7 @@ export interface RenderPaginatedParams<T> {
    * @param rowsForOnePage - The rows to render.
    * @returns A {@link Promise} that resolves when the content is rendered.
    */
-  readonly renderer: (rowsForOnePage: ArrayOrDataArray<T>) => Promisable<void>;
+  renderer(rowsForOnePage: ArrayOrDataArray<T>): Promisable<void>;
 
   /**
    * Rows to paginate.
