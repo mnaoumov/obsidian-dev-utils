@@ -4,17 +4,65 @@
  * Interface for components that need to perform work when the workspace layout is ready.
  */
 
+import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
+import { invokeAsyncSafely } from '../../async.ts';
+import { DisposableComponent } from './disposable-component.ts';
+
 /**
- * Components implementing this interface will have {@link onLayoutReady} called
- * by PluginBase after the workspace layout is ready, with error isolation.
+ * A component that executes a callback function when the Obsidian layout becomes ready.
  */
-export interface LayoutReadyComponent {
+export abstract class LayoutReadyComponent extends DisposableComponent {
   /**
-   * Called when the workspace layout is ready.
+   * Creates a new LayoutReadyComponent instance.
    *
-   * @returns A {@link Promise} that resolves when layout-ready work is complete.
+   * @param app - The Obsidian App instance.
    */
-  onLayoutReady(): Promisable<void>;
+  public constructor(private readonly app: App) {
+    super();
+  }
+
+  /**
+   * Loads the component and registers the layout ready handler.
+   */
+  public override onload(): void {
+    super.onload();
+    this.app.workspace.onLayoutReady(() => {
+      window.setTimeout(() => {
+        if (this._loaded) {
+          invokeAsyncSafely(this.onLayoutReady.bind(this));
+        }
+      }, 0);
+    });
+  }
+
+  /**
+   * Executes when the Obsidian layout becomes ready.
+   */
+  protected abstract onLayoutReady(): Promisable<void>;
+}
+
+/**
+ * A {@link LayoutReadyComponent} subclass that invokes a provided callback function when the layout becomes ready.
+ */
+export class CallbackLayoutReadyComponent extends LayoutReadyComponent {
+  /**
+   * Creates a new CallbackLayoutReadyComponent instance.
+   *
+   * @param app - The Obsidian App instance.
+   * @param callback - The callback to invoke when layout is ready.
+   */
+  public constructor(app: App, private readonly callback: () => Promisable<void>) {
+    super(app);
+  }
+
+  /**
+   * Executes when the Obsidian layout becomes ready.
+   *
+   * @returns The result of invoking the callback.
+   */
+  protected override onLayoutReady(): Promisable<void> {
+    return this.callback();
+  }
 }
