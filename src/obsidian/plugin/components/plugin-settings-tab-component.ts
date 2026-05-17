@@ -7,10 +7,9 @@
 
 import type { Plugin } from 'obsidian';
 
-import {
-  Component,
-  PluginSettingTab
-} from 'obsidian';
+import { PluginSettingTab } from 'obsidian';
+
+import { DisposableComponent } from '../../components/disposable-component.ts';
 
 interface PluginSettingsTabComponentConstructorParams {
   readonly plugin: Plugin;
@@ -21,7 +20,7 @@ interface PluginSettingsTabComponentConstructorParams {
  * Wraps a {@link PluginSettingTab} and registers it with Obsidian on load.
  * Also registers an "Open Settings" command to open the settings tab from the command palette.
  */
-export class PluginSettingsTabComponent extends Component {
+export class PluginSettingsTabComponent extends DisposableComponent {
   private readonly plugin: Plugin;
   private readonly pluginSettingsTab: PluginSettingTab;
 

@@ -27,6 +27,7 @@ import { invokeAsyncSafelyAfterDelay } from '../../async.ts';
 import { printError } from '../../error.ts';
 import { bypassStrictProxy } from '../../strict-proxy.ts';
 import { loadChildrenFirstAsync } from '../components/async-component.ts';
+import { DisposableComponent } from '../components/disposable-component.ts';
 import { AbortSignalComponent } from './components/abort-signal-component.ts';
 import { AsyncErrorHandlerComponent } from './components/async-error-handler-component.ts';
 import { ConsoleDebugComponent } from './components/console-debug-component.ts';
@@ -97,7 +98,7 @@ export abstract class PluginBase extends ObsidianPlugin {
    * @param component - The component to add.
    * @returns The added component.
    */
-  public override addChild<T extends Component>(component: T): T {
+  public override addChild<T extends DisposableComponent>(component: T): T {
     if (this._loaded) {
       return super.addChild(component);
     }

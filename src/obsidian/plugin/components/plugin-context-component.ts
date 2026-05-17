@@ -6,9 +6,8 @@
 
 import type { App } from 'obsidian';
 
-import { Component } from 'obsidian';
-
 import { AllWindowsEventComponent } from '../../components/all-windows-event-component.ts';
+import { DisposableComponent } from '../../components/disposable-component.ts';
 import {
   initDebugController,
   initPluginContext
@@ -22,7 +21,7 @@ interface PluginContextComponentConstructorParams {
 /**
  * Initializes plugin context (plugin ID, debug controller, library styles) on load.
  */
-export class PluginContextComponent extends Component {
+export class PluginContextComponent extends DisposableComponent {
   /**
    * The singleton key for the {@link PluginContextComponent} class.
    */

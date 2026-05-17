@@ -8,6 +8,8 @@ import type { Promisable } from 'type-fest';
 
 import { Component } from 'obsidian';
 
+import { DisposableComponent } from './disposable-component.ts';
+
 /**
  * A {@link Component} that supports async lifecycle methods.
  *
@@ -15,7 +17,7 @@ import { Component } from 'obsidian';
  * in a `Promise.all()`. This class overrides `load()` to `await` `onload()` before loading children,
  * ensuring ordered initialization.
  */
-export abstract class AsyncComponentBase extends Component {
+export abstract class AsyncComponentBase extends DisposableComponent {
   /**
    * Loads this component and its children sequentially.
    *

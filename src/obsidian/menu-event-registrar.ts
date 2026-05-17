@@ -13,7 +13,7 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
-import { Component } from 'obsidian';
+import { DisposableComponent } from './components/disposable-component.ts';
 
 /**
  * Handler for the editor context menu event.
@@ -77,7 +77,7 @@ export interface MenuEventRegistrar {
  *
  * Event handlers are registered with the provided {@link Component} for lifecycle management.
  */
-export class AppMenuEventRegistrar extends Component implements MenuEventRegistrar {
+export class AppMenuEventRegistrar extends DisposableComponent implements MenuEventRegistrar {
   /**
    * Creates a new app-backed menu event registrar.
    *

@@ -11,6 +11,8 @@ import { Component } from 'obsidian';
 
 import type { GenericObject } from '../type-guards.ts';
 
+import { DisposableComponent } from './components/disposable-component.ts';
+
 /**
  * A type of the factories to apply to the object.
  *
@@ -70,7 +72,7 @@ type WrapperFactory<T extends Function | undefined> = (next: T) => T;
  * A component that manages monkey-patches with lifecycle-bound cleanup.
  * All patches registered via this component are automatically uninstalled when the component unloads.
  */
-export class MonkeyAroundComponent extends Component {
+export class MonkeyAroundComponent extends DisposableComponent {
   /**
    * Registers a single-method patch using a simplified handler.
    *
