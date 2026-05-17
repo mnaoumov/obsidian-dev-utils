@@ -12,7 +12,7 @@ import {
   around,
   invokeWithPatch,
   invokeWithPatchAsync,
-  PatchComponent,
+  MonkeyAroundComponent,
   registerMethodPatch,
   registerPatch
 } from './monkey-around.ts';
@@ -130,55 +130,143 @@ describe('invokeWithPatchAsync', () => {
   });
 });
 
-describe('PatchComponent', () => {
-  it('should apply patch when loaded', () => {
-    const obj = createTestObj();
-    const patchComponent = new PatchComponent(obj, {
-      greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
+describe('MonkeyAroundComponent', () => {
+  describe('registerPatch', () => {
+    it('should apply patch when loaded', () => {
+      const obj = createTestObj();
+      const component = new MonkeyAroundComponent();
+      component.load();
+
+      component.registerPatch(obj, {
+        greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
+      });
+
+      expect(obj.greet('test')).toBe('patched: hello test');
     });
 
-    expect(obj.greet('test')).toBe('hello test');
-    patchComponent.load();
-    expect(obj.greet('test')).toBe('patched: hello test');
+    it('should remove patch when unloaded', () => {
+      const obj = createTestObj();
+      const component = new MonkeyAroundComponent();
+      component.load();
+
+      component.registerPatch(obj, {
+        greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
+      });
+
+      expect(obj.greet('x')).toBe('patched: hello x');
+      component.unload();
+      expect(obj.greet('x')).toBe('hello x');
+    });
+
+    it('should be safe to unload twice', () => {
+      const obj = createTestObj();
+      const component = new MonkeyAroundComponent();
+      component.load();
+
+      component.registerPatch(obj, {
+        greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
+      });
+
+      component.unload();
+      expect(() => {
+        component.unload();
+      }).not.toThrow();
+    });
+
+    it('should manage multiple patches on a single component', () => {
+      const obj1 = createTestObj();
+      const obj2 = createTestObj();
+      const component = new MonkeyAroundComponent();
+      component.load();
+
+      component.registerPatch(obj1, {
+        greet: (next: TestObjGreet) => (name: string): string => `p1: ${next(name)}`
+      });
+      component.registerPatch(obj2, {
+        greet: (next: TestObjGreet) => (name: string): string => `p2: ${next(name)}`
+      });
+
+      expect(obj1.greet('a')).toBe('p1: hello a');
+      expect(obj2.greet('b')).toBe('p2: hello b');
+      component.unload();
+      expect(obj1.greet('a')).toBe('hello a');
+      expect(obj2.greet('b')).toBe('hello b');
+    });
   });
 
-  it('should remove patch when unloaded', () => {
-    const obj = createTestObj();
-    const patchComponent = new PatchComponent(obj, {
-      greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
+  describe('registerMethodPatch', () => {
+    it('should patch a method with handler receiving originalFn, originalThis, originalArgs', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+
+      component.registerMethodPatch(obj, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
+        return `method-patched: ${originalFn.call(originalThis, name)}`;
+      });
+
+      expect(obj.greet('world')).toBe('method-patched: hello world');
     });
 
-    patchComponent.load();
-    expect(obj.greet('x')).toBe('patched: hello x');
-    patchComponent.unload();
-    expect(obj.greet('x')).toBe('hello x');
-  });
+    it('should remove method patch when unloaded', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
 
-  it('should be safe to unload twice', () => {
-    const obj = createTestObj();
-    const patchComponent = new PatchComponent(obj, {
-      greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
+      component.registerMethodPatch(obj, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
+        return `method-patched: ${originalFn.call(originalThis, name)}`;
+      });
+
+      expect(obj.greet('x')).toBe('method-patched: hello x');
+      component.unload();
+      expect(obj.greet('x')).toBe('hello x');
     });
 
-    patchComponent.load();
-    patchComponent.unload();
-    expect(() => {
-      patchComponent.unload();
-    }).not.toThrow();
+    it('should preserve originalThis for prototype patches', () => {
+      class Greeter {
+        public prefix = 'hi';
+
+        public greet(name: string): string {
+          return `${this.prefix} ${name}`;
+        }
+      }
+      const greeter = new Greeter();
+      const component = new MonkeyAroundComponent();
+      component.load();
+
+      component.registerMethodPatch(greeter, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
+        return `patched(${originalFn.call(originalThis, name)})`;
+      });
+
+      expect(greeter.greet('world')).toBe('patched(hi world)');
+    });
+
+    it('should work with a typed handler function', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+
+      function handler({ originalArgs: [name], originalFn, originalThis }: PatchHandlerParams<TestObj, 'greet'>): string {
+        return `typed: ${originalFn.call(originalThis, name)}`;
+      }
+
+      component.registerMethodPatch(obj, 'greet', handler);
+
+      expect(obj.greet('test')).toBe('typed: hello test');
+    });
   });
 });
 
-describe('registerPatch', () => {
-  it('should apply patch and add child component', () => {
+describe('registerPatch (convenience)', () => {
+  it('should apply patch and return MonkeyAroundComponent', () => {
     const obj = createTestObj();
     const parent = new Component();
     parent.load();
 
-    const patchComponent = registerPatch(parent, obj, {
+    const result = registerPatch(parent, obj, {
       greet: (next: TestObjGreet) => (name: string): string => `registered: ${next(name)}`
     });
 
-    expect(patchComponent).toBeInstanceOf(PatchComponent);
+    expect(result).toBeInstanceOf(MonkeyAroundComponent);
     expect(obj.greet('test')).toBe('registered: hello test');
   });
 
@@ -197,17 +285,18 @@ describe('registerPatch', () => {
   });
 });
 
-describe('registerMethodPatch', () => {
-  it('should patch a method with handler receiving originalFn, originalThis, originalArgs', () => {
+describe('registerMethodPatch (convenience)', () => {
+  it('should apply method patch and return MonkeyAroundComponent', () => {
     const obj = createTestObj();
     const parent = new Component();
     parent.load();
 
-    registerMethodPatch(parent, obj, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
-      return `method-patched: ${originalFn.call(originalThis, name)}`;
+    const result = registerMethodPatch(parent, obj, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
+      return `registered: ${originalFn.call(originalThis, name)}`;
     });
 
-    expect(obj.greet('world')).toBe('method-patched: hello world');
+    expect(result).toBeInstanceOf(MonkeyAroundComponent);
+    expect(obj.greet('test')).toBe('registered: hello test');
   });
 
   it('should remove method patch when parent component is unloaded', () => {
@@ -216,56 +305,11 @@ describe('registerMethodPatch', () => {
     parent.load();
 
     registerMethodPatch(parent, obj, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
-      return `method-patched: ${originalFn.call(originalThis, name)}`;
+      return `registered: ${originalFn.call(originalThis, name)}`;
     });
 
-    expect(obj.greet('x')).toBe('method-patched: hello x');
+    expect(obj.greet('x')).toBe('registered: hello x');
     parent.unload();
     expect(obj.greet('x')).toBe('hello x');
-  });
-
-  it('should preserve originalThis for prototype patches', () => {
-    class Greeter {
-      public prefix = 'hi';
-
-      public greet(name: string): string {
-        return `${this.prefix} ${name}`;
-      }
-    }
-    const greeter = new Greeter();
-    const parent = new Component();
-    parent.load();
-
-    registerMethodPatch(parent, greeter, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
-      return `patched(${originalFn.call(originalThis, name)})`;
-    });
-
-    expect(greeter.greet('world')).toBe('patched(hi world)');
-  });
-
-  it('should return a PatchComponent', () => {
-    const obj = createTestObj();
-    const parent = new Component();
-    parent.load();
-
-    const result = registerMethodPatch(parent, obj, 'greet', ({ originalArgs, originalFn, originalThis }) => {
-      return originalFn.call(originalThis, ...originalArgs);
-    });
-
-    expect(result).toBeInstanceOf(PatchComponent);
-  });
-
-  it('should work with a typed handler function', () => {
-    const obj = createTestObj();
-    const parent = new Component();
-    parent.load();
-
-    function handler({ originalArgs: [name], originalFn, originalThis }: PatchHandlerParams<TestObj, 'greet'>): string {
-      return `typed: ${originalFn.call(originalThis, name)}`;
-    }
-
-    registerMethodPatch(parent, obj, 'greet', handler);
-
-    expect(obj.greet('test')).toBe('typed: hello test');
   });
 });

@@ -67,28 +67,43 @@ type Uninstaller = () => void;
 type WrapperFactory<T extends Function | undefined> = (next: T) => T;
 
 /**
- * A component that applies a patch to an object during its lifecycle.
- * The patch is automatically installed when the component loads and removed when it unloads.
- *
- * @typeParam Obj - The object to patch.
+ * A component that manages monkey-patches with lifecycle-bound cleanup.
+ * All patches registered via this component are automatically uninstalled when the component unloads.
  */
-export class PatchComponent<Obj extends object> extends Component {
+export class MonkeyAroundComponent extends Component {
   /**
-   * Creates a new patch component.
+   * Registers a single-method patch using a simplified handler.
    *
+   * @typeParam Obj - The object to patch.
+   * @typeParam K - The method name to patch.
    * @param obj - The object to patch.
-   * @param factories - The factories to apply to the object.
+   * @param methodName - The name of the method to patch.
+   * @param handler - The patch handler function receiving `originalFn`, `originalThis`, and `originalArgs`.
    */
-  public constructor(private readonly obj: Obj, private readonly factories: Factories<Obj>) {
-    super();
+  public registerMethodPatch<Obj extends object, K extends MethodKeys<Obj>>(
+    obj: Obj,
+    methodName: K,
+    handler: PatchHandlerFn<Obj, K>
+  ): void {
+    type Fn = Extract<Obj[K], (...args: never[]) => unknown>;
+    this.registerPatch(obj, {
+      [methodName]: (originalFn: Fn): Fn => {
+        return function patchedMethod(this: Obj, ...originalArgs: Parameters<Fn>): ReturnType<Fn> {
+          return handler({ originalArgs, originalFn, originalThis: this });
+        } as Fn;
+      }
+    } as Factories<Obj>);
   }
 
   /**
-   * Installs the patch when the component loads.
+   * Registers a patch using raw factories (advanced API).
+   *
+   * @typeParam Obj - The object to patch.
+   * @param obj - The object to patch.
+   * @param factories - The factories to apply to the object.
    */
-  public override onload(): void {
-    super.onload();
-    const uninstaller = around(this.obj, this.factories);
+  public registerPatch<Obj extends object>(obj: Obj, factories: Factories<Obj>): void {
+    const uninstaller = around(obj, factories);
     this.register(uninstaller);
   }
 }
@@ -147,42 +162,38 @@ export async function invokeWithPatchAsync<Obj extends object, Result>(obj: Obj,
 }
 
 /**
- * Registers a method patch using a simplified handler that receives `originalFn`, `originalThis`, and `originalArgs`.
+ * Convenience: creates a {@link MonkeyAroundComponent}, adds it as a child of the given component, and registers a method patch.
  *
  * @typeParam Obj - The object to patch.
  * @typeParam K - The method name to patch.
- * @param component - The component to register the patch to.
+ * @param component - The parent component for lifecycle management.
  * @param obj - The object to patch.
  * @param methodName - The name of the method to patch.
  * @param handler - The patch handler function.
- * @returns The patch component.
+ * @returns The monkey-around component.
  */
 export function registerMethodPatch<Obj extends object, K extends MethodKeys<Obj>>(
   component: Component,
   obj: Obj,
   methodName: K,
   handler: PatchHandlerFn<Obj, K>
-): PatchComponent<Obj> {
-  type Fn = Extract<Obj[K], (...args: never[]) => unknown>;
-  const factories = {
-    [methodName]: (originalFn: Fn): Fn => {
-      return function patchedMethod(this: Obj, ...originalArgs: Parameters<Fn>): ReturnType<Fn> {
-        return handler({ originalArgs, originalFn, originalThis: this });
-      } as Fn;
-    }
-  } as Factories<Obj>;
-  return component.addChild(new PatchComponent<Obj>(obj, factories));
+): MonkeyAroundComponent {
+  const monkeyAround = component.addChild(new MonkeyAroundComponent());
+  monkeyAround.registerMethodPatch(obj, methodName, handler);
+  return monkeyAround;
 }
 
 /**
- * Registers a patch to the object.
+ * Convenience: creates a {@link MonkeyAroundComponent}, adds it as a child of the given component, and registers a patch.
  *
  * @typeParam Obj - The object to patch.
- * @param component - The component to register the patch to.
+ * @param component - The parent component for lifecycle management.
  * @param obj - The object to patch.
  * @param factories - The factories to apply to the object.
- * @returns The patch component.
+ * @returns The monkey-around component.
  */
-export function registerPatch<Obj extends object>(component: Component, obj: Obj, factories: Factories<Obj>): PatchComponent<Obj> {
-  return component.addChild(new PatchComponent<Obj>(obj, factories));
+export function registerPatch<Obj extends object>(component: Component, obj: Obj, factories: Factories<Obj>): MonkeyAroundComponent {
+  const monkeyAround = component.addChild(new MonkeyAroundComponent());
+  monkeyAround.registerPatch(obj, factories);
+  return monkeyAround;
 }
