@@ -10,9 +10,11 @@
  */
 import type { Rule } from 'eslint';
 
+import { ensureNonNullable } from '../../../type-guards.ts';
+
 export const MESSAGE_ID = 'readonlyParamsOptionsMembers';
 
-interface PropertySignatureNode extends Rule.Node {
+interface PropertySignatureNode {
   readonly key: Rule.Node;
 }
 
@@ -28,10 +30,10 @@ export const readonlyParamsOptionsMembers: Rule.RuleModule = {
     };
 
     function reportNonReadonly(ctx: Rule.RuleContext, node: Rule.Node): void {
-      const propertyNode = node as PropertySignatureNode;
+      const propertyNode = node as Partial<PropertySignatureNode>;
       ctx.report({
         fix(fixer) {
-          return fixer.insertTextBefore(propertyNode.key, 'readonly ');
+          return fixer.insertTextBefore(ensureNonNullable(propertyNode.key), 'readonly ');
         },
         messageId: MESSAGE_ID,
         node
