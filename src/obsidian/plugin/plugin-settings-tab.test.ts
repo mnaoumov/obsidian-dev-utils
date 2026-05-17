@@ -2,6 +2,7 @@ import type {
   App as AppOriginal,
   Plugin
 } from 'obsidian';
+import type { PartialDeep } from 'type-fest';
 
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
@@ -72,7 +73,7 @@ class TestSettingsTab extends PluginSettingsTabBase<TestSettings> {
 
 function createMockPlugin(appInstance: AppOriginal): Plugin {
   return strictProxy<Plugin>({
-    app: appInstance,
+    app: appInstance as PartialDeep<AppOriginal>,
     manifest: { id: 'test-plugin' }
   });
 }
