@@ -6,17 +6,13 @@
 
 ## 65.0.0
 
-- test: add v8 ignore comments for untestable defensive branches in params-options-name-match These branches guard against impossible AST states (missing parent chain, missing key property, etc.) that the TypeScript ESLint parser never produces.
-- fix(test): correct mock path for loadPrism in code-highlighter-component test The mock was targeting 'obsidian-typings/implementations' but the source imports from '@obsidian-typings/obsidian-public-latest/implementations', causing 16 unhandled rejection errors during test runs.
-- test: fix env
 - refactor!: should* to methods
-- chore: lint
 - refactor: missing readonly's
 - fix: explicitly add DOM.Iterable
-- fix: support getters and setters in require-super-call eslint rule Previously the rule only checked for `super.method()` call expressions, causing false positives on override getters/setters. Now: - Getters: checks for `super.prop` member access - Setters: checks for `super.prop = value` assignment Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
-- refactor: fix params-options-name-match violations - Rename RenameHandlerParams → RenameHandlerConstructorParams - Rename RenameMapParams → RenameMapConstructorParams - Fix ConfirmParams JSDoc (Options → Parameters) - Add eslint-disable for legitimate shared-type patterns:   inherited constructor params, shared function params, generic bind options Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
-- feat: add eslint rules for params/options interfaces - readonly-params-options-members: requires all properties in *Params/*Options   interfaces to be readonly (auto-fixable) - params-options-name-match: requires type names to match the exported   function/constructor they belong to (e.g. FooBarParams for fooBar()) Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
-- refactor: migrate obsidian-typings to @obsidian-typings scoped package Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+- fix: support getters and setters in require-super-call eslint rule
+- refactor: fix params-options-name-match violations
+- feat: add eslint rules for params/options interfaces
+- refactor: migrate obsidian-typings to @obsidian-typings scoped package
 - refactor: params
 - chore: update libs
 
