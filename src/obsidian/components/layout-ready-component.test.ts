@@ -27,7 +27,7 @@ vi.mock('../../async.ts', () => ({
 
 interface MockApp {
   app: AppOriginal;
-  triggerLayoutReady: () => void;
+  triggerLayoutReady(): void;
 }
 
 function createMockApp(): MockApp {

@@ -46,11 +46,11 @@ interface MockBaseTypeProperty {
 
 interface MockRuleContextResult {
   report: ReturnType<typeof vi.fn>;
-  visitMethodDefinitionExit: (node: Rule.Node) => void;
+  visitMethodDefinitionExit(node: Rule.Node): void;
 }
 
 interface MockTypeCheckerOverrides {
-  getBaseTypes?: () => MockBaseType[] | undefined;
+  getBaseTypes?(): MockBaseType[] | undefined;
 }
 
 /**

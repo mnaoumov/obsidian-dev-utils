@@ -332,7 +332,7 @@ export interface RetryWithTimeoutParams {
    *
    * @param context - The timeout context.
    */
-  readonly onTimeout?: (this: void, context: TimeoutContext) => void;
+  onTimeout?(this: void, context: TimeoutContext): void;
 
   /**
    * The function to execute.
@@ -340,7 +340,7 @@ export interface RetryWithTimeoutParams {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  readonly operationFn: (this: void, abortSignal: AbortSignal) => Promisable<boolean>;
+  operationFn(this: void, abortSignal: AbortSignal): Promisable<boolean>;
 
   /**
    * The name of the operation.
@@ -374,7 +374,7 @@ export interface RunWithTimeoutParams<Result> {
    *
    * @param context - The timeout context.
    */
-  readonly onTimeout?: (this: void, context: TimeoutContext) => void;
+  onTimeout?(this: void, context: TimeoutContext): void;
 
   /**
    * The operation function to execute.
@@ -382,7 +382,7 @@ export interface RunWithTimeoutParams<Result> {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  readonly operationFn: (this: void, abortSignal: AbortSignal) => Promisable<Result>;
+  operationFn(this: void, abortSignal: AbortSignal): Promisable<Result>;
 
   /**
    * The name of the operation.
@@ -413,7 +413,7 @@ export interface TimeoutContext {
    *
    * @param callback - The function to call when the operation completes.
    */
-  readonly onOperationCompleted: (callback: () => void) => void;
+  onOperationCompleted(callback: () => void): void;
   /**
    * The name of the operation.
    */
@@ -421,7 +421,7 @@ export interface TimeoutContext {
   /**
    * Terminates the operation that timed out.
    */
-  readonly terminateOperation: () => void;
+  terminateOperation(): void;
 }
 
 /**

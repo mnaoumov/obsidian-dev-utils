@@ -41,7 +41,7 @@ export interface LoopParams<T> {
    * @param iterationStr - A string representing the current iteration.
    * @returns A string to display in the notice.
    */
-  readonly buildNoticeMessage: (item: T, iterationStr: string) => string;
+  buildNoticeMessage(item: T, iterationStr: string): string;
 
   /**
    * Items to loop over.
@@ -63,7 +63,7 @@ export interface LoopParams<T> {
    *
    * @param item - The current item.
    */
-  readonly processItem: (item: T) => Promisable<void>;
+  processItem(item: T): Promisable<void>;
 
   /**
    * A title of the progress bar. Default is `''`.

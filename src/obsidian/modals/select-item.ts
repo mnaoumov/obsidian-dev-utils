@@ -46,7 +46,7 @@ export interface SelectItemParams<T> {
    * @param item - The item to get the display text for.
    * @returns The display text for the item.
    */
-  readonly itemTextFunc: (item: T) => string;
+  itemTextFunc(item: T): string;
 
   /**
    * A placeholder text for the input field.
