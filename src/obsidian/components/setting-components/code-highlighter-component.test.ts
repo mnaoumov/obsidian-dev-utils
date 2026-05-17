@@ -33,7 +33,7 @@ vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 
-vi.mock('obsidian-typings/implementations', () => ({
+vi.mock('@obsidian-typings/obsidian-public-latest/implementations', () => ({
   loadPrism: vi.fn(() =>
     Promise.resolve({
       highlightElement: vi.fn()
