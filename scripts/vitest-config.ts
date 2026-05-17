@@ -22,7 +22,7 @@ const SHARED_COVERAGE = {
 
 const SHARED_SERVER = {
   deps: {
-    inline: ['obsidian-typings']
+    inline: ['@obsidian-typings']
   }
 };
 
