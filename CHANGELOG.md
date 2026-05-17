@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 65.0.1
+
+- fix: mocks
+
 ## 65.0.0
 
 - test: add v8 ignore comments for untestable defensive branches in params-options-name-match These branches guard against impossible AST states (missing parent chain, missing key property, etc.) that the TypeScript ESLint parser never produces.
