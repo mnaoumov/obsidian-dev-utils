@@ -5,9 +5,9 @@ import {
   it
 } from 'vitest';
 
-import type { PatchHandlerParams } from './monkey-around.ts';
+import type { PatchHandlerParams } from './monkey-around-component.ts';
 
-import { noopAsync } from '../function.ts';
+import { noopAsync } from '../../function.ts';
 import {
   around,
   invokeWithPatch,
@@ -15,7 +15,7 @@ import {
   MonkeyAroundComponent,
   registerMethodPatch,
   registerPatch
-} from './monkey-around.ts';
+} from './monkey-around-component.ts';
 
 interface TestObj {
   greet(name: string): string;

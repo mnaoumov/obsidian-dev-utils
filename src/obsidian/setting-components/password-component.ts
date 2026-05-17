@@ -5,11 +5,11 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
-import type { initPluginContext } from '../../plugin/plugin-context.ts';
+import type { initPluginContext } from '../plugin/plugin-context.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `SettingEx` to use it in the tsdocs.
-import type { SettingEx } from '../../setting-ex.ts';
+import type { SettingEx } from '../setting-ex.ts';
 
-import { CssClass } from '../../../css-class.ts';
+import { CssClass } from '../../css-class.ts';
 import { TypedTextComponent } from './typed-text-component.ts';
 
 /**

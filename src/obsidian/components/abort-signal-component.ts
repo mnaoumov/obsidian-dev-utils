@@ -4,8 +4,8 @@
  * Component that provides an AbortSignal for cancelling long-running operations on plugin unload.
  */
 
-import { SilentError } from '../../../error.ts';
-import { DisposableComponent } from '../../components/disposable-component.ts';
+import { SilentError } from '../../error.ts';
+import { DisposableComponent } from './disposable-component.ts';
 
 /**
  * Provides an {@link AbortSignal} that is aborted when the component is unloaded.

@@ -9,13 +9,13 @@ import {
 
 import { TriStateCheckboxComponent } from './tri-state-checkbox-component.ts';
 
-vi.mock('../../../css-class.ts', () => ({
+vi.mock('../../css-class.ts', () => ({
   CssClass: {
     TriStateCheckboxComponent: 'tri-state-checkbox-component'
   }
 }));
 
-vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
+vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 

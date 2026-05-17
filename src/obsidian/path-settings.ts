@@ -8,9 +8,9 @@ import {
   ALWAYS_MATCH_REG_EXP,
   escapeRegExp,
   NEVER_MATCH_REG_EXP
-} from '../../reg-exp.ts';
-import { trimEnd } from '../../string.ts';
-import { assert } from '../../type-guards.ts';
+} from '../reg-exp.ts';
+import { trimEnd } from '../string.ts';
+import { assert } from '../type-guards.ts';
 
 enum PathSettingType {
   Exclude = 'Exclude',

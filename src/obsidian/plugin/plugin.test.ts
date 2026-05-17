@@ -13,7 +13,7 @@ import {
   vi
 } from 'vitest';
 
-import type { LayoutReadyComponent } from './components/layout-ready-component.ts';
+import type { LayoutReadyComponent } from '../components/layout-ready-component.ts';
 
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { DisposableComponent } from '../components/disposable-component.ts';
@@ -140,10 +140,6 @@ class TestPlugin extends PluginBase {
   public getNoticeComponent(): typeof this.noticeComponent {
     return this.noticeComponent;
   }
-
-  public getSettingsComponent(): typeof this.settingsComponent {
-    return this.settingsComponent;
-  }
 }
 
 beforeEach(() => {
@@ -161,7 +157,6 @@ describe('PluginBase', () => {
     expect(plugin.getAbortSignalComponent()).toBeDefined();
     expect(plugin.getConsoleDebugComponent()).toBeDefined();
     expect(plugin.getNoticeComponent()).toBeDefined();
-    expect(plugin.getSettingsComponent()).toBeDefined();
   });
 
   it('should call onLayoutReady on children implementing LayoutReadyComponent', async () => {
@@ -182,15 +177,6 @@ describe('PluginBase', () => {
     await vi.waitFor(() => {
       expect(plugin.layoutReadyChild.layoutReadyCalled).toBe(true);
     });
-  });
-
-  it('should delegate onExternalSettingsChange to settings component', async () => {
-    const plugin = new TestPlugin(app, manifest);
-    await plugin.load();
-
-    const spy = vi.spyOn(plugin.getSettingsComponent(), 'onExternalSettingsChange');
-    await plugin.onExternalSettingsChange();
-    expect(spy).toHaveBeenCalled();
   });
 
   it('should replace singleton component with same COMPONENT_KEY', () => {

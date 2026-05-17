@@ -11,26 +11,26 @@ import {
   Setting
 } from 'obsidian';
 
-import { CheckboxComponent } from './components/setting-components/checkbox-component.ts';
-import { CodeHighlighterComponent } from './components/setting-components/code-highlighter-component.ts';
-import { DateComponent } from './components/setting-components/date-component.ts';
-import { DateTimeComponent } from './components/setting-components/date-time-component.ts';
-import { EmailComponent } from './components/setting-components/email-component.ts';
-import { FileComponent } from './components/setting-components/file-component.ts';
-import { MonthComponent } from './components/setting-components/month-component.ts';
-import { MultipleDropdownComponent } from './components/setting-components/multiple-dropdown-component.ts';
-import { MultipleEmailComponent } from './components/setting-components/multiple-email-component.ts';
-import { MultipleFileComponent } from './components/setting-components/multiple-file-component.ts';
-import { MultipleTextComponent } from './components/setting-components/multiple-text-component.ts';
-import { NumberComponent } from './components/setting-components/number-component.ts';
-import { PasswordComponent } from './components/setting-components/password-component.ts';
-import { TelephoneComponent } from './components/setting-components/telephone-component.ts';
-import { TimeComponent } from './components/setting-components/time-component.ts';
-import { TriStateCheckboxComponent } from './components/setting-components/tri-state-checkbox-component.ts';
-import { TypedDropdownComponent } from './components/setting-components/typed-dropdown-component.ts';
-import { TypedMultipleDropdownComponent } from './components/setting-components/typed-multiple-dropdown-component.ts';
-import { UrlComponent } from './components/setting-components/url-component.ts';
-import { WeekComponent } from './components/setting-components/week-component.ts';
+import { CheckboxComponent } from './setting-components/checkbox-component.ts';
+import { CodeHighlighterComponent } from './setting-components/code-highlighter-component.ts';
+import { DateComponent } from './setting-components/date-component.ts';
+import { DateTimeComponent } from './setting-components/date-time-component.ts';
+import { EmailComponent } from './setting-components/email-component.ts';
+import { FileComponent } from './setting-components/file-component.ts';
+import { MonthComponent } from './setting-components/month-component.ts';
+import { MultipleDropdownComponent } from './setting-components/multiple-dropdown-component.ts';
+import { MultipleEmailComponent } from './setting-components/multiple-email-component.ts';
+import { MultipleFileComponent } from './setting-components/multiple-file-component.ts';
+import { MultipleTextComponent } from './setting-components/multiple-text-component.ts';
+import { NumberComponent } from './setting-components/number-component.ts';
+import { PasswordComponent } from './setting-components/password-component.ts';
+import { TelephoneComponent } from './setting-components/telephone-component.ts';
+import { TimeComponent } from './setting-components/time-component.ts';
+import { TriStateCheckboxComponent } from './setting-components/tri-state-checkbox-component.ts';
+import { TypedDropdownComponent } from './setting-components/typed-dropdown-component.ts';
+import { TypedMultipleDropdownComponent } from './setting-components/typed-multiple-dropdown-component.ts';
+import { UrlComponent } from './setting-components/url-component.ts';
+import { WeekComponent } from './setting-components/week-component.ts';
 
 /**
  * Extends the Setting class with additional methods for adding components.

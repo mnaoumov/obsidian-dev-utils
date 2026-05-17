@@ -4,8 +4,8 @@
  * Component that provides namespaced console debug logging.
  */
 
-import { getDebugger } from '../../../debug.ts';
-import { DisposableComponent } from '../../components/disposable-component.ts';
+import { getDebugger } from '../../debug.ts';
+import { DisposableComponent } from './disposable-component.ts';
 
 /**
  * Provides a namespaced `consoleDebug()` method for logging.

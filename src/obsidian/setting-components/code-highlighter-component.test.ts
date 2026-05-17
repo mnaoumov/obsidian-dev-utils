@@ -7,17 +7,17 @@ import {
   vi
 } from 'vitest';
 
-import { assertNonNullable } from '../../../type-guards.ts';
+import { assertNonNullable } from '../../type-guards.ts';
 import { CodeHighlighterComponent } from './code-highlighter-component.ts';
 
-vi.mock('../../../async.ts', () => ({
+vi.mock('../../async.ts', () => ({
   convertAsyncToSync: vi.fn((fn: () => unknown) => fn),
   invokeAsyncSafely: vi.fn((fn: () => unknown) => {
     fn();
   })
 }));
 
-vi.mock('../../../css-class.ts', () => ({
+vi.mock('../../css-class.ts', () => ({
   CssClass: {
     CodeHighlighterComponent: 'code-highlighter-component',
     IsPlaceholder: 'is-placeholder',
@@ -25,11 +25,11 @@ vi.mock('../../../css-class.ts', () => ({
   }
 }));
 
-vi.mock('../../../html-element.ts', () => ({
+vi.mock('../../html-element.ts', () => ({
   toPx: vi.fn((n: number) => `${String(n)}px`)
 }));
 
-vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
+vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 

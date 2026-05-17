@@ -13,35 +13,35 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
-import type { AsyncEventRef } from '../../../async-events.ts';
-import type { Transformer } from '../../../transformers/transformer.ts';
-import type { GenericObject } from '../../../type-guards.ts';
+import type { AsyncEventRef } from '../../async-events.ts';
+import type { Transformer } from '../../transformers/transformer.ts';
+import type { GenericObject } from '../../type-guards.ts';
 import type {
   MaybeReturn,
   StringKeys
-} from '../../../type.ts';
-import type { DataHandler } from '../../data-handler.ts';
+} from '../../type.ts';
+import type { DataHandler } from '../data-handler.ts';
 
-import { AsyncEvents } from '../../../async-events.ts';
-import { getLibDebugger } from '../../../debug.ts';
+import { AsyncEvents } from '../../async-events.ts';
+import { getLibDebugger } from '../../debug.ts';
 import {
   noop,
   noopAsync
-} from '../../../function.ts';
+} from '../../function.ts';
 import {
   castTo,
   deepEqual,
   getAllKeys
-} from '../../../object-utils.ts';
-import { DateTransformer } from '../../../transformers/date-transformer.ts';
-import { DurationTransformer } from '../../../transformers/duration-transformer.ts';
-import { GroupTransformer } from '../../../transformers/group-transformer.ts';
-import { MapTransformer } from '../../../transformers/map-transformer.ts';
-import { SetTransformer } from '../../../transformers/set-transformer.ts';
-import { SkipPrivatePropertyTransformer } from '../../../transformers/skip-private-property-transformer.ts';
-import { TwoWayMapTransformer } from '../../../transformers/two-way-map-transformer.ts';
-import { AsyncComponentBase } from '../../components/async-component.ts';
-import { registerAsyncEvent } from '../../components/async-events-component.ts';
+} from '../../object-utils.ts';
+import { DateTransformer } from '../../transformers/date-transformer.ts';
+import { DurationTransformer } from '../../transformers/duration-transformer.ts';
+import { GroupTransformer } from '../../transformers/group-transformer.ts';
+import { MapTransformer } from '../../transformers/map-transformer.ts';
+import { SetTransformer } from '../../transformers/set-transformer.ts';
+import { SkipPrivatePropertyTransformer } from '../../transformers/skip-private-property-transformer.ts';
+import { TwoWayMapTransformer } from '../../transformers/two-way-map-transformer.ts';
+import { AsyncComponentBase } from './async-component.ts';
+import { registerAsyncEvent } from './async-events-component.ts';
 
 const defaultTransformer = new GroupTransformer([
   new SkipPrivatePropertyTransformer(),
@@ -105,19 +105,6 @@ type PropertyNames<PluginSettings extends object> = StringKeys<PluginSettings>;
 type PropertyValues<PluginSettings extends object> = PluginSettings[PropertyNames<PluginSettings>];
 
 type ValidationResult<PluginSettings extends object> = Partial<Record<StringKeys<PluginSettings>, string>>;
-
-class EmptyDataHandler implements DataHandler {
-  public async loadData(): Promise<unknown> {
-    await noopAsync();
-    return {};
-  }
-
-  /* v8 ignore start -- unreachable because EmptyPluginSettingsComponent has no properties to change, so saveToFile always short-circuits. */
-  public async saveData(): Promise<void> {
-    await noopAsync();
-  }
-  /* v8 ignore stop */
-}
 
 /**
  * Base class for plugin settings components.
@@ -625,26 +612,5 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
     await this.onSavingRecord(rawRecord);
 
     return this.getTransformer().transformObjectRecursively(rawRecord);
-  }
-}
-
-/**
- * A no-op settings component for plugins without settings.
- */
-export class EmptyPluginSettingsComponent extends PluginSettingsComponentBase<object> {
-  /**
-   * Creates a new empty plugin settings component.
-   */
-  public constructor() {
-    super(new EmptyDataHandler());
-  }
-
-  /**
-   * Creates empty default settings.
-   *
-   * @returns An empty object.
-   */
-  protected override createDefaultSettings(): object {
-    return {};
   }
 }

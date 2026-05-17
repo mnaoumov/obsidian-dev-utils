@@ -4,11 +4,11 @@
  * Component that initializes i18n translations.
  */
 
-import type { TranslationsMap } from '../../i18n/i18n.ts';
+import type { TranslationsMap } from '../i18n/i18n.ts';
 
-import { AsyncComponentBase } from '../../components/async-component.ts';
-import { initI18N } from '../../i18n/i18n.ts';
-import { defaultTranslationsMap } from '../../i18n/locales/translations-map.ts';
+import { initI18N } from '../i18n/i18n.ts';
+import { defaultTranslationsMap } from '../i18n/locales/translations-map.ts';
+import { AsyncComponentBase } from './async-component.ts';
 
 /**
  * Initializes the i18n module with the provided translations map.

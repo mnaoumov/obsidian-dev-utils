@@ -23,13 +23,13 @@ import {
 
 import type { AsyncEventRef } from '../../async-events.ts';
 import type { StringKeys } from '../../type.ts';
-import type { ValueComponentWithChangeTracking } from '../components/setting-components/value-component-with-change-tracking.ts';
-import type { ValidationMessageHolder } from '../validation.ts';
 import type {
   PluginSettingsComponentBase,
   ReadonlyPluginSettings,
   ReadonlyPluginSettingsState
-} from './components/plugin-settings-component.ts';
+} from '../components/plugin-settings-component.ts';
+import type { ValueComponentWithChangeTracking } from '../setting-components/value-component-with-change-tracking.ts';
+import type { ValidationMessageHolder } from '../validation.ts';
 
 import {
   convertAsyncToSync,
@@ -43,9 +43,9 @@ import {
 import { deepEqual } from '../../object-utils.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { AsyncEventsComponent } from '../components/async-events-component.ts';
-import { ensureWrapped } from '../components/setting-components/setting-component-wrapper.ts';
-import { getTextBasedComponentValue } from '../components/setting-components/text-based-component.ts';
-import { getValidatorComponent } from '../components/setting-components/validator-component.ts';
+import { ensureWrapped } from '../setting-components/setting-component-wrapper.ts';
+import { getTextBasedComponentValue } from '../setting-components/text-based-component.ts';
+import { getValidatorComponent } from '../setting-components/validator-component.ts';
 import { isValidationMessageHolder } from '../validation.ts';
 import { addPluginCssClasses } from './plugin-context.ts';
 

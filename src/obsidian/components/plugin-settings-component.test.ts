@@ -6,13 +6,10 @@ import {
   vi
 } from 'vitest';
 
-import type { DataHandler } from '../../data-handler.ts';
+import type { DataHandler } from '../data-handler.ts';
 
-import { noop } from '../../../function.ts';
-import {
-  EmptyPluginSettingsComponent,
-  PluginSettingsComponentBase
-} from './plugin-settings-component.ts';
+import { noop } from '../../function.ts';
+import { PluginSettingsComponentBase } from './plugin-settings-component.ts';
 
 vi.mock('../../../debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
@@ -467,23 +464,5 @@ describe('PluginSettingsComponentBase', () => {
     expect(component.settingsState.inputValues.count).toBe(-5);
     expect(component.settingsState.effectiveValues.count).toBe(0);
     expect(component.settingsState.validationMessages.count).toBe('Must be non-negative');
-  });
-});
-
-describe('EmptyPluginSettingsComponent', () => {
-  it('should create with default no-op params', () => {
-    const component = new EmptyPluginSettingsComponent();
-    expect(component.defaultSettings).toEqual({});
-  });
-
-  it('should create with custom params', () => {
-    const component = new EmptyPluginSettingsComponent();
-    expect(component.defaultSettings).toEqual({});
-  });
-
-  it('should load without errors', async () => {
-    const component = new EmptyPluginSettingsComponent();
-    await component.onload();
-    expect(component.settings).toEqual({});
   });
 });

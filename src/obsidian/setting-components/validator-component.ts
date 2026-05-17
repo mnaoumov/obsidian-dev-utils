@@ -15,10 +15,10 @@ import {
   ToggleComponent
 } from 'obsidian';
 
-import type { ValidatorElement } from '../../../html-element.ts';
+import type { ValidatorElement } from '../../html-element.ts';
 
-import { CssClass } from '../../../css-class.ts';
-import { addPluginCssClasses } from '../../plugin/plugin-context.ts';
+import { CssClass } from '../../css-class.ts';
+import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import { ensureWrapped } from './setting-component-wrapper.ts';
 
 /**

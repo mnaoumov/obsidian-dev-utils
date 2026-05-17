@@ -11,8 +11,8 @@ import {
 
 import type { TextBasedComponent } from './text-based-component.ts';
 
-import { noop } from '../../../function.ts';
-import { assertNonNullable } from '../../../type-guards.ts';
+import { noop } from '../../function.ts';
+import { assertNonNullable } from '../../type-guards.ts';
 import { getTextBasedComponentValue } from './text-based-component.ts';
 
 // Allow duck-type check in getTextBasedComponentValue to work with strictMock.
