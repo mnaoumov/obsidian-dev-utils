@@ -5,12 +5,15 @@ import {
   it
 } from 'vitest';
 
+import type { PatchHandlerParams } from './monkey-around.ts';
+
 import { noopAsync } from '../function.ts';
 import {
   around,
   invokeWithPatch,
   invokeWithPatchAsync,
   PatchComponent,
+  registerMethodPatch,
   registerPatch
 } from './monkey-around.ts';
 
@@ -191,5 +194,78 @@ describe('registerPatch', () => {
     expect(obj.greet('x')).toBe('registered: hello x');
     parent.unload();
     expect(obj.greet('x')).toBe('hello x');
+  });
+});
+
+describe('registerMethodPatch', () => {
+  it('should patch a method with handler receiving originalFn, originalThis, originalArgs', () => {
+    const obj = createTestObj();
+    const parent = new Component();
+    parent.load();
+
+    registerMethodPatch(parent, obj, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
+      return `method-patched: ${originalFn.call(originalThis, name)}`;
+    });
+
+    expect(obj.greet('world')).toBe('method-patched: hello world');
+  });
+
+  it('should remove method patch when parent component is unloaded', () => {
+    const obj = createTestObj();
+    const parent = new Component();
+    parent.load();
+
+    registerMethodPatch(parent, obj, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
+      return `method-patched: ${originalFn.call(originalThis, name)}`;
+    });
+
+    expect(obj.greet('x')).toBe('method-patched: hello x');
+    parent.unload();
+    expect(obj.greet('x')).toBe('hello x');
+  });
+
+  it('should preserve originalThis for prototype patches', () => {
+    class Greeter {
+      public prefix = 'hi';
+
+      public greet(name: string): string {
+        return `${this.prefix} ${name}`;
+      }
+    }
+    const greeter = new Greeter();
+    const parent = new Component();
+    parent.load();
+
+    registerMethodPatch(parent, greeter, 'greet', ({ originalArgs: [name], originalFn, originalThis }) => {
+      return `patched(${originalFn.call(originalThis, name)})`;
+    });
+
+    expect(greeter.greet('world')).toBe('patched(hi world)');
+  });
+
+  it('should return a PatchComponent', () => {
+    const obj = createTestObj();
+    const parent = new Component();
+    parent.load();
+
+    const result = registerMethodPatch(parent, obj, 'greet', ({ originalArgs, originalFn, originalThis }) => {
+      return originalFn.call(originalThis, ...originalArgs);
+    });
+
+    expect(result).toBeInstanceOf(PatchComponent);
+  });
+
+  it('should work with a typed handler function', () => {
+    const obj = createTestObj();
+    const parent = new Component();
+    parent.load();
+
+    function handler({ originalArgs: [name], originalFn, originalThis }: PatchHandlerParams<TestObj, 'greet'>): string {
+      return `typed: ${originalFn.call(originalThis, name)}`;
+    }
+
+    registerMethodPatch(parent, obj, 'greet', handler);
+
+    expect(obj.greet('test')).toBe('typed: hello test');
   });
 });
