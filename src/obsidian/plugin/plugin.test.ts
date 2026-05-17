@@ -224,6 +224,32 @@ describe('PluginBase', () => {
 
     expect(plugin['singletonComponents'].has(KEY)).toBe(false);
   });
+
+  it('should call onExternalSettingsChange on settings component', async () => {
+    const plugin = new TestPlugin(app, manifest);
+
+    await plugin.onExternalSettingsChange();
+
+    // Should not throw even without a settings component registered
+  });
+
+  it('should throw when getRegisteredComponent finds incompatible component', () => {
+    const KEY = Symbol('Shared');
+
+    class ComponentA extends DisposableComponent {
+      public static readonly COMPONENT_KEY = KEY;
+    }
+
+    class ComponentB extends DisposableComponent {
+      public static readonly COMPONENT_KEY = KEY;
+    }
+
+    const plugin = new TestPlugin(app, manifest);
+    plugin.addChild(new ComponentA());
+
+    // Manually call getRegisteredComponent with ComponentB which expects a different instance type
+    expect(() => plugin['getRegisteredComponent'](ComponentB)).toThrow('Incompatible');
+  });
 });
 
 describe('reloadPlugin', () => {
