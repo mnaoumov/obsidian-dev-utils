@@ -4,24 +4,24 @@
  * Handles registering DOM events and handlers for all windows (main window and all existing/future popup windows) and their documents.
  */
 
-import type {
-  App,
-  Component
-} from 'obsidian';
+import type { App } from 'obsidian';
+
+import { Component } from 'obsidian';
 
 import { getAllDomWindows } from '../workspace.ts';
 
 /**
  * Handles registering DOM events and handlers for all windows (main window and all existing/future popup windows) and their documents.
  */
-export class AllWindowsEventHandler {
+export class AllWindowsEventComponent extends Component {
   /**
-   * Creates a new instance of the `AllWindowsEventHandler` class.
+   * Creates a new instance of the `AllWindowsEventComponent` class.
    *
    * @param app - The Obsidian app instance.
-   * @param component - The component to register the event on.
    */
-  public constructor(private readonly app: App, private readonly component: Component) {}
+  public constructor(private readonly app: App) {
+    super();
+  }
 
   /**
    * Registers a DOM event for all documents (main window document and all existing/future popup window documents).
@@ -37,7 +37,7 @@ export class AllWindowsEventHandler {
     options?: AddEventListenerOptions | boolean
   ): void {
     this.registerAllWindowsHandler((win) => {
-      this.component.registerDomEvent(win.document, type, callback, options);
+      this.registerDomEvent(win.document, type, callback, options);
     });
   }
 
@@ -55,18 +55,21 @@ export class AllWindowsEventHandler {
     options?: AddEventListenerOptions | boolean
   ): void {
     this.registerAllWindowsHandler((win) => {
-      this.component.registerDomEvent(win, type, callback, options);
+      this.registerDomEvent(win, type, callback, options);
     });
   }
 
   /**
    * Registers a handler for all windows (main window and all existing/future popup windows).
    *
-   * @param allWindowsHandler - The handler for all windows.
+   * @param allWindowsHandler - The handler called for each window (main + popups).
    */
   public registerAllWindowsHandler(allWindowsHandler: (win: Window) => void): void {
     const mainWindow = activeWindow;
-    allWindowsHandler(mainWindow);
+
+    if (this._loaded) {
+      allWindowsHandler(mainWindow);
+    }
 
     this.app.workspace.onLayoutReady(() => {
       for (const win of getAllDomWindows(this.app)) {
@@ -74,11 +77,15 @@ export class AllWindowsEventHandler {
           continue;
         }
 
-        allWindowsHandler(win);
+        if (this._loaded) {
+          allWindowsHandler(win);
+        }
       }
 
-      this.component.registerEvent(this.app.workspace.on('window-open', (workspaceWindow) => {
-        allWindowsHandler(workspaceWindow.win);
+      this.registerEvent(this.app.workspace.on('window-open', (workspaceWindow) => {
+        if (this._loaded) {
+          allWindowsHandler(workspaceWindow.win);
+        }
       }));
     });
   }

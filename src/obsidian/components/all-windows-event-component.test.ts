@@ -1,6 +1,5 @@
 import type {
   App,
-  Component,
   EventRef,
   Workspace,
   WorkspaceContainer,
@@ -18,7 +17,7 @@ import {
 
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
-import { AllWindowsEventHandler } from './all-windows-event-handler.ts';
+import { AllWindowsEventComponent } from './all-windows-event-component.ts';
 
 interface CreateMockAppParams {
   readonly domWindows?: Window[];
@@ -26,13 +25,13 @@ interface CreateMockAppParams {
   readonly onWindowOpen?: Workspace['on'];
 }
 
-interface MockComponent {
-  component: Component;
-  registerDomEvent: ReturnType<typeof vi.fn>;
-  registerEvent: ReturnType<typeof vi.fn>;
-}
-
 type WindowOpenCallback = (workspaceWindow: WorkspaceWindow) => void;
+
+function createLoadedComponent(app: App): AllWindowsEventComponent {
+  const component = new AllWindowsEventComponent(app);
+  component.load();
+  return component;
+}
 
 function createMockApp(params: CreateMockAppParams): App {
   const {
@@ -63,35 +62,32 @@ function createMockApp(params: CreateMockAppParams): App {
   });
 }
 
-function createMockComponent(): MockComponent {
-  const registerDomEvent = vi.fn();
-  const registerEvent = vi.fn();
-  return {
-    component: castTo<Component>({ registerDomEvent, registerEvent }),
-    registerDomEvent,
-    registerEvent
-  };
-}
-
-describe('AllWindowsEventHandler', () => {
+describe('AllWindowsEventComponent', () => {
   describe('registerAllWindowsHandler', () => {
     it('should call handler immediately with main window', () => {
       const app = createMockApp({});
-      const mock = createMockComponent();
       const handler = vi.fn();
 
-      new AllWindowsEventHandler(app, mock.component).registerAllWindowsHandler(handler);
+      createLoadedComponent(app).registerAllWindowsHandler(handler);
 
       expect(handler).toHaveBeenCalledWith(activeWindow);
+    });
+
+    it('should not call handler when component is not loaded', () => {
+      const app = createMockApp({});
+      const handler = vi.fn();
+
+      new AllWindowsEventComponent(app).registerAllWindowsHandler(handler);
+
+      expect(handler).not.toHaveBeenCalled();
     });
 
     it('should call handler for existing popup windows after layout ready', () => {
       const popupWin = strictProxy<Window>({});
       const app = createMockApp({ domWindows: [activeWindow, popupWin] });
-      const mock = createMockComponent();
       const handler = vi.fn();
 
-      new AllWindowsEventHandler(app, mock.component).registerAllWindowsHandler(handler);
+      createLoadedComponent(app).registerAllWindowsHandler(handler);
 
       expect(handler).toHaveBeenCalledTimes(2);
       expect(handler).toHaveBeenCalledWith(popupWin);
@@ -99,10 +95,9 @@ describe('AllWindowsEventHandler', () => {
 
     it('should skip main window in popup windows iteration', () => {
       const app = createMockApp({ domWindows: [activeWindow] });
-      const mock = createMockComponent();
       const handler = vi.fn();
 
-      new AllWindowsEventHandler(app, mock.component).registerAllWindowsHandler(handler);
+      createLoadedComponent(app).registerAllWindowsHandler(handler);
 
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(activeWindow);
@@ -115,10 +110,9 @@ describe('AllWindowsEventHandler', () => {
         return strictProxy<EventRef>({});
       }) as Workspace['on'];
       const app = createMockApp({ onWindowOpen });
-      const mock = createMockComponent();
       const handler = vi.fn();
 
-      new AllWindowsEventHandler(app, mock.component).registerAllWindowsHandler(handler);
+      createLoadedComponent(app).registerAllWindowsHandler(handler);
 
       expect(windowOpenCallback).toBeDefined();
       const newWin = strictProxy<PartialDeep<Window>>({});
@@ -127,14 +121,35 @@ describe('AllWindowsEventHandler', () => {
       expect(handler).toHaveBeenCalledWith(newWin);
     });
 
+    it('should not call handler for future popup windows when component is unloaded', () => {
+      let windowOpenCallback: undefined | WindowOpenCallback;
+      const onWindowOpen = vi.fn().mockImplementation((_event: string, cb: WindowOpenCallback) => {
+        windowOpenCallback = cb;
+        return strictProxy<EventRef>({});
+      }) as Workspace['on'];
+      const app = createMockApp({ onWindowOpen });
+      const handler = vi.fn();
+      const component = createLoadedComponent(app);
+
+      component.registerAllWindowsHandler(handler);
+      handler.mockClear();
+      component.unload();
+
+      const newWin = strictProxy<PartialDeep<Window>>({});
+      const workspaceWindow = strictProxy<WorkspaceWindow>({ win: newWin });
+      windowOpenCallback?.(workspaceWindow);
+      expect(handler).not.toHaveBeenCalled();
+    });
+
     it('should register window-open event on the component', () => {
       const app = createMockApp({});
-      const mock = createMockComponent();
+      const component = createLoadedComponent(app);
+      const registerEventSpy = vi.spyOn(component, 'registerEvent');
       const handler = vi.fn();
 
-      new AllWindowsEventHandler(app, mock.component).registerAllWindowsHandler(handler);
+      component.registerAllWindowsHandler(handler);
 
-      expect(mock.registerEvent).toHaveBeenCalled();
+      expect(registerEventSpy).toHaveBeenCalled();
     });
 
     it('should defer popup window handling until layout is ready', () => {
@@ -146,10 +161,9 @@ describe('AllWindowsEventHandler', () => {
           layoutReadyCallback = cb;
         }
       });
-      const mock = createMockComponent();
       const handler = vi.fn();
 
-      new AllWindowsEventHandler(app, mock.component).registerAllWindowsHandler(handler);
+      createLoadedComponent(app).registerAllWindowsHandler(handler);
 
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(activeWindow);
@@ -158,51 +172,77 @@ describe('AllWindowsEventHandler', () => {
       expect(handler).toHaveBeenCalledTimes(2);
       expect(handler).toHaveBeenCalledWith(popupWin);
     });
+
+    it('should skip deferred handler if component is unloaded before layout ready', () => {
+      let layoutReadyCallback: (() => void) | undefined;
+      const popupWin = strictProxy<Window>({});
+      const app = createMockApp({
+        domWindows: [activeWindow, popupWin],
+        onLayoutReady: (cb: () => void): void => {
+          layoutReadyCallback = cb;
+        }
+      });
+      const component = createLoadedComponent(app);
+      const handler = vi.fn();
+
+      component.registerAllWindowsHandler(handler);
+
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      component.unload();
+      layoutReadyCallback?.();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('registerAllWindowsDomEvent', () => {
     it('should register DOM event on all windows', () => {
       const app = createMockApp({});
-      const mock = createMockComponent();
+      const component = createLoadedComponent(app);
+      const registerDomEventSpy = vi.spyOn(component, 'registerDomEvent');
       const callback = vi.fn();
 
-      new AllWindowsEventHandler(app, mock.component).registerAllWindowsDomEvent('click', callback);
+      component.registerAllWindowsDomEvent('click', callback);
 
-      expect(mock.registerDomEvent).toHaveBeenCalledWith(activeWindow, 'click', callback, undefined);
+      expect(registerDomEventSpy).toHaveBeenCalledWith(activeWindow, 'click', callback, undefined);
     });
 
     it('should pass options to registerDomEvent', () => {
       const app = createMockApp({});
-      const mock = createMockComponent();
+      const component = createLoadedComponent(app);
+      const registerDomEventSpy = vi.spyOn(component, 'registerDomEvent');
       const callback = vi.fn();
       const options = { capture: true };
 
-      new AllWindowsEventHandler(app, mock.component).registerAllWindowsDomEvent('click', callback, options);
+      component.registerAllWindowsDomEvent('click', callback, options);
 
-      expect(mock.registerDomEvent).toHaveBeenCalledWith(activeWindow, 'click', callback, options);
+      expect(registerDomEventSpy).toHaveBeenCalledWith(activeWindow, 'click', callback, options);
     });
   });
 
   describe('registerAllDocumentsDomEvent', () => {
     it('should register DOM event on all documents', () => {
       const app = createMockApp({});
-      const mock = createMockComponent();
+      const component = createLoadedComponent(app);
+      const registerDomEventSpy = vi.spyOn(component, 'registerDomEvent');
       const callback = vi.fn();
 
-      new AllWindowsEventHandler(app, mock.component).registerAllDocumentsDomEvent('click', callback);
+      component.registerAllDocumentsDomEvent('click', callback);
 
-      expect(mock.registerDomEvent).toHaveBeenCalledWith(activeWindow.document, 'click', callback, undefined);
+      expect(registerDomEventSpy).toHaveBeenCalledWith(activeWindow.document, 'click', callback, undefined);
     });
 
     it('should pass options to registerDomEvent', () => {
       const app = createMockApp({});
-      const mock = createMockComponent();
+      const component = createLoadedComponent(app);
+      const registerDomEventSpy = vi.spyOn(component, 'registerDomEvent');
       const callback = vi.fn();
       const options = { passive: true };
 
-      new AllWindowsEventHandler(app, mock.component).registerAllDocumentsDomEvent('click', callback, options);
+      component.registerAllDocumentsDomEvent('click', callback, options);
 
-      expect(mock.registerDomEvent).toHaveBeenCalledWith(activeWindow.document, 'click', callback, options);
+      expect(registerDomEventSpy).toHaveBeenCalledWith(activeWindow.document, 'click', callback, options);
     });
   });
 });

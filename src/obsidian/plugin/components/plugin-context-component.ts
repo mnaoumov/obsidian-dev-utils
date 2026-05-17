@@ -8,7 +8,7 @@ import type { App } from 'obsidian';
 
 import { Component } from 'obsidian';
 
-import { AllWindowsEventHandler } from '../../components/all-windows-event-handler.ts';
+import { AllWindowsEventComponent } from '../../components/all-windows-event-component.ts';
 import {
   initDebugController,
   initPluginContext
@@ -47,7 +47,7 @@ export class PluginContextComponent extends Component {
   public override onload(): void {
     super.onload();
     initPluginContext(this.app, this.pluginId);
-    new AllWindowsEventHandler(this.app, this).registerAllWindowsHandler((win) => {
+    this.addChild(new AllWindowsEventComponent(this.app)).registerAllWindowsHandler((win) => {
       initDebugController(win, this);
     });
   }

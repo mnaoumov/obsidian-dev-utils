@@ -17,15 +17,15 @@ const mocks = vi.hoisted(() => ({
   registerAllWindowsHandler: vi.fn()
 }));
 
-vi.mock('../../components/all-windows-event-handler.ts', () => {
-  class MockAllWindowsEventHandler {
+vi.mock('../../components/all-windows-event-component.ts', () => {
+  class MockAllWindowsEventComponent {
     public registerAllWindowsHandler(handler: (win: Window) => void): void {
       mocks.registerAllWindowsHandler(handler);
 
       handler(window);
     }
   }
-  return { AllWindowsEventHandler: MockAllWindowsEventHandler };
+  return { AllWindowsEventComponent: MockAllWindowsEventComponent };
 });
 
 vi.mock('../plugin-context.ts', () => ({
