@@ -7,22 +7,23 @@
 
 import type { Plugin } from 'obsidian';
 
-import { Component } from 'obsidian';
-
-import type { PluginSettingsTabBase } from '../plugin-settings-tab.ts';
+import {
+  Component,
+  PluginSettingTab
+} from 'obsidian';
 
 interface PluginSettingsTabComponentConstructorParams {
   readonly plugin: Plugin;
-  readonly pluginSettingsTab: PluginSettingsTabBase<object>;
+  readonly pluginSettingsTab: PluginSettingTab;
 }
 
 /**
- * Wraps a {@link PluginSettingsTabBase} and registers it with Obsidian on load.
+ * Wraps a {@link PluginSettingTab} and registers it with Obsidian on load.
  * Also registers an "Open Settings" command to open the settings tab from the command palette.
  */
 export class PluginSettingsTabComponent extends Component {
   private readonly plugin: Plugin;
-  private readonly pluginSettingsTab: PluginSettingsTabBase<object>;
+  private readonly pluginSettingsTab: PluginSettingTab;
 
   /**
    * Creates a new plugin settings tab component.
