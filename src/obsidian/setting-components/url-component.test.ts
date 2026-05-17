@@ -9,13 +9,13 @@ import {
 
 import { UrlComponent } from './url-component.ts';
 
-vi.mock('../../../css-class.ts', () => ({
+vi.mock('../../css-class.ts', () => ({
   CssClass: {
     UrlComponent: 'url-component'
   }
 }));
 
-vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
+vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 

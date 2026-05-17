@@ -4,9 +4,9 @@
  * Wraps an element in a setting component wrapper.
  */
 
-import { CssClass } from '../../../css-class.ts';
-import { assertNonNullable } from '../../../type-guards.ts';
-import { addPluginCssClasses } from '../../plugin/plugin-context.ts';
+import { CssClass } from '../../css-class.ts';
+import { assertNonNullable } from '../../type-guards.ts';
+import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 /**
  * Ensures that the element is wrapped in a setting component wrapper.

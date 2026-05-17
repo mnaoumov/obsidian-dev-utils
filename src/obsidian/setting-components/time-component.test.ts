@@ -10,13 +10,13 @@ import {
 
 import { TimeComponent } from './time-component.ts';
 
-vi.mock('../../../css-class.ts', () => ({
+vi.mock('../../css-class.ts', () => ({
   CssClass: {
     TimeComponent: 'time-component'
   }
 }));
 
-vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
+vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 

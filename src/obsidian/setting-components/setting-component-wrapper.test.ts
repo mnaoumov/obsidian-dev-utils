@@ -9,13 +9,13 @@ import {
 
 import { ensureWrapped } from './setting-component-wrapper.ts';
 
-vi.mock('../../../css-class.ts', () => ({
+vi.mock('../../css-class.ts', () => ({
   CssClass: {
     SettingComponentWrapper: 'setting-component-wrapper'
   }
 }));
 
-vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
+vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 

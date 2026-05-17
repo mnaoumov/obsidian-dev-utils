@@ -13,8 +13,8 @@ import {
   vi
 } from 'vitest';
 
-import type { ValueComponentWithChangeTracking } from '../components/setting-components/value-component-with-change-tracking.ts';
-import type { PluginSettingsComponentBase } from './components/plugin-settings-component.ts';
+import type { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
+import type { ValueComponentWithChangeTracking } from '../setting-components/value-component-with-change-tracking.ts';
 
 import { noop } from '../../function.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';

@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Tests for {@link AppMenuEventRegistrar}.
+ * Tests for {@link MenuEventRegistrarComponent}.
  */
 
 import type {
@@ -17,7 +17,7 @@ import {
 } from 'vitest';
 
 import { strictProxy } from '../test-helpers/mock-implementation.ts';
-import { AppMenuEventRegistrar } from './menu-event-registrar.ts';
+import { MenuEventRegistrarComponent } from './components/AppMenuEventRegistrarComponent.ts';
 
 interface Mocks {
   app: AppOriginal;
@@ -43,7 +43,7 @@ function createMocks(): Mocks {
 describe('AppMenuEventRegistrar', () => {
   it('should register editor-menu event', () => {
     const { app, registeredEvents } = createMocks();
-    const registrar = new AppMenuEventRegistrar(app);
+    const registrar = new MenuEventRegistrarComponent(app);
     const registerEventSpy = vi.spyOn(registrar, 'registerEvent');
 
     registrar.registerEditorMenuEventHandler(vi.fn());
@@ -54,7 +54,7 @@ describe('AppMenuEventRegistrar', () => {
 
   it('should register file-menu event', () => {
     const { app, registeredEvents } = createMocks();
-    const registrar = new AppMenuEventRegistrar(app);
+    const registrar = new MenuEventRegistrarComponent(app);
     const registerEventSpy = vi.spyOn(registrar, 'registerEvent');
 
     registrar.registerFileMenuEventHandler(vi.fn());
@@ -65,7 +65,7 @@ describe('AppMenuEventRegistrar', () => {
 
   it('should register files-menu event', () => {
     const { app, registeredEvents } = createMocks();
-    const registrar = new AppMenuEventRegistrar(app);
+    const registrar = new MenuEventRegistrarComponent(app);
     const registerEventSpy = vi.spyOn(registrar, 'registerEvent');
 
     registrar.registerFilesMenuEventHandler(vi.fn());

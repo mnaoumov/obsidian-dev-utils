@@ -6,7 +6,7 @@
 
 import { Notice } from 'obsidian';
 
-import { DisposableComponent } from '../../components/disposable-component.ts';
+import { DisposableComponent } from './disposable-component.ts';
 
 /**
  * Manages showing plugin notices. Automatically hides the previous notice when a new one is shown.

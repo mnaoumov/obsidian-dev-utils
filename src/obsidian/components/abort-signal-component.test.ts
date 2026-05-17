@@ -4,7 +4,7 @@ import {
   it
 } from 'vitest';
 
-import { SilentError } from '../../../error.ts';
+import { SilentError } from '../../error.ts';
 import { AbortSignalComponent } from './abort-signal-component.ts';
 
 describe('AbortSignalComponent', () => {

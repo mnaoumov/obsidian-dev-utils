@@ -4,9 +4,9 @@
  * Component that handles async errors by showing a notice to the user.
  */
 
-import { registerAsyncErrorEventHandler } from '../../../error.ts';
-import { DisposableComponent } from '../../components/disposable-component.ts';
-import { t } from '../../i18n/i18n.ts';
+import { registerAsyncErrorEventHandler } from '../../error.ts';
+import { t } from '../i18n/i18n.ts';
+import { DisposableComponent } from './disposable-component.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 /**

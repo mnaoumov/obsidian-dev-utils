@@ -12,11 +12,11 @@ import {
   ValueComponent
 } from 'obsidian';
 
-import type { ValidatorElement } from '../../../html-element.ts';
+import type { ValidatorElement } from '../../html-element.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `initPluginContext` to use it in the tsdocs.
-import type { initPluginContext } from '../../plugin/plugin-context.ts';
+import type { initPluginContext } from '../plugin/plugin-context.ts';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- We need to import `SettingEx` to use it in the tsdocs.
-import type { SettingEx } from '../../setting-ex.ts';
+import type { SettingEx } from '../setting-ex.ts';
 import type { TextBasedComponent } from './text-based-component.ts';
 import type { ValidatorComponent } from './validator-component.ts';
 import type { ValueComponentWithChangeTracking } from './value-component-with-change-tracking.ts';
@@ -24,10 +24,10 @@ import type { ValueComponentWithChangeTracking } from './value-component-with-ch
 import {
   convertAsyncToSync,
   invokeAsyncSafely
-} from '../../../async.ts';
-import { CssClass } from '../../../css-class.ts';
-import { toPx } from '../../../html-element.ts';
-import { addPluginCssClasses } from '../../plugin/plugin-context.ts';
+} from '../../async.ts';
+import { CssClass } from '../../css-class.ts';
+import { toPx } from '../../html-element.ts';
+import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 /**
  * A component that displays and edits code.

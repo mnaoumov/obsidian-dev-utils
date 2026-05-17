@@ -20,21 +20,20 @@ import {
   Plugin as ObsidianPlugin
 } from 'obsidian';
 
-import type { LayoutReadyComponent } from './components/layout-ready-component.ts';
-import type { PluginSettingsComponentBase } from './components/plugin-settings-component.ts';
+import type { LayoutReadyComponent } from '../components/layout-ready-component.ts';
 
 import { invokeAsyncSafelyAfterDelay } from '../../async.ts';
 import { printError } from '../../error.ts';
 import { bypassStrictProxy } from '../../strict-proxy.ts';
+import { AbortSignalComponent } from '../components/abort-signal-component.ts';
 import { loadChildrenFirstAsync } from '../components/async-component.ts';
+import { AsyncErrorHandlerComponent } from '../components/async-error-handler-component.ts';
+import { ConsoleDebugComponent } from '../components/console-debug-component.ts';
 import { DisposableComponent } from '../components/disposable-component.ts';
-import { AbortSignalComponent } from './components/abort-signal-component.ts';
-import { AsyncErrorHandlerComponent } from './components/async-error-handler-component.ts';
-import { ConsoleDebugComponent } from './components/console-debug-component.ts';
-import { I18nComponent } from './components/i18n-component.ts';
-import { PluginContextComponent } from './components/plugin-context-component.ts';
-import { PluginNoticeComponent } from './components/plugin-notice-component.ts';
-import { EmptyPluginSettingsComponent } from './components/plugin-settings-component.ts';
+import { I18nComponent } from '../components/i18n-component.ts';
+import { PluginContextComponent } from '../components/plugin-context-component.ts';
+import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
+import { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
 
 interface ComponentClassWithKey {
   COMPONENT_KEY: symbol;
@@ -62,11 +61,6 @@ export abstract class PluginBase extends ObsidianPlugin {
    */
   protected readonly noticeComponent: PluginNoticeComponent;
 
-  /**
-   * The settings component. Manages plugin settings lifecycle.
-   */
-  protected readonly settingsComponent: PluginSettingsComponentBase<object>;
-
   private readonly singletonComponents = new Map<symbol, Component>();
 
   /**
@@ -84,7 +78,6 @@ export abstract class PluginBase extends ObsidianPlugin {
     this.addChild(new AsyncErrorHandlerComponent(this.noticeComponent));
     this.abortSignalComponent = this.addChild(new AbortSignalComponent(manifest.id));
     this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(manifest.id));
-    this.settingsComponent = this.addChild(new EmptyPluginSettingsComponent());
   }
 
   /**
@@ -143,7 +136,16 @@ export abstract class PluginBase extends ObsidianPlugin {
    */
   public override async onExternalSettingsChange(): Promise<void> {
     await super.onExternalSettingsChange?.();
-    await this.settingsComponent.onExternalSettingsChange();
+    const pluginSettingsComponent = this.singletonComponents.get(PluginSettingsComponentBase.COMPONENT_KEY);
+    if (!pluginSettingsComponent) {
+      return;
+    }
+
+    if (!(pluginSettingsComponent instanceof PluginSettingsComponentBase)) {
+      throw new Error('Incompatible PluginSettingsComponent is registered');
+    }
+
+    await pluginSettingsComponent.onExternalSettingsChange();
   }
 }
 

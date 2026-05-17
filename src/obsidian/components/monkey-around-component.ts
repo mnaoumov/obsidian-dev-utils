@@ -9,9 +9,9 @@ import type { ConditionalKeys } from 'type-fest';
 import { around as originalAround } from 'monkey-around';
 import { Component } from 'obsidian';
 
-import type { GenericObject } from '../type-guards.ts';
+import type { GenericObject } from '../../type-guards.ts';
 
-import { DisposableComponent } from './components/disposable-component.ts';
+import { DisposableComponent } from './disposable-component.ts';
 
 /**
  * A type of the factories to apply to the object.

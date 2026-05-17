@@ -5,7 +5,7 @@ import {
   vi
 } from 'vitest';
 
-import { noop } from '../../../function.ts';
+import { noop } from '../../function.ts';
 import { AsyncErrorHandlerComponent } from './async-error-handler-component.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 

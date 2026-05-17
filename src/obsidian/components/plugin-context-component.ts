@@ -6,12 +6,12 @@
 
 import type { App } from 'obsidian';
 
-import { AllWindowsEventComponent } from '../../components/all-windows-event-component.ts';
-import { DisposableComponent } from '../../components/disposable-component.ts';
 import {
   initDebugController,
   initPluginContext
-} from '../plugin-context.ts';
+} from '../plugin/plugin-context.ts';
+import { AllWindowsEventComponent } from './all-windows-event-component.ts';
+import { DisposableComponent } from './disposable-component.ts';
 
 interface PluginContextComponentConstructorParams {
   readonly app: App;

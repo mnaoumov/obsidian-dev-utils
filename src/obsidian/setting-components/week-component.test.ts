@@ -9,13 +9,13 @@ import {
 
 import { WeekComponent } from './week-component.ts';
 
-vi.mock('../../../css-class.ts', () => ({
+vi.mock('../../css-class.ts', () => ({
   CssClass: {
     WeekComponent: 'week-component'
   }
 }));
 
-vi.mock('../../../obsidian/plugin/plugin-context.ts', () => ({
+vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 

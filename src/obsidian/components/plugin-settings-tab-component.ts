@@ -9,7 +9,7 @@ import type { Plugin } from 'obsidian';
 
 import { PluginSettingTab } from 'obsidian';
 
-import { DisposableComponent } from '../../components/disposable-component.ts';
+import { DisposableComponent } from './disposable-component.ts';
 
 interface PluginSettingsTabComponentConstructorParams {
   readonly plugin: Plugin;
