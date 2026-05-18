@@ -56,6 +56,10 @@ import {
   hasOwnAttachmentFolder
 } from './attachment-path.ts';
 import {
+  hasPatchToken,
+  MonkeyAroundComponent
+} from './components/monkey-around-component.ts';
+import {
   CANVAS_FILE_EXTENSION,
   getFile,
   getFileOrNull,
@@ -79,7 +83,6 @@ import {
   tempRegisterFilesAndRunAsync,
   unregisterFileCacheForNonExistingFile
 } from './metadata-cache.ts';
-import { registerPatch } from './monkey-around.ts';
 import { addToQueue } from './queue.ts';
 import { deleteIfNotUsed } from './vault-delete.ts';
 import {
@@ -196,7 +199,7 @@ interface RenameMapConstructorParams {
   readonly settingsManager: SettingsManager;
 }
 
-type RunAsyncLinkUpdateFn = { renameDeleteHandlerPatched?: boolean } & FileManager['runAsyncLinkUpdate'];
+const PATCH_TOKEN = Symbol.for('renameDeleteHandler');
 
 class DeleteHandler {
   public constructor(
@@ -358,9 +361,24 @@ class Registry {
     this.plugin.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
     this.plugin.registerEvent(this.app.metadataCache.on('deleted', this.handleMetadataDeleted.bind(this)));
 
-    registerPatch(this.plugin, this.app.fileManager, {
-      runAsyncLinkUpdate: (next: RunAsyncLinkUpdateFn): RunAsyncLinkUpdateFn => {
-        return Object.assign((linkUpdatesHandler) => this.runAsyncLinkUpdate(next, linkUpdatesHandler), { renameDeleteHandlerPatched: true });
+    const patch = this.plugin.addChild(new MonkeyAroundComponent());
+    patch.load();
+
+    patch.registerMethodPatch<FileManager, 'runAsyncLinkUpdate'>({
+      methodName: 'runAsyncLinkUpdate',
+      obj: this.app.fileManager,
+      patchHandler: ({
+        fallback,
+        originalArgs: [linkUpdatesHandler],
+        originalMethod,
+        originalMethodBound
+      }) => {
+        if (hasPatchToken(originalMethod, PATCH_TOKEN)) {
+          return fallback();
+        }
+
+        const newHandler: LinkUpdatesHandler = (linkUpdates) => this.wrapLinkUpdatesHandler(linkUpdates, linkUpdatesHandler);
+        return originalMethodBound(newHandler);
       }
     });
   }
@@ -441,14 +459,6 @@ class Registry {
     getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
       `Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`
     );
-  }
-
-  private async runAsyncLinkUpdate(next: RunAsyncLinkUpdateFn, linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
-    if (next.renameDeleteHandlerPatched) {
-      await next.call(this.app.fileManager, linkUpdatesHandler);
-      return;
-    }
-    await next.call(this.app.fileManager, (linkUpdates) => this.wrapLinkUpdatesHandler(linkUpdates, linkUpdatesHandler));
   }
 
   private shouldInvokeHandler(): boolean {

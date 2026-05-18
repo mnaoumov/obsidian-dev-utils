@@ -8,8 +8,7 @@
 
 import type {
   DomEventsHandlers,
-  DomEventsHandlersInfo,
-  EmbedCreator
+  DomEventsHandlersInfo
 } from '@obsidian-typings/obsidian-public-latest';
 import type { ExtractConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
 import type { App } from 'obsidian';
@@ -25,13 +24,13 @@ import {
 import type { PathOrAbstractFile } from './file-system.ts';
 
 import { getZIndex } from '../html-element.ts';
+import { MonkeyAroundComponent } from './components/monkey-around-component.ts';
 import { getDomEventsHandlersConstructor } from './constructors/getDomEventsHandlersConstructor.ts';
 import {
   getAbstractFileOrNull,
   getPath,
   isFolder
 } from './file-system.ts';
-import { invokeWithPatchAsync } from './monkey-around.ts';
 
 type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
 
@@ -136,14 +135,23 @@ export async function fullRender(params: FullRenderParams): Promise<void> {
     component.load();
     shouldUnloadComponent = true;
   }
-  await invokeWithPatchAsync(params.app.embedRegistry.embedByExtension, {
-    md: (next: EmbedCreator): EmbedCreator => (context, file, subpath) => {
+
+  using patch = new MonkeyAroundComponent();
+  patch.load();
+
+  patch.registerMethodPatch({
+    methodName: 'md',
+    obj: params.app.embedRegistry.embedByExtension,
+    patchHandler: ({
+      fallback,
+      originalArgs: [context]
+    }) => {
       context.displayMode = false;
-      return next(context, file, subpath);
+      return fallback();
     }
-  }, async () => {
-    await MarkdownRenderer.render(params.app, params.markdown, params.el, sourcePath, component);
   });
+
+  await MarkdownRenderer.render(params.app, params.markdown, params.el, sourcePath, component);
 
   if (shouldUnloadComponent) {
     component.unload();
