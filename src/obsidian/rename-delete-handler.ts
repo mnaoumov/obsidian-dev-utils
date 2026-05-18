@@ -11,7 +11,6 @@ import type {
 import type {
   App,
   CachedMetadata,
-  FileManager,
   Plugin,
   Reference,
   TAbstractFile,
@@ -364,7 +363,7 @@ class Registry {
     const patch = this.plugin.addChild(new MonkeyAroundComponent());
     patch.load();
 
-    patch.registerMethodPatch<FileManager, 'runAsyncLinkUpdate'>({
+    patch.registerMethodPatch({
       methodName: 'runAsyncLinkUpdate',
       obj: this.app.fileManager,
       patchHandler: ({
