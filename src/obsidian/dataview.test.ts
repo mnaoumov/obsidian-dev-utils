@@ -58,7 +58,7 @@ vi.mock('../obsidian/resource-url.ts', () => ({
 }));
 
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((fn: GenericAsyncFunction, options?: unknown) => {
+  t: vi.fn((fn: GenericAsyncFunction<unknown[]>, options?: unknown) => {
     try {
       const translations = {
         obsidianDevUtils: {
