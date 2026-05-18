@@ -115,6 +115,11 @@ export class MonkeyAroundComponent extends DisposableComponent {
   public registerMethodPatch<Obj extends object, const MethodName extends MethodKeys<Obj>>(
     params: MonkeyAroundComponentRegisterMethodPatchParams<Obj, MethodName>
   ): void {
+    if (params.patchToken) {
+      const originalMethod = params.obj[params.methodName] as GenericFunction;
+      getMonkeyAroundPatches().set(originalMethod, params.patchToken);
+    }
+
     type RawFn = Extract<Obj[MethodName], GenericFunction>;
     type Fn = GenericFunction<Parameters<RawFn>, ReturnType<RawFn>>;
     this.registerPatch(params.obj, {
@@ -135,21 +140,6 @@ export class MonkeyAroundComponent extends DisposableComponent {
         }
       }
     } as Factories<Obj>);
-
-    if (!params.patchToken) {
-      return;
-    }
-
-    const originalMethod = params.obj[params.methodName] as GenericFunction;
-    const monkeyAroundPatches = getMonkeyAroundPatches();
-    let patchTokens = monkeyAroundPatches.get(originalMethod);
-
-    if (!patchTokens) {
-      patchTokens = new Set();
-      monkeyAroundPatches.set(originalMethod, patchTokens);
-    }
-
-    patchTokens.add(params.patchToken);
   }
 
   /**
@@ -190,9 +180,9 @@ export function around<Obj extends object>(obj: Obj, factories: Factories<Obj>):
  * @returns Whether the function has the patch token.
  */
 export function hasPatchToken(fn: GenericFunction, patchToken: symbol): boolean {
-  return getMonkeyAroundPatches().get(fn)?.has(patchToken) ?? false;
+  return getMonkeyAroundPatches().get(fn) === patchToken;
 }
 
-function getMonkeyAroundPatches(): WeakMap<GenericFunction, Set<symbol>> {
-  return getObsidianDevUtilsState(null, 'monkeyAroundPatches', new WeakMap<GenericFunction, Set<symbol>>()).value;
+function getMonkeyAroundPatches(): WeakMap<GenericFunction, symbol> {
+  return getObsidianDevUtilsState(null, 'monkeyAroundPatches', new WeakMap<GenericFunction, symbol>()).value;
 }
