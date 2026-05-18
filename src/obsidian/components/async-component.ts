@@ -17,7 +17,7 @@ import { DisposableComponent } from './disposable-component.ts';
  * in a `Promise.all()`. This class overrides `load()` to `await` `onload()` before loading children,
  * ensuring ordered initialization.
  */
-export abstract class AsyncComponentBase extends DisposableComponent {
+export class AsyncComponent extends DisposableComponent {
   /**
    * Loads this component and its children sequentially.
    *

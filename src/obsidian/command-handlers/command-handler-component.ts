@@ -12,7 +12,7 @@ import type {
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
-import { AsyncComponentBase } from '../components/async-component.ts';
+import { AsyncComponent } from '../components/async-component.ts';
 
 interface CommandHandlerComponentConstructorParams {
   readonly activeFileProvider: ActiveFileProvider;
@@ -25,7 +25,7 @@ interface CommandHandlerComponentConstructorParams {
 /**
  * Wraps a {@link CommandHandler} and registers it with Obsidian on load.
  */
-export class CommandHandlerComponent extends AsyncComponentBase {
+export class CommandHandlerComponent extends AsyncComponent {
   private readonly activeFileProvider: ActiveFileProvider;
   private readonly commandHandlers: CommandHandler[];
   private readonly commandRegistrar: CommandRegistrar;

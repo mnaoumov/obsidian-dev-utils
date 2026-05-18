@@ -155,17 +155,17 @@ describe('PluginBase', () => {
   it('should replace singleton component with same COMPONENT_KEY', () => {
     const KEY = Symbol('TestSingleton');
 
-    class SingletonComponent1 extends DisposableComponent {
+    class SingletonTestComponent extends DisposableComponent {
       public static readonly COMPONENT_KEY = KEY;
     }
 
-    class SingletonComponent2 extends DisposableComponent {
+    class SingletonReplacementComponent extends DisposableComponent {
       public static readonly COMPONENT_KEY = KEY;
     }
 
     const plugin = new TestPlugin(app, manifest);
-    const component1 = new SingletonComponent1();
-    const component2 = new SingletonComponent2();
+    const component1 = new SingletonTestComponent();
+    const component2 = new SingletonReplacementComponent();
 
     const result1 = plugin.addChild(component1);
     expect(result1).toBe(component1);
@@ -236,19 +236,19 @@ describe('PluginBase', () => {
   it('should throw when getRegisteredComponent finds incompatible component', () => {
     const KEY = Symbol('Shared');
 
-    class ComponentA extends DisposableComponent {
+    class IncompatibleSourceComponent extends DisposableComponent {
       public static readonly COMPONENT_KEY = KEY;
     }
 
-    class ComponentB extends DisposableComponent {
+    class IncompatibleTargetComponent extends DisposableComponent {
       public static readonly COMPONENT_KEY = KEY;
     }
 
     const plugin = new TestPlugin(app, manifest);
-    plugin.addChild(new ComponentA());
+    plugin.addChild(new IncompatibleSourceComponent());
 
-    // Manually call getRegisteredComponent with ComponentB which expects a different instance type
-    expect(() => plugin['getRegisteredComponent'](ComponentB)).toThrow('Incompatible');
+    // Manually call getRegisteredComponent with IncompatibleTargetComponent which expects a different instance type
+    expect(() => plugin['getRegisteredComponent'](IncompatibleTargetComponent)).toThrow('Incompatible');
   });
 });
 

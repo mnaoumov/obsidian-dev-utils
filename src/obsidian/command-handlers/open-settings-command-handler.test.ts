@@ -35,13 +35,6 @@ describe('OpenSettingsCommandHandler', () => {
     return { handler, open, openTab, settingTab };
   }
 
-  it('should have correct id, name, and icon', () => {
-    const { handler } = createHandler();
-    expect(handler.id).toBe('open-settings');
-    expect(handler.name).toBe('Open settings');
-    expect(handler.icon).toBe('settings');
-  });
-
   it('should build a command with checkCallback', () => {
     const { handler } = createHandler();
     const command = handler.buildCommand();

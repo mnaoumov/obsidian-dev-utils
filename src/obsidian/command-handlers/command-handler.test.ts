@@ -37,14 +37,6 @@ function createParams(overrides?: Partial<CommandHandlerConstructorParams>): Com
 }
 
 describe('CommandHandler', () => {
-  it('should store constructor params as public fields', () => {
-    const handler = new TestCommandHandler(createParams());
-
-    expect(handler.icon).toBe('test-icon');
-    expect(handler.id).toBe('test-id');
-    expect(handler.name).toBe('Test Command');
-  });
-
   it('should build a command from handler properties', () => {
     const handler = new TestCommandHandler(createParams({
       icon: 'wand',

@@ -459,6 +459,7 @@ function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.
         'obsidian-dev-utils/no-used-underscore-variables': 'error',
         'obsidian-dev-utils/params-options-name-match': 'error',
         'obsidian-dev-utils/readonly-params-options-members': 'error',
+        'obsidian-dev-utils/require-component-suffix': 'error',
         'obsidian-dev-utils/require-super-call': 'error'
       }
     }
@@ -597,6 +598,9 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
         '@typescript-eslint/explicit-function-return-type': 'error',
         '@typescript-eslint/explicit-member-accessibility': 'error',
         '@typescript-eslint/method-signature-style': ['error', 'method'],
+        '@typescript-eslint/no-floating-promises': ['error', {
+          checkThenables: true
+        }],
         '@typescript-eslint/no-invalid-void-type': ['error', {
           allowAsThisParameter: true
         }],

@@ -41,7 +41,7 @@ import { MapTransformer } from '../../transformers/map-transformer.ts';
 import { SetTransformer } from '../../transformers/set-transformer.ts';
 import { SkipPrivatePropertyTransformer } from '../../transformers/skip-private-property-transformer.ts';
 import { TwoWayMapTransformer } from '../../transformers/two-way-map-transformer.ts';
-import { AsyncComponentBase } from './async-component.ts';
+import { AsyncComponent } from './async-component.ts';
 import { registerAsyncEvent } from './async-events-component.ts';
 
 const defaultTransformer = new GroupTransformer([
@@ -115,7 +115,7 @@ type ValidationResult<PluginSettings extends object> = Partial<Record<StringKeys
  *
  * @typeParam PluginSettings - The plugin settings type.
  */
-export abstract class PluginSettingsComponentBase<PluginSettings extends object> extends AsyncComponentBase {
+export abstract class PluginSettingsComponentBase<PluginSettings extends object> extends AsyncComponent {
   /**
    * Component key for singleton replacement via {@link PluginBase.addChild}.
    */
