@@ -1,5 +1,33 @@
 # CHANGELOG
 
+## 66.0.0
+
+- chore: regenerate exports
+- fix: patch token validation
+- fix: compilation
+- fix: inference
+- refactor: migrate callers to new MonkeyAroundComponent API
+- refactor: move Generic*Function types from type.ts to function.ts
+- refactor!: rewrite MonkeyAroundComponent API
+- refactor: method style
+- docs: fix link
+- chore: update libs
+- test: achieve 100% coverage for plugin.ts and obsidian-plugin-repo-paths.ts
+- test: fix stale tests and add coverage for disposable-component, plugin-id
+- test: add 100% coverage tests for LayoutReadyComponent
+- refactor: move MenuEventRegistrarComponent tests to components directory
+- refactor!: move components
+- refactor!: extract setting components
+- feat: add DisposableComponent with Symbol.dispose support
+- refactor: rename PatchComponent to MonkeyAroundComponent with instance methods
+- feat: add registerMethodPatch for simplified single-method patching
+- fix: simplify PatchComponent.onload by removing redundant uninstall guard
+- test: update monkey-around tests for PatchComponent
+- refactor!: rename AllWindowsEventHandler to AllWindowsEventComponent
+- fix: make AppMenuEventRegistrar extend Component directly
+- fix: widen PluginSettingsTabComponent type to PluginSettingTab
+- refactor: migrate to @obsidian-typings/obsidian-public-latest
+
 ## 65.0.1
 
 - fix: mocks
