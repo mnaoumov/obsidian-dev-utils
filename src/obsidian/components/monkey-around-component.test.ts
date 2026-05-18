@@ -11,8 +11,10 @@ import type {
   PatchHandlerParams
 } from './monkey-around-component.ts';
 
+import { noop } from '../../function.ts';
 import {
   around,
+  hasPatchToken,
   MonkeyAroundComponent
 } from './monkey-around-component.ts';
 
@@ -298,6 +300,104 @@ describe('MonkeyAroundComponent', () => {
       expect(obj.greet('test')).toBe('child: hello test');
       parent.unload();
       expect(obj.greet('test')).toBe('hello test');
+    });
+  });
+
+  describe('hasPatchToken', () => {
+    it('should return false for an unpatched function', () => {
+      const token = Symbol('test-patch');
+
+      expect(hasPatchToken(noop, token)).toBe(false);
+    });
+
+    it('should return true when checking the original method inside the handler', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+      const token = Symbol('test-patch');
+      let detectedToken = false;
+
+      component.registerMethodPatch<TestObj, 'greet'>({
+        methodName: 'greet',
+        obj,
+        patchHandler: ({ fallback, originalMethod }) => {
+          detectedToken = hasPatchToken(originalMethod, token);
+          return fallback();
+        },
+        patchToken: token
+      });
+
+      obj.greet('world');
+      expect(detectedToken).toBe(true);
+    });
+
+    it('should return false for a different token on the original method', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+      const token1 = Symbol('token-1');
+      const token2 = Symbol('token-2');
+      let detectedToken = false;
+
+      component.registerMethodPatch<TestObj, 'greet'>({
+        methodName: 'greet',
+        obj,
+        patchHandler: ({ fallback, originalMethod }) => {
+          detectedToken = hasPatchToken(originalMethod, token2);
+          return fallback();
+        },
+        patchToken: token1
+      });
+
+      obj.greet('world');
+      expect(detectedToken).toBe(false);
+    });
+
+    it('should allow a second independent patch to detect the first via Symbol.for', () => {
+      const component1 = new MonkeyAroundComponent();
+      component1.load();
+      const component2 = new MonkeyAroundComponent();
+      component2.load();
+      const obj = createTestObj();
+      let secondPatchDetectedFirst = false;
+
+      component1.registerMethodPatch<TestObj, 'greet'>({
+        methodName: 'greet',
+        obj,
+        patchHandler: ({ fallback }) => fallback(),
+        patchToken: Symbol.for('my-patch')
+      });
+
+      component2.registerMethodPatch<TestObj, 'greet'>({
+        methodName: 'greet',
+        obj,
+        patchHandler: ({ fallback, originalMethod }) => {
+          secondPatchDetectedFirst = hasPatchToken(originalMethod, Symbol.for('my-patch'));
+          return fallback();
+        },
+        patchToken: Symbol.for('my-patch')
+      });
+
+      obj.greet('world');
+      expect(secondPatchDetectedFirst).toBe(true);
+    });
+
+    it('should track token on the original function, not the wrapped one', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+      const originalGreet = obj.greet;
+      const token = Symbol('test-patch');
+
+      component.registerMethodPatch<TestObj, 'greet'>({
+        methodName: 'greet',
+        obj,
+        patchHandler: ({ fallback }) => fallback(),
+        patchToken: token
+      });
+
+      expect(hasPatchToken(originalGreet, token)).toBe(true);
+      expect(hasPatchToken(obj.greet, token)).toBe(false);
     });
   });
 
