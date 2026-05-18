@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 66.0.1
+
+- fix: accidental DisposableComponent leakage
+
 ## 66.0.0
 
 - chore: regenerate exports
