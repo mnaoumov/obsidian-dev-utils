@@ -14,6 +14,7 @@ import type {
 } from 'type-fest';
 
 import type { AsyncEventRef } from '../../async-events.ts';
+import type { GenericPromisableVoidFunction } from '../../function.ts';
 import type { Transformer } from '../../transformers/transformer.ts';
 import type { GenericObject } from '../../type-guards.ts';
 import type {
@@ -293,7 +294,7 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
    */
   public on<Args extends unknown[]>(
     name: string,
-    callback: (...args: Args) => Promisable<void>,
+    callback: GenericPromisableVoidFunction<Args>,
     thisArg?: unknown
   ): AsyncEventRef {
     return this.asyncEvents.on(name, callback, thisArg);

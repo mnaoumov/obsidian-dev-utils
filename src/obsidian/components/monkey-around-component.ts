@@ -8,8 +8,8 @@ import type { ConditionalKeys } from 'type-fest';
 
 import { around as originalAround } from 'monkey-around';
 
+import type { GenericFunction } from '../../function.ts';
 import type { GenericObject } from '../../type-guards.ts';
-import type { GenericFunction } from '../../type.ts';
 
 import { getObsidianDevUtilsState } from '../app.ts';
 import { DisposableComponent } from './disposable-component.ts';

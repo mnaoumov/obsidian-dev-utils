@@ -13,6 +13,10 @@ import {
   vi
 } from 'vitest';
 
+import type {
+  GenericFunction,
+  GenericVoidFunction
+} from '../../function.ts';
 import type { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
 import type { ValueComponentWithChangeTracking } from '../setting-components/value-component-with-change-tracking.ts';
 
@@ -39,7 +43,7 @@ vi.mock('./plugin-context.ts', () => ({
 
 interface EventListenerEntry {
   0: string;
-  1(...args: unknown[]): unknown;
+  1: GenericFunction;
 }
 
 interface MockValueComponentBase {
@@ -81,7 +85,7 @@ function createMockPlugin(appInstance: AppOriginal): Plugin {
 function createMockSettingsComponent(): PluginSettingsComponentBase<TestSettings> {
   return strictProxy<PluginSettingsComponentBase<TestSettings>>({
     defaultSettings: { enabled: false, name: 'default' },
-    on: vi.fn((_name: string, _callback: (...args: unknown[]) => void) => ({
+    on: vi.fn((_name: string, _callback: GenericVoidFunction) => ({
       asyncEvents: {
         offref: vi.fn()
       }
@@ -176,7 +180,7 @@ describe('PluginSettingsTabBase', () => {
     const onChange = vi.fn();
     const setValue = vi.fn();
     const mockComponent: ValueComponentWithChangeTracking<string> = {
-      onChange: vi.fn((cb: (...args: unknown[]) => unknown) => {
+      onChange: vi.fn((cb: GenericFunction) => {
         onChange.mockImplementation(cb);
         return mockComponent;
       }),
@@ -869,10 +873,10 @@ describe('PluginSettingsTabBase', () => {
   it('should handle missing validation message in settingsState (null coalescing)', () => {
     const plugin = createMockPlugin(app);
     // Create a special settings component where validationMessages has no 'name' key
-    const listeners = new Map<string, ((...args: unknown[]) => void)[]>();
+    const listeners = new Map<string, GenericVoidFunction[]>();
     const pluginSettingsComponent = {
       defaultSettings: { enabled: false, name: 'default' },
-      on: vi.fn((name: string, callback: (...args: unknown[]) => void) => {
+      on: vi.fn((name: string, callback: GenericVoidFunction) => {
         const existing = listeners.get(name) ?? [];
         existing.push(callback);
         listeners.set(name, existing);

@@ -94,6 +94,7 @@ export interface TypeAsserter<Type> {
     ) => readonly Type[]
     : never;
 }
+
 type Duplicates<
   T extends readonly unknown[],
   Seen extends readonly unknown[] = [],
@@ -104,6 +105,7 @@ type Duplicates<
     : Duplicates<Rest, Seen, [...Added, First], [...Out, First]>
   : Duplicates<Rest, [...Seen, First], Added, Out>
   : Out;
+
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters,no-magic-numbers -- We need to use the dummy parameter to get type inference.
 type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends (<T>() => T extends Y ? 1 : 2) ? true : false;
 

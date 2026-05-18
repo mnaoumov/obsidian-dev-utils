@@ -9,6 +9,8 @@ import type { MockInstance } from 'vitest';
 
 import { vi } from 'vitest';
 
+import type { GenericFunction } from '../function.ts';
+
 export { strictProxy } from '../strict-proxy.ts';
 
 const savedOriginals = new WeakMap<object, Map<string, unknown>>();
@@ -24,10 +26,8 @@ const savedOriginals = new WeakMap<object, Map<string, unknown>>();
  */
 export function mockImplementation<
   T extends object,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Matches vitest's Procedure type: (...args: any[]) => any.
-  K extends keyof { [P in keyof T as T[P] extends (...args: any[]) => any ? P : never]: T[P] } & string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Matches vitest's Procedure type for conditional inference.
-  F extends (...args: any[]) => any = T[K] extends (...args: any[]) => any ? T[K] : (...args: unknown[]) => unknown
+  K extends keyof { [P in keyof T as T[P] extends GenericFunction ? P : never]: T[P] } & string,
+  F extends GenericFunction = T[K] extends GenericFunction ? T[K] : GenericFunction
 >(
   obj: T,
   method: K,

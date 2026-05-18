@@ -21,6 +21,7 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericFunction } from '../function.ts';
 import type { GenericObject } from '../type-guards.ts';
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
 
@@ -1107,8 +1108,8 @@ describe('processFile', () => {
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
 
-    let capturedCallback: ((leaf: unknown) => void) | undefined;
-    vi.spyOn(app.workspace, 'on').mockImplementation((name: string, callback: (...data: unknown[]) => unknown, _ctx?: unknown) => {
+    let capturedCallback: GenericFunction<unknown[]> | undefined;
+    vi.spyOn(app.workspace, 'on').mockImplementation((name: string, callback: GenericFunction<unknown[]>, _ctx?: unknown) => {
       capturedCallback = callback;
       return { e: app.workspace, fn: callback, name };
     });
