@@ -112,7 +112,7 @@ export class MonkeyAroundComponent extends DisposableComponent {
    * @typeParam K - The method name to patch.
    * @param params - The parameters of the patch.
    */
-  public registerMethodPatch<Obj extends object, MethodName extends MethodKeys<Obj>>(
+  public registerMethodPatch<Obj extends object, const MethodName extends MethodKeys<Obj>>(
     params: MonkeyAroundComponentRegisterMethodPatchParams<Obj, MethodName>
   ): void {
     type RawFn = Extract<Obj[MethodName], GenericFunction>;

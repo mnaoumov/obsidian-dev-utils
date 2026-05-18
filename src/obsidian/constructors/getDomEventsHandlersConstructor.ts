@@ -52,7 +52,7 @@ export async function getDomEventsHandlersConstructor(app: App): Promise<DomEven
         originalArgs: [handlers]
       }) {
         ctor = handlers.constructor as DomEventsHandlersConstructor;
-        return fallback();
+        fallback();
       }
     });
 
