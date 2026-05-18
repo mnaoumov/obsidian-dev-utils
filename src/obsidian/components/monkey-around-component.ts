@@ -7,10 +7,11 @@
 import type { ConditionalKeys } from 'type-fest';
 
 import { around as originalAround } from 'monkey-around';
-import { Component } from 'obsidian';
 
 import type { GenericObject } from '../../type-guards.ts';
+import type { GenericFunction } from '../../type.ts';
 
+import { getObsidianDevUtilsState } from '../app.ts';
 import { DisposableComponent } from './disposable-component.ts';
 
 /**
@@ -20,10 +21,37 @@ import { DisposableComponent } from './disposable-component.ts';
  */
 export type Factories<Obj extends object> = Partial<
   {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type as a generic restriction.
-    [Key in ConditionalKeys<Obj, Function | undefined>]: WrapperFactory<Extract<Obj[Key], Function | undefined>>;
+    [Key in ConditionalKeys<Obj, GenericFunction | undefined>]: WrapperFactory<Extract<Obj[Key], GenericFunction | undefined>>;
   }
 >;
+
+/**
+ * Parameters passed to {@link MonkeyAroundComponent#registerMethodPatch}.
+ *
+ * @typeParam Obj - The object to patch.
+ * @typeParam MethodName - The method name to patch.
+ */
+export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends object, MethodName extends MethodKeys<Obj>> {
+  /**
+   * The method name to patch.
+   */
+  readonly methodName: MethodName;
+
+  /**
+   * The object to patch.
+   */
+  readonly obj: Obj;
+
+  /**
+   * The patch handler function.
+   */
+  readonly patchHandler: PatchHandlerFn<Obj, MethodName>;
+
+  /**
+   * An optional token to identify the patch.
+   */
+  readonly patchToken?: symbol;
+}
 
 /**
  * A patch handler function that intercepts calls to a method on an object.
@@ -33,7 +61,7 @@ export type Factories<Obj extends object> = Partial<
  */
 export type PatchHandlerFn<Obj extends object, K extends MethodKeys<Obj>> = (
   params: PatchHandlerParams<Obj, K>
-) => ReturnType<Extract<Obj[K], (...args: never[]) => unknown>>;
+) => ReturnType<Extract<Obj[K], GenericFunction>>;
 
 /**
  * Parameters passed to a {@link PatchHandlerFn} callback.
@@ -42,15 +70,19 @@ export type PatchHandlerFn<Obj extends object, K extends MethodKeys<Obj>> = (
  * @typeParam K - The method name being patched.
  */
 export interface PatchHandlerParams<Obj extends object, K extends MethodKeys<Obj>> {
+  fallback(this: void): ReturnType<Extract<Obj[K], GenericFunction>>;
+
   /**
    * The original arguments of the intercepted call, as a tuple.
    */
-  readonly originalArgs: Parameters<Extract<Obj[K], (...args: never[]) => unknown>>;
+  readonly originalArgs: Parameters<Extract<Obj[K], GenericFunction>>;
 
   /**
    * The original (unpatched) function. Call via `originalFn.call(originalThis, ...originalArgs)`.
    */
-  readonly originalFn: Extract<Obj[K], (...args: never[]) => unknown>;
+  readonly originalMethod: Extract<Obj[K], GenericFunction>;
+
+  readonly originalMethodBound: OmitThisParameter<Extract<Obj[K], GenericFunction>>;
 
   /**
    * The original `this` context of the intercepted call.
@@ -59,7 +91,7 @@ export interface PatchHandlerParams<Obj extends object, K extends MethodKeys<Obj
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type as a generic restriction.
-type MethodKeys<Obj extends object> = ConditionalKeys<Obj, Function | undefined>;
+type MethodKeys<Obj extends object> = ConditionalKeys<Obj, Function | undefined> & keyof Obj;
 
 type OriginalFactories<Obj extends GenericObject> = Parameters<typeof originalAround<Obj>>[1];
 
@@ -78,23 +110,46 @@ export class MonkeyAroundComponent extends DisposableComponent {
    *
    * @typeParam Obj - The object to patch.
    * @typeParam K - The method name to patch.
-   * @param obj - The object to patch.
-   * @param methodName - The name of the method to patch.
-   * @param handler - The patch handler function receiving `originalFn`, `originalThis`, and `originalArgs`.
+   * @param params - The parameters of the patch.
    */
-  public registerMethodPatch<Obj extends object, K extends MethodKeys<Obj>>(
-    obj: Obj,
-    methodName: K,
-    handler: PatchHandlerFn<Obj, K>
+  public registerMethodPatch<Obj extends object, MethodName extends MethodKeys<Obj>>(
+    params: MonkeyAroundComponentRegisterMethodPatchParams<Obj, MethodName>
   ): void {
-    type Fn = Extract<Obj[K], (...args: never[]) => unknown>;
-    this.registerPatch(obj, {
-      [methodName]: (originalFn: Fn): Fn => {
-        return function patchedMethod(this: Obj, ...originalArgs: Parameters<Fn>): ReturnType<Fn> {
-          return handler({ originalArgs, originalFn, originalThis: this });
-        } as Fn;
+    type RawFn = Extract<Obj[MethodName], GenericFunction>;
+    type Fn = GenericFunction<Parameters<RawFn>, ReturnType<RawFn>>;
+    this.registerPatch(params.obj, {
+      [params.methodName]: (originalMethod: Fn): Fn => {
+        return patchedMethod;
+        function patchedMethod(this: Obj, ...originalArgs: Parameters<RawFn>): ReturnType<RawFn> {
+          // eslint-disable-next-line consistent-this, @typescript-eslint/no-this-alias -- We need to use the `this` context.
+          const originalThis = this;
+          return params.patchHandler({
+            fallback() {
+              return originalMethod.call(originalThis, ...originalArgs);
+            },
+            originalArgs,
+            originalMethod: originalMethod as RawFn,
+            originalMethodBound: originalMethod.bind(originalThis) as OmitThisParameter<RawFn>,
+            originalThis
+          });
+        }
       }
     } as Factories<Obj>);
+
+    if (!params.patchToken) {
+      return;
+    }
+
+    const originalMethod = params.obj[params.methodName] as GenericFunction;
+    const monkeyAroundPatches = getMonkeyAroundPatches();
+    let patchTokens = monkeyAroundPatches.get(originalMethod);
+
+    if (!patchTokens) {
+      patchTokens = new Set();
+      monkeyAroundPatches.set(originalMethod, patchTokens);
+    }
+
+    patchTokens.add(params.patchToken);
   }
 
   /**
@@ -105,6 +160,10 @@ export class MonkeyAroundComponent extends DisposableComponent {
    * @param factories - The factories to apply to the object.
    */
   public registerPatch<Obj extends object>(obj: Obj, factories: Factories<Obj>): void {
+    if (!this._loaded) {
+      throw new Error('Cannot register patch on a component that is not loaded.');
+    }
+
     const uninstaller = around(obj, factories);
     this.register(uninstaller);
   }
@@ -124,78 +183,16 @@ export function around<Obj extends object>(obj: Obj, factories: Factories<Obj>):
 }
 
 /**
- * Invokes a function with a patch applied to the object.
- * A patch is automatically removed when the function returns.
+ * Checks if a function has a specific patch token.
  *
- * @typeParam Obj - The object to patch.
- * @typeParam Result - The type of the result of the function.
- * @param obj - The object to patch.
- * @param factories - The factories to apply to the object.
- * @param fn - The function to invoke.
- * @returns The result of the function.
+ * @param fn - The function to check.
+ * @param patchToken - The patch token to check for.
+ * @returns Whether the function has the patch token.
  */
-export function invokeWithPatch<Obj extends object, Result>(obj: Obj, factories: Factories<Obj>, fn: () => Result): Result {
-  const uninstaller = around(obj, factories);
-  try {
-    return fn();
-  } finally {
-    uninstaller();
-  }
+export function hasPatchToken(fn: GenericFunction, patchToken: symbol): boolean {
+  return getMonkeyAroundPatches().get(fn)?.has(patchToken) ?? false;
 }
 
-/**
- * Invokes an async function with a patch applied to the object.
- * A patch is automatically removed when the function returns.
- *
- * @typeParam Obj - The object to patch.
- * @typeParam Result - The type of the result of the function.
- * @param obj - The object to patch.
- * @param factories - The factories to apply to the object.
- * @param fn - The function to invoke.
- * @returns The result of the function.
- */
-export async function invokeWithPatchAsync<Obj extends object, Result>(obj: Obj, factories: Factories<Obj>, fn: () => Promise<Result>): Promise<Result> {
-  const uninstaller = around(obj, factories);
-  try {
-    return await fn();
-  } finally {
-    uninstaller();
-  }
-}
-
-/**
- * Convenience: creates a {@link MonkeyAroundComponent}, adds it as a child of the given component, and registers a method patch.
- *
- * @typeParam Obj - The object to patch.
- * @typeParam K - The method name to patch.
- * @param component - The parent component for lifecycle management.
- * @param obj - The object to patch.
- * @param methodName - The name of the method to patch.
- * @param handler - The patch handler function.
- * @returns The monkey-around component.
- */
-export function registerMethodPatch<Obj extends object, K extends MethodKeys<Obj>>(
-  component: Component,
-  obj: Obj,
-  methodName: K,
-  handler: PatchHandlerFn<Obj, K>
-): MonkeyAroundComponent {
-  const monkeyAround = component.addChild(new MonkeyAroundComponent());
-  monkeyAround.registerMethodPatch(obj, methodName, handler);
-  return monkeyAround;
-}
-
-/**
- * Convenience: creates a {@link MonkeyAroundComponent}, adds it as a child of the given component, and registers a patch.
- *
- * @typeParam Obj - The object to patch.
- * @param component - The parent component for lifecycle management.
- * @param obj - The object to patch.
- * @param factories - The factories to apply to the object.
- * @returns The monkey-around component.
- */
-export function registerPatch<Obj extends object>(component: Component, obj: Obj, factories: Factories<Obj>): MonkeyAroundComponent {
-  const monkeyAround = component.addChild(new MonkeyAroundComponent());
-  monkeyAround.registerPatch(obj, factories);
-  return monkeyAround;
+function getMonkeyAroundPatches(): WeakMap<GenericFunction, Set<symbol>> {
+  return getObsidianDevUtilsState(null, 'monkeyAroundPatches', new WeakMap<GenericFunction, Set<symbol>>()).value;
 }
