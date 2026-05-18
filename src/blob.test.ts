@@ -7,6 +7,8 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericVoidFunction } from './function.ts';
+
 import {
   blobToArrayBuffer,
   blobToDataUrl,
@@ -22,9 +24,9 @@ interface BlobWithParts {
 
 class MockFileReader {
   public result: ArrayBuffer | null | string = null;
-  private readonly listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
+  private readonly listeners: Record<string, GenericVoidFunction[]> = {};
 
-  public addEventListener(event: string, fn: (...args: unknown[]) => void): void {
+  public addEventListener(event: string, fn: GenericVoidFunction): void {
     this.listeners[event] ??= [];
     this.listeners[event].push(fn);
   }

@@ -11,6 +11,7 @@ import {
   vi
 } from 'vitest';
 
+import type { GenericAsyncFunction } from '../function.ts';
 import type { DataviewInlineApi } from './dataview.ts';
 
 import {
@@ -35,7 +36,7 @@ interface PathHolder {
 }
 
 vi.mock('../async.ts', () => ({
-  convertAsyncToSync: vi.fn((fn: (...args: unknown[]) => Promise<unknown>) => fn)
+  convertAsyncToSync: vi.fn((fn: GenericAsyncFunction) => fn)
 }));
 
 vi.mock('../error.ts', () => ({
@@ -57,7 +58,7 @@ vi.mock('../obsidian/resource-url.ts', () => ({
 }));
 
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((fn: (...args: unknown[]) => unknown, options?: unknown) => {
+  t: vi.fn((fn: GenericAsyncFunction, options?: unknown) => {
     try {
       const translations = {
         obsidianDevUtils: {

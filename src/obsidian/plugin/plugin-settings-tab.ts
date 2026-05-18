@@ -22,6 +22,7 @@ import {
 } from 'obsidian';
 
 import type { AsyncEventRef } from '../../async-events.ts';
+import type { GenericPromisableVoidFunction } from '../../function.ts';
 import type { StringKeys } from '../../type.ts';
 import type {
   PluginSettingsComponentBase,
@@ -479,7 +480,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   ): AsyncEventRef;
   private on<Args extends unknown[]>(
     name: string,
-    callback: (...args: Args) => Promisable<void>,
+    callback: GenericPromisableVoidFunction<Args>,
     thisArg?: unknown
   ): AsyncEventRef {
     return this.asyncEventsComponent.asyncEvents.on(name, callback, thisArg);

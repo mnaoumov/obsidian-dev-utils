@@ -6,6 +6,12 @@
 
 import type { Promisable } from 'type-fest';
 
+import type {
+  GenericAsyncFunction,
+  GenericFunction,
+  GenericVoidFunction
+} from './function.ts';
+
 import {
   abortSignalAny,
   abortSignalNever,
@@ -169,7 +175,7 @@ export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: numbe
  * @param stackTrace - The stack trace of the source function.
  * @returns A function that wraps the asynchronous function in a synchronous interface.
  */
-export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: Args) => Promise<unknown>, stackTrace?: string): (...args: Args) => void {
+export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: GenericAsyncFunction<Args>, stackTrace?: string): GenericVoidFunction<Args> {
   stackTrace ??= getStackTrace(1);
   return (...args: Args): void => {
     assertNonNullable(stackTrace);
@@ -187,7 +193,7 @@ export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: (...args: 
  * @param syncFn - The synchronous function to convert.
  * @returns A function that wraps the synchronous function in an asynchronous interface.
  */
-export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: (...args: Args) => Result): (...args: Args) => Promise<Result> {
+export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: GenericFunction<Args, Result>): GenericAsyncFunction<Args, Result> {
   return async (...args: Args): Promise<Result> => {
     await Promise.resolve();
     return syncFn(...args);

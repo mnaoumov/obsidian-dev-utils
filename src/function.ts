@@ -1,8 +1,55 @@
 /**
  * @file
  *
- * Contains utility functions for working with functions.
+ * Contains utility functions and types for working with functions.
  */
+
+import type { Promisable } from 'type-fest';
+
+/**
+ * Represents a generic async function.
+ *
+ * @typeParam Args - The arguments of the function.
+ * @typeParam Return - The awaited return type of the function.
+ */
+export type GenericAsyncFunction<Args extends unknown[] = never[], Return = unknown> = GenericFunction<Args, Promise<Return>>;
+
+/**
+ * Represents a generic async void function.
+ *
+ * @typeParam Args - The arguments of the function.
+ */
+export type GenericAsyncVoidFunction<Args extends unknown[] = never[]> = GenericAsyncFunction<Args, void>;
+
+/**
+ * Represents a generic function.
+ *
+ * @typeParam Args - The arguments of the function.
+ * @typeParam Return - The return type of the function.
+ */
+export type GenericFunction<Args extends unknown[] = never[], Return = unknown> = (...args: Args) => Return;
+
+/**
+ * Represents a generic promisable function.
+ *
+ * @typeParam Args - The arguments of the function.
+ * @typeParam Return - The awaited return type of the function.
+ */
+export type GenericPromisableFunction<Args extends unknown[] = never[], Return = unknown> = GenericFunction<Args, Promisable<Return>>;
+
+/**
+ * Represents a generic promisable void function.
+ *
+ * @typeParam Args - The arguments of the function.
+ */
+export type GenericPromisableVoidFunction<Args extends unknown[] = never[]> = GenericPromisableFunction<Args, void>;
+
+/**
+ * Represents a generic void function.
+ *
+ * @typeParam Args - The arguments of the function.
+ */
+export type GenericVoidFunction<Args extends unknown[] = never[]> = GenericFunction<Args, void>;
 
 /**
  * Converts a function into a string that is a valid function expression.
@@ -51,7 +98,7 @@ export async function noopAsync(): Promise<void> {
  * @param fn - Function to be called.
  * @returns An async function that calls the original function with the provided arguments and omits the return value.
  */
-export function omitAsyncReturnType<Args extends unknown[]>(fn: (...args: Args) => Promise<unknown>): (...args: Args) => Promise<void> {
+export function omitAsyncReturnType<Args extends unknown[]>(fn: GenericAsyncFunction<Args>): GenericAsyncVoidFunction<Args> {
   return async (...args: Args) => {
     await fn(...args);
   };
@@ -78,7 +125,7 @@ const ASYNC_KEYWORD_RE = /^async\b\s*/;
  * @param fn - Function to be called.
  * @returns A function that calls the original function with the provided arguments and omits the return value.
  */
-export function omitReturnType<Args extends unknown[]>(fn: (...args: Args) => unknown): (...args: Args) => void {
+export function omitReturnType<Args extends unknown[]>(fn: GenericFunction<Args>): GenericVoidFunction<Args> {
   return (...args: Args) => {
     fn(...args);
   };
