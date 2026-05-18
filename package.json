@@ -261,26 +261,6 @@
         "default": "./dist/lib/cjs/obsidian/components/*.cjs"
       }
     },
-    "./obsidian/components/setting-components": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/components/setting-components/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/components/setting-components/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/components/setting-components/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/components/setting-components/index.cjs"
-      }
-    },
-    "./obsidian/components/setting-components/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/components/setting-components/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/components/setting-components/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/components/setting-components/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/components/setting-components/*.cjs"
-      }
-    },
     "./obsidian/constructors": {
       "import": {
         "types": "./dist/lib/esm/obsidian/constructors/index.d.mts",
@@ -381,26 +361,6 @@
         "default": "./dist/lib/cjs/obsidian/plugin/*.cjs"
       }
     },
-    "./obsidian/plugin/components": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/plugin/components/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/plugin/components/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/plugin/components/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/plugin/components/index.cjs"
-      }
-    },
-    "./obsidian/plugin/components/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/plugin/components/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/plugin/components/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/plugin/components/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/plugin/components/*.cjs"
-      }
-    },
     "./obsidian/react": {
       "import": {
         "types": "./dist/lib/esm/obsidian/react/index.d.mts",
@@ -419,6 +379,26 @@
       "require": {
         "types": "./dist/lib/cjs/obsidian/react/*.d.cts",
         "default": "./dist/lib/cjs/obsidian/react/*.cjs"
+      }
+    },
+    "./obsidian/setting-components": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/setting-components/index.d.mts",
+        "default": "./dist/lib/esm/obsidian/setting-components/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/setting-components/index.d.cts",
+        "default": "./dist/lib/cjs/obsidian/setting-components/index.cjs"
+      }
+    },
+    "./obsidian/setting-components/*": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/setting-components/*.d.mts",
+        "default": "./dist/lib/esm/obsidian/setting-components/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/setting-components/*.d.cts",
+        "default": "./dist/lib/cjs/obsidian/setting-components/*.cjs"
       }
     },
     "./script-utils": {
