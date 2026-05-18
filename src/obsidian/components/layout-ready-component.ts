@@ -8,12 +8,13 @@ import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
 import { invokeAsyncSafely } from '../../async.ts';
+import { noop } from '../../function.ts';
 import { DisposableComponent } from './disposable-component.ts';
 
 /**
  * A component that executes a callback function when the Obsidian layout becomes ready.
  */
-export abstract class LayoutReadyComponent extends DisposableComponent {
+export class LayoutReadyComponent extends DisposableComponent {
   /**
    * Creates a new LayoutReadyComponent instance.
    *
@@ -40,7 +41,9 @@ export abstract class LayoutReadyComponent extends DisposableComponent {
   /**
    * Executes when the Obsidian layout becomes ready.
    */
-  protected abstract onLayoutReady(): Promisable<void>;
+  protected onLayoutReady(): Promisable<void> {
+    noop();
+  }
 }
 
 /**

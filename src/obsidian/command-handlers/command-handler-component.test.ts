@@ -126,8 +126,8 @@ describe('CommandHandlerComponent', () => {
     await component.onload();
 
     // Handler should be unaffected
-    expect(commandHandler.id).toBe('original-id');
-    expect(commandHandler.name).toBe('Original Name');
+    expect(commandHandler.buildCommand().id).toBe('original-id');
+    expect(commandHandler.buildCommand().name).toBe('Original Name');
   });
 
   it('should call removeCommand on unload', async () => {

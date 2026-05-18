@@ -5,11 +5,11 @@ import {
 } from 'vitest';
 
 import {
-  AsyncComponentBase,
+  AsyncComponent,
   loadChildrenFirstAsync
 } from './async-component.ts';
 
-class TestAsyncComponent extends AsyncComponentBase {
+class TestAsyncComponent extends AsyncComponent {
   public onloadCalled = false;
 
   public override async onload(): Promise<void> {
@@ -18,7 +18,7 @@ class TestAsyncComponent extends AsyncComponentBase {
   }
 }
 
-describe('AsyncComponentBase', () => {
+describe('AsyncComponent', () => {
   it('should call onload and load children sequentially', async () => {
     const parent = new TestAsyncComponent();
     const child = new TestAsyncComponent();
@@ -43,7 +43,7 @@ describe('AsyncComponentBase', () => {
   it('should await async children load in order', async () => {
     const order: string[] = [];
 
-    class SlowChild extends AsyncComponentBase {
+    class SlowChildComponent extends AsyncComponent {
       public override async onload(): Promise<void> {
         await super.onload();
         await new Promise<void>((resolve) => {
@@ -53,7 +53,7 @@ describe('AsyncComponentBase', () => {
       }
     }
 
-    class ParentComponent extends AsyncComponentBase {
+    class ParentComponent extends AsyncComponent {
       public override async onload(): Promise<void> {
         await super.onload();
         order.push('parent');
@@ -61,7 +61,7 @@ describe('AsyncComponentBase', () => {
     }
 
     const parent = new ParentComponent();
-    parent.addChild(new SlowChild());
+    parent.addChild(new SlowChildComponent());
 
     await parent.load();
 
@@ -73,14 +73,14 @@ describe('loadChildrenFirstAsync', () => {
   it('should load children before parent', async () => {
     const order: string[] = [];
 
-    class ChildComponent extends AsyncComponentBase {
+    class ChildComponent extends AsyncComponent {
       public override async onload(): Promise<void> {
         await super.onload();
         order.push('child');
       }
     }
 
-    class ParentComponent extends AsyncComponentBase {
+    class ParentComponent extends AsyncComponent {
       public override async onload(): Promise<void> {
         await super.onload();
         order.push('parent');
@@ -108,7 +108,7 @@ describe('loadChildrenFirstAsync', () => {
   it('should load deeply nested children in correct order', async () => {
     const order: string[] = [];
 
-    class OrderedComponent extends AsyncComponentBase {
+    class OrderedComponent extends AsyncComponent {
       public constructor(private readonly label: string) {
         super();
       }
