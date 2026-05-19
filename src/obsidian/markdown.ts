@@ -136,8 +136,7 @@ export async function fullRender(params: FullRenderParams): Promise<void> {
     shouldUnloadComponent = true;
   }
 
-  using patch = new MonkeyAroundComponent();
-  patch.load();
+  using patch = component.addChild(new MonkeyAroundComponent());
 
   patch.registerMethodPatch({
     methodName: 'md',
