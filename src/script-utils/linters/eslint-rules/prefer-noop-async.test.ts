@@ -15,15 +15,7 @@ RuleTester.afterAll = afterAll;
 RuleTester.describe = describe;
 RuleTester.it = it;
 
-const ruleTester = new RuleTester({
-  languageOptions: {
-    parserOptions: {
-      projectService: {
-        allowDefaultProject: ['*.ts']
-      }
-    }
-  }
-});
+const ruleTester = new RuleTester();
 
 ruleTester.run('prefer-noop-async', toRuleTesterModule(preferNoopAsync), {
   invalid: [
@@ -61,7 +53,11 @@ ruleTester.run('prefer-noop-async', toRuleTesterModule(preferNoopAsync), {
     },
     {
       code: 'Promise.all([]);',
-      name: 'Promise.all (not Promise.resolve)'
+      name: 'Promise.all (not Promise.resolve, has arguments)'
+    },
+    {
+      code: 'Promise.reject();',
+      name: 'Promise.reject (not resolve)'
     },
     {
       code: 'MyPromise.resolve();',

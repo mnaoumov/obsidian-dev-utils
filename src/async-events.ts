@@ -157,7 +157,10 @@ export class AsyncEvents {
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public trigger<Args extends unknown[]>(name: string, ...args: Args): void {
-    this.triggerAsync(name, ...args).catch(console.error);
+    const eventRefs = this.eventRefsMap.get(name) ?? [];
+    for (const eventRef of eventRefs.slice()) {
+      this.tryTrigger(eventRef, args);
+    }
   }
 
   /**
@@ -187,7 +190,20 @@ export class AsyncEvents {
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void {
-    this.tryTriggerAsync(eventRef, args).catch(console.error);
+    try {
+      const result = eventRef.callback.call(eventRef.thisArg, ...args);
+      if (result instanceof Promise) {
+        result.catch((e: unknown) => {
+          window.setTimeout(() => {
+            throw e;
+          }, 0);
+        });
+      }
+    } catch (e) {
+      window.setTimeout(() => {
+        throw e;
+      }, 0);
+    }
   }
 
   /**
