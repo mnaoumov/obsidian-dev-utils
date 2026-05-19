@@ -18,11 +18,6 @@ vi.mock('../../../debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
 }));
 
-interface TestSettings {
-  count: number;
-  name: string;
-}
-
 class MockDataHandler implements DataHandler {
   public loadData = vi.fn(() => Promise.resolve(this.data));
 
@@ -42,13 +37,16 @@ class MockDataHandler implements DataHandler {
   }
 }
 
-class TestSettingsComponent extends PluginSettingsComponentBase<TestSettings> {
-  protected override createDefaultSettings(): TestSettings {
-    return {
-      count: 0,
-      name: 'default'
-    };
-  }
+class TestSettings {
+  public count = 0;
+  public name = 'default';
+}
+
+function createComponent(dataHandler: MockDataHandler): PluginSettingsComponentBase<TestSettings> {
+  return new PluginSettingsComponentBase({
+    dataHandler,
+    pluginSettingsClass: TestSettings
+  });
 }
 
 describe('PluginSettingsComponentBase', () => {
@@ -59,7 +57,7 @@ describe('PluginSettingsComponentBase', () => {
   it('should bind loadData/saveData to the params object', async () => {
     const dataHandler = new MockDataHandler({ count: 42, name: 'bound' });
 
-    const component = new TestSettingsComponent(dataHandler);
+    const component = createComponent(dataHandler);
     await component.onload();
 
     expect(component.settings.count).toBe(42);
@@ -73,26 +71,26 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should have default settings after construction', () => {
-    const component = new TestSettingsComponent(new MockDataHandler({}));
+    const component = createComponent(new MockDataHandler({}));
     expect(component.defaultSettings).toEqual({ count: 0, name: 'default' });
     expect(component.settings).toEqual({ count: 0, name: 'default' });
   });
 
   it('should load settings from file on onload', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler({ count: 5, name: 'loaded' }));
+    const component = createComponent(new MockDataHandler({ count: 5, name: 'loaded' }));
     await component.onload();
     expect(component.settings.count).toBe(5);
     expect(component.settings.name).toBe('loaded');
   });
 
   it('should handle null data on load', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler(null));
+    const component = createComponent(new MockDataHandler(null));
     await component.onload();
     expect(component.settings).toEqual({ count: 0, name: 'default' });
   });
 
   it('should handle undefined data on load', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler(undefined));
+    const component = createComponent(new MockDataHandler(undefined));
     await component.onload();
     expect(component.settings).toEqual({ count: 0, name: 'default' });
   });
@@ -101,7 +99,7 @@ describe('PluginSettingsComponentBase', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
     });
-    const component = new TestSettingsComponent(new MockDataHandler('invalid'));
+    const component = createComponent(new MockDataHandler('invalid'));
     await component.onload();
     expect(component.settings).toEqual({ count: 0, name: 'default' });
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid settings'));
@@ -109,7 +107,7 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should set a property and return validation message', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler({}));
+    const component = createComponent(new MockDataHandler({}));
     await component.onload();
     const message = await component.setProperty('name', 'updated');
     expect(message).toBe('');
@@ -118,10 +116,6 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should validate property and use default for invalid values', async () => {
     class ValidatingComponent extends PluginSettingsComponentBase<TestSettings> {
-      protected override createDefaultSettings(): TestSettings {
-        return { count: 0, name: 'default' };
-      }
-
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
@@ -133,7 +127,10 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(new MockDataHandler({}));
+    const component = new ValidatingComponent({
+      dataHandler: new MockDataHandler({}),
+      pluginSettingsClass: TestSettings
+    });
     await component.onload();
 
     const message = await component.setProperty('count', -1);
@@ -144,7 +141,7 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should save to file when settings changed', async () => {
     const dataHandler = new MockDataHandler({});
-    const component = new TestSettingsComponent(dataHandler);
+    const component = createComponent(dataHandler);
     await component.onload();
 
     await component.setProperty('name', 'changed');
@@ -155,7 +152,7 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should not save to file when settings unchanged', async () => {
     const dataHandler = new MockDataHandler({ count: 0, name: 'default' });
-    const component = new TestSettingsComponent(dataHandler);
+    const component = createComponent(dataHandler);
     await component.onload();
 
     vi.mocked(dataHandler.saveData).mockClear();
@@ -165,7 +162,7 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should trigger loadSettings event on load', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler({}));
+    const component = createComponent(new MockDataHandler({}));
     const callback = vi.fn();
     component.on('loadSettings', callback);
     await component.onload();
@@ -176,7 +173,7 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should trigger saveSettings event on save', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler({}));
+    const component = createComponent(new MockDataHandler({}));
     await component.onload();
 
     const callback = vi.fn();
@@ -190,7 +187,7 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should handle onExternalSettingsChange', async () => {
     const dataHandler = new MockDataHandler({ count: 1, name: 'initial' });
-    const component = new TestSettingsComponent(dataHandler);
+    const component = createComponent(dataHandler);
     await component.onload();
 
     vi.mocked(dataHandler.loadData).mockResolvedValue({ count: 2, name: 'external' });
@@ -202,7 +199,7 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should editAndSave', async () => {
     const dataHandler = new MockDataHandler({});
-    const component = new TestSettingsComponent(dataHandler);
+    const component = createComponent(dataHandler);
     await component.onload();
 
     await component.editAndSave((settings) => {
@@ -215,10 +212,6 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should ensureSafe by replacing invalid values with defaults', async () => {
     class ValidatingComponent extends PluginSettingsComponentBase<TestSettings> {
-      protected override createDefaultSettings(): TestSettings {
-        return { count: 0, name: 'default' };
-      }
-
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
@@ -230,7 +223,10 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(new MockDataHandler({}));
+    const component = new ValidatingComponent({
+      dataHandler: new MockDataHandler({}),
+      pluginSettingsClass: TestSettings
+    });
     await component.onload();
 
     const settings: TestSettings = { count: -5, name: 'test' };
@@ -241,10 +237,6 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should getSafeCopy', async () => {
     class ValidatingComponent extends PluginSettingsComponentBase<TestSettings> {
-      protected override createDefaultSettings(): TestSettings {
-        return { count: 0, name: 'default' };
-      }
-
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
@@ -256,7 +248,10 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(new MockDataHandler({}));
+    const component = new ValidatingComponent({
+      dataHandler: new MockDataHandler({}),
+      pluginSettingsClass: TestSettings
+    });
     await component.onload();
 
     const original: TestSettings = { count: -1, name: 'test' };
@@ -269,10 +264,6 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should revalidate and return validation messages', async () => {
     class ValidatingComponent extends PluginSettingsComponentBase<TestSettings> {
-      protected override createDefaultSettings(): TestSettings {
-        return { count: 0, name: 'default' };
-      }
-
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('name', (value) => {
@@ -284,7 +275,10 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(new MockDataHandler({}));
+    const component = new ValidatingComponent({
+      dataHandler: new MockDataHandler({}),
+      pluginSettingsClass: TestSettings
+    });
     await component.onload();
 
     await component.setProperty('name', '');
@@ -299,10 +293,6 @@ describe('PluginSettingsComponentBase', () => {
     }
 
     class LegacyComponent extends PluginSettingsComponentBase<TestSettings> {
-      protected override createDefaultSettings(): TestSettings {
-        return { count: 0, name: 'default' };
-      }
-
       protected override registerLegacySettingsConverters(): void {
         super.registerLegacySettingsConverters();
         this.registerLegacySettingsConverter(
@@ -317,17 +307,16 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new LegacyComponent(new MockDataHandler({ oldName: 'migrated' }));
+    const component = new LegacyComponent({
+      dataHandler: new MockDataHandler({ oldName: 'migrated' }),
+      pluginSettingsClass: TestSettings
+    });
     await component.onload();
     expect(component.settings.name).toBe('migrated');
   });
 
   it('should delete legacy keys that are not in current settings', async () => {
     class LegacyComponent extends PluginSettingsComponentBase<TestSettings> {
-      protected override createDefaultSettings(): TestSettings {
-        return { count: 0, name: 'default' };
-      }
-
       protected override registerLegacySettingsConverters(): void {
         super.registerLegacySettingsConverters();
         this.registerLegacySettingsConverter(
@@ -342,7 +331,10 @@ describe('PluginSettingsComponentBase', () => {
     }
 
     // Data has a legacy key that is in legacySettingsKeys but not in pluginSettingKeys
-    const component = new LegacyComponent(new MockDataHandler({ count: 1, legacyOnlyField: 'stale', name: 'test' }));
+    const component = new LegacyComponent({
+      dataHandler: new MockDataHandler({ count: 1, legacyOnlyField: 'stale', name: 'test' }),
+      pluginSettingsClass: TestSettings
+    });
     await component.onload();
     expect(component.settings.count).toBe(1);
     expect(component.settings.name).toBe('test');
@@ -350,10 +342,6 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should skip keys that are neither in plugin settings nor legacy settings', async () => {
     class LegacyComponent extends PluginSettingsComponentBase<TestSettings> {
-      protected override createDefaultSettings(): TestSettings {
-        return { count: 0, name: 'default' };
-      }
-
       protected override registerLegacySettingsConverters(): void {
         super.registerLegacySettingsConverters();
         this.registerLegacySettingsConverter(
@@ -368,19 +356,22 @@ describe('PluginSettingsComponentBase', () => {
     }
 
     // Data has 'unknownField' which is NOT in pluginSettingKeys and NOT in legacySettingsKeys
-    const component = new LegacyComponent(new MockDataHandler({ count: 1, name: 'test', unknownField: 'should-stay' }));
+    const component = new LegacyComponent({
+      dataHandler: new MockDataHandler({ count: 1, name: 'test', unknownField: 'should-stay' }),
+      pluginSettingsClass: TestSettings
+    });
     await component.onload();
     expect(component.settings.count).toBe(1);
   });
 
   it('should ignore unknown properties in raw record', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler({ count: 1, name: 'test', unknownProp: 'ignored' }));
+    const component = createComponent(new MockDataHandler({ count: 1, name: 'test', unknownProp: 'ignored' }));
     await component.onload();
     expect(component.settings.count).toBe(1);
   });
 
   it('should warn about type mismatches in raw record', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler({ count: 'not-a-number', name: 'test' }));
+    const component = createComponent(new MockDataHandler({ count: 'not-a-number', name: 'test' }));
     await component.onload();
     // Should still load the value but log a debug warning
     expect(component.settings.name).toBe('test');
@@ -388,20 +379,20 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should save normalized data when loaded record differs from raw', async () => {
     const params = new MockDataHandler({ count: 5, extraField: 'removed', name: 'test' });
-    const component = new TestSettingsComponent(params);
+    const component = createComponent(params);
     await component.onload();
     // SaveData should have been called because the normalized record differs from the raw one
     expect(params.saveData).toHaveBeenCalled();
   });
 
   it('should validate with empty validators returning no errors', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler({}));
+    const component = createComponent(new MockDataHandler({}));
     const result = await component.validate({ count: 1, name: 'valid' });
     expect(result).toEqual({});
   });
 
   it('should return false for non-string property names in isValidPropertyName', () => {
-    const component = new TestSettingsComponent(new MockDataHandler({}));
+    const component = createComponent(new MockDataHandler({}));
     // Access the private method to test the non-string guard
     const result = component['isValidPropertyName'](123);
     expect(result).toBe(false);
@@ -409,10 +400,6 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should handle validator returning empty string (no error)', async () => {
     class ValidatingComponent extends PluginSettingsComponentBase<TestSettings> {
-      protected override createDefaultSettings(): TestSettings {
-        return { count: 0, name: 'default' };
-      }
-
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
@@ -424,7 +411,10 @@ describe('PluginSettingsComponentBase', () => {
       }
     }
 
-    const component = new ValidatingComponent(new MockDataHandler({}));
+    const component = new ValidatingComponent({
+      dataHandler: new MockDataHandler({}),
+      pluginSettingsClass: TestSettings
+    });
     await component.onload();
 
     // Valid value - validator returns empty string
@@ -433,7 +423,7 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should use input value for effective when no validation error', async () => {
-    const component = new TestSettingsComponent(new MockDataHandler({}));
+    const component = createComponent(new MockDataHandler({}));
     await component.onload();
 
     // Set a valid property - effective should equal input, not default
@@ -444,10 +434,6 @@ describe('PluginSettingsComponentBase', () => {
 
   it('should load settings with validation error and use defaults for effective values', async () => {
     class ValidatingComponent extends PluginSettingsComponentBase<TestSettings> {
-      protected override createDefaultSettings(): TestSettings {
-        return { count: 0, name: 'default' };
-      }
-
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
@@ -460,7 +446,10 @@ describe('PluginSettingsComponentBase', () => {
     }
 
     // Load from file with an invalid count
-    const component = new ValidatingComponent(new MockDataHandler({ count: -5, name: 'test' }));
+    const component = new ValidatingComponent({
+      dataHandler: new MockDataHandler({ count: -5, name: 'test' }),
+      pluginSettingsClass: TestSettings
+    });
     await component.onload();
 
     // Input should have the raw value, effective should have the default

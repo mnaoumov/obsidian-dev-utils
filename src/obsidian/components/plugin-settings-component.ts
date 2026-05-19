@@ -9,6 +9,7 @@
  */
 
 import type {
+  Constructor,
   Promisable,
   ReadonlyDeep
 } from 'type-fest';
@@ -52,6 +53,23 @@ const defaultTransformer = new GroupTransformer([
   new SetTransformer(),
   new TwoWayMapTransformer()
 ]);
+
+/**
+ * Constructor parameters for {@link PluginSettingsComponentBase}.
+ *
+ * @typeParam PluginSettings - The type of the plugin settings.
+ */
+export interface PluginSettingsComponentBaseConstructorParams<PluginSettings> {
+  /**
+   * The data handler for the plugin.
+   */
+  readonly dataHandler: DataHandler;
+
+  /**
+   * The plugin settings class.
+   */
+  readonly pluginSettingsClass: Constructor<PluginSettings, []>;
+}
 
 /**
  * A snapshot of plugin settings state, including raw input values, effective (validated) values,
@@ -115,7 +133,8 @@ type ValidationResult<PluginSettings extends object> = Partial<Record<StringKeys
  *
  * @typeParam PluginSettings - The plugin settings type.
  */
-export abstract class PluginSettingsComponentBase<PluginSettings extends object> extends AsyncComponent {
+// eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Non-abstract base class; consumers extend it.
+export class PluginSettingsComponentBase<PluginSettings extends object> extends AsyncComponent {
   /**
    * Component key for singleton replacement via {@link PluginBase.addChild}.
    */
@@ -148,19 +167,25 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
 
   private readonly asyncEvents = new AsyncEvents();
   private currentState: PluginSettingsState<PluginSettings>;
+  private readonly dataHandler: DataHandler;
   private lastSavedState: PluginSettingsState<PluginSettings>;
   private readonly legacySettingsConverters: ((record: GenericObject) => void)[] = [];
+  private readonly pluginSettingsClass: Constructor<PluginSettings, []>;
+
   private readonly propertyNames: PropertyNames<PluginSettings>[];
   private readonly validators = new Map<PropertyNames<PluginSettings>, SettingsValidator<PluginSettings>>();
 
   /**
    * Creates a new plugin settings component.
    *
-   * @param dataHandler - The data handler.
+   * @param params - The constructor parameters.
    */
-  public constructor(private readonly dataHandler: DataHandler) {
+  public constructor(params: PluginSettingsComponentBaseConstructorParams<PluginSettings>) {
     super();
-    this.defaultSettings = this.createDefaultSettings() as ReadonlyDeep<PluginSettings>;
+    this.dataHandler = params.dataHandler;
+    this.pluginSettingsClass = params.pluginSettingsClass;
+
+    this.defaultSettings = new this.pluginSettingsClass() as ReadonlyDeep<PluginSettings>;
     this.currentState = this.createDefaultState();
     this.lastSavedState = this.createDefaultState();
     this.propertyNames = getAllKeys(this.currentState.inputValues);
@@ -428,13 +453,6 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
   }
 
   /**
-   * Creates the default settings. Must be implemented by subclasses.
-   *
-   * @returns The default settings.
-   */
-  protected abstract createDefaultSettings(): PluginSettings;
-
-  /**
    * Gets the transformer.
    *
    * @returns The transformer.
@@ -527,8 +545,8 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
 
   private createDefaultState(): PluginSettingsState<PluginSettings> {
     return {
-      effectiveValues: this.createDefaultSettings(),
-      inputValues: this.createDefaultSettings(),
+      effectiveValues: new this.pluginSettingsClass(),
+      inputValues: new this.pluginSettingsClass(),
       validationMessages: castTo<Record<PropertyNames<PluginSettings>, string>>({})
     };
   }
@@ -561,7 +579,7 @@ export abstract class PluginSettingsComponentBase<PluginSettings extends object>
     rawRecord = this.getTransformer().transformObjectRecursively(rawRecord);
     await this.onLoadRecord(rawRecord);
 
-    const settings = this.createDefaultSettings();
+    const settings = new this.pluginSettingsClass();
     const defaults = this.defaultSettings as PluginSettings;
 
     for (const [propertyName, value] of Object.entries(rawRecord)) {
