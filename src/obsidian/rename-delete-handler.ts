@@ -361,7 +361,6 @@ class Registry {
     this.plugin.registerEvent(this.app.metadataCache.on('deleted', this.handleMetadataDeleted.bind(this)));
 
     const patch = this.plugin.addChild(new MonkeyAroundComponent());
-    patch.load();
 
     patch.registerMethodPatch({
       methodName: 'runAsyncLinkUpdate',
