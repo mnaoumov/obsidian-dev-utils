@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 67.0.0
+
+- refactor!: simplify PluginSettingsComponentBase
+- feat: noopAsync eslint rule
+- feat: add component suffix rule
+- chore: update libs
+
 ## 66.0.1
 
 - fix: accidental DisposableComponent leakage
