@@ -20,10 +20,7 @@ import type {
 import type { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
 import type { ValueComponentWithChangeTracking } from '../setting-components/value-component-with-change-tracking.ts';
 
-import {
-  noop,
-  noopAsync
-} from '../../function.ts';
+import { noopAsync } from '../../function.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import {
   PluginSettingsTabBase,
@@ -604,11 +601,11 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.display();
 
-      let changeCallback: ((value: string) => Promise<void>) | undefined;
+      let changeCallback: ((value: string) => void) | undefined;
       const mockComponent = createTextBasedMockComponent();
 
       // Track onChange registrations
-      mockComponent.onChange = vi.fn((cb: (value: string) => Promise<void>) => {
+      mockComponent.onChange = vi.fn((cb: (value: string) => void) => {
         changeCallback = cb;
         return mockComponent;
       }) as never;
@@ -620,16 +617,14 @@ describe('PluginSettingsTabBase', () => {
       // Which should hit the shouldSkipOnChange early return
       mockComponent.empty = vi.fn(() => {
         // Simulate that empty() triggers onChange callback
-        changeCallback?.('').catch(() => {
-          noop();
-        });
+        changeCallback?.('');
       }) as never;
 
       tab.bind(mockComponent, 'name' as never);
 
       // Trigger onChange with value equal to default to set shouldEmptyOnBlur=true
       if (changeCallback) {
-        await changeCallback('default');
+        changeCallback('default');
         // Advance timers to trigger debounced updateValidatorEl
         // UpdateValidatorEl will see shouldEmptyOnBlur=true, call textBasedComponent.empty()
         // Which triggers onChange with shouldSkipOnChange=true (lines 299-300)

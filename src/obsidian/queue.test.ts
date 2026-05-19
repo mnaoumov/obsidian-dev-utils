@@ -59,7 +59,8 @@ vi.mock('../error.ts', () => ({
 }));
 
 vi.mock('../function.ts', () => ({
-  noop: vi.fn()
+  noop: vi.fn(),
+  noopAsync: vi.fn(() => noopAsync())
 }));
 
 vi.mock('../obsidian/app.ts', () => ({

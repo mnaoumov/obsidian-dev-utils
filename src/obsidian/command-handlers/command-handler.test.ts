@@ -50,9 +50,9 @@ describe('CommandHandler', () => {
     expect(command.icon).toBe('wand');
   });
 
-  it('should have a no-op default onRegistered', async () => {
+  it('should have a no-op default onRegistered', () => {
     const handler = new TestCommandHandler(createParams());
-    await expect(handler.onRegistered({
+    expect(handler.onRegistered({
       activeFileProvider: { getActiveFile: () => null },
       menuEventRegistrar: {
         registerEditorMenuEventHandler: vi.fn(),
@@ -60,6 +60,6 @@ describe('CommandHandler', () => {
         registerFilesMenuEventHandler: vi.fn()
       },
       pluginName: 'Test Plugin'
-    })).resolves.toBeUndefined();
+    })).toBeUndefined();
   });
 });
