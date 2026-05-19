@@ -81,9 +81,11 @@ function checkClass(
   const classNode = node as TSESTree.ClassDeclaration | TSESTree.ClassExpression;
   const classId = classNode.id;
 
+  /* v8 ignore start -- ESLint selector `[id]` guarantees classId is present. */
   if (!classId) {
     return;
   }
+  /* v8 ignore stop */
 
   const className = classId.name;
   const { abstract: isAbstract } = classNode;

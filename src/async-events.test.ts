@@ -355,6 +355,19 @@ describe('AsyncEvents', () => {
         deferredFn();
       }).toThrow(error);
     });
+
+    it('should catch async rejection and defer via window.setTimeout', async () => {
+      const error = new Error('async try error');
+      const ref = events.on('test', () => Promise.reject(error));
+      events.tryTrigger(ref, []);
+      await noopAsync();
+      const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
+      assertNonNullable(firstCall);
+      const deferredFn = firstCall[0] as () => void;
+      expect(() => {
+        deferredFn();
+      }).toThrow(error);
+    });
   });
 
   describe('tryTriggerAsync', () => {

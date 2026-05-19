@@ -20,6 +20,12 @@ class TestAsyncComponent extends AsyncComponent {
 }
 
 describe('AsyncComponent', () => {
+  it('should resolve base onload without error', async () => {
+    const component = new AsyncComponent();
+    await component.load();
+    expect(component._loaded).toBe(true);
+  });
+
   it('should call onload and load children sequentially', async () => {
     const parent = new TestAsyncComponent();
     const child = new TestAsyncComponent();
