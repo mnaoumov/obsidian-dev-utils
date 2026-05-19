@@ -85,7 +85,7 @@ describe('Async', () => {
   describe('asyncFilter', () => {
     it('should filter elements based on async predicate', async () => {
       const result = await asyncFilter([1, 2, 3, 4, 5], async (v) => {
-        await Promise.resolve();
+        await noopAsync();
         return v % 2 === 0;
       });
       expect(result).toEqual([2, 4]);
@@ -264,7 +264,7 @@ describe('Async', () => {
   describe('asyncMap', () => {
     it('should map elements with async callback', async () => {
       const result = await asyncMap([1, 2, 3], async (v) => {
-        await Promise.resolve();
+        await noopAsync();
         return v * 2;
       });
       expect(result).toEqual([2, 4, 6]);
@@ -305,7 +305,7 @@ describe('Async', () => {
   describe('asyncFlatMap', () => {
     it('should map and flatten results', async () => {
       const result = await asyncFlatMap([1, 2, 3], async (v) => {
-        await Promise.resolve();
+        await noopAsync();
         return [v, v * 10];
       });
       expect(result).toEqual([1, 10, 2, 20, 3, 30]);
@@ -488,7 +488,7 @@ describe('Async', () => {
       async function fn(): Promise<void> {
         concurrency++;
         maxConcurrency = Math.max(maxConcurrency, concurrency);
-        await Promise.resolve();
+        await noopAsync();
         concurrency--;
       }
       await promiseAllAsyncFnsSequentially([fn, fn, fn]);

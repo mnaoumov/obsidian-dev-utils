@@ -54,7 +54,6 @@ export class DateComponent extends TypedRangeTextComponent<Date> {
    * @param value - The date to convert.
    * @returns The string.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces default String() conversion with custom formatting.
   public override valueToString(value: Date): string {
     return moment(value).format(DATE_FORMAT);
   }

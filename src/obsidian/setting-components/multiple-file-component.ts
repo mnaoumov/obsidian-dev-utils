@@ -38,7 +38,6 @@ export class MultipleFileComponent extends TypedTextComponent<readonly File[]> {
    *
    * @returns The value of the component.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces default String() conversion with custom formatting.
   public override getValue(): readonly File[] {
     return Array.from(ensureNonNullable(this.inputEl.files));
   }
@@ -58,7 +57,6 @@ export class MultipleFileComponent extends TypedTextComponent<readonly File[]> {
    * @param value - The file to convert.
    * @returns The string.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces default String() conversion with custom formatting.
   public override valueToString(value: readonly File[]): string {
     return value[0]?.name ?? '';
   }

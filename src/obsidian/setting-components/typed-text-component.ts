@@ -4,8 +4,6 @@
  * Contains a component that displays and edits a text-based value.
  */
 
-import type { Promisable } from 'type-fest';
-
 import {
   TextComponent,
   ValueComponent
@@ -73,9 +71,11 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
    * @param callback - The callback function to be called when the component is changed.
    * @returns The component.
    */
-  public onChange(callback: (value: T) => Promisable<void>): this {
+  public onChange(callback: (value: T) => void): this {
     /* v8 ignore start -- The inner arrow function is only invoked when the DOM input event fires. */
-    this.textComponent.onChange(() => callback(this.getValue()));
+    this.textComponent.onChange(() => {
+      callback(this.getValue());
+    });
     /* v8 ignore stop */
     return this;
   }

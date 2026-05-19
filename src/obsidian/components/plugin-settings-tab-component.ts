@@ -39,7 +39,6 @@ export class PluginSettingsTabComponent extends DisposableComponent {
    * Registers the settings tab and an "Open Settings" command with Obsidian.
    */
   public override onload(): void {
-    super.onload();
     this.plugin.addSettingTab(this.pluginSettingsTab);
   }
 }

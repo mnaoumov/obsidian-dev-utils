@@ -10,11 +10,12 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import { ensureLoaded } from '../html-element.ts';
 import { printToPdf } from './pdf.ts';
 
 vi.mock('../html-element.ts', () => ({
-  ensureLoaded: vi.fn(async () => Promise.resolve())
+  ensureLoaded: vi.fn(async () => noopAsync())
 }));
 
 interface MockIpcRenderer {

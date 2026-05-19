@@ -305,7 +305,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       });
     }, UPDATE_VALIDATOR_EL_TIMEOUT_IN_MILLISECONDS);
 
-    valueComponent.onChange(async (uiValue) => {
+    valueComponent.onChange(convertAsyncToSync(async (uiValue) => {
       if (shouldSkipOnChange) {
         shouldSkipOnChange = false;
         return;
@@ -341,7 +341,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
         await optionsExt.onChanged(newValue as ReadonlyDeep<PropertyType>, oldValue);
       }
       this.saveSettingsDebounced();
-    });
+    }));
 
     validatorEl?.addEventListener('focus', () => {
       updateValidatorElDebounced();

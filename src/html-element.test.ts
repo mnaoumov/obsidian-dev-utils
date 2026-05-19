@@ -11,6 +11,7 @@ import {
 
 import type { GenericObject } from './type-guards.ts';
 
+import { noopAsync } from './function.ts';
 import {
   appendCodeBlock,
   createDivAsync,
@@ -74,7 +75,7 @@ describe('createDivAsync', () => {
 
   it('should call the async callback with the div', async () => {
     const callback = vi.fn(async () => {
-      await Promise.resolve();
+      await noopAsync();
     });
     await createDivAsync(undefined, callback);
     expect(callback).toHaveBeenCalledWith(expect.any(HTMLDivElement));
@@ -83,7 +84,7 @@ describe('createDivAsync', () => {
   it('should await the async callback before returning', async () => {
     let callbackCompleted = false;
     async function callback(): Promise<void> {
-      await Promise.resolve();
+      await noopAsync();
       callbackCompleted = true;
     }
     await createDivAsync(undefined, callback);
@@ -121,7 +122,7 @@ describe('createElAsync', () => {
 
   it('should call the async callback with the element', async () => {
     const callback = vi.fn(async () => {
-      await Promise.resolve();
+      await noopAsync();
     });
     await createElAsync('p', undefined, callback);
     expect(callback).toHaveBeenCalledWith(expect.any(HTMLParagraphElement));
@@ -130,7 +131,7 @@ describe('createElAsync', () => {
   it('should await the async callback before returning', async () => {
     let callbackCompleted = false;
     async function callback(): Promise<void> {
-      await Promise.resolve();
+      await noopAsync();
       callbackCompleted = true;
     }
     await createElAsync('p', undefined, callback);
@@ -168,7 +169,7 @@ describe('createSpanAsync', () => {
 
   it('should call the async callback with the span', async () => {
     const callback = vi.fn(async () => {
-      await Promise.resolve();
+      await noopAsync();
     });
     await createSpanAsync(undefined, callback);
     expect(callback).toHaveBeenCalledWith(expect.any(HTMLSpanElement));
@@ -177,7 +178,7 @@ describe('createSpanAsync', () => {
   it('should await the async callback before returning', async () => {
     let callbackCompleted = false;
     async function callback(): Promise<void> {
-      await Promise.resolve();
+      await noopAsync();
       callbackCompleted = true;
     }
     await createSpanAsync(undefined, callback);
@@ -204,7 +205,7 @@ describe('createFragmentAsync', () => {
 
   it('should call the async callback with the fragment', async () => {
     const callback = vi.fn(async () => {
-      await Promise.resolve();
+      await noopAsync();
     });
     await createFragmentAsync(callback);
     expect(callback).toHaveBeenCalledWith(expect.any(DocumentFragment));
@@ -213,7 +214,7 @@ describe('createFragmentAsync', () => {
   it('should await the async callback before returning', async () => {
     let callbackCompleted = false;
     async function callback(): Promise<void> {
-      await Promise.resolve();
+      await noopAsync();
       callbackCompleted = true;
     }
     await createFragmentAsync(callback);
@@ -251,7 +252,7 @@ describe('createSvgAsync', () => {
 
   it('should call the async callback with the svg element', async () => {
     const callback = vi.fn(async () => {
-      await Promise.resolve();
+      await noopAsync();
     });
     await createSvgAsync('svg', undefined, callback);
     expect(callback).toHaveBeenCalledWith(expect.any(SVGSVGElement));
@@ -260,7 +261,7 @@ describe('createSvgAsync', () => {
   it('should await the async callback before returning', async () => {
     let callbackCompleted = false;
     async function callback(): Promise<void> {
-      await Promise.resolve();
+      await noopAsync();
       callbackCompleted = true;
     }
     await createSvgAsync('svg', undefined, callback);

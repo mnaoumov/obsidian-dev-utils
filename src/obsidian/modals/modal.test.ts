@@ -11,7 +11,10 @@ import {
   vi
 } from 'vitest';
 
-import { noopAsync } from '../../function.ts';
+import {
+  noop,
+  noopAsync
+} from '../../function.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import {
   ModalBase,
@@ -30,12 +33,11 @@ vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
 
 class TestModal extends ModalBase<string> {
   public override onClose(): void {
-    super.onClose();
     this.resolve('closed');
   }
 
   public override onOpen(): void {
-    super.onOpen();
+    noop();
   }
 }
 

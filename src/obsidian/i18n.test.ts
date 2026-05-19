@@ -25,7 +25,7 @@ const {
   mockTLibFn
 } = vi.hoisted(() => {
   const mockAddResourceBundleFn2 = vi.fn();
-  const mockInitFn2 = vi.fn(() => Promise.resolve());
+  const mockInitFn2 = vi.fn(() => noopAsync());
   const mockTLibFn2 = vi.fn((selector: unknown) => {
     if (typeof selector === 'function') {
       return (selector as (translations: Record<string, unknown>) => unknown)({ test: 'translated-value' });

@@ -4,8 +4,6 @@
  * Typed dropdown component.
  */
 
-import type { Promisable } from 'type-fest';
-
 import {
   DropdownComponent,
   ValueComponent
@@ -113,7 +111,7 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
    * @param callback - The callback function to be called when the component is changed.
    * @returns The component.
    */
-  public onChange(callback: (value: null | T) => Promisable<void>): this {
+  public onChange(callback: (value: null | T) => void): this {
     const changeHandler = (): void => {
       callback(this.getValue());
     };
@@ -149,7 +147,7 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
   /**
    * @deprecated Use only from tests to simulate a change event.
    */
-  public simulateChange(): void {
+  public simulateChange__(): void {
     this.simulateChangeCallback?.();
   }
 }

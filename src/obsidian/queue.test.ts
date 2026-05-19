@@ -11,7 +11,10 @@ import {
 
 import type { RunWithTimeoutNoticeParams } from './async-with-notice.ts';
 
-import { noop } from '../function.ts';
+import {
+  noop,
+  noopAsync
+} from '../function.ts';
 import {
   addToQueue,
   addToQueueAndWait,
@@ -87,7 +90,7 @@ interface MockQueue {
 }
 
 function createMockQueue(): MockQueue {
-  return { items: [], promise: Promise.resolve() };
+  return { items: [], promise: noopAsync() };
 }
 
 describe('addToQueue', () => {

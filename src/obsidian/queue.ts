@@ -18,7 +18,10 @@ import {
   invokeAsyncSafely
 } from '../async.ts';
 import { getStackTrace } from '../error.ts';
-import { noop } from '../function.ts';
+import {
+  noop,
+  noopAsync
+} from '../function.ts';
 import { getObsidianDevUtilsState } from './app.ts';
 import { runWithTimeoutNotice } from './async-with-notice.ts';
 import { t } from './i18n/i18n.ts';
@@ -168,7 +171,7 @@ export async function flushQueue(app: App): Promise<void> {
 }
 
 function getQueue(app: App): ValueWrapper<Queue> {
-  return getObsidianDevUtilsState(app, 'queue', { items: [], promise: Promise.resolve() });
+  return getObsidianDevUtilsState(app, 'queue', { items: [], promise: noopAsync() });
 }
 
 async function processNextQueueItem(app: App): Promise<void> {

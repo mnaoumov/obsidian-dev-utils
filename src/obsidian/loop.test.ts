@@ -37,7 +37,7 @@ vi.mock('../async.ts', () => ({
   invokeAsyncSafely: vi.fn((fn: () => Promise<unknown>) => {
     fn().catch(() => undefined);
   }),
-  requestAnimationFrameAsync: vi.fn(() => Promise.resolve())
+  requestAnimationFrameAsync: vi.fn(() => noopAsync())
 }));
 
 vi.mock('../debug.ts', () => ({
@@ -58,7 +58,7 @@ vi.mock('../error.ts', () => ({
 
 vi.mock('../function.ts', () => ({
   noop: vi.fn(),
-  noopAsync: vi.fn(() => Promise.resolve())
+  noopAsync: vi.fn(() => noopAsync())
 }));
 
 vi.mock('../obsidian/plugin/plugin-context.ts', () => ({
@@ -66,7 +66,7 @@ vi.mock('../obsidian/plugin/plugin-context.ts', () => ({
 }));
 
 function sleepImmediate(_ms: number): Promise<void> {
-  return Promise.resolve();
+  return noopAsync();
 }
 
 describe('loop', () => {

@@ -121,7 +121,7 @@ export abstract class PluginBase extends ObsidianPlugin {
   /**
    * Loads the plugin and its components.
    */
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises, obsidian-dev-utils/require-super-call -- Obsidian's load() handles async returns at runtime. Intentionally replaces Component.load() with children-first async loading.
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Obsidian's load() handles async returns at runtime. Intentionally replaces Component.load() with children-first async loading.
   public override async load(): Promise<void> {
     await loadChildrenFirstAsync(this);
   }

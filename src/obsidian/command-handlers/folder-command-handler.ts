@@ -43,7 +43,6 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
    * @param abstractFile - The file or folder.
    * @returns Whether the command can execute.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally narrows abstract file to TFolder check.
   protected override canExecuteAbstractFile(abstractFile: TAbstractFile): boolean {
     return isFolder(abstractFile) && this.canExecuteFolder(abstractFile);
   }
@@ -54,7 +53,6 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
    * @param abstractFiles - The files or folders.
    * @returns Whether the command can execute.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally narrows abstract files to TFolder[] check.
   protected override canExecuteAbstractFiles(abstractFiles: TAbstractFile[]): boolean {
     return abstractFiles.every((f) => isFolder(f)) && this.canExecuteFolders(asArrayOfFolders(abstractFiles));
   }
@@ -94,7 +92,6 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
    *
    * @param abstractFiles - The files or folders.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces parent with TFolder-specific delegation.
   protected override async executeAbstractFiles(abstractFiles: TAbstractFile[]): Promise<void> {
     await this.executeFolders(asArrayOfFolders(abstractFiles));
   }
@@ -126,7 +123,6 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
    * @param leaf - The workspace leaf, if available.
    * @returns Whether to add to the file menu.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally narrows to TFolder before delegating.
   protected override shouldAddToAbstractFileMenu(abstractFile: TAbstractFile, source: string, leaf?: WorkspaceLeaf): boolean {
     if (!isFolder(abstractFile)) {
       return false;
@@ -142,7 +138,6 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
    * @param leaf - The workspace leaf, if available.
    * @returns Whether to add to the files menu.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally narrows to TFolder[] before delegating.
   protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFile[], source: string, leaf?: WorkspaceLeaf): boolean {
     if (!abstractFiles.every((f) => isFolder(f))) {
       return false;

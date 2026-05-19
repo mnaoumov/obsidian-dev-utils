@@ -26,6 +26,7 @@ import type {
 import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
+import { noopAsync } from '../../function.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { AbstractFileCommandHandler } from './abstract-file-command-handler.ts';
 
@@ -96,41 +97,41 @@ function createParams(overrides?: Partial<AbstractFileCommandHandlerConstructorP
 
 describe('AbstractFileCommandHandler', () => {
   describe('checkCallback (command palette)', () => {
-    it('should return true when active file exists and canExecuteAbstractFile returns true', async () => {
+    it('should return true when active file exists and canExecuteAbstractFile returns true', () => {
       const file = createMockFile();
       const handler = new TestAbstractFileHandler(createParams());
       const { context } = createMockContext(file);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
     });
 
-    it('should return false when no active file', async () => {
+    it('should return false when no active file', () => {
       const handler = new TestAbstractFileHandler(createParams());
       const { context } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(false);
     });
 
-    it('should return false when canExecuteAbstractFile returns false', async () => {
+    it('should return false when canExecuteAbstractFile returns false', () => {
       const file = createMockFile();
       const handler = new TestAbstractFileHandler(createParams());
       handler.canExecuteFn.mockReturnValue(false);
       const { context } = createMockContext(file);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(false);
     });
 
-    it('should call executeAbstractFile when checking=false', async () => {
+    it('should call executeAbstractFile when checking=false', () => {
       const file = createMockFile();
       const handler = new TestAbstractFileHandler(createParams());
       const { context } = createMockContext(file);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       command.checkCallback?.(false);
@@ -139,19 +140,19 @@ describe('AbstractFileCommandHandler', () => {
   });
 
   describe('file menu', () => {
-    it('should register file-menu and files-menu handlers', async () => {
+    it('should register file-menu and files-menu handlers', () => {
       const handler = new TestAbstractFileHandler(createParams());
       const { context, fileMenuHandlers, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       expect(fileMenuHandlers).toHaveLength(1);
       expect(filesMenuHandlers).toHaveLength(1);
     });
 
-    it('should not add menu item when shouldAddToAbstractFileMenu returns false', async () => {
+    it('should not add menu item when shouldAddToAbstractFileMenu returns false', () => {
       const handler = new TestAbstractFileHandler(createParams());
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -160,11 +161,11 @@ describe('AbstractFileCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should add menu item when shouldAddToAbstractFileMenu and canExecuteAbstractFile return true', async () => {
+    it('should add menu item when shouldAddToAbstractFileMenu and canExecuteAbstractFile return true', () => {
       const handler = new TestAbstractFileHandler(createParams());
       handler.shouldAddToMenuFn.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -173,12 +174,12 @@ describe('AbstractFileCommandHandler', () => {
       expect(addItem).toHaveBeenCalledOnce();
     });
 
-    it('should not add menu item when canExecuteAbstractFile returns false', async () => {
+    it('should not add menu item when canExecuteAbstractFile returns false', () => {
       const handler = new TestAbstractFileHandler(createParams());
       handler.shouldAddToMenuFn.mockReturnValue(true);
       handler.canExecuteFn.mockReturnValue(false);
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -198,7 +199,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(abstractFile: TAbstractFileOriginal): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
           executionOrder.push(abstractFile.path);
         }
 
@@ -210,7 +211,7 @@ describe('AbstractFileCommandHandler', () => {
 
       const handler = new SequentialHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const file1 = strictProxy<TAbstractFileOriginal>({ path: 'a.md' });
       const file2 = strictProxy<TAbstractFileOriginal>({ path: 'b.md' });
@@ -238,10 +239,10 @@ describe('AbstractFileCommandHandler', () => {
       });
     });
 
-    it('should return false for canExecuteAbstractFiles when array is empty', async () => {
+    it('should return false for canExecuteAbstractFiles when array is empty', () => {
       class EmptyCheckHandler extends AbstractFileCommandHandler {
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -252,7 +253,7 @@ describe('AbstractFileCommandHandler', () => {
 
       const handler = new EmptyCheckHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -263,7 +264,7 @@ describe('AbstractFileCommandHandler', () => {
   });
 
   describe('submenu', () => {
-    it('should set section submenu when shouldAddCommandToSubmenu is true', async () => {
+    it('should set section submenu when shouldAddCommandToSubmenu is true', () => {
       const handler = new TestAbstractFileHandler(createParams({
         fileMenuSection: 'my-section',
         fileMenuSubmenuIcon: 'folder',
@@ -271,7 +272,7 @@ describe('AbstractFileCommandHandler', () => {
       }));
       handler.shouldAddToMenuFn.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const setSectionSubmenu = vi.fn();
       const addItem = vi.fn();
@@ -286,14 +287,14 @@ describe('AbstractFileCommandHandler', () => {
   });
 
   describe('file menu item details', () => {
-    it('should set title, icon, section and onClick on menu item', async () => {
+    it('should set title, icon, section and onClick on menu item', () => {
       const handler = new TestAbstractFileHandler(createParams({
         fileMenuItemName: 'Custom Name',
         fileMenuSection: 'custom-section'
       }));
       handler.shouldAddToMenuFn.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const menu = strictProxy<MenuOriginal>({});
       const setTitle = vi.fn().mockReturnThis();
@@ -316,11 +317,11 @@ describe('AbstractFileCommandHandler', () => {
       expect(handler.executeFn).toHaveBeenCalledOnce();
     });
 
-    it('should use command name when fileMenuItemName is not provided', async () => {
+    it('should use command name when fileMenuItemName is not provided', () => {
       const handler = new TestAbstractFileHandler(createParams());
       handler.shouldAddToMenuFn.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const menu = strictProxy<MenuOriginal>({});
       const setTitle = vi.fn().mockReturnThis();
@@ -342,7 +343,7 @@ describe('AbstractFileCommandHandler', () => {
   });
 
   describe('multi-file menu', () => {
-    it('should not add items when shouldAddToAbstractFilesMenu returns false', async () => {
+    it('should not add items when shouldAddToAbstractFilesMenu returns false', () => {
       class NoFilesMenuHandler extends AbstractFileCommandHandler {
         protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
           super.canExecuteAbstractFile(abstractFile);
@@ -350,13 +351,13 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
       }
 
       const handler = new NoFilesMenuHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -365,7 +366,7 @@ describe('AbstractFileCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should set section submenu for multi-file menu when shouldAddCommandToSubmenu is true', async () => {
+    it('should set section submenu for multi-file menu when shouldAddCommandToSubmenu is true', () => {
       class FilesSubmenuHandler extends AbstractFileCommandHandler {
         protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
           super.canExecuteAbstractFile(abstractFile);
@@ -373,7 +374,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -388,7 +389,7 @@ describe('AbstractFileCommandHandler', () => {
         shouldAddCommandToSubmenu: true
       }));
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const setSectionSubmenu = vi.fn();
       const addItem = vi.fn();
@@ -401,7 +402,7 @@ describe('AbstractFileCommandHandler', () => {
       });
     });
 
-    it('should fall back to file menu section and icon for multi-file submenu', async () => {
+    it('should fall back to file menu section and icon for multi-file submenu', () => {
       class FilesSubmenuHandler extends AbstractFileCommandHandler {
         protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
           super.canExecuteAbstractFile(abstractFile);
@@ -409,7 +410,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -424,7 +425,7 @@ describe('AbstractFileCommandHandler', () => {
         shouldAddCommandToSubmenu: true
       }));
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const setSectionSubmenu = vi.fn();
       const addItem = vi.fn();
@@ -437,7 +438,7 @@ describe('AbstractFileCommandHandler', () => {
       });
     });
 
-    it('should use filesMenuItemName for multi-file menu item title', async () => {
+    it('should use filesMenuItemName for multi-file menu item title', () => {
       class FilesMenuHandler extends AbstractFileCommandHandler {
         protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
           super.canExecuteAbstractFile(abstractFile);
@@ -445,7 +446,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -458,7 +459,7 @@ describe('AbstractFileCommandHandler', () => {
         filesMenuItemName: 'Process All'
       }));
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const menu = strictProxy<MenuOriginal>({});
       const setTitle = vi.fn().mockReturnThis();
@@ -478,7 +479,7 @@ describe('AbstractFileCommandHandler', () => {
       expect(setTitle).toHaveBeenCalledWith('Process All');
     });
 
-    it('should fall back to fileMenuItemName then command name for multi-file title', async () => {
+    it('should fall back to fileMenuItemName then command name for multi-file title', () => {
       class FilesMenuHandler extends AbstractFileCommandHandler {
         protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
           super.canExecuteAbstractFile(abstractFile);
@@ -486,7 +487,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -499,7 +500,7 @@ describe('AbstractFileCommandHandler', () => {
         fileMenuItemName: 'Single Item Name'
       }));
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const menu = strictProxy<MenuOriginal>({});
       const setTitle = vi.fn().mockReturnThis();
@@ -519,7 +520,7 @@ describe('AbstractFileCommandHandler', () => {
       expect(setTitle).toHaveBeenCalledWith('Single Item Name');
     });
 
-    it('should not add multi-file menu items when canExecuteAbstractFiles returns false', async () => {
+    it('should not add multi-file menu items when canExecuteAbstractFiles returns false', () => {
       class FailCanExecuteHandler extends AbstractFileCommandHandler {
         protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
           super.canExecuteAbstractFile(abstractFile);
@@ -527,7 +528,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -538,7 +539,7 @@ describe('AbstractFileCommandHandler', () => {
 
       const handler = new FailCanExecuteHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -557,7 +558,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(abstractFile: TAbstractFileOriginal): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
           executionOrder.push(abstractFile.path);
         }
 
@@ -569,7 +570,7 @@ describe('AbstractFileCommandHandler', () => {
 
       const handler = new ClickableFilesHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const file1 = strictProxy<TAbstractFileOriginal>({ path: 'x.md' });
       const file2 = strictProxy<TAbstractFileOriginal>({ path: 'y.md' });
@@ -598,7 +599,7 @@ describe('AbstractFileCommandHandler', () => {
   });
 
   describe('shouldAddToCommandPalette', () => {
-    it('should return false from command palette when shouldAddToCommandPalette returns false', async () => {
+    it('should return false from command palette when shouldAddToCommandPalette returns false', () => {
       class NoPaletteHandler extends AbstractFileCommandHandler {
         protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
           super.canExecuteAbstractFile(abstractFile);
@@ -606,7 +607,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToCommandPalette(): boolean {
@@ -618,7 +619,7 @@ describe('AbstractFileCommandHandler', () => {
       const file = createMockFile();
       const handler = new NoPaletteHandler(createParams());
       const { context } = createMockContext(file);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(false);
@@ -637,13 +638,13 @@ describe('AbstractFileCommandHandler', () => {
 
         protected override async executeAbstractFile(): Promise<void> {
           executeFn();
-          await Promise.resolve();
+          await noopAsync();
         }
       }
 
       const handler = new NullFileHandler(createParams());
       const { context } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       command.checkCallback?.(false);
@@ -655,13 +656,13 @@ describe('AbstractFileCommandHandler', () => {
   });
 
   describe('submenu without icons', () => {
-    it('should use empty string for fileMenuSubmenuIcon when not provided', async () => {
+    it('should use empty string for fileMenuSubmenuIcon when not provided', () => {
       const handler = new TestAbstractFileHandler(createParams({
         shouldAddCommandToSubmenu: true
       }));
       handler.shouldAddToMenuFn.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const setSectionSubmenu = vi.fn();
       const addItem = vi.fn();
@@ -674,7 +675,7 @@ describe('AbstractFileCommandHandler', () => {
       });
     });
 
-    it('should use empty string for filesMenuSubmenuIcon when neither icon is provided', async () => {
+    it('should use empty string for filesMenuSubmenuIcon when neither icon is provided', () => {
       class FilesSubmenuHandler extends AbstractFileCommandHandler {
         protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
           super.canExecuteAbstractFile(abstractFile);
@@ -682,7 +683,7 @@ describe('AbstractFileCommandHandler', () => {
         }
 
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -695,7 +696,7 @@ describe('AbstractFileCommandHandler', () => {
         shouldAddCommandToSubmenu: true
       }));
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const setSectionSubmenu = vi.fn();
       const addItem = vi.fn();
@@ -710,17 +711,17 @@ describe('AbstractFileCommandHandler', () => {
   });
 
   describe('default canExecuteAbstractFile', () => {
-    it('should return true by default', async () => {
+    it('should return true by default', () => {
       class DefaultCanExecuteHandler extends AbstractFileCommandHandler {
         protected override async executeAbstractFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
       }
 
       const file = createMockFile();
       const handler = new DefaultCanExecuteHandler(createParams());
       const { context } = createMockContext(file);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);

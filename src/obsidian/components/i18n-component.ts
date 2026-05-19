@@ -32,7 +32,6 @@ export class I18nComponent extends AsyncComponent {
    * Initializes i18n.
    */
   public override async onload(): Promise<void> {
-    await super.onload();
     await initI18N(this.translationsMap);
   }
 }

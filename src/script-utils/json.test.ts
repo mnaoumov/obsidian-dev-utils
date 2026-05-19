@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
   editJson,
@@ -157,7 +158,7 @@ describe('editJson', () => {
   it('should support async edit functions', async () => {
     mockReadFile.mockResolvedValue('{"items":[]}');
     await editJson<ItemsJson>('/file.json', async (data) => {
-      await Promise.resolve();
+      await noopAsync();
       data.items.push('new');
     });
     const written = mockWriteFile.mock.calls[0]?.[1];
