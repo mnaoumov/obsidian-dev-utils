@@ -58,10 +58,16 @@ vi.mock('../error.ts', () => ({
   getStackTrace: vi.fn(() => 'mock-stack-trace')
 }));
 
-vi.mock('../function.ts', () => ({
-  noop: vi.fn(),
-  noopAsync: vi.fn(() => noopAsync())
-}));
+const functionMocks = vi.hoisted(() => {
+  // eslint-disable-next-line obsidian-dev-utils/prefer-noop-async -- Cannot use noopAsync() in vi.hoisted() since imports are not yet available.
+  const resolvedPromise = Promise.resolve();
+  return {
+    noop: vi.fn(),
+    noopAsync: vi.fn(() => resolvedPromise)
+  };
+});
+
+vi.mock('../function.ts', () => functionMocks);
 
 vi.mock('../obsidian/app.ts', () => ({
   getObsidianDevUtilsState: mocks.getObsidianDevUtilsState

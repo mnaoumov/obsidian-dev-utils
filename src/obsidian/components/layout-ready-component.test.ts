@@ -88,6 +88,19 @@ describe('LayoutReadyComponent', () => {
     vi.useRealTimers();
   });
 
+  it('should call base onLayoutReady (noop) without error when no override', () => {
+    vi.useFakeTimers();
+    const { app, triggerLayoutReady } = createMockApp();
+    const component = new LayoutReadyComponent(app);
+
+    component.load();
+    triggerLayoutReady();
+    vi.runAllTimers();
+
+    expect(app.workspace.onLayoutReady).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
   it('should work with abstract subclass pattern', () => {
     vi.useFakeTimers();
     const { app, triggerLayoutReady } = createMockApp();
