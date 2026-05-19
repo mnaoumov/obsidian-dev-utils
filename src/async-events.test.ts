@@ -253,11 +253,11 @@ describe('AsyncEvents', () => {
     it('should fire async callbacks in order', async () => {
       const order: number[] = [];
       events.on('test', async () => {
-        await Promise.resolve();
+        await noopAsync();
         order.push(1);
       });
       events.on('test', async () => {
-        await Promise.resolve();
+        await noopAsync();
         order.push(2);
       });
       await events.triggerAsync('test');

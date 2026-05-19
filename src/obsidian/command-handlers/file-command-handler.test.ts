@@ -31,6 +31,7 @@ import type {
 import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
+import { noopAsync } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { FileCommandHandler } from './file-command-handler.ts';
@@ -109,22 +110,22 @@ describe('FileCommandHandler', () => {
   setupApp();
 
   describe('type filtering', () => {
-    it('should accept TFile instances via canExecuteAbstractFile', async () => {
+    it('should accept TFile instances via canExecuteAbstractFile', () => {
       const file = createMockTFile();
       const handler = new TestFileHandler(createParams());
       const { context } = createMockContext(file);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
     });
 
-    it('should reject non-TFile instances', async () => {
+    it('should reject non-TFile instances', () => {
       const folder = TFolder.create__(castTo(app.vault), 'some-folder').asOriginalType2__();
       const handler = new TestFileHandler(createParams());
       const activeFileProvider: ActiveFileProvider = { getActiveFile: () => castTo(folder) };
 
-      await handler.onRegistered({
+      handler.onRegistered({
         activeFileProvider,
         menuEventRegistrar: {
           registerEditorMenuEventHandler: vi.fn(),
@@ -140,7 +141,7 @@ describe('FileCommandHandler', () => {
   });
 
   describe('default methods', () => {
-    it('should use default canExecuteFile returning true', async () => {
+    it('should use default canExecuteFile returning true', () => {
       class DefaultFileHandler extends FileCommandHandler {
         public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
@@ -152,22 +153,22 @@ describe('FileCommandHandler', () => {
       const file = createMockTFile();
       const handler = new DefaultFileHandler(createParams());
       const { context } = createMockContext(file);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
     });
 
-    it('should use default shouldAddToFileMenu returning false', async () => {
+    it('should use default shouldAddToFileMenu returning false', () => {
       class DefaultMenuFileHandler extends FileCommandHandler {
         protected override async executeFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
       }
 
       const handler = new DefaultMenuFileHandler(createParams());
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -176,10 +177,10 @@ describe('FileCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should use default shouldAddToFilesMenu returning false', async () => {
+    it('should use default shouldAddToFilesMenu returning false', () => {
       class DefaultFilesMenuHandler extends FileCommandHandler {
         protected override async executeFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -190,7 +191,7 @@ describe('FileCommandHandler', () => {
 
       const handler = new DefaultFilesMenuHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -211,7 +212,7 @@ describe('FileCommandHandler', () => {
         }
 
         protected override async executeFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
       }
 
@@ -226,10 +227,10 @@ describe('FileCommandHandler', () => {
   });
 
   describe('multi-file type filtering', () => {
-    it('should reject multi-file when any item is not a TFile', async () => {
+    it('should reject multi-file when any item is not a TFile', () => {
       const handler = new TestFileHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const folder = TFolder.create__(castTo(app.vault), 'some-folder').asOriginalType2__();
       const file = createMockTFile();
@@ -241,10 +242,10 @@ describe('FileCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should accept multi-file when all items are TFile', async () => {
+    it('should accept multi-file when all items are TFile', () => {
       class FilesMenuHandler extends FileCommandHandler {
         protected override async executeFile(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -260,7 +261,7 @@ describe('FileCommandHandler', () => {
 
       const handler = new FilesMenuHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -269,10 +270,10 @@ describe('FileCommandHandler', () => {
       expect(addItem).toHaveBeenCalledOnce();
     });
 
-    it('should reject file menu for non-TFile instances', async () => {
+    it('should reject file menu for non-TFile instances', () => {
       const handler = new TestFileHandler(createParams());
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const folder = TFolder.create__(castTo(app.vault), 'some-folder').asOriginalType2__();
 
@@ -290,7 +291,7 @@ describe('FileCommandHandler', () => {
 
       class TrackingFileHandler extends FileCommandHandler {
         protected override async executeFile(file: TFileOriginal): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
           executedFiles.push(file.path);
         }
 
@@ -303,7 +304,7 @@ describe('FileCommandHandler', () => {
       const handler = new TrackingFileHandler(createParams());
       const file = createMockTFile('target.md');
       const { context } = createMockContext(file);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       // Trigger via command palette (checking=false calls execute -> executeAbstractFile -> executeFile)
       const command = handler.buildCommand();
@@ -319,7 +320,7 @@ describe('FileCommandHandler', () => {
 
       class TrackingFilesHandler extends FileCommandHandler {
         protected override async executeFile(file: TFileOriginal): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
           executedFiles.push(file.path);
         }
 
@@ -336,7 +337,7 @@ describe('FileCommandHandler', () => {
 
       const handler = new TrackingFilesHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const file1 = createMockTFile('a.md');
       const file2 = createMockTFile('b.md');
@@ -379,7 +380,7 @@ describe('FileCommandHandler', () => {
         }
 
         protected override async executeFile(file: TFileOriginal): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
           executionOrder.push(file.path);
         }
       }

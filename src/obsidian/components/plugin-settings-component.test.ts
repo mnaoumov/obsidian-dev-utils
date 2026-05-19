@@ -8,7 +8,10 @@ import {
 
 import type { DataHandler } from '../data-handler.ts';
 
-import { noop } from '../../function.ts';
+import {
+  noop,
+  noopAsync
+} from '../../function.ts';
 import { PluginSettingsComponentBase } from './plugin-settings-component.ts';
 
 vi.mock('../../../debug.ts', () => ({
@@ -27,7 +30,7 @@ class MockDataHandler implements DataHandler {
 
   public saveData = vi.fn((d: unknown) => {
     this._data = d;
-    return Promise.resolve();
+    return noopAsync();
   });
 
   public get data(): unknown {

@@ -44,7 +44,6 @@ export class PluginContextComponent extends DisposableComponent {
    * Initializes the plugin context and debug controller.
    */
   public override onload(): void {
-    super.onload();
     initPluginContext(this.app, this.pluginId);
     this.addChild(new AllWindowsEventComponent(this.app)).registerAllWindowsHandler((win) => {
       initDebugController(win, this);

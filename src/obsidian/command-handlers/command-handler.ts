@@ -8,11 +8,12 @@ import type {
   Command,
   IconName
 } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
 import type { ActiveFileProvider } from '../active-file-provider.ts';
 import type { MenuEventRegistrar } from '../menu-event-registrar.ts';
 
-import { noopAsync } from '../../function.ts';
+import { noop } from '../../function.ts';
 
 /**
  * Parameters for creating a command handler.
@@ -100,7 +101,7 @@ export abstract class CommandHandler {
    *
    * @param _context - The registration context providing runtime capabilities.
    */
-  public async onRegistered(_context: CommandHandlerRegistrationContext): Promise<void> {
-    await noopAsync();
+  public onRegistered(_context: CommandHandlerRegistrationContext): Promisable<void> {
+    noop();
   }
 }

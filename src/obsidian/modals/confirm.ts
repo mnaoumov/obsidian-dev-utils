@@ -71,12 +71,10 @@ class ConfirmModal extends ModalBase<boolean> {
   }
 
   public override onClose(): void {
-    super.onClose();
     this.resolve(this.isConfirmed);
   }
 
   public override onOpen(): void {
-    super.onOpen();
     this.titleEl.setText(this.title);
     this.contentEl.createEl('p', { text: this.message });
     const okButton = new ButtonComponent(this.contentEl);

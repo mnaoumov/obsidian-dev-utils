@@ -20,7 +20,10 @@ import type {
 import type { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
 import type { ValueComponentWithChangeTracking } from '../setting-components/value-component-with-change-tracking.ts';
 
-import { noop } from '../../function.ts';
+import {
+  noop,
+  noopAsync
+} from '../../function.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import {
   PluginSettingsTabBase,
@@ -91,7 +94,7 @@ function createMockSettingsComponent(): PluginSettingsComponentBase<TestSettings
       }
     })),
     revalidate: vi.fn(() => Promise.resolve({ enabled: '', name: '' })),
-    saveToFile: vi.fn(() => Promise.resolve()),
+    saveToFile: vi.fn(() => noopAsync()),
     setProperty: vi.fn(() => Promise.resolve('')),
     settingsState: {
       effectiveValues: { enabled: false, name: 'test' },
@@ -883,7 +886,7 @@ describe('PluginSettingsTabBase', () => {
         return { asyncEvents: { offref: vi.fn() } };
       }),
       revalidate: vi.fn(() => Promise.resolve({ enabled: '', name: '' })),
-      saveToFile: vi.fn(() => Promise.resolve()),
+      saveToFile: vi.fn(() => noopAsync()),
       setProperty: vi.fn(() => Promise.resolve('')),
       settingsState: {
         effectiveValues: { enabled: false, name: 'test' },

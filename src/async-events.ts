@@ -102,15 +102,6 @@ export class AsyncEvents {
    * });
    * ```
    */
-
-  /**
-   * Subscribes to an event.
-   *
-   * @param name - The name of the event.
-   * @param callback - The callback.
-   * @param thisArg - The `this` context.
-   * @returns A reference to the event listener.
-   */
   public on<Args extends unknown[]>(name: string, callback: GenericPromisableVoidFunction<Args>, thisArg?: unknown): AsyncEventRef {
     let eventRefs = this.eventRefsMap.get(name);
     if (!eventRefs) {
@@ -144,15 +135,6 @@ export class AsyncEvents {
    * });
    * ```
    */
-
-  /**
-   * Subscribes to an event once.
-   *
-   * @param name - The name of the event.
-   * @param callback - The callback to call when the event is triggered.
-   * @param thisArg - The context passed as `this` to the `callback`.
-   * @returns A reference to the event listener.
-   */
   public once<Args extends unknown[]>(name: string, callback: GenericPromisableVoidFunction<Args>, thisArg?: unknown): AsyncEventRef {
     const originalEventRef = this.on(name, callback, thisArg);
     const cleanupEventRef = this.on(name, () => {
@@ -175,10 +157,7 @@ export class AsyncEvents {
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public trigger<Args extends unknown[]>(name: string, ...args: Args): void {
-    const eventRefs = this.eventRefsMap.get(name) ?? [];
-    for (const eventRef of eventRefs.slice()) {
-      this.tryTrigger(eventRef, args);
-    }
+    this.triggerAsync(name, ...args).catch(console.error);
   }
 
   /**
@@ -208,13 +187,7 @@ export class AsyncEvents {
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void {
-    try {
-      eventRef.callback.apply(eventRef.thisArg, args);
-    } catch (e) {
-      window.setTimeout(() => {
-        throw e;
-      }, 0);
-    }
+    this.tryTriggerAsync(eventRef, args).catch(console.error);
   }
 
   /**
@@ -226,8 +199,7 @@ export class AsyncEvents {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   public async tryTriggerAsync<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): Promise<void> {
     try {
-      const result = eventRef.callback.call(eventRef.thisArg, ...args);
-      await (result as Promise<void>);
+      await eventRef.callback.call(eventRef.thisArg, ...args);
     } catch (e) {
       window.setTimeout(() => {
         throw e;

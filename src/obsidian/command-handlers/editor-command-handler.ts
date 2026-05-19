@@ -124,8 +124,7 @@ export abstract class EditorCommandHandler extends CommandHandler {
    *
    * @param context - The registration context.
    */
-  public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
-    await super.onRegistered(context);
+  public override onRegistered(context: CommandHandlerRegistrationContext): void {
     this._pluginName = context.pluginName;
     context.menuEventRegistrar.registerEditorMenuEventHandler(this.handleEditorMenu.bind(this));
   }

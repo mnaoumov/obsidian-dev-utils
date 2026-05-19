@@ -78,7 +78,6 @@ export class WeekComponent extends TypedRangeTextComponent<IsoWeek> {
    * @param value - The week to convert.
    * @returns The string.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces default String() conversion with custom formatting.
   public override valueToString(value: IsoWeek): string {
     const date = moment().year(value.year).isoWeek(value.weekNumber);
     return date.format(DATE_FORMAT);

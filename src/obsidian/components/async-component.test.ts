@@ -4,6 +4,7 @@ import {
   it
 } from 'vitest';
 
+import { noopAsync } from '../../function.ts';
 import {
   AsyncComponent,
   loadChildrenFirstAsync
@@ -13,7 +14,7 @@ class TestAsyncComponent extends AsyncComponent {
   public onloadCalled = false;
 
   public override async onload(): Promise<void> {
-    await super.onload();
+    await noopAsync();
     this.onloadCalled = true;
   }
 }
@@ -45,7 +46,6 @@ describe('AsyncComponent', () => {
 
     class SlowChildComponent extends AsyncComponent {
       public override async onload(): Promise<void> {
-        await super.onload();
         await new Promise<void>((resolve) => {
           window.setTimeout(resolve, 10);
         });
@@ -55,7 +55,7 @@ describe('AsyncComponent', () => {
 
     class ParentComponent extends AsyncComponent {
       public override async onload(): Promise<void> {
-        await super.onload();
+        await noopAsync();
         order.push('parent');
       }
     }
@@ -75,14 +75,14 @@ describe('loadChildrenFirstAsync', () => {
 
     class ChildComponent extends AsyncComponent {
       public override async onload(): Promise<void> {
-        await super.onload();
+        await noopAsync();
         order.push('child');
       }
     }
 
     class ParentComponent extends AsyncComponent {
       public override async onload(): Promise<void> {
-        await super.onload();
+        await noopAsync();
         order.push('parent');
       }
     }
@@ -114,7 +114,7 @@ describe('loadChildrenFirstAsync', () => {
       }
 
       public override async onload(): Promise<void> {
-        await super.onload();
+        await noopAsync();
         order.push(this.label);
       }
     }

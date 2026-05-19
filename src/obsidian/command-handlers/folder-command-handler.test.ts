@@ -31,6 +31,7 @@ import type {
 import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
+import { noopAsync } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { FolderCommandHandler } from './folder-command-handler.ts';
@@ -109,21 +110,21 @@ describe('FolderCommandHandler', () => {
   setupApp();
 
   describe('type filtering', () => {
-    it('should accept TFolder instances via canExecuteAbstractFile', async () => {
+    it('should accept TFolder instances via canExecuteAbstractFile', () => {
       const folder = createMockTFolder('my-folder');
       const handler = new TestFolderHandler(createParams());
       const { context } = createMockContext(folder);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
     });
 
-    it('should reject non-TFolder instances', async () => {
+    it('should reject non-TFolder instances', () => {
       const handler = new TestFolderHandler(createParams());
       const activeFileProvider: ActiveFileProvider = { getActiveFile: () => null };
 
-      await handler.onRegistered({
+      handler.onRegistered({
         activeFileProvider,
         menuEventRegistrar: {
           registerEditorMenuEventHandler: vi.fn(),
@@ -138,11 +139,11 @@ describe('FolderCommandHandler', () => {
       expect(command.checkCallback?.(true)).toBe(false);
     });
 
-    it('should reject TFile instances in canExecuteAbstractFile', async () => {
+    it('should reject TFile instances in canExecuteAbstractFile', () => {
       const file = TFile.create__(castTo(app.vault), 'test.md').asOriginalType2__();
       const handler = new TestFolderHandler(createParams());
       const { context } = createMockContext(castTo(file));
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(false);
@@ -150,32 +151,32 @@ describe('FolderCommandHandler', () => {
   });
 
   describe('default methods', () => {
-    it('should use default canExecuteFolder returning true', async () => {
+    it('should use default canExecuteFolder returning true', () => {
       class DefaultFolderHandler extends FolderCommandHandler {
         protected override async executeFolder(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
       }
 
       const folder = createMockTFolder('my-folder');
       const handler = new DefaultFolderHandler(createParams());
       const { context } = createMockContext(folder);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
     });
 
-    it('should use default shouldAddToFolderMenu returning false', async () => {
+    it('should use default shouldAddToFolderMenu returning false', () => {
       class DefaultMenuFolderHandler extends FolderCommandHandler {
         protected override async executeFolder(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
       }
 
       const handler = new DefaultMenuFolderHandler(createParams());
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -184,10 +185,10 @@ describe('FolderCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should use default shouldAddToFoldersMenu returning false', async () => {
+    it('should use default shouldAddToFoldersMenu returning false', () => {
       class DefaultFoldersMenuHandler extends FolderCommandHandler {
         protected override async executeFolder(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -198,7 +199,7 @@ describe('FolderCommandHandler', () => {
 
       const handler = new DefaultFoldersMenuHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -219,7 +220,7 @@ describe('FolderCommandHandler', () => {
         }
 
         protected override async executeFolder(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
       }
 
@@ -234,10 +235,10 @@ describe('FolderCommandHandler', () => {
   });
 
   describe('multi-folder type filtering', () => {
-    it('should reject multi-folder when any item is not a TFolder', async () => {
+    it('should reject multi-folder when any item is not a TFolder', () => {
       const handler = new TestFolderHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const file = TFile.create__(castTo(app.vault), 'test.md').asOriginalType2__();
       const folder = createMockTFolder('some-folder');
@@ -249,10 +250,10 @@ describe('FolderCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should accept multi-folder when all items are TFolder', async () => {
+    it('should accept multi-folder when all items are TFolder', () => {
       class FoldersMenuHandler extends FolderCommandHandler {
         protected override async executeFolder(): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
         }
 
         protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
@@ -268,7 +269,7 @@ describe('FolderCommandHandler', () => {
 
       const handler = new FoldersMenuHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -277,10 +278,10 @@ describe('FolderCommandHandler', () => {
       expect(addItem).toHaveBeenCalledOnce();
     });
 
-    it('should reject file menu for non-TFolder instances', async () => {
+    it('should reject file menu for non-TFolder instances', () => {
       const handler = new TestFolderHandler(createParams());
       const { context, fileMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const file = TFile.create__(castTo(app.vault), 'test.md').asOriginalType2__();
 
@@ -298,7 +299,7 @@ describe('FolderCommandHandler', () => {
 
       class TrackingFolderHandler extends FolderCommandHandler {
         protected override async executeFolder(folder: TFolderOriginal): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
           executedFolders.push(folder.path);
         }
 
@@ -311,7 +312,7 @@ describe('FolderCommandHandler', () => {
       const folder = createMockTFolder('target');
       const handler = new TrackingFolderHandler(createParams());
       const { context } = createMockContext(folder);
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const command = handler.buildCommand();
       command.checkCallback?.(false);
@@ -326,7 +327,7 @@ describe('FolderCommandHandler', () => {
 
       class TrackingFoldersHandler extends FolderCommandHandler {
         protected override async executeFolder(folder: TFolderOriginal): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
           executedFolders.push(folder.path);
         }
 
@@ -343,7 +344,7 @@ describe('FolderCommandHandler', () => {
 
       const handler = new TrackingFoldersHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      await handler.onRegistered(context);
+      handler.onRegistered(context);
 
       const folder1 = createMockTFolder('a');
       const folder2 = createMockTFolder('b');
@@ -386,7 +387,7 @@ describe('FolderCommandHandler', () => {
         }
 
         protected override async executeFolder(folder: TFolderOriginal): Promise<void> {
-          await Promise.resolve();
+          await noopAsync();
           executionOrder.push(folder.path);
         }
       }

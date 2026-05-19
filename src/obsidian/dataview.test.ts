@@ -213,7 +213,7 @@ describe('getRenderedContainer', () => {
     const dv = createMockDv();
     let resolved = false;
     async function renderer(): Promise<void> {
-      await Promise.resolve();
+      await noopAsync();
       resolved = true;
     }
 

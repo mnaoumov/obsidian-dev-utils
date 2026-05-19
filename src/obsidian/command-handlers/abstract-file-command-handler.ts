@@ -162,8 +162,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    *
    * @param context - The registration context.
    */
-  public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
-    await super.onRegistered(context);
+  public override onRegistered(context: CommandHandlerRegistrationContext): void {
     this._activeFileProvider = context.activeFileProvider;
     this._pluginName = context.pluginName;
     context.menuEventRegistrar.registerFileMenuEventHandler(this.handleAbstractFileMenu.bind(this));
@@ -176,7 +175,6 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    *
    * @returns Whether the command can execute.
    */
-  // eslint-disable-next-line obsidian-dev-utils/require-super-call -- Intentionally replaces trivial parent default.
   protected override canExecute(): boolean {
     if (!this._activeFileProvider) {
       return false;

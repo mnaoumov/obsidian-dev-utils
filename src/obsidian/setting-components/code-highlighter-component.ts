@@ -4,8 +4,6 @@
  * Contains a component that displays and edits multiple text values.
  */
 
-import type { Promisable } from 'type-fest';
-
 import { loadPrism } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   TextAreaComponent,
@@ -127,7 +125,7 @@ export class CodeHighlighterComponent extends ValueComponent<string>
    * @param callback - The callback to call when the value changes.
    * @returns The component.
    */
-  public onChange(callback: (newValue: string) => Promisable<void>): this {
+  public onChange(callback: (newValue: string) => void): this {
     const changeHandler = (): void => {
       callback(this.getValue());
     };
@@ -214,9 +212,11 @@ export class CodeHighlighterComponent extends ValueComponent<string>
   }
 
   /**
+   * Simulate a change event.
+   *
    * @deprecated Use only from tests to simulate a change event.
    */
-  public simulateChange(): void {
+  public simulateChange__(): void {
     this.simulateChangeCallback?.();
   }
 

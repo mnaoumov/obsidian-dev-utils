@@ -4,8 +4,6 @@
  * Checkbox component.
  */
 
-import type { Promisable } from 'type-fest';
-
 import { ValueComponent } from 'obsidian';
 
 import type { ValidatorElement } from '../../html-element.ts';
@@ -43,7 +41,7 @@ export class CheckboxComponent extends ValueComponent<boolean> implements Valida
     return this.inputEl;
   }
 
-  private changeCallback?: (newValue: boolean) => Promisable<void>;
+  private changeCallback?: (newValue: boolean) => void;
 
   /**
    * Creates a new checkbox component.
@@ -72,7 +70,7 @@ export class CheckboxComponent extends ValueComponent<boolean> implements Valida
    * @param callback - The callback to be called when the checkbox is changed.
    * @returns The component.
    */
-  public onChange(callback: (newValue: boolean) => Promisable<void>): this {
+  public onChange(callback: (newValue: boolean) => void): this {
     this.changeCallback = callback;
     return this;
   }

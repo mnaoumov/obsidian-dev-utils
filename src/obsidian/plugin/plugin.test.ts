@@ -13,6 +13,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../../function.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
 import { DisposableComponent } from '../components/disposable-component.ts';
 import {
@@ -257,8 +258,8 @@ describe('reloadPlugin', () => {
     return strictProxy<Plugin>({
       app: {
         plugins: {
-          disablePlugin: vi.fn(() => Promise.resolve()),
-          enablePlugin: vi.fn(() => Promise.resolve())
+          disablePlugin: vi.fn(() => noopAsync()),
+          enablePlugin: vi.fn(() => noopAsync())
         }
       },
       manifest: { id: 'test-plugin' }
@@ -278,7 +279,7 @@ describe('showErrorAndDisablePlugin', () => {
     return strictProxy<Plugin>({
       app: {
         plugins: {
-          disablePlugin: vi.fn(() => Promise.resolve())
+          disablePlugin: vi.fn(() => noopAsync())
         }
       },
       manifest: { id: 'test-plugin' }

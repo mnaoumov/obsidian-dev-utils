@@ -30,7 +30,10 @@ import {
   printError,
   SilentError
 } from './error.ts';
-import { noop } from './function.ts';
+import {
+  noop,
+  noopAsync
+} from './function.ts';
 import { normalizeOptionalProperties } from './object-utils.ts';
 import {
   assert,
@@ -195,7 +198,7 @@ export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: GenericAsy
  */
 export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: GenericFunction<Args, Result>): GenericAsyncFunction<Args, Result> {
   return async (...args: Args): Promise<Result> => {
-    await Promise.resolve();
+    await noopAsync();
     return syncFn(...args);
   };
 }

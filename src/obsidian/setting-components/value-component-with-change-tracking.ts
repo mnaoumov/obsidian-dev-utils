@@ -7,7 +7,6 @@
 /* v8 ignore start -- Interface-only module; no runtime code to test. */
 
 import type { ValueComponent } from 'obsidian';
-import type { Promisable } from 'type-fest';
 
 /**
  * A ValueComponent that can track changes.
@@ -20,7 +19,7 @@ export interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
    *
    * @param callback - A callback function that is called when the value of the component changes.
    */
-  onChange(callback: (newValue: T) => Promisable<void>): this;
+  onChange(callback: (newValue: T) => void): this;
 }
 
 /* v8 ignore stop */

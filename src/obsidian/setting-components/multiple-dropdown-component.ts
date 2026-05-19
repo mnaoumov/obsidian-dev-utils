@@ -4,8 +4,6 @@
  * Contains a component that displays and edits a multi-select dropdown.
  */
 
-import type { Promisable } from 'type-fest';
-
 import {
   DropdownComponent,
   ValueComponent
@@ -105,7 +103,7 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    * @param callback - The callback function to be called when the component is changed.
    * @returns The component.
    */
-  public onChange(callback: (value: readonly string[]) => Promisable<void>): this {
+  public onChange(callback: (value: readonly string[]) => void): this {
     const changeHandler = (): void => {
       callback(this.getValue());
     };
@@ -141,9 +139,11 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
   }
 
   /**
+   * Simulate a change event.
+   *
    * @deprecated Use only from tests to simulate a change event.
    */
-  public simulateChange(): void {
+  public simulateChange__(): void {
     this.simulateChangeCallback?.();
   }
 }

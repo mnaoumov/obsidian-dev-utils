@@ -28,7 +28,6 @@ export class LayoutReadyComponent extends DisposableComponent {
    * Loads the component and registers the layout ready handler.
    */
   public override onload(): void {
-    super.onload();
     this.app.workspace.onLayoutReady(() => {
       window.setTimeout(() => {
         if (this._loaded) {
