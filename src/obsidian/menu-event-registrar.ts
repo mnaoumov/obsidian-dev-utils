@@ -44,8 +44,6 @@ export type FilesMenuEventHandler = (menu: Menu, abstractFiles: TAbstractFile[],
 /**
  * Registers menu event handlers with lifecycle management.
  */
-
-/** */
 export interface MenuEventRegistrar {
   /**
    * Registers a handler for the editor context menu event.

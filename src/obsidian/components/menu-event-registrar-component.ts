@@ -20,8 +20,6 @@ import { DisposableComponent } from './disposable-component.ts';
  *
  * Event handlers are registered with the provided {@link Component} for lifecycle management.
  */
-
-/** */
 export class MenuEventRegistrarComponent extends DisposableComponent implements MenuEventRegistrar {
   /**
    * Creates a new app-backed menu event registrar.
