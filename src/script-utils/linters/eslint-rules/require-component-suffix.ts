@@ -7,8 +7,10 @@
  * directly or transitively) does not have a name ending with `Component`
  * (or `ComponentBase` for abstract base classes).
  *
- * Classes that extend `Plugin` (which itself extends `Component`) are
- * excluded because they follow a different naming convention.
+ * Classes whose inheritance chain includes any of the Obsidian framework
+ * classes that extend `Component` (e.g. `Plugin`, `View`,
+ * `MarkdownRenderChild`, `Menu`, `HoverPopover`, `QueryController`)
+ * are excluded because they follow Obsidian's own naming conventions.
  *
  * The rule uses the TypeScript type checker to walk the full inheritance
  * chain, so it works regardless of how many intermediate classes sit
@@ -26,7 +28,7 @@ export const MESSAGE_ID_ABSTRACT_NEEDS_BASE = 'abstractNeedsComponentBase';
 export const MESSAGE_ID_BASE_NOT_ABSTRACT = 'componentBaseNotAbstract';
 
 /** Ancestor class names that opt a subtree out of the suffix requirement. */
-const EXCLUDED_ANCESTORS = new Set(['Plugin']);
+const EXCLUDED_ANCESTORS = new Set(['HoverPopover', 'MarkdownRenderChild', 'Menu', 'Plugin', 'QueryController', 'View']);
 
 /** The ancestor class name that triggers the suffix requirement. */
 const REQUIRED_ANCESTOR = 'Component';

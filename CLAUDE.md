@@ -196,6 +196,8 @@ See `static/scripts/` for the full set of consumer examples.
 
 ## Current Task
 
+Add more suffix exceptions to the `require-component-suffix` ESLint rule. Currently only `Plugin` is excluded; need to add all direct `Component` subclasses from `obsidian.d.ts`: `BasesView`, `HoverPopover`, `MarkdownRenderChild`, `Menu`, `QueryController`, `View`.
+
 ### Architectural Vision: Improve DX + Testability of Plugin Base Classes
 
 **Goal:** Make all base classes testable (remove v8 ignore comments) and simplify DX for ~23 consuming plugins. Currently PluginBase and related classes are fully untested.
