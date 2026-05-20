@@ -131,23 +131,30 @@ describe('require-component-suffix (unresolvable types)', () => {
     expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID_MISSING_SUFFIX }));
   });
 
-  it('should not report when ancestor chain includes Plugin', () => {
+  it.each([
+    'HoverPopover',
+    'MarkdownRenderChild',
+    'Menu',
+    'Plugin',
+    'QueryController',
+    'View'
+  ])('should not report when ancestor chain includes %s', (excludedAncestor) => {
     const componentType: MockBaseType = {
       getBaseTypes: (): undefined => undefined,
       getSymbol: (): MockSymbol => ({ getName: () => 'Component' })
     };
 
-    const pluginType: MockBaseType = {
+    const excludedType: MockBaseType = {
       getBaseTypes: (): MockBaseType[] => [componentType],
-      getSymbol: (): MockSymbol => ({ getName: () => 'Plugin' })
+      getSymbol: (): MockSymbol => ({ getName: () => excludedAncestor })
     };
 
     const classType: MockBaseType = {
-      getBaseTypes: (): MockBaseType[] => [pluginType]
+      getBaseTypes: (): MockBaseType[] => [excludedType]
     };
 
     const { report, visitors } = createMockRuleContext(classType);
-    const classNode = { id: { name: 'MyPlugin' } };
+    const classNode = { id: { name: `My${excludedAncestor}` } };
     const visitor = visitors['ClassDeclaration[id]'];
     assertNonNullable(visitor);
     visitor(classNode as Rule.Node);
@@ -315,6 +322,47 @@ ruleTester.run('require-component-suffix', toRuleTesterModule(requireComponentSu
         class MySpecialPlugin extends MyPluginBase {}
       `,
       name: 'transitive Plugin subclass is excluded'
+    },
+    {
+      code: `
+        import { View } from 'obsidian';
+        class MyView extends View {
+          getViewType(): string { return 'my-view'; }
+          getDisplayText(): string { return 'My View'; }
+        }
+      `,
+      name: 'View subclass is excluded'
+    },
+    {
+      code: `
+        import { ItemView } from 'obsidian';
+        class MyItemView extends ItemView {
+          getViewType(): string { return 'my-view'; }
+          getDisplayText(): string { return 'My View'; }
+        }
+      `,
+      name: 'transitive View subclass (ItemView) is excluded'
+    },
+    {
+      code: `
+        import { MarkdownRenderChild } from 'obsidian';
+        class MyRenderChild extends MarkdownRenderChild {}
+      `,
+      name: 'MarkdownRenderChild subclass is excluded'
+    },
+    {
+      code: `
+        import { Menu } from 'obsidian';
+        class MyMenu extends Menu {}
+      `,
+      name: 'Menu subclass is excluded'
+    },
+    {
+      code: `
+        import { HoverPopover } from 'obsidian';
+        class MyPopover extends HoverPopover {}
+      `,
+      name: 'HoverPopover subclass is excluded'
     },
     {
       code: `
