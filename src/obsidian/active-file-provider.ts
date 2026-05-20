@@ -12,8 +12,6 @@ import type {
 /**
  * Provides access to the currently active file.
  */
-
-/** */
 export interface ActiveFileProvider {
   /**
    * Gets the currently active file.

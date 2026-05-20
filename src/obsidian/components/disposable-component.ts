@@ -15,7 +15,9 @@ type DisposableComponentWrapper<TComponent extends Component> = Disposable & TCo
  * that delegates to the component's unload lifecycle method.
  */
 export class DisposableComponent extends Component implements Disposable {
-  /** */
+  /**
+   * Dispose the component and its children.
+   */
   public [Symbol.dispose](): void {
     this.unload();
   }
