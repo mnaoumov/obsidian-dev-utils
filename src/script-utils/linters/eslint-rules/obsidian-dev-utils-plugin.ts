@@ -11,6 +11,7 @@ import { paramsOptionsNameMatch } from './params-options-name-match.ts';
 import { preferNoopAsync } from './prefer-noop-async.ts';
 import { readonlyParamsOptionsMembers } from './readonly-params-options-members.ts';
 import { requireComponentSuffix } from './require-component-suffix.ts';
+import { requireMethodTemplate } from './require-method-template.ts';
 import { requireSuperCall } from './require-super-call.ts';
 
 export const obsidianDevUtilsPlugin: ESLint.Plugin = {
@@ -21,6 +22,7 @@ export const obsidianDevUtilsPlugin: ESLint.Plugin = {
     'prefer-noop-async': preferNoopAsync,
     'readonly-params-options-members': readonlyParamsOptionsMembers,
     'require-component-suffix': requireComponentSuffix,
+    'require-method-template': requireMethodTemplate,
     'require-super-call': requireSuperCall
   }
 };

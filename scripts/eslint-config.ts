@@ -56,6 +56,7 @@ function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
           }
         ],
         'jsdoc/check-template-names': 'error',
+        'jsdoc/require-description': 'error',
         'jsdoc/require-file-overview': [
           'error',
           {
