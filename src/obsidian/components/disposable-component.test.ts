@@ -15,25 +15,8 @@ import {
 import { noop } from '../../function.ts';
 import {
   asDisposableComponent,
-  DisposableComponent,
   isDisposable
 } from './disposable-component.ts';
-
-describe('DisposableComponent', () => {
-  it('should call unload when Symbol.dispose is invoked', () => {
-    const component = new DisposableComponent();
-    const unloadSpy = vi.spyOn(component, 'unload');
-
-    component[Symbol.dispose]();
-
-    expect(unloadSpy).toHaveBeenCalledOnce();
-  });
-
-  it('should implement Disposable interface', () => {
-    const component = new DisposableComponent();
-    expect(isDisposable(component)).toBe(true);
-  });
-});
 
 describe('asDisposableComponent', () => {
   it('should add Symbol.dispose to a plain Component', () => {
@@ -45,12 +28,6 @@ describe('asDisposableComponent', () => {
     const unloadSpy = vi.spyOn(component, 'unload');
     wrapped[Symbol.dispose]();
     expect(unloadSpy).toHaveBeenCalledOnce();
-  });
-
-  it('should return the same object if already disposable', () => {
-    const component = new DisposableComponent();
-    const result = asDisposableComponent(component);
-    expect(result).toBe(component);
   });
 });
 

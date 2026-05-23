@@ -215,6 +215,7 @@ export class SettingEx extends Setting {
   /**
    * Adds a {@link TypedDropdownComponent} to the setting.
    *
+   * @typeParam T - The type of the dropdown items.
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
@@ -225,6 +226,7 @@ export class SettingEx extends Setting {
   /**
    * Adds a {@link TypedMultipleDropdownComponent} to the setting.
    *
+   * @typeParam T - The type of the items in the dropdown.
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */

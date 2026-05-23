@@ -145,6 +145,8 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
   }
 
   /**
+   * Simulate a change event.
+   *
    * @deprecated Use only from tests to simulate a change event.
    */
   public simulateChange__(): void {

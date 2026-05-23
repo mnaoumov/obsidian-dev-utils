@@ -8,17 +8,12 @@ import type { TranslationsMap } from '../i18n/i18n.ts';
 
 import { initI18N } from '../i18n/i18n.ts';
 import { defaultTranslationsMap } from '../i18n/locales/translations-map.ts';
-import { AsyncComponent } from './async-component.ts';
+import { ComponentEx } from './component-ex.ts';
 
 /**
  * Initializes the i18n module with the provided translations map.
  */
-export class I18nComponent extends AsyncComponent {
-  /**
-   * The singleton key for the {@link I18nComponent} class.
-   */
-  public static readonly COMPONENT_KEY = Symbol(I18nComponent.name);
-
+export class I18nComponent extends ComponentEx {
   /**
    * Creates a new i18n component.
    *
@@ -31,7 +26,7 @@ export class I18nComponent extends AsyncComponent {
   /**
    * Initializes i18n.
    */
-  public override async onload(): Promise<void> {
+  public override async onloadAsync(): Promise<void> {
     await initI18N(this.translationsMap);
   }
 }

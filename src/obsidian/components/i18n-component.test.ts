@@ -23,14 +23,14 @@ vi.mock('../i18n/locales/translations-map.ts', () => ({
 describe('I18nComponent', () => {
   it('should initialize i18n with default translations on load', async () => {
     const component = new I18nComponent();
-    await component.onload();
+    await component.loadWithPromises();
     expect(mocks.initI18N).toHaveBeenCalledWith(mocks.defaultTranslationsMap);
   });
 
   it('should initialize i18n with custom translations on load', async () => {
     const customMap = { fr: { hello: 'bonjour' } };
     const component = new I18nComponent(customMap);
-    await component.onload();
+    await component.loadWithPromises();
     expect(mocks.initI18N).toHaveBeenCalledWith(customMap);
   });
 });

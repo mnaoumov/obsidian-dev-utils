@@ -6,18 +6,13 @@
 
 import { registerAsyncErrorEventHandler } from '../../error.ts';
 import { t } from '../i18n/i18n.ts';
-import { DisposableComponent } from './disposable-component.ts';
+import { ComponentEx } from './component-ex.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 /**
  * Registers a global async error handler that shows a notice to the user.
  */
-export class AsyncErrorHandlerComponent extends DisposableComponent {
-  /**
-   * The singleton key for the {@link AsyncErrorHandlerComponent} class.
-   */
-  public static readonly COMPONENT_KEY = Symbol(AsyncErrorHandlerComponent.name);
-
+export class AsyncErrorHandlerComponent extends ComponentEx {
   /**
    * Creates a new async error handler component.
    *

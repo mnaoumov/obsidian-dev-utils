@@ -5,7 +5,7 @@
  */
 
 import { getDebugger } from '../../debug.ts';
-import { DisposableComponent } from './disposable-component.ts';
+import { ComponentEx } from './component-ex.ts';
 
 /**
  * Provides a namespaced `consoleDebug()` method for logging.
@@ -14,12 +14,7 @@ import { DisposableComponent } from './disposable-component.ts';
  *
  * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md} for more information.
  */
-export class ConsoleDebugComponent extends DisposableComponent {
-  /**
-   * The singleton key for the {@link ConsoleDebugComponent} class.
-   */
-  public static readonly COMPONENT_KEY = Symbol(ConsoleDebugComponent.name);
-
+export class ConsoleDebugComponent extends ComponentEx {
   /**
    * Creates a new console debug component.
    *

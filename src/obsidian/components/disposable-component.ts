@@ -9,21 +9,6 @@ import { Component } from 'obsidian';
 type DisposableComponentWrapper<TComponent extends Component> = Disposable & TComponent;
 
 /**
- * A component that implements the Disposable interface for automatic resource cleanup.
- *
- * This class extends Obsidian's Component and provides a `Symbol.dispose` method
- * that delegates to the component's unload lifecycle method.
- */
-export class DisposableComponent extends Component implements Disposable {
-  /**
-   * Dispose the component and its children.
-   */
-  public [Symbol.dispose](): void {
-    this.unload();
-  }
-}
-
-/**
  * Convert component to a Disposable interface by adding a Symbol.dispose method.
  *
  * @typeParam TComponent - The type of component to wrap, constrained to extend Component.

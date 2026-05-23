@@ -5,17 +5,12 @@
  */
 
 import { SilentError } from '../../error.ts';
-import { DisposableComponent } from './disposable-component.ts';
+import { ComponentEx } from './component-ex.ts';
 
 /**
  * Provides an {@link AbortSignal} that is aborted when the component is unloaded.
  */
-export class AbortSignalComponent extends DisposableComponent {
-  /**
-   * The singleton key for the {@link AbortSignalComponent} class.
-   */
-  public static readonly COMPONENT_KEY = Symbol(AbortSignalComponent.name);
-
+export class AbortSignalComponent extends ComponentEx {
   /**
    * The abort signal.
    */

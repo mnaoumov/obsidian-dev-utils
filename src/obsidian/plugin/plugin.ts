@@ -4,36 +4,37 @@
  * Base class for Obsidian plugins using a component-based architecture.
  *
  * PluginBase registers universal components (context, i18n, error handling, abort signal, lifecycle events, debug).
- * Subclasses add their own components via {@link PluginBase.addChild} in their constructor.
- * Any universal component can be replaced by calling {@link PluginBase.addChild} with a new instance of the same class
- * (singleton replacement is automatic for components whose class defines a static `COMPONENT_KEY`).
  */
 
 import type {
   App,
-  Constructor,
   PluginManifest
 } from 'obsidian';
 
 import {
-  Component,
   Notice,
   Plugin as ObsidianPlugin
 } from 'obsidian';
 
+import type { AsyncEventSource } from '../../async-events.ts';
+
+import { mixinAsyncEvents } from '../../async-events.ts';
 import { printError } from '../../error.ts';
-import { ensureNonNullable } from '../../type-guards.ts';
 import { AbortSignalComponent } from '../components/abort-signal-component.ts';
-import { loadChildrenFirstAsync } from '../components/async-component.ts';
 import { AsyncErrorHandlerComponent } from '../components/async-error-handler-component.ts';
 import { ConsoleDebugComponent } from '../components/console-debug-component.ts';
 import { I18nComponent } from '../components/i18n-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
-import { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
 
-interface ComponentClassWithKey {
-  COMPONENT_KEY: symbol;
+/**
+ * Event source for plugin events.
+ */
+export type PluginEventSource = AsyncEventSource<PluginEventMap>;
+
+interface PluginEventMap {
+  /** Fired when plugin settings are changed externally (e.g. sync, manual file edit). */
+  externalSettingsChange: [];
 }
 
 /**
@@ -42,88 +43,57 @@ interface ComponentClassWithKey {
  * Registers universal components automatically. Subclasses add or replace components
  * via {@link PluginBase.addChild} in their constructor.
  */
-export abstract class PluginBase extends ObsidianPlugin {
+export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(ObsidianPlugin) implements PluginEventSource {
   /**
-   * The abort signal component. Aborted when the plugin is unloaded.
-   *
-   * @returns the abort signal component.
+   * Abort signal component.
    */
-  protected get abortSignalComponent(): AbortSignalComponent {
-    return ensureNonNullable(this.getRegisteredComponent(AbortSignalComponent));
-  }
+  protected abortSignalComponent?: AbortSignalComponent;
 
   /**
-   * The console debug component. Provides namespaced debug logging.
-   *
-   * @returns The console debug component.
+   * Async error handler component.
    */
-  protected get consoleDebugComponent(): ConsoleDebugComponent {
-    return ensureNonNullable(this.getRegisteredComponent(ConsoleDebugComponent));
-  }
+  protected asyncErrorHandlerComponent?: AsyncErrorHandlerComponent;
 
   /**
-   * The notice component. Displays notices to the user.
-   *
-   * @returns The notice component.
+   * Console debug component.
    */
-  protected get noticeComponent(): PluginNoticeComponent {
-    return ensureNonNullable(this.getRegisteredComponent(PluginNoticeComponent));
-  }
-
-  private readonly singletonComponents = new Map<symbol, Component>();
+  protected consoleDebugComponent?: ConsoleDebugComponent;
 
   /**
-   * Creates a new PluginBase.
+   * I18n component.
+   */
+  protected i18nComponent?: I18nComponent;
+
+  /**
+   * Plugin context component (plugin ID, debug controller, library styles).
+   */
+  protected pluginContextComponent?: PluginContextComponent;
+
+  /**
+   * Plugin notice component.
+   */
+  protected pluginNoticeComponent?: PluginNoticeComponent;
+
+  /**
+   * Creates a new plugin.
    *
-   * @param app - The Obsidian app instance.
+   * @param app - The Obsidian App instance.
    * @param manifest - The plugin manifest.
    */
   public constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
 
-    this.addChild(new PluginContextComponent({ app, pluginId: manifest.id }));
-    this.addChild(new I18nComponent());
-    this.addChild(new PluginNoticeComponent(manifest.name));
-    this.addChild(new AsyncErrorHandlerComponent(this.noticeComponent));
-    this.addChild(new AbortSignalComponent(manifest.id));
-    this.addChild(new ConsoleDebugComponent(manifest.id));
-  }
-
-  /**
-   * Adds a component to the plugin.
-   *
-   * If the component's class defines a static `COMPONENT_KEY` symbol, it is treated as a singleton —
-   * adding another component with the same key replaces the previous one.
-   * Components without a `COMPONENT_KEY` are multi-instance and simply added.
-   *
-   * @typeParam T - The component type.
-   * @param component - The component to add.
-   * @returns The added component.
-   */
-  public override addChild<T extends Component>(component: T): T {
-    if (this._loaded) {
-      return super.addChild(component);
-    }
-
-    const singletonKey = (component.constructor as Partial<ComponentClassWithKey>).COMPONENT_KEY;
-
-    if (singletonKey) {
-      const oldComponent = this.singletonComponents.get(singletonKey);
-      if (oldComponent) {
-        this.removeChild(oldComponent);
-      }
-      this.singletonComponents.set(singletonKey, component);
-    }
-
-    return super.addChild(component);
-  }
-
-  /**
-   * Loads the plugin and its components.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Obsidian's load() handles async returns at runtime. Intentionally replaces Component.load() with children-first async loading.
-  public override async load(): Promise<void> {
-    await loadChildrenFirstAsync(this);
+    this.pluginContextComponent = this.addChild(
+      new PluginContextComponent({
+        app: this.app,
+        pluginId: this.manifest.id
+      })
+    );
+    this.i18nComponent = this.addChild(new I18nComponent());
+    this.pluginNoticeComponent = this.addChild(new PluginNoticeComponent(this.manifest.name));
+    this.asyncErrorHandlerComponent = this.addChild(new AsyncErrorHandlerComponent(this.pluginNoticeComponent));
+    this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
+    this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
   }
 
   /**
@@ -133,21 +103,7 @@ export abstract class PluginBase extends ObsidianPlugin {
    */
   public override async onExternalSettingsChange(): Promise<void> {
     await super.onExternalSettingsChange?.();
-    await this.getRegisteredComponent(PluginSettingsComponentBase)?.onExternalSettingsChange();
-  }
-
-  private getRegisteredComponent<TComponent>(componentClassWithKey: ComponentClassWithKey & Constructor<TComponent>): null | TComponent {
-    const key = componentClassWithKey.COMPONENT_KEY;
-    const registeredComponent = this.singletonComponents.get(key);
-    if (!registeredComponent) {
-      return null;
-    }
-
-    if (!(registeredComponent instanceof componentClassWithKey)) {
-      throw new Error(`Incompatible ${String(key)} is registered`);
-    }
-
-    return registeredComponent;
+    await this.triggerAsync('externalSettingsChange');
   }
 }
 

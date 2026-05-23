@@ -85,10 +85,18 @@ export function noop(): void {
 }
 
 /**
- * A function that does nothing.
+ * A singleton no-op promise.
  */
-export async function noopAsync(): Promise<void> {
-  // Does nothing.
+// eslint-disable-next-line obsidian-dev-utils/prefer-noop-async -- Avoid circular reference.
+export const noopAsyncSingletonPromise = Promise.resolve();
+
+/**
+ * A function that does nothing.
+ *
+ * @returns A promise that resolves when the function is complete.
+ */
+export function noopAsync(): Promise<void> {
+  return noopAsyncSingletonPromise;
 }
 
 /**
