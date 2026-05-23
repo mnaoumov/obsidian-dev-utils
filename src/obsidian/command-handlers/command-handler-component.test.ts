@@ -78,7 +78,7 @@ describe('CommandHandlerComponent', () => {
       pluginName: 'Test Plugin'
     });
 
-    await component.onload();
+    await component.loadWithPromises();
 
     expect(commandRegistrar.addCommand).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -98,7 +98,7 @@ describe('CommandHandlerComponent', () => {
       pluginName: 'Test Plugin'
     });
 
-    await component.onload();
+    await component.loadWithPromises();
 
     expect(commandHandler.registeredContext).toBeDefined();
     expect(commandHandler.registeredContext?.activeFileProvider).toBeDefined();
@@ -123,7 +123,7 @@ describe('CommandHandlerComponent', () => {
       pluginName: 'Test Plugin'
     });
 
-    await component.onload();
+    await component.loadWithPromises();
 
     // Handler should be unaffected
     expect(commandHandler.buildCommand().id).toBe('original-id');
@@ -141,7 +141,7 @@ describe('CommandHandlerComponent', () => {
       pluginName: 'Test Plugin'
     });
 
-    await component.load();
+    await component.loadWithPromises();
     component.unload();
 
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');

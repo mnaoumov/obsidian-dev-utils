@@ -26,8 +26,8 @@ describe('AsyncEvents', () => {
   describe('on / trigger', () => {
     it('should register and fire callback with correct args', () => {
       const callback = vi.fn();
-      events.on<[string, number]>('test', callback);
-      events.trigger<[string, number]>('test', 'hello', 42);
+      events.on('test', callback);
+      events.trigger('test', 'hello', 42);
       expect(callback).toHaveBeenCalledOnce();
       expect(callback).toHaveBeenCalledWith('hello', 42);
     });
@@ -158,8 +158,8 @@ describe('AsyncEvents', () => {
 
     it('should pass correct arguments to the once callback', () => {
       const callback = vi.fn();
-      events.once<[string, number]>('test', callback);
-      events.trigger<[string, number]>('test', 'arg1', 99);
+      events.once('test', callback);
+      events.trigger('test', 'arg1', 99);
       expect(callback).toHaveBeenCalledWith('arg1', 99);
     });
 
@@ -266,8 +266,8 @@ describe('AsyncEvents', () => {
 
     it('should pass arguments to async callbacks', async () => {
       const callback = vi.fn(noopAsync);
-      events.on<[string]>('test', callback);
-      await events.triggerAsync<[string]>('test', 'async-arg');
+      events.on('test', callback);
+      await events.triggerAsync('test', 'async-arg');
       expect(callback).toHaveBeenCalledWith('async-arg');
     });
 
@@ -317,7 +317,7 @@ describe('AsyncEvents', () => {
   describe('tryTrigger', () => {
     it('should call the callback from the event ref with correct args', () => {
       const callback = vi.fn();
-      const ref = events.on<[number, string]>('test', callback);
+      const ref = events.on('test', callback);
       events.tryTrigger(ref, [10, 'hello']);
       expect(callback).toHaveBeenCalledWith(10, 'hello');
     });
@@ -373,7 +373,7 @@ describe('AsyncEvents', () => {
   describe('tryTriggerAsync', () => {
     it('should call the async callback from the event ref with correct args', async () => {
       const callback = vi.fn(noopAsync);
-      const ref = events.on<[string]>('test', callback);
+      const ref = events.on('test', callback);
       await events.tryTriggerAsync(ref, ['async-arg']);
       expect(callback).toHaveBeenCalledWith('async-arg');
     });
@@ -420,7 +420,7 @@ describe('AsyncEvents', () => {
     it('should have asyncEvents pointing to the events instance', () => {
       const callback = vi.fn();
       const ref = events.on('my-event', callback, 'myThis');
-      expect(ref.asyncEvents).toBe(events);
+      expect(ref.asyncEventSource).toBe(events);
     });
 
     it('should have callback pointing to the registered function', () => {

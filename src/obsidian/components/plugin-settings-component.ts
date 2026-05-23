@@ -14,8 +14,10 @@ import type {
   ReadonlyDeep
 } from 'type-fest';
 
-import type { AsyncEventRef } from '../../async-events.ts';
-import type { GenericPromisableVoidFunction } from '../../function.ts';
+import type {
+  AsyncEventRef,
+  AsyncEventSource
+} from '../../async-events.ts';
 import type { Transformer } from '../../transformers/transformer.ts';
 import type { GenericObject } from '../../type-guards.ts';
 import type {
@@ -23,6 +25,7 @@ import type {
   StringKeys
 } from '../../type.ts';
 import type { DataHandler } from '../data-handler.ts';
+import type { PluginEventSource } from '../plugin/plugin.ts';
 
 import { AsyncEvents } from '../../async-events.ts';
 import { getLibDebugger } from '../../debug.ts';
@@ -42,8 +45,8 @@ import { MapTransformer } from '../../transformers/map-transformer.ts';
 import { SetTransformer } from '../../transformers/set-transformer.ts';
 import { SkipPrivatePropertyTransformer } from '../../transformers/skip-private-property-transformer.ts';
 import { TwoWayMapTransformer } from '../../transformers/two-way-map-transformer.ts';
-import { AsyncComponent } from './async-component.ts';
 import { registerAsyncEvent } from './async-events-component.ts';
+import { ComponentEx } from './component-ex.ts';
 
 const defaultTransformer = new GroupTransformer([
   new SkipPrivatePropertyTransformer(),
@@ -64,6 +67,11 @@ export interface PluginSettingsComponentBaseConstructorParams<PluginSettings> {
    * The data handler for the plugin.
    */
   readonly dataHandler: DataHandler;
+
+  /**
+   * The plugin events.
+   */
+  readonly pluginEventSource: PluginEventSource;
 
   /**
    * The plugin settings class.
@@ -119,6 +127,18 @@ export type SettingsValidator<PluginSettings extends object, PropertyName extend
   settings: PluginSettings
 ) => Promisable<MaybeReturn<string>>;
 
+interface PluginSettingsComponentBaseEventMap<PluginSettings extends object> {
+  loadSettings: [
+    loadedState: ReadonlyPluginSettingsState<PluginSettings>,
+    isInitialLoad: boolean
+  ];
+  saveSettings: [
+    newState: ReadonlyPluginSettingsState<PluginSettings>,
+    oldState: ReadonlyPluginSettingsState<PluginSettings>,
+    context: unknown
+  ];
+}
+
 type PropertyNames<PluginSettings extends object> = StringKeys<PluginSettings>;
 
 type PropertyValues<PluginSettings extends object> = PluginSettings[PropertyNames<PluginSettings>];
@@ -134,12 +154,8 @@ type ValidationResult<PluginSettings extends object> = Partial<Record<StringKeys
  * @typeParam PluginSettings - The plugin settings type.
  */
 // eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Non-abstract base class; consumers extend it.
-export class PluginSettingsComponentBase<PluginSettings extends object> extends AsyncComponent {
-  /**
-   * Component key for singleton replacement via {@link PluginBase.addChild}.
-   */
-  public static readonly COMPONENT_KEY = Symbol(PluginSettingsComponentBase.name);
-
+export class PluginSettingsComponentBase<PluginSettings extends object> extends ComponentEx
+  implements AsyncEventSource<PluginSettingsComponentBaseEventMap<PluginSettings>> {
   /**
    * Gets the readonly default settings.
    *
@@ -165,14 +181,16 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     return this.currentState as ReadonlyPluginSettingsState<PluginSettings>;
   }
 
-  private readonly asyncEvents = new AsyncEvents();
+  private readonly asyncEvents = new AsyncEvents<PluginSettingsComponentBaseEventMap<PluginSettings>>();
   private currentState: PluginSettingsState<PluginSettings>;
   private readonly dataHandler: DataHandler;
   private lastSavedState: PluginSettingsState<PluginSettings>;
   private readonly legacySettingsConverters: ((record: GenericObject) => void)[] = [];
-  private readonly pluginSettingsClass: Constructor<PluginSettings, []>;
 
+  private readonly pluginEventSource: PluginEventSource;
+  private readonly pluginSettingsClass: Constructor<PluginSettings, []>;
   private readonly propertyNames: PropertyNames<PluginSettings>[];
+
   private readonly validators = new Map<PropertyNames<PluginSettings>, SettingsValidator<PluginSettings>>();
 
   /**
@@ -184,6 +202,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     super();
     this.dataHandler = params.dataHandler;
     this.pluginSettingsClass = params.pluginSettingsClass;
+    this.pluginEventSource = params.pluginEventSource;
 
     this.defaultSettings = new this.pluginSettingsClass() as ReadonlyDeep<PluginSettings>;
     this.currentState = this.createDefaultState();
@@ -272,57 +291,74 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
         await this.saveToFileImpl();
       }
     } finally {
-      await this.asyncEvents.triggerAsync('loadSettings', this.currentState, isInitialLoad);
+      await this.asyncEvents.triggerAsync('loadSettings', this.currentState as ReadonlyPluginSettingsState<PluginSettings>, isInitialLoad);
     }
   }
 
   /**
-   * Subscribes to the `loadSettings` event.
+   * Remove an event listener.
    *
-   * @param name - Always `loadSettings`.
-   * @param callback - The callback.
-   * @param thisArg - The `this` context.
-   * @returns A reference to the event listener.
-   */
-  public on(
-    name: 'loadSettings',
-    callback: (
-      loadedState: ReadonlyPluginSettingsState<PluginSettings>,
-      isInitialLoad: boolean
-    ) => Promisable<void>,
-    thisArg?: unknown
-  ): AsyncEventRef;
-  /**
-   * Subscribes to the `saveSettings` event.
-   *
-   * @param name - Always `saveSettings`.
-   * @param callback - The callback.
-   * @param thisArg - The `this` context.
-   * @returns A reference to the event listener.
-   */
-  public on(
-    name: 'saveSettings',
-    callback: (
-      newState: ReadonlyPluginSettingsState<PluginSettings>,
-      oldState: ReadonlyPluginSettingsState<PluginSettings>,
-      context: unknown
-    ) => Promisable<void>,
-    thisArg?: unknown
-  ): AsyncEventRef;
-  /**
-   * Subscribes to an event.
-   *
+   * @typeParam EventName - The name of the event.
+   * @typeParam Args - The types of the arguments the event callback accepts.
    * @param name - The name of the event.
-   * @param callback - The callback.
-   * @param thisArg - The `this` context.
+   * @param callback - The callback to remove.
+   */
+  public off<
+    EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings>,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
+    Args extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
+      : unknown[]
+  >(name: EventName, callback: (...args: Args) => Promisable<void>): void {
+    this.asyncEvents.off(name, callback);
+  }
+
+  /**
+   * Remove an event listener by reference.
+   *
+   * @param eventRef - The reference to the event listener.
+   */
+  public offref(eventRef: AsyncEventRef): void {
+    this.asyncEvents.offref(eventRef);
+  }
+
+  /**
+   * Add an event listener.
+   *
+   * @typeParam EventName - The name of the event.
+   * @typeParam Args - The types of the arguments the event callback accepts.
+   * @param name - The name of the event.
+   * @param callback - The callback to call when the event is triggered.
+   * @param thisArg - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    */
-  public on<Args extends unknown[]>(
-    name: string,
-    callback: GenericPromisableVoidFunction<Args>,
-    thisArg?: unknown
-  ): AsyncEventRef {
+  public on<
+    EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings>,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
+    Args extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
+      : unknown[]
+  >(name: EventName, callback: (...args: Args) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
     return this.asyncEvents.on(name, callback, thisArg);
+  }
+
+  /**
+   * Trigger an event, executing all the listeners in order even if some of them throw an error.
+   *
+   * Add an event listener that will be called only once.
+   *
+   * @typeParam EventName - The name of the event.
+   * @typeParam Args - The types of the arguments the event callback accepts.
+   * @param name - The name of the event.
+   * @param callback - The callback to call when the event is triggered.
+   * @param thisArg - The context passed as `this` to the `callback`.
+   * @returns A reference to the event listener.
+   */
+  public once<
+    EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings>,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
+    Args extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
+      : unknown[]
+  >(name: EventName, callback: (...args: Args) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
+    return this.asyncEvents.once(name, callback, thisArg);
   }
 
   /**
@@ -337,9 +373,10 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   /**
    * Loads settings from file and registers event handlers.
    */
-  public override async onload(): Promise<void> {
+  public override async onloadAsync(): Promise<void> {
     registerAsyncEvent(this, this.on('loadSettings', this.onLoadSettings.bind(this)));
     registerAsyncEvent(this, this.on('saveSettings', this.onSaveSettings.bind(this)));
+    registerAsyncEvent(this, this.pluginEventSource.on('externalSettingsChange', this.onExternalSettingsChange.bind(this)));
     await this.loadFromFile(true);
   }
 
@@ -380,6 +417,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   /**
    * Registers a validator for a property.
    *
+   * @typeParam PropertyName - The name of the settings property.
    * @param propertyName - The name of the property.
    * @param validator - The validator.
    */
@@ -412,7 +450,12 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     }
 
     await this.saveToFileImpl();
-    await this.asyncEvents.triggerAsync('saveSettings', this.currentState, this.lastSavedState, context);
+    await this.asyncEvents.triggerAsync(
+      'saveSettings',
+      this.currentState as ReadonlyPluginSettingsState<PluginSettings>,
+      this.lastSavedState as ReadonlyPluginSettingsState<PluginSettings>,
+      context
+    );
     this.lastSavedState = await this.cloneState(this.currentState);
   }
 

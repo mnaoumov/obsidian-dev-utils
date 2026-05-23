@@ -173,6 +173,8 @@ type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string
  */
 export function assignWithNonEnumerableProperties<T extends object, U>(target: T, source: U): T & U;
 /**
+ * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
+ *
  * @typeParam T - The target object type.
  * @typeParam U - The first source object type.
  * @typeParam V - The second source object type.

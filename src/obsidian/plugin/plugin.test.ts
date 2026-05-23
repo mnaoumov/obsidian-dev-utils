@@ -15,7 +15,6 @@ import {
 
 import { noopAsync } from '../../function.ts';
 import { strictProxy } from '../../test-helpers/mock-implementation.ts';
-import { DisposableComponent } from '../components/disposable-component.ts';
 import {
   PluginBase,
   reloadPlugin,
@@ -124,8 +123,8 @@ class TestPlugin extends PluginBase {
     return this.consoleDebugComponent;
   }
 
-  public getNoticeComponent(): typeof this.noticeComponent {
-    return this.noticeComponent;
+  public getNoticeComponent(): typeof this.pluginNoticeComponent {
+    return this.pluginNoticeComponent;
   }
 }
 
@@ -141,115 +140,26 @@ beforeEach(() => {
 describe('PluginBase', () => {
   it('should create with all default components', () => {
     const plugin = new TestPlugin(app, manifest);
+    plugin.load();
     expect(plugin.getAbortSignalComponent()).toBeDefined();
     expect(plugin.getConsoleDebugComponent()).toBeDefined();
     expect(plugin.getNoticeComponent()).toBeDefined();
   });
 
-  it('should load children first then self via loadChildrenFirstAsync', async () => {
+  it('should load children first then self via loadChildrenFirstAsync', () => {
     const plugin = new TestPlugin(app, manifest);
-    await plugin.load();
+    plugin.load();
 
     expect(plugin._loaded).toBe(true);
   });
 
-  it('should replace singleton component with same COMPONENT_KEY', () => {
-    const KEY = Symbol('TestSingleton');
-
-    class SingletonTestComponent extends DisposableComponent {
-      public static readonly COMPONENT_KEY = KEY;
-    }
-
-    class SingletonReplacementComponent extends DisposableComponent {
-      public static readonly COMPONENT_KEY = KEY;
-    }
-
-    const plugin = new TestPlugin(app, manifest);
-    const component1 = new SingletonTestComponent();
-    const component2 = new SingletonReplacementComponent();
-
-    const result1 = plugin.addChild(component1);
-    expect(result1).toBe(component1);
-
-    const result2 = plugin.addChild(component2);
-    expect(result2).toBe(component2);
-
-    expect(plugin['singletonComponents'].get(KEY)).toBe(component2);
-  });
-
-  it('should not replace multi-instance components without COMPONENT_KEY', () => {
-    const plugin = new TestPlugin(app, manifest);
-    const component1 = new DisposableComponent();
-    const component2 = new DisposableComponent();
-
-    plugin.addChild(component1);
-    plugin.addChild(component2);
-
-    // Both should be added as children (not replaced)
-    const children = plugin._children;
-    expect(children).toContain(component1);
-    expect(children).toContain(component2);
-  });
-
-  it('should handle singleton replacement during construction', () => {
-    const KEY = Symbol('TestSingletonReplacement');
-
-    class ReplacementComponent extends DisposableComponent {
-      public static readonly COMPONENT_KEY = KEY;
-    }
-
-    const plugin = new TestPlugin(app, manifest);
-    const component = new ReplacementComponent();
-    plugin.addChild(component);
-
-    const replacement = new ReplacementComponent();
-    plugin.addChild(replacement);
-
-    expect(plugin['singletonComponents'].get(KEY)).toBe(replacement);
-    expect(plugin._children).not.toContain(component);
-    expect(plugin._children).toContain(replacement);
-  });
-
-  it('should bypass singleton logic when addChild is called after load', async () => {
-    const KEY = Symbol('TestPostLoad');
-
-    class PostLoadComponent extends DisposableComponent {
-      public static readonly COMPONENT_KEY = KEY;
-    }
-
-    const plugin = new TestPlugin(app, manifest);
-    await plugin.load();
-
-    const component = new PostLoadComponent();
-    plugin.addChild(component);
-
-    expect(plugin['singletonComponents'].has(KEY)).toBe(false);
-  });
-
   it('should call onExternalSettingsChange on settings component', async () => {
     const plugin = new TestPlugin(app, manifest);
+    plugin.load();
 
     await plugin.onExternalSettingsChange();
 
     // Should not throw even without a settings component registered
-  });
-
-  it('should throw when getRegisteredComponent finds incompatible component', () => {
-    const KEY = Symbol('Shared');
-
-    class IncompatibleSourceComponent extends DisposableComponent {
-      public static readonly COMPONENT_KEY = KEY;
-    }
-
-    class IncompatibleTargetComponent extends DisposableComponent {
-      public static readonly COMPONENT_KEY = KEY;
-    }
-
-    const plugin = new TestPlugin(app, manifest);
-    plugin.addChild(new IncompatibleSourceComponent());
-
-    // Manually call getRegisteredComponent with IncompatibleTargetComponent which expects a different instance type
-    expect(() => plugin['getRegisteredComponent'](IncompatibleTargetComponent)).toThrow('Incompatible');
   });
 });
 

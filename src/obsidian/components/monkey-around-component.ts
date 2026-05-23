@@ -12,7 +12,7 @@ import type { GenericFunction } from '../../function.ts';
 import type { GenericObject } from '../../type-guards.ts';
 
 import { getObsidianDevUtilsState } from '../app.ts';
-import { DisposableComponent } from './disposable-component.ts';
+import { ComponentEx } from './component-ex.ts';
 
 /**
  * A type of the factories to apply to the object.
@@ -104,12 +104,12 @@ type WrapperFactory<T extends Function | undefined> = (next: T) => T;
  * A component that manages monkey-patches with lifecycle-bound cleanup.
  * All patches registered via this component are automatically uninstalled when the component unloads.
  */
-export class MonkeyAroundComponent extends DisposableComponent {
+export class MonkeyAroundComponent extends ComponentEx {
   /**
    * Registers a single-method patch using a simplified handler.
    *
    * @typeParam Obj - The object to patch.
-   * @typeParam K - The method name to patch.
+   * @typeParam MethodName - The method name to patch.
    * @param params - The parameters of the patch.
    */
   public registerMethodPatch<Obj extends object, const MethodName extends MethodKeys<Obj>>(

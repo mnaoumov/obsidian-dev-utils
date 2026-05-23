@@ -7,10 +7,12 @@
 import { AsyncEvents } from './async-events.ts';
 import { ensureNonNullable } from './type-guards.ts';
 
-const ASYNC_ERROR_EVENT = 'asyncError';
+interface ErrorAsyncEventMap {
+  asyncError: [error: unknown];
+}
 
-const asyncErrorEventEmitter = new AsyncEvents();
-asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handleAsyncError);
+const errorAsyncEvents = new AsyncEvents<ErrorAsyncEventMap>();
+errorAsyncEvents.on('asyncError', handleAsyncError);
 
 /**
  * A message of the AsyncWrapperError.
@@ -82,7 +84,7 @@ export class SilentError extends Error {
  * @param asyncError - The error to emit as an asynchronous error event.
  */
 export function emitAsyncErrorEvent(asyncError: unknown): void {
-  asyncErrorEventEmitter.trigger(ASYNC_ERROR_EVENT, asyncError);
+  errorAsyncEvents.trigger('asyncError', asyncError);
 }
 
 /**
@@ -145,9 +147,9 @@ export function printError(error: unknown, console?: Console): void {
  * @returns A function to unregister the handler.
  */
 export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): () => void {
-  const eventRef = asyncErrorEventEmitter.on(ASYNC_ERROR_EVENT, handler);
+  const eventRef = errorAsyncEvents.on('asyncError', handler);
   return () => {
-    asyncErrorEventEmitter.offref(eventRef);
+    errorAsyncEvents.offref(eventRef);
   };
 }
 

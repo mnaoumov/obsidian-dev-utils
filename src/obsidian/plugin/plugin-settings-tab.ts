@@ -21,8 +21,6 @@ import {
   setTooltip
 } from 'obsidian';
 
-import type { AsyncEventRef } from '../../async-events.ts';
-import type { GenericPromisableVoidFunction } from '../../function.ts';
 import type { StringKeys } from '../../type.ts';
 import type {
   PluginSettingsComponentBase,
@@ -32,6 +30,7 @@ import type {
 import type { ValueComponentWithChangeTracking } from '../setting-components/value-component-with-change-tracking.ts';
 import type { ValidationMessageHolder } from '../validation.ts';
 
+import { mixinAsyncEvents } from '../../async-events.ts';
 import {
   convertAsyncToSync,
   invokeAsyncSafely
@@ -43,7 +42,8 @@ import {
 } from '../../function.ts';
 import { deepEqual } from '../../object-utils.ts';
 import { assertNonNullable } from '../../type-guards.ts';
-import { AsyncEventsComponent } from '../components/async-events-component.ts';
+import { registerAsyncEvent } from '../components/async-events-component.ts';
+import { ComponentEx } from '../components/component-ex.ts';
 import { ensureWrapped } from '../setting-components/setting-component-wrapper.ts';
 import { getTextBasedComponentValue } from '../setting-components/text-based-component.ts';
 import { getValidatorComponent } from '../setting-components/validator-component.ts';
@@ -130,13 +130,17 @@ export interface PluginSettingsTabBaseConstructorParams<PluginSettings extends o
   readonly pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
 }
 
+interface PluginSettingsTabBaseEventMap {
+  validationMessageChanged: [propertyName: string, validationMessage: string];
+}
+
 /**
  * Base class for creating plugin settings tabs in Obsidian.
  * Provides a method for binding value components to plugin settings and handling changes.
  *
  * @typeParam PluginSettings - The plugin settings type.
  */
-export abstract class PluginSettingsTabBase<PluginSettings extends object> extends PluginSettingTab {
+export abstract class PluginSettingsTabBase<PluginSettings extends object> extends mixinAsyncEvents<PluginSettingsTabBaseEventMap>()(PluginSettingTab) {
   /**
    * Whether the plugin settings tab is open.
    *
@@ -162,7 +166,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   }
 
   private _isOpen = false;
-  private readonly asyncEventsComponent: AsyncEventsComponent;
+  private readonly component: ComponentEx;
   private readonly saveSettingsDebounced: Debouncer<[], void>;
 
   private get pluginSettings(): ReadonlyPluginSettings<PluginSettings> {
@@ -182,7 +186,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       convertAsyncToSync(() => this.pluginSettingsComponent.saveToFile(SAVE_TO_FILE_CONTEXT)),
       this.saveSettingsDebounceTimeoutInMilliseconds
     );
-    this.asyncEventsComponent = new AsyncEventsComponent();
+    this.component = new ComponentEx();
   }
 
   /**
@@ -279,14 +283,17 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       wrapper.appendChild(tooltipEl);
     }
 
-    this.asyncEventsComponent.registerAsyncEvent(this.on('validationMessageChanged', (anotherPropertyName, anotherValidationMessage) => {
-      if (propertyName !== anotherPropertyName) {
-        return;
-      }
+    registerAsyncEvent(
+      this.component,
+      this.on('validationMessageChanged', (anotherPropertyName, anotherValidationMessage) => {
+        if (propertyName !== anotherPropertyName) {
+          return;
+        }
 
-      validationMessage = anotherValidationMessage;
-      updateValidatorElDebounced();
-    }));
+        validationMessage = anotherValidationMessage;
+        updateValidatorElDebounced();
+      })
+    );
 
     let shouldEmptyOnBlur = false;
     let shouldRevertToDefaultValueOnBlur = false;
@@ -408,9 +415,9 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   public override display(): void {
     this.containerEl.empty();
     this._isOpen = true;
-    this.asyncEventsComponent.load();
-    this.asyncEventsComponent.registerAsyncEvent(this.pluginSettingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
-    this.asyncEventsComponent.registerAsyncEvent(this.pluginSettingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
+    this.component.load();
+    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
+    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
   }
 
   /**
@@ -420,8 +427,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     super.hide();
     this.saveSettingsDebounced.cancel();
     this._isOpen = false;
-    this.asyncEventsComponent.unload();
-    this.asyncEventsComponent.load();
+    this.component.unload();
     invokeAsyncSafely(() => this.hideAsync());
   }
 
@@ -470,22 +476,6 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     return settings[propertyName] as ReadonlyDeep<PluginSettings[PropertyName]>;
   }
 
-  private on(
-    name: 'validationMessageChanged',
-    callback: (
-      propertyName: string,
-      validationMessage: string
-    ) => Promisable<void>,
-    thisArg?: unknown
-  ): AsyncEventRef;
-  private on<Args extends unknown[]>(
-    name: string,
-    callback: GenericPromisableVoidFunction<Args>,
-    thisArg?: unknown
-  ): AsyncEventRef {
-    return this.asyncEventsComponent.asyncEvents.on(name, callback, thisArg);
-  }
-
   private async onSaveSettings(
     newState: ReadonlyPluginSettingsState<PluginSettings>,
     _oldState: ReadonlyPluginSettingsState<PluginSettings>,
@@ -501,7 +491,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
   private async updateValidations(validationMessages: Record<StringKeys<PluginSettings>, string>): Promise<void> {
     for (const [propertyName, validationMessage] of Object.entries(validationMessages)) {
-      await this.asyncEventsComponent.asyncEvents.triggerAsync('validationMessageChanged', propertyName, validationMessage);
+      await this.triggerAsync('validationMessageChanged', propertyName, validationMessage as string);
     }
   }
 }

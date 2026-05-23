@@ -9,12 +9,12 @@ import type { Promisable } from 'type-fest';
 
 import { invokeAsyncSafely } from '../../async.ts';
 import { noop } from '../../function.ts';
-import { DisposableComponent } from './disposable-component.ts';
+import { ComponentEx } from './component-ex.ts';
 
 /**
  * A component that executes a callback function when the Obsidian layout becomes ready.
  */
-export class LayoutReadyComponent extends DisposableComponent {
+export class LayoutReadyComponent extends ComponentEx {
   /**
    * Creates a new LayoutReadyComponent instance.
    *

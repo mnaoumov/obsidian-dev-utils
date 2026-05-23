@@ -12,7 +12,7 @@ import type {
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
-import { AsyncComponent } from '../components/async-component.ts';
+import { ComponentEx } from '../components/component-ex.ts';
 
 interface CommandHandlerComponentConstructorParams {
   readonly activeFileProvider: ActiveFileProvider;
@@ -25,7 +25,7 @@ interface CommandHandlerComponentConstructorParams {
 /**
  * Wraps a {@link CommandHandler} and registers it with Obsidian on load.
  */
-export class CommandHandlerComponent extends AsyncComponent {
+export class CommandHandlerComponent extends ComponentEx {
   private readonly activeFileProvider: ActiveFileProvider;
   private readonly commandHandlers: CommandHandler[];
   private readonly commandRegistrar: CommandRegistrar;
@@ -49,7 +49,7 @@ export class CommandHandlerComponent extends AsyncComponent {
   /**
    * Registers the command with Obsidian and provides runtime context to the handler.
    */
-  public override async onload(): Promise<void> {
+  public override async onloadAsync(): Promise<void> {
     const context: CommandHandlerRegistrationContext = {
       activeFileProvider: this.activeFileProvider,
       menuEventRegistrar: this.menuEventRegistrar,

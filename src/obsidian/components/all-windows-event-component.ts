@@ -7,12 +7,12 @@
 import type { App } from 'obsidian';
 
 import { getAllDomWindows } from '../workspace.ts';
-import { DisposableComponent } from './disposable-component.ts';
+import { ComponentEx } from './component-ex.ts';
 
 /**
  * Handles registering DOM events and handlers for all windows (main window and all existing/future popup windows) and their documents.
  */
-export class AllWindowsEventComponent extends DisposableComponent {
+export class AllWindowsEventComponent extends ComponentEx {
   /**
    * Creates a new instance of the `AllWindowsEventComponent` class.
    *

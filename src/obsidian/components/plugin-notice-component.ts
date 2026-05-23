@@ -6,17 +6,12 @@
 
 import { Notice } from 'obsidian';
 
-import { DisposableComponent } from './disposable-component.ts';
+import { ComponentEx } from './component-ex.ts';
 
 /**
  * Manages showing plugin notices. Automatically hides the previous notice when a new one is shown.
  */
-export class PluginNoticeComponent extends DisposableComponent {
-  /**
-   * The singleton key for the {@link PluginNoticeComponent} class.
-   */
-  public static readonly COMPONENT_KEY = Symbol(PluginNoticeComponent.name);
-
+export class PluginNoticeComponent extends ComponentEx {
   private notice?: Notice;
 
   /**

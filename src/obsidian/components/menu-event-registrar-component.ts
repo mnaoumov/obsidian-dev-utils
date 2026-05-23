@@ -13,14 +13,14 @@ import type {
   MenuEventRegistrar
 } from '../menu-event-registrar.ts';
 
-import { DisposableComponent } from './disposable-component.ts';
+import { ComponentEx } from './component-ex.ts';
 
 /**
  * {@link MenuEventRegistrar} backed by Obsidian's {@link App} workspace events.
  *
  * Event handlers are registered with the provided {@link Component} for lifecycle management.
  */
-export class MenuEventRegistrarComponent extends DisposableComponent implements MenuEventRegistrar {
+export class MenuEventRegistrarComponent extends ComponentEx implements MenuEventRegistrar {
   /**
    * Creates a new app-backed menu event registrar.
    *
