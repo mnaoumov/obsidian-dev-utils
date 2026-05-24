@@ -134,6 +134,56 @@ export interface AsyncEventSource<EventMap extends EventMapConstraint<EventMap> 
 }
 
 /**
+ * Interface exposing event-triggering methods for subclasses of mixin-created classes.
+ *
+ * These methods are `protected` at runtime but surfaced in the declaration type
+ * because TypeScript cannot represent `protected` in anonymous-class return types.
+ *
+ * @typeParam EventMap - Maps event names to their argument tuples.
+ */
+export interface AsyncEventTrigger<EventMap extends EventMapConstraint<EventMap> = EventMapBase> {
+  /**
+   * Trigger an event, executing all the listeners in order even if some of them throw an error.
+   *
+   * @typeParam EventName - The name of the event.
+   * @param name - The name of the event.
+   * @param args - The data to pass to the event listeners.
+   */
+  trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): void;
+
+  /**
+   * Trigger an event asynchronously.
+   *
+   * @typeParam EventName - The name of the event.
+   * @param name - The name of the event.
+   * @param args - The data to pass to the event listeners.
+   * @returns A {@link Promise} that resolves when all listeners have completed.
+   */
+  triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): Promise<void>;
+
+  /**
+   * Try to trigger an event, executing all the listeners in order even if some of them throw an error.
+   *
+   * @typeParam Args - The types of the arguments the function accepts.
+   * @param eventRef - The event reference.
+   * @param args - The data to pass to the event listeners.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
+  tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void;
+
+  /**
+   * Try to trigger an event asynchronously.
+   *
+   * @typeParam Args - The types of the arguments the function accepts.
+   * @param eventRef - The event reference.
+   * @param args - The data to pass to the event listeners.
+   * @returns A {@link Promise} that resolves when all listeners have completed.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
+  tryTriggerAsync<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): Promise<void>;
+}
+
+/**
  * Resolves callback argument types for an event.
  *
  * - When `EventMap` has an index signature (untyped default): returns `unknown[]`,
@@ -475,10 +525,11 @@ export class AsyncEvents<EventMap extends EventMapConstraint<EventMap> = EventMa
  * ```
  */
 export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> = EventMapBase>() {
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type -- Return type is inferred from the class expression; spelling it out would duplicate the entire class shape.
-  return function inner<TBase extends AbstractConstructor<object>>(baseClass: TBase) {
+  return function inner<TBase extends AbstractConstructor<object>>(
+    baseClass: TBase
+  ): AbstractConstructor<AsyncEventSource<EventMap> & AsyncEventTrigger<EventMap>> & TBase {
     abstract class AsyncEventsMixin extends baseClass implements AsyncEventSource<EventMap> {
-      private readonly asyncEvents = new AsyncEvents<EventMap>();
+      readonly #asyncEvents = new AsyncEvents<EventMap>();
 
       /**
        * Remove an event listener.
@@ -493,7 +544,7 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
         name: EventName,
         callback: (...args: Args) => Promisable<void>
       ): void {
-        this.asyncEvents.off(name, callback);
+        this.#asyncEvents.off(name, callback);
       }
 
       /**
@@ -502,7 +553,7 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        * @param eventRef - The event reference to remove.
        */
       public offref(eventRef: AsyncEventRef): void {
-        this.asyncEvents.offref(eventRef);
+        this.#asyncEvents.offref(eventRef);
       }
 
       /**
@@ -521,7 +572,7 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
         callback: (...args: Args) => Promisable<void>,
         thisArg?: unknown
       ): AsyncEventRef {
-        return this.asyncEvents.on(name, callback, thisArg);
+        return this.#asyncEvents.on(name, callback, thisArg);
       }
 
       /**
@@ -540,7 +591,7 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
         callback: (...args: Args) => Promisable<void>,
         thisArg?: unknown
       ): AsyncEventRef {
-        return this.asyncEvents.once(name, callback, thisArg);
+        return this.#asyncEvents.once(name, callback, thisArg);
       }
 
       /**
@@ -551,7 +602,7 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        * @param args - The data to pass to the event listeners.
        */
       protected trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): void {
-        this.asyncEvents.trigger(name, ...args);
+        this.#asyncEvents.trigger(name, ...args);
       }
 
       /**
@@ -563,7 +614,7 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        * @returns A {@link Promise} that resolves when all listeners have completed.
        */
       protected async triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): Promise<void> {
-        await this.asyncEvents.triggerAsync(name, ...args);
+        await this.#asyncEvents.triggerAsync(name, ...args);
       }
 
       /**
@@ -575,7 +626,7 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- Parity with Obsidian's Events.tryTrigger.
       protected tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void {
-        this.asyncEvents.tryTrigger(eventRef, args);
+        this.#asyncEvents.tryTrigger(eventRef, args);
       }
 
       /**
@@ -588,11 +639,11 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- Parity with Obsidian's Events.tryTrigger.
       protected async tryTriggerAsync<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): Promise<void> {
-        await this.asyncEvents.tryTriggerAsync(eventRef, args);
+        await this.#asyncEvents.tryTriggerAsync(eventRef, args);
       }
     }
 
-    return AsyncEventsMixin;
+    return AsyncEventsMixin as AbstractConstructor<AsyncEventSource<EventMap> & AsyncEventTrigger<EventMap>> & TBase;
   };
 }
 
