@@ -223,7 +223,6 @@ describe('ComponentEx', () => {
       const thenable: PromiseLike<void> = {
         async then(resolve) {
           await resolve?.();
-          return this;
         }
       };
       // eslint-disable-next-line @typescript-eslint/no-invalid-void-type, no-restricted-syntax -- We need to bypass type system to return `Promise<void>`.
