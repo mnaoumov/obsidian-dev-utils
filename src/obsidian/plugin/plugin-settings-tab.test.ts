@@ -86,7 +86,7 @@ function createMockSettingsComponent(): PluginSettingsComponentBase<TestSettings
   return strictProxy<PluginSettingsComponentBase<TestSettings>>({
     defaultSettings: { enabled: false, name: 'default' },
     on: vi.fn((_name: string, _callback: GenericVoidFunction) => ({
-      asyncEvents: {
+      asyncEventSource: {
         offref: vi.fn()
       }
     })),
