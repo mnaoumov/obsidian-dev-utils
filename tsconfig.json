@@ -11,7 +11,8 @@
     "lib": [
       "DOM",
       "DOM.Iterable",
-      "ES2024"
+      "ES2024",
+      "ESNext.Disposable"
     ],
     "libReplacement": true,
     "module": "NodeNext",
