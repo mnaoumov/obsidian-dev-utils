@@ -621,6 +621,7 @@
     "build:static": "jiti scripts/build-static.ts",
     "build:styles": "jiti scripts/build-styles.ts",
     "build:types": "jiti scripts/build-types.ts",
+    "build:validate-declarations": "jiti scripts/build-validate-declarations.ts",
     "commit": "jiti scripts/commit.ts",
     "format": "jiti scripts/format.ts",
     "format:check": "jiti scripts/format-check.ts",
