@@ -26,6 +26,55 @@ const ruleTester = new RuleTester({
   }
 });
 
+const ruleTesterNoSettings = new RuleTester();
+
+ruleTesterNoSettings.run('require-method-template (no settings)', toRuleTesterModule(requireMethodTemplate), {
+  invalid: [
+    {
+      code: `
+class Foo {
+  /**
+   * Does something.
+   */
+  public bar<T>(name: T): T {
+    return name;
+  }
+}
+      `,
+      errors: [{ messageId: MESSAGE_ID_MISSING_TEMPLATE }],
+      name: 'missing @template with default tag name'
+    }
+  ],
+  valid: [
+    {
+      code: `
+class Foo {
+  /**
+   * Does something.
+   *
+   * @template T - The type.
+   */
+  public bar<T>(name: T): T {
+    return name;
+  }
+}
+      `,
+      name: 'valid with @template when no settings configured'
+    },
+    {
+      code: `
+class Foo {
+  // line comment only
+  public bar<T>(name: T): T {
+    return name;
+  }
+}
+      `,
+      name: 'generic method with only line comments (no block JSDoc)'
+    }
+  ]
+});
+
 ruleTester.run('require-method-template', toRuleTesterModule(requireMethodTemplate), {
   invalid: [
     {
