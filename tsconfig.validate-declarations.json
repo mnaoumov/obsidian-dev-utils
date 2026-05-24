@@ -1,9 +1,7 @@
 {
   "extends": "@tsconfig/strictest/tsconfig.json",
   "compilerOptions": {
-    "lib": [
-      "ES2024"
-    ],
+    "lib": [],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
