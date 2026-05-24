@@ -480,4 +480,43 @@ describe('PluginSettingsComponentBase', () => {
     expect(component.settingsState.effectiveValues.count).toBe(0);
     expect(component.settingsState.validationMessages.count).toBe('Must be non-negative');
   });
+
+  it('should support off to remove event listener', async () => {
+    const component = createComponent(new MockDataHandler({}));
+    await component.loadWithPromises();
+
+    const callback = vi.fn();
+    component.on('loadSettings', callback);
+    component.off('loadSettings', callback);
+
+    await component.loadFromFile(true);
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('should support offref to remove event listener by reference', async () => {
+    const component = createComponent(new MockDataHandler({}));
+    await component.loadWithPromises();
+
+    const callback = vi.fn();
+    const ref = component.on('loadSettings', callback);
+    component.offref(ref);
+
+    await component.loadFromFile(true);
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('should support once for single-fire event listener', async () => {
+    const component = createComponent(new MockDataHandler({}));
+    await component.loadWithPromises();
+
+    const callback = vi.fn();
+    component.once('loadSettings', callback);
+
+    await component.loadFromFile(true);
+    await component.loadFromFile(true);
+
+    expect(callback).toHaveBeenCalledOnce();
+  });
 });
