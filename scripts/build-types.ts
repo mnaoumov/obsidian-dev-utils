@@ -17,7 +17,8 @@ import { replaceAll } from '../src/string.ts';
 
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');
-  const IMPORT_REG_EXP = /from '(?<ImportPath>.+?)\.ts';/gm;
+  const STATIC_IMPORT_REG_EXP = /from '(?<ImportPath>.+?)\.ts';/gm;
+  const DYNAMIC_IMPORT_REG_EXP = /import\("(?<ImportPath>.+?)\.ts"\)/gm;
 
   for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
     if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
@@ -38,8 +39,10 @@ await wrapCliTask(async () => {
 
     await mkdir(dirname(ctsPath), { recursive: true });
     await mkdir(dirname(mtsPath), { recursive: true });
-    const ctsContent = replaceAll(content, IMPORT_REG_EXP, 'from \'$<ImportPath>.cjs\';');
-    const mtsContent = replaceAll(content, IMPORT_REG_EXP, 'from \'$<ImportPath>.mjs\';');
+    let ctsContent = replaceAll(content, STATIC_IMPORT_REG_EXP, 'from \'$<ImportPath>.cjs\';');
+    ctsContent = replaceAll(ctsContent, DYNAMIC_IMPORT_REG_EXP, 'import("$<ImportPath>.cjs")');
+    let mtsContent = replaceAll(content, STATIC_IMPORT_REG_EXP, 'from \'$<ImportPath>.mjs\';');
+    mtsContent = replaceAll(mtsContent, DYNAMIC_IMPORT_REG_EXP, 'import("$<ImportPath>.mjs")');
     await writeFile(ctsPath, ctsContent);
     await writeFile(mtsPath, mtsContent);
   }

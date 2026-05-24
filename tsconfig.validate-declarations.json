@@ -1,0 +1,25 @@
+{
+  "extends": "@tsconfig/strictest/tsconfig.json",
+  "compilerOptions": {
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2024",
+      "ESNext.Disposable"
+    ],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "skipLibCheck": false,
+    "target": "ES2024",
+    "types": [
+      "@obsidian-typings/obsidian-public-latest",
+      "node"
+    ]
+  },
+  "include": [
+    "./dist/lib/esm/**/*.d.mts"
+  ]
+}

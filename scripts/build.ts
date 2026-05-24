@@ -9,6 +9,7 @@ const BUILD_STEPS = [
   'build:generate-index',
   'build:compile:typescript',
   'build:types',
+  'build:validate-declarations',
   'build:lib',
   'build:generate-exports',
   'build:static',
