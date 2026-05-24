@@ -7,7 +7,12 @@ import {
   vi
 } from 'vitest';
 
-import { AsyncEvents } from './async-events.ts';
+import type { AsyncEventRef } from './async-events.ts';
+
+import {
+  AsyncEvents,
+  mixinAsyncEvents
+} from './async-events.ts';
 import { noopAsync } from './function.ts';
 import { assertNonNullable } from './type-guards.ts';
 
@@ -445,5 +450,97 @@ describe('AsyncEvents', () => {
       const ref = events.on('test', vi.fn());
       expect(ref.thisArg).toBeUndefined();
     });
+  });
+});
+
+interface TestEventMap {
+  greet: [name: string];
+  save: [];
+}
+
+class Base {
+  public baseValue = 42;
+}
+
+class MixedIn extends mixinAsyncEvents<TestEventMap>()(Base) {
+  public doTrigger(name: string, ...args: unknown[]): void {
+    this.trigger(name as never, ...args as never);
+  }
+
+  public async doTriggerAsync(name: string, ...args: unknown[]): Promise<void> {
+    await this.triggerAsync(name as never, ...args as never);
+  }
+
+  public doTryTrigger(eventRef: AsyncEventRef, args: unknown[]): void {
+    this.tryTrigger(eventRef, args);
+  }
+
+  public async doTryTriggerAsync(eventRef: AsyncEventRef, args: unknown[]): Promise<void> {
+    await this.tryTriggerAsync(eventRef, args);
+  }
+}
+
+describe('mixinAsyncEvents', () => {
+  let instance: MixedIn;
+
+  beforeEach(() => {
+    instance = new MixedIn();
+    vi.spyOn(activeWindow, 'setTimeout').mockReturnValue(0);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should preserve base class properties', () => {
+    expect(instance.baseValue).toBe(42);
+  });
+
+  it('should delegate on/off/once to internal AsyncEvents', () => {
+    const callback = vi.fn();
+    const ref = instance.on('greet', callback);
+    instance.doTrigger('greet', 'Alice');
+    expect(callback).toHaveBeenCalledWith('Alice');
+
+    instance.off('greet', callback);
+    instance.doTrigger('greet', 'Bob');
+    expect(callback).toHaveBeenCalledOnce();
+
+    const onceCallback = vi.fn();
+    instance.once('save', onceCallback);
+    instance.doTrigger('save');
+    instance.doTrigger('save');
+    expect(onceCallback).toHaveBeenCalledOnce();
+
+    expect(ref.asyncEventSource).toBeDefined();
+  });
+
+  it('should delegate offref', () => {
+    const callback = vi.fn();
+    const ref = instance.on('greet', callback);
+    instance.offref(ref);
+    instance.doTrigger('greet', 'Alice');
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('should delegate triggerAsync', async () => {
+    const callback = vi.fn(() => noopAsync());
+    instance.on('save', callback);
+    await instance.doTriggerAsync('save');
+    expect(callback).toHaveBeenCalledOnce();
+  });
+
+  it('should delegate tryTrigger', () => {
+    const callback = vi.fn();
+    const ref = instance.on('greet', callback);
+    instance.doTryTrigger(ref, ['Alice']);
+    expect(callback).toHaveBeenCalledWith('Alice');
+  });
+
+  it('should delegate tryTriggerAsync', async () => {
+    const callback = vi.fn(() => noopAsync());
+    const ref = instance.on('save', callback);
+    await instance.doTryTriggerAsync(ref, []);
+    expect(callback).toHaveBeenCalledOnce();
   });
 });
