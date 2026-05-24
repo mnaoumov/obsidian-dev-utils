@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 68.0.0
+
+- test: fix remaining coverage gaps in disposable component and ESLint rule
+- test: add remaining coverage for async event registration and ESLint rule
+- test: add coverage for mixin, RegistryComponent, and settings event methods
+- docs: clear current task in CLAUDE.md
+- fix: resolve test hang and broken mocks
+- fix: build
+- chore: update libs
+- refactor!: components/plugins
+- feat: add new eslint rules
+- feat(eslint): exclude all Obsidian Component subclasses from require-component-suffix
+- docs: fix empty tsdocs
+- refactor: skip useless load()
+
 ## 67.0.0
 
 - refactor!: simplify PluginSettingsComponentBase
