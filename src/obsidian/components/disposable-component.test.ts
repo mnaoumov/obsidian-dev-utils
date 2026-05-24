@@ -29,6 +29,14 @@ describe('asDisposableComponent', () => {
     wrapped[Symbol.dispose]();
     expect(unloadSpy).toHaveBeenCalledOnce();
   });
+
+  it('should return the same component if already disposable', () => {
+    const component = new Component();
+    const wrapped = asDisposableComponent(component);
+    const wrappedAgain = asDisposableComponent(wrapped);
+
+    expect(wrappedAgain).toBe(wrapped);
+  });
 });
 
 describe('isDisposable', () => {
