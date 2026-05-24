@@ -2,10 +2,7 @@
   "extends": "@tsconfig/strictest/tsconfig.json",
   "compilerOptions": {
     "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2024",
-      "ESNext.Disposable"
+      "ES2024"
     ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
