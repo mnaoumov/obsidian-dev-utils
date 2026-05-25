@@ -669,8 +669,8 @@
     "@types/react": "^19.2.15",
     "@types/semver": "^7.7.1",
     "@types/shell-quote": "^1.7.5",
-    "@typescript-eslint/eslint-plugin": "^8.59.4",
-    "@typescript-eslint/parser": "^8.59.4",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
     "commander": "^14.0.3",
     "compare-versions": "^6.1.1",
     "cspell": "^10.0.0",
@@ -715,7 +715,7 @@
     "svelte-preprocess": "^6.0.5",
     "type-fest": "^5.6.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.4",
+    "typescript-eslint": "^8.60.0",
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
@@ -724,7 +724,7 @@
     "@commitlint/types": "^21.0.1",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/markdown-it": "^14.1.2",
-    "@typescript-eslint/rule-tester": "^8.59.4",
+    "@typescript-eslint/rule-tester": "^8.60.0",
     "@vitest/coverage-v8": "^4.1.7",
     "@vitest/runner": "^4.1.7",
     "better-typescript-lib": "^2.12.0",
