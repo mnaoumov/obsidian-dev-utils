@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 69.1.1
+
+- fix: make components non-nullable
+- chore: update libs
+
 ## 69.1.0
 
 - feat: extract PluginEventSource
