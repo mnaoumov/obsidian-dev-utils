@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 69.1.0
+
+- feat: extract PluginEventSource
+- fix: add /// \<reference types="node" /\> to generated declaration files
+
 ## 69.0.0
 
 - chore: update libs
