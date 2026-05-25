@@ -40,32 +40,32 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
   /**
    * Abort signal component.
    */
-  protected abortSignalComponent?: AbortSignalComponent;
+  protected abortSignalComponent: AbortSignalComponent;
 
   /**
    * Async error handler component.
    */
-  protected asyncErrorHandlerComponent?: AsyncErrorHandlerComponent;
+  protected asyncErrorHandlerComponent: AsyncErrorHandlerComponent;
 
   /**
    * Console debug component.
    */
-  protected consoleDebugComponent?: ConsoleDebugComponent;
+  protected consoleDebugComponent: ConsoleDebugComponent;
 
   /**
    * I18n component.
    */
-  protected i18nComponent?: I18nComponent;
+  protected i18nComponent: I18nComponent;
 
   /**
    * Plugin context component (plugin ID, debug controller, library styles).
    */
-  protected pluginContextComponent?: PluginContextComponent;
+  protected pluginContextComponent: PluginContextComponent;
 
   /**
    * Plugin notice component.
    */
-  protected pluginNoticeComponent?: PluginNoticeComponent;
+  protected pluginNoticeComponent: PluginNoticeComponent;
 
   /**
    * Creates a new plugin.
