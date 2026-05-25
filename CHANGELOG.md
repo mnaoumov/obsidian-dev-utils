@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 69.0.0
+
+- chore: update libs
+- fix(test): run ESLint type-checked rule tests in single-thread mode
+- fix: prefix reference path with ./ for same-directory references
+- fix: make generated declarations self-contained via library.d.mts<noreply@anthropic.com>
+- fix: inject /// \<reference lib\>
+- fix: rewrite dynamic import()
+
 ## 68.0.0
 
 - test: fix remaining coverage gaps in disposable component and ESLint rule
