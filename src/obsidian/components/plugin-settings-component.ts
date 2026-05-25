@@ -25,7 +25,7 @@ import type {
   StringKeys
 } from '../../type.ts';
 import type { DataHandler } from '../data-handler.ts';
-import type { PluginEventSource } from '../plugin/plugin.ts';
+import type { PluginEventSource } from '../plugin/plugin-event-source.ts';
 
 import { AsyncEvents } from '../../async-events.ts';
 import { getLibDebugger } from '../../debug.ts';

@@ -8,7 +8,7 @@ import {
 
 import type { AsyncEventRef } from '../../async-events.ts';
 import type { DataHandler } from '../data-handler.ts';
-import type { PluginEventSource } from '../plugin/plugin.ts';
+import type { PluginEventSource } from '../plugin/plugin-event-source.ts';
 
 import {
   noop,
