@@ -19,6 +19,7 @@ import { replaceAll } from '../src/string.ts';
 
 interface TsconfigCompilerOptions {
   readonly lib?: string[];
+  readonly types?: string[];
 }
 
 interface TsconfigJson {
@@ -26,6 +27,7 @@ interface TsconfigJson {
 }
 
 const REFERENCE_LIB_REG_EXP = /\/\/\/ <reference lib="(?<Lib>[^"]+)" \/>/gm;
+const DECLARATION_REFERENCE_TYPES = new Set(['node']);
 const LIBRARY_FILE_NAME = 'library';
 
 await wrapCliTask(async () => {
@@ -34,6 +36,7 @@ await wrapCliTask(async () => {
   const DYNAMIC_IMPORT_REG_EXP = /import\("(?<ImportPath>.+?)\.ts"\)/gm;
 
   const allLibs = await collectAllLibs();
+  const allTypes = await collectAllTypes();
 
   for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
     if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
@@ -65,8 +68,9 @@ await wrapCliTask(async () => {
 
     if (isLibraryFile) {
       const libDirectives = buildAllReferenceLibDirectives(allLibs);
-      ctsContent = libDirectives + ctsContent;
-      mtsContent = libDirectives + mtsContent;
+      const typesDirectives = buildAllReferenceTypesDirectives(allTypes);
+      ctsContent = libDirectives + typesDirectives + ctsContent;
+      mtsContent = libDirectives + typesDirectives + mtsContent;
     } else {
       const ctsLibRef = buildReferencePathDirective(ctsPath, ObsidianDevUtilsRepoPaths.Cjs, ObsidianDevUtilsRepoPaths.DctsExtension);
       ctsContent = ctsLibRef + ctsContent;
@@ -99,10 +103,29 @@ await wrapCliTask(async () => {
     return [...libs].sort();
   }
 
+  async function collectAllTypes(): Promise<string[]> {
+    const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
+    const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
+    return (tsconfig.compilerOptions?.types ?? [])
+      .filter((type) => DECLARATION_REFERENCE_TYPES.has(type))
+      .sort();
+  }
+
   function buildAllReferenceLibDirectives(libs: string[]): string {
     return `${
       libs
         .map((lib) => `/// <reference lib="${lib}" />`)
+        .join('\n')
+    }\n`;
+  }
+
+  function buildAllReferenceTypesDirectives(types: string[]): string {
+    if (types.length === 0) {
+      return '';
+    }
+    return `${
+      types
+        .map((type) => `/// <reference types="${type}" />`)
         .join('\n')
     }\n`;
   }
