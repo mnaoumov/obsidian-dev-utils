@@ -29,6 +29,7 @@ const SHARED_SERVER = {
 const SHARED_EXCLUDE = ['node_modules', 'dist'];
 
 const SCRIPT_UTILS_TEST_FILES = 'src/script-utils/**/*.test.ts';
+const ESLINT_TYPECHECK_TEST_FILES = 'src/script-utils/linters/eslint-rules/*.test.ts';
 const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
 const OBSIDIAN_INTEGRATION_TEST_FILES = 'src/**/*.obsidian.integration.test.ts';
 const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
@@ -45,9 +46,25 @@ export const config = defineConfig({
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'node',
-          exclude: [...SHARED_EXCLUDE, INTEGRATION_TEST_FILES],
+          exclude: [...SHARED_EXCLUDE, INTEGRATION_TEST_FILES, ESLINT_TYPECHECK_TEST_FILES],
           include: [SCRIPT_UTILS_TEST_FILES],
           name: 'unit-tests:script-utils',
+          server: SHARED_SERVER,
+          setupFiles: []
+        }
+      },
+      {
+        resolve: SHARED_RESOLVE,
+        test: {
+          environment: 'node',
+          exclude: [...SHARED_EXCLUDE],
+          include: [ESLINT_TYPECHECK_TEST_FILES],
+          isolate: false,
+          maxWorkers: 1,
+          name: 'unit-tests:eslint-typecheck',
+          sequence: {
+            groupOrder: 1
+          },
           server: SHARED_SERVER,
           setupFiles: []
         }
