@@ -16,7 +16,10 @@ import {
   Plugin as ObsidianPlugin
 } from 'obsidian';
 
-import type { AsyncEventSource } from '../../async-events.ts';
+import type {
+  PluginEventMap,
+  PluginEventSource
+} from './plugin-event-source.ts';
 
 import { mixinAsyncEvents } from '../../async-events.ts';
 import { printError } from '../../error.ts';
@@ -26,16 +29,6 @@ import { ConsoleDebugComponent } from '../components/console-debug-component.ts'
 import { I18nComponent } from '../components/i18n-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
-
-/**
- * Event source for plugin events.
- */
-export type PluginEventSource = AsyncEventSource<PluginEventMap>;
-
-interface PluginEventMap {
-  /** Fired when plugin settings are changed externally (e.g. sync, manual file edit). */
-  externalSettingsChange: [];
-}
 
 /**
  * Base class for creating Obsidian plugins with a component-based architecture.
