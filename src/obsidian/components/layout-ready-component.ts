@@ -20,7 +20,7 @@ export class LayoutReadyComponent extends ComponentEx {
    *
    * @param app - The Obsidian App instance.
    */
-  public constructor(private readonly app: App) {
+  public constructor(protected readonly app: App) {
     super();
   }
 
