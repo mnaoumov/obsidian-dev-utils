@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 69.1.3
+
+- refactor: wrap plugin async components
+
 ## 69.1.2
 
 - chore: update libs
