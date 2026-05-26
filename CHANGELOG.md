@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 69.1.2
+
+- chore: update libs
+- test: cover remaining branches in ESLint rules for 100% coverage
+- test: reuse mocks
+- perf: eliminate slow projectService startup in ESLint rule tests
+- feat: expose LayoutReadyComponent.app
+
 ## 69.1.1
 
 - fix: make components non-nullable
