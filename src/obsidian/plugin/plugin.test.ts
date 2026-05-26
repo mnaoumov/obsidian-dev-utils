@@ -4,6 +4,7 @@ import type {
   PluginManifest
 } from 'obsidian';
 
+import { Component } from 'obsidian';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
@@ -151,6 +152,15 @@ describe('PluginBase', () => {
     plugin.load();
 
     expect(plugin._loaded).toBe(true);
+  });
+
+  it('should delegate removeChild to wrapperComponent', () => {
+    const plugin = new TestPlugin(app, manifest);
+    plugin.load();
+
+    const child = plugin.addChild(new Component());
+    const removed = plugin.removeChild(child);
+    expect(removed).toBe(child);
   });
 
   it('should call onExternalSettingsChange on settings component', async () => {
