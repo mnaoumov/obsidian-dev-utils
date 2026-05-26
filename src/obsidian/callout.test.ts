@@ -14,7 +14,7 @@ import type { AddToQueueParams } from './queue.ts';
 
 import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
-import { strictProxy } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
   CalloutMode,

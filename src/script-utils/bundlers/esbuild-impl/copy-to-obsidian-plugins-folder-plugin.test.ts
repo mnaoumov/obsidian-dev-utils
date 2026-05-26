@@ -11,7 +11,7 @@ import {
   vi
 } from 'vitest';
 
-import { strictProxy } from '../../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../../strict-proxy.ts';
 import { assertNonNullable } from '../../../type-guards.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copy-to-obsidian-plugins-folder-plugin.ts';
 

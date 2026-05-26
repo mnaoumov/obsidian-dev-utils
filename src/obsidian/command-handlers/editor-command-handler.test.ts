@@ -22,7 +22,7 @@ import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 import type { EditorCommandHandlerConstructorParams } from './editor-command-handler.ts';
 
 import { noopAsync } from '../../function.ts';
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { EditorCommandHandler } from './editor-command-handler.ts';
 
 interface MockContext {

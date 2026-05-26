@@ -33,7 +33,7 @@ import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
 import { noopAsync } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { FileCommandHandler } from './file-command-handler.ts';
 
 let app: AppOriginal;

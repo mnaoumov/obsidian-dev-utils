@@ -17,7 +17,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../../object-utils.ts';
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { selectItem } from './select-item.ts';
 

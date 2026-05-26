@@ -11,8 +11,6 @@ import { vi } from 'vitest';
 
 import type { GenericFunction } from '../function.ts';
 
-export { strictProxy } from '../strict-proxy.ts';
-
 const savedOriginals = new WeakMap<object, Map<string, unknown>>();
 
 /**

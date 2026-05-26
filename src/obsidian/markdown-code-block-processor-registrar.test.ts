@@ -14,7 +14,7 @@ import {
 } from 'vitest';
 
 import { noop } from '../function.ts';
-import { strictProxy } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { PluginMarkdownCodeBlockProcessorRegistrar } from './markdown-code-block-processor-registrar.ts';
 
 describe('PluginMarkdownCodeBlockProcessorRegistrar', () => {

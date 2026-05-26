@@ -10,7 +10,7 @@ import {
   vi
 } from 'vitest';
 
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { PluginSettingsTabComponent } from './plugin-settings-tab-component.ts';
 
 describe('PluginSettingsTabComponent', () => {

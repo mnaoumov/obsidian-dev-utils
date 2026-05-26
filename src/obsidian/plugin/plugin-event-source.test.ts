@@ -15,7 +15,7 @@ import {
 import type { AsyncEventRef } from '../../async-events.ts';
 import type { PluginBase } from './plugin.ts';
 
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { PluginEventSourceImpl } from './plugin-event-source.ts';
 
 describe('PluginEventSourceImpl', () => {
