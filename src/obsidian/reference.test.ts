@@ -12,7 +12,7 @@ import {
 import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-with-offsets.ts';
 import type { CanvasReference } from './reference.ts';
 
-import { strictProxy } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import {
   isCanvasFileNodeReference,
   isCanvasReference,

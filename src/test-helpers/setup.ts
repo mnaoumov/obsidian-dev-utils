@@ -7,10 +7,8 @@
  */
 
 import { castTo } from '../object-utils.ts';
-import { setupObsidianTypingsMocks } from './mocks/obsidian-typings/setup.ts';
 
 function setup(): void {
-  setupObsidianTypingsMocks();
   setupObsidianDevUtilsState();
 }
 

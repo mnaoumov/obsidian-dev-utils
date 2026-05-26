@@ -25,7 +25,7 @@ import {
 import type { CanvasReference } from './reference.ts';
 
 import { castTo } from '../object-utils.ts';
-import { strictProxy } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import {
   assertNonNullable,
   ensureNonNullable

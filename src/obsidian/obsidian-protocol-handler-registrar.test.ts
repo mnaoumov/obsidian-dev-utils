@@ -13,7 +13,7 @@ import {
   vi
 } from 'vitest';
 
-import { strictProxy } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { PluginObsidianProtocolHandlerRegistrar } from './obsidian-protocol-handler-registrar.ts';
 
 describe('PluginObsidianProtocolHandlerRegistrar', () => {

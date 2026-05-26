@@ -27,7 +27,7 @@ import type { AbstractFileCommandHandlerConstructorParams } from './abstract-fil
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
 import { noopAsync } from '../../function.ts';
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { AbstractFileCommandHandler } from './abstract-file-command-handler.ts';
 
 interface MockContext {

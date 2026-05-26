@@ -8,7 +8,7 @@ import {
 
 import type { GenericObject } from '../type-guards.ts';
 
-import { strictProxy } from '../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import {
   getNewLinkFormat,
   shouldUseWikilinks

@@ -16,7 +16,7 @@ import {
   vi
 } from 'vitest';
 
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { MenuEventRegistrarComponent } from './menu-event-registrar-component.ts';
 
 interface Mocks {

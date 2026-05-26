@@ -26,7 +26,7 @@ import {
   onAncestorScrollOrResize,
   toPx
 } from './html-element.ts';
-import { strictProxy } from './test-helpers/mock-implementation.ts';
+import { strictProxy } from './strict-proxy.ts';
 import {
   assertNonNullable,
   ensureGenericObject

@@ -16,7 +16,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../../object-utils.ts';
-import { strictProxy } from '../../test-helpers/mock-implementation.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { AllWindowsEventComponent } from './all-windows-event-component.ts';
 
 interface CreateMockAppParams {
