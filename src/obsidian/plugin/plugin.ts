@@ -8,6 +8,7 @@
 
 import type {
   App,
+  Component,
   PluginManifest
 } from 'obsidian';
 
@@ -25,6 +26,7 @@ import { mixinAsyncEvents } from '../../async-events.ts';
 import { printError } from '../../error.ts';
 import { AbortSignalComponent } from '../components/abort-signal-component.ts';
 import { AsyncErrorHandlerComponent } from '../components/async-error-handler-component.ts';
+import { ComponentEx } from '../components/component-ex.ts';
 import { ConsoleDebugComponent } from '../components/console-debug-component.ts';
 import { I18nComponent } from '../components/i18n-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
@@ -67,6 +69,8 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
    */
   protected pluginNoticeComponent: PluginNoticeComponent;
 
+  private readonly wrapperComponent: ComponentEx;
+
   /**
    * Creates a new plugin.
    *
@@ -75,6 +79,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
    */
   public constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
+    this.wrapperComponent = super.addChild(new ComponentEx());
 
     this.pluginContextComponent = this.addChild(
       new PluginContextComponent({
@@ -90,6 +95,17 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
   }
 
   /**
+   * Adds a child component to the plugin.
+   *
+   * @typeParam TComponent - The type of component to add.
+   * @param component - The component to add.
+   * @returns The added component.
+   */
+  public override addChild<TComponent extends Component>(component: TComponent): TComponent {
+    return this.wrapperComponent.addChild(component);
+  }
+
+  /**
    * Called when the external settings change.
    *
    * Override in subclass if needed. Make sure to call `await super.onExternalSettingsChange()` first.
@@ -97,6 +113,24 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
   public override async onExternalSettingsChange(): Promise<void> {
     await super.onExternalSettingsChange?.();
     await this.triggerAsync('externalSettingsChange');
+  }
+
+  /**
+   * Called when the plugin is loaded.
+   */
+  public override async onload(): Promise<void> {
+    await this.wrapperComponent.loadWithPromises();
+  }
+
+  /**
+   * Removes a child component from the plugin.
+   *
+   * @typeParam TComponent - The type of component to remove.
+   * @param component - The component to remove.
+   * @returns The removed component.
+   */
+  public override removeChild<TComponent extends Component>(component: TComponent): TComponent {
+    return this.wrapperComponent.removeChild(component);
   }
 }
 
