@@ -22,10 +22,7 @@ import type {
   TSESTree
 } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
-import type {
-  Declaration,
-  TypeChecker
-} from 'typescript';
+import type { Declaration } from 'typescript';
 
 import {
   canHaveModifiers,
@@ -49,8 +46,6 @@ interface OverrideMethodInfo {
 
 export const requireSuperCall: Rule.RuleModule = {
   create(context) {
-    const services = context.sourceCode.parserServices as ParserServicesWithTypeInformation;
-    const checker = services.program.getTypeChecker();
     const methodStack: OverrideMethodInfo[] = [];
 
     return {
@@ -121,7 +116,7 @@ export const requireSuperCall: Rule.RuleModule = {
           return;
         }
 
-        if (checkIsParentMethodAbstract(services, checker, info.node, info.methodName)) {
+        if (checkIsParentMethodAbstract(context, info.node, info.methodName)) {
           return;
         }
 
@@ -161,18 +156,26 @@ function checkIsAbstract(decl: Declaration): boolean {
 /**
  * Checks whether the parent class's version of the method is `abstract`.
  *
- * @param services - The parser services with type information.
- * @param checker - The TypeScript type checker.
+ * When type information is not available (e.g., parser configured without
+ * `projectService`), returns `false` so the rule conservatively reports.
+ *
+ * @param context - The ESLint rule context.
  * @param methodNode - The override method definition AST node.
  * @param methodName - The method name to look up in the parent class.
  * @returns `true` if the parent method is abstract.
  */
 function checkIsParentMethodAbstract(
-  services: ParserServicesWithTypeInformation,
-  checker: TypeChecker,
+  context: Rule.RuleContext,
   methodNode: TSESTree.MethodDefinition,
   methodName: string
 ): boolean {
+  const services = context.sourceCode.parserServices as Partial<ParserServicesWithTypeInformation>;
+
+  if (!services.program || !services.esTreeNodeToTSNodeMap) {
+    return false;
+  }
+
+  const checker = services.program.getTypeChecker();
   const classDecl = methodNode.parent.parent;
   const tsClassNode = services.esTreeNodeToTSNodeMap.get(classDecl);
   const classType = checker.getTypeAtLocation(tsClassNode);
