@@ -24,7 +24,8 @@ const ruleTester = new RuleTester({
   languageOptions: {
     parserOptions: {
       projectService: {
-        allowDefaultProject: ['*.ts']
+        allowDefaultProject: ['*.ts'],
+        defaultProject: 'tsconfig.eslint-test.json'
       }
     }
   }

@@ -2,6 +2,7 @@ import type { TSESTree } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
+import { SyntaxKind } from 'typescript';
 import {
   afterAll,
   describe,
@@ -18,23 +19,11 @@ import {
 } from './require-super-call.ts';
 import { toRuleTesterModule } from './rule-tester-helper.ts';
 
-const TYPE_CHECK_TIMEOUT_IN_MILLISECONDS = 60_000;
-
-vi.setConfig({ testTimeout: TYPE_CHECK_TIMEOUT_IN_MILLISECONDS });
-
 RuleTester.afterAll = afterAll;
 RuleTester.describe = describe;
 RuleTester.it = it;
 
-const ruleTester = new RuleTester({
-  languageOptions: {
-    parserOptions: {
-      projectService: {
-        allowDefaultProject: ['*.ts']
-      }
-    }
-  }
-});
+const ruleTester = new RuleTester();
 
 interface MockBaseType {
   getProperty(name: string): MockBaseTypeProperty | undefined;
@@ -136,6 +125,112 @@ describe('require-super-call (unresolvable types)', () => {
       }]
     });
 
+    visitMethodDefinitionExit(strictProxy<Rule.Node>({}));
+
+    expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
+  });
+});
+
+describe('require-super-call (abstract parent method)', () => {
+  it('should not report when parent method is abstract', () => {
+    const abstractDeclaration = {
+      kind: SyntaxKind.MethodDeclaration,
+      modifiers: [{ kind: SyntaxKind.AbstractKeyword }]
+    };
+
+    const { report, visitMethodDefinitionExit } = createMockRuleContext({
+      getBaseTypes: (): MockBaseType[] => [{
+        getProperty: (): MockBaseTypeProperty => ({
+          getDeclarations: (): unknown[] => [abstractDeclaration]
+        })
+      }]
+    });
+
+    visitMethodDefinitionExit(strictProxy<Rule.Node>({}));
+
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('should not report when parent method is abstract in multi-level chain', () => {
+    const concreteDeclaration = {
+      kind: SyntaxKind.MethodDeclaration,
+      modifiers: [{ kind: SyntaxKind.OverrideKeyword }]
+    };
+
+    const abstractDeclaration = {
+      kind: SyntaxKind.MethodDeclaration,
+      modifiers: [{ kind: SyntaxKind.AbstractKeyword }]
+    };
+
+    const { report, visitMethodDefinitionExit } = createMockRuleContext({
+      getBaseTypes: (): MockBaseType[] => [
+        {
+          getProperty: (): MockBaseTypeProperty => ({
+            getDeclarations: (): unknown[] => [concreteDeclaration]
+          })
+        },
+        {
+          getProperty: (): MockBaseTypeProperty => ({
+            getDeclarations: (): unknown[] => [abstractDeclaration]
+          })
+        }
+      ]
+    });
+
+    visitMethodDefinitionExit(strictProxy<Rule.Node>({}));
+
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it('should report when parent method is concrete (not abstract)', () => {
+    const concreteDeclaration = {
+      kind: SyntaxKind.MethodDeclaration,
+      modifiers: [{ kind: SyntaxKind.PublicKeyword }]
+    };
+
+    const { report, visitMethodDefinitionExit } = createMockRuleContext({
+      getBaseTypes: (): MockBaseType[] => [{
+        getProperty: (): MockBaseTypeProperty => ({
+          getDeclarations: (): unknown[] => [concreteDeclaration]
+        })
+      }]
+    });
+
+    visitMethodDefinitionExit(strictProxy<Rule.Node>({}));
+
+    expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
+  });
+});
+
+describe('require-super-call (no type info)', () => {
+  it('should report when parserServices has no type information', () => {
+    const report = vi.fn();
+
+    const context = strictProxy<Rule.RuleContext>({
+      report,
+      sourceCode: strictProxy<Rule.RuleContext['sourceCode']>({
+        parserServices: {
+          esTreeNodeToTSNodeMap: undefined,
+          program: undefined
+        }
+      })
+    });
+
+    const visitors = requireSuperCall.create(context) as Record<string, (node: Rule.Node) => void>;
+
+    const methodNode = strictProxy<TSESTree.MethodDefinition>({
+      key: strictProxy<TSESTree.Identifier>({ name: 'method', type: 'Identifier' as TSESTree.Identifier['type'] }),
+      kind: 'method',
+      override: true,
+      parent: { parent: {} }
+    });
+
+    const methodDefinitionVisitor = visitors['MethodDefinition'];
+    assertNonNullable(methodDefinitionVisitor);
+    methodDefinitionVisitor(methodNode as Rule.Node);
+
+    const visitMethodDefinitionExit = visitors['MethodDefinition:exit'];
+    assertNonNullable(visitMethodDefinitionExit);
     visitMethodDefinitionExit(strictProxy<Rule.Node>({}));
 
     expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
@@ -366,40 +461,6 @@ ruleTester.run('require-super-call', toRuleTesterModule(requireSuperCall), {
         }
       `,
       name: 'non-override method on class that extends (no error)'
-    },
-    {
-      code: `
-        abstract class Parent { abstract method(): void; }
-        class Child extends Parent {
-          public override method(): void {
-            console.log('implementing abstract');
-          }
-        }
-      `,
-      name: 'implementing abstract method (no super to call)'
-    },
-    {
-      code: `
-        abstract class Parent { abstract compute(): number; }
-        class Child extends Parent {
-          public override compute(): number {
-            return 42;
-          }
-        }
-      `,
-      name: 'implementing abstract method with return value'
-    },
-    {
-      code: `
-        abstract class Base { abstract init(): void; }
-        class Middle extends Base { override init(): void { console.log('middle'); } }
-        class Leaf extends Middle {
-          public override init(): void {
-            super.init();
-          }
-        }
-      `,
-      name: 'override of concrete method in chain with abstract grandparent'
     },
     {
       code: `
