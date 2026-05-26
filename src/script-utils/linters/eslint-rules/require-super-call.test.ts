@@ -200,6 +200,24 @@ describe('require-super-call (abstract parent method)', () => {
 
     expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
   });
+
+  it('should report when parent method declaration has no modifiers', () => {
+    const declarationWithoutModifiers = {
+      kind: SyntaxKind.MethodDeclaration
+    };
+
+    const { report, visitMethodDefinitionExit } = createMockRuleContext({
+      getBaseTypes: (): MockBaseType[] => [{
+        getProperty: (): MockBaseTypeProperty => ({
+          getDeclarations: (): unknown[] => [declarationWithoutModifiers]
+        })
+      }]
+    });
+
+    visitMethodDefinitionExit(strictProxy<Rule.Node>({}));
+
+    expect(report).toHaveBeenCalledWith(expect.objectContaining({ messageId: MESSAGE_ID }));
+  });
 });
 
 describe('require-super-call (no type info)', () => {

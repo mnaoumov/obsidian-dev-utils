@@ -163,6 +163,26 @@ describe('require-component-suffix (unresolvable types)', () => {
     expect(report).not.toHaveBeenCalled();
   });
 
+  it('should handle circular type hierarchy without infinite loop', () => {
+    const circularType: MockBaseType = {
+      getSymbol: (): MockSymbol => ({ getName: () => 'SomeClass' })
+    };
+
+    circularType.getBaseTypes = (): MockBaseType[] => [circularType];
+
+    const classType: MockBaseType = {
+      getBaseTypes: (): MockBaseType[] => [circularType]
+    };
+
+    const { report, visitors } = createMockRuleContext(classType);
+    const classNode = { id: { name: 'Foo' } };
+    const visitor = visitors['ClassDeclaration[id]'];
+    assertNonNullable(visitor);
+    visitor(classNode as Rule.Node);
+
+    expect(report).not.toHaveBeenCalled();
+  });
+
   it('should report abstract class ending with Component instead of ComponentBase', () => {
     const componentType: MockBaseType = {
       getBaseTypes: (): undefined => undefined,
