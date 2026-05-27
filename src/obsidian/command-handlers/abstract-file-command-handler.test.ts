@@ -728,6 +728,23 @@ describe('AbstractFileCommandHandler', () => {
     });
   });
 
+  describe('executeAbstractFiles with empty array', () => {
+    it('should return undefined when called with empty array', async () => {
+      class EmptyArrayHandler extends AbstractFileCommandHandler {
+        public async publicExecuteAbstractFiles(abstractFiles: TAbstractFileOriginal[]): Promise<void> {
+          await this.executeAbstractFiles(abstractFiles);
+        }
+
+        protected override async executeAbstractFile(): Promise<void> {
+          await noopAsync();
+        }
+      }
+
+      const handler = new EmptyArrayHandler(createParams());
+      await expect(handler.publicExecuteAbstractFiles([])).resolves.toBeUndefined();
+    });
+  });
+
   describe('activeFileProvider before registration', () => {
     it('should return false from command palette when not yet registered', () => {
       const handler = new TestAbstractFileHandler(createParams());

@@ -18,7 +18,10 @@ import type {
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
-import { invokeAsyncSafely } from '../../async.ts';
+import {
+  chain,
+  invokeAsyncSafely
+} from '../../async.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { GlobalCommandHandler } from './global-command-handler.ts';
 
@@ -211,11 +214,13 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
 
   /**
    * Executes the command from the command palette using the active file.
+   *
+   * @returns `Promisable<void>` that resolves when command had been executed.
    */
-  protected override async execute(): Promise<void> {
+  protected override execute(): Promisable<void> {
     const activeFile = this.getActiveFile();
     if (activeFile) {
-      await this.executeAbstractFile(activeFile);
+      return this.executeAbstractFile(activeFile);
     }
   }
 
@@ -231,10 +236,16 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    * Default implementation executes sequentially.
    *
    * @param abstractFiles - The files or folders.
+   * @returns `Promisable<void>` that resolves when all abstract files have been executed.
    */
-  protected async executeAbstractFiles(abstractFiles: TAbstractFile[]): Promise<void> {
+  protected executeAbstractFiles(abstractFiles: TAbstractFile[]): Promisable<void> {
+    let promise: null | Promise<void> = null;
     for (const file of abstractFiles) {
-      await this.executeAbstractFile(file);
+      promise = chain(promise, () => this.executeAbstractFile(file));
+    }
+
+    if (promise) {
+      return promise;
     }
   }
 

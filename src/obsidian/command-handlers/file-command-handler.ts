@@ -13,6 +13,7 @@ import type { Promisable } from 'type-fest';
 
 import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 
+import { chain } from '../../async.ts';
 import {
   asArrayOfFiles,
   asFile,
@@ -82,18 +83,20 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    * Delegates to {@link executeFile}.
    *
    * @param abstractFile - The file or folder.
+   * @returns `Promisable<void>` that resolves when abstract file had been executed.
    */
-  protected override async executeAbstractFile(abstractFile: TAbstractFile): Promise<void> {
-    await this.executeFile(asFile(abstractFile));
+  protected override executeAbstractFile(abstractFile: TAbstractFile): Promisable<void> {
+    return this.executeFile(asFile(abstractFile));
   }
 
   /**
    * Delegates to {@link executeFiles}.
    *
    * @param abstractFiles - The files or folders.
+   * @returns `Promisable<void>` that resolves when all abstract files have been executed.
    */
-  protected override async executeAbstractFiles(abstractFiles: TAbstractFile[]): Promise<void> {
-    await this.executeFiles(asArrayOfFiles(abstractFiles));
+  protected override executeAbstractFiles(abstractFiles: TAbstractFile[]): Promisable<void> {
+    return this.executeFiles(asArrayOfFiles(abstractFiles));
   }
 
   /**
@@ -108,10 +111,16 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
    * Default implementation executes sequentially.
    *
    * @param files - The files.
+   * @returns `Promisable<void>` that resolves when all files have been executed.
    */
-  protected async executeFiles(files: TFile[]): Promise<void> {
+  protected executeFiles(files: TFile[]): Promisable<void> {
+    let promise: null | Promise<void> = null;
     for (const file of files) {
-      await this.executeFile(file);
+      promise = chain(promise, () => this.executeFile(file));
+    }
+
+    if (promise) {
+      return promise;
     }
   }
 
