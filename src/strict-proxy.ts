@@ -8,7 +8,22 @@
  * `obsidian-test-mocks/src/internal/strict-proxy.ts`.
  */
 
-import type { PartialDeep } from 'type-fest';
+import type { GenericFunction } from './function.ts';
+
+/**
+ * A recursive partial type compatible with `exactOptionalPropertyTypes`.
+ *
+ * Unlike `PartialDeep` from type-fest, this type allows full `T` values at any
+ * nesting level via the `| T[K]` union. This is essential for composing nested
+ * `strictProxy` calls — an inner `strictProxy<MetadataCache>({...})` returns
+ * `MetadataCache`, which must be assignable to the outer partial type.
+ *
+ * @typeParam T - The target type to create a partial version of.
+ */
+type StrictProxyPartial<T> = T extends GenericFunction ? T
+  : T extends readonly unknown[] ? T
+  : T extends object ? { [K in keyof T]?: StrictProxyPartial<T[K]> | T[K] }
+  : T;
 
 const STRICT_PROXY_TARGET_SYMBOL = Symbol.for('strictProxyTarget');
 
@@ -54,7 +69,7 @@ export function bypassStrictProxy<T>(obj: T): T {
  * @param partial - A partial object containing only the mocked members.
  * @returns A proxy typed as `T` that throws on unmocked property access.
  */
-export function strictProxy<T>(partial: PartialDeep<T>): T {
+export function strictProxy<T>(partial: StrictProxyPartial<T>): T {
   return wrapProxy<T>(partial);
 }
 

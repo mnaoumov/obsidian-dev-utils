@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import type { PartialDeep } from 'type-fest';
 
 import {
   beforeEach,
@@ -263,7 +262,7 @@ describe('renderCallout', () => {
 
     // Simulate intersection
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -289,7 +288,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: false, target: castTo<PartialDeep<Element>>(observedEl) })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: false, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -309,7 +308,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -336,7 +335,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall1[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -368,7 +367,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall2[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -398,7 +397,7 @@ describe('renderCallout', () => {
     const observedEl = firstObserveCall3[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: castTo<PartialDeep<Element>>(observedEl) })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 

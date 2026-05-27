@@ -1,7 +1,5 @@
 // @vitest-environment jsdom
 
-import type { PartialDeep } from 'type-fest';
-
 import {
   afterAll,
   beforeEach,
@@ -90,7 +88,7 @@ function createMockDv(): DataviewInlineApi {
 
   return strictProxy<DataviewInlineApi>({
     app: { metadataCache: {}, vault: { adapter: {} } },
-    container: castTo<PartialDeep<HTMLElement>>(container),
+    container,
     current: castTo<DataviewInlineApi['current']>(vi.fn(() => ({ file: { path: 'current.md' } }))),
     el: castTo<DataviewInlineApi['el']>(vi.fn(
       (

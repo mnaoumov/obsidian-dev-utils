@@ -6,7 +6,6 @@ import type {
   WorkspaceLeaf,
   WorkspaceWindow
 } from 'obsidian';
-import type { PartialDeep } from 'type-fest';
 
 import {
   describe,
@@ -15,7 +14,6 @@ import {
   vi
 } from 'vitest';
 
-import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { AllWindowsEventComponent } from './all-windows-event-component.ts';
 
@@ -42,7 +40,7 @@ function createMockApp(params: CreateMockAppParams): App {
     onWindowOpen = vi.fn().mockReturnValue(strictProxy<EventRef>({}))
   } = params;
 
-  const containers = domWindows.map((win) => strictProxy<WorkspaceContainer>({ win: castTo<PartialDeep<Window>>(win) }));
+  const containers = domWindows.map((win) => strictProxy<WorkspaceContainer>({ win }));
   const leaves = containers.map((container) =>
     strictProxy<WorkspaceLeaf>({
       getContainer: (): WorkspaceContainer => container
@@ -115,7 +113,7 @@ describe('AllWindowsEventComponent', () => {
       createLoadedComponent(app).registerAllWindowsHandler(handler);
 
       expect(windowOpenCallback).toBeDefined();
-      const newWin = strictProxy<PartialDeep<Window>>({});
+      const newWin = strictProxy<Window>({});
       const workspaceWindow = strictProxy<WorkspaceWindow>({ win: newWin });
       windowOpenCallback?.(workspaceWindow);
       expect(handler).toHaveBeenCalledWith(newWin);
@@ -135,7 +133,7 @@ describe('AllWindowsEventComponent', () => {
       handler.mockClear();
       component.unload();
 
-      const newWin = strictProxy<PartialDeep<Window>>({});
+      const newWin = strictProxy<Window>({});
       const workspaceWindow = strictProxy<WorkspaceWindow>({ win: newWin });
       windowOpenCallback?.(workspaceWindow);
       expect(handler).not.toHaveBeenCalled();

@@ -7,7 +7,6 @@ import type {
   Reference,
   TFile as TFileOriginal
 } from 'obsidian';
-import type { PartialDeep } from 'type-fest';
 
 import {
   App,
@@ -2759,7 +2758,7 @@ describe('app-dependent functions', () => {
     it('should register and apply default options', () => {
       let cleanupFn: (() => void) | undefined;
       const mockPlugin = strictProxy<Plugin>({
-        app: castTo<PartialDeep<AppOriginal>>(app),
+        app,
         register: vi.fn((fn: () => void) => {
           cleanupFn = fn;
         })

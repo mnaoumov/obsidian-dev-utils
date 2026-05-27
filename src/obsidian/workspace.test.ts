@@ -3,7 +3,6 @@ import type {
   WorkspaceContainer,
   WorkspaceLeaf
 } from 'obsidian';
-import type { PartialDeep } from 'type-fest';
 
 import {
   describe,
@@ -11,7 +10,6 @@ import {
   it
 } from 'vitest';
 
-import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import {
   getAllContainers,
@@ -36,7 +34,7 @@ function createMockApp(containers: WorkspaceContainer[]): App {
 }
 
 function createMockContainer(win: Window): WorkspaceContainer {
-  return strictProxy<WorkspaceContainer>({ win: castTo<PartialDeep<Window>>(win) });
+  return strictProxy<WorkspaceContainer>({ win });
 }
 
 describe('getAllContainers', () => {
