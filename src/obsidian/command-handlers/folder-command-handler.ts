@@ -13,6 +13,7 @@ import type { Promisable } from 'type-fest';
 
 import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 
+import { chain } from '../../async.ts';
 import {
   asArrayOfFolders,
   asFolder,
@@ -82,18 +83,20 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
    * Delegates to {@link executeFolder}.
    *
    * @param abstractFile - The file or folder.
+   * @returns `Promisable<void>` that resolves when abstract file had been executed.
    */
-  protected override async executeAbstractFile(abstractFile: TAbstractFile): Promise<void> {
-    await this.executeFolder(asFolder(abstractFile));
+  protected override executeAbstractFile(abstractFile: TAbstractFile): Promisable<void> {
+    return this.executeFolder(asFolder(abstractFile));
   }
 
   /**
    * Delegates to {@link executeFolders}.
    *
    * @param abstractFiles - The files or folders.
+   * @returns `Promisable<void>` that resolves when all abstract files have been executed.
    */
-  protected override async executeAbstractFiles(abstractFiles: TAbstractFile[]): Promise<void> {
-    await this.executeFolders(asArrayOfFolders(abstractFiles));
+  protected override executeAbstractFiles(abstractFiles: TAbstractFile[]): Promisable<void> {
+    return this.executeFolders(asArrayOfFolders(abstractFiles));
   }
 
   /**
@@ -108,10 +111,16 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
    * Default implementation executes sequentially.
    *
    * @param folders - The folders.
+   * @returns `Promisable<void>` that resolves when all folders have been executed.
    */
-  protected async executeFolders(folders: TFolder[]): Promise<void> {
+  protected executeFolders(folders: TFolder[]): Promisable<void> {
+    let promise: null | Promise<void> = null;
     for (const folder of folders) {
-      await this.executeFolder(folder);
+      promise = chain(promise, () => this.executeFolder(folder));
+    }
+
+    if (promise) {
+      return promise;
     }
   }
 

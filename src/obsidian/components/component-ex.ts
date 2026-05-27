@@ -8,10 +8,8 @@ import type { Promisable } from 'type-fest';
 
 import { Component } from 'obsidian';
 
-import {
-  noop,
-  noopAsyncSingletonPromise
-} from '../../function.ts';
+import { chain } from '../../async.ts';
+import { noopAsyncSingletonPromise } from '../../function.ts';
 
 /**
  * Extended Component
@@ -33,7 +31,7 @@ export class ComponentEx extends Component implements Disposable {
     this.childrenSet.add(component);
 
     if (this._loaded) {
-      this.chain(() => this.extractLoadPromisable(component));
+      this.loadPromise = chain(this.loadPromise, () => this.extractLoadPromisable(component));
     }
 
     return component;
@@ -54,11 +52,11 @@ export class ComponentEx extends Component implements Disposable {
     this.onload();
     const onloadAsyncPromise = this.onloadAsync();
     if (onloadAsyncPromise !== noopAsyncSingletonPromise) {
-      this.chain(() => onloadAsyncPromise);
+      this.loadPromise = chain(this.loadPromise, () => onloadAsyncPromise);
     }
 
     for (const child of this._children.slice()) {
-      this.chain(() => this.extractLoadPromisable(child));
+      this.loadPromise = chain(this.loadPromise, () => this.extractLoadPromisable(child));
     }
 
     if (this.loadPromise) {
@@ -106,19 +104,6 @@ export class ComponentEx extends Component implements Disposable {
    */
   public [Symbol.dispose](): void {
     this.unload();
-  }
-
-  private chain(promisableFn: () => null | Promisable<void>): void {
-    if (this.loadPromise) {
-      this.loadPromise = this.loadPromise.then(() => promisableFn() ?? undefined);
-    } else {
-      const promisable = promisableFn();
-      if (promisable) {
-        this.loadPromise = promisable instanceof Promise ? promisable as Promise<void> : Promise.resolve(promisable);
-      }
-    }
-
-    this.loadPromise?.catch(noop);
   }
 
   private extractLoadPromisable(component: Component): null | Promisable<void> {

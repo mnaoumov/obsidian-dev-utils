@@ -393,5 +393,20 @@ describe('FileCommandHandler', () => {
       await handler.publicExecuteFiles([file1, file2]);
       expect(executionOrder).toEqual(['a.md', 'b.md']);
     });
+
+    it('should return undefined when called with empty array', async () => {
+      class EmptyFilesHandler extends FileCommandHandler {
+        public async publicExecuteFiles(files: TFileOriginal[]): Promise<void> {
+          await this.executeFiles(files);
+        }
+
+        protected override async executeFile(): Promise<void> {
+          await noopAsync();
+        }
+      }
+
+      const handler = new EmptyFilesHandler(createParams());
+      await expect(handler.publicExecuteFiles([])).resolves.toBeUndefined();
+    });
   });
 });

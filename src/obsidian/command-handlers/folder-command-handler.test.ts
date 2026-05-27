@@ -400,5 +400,20 @@ describe('FolderCommandHandler', () => {
       await handler.publicExecuteFolders([folder1, folder2]);
       expect(executionOrder).toEqual(['dir-a', 'dir-b']);
     });
+
+    it('should return undefined when called with empty array', async () => {
+      class EmptyFoldersHandler extends FolderCommandHandler {
+        public async publicExecuteFolders(folders: TFolderOriginal[]): Promise<void> {
+          await this.executeFolders(folders);
+        }
+
+        protected override async executeFolder(): Promise<void> {
+          await noopAsync();
+        }
+      }
+
+      const handler = new EmptyFoldersHandler(createParams());
+      await expect(handler.publicExecuteFolders([])).resolves.toBeUndefined();
+    });
   });
 });

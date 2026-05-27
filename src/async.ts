@@ -434,6 +434,28 @@ export interface TimeoutContext {
 }
 
 /**
+ * Chains a promise with another promise.
+ *
+ * @param chainPromise - Represents the chained promise.
+ * @param promisableFn - The function to chain.
+ * @returns Chained promise or `null` if no async logic is chained.
+ */
+export function chain(chainPromise: null | Promise<void>, promisableFn: () => null | Promisable<void>): null | Promise<void> {
+  let nextChainPromise = chainPromise;
+  if (chainPromise) {
+    nextChainPromise = chainPromise.then(() => promisableFn() ?? undefined);
+  } else {
+    const promisable = promisableFn();
+    if (promisable) {
+      nextChainPromise = promisable instanceof Promise ? promisable as Promise<void> : Promise.resolve(promisable);
+    }
+  }
+
+  nextChainPromise?.catch(noop);
+  return nextChainPromise;
+}
+
+/**
  * Marks an error to terminate retry logic.
  *
  * @param error - The error to mark to terminate retry logic.
