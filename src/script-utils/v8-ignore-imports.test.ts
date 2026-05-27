@@ -14,6 +14,7 @@ import * as DebugController from '../debug-controller.ts';
 import * as AttachmentPath from '../obsidian/attachment-path.ts';
 import * as Backlink from '../obsidian/backlink.ts';
 import * as CodeBlockMarkdownInformation from '../obsidian/code-block-markdown-information.ts';
+import * as RenameDeleteHandlerComponent from '../obsidian/components/rename-delete-handler-component.ts';
 import * as GetDomEventsHandlersConstructor from '../obsidian/constructors/getDomEventsHandlersConstructor.ts';
 import * as CustomTypeOptionsBase from '../obsidian/i18n/custom-type-options.ts';
 import * as DefaultTranslationsBase from '../obsidian/i18n/default-translations.ts';
@@ -21,7 +22,6 @@ import * as Markdown from '../obsidian/markdown.ts';
 import * as PluginSettingsTabBase from '../obsidian/plugin/plugin-settings-tab.ts';
 import * as PluginBase from '../obsidian/plugin/plugin.ts';
 import * as AppContext from '../obsidian/react/app-context.ts';
-import * as RenameDeleteHandler from '../obsidian/rename-delete-handler.ts';
 import * as ValueComponentWithChangeTracking from '../obsidian/setting-components/value-component-with-change-tracking.ts';
 import { changeExtensionPlugin } from './bundlers/esbuild-impl/change-extension-plugin.ts';
 import { copyToObsidianPluginsFolderPlugin } from './bundlers/esbuild-impl/copy-to-obsidian-plugins-folder-plugin.ts';
@@ -58,7 +58,7 @@ it('should load all v8-ignored modules so coverage processes their ignore commen
     NanoStagedConfig,
     PluginBase,
     PluginSettingsTabBase,
-    RenameDeleteHandler,
+    RenameDeleteHandlerComponent,
     StateFieldSpec,
     ValueComponentWithChangeTracking,
     changeExtensionPlugin,
