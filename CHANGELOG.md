@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 69.2.2
+
+- chore: update libs
+- refactor!: move rename-delete-handler
+
 ## 69.2.1
 
 - feat: expose StrictProxyPartial
