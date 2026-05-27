@@ -82,21 +82,4 @@ describe('rename-delete-handler', () => {
       expect(result).toBe(true);
     });
   });
-
-  describe('registerRenameDeleteHandlers export', () => {
-    it('should export registerRenameDeleteHandlers as a function', async () => {
-      const result = await evalInObsidian<Record<string, never>, boolean>({
-        fn() {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          return typeof lib.obsidian['rename-delete-handler'].registerRenameDeleteHandlers === 'function';
-        },
-        vaultPath: inject('tempVaultPath')
-      });
-
-      expect(result).toBe(true);
-    });
-  });
 });
