@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 69.2.1
+
+- feat: expose StrictProxyPartial
+
 ## 69.2.0
 
 - refactor: promisable command handlers
