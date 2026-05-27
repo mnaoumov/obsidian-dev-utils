@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 69.2.0
+
+- refactor: promisable command handlers
+- fix: replace PartialDeep with custom StrictProxyPartial type
+
 ## 69.1.3
 
 - refactor: wrap plugin async components
