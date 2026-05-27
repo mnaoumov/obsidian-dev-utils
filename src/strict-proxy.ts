@@ -20,7 +20,7 @@ import type { GenericFunction } from './function.ts';
  *
  * @typeParam T - The target type to create a partial version of.
  */
-type StrictProxyPartial<T> = T extends GenericFunction ? T
+export type StrictProxyPartial<T> = T extends GenericFunction ? T
   : T extends readonly unknown[] ? T
   : T extends object ? { [K in keyof T]?: StrictProxyPartial<T[K]> | T[K] }
   : T;
