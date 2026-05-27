@@ -11,7 +11,6 @@ import type {
 import type {
   App,
   CachedMetadata,
-  Plugin,
   Reference,
   TAbstractFile,
   TFile
@@ -31,33 +30,29 @@ import {
 import type {
   UpdateLinkParams,
   UpdateLinksInFileParams
-} from './link.ts';
+} from '../link.ts';
+import type { AbortSignalComponent } from './abort-signal-component.ts';
 
-import { abortSignalNever } from '../abort-controller.ts';
-import { filterInPlace } from '../array.ts';
-import { getLibDebugger } from '../debug.ts';
+import { filterInPlace } from '../../array.ts';
+import { getLibDebugger } from '../../debug.ts';
 import {
   normalizeOptionalProperties,
   toJson
-} from '../object-utils.ts';
+} from '../../object-utils.ts';
 import {
   basename,
   dirname,
   extname,
   join,
   relative
-} from '../path.ts';
-import { getObsidianDevUtilsState } from './app.ts';
+} from '../../path.ts';
+import { getObsidianDevUtilsState } from '../app.ts';
 import {
   AttachmentPathContext,
   getAttachmentFilePath,
   getAttachmentFolderPath,
   hasOwnAttachmentFolder
-} from './attachment-path.ts';
-import {
-  hasPatchToken,
-  MonkeyAroundComponent
-} from './components/monkey-around-component.ts';
+} from '../attachment-path.ts';
 import {
   CANVAS_FILE_EXTENSION,
   getFile,
@@ -66,13 +61,13 @@ import {
   isFile,
   isMarkdownFile,
   isNote
-} from './file-system.ts';
+} from '../file-system.ts';
 import {
   editLinks,
   extractLinkFile,
   updateLink,
   updateLinksInFile
-} from './link.ts';
+} from '../link.ts';
 import {
   getAllLinks,
   getBacklinksForFileOrPath,
@@ -81,16 +76,21 @@ import {
   tempRegisterFilesAndRun,
   tempRegisterFilesAndRunAsync,
   unregisterFileCacheForNonExistingFile
-} from './metadata-cache.ts';
-import { addToQueue } from './queue.ts';
-import { deleteIfNotUsed } from './vault-delete.ts';
+} from '../metadata-cache.ts';
+import { addToQueue } from '../queue.ts';
+import { deleteIfNotUsed } from '../vault-delete.ts';
 import {
   deleteEmptyFolder,
   deleteEmptyFolderHierarchy,
   getSafeRenamePath,
   renameSafe,
   trashSafe
-} from './vault.ts';
+} from '../vault.ts';
+import { ComponentEx } from './component-ex.ts';
+import {
+  hasPatchToken,
+  MonkeyAroundComponent
+} from './monkey-around-component.ts';
 
 /**
  * A behavior of the rename/delete handler when deleting empty folders.
@@ -162,10 +162,6 @@ export interface RenameDeleteHandlerSettings {
   shouldUpdateFileNameAliases: boolean;
 }
 
-interface AbortablePlugin extends Plugin {
-  abortSignal?: AbortSignal;
-}
-
 interface HandledRenameKey {
   newPath: string;
   oldPath: string;
@@ -199,6 +195,13 @@ interface RenameMapConstructorParams {
 }
 
 const PATCH_TOKEN = Symbol.for('renameDeleteHandler');
+
+interface RenameDeleteHandlerComponentConstructorParams {
+  readonly abortSignalComponent: AbortSignalComponent;
+  readonly app: App;
+  readonly pluginId: string;
+  settingsBuilder(this: void): Partial<RenameDeleteHandlerSettings>;
+}
 
 class DeleteHandler {
   public constructor(
@@ -324,201 +327,6 @@ class MetadataDeletedHandler {
     if (isMarkdownFile(this.app, this.file) && this.prevCache) {
       this.deletedMetadataCacheMap.set(this.file.path, this.prevCache);
     }
-  }
-}
-
-class Registry {
-  private readonly abortSignal: AbortSignal;
-  private readonly app: App;
-  private readonly deletedMetadataCacheMap = new Map<string, CachedMetadata>();
-  private readonly handledRenames = new HandledRenames();
-  private readonly interruptedRenamesMap = new Map<string, InterruptedRename[]>();
-  private readonly pluginId: string;
-
-  public constructor(
-    private readonly plugin: AbortablePlugin,
-    private readonly settingsBuilder: () => Partial<RenameDeleteHandlerSettings>,
-    private readonly settingsManager: SettingsManager
-  ) {
-    this.app = plugin.app;
-    this.pluginId = plugin.manifest.id;
-    this.abortSignal = plugin.abortSignal ?? abortSignalNever();
-  }
-
-  public register(): void {
-    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
-
-    renameDeleteHandlersMap.set(this.pluginId, this.settingsBuilder);
-    this.logRegisteredHandlers();
-
-    this.plugin.register(() => {
-      renameDeleteHandlersMap.delete(this.pluginId);
-      this.logRegisteredHandlers();
-    });
-
-    this.plugin.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
-    this.plugin.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
-    this.plugin.registerEvent(this.app.metadataCache.on('deleted', this.handleMetadataDeleted.bind(this)));
-
-    const patch = this.plugin.addChild(new MonkeyAroundComponent());
-
-    patch.registerMethodPatch({
-      methodName: 'runAsyncLinkUpdate',
-      obj: this.app.fileManager,
-      patchHandler: ({
-        fallback,
-        originalArgs: [linkUpdatesHandler],
-        originalMethod,
-        originalMethodBound
-      }) => {
-        if (hasPatchToken(originalMethod, PATCH_TOKEN)) {
-          return fallback();
-        }
-
-        const newHandler: LinkUpdatesHandler = (linkUpdates) => this.wrapLinkUpdatesHandler(linkUpdates, linkUpdatesHandler);
-        return originalMethodBound(newHandler);
-      }
-    });
-  }
-
-  private handleDelete(file: TAbstractFile): void {
-    if (!this.shouldInvokeHandler()) {
-      return;
-    }
-    addToQueue({
-      app: this.app,
-      operationFn: (abortSignal) => new DeleteHandler(this.app, file, abortSignal, this.settingsManager, this.deletedMetadataCacheMap).handle(),
-      operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleDelete, { filePath: file.path })
-    });
-  }
-
-  private handleMetadataDeleted(file: TAbstractFile, prevCache: CachedMetadata | null): void {
-    if (!this.shouldInvokeHandler()) {
-      return;
-    }
-    new MetadataDeletedHandler(this.app, file, prevCache, this.settingsManager, this.deletedMetadataCacheMap).handle();
-  }
-
-  private handleRename(file: TAbstractFile, oldPath: string): void {
-    if (!this.shouldInvokeHandler()) {
-      return;
-    }
-
-    if (!isFile(file)) {
-      return;
-    }
-
-    const newPath = file.path;
-
-    getLibDebugger('RenameDeleteHandler:handleRename')(`Handle Rename ${oldPath} -> ${newPath}`);
-    if (this.handledRenames.has(oldPath, newPath)) {
-      this.handledRenames.delete(oldPath, newPath);
-      return;
-    }
-
-    const settings = this.settingsManager.getSettings();
-    if (!settings.shouldHandleRenames) {
-      return;
-    }
-
-    if (settings.isPathIgnored?.(oldPath)) {
-      getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of old path ${oldPath} as the path is ignored.`);
-      return;
-    }
-
-    if (settings.isPathIgnored?.(newPath)) {
-      getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of new path ${newPath} as the path is ignored.`);
-      return;
-    }
-
-    const oldCache = this.app.metadataCache.getCache(oldPath) ?? this.app.metadataCache.getCache(newPath);
-    const oldPathBacklinksMap = getBacklinksForFileOrPath(this.app, oldPath).data;
-    addToQueue({
-      abortSignal: this.abortSignal,
-      app: this.app,
-      operationFn: (abortSignal) =>
-        new RenameHandler({
-          abortSignal,
-          app: this.app,
-          handledRenames: this.handledRenames,
-          interruptedRenamesMap: this.interruptedRenamesMap,
-          newPath,
-          oldCache,
-          oldPath,
-          oldPathBacklinksMap,
-          settingsManager: this.settingsManager
-        }).handle(),
-      operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleRename, { newPath, oldPath })
-    });
-  }
-
-  private logRegisteredHandlers(): void {
-    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
-    getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
-      `Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`
-    );
-  }
-
-  private shouldInvokeHandler(): boolean {
-    const pluginId = this.plugin.manifest.id;
-
-    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
-    const mainPluginId = Array.from(renameDeleteHandlersMap.keys())[0];
-    return mainPluginId === pluginId;
-  }
-
-  private async wrapLinkUpdatesHandler(linkUpdates: LinkUpdate[], linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
-    let isRenameCalled = false;
-    const eventRef = this.app.vault.on('rename', () => {
-      isRenameCalled = true;
-    });
-    try {
-      await linkUpdatesHandler(linkUpdates);
-    } finally {
-      this.app.vault.offref(eventRef);
-    }
-    const settings = this.settingsManager.getSettings();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed in `rename` event handler. ESLint mistakenly does not recognize it.
-    if (!isRenameCalled || !settings.shouldHandleRenames) {
-      return;
-    }
-
-    filterInPlace(
-      linkUpdates,
-      (linkUpdate) => {
-        if (settings.isPathIgnored?.(linkUpdate.sourceFile.path)) {
-          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
-            `Roll back to default link update of source file ${linkUpdate.sourceFile.path} as the path is ignored.`
-          );
-          return true;
-        }
-
-        if (settings.isPathIgnored?.(linkUpdate.resolvedFile.path)) {
-          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
-            `Roll back to default link update of resolved file ${linkUpdate.resolvedFile.path} as the path is ignored.`
-          );
-          return true;
-        }
-
-        if (!this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
-          return false;
-        }
-
-        if (this.app.plugins.getPlugin('backlink-cache')) {
-          return false;
-        }
-
-        if (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) {
-          return true;
-        }
-
-        if (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION) {
-          return true;
-        }
-
-        return false;
-      }
-    );
   }
 }
 
@@ -995,14 +803,207 @@ class RenameMap {
   }
 }
 
-/**
- * Registers the rename/delete handlers.
- *
- * @param plugin - The plugin instance.
- * @param settingsBuilder - A function that returns the settings for the rename delete handler.
- */
-export function registerRenameDeleteHandlers(plugin: AbortablePlugin, settingsBuilder: () => Partial<RenameDeleteHandlerSettings>): void {
-  new Registry(plugin, settingsBuilder, new SettingsManager(plugin.app)).register();
+/** */
+export class RenameDeleteHandlerComponent extends ComponentEx {
+  private readonly abortSignalComponent: AbortSignalComponent;
+  private readonly app: App;
+  private readonly deletedMetadataCacheMap = new Map<string, CachedMetadata>();
+  private readonly handledRenames = new HandledRenames();
+  private readonly interruptedRenamesMap = new Map<string, InterruptedRename[]>();
+  private readonly pluginId: string;
+  private readonly settingsBuilder: () => Partial<RenameDeleteHandlerSettings>;
+  private readonly settingsManager: SettingsManager;
+
+  /**
+   * Creates an instance of RenameDeleteHandlerComponent.
+   *
+   * @param params - The parameters for the RenameDeleteHandlerComponent.
+   */
+  public constructor(params: RenameDeleteHandlerComponentConstructorParams) {
+    super();
+    this.abortSignalComponent = params.abortSignalComponent;
+    this.app = params.app;
+    this.pluginId = params.pluginId;
+    this.settingsBuilder = params.settingsBuilder;
+    this.settingsManager = new SettingsManager(this.app);
+  }
+
+  /**
+   * Loads the component
+   */
+  public override onload(): void {
+    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
+
+    renameDeleteHandlersMap.set(this.pluginId, this.settingsBuilder);
+    this.logRegisteredHandlers();
+
+    this.register(() => {
+      renameDeleteHandlersMap.delete(this.pluginId);
+      this.logRegisteredHandlers();
+    });
+
+    this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
+    this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
+    this.registerEvent(this.app.metadataCache.on('deleted', this.handleMetadataDeleted.bind(this)));
+
+    const patch = this.addChild(new MonkeyAroundComponent());
+
+    patch.registerMethodPatch({
+      methodName: 'runAsyncLinkUpdate',
+      obj: this.app.fileManager,
+      patchHandler: ({
+        fallback,
+        originalArgs: [linkUpdatesHandler],
+        originalMethod,
+        originalMethodBound
+      }) => {
+        if (hasPatchToken(originalMethod, PATCH_TOKEN)) {
+          return fallback();
+        }
+
+        const newHandler: LinkUpdatesHandler = (linkUpdates) => this.wrapLinkUpdatesHandler(linkUpdates, linkUpdatesHandler);
+        return originalMethodBound(newHandler);
+      }
+    });
+  }
+
+  private handleDelete(file: TAbstractFile): void {
+    if (!this.shouldInvokeHandler()) {
+      return;
+    }
+    addToQueue({
+      app: this.app,
+      operationFn: (abortSignal) => new DeleteHandler(this.app, file, abortSignal, this.settingsManager, this.deletedMetadataCacheMap).handle(),
+      operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleDelete, { filePath: file.path })
+    });
+  }
+
+  private handleMetadataDeleted(file: TAbstractFile, prevCache: CachedMetadata | null): void {
+    if (!this.shouldInvokeHandler()) {
+      return;
+    }
+    new MetadataDeletedHandler(this.app, file, prevCache, this.settingsManager, this.deletedMetadataCacheMap).handle();
+  }
+
+  private handleRename(file: TAbstractFile, oldPath: string): void {
+    if (!this.shouldInvokeHandler()) {
+      return;
+    }
+
+    if (!isFile(file)) {
+      return;
+    }
+
+    const newPath = file.path;
+
+    getLibDebugger('RenameDeleteHandler:handleRename')(`Handle Rename ${oldPath} -> ${newPath}`);
+    if (this.handledRenames.has(oldPath, newPath)) {
+      this.handledRenames.delete(oldPath, newPath);
+      return;
+    }
+
+    const settings = this.settingsManager.getSettings();
+    if (!settings.shouldHandleRenames) {
+      return;
+    }
+
+    if (settings.isPathIgnored?.(oldPath)) {
+      getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of old path ${oldPath} as the path is ignored.`);
+      return;
+    }
+
+    if (settings.isPathIgnored?.(newPath)) {
+      getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of new path ${newPath} as the path is ignored.`);
+      return;
+    }
+
+    const oldCache = this.app.metadataCache.getCache(oldPath) ?? this.app.metadataCache.getCache(newPath);
+    const oldPathBacklinksMap = getBacklinksForFileOrPath(this.app, oldPath).data;
+    addToQueue({
+      abortSignal: this.abortSignalComponent.abortSignal,
+      app: this.app,
+      operationFn: (abortSignal) =>
+        new RenameHandler({
+          abortSignal,
+          app: this.app,
+          handledRenames: this.handledRenames,
+          interruptedRenamesMap: this.interruptedRenamesMap,
+          newPath,
+          oldCache,
+          oldPath,
+          oldPathBacklinksMap,
+          settingsManager: this.settingsManager
+        }).handle(),
+      operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleRename, { newPath, oldPath })
+    });
+  }
+
+  private logRegisteredHandlers(): void {
+    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
+    getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
+      `Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`
+    );
+  }
+
+  private shouldInvokeHandler(): boolean {
+    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
+    const mainPluginId = Array.from(renameDeleteHandlersMap.keys())[0];
+    return mainPluginId === this.pluginId;
+  }
+
+  private async wrapLinkUpdatesHandler(linkUpdates: LinkUpdate[], linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
+    let isRenameCalled = false;
+    const eventRef = this.app.vault.on('rename', () => {
+      isRenameCalled = true;
+    });
+    try {
+      await linkUpdatesHandler(linkUpdates);
+    } finally {
+      this.app.vault.offref(eventRef);
+    }
+    const settings = this.settingsManager.getSettings();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed in `rename` event handler. ESLint mistakenly does not recognize it.
+    if (!isRenameCalled || !settings.shouldHandleRenames) {
+      return;
+    }
+
+    filterInPlace(
+      linkUpdates,
+      (linkUpdate) => {
+        if (settings.isPathIgnored?.(linkUpdate.sourceFile.path)) {
+          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
+            `Roll back to default link update of source file ${linkUpdate.sourceFile.path} as the path is ignored.`
+          );
+          return true;
+        }
+
+        if (settings.isPathIgnored?.(linkUpdate.resolvedFile.path)) {
+          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
+            `Roll back to default link update of resolved file ${linkUpdate.resolvedFile.path} as the path is ignored.`
+          );
+          return true;
+        }
+
+        if (!this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
+          return false;
+        }
+
+        if (this.app.plugins.getPlugin('backlink-cache')) {
+          return false;
+        }
+
+        if (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) {
+          return true;
+        }
+
+        if (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION) {
+          return true;
+        }
+
+        return false;
+      }
+    );
+  }
 }
 
 async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHandlerSettings>, parentFolderPaths: string[]): Promise<void> {
