@@ -16,9 +16,12 @@ import {
   it
 } from 'vitest';
 
-interface ReadNoteContentArgs extends Record<string, unknown> {
+import type { GenericObject } from '../type-guards.ts';
+
+interface ReadNoteContent {
   content: string;
 }
+type ReadNoteContentArgs = GenericObject<ReadNoteContent>;
 
 describe('markdown-code-block-processor', () => {
   it('should export getCodeBlockMarkdownInfo function', async () => {
