@@ -16,7 +16,7 @@ import {
   it
 } from 'vitest';
 
-interface ReadNoteContentArgs {
+interface ReadNoteContentArgs extends Record<string, unknown> {
   content: string;
 }
 
