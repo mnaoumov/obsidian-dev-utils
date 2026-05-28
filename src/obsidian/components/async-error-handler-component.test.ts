@@ -6,19 +6,22 @@ import {
 } from 'vitest';
 
 import { noop } from '../../function.ts';
+import { castTo } from '../../object-utils.ts';
 import { AsyncErrorHandlerComponent } from './async-error-handler-component.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
+type TranslationsArg = Parameters<Parameters<typeof import('../i18n/i18n.ts')['t']>[0]>[0];
+
 const mocks = vi.hoisted(() => ({
-  registerAsyncErrorEventHandler: vi.fn(() => vi.fn()),
-  t: vi.fn((fn: (translations: Record<string, Record<string, string>>) => string) =>
-    fn({
+  registerAsyncErrorEventHandler: vi.fn<(handler: (error: unknown) => void) => () => void>(),
+  t: vi.fn((fn: (translations: TranslationsArg) => string) =>
+    fn(castTo<TranslationsArg>({
       obsidianDevUtils: {
         notices: {
           unhandledError: 'An error occurred'
         }
       }
-    } as never)
+    }))
   )
 }));
 
@@ -51,12 +54,10 @@ describe('AsyncErrorHandlerComponent', () => {
     let errorHandler: (error: unknown) => void = () => {
       noop();
     };
-    mocks.registerAsyncErrorEventHandler.mockImplementation(
-      ((handler: (error: unknown) => void) => {
-        errorHandler = handler;
-        return vi.fn();
-      }) as never
-    );
+    mocks.registerAsyncErrorEventHandler.mockImplementation((handler) => {
+      errorHandler = handler;
+      return vi.fn();
+    });
 
     component.onload();
     errorHandler(new Error('test error'));

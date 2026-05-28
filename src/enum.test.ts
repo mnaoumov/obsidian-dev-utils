@@ -8,6 +8,7 @@ import {
   getEnumKey,
   getEnumValue
 } from './enum.ts';
+import { castTo } from './object-utils.ts';
 
 const TestEnum = {
   Bar: 'bar',
@@ -26,11 +27,11 @@ describe('Enum', () => {
     });
 
     it('should throw for an invalid enum value', () => {
-      expect(() => getEnumKey(TestEnum, 'invalid' as never)).toThrow('Invalid enum value: invalid');
+      expect(() => getEnumKey(TestEnum, castTo<typeof TestEnum[keyof typeof TestEnum]>('invalid'))).toThrow('Invalid enum value: invalid');
     });
 
     it('should throw with the value in the error message', () => {
-      expect(() => getEnumKey(TestEnum, 'nope' as never)).toThrow('nope');
+      expect(() => getEnumKey(TestEnum, castTo<typeof TestEnum[keyof typeof TestEnum]>('nope'))).toThrow('nope');
     });
   });
 

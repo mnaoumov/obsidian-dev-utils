@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 
+import type { Debugger } from 'debug';
+
 import {
   beforeEach,
   describe,
@@ -17,6 +19,7 @@ import {
 } from '../async.ts';
 import { getDebugger } from '../debug.ts';
 import { noopAsync } from '../function.ts';
+import { castTo } from '../object-utils.ts';
 import {
   assertNonNullable,
   ensureNonNullable
@@ -711,7 +714,7 @@ describe('AsyncWithNotice', () => {
     it('should log debug info with operation name and total duration when operation completes', async () => {
       const onTimeout = await captureOnTimeoutWithoutNotice();
       const mockDebugFn = vi.fn();
-      vi.mocked(getDebugger).mockReturnValue(mockDebugFn as never);
+      vi.mocked(getDebugger).mockReturnValue(castTo<Debugger>(mockDebugFn));
 
       const onOperationCompletedCallbacks: (() => void)[] = [];
       const ctx = createMockTimeoutContext({

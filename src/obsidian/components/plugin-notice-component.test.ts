@@ -1,3 +1,5 @@
+import type { Notice as NoticeOriginal } from 'obsidian';
+
 import {
   beforeEach,
   describe,
@@ -6,6 +8,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../object-utils.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 interface NoticeInstance {
@@ -17,7 +20,7 @@ const mocks = vi.hoisted(() => {
   const NoticeMock = vi.fn(function noticeMock(this: NoticeInstance) {
     this.hide = vi.fn();
     instances.push(this);
-  }) as never;
+  });
   return { instances, NoticeMock };
 });
 
@@ -25,7 +28,7 @@ vi.mock('obsidian', async (importOriginal) => {
   const actual = await importOriginal<typeof import('obsidian')>();
   return {
     ...actual,
-    Notice: mocks.NoticeMock
+    Notice: castTo<typeof NoticeOriginal>(mocks.NoticeMock)
   };
 });
 

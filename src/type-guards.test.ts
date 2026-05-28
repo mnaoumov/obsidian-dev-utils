@@ -5,6 +5,7 @@ import {
   it
 } from 'vitest';
 
+import { castTo } from './object-utils.ts';
 import {
   assert,
   assertGenericObject,
@@ -55,7 +56,7 @@ describe('TypeGuards', () => {
   describe('assertNever', () => {
     it('should throw with the stringified value', () => {
       expect(() => {
-        assertNever('unexpected' as never);
+        assertNever(castTo<never>('unexpected'));
       }).toThrow('Unhandled value: unexpected');
     });
 

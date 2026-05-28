@@ -14,6 +14,7 @@ import {
   mixinAsyncEvents
 } from './async-events.ts';
 import { noopAsync } from './function.ts';
+import { castTo } from './object-utils.ts';
 import { assertNonNullable } from './type-guards.ts';
 
 describe('AsyncEvents', () => {
@@ -458,17 +459,19 @@ interface TestEventMap {
   save: [];
 }
 
+type TestEventName = keyof TestEventMap;
+
 class Base {
   public baseValue = 42;
 }
 
 class MixedIn extends mixinAsyncEvents<TestEventMap>()(Base) {
   public doTrigger(name: string, ...args: unknown[]): void {
-    this.trigger(name as never, ...args as never);
+    this.trigger(castTo<TestEventName>(name), ...castTo<TestEventMap[TestEventName]>(args));
   }
 
   public async doTriggerAsync(name: string, ...args: unknown[]): Promise<void> {
-    await this.triggerAsync(name as never, ...args as never);
+    await this.triggerAsync(castTo<TestEventName>(name), ...castTo<TestEventMap[TestEventName]>(args));
   }
 
   public doTryTrigger(eventRef: AsyncEventRef, args: unknown[]): void {
