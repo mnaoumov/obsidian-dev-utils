@@ -31,5 +31,5 @@ See full documentation of [`window.DEBUG`](https://github.com/mnaoumov/obsidian-
 In order to write your debug messages from your plugin, use:
 
 ```js
-plugin.consoleDebug('foo', 'bar', 'baz');
+consoleDebugComponent.debug('foo', 'bar', 'baz');
 ```
