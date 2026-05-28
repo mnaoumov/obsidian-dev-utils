@@ -21,7 +21,7 @@ import { errorToString } from './error.ts';
 import { getFunctionExpressionString } from './function.ts';
 import { replaceAll } from './string.ts';
 import {
-  assert,
+  assertNever,
   ensureGenericObject,
   ensureNonNullable
 } from './type-guards.ts';
@@ -589,7 +589,7 @@ function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<strin
       return 'undefined';
     /* v8 ignore start -- Exhaustive switch guard; default branch is unreachable. */
     default:
-      assert(false, 'Unhandled substitution key');
+      assertNever(params.key);
       /* v8 ignore stop */
   }
 }
