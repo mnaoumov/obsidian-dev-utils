@@ -7,6 +7,7 @@
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
 
+import dedent from 'dedent';
 import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
@@ -14,6 +15,10 @@ import {
   inject,
   it
 } from 'vitest';
+
+interface ReadNoteContentArgs {
+  content: string;
+}
 
 describe('markdown-code-block-processor', () => {
   it('should export getCodeBlockMarkdownInfo function', async () => {
@@ -77,18 +82,17 @@ describe('markdown-code-block-processor', () => {
   });
 
   it('should read note content with code block from vault', async () => {
-    const result = await evalInObsidian<Record<string, never>, string>({
-      async fn({ app }) {
-        const content = [
-          '# Test Note',
-          '',
-          '```js',
-          'console.log("hello");',
-          '```',
-          ''
-        ].join('\n');
+    const content = `${dedent`
+        # Test Note
 
-        const file = await app.vault.create('code-block-test.md', content);
+        \`\`\`js
+        console.log("hello");
+        \`\`\`
+      `}\n`;
+    const result = await evalInObsidian<ReadNoteContentArgs, string>({
+      args: { content },
+      async fn({ app, content: noteContent }) {
+        const file = await app.vault.create('code-block-test.md', noteContent);
         try {
           return await app.vault.read(file);
         } finally {
