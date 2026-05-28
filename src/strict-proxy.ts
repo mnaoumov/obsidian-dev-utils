@@ -28,9 +28,14 @@ export type StrictProxyPartial<T> = T extends GenericFunction ? T
 const STRICT_PROXY_TARGET_SYMBOL = Symbol.for('strictProxyTarget');
 
 const PASSTHROUGH_PROPS = new Set<string | symbol>([
+  '_isMockFunction',
+  '$$typeof',
+  'asymmetricMatch',
+  'nodeType',
   Symbol.iterator,
   Symbol.toPrimitive,
   Symbol.toStringTag,
+  'tagName',
   'then',
   'toJSON'
 ]);
