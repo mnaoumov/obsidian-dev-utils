@@ -695,9 +695,10 @@ function deepEqualSet(a: Set<unknown>, b: Set<unknown>): boolean {
 }
 
 function deepEqualTyped(a: unknown, b: unknown): boolean | undefined {
-  for (const { constructor, equalityComparer } of equalityComparerEntries) {
-    if (a instanceof constructor && b instanceof constructor) {
-      return equalityComparer(a as never, b as never);
+  for (const entry of equalityComparerEntries) {
+    const result = tryEntryEquality(entry, a, b);
+    if (result !== undefined) {
+      return result;
     }
   }
   return undefined;
@@ -831,6 +832,13 @@ function toPlainObject(
   }
 
   return handleObject(value, key, depth, canUseToJSON, fullOptions, functionTexts, usedObjects);
+}
+
+function tryEntryEquality<T>(entry: EqualityComparerEntry<T>, a: unknown, b: unknown): boolean | undefined {
+  if (a instanceof entry.constructor && b instanceof entry.constructor) {
+    return entry.equalityComparer(a, b);
+  }
+  return undefined;
 }
 
 function tryHandleToJSON(
