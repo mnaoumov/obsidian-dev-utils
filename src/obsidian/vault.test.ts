@@ -2,7 +2,8 @@
 
 import type {
   App as AppOriginal,
-  Editor
+  Editor,
+  WorkspaceLeaf as WorkspaceLeafOriginal
 } from 'obsidian';
 
 import { getDataAdapterEx } from '@obsidian-typings/obsidian-public-latest/implementations';
@@ -458,7 +459,7 @@ describe('saveNote', () => {
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
-      { view } as never
+      strictProxy<WorkspaceLeafOriginal>({ view })
     ]);
 
     await saveNote(app, 'note.md');
@@ -475,7 +476,7 @@ describe('saveNote', () => {
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
-      { view } as never
+      strictProxy<WorkspaceLeafOriginal>({ view })
     ]);
 
     await saveNote(app, 'note.md');
@@ -490,7 +491,7 @@ describe('saveNote', () => {
     vi.spyOn(view, 'save');
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
-      { view } as never
+      strictProxy<WorkspaceLeafOriginal>({ view })
     ]);
 
     await saveNote(app, 'note.md');
@@ -1088,7 +1089,7 @@ describe('processFile', () => {
     view.editor = strictProxy<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
-      { view } as never
+      strictProxy<WorkspaceLeafOriginal>({ view })
     ]);
     vi.spyOn(app.workspace, 'on');
 
@@ -1157,7 +1158,7 @@ describe('processFile', () => {
     view.editor = strictProxy<Editor>({});
 
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
-      { view } as never
+      strictProxy<WorkspaceLeafOriginal>({ view })
     ]);
 
     const mockedLockEditor = vi.mocked(lockEditor);

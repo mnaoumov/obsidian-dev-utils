@@ -21,6 +21,7 @@ import type { ContentArgs } from './vault.ts';
 import { getLibDebugger } from '../debug.ts';
 import { printError } from '../error.ts';
 import { noop } from '../function.ts';
+import { castTo } from '../object-utils.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
 import {
@@ -299,13 +300,13 @@ describe('isFrontmatterChangeWithOffsets', () => {
 describe('toFrontmatterChangeWithOffsets', () => {
   it('should return the same change if it already has offsets', () => {
     const change = makeFrontmatterChangeWithOffsets('old', 'new', 'aliases', 5, 8);
-    const result = toFrontmatterChangeWithOffsets(change as never);
+    const result = toFrontmatterChangeWithOffsets(castTo<Parameters<typeof toFrontmatterChangeWithOffsets>[0]>(change));
     expect(result).toBe(change);
   });
 
   it('should convert a frontmatter change without offsets by adding startOffset=0 and endOffset=original.length', () => {
     const change = makeFrontmatterChange('hello', 'world', 'aliases');
-    const result = toFrontmatterChangeWithOffsets(change as never);
+    const result = toFrontmatterChangeWithOffsets(castTo<Parameters<typeof toFrontmatterChangeWithOffsets>[0]>(change));
     expect(isFrontmatterChangeWithOffsets(result)).toBe(true);
     expect(result.reference.startOffset).toBe(0);
     expect(result.reference.endOffset).toBe(5);
@@ -313,7 +314,7 @@ describe('toFrontmatterChangeWithOffsets', () => {
 
   it('should preserve all original properties on the converted change', () => {
     const change = makeFrontmatterChange('link-value', 'new-value', 'myKey');
-    const result = toFrontmatterChangeWithOffsets(change as never);
+    const result = toFrontmatterChangeWithOffsets(castTo<Parameters<typeof toFrontmatterChangeWithOffsets>[0]>(change));
     expect(result.newContent).toBe('new-value');
     expect(result.oldContent).toBe('link-value');
     expect(result.reference.key).toBe('myKey');

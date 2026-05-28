@@ -13,6 +13,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { ensureGenericObject } from '../../type-guards.ts';
 import {
@@ -112,7 +113,7 @@ describe('initDebugController', () => {
 
   it('should restore old DEBUG on cleanup when DEBUG is still ours', () => {
     const oldDebug = { old: true };
-    const win: Window = { DEBUG: oldDebug } as never;
+    const win = castTo<Window>({ DEBUG: oldDebug });
     const registerFn = vi.fn();
     const mockComponent = strictProxy<Component>({
       register: registerFn
@@ -177,9 +178,9 @@ describe('initPluginContext', () => {
 
   it('should remove old styles and inject new ones when version is newer', () => {
     mocks.compareVersions.mockReturnValue(1);
-    const oldStyleEl = { remove: vi.fn() };
+    const oldStyleEl = strictProxy<Element>({ remove: vi.fn() });
     // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
-    vi.spyOn(document.head, 'querySelector').mockReturnValue(oldStyleEl as never);
+    vi.spyOn(document.head, 'querySelector').mockReturnValue(oldStyleEl);
     // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     const createElSpy = vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext(app, 'my-plugin');

@@ -1,4 +1,7 @@
-import type { App as AppOriginal } from 'obsidian';
+import type {
+  App as AppOriginal,
+  TFile
+} from 'obsidian';
 
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
@@ -12,6 +15,7 @@ import {
 import type { GenericObject } from '../type-guards.ts';
 
 import { deepEqual } from '../object-utils.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { ensureNonNullable } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
 import {
@@ -91,13 +95,13 @@ describe('addAlias', () => {
   });
 
   it('should do nothing when alias matches basename', async () => {
-    vi.mocked(getFile).mockReturnValue({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' } as never);
+    vi.mocked(getFile).mockReturnValue(strictProxy<TFile>({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' }));
     await addAlias(app, 'note.md', 'note');
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias matches file name', async () => {
-    vi.mocked(getFile).mockReturnValue({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' } as never);
+    vi.mocked(getFile).mockReturnValue(strictProxy<TFile>({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' }));
     await addAlias(app, 'note.md', 'note.md');
     expect(process).not.toHaveBeenCalled();
   });
@@ -105,7 +109,7 @@ describe('addAlias', () => {
   it('should add an alias to frontmatter', async () => {
     const frontmatter: GenericObject = {};
     vi.mocked(parseFrontmatter).mockReturnValue(frontmatter);
-    vi.mocked(getFile).mockReturnValue({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' } as never);
+    vi.mocked(getFile).mockReturnValue(strictProxy<TFile>({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' }));
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
@@ -119,7 +123,7 @@ describe('addAlias', () => {
   it('should not add a duplicate alias', async () => {
     const frontmatter = { aliases: ['existing-alias'] };
     vi.mocked(parseFrontmatter).mockReturnValue(frontmatter);
-    vi.mocked(getFile).mockReturnValue({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' } as never);
+    vi.mocked(getFile).mockReturnValue(strictProxy<TFile>({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' }));
 
     vi.mocked(process).mockImplementation(async (_app, _pathOrFile, fn) => {
       const controller = new AbortController();
