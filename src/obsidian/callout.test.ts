@@ -9,6 +9,7 @@ import {
 } from 'vitest';
 
 import type { GenericObject } from '../type-guards.ts';
+import type { DataviewInlineApi } from './dataview.ts';
 import type { AddToQueueParams } from './queue.ts';
 
 import { noopAsync } from '../function.ts';
@@ -176,7 +177,7 @@ describe('renderCallout', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv) });
 
     const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
     expect(firstCallArgs[0]).toBe('> [!NOTE]- \n>\n> <div class="content"></div>');
@@ -186,7 +187,7 @@ describe('renderCallout', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never, mode: CalloutMode.Default });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: CalloutMode.Default });
 
     const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
     expect(firstCallArgs[0]).toBe('> [!NOTE] \n>\n> <div class="content"></div>');
@@ -196,7 +197,7 @@ describe('renderCallout', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never, mode: CalloutMode.FoldableExpanded });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: CalloutMode.FoldableExpanded });
 
     const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
     expect(firstCallArgs[0]).toBe('> [!NOTE]+ \n>\n> <div class="content"></div>');
@@ -206,7 +207,7 @@ describe('renderCallout', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never, type: 'WARNING' });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv), type: 'WARNING' });
 
     const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
     expect(firstCallArgs[0]).toBe('> [!WARNING]- \n>\n> <div class="content"></div>');
@@ -216,7 +217,7 @@ describe('renderCallout', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never, header: 'My Header' });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv), header: 'My Header' });
 
     const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
     expect(firstCallArgs[0]).toBe('> [!NOTE]- My Header\n>\n> <div class="content"></div>');
@@ -226,7 +227,7 @@ describe('renderCallout', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv) });
 
     // The second call to dv.paragraph should be the loading text
     expect(dv.paragraph).toHaveBeenCalledTimes(2);
@@ -239,7 +240,7 @@ describe('renderCallout', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv) });
 
     expect(IntersectionObserver).toHaveBeenCalledWith(expect.any(Function));
     expect(mockObserve).toHaveBeenCalledTimes(1);
@@ -254,7 +255,7 @@ describe('renderCallout', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv) });
 
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
@@ -281,7 +282,7 @@ describe('renderCallout', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv) });
 
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
@@ -301,7 +302,7 @@ describe('renderCallout', () => {
     const dv = createMockDv();
     const abortController = new AbortController();
 
-    renderCallout({ abortSignal: abortController.signal, dv: dv as never });
+    renderCallout({ abortSignal: abortController.signal, dv: castTo<DataviewInlineApi>(dv) });
 
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
@@ -328,7 +329,7 @@ describe('renderCallout', () => {
       await params.operationFn(abortController.signal);
     });
 
-    renderCallout({ contentProvider: 'Hello World', dv: dv as never });
+    renderCallout({ contentProvider: 'Hello World', dv: castTo<DataviewInlineApi>(dv) });
 
     const firstObserveCall1 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall1);
@@ -360,7 +361,7 @@ describe('renderCallout', () => {
       await params.operationFn(abortController.signal);
     });
 
-    renderCallout({ contentProvider: contentFn, dv: dv as never });
+    renderCallout({ contentProvider: contentFn, dv: castTo<DataviewInlineApi>(dv) });
 
     const firstObserveCall2 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall2);
@@ -390,7 +391,7 @@ describe('renderCallout', () => {
 
     // Use a function that returns undefined so resolveValue returns undefined,
     // Triggering the content ??= paragraph fallback path
-    renderCallout({ contentProvider: () => undefined, dv: dv as never });
+    renderCallout({ contentProvider: () => undefined, dv: castTo<DataviewInlineApi>(dv) });
 
     const firstObserveCall3 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall3);
@@ -415,7 +416,7 @@ describe('renderCallout', () => {
     const dv = createMockDv();
 
     renderCallout({
-      dv: dv as never,
+      dv: castTo<DataviewInlineApi>(dv),
       header: 'Important',
       mode: CalloutMode.FoldableExpanded,
       type: 'TIP'
@@ -452,7 +453,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never, mode: CalloutMode.FoldableCollapsed });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: CalloutMode.FoldableCollapsed });
 
     const firstParagraphCall1 = dv.paragraph.mock.calls[0];
     assertNonNullable(firstParagraphCall1);
@@ -464,7 +465,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never, mode: CalloutMode.FoldableExpanded });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: CalloutMode.FoldableExpanded });
 
     const firstParagraphCall2 = dv.paragraph.mock.calls[0];
     assertNonNullable(firstParagraphCall2);
@@ -476,7 +477,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
     await noopAsync();
     const dv = createMockDv();
 
-    renderCallout({ dv: dv as never, mode: CalloutMode.Default });
+    renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: CalloutMode.Default });
 
     const firstParagraphCall3 = dv.paragraph.mock.calls[0];
     assertNonNullable(firstParagraphCall3);

@@ -13,6 +13,7 @@ import {
   noop,
   noopAsync
 } from '../function.ts';
+import { castTo } from '../object-utils.ts';
 import { ensureGenericObject } from '../type-guards.ts';
 import { DEFAULT_NS } from './i18n/i18n.ts';
 
@@ -101,7 +102,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
       const { t: freshT } = await reloadI18N();
 
-      freshT(((translations: GenericObject) => translations['test']) as never);
+      freshT(castTo<Parameters<typeof freshT>[0]>((translations: GenericObject) => translations['test']));
 
       expect(vi.mocked(console.warn)).toHaveBeenCalledWith(
         'I18N was not initialized, initializing default obsidian-dev-utils translations'
@@ -196,7 +197,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       await initI18N({ en: { test: 'hello' } }, false);
       mockTLibFn.mockClear();
 
-      const selector = (($: GenericObject): unknown => $['test']) as never;
+      const selector = castTo<Parameters<typeof freshT>[0]>(($: GenericObject): unknown => $['test']);
       freshT(selector);
 
       expect(mockTLibFn).toHaveBeenCalledTimes(1);
@@ -208,9 +209,9 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       await initI18N({ en: { test: 'hello' } }, false);
       mockTLibFn.mockClear();
 
-      const selector = (($: GenericObject): unknown => $['test']) as never;
+      const selector = castTo<Parameters<typeof freshT>[0]>(($: GenericObject): unknown => $['test']);
       const options = { ns: ['translation' as const] };
-      freshT(selector, options as never);
+      freshT(selector, castTo<Parameters<typeof freshT>[1]>(options));
 
       expect(mockTLibFn).toHaveBeenCalledTimes(1);
       expect(mockTLibFn).toHaveBeenCalledWith(selector, options);
@@ -220,7 +221,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       const { initI18N, t: freshT } = await reloadI18N();
       await initI18N({ en: { test: 'hello' } }, false);
 
-      const result = freshT((($: GenericObject): unknown => $['test']) as never);
+      const result = freshT(castTo<Parameters<typeof freshT>[0]>(($: GenericObject): unknown => $['test']));
 
       expect(result).toBe('translated-value');
     });

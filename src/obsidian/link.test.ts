@@ -1654,10 +1654,10 @@ describe('app-dependent functions', () => {
     );
     vi.mocked(getCacheSafe).mockResolvedValue(null);
     vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({}));
-    vi.mocked(getBacklinksForFileSafe).mockResolvedValue({
+    vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
       get: () => null,
       keys: () => []
-    } as never);
+    }));
     vi.mocked(applyContentChanges).mockImplementation(
       async (_signal, content, _path, changesProvider) => {
         if (typeof changesProvider === 'function') {
@@ -2520,7 +2520,7 @@ describe('app-dependent functions', () => {
         original: '[[target]]',
         position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
       };
-      vi.mocked(getBacklinksForFileSafe).mockResolvedValue({
+      vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
         get: (key: string) => {
           if (key === 'note.md') {
             return [backlinkRef];
@@ -2528,7 +2528,7 @@ describe('app-dependent functions', () => {
           return null;
         },
         keys: () => ['note.md']
-      } as never);
+      }));
 
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
@@ -2566,10 +2566,10 @@ describe('app-dependent functions', () => {
         original: '[[target]]',
         position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
       };
-      vi.mocked(getBacklinksForFileSafe).mockResolvedValue({
+      vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
         get: () => [],
         keys: () => ['note.md']
-      } as never);
+      }));
 
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
