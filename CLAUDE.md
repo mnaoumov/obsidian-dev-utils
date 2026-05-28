@@ -548,17 +548,7 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 
 ## Pending Questions
 
-### Q1: i18n decoupling approach (auto-selected: B)
-
-The i18n system uses `PluginTypes` for type-safe translations. Two options:
-
-- A) Keep i18n coupled to a generic parameter (simpler, but PluginBase stays generic)
-- B) Decouple i18n from PluginTypes entirely — `initI18N()` takes a plain `TranslationsMap` without generic constraints
-- **Auto-selected B** because only 2/23 plugins use custom translations, and making PluginBase non-generic is the primary goal.
-
-### Q2: Settings persistence approach (auto-selected: A, implemented)
-
-Settings persistence uses `loadData`/`saveData` callbacks passed to `PluginSettingsComponentBase` constructor — cleanest DI, no plugin dependency.
+None.
 
 ## Commits
 
