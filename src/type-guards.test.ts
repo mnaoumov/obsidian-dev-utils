@@ -8,6 +8,7 @@ import {
 import {
   assert,
   assertGenericObject,
+  assertNever,
   assertNonNullable,
   ensureGenericObject,
   ensureNonNullable
@@ -48,6 +49,31 @@ describe('TypeGuards', () => {
       assertGenericObject(obj);
       expect(obj['a']).toBe(1);
       expect(obj['b']).toBe('two');
+    });
+  });
+
+  describe('assertNever', () => {
+    it('should throw with the stringified value', () => {
+      expect(() => {
+        assertNever('unexpected' as never);
+      }).toThrow('Unhandled value: unexpected');
+    });
+
+    it('should be callable in an exhaustive switch default branch', () => {
+      type Mode = 'a' | 'b';
+      function handle(mode: Mode): string {
+        switch (mode) {
+          case 'a':
+            return 'A';
+          case 'b':
+            return 'B';
+          default:
+            assertNever(mode);
+        }
+      }
+      expect(handle('a')).toBe('A');
+      expect(handle('b')).toBe('B');
+      expect(() => handle('c' as Mode)).toThrow('Unhandled value: c');
     });
   });
 
