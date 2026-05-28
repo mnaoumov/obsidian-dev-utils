@@ -44,9 +44,9 @@ export function mockImplementation<
 
   const originalImplementation = map.get(method) as F;
 
-  const spy = vi.spyOn(obj, method);
-  spy.mockImplementation(function mockImpl(this: unknown, ...args: unknown[]): unknown {
-    return impl.call(this as T, originalImplementation, ...(args as Parameters<F>));
-  } as never);
-  return spy as MockInstance;
+  const spy = vi.spyOn(obj, method) as MockInstance<F>;
+  spy.mockImplementation(function mockImpl(this: T, ...args: Parameters<F>): ReturnType<F> {
+    return impl.call(this, originalImplementation, ...args);
+  });
+  return spy;
 }
