@@ -41,6 +41,31 @@ export function assertGenericObject<T>(_obj: T): asserts _obj is GenericObject<T
 }
 
 /**
+ * Asserts at compile time that every case of a discriminated union has been
+ * handled. Place at the `default` branch of a `switch` over a union or enum.
+ *
+ * If a new variant is added to the union without a matching `case`, the call
+ * to {@link assertNever} fails to compile because `value` is no longer `never`.
+ * If reached at runtime (e.g. because the value was bypassed via JSON or a
+ * type assertion), it throws a descriptive `Error`.
+ *
+ * @example
+ * ```ts
+ * switch (mode) {
+ *   case 'a': return doA();
+ *   case 'b': return doB();
+ *   default: assertNever(mode);
+ * }
+ * ```
+ *
+ * @param value - The exhaustively-handled value, narrowed to `never` by control flow.
+ * @throws Always, if reached at runtime.
+ */
+export function assertNever(value: never): never {
+  throw new Error(`Unhandled value: ${String(value)}`);
+}
+
+/**
  * Asserts that a value is not `null` or `undefined`, narrowing its type in place.
  *
  * Only callable when `T` includes `null` or `undefined`. Passing an already non-nullable type is a compile error.
