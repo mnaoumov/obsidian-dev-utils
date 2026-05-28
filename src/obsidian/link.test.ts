@@ -1993,7 +1993,7 @@ describe('app-dependent functions', () => {
           sourcePathOrFile: 'note.md',
           targetPathOrFile: 'target.md'
         })
-      ).toThrow('Invalid link style');
+      ).toThrow('Unhandled value: Invalid');
     });
 
     it('should throw for invalid link path style', () => {
@@ -2005,7 +2005,7 @@ describe('app-dependent functions', () => {
           sourcePathOrFile: 'note.md',
           targetPathOrFile: 'target.md'
         })
-      ).toThrow('Invalid link path style');
+      ).toThrow('Unhandled value: Invalid');
     });
 
     it('should throw for invalid ObsidianSettingsDefault new link format', () => {
@@ -2023,7 +2023,7 @@ describe('app-dependent functions', () => {
           sourcePathOrFile: 'note.md',
           targetPathOrFile: 'target.md'
         })
-      ).toThrow('Invalid link format');
+      ).toThrow('Unhandled value: invalid-format');
     });
 
     it('should not allow single subpath when isSingleSubpathAllowed is false', () => {

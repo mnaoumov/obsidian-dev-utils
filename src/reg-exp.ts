@@ -4,7 +4,10 @@
  * Contains utility functions for regular expressions.
  */
 
-import { assert } from './type-guards.ts';
+import {
+  assert,
+  assertNever
+} from './type-guards.ts';
 
 /**
  * A strategy to use when merging multiple regex flags into one alternation.
@@ -67,7 +70,7 @@ function shouldPickFlag(regExps: RegExp[], flag: string, strategy: RegExpMergeFl
       return count > 0;
     default:
       /* v8 ignore start -- Exhaustive switch guard. */
-      assert(false, `Invalid strategy: ${strategy as string}`);
+      assertNever(strategy);
       /* v8 ignore stop */
   }
 
@@ -177,7 +180,7 @@ function addUnicodeFlags(
       break;
     default:
       /* v8 ignore start -- Exhaustive switch guard. */
-      assert(false, `Invalid strategy: ${strategy as string}`);
+      assertNever(strategy);
       /* v8 ignore stop */
   }
 

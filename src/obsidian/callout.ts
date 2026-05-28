@@ -10,7 +10,10 @@ import type { DataviewInlineApi } from './dataview.ts';
 import type { AddToQueueParams } from './queue.ts';
 
 import { normalizeOptionalProperties } from '../object-utils.ts';
-import { ensureNonNullable } from '../type-guards.ts';
+import {
+  assertNever,
+  ensureNonNullable
+} from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
 import { getRenderedContainer } from './dataview.ts';
 import { t } from './i18n/i18n.ts';
@@ -135,11 +138,13 @@ export function wrapForCallout(content: string): string {
  */
 function getModifier(mode: CalloutMode): string {
   switch (mode) {
+    case CalloutMode.Default:
+      return '';
     case CalloutMode.FoldableCollapsed:
       return '-';
     case CalloutMode.FoldableExpanded:
       return '+';
     default:
-      return '';
+      assertNever(mode);
   }
 }

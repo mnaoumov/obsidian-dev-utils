@@ -746,7 +746,7 @@ describe('getOrCreateAbstractFileSafe', () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('path');
     await expect(
       getOrCreateAbstractFileSafe(app, 'path', castTo<FileSystemType>('invalid'))
-    ).rejects.toThrow('Invalid file system type');
+    ).rejects.toThrow('Unhandled value: invalid');
   });
 });
 

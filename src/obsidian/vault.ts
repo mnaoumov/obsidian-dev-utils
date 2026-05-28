@@ -39,6 +39,7 @@ import {
   extname,
   join
 } from '../path.ts';
+import { assertNever } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
 import {
@@ -340,7 +341,7 @@ export async function getOrCreateAbstractFileSafe(app: App, path: string, type: 
     case FileSystemType.Folder:
       return await app.vault.createFolder(path);
     default:
-      throw new Error(`Invalid file system type: ${type as string}`);
+      assertNever(type);
   }
 }
 

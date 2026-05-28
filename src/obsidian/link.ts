@@ -48,6 +48,7 @@ import {
   trimEnd
 } from '../string.ts';
 import {
+  assertNever,
   assertNonNullable,
   ensureNonNullable
 } from '../type-guards.ts';
@@ -1473,7 +1474,7 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
       }
       /* v8 ignore start -- All valid FinalLinkPathStyle values are handled above. */
       default:
-        throw new Error(`Invalid link path style: ${config.linkPathStyle as string}.`);
+        assertNever(config.linkPathStyle);
         /* v8 ignore stop */
     }
   }
@@ -1586,28 +1587,18 @@ async function getFileChanges(
 }
 
 function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLinkPathStyle {
-  switch (linkPathStyle ?? LinkPathStyle.ObsidianSettingsDefault) {
+  const resolvedStyle = linkPathStyle ?? LinkPathStyle.ObsidianSettingsDefault;
+  switch (resolvedStyle) {
     case LinkPathStyle.AbsolutePathInVault:
       return FinalLinkPathStyle.AbsolutePathInVault;
+    case LinkPathStyle.ObsidianSettingsDefault:
+      return resolveFinalLinkPathStyleFromObsidianSettings(app);
     case LinkPathStyle.RelativePathToTheSource:
       return FinalLinkPathStyle.RelativePathToTheSource;
     case LinkPathStyle.ShortestPathWhenPossible:
       return FinalLinkPathStyle.ShortestPathWhenPossible;
-    case LinkPathStyle.ObsidianSettingsDefault: {
-      const newLinkFormat = getNewLinkFormat(app);
-      switch (newLinkFormat) {
-        case 'absolute':
-          return FinalLinkPathStyle.AbsolutePathInVault;
-        case 'relative':
-          return FinalLinkPathStyle.RelativePathToTheSource;
-        case 'shortest':
-          return FinalLinkPathStyle.ShortestPathWhenPossible;
-        default:
-          throw new Error(`Invalid link format: ${newLinkFormat as string}.`);
-      }
-    }
     default:
-      throw new Error(`Invalid link path style: ${linkPathStyle as string}.`);
+      assertNever(resolvedStyle);
   }
 }
 
@@ -1687,6 +1678,20 @@ function parseWikilinkNode(node: WikiLinkNode, str: string): ParseLinkResult {
   });
 }
 
+function resolveFinalLinkPathStyleFromObsidianSettings(app: App): FinalLinkPathStyle {
+  const newLinkFormat = getNewLinkFormat(app);
+  switch (newLinkFormat) {
+    case 'absolute':
+      return FinalLinkPathStyle.AbsolutePathInVault;
+    case 'relative':
+      return FinalLinkPathStyle.RelativePathToTheSource;
+    case 'shortest':
+      return FinalLinkPathStyle.ShortestPathWhenPossible;
+    default:
+      assertNever(newLinkFormat);
+  }
+}
+
 function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: TablePosition[]): boolean {
   /* v8 ignore start -- getFileChanges only calls this for non-canvas files which always have content changes. */
   if (!isContentChange(fileChange)) {
@@ -1704,7 +1709,8 @@ function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: Tab
 }
 
 function shouldUseWikilinkStyle(app: App, originalLink?: string, linkStyle?: LinkStyle): boolean {
-  switch (linkStyle ?? LinkStyle.PreserveExisting) {
+  const resolvedStyle = linkStyle ?? LinkStyle.PreserveExisting;
+  switch (resolvedStyle) {
     case LinkStyle.Markdown:
       return false;
     case LinkStyle.ObsidianSettingsDefault:
@@ -1714,6 +1720,6 @@ function shouldUseWikilinkStyle(app: App, originalLink?: string, linkStyle?: Lin
     case LinkStyle.Wikilink:
       return true;
     default:
-      throw new Error(`Invalid link style: ${linkStyle as string}.`);
+      assertNever(resolvedStyle);
   }
 }
