@@ -834,7 +834,7 @@ function toPlainObject(
   return handleObject(value, key, depth, canUseToJSON, fullOptions, functionTexts, usedObjects);
 }
 
-function tryEntryEquality<T>(entry: EqualityComparerEntry<T>, a: unknown, b: unknown): boolean | undefined {
+function tryEntryEquality(entry: EqualityComparerEntry<unknown>, a: unknown, b: unknown): boolean | undefined {
   if (a instanceof entry.constructor && b instanceof entry.constructor) {
     return entry.equalityComparer(a, b);
   }

@@ -44,7 +44,7 @@ export function mockImplementation<
 
   const originalImplementation = map.get(method) as F;
 
-  const spy = vi.spyOn(obj, method) as MockInstance<F>;
+  const spy = vi.spyOn(obj, method) as MockInstance;
   spy.mockImplementation(function mockImpl(this: T, ...args: Parameters<F>): ReturnType<F> {
     return impl.call(this, originalImplementation, ...args);
   });
