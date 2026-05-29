@@ -33,6 +33,7 @@ import tseslint from 'typescript-eslint';
 import { ObsidianPluginRepoPaths } from '../../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import { join } from '../../path.ts';
 import { getRootFolder } from '../root.ts';
+import { noRestrictedSyntaxRuleEntries } from './eslint-no-restricted-syntax.ts';
 import { obsidianDevUtilsPlugin } from './eslint-rules/obsidian-dev-utils-plugin.ts';
 
 /**
@@ -248,62 +249,7 @@ function getEslintConfigs(context: EslintConfigContext): Linter.Config[] {
         'no-proto': 'error',
         'no-restricted-syntax': [
           'error',
-          {
-            message: 'Do not use definite assignment assertions (!). Initialize the field or make it optional.',
-            selector: 'PropertyDefinition[definite=true]'
-          },
-          {
-            message: 'Do not use definite assignment assertions (!) on abstract fields.',
-            selector: 'TSAbstractPropertyDefinition[definite=true]'
-          },
-          {
-            message: 'Do not use anonymous inline object types in function parameters. Define a named interface instead.',
-            selector: ':function > Identifier TSTypeLiteral'
-          },
-          {
-            message: 'Do not use anonymous inline object types in function return types. Define a named interface instead.',
-            selector: ':function > TSTypeAnnotation TSTypeLiteral'
-          },
-          {
-            message: 'Do not use anonymous inline object types in interface/method signatures. Define a named interface instead.',
-            selector: 'TSMethodSignature TSTypeLiteral'
-          },
-          {
-            message: 'Do not use anonymous inline object types as type arguments. Define a named interface instead.',
-            selector: 'TSTypeParameterInstantiation TSTypeLiteral'
-          },
-          {
-            message: 'Do not use anonymous inline object types in type annotations. Define a named interface instead.',
-            selector: 'TSTypeAnnotation TSTypeLiteral'
-          },
-          {
-            message: 'Do not use anonymous inline object types in type assertions. Define a named interface instead.',
-            selector: 'TSAsExpression TSTypeLiteral'
-          },
-          {
-            message: 'Do not use double type assertions (as X as Y).',
-            selector: 'TSAsExpression > TSAsExpression'
-          },
-          {
-            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only.',
-            selector: 'MethodDefinition[key.name=/^_/]:not([override=true])'
-          },
-          {
-            message: 'Do not use _ prefix on methods or functions. The _ prefix is for unused parameters only.',
-            selector: 'FunctionDeclaration[id.name=/^_/]'
-          },
-          {
-            message: 'Do not rename imports with "Mock" in the alias. Mock classes are the canonical types — use the original name.',
-            selector: 'ImportSpecifier[local.name=/Mock/]:not([imported.name=/Mock/])'
-          },
-          {
-            message: 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading.',
-            selector: 'ImportExpression'
-          },
-          {
-            message: 'Do not use `declare` on class properties. Initialize the property or use a regular type annotation.',
-            selector: 'PropertyDefinition[declare=true]'
-          }
+          ...noRestrictedSyntaxRuleEntries
         ],
         'no-return-assign': 'error',
         'no-script-url': 'error',
