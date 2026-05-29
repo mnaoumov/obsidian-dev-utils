@@ -73,7 +73,7 @@ describe('rename-delete-handler', () => {
         async fn({ app }) {
           const folder = await app.vault.createFolder('rdh-test-folder');
           // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
-          await app.vault.delete(folder);
+          await app.vault.delete(folder, true);
           return app.vault.getAbstractFileByPath('rdh-test-folder') === null;
         },
         vaultPath: inject('tempVaultPath')
