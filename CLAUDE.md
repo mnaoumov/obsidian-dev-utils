@@ -100,6 +100,15 @@ export function myFunction(param: Type): ReturnType {
 
 - Use `assertNonNullable()` from `src/type-guards.ts` in tests instead of `!`
 
+## Rules
+
+### L1. Overriding deprecated upstream methods
+
+- When this library overrides a method whose ancestor declaration carries a `@deprecated` JSDoc tag (e.g., Obsidian's `SettingTab.display()` is deprecated as of 1.13.0), the override semantically clears the deprecation but the `@typescript-eslint/no-deprecated` rule still fires on every call site. This is because the rule reads JSDoc tags via TypeScript's `getJsDocTags(checker)`, which walks the inheritance chain.
+- Resolution: add `// eslint-disable-next-line @typescript-eslint/no-deprecated -- <reason>` at the call site, or a file-level `/* eslint-disable @typescript-eslint/no-deprecated -- <reason> */` with a matching `/* eslint-enable ... -- <reason> */` when the same call appears throughout a file (paired enable + description are required by `@eslint-community/eslint-comments`).
+- Do not remove the `override` keyword or omit the override JSDoc to work around the rule. Keep the override explicit and disable the rule where the deprecated symbol is unavoidably referenced.
+- (cannot be forced by ESLint — describes how to interact with an existing ESLint rule)
+
 ## Testing
 
 ### Goals
@@ -193,6 +202,17 @@ export const config = obsidianDevUtilsConfig;
 ```
 
 See `static/scripts/` for the full set of consumer examples.
+
+## Known Issues
+
+### Upstream type errors in node_modules
+
+`npm run build:compile:typescript` reports 3 errors originating in dependency `.d.ts` files (NOT in our source):
+
+- `node_modules/@obsidian-typings/obsidian-public-1.12.7/dist/cjs/types.d.cts` — `SecretStorage` incorrectly extends `Events` (`constructor__` signature mismatch); `listEl` redeclared with `HTMLDivElement` vs `HTMLElement`.
+- `node_modules/obsidian/obsidian.d.ts` — same `SecretStorage` / `Events` incompatibility.
+
+These predate the local source changes and cannot be fixed without `skipLibCheck` (forbidden by global rules) or upstream patches via `patch-package`. They surface on every `tsc --build` run regardless of working-tree state. Fix path: report to `obsidian-typings` upstream or patch locally.
 
 ## Current Task
 
