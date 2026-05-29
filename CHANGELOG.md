@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 69.2.3
+
+- test(integration): force-delete folder to avoid EISDIR via trash path
+- chore: update libs
+- fix: resolve TypeScript and lint errors after as-never refactors
+- test: lint rules
+- refactor(test): replace remaining `as never` with strictProxy/castTo
+- feat(strict-proxy): pass through common test-framework probe properties
+- refactor(test): replace `as never` with castTo\<T\>() in small test files
+- refactor: remove `as never` from mockImplementation helper
+- refactor: replace `as never` with typed helper in deepEqualTyped
+- refactor(test): use GenericObject from type-guards for evalInObsidian args
+- refactor: use assertNever in exhaustive switch defaults
+- fix(test): satisfy GenericObject constraint in evalInObsidian args type
+- docs(claude): clear stale pending questions
+- chore: drop duplicate eslint-plugin-import-x from devDependencies
+- test(markdown-code-block-processor): use dedent for multiline literal
+- feat(type-guards): add assertNever for exhaustive switch checks
+- docs: update consoleDebug reference to consoleDebugComponent
+
 ## 69.2.2
 
 - chore: update libs
