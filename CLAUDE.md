@@ -203,17 +203,6 @@ export const config = obsidianDevUtilsConfig;
 
 See `static/scripts/` for the full set of consumer examples.
 
-## Known Issues
-
-### Upstream type errors in node_modules
-
-`npm run build:compile:typescript` reports 3 errors originating in dependency `.d.ts` files (NOT in our source):
-
-- `node_modules/@obsidian-typings/obsidian-public-1.12.7/dist/cjs/types.d.cts` — `SecretStorage` incorrectly extends `Events` (`constructor__` signature mismatch); `listEl` redeclared with `HTMLDivElement` vs `HTMLElement`.
-- `node_modules/obsidian/obsidian.d.ts` — same `SecretStorage` / `Events` incompatibility.
-
-These predate the local source changes and cannot be fixed without `skipLibCheck` (forbidden by global rules) or upstream patches via `patch-package`. They surface on every `tsc --build` run regardless of working-tree state. Fix path: report to `obsidian-typings` upstream or patch locally.
-
 ## Current Task
 
 None. Coverage at 100% (4602/4602 statements, 2004/2004 branches, 1264/1264 functions, 4479/4479 lines).
