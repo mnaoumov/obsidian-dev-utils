@@ -455,6 +455,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * @returns A {@link Promise} that resolves when the settings are loaded.
    */
   protected async onLoadSettings(_loadedState: ReadonlyPluginSettingsState<PluginSettings>, _isInitialLoad: boolean): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Calls our own override; the inherited @deprecated tag on Obsidian's SettingTab.display propagates via TS getJsDocTags.
     this.display();
     await noopAsync();
   }
@@ -486,6 +487,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Calls our own override; the inherited @deprecated tag on Obsidian's SettingTab.display propagates via TS getJsDocTags.
     this.display();
   }
 
