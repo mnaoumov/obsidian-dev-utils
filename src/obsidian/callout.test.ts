@@ -486,4 +486,11 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
     expect(calloutText).toMatch(/\[!NOTE\] /);
     expect(calloutText).not.toMatch(/\[!NOTE\][+-]/);
   });
+
+  it('should throw for an invalid CalloutMode', () => {
+    const dv = createMockDv();
+    expect(() => {
+      renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: castTo<CalloutMode>(999) });
+    }).toThrow('Unhandled value: 999');
+  });
 });
