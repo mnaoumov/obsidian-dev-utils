@@ -47,6 +47,7 @@
     "dprint",
     "durationformat",
     "econtains",
+    "EISDIR",
     "elink",
     "errorbox",
     "etags",
