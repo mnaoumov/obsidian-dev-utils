@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 69.2.4
+
+- chore: update libs
+
 ## 69.2.3
 
 - test(integration): force-delete folder to avoid EISDIR via trash path
