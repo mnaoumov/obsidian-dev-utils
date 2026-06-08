@@ -180,6 +180,28 @@ describe('ComponentEx', () => {
       await component.loadWithPromises();
       expect(component.loadWithPromises()).toBeNull();
     });
+
+    it('should reject with an AggregateError when a child throws synchronously during load', async () => {
+      const parent = new ComponentEx();
+      const child = new Component();
+      vi.spyOn(child, 'load').mockImplementation(() => {
+        throw new Error('sync load failed');
+      });
+      parent.addChild(child);
+
+      const promise = parent.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((thrown: unknown) => thrown);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (rejection instanceof AggregateError) {
+        expect(rejection.errors).toHaveLength(1);
+        const [firstError] = rejection.errors;
+        expect(firstError).toBeInstanceOf(Error);
+        if (firstError instanceof Error) {
+          expect(firstError.message).toBe('sync load failed');
+        }
+      }
+    });
   });
 
   describe('onloadAsync', () => {
@@ -230,6 +252,17 @@ describe('ComponentEx', () => {
       parent.addChild(child);
 
       expect(child._loaded).toBe(true);
+    });
+
+    it('should chain an async child added while the parent async load is in flight', async () => {
+      const parent = new TestComponentEx();
+      parent.load();
+
+      const child = new TestComponentEx();
+      parent.addChild(child);
+
+      await parent.loadWithPromises();
+      expect(child.asyncLoadFn).toHaveBeenCalledOnce();
     });
   });
 

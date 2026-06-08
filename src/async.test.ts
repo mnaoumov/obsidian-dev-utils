@@ -15,6 +15,7 @@ import {
   asyncFilterInPlace,
   asyncFlatMap,
   asyncMap,
+  chain,
   convertAsyncToSync,
   convertSyncToAsync,
   handleSilentError,
@@ -27,6 +28,7 @@ import {
   promiseAllAsyncFnsSequentially,
   promiseAllSequentially,
   queueMicrotaskAsync,
+  requestAnimationFrameAsync,
   retryWithTimeout,
   runWithTimeout,
   setImmediateAsync,
@@ -1565,6 +1567,72 @@ describe('Async', () => {
       neverEnds().catch(reject).catch(noop);
       await sleep(100);
       expect(reject).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('chain', () => {
+    it('should return null when there is no chain promise and the function returns null', () => {
+      expect(chain(null, () => null)).toBeNull();
+    });
+
+    it('should return the Promise produced by the function when there is no chain promise', async () => {
+      const inner = noopAsync();
+      const result = chain(null, () => inner);
+      expect(result).toBeInstanceOf(Promise);
+      await result;
+    });
+
+    it('should wrap a non-Promise thenable produced by the function when there is no chain promise', async () => {
+      let wasResolved = false;
+      const thenable: PromiseLike<void> = {
+        then(onFulfilled) {
+          wasResolved = true;
+          return Promise.resolve(onFulfilled?.());
+        }
+      };
+      const result = chain(null, () => thenable);
+      expect(result).toBeInstanceOf(Promise);
+      await result;
+      expect(wasResolved).toBe(true);
+    });
+
+    it('should chain after an existing promise when the function returns a value', async () => {
+      const order: number[] = [];
+      const first = noopAsync().then(() => {
+        order.push(1);
+      });
+      const result = chain(first, () =>
+        noopAsync().then(() => {
+          order.push(2);
+        }));
+      assertNonNullable(result);
+      await result;
+      expect(order).toEqual([1, 2]);
+    });
+
+    it('should chain after an existing promise when the function returns null', async () => {
+      const order: number[] = [];
+      const first = noopAsync().then(() => {
+        order.push(1);
+      });
+      const result = chain(first, () => null);
+      assertNonNullable(result);
+      await result;
+      expect(order).toEqual([1]);
+    });
+  });
+
+  describe('requestAnimationFrameAsync', () => {
+    it('should resolve on the next animation frame', async () => {
+      const requestAnimationFrameSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+        callback(0);
+        return 0;
+      });
+
+      await requestAnimationFrameAsync();
+
+      expect(requestAnimationFrameSpy).toHaveBeenCalledOnce();
+      requestAnimationFrameSpy.mockRestore();
     });
   });
 });
