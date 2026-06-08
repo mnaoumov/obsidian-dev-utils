@@ -115,6 +115,8 @@ export class MonkeyAroundComponent extends ComponentEx {
   public registerMethodPatch<Obj extends object, const MethodName extends MethodKeys<Obj>>(
     params: MonkeyAroundComponentRegisterMethodPatchParams<Obj, MethodName>
   ): void {
+    this.ensureLoaded();
+
     if (params.patchToken) {
       const originalMethod = params.obj[params.methodName] as GenericFunction;
       getMonkeyAroundPatches().set(originalMethod, params.patchToken);
@@ -150,9 +152,7 @@ export class MonkeyAroundComponent extends ComponentEx {
    * @param factories - The factories to apply to the object.
    */
   public registerPatch<Obj extends object>(obj: Obj, factories: Factories<Obj>): void {
-    if (!this._loaded) {
-      throw new Error('Cannot register patch on a component that is not loaded.');
-    }
+    this.ensureLoaded();
 
     const uninstaller = around(obj, factories);
     this.register(uninstaller);

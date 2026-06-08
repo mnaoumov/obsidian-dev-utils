@@ -47,6 +47,7 @@ describe('AsyncErrorHandlerComponent', () => {
 
   it('should show notice when async error occurs', () => {
     const noticeComponent = new PluginNoticeComponent('Test');
+    noticeComponent.load();
     const showNoticeSpy = vi.spyOn(noticeComponent, 'showNotice');
     const component = new AsyncErrorHandlerComponent(noticeComponent);
 

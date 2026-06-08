@@ -24,15 +24,21 @@ export class PluginNoticeComponent extends ComponentEx {
   }
 
   /**
+   * Hides the current notice on unload.
+   */
+  public override onunload(): void {
+    this.notice?.hide();
+  }
+
+  /**
    * Displays a notice message to the user.
    *
    * @param message - The message to display.
    */
   public showNotice(message: string): void {
-    if (this.notice) {
-      this.notice.hide();
-    }
+    this.ensureLoaded();
 
+    this.notice?.hide();
     this.notice = new Notice(`${this.pluginName}\n${message}`);
   }
 }

@@ -21,7 +21,8 @@ describe('ConsoleDebugComponent', () => {
     mocks.getDebugger.mockReturnValue(debugFn);
 
     const component = new ConsoleDebugComponent('my-plugin');
-    component.debug('test message', 'arg1', 'arg2');
+    component.load();
+    component.consoleDebug('test message', 'arg1', 'arg2');
 
     expect(mocks.getDebugger).toHaveBeenCalledWith('my-plugin', 1);
     expect(debugFn).toHaveBeenCalledWith('test message', 'arg1', 'arg2');

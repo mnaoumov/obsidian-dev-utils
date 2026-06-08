@@ -36,6 +36,7 @@ export class MenuEventRegistrarComponent extends ComponentEx implements MenuEven
    * @param handler - The handler to register.
    */
   public registerEditorMenuEventHandler(handler: EditorMenuEventHandler): void {
+    this.ensureLoaded();
     this.registerEvent(this.app.workspace.on('editor-menu', handler));
   }
 
@@ -45,6 +46,7 @@ export class MenuEventRegistrarComponent extends ComponentEx implements MenuEven
    * @param handler - The handler to register.
    */
   public registerFileMenuEventHandler(handler: FileMenuEventHandler): void {
+    this.ensureLoaded();
     this.registerEvent(this.app.workspace.on('file-menu', handler));
   }
 
@@ -54,6 +56,7 @@ export class MenuEventRegistrarComponent extends ComponentEx implements MenuEven
    * @param handler - The handler to register.
    */
   public registerFilesMenuEventHandler(handler: FilesMenuEventHandler): void {
+    this.ensureLoaded();
     this.registerEvent(this.app.workspace.on('files-menu', handler));
   }
 }

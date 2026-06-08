@@ -868,6 +868,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   }
 
   private handleDelete(file: TAbstractFile): void {
+    this.ensureLoaded();
     if (!this.shouldInvokeHandler()) {
       return;
     }
@@ -879,6 +880,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   }
 
   private handleMetadataDeleted(file: TAbstractFile, prevCache: CachedMetadata | null): void {
+    this.ensureLoaded();
     if (!this.shouldInvokeHandler()) {
       return;
     }
@@ -886,6 +888,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   }
 
   private handleRename(file: TAbstractFile, oldPath: string): void {
+    this.ensureLoaded();
     if (!this.shouldInvokeHandler()) {
       return;
     }
@@ -939,6 +942,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   }
 
   private logRegisteredHandlers(): void {
+    this.ensureLoaded();
     const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
     getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
       `Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`
@@ -946,12 +950,14 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   }
 
   private shouldInvokeHandler(): boolean {
+    this.ensureLoaded();
     const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
     const mainPluginId = Array.from(renameDeleteHandlersMap.keys())[0];
     return mainPluginId === this.pluginId;
   }
 
   private async wrapLinkUpdatesHandler(linkUpdates: LinkUpdate[], linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
+    this.ensureLoaded();
     let isRenameCalled = false;
     const eventRef = this.app.vault.on('rename', () => {
       isRenameCalled = true;

@@ -13,8 +13,13 @@ import { ComponentEx } from './component-ex.ts';
 export class AbortSignalComponent extends ComponentEx {
   /**
    * The abort signal.
+   *
+   * @returns The {@link AbortSignal} that is aborted when the component is unloaded.
    */
-  public readonly abortSignal: AbortSignal;
+  public get abortSignal(): AbortSignal {
+    this.ensureLoaded();
+    return this.abortController.signal;
+  }
 
   private readonly abortController: AbortController;
 
@@ -26,7 +31,6 @@ export class AbortSignalComponent extends ComponentEx {
   public constructor(private readonly pluginId: string) {
     super();
     this.abortController = new AbortController();
-    this.abortSignal = this.abortController.signal;
   }
 
   /**

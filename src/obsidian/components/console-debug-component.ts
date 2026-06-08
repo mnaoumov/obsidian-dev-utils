@@ -30,7 +30,9 @@ export class ConsoleDebugComponent extends ComponentEx {
    * @param message - The message to log.
    * @param args - Additional arguments to log.
    */
-  public debug(message: string, ...args: unknown[]): void {
+  public consoleDebug(message: string, ...args: unknown[]): void {
+    this.ensureLoaded();
+
     // Skip the `debug()` call itself
     const FRAMES_TO_SKIP = 1;
     const pluginDebugger = getDebugger(this.pluginId, FRAMES_TO_SKIP);
