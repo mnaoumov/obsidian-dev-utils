@@ -8,6 +8,8 @@ import type {
 } from 'obsidian';
 
 import {
+  afterEach,
+  beforeEach,
   describe,
   expect,
   it,
@@ -61,6 +63,14 @@ function createMockApp(params: CreateMockAppParams): App {
 }
 
 describe('AllWindowsEventComponent', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('registerAllWindowsHandler', () => {
     it('should call handler immediately with main window', () => {
       const app = createMockApp({});
@@ -71,13 +81,13 @@ describe('AllWindowsEventComponent', () => {
       expect(handler).toHaveBeenCalledWith(activeWindow);
     });
 
-    it('should not call handler when component is not loaded', () => {
+    it('should throw when registering a handler before the component is loaded', () => {
       const app = createMockApp({});
       const handler = vi.fn();
 
-      new AllWindowsEventComponent(app).registerAllWindowsHandler(handler);
-
-      expect(handler).not.toHaveBeenCalled();
+      expect(() => {
+        new AllWindowsEventComponent(app).registerAllWindowsHandler(handler);
+      }).toThrow('Cannot register handler until component is loaded');
     });
 
     it('should call handler for existing popup windows after layout ready', () => {
@@ -86,6 +96,7 @@ describe('AllWindowsEventComponent', () => {
       const handler = vi.fn();
 
       createLoadedComponent(app).registerAllWindowsHandler(handler);
+      vi.runAllTimers();
 
       expect(handler).toHaveBeenCalledTimes(2);
       expect(handler).toHaveBeenCalledWith(popupWin);
@@ -96,6 +107,7 @@ describe('AllWindowsEventComponent', () => {
       const handler = vi.fn();
 
       createLoadedComponent(app).registerAllWindowsHandler(handler);
+      vi.runAllTimers();
 
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith(activeWindow);
@@ -111,6 +123,7 @@ describe('AllWindowsEventComponent', () => {
       const handler = vi.fn();
 
       createLoadedComponent(app).registerAllWindowsHandler(handler);
+      vi.runAllTimers();
 
       expect(windowOpenCallback).toBeDefined();
       const newWin = strictProxy<Window>({});
@@ -119,24 +132,18 @@ describe('AllWindowsEventComponent', () => {
       expect(handler).toHaveBeenCalledWith(newWin);
     });
 
-    it('should not call handler for future popup windows when component is unloaded', () => {
-      let windowOpenCallback: undefined | WindowOpenCallback;
-      const onWindowOpen = vi.fn().mockImplementation((_event: string, cb: WindowOpenCallback) => {
-        windowOpenCallback = cb;
-        return strictProxy<EventRef>({});
-      }) as Workspace['on'];
+    it('should hand the window-open subscription to registerEvent so it is cleaned up on unload', () => {
+      const eventRef = strictProxy<EventRef>({});
+      const onWindowOpen = vi.fn().mockReturnValue(eventRef) as Workspace['on'];
       const app = createMockApp({ onWindowOpen });
-      const handler = vi.fn();
       const component = createLoadedComponent(app);
+      const registerEventSpy = vi.spyOn(component, 'registerEvent');
+      const handler = vi.fn();
 
       component.registerAllWindowsHandler(handler);
-      handler.mockClear();
-      component.unload();
+      vi.runAllTimers();
 
-      const newWin = strictProxy<Window>({});
-      const workspaceWindow = strictProxy<WorkspaceWindow>({ win: newWin });
-      windowOpenCallback?.(workspaceWindow);
-      expect(handler).not.toHaveBeenCalled();
+      expect(registerEventSpy).toHaveBeenCalledWith(eventRef);
     });
 
     it('should register window-open event on the component', () => {
@@ -146,6 +153,7 @@ describe('AllWindowsEventComponent', () => {
       const handler = vi.fn();
 
       component.registerAllWindowsHandler(handler);
+      vi.runAllTimers();
 
       expect(registerEventSpy).toHaveBeenCalled();
     });
@@ -167,6 +175,7 @@ describe('AllWindowsEventComponent', () => {
       expect(handler).toHaveBeenCalledWith(activeWindow);
 
       layoutReadyCallback?.();
+      vi.runAllTimers();
       expect(handler).toHaveBeenCalledTimes(2);
       expect(handler).toHaveBeenCalledWith(popupWin);
     });
@@ -189,6 +198,7 @@ describe('AllWindowsEventComponent', () => {
 
       component.unload();
       layoutReadyCallback?.();
+      vi.runAllTimers();
 
       expect(handler).toHaveBeenCalledTimes(1);
     });
