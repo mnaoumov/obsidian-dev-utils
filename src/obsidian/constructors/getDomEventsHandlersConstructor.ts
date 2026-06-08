@@ -16,7 +16,7 @@ import type { App } from 'obsidian';
 
 import { MarkdownPreviewRenderer } from 'obsidian';
 
-import { requestAnimationFrameAsync } from '../../async.ts';
+import { retryWithTimeout } from '../../async.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { MonkeyAroundComponent } from '../components/monkey-around-component.ts';
 import { trashSafe } from '../vault.ts';
@@ -61,8 +61,14 @@ export async function getDomEventsHandlersConstructor(app: App): Promise<DomEven
       active: true,
       state: { mode: 'preview' }
     });
-    await requestAnimationFrameAsync();
-    leaf.detach();
+    try {
+      await retryWithTimeout({
+        operationFn: () => ctor !== null,
+        operationName: 'getDomEventsHandlersConstructor'
+      });
+    } finally {
+      leaf.detach();
+    }
 
     assertNonNullable(ctor, 'Failed to get register dom events handlers constructor');
     return ctor;

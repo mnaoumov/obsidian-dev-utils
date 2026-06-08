@@ -38,9 +38,7 @@ describe('backlinks via metadata cache', () => {
         await app.vault.create('backlink-linker-a.md', '# Linker A\n\nLinks to [[backlink-target]].\n');
         await app.vault.create('backlink-linker-b.md', '# Linker B\n\nAlso links to [[backlink-target]].\n');
 
-        await new Promise((resolve) => {
-          window.setTimeout(resolve, 1000);
-        });
+        await lib.obsidian['metadata-cache'].ensureMetadataCacheReady(app);
 
         try {
           const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe(app, 'backlink-target.md');
@@ -76,9 +74,7 @@ describe('backlinks via metadata cache', () => {
 
         await app.vault.create('backlink-isolated.md', '# Isolated\n\nNo one links here.\n');
 
-        await new Promise((resolve) => {
-          window.setTimeout(resolve, 500);
-        });
+        await lib.obsidian['metadata-cache'].ensureMetadataCacheReady(app);
 
         try {
           const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe(app, 'backlink-isolated.md');
@@ -111,9 +107,7 @@ describe('backlinks via metadata cache', () => {
 
         await app.vault.create('backlink-multi-linker.md', '# Multi\n\nLinks to [[alpha]] and [[beta]].\n');
 
-        await new Promise((resolve) => {
-          window.setTimeout(resolve, 500);
-        });
+        await lib.obsidian['metadata-cache'].ensureMetadataCacheReady(app);
 
         try {
           const cache = app.metadataCache.getCache('backlink-multi-linker.md');
