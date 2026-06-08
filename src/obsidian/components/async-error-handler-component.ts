@@ -16,9 +16,9 @@ export class AsyncErrorHandlerComponent extends ComponentEx {
   /**
    * Creates a new async error handler component.
    *
-   * @param noticeComponent - The notice component used to display error messages.
+   * @param pluginNoticeComponent - The notice component used to display error messages.
    */
-  public constructor(private readonly noticeComponent: PluginNoticeComponent) {
+  public constructor(private readonly pluginNoticeComponent: PluginNoticeComponent) {
     super();
   }
 
@@ -35,6 +35,6 @@ export class AsyncErrorHandlerComponent extends ComponentEx {
    * @param _asyncError - The async error.
    */
   protected handleAsyncError(_asyncError: unknown): void {
-    this.noticeComponent.showNotice(t(($) => $.obsidianDevUtils.notices.unhandledError));
+    this.pluginNoticeComponent.showNotice(t(($) => $.obsidianDevUtils.notices.unhandledError));
   }
 }
