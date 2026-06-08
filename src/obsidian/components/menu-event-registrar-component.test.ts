@@ -44,6 +44,7 @@ describe('MenuEventRegistrarComponent', () => {
   it('should register editor-menu event', () => {
     const { app, registeredEvents } = createMocks();
     const registrar = new MenuEventRegistrarComponent(app);
+    registrar.load();
     const registerEventSpy = vi.spyOn(registrar, 'registerEvent');
 
     registrar.registerEditorMenuEventHandler(vi.fn());
@@ -55,6 +56,7 @@ describe('MenuEventRegistrarComponent', () => {
   it('should register file-menu event', () => {
     const { app, registeredEvents } = createMocks();
     const registrar = new MenuEventRegistrarComponent(app);
+    registrar.load();
     const registerEventSpy = vi.spyOn(registrar, 'registerEvent');
 
     registrar.registerFileMenuEventHandler(vi.fn());
@@ -66,11 +68,27 @@ describe('MenuEventRegistrarComponent', () => {
   it('should register files-menu event', () => {
     const { app, registeredEvents } = createMocks();
     const registrar = new MenuEventRegistrarComponent(app);
+    registrar.load();
     const registerEventSpy = vi.spyOn(registrar, 'registerEvent');
 
     registrar.registerFilesMenuEventHandler(vi.fn());
 
     expect(registeredEvents).toContain('files-menu');
     expect(registerEventSpy).toHaveBeenCalledOnce();
+  });
+
+  it('should throw when registering a handler before the component is loaded', () => {
+    const { app } = createMocks();
+    const registrar = new MenuEventRegistrarComponent(app);
+
+    expect(() => {
+      registrar.registerEditorMenuEventHandler(vi.fn());
+    }).toThrow('Component is not loaded');
+    expect(() => {
+      registrar.registerFileMenuEventHandler(vi.fn());
+    }).toThrow('Component is not loaded');
+    expect(() => {
+      registrar.registerFilesMenuEventHandler(vi.fn());
+    }).toThrow('Component is not loaded');
   });
 });

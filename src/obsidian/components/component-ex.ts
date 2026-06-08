@@ -134,6 +134,22 @@ export class ComponentEx extends Component implements Disposable {
   }
 
   /**
+   * Ensures the component is loaded, throwing if it is not.
+   *
+   * Use this to guard public methods that register teardown-bearing resources (via {@link Component.register},
+   * {@link Component.registerEvent}, {@link Component.registerDomEvent}, etc.). Registering before load is unsafe:
+   * {@link Component.unload} is a no-op while the component is not loaded, so any teardown registered beforehand would
+   * never run if the component is unloaded without first being loaded.
+   *
+   * @throws An {@link Error} if the component is not loaded.
+   */
+  protected ensureLoaded(): void {
+    if (!this._loaded) {
+      throw new Error('Component is not loaded');
+    }
+  }
+
+  /**
    * Sequences an already-started load step into the load promise.
    *
    * The step is presumed to have started synchronously (so any `_loaded` flag it sets is already visible); only the

@@ -40,12 +40,14 @@ describe('PluginNoticeComponent', () => {
 
   it('should show a notice with plugin name prefix', () => {
     const component = new PluginNoticeComponent('My Plugin');
+    component.load();
     component.showNotice('Something happened');
     expect(mocks.NoticeMock).toHaveBeenCalledWith('My Plugin\nSomething happened');
   });
 
   it('should hide previous notice when showing a new one', () => {
     const component = new PluginNoticeComponent('My Plugin');
+    component.load();
 
     component.showNotice('First');
     const firstNotice = mocks.instances[0];
@@ -57,7 +59,28 @@ describe('PluginNoticeComponent', () => {
 
   it('should not call hide if no previous notice exists', () => {
     const component = new PluginNoticeComponent('My Plugin');
+    component.load();
     component.showNotice('First');
     expect(mocks.NoticeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should hide the current notice on unload', () => {
+    const component = new PluginNoticeComponent('My Plugin');
+    component.load();
+    component.showNotice('Persistent');
+    const notice = mocks.instances[0];
+
+    component.unload();
+
+    expect(notice?.hide).toHaveBeenCalled();
+  });
+
+  it('should not throw on unload when no notice was shown', () => {
+    const component = new PluginNoticeComponent('My Plugin');
+    component.load();
+
+    expect(() => {
+      component.unload();
+    }).not.toThrow();
   });
 });

@@ -36,9 +36,7 @@ export class AllWindowsEventComponent extends ComponentEx {
     callback: (this: HTMLElement, evt: DocumentEventMap[DocumentEventType]) => unknown,
     options?: AddEventListenerOptions | boolean
   ): void {
-    if (!this._loaded) {
-      throw new Error('Cannot register handler until component is loaded');
-    }
+    this.ensureLoaded();
 
     this.registerAllWindowsHandler((win) => {
       this.registerDomEvent(win.document, type, callback, options);
@@ -58,9 +56,7 @@ export class AllWindowsEventComponent extends ComponentEx {
     callback: (this: HTMLElement, evt: WindowEventMap[WindowEventType]) => unknown,
     options?: AddEventListenerOptions | boolean
   ): void {
-    if (!this._loaded) {
-      throw new Error('Cannot register handler until component is loaded');
-    }
+    this.ensureLoaded();
 
     this.registerAllWindowsHandler((win) => {
       this.registerDomEvent(win, type, callback, options);
@@ -73,9 +69,7 @@ export class AllWindowsEventComponent extends ComponentEx {
    * @param allWindowsHandler - The handler called for each window (main + popups).
    */
   public registerAllWindowsHandler(allWindowsHandler: (win: Window) => void): void {
-    if (!this._loaded) {
-      throw new Error('Cannot register handler until component is loaded');
-    }
+    this.ensureLoaded();
 
     const mainWindow = activeWindow;
     allWindowsHandler(mainWindow);

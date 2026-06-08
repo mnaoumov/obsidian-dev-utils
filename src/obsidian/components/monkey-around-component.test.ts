@@ -109,7 +109,7 @@ describe('MonkeyAroundComponent', () => {
         component.registerPatch(obj, {
           greet: (next: TestObjGreet) => (name: string): string => `patched: ${next(name)}`
         });
-      }).toThrow('Cannot register patch on a component that is not loaded.');
+      }).toThrow('Component is not loaded');
     });
 
     it('should manage multiple patches on a single component', () => {
@@ -146,7 +146,7 @@ describe('MonkeyAroundComponent', () => {
             return fallback();
           }
         });
-      }).toThrow('Cannot register patch on a component that is not loaded.');
+      }).toThrow('Component is not loaded');
     });
 
     it('should patch a method with handler receiving params', () => {

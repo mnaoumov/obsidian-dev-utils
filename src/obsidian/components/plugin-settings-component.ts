@@ -220,6 +220,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @returns A {@link Promise} that resolves when the settings are saved.
    */
   public async editAndSave(settingsEditor: (settings: PluginSettings) => Promisable<void>, context?: unknown): Promise<void> {
+    this.ensureLoaded();
     await this.edit(settingsEditor);
     await this.saveToFile(context);
   }
@@ -261,6 +262,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @returns A {@link Promise} that resolves when the settings are loaded.
    */
   public async loadFromFile(isInitialLoad: boolean): Promise<void> {
+    this.ensureLoaded();
     const data = await this.dataHandler.loadData();
     this.lastSavedState = this.createDefaultState();
     this.currentState = this.createDefaultState();
@@ -367,6 +369,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @returns A {@link Promise} that resolves when the settings are reloaded.
    */
   public async onExternalSettingsChange(): Promise<void> {
+    this.ensureLoaded();
     await this.loadFromFile(false);
   }
 
@@ -434,6 +437,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @returns The validation messages.
    */
   public async revalidate(): Promise<Record<PropertyNames<PluginSettings>, string>> {
+    this.ensureLoaded();
     await this.edit(noop);
     return this.currentState.validationMessages;
   }
@@ -445,6 +449,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @returns A {@link Promise} that resolves when the settings are saved.
    */
   public async saveToFile(context?: unknown): Promise<void> {
+    this.ensureLoaded();
     if (deepEqual(this.lastSavedState.inputValues, this.currentState.inputValues)) {
       return;
     }
@@ -471,6 +476,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     propertyName: PropertyName,
     value: PluginSettings[PropertyName]
   ): Promise<string> {
+    this.ensureLoaded();
     await this.edit((settings) => {
       settings[propertyName] = value;
     });

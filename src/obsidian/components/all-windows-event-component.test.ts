@@ -87,7 +87,7 @@ describe('AllWindowsEventComponent', () => {
 
       expect(() => {
         new AllWindowsEventComponent(app).registerAllWindowsHandler(handler);
-      }).toThrow('Cannot register handler until component is loaded');
+      }).toThrow('Component is not loaded');
     });
 
     it('should call handler for existing popup windows after layout ready', () => {
