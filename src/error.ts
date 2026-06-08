@@ -61,6 +61,36 @@ export class CustomStackTraceError extends Error {
 }
 
 /**
+ * An error that wraps a non-`Error` value that was thrown, preserving the original value in `cause`.
+ */
+export class ErrorWrapper extends Error {
+  /**
+   * Creates a new ErrorWrapper.
+   *
+   * @param thrownValue - The original non-`Error` value that was thrown.
+   */
+  public constructor(thrownValue: unknown) {
+    super(`A non-Error value was thrown: ${String(thrownValue)}`, { cause: thrownValue });
+    this.name = 'ErrorWrapper';
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2.
+    Error.captureStackTrace?.(this, ErrorWrapper);
+  }
+
+  /**
+   * Normalizes any thrown value to an `Error`.
+   *
+   * Returns the value unchanged if it is already an `Error`, otherwise wraps it in an {@link ErrorWrapper}.
+   *
+   * @param thrownValue - The thrown value to normalize.
+   * @returns An `Error` instance: the original value if it is already an `Error`, otherwise an {@link ErrorWrapper}.
+   */
+  public static create(thrownValue: unknown): Error {
+    return thrownValue instanceof Error ? thrownValue : new ErrorWrapper(thrownValue);
+  }
+}
+
+/**
  * An error that is not printed to the console.
  */
 export class SilentError extends Error {
