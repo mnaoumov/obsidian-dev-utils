@@ -158,6 +158,23 @@ describe('MyModule', () => {
 - Use `vi.fn()` for mock functions, `vi.useFakeTimers()`/`vi.useRealTimers()` for timer mocking
 - Use `vi.stubGlobal()` / `vi.unstubAllGlobals()` for global stubs
 
+### Integration test timing
+
+- Obsidian integration tests (`*.obsidian.integration.test.ts`) share a single Obsidian instance
+  via the global setup. Never gate on a fixed `setTimeout`/sleep wait — it passes in isolation but
+  flakes under full-suite load, because the shared instance is slower when the unit suites run
+  concurrently. Wait on a readiness signal instead.
+- For metadata-cache-dependent assertions, `await ensureMetadataCacheReady(app)` after mutating the
+  vault — it awaits `onCleanCache` and is unbounded, so it waits exactly as long as needed.
+  `getBacklinksForFileSafe` already calls it internally, but inside a *bounded* retry that can time
+  out under load, so call it explicitly first.
+- When there is no readiness event to await, poll with `retryWithTimeout` (bounded) rather than a
+  single frame or fixed delay — e.g. `getDomEventsHandlersConstructor` retries until the constructor
+  is intercepted instead of asserting after one `requestAnimationFrame`.
+- Inside `evalInObsidian` callbacks, library helpers are reachable via
+  `window.__obsidianDevUtilsModule__` (e.g. `lib.obsidian['metadata-cache'].ensureMetadataCacheReady`),
+  **not** via the test file's imports — the callback is serialized and runs in the Obsidian process.
+
 ## Dependencies
 
 ### Pinned versions
