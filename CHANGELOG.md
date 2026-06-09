@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 70.0.0
+
+- docs: document integration-test readiness-wait convention
+- fix: harden flaky integration tests under full-suite load
+- test: cover pre-existing ComponentEx and async.ts coverage gaps
+- feat(components): add ensureLoaded lifecycle guard to ComponentEx and subclasses
+- refactor(components)!: aggregate ComponentEx load errors and load children eagerly
+- refactor: rename noticeComponent to pluginNoticeComponent
+- chore: update libs
+
 ## 69.2.4
 
 - chore: update libs
