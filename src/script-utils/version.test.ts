@@ -19,6 +19,7 @@ import {
   getReleaseNotes,
   getVersionUpdateType,
   gitPush,
+  parseVersionArgs,
   publishGitHubRelease,
   updateChangelog,
   updateVersion,
@@ -134,6 +135,14 @@ beforeEach(() => {
   mockResolvePathFromRootSafe.mockImplementation((path: string) => `/root/${path}`);
   mockExistsSync.mockReturnValue(false);
 });
+
+function setIsTty(value: boolean | undefined): void {
+  Object.defineProperty(process.stdin, 'isTTY', {
+    configurable: true,
+    value,
+    writable: true
+  });
+}
 
 describe('VersionUpdateType', () => {
   it('should have Major equal to "major"', () => {
@@ -358,6 +367,61 @@ describe('addUpdatedFilesToGit', () => {
     await addUpdatedFilesToGit('1.0.0');
     expect(mockExecFromRoot).toHaveBeenCalledWith(['git', 'add', '--all'], { isQuiet: true });
     expect(mockExecFromRoot).toHaveBeenCalledWith(['git', 'commit', '-m', 'chore: release 1.0.0', '--allow-empty'], { isQuiet: true });
+  });
+
+  it('should add --no-verify when bypassing commit verification', async () => {
+    await addUpdatedFilesToGit('1.0.0', { shouldBypassCommitVerification: true });
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['git', 'commit', '-m', 'chore: release 1.0.0', '--allow-empty', '--no-verify'], { isQuiet: true });
+  });
+
+  it('should retry the commit after the user fixes the issue in an interactive terminal', async () => {
+    const originalIsTty = process.stdin.isTTY;
+    setIsTty(true);
+    try {
+      const question = vi.fn().mockResolvedValue(undefined);
+      mockCreateInterface.mockReturnValue({ question });
+      let commitAttempts = 0;
+      mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
+        const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
+        if (cmdStr.startsWith('git commit')) {
+          commitAttempts++;
+          if (commitAttempts === 1) {
+            return Promise.reject(new Error('Unknown word in cspell'));
+          }
+        }
+        return Promise.resolve('');
+      });
+
+      await addUpdatedFilesToGit('1.0.0');
+
+      expect(commitAttempts).toBe(2);
+      expect(question).toHaveBeenCalledTimes(1);
+      const gitAddCalls = mockExecFromRoot.mock.calls.filter((call: unknown[]) =>
+        Array.isArray(call[0]) && (call[0] as string[]).join(' ') === 'git add --all'
+      );
+      expect(gitAddCalls).toHaveLength(2);
+    } finally {
+      setIsTty(originalIsTty);
+    }
+  });
+
+  it('should re-throw the commit error without prompting in a non-interactive environment', async () => {
+    const originalIsTty = process.stdin.isTTY;
+    setIsTty(false);
+    try {
+      mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
+        const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
+        if (cmdStr.startsWith('git commit')) {
+          return Promise.reject(new Error('Unknown word in cspell'));
+        }
+        return Promise.resolve('');
+      });
+
+      await expect(addUpdatedFilesToGit('1.0.0')).rejects.toThrow('Unknown word in cspell');
+      expect(mockCreateInterface).not.toHaveBeenCalled();
+    } finally {
+      setIsTty(originalIsTty);
+    }
   });
 });
 
@@ -626,6 +690,55 @@ describe('updateChangelog', () => {
       'utf-8'
     );
   });
+
+  it('should skip the interactive review when bypassing changelog editing', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockExecFromRoot.mockResolvedValueOnce('msg\0');
+    await updateChangelog('1.0.0', { shouldBypassChangelogEditing: true });
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      expect.stringContaining('CHANGELOG.md'),
+      expect.stringContaining('## 1.0.0'),
+      'utf-8'
+    );
+    expect(mockCreateInterface).not.toHaveBeenCalled();
+    expect(mockExecFromRoot).not.toHaveBeenCalledWith(['code', '-w', expect.any(String)], expect.any(Object));
+    expect(mockExecFromRoot).not.toHaveBeenCalledWith('code --version', expect.any(Object));
+  });
+});
+
+describe('parseVersionArgs', () => {
+  it('should parse the version update type with no flags', () => {
+    const { options, versionUpdateType } = parseVersionArgs(['patch']);
+    expect(versionUpdateType).toBe('patch');
+    expect(options).toEqual({
+      isDryRun: false,
+      shouldBypassChangelogEditing: false,
+      shouldBypassCommitVerification: false,
+      shouldSkipPreflightChecks: false
+    });
+  });
+
+  it('should parse all flags', () => {
+    const { options, versionUpdateType } = parseVersionArgs([
+      'patch',
+      '--bypass-changelog-editing',
+      '--bypass-commit-verification',
+      '--dry-run',
+      '--skip-preflight-checks'
+    ]);
+    expect(versionUpdateType).toBe('patch');
+    expect(options).toEqual({
+      isDryRun: true,
+      shouldBypassChangelogEditing: true,
+      shouldBypassCommitVerification: true,
+      shouldSkipPreflightChecks: true
+    });
+  });
+
+  it('should return undefined version update type when no positional is provided', () => {
+    const { versionUpdateType } = parseVersionArgs(['--dry-run']);
+    expect(versionUpdateType).toBeUndefined();
+  });
 });
 
 describe('updateVersion', () => {
@@ -676,8 +789,48 @@ describe('updateVersion', () => {
     setupFullMocks();
     mockReaddirPosix.mockResolvedValue([]);
     const prepareRelease = vi.fn().mockResolvedValue(undefined);
-    await updateVersion('patch', prepareRelease);
+    await updateVersion('patch', { prepareGitHubRelease: prepareRelease });
     expect(prepareRelease).toHaveBeenCalledWith('1.0.1');
+  });
+
+  it('should skip preflight checks and clean-repo check when shouldSkipPreflightChecks is set', async () => {
+    setupFullMocks();
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('patch', { shouldSkipPreflightChecks: true });
+    expect(mockNpmRun).not.toHaveBeenCalled();
+    expect(mockNpmRunOptional).not.toHaveBeenCalled();
+    expect(mockExecFromRoot).not.toHaveBeenCalledWith('git status --porcelain --untracked-files=all', expect.any(Object));
+    expect(mockEditPackageJson).toHaveBeenCalled();
+  });
+
+  it('should stop before push and release when isDryRun is set', async () => {
+    setupFullMocks();
+    mockReaddirPosix.mockResolvedValue([]);
+    const prepareRelease = vi.fn().mockResolvedValue(undefined);
+    await updateVersion('patch', {
+      isDryRun: true,
+      prepareGitHubRelease: prepareRelease
+    });
+    expect(mockExecFromRoot).toHaveBeenCalledWith(expect.stringContaining('git tag'), expect.any(Object));
+    expect(mockExecFromRoot).not.toHaveBeenCalledWith('git push --follow-tags --force', expect.any(Object));
+    expect(prepareRelease).not.toHaveBeenCalled();
+  });
+
+  it('should bypass commit verification when shouldBypassCommitVerification is set', async () => {
+    setupFullMocks();
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('patch', { shouldBypassCommitVerification: true });
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      ['git', 'commit', '-m', 'chore: release 1.0.1', '--allow-empty', '--no-verify'],
+      { isQuiet: true }
+    );
+  });
+
+  it('should bypass changelog editing when shouldBypassChangelogEditing is set', async () => {
+    setupFullMocks();
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('patch', { shouldBypassChangelogEditing: true });
+    expect(mockExecFromRoot).not.toHaveBeenCalledWith('code --version', expect.any(Object));
   });
 
   it('should run updateVersionInFilesForPlugin for obsidian plugin with prerelease', async () => {
