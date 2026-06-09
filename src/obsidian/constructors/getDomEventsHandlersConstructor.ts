@@ -49,7 +49,7 @@ export async function getDomEventsHandlersConstructor(app: App): Promise<DomEven
       obj: MarkdownPreviewRenderer,
       patchHandler({
         fallback,
-        originalArgs: [handlers]
+        originalArgs: [, handlers]
       }) {
         ctor = handlers.constructor as DomEventsHandlersConstructor;
         fallback();
