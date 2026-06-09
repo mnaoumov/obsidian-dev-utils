@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 70.0.1
+
+- fix: getDomEventsHandlersConstructor
+
 ## 70.0.0
 
 - docs: document integration-test readiness-wait convention
