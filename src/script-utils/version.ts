@@ -17,6 +17,7 @@ import {
   writeFile
 } from 'node:fs/promises';
 import { createInterface } from 'node:readline/promises';
+import { parseArgs } from 'node:util';
 import {
   inc,
   prerelease
@@ -25,6 +26,7 @@ import {
 import type { PackageLockJson } from './npm.ts';
 
 import { getLibDebugger } from '../debug.ts';
+import { errorToString } from '../error.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import { join } from '../path.ts';
 import { replaceAll } from '../string.ts';
@@ -49,6 +51,78 @@ import {
   execFromRoot,
   resolvePathFromRootSafe
 } from './root.ts';
+
+/**
+ * Options for {@link addUpdatedFilesToGit}.
+ */
+export interface AddUpdatedFilesToGitOptions {
+  /**
+   * Whether to pass `--no-verify` to the release commit, skipping the pre-commit hook. Defaults to `false`.
+   */
+  readonly shouldBypassCommitVerification?: boolean;
+}
+
+/**
+ * The result of parsing the command-line arguments for a version update.
+ */
+export interface ParsedVersionArgs {
+  /**
+   * The {@link UpdateVersionOptions} parsed from the flags.
+   */
+  readonly options: UpdateVersionOptions;
+
+  /**
+   * The positional version update type argument, or `undefined` if none was provided.
+   */
+  readonly versionUpdateType: string | undefined;
+}
+
+/**
+ * Options for {@link updateChangelog}.
+ */
+export interface UpdateChangelogOptions {
+  /**
+   * Whether to skip the interactive review of the generated changelog. When `true`, the changelog
+   * is still generated from commit messages, but it is not opened in the editor for manual review.
+   * Defaults to `false`.
+   */
+  readonly shouldBypassChangelogEditing?: boolean;
+}
+
+/**
+ * Options for {@link updateVersion}.
+ */
+export interface UpdateVersionOptions {
+  /**
+   * Whether to perform a dry run. When `true`, all local steps are executed (version bump, changelog,
+   * commit, tag), but the changes are not pushed and no GitHub release is published. Defaults to `false`.
+   */
+  readonly isDryRun?: boolean;
+
+  /**
+   * A callback function to prepare the GitHub release.
+   *
+   * @param newVersion - The new version number for the release.
+   * @returns A {@link Promise} that resolves when the GitHub release has been prepared.
+   */
+  prepareGitHubRelease?(this: void, newVersion: string): Promise<void>;
+
+  /**
+   * Whether to skip the interactive review of the generated changelog. Defaults to `false`.
+   */
+  readonly shouldBypassChangelogEditing?: boolean;
+
+  /**
+   * Whether to pass `--no-verify` to the release commit, skipping the pre-commit hook. Defaults to `false`.
+   */
+  readonly shouldBypassCommitVerification?: boolean;
+
+  /**
+   * Whether to skip the preflight checks (clean-repo check, format, spellcheck, lint, build, and tests).
+   * Defaults to `false`.
+   */
+  readonly shouldSkipPreflightChecks?: boolean;
+}
 
 interface NpmPackResult {
   filename: string;
@@ -114,12 +188,43 @@ export async function addGitTag(newVersion: string): Promise<void> {
 /**
  * Adds updated files to the Git staging area and commits them with the new version message.
  *
+ * If the commit fails (for example, the pre-commit hook rejects a new word in the changelog) and the
+ * process is attached to an interactive terminal, the user is prompted to fix the issue (for example,
+ * add the missing word to `cspell.json`) and press Enter to retry. The retry re-stages all files, so the
+ * fix is picked up without restarting the whole release lifecycle. In a non-interactive environment (no
+ * TTY, such as CI), the error is re-thrown instead of prompting, so the script fails fast rather than
+ * hanging. Pass `shouldBypassCommitVerification` to skip the pre-commit hook entirely in such cases.
+ *
  * @param newVersion - The new version number used as the commit message.
+ * @param options - The {@link AddUpdatedFilesToGitOptions} controlling the commit behavior.
  * @returns A {@link Promise} that resolves when the files have been added and committed.
  */
-export async function addUpdatedFilesToGit(newVersion: string): Promise<void> {
-  await execFromRoot(['git', 'add', '--all'], { isQuiet: true });
-  await execFromRoot(['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty'], { isQuiet: true });
+export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdatedFilesToGitOptions = {}): Promise<void> {
+  const { shouldBypassCommitVerification = false } = options;
+  const versionDebugger = getLibDebugger('Version');
+
+  const commitArgs = ['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty'];
+  if (shouldBypassCommitVerification) {
+    commitArgs.push('--no-verify');
+  }
+
+  for (;;) {
+    try {
+      await execFromRoot(['git', 'add', '--all'], { isQuiet: true });
+      await execFromRoot(commitArgs, { isQuiet: true });
+      return;
+    } catch (error) {
+      if (!process.stdin.isTTY) {
+        throw error;
+      }
+
+      versionDebugger(
+        `Failed to commit the release.\n${errorToString(error)}\n`
+          + 'Fix the issues (for example, add the missing word to cspell.json) and press Enter to retry the commit, or Ctrl+C to abort.'
+      );
+      await createInterface(process.stdin, process.stdout).question('Press Enter to retry the commit...');
+    }
+  }
 }
 
 /**
@@ -281,6 +386,42 @@ export async function gitPush(): Promise<void> {
 }
 
 /**
+ * Parses the command-line arguments for a version update into a version update type and
+ * {@link UpdateVersionOptions}.
+ *
+ * Recognized flags:
+ * - `--bypass-changelog-editing` — generate the changelog without opening it for manual review.
+ * - `--bypass-commit-verification` — pass `--no-verify` to the release commit.
+ * - `--dry-run` — run all local steps but skip the push and the GitHub release.
+ * - `--skip-preflight-checks` — skip the clean-repo check, format, spellcheck, lint, build, and tests.
+ *
+ * @param args - The command-line arguments to parse (typically `process.argv.slice(2)`).
+ * @returns The {@link ParsedVersionArgs} containing the version update type and the options.
+ */
+export function parseVersionArgs(args: string[]): ParsedVersionArgs {
+  const { positionals, values } = parseArgs({
+    allowPositionals: true,
+    args,
+    options: {
+      'bypass-changelog-editing': { type: 'boolean' },
+      'bypass-commit-verification': { type: 'boolean' },
+      'dry-run': { type: 'boolean' },
+      'skip-preflight-checks': { type: 'boolean' }
+    }
+  });
+
+  return {
+    options: {
+      isDryRun: values['dry-run'] ?? false,
+      shouldBypassChangelogEditing: values['bypass-changelog-editing'] ?? false,
+      shouldBypassCommitVerification: values['bypass-commit-verification'] ?? false,
+      shouldSkipPreflightChecks: values['skip-preflight-checks'] ?? false
+    },
+    versionUpdateType: positionals[0]
+  };
+}
+
+/**
  * Publishes a GitHub release for the new version.
  *
  * Handles the creation of a release and uploading files for either an Obsidian plugin or another project.
@@ -336,9 +477,11 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
  * and prompts the user to review the changes.
  *
  * @param newVersion - The new version number to be added to the changelog.
+ * @param options - The {@link UpdateChangelogOptions} controlling the changelog review behavior.
  * @returns A {@link Promise} that resolves when the changelog update is complete.
  */
-export async function updateChangelog(newVersion: string): Promise<void> {
+export async function updateChangelog(newVersion: string, options: UpdateChangelogOptions = {}): Promise<void> {
+  const { shouldBypassChangelogEditing = false } = options;
   const HEADER_LINES_COUNT = 2;
   const changelogPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ChangelogMd);
   let previousChangelogLines: string[];
@@ -371,6 +514,10 @@ export async function updateChangelog(newVersion: string): Promise<void> {
   }
 
   await writeFile(changelogPath, newChangeLog, 'utf-8');
+
+  if (shouldBypassChangelogEditing) {
+    return;
+  }
 
   const codeVersion = await execFromRoot('code --version', {
     isQuiet: true,
@@ -405,17 +552,25 @@ export async function updateChangelog(newVersion: string): Promise<void> {
  * 8. If an Obsidian plugin, copies the updated manifest and publishes a GitHub release.
  *
  * @param versionUpdateType - The type of version update to perform (major, minor, patch, premajor, preminor, prepatch, prerelease, or x.y.z[-suffix]).
- * @param prepareGitHubRelease - A callback function to prepare the GitHub release.
+ * @param options - The {@link UpdateVersionOptions} controlling the release behavior.
  * @returns A {@link Promise} that resolves when the version update is complete.
  */
-export async function updateVersion(versionUpdateType?: string, prepareGitHubRelease?: (newVersion: string) => Promise<void>): Promise<void> {
+export async function updateVersion(versionUpdateType?: string, options: UpdateVersionOptions = {}): Promise<void> {
+  const {
+    isDryRun = false,
+    prepareGitHubRelease,
+    shouldBypassChangelogEditing = false,
+    shouldBypassCommitVerification = false,
+    shouldSkipPreflightChecks = false
+  } = options;
+
   if (!versionUpdateType) {
     const npmOldVersion = process.env['npm_old_version'];
     const npmNewVersion = process.env['npm_new_version'];
 
     if (npmOldVersion && npmNewVersion) {
       await updateVersionInFiles(npmOldVersion);
-      await updateVersion(npmNewVersion, prepareGitHubRelease);
+      await updateVersion(npmNewVersion, options);
       return;
     }
 
@@ -426,16 +581,19 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
 
   validate(versionUpdateType);
   await checkGitInstalled();
-  await checkGitRepoClean();
   await checkGitHubCliInstalled();
-  await npmRun('format:check');
-  await npmRun('spellcheck');
-  await npmRun('lint:md');
-  await npmRun('build');
-  await npmRun('lint');
-  await npmRunOptional('test');
-  await npmRunOptional('test:integration');
-  await npmRunOptional('test:coverage');
+
+  if (!shouldSkipPreflightChecks) {
+    await checkGitRepoClean();
+    await npmRun('format:check');
+    await npmRun('spellcheck');
+    await npmRun('lint:md');
+    await npmRun('build');
+    await npmRun('lint');
+    await npmRunOptional('test');
+    await npmRunOptional('test:integration');
+    await npmRunOptional('test:coverage');
+  }
 
   const newVersion = await getNewVersion(versionUpdateType);
   await updateVersionInFiles(newVersion);
@@ -443,9 +601,15 @@ export async function updateVersion(versionUpdateType?: string, prepareGitHubRel
     await updateVersionInFilesForPlugin(newVersion);
   }
 
-  await updateChangelog(newVersion);
-  await addUpdatedFilesToGit(newVersion);
+  await updateChangelog(newVersion, { shouldBypassChangelogEditing });
+  await addUpdatedFilesToGit(newVersion, { shouldBypassCommitVerification });
   await addGitTag(newVersion);
+
+  if (isDryRun) {
+    getLibDebugger('Version')('Dry run: skipping git push and GitHub release. The version bump, changelog, commit, and tag have been created locally.');
+    return;
+  }
+
   await gitPush();
   await prepareGitHubRelease?.(newVersion);
   await publishGitHubRelease(newVersion, isObsidianPlugin);

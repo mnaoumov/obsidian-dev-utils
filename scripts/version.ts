@@ -12,15 +12,25 @@ import {
   execFromRoot,
   resolvePathFromRootSafe
 } from '../src/script-utils/root.ts';
-import { updateVersion } from '../src/script-utils/version.ts';
+import {
+  parseVersionArgs,
+  updateVersion
+} from '../src/script-utils/version.ts';
 
-const VERSION_UPDATE_TYPE_ARG_INDEX = 2;
+const [, , ...args] = process.argv;
 
 await wrapCliTask(async () => {
   await execFromRoot(['npm', 'run', 'build:static']);
-  const versionUpdateTypeStr = process.argv[VERSION_UPDATE_TYPE_ARG_INDEX];
-  await updateVersion(versionUpdateTypeStr, prepareGitHubRelease);
-  const isPreRelease = Boolean(versionUpdateTypeStr?.startsWith('pre')) || Boolean(versionUpdateTypeStr?.includes('-'));
+  const { options, versionUpdateType } = parseVersionArgs(args);
+  await updateVersion(versionUpdateType, {
+    ...options,
+    prepareGitHubRelease
+  });
+  if (options.isDryRun) {
+    return;
+  }
+
+  const isPreRelease = Boolean(versionUpdateType?.startsWith('pre')) || Boolean(versionUpdateType?.includes('-'));
   await publish(isPreRelease);
 });
 
