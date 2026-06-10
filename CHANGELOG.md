@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 70.1.0
+
+- feat: add flags to version update lifecycle
+
 ## 70.0.1
 
 - fix: getDomEventsHandlersConstructor
