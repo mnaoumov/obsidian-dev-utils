@@ -2,13 +2,13 @@
   "extends": "@tsconfig/strictest/tsconfig.json",
   "compilerOptions": {
     "lib": [],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "node16",
+    "moduleResolution": "node16",
     "noEmit": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "skipLibCheck": false,
-    "target": "ES2024",
+    "target": "ES2022",
     "types": [
       "@obsidian-typings/obsidian-public-latest",
       "node"

@@ -63,7 +63,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
       extractDependenciesToBundlePlugin(dependenciesToSkip, dependenciesToBundle)
     ],
     sourcemap: 'inline',
-    target: 'ESNext',
+    target: 'ES2022',
     treeShaking: true,
     write: false
   };

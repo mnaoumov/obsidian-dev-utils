@@ -41,7 +41,7 @@ async function build(libFiles: string[], format: 'cjs' | 'esm'): Promise<void> {
       changeExtensionPlugin(extension)
     ],
     sourcemap: 'inline',
-    target: 'ESNext',
+    target: 'ES2022',
     treeShaking: true,
     write: false
   };
