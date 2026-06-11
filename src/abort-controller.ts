@@ -20,7 +20,9 @@ export const INFINITE_TIMEOUT = Number.POSITIVE_INFINITY;
 export function abortSignalAny(...maybeAbortSignals: (AbortSignal | undefined)[]): AbortSignal {
   const abortSignals = maybeAbortSignals.filter((abortSignal) => !!abortSignal);
 
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `AbortSignal.any` is feature-detected here with a manual fallback below, so it is not required on older Obsidian/Electron (Chromium) versions that lack it.
   if (typeof AbortSignal.any === 'function') {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `AbortSignal.any` is feature-detected by the guard above with a manual fallback below, so it is not required on older Obsidian/Electron (Chromium) versions that lack it.
     return AbortSignal.any(abortSignals);
   }
 
@@ -77,7 +79,9 @@ export function abortSignalTimeout(timeoutInMilliseconds: number): AbortSignal {
     return abortSignalNever();
   }
 
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `AbortSignal.timeout` is feature-detected here with a manual fallback below, so it is not required on older Obsidian/Electron (Chromium) versions that lack it.
   if (typeof AbortSignal.timeout === 'function') {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `AbortSignal.timeout` is feature-detected by the guard above with a manual fallback below, so it is not required on older Obsidian/Electron (Chromium) versions that lack it.
     return AbortSignal.timeout(timeoutInMilliseconds);
   }
 

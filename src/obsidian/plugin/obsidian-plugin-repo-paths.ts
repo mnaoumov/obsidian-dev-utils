@@ -131,6 +131,9 @@ export enum ObsidianPluginRepoPaths {
   /** Scripts folder. */
   Scripts = 'scripts',
 
+  /** Script utilities folder (dev-only tooling that runs in the consumer's Node environment, not the Obsidian runtime). */
+  ScriptUtils = 'src/script-utils',
+
   /** Source folder. */
   Src = 'src',
 
