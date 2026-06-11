@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 70.2.2
+
+- fix: allow actions after unloaded
+- chore: update libs
+
 ## 70.2.1
 
 - fix: wrong lib
