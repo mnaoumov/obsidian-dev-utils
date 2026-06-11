@@ -1,7 +1,7 @@
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { execFromRoot } from '../src/script-utils/root.ts';
+import {
+  CliTaskResult,
+  wrapCliTask
+} from '../src/script-utils/cli-utils.ts';
+import { validateDeclarations } from '../src/script-utils/validate-declarations.ts';
 
-await wrapCliTask(async () => {
-  await execFromRoot('tsc --project ./tsconfig.validate-declarations.json');
-  await execFromRoot('tsc --project ./tsconfig.validate-declarations-cjs.json');
-});
+await wrapCliTask(() => CliTaskResult.Success(validateDeclarations()));

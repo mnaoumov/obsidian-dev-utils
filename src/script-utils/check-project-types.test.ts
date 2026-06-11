@@ -155,6 +155,23 @@ describe('checkProjectTypes', () => {
     expect(process.stdout.write).toHaveBeenCalledWith('formatted');
   });
 
+  it('should drop diagnostics rejected by shouldKeepDiagnostic even when their file is kept', () => {
+    const keptError = createDiagnostic({ category: DiagnosticCategory.Error, fileName: '/root/keep.ts' });
+    const interopError = createDiagnostic({ category: DiagnosticCategory.Error, fileName: '/root/keep.ts' });
+    mockGetPreEmitDiagnostics.mockReturnValue([keptError, interopError]);
+
+    const result = checkProjectTypes({
+      options: {},
+      rootNames: ['/root/keep.ts'],
+      shouldKeepDiagnostic: (diagnostic) => diagnostic !== interopError,
+      shouldKeepFile: () => true
+    });
+
+    expect(result).toBe(false);
+    expect(mockFormatWithColor).toHaveBeenCalledWith([keptError], expect.anything());
+    expect(process.stdout.write).toHaveBeenCalledWith('Ignored 1 diagnostic(s) outside the validated set.\n');
+  });
+
   it('should skip output and return true when every diagnostic is ignored', () => {
     const droppedError = createDiagnostic({ category: DiagnosticCategory.Error, fileName: '/root/drop.ts' });
     mockGetPreEmitDiagnostics.mockReturnValue([droppedError]);

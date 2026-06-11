@@ -142,6 +142,12 @@ export enum ObsidianDevUtilsRepoPaths {
   /** TypeScript configuration file. */
   TsConfigJson = 'tsconfig.json',
 
+  /** TypeScript configuration file that validates the generated CommonJS declarations. */
+  TsConfigValidateDeclarationsCjsJson = 'tsconfig.validate-declarations-cjs.json',
+
+  /** TypeScript configuration file that validates the generated ESM declarations. */
+  TsConfigValidateDeclarationsJson = 'tsconfig.validate-declarations.json',
+
   /** TypeScript file extension. */
   TsExtension = '.ts',
 
