@@ -223,7 +223,7 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
       copyToObsidianPluginsFolderPlugin(isProductionBuild, distFolder, obsidianConfigFolder, pluginName)
     ],
     sourcemap: isProductionBuild ? false : 'inline',
-    target: 'esnext',
+    target: 'es2022',
     treeShaking: true
   };
 
