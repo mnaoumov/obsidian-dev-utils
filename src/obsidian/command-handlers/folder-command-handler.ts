@@ -125,6 +125,15 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
   }
 
   /**
+   * Gets the active folder, if any, to use as the target when executing from the command palette.
+   *
+   * @returns The active folder or `null` if none is active.
+   */
+  protected override getActiveFile(): null | TAbstractFile {
+    return this.activeFileProvider.getActiveFile()?.parent ?? null;
+  }
+
+  /**
    * Filters to only show menu for TFolder instances.
    *
    * @param abstractFile - The file or folder.

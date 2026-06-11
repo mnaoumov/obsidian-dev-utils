@@ -746,11 +746,11 @@ describe('AbstractFileCommandHandler', () => {
   });
 
   describe('activeFileProvider before registration', () => {
-    it('should return false from command palette when not yet registered', () => {
+    it('should throw from command palette when not yet registered', () => {
       const handler = new TestAbstractFileHandler(createParams());
 
       const command = handler.buildCommand();
-      expect(command.checkCallback?.(true)).toBe(false);
+      expect(() => command.checkCallback?.(true)).toThrow();
     });
   });
 });

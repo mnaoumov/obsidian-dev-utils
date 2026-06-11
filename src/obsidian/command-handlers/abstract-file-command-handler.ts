@@ -73,6 +73,15 @@ export interface AbstractFileCommandHandlerConstructorParams extends CommandHand
  */
 export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   /**
+   * Get the active file provider.
+   *
+   * @returns The active file provider.
+   */
+  protected get activeFileProvider(): ActiveFileProvider {
+    return ensureNonNullable(this._activeFileProvider);
+  }
+
+  /**
    * Gets the item name to use in the single-file menu.
    *
    * @returns The item name, or `undefined` to use the command name.
@@ -127,7 +136,6 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   }
 
   private _activeFileProvider?: ActiveFileProvider;
-
   private readonly _fileMenuItemName?: string | undefined;
   private readonly _fileMenuSection?: string | undefined;
   private readonly _fileMenuSubmenuIcon?: IconName | undefined;
@@ -135,10 +143,8 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   private readonly _filesMenuSection?: string | undefined;
   private readonly _filesMenuSubmenuIcon?: IconName | undefined;
   private _pluginName?: string;
+
   private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
-  private get activeFileProvider(): ActiveFileProvider {
-    return ensureNonNullable(this._activeFileProvider);
-  }
 
   private get pluginName(): string {
     return ensureNonNullable(this._pluginName);
@@ -179,10 +185,6 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    * @returns Whether the command can execute.
    */
   protected override canExecute(): boolean {
-    if (!this._activeFileProvider) {
-      return false;
-    }
-
     if (!this.shouldAddToCommandPalette()) {
       return false;
     }
@@ -250,6 +252,15 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   }
 
   /**
+   * Gets the active file, if any, to use as the target when executing from the command palette.
+   *
+   * @returns The active file or `null` if none is active.
+   */
+  protected getActiveFile(): null | TAbstractFile {
+    return this.activeFileProvider.getActiveFile() ?? null;
+  }
+
+  /**
    * Gets whether to add the command to a submenu.
    *
    * @returns Whether to add to a submenu.
@@ -290,10 +301,6 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    */
   protected shouldAddToCommandPalette(): boolean {
     return true;
-  }
-
-  private getActiveFile(): null | TAbstractFile {
-    return this.activeFileProvider.getActiveFile() ?? null;
   }
 
   private handleAbstractFileMenu(menu: Menu, abstractFile: TAbstractFile, source: string, leaf?: WorkspaceLeaf): void {
