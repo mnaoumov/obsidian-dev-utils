@@ -7,6 +7,7 @@
 import type {
   App as AppOriginal,
   Menu as MenuOriginal,
+  TAbstractFile as TAbstractFileOriginal,
   TFolder as TFolderOriginal,
   WorkspaceLeaf as WorkspaceLeafOriginal
 } from 'obsidian';
@@ -44,6 +45,10 @@ interface MockContext {
   filesMenuHandlers: FilesMenuEventHandler[];
 }
 
+interface MutableParent {
+  parent: null | TFolderOriginal;
+}
+
 class TestFolderHandler extends FolderCommandHandler {
   public canExecuteFn = vi.fn(() => true);
   public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
@@ -63,7 +68,13 @@ class TestFolderHandler extends FolderCommandHandler {
   }
 }
 
-function createMockContext(activeFile?: TFolderOriginal): MockContext {
+function createMockActiveFile(parentFolder: TFolderOriginal): TAbstractFileOriginal {
+  const file = TFile.create__(castTo(app.vault), `${parentFolder.path}/note.md`).asOriginalType2__();
+  castTo<MutableParent>(file).parent = parentFolder;
+  return castTo(file);
+}
+
+function createMockContext(activeFile?: TAbstractFileOriginal): MockContext {
   const fileMenuHandlers: FileMenuEventHandler[] = [];
   const filesMenuHandlers: FilesMenuEventHandler[] = [];
   const activeFileProvider: ActiveFileProvider = {
@@ -113,7 +124,7 @@ describe('FolderCommandHandler', () => {
     it('should accept TFolder instances via canExecuteAbstractFile', () => {
       const folder = createMockTFolder('my-folder');
       const handler = new TestFolderHandler(createParams());
-      const { context } = createMockContext(folder);
+      const { context } = createMockContext(createMockActiveFile(folder));
       handler.onRegistered(context);
 
       const command = handler.buildCommand();
@@ -160,7 +171,7 @@ describe('FolderCommandHandler', () => {
 
       const folder = createMockTFolder('my-folder');
       const handler = new DefaultFolderHandler(createParams());
-      const { context } = createMockContext(folder);
+      const { context } = createMockContext(createMockActiveFile(folder));
       handler.onRegistered(context);
 
       const command = handler.buildCommand();
@@ -311,7 +322,7 @@ describe('FolderCommandHandler', () => {
 
       const folder = createMockTFolder('target');
       const handler = new TrackingFolderHandler(createParams());
-      const { context } = createMockContext(folder);
+      const { context } = createMockContext(createMockActiveFile(folder));
       handler.onRegistered(context);
 
       const command = handler.buildCommand();
@@ -414,6 +425,51 @@ describe('FolderCommandHandler', () => {
 
       const handler = new EmptyFoldersHandler(createParams());
       await expect(handler.publicExecuteFolders([])).resolves.toBeUndefined();
+    });
+  });
+
+  describe('command palette target resolution', () => {
+    it('should resolve the command palette target to the parent folder of the active file', async () => {
+      const executedFolders: string[] = [];
+
+      class TrackingFolderHandler extends FolderCommandHandler {
+        protected override async executeFolder(folder: TFolderOriginal): Promise<void> {
+          await noopAsync();
+          executedFolders.push(folder.path);
+        }
+      }
+
+      const parentFolder = createMockTFolder('parent-folder');
+      const handler = new TrackingFolderHandler(createParams());
+      const { context } = createMockContext(createMockActiveFile(parentFolder));
+      handler.onRegistered(context);
+
+      const command = handler.buildCommand();
+      expect(command.checkCallback?.(true)).toBe(true);
+
+      command.checkCallback?.(false);
+      await vi.waitFor(() => {
+        expect(executedFolders).toEqual(['parent-folder']);
+      });
+    });
+
+    it('should reject the command palette when the active file has no parent', () => {
+      const handler = new TestFolderHandler(createParams());
+      const rootLevelFile = TFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
+      const { context } = createMockContext(castTo(rootLevelFile));
+      handler.onRegistered(context);
+
+      const command = handler.buildCommand();
+      expect(command.checkCallback?.(true)).toBe(false);
+    });
+
+    it('should reject the command palette when there is no active file', () => {
+      const handler = new TestFolderHandler(createParams());
+      const { context } = createMockContext();
+      handler.onRegistered(context);
+
+      const command = handler.buildCommand();
+      expect(command.checkCallback?.(true)).toBe(false);
     });
   });
 });
