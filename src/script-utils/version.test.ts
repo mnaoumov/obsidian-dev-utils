@@ -396,9 +396,7 @@ describe('addUpdatedFilesToGit', () => {
 
       expect(commitAttempts).toBe(2);
       expect(question).toHaveBeenCalledTimes(1);
-      const gitAddCalls = mockExecFromRoot.mock.calls.filter((call: unknown[]) =>
-        Array.isArray(call[0]) && (call[0] as string[]).join(' ') === 'git add --all'
-      );
+      const gitAddCalls = mockExecFromRoot.mock.calls.filter((call: unknown[]) => Array.isArray(call[0]) && (call[0] as string[]).join(' ') === 'git add --all');
       expect(gitAddCalls).toHaveLength(2);
     } finally {
       setIsTty(originalIsTty);

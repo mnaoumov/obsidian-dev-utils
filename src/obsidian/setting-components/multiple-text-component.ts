@@ -30,8 +30,7 @@ import { addPluginCssClasses } from '../plugin/plugin-context.ts';
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class MultipleTextComponent extends ValueComponent<readonly string[]>
-  implements TextBasedComponent<readonly string[]>, ValidatorComponent, ValueComponentWithChangeTracking<readonly string[]> {
+export class MultipleTextComponent extends ValueComponent<readonly string[]> implements TextBasedComponent<readonly string[]>, ValidatorComponent, ValueComponentWithChangeTracking<readonly string[]> {
   /**
    * An input element of the component.
    *

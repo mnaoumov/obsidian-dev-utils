@@ -185,8 +185,7 @@ export const noAsyncCallbackToUnsafeReturn: Rule.RuleModule = {
       description: 'Disallow passing async functions as callbacks to parameters with `any` or `unknown` return type'
     },
     messages: {
-      [MESSAGE_ID]:
-        'Async function passed as callback to a parameter with `any`/`unknown` return type. This may cause unhandled promise rejections. Wrap the call: `(...args) => { yourAsyncFn(...args); }`.'
+      [MESSAGE_ID]: 'Async function passed as callback to a parameter with `any`/`unknown` return type. This may cause unhandled promise rejections. Wrap the call: `(...args) => { yourAsyncFn(...args); }`.'
     },
     schema: [],
     type: 'problem'

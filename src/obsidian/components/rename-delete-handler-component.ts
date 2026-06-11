@@ -334,8 +334,7 @@ class SettingsManager {
   public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
 
   public constructor(private readonly app: App) {
-    this.renameDeleteHandlersMap =
-      getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
+    this.renameDeleteHandlersMap = getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
   }
 
   public getSettings(): Partial<RenameDeleteHandlerSettings> {
