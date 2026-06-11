@@ -12,7 +12,7 @@
       "DOM",
       "DOM.Iterable",
       "ES2022",
-      "es2022.Disposable"
+      "ESNext.Disposable"
     ],
     "libReplacement": true,
     "module": "node16",
