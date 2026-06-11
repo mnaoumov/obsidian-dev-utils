@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 70.2.0
+
+- feat: validate declarations against our types only
+- chore: lint
+- feat: manual type validation
+- fix: tests in es2024 syntax
+- feat: ensure not using Node 16.13.2+
+- fix: properly identify current folder re <https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/118>
+- feat: force es2022/node16
+- fix: build plugins to support older env
+- chore: update libs
+
 ## 70.1.0
 
 - feat: add flags to version update lifecycle
