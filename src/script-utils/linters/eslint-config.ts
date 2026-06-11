@@ -21,6 +21,8 @@ import eslint from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-import-x';
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
+import nodePlugin from 'eslint-plugin-n';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
@@ -136,6 +138,7 @@ export function defineEslintConfigs(params: DefineEslintConfigsParams = {}): Lin
     ...getEslintImportResolverTypescriptConfigs(),
     ...getEslintCommentsConfigs(context),
     ...getObsidianDevUtilsPluginConfigs(context),
+    ...getNodeCompatConfigs(context),
     ...customConfigs
   );
 }
@@ -388,6 +391,45 @@ function getImportXConfigs(context: EslintConfigContext): Linter.Config[] {
       ],
       rules: {
         'import-x/no-default-export': 'off'
+      }
+    }
+  ]);
+}
+
+function getNodeCompatConfigs(context: EslintConfigContext): Linter.Config[] {
+  // The minimum Obsidian installer that still receives app updates (0.14.5) ships Electron 18.0.3, which runs Node 16.13.2.
+  // Shipped source must therefore avoid Node/ES runtime builtins unavailable in that version. Tests and scripts are dev-only and exempt.
+  const minimumNodeVersion = '>=16.13.2';
+
+  return defineConfig([
+    {
+      files: context.sourceFiles,
+      ignores: [
+        ...context.testFiles,
+        // Dev-only tooling (build, lint, version) under `src/script-utils/**` runs via `jiti` in the consumer's Node environment when building a plugin and never ships into the Obsidian runtime, so the Node-16 floor does not apply to it.
+        join(ObsidianPluginRepoPaths.ScriptUtils, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs)
+      ],
+      plugins: {
+        n: nodePlugin
+      },
+      rules: {
+        'n/no-unsupported-features/es-builtins': [
+          'error',
+          {
+            version: minimumNodeVersion
+          }
+        ],
+        'n/no-unsupported-features/node-builtins': [
+          'error',
+          {
+            // `Blob` and `File` are DOM web globals always present in the Obsidian/Electron renderer (every supported Chromium), but the rule also knows them as Node's experimental builtins and cannot tell which is meant. Ignore them globally; genuinely newer APIs (e.g. `AbortSignal.any`) stay flagged.
+            ignores: [
+              'Blob',
+              'File'
+            ],
+            version: minimumNodeVersion
+          }
+        ]
       }
     }
   ]);
