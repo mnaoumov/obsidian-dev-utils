@@ -607,8 +607,7 @@
     "dist/",
     "!dist/*.tgz",
     "LICENSE",
-    "README.md",
-    "scripts/postinstall.mjs"
+    "README.md"
   ],
   "scripts": {
     "build": "jiti scripts/build.ts",
@@ -737,7 +736,6 @@
     "nano-staged": "^1.0.2",
     "obsidian-integration-testing": "^4.2.3",
     "obsidian-test-mocks": "^3.1.0",
-    "patch-package": "^8.0.1",
     "ts-declaration-location": "^1.0.7",
     "vitest": "^4.1.8",
     "yaml": "^2.9.0"
