@@ -559,7 +559,7 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
   }
 
   const functionTexts: string[] = [];
-  const usedObjects = new WeakSet<object>();
+  const usedObjects = new WeakSet();
 
   const plainObject = toPlainObject(value, '', 0, true, fullOptions, functionTexts, usedObjects);
   let json = ensureNonNullable(JSON.stringify(plainObject, null, fullOptions.space));
