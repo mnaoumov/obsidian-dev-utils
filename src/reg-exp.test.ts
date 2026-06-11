@@ -13,6 +13,13 @@ import {
   RegExpMergeFlagsConflictStrategy
 } from './reg-exp.ts';
 
+// The `v` flag is es2024, so a `/.../v` literal triggers TS1501 under this project's es2022 target.
+// Building it via the `RegExp` constructor with a non-literal source sidesteps both TS1501 and the
+// `prefer-regex-literals` ESLint rule (which only fires on static-string patterns).
+function vFlagRegExp(source: string): RegExp {
+  return new RegExp(source, 'v');
+}
+
 describe('escapeRegExp', () => {
   it('should escape all special regex characters', () => {
     const special = '.*+?^${}()|[]\\';
@@ -110,7 +117,7 @@ describe('oneOf', () => {
     });
 
     it('should throw when both u and v are uniformly present', () => {
-      expect(() => oneOf([/abc/u, /def/v])).toThrow();
+      expect(() => oneOf([/abc/u, vFlagRegExp('def')])).toThrow();
     });
   });
 
@@ -172,27 +179,27 @@ describe('oneOf', () => {
     });
 
     it('should keep v flag when all regexes have it', () => {
-      const result = oneOf([/abc/v, /def/v]);
+      const result = oneOf([vFlagRegExp('abc'), vFlagRegExp('def')]);
       expect(result.flags).toContain('v');
     });
 
     it('should resolve u+v conflict in Union strategy by keeping v', () => {
-      const result = oneOf([/abc/u, /def/v], RegExpMergeFlagsConflictStrategy.Union);
+      const result = oneOf([/abc/u, vFlagRegExp('def')], RegExpMergeFlagsConflictStrategy.Union);
       expect(result.flags).toContain('v');
     });
 
     it('should resolve u+v conflict in Union strategy by dropping u', () => {
-      const result = oneOf([/abc/u, /def/v], RegExpMergeFlagsConflictStrategy.Union);
+      const result = oneOf([/abc/u, vFlagRegExp('def')], RegExpMergeFlagsConflictStrategy.Union);
       expect(result.flags).not.toContain('u');
     });
 
     it('should drop u in Intersect when not all share it', () => {
-      const result = oneOf([/abc/u, /def/v], RegExpMergeFlagsConflictStrategy.Intersect);
+      const result = oneOf([/abc/u, vFlagRegExp('def')], RegExpMergeFlagsConflictStrategy.Intersect);
       expect(result.flags).not.toContain('u');
     });
 
     it('should drop v in Intersect when not all share it', () => {
-      const result = oneOf([/abc/u, /def/v], RegExpMergeFlagsConflictStrategy.Intersect);
+      const result = oneOf([/abc/u, vFlagRegExp('def')], RegExpMergeFlagsConflictStrategy.Intersect);
       expect(result.flags).not.toContain('v');
     });
   });
