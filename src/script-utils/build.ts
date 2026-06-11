@@ -18,12 +18,18 @@ import { toArray } from '../async.ts';
 import { getLibDebugger } from '../debug.ts';
 import { join } from '../path.ts';
 import { trimStart } from '../string.ts';
+import {
+  checkProjectTypes,
+  parseTsConfig,
+  toCanonical
+} from './check-project-types.ts';
 import { readdirPosix } from './fs.ts';
 import { readJson } from './json.ts';
 import { npmRunOptional } from './npm-run.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 import {
   execFromRoot,
+  getRootFolder,
   resolvePathFromRootSafe
 } from './root.ts';
 
@@ -74,10 +80,20 @@ export async function buildCompileSvelte(): Promise<void> {
 /**
  * Compiles the TypeScript code.
  *
+ * The general `tsc` pass runs with `skipLibCheck: true` (configured in `tsconfig.json`) so it does
+ * not fail on broken upstream `.d.ts` files we do not control. Afterwards, {@link validateProjectTypes}
+ * re-runs the type-check in-memory with `skipLibCheck: false`, reporting only diagnostics from the
+ * files we own, so the declarations we author are still fully validated.
+ *
  * @returns A {@link Promise} that resolves when the code compiles successfully.
+ * @throws If the project's own declarations fail validation.
  */
 export async function buildCompileTypeScript(): Promise<void> {
   await execFromRoot(['npx', 'tsc', '--build', '--force']);
+
+  if (!validateProjectTypes()) {
+    throw new Error('TypeScript declaration validation failed.');
+  }
 }
 
 /**
@@ -97,4 +113,34 @@ export async function buildStatic(): Promise<void> {
     const path = trimStart(join(dirent.parentPath, dirent.name), `${ObsidianDevUtilsRepoPaths.Static}/`);
     await cp(join(ObsidianDevUtilsRepoPaths.Static, path), join(ObsidianDevUtilsRepoPaths.Dist, path));
   }
+}
+
+const NODE_MODULES_SEGMENT = '/node_modules/';
+
+function shouldKeepProjectFile(fileName: string, rootCanonical: string): boolean {
+  return fileName.startsWith(`${rootCanonical}/`) && !fileName.includes(NODE_MODULES_SEGMENT);
+}
+
+/**
+ * Re-runs the project type-check in-memory with `skipLibCheck: false`, reporting only diagnostics
+ * whose source file belongs to the project (under the root folder, outside `node_modules`).
+ *
+ * @returns `true` when the project's own files have no type errors, `false` otherwise.
+ * @throws If the root folder cannot be found.
+ */
+function validateProjectTypes(): boolean {
+  const root = getRootFolder();
+
+  if (!root) {
+    throw new Error('Could not find root folder');
+  }
+
+  const rootCanonical = toCanonical(root);
+  const { fileNames, options } = parseTsConfig(join(root, ObsidianDevUtilsRepoPaths.TsConfigJson));
+
+  return checkProjectTypes({
+    options,
+    rootNames: fileNames,
+    shouldKeepFile: (fileName) => shouldKeepProjectFile(fileName, rootCanonical)
+  });
 }

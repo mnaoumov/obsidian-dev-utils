@@ -57,6 +57,26 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - `src/**/index.ts` files are auto-generated — do NOT edit them manually
 - `package.json` exports are auto-generated via `build:generate-exports`
 
+### Type Validation (manual `skipLibCheck` wrapper)
+
+`tsconfig.json` sets `skipLibCheck: true`. This is a deliberate exception to the usual "never
+weaken `@tsconfig/strictest`" stance: it lets `tsc` type-check our `.ts` files without failing on
+broken upstream `.d.ts` files we do not control (e.g. a given version's `obsidian.d.ts`, which has
+shipped `HistoryHandler`/`PromiseWithResolvers` type errors).
+
+The declarations we author (`src/@types/**`, `src/obsidian/@types/dataview/**`) are still fully
+validated. `buildCompileTypeScript()` (run by `build:compile:typescript`) does two passes:
+
+1. `tsc --build --force` — the normal compile, with `skipLibCheck: true`.
+2. An in-memory re-check via `checkProjectTypes()` (`src/script-utils/check-project-types.ts`) with
+   `skipLibCheck: false`, reporting **only** diagnostics whose source file is under the project root
+   and outside `node_modules`. It prints `Ignored N diagnostic(s) outside the validated set.` —
+   when upstream is fixed and `N` reaches `0`, the workaround is no longer doing anything and
+   `skipLibCheck` can go back to `false`.
+
+`checkProjectTypes()` / `parseTsConfig()` / `toCanonical()` are exported as a reusable primitive, so
+consuming plugins inherit the same resilience through the shared `buildCompileTypeScript()`.
+
 ## Code Conventions
 
 ### File Structure
@@ -222,7 +242,11 @@ See `static/scripts/` for the full set of consumer examples.
 
 ## Current Task
 
-None. Coverage at 100% (4612/4612 statements, 2007/2007 branches, 1267/1267 functions, 4489/4489 lines).
+None. The "manual `skipLibCheck` wrapper" port (see **Type Validation** under Architecture →
+Build) is complete: `tsconfig.json` now uses `skipLibCheck: true`, `buildCompileTypeScript()`
+runs the filtered in-memory `checkProjectTypes()` validation, and both new files
+(`src/script-utils/check-project-types.ts` + test, plus `build.ts`/`build.test.ts` updates) are at
+100% coverage with lint/format/spellcheck clean.
 
 ### Architectural Vision: Improve DX + Testability of Plugin Base Classes
 

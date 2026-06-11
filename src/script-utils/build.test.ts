@@ -6,6 +6,11 @@ import {
   vi
 } from 'vitest';
 
+import type {
+  CheckProjectTypesParams,
+  ParsedTsConfig
+} from './check-project-types.ts';
+
 import { noopAsync } from '../function.ts';
 import {
   buildClean,
@@ -16,28 +21,43 @@ import {
 } from './build.ts';
 
 const {
+  mockCheckProjectTypes,
   mockCp,
   mockExecFromRoot,
+  mockGetRootFolder,
   mockGlob,
   mockNpmRunOptional,
+  mockParseTsConfig,
   mockReaddirPosix,
   mockReadJson,
   mockResolvePathFromRootSafe,
-  mockRm
+  mockRm,
+  mockToCanonical
 } = vi.hoisted(() => ({
+  mockCheckProjectTypes: vi.fn<(params: CheckProjectTypesParams) => boolean>(),
   mockCp: vi.fn(),
   mockExecFromRoot: vi.fn(),
+  mockGetRootFolder: vi.fn<() => null | string>(),
   mockGlob: vi.fn(),
   mockNpmRunOptional: vi.fn(),
+  mockParseTsConfig: vi.fn<(tsConfigPath: string) => ParsedTsConfig>(),
   mockReaddirPosix: vi.fn(),
   mockReadJson: vi.fn(),
   mockResolvePathFromRootSafe: vi.fn<(path: string) => string>(),
-  mockRm: vi.fn()
+  mockRm: vi.fn(),
+  mockToCanonical: vi.fn<(fileName: string) => string>()
 }));
 
 vi.mock('../script-utils/root.ts', () => ({
   execFromRoot: mockExecFromRoot,
+  getRootFolder: mockGetRootFolder,
   resolvePathFromRootSafe: mockResolvePathFromRootSafe
+}));
+
+vi.mock('./check-project-types.ts', () => ({
+  checkProjectTypes: mockCheckProjectTypes,
+  parseTsConfig: mockParseTsConfig,
+  toCanonical: mockToCanonical
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -73,6 +93,10 @@ beforeEach(() => {
   mockRm.mockResolvedValue(undefined);
   mockCp.mockResolvedValue(undefined);
   mockResolvePathFromRootSafe.mockImplementation((path: string) => `/root/${path}`);
+  mockGetRootFolder.mockReturnValue('/root');
+  mockToCanonical.mockImplementation((fileName: string) => fileName.toLowerCase());
+  mockParseTsConfig.mockReturnValue({ fileNames: ['/root/src/a.ts'], options: {} });
+  mockCheckProjectTypes.mockReturnValue(true);
 });
 
 describe('buildClean', () => {
@@ -104,9 +128,36 @@ describe('buildCompile', () => {
 });
 
 describe('buildCompileTypeScript', () => {
-  it('should run tsc --build --force', async () => {
+  it('should run tsc --build --force and validate the project types', async () => {
     await buildCompileTypeScript();
     expect(mockExecFromRoot).toHaveBeenCalledWith(['npx', 'tsc', '--build', '--force']);
+    expect(mockParseTsConfig).toHaveBeenCalledWith('/root/tsconfig.json');
+    expect(mockCheckProjectTypes).toHaveBeenCalledWith(expect.objectContaining({
+      options: {},
+      rootNames: ['/root/src/a.ts']
+    }));
+  });
+
+  it('should keep only project files outside node_modules when validating', async () => {
+    mockCheckProjectTypes.mockImplementation((params) => {
+      expect(params.shouldKeepFile('/root/src/a.ts')).toBe(true);
+      expect(params.shouldKeepFile('/root/node_modules/obsidian/obsidian.d.ts')).toBe(false);
+      expect(params.shouldKeepFile('/other/z.ts')).toBe(false);
+      return true;
+    });
+
+    await buildCompileTypeScript();
+    expect(mockCheckProjectTypes).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw when the project types fail validation', async () => {
+    mockCheckProjectTypes.mockReturnValue(false);
+    await expect(buildCompileTypeScript()).rejects.toThrow('TypeScript declaration validation failed.');
+  });
+
+  it('should throw when the root folder cannot be found', async () => {
+    mockGetRootFolder.mockReturnValue(null);
+    await expect(buildCompileTypeScript()).rejects.toThrow('Could not find root folder');
   });
 });
 
