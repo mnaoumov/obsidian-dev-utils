@@ -36,7 +36,7 @@
 - refactor(test): use GenericObject from type-guards for evalInObsidian args
 - refactor: use assertNever in exhaustive switch defaults
 - fix(test): satisfy GenericObject constraint in evalInObsidian args type
-- docs(claude): clear stale pending questions
+- docs: clear stale pending questions
 - chore: drop duplicate eslint-plugin-import-x from devDependencies
 - test(markdown-code-block-processor): use dedent for multiline literal
 - feat(type-guards): add assertNever for exhaustive switch checks
@@ -92,7 +92,6 @@
 - test: fix remaining coverage gaps in disposable component and ESLint rule
 - test: add remaining coverage for async event registration and ESLint rule
 - test: add coverage for mixin, RegistryComponent, and settings event methods
-- docs: clear current task in CLAUDE.md
 - fix: resolve test hang and broken mocks
 - fix: build
 - chore: update libs
@@ -302,7 +301,7 @@
 - refactor: make GenericObject generic
 - refactor: extract strictProxy to its own module
 - fix(lint): forbid as anonymous type
-- chore: remove global rule references from changelog Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+- chore: remove global rule references from changelog
 
 ## 55.0.0
 
@@ -446,8 +445,8 @@
 
 ## 51.0.1
 
-- fix: increase test timeouts for heavy dynamic imports in i18n and pdf tests Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
-- fix: add debug logging and robust JSON extraction for npm pack output Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+- fix: increase test timeouts for heavy dynamic imports in i18n and pdf tests
+- fix: add debug logging and robust JSON extraction for npm pack output
 - chore: debugging failure
 
 ## 51.0.0
