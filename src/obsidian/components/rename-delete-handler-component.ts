@@ -802,7 +802,11 @@ class RenameMap {
   }
 }
 
-/** */
+/**
+ * Component that handles rename and delete events in Obsidian.
+ * It listens to rename and delete events and updates links accordingly.
+ * It also handles edge cases such as case-only renames and collisions with existing files.
+ */
 export class RenameDeleteHandlerComponent extends ComponentEx {
   private readonly abortSignalComponent: AbortSignalComponent;
   private readonly app: App;
