@@ -44,7 +44,7 @@ export async function buildIntegrationTestPlugin(): Promise<void> {
     outfile: join(DIST_DEV_DIR, 'main.js'),
     platform: 'node',
     sourcemap: 'inline',
-    target: 'ESNext'
+    target: 'ES2022'
   });
 
   await cp(join(PLUGIN_DIR, 'manifest.json'), join(DIST_DEV_DIR, 'manifest.json'));

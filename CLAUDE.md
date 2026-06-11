@@ -48,7 +48,7 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 ### TypeScript
 
 - Extends `@tsconfig/strictest` — very strict settings
-- Target: ES2024, Module: NodeNext
+- Target: 2022, Module: node16 (The minimum Obsidian installer version that still receives app updates is 0.14.5, which uses electron 18.0.3, which uses Node 16.13.2, which corresponds to ES2022)
 - `allowImportingTsExtensions: true` — always use `.ts` extension in imports
 
 ### Build
