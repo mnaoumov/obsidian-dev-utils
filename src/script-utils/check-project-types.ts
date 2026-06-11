@@ -40,6 +40,18 @@ export interface CheckProjectTypesParams {
   readonly rootNames: readonly string[];
 
   /**
+   * Decides whether a diagnostic should be reported, based on the diagnostic itself rather than its
+   * source file. Runs in addition to {@link CheckProjectTypesParams.shouldKeepFile} — a diagnostic is
+   * reported only when both predicates keep it. Use this to drop diagnostics that are reported in a
+   * file we own but are caused by something we do not control (e.g. a cross-module-format interop
+   * complaint about a third-party import). When omitted, no diagnostic is dropped on this basis.
+   *
+   * @param diagnostic - The diagnostic to evaluate.
+   * @returns `true` to report the diagnostic, `false` to ignore it.
+   */
+  shouldKeepDiagnostic?(this: void, diagnostic: Diagnostic): boolean;
+
+  /**
    * Decides whether a diagnostic's source file is one we care about.
    *
    * @param fileName - The diagnostic's source file, already passed through {@link toCanonical}.
@@ -86,7 +98,9 @@ export function checkProjectTypes(params: CheckProjectTypesParams): boolean {
   });
 
   const allDiagnostics = getPreEmitDiagnostics(program);
-  const keptDiagnostics = allDiagnostics.filter((diagnostic) => shouldKeepDiagnostic(diagnostic, params.shouldKeepFile));
+  const keptDiagnostics = allDiagnostics.filter((diagnostic) =>
+    shouldKeepDiagnosticByFile(diagnostic, params.shouldKeepFile) && (params.shouldKeepDiagnostic?.(diagnostic) ?? true)
+  );
   const ignoredCount = allDiagnostics.length - keptDiagnostics.length;
 
   if (keptDiagnostics.length > 0) {
@@ -146,7 +160,7 @@ export function toCanonical(fileName: string): string {
   return sys.useCaseSensitiveFileNames ? normalized : normalized.toLowerCase();
 }
 
-function shouldKeepDiagnostic(diagnostic: Diagnostic, shouldKeepFile: (fileName: string) => boolean): boolean {
+function shouldKeepDiagnosticByFile(diagnostic: Diagnostic, shouldKeepFile: (fileName: string) => boolean): boolean {
   if (!diagnostic.file) {
     return true;
   }
