@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 70.2.1
+
+- fix: wrong lib
+- chore: format
+- chore: unlimited line width
+- chore: stop patching
+
 ## 70.2.0
 
 - feat: validate declarations against our types only
