@@ -64,8 +64,7 @@ export const noRestrictedSyntaxRuleEntries: readonly NoRestrictedSyntaxRuleEntry
     selector: 'TSAsExpression > TSAsExpression'
   },
   {
-    message:
-      'Do not use `as never`. It silently satisfies type constraints by claiming "this value is of every type" — almost always masks a real type mismatch. Fix the underlying types instead.',
+    message: 'Do not use `as never`. It silently satisfies type constraints by claiming "this value is of every type" — almost always masks a real type mismatch. Fix the underlying types instead.',
     selector: 'TSAsExpression > TSNeverKeyword'
   },
   {

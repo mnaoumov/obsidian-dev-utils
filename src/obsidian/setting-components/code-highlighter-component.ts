@@ -36,8 +36,7 @@ import { addPluginCssClasses } from '../plugin/plugin-context.ts';
  *
  * Alternatively, you can copy styles from {@link https://github.com/mnaoumov/obsidian-dev-utils/releases/latest/download/styles.css}.
  */
-export class CodeHighlighterComponent extends ValueComponent<string>
-  implements TextBasedComponent<string>, ValidatorComponent, ValueComponentWithChangeTracking<string> {
+export class CodeHighlighterComponent extends ValueComponent<string> implements TextBasedComponent<string>, ValidatorComponent, ValueComponentWithChangeTracking<string> {
   /**
    * An input element of the component.
    *

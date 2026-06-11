@@ -1703,9 +1703,7 @@ function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: Tab
     return false;
   }
 
-  return tablePositions.some((tablePosition) =>
-    tablePosition.start <= fileChange.reference.position.start.offset && fileChange.reference.position.end.offset <= tablePosition.end
-  );
+  return tablePositions.some((tablePosition) => tablePosition.start <= fileChange.reference.position.start.offset && fileChange.reference.position.end.offset <= tablePosition.end);
 }
 
 function shouldUseWikilinkStyle(app: App, originalLink?: string, linkStyle?: LinkStyle): boolean {

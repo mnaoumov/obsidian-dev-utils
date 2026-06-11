@@ -50,8 +50,7 @@ export function fixSourceMapsPlugin(isProductionBuild: boolean, distPaths: strin
           const newContent = replaceAll(
             content,
             /(?<Prefix>\n(?:\/\/|\/\*)# sourceMappingURL=data:application\/json;base64,)(?<SourceMapBase64>.+?)(?<Suffix>$|\n| \*\/)(?:.|\n)*/g,
-            ({ capturedGroupArgs: [prefix = '', sourceMapBase64 = '', suffix = ''] }) =>
-              `${prefix + fixSourceMap(sourceMapBase64, pluginName) + suffix.trim()}\n/* nosourcemap */`
+            ({ capturedGroupArgs: [prefix = '', sourceMapBase64 = '', suffix = ''] }) => `${prefix + fixSourceMap(sourceMapBase64, pluginName) + suffix.trim()}\n/* nosourcemap */`
           );
 
           if (content !== newContent) {

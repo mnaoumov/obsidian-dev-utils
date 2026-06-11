@@ -154,8 +154,7 @@ type ValidationResult<PluginSettings extends object> = Partial<Record<StringKeys
  * @typeParam PluginSettings - The plugin settings type.
  */
 // eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Non-abstract base class; consumers extend it.
-export class PluginSettingsComponentBase<PluginSettings extends object> extends ComponentEx
-  implements AsyncEventSource<PluginSettingsComponentBaseEventMap<PluginSettings>> {
+export class PluginSettingsComponentBase<PluginSettings extends object> extends ComponentEx implements AsyncEventSource<PluginSettingsComponentBaseEventMap<PluginSettings>> {
   /**
    * Gets the readonly default settings.
    *

@@ -29,8 +29,7 @@ import { MultipleDropdownComponent } from './multiple-dropdown-component.ts';
  *
  * @typeParam T - The type of the value to select.
  */
-export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T[]>
-  implements ValidatorComponent, ValueComponentWithChangeTracking<readonly T[]> {
+export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T[]> implements ValidatorComponent, ValueComponentWithChangeTracking<readonly T[]> {
   /**
    * A select element of the component.
    *

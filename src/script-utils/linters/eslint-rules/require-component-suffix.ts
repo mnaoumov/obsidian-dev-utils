@@ -57,8 +57,7 @@ export const requireComponentSuffix: Rule.RuleModule = {
     },
     messages: {
       [MESSAGE_ID_ABSTRACT_NEEDS_BASE]: 'Abstract class `{{ className }}` extends `Component` but its name does not end with `ComponentBase`.',
-      [MESSAGE_ID_BASE_NOT_ABSTRACT]:
-        'Class `{{ className }}` ends with `ComponentBase` but is not abstract. Only abstract classes may use the `ComponentBase` suffix.',
+      [MESSAGE_ID_BASE_NOT_ABSTRACT]: 'Class `{{ className }}` ends with `ComponentBase` but is not abstract. Only abstract classes may use the `ComponentBase` suffix.',
       [MESSAGE_ID_MISSING_SUFFIX]: 'Class `{{ className }}` extends `Component` but its name does not end with `Component`.'
     },
     schema: [],

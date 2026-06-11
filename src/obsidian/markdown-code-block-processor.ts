@@ -177,13 +177,10 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       lastTextLineOffset = lineOffset;
     }
 
-    const potentialCodeBlockTextLines = textLines.map((line, index) =>
-      approximateSectionInfo.lineStart <= index && index <= approximateSectionInfo.lineEnd ? line : ''
-    );
+    const potentialCodeBlockTextLines = textLines.map((line, index) => approximateSectionInfo.lineStart <= index && index <= approximateSectionInfo.lineEnd ? line : '');
     const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
 
-    const REG_EXP =
-      /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t](?<CodeBlockArgs>.*?))?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
+    const REG_EXP = /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t](?<CodeBlockArgs>.*?))?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
 
     for (const match of potentialCodeBlockText.matchAll(REG_EXP)) {
       if (!isSuitableCodeBlock(match, language, sourceLf, isInCallout)) {

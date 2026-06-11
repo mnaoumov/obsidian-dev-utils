@@ -100,8 +100,7 @@ type Duplicates<
   Seen extends readonly unknown[] = [],
   Added extends readonly unknown[] = [],
   Out extends readonly unknown[] = []
-> = T extends readonly [infer First, ...infer Rest]
-  ? Includes<Seen, First> extends true ? Includes<Added, First> extends true ? Duplicates<Rest, Seen, Added, Out>
+> = T extends readonly [infer First, ...infer Rest] ? Includes<Seen, First> extends true ? Includes<Added, First> extends true ? Duplicates<Rest, Seen, Added, Out>
     : Duplicates<Rest, Seen, [...Added, First], [...Out, First]>
   : Duplicates<Rest, [...Seen, First], Added, Out>
   : Out;
@@ -109,8 +108,7 @@ type Duplicates<
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters,no-magic-numbers -- We need to use the dummy parameter to get type inference.
 type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends (<T>() => T extends Y ? 1 : 2) ? true : false;
 
-type Includes<Type extends readonly unknown[], Member> = Type extends readonly [infer First, ...infer Rest]
-  ? Equal<First, Member> extends true ? true : Includes<Rest, Member>
+type Includes<Type extends readonly unknown[], Member> = Type extends readonly [infer First, ...infer Rest] ? Equal<First, Member> extends true ? true : Includes<Rest, Member>
   : false;
 
 type LastInUnion<Union> = UnionToIntersection<Union extends unknown ? () => Union : never> extends () => infer Last ? Last : never;
@@ -119,8 +117,7 @@ type LiteralKey = number | string;
 
 type ToString<T> = T extends number | string ? `${T}` : never;
 
-type TupleToCSV<Tuple extends readonly unknown[]> = Tuple extends readonly [infer First, ...infer Rest]
-  ? First extends LiteralKey ? Rest extends readonly unknown[] ? Rest['length'] extends 0 ? ToString<First> : `${ToString<First>},${TupleToCSV<Rest>}`
+type TupleToCSV<Tuple extends readonly unknown[]> = Tuple extends readonly [infer First, ...infer Rest] ? First extends LiteralKey ? Rest extends readonly unknown[] ? Rest['length'] extends 0 ? ToString<First> : `${ToString<First>},${TupleToCSV<Rest>}`
     : never
   : never
   : '';
