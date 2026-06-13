@@ -413,11 +413,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * Renders the plugin settings tab.
    */
   public override display(): void {
-    this.containerEl.empty();
-    this._isOpen = true;
-    this.component.load();
-    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
-    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
+    this.displayLegacy();
   }
 
   /**
@@ -445,6 +441,19 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    */
   public show(): void {
     this.app.setting.openTab(this);
+  }
+
+  /**
+   * Legacy way to render the plugin settings tab.
+   *
+   * Temporary workaround to avoid dealing with `@deprecated`.
+   */
+  protected displayLegacy(): void {
+    this.containerEl.empty();
+    this._isOpen = true;
+    this.component.load();
+    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
+    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
   }
 
   /**
