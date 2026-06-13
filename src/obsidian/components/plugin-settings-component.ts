@@ -45,6 +45,7 @@ import { MapTransformer } from '../../transformers/map-transformer.ts';
 import { SetTransformer } from '../../transformers/set-transformer.ts';
 import { SkipPrivatePropertyTransformer } from '../../transformers/skip-private-property-transformer.ts';
 import { TwoWayMapTransformer } from '../../transformers/two-way-map-transformer.ts';
+import { ValueWrapper } from '../../value-wrapper.ts';
 import { registerAsyncEvent } from './async-events-component.ts';
 import { ComponentEx } from './component-ex.ts';
 
@@ -393,12 +394,12 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     legacySettingsClass: new () => LegacySettings,
     converter: (legacySettings: Partial<LegacySettings> & Partial<PluginSettings>) => void
   ): void {
-    const that = this;
+    const thisWrapper = new ValueWrapper(this);
     this.legacySettingsConverters.push(legacySettingsConverter);
 
     function legacySettingsConverter(record: GenericObject): void {
       const legacySettingsKeys = new Set<string>(Object.keys(new legacySettingsClass()));
-      const pluginSettingKeys = new Set<string>(that.propertyNames);
+      const pluginSettingKeys = new Set<string>(thisWrapper.value.propertyNames);
       const legacySettings = record as Partial<LegacySettings> & Partial<PluginSettings>;
       converter(legacySettings);
       for (const key of Object.keys(legacySettings)) {
