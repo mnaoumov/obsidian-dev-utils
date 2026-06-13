@@ -6,6 +6,7 @@ import {
 } from 'vitest';
 
 import {
+  createFunction,
   getFunctionExpressionString,
   noop,
   noopAsync,
@@ -106,6 +107,26 @@ describe('Function', () => {
       };
       const result = getFunctionExpressionString(obj.gen);
       expect(result).toMatch(/^async function \*gen\(\)/);
+    });
+  });
+
+  describe('createFunction', () => {
+    it('should create an argumentless function from the function body', () => {
+      const fn = createFunction<() => number>({ functionBody: 'return 42;' });
+      expect(fn()).toBe(42);
+    });
+
+    it('should create a function with named arguments', () => {
+      const fn = createFunction<(a: number, b: number) => number>({
+        argNames: ['a', 'b'],
+        functionBody: 'return a + b;'
+      });
+      expect(fn(2, 3)).toBe(5);
+    });
+
+    it('should default to no arguments when argNames is omitted', () => {
+      const fn = createFunction<() => string>({ functionBody: 'return "no args";' });
+      expect(fn()).toBe('no args');
     });
   });
 
