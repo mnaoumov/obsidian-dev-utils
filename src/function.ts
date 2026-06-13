@@ -126,6 +126,57 @@ const FUNCTION_EXPRESSION_RE = /^(?:function\b|async\b\s*(?:function\b|\()|\()/;
  */
 const ASYNC_KEYWORD_RE = /^async\b\s*/;
 
+type ArgNamesOf<T extends GenericFunction> = MapToArgNames<Parameters<T>>;
+
+interface CreateFunctionArgumentlessParams {
+  readonly functionBody: string;
+}
+
+interface CreateFunctionParams<TFunction extends GenericFunction> extends CreateFunctionArgumentlessParams {
+  readonly argNames: ArgNamesOf<TFunction>;
+}
+
+type MapToArgNames<TArgs extends readonly unknown[]> = {
+  readonly [K in keyof TArgs]: string;
+};
+
+/**
+ * Creates a function from the provided parameters.
+ *
+ * Function is argumentless, so `argNames` is not needed.
+ *
+ * @typeParam TFunction - The type of the function to create.
+ * @param params - The parameters to create the function with.
+ * @returns A function created from the provided parameters.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need return type.
+export function createFunction<TFunction extends () => unknown>(params: CreateFunctionArgumentlessParams): TFunction;
+/**
+ * Creates a function from the provided parameters.
+ *
+ * Function has arguments, so `argNames` is required.
+ *
+ * @typeParam TFunction - The type of the function to create.
+ * @param params - The parameters to create the function with.
+ * @returns A function created from the provided parameters.
+ */
+export function createFunction<TFunction extends GenericFunction>(params: CreateFunctionParams<TFunction>): TFunction;
+/**
+ * Creates a function from the provided parameters.
+ *
+ * @typeParam TFunction - The type of the function to create.
+ *
+ * @param params - The parameters to create the function with.
+ * @returns A function created from the provided parameters.
+ */
+export function createFunction<TFunction extends GenericFunction>(
+  params: CreateFunctionArgumentlessParams & Partial<CreateFunctionParams<TFunction>>
+): TFunction {
+  const argNames = params.argNames ?? [];
+  // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval -- Need function constructor
+  return new Function(...argNames, params.functionBody) as TFunction;
+}
+
 /**
  * Makes a function that calls the original function with the provided arguments and omits the return value.
  *
