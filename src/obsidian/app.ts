@@ -8,15 +8,9 @@ import type { App } from 'obsidian';
 
 import type { GenericObject } from '../type-guards.ts';
 
-import { noop } from '../function.ts';
+import { ValueWrapper } from '../value-wrapper.ts';
 
-/**
- * Wrapper type for accessing the `App` instance globally.
- */
 interface AppWrapper {
-  /**
-   * An optional reference to the Obsidian `App` instance.
-   */
   app: App;
 }
 
@@ -25,28 +19,12 @@ interface ObsidianDevUtilsStateWrapper {
 }
 
 /**
- * Wrapper type for storing shared state in the Obsidian app.
- *
- * @typeParam T - The type of the wrapped value.
- */
-export class ValueWrapper<T> {
-  /**
-   * Creates a new value wrapper.
-   *
-   * @param value - The value to wrap.
-   */
-  public constructor(public value: T) {
-    noop();
-  }
-}
-
-/**
  * Retrieves the Obsidian `App` instance.
  *
  * @returns The `App` instance.
  * @throws Will throw an error if the `App` instance cannot be found.
  *
- * @see {@link https://github.com/mnaoumov/obsidian-codescript-toolkit?tab=readme-ov-file#obsidianapp-module}
+ * @see {@link https://github.com/mnaoumov/obsidian-codescript-toolkit/blob/main/docs/obsidian-app-module.md}
  * @deprecated Usage of this function is not recommended. Pass the {@link App} instance to the function instead when possible.
  */
 export function getApp(): App {

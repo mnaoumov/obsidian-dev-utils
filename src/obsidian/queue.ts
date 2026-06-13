@@ -7,7 +7,7 @@
 import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
-import type { ValueWrapper } from './app.ts';
+import type { ValueWrapper } from '../value-wrapper.ts';
 
 import {
   abortSignalAny,
