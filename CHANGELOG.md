@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 70.3.0
+
+- feat: createFunction
+- refactor: use wrapper to capture this bypasses <https://typescript-eslint.io/rules/no-this-alias/>
+- refactor: extract ValueWrapper
+- refactor: extract displayLegacy
+- chore: update libs
+- docs: add missing tsdocs
+
 ## 70.2.2
 
 - fix: allow actions after unloaded
