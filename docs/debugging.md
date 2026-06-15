@@ -33,3 +33,7 @@ In order to write your debug messages from your plugin, use:
 ```js
 consoleDebugComponent.debug('foo', 'bar', 'baz');
 ```
+
+## Advanced Debug Mode
+
+You can use [Advanced Debug Mode](https://community.obsidian.md/plugins/advanced-debug-mode) plugin to configure debug namespaces via Settings UI.
