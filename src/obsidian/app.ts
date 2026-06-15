@@ -57,7 +57,7 @@ export function getObsidianDevUtilsState<T>(app: App | null, key: string, defaul
   const holder = app ?? getAppOrNull() ?? globalThis;
   const sharedStateWrapper = holder as Partial<ObsidianDevUtilsStateWrapper>;
   sharedStateWrapper.obsidianDevUtilsState ??= {};
-  return (sharedStateWrapper.obsidianDevUtilsState[key] ??= new ValueWrapper(defaultValue)) as ValueWrapper<T>;
+  return (sharedStateWrapper.obsidianDevUtilsState[key] ??= ValueWrapper.of(defaultValue)) as ValueWrapper<T>;
 }
 
 function getAppOrNull(): App | null {

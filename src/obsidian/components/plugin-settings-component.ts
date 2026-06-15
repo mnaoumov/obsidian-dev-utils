@@ -394,7 +394,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     legacySettingsClass: new () => LegacySettings,
     converter: (legacySettings: Partial<LegacySettings> & Partial<PluginSettings>) => void
   ): void {
-    const thisWrapper = new ValueWrapper(this);
+    const thisWrapper = ValueWrapper.of(this);
     this.legacySettingsConverters.push(legacySettingsConverter);
 
     function legacySettingsConverter(record: GenericObject): void {

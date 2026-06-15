@@ -45,6 +45,12 @@ describe('PluginNoticeComponent', () => {
     expect(mocks.NoticeMock).toHaveBeenCalledWith('My Plugin\nSomething happened');
   });
 
+  it('should mark the notice as unloaded when shown while not loaded', () => {
+    const component = new PluginNoticeComponent('My Plugin');
+    component.showNotice('Something happened');
+    expect(mocks.NoticeMock).toHaveBeenCalledWith('My Plugin (unloaded)\nSomething happened');
+  });
+
   it('should hide previous notice when showing a new one', () => {
     const component = new PluginNoticeComponent('My Plugin');
     component.load();

@@ -120,12 +120,24 @@ class TestPlugin extends PluginBase {
     return this.abortSignalComponent;
   }
 
+  public getAsyncErrorHandlerComponent(): typeof this.asyncErrorHandlerComponent {
+    return this.asyncErrorHandlerComponent;
+  }
+
   public getConsoleDebugComponent(): typeof this.consoleDebugComponent {
     return this.consoleDebugComponent;
   }
 
+  public getI18nComponent(): typeof this.i18nComponent {
+    return this.i18nComponent;
+  }
+
   public getNoticeComponent(): typeof this.pluginNoticeComponent {
     return this.pluginNoticeComponent;
+  }
+
+  public getPluginContextComponent(): typeof this.pluginContextComponent {
+    return this.pluginContextComponent;
   }
 }
 
@@ -139,12 +151,15 @@ beforeEach(() => {
 });
 
 describe('PluginBase', () => {
-  it('should create with all default components', () => {
+  it('should create with all default components', async () => {
     const plugin = new TestPlugin(app, manifest);
-    plugin.load();
+    await plugin.onload();
     expect(plugin.getAbortSignalComponent()).toBeDefined();
+    expect(plugin.getAsyncErrorHandlerComponent()).toBeDefined();
     expect(plugin.getConsoleDebugComponent()).toBeDefined();
+    expect(plugin.getI18nComponent()).toBeDefined();
     expect(plugin.getNoticeComponent()).toBeDefined();
+    expect(plugin.getPluginContextComponent()).toBeDefined();
   });
 
   it('should load children first then self via loadChildrenFirstAsync', () => {

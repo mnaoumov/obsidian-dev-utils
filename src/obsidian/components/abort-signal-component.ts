@@ -17,7 +17,6 @@ export class AbortSignalComponent extends ComponentEx {
    * @returns The {@link AbortSignal} that is aborted when the component is unloaded.
    */
   public get abortSignal(): AbortSignal {
-    this.ensureLoaded();
     return this.abortController.signal;
   }
 

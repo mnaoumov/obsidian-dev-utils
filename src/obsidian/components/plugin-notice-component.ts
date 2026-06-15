@@ -36,9 +36,7 @@ export class PluginNoticeComponent extends ComponentEx {
    * @param message - The message to display.
    */
   public showNotice(message: string): void {
-    this.ensureLoaded();
-
     this.notice?.hide();
-    this.notice = new Notice(`${this.pluginName}\n${message}`);
+    this.notice = new Notice(`${this.pluginName}${this._loaded ? '' : ' (unloaded)'}\n${message}`);
   }
 }

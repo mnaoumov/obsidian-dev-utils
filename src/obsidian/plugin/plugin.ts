@@ -6,12 +6,6 @@
  * PluginBase registers universal components (context, i18n, error handling, abort signal, lifecycle events, debug).
  */
 
-import type {
-  App,
-  Component,
-  PluginManifest
-} from 'obsidian';
-
 import {
   Notice,
   Plugin as ObsidianPlugin
@@ -24,9 +18,10 @@ import type {
 
 import { mixinAsyncEvents } from '../../async-events.ts';
 import { printError } from '../../error.ts';
+import { noopAsync } from '../../function.ts';
+import { ensureNonNullable } from '../../type-guards.ts';
 import { AbortSignalComponent } from '../components/abort-signal-component.ts';
 import { AsyncErrorHandlerComponent } from '../components/async-error-handler-component.ts';
-import { ComponentEx } from '../components/component-ex.ts';
 import { ConsoleDebugComponent } from '../components/console-debug-component.ts';
 import { I18nComponent } from '../components/i18n-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
@@ -36,74 +31,128 @@ import { PluginNoticeComponent } from '../components/plugin-notice-component.ts'
  * Base class for creating Obsidian plugins with a component-based architecture.
  *
  * Registers universal components automatically. Subclasses add or replace components
- * via {@link PluginBase.addChild} in their constructor.
+ * via {@link removeChild} / {@link addChild}.
  */
 export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(ObsidianPlugin) implements PluginEventSource {
   /**
-   * Abort signal component.
-   */
-  protected abortSignalComponent: AbortSignalComponent;
-
-  /**
-   * Async error handler component.
-   */
-  protected asyncErrorHandlerComponent: AsyncErrorHandlerComponent;
-
-  /**
-   * Console debug component.
-   */
-  protected consoleDebugComponent: ConsoleDebugComponent;
-
-  /**
-   * I18n component.
-   */
-  protected i18nComponent: I18nComponent;
-
-  /**
-   * Plugin context component (plugin ID, debug controller, library styles).
-   */
-  protected pluginContextComponent: PluginContextComponent;
-
-  /**
-   * Plugin notice component.
-   */
-  protected pluginNoticeComponent: PluginNoticeComponent;
-
-  private readonly wrapperComponent: ComponentEx;
-
-  /**
-   * Creates a new plugin.
+   * Gets abort signal component.
    *
-   * @param app - The Obsidian App instance.
-   * @param manifest - The plugin manifest.
+   * @returns abort signal component.
    */
-  public constructor(app: App, manifest: PluginManifest) {
-    super(app, manifest);
-    this.wrapperComponent = super.addChild(new ComponentEx());
-
-    this.pluginContextComponent = this.addChild(
-      new PluginContextComponent({
-        app: this.app,
-        pluginId: this.manifest.id
-      })
-    );
-    this.i18nComponent = this.addChild(new I18nComponent());
-    this.pluginNoticeComponent = this.addChild(new PluginNoticeComponent(this.manifest.name));
-    this.asyncErrorHandlerComponent = this.addChild(new AsyncErrorHandlerComponent(this.pluginNoticeComponent));
-    this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
-    this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
+  protected get abortSignalComponent(): AbortSignalComponent {
+    return ensureNonNullable(this._abortSignalComponent);
   }
 
   /**
-   * Adds a child component to the plugin.
+   * Sets abort signal component.
    *
-   * @typeParam TComponent - The type of component to add.
-   * @param component - The component to add.
-   * @returns The added component.
+   * @param value - Abort signal component.
    */
-  public override addChild<TComponent extends Component>(component: TComponent): TComponent {
-    return this.wrapperComponent.addChild(component);
+  protected set abortSignalComponent(value: AbortSignalComponent) {
+    this._abortSignalComponent = value;
   }
+
+  /**
+   * Gets async error handler component.
+   *
+   * @returns async error handler component.
+   */
+  protected get asyncErrorHandlerComponent(): AsyncErrorHandlerComponent {
+    return ensureNonNullable(this._asyncErrorHandlerComponent);
+  }
+
+  /**
+   * Sets async error handler component.
+   *
+   * @param value - Async error handler component.
+   */
+  protected set asyncErrorHandlerComponent(value: AsyncErrorHandlerComponent) {
+    this._asyncErrorHandlerComponent = value;
+  }
+
+  /**
+   * Gets console debug component.
+   *
+   * @returns console debug component.
+   */
+  protected get consoleDebugComponent(): ConsoleDebugComponent {
+    return ensureNonNullable(this._consoleDebugComponent);
+  }
+
+  /**
+   * Sets console debug component.
+   *
+   * @param value - Console debug component.
+   */
+  protected set consoleDebugComponent(value: ConsoleDebugComponent) {
+    this._consoleDebugComponent = value;
+  }
+
+  /**
+   * Gets i18n component.
+   *
+   * @returns i18n component.
+   */
+  protected get i18nComponent(): I18nComponent {
+    return ensureNonNullable(this._i18nComponent);
+  }
+
+  /**
+   * Sets i18n component.
+   *
+   * @param value - I18n component.
+   */
+  protected set i18nComponent(value: I18nComponent) {
+    this._i18nComponent = value;
+  }
+
+  /**
+   * Gets plugin context component (plugin ID, debug controller, library styles).
+   *
+   * @returns plugin context component.
+   */
+  protected get pluginContextComponent(): PluginContextComponent {
+    return ensureNonNullable(this._pluginContextComponent);
+  }
+
+  /**
+   * Sets plugin context component.
+   *
+   * @param value - Plugin context component.
+   */
+  protected set pluginContextComponent(value: PluginContextComponent) {
+    this._pluginContextComponent = value;
+  }
+
+  /**
+   * Gets plugin notice component.
+   *
+   * @returns plugin notice component.
+   */
+  protected get pluginNoticeComponent(): PluginNoticeComponent {
+    return ensureNonNullable(this._pluginNoticeComponent);
+  }
+
+  /**
+   * Sets plugin notice component.
+   *
+   * @param value - Plugin notice component.
+   */
+  protected set pluginNoticeComponent(value: PluginNoticeComponent) {
+    this._pluginNoticeComponent = value;
+  }
+
+  private _abortSignalComponent?: AbortSignalComponent;
+
+  private _asyncErrorHandlerComponent?: AsyncErrorHandlerComponent;
+
+  private _consoleDebugComponent?: ConsoleDebugComponent;
+
+  private _i18nComponent?: I18nComponent;
+
+  private _pluginContextComponent?: PluginContextComponent;
+
+  private _pluginNoticeComponent?: PluginNoticeComponent;
 
   /**
    * Called when the external settings change.
@@ -119,18 +168,18 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
    * Called when the plugin is loaded.
    */
   public override async onload(): Promise<void> {
-    await this.wrapperComponent.loadWithPromises();
-  }
-
-  /**
-   * Removes a child component from the plugin.
-   *
-   * @typeParam TComponent - The type of component to remove.
-   * @param component - The component to remove.
-   * @returns The removed component.
-   */
-  public override removeChild<TComponent extends Component>(component: TComponent): TComponent {
-    return this.wrapperComponent.removeChild(component);
+    await noopAsync();
+    this.pluginContextComponent = this.addChild(
+      new PluginContextComponent({
+        app: this.app,
+        pluginId: this.manifest.id
+      })
+    );
+    this.i18nComponent = this.addChild(new I18nComponent());
+    this.pluginNoticeComponent = this.addChild(new PluginNoticeComponent(this.manifest.name));
+    this.asyncErrorHandlerComponent = this.addChild(new AsyncErrorHandlerComponent(this.pluginNoticeComponent));
+    this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
+    this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
   }
 }
 

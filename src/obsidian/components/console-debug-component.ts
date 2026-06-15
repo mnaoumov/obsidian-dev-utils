@@ -31,11 +31,12 @@ export class ConsoleDebugComponent extends ComponentEx {
    * @param args - Additional arguments to log.
    */
   public consoleDebug(message: string, ...args: unknown[]): void {
-    this.ensureLoaded();
-
-    // Skip the `debug()` call itself
+    // Skip the `consoleDebug()` call itself
     const FRAMES_TO_SKIP = 1;
     const pluginDebugger = getDebugger(this.pluginId, FRAMES_TO_SKIP);
+    if (!this._loaded) {
+      pluginDebugger('Plugin is unloaded but sent the following message:');
+    }
     pluginDebugger(message, ...args);
   }
 }

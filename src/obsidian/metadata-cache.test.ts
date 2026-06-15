@@ -30,6 +30,7 @@ import {
   assertNonNullable,
   ensureGenericObject
 } from '../type-guards.ts';
+import { ValueWrapper } from '../value-wrapper.ts';
 import { getObsidianDevUtilsState } from './app.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
 import {
@@ -528,7 +529,7 @@ describe('unregisterFiles', () => {
   it('should not remove file from fileMap when count is still positive', () => {
     const sharedMap = new Map<string, number>();
     const mockedGetState = vi.mocked(getObsidianDevUtilsState);
-    mockedGetState.mockReturnValue({ value: sharedMap });
+    mockedGetState.mockReturnValue(ValueWrapper.of(sharedMap));
 
     const file = strictProxy<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
 
@@ -538,7 +539,7 @@ describe('unregisterFiles', () => {
 
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBe(file);
 
-    mockedGetState.mockImplementation((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }));
+    mockedGetState.mockImplementation((_app: unknown, _key: string, defaultValue: unknown) => ValueWrapper.of(defaultValue));
   });
 });
 
