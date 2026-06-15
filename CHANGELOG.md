@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 70.4.0
+
+- refactor: plugin and wrapper
+- docs: add reference to Advanced Debug Mode
+
 ## 70.3.0
 
 - feat: createFunction
