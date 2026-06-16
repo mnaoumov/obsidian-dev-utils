@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 71.0.0
+
+- refactor: make displayLegacy() public
+
 ## 70.4.0
 
 - refactor: plugin and wrapper
