@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-deprecated -- PluginSettingsTabBase overrides PluginSettingTab.display(); the inherited @deprecated tag propagates via TS getJsDocTags but the override removes the deprecation semantically. */
-
 import type {
   App as AppOriginal,
   Plugin
@@ -71,8 +69,8 @@ interface TextBasedMockComponentShape extends MockValueComponentBase {
 class TestSettingsTab extends PluginSettingsTabBase<TestSettings> {
   public displayCalled = false;
 
-  public override display(): void {
-    super.display();
+  public override displayLegacy(): void {
+    super.displayLegacy();
     this.displayCalled = true;
   }
 }
@@ -131,10 +129,23 @@ describe('PluginSettingsTabBase', () => {
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
 
-    tab.display();
+    tab.displayLegacy();
 
     expect(tab.isOpen).toBe(true);
     expect(tab.displayCalled).toBe(true);
+  });
+
+  it('should delegate display to displayLegacy', () => {
+    const plugin = createMockPlugin(app);
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
+
+    const displayLegacySpy = vi.spyOn(tab, 'displayLegacy');
+
+    // eslint-disable-next-line @typescript-eslint/no-deprecated -- We need to call it in the test.
+    tab.display();
+
+    expect(displayLegacySpy).toHaveBeenCalled();
   });
 
   it('should set isOpen to false on hide', () => {
@@ -142,7 +153,7 @@ describe('PluginSettingsTabBase', () => {
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
 
-    tab.display();
+    tab.displayLegacy();
     expect(tab.isOpen).toBe(true);
 
     tab.hide();
@@ -177,7 +188,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     const onChange = vi.fn();
     const setValue = vi.fn();
@@ -198,7 +209,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const setValue = vi.fn();
@@ -225,7 +236,7 @@ describe('PluginSettingsTabBase', () => {
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
 
-    tab.display();
+    tab.displayLegacy();
 
     expect(pluginSettingsComponent.on).toHaveBeenCalledWith('loadSettings', expect.any(Function));
     expect(pluginSettingsComponent.on).toHaveBeenCalledWith('saveSettings', expect.any(Function));
@@ -235,7 +246,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     await tab['revalidate']();
 
@@ -246,7 +257,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     // When value equals default, text-based component should be emptied
     (pluginSettingsComponent.settingsState.inputValues as TestSettings).name = 'default';
@@ -261,7 +272,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const mockComponent = castTo<ValueComponentWithChangeTracking<string>>({
@@ -291,7 +302,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const mockComponent = createTextBasedMockComponent();
@@ -314,7 +325,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const mockComponent = castTo<ValueComponentWithChangeTracking<string>>({
@@ -338,7 +349,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     const parentEl = createDiv();
     const validatorEl = createEl('input');
@@ -359,7 +370,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     const parentEl = createDiv();
     const validatorEl = createEl('input');
@@ -389,7 +400,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     // Get the saveSettings callback
     const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls;
@@ -411,7 +422,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
     tab.displayCalled = false;
 
     const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls;
@@ -433,7 +444,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
     tab.displayCalled = false;
 
     const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls;
@@ -451,7 +462,7 @@ describe('PluginSettingsTabBase', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const mockComponent = createTextBasedMockComponent();
@@ -485,7 +496,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       const parentEl = createDiv();
       const validatorEl = createEl('input');
@@ -527,7 +538,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       const parentEl = createDiv();
       const validatorEl = createEl('input');
@@ -562,7 +573,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       const parentEl = createDiv();
       const validatorEl = createEl('input');
@@ -601,7 +612,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       let changeCallback: ((value: string) => void) | undefined;
       const mockComponent = createTextBasedMockComponent();
@@ -648,7 +659,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = createTextBasedMockComponent();
@@ -685,7 +696,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = createTextBasedMockComponent();
@@ -721,7 +732,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       const parentEl = createDiv();
       const validatorEl = createEl('input');
@@ -760,7 +771,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       const parentEl = createDiv();
       const validatorEl = createEl('input');
@@ -797,7 +808,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = createTextBasedMockComponent();
@@ -838,7 +849,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       const parentEl = createDiv();
       const validatorEl = createEl('input');
@@ -894,7 +905,7 @@ describe('PluginSettingsTabBase', () => {
     });
 
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-    tab.display();
+    tab.displayLegacy();
 
     const mockComponent = castTo<ValueComponentWithChangeTracking<string>>({
       onChange: vi.fn(() => mockComponent),
@@ -911,7 +922,7 @@ describe('PluginSettingsTabBase', () => {
       const plugin = createMockPlugin(app);
       const pluginSettingsComponent = createMockSettingsComponent();
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
-      tab.display();
+      tab.displayLegacy();
 
       const parentEl = createDiv();
       const validatorEl = createEl('input');
@@ -961,5 +972,3 @@ function createTextBasedMockComponent(): TextBasedMockComponentShape & ValueComp
   };
   return castTo<TextBasedMockComponentShape & ValueComponentWithChangeTracking<string>>(mockComponent);
 }
-
-/* eslint-enable @typescript-eslint/no-deprecated -- Closes the file-level disable at the top. */

@@ -417,6 +417,19 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   }
 
   /**
+   * Legacy way to render the plugin settings tab.
+   *
+   * Temporary workaround to avoid dealing with `@deprecated`.
+   */
+  public displayLegacy(): void {
+    this.containerEl.empty();
+    this._isOpen = true;
+    this.component.load();
+    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
+    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
+  }
+
+  /**
    * Hides the plugin settings tab.
    */
   public override hide(): void {
@@ -444,19 +457,6 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   }
 
   /**
-   * Legacy way to render the plugin settings tab.
-   *
-   * Temporary workaround to avoid dealing with `@deprecated`.
-   */
-  protected displayLegacy(): void {
-    this.containerEl.empty();
-    this._isOpen = true;
-    this.component.load();
-    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
-    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
-  }
-
-  /**
    * Called when the plugin settings are loaded.
    *
    * @param _loadedState - The loaded settings state.
@@ -464,8 +464,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * @returns A {@link Promise} that resolves when the settings are loaded.
    */
   protected async onLoadSettings(_loadedState: ReadonlyPluginSettingsState<PluginSettings>, _isInitialLoad: boolean): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Calls our own override; the inherited @deprecated tag on Obsidian's SettingTab.display propagates via TS getJsDocTags.
-    this.display();
+    this.displayLegacy();
     await noopAsync();
   }
 
@@ -496,8 +495,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- Calls our own override; the inherited @deprecated tag on Obsidian's SettingTab.display propagates via TS getJsDocTags.
-    this.display();
+    this.displayLegacy();
   }
 
   private async updateValidations(validationMessages: Record<StringKeys<PluginSettings>, string>): Promise<void> {
