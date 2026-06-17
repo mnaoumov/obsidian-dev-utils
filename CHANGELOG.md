@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 71.0.1
+
+- chore: update libs
+
 ## 71.0.0
 
 - refactor: make displayLegacy() public
