@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 71.0.2
+
+- chore(deps): drop unused @types/markdown-it devDependency
+- fix(deps): stop listing override-only js-yaml/markdown-it as direct deps
+
 ## 71.0.1
 
 - chore: update libs
