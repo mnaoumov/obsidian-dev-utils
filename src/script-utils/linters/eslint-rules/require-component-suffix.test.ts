@@ -44,8 +44,8 @@ interface MockBaseType {
 }
 
 interface MockRuleContextResult {
-  report: ReturnType<typeof vi.fn>;
-  visitors: Record<string, (node: Rule.Node) => void>;
+  readonly report: ReturnType<typeof vi.fn>;
+  readonly visitors: Record<string, (node: Rule.Node) => void>;
 }
 
 interface MockSymbol {

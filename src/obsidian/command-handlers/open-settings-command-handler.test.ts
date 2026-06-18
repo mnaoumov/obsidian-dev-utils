@@ -14,10 +14,10 @@ import { strictProxy } from '../../strict-proxy.ts';
 import { OpenSettingsCommandHandler } from './open-settings-command-handler.ts';
 
 interface CreateHandlerResult {
-  handler: OpenSettingsCommandHandler;
-  open: ReturnType<typeof vi.fn>;
-  openTab: ReturnType<typeof vi.fn>;
-  settingTab: SettingTabOriginal;
+  readonly handler: OpenSettingsCommandHandler;
+  readonly open: ReturnType<typeof vi.fn>;
+  readonly openTab: ReturnType<typeof vi.fn>;
+  readonly settingTab: SettingTabOriginal;
 }
 
 describe('OpenSettingsCommandHandler', () => {

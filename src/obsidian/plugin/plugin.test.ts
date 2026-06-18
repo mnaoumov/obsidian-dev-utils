@@ -182,9 +182,11 @@ describe('PluginBase', () => {
     class OrderedPlugin extends TestPlugin {
       protected override onloadImpl(): void {
         const first = this.addChild(new OrderedChildComponent('first'));
-        this.addChild(new OrderedChildComponent('second', () => {
-          wasFirstLoadedWhenSecondRan = first._loaded;
-        }));
+        this.addChild(
+          new OrderedChildComponent('second', () => {
+            wasFirstLoadedWhenSecondRan = first._loaded;
+          })
+        );
       }
     }
 

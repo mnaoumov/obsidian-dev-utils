@@ -78,8 +78,8 @@ export interface FileChange {
   reference: Reference;
 }
 interface ApplyContentChangesToTextResult {
-  frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>;
-  newContent: string;
+  readonly frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>;
+  readonly newContent: string;
 }
 type CanvasChange = { reference: CanvasReference } & FileChange;
 type CanvasFileNodeChange = { reference: CanvasFileNodeReference } & FileChange;
@@ -90,8 +90,8 @@ type FrontmatterChange = { reference: FrontmatterLinkCache } & FileChange;
 type FrontmatterChangeWithOffsets = { reference: FrontmatterLinkCacheWithOffsets } & FileChange;
 
 interface ParseFrontmatterSafelyResult {
-  frontmatter: CombinedFrontmatter<unknown>;
-  hasFrontmatterError: boolean;
+  readonly frontmatter: CombinedFrontmatter<unknown>;
+  readonly hasFrontmatterError: boolean;
 }
 
 /**

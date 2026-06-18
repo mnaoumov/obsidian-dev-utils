@@ -125,7 +125,7 @@ export interface UpdateVersionOptions {
 }
 
 interface NpmPackResult {
-  filename: string;
+  readonly filename: string;
 }
 
 /**

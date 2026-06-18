@@ -447,7 +447,7 @@ function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.
         'obsidian-dev-utils/no-used-underscore-variables': 'error',
         'obsidian-dev-utils/params-options-name-match': 'error',
         'obsidian-dev-utils/prefer-noop-async': 'error',
-        'obsidian-dev-utils/readonly-params-options-members': 'error',
+        'obsidian-dev-utils/readonly-params-options-result-members': 'error',
         'obsidian-dev-utils/require-component-suffix': 'error',
         'obsidian-dev-utils/require-method-template': 'error',
         'obsidian-dev-utils/require-super-call': 'off'

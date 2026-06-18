@@ -414,7 +414,7 @@ export interface ParseLinkResult {
    * [\*alias\*](link.md) -> \*alias\*
    * ```
    */
-  alias?: string;
+  readonly alias?: string;
 
   /**
    * An encoded URL of the link.
@@ -424,12 +424,12 @@ export interface ParseLinkResult {
    * [alias](<link with space.md>) -> link%20with%20space.md
    * ```
    */
-  encodedUrl?: string;
+  readonly encodedUrl?: string;
 
   /**
    * An end offset of the link in the original text.
    */
-  endOffset: number;
+  readonly endOffset: number;
 
   /**
    * Indicates if the link has angle brackets.
@@ -440,7 +440,7 @@ export interface ParseLinkResult {
    * [alias](link.md) -> false
    * ```
    */
-  hasAngleBrackets?: boolean;
+  readonly hasAngleBrackets?: boolean;
 
   /**
    * Indicates if the link is an embed link.
@@ -451,7 +451,7 @@ export interface ParseLinkResult {
    * [[alias]] -> false
    * ```
    */
-  isEmbed: boolean;
+  readonly isEmbed: boolean;
 
   /**
    * Indicates if the link is external.
@@ -462,7 +462,7 @@ export interface ParseLinkResult {
    * [alias](file.md) -> false
    * ```
    */
-  isExternal: boolean;
+  readonly isExternal: boolean;
 
   /**
    * Indicates if the link is a wikilink.
@@ -473,7 +473,7 @@ export interface ParseLinkResult {
    * [alias](link.md) -> false
    * ```
    */
-  isWikilink: boolean;
+  readonly isWikilink: boolean;
 
   /**
    * A raw link text.
@@ -483,12 +483,12 @@ export interface ParseLinkResult {
    * [alias](link.md) -> [alias](link.md)
    * ```
    */
-  raw: string;
+  readonly raw: string;
 
   /**
    * A start offset of the link in the original text.
    */
-  startOffset: number;
+  readonly startOffset: number;
 
   /**
    * A title of the link.
@@ -498,7 +498,7 @@ export interface ParseLinkResult {
    * [alias](link.md "title") -> title
    * ```
    */
-  title?: string;
+  readonly title?: string;
 
   /**
    * An unescaped alias of the link.
@@ -508,7 +508,7 @@ export interface ParseLinkResult {
    * [\*alias\*](link.md) -> *alias*
    * ```
    */
-  unescapedAlias?: string;
+  readonly unescapedAlias?: string;
 
   /**
    * An URL of the link.
@@ -518,7 +518,7 @@ export interface ParseLinkResult {
    * [alias](link%20with%20space.md) -> link with space.md
    * ```
    */
-  url: string;
+  readonly url: string;
 }
 
 /**
@@ -568,12 +568,12 @@ export interface SplitSubpathResult {
   /**
    * A link path.
    */
-  linkPath: string;
+  readonly linkPath: string;
 
   /**
    * A subpath.
    */
-  subpath: string;
+  readonly subpath: string;
 }
 
 /**
@@ -1005,9 +1005,12 @@ export function parseLinks(str: string): ParseLinkResult[] {
     }
 
     if (embedSymbolOffsets.has(link.startOffset - 1)) {
-      link.isEmbed = true;
-      link.startOffset--;
-      link.raw = `!${link.raw}`;
+      link = {
+        ...link,
+        isEmbed: true,
+        raw: `!${link.raw}`,
+        startOffset: link.startOffset - 1
+      };
     }
     links.push(link);
   });

@@ -21,8 +21,8 @@ import {
  * Result of the backlinks test.
  */
 interface BacklinksResult {
-  backlinkCount: number;
-  backlinkKeys: string[];
+  readonly backlinkCount: number;
+  readonly backlinkKeys: string[];
 }
 
 describe('backlinks via metadata cache', () => {

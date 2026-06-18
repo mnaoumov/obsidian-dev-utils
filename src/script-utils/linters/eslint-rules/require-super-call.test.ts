@@ -34,7 +34,7 @@ interface MockBaseTypeProperty {
 }
 
 interface MockRuleContextResult {
-  report: ReturnType<typeof vi.fn>;
+  readonly report: ReturnType<typeof vi.fn>;
   visitMethodDefinitionExit(node: Rule.Node): void;
 }
 

@@ -1,30 +1,30 @@
 /**
  * @file
  *
- * ESLint rule: readonly-params-options-members
+ * ESLint rule: readonly-params-options-result-members
  *
  * Reports an error when an interface or type alias whose name ends with
- * `Params` or `Options` has a property signature that is not `readonly`.
- * Parameter/options bags should be immutable — callers should never mutate
- * the object they received.
+ * `Params`, `Options`, or `Result` has a property signature that is not
+ * `readonly`. Parameter/options/result bags should be immutable — callers
+ * should never mutate the object they received.
  */
 import type { Rule } from 'eslint';
 
 import { ensureNonNullable } from '../../../type-guards.ts';
 
-export const MESSAGE_ID = 'readonlyParamsOptionsMembers';
+export const MESSAGE_ID = 'readonlyParamsOptionsResultMembers';
 
 interface PropertySignatureNode {
   readonly key: Rule.Node;
 }
 
-export const readonlyParamsOptionsMembers: Rule.RuleModule = {
+export const readonlyParamsOptionsResultMembers: Rule.RuleModule = {
   create(context) {
     return {
-      'TSInterfaceDeclaration[id.name=/(?:Params|Options)$/] TSPropertySignature[readonly=false]'(node: Rule.Node): void {
+      'TSInterfaceDeclaration[id.name=/(?:Params|Options|Result)$/] TSPropertySignature[readonly=false]'(node: Rule.Node): void {
         reportNonReadonly(context, node);
       },
-      'TSTypeAliasDeclaration[id.name=/(?:Params|Options)$/] TSPropertySignature[readonly=false]'(node: Rule.Node): void {
+      'TSTypeAliasDeclaration[id.name=/(?:Params|Options|Result)$/] TSPropertySignature[readonly=false]'(node: Rule.Node): void {
         reportNonReadonly(context, node);
       }
     };
@@ -42,11 +42,11 @@ export const readonlyParamsOptionsMembers: Rule.RuleModule = {
   },
   meta: {
     docs: {
-      description: 'Require all properties in `*Params` and `*Options` interfaces to be `readonly`'
+      description: 'Require all properties in `*Params`, `*Options`, and `*Result` interfaces to be `readonly`'
     },
     fixable: 'code',
     messages: {
-      [MESSAGE_ID]: 'Property must be `readonly`. Params/Options interfaces should be immutable.'
+      [MESSAGE_ID]: 'Property must be `readonly`. Params/Options/Result interfaces should be immutable.'
     },
     schema: [],
     type: 'suggestion'

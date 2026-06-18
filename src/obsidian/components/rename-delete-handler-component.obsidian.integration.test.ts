@@ -22,8 +22,8 @@ import {
  * Result of the rename test.
  */
 interface RenameTestResult {
-  hasNewFile: boolean;
-  hasOldFile: boolean;
+  readonly hasNewFile: boolean;
+  readonly hasOldFile: boolean;
 }
 
 describe('rename-delete-handler', () => {
