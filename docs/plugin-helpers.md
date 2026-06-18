@@ -45,7 +45,6 @@ The most important methods in the execution order:
 - `onSaveSettings()`
 - `onExternalSettingsChange()` - usually you don't need to override it.
 - `onunload()` - usually you don't need to override it.
-- `onunloadImpl()`
 
 ## [PluginSettingsComponentBase](../src/obsidian/components/plugin-settings-component.ts)
 

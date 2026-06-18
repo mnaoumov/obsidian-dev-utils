@@ -16,6 +16,7 @@ import {
 
 import { noopAsync } from '../../function.ts';
 import { strictProxy } from '../../strict-proxy.ts';
+import { ComponentEx } from '../components/component-ex.ts';
 import {
   PluginBase,
   reloadPlugin,
@@ -162,11 +163,53 @@ describe('PluginBase', () => {
     expect(plugin.getPluginContextComponent()).toBeDefined();
   });
 
-  it('should load children first then self via loadChildrenFirstAsync', () => {
-    const plugin = new TestPlugin(app, manifest);
-    plugin.load();
+  it('should load children sequentially (children-first) via onloadImpl', async () => {
+    const order: string[] = [];
+    let wasFirstLoadedWhenSecondRan = false;
 
-    expect(plugin._loaded).toBe(true);
+    class OrderedChildComponent extends ComponentEx {
+      public constructor(private readonly label: string, private readonly onLoaded?: () => void) {
+        super();
+      }
+
+      public override async onloadAsync(): Promise<void> {
+        await noopAsync();
+        order.push(this.label);
+        this.onLoaded?.();
+      }
+    }
+
+    class OrderedPlugin extends TestPlugin {
+      protected override onloadImpl(): void {
+        const first = this.addChild(new OrderedChildComponent('first'));
+        this.addChild(new OrderedChildComponent('second', () => {
+          wasFirstLoadedWhenSecondRan = first._loaded;
+        }));
+      }
+    }
+
+    const plugin = new OrderedPlugin(app, manifest);
+    await plugin.onload();
+
+    expect(order).toEqual(['first', 'second']);
+    expect(wasFirstLoadedWhenSecondRan).toBe(true);
+  });
+
+  it('should reject when an onloadImpl child fails to load', async () => {
+    class FailingChildComponent extends ComponentEx {
+      public override onloadAsync(): Promise<void> {
+        return Promise.reject(new Error('child load failed'));
+      }
+    }
+
+    class FailingPlugin extends TestPlugin {
+      protected override onloadImpl(): void {
+        this.addChild(new FailingChildComponent());
+      }
+    }
+
+    const plugin = new FailingPlugin(app, manifest);
+    await expect(plugin.onload()).rejects.toThrow(AggregateError);
   });
 
   it('should delegate removeChild to wrapperComponent', () => {

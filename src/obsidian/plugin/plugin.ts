@@ -6,6 +6,9 @@
  * PluginBase registers universal components (context, i18n, error handling, abort signal, lifecycle events, debug).
  */
 
+import type { Component } from 'obsidian';
+import type { Promisable } from 'type-fest';
+
 import {
   Notice,
   Plugin as ObsidianPlugin
@@ -22,6 +25,7 @@ import { noopAsync } from '../../function.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { AbortSignalComponent } from '../components/abort-signal-component.ts';
 import { AsyncErrorHandlerComponent } from '../components/async-error-handler-component.ts';
+import { ComponentEx } from '../components/component-ex.ts';
 import { ConsoleDebugComponent } from '../components/console-debug-component.ts';
 import { I18nComponent } from '../components/i18n-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
@@ -154,6 +158,22 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
 
   private _pluginNoticeComponent?: PluginNoticeComponent;
 
+  private readonly wrapperComponent = new ComponentEx();
+
+  /**
+   * Adds a child component.
+   *
+   * The child is added to an internal wrapper component so that, during {@link onloadImpl},
+   * children are queued and then loaded sequentially (children-first) when the plugin loads.
+   *
+   * @typeParam TComponent - The type of component to add.
+   * @param component - The component instance to add.
+   * @returns The added component.
+   */
+  public override addChild<TComponent extends Component>(component: TComponent): TComponent {
+    return this.wrapperComponent.addChild(component);
+  }
+
   /**
    * Called when the external settings change.
    *
@@ -166,9 +186,13 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
 
   /**
    * Called when the plugin is loaded.
+   *
+   * Orchestrates loading: registers the universal components, lets the subclass wire its own
+   * components via {@link onloadImpl}, then loads all of them sequentially (children-first).
+   *
+   * Do NOT override this method. Override {@link onloadImpl} instead.
    */
   public override async onload(): Promise<void> {
-    await noopAsync();
     this.pluginContextComponent = this.addChild(
       new PluginContextComponent({
         app: this.app,
@@ -180,6 +204,37 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
     this.asyncErrorHandlerComponent = this.addChild(new AsyncErrorHandlerComponent(this.pluginNoticeComponent));
     this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
     this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
+
+    await this.onloadImpl();
+
+    // Add the wrapper to the native plugin only now, after all children are queued.
+    // The plugin is already loaded, so this loads the wrapper's children sequentially (children-first).
+    // It also registers the wrapper for automatic teardown on plugin unload.
+    super.addChild(this.wrapperComponent);
+    await this.wrapperComponent.loadWithPromises();
+  }
+
+  /**
+   * Removes a child component.
+   *
+   * @typeParam TComponent - The type of component to remove.
+   * @param component - The component instance to remove.
+   * @returns The removed component.
+   */
+  public override removeChild<TComponent extends Component>(component: TComponent): TComponent {
+    return this.wrapperComponent.removeChild(component);
+  }
+
+  /**
+   * Called during {@link onload} to wire plugin-specific child components.
+   *
+   * Override in subclass to add child components via {@link addChild}. The universal components are
+   * available here. Children are loaded sequentially in the order they are added (children-first).
+   *
+   * @returns A {@link Promise} that resolves when the subclass load logic is complete.
+   */
+  protected onloadImpl(): Promisable<void> {
+    return noopAsync();
   }
 }
 
