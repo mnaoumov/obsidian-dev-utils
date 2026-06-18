@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 72.0.0
+
+- feat: force Result interfaces have readonly fields
+- refactor: ensure children loaded
+
 ## 71.0.2
 
 - chore(deps): drop unused @types/markdown-it devDependency
