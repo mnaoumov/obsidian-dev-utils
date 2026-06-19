@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 74.0.0
+
+- refactor!: remove i18n-component
+- feat: expose pluginName
+
 ## 73.0.0
 
 - refactor!: replace registerGenerateMarkdownLinkDefaultOptionsFn with component
