@@ -59,7 +59,7 @@ vi.mock('../../library.ts', () => ({
 }));
 
 vi.mock('../app.ts', () => ({
-  getObsidianDevUtilsState: vi.fn(() => ({ value: '0.0.0' }))
+  getObsidianDevUtilsState: vi.fn((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }))
 }));
 
 vi.mock('./plugin-id.ts', () => ({
