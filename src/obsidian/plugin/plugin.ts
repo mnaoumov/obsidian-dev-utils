@@ -14,6 +14,7 @@ import {
   Plugin as ObsidianPlugin
 } from 'obsidian';
 
+import type { TranslationsMap } from '../i18n/i18n.ts';
 import type {
   PluginEventMap,
   PluginEventSource
@@ -27,9 +28,10 @@ import { AbortSignalComponent } from '../components/abort-signal-component.ts';
 import { AsyncErrorHandlerComponent } from '../components/async-error-handler-component.ts';
 import { ComponentEx } from '../components/component-ex.ts';
 import { ConsoleDebugComponent } from '../components/console-debug-component.ts';
-import { I18nComponent } from '../components/i18n-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
+import { initI18N } from '../i18n/i18n.ts';
+import { defaultTranslationsMap } from '../i18n/locales/translations-map.ts';
 
 /**
  * Base class for creating Obsidian plugins with a component-based architecture.
@@ -93,24 +95,6 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
   }
 
   /**
-   * Gets i18n component.
-   *
-   * @returns i18n component.
-   */
-  protected get i18nComponent(): I18nComponent {
-    return ensureNonNullable(this._i18nComponent);
-  }
-
-  /**
-   * Sets i18n component.
-   *
-   * @param value - I18n component.
-   */
-  protected set i18nComponent(value: I18nComponent) {
-    this._i18nComponent = value;
-  }
-
-  /**
    * Gets plugin context component (plugin ID, debug controller, library styles).
    *
    * @returns plugin context component.
@@ -152,8 +136,6 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
 
   private _consoleDebugComponent?: ConsoleDebugComponent;
 
-  private _i18nComponent?: I18nComponent;
-
   private _pluginContextComponent?: PluginContextComponent;
 
   private _pluginNoticeComponent?: PluginNoticeComponent;
@@ -193,13 +175,13 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
    * Do NOT override this method. Override {@link onloadImpl} instead.
    */
   public override async onload(): Promise<void> {
+    await initI18N(this.createTranslationsMap());
     this.pluginContextComponent = this.addChild(
       new PluginContextComponent({
         app: this.app,
         pluginId: this.manifest.id
       })
     );
-    this.i18nComponent = this.addChild(new I18nComponent());
     this.pluginNoticeComponent = this.addChild(new PluginNoticeComponent(this.manifest.name));
     this.asyncErrorHandlerComponent = this.addChild(new AsyncErrorHandlerComponent(this.pluginNoticeComponent));
     this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
@@ -223,6 +205,18 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
    */
   public override removeChild<TComponent extends Component>(component: TComponent): TComponent {
     return this.wrapperComponent.removeChild(component);
+  }
+
+  /**
+   * Provides the translations map used to initialize i18n during {@link onload}.
+   *
+   * Override in subclass to supply plugin-specific translations. The default returns the built-in
+   * `obsidian-dev-utils` translations.
+   *
+   * @returns The translations map.
+   */
+  protected createTranslationsMap(): TranslationsMap {
+    return defaultTranslationsMap;
   }
 
   /**

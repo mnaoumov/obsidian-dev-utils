@@ -14,9 +14,12 @@ import {
   vi
 } from 'vitest';
 
+import type { TranslationsMap } from '../i18n/i18n.ts';
+
 import { noopAsync } from '../../function.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { ComponentEx } from '../components/component-ex.ts';
+import { initI18N } from '../i18n/i18n.ts';
 import {
   PluginBase,
   reloadPlugin,
@@ -129,10 +132,6 @@ class TestPlugin extends PluginBase {
     return this.consoleDebugComponent;
   }
 
-  public getI18nComponent(): typeof this.i18nComponent {
-    return this.i18nComponent;
-  }
-
   public getNoticeComponent(): typeof this.pluginNoticeComponent {
     return this.pluginNoticeComponent;
   }
@@ -158,9 +157,28 @@ describe('PluginBase', () => {
     expect(plugin.getAbortSignalComponent()).toBeDefined();
     expect(plugin.getAsyncErrorHandlerComponent()).toBeDefined();
     expect(plugin.getConsoleDebugComponent()).toBeDefined();
-    expect(plugin.getI18nComponent()).toBeDefined();
     expect(plugin.getNoticeComponent()).toBeDefined();
     expect(plugin.getPluginContextComponent()).toBeDefined();
+  });
+
+  it('should initialize i18n with the default translations map on load', async () => {
+    const plugin = new TestPlugin(app, manifest);
+    await plugin.onload();
+    expect(vi.mocked(initI18N)).toHaveBeenCalledWith({});
+  });
+
+  it('should initialize i18n with a subclass-provided translations map', async () => {
+    const customMap: TranslationsMap = { fr: { hello: 'bonjour' } };
+
+    class CustomTranslationsPlugin extends PluginBase {
+      protected override createTranslationsMap(): TranslationsMap {
+        return customMap;
+      }
+    }
+
+    const plugin = new CustomTranslationsPlugin(app, manifest);
+    await plugin.onload();
+    expect(vi.mocked(initI18N)).toHaveBeenCalledWith(customMap);
   });
 
   it('should load children sequentially (children-first) via onloadImpl', async () => {

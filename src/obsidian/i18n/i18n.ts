@@ -36,8 +36,6 @@ export const DEFAULT_NS = 'translation';
  */
 export type TranslationsMap = Record<string, Record<string, unknown>>;
 
-let isInitialized = false;
-
 interface TOptions extends SelectorOptions<[typeof DEFAULT_NS]> {
   readonly ns: [typeof DEFAULT_NS];
 }
@@ -45,17 +43,15 @@ interface TOptions extends SelectorOptions<[typeof DEFAULT_NS]> {
 /**
  * Initializes the `i18n` module.
  *
+ * Calling this again re-runs `i18next.init()`, which fully replaces the resource store and language, so a reload picks
+ * up a changed language or translations map. The lazy fallback in {@link t} and external callers rely on
+ * `i18next.isInitialized` (set by `i18next.init()`) as the single source of truth, so no separate guard is kept here.
+ *
  * @param translationsMap - The translations map.
  * @param isAsync - Whether the initialization is asynchronous.
  * @returns A {@link Promise} that resolves when the `i18n` module is initialized.
  */
 export async function initI18N(translationsMap: TranslationsMap, isAsync = true): Promise<void> {
-  if (isInitialized) {
-    return;
-  }
-
-  isInitialized = true;
-
   await init({
     fallbackLng: DEFAULT_LANGUAGE,
     initAsync: isAsync,
@@ -82,7 +78,7 @@ function tImpl(
   selector: SelectorFn<ReadonlyDeep<DefaultTranslationsBase>, string, SelectorOptions<[typeof DEFAULT_NS]>>,
   options?: TOptions
 ): string {
-  if (!isInitialized) {
+  if (!i18next.isInitialized) {
     console.warn('I18N was not initialized, initializing default obsidian-dev-utils translations');
     invokeAsyncSafely(() => initI18N(defaultTranslationsMap, false));
   }

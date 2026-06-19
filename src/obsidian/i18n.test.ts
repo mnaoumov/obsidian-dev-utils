@@ -21,12 +21,21 @@ const HEAVY_IMPORT_TIMEOUT = 30_000;
 
 const {
   mockAddResourceBundleFn,
+  mockI18nextInstance,
   mockInitFn,
   mockInvokeAsyncSafelyFn,
   mockTLibFn
 } = vi.hoisted(() => {
   const mockAddResourceBundleFn2 = vi.fn();
-  const mockInitFn2 = vi.fn(() => noopAsync());
+  // Mirrors i18next: `init()` flips `isInitialized`, which the real code reads as the single source of truth.
+  const mockI18nextInstance2 = {
+    addResourceBundle: mockAddResourceBundleFn2,
+    isInitialized: false
+  };
+  const mockInitFn2 = vi.fn(() => {
+    mockI18nextInstance2.isInitialized = true;
+    return noopAsync();
+  });
   const mockTLibFn2 = vi.fn((selector: unknown) => {
     if (typeof selector === 'function') {
       return (selector as (translations: Record<string, unknown>) => unknown)({ test: 'translated-value' });
@@ -38,6 +47,7 @@ const {
   });
   return {
     mockAddResourceBundleFn: mockAddResourceBundleFn2,
+    mockI18nextInstance: mockI18nextInstance2,
     mockInitFn: mockInitFn2,
     mockInvokeAsyncSafelyFn: mockInvokeAsyncSafelyFn2,
     mockTLibFn: mockTLibFn2
@@ -45,12 +55,8 @@ const {
 });
 
 vi.mock('i18next', () => ({
-  default: {
-    addResourceBundle: mockAddResourceBundleFn
-  },
-  i18next: {
-    addResourceBundle: mockAddResourceBundleFn
-  },
+  default: mockI18nextInstance,
+  i18next: mockI18nextInstance,
   init: mockInitFn,
   t: mockTLibFn
 }));
@@ -82,6 +88,10 @@ async function reloadI18N(): Promise<typeof import('./i18n/i18n.ts')> {
 }
 
 describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
+  beforeEach(() => {
+    mockI18nextInstance.isInitialized = false;
+  });
+
   describe('DEFAULT_NS', () => {
     it('should export DEFAULT_NS as "translation"', async () => {
       await noopAsync();
@@ -165,14 +175,14 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       );
     });
 
-    it('should only initialize once (idempotent)', async () => {
+    it('should re-initialize on every call so a reload picks up changes', async () => {
       const { initI18N } = await reloadI18N();
 
       await initI18N({ en: { test: 'value' } }, false);
       expect(mockInitFn).toHaveBeenCalledTimes(1);
 
       await initI18N({ en: { test: 'other-value' } }, false);
-      expect(mockInitFn).toHaveBeenCalledTimes(1);
+      expect(mockInitFn).toHaveBeenCalledTimes(2);
     });
 
     it('should default isAsync to true', async () => {
