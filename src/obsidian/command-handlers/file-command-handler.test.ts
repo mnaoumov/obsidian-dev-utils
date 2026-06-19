@@ -110,22 +110,22 @@ describe('FileCommandHandler', () => {
   setupApp();
 
   describe('type filtering', () => {
-    it('should accept TFile instances via canExecuteAbstractFile', () => {
+    it('should accept TFile instances via canExecuteAbstractFile', async () => {
       const file = createMockTFile();
       const handler = new TestFileHandler(createParams());
       const { context } = createMockContext(file);
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
     });
 
-    it('should reject non-TFile instances', () => {
+    it('should reject non-TFile instances', async () => {
       const folder = TFolder.create__(castTo(app.vault), 'some-folder').asOriginalType2__();
       const handler = new TestFileHandler(createParams());
       const activeFileProvider: ActiveFileProvider = { getActiveFile: () => castTo(folder) };
 
-      handler.onRegistered({
+      await handler.onRegistered({
         activeFileProvider,
         menuEventRegistrar: {
           registerEditorMenuEventHandler: vi.fn(),
@@ -141,7 +141,7 @@ describe('FileCommandHandler', () => {
   });
 
   describe('default methods', () => {
-    it('should use default canExecuteFile returning true', () => {
+    it('should use default canExecuteFile returning true', async () => {
       class DefaultFileHandler extends FileCommandHandler {
         public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
@@ -153,13 +153,13 @@ describe('FileCommandHandler', () => {
       const file = createMockTFile();
       const handler = new DefaultFileHandler(createParams());
       const { context } = createMockContext(file);
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
     });
 
-    it('should use default shouldAddToFileMenu returning false', () => {
+    it('should use default shouldAddToFileMenu returning false', async () => {
       class DefaultMenuFileHandler extends FileCommandHandler {
         protected override async executeFile(): Promise<void> {
           await noopAsync();
@@ -168,7 +168,7 @@ describe('FileCommandHandler', () => {
 
       const handler = new DefaultMenuFileHandler(createParams());
       const { context, fileMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -177,7 +177,7 @@ describe('FileCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should use default shouldAddToFilesMenu returning false', () => {
+    it('should use default shouldAddToFilesMenu returning false', async () => {
       class DefaultFilesMenuHandler extends FileCommandHandler {
         protected override async executeFile(): Promise<void> {
           await noopAsync();
@@ -191,7 +191,7 @@ describe('FileCommandHandler', () => {
 
       const handler = new DefaultFilesMenuHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -227,10 +227,10 @@ describe('FileCommandHandler', () => {
   });
 
   describe('multi-file type filtering', () => {
-    it('should reject multi-file when any item is not a TFile', () => {
+    it('should reject multi-file when any item is not a TFile', async () => {
       const handler = new TestFileHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const folder = TFolder.create__(castTo(app.vault), 'some-folder').asOriginalType2__();
       const file = createMockTFile();
@@ -242,7 +242,7 @@ describe('FileCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should accept multi-file when all items are TFile', () => {
+    it('should accept multi-file when all items are TFile', async () => {
       class FilesMenuHandler extends FileCommandHandler {
         protected override async executeFile(): Promise<void> {
           await noopAsync();
@@ -261,7 +261,7 @@ describe('FileCommandHandler', () => {
 
       const handler = new FilesMenuHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -270,10 +270,10 @@ describe('FileCommandHandler', () => {
       expect(addItem).toHaveBeenCalledOnce();
     });
 
-    it('should reject file menu for non-TFile instances', () => {
+    it('should reject file menu for non-TFile instances', async () => {
       const handler = new TestFileHandler(createParams());
       const { context, fileMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const folder = TFolder.create__(castTo(app.vault), 'some-folder').asOriginalType2__();
 
@@ -304,7 +304,7 @@ describe('FileCommandHandler', () => {
       const handler = new TrackingFileHandler(createParams());
       const file = createMockTFile('target.md');
       const { context } = createMockContext(file);
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       // Trigger via command palette (checking=false calls execute -> executeAbstractFile -> executeFile)
       const command = handler.buildCommand();
@@ -337,7 +337,7 @@ describe('FileCommandHandler', () => {
 
       const handler = new TrackingFilesHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const file1 = createMockTFile('a.md');
       const file2 = createMockTFile('b.md');

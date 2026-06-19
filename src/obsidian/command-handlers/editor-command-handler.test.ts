@@ -137,18 +137,18 @@ describe('EditorCommandHandler', () => {
     expect(handler.executeFn).toHaveBeenCalledOnce();
   });
 
-  it('should register editor-menu event handler on registration', () => {
+  it('should register editor-menu event handler on registration', async () => {
     const handler = new TestEditorHandler(createParams());
     const { context, editorMenuHandlers } = createMockContext();
 
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
     expect(editorMenuHandlers).toHaveLength(1);
   });
 
-  it('should not add menu item when shouldAddToEditorMenu returns false', () => {
+  it('should not add menu item when shouldAddToEditorMenu returns false', async () => {
     const handler = new TestEditorHandler(createParams());
     const { context, editorMenuHandlers } = createMockContext();
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
 
     const addItem = vi.fn();
     const menu = strictProxy<MenuOriginal>({ addItem });
@@ -157,11 +157,11 @@ describe('EditorCommandHandler', () => {
     expect(addItem).not.toHaveBeenCalled();
   });
 
-  it('should add menu item when shouldAddToEditorMenu returns true', () => {
+  it('should add menu item when shouldAddToEditorMenu returns true', async () => {
     const handler = new TestEditorHandler(createParams());
     handler.shouldAddToEditorMenuFn.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
 
     const addItem = vi.fn();
     const menu = strictProxy<MenuOriginal>({ addItem });
@@ -170,12 +170,12 @@ describe('EditorCommandHandler', () => {
     expect(addItem).toHaveBeenCalledOnce();
   });
 
-  it('should not add menu item when canExecuteEditor returns false', () => {
+  it('should not add menu item when canExecuteEditor returns false', async () => {
     const handler = new TestEditorHandler(createParams());
     handler.shouldAddToEditorMenuFn.mockReturnValue(true);
     handler.canExecuteFn.mockReturnValue(false);
     const { context, editorMenuHandlers } = createMockContext();
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
 
     const addItem = vi.fn();
     const menu = strictProxy<MenuOriginal>({ addItem });
@@ -184,7 +184,7 @@ describe('EditorCommandHandler', () => {
     expect(addItem).not.toHaveBeenCalled();
   });
 
-  it('should set section submenu when shouldAddCommandToSubmenu is true', () => {
+  it('should set section submenu when shouldAddCommandToSubmenu is true', async () => {
     const handler = new TestEditorHandler(createParams({
       editorMenuSection: 'my-section',
       editorMenuSubmenuIcon: 'folder',
@@ -192,7 +192,7 @@ describe('EditorCommandHandler', () => {
     }));
     handler.shouldAddToEditorMenuFn.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
 
     const setSectionSubmenu = vi.fn();
     const addItem = vi.fn();
@@ -205,11 +205,11 @@ describe('EditorCommandHandler', () => {
     });
   });
 
-  it('should use pluginName as default section', () => {
+  it('should use pluginName as default section', async () => {
     const handler = new TestEditorHandler(createParams());
     handler.shouldAddToEditorMenuFn.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
 
     const setSectionSubmenu = vi.fn();
     const menu = strictProxy<MenuOriginal>({ setSectionSubmenu });
@@ -228,13 +228,13 @@ describe('EditorCommandHandler', () => {
     editorMenuHandlers[0]?.(menu, createMockEditor(), createMockCtx());
   });
 
-  it('should use default submenu icon as empty string when not provided', () => {
+  it('should use default submenu icon as empty string when not provided', async () => {
     const handler = new TestEditorHandler(createParams({
       shouldAddCommandToSubmenu: true
     }));
     handler.shouldAddToEditorMenuFn.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
 
     const setSectionSubmenu = vi.fn();
     const addItem = vi.fn();
@@ -247,11 +247,11 @@ describe('EditorCommandHandler', () => {
     });
   });
 
-  it('should execute via menu item onClick callback', () => {
+  it('should execute via menu item onClick callback', async () => {
     const handler = new TestEditorHandler(createParams());
     handler.shouldAddToEditorMenuFn.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
 
     const menu = strictProxy<MenuOriginal>({});
     const addItem = vi.fn((cb: (item: unknown) => void) => {
@@ -289,7 +289,7 @@ describe('EditorCommandHandler', () => {
     expect(result).toBe(true);
   });
 
-  it('should use default shouldAddToEditorMenu returning false', () => {
+  it('should use default shouldAddToEditorMenu returning false', async () => {
     class DefaultMenuHandler extends EditorCommandHandler {
       protected override async executeEditor(): Promise<void> {
         await noopAsync();
@@ -298,7 +298,7 @@ describe('EditorCommandHandler', () => {
 
     const handler = new DefaultMenuHandler(createParams());
     const { context, editorMenuHandlers } = createMockContext();
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
 
     const addItem = vi.fn();
     const menu = strictProxy<MenuOriginal>({ addItem });
@@ -320,13 +320,13 @@ describe('EditorCommandHandler', () => {
     expect(command.editorCheckCallback?.(true, createMockEditor(), createMockCtx())).toBe(true);
   });
 
-  it('should use editorMenuItemName when provided', () => {
+  it('should use editorMenuItemName when provided', async () => {
     const handler = new TestEditorHandler(createParams({
       editorMenuItemName: 'Custom Item'
     }));
     handler.shouldAddToEditorMenuFn.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
-    handler.onRegistered(context);
+    await handler.onRegistered(context);
 
     const menu = strictProxy<MenuOriginal>({});
     const addItem = vi.fn((cb: (item: unknown) => void) => {

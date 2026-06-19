@@ -121,21 +121,21 @@ describe('FolderCommandHandler', () => {
   setupApp();
 
   describe('type filtering', () => {
-    it('should accept TFolder instances via canExecuteAbstractFile', () => {
+    it('should accept TFolder instances via canExecuteAbstractFile', async () => {
       const folder = createMockTFolder('my-folder');
       const handler = new TestFolderHandler(createParams());
       const { context } = createMockContext(createMockActiveFile(folder));
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
     });
 
-    it('should reject non-TFolder instances', () => {
+    it('should reject non-TFolder instances', async () => {
       const handler = new TestFolderHandler(createParams());
       const activeFileProvider: ActiveFileProvider = { getActiveFile: () => null };
 
-      handler.onRegistered({
+      await handler.onRegistered({
         activeFileProvider,
         menuEventRegistrar: {
           registerEditorMenuEventHandler: vi.fn(),
@@ -150,11 +150,11 @@ describe('FolderCommandHandler', () => {
       expect(command.checkCallback?.(true)).toBe(false);
     });
 
-    it('should reject TFile instances in canExecuteAbstractFile', () => {
+    it('should reject TFile instances in canExecuteAbstractFile', async () => {
       const file = TFile.create__(castTo(app.vault), 'test.md').asOriginalType2__();
       const handler = new TestFolderHandler(createParams());
       const { context } = createMockContext(castTo(file));
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(false);
@@ -162,7 +162,7 @@ describe('FolderCommandHandler', () => {
   });
 
   describe('default methods', () => {
-    it('should use default canExecuteFolder returning true', () => {
+    it('should use default canExecuteFolder returning true', async () => {
       class DefaultFolderHandler extends FolderCommandHandler {
         protected override async executeFolder(): Promise<void> {
           await noopAsync();
@@ -172,13 +172,13 @@ describe('FolderCommandHandler', () => {
       const folder = createMockTFolder('my-folder');
       const handler = new DefaultFolderHandler(createParams());
       const { context } = createMockContext(createMockActiveFile(folder));
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
     });
 
-    it('should use default shouldAddToFolderMenu returning false', () => {
+    it('should use default shouldAddToFolderMenu returning false', async () => {
       class DefaultMenuFolderHandler extends FolderCommandHandler {
         protected override async executeFolder(): Promise<void> {
           await noopAsync();
@@ -187,7 +187,7 @@ describe('FolderCommandHandler', () => {
 
       const handler = new DefaultMenuFolderHandler(createParams());
       const { context, fileMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -196,7 +196,7 @@ describe('FolderCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should use default shouldAddToFoldersMenu returning false', () => {
+    it('should use default shouldAddToFoldersMenu returning false', async () => {
       class DefaultFoldersMenuHandler extends FolderCommandHandler {
         protected override async executeFolder(): Promise<void> {
           await noopAsync();
@@ -210,7 +210,7 @@ describe('FolderCommandHandler', () => {
 
       const handler = new DefaultFoldersMenuHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -246,10 +246,10 @@ describe('FolderCommandHandler', () => {
   });
 
   describe('multi-folder type filtering', () => {
-    it('should reject multi-folder when any item is not a TFolder', () => {
+    it('should reject multi-folder when any item is not a TFolder', async () => {
       const handler = new TestFolderHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const file = TFile.create__(castTo(app.vault), 'test.md').asOriginalType2__();
       const folder = createMockTFolder('some-folder');
@@ -261,7 +261,7 @@ describe('FolderCommandHandler', () => {
       expect(addItem).not.toHaveBeenCalled();
     });
 
-    it('should accept multi-folder when all items are TFolder', () => {
+    it('should accept multi-folder when all items are TFolder', async () => {
       class FoldersMenuHandler extends FolderCommandHandler {
         protected override async executeFolder(): Promise<void> {
           await noopAsync();
@@ -280,7 +280,7 @@ describe('FolderCommandHandler', () => {
 
       const handler = new FoldersMenuHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const addItem = vi.fn();
       const menu = strictProxy<MenuOriginal>({ addItem });
@@ -289,10 +289,10 @@ describe('FolderCommandHandler', () => {
       expect(addItem).toHaveBeenCalledOnce();
     });
 
-    it('should reject file menu for non-TFolder instances', () => {
+    it('should reject file menu for non-TFolder instances', async () => {
       const handler = new TestFolderHandler(createParams());
       const { context, fileMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const file = TFile.create__(castTo(app.vault), 'test.md').asOriginalType2__();
 
@@ -323,7 +323,7 @@ describe('FolderCommandHandler', () => {
       const folder = createMockTFolder('target');
       const handler = new TrackingFolderHandler(createParams());
       const { context } = createMockContext(createMockActiveFile(folder));
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const command = handler.buildCommand();
       command.checkCallback?.(false);
@@ -355,7 +355,7 @@ describe('FolderCommandHandler', () => {
 
       const handler = new TrackingFoldersHandler(createParams());
       const { context, filesMenuHandlers } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const folder1 = createMockTFolder('a');
       const folder2 = createMockTFolder('b');
@@ -442,7 +442,7 @@ describe('FolderCommandHandler', () => {
       const parentFolder = createMockTFolder('parent-folder');
       const handler = new TrackingFolderHandler(createParams());
       const { context } = createMockContext(createMockActiveFile(parentFolder));
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(true);
@@ -453,20 +453,20 @@ describe('FolderCommandHandler', () => {
       });
     });
 
-    it('should reject the command palette when the active file has no parent', () => {
+    it('should reject the command palette when the active file has no parent', async () => {
       const handler = new TestFolderHandler(createParams());
       const rootLevelFile = TFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
       const { context } = createMockContext(castTo(rootLevelFile));
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(false);
     });
 
-    it('should reject the command palette when there is no active file', () => {
+    it('should reject the command palette when there is no active file', async () => {
       const handler = new TestFolderHandler(createParams());
       const { context } = createMockContext();
-      handler.onRegistered(context);
+      await handler.onRegistered(context);
 
       const command = handler.buildCommand();
       expect(command.checkCallback?.(true)).toBe(false);

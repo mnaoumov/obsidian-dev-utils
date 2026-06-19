@@ -142,13 +142,8 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   private readonly _filesMenuItemName?: string | undefined;
   private readonly _filesMenuSection?: string | undefined;
   private readonly _filesMenuSubmenuIcon?: IconName | undefined;
-  private _pluginName?: string;
 
   private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
-
-  private get pluginName(): string {
-    return ensureNonNullable(this._pluginName);
-  }
 
   /**
    * Creates a new abstract file command handler.
@@ -171,9 +166,9 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    *
    * @param context - The registration context.
    */
-  public override onRegistered(context: CommandHandlerRegistrationContext): void {
+  public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
+    await super.onRegistered(context);
     this._activeFileProvider = context.activeFileProvider;
-    this._pluginName = context.pluginName;
     context.menuEventRegistrar.registerFileMenuEventHandler(this.handleAbstractFileMenu.bind(this));
     context.menuEventRegistrar.registerFilesMenuEventHandler(this.handleAbstractFilesMenu.bind(this));
   }

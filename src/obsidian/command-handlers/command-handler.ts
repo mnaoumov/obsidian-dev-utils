@@ -8,12 +8,12 @@ import type {
   Command,
   IconName
 } from 'obsidian';
-import type { Promisable } from 'type-fest';
 
 import type { ActiveFileProvider } from '../active-file-provider.ts';
 import type { MenuEventRegistrar } from '../menu-event-registrar.ts';
 
-import { noop } from '../../function.ts';
+import { noopAsync } from '../../function.ts';
+import { ensureNonNullable } from '../../type-guards.ts';
 
 /**
  * Parameters for creating a command handler.
@@ -78,6 +78,17 @@ export abstract class CommandHandler {
   public readonly name: string;
 
   /**
+   * Gets the plugin name.
+   *
+   * @returns The plugin name.
+   */
+  protected get pluginName(): string {
+    return ensureNonNullable(this._pluginName);
+  }
+
+  private _pluginName?: string;
+
+  /**
    * Creates a new command handler.
    *
    * @param params - The parameters for the command handler.
@@ -99,9 +110,10 @@ export abstract class CommandHandler {
    * Called after the command has been registered with Obsidian.
    * Subclasses use the provided context to register menu event handlers.
    *
-   * @param _context - The registration context providing runtime capabilities.
+   * @param context - The registration context providing runtime capabilities.
    */
-  public onRegistered(_context: CommandHandlerRegistrationContext): Promisable<void> {
-    noop();
+  public async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
+    await noopAsync();
+    this._pluginName = context.pluginName;
   }
 }
