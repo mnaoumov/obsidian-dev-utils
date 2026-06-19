@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 73.0.0
+
+- refactor!: replace registerGenerateMarkdownLinkDefaultOptionsFn with component
+- test: honor defaultValue
+- feat: permanent notices
+
 ## 72.0.0
 
 - feat: force Result interfaces have readonly fields
