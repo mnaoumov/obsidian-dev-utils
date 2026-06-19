@@ -3,7 +3,6 @@ import type {
   App as AppOriginal,
   CachedMetadata,
   FrontmatterLinkCache,
-  Plugin,
   Reference,
   TFile as TFileOriginal
 } from 'obsidian';
@@ -21,6 +20,7 @@ import {
   vi
 } from 'vitest';
 
+import type { GenerateMarkdownLinkParams } from './link.ts';
 import type { CanvasReference } from './reference.ts';
 
 import { castTo } from '../object-utils.ts';
@@ -30,6 +30,7 @@ import {
   ensureNonNullable
 } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
+import { GenerateMarkdownLinkDefaultParamsComponent } from './components/generate-markdown-link-default-params-component.ts';
 import {
   applyContentChanges,
   applyFileChanges
@@ -49,7 +50,6 @@ import {
   LinkStyle,
   parseLink,
   parseLinks,
-  registerGenerateMarkdownLinkDefaultOptionsFn,
   shouldResetAlias,
   splitSubpath,
   testAngleBrackets,
@@ -2754,21 +2754,17 @@ describe('app-dependent functions', () => {
     });
   });
 
-  describe('registerGenerateMarkdownLinkDefaultOptionsFn', () => {
-    it('should register and apply default options', () => {
-      let cleanupFn: (() => void) | undefined;
-      const mockPlugin = strictProxy<Plugin>({
+  describe('GenerateMarkdownLinkDefaultParamsComponent', () => {
+    it('should apply registered default params while loaded and stop applying them after unload', () => {
+      const component = new GenerateMarkdownLinkDefaultParamsComponent({
         app,
-        register: vi.fn((fn: () => void) => {
-          cleanupFn = fn;
-        })
+        getDefaultParams(): Partial<GenerateMarkdownLinkParams> {
+          return {
+            shouldUseLeadingSlashForAbsolutePaths: true
+          };
+        }
       });
-
-      registerGenerateMarkdownLinkDefaultOptionsFn(mockPlugin, () => ({
-        shouldUseLeadingSlashForAbsolutePaths: true
-      }));
-
-      expect(mockPlugin.register).toHaveBeenCalled();
+      component.load();
 
       const result = generateMarkdownLink({
         app,
@@ -2779,8 +2775,7 @@ describe('app-dependent functions', () => {
       });
       expect(result).toContain('/');
 
-      assertNonNullable(cleanupFn);
-      cleanupFn();
+      component.unload();
 
       const result2 = generateMarkdownLink({
         app,

@@ -9,7 +9,6 @@ import type { Link } from 'mdast';
 import type {
   App,
   CachedMetadata,
-  Plugin,
   Reference,
   TFile
 } from 'obsidian';
@@ -171,7 +170,7 @@ enum FinalLinkPathStyle {
 }
 
 /**
- * Options for {@link convertLink}.
+ * Params for {@link convertLink}.
  */
 export interface ConvertLinkParams {
   /**
@@ -206,7 +205,7 @@ export interface ConvertLinkParams {
 }
 
 /**
- * Options for {@link generateMarkdownLink}.
+ * Params for {@link generateMarkdownLink}.
  */
 export interface GenerateMarkdownLinkParams {
   /**
@@ -363,7 +362,7 @@ export interface GenerateMarkdownLinkParams {
 }
 
 /**
- * Options for {@link generateRawMarkdownLink}.
+ * Params for {@link generateRawMarkdownLink}.
  */
 export interface GenerateRawMarkdownLinkParams {
   /**
@@ -522,7 +521,7 @@ export interface ParseLinkResult {
 }
 
 /**
- * Options for {@link shouldResetAlias}.
+ * Params for {@link shouldResetAlias}.
  */
 export interface ShouldResetAliasParams {
   /**
@@ -577,7 +576,7 @@ export interface SplitSubpathResult {
 }
 
 /**
- * Options for {@link updateLink}.
+ * Params for {@link updateLink}.
  */
 export interface UpdateLinkParams {
   /**
@@ -622,7 +621,7 @@ export interface UpdateLinkParams {
 }
 
 /**
- * Options for {@link updateLinksInFile}.
+ * Params for {@link updateLinksInFile}.
  */
 export interface UpdateLinksInFileParams extends ProcessOptions {
   /**
@@ -672,7 +671,7 @@ interface TablePosition {
 }
 
 /**
- * Options for {@link updateLinksInContent}.
+ * Params for {@link updateLinksInContent}.
  */
 interface UpdateLinksInContentParams {
   /**
@@ -912,19 +911,19 @@ export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
 export function generateMarkdownLink(params: GenerateMarkdownLinkParams): string {
   const { app } = params;
 
-  const DEFAULT_OPTIONS: Partial<GenerateMarkdownLinkParams> = {
+  const DEFAULT_PARAMS: Partial<GenerateMarkdownLinkParams> = {
     isEmptyEmbedAliasAllowed: true
   };
 
-  const customDefaultOptions = getGenerateMarkdownLinkDefaultOptionsFns(app).map((defaultOptionsFn) => defaultOptionsFn());
-  params = Object.assign({}, DEFAULT_OPTIONS, ...customDefaultOptions, params);
+  const customDefaultParams = getGenerateMarkdownLinkDefaultParamsFns(app).map((defaultParamsFn) => defaultParamsFn());
+  params = Object.assign({}, DEFAULT_PARAMS, ...customDefaultParams, params);
   const targetFile = getFile(app, params.targetPathOrFile, params.isNonExistingFileAllowed);
 
   return tempRegisterFilesAndRun(app, [targetFile], () => generateMarkdownLinkImpl(params));
 }
 
 /**
- * Generates a raw markdown link based on the provided options.
+ * Generates a raw markdown link based on the provided params.
  *
  * @param params - The parameters for generating a raw markdown link.
  * @returns A raw markdown link.
@@ -948,6 +947,20 @@ export function generateRawMarkdownLink(params: GenerateRawMarkdownLinkParams): 
   const titlePart = params.title ? ` ${JSON.stringify(params.title)}` : '';
 
   return `${embedPrefix}[${escapedAlias}](${url}${titlePart})`;
+}
+
+/**
+ * Returns the shared, mutable list of functions that provide default params for {@link generateMarkdownLink}.
+ *
+ * Each function is invoked on every {@link generateMarkdownLink} call and its result is merged into the params (later
+ * registrations take precedence over the built-in defaults, but never over explicitly passed params). Register entries
+ * by adding a `GenerateMarkdownLinkDefaultParamsComponent` to a component tree rather than mutating this list directly.
+ *
+ * @param app - The Obsidian app instance whose shared state holds the list.
+ * @returns The mutable list of default-params functions.
+ */
+export function getGenerateMarkdownLinkDefaultParamsFns(app: App): (() => Partial<GenerateMarkdownLinkParams>)[] {
+  return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkParams>)[]>(app, 'generateMarkdownLinkDefaultParamsFns', []).value;
 }
 
 /**
@@ -1030,20 +1043,6 @@ export function parseLinks(str: string): ParseLinkResult[] {
   links.sort((a, b) => a.startOffset - b.startOffset);
 
   return links;
-}
-
-/**
- * Registers a function that returns default options for generating a markdown link.
- *
- * @param plugin - The plugin instance.
- * @param fn - The function that returns the default options.
- */
-export function registerGenerateMarkdownLinkDefaultOptionsFn(plugin: Plugin, fn: () => Partial<GenerateMarkdownLinkParams>): void {
-  const generateMarkdownLinkDefaultOptionsFns = getGenerateMarkdownLinkDefaultOptionsFns(plugin.app);
-  generateMarkdownLinkDefaultOptionsFns.push(fn);
-  plugin.register(() => {
-    generateMarkdownLinkDefaultOptionsFns.remove(fn);
-  });
 }
 
 /**
@@ -1603,10 +1602,6 @@ function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLi
     default:
       assertNever(resolvedStyle);
   }
-}
-
-function getGenerateMarkdownLinkDefaultOptionsFns(app: App): (() => Partial<GenerateMarkdownLinkParams>)[] {
-  return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkParams>)[]>(app, 'generateMarkdownLinkDefaultOptionsFns', []).value;
 }
 
 function getLinkConfig(params: GenerateMarkdownLinkParams, targetFile: TFile): LinkConfig {
