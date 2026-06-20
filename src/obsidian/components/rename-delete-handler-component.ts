@@ -896,8 +896,6 @@ class RenameMap {
   }
 }
 
-/* v8 ignore stop */
-
 /**
  * Component that handles rename and delete events in Obsidian.
  * It listens to rename and delete events and updates links accordingly.
@@ -1056,3 +1054,5 @@ async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHand
     }
   }
 }
+
+/* v8 ignore stop */

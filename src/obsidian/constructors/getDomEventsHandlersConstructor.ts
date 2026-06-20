@@ -41,8 +41,6 @@ class MarkdownPreviewRendererRegisterDomEventsPatchComponent extends MonkeyAroun
   }
 }
 
-/* v8 ignore stop */
-
 /**
  * Extracts the `DomEventsHandlersConstructor` from Obsidian's runtime.
  *
@@ -85,3 +83,5 @@ export async function getDomEventsHandlersConstructor(app: App): Promise<DomEven
     }
   }
 }
+
+/* v8 ignore stop */

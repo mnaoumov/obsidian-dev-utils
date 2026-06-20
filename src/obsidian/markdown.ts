@@ -231,8 +231,6 @@ export async function renderExternalLink(app: App, url: string, displayText?: st
   return aEl;
 }
 
-/* v8 ignore stop */
-
 /**
  * Renders an internal link.
  *
@@ -264,3 +262,5 @@ export async function renderInternalLink(app: App, pathOrAbstractFile: PathOrAbs
   await registerLinkHandlers(app, aEl);
   return aEl;
 }
+
+/* v8 ignore stop */
