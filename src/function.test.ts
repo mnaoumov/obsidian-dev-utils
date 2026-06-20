@@ -6,6 +6,7 @@ import {
 } from 'vitest';
 
 import {
+  cloneFunction,
   createFunction,
   getFunctionExpressionString,
   noop,
@@ -13,6 +14,10 @@ import {
   omitAsyncReturnType,
   omitReturnType
 } from './function.ts';
+
+interface ValueHolder {
+  value: number;
+}
 
 describe('Function', () => {
   describe('getFunctionExpressionString', () => {
@@ -107,6 +112,35 @@ describe('Function', () => {
       };
       const result = getFunctionExpressionString(obj.gen);
       expect(result).toMatch(/^async function \*gen\(\)/);
+    });
+  });
+
+  describe('cloneFunction', () => {
+    it('should return a new function that is not strictly equal to the original', () => {
+      function original(): number {
+        return 42;
+      }
+      const cloned = cloneFunction(original);
+      expect(cloned).not.toBe(original);
+    });
+
+    it('should preserve the original behavior and forward typed arguments', () => {
+      function add(a: number, b: number): number {
+        return a + b;
+      }
+      const cloned = cloneFunction(add);
+      expect(cloned(2, 3)).toBe(5);
+    });
+
+    it('should forward the `this` context to the original function', () => {
+      const obj = {
+        getValue(this: ValueHolder): number {
+          return this.value;
+        },
+        value: 10
+      };
+      obj.getValue = cloneFunction(obj.getValue);
+      expect(obj.getValue()).toBe(10);
     });
   });
 

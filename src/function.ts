@@ -141,6 +141,22 @@ type MapToArgNames<TArgs extends readonly unknown[]> = {
 };
 
 /**
+ * Clone a function by creating a new function that calls the original function.
+ *
+ * This is useful for creating a new instance of a function that has the same behavior but is not strictly equal to the original function.
+ *
+ * @typeParam TFunction - The type of the function to clone.
+ * @param fn - The function to clone.
+ * @returns A new function that has the same behavior as the original function.
+ */
+export function cloneFunction<TFunction extends GenericFunction>(fn: TFunction): TFunction {
+  return clonedFn as TFunction;
+
+  function clonedFn(this: ThisParameterType<TFunction>, ...args: Parameters<TFunction>): ReturnType<TFunction> {
+    return fn.apply(this, args) as ReturnType<TFunction>;
+  }
+}
+/**
  * Creates a function from the provided parameters.
  *
  * Function is argumentless, so `argNames` is not needed.
