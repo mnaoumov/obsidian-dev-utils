@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 74.1.0
+
+- fix: restore v8 ignore coverage on runtime-coupled exports
+- feat: cloneFunction
+- refactor: monkey around
+
 ## 74.0.0
 
 - refactor!: remove i18n-component
