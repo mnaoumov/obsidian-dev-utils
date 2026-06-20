@@ -10,6 +10,7 @@ import { around as originalAround } from 'monkey-around';
 
 import type { GenericFunction } from '../../function.ts';
 import type { GenericObject } from '../../type-guards.ts';
+import type { MaybeReturn } from '../../type.ts';
 
 import { getObsidianDevUtilsState } from '../app.ts';
 import { ComponentEx } from './component-ex.ts';
@@ -51,44 +52,82 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends obje
    * An optional token to identify the patch.
    */
   readonly patchToken?: symbol;
+
+  /**
+   * An optional post-patch handler function that runs after the patch is applied.
+   */
+  readonly postPatchHandler?: PostPatchHandlerFn<Obj, MethodName>;
 }
 
 /**
  * A patch handler function that intercepts calls to a method on an object.
  *
  * @typeParam Obj - The object being patched.
- * @typeParam K - The method name being patched.
+ * @typeParam MethodName - The method name being patched.
  */
-export type PatchHandlerFn<Obj extends object, K extends MethodKeys<Obj>> = (
-  params: PatchHandlerParams<Obj, K>
-) => ReturnType<Extract<Obj[K], GenericFunction>>;
+export type PatchHandlerFn<Obj extends object, MethodName extends MethodKeys<Obj>> = (
+  params: PatchHandlerParams<Obj, MethodName>
+) => ReturnType<ExtractFunction<Obj, MethodName>>;
 
 /**
  * Parameters passed to a {@link PatchHandlerFn} callback.
  *
  * @typeParam Obj - The object being patched.
- * @typeParam K - The method name being patched.
+ * @typeParam MethodName - The method name being patched.
  */
-export interface PatchHandlerParams<Obj extends object, K extends MethodKeys<Obj>> {
-  fallback(this: void): ReturnType<Extract<Obj[K], GenericFunction>>;
+export interface PatchHandlerParams<Obj extends object, MethodName extends MethodKeys<Obj>> {
+  fallback(this: void): ReturnType<ExtractFunction<Obj, MethodName>>;
 
   /**
    * The original arguments of the intercepted call, as a tuple.
    */
-  readonly originalArgs: Parameters<Extract<Obj[K], GenericFunction>>;
+  readonly originalArgs: Parameters<ExtractFunction<Obj, MethodName>>;
 
   /**
-   * The original (unpatched) function. Call via `originalFn.call(originalThis, ...originalArgs)`.
+   * The original (unpatched) method. Call via `originalFn.call(originalThis, ...originalArgs)`.
    */
-  readonly originalMethod: Extract<Obj[K], GenericFunction>;
+  readonly originalMethod: ExtractFunction<Obj, MethodName>;
 
-  readonly originalMethodBound: OmitThisParameter<Extract<Obj[K], GenericFunction>>;
+  /**
+   * The original method, but with the `this` context already bound to the original object. Call via `originalMethodBound(...originalArgs)`.
+   */
+  readonly originalMethodBound: OmitThisParameter<ExtractFunction<Obj, MethodName>>;
 
   /**
    * The original `this` context of the intercepted call.
    */
   readonly originalThis: Obj;
 }
+
+/**
+ * A post-patch handler function that runs after a patch is applied.
+ *
+ * @typeParam Obj - The object being patched.
+ * @typeParam MethodName - The method name being patched.
+ */
+export type PostPatchHandlerFn<Obj extends object, MethodName extends MethodKeys<Obj>> = (
+  params: PostPatchHandlerParams<Obj, MethodName>
+) => MaybeReturn<ExtractFunction<Obj, MethodName>>;
+
+/**
+ * Parameters passed to a {@link PostPatchHandlerFn} callback.
+ *
+ * @typeParam Obj - The object being patched.
+ * @typeParam MethodName - The method name being patched.
+ */
+export interface PostPatchHandlerParams<Obj extends object, MethodName extends MethodKeys<Obj>> {
+  /**
+   * The original (unpatched) method. Call via `originalFn.call(originalThis, ...originalArgs)`.
+   */
+  readonly originalMethod: ExtractFunction<Obj, MethodName>;
+
+  /**
+   * The patched method.
+   */
+  readonly patchedMethod: ExtractFunction<Obj, MethodName>;
+}
+
+type ExtractFunction<Obj extends object, MethodName extends MethodKeys<Obj>> = GenericFunction<Parameters<Extract<Obj[MethodName], GenericFunction>>, ReturnType<Extract<Obj[MethodName], GenericFunction>>>;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type as a generic restriction.
 type MethodKeys<Obj extends object> = ConditionalKeys<Obj, Function | undefined> & keyof Obj;
@@ -122,12 +161,15 @@ export class MonkeyAroundComponent extends ComponentEx {
       getMonkeyAroundPatches().set(originalMethod, params.patchToken);
     }
 
-    type RawFn = Extract<Obj[MethodName], GenericFunction>;
-    type Fn = GenericFunction<Parameters<RawFn>, ReturnType<RawFn>>;
+    type Fn = ExtractFunction<Obj, MethodName>;
+
     this.registerPatch(params.obj, {
       [params.methodName]: (originalMethod: Fn): Fn => {
-        return patchedMethod;
-        function patchedMethod(this: Obj, ...originalArgs: Parameters<RawFn>): ReturnType<RawFn> {
+        return params.postPatchHandler?.({
+          originalMethod,
+          patchedMethod
+        }) ?? patchedMethod;
+        function patchedMethod(this: Obj, ...originalArgs: Parameters<Fn>): ReturnType<Fn> {
           // eslint-disable-next-line consistent-this, @typescript-eslint/no-this-alias -- We need to use the `this` context.
           const originalThis = this;
           return params.patchHandler({
@@ -135,8 +177,8 @@ export class MonkeyAroundComponent extends ComponentEx {
               return originalMethod.call(originalThis, ...originalArgs);
             },
             originalArgs,
-            originalMethod: originalMethod as RawFn,
-            originalMethodBound: originalMethod.bind(originalThis) as OmitThisParameter<RawFn>,
+            originalMethod,
+            originalMethodBound: originalMethod.bind(originalThis),
             originalThis
           });
         }

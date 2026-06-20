@@ -6,9 +6,12 @@ import {
   it
 } from 'vitest';
 
+import type { MaybeReturn } from '../../type.ts';
 import type {
   PatchHandlerFn,
-  PatchHandlerParams
+  PatchHandlerParams,
+  PostPatchHandlerFn,
+  PostPatchHandlerParams
 } from './monkey-around-component.ts';
 
 import { noop } from '../../function.ts';
@@ -301,6 +304,43 @@ describe('MonkeyAroundComponent', () => {
       parent.unload();
       expect(obj.greet('test')).toBe('hello test');
     });
+
+    it('should install the method returned by postPatchHandler in place of the patched method', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+
+      component.registerMethodPatch<TestObj, 'greet'>({
+        methodName: 'greet',
+        obj,
+        patchHandler: ({ fallback }) => `inner: ${fallback()}`,
+
+        postPatchHandler: ({ patchedMethod }) => (name: string): string => `wrapped[${patchedMethod(name)}]`
+      });
+
+      expect(obj.greet('world')).toBe('wrapped[inner: hello world]');
+    });
+
+    it('should fall back to the patched method when postPatchHandler returns nothing', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+      const originalGreet = obj.greet;
+      let observedParams: PostPatchHandlerParams<TestObj, 'greet'> | undefined;
+
+      component.registerMethodPatch<TestObj, 'greet'>({
+        methodName: 'greet',
+        obj,
+        patchHandler: ({ fallback }) => `inner: ${fallback()}`,
+        postPatchHandler: (params) => {
+          observedParams = params;
+        }
+      });
+
+      expect(obj.greet('world')).toBe('inner: hello world');
+      expect(observedParams?.originalMethod).toBe(originalGreet);
+      expect(observedParams?.patchedMethod('test')).toBe('inner: hello test');
+    });
   });
 
   describe('hasPatchToken', () => {
@@ -496,6 +536,11 @@ describe('MonkeyAroundComponent', () => {
     it('should correctly type PatchHandlerFn', () => {
       expectTypeOf<PatchHandlerFn<TestObj, 'greet'>>()
         .toEqualTypeOf<(params: PatchHandlerParams<TestObj, 'greet'>) => string>();
+    });
+
+    it('should correctly type PostPatchHandlerFn', () => {
+      expectTypeOf<PostPatchHandlerFn<TestObj, 'greet'>>()
+        .toEqualTypeOf<(params: PostPatchHandlerParams<TestObj, 'greet'>) => MaybeReturn<(name: string) => string>>();
     });
   });
 });
