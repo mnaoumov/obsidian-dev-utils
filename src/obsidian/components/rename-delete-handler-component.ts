@@ -11,6 +11,7 @@ import type {
 import type {
   App,
   CachedMetadata,
+  FileManager,
   Reference,
   TAbstractFile,
   TFile
@@ -196,6 +197,12 @@ interface RenameMapConstructorParams {
 
 const PATCH_TOKEN = Symbol.for('renameDeleteHandler');
 
+interface FileManagerRunAsyncLinkUpdatePatchComponentConstructorParams {
+  readonly app: App;
+  readonly fileManager: FileManager;
+  readonly settingsManager: SettingsManager;
+}
+
 interface RenameDeleteHandlerComponentConstructorParams {
   readonly abortSignalComponent: AbortSignalComponent;
   readonly app: App;
@@ -278,6 +285,134 @@ class DeleteHandler {
   }
 }
 
+class SettingsManager {
+  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
+
+  public constructor(private readonly app: App) {
+    this.renameDeleteHandlersMap = getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
+  }
+
+  public getSettings(): Partial<RenameDeleteHandlerSettings> {
+    const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
+
+    const settings: Partial<RenameDeleteHandlerSettings> = {};
+    settings.isNote = (path: string): boolean => isNote(this.app, path);
+    settings.isPathIgnored = (): boolean => false;
+
+    for (const settingsBuilder of settingsBuilders) {
+      const newSettings = settingsBuilder();
+      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
+      if (newSettings.emptyFolderBehavior) {
+        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
+      }
+      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
+      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
+      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
+      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
+      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
+      const isPathIgnored = settings.isPathIgnored;
+      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
+      const currentIsNote = settings.isNote;
+      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
+    }
+
+    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
+    return settings;
+  }
+
+  public isNoteEx(path: string): boolean {
+    const settings = this.getSettings();
+    return settings.isNote?.(path) ?? false;
+  }
+}
+
+class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent {
+  private readonly app: App;
+  private readonly fileManager: FileManager;
+  private readonly settingsManager: SettingsManager;
+
+  public constructor(params: FileManagerRunAsyncLinkUpdatePatchComponentConstructorParams) {
+    super();
+    this.app = params.app;
+    this.fileManager = params.fileManager;
+    this.settingsManager = params.settingsManager;
+  }
+
+  public override onload(): void {
+    this.registerMethodPatch({
+      methodName: 'runAsyncLinkUpdate',
+      obj: this.fileManager,
+      patchHandler: ({
+        fallback,
+        originalArgs: [linkUpdatesHandler],
+        originalMethod,
+        originalMethodBound
+      }) => {
+        if (hasPatchToken(originalMethod, PATCH_TOKEN)) {
+          return fallback();
+        }
+
+        const newHandler: LinkUpdatesHandler = (linkUpdates) => this.wrapLinkUpdatesHandler(linkUpdates, linkUpdatesHandler);
+        return originalMethodBound(newHandler);
+      }
+    });
+  }
+
+  private async wrapLinkUpdatesHandler(linkUpdates: LinkUpdate[], linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
+    let isRenameCalled = false;
+    const eventRef = this.app.vault.on('rename', () => {
+      isRenameCalled = true;
+    });
+    try {
+      await linkUpdatesHandler(linkUpdates);
+    } finally {
+      this.app.vault.offref(eventRef);
+    }
+    const settings = this.settingsManager.getSettings();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed in `rename` event handler. ESLint mistakenly does not recognize it.
+    if (!isRenameCalled || !settings.shouldHandleRenames) {
+      return;
+    }
+
+    filterInPlace(
+      linkUpdates,
+      (linkUpdate) => {
+        if (settings.isPathIgnored?.(linkUpdate.sourceFile.path)) {
+          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
+            `Roll back to default link update of source file ${linkUpdate.sourceFile.path} as the path is ignored.`
+          );
+          return true;
+        }
+
+        if (settings.isPathIgnored?.(linkUpdate.resolvedFile.path)) {
+          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
+            `Roll back to default link update of resolved file ${linkUpdate.resolvedFile.path} as the path is ignored.`
+          );
+          return true;
+        }
+
+        if (!this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
+          return false;
+        }
+
+        if (this.app.plugins.getPlugin('backlink-cache')) {
+          return false;
+        }
+
+        if (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) {
+          return true;
+        }
+
+        if (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION) {
+          return true;
+        }
+
+        return false;
+      }
+    );
+  }
+}
+
 class HandledRenames {
   private readonly map = new Map<string, HandledRenameKey>();
 
@@ -327,47 +462,6 @@ class MetadataDeletedHandler {
     if (isMarkdownFile(this.app, this.file) && this.prevCache) {
       this.deletedMetadataCacheMap.set(this.file.path, this.prevCache);
     }
-  }
-}
-
-class SettingsManager {
-  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
-
-  public constructor(private readonly app: App) {
-    this.renameDeleteHandlersMap = getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
-  }
-
-  public getSettings(): Partial<RenameDeleteHandlerSettings> {
-    const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
-
-    const settings: Partial<RenameDeleteHandlerSettings> = {};
-    settings.isNote = (path: string): boolean => isNote(this.app, path);
-    settings.isPathIgnored = (): boolean => false;
-
-    for (const settingsBuilder of settingsBuilders) {
-      const newSettings = settingsBuilder();
-      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
-      if (newSettings.emptyFolderBehavior) {
-        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
-      }
-      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
-      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
-      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
-      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
-      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
-      const isPathIgnored = settings.isPathIgnored;
-      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
-      const currentIsNote = settings.isNote;
-      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
-    }
-
-    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
-    return settings;
-  }
-
-  public isNoteEx(path: string): boolean {
-    const settings = this.getSettings();
-    return settings.isNote?.(path) ?? false;
   }
 }
 
@@ -802,6 +896,8 @@ class RenameMap {
   }
 }
 
+/* v8 ignore stop */
+
 /**
  * Component that handles rename and delete events in Obsidian.
  * It listens to rename and delete events and updates links accordingly.
@@ -849,25 +945,13 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
     this.registerEvent(this.app.metadataCache.on('deleted', this.handleMetadataDeleted.bind(this)));
 
-    const patch = this.addChild(new MonkeyAroundComponent());
-
-    patch.registerMethodPatch({
-      methodName: 'runAsyncLinkUpdate',
-      obj: this.app.fileManager,
-      patchHandler: ({
-        fallback,
-        originalArgs: [linkUpdatesHandler],
-        originalMethod,
-        originalMethodBound
-      }) => {
-        if (hasPatchToken(originalMethod, PATCH_TOKEN)) {
-          return fallback();
-        }
-
-        const newHandler: LinkUpdatesHandler = (linkUpdates) => this.wrapLinkUpdatesHandler(linkUpdates, linkUpdatesHandler);
-        return originalMethodBound(newHandler);
-      }
-    });
+    this.addChild(
+      new FileManagerRunAsyncLinkUpdatePatchComponent({
+        app: this.app,
+        fileManager: this.app.fileManager,
+        settingsManager: this.settingsManager
+      })
+    );
   }
 
   private handleDelete(file: TAbstractFile): void {
@@ -953,60 +1037,6 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     const mainPluginId = Array.from(renameDeleteHandlersMap.keys())[0];
     return mainPluginId === this.pluginId;
   }
-
-  private async wrapLinkUpdatesHandler(linkUpdates: LinkUpdate[], linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
-    let isRenameCalled = false;
-    const eventRef = this.app.vault.on('rename', () => {
-      isRenameCalled = true;
-    });
-    try {
-      await linkUpdatesHandler(linkUpdates);
-    } finally {
-      this.app.vault.offref(eventRef);
-    }
-    const settings = this.settingsManager.getSettings();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed in `rename` event handler. ESLint mistakenly does not recognize it.
-    if (!isRenameCalled || !settings.shouldHandleRenames) {
-      return;
-    }
-
-    filterInPlace(
-      linkUpdates,
-      (linkUpdate) => {
-        if (settings.isPathIgnored?.(linkUpdate.sourceFile.path)) {
-          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
-            `Roll back to default link update of source file ${linkUpdate.sourceFile.path} as the path is ignored.`
-          );
-          return true;
-        }
-
-        if (settings.isPathIgnored?.(linkUpdate.resolvedFile.path)) {
-          getLibDebugger('RenameDeleteHandler:runAsyncLinkUpdate')(
-            `Roll back to default link update of resolved file ${linkUpdate.resolvedFile.path} as the path is ignored.`
-          );
-          return true;
-        }
-
-        if (!this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
-          return false;
-        }
-
-        if (this.app.plugins.getPlugin('backlink-cache')) {
-          return false;
-        }
-
-        if (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) {
-          return true;
-        }
-
-        if (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION) {
-          return true;
-        }
-
-        return false;
-      }
-    );
-  }
 }
 
 async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHandlerSettings>, parentFolderPaths: string[]): Promise<void> {
@@ -1026,5 +1056,3 @@ async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHand
     }
   }
 }
-
-/* v8 ignore stop */

@@ -8,7 +8,8 @@
 
 import type {
   DomEventsHandlers,
-  DomEventsHandlersInfo
+  DomEventsHandlersInfo,
+  EmbedRegistryEmbedByExtensionRecord
 } from '@obsidian-typings/obsidian-public-latest';
 import type { ExtractConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
 import type { App } from 'obsidian';
@@ -77,6 +78,26 @@ interface FixedZIndexDomEventsHandlersInfoConstructorParams {
   readonly path: string;
 }
 
+class EmbedByExtensionMdPatchComponent extends MonkeyAroundComponent {
+  public constructor(private readonly embedByExtension: EmbedRegistryEmbedByExtensionRecord) {
+    super();
+  }
+
+  public override onload(): void {
+    this.registerMethodPatch({
+      methodName: 'md',
+      obj: this.embedByExtension,
+      patchHandler: ({
+        fallback,
+        originalArgs: [context]
+      }) => {
+        context.displayMode = false;
+        return fallback();
+      }
+    });
+  }
+}
+
 class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
   public readonly app: App;
   public readonly el: HTMLElement;
@@ -136,19 +157,7 @@ export async function fullRender(params: FullRenderParams): Promise<void> {
     shouldUnloadComponent = true;
   }
 
-  using patch = component.addChild(new MonkeyAroundComponent());
-
-  patch.registerMethodPatch({
-    methodName: 'md',
-    obj: params.app.embedRegistry.embedByExtension,
-    patchHandler: ({
-      fallback,
-      originalArgs: [context]
-    }) => {
-      context.displayMode = false;
-      return fallback();
-    }
-  });
+  using _ = component.addChild(new EmbedByExtensionMdPatchComponent(params.app.embedRegistry.embedByExtension));
 
   await MarkdownRenderer.render(params.app, params.markdown, params.el, sourcePath, component);
 
@@ -222,6 +231,8 @@ export async function renderExternalLink(app: App, url: string, displayText?: st
   return aEl;
 }
 
+/* v8 ignore stop */
+
 /**
  * Renders an internal link.
  *
@@ -253,5 +264,3 @@ export async function renderInternalLink(app: App, pathOrAbstractFile: PathOrAbs
   await registerLinkHandlers(app, aEl);
   return aEl;
 }
-
-/* v8 ignore stop */

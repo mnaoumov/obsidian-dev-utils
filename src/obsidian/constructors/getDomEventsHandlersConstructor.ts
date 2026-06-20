@@ -23,6 +23,26 @@ import { trashSafe } from '../vault.ts';
 
 type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
 
+class MarkdownPreviewRendererRegisterDomEventsPatchComponent extends MonkeyAroundComponent {
+  public domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
+
+  public override onload(): void {
+    this.registerMethodPatch({
+      methodName: 'registerDomEvents',
+      obj: MarkdownPreviewRenderer,
+      patchHandler: ({
+        fallback,
+        originalArgs: [, handlers]
+      }) => {
+        this.domEventsHandlersConstructor = handlers.constructor as DomEventsHandlersConstructor;
+        fallback();
+      }
+    });
+  }
+}
+
+/* v8 ignore stop */
+
 /**
  * Extracts the `DomEventsHandlersConstructor` from Obsidian's runtime.
  *
@@ -39,22 +59,9 @@ export async function getDomEventsHandlersConstructor(app: App): Promise<DomEven
     mdFile = await app.vault.create('__temp.md', '');
     shouldDelete = true;
   }
-  let ctor: DomEventsHandlersConstructor | null = null;
   try {
-    using patch = new MonkeyAroundComponent();
+    using patch = new MarkdownPreviewRendererRegisterDomEventsPatchComponent();
     patch.load();
-
-    patch.registerMethodPatch({
-      methodName: 'registerDomEvents',
-      obj: MarkdownPreviewRenderer,
-      patchHandler({
-        fallback,
-        originalArgs: [, handlers]
-      }) {
-        ctor = handlers.constructor as DomEventsHandlersConstructor;
-        fallback();
-      }
-    });
 
     const leaf = app.workspace.getLeaf(true);
     await leaf.openFile(mdFile, {
@@ -63,20 +70,18 @@ export async function getDomEventsHandlersConstructor(app: App): Promise<DomEven
     });
     try {
       await retryWithTimeout({
-        operationFn: () => ctor !== null,
+        operationFn: () => patch.domEventsHandlersConstructor !== null,
         operationName: 'getDomEventsHandlersConstructor'
       });
     } finally {
       leaf.detach();
     }
 
-    assertNonNullable(ctor, 'Failed to get register dom events handlers constructor');
-    return ctor;
+    assertNonNullable(patch.domEventsHandlersConstructor, 'Failed to get register dom events handlers constructor');
+    return patch.domEventsHandlersConstructor;
   } finally {
     if (shouldDelete) {
       await trashSafe(app, mdFile);
     }
   }
 }
-
-/* v8 ignore stop */
