@@ -23,7 +23,6 @@ const {
   mockAddResourceBundleFn,
   mockI18nextInstance,
   mockInitFn,
-  mockInvokeAsyncSafelyFn,
   mockTLibFn
 } = vi.hoisted(() => {
   const mockAddResourceBundleFn2 = vi.fn();
@@ -42,14 +41,10 @@ const {
     }
     return 'mock-translated';
   });
-  const mockInvokeAsyncSafelyFn2 = vi.fn((fn: () => Promise<unknown>) => {
-    fn().then(() => undefined, () => undefined);
-  });
   return {
     mockAddResourceBundleFn: mockAddResourceBundleFn2,
     mockI18nextInstance: mockI18nextInstance2,
     mockInitFn: mockInitFn2,
-    mockInvokeAsyncSafelyFn: mockInvokeAsyncSafelyFn2,
     mockTLibFn: mockTLibFn2
   };
 });
@@ -68,10 +63,6 @@ vi.mock('obsidian', async () => {
     getLanguage: vi.fn(() => 'en')
   };
 });
-
-vi.mock('../async.ts', () => ({
-  invokeAsyncSafely: mockInvokeAsyncSafelyFn
-}));
 
 vi.mock('../obsidian/i18n/locales/en.ts', () => ({
   en: { obsidianDevUtils: { test: 'english-value' } }
@@ -117,7 +108,9 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       expect(vi.mocked(console.warn)).toHaveBeenCalledWith(
         'I18N was not initialized, initializing default obsidian-dev-utils translations'
       );
-      expect(mockInvokeAsyncSafelyFn).toHaveBeenCalledTimes(1);
+      // The real invokeAsyncSafely runs the fire-and-forget initI18N synchronously up to its first
+      // Await, so the observable effect of auto-initialization is that init() was called once.
+      expect(mockInitFn).toHaveBeenCalledTimes(1);
 
       vi.mocked(console.warn).mockRestore();
     });

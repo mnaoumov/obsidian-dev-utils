@@ -19,12 +19,6 @@ import {
   LayoutReadyComponent
 } from './layout-ready-component.ts';
 
-vi.mock('../../async.ts', () => ({
-  invokeAsyncSafely: (fn: () => unknown): void => {
-    fn();
-  }
-}));
-
 interface MockApp {
   app: AppOriginal;
   triggerLayoutReady(): void;

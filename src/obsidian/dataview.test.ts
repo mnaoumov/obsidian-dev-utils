@@ -12,6 +12,7 @@ import {
 import type { GenericAsyncFunction } from '../function.ts';
 import type { DataviewInlineApi } from './dataview.ts';
 
+import { waitForAllAsyncOperations } from '../async.ts';
 import {
   noop,
   noopAsync
@@ -32,10 +33,6 @@ import { getFile } from './file-system.ts';
 interface PathHolder {
   path: string;
 }
-
-vi.mock('../async.ts', () => ({
-  convertAsyncToSync: vi.fn((fn: GenericAsyncFunction) => fn)
-}));
 
 vi.mock('../error.ts', () => ({
   errorToString: vi.fn((e: unknown) => String(e)),
@@ -618,16 +615,11 @@ describe('renderPaginated page navigation', () => {
 
     vi.mocked(dv.list).mockClear();
     const event = new PointerEvent('click', { bubbles: true, cancelable: true });
-    // The convertAsyncToSync mock makes the handler the async function itself,
-    // So the click handler is attached via addEventListener
-    // eslint-disable-next-line @typescript-eslint/await-thenable -- dispatchEvent may trigger async handlers.
-    await nextLink?.dispatchEvent(event);
+    nextLink?.dispatchEvent(event);
 
-    // The handler is async (because our convertAsyncToSync mock returns the async fn),
-    // So we need to let it settle before asserting.
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
-    });
+    // The real convertAsyncToSync schedules the click handler as a tracked fire-and-forget
+    // Operation, so drain it before asserting.
+    await waitForAllAsyncOperations();
 
     expect(dv.list).toHaveBeenCalledOnce();
 
