@@ -1,4 +1,9 @@
-import { Component } from 'obsidian';
+import type { Debouncer } from 'obsidian';
+
+import {
+  Component,
+  debounce
+} from 'obsidian';
 import {
   describe,
   expect,
@@ -340,6 +345,124 @@ describe('MonkeyAroundComponent', () => {
       expect(obj.greet('world')).toBe('inner: hello world');
       expect(observedParams?.originalMethod).toBe(originalGreet);
       expect(observedParams?.patchedMethod('test')).toBe('inner: hello test');
+    });
+  });
+
+  describe('Debouncer members', () => {
+    interface WithDebouncer {
+      save: Debouncer<[string], void>;
+    }
+
+    function createWithDebouncer(saved: string[]): WithDebouncer {
+      return {
+        save: debounce((value: string) => {
+          saved.push(value);
+        }, 0, true)
+      };
+    }
+
+    it('registerMethodPatch should keep the Debouncer cancel/run members reachable after patching', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const saved: string[] = [];
+      const obj = createWithDebouncer(saved);
+
+      component.registerMethodPatch<WithDebouncer, 'save'>({
+        methodName: 'save',
+        obj,
+        patchHandler: ({ fallback }) => fallback()
+      });
+
+      expect(typeof obj.save.cancel).toBe('function');
+      expect(typeof obj.save.run).toBe('function');
+      expect(() => {
+        obj.save.cancel();
+      }).not.toThrow();
+    });
+
+    it('registerFunctionPatch should expose the full Debouncer type and allow replacing it', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const saved: string[] = [];
+      const obj = createWithDebouncer(saved);
+
+      component.registerFunctionPatch<WithDebouncer, 'save'>({
+        functionName: 'save',
+        obj,
+        patchHandler: (originalValue) => {
+          expectTypeOf(originalValue).toEqualTypeOf<Debouncer<[string], void>>();
+          return debounce((value: string) => {
+            saved.push(`new:${value}`);
+          }, 0, true);
+        }
+      });
+
+      expect(typeof obj.save).toBe('function');
+      expect(typeof obj.save.cancel).toBe('function');
+    });
+  });
+
+  describe('registerFunctionPatch', () => {
+    it('should throw if registering member patch before load', () => {
+      const obj = createTestObj();
+      const component = new MonkeyAroundComponent();
+
+      expect(() => {
+        component.registerFunctionPatch<TestObj, 'greet'>({
+          functionName: 'greet',
+          obj,
+          patchHandler: (originalGreet) => originalGreet
+        });
+      }).toThrow('Component is not loaded');
+    });
+
+    it('should replace a member with the value returned by the patch handler', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+
+      component.registerFunctionPatch<TestObj, 'greet'>({
+        functionName: 'greet',
+        obj,
+        patchHandler: (originalGreet) => (name: string): string => `member: ${originalGreet(name)}`
+      });
+
+      expect(obj.greet('world')).toBe('member: hello world');
+    });
+
+    it('should pass the original member value to the patch handler', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+      const originalGreet = obj.greet;
+      let received: TestObj['greet'] | undefined;
+
+      component.registerFunctionPatch<TestObj, 'greet'>({
+        functionName: 'greet',
+        obj,
+        patchHandler: (originalValue) => {
+          received = originalValue;
+          return (name: string): string => originalValue(name);
+        }
+      });
+
+      expect(received).toBe(originalGreet);
+    });
+
+    it('should remove the member patch when unloaded', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+
+      component.registerFunctionPatch<TestObj, 'greet'>({
+        functionName: 'greet',
+        obj,
+        patchHandler: (originalGreet) => (name: string): string => `member: ${originalGreet(name)}`
+      });
+
+      expect(obj.greet('x')).toBe('member: hello x');
+      component.unload();
+      expect(obj.greet('x')).toBe('hello x');
     });
   });
 
