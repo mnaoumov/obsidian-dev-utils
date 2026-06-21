@@ -58,7 +58,7 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
     return;
   }
 
-  if (dirent.isFile() && dirent.name.endsWith('-setup.ts')) {
+  if (dirent.isFile() && (dirent.name === 'setup.ts' || dirent.name.endsWith('-setup.ts'))) {
     return;
   }
 

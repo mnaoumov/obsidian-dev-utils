@@ -80,8 +80,7 @@ export const config = defineConfig({
           setupFiles: [
             'obsidian-test-mocks/vitest-setup',
             'obsidian-test-mocks/obsidian-typings/vitest-setup',
-            './src/setup/async-operation-tracking-vitest-setup.ts',
-            './src/test-helpers/setup.ts'
+            './src/vitest-setup.ts'
           ]
         }
       },

@@ -8,32 +8,31 @@ import {
 
 import {
   disableAsyncOperationTracking,
-  enableAsyncOperationTracking,
   waitForAllAsyncOperations
-} from '../async.ts';
-import { setupAsyncOperationTracking } from './async-operation-tracking-setup.ts';
+} from './async.ts';
+import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
+import { setup } from './setup.ts';
 
-describe('setupAsyncOperationTracking', () => {
+describe('setup', () => {
   afterEach(() => {
     disableAsyncOperationTracking();
   });
 
-  it('should register the tracking toggles with the provided hooks', () => {
+  it('should register handlers with the provided hooks', () => {
     const beforeEachRegistrar = vi.fn<(fn: () => void) => void>();
     const afterEachRegistrar = vi.fn<(fn: () => void) => void>();
 
-    setupAsyncOperationTracking({
+    setup({
       afterEach: afterEachRegistrar,
       beforeEach: beforeEachRegistrar
     });
 
     expect(beforeEachRegistrar).toHaveBeenCalledTimes(1);
-    expect(beforeEachRegistrar).toHaveBeenCalledWith(enableAsyncOperationTracking);
     expect(afterEachRegistrar).toHaveBeenCalledTimes(1);
     expect(afterEachRegistrar).toHaveBeenCalledWith(disableAsyncOperationTracking);
   });
 
-  it('should enable tracking via the beforeEach callback and disable it via the afterEach callback', async () => {
+  it('should reset state and enable tracking via beforeEach, and disable tracking via afterEach', async () => {
     let beforeEachCallback: (() => void) | undefined;
     let afterEachCallback: (() => void) | undefined;
 
@@ -44,7 +43,7 @@ describe('setupAsyncOperationTracking', () => {
       afterEachCallback = fn;
     });
 
-    setupAsyncOperationTracking({
+    setup({
       afterEach: afterEachRegistrar,
       beforeEach: beforeEachRegistrar
     });
@@ -52,7 +51,15 @@ describe('setupAsyncOperationTracking', () => {
     expect(beforeEachCallback).toBeDefined();
     expect(afterEachCallback).toBeDefined();
 
+    const before = getObsidianDevUtilsState('setup-test-key', 'a');
+    before.value = 'mutated';
+
     beforeEachCallback?.();
+
+    const after = getObsidianDevUtilsState('setup-test-key', 'b');
+    expect(after).not.toBe(before);
+    expect(after.value).toBe('b');
+
     await expect(waitForAllAsyncOperations()).resolves.toBeUndefined();
 
     afterEachCallback?.();

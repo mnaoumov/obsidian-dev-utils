@@ -32,3 +32,14 @@ export function getObsidianDevUtilsState<T>(key: string, defaultValue: T): Value
   wrapper.__obsidianDevUtils ??= {};
   return (wrapper.__obsidianDevUtils[key] ??= ValueWrapper.of(defaultValue)) as ValueWrapper<T>;
 }
+
+/**
+ * Clears the shared-state bag on `globalThis.__obsidianDevUtils`.
+ *
+ * Intended for test isolation: call it before each test so accumulated state (debuggers, queues,
+ * registered handlers, etc.) does not leak between tests.
+ */
+export function resetObsidianDevUtilsState(): void {
+  // eslint-disable-next-line obsidianmd/no-global-this -- The shared state intentionally lives on the realm global.
+  (globalThis as Partial<ObsidianDevUtilsWrapper>).__obsidianDevUtils = {};
+}

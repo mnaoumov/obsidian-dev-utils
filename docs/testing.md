@@ -4,11 +4,11 @@
 
 Fire-and-forget async operations scheduled via `invokeAsyncSafely` / `convertAsyncToSync` are not awaitable from a test by default, which makes assertions that depend on them flaky. `Obsidian Dev Utils` can **track** those operations so a test can drain them deterministically with `waitForAllAsyncOperations()`.
 
-Tracking is opt-in — disabled by default, so production code carries no bookkeeping overhead. Enable it in your test suite with one of these setup endpoints. Each enables tracking in `beforeEach` and disables it in `afterEach`, so operations never leak between tests:
+Tracking is opt-in — disabled by default, so production code carries no bookkeeping overhead. Enable it in your test suite with one of these setup endpoints. Each resets the shared state and enables tracking before each test, then disables tracking after each test, so neither state nor operations leak between tests:
 
-- **Vitest** — `obsidian-dev-utils/setup/async-operation-tracking-vitest-setup`
-- **Jest** — `obsidian-dev-utils/setup/async-operation-tracking-jest-setup`
-- **Any framework (agnostic)** — `obsidian-dev-utils/setup/async-operation-tracking-setup`
+- **Vitest** — `obsidian-dev-utils/vitest-setup`
+- **Jest** — `obsidian-dev-utils/jest-setup`
+- **Any framework (agnostic)** — `obsidian-dev-utils/setup`
 
 ### Vitest
 
@@ -18,7 +18,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    setupFiles: ['obsidian-dev-utils/setup/async-operation-tracking-vitest-setup']
+    setupFiles: ['obsidian-dev-utils/vitest-setup']
   }
 });
 ```
@@ -32,7 +32,7 @@ export default defineConfig({
 import type { Config } from 'jest';
 
 const config: Config = {
-  setupFilesAfterEnv: ['obsidian-dev-utils/setup/async-operation-tracking-jest-setup']
+  setupFilesAfterEnv: ['obsidian-dev-utils/jest-setup']
 };
 
 export default config;
@@ -43,13 +43,13 @@ export default config;
 The agnostic endpoint registers the hooks you hand it, so any framework that exposes `beforeEach` / `afterEach` works:
 
 ```typescript
-import { setupAsyncOperationTracking } from 'obsidian-dev-utils/setup/async-operation-tracking-setup';
+import { setup } from 'obsidian-dev-utils/setup';
 import {
   afterEach,
   beforeEach
 } from 'your-test-framework';
 
-setupAsyncOperationTracking({ afterEach, beforeEach });
+setup({ afterEach, beforeEach });
 ```
 
 ### Using it in a test

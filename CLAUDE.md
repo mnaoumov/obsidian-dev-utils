@@ -137,15 +137,19 @@ export function myFunction(param: Type): ReturnType {
 - The project aims for 100% test coverage. Every new or changed code path must be covered by tests.
 - Currently unit tests only; full E2E Obsidian Electron tests are planned for the next phase.
 
-### Async-operation-tracking test setup
+### Test setup
 
-- Consumers can wire async-operation tracking into their test suites via three endpoints:
-  `obsidian-dev-utils/setup/async-operation-tracking-setup` (framework-agnostic `setupAsyncOperationTracking({ beforeEach, afterEach })`),
-  `obsidian-dev-utils/setup/async-operation-tracking-vitest-setup`, and `obsidian-dev-utils/setup/async-operation-tracking-jest-setup`.
-  Each enables async-operation tracking in `beforeEach` and disables it in `afterEach`, so tests can
-  `await waitForAllAsyncOperations()`. The Vitest/Jest files are thin setup-file glue (v8-ignored) over the
-  unit-tested agnostic core. All `*-setup.ts` files are excluded from the auto-generated barrels (see
-  `scripts/build-generate-index.ts`) so a production `import 'obsidian-dev-utils'` never pulls in `vitest`/`@jest/globals`.
+- Consumers wire the library's per-test setup into their suites via three endpoints, mirroring
+  `obsidian-test-mocks`'s naming: `obsidian-dev-utils/setup` (framework-agnostic
+  `setup({ beforeEach, afterEach })`), `obsidian-dev-utils/vitest-setup`, and
+  `obsidian-dev-utils/jest-setup`.
+  Before each test the setup resets the shared-state bag on `globalThis.__obsidianDevUtils` (so
+  accumulated state does not leak between tests) and enables async-operation tracking; after each test
+  it disables tracking, so tests can `await waitForAllAsyncOperations()` against isolated state. The
+  Vitest/Jest files are thin setup-file glue (v8-ignored) over the unit-tested agnostic core. The
+  top-level `setup.ts` and all `*-setup.ts` files are excluded from the auto-generated barrels (see
+  `scripts/build-generate-index.ts`) so a production `import 'obsidian-dev-utils'` never pulls in
+  `vitest`/`@jest/globals`.
 
 ### Framework
 

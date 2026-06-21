@@ -577,16 +577,6 @@
         "default": "./dist/lib/cjs/script-utils/test-runners/*.cjs"
       }
     },
-    "./setup/*": {
-      "import": {
-        "types": "./dist/lib/esm/setup/*.d.mts",
-        "default": "./dist/lib/esm/setup/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/setup/*.d.cts",
-        "default": "./dist/lib/cjs/setup/*.cjs"
-      }
-    },
     "./transformers": {
       "import": {
         "types": "./dist/lib/esm/transformers/index.d.mts",

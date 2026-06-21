@@ -5,7 +5,10 @@ import {
   it
 } from 'vitest';
 
-import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
+import {
+  getObsidianDevUtilsState,
+  resetObsidianDevUtilsState
+} from './obsidian-dev-utils-state.ts';
 import { ValueWrapper } from './value-wrapper.ts';
 
 interface GlobalThisWithState {
@@ -45,5 +48,13 @@ describe('getObsidianDevUtilsState', () => {
     wrapper.value = 'changed';
     const same = getObsidianDevUtilsState('mutable', 'initial');
     expect(same.value).toBe('changed');
+  });
+
+  it('should drop the shared state when reset', () => {
+    const first = getObsidianDevUtilsState('resettable', 'a');
+    resetObsidianDevUtilsState();
+    const second = getObsidianDevUtilsState('resettable', 'b');
+    expect(second).not.toBe(first);
+    expect(second.value).toBe('b');
   });
 });
