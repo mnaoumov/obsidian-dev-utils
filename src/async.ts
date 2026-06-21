@@ -259,6 +259,28 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue?: T): Pr
   }
 }
 
+const pendingAsyncOperations = new Set<Promise<void>>();
+let isAsyncOperationTrackingEnabled = false;
+
+/**
+ * Disables tracking previously enabled via {@link enableAsyncOperationTracking} and forgets any currently-tracked operations.
+ */
+export function disableAsyncOperationTracking(): void {
+  isAsyncOperationTrackingEnabled = false;
+  pendingAsyncOperations.clear();
+}
+
+/**
+ * Enables tracking of fire-and-forget operations scheduled via {@link invokeAsyncSafely} (and therefore {@link convertAsyncToSync}).
+ *
+ * While enabled, each scheduled operation is recorded until it settles so that tests can await them all via {@link waitForAllAsyncOperations}, removing the need to override {@link invokeAsyncSafely} / {@link convertAsyncToSync} in tests.
+ *
+ * Tracking is disabled by default, so production code carries no bookkeeping overhead. Intended to be enabled in test environments only.
+ */
+export function enableAsyncOperationTracking(): void {
+  isAsyncOperationTrackingEnabled = true;
+}
+
 /**
  * Invokes a {@link Promise} and safely handles any errors by catching them and emitting an async error event.
  *
@@ -272,12 +294,11 @@ export function invokeAsyncSafely(asyncFn: () => Promisable<unknown>, stackTrace
   try {
     result = asyncFn();
   } catch (error) {
-    // eslint-disable-next-line no-void, @typescript-eslint/prefer-promise-reject-errors -- We need to fire-and-forget. Re-rejecting the original caught error as-is.
-    void addErrorHandler(() => Promise.reject(error), stackTrace);
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Re-rejecting the original caught error as-is.
+    trackAsyncOperation(addErrorHandler(() => Promise.reject(error), stackTrace));
   }
   if (result instanceof Promise) {
-    // eslint-disable-next-line no-void -- We need to fire-and-forget.
-    void addErrorHandler(() => result, stackTrace);
+    trackAsyncOperation(addErrorHandler(() => result, stackTrace));
   }
 }
 
@@ -328,6 +349,31 @@ export async function promiseAllAsyncFnsSequentially<T>(asyncFns: (() => Promisa
  */
 export async function promiseAllSequentially<T>(promises: Promisable<T>[]): Promise<T[]> {
   return await promiseAllAsyncFnsSequentially(promises.map((promise) => () => promise));
+}
+
+/**
+ * Waits for all fire-and-forget operations tracked since {@link enableAsyncOperationTracking} was called to settle.
+ *
+ * Operations scheduled while awaiting are also awaited, so cascading fire-and-forget chains are fully drained. Resolves immediately when tracking is disabled or no operations are pending.
+ *
+ * @returns A {@link Promise} that resolves once no tracked operations remain pending.
+ */
+export async function waitForAllAsyncOperations(): Promise<void> {
+  while (pendingAsyncOperations.size > 0) {
+    await Promise.allSettled([...pendingAsyncOperations]);
+  }
+}
+
+function trackAsyncOperation(operation: Promise<void>): void {
+  if (!isAsyncOperationTrackingEnabled) {
+    return;
+  }
+
+  pendingAsyncOperations.add(operation);
+  // eslint-disable-next-line no-void -- Fire-and-forget cleanup of the settled operation.
+  void operation.finally(() => {
+    pendingAsyncOperations.delete(operation);
+  });
 }
 
 const terminateRetryErrors = new WeakSet<Error>();

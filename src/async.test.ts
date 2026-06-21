@@ -18,6 +18,8 @@ import {
   chain,
   convertAsyncToSync,
   convertSyncToAsync,
+  disableAsyncOperationTracking,
+  enableAsyncOperationTracking,
   handleSilentError,
   ignoreError,
   invokeAsyncSafely,
@@ -35,7 +37,8 @@ import {
   setTimeoutAsync,
   sleep,
   timeout,
-  toArray
+  toArray,
+  waitForAllAsyncOperations
 } from './async.ts';
 import {
   registerAsyncErrorEventHandler,
@@ -1182,6 +1185,64 @@ describe('Async', () => {
 
       expect(handler).toHaveBeenCalledTimes(1);
       unregister();
+    });
+  });
+
+  describe('async operation tracking', () => {
+    afterEach(() => {
+      disableAsyncOperationTracking();
+    });
+
+    it('should wait for tracked fire-and-forget operations to settle', async () => {
+      enableAsyncOperationTracking();
+      let didComplete = false;
+      invokeAsyncSafely(async () => {
+        await noopAsync();
+        didComplete = true;
+      });
+
+      await waitForAllAsyncOperations();
+
+      expect(didComplete).toBe(true);
+    });
+
+    it('should drain operations scheduled while waiting', async () => {
+      enableAsyncOperationTracking();
+      let completedCount = 0;
+      invokeAsyncSafely(async () => {
+        await noopAsync();
+        completedCount++;
+        invokeAsyncSafely(async () => {
+          await noopAsync();
+          completedCount++;
+        });
+      });
+
+      await waitForAllAsyncOperations();
+
+      const EXPECTED_COMPLETED_COUNT = 2;
+      expect(completedCount).toBe(EXPECTED_COMPLETED_COUNT);
+    });
+
+    it('should forget pending operations when tracking is disabled', async () => {
+      enableAsyncOperationTracking();
+      let didComplete = false;
+      let releaseOperation: () => void = noop;
+      const gate = new Promise<void>((resolve) => {
+        releaseOperation = resolve;
+      });
+      invokeAsyncSafely(async () => {
+        await gate;
+        didComplete = true;
+      });
+
+      disableAsyncOperationTracking();
+      await waitForAllAsyncOperations();
+
+      expect(didComplete).toBe(false);
+
+      releaseOperation();
+      await gate;
     });
   });
 
