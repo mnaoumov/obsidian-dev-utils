@@ -13,6 +13,8 @@ import {
 
 import type { MaybeReturn } from '../../type.ts';
 import type {
+  FunctionKeys,
+  MethodKeys,
   PatchHandlerFn,
   PatchHandlerParams,
   PostPatchHandlerFn,
@@ -355,30 +357,15 @@ describe('MonkeyAroundComponent', () => {
 
     function createWithDebouncer(saved: string[]): WithDebouncer {
       return {
-        save: debounce((value: string) => {
-          saved.push(value);
-        }, 0, true)
+        save: debounce(
+          (value: string) => {
+            saved.push(value);
+          },
+          0,
+          true
+        )
       };
     }
-
-    it('registerMethodPatch should keep the Debouncer cancel/run members reachable after patching', () => {
-      const component = new MonkeyAroundComponent();
-      component.load();
-      const saved: string[] = [];
-      const obj = createWithDebouncer(saved);
-
-      component.registerMethodPatch<WithDebouncer, 'save'>({
-        methodName: 'save',
-        obj,
-        patchHandler: ({ fallback }) => fallback()
-      });
-
-      expect(typeof obj.save.cancel).toBe('function');
-      expect(typeof obj.save.run).toBe('function');
-      expect(() => {
-        obj.save.cancel();
-      }).not.toThrow();
-    });
 
     it('registerFunctionPatch should expose the full Debouncer type and allow replacing it', () => {
       const component = new MonkeyAroundComponent();
@@ -391,9 +378,13 @@ describe('MonkeyAroundComponent', () => {
         obj,
         patchHandler: (originalValue) => {
           expectTypeOf(originalValue).toEqualTypeOf<Debouncer<[string], void>>();
-          return debounce((value: string) => {
-            saved.push(`new:${value}`);
-          }, 0, true);
+          return debounce(
+            (value: string) => {
+              saved.push(`new:${value}`);
+            },
+            0,
+            true
+          );
         }
       });
 
@@ -561,6 +552,31 @@ describe('MonkeyAroundComponent', () => {
 
       expect(hasPatchToken(originalGreet, token)).toBe(true);
       expect(hasPatchToken(obj.greet, token)).toBe(false);
+    });
+  });
+
+  describe('FunctionKeys / MethodKeys', () => {
+    interface Mixed {
+      greet(name: string): string;
+      save: Debouncer<[string], void>;
+      sum(a: number, b: number): number;
+      value: number;
+    }
+
+    interface OnlyDebouncer {
+      save: Debouncer<[string], void>;
+    }
+
+    it('FunctionKeys includes methods and callable objects (Debouncer), excluding non-callables', () => {
+      expectTypeOf<FunctionKeys<Mixed>>().toEqualTypeOf<'greet' | 'save' | 'sum'>();
+    });
+
+    it('MethodKeys includes only plain methods, excluding Debouncer and non-callables', () => {
+      expectTypeOf<MethodKeys<Mixed>>().toEqualTypeOf<'greet' | 'sum'>();
+    });
+
+    it('MethodKeys is never when the object has only a Debouncer member', () => {
+      expectTypeOf<MethodKeys<OnlyDebouncer>>().toBeNever();
     });
   });
 

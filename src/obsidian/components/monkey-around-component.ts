@@ -23,6 +23,24 @@ import { ComponentEx } from './component-ex.ts';
 export type Factories<Obj extends object> = Partial<FullFactories<Obj>>;
 
 /**
+ * Keys of `Obj` whose value is callable — a method, or a function-like object such as a `Debouncer`. These are the members
+ * accepted by {@link MonkeyAroundComponent#registerFunctionPatch}.
+ *
+ * @typeParam Obj - The object whose keys are filtered.
+ */
+export type FunctionKeys<Obj extends object> = ConditionalKeys<Obj, GenericFunction | undefined> & keyof Obj;
+
+/**
+ * Keys of `Obj` whose value is a plain function (a "real method"). Function-like objects that carry extra members are
+ * excluded — e.g. a `Debouncer` (which adds `cancel`/`run`) belongs to {@link MonkeyAroundComponent#registerFunctionPatch},
+ * not {@link MonkeyAroundComponent#registerMethodPatch}. The check is whether the member has any own keys beyond a bare
+ * function's (`Exclude<keyof T, keyof GenericFunction>` is `never`).
+ *
+ * @typeParam Obj - The object whose keys are filtered.
+ */
+export type MethodKeys<Obj extends object> = MethodKeysMap<Obj>[FunctionKeys<Obj>];
+
+/**
  * Parameters passed to {@link MonkeyAroundComponent#registerFunctionPatch}.
  *
  * @typeParam Obj - The object to patch.
@@ -54,7 +72,7 @@ export interface MonkeyAroundComponentRegisterFunctionPatchParams<Obj extends ob
  * @typeParam Obj - The object to patch.
  * @typeParam MethodName - The method name to patch.
  */
-export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends object, MethodName extends FunctionKeys<Obj>> {
+export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends object, MethodName extends MethodKeys<Obj>> {
   /**
    * The method name to patch.
    */
@@ -87,7 +105,7 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends obje
  * @typeParam Obj - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export type PatchHandlerFn<Obj extends object, MethodName extends FunctionKeys<Obj>> = (
+export type PatchHandlerFn<Obj extends object, MethodName extends MethodKeys<Obj>> = (
   params: PatchHandlerParams<Obj, MethodName>
 ) => ReturnType<ExtractFunction<Obj, MethodName>>;
 
@@ -97,7 +115,7 @@ export type PatchHandlerFn<Obj extends object, MethodName extends FunctionKeys<O
  * @typeParam Obj - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export interface PatchHandlerParams<Obj extends object, MethodName extends FunctionKeys<Obj>> {
+export interface PatchHandlerParams<Obj extends object, MethodName extends MethodKeys<Obj>> {
   fallback(this: void): ReturnType<ExtractFunction<Obj, MethodName>>;
 
   /**
@@ -127,7 +145,7 @@ export interface PatchHandlerParams<Obj extends object, MethodName extends Funct
  * @typeParam Obj - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export type PostPatchHandlerFn<Obj extends object, MethodName extends FunctionKeys<Obj>> = (
+export type PostPatchHandlerFn<Obj extends object, MethodName extends MethodKeys<Obj>> = (
   params: PostPatchHandlerParams<Obj, MethodName>
 ) => MaybeReturn<ExtractFunction<Obj, MethodName>>;
 
@@ -137,7 +155,7 @@ export type PostPatchHandlerFn<Obj extends object, MethodName extends FunctionKe
  * @typeParam Obj - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export interface PostPatchHandlerParams<Obj extends object, MethodName extends FunctionKeys<Obj>> {
+export interface PostPatchHandlerParams<Obj extends object, MethodName extends MethodKeys<Obj>> {
   /**
    * The original (unpatched) method. Call via `originalFn.call(originalThis, ...originalArgs)`.
    */
@@ -149,13 +167,15 @@ export interface PostPatchHandlerParams<Obj extends object, MethodName extends F
   readonly patchedMethod: ExtractFunction<Obj, MethodName>;
 }
 
-type ExtractFunction<Obj extends object, MethodName extends FunctionKeys<Obj>> = GenericFunction<Parameters<Extract<Obj[MethodName], GenericFunction>>, ReturnType<Extract<Obj[MethodName], GenericFunction>>>;
+type ExtractFunction<Obj extends object, MethodName extends MethodKeys<Obj>> = GenericFunction<Parameters<Extract<Obj[MethodName], GenericFunction>>, ReturnType<Extract<Obj[MethodName], GenericFunction>>>;
 
 type FullFactories<Obj extends object> = {
   [Key in keyof Obj]: (originalValue: Obj[Key]) => Obj[Key];
 };
 
-type FunctionKeys<Obj extends object> = ConditionalKeys<Obj, GenericFunction | undefined> & keyof Obj;
+type MethodKeysMap<Obj extends object> = {
+  [Key in FunctionKeys<Obj>]: [Exclude<keyof NonNullable<Obj[Key]>, keyof GenericFunction>] extends [never] ? Key : never;
+};
 
 type OriginalFactories<Obj extends GenericObject> = Parameters<typeof originalAround<Obj>>[1];
 
@@ -193,7 +213,7 @@ export class MonkeyAroundComponent extends ComponentEx {
    * @typeParam MethodName - The method name to patch.
    * @param params - The parameters of the patch.
    */
-  public registerMethodPatch<Obj extends object, const MethodName extends FunctionKeys<Obj>>(
+  public registerMethodPatch<Obj extends object, const MethodName extends MethodKeys<Obj>>(
     params: MonkeyAroundComponentRegisterMethodPatchParams<Obj, MethodName>
   ): void {
     this.ensureLoaded();
