@@ -61,8 +61,8 @@ vi.mock('../../library.ts', () => ({
   LIBRARY_VERSION: '1.0.0'
 }));
 
-vi.mock('../app.ts', () => ({
-  getObsidianDevUtilsState: vi.fn((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }))
+vi.mock('../../obsidian-dev-utils-state.ts', () => ({
+  getObsidianDevUtilsState: vi.fn((_key: string, defaultValue: unknown) => ({ value: defaultValue }))
 }));
 
 vi.mock('./plugin-id.ts', () => ({

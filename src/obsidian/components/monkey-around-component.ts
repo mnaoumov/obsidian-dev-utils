@@ -12,7 +12,7 @@ import type { GenericFunction } from '../../function.ts';
 import type { GenericObject } from '../../type-guards.ts';
 import type { MaybeReturn } from '../../type.ts';
 
-import { getObsidianDevUtilsState } from '../app.ts';
+import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
 import { ComponentEx } from './component-ex.ts';
 
 /**
@@ -293,5 +293,5 @@ export function hasPatchToken(fn: GenericFunction, patchToken: symbol): boolean 
 }
 
 function getMonkeyAroundPatches(): WeakMap<GenericFunction, symbol> {
-  return getObsidianDevUtilsState(null, 'monkeyAroundPatches', new WeakMap<GenericFunction, symbol>()).value;
+  return getObsidianDevUtilsState('monkeyAroundPatches', new WeakMap<GenericFunction, symbol>()).value;
 }

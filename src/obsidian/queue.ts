@@ -4,7 +4,6 @@
  * Contains utility functions for enqueuing and processing functions in Obsidian.
  */
 
-import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
 import type { ValueWrapper } from '../value-wrapper.ts';
@@ -22,7 +21,7 @@ import {
   noop,
   noopAsync
 } from '../function.ts';
-import { getObsidianDevUtilsState } from './app.ts';
+import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { runWithTimeoutNotice } from './async-with-notice.ts';
 import { t } from './i18n/i18n.ts';
 import { invokeAsyncAndLog } from './logger.ts';
@@ -35,11 +34,6 @@ export interface AddToQueueAndWaitParams {
    * Optional abort signal.
    */
   readonly abortSignal?: AbortSignal;
-
-  /**
-   * The Obsidian application instance.
-   */
-  readonly app: App;
 
   /**
    * The function to add.
@@ -75,11 +69,6 @@ export interface AddToQueueParams {
    * Optional abort signal.
    */
   readonly abortSignal?: AbortSignal;
-
-  /**
-   * The Obsidian application instance.
-   */
-  readonly app: App;
 
   /**
    * The function to add.
@@ -144,7 +133,7 @@ export async function addToQueueAndWait(params: AddToQueueAndWaitParams): Promis
   const timeoutInMilliseconds = params.timeoutInMilliseconds ?? DEFAULT_TIMEOUT_IN_MILLISECONDS;
   const stackTrace = params.stackTrace ?? getStackTrace(1);
   const operationName = params.operationName ?? '';
-  const queue = getQueue(params.app).value;
+  const queue = getQueue().value;
   queue.items.push({
     abortSignal,
     operationFn: params.operationFn,
@@ -153,29 +142,26 @@ export async function addToQueueAndWait(params: AddToQueueAndWaitParams): Promis
     stackTrace,
     timeoutInMilliseconds
   });
-  queue.promise = queue.promise.then(() => processNextQueueItem(params.app));
+  queue.promise = queue.promise.then(() => processNextQueueItem());
   await queue.promise;
 }
 
 /**
  * Flushes the queue;
- *
- * @param app - The Obsidian application instance.
  */
-export async function flushQueue(app: App): Promise<void> {
+export async function flushQueue(): Promise<void> {
   await addToQueueAndWait({
-    app,
     operationFn: noop,
     operationName: t(($) => $.obsidianDevUtils.queue.flushQueue)
   });
 }
 
-function getQueue(app: App): ValueWrapper<Queue> {
-  return getObsidianDevUtilsState(app, 'queue', { items: [], promise: noopAsync() });
+function getQueue(): ValueWrapper<Queue> {
+  return getObsidianDevUtilsState('queue', { items: [], promise: noopAsync() });
 }
 
-async function processNextQueueItem(app: App): Promise<void> {
-  const queue = getQueue(app).value;
+async function processNextQueueItem(): Promise<void> {
+  const queue = getQueue().value;
   const item = queue.items[0];
   /* v8 ignore start -- Defensive check; processNextQueueItem is only called after an item is pushed. */
   if (!item) {

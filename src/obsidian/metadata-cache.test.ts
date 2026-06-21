@@ -25,13 +25,13 @@ import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-w
 
 import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
+import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import {
   assertNonNullable,
   ensureGenericObject
 } from '../type-guards.ts';
 import { ValueWrapper } from '../value-wrapper.ts';
-import { getObsidianDevUtilsState } from './app.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
 import {
   getFile,
@@ -62,8 +62,8 @@ interface PathHolder {
   path: string;
 }
 
-vi.mock('../obsidian/app.ts', () => ({
-  getObsidianDevUtilsState: vi.fn((_app: unknown, _key: string, defaultValue: unknown) => ({ value: defaultValue }))
+vi.mock('../obsidian-dev-utils-state.ts', () => ({
+  getObsidianDevUtilsState: vi.fn((_key: string, defaultValue: unknown) => ({ value: defaultValue }))
 }));
 
 vi.mock('../obsidian/async-with-notice.ts', () => ({
@@ -539,7 +539,7 @@ describe('unregisterFiles', () => {
 
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBe(file);
 
-    mockedGetState.mockImplementation((_app: unknown, _key: string, defaultValue: unknown) => ValueWrapper.of(defaultValue));
+    mockedGetState.mockImplementation((_key: string, defaultValue: unknown) => ValueWrapper.of(defaultValue));
   });
 });
 

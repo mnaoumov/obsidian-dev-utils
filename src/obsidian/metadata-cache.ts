@@ -24,8 +24,8 @@ import type { PathOrFile } from './file-system.ts';
 import type { CombinedFrontmatter } from './frontmatter.ts';
 
 import { getNestedPropertyValue } from '../object-utils.ts';
+import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { ensureNonNullable } from '../type-guards.ts';
-import { getObsidianDevUtilsState } from './app.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
 import {
   getFile,
@@ -313,7 +313,7 @@ export function registerFileCacheForNonExistingFile(app: App, pathOrFile: PathOr
  * @param files - The files to register.
  */
 export function registerFiles(app: App, files: TAbstractFile[]): void {
-  const registeredFilesCounts = getRegisteredFilesCounts(app);
+  const registeredFilesCounts = getRegisteredFilesCounts();
 
   for (let file of files) {
     while (file.deleted) {
@@ -392,7 +392,7 @@ export function unregisterFileCacheForNonExistingFile(app: App, pathOrFile: Path
  * @param files - The files to unregister.
  */
 export function unregisterFiles(app: App, files: TAbstractFile[]): void {
-  const registeredFilesCounts = getRegisteredFilesCounts(app);
+  const registeredFilesCounts = getRegisteredFilesCounts();
 
   for (let file of files) {
     while (file.deleted) {
@@ -414,6 +414,6 @@ export function unregisterFiles(app: App, files: TAbstractFile[]): void {
   }
 }
 
-function getRegisteredFilesCounts(app: App): Map<string, number> {
-  return getObsidianDevUtilsState(app, 'registeredFilesCounts', new Map<string, number>()).value;
+function getRegisteredFilesCounts(): Map<string, number> {
+  return getObsidianDevUtilsState('registeredFilesCounts', new Map<string, number>()).value;
 }

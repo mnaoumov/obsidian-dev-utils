@@ -12,7 +12,7 @@ import type { DebugController } from './debug-controller.ts';
 
 import { CustomStackTraceError } from './error.ts';
 import { LIBRARY_NAME } from './library.ts';
-import { getObsidianDevUtilsState } from './obsidian/app.ts';
+import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
 import { isInObsidian } from './obsidian/is-in-obsidian.ts';
 import {
   getPluginId,
@@ -53,7 +53,7 @@ export function getDebugController(): DebugController {
  */
 export function getDebugger(namespace: string, framesToSkip = 0): Debugger {
   const key = `${namespace}:${String(framesToSkip)}`;
-  const debuggersMap = getObsidianDevUtilsState(null, 'debuggers', new Map<string, Debugger>()).value;
+  const debuggersMap = getObsidianDevUtilsState('debuggers', new Map<string, Debugger>()).value;
   let debuggerEx = debuggersMap.get(key);
   if (!debuggerEx) {
     debuggerEx = getSharedDebugLibInstance()(namespace);
@@ -150,7 +150,7 @@ function getSharedDebugLibInstance(): typeof debug {
   if (!isInObsidian()) {
     return debug;
   }
-  return getObsidianDevUtilsState(null, 'debug', debug).value;
+  return getObsidianDevUtilsState('debug', debug).value;
 }
 
 function logWithCaller(namespace: string, framesToSkip: number, message: string, ...args: unknown[]): void {

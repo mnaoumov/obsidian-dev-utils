@@ -40,6 +40,7 @@ import {
   normalizeOptionalProperties,
   toJson
 } from '../../object-utils.ts';
+import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
 import {
   basename,
   dirname,
@@ -47,7 +48,6 @@ import {
   join,
   relative
 } from '../../path.ts';
-import { getObsidianDevUtilsState } from '../app.ts';
 import {
   AttachmentPathContext,
   getAttachmentFilePath,
@@ -289,7 +289,7 @@ class SettingsManager {
   public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
 
   public constructor(private readonly app: App) {
-    this.renameDeleteHandlersMap = getObsidianDevUtilsState(app, 'renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
+    this.renameDeleteHandlersMap = getObsidianDevUtilsState('renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
   }
 
   public getSettings(): Partial<RenameDeleteHandlerSettings> {
@@ -507,8 +507,8 @@ class RenameHandler {
 
     this.abortSignal.throwIfAborted();
 
-    const renamedFilePaths = getObsidianDevUtilsState(this.app, 'renamedFilePaths', new Set<string>()).value;
-    const renamedLinks = getObsidianDevUtilsState(this.app, 'renamedLinkPaths', new Set<string>()).value;
+    const renamedFilePaths = getObsidianDevUtilsState('renamedFilePaths', new Set<string>()).value;
+    const renamedLinks = getObsidianDevUtilsState('renamedLinkPaths', new Set<string>()).value;
 
     try {
       const renameMap = new RenameMap({
@@ -610,7 +610,6 @@ class RenameHandler {
       const orphanKeys = Array.from(this.handledRenames.keys());
       addToQueue({
         abortSignal: this.abortSignal,
-        app: this.app,
         operationFn: () => {
           for (const orphanKey of orphanKeys) {
             this.handledRenames.delete(orphanKey.oldPath, orphanKey.newPath);
@@ -957,7 +956,6 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
       return;
     }
     addToQueue({
-      app: this.app,
       operationFn: (abortSignal) => new DeleteHandler(this.app, file, abortSignal, this.settingsManager, this.deletedMetadataCacheMap).handle(),
       operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleDelete, { filePath: file.path })
     });
@@ -1006,7 +1004,6 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     const oldPathBacklinksMap = getBacklinksForFileOrPath(this.app, oldPath).data;
     addToQueue({
       abortSignal: this.abortSignalComponent.abortSignal,
-      app: this.app,
       operationFn: (abortSignal) =>
         new RenameHandler({
           abortSignal,

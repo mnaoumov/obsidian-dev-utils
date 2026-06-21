@@ -1,6 +1,3 @@
-import type { App as AppOriginal } from 'obsidian';
-
-import { App } from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -20,12 +17,6 @@ import {
   addToQueueAndWait,
   flushQueue
 } from './queue.ts';
-
-let app: AppOriginal;
-
-beforeEach(() => {
-  app = App.createConfigured__().asOriginalType__();
-});
 
 const mocks = vi.hoisted(() => ({
   addErrorHandler: vi.fn(async (fn: () => Promise<void>) => {
@@ -69,7 +60,7 @@ const functionMocks = vi.hoisted(() => {
 
 vi.mock('../function.ts', () => functionMocks);
 
-vi.mock('../obsidian/app.ts', () => ({
+vi.mock('../obsidian-dev-utils-state.ts', () => ({
   getObsidianDevUtilsState: mocks.getObsidianDevUtilsState
 }));
 
@@ -111,7 +102,7 @@ describe('addToQueue', () => {
 
   it('should add an item to the queue via invokeAsyncSafely', () => {
     const operationFn = vi.fn();
-    addToQueue({ app, operationFn, operationName: 'test-op' });
+    addToQueue({ operationFn, operationName: 'test-op' });
     expect(mocks.invokeAsyncSafely).toHaveBeenCalledWith(expect.any(Function), 'mock-stack-trace');
   });
 });
@@ -127,7 +118,7 @@ describe('addToQueueAndWait', () => {
 
   it('should add an item to the queue and process it', async () => {
     const operationFn = vi.fn();
-    await addToQueueAndWait({ app, operationFn, operationName: 'test-op' });
+    await addToQueueAndWait({ operationFn, operationName: 'test-op' });
     expect(queue.items.length).toBe(0);
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalled();
   });
@@ -141,8 +132,8 @@ describe('addToQueueAndWait', () => {
       order.push(2);
     });
 
-    await addToQueueAndWait({ app, operationFn: op1, operationName: 'op1' });
-    await addToQueueAndWait({ app, operationFn: op2, operationName: 'op2' });
+    await addToQueueAndWait({ operationFn: op1, operationName: 'op1' });
+    await addToQueueAndWait({ operationFn: op2, operationName: 'op2' });
     expect(order).toEqual([1, 2]);
   });
 
@@ -151,13 +142,12 @@ describe('addToQueueAndWait', () => {
     controller.abort();
     await expect(addToQueueAndWait({
       abortSignal: controller.signal,
-      app,
       operationFn: vi.fn()
     })).rejects.toThrow();
   });
 
   it('should use default timeout when not specified', async () => {
-    await addToQueueAndWait({ app, operationFn: vi.fn() });
+    await addToQueueAndWait({ operationFn: vi.fn() });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         timeoutInMilliseconds: 60000
@@ -166,7 +156,7 @@ describe('addToQueueAndWait', () => {
   });
 
   it('should use custom timeout when specified', async () => {
-    await addToQueueAndWait({ app, operationFn: vi.fn(), timeoutInMilliseconds: 5000 });
+    await addToQueueAndWait({ operationFn: vi.fn(), timeoutInMilliseconds: 5000 });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         timeoutInMilliseconds: 5000
@@ -175,7 +165,7 @@ describe('addToQueueAndWait', () => {
   });
 
   it('should use custom stack trace when provided', async () => {
-    await addToQueueAndWait({ app, operationFn: vi.fn(), stackTrace: 'custom-stack' });
+    await addToQueueAndWait({ operationFn: vi.fn(), stackTrace: 'custom-stack' });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         stackTrace: 'custom-stack'
@@ -186,7 +176,7 @@ describe('addToQueueAndWait', () => {
   it('should handle empty queue gracefully', async () => {
     // Queue with no items should just resolve
     queue.items = [];
-    await addToQueueAndWait({ app, operationFn: noop });
+    await addToQueueAndWait({ operationFn: noop });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalled();
   });
 });
@@ -201,7 +191,7 @@ describe('flushQueue', () => {
   });
 
   it('should add a noop operation to the queue', async () => {
-    await flushQueue(app);
+    await flushQueue();
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         operationName: 'mock-translation'

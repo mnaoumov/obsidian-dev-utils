@@ -34,6 +34,7 @@ import type { ProcessOptions } from './vault.ts';
 
 import { abortSignalNever } from '../abort-controller.ts';
 import { normalizeOptionalProperties } from '../object-utils.ts';
+import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import {
   basename,
   dirname,
@@ -52,7 +53,6 @@ import {
   ensureNonNullable
 } from '../type-guards.ts';
 import { isUrl } from '../url.ts';
-import { getObsidianDevUtilsState } from './app.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -915,7 +915,7 @@ export function generateMarkdownLink(params: GenerateMarkdownLinkParams): string
     isEmptyEmbedAliasAllowed: true
   };
 
-  const customDefaultParams = getGenerateMarkdownLinkDefaultParamsFns(app).map((defaultParamsFn) => defaultParamsFn());
+  const customDefaultParams = getGenerateMarkdownLinkDefaultParamsFns().map((defaultParamsFn) => defaultParamsFn());
   params = Object.assign({}, DEFAULT_PARAMS, ...customDefaultParams, params);
   const targetFile = getFile(app, params.targetPathOrFile, params.isNonExistingFileAllowed);
 
@@ -956,11 +956,10 @@ export function generateRawMarkdownLink(params: GenerateRawMarkdownLinkParams): 
  * registrations take precedence over the built-in defaults, but never over explicitly passed params). Register entries
  * by adding a `GenerateMarkdownLinkDefaultParamsComponent` to a component tree rather than mutating this list directly.
  *
- * @param app - The Obsidian app instance whose shared state holds the list.
  * @returns The mutable list of default-params functions.
  */
-export function getGenerateMarkdownLinkDefaultParamsFns(app: App): (() => Partial<GenerateMarkdownLinkParams>)[] {
-  return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkParams>)[]>(app, 'generateMarkdownLinkDefaultParamsFns', []).value;
+export function getGenerateMarkdownLinkDefaultParamsFns(): (() => Partial<GenerateMarkdownLinkParams>)[] {
+  return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkParams>)[]>('generateMarkdownLinkDefaultParamsFns', []).value;
 }
 
 /**

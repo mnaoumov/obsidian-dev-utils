@@ -6,16 +6,8 @@
 
 import type { App } from 'obsidian';
 
-import type { GenericObject } from '../type-guards.ts';
-
-import { ValueWrapper } from '../value-wrapper.ts';
-
 interface AppWrapper {
   app: App;
-}
-
-interface ObsidianDevUtilsStateWrapper {
-  obsidianDevUtilsState: GenericObject;
 }
 
 /**
@@ -40,31 +32,5 @@ export function getApp(): App {
     return globalThis.require('obsidian/app') as App;
   } catch {
     throw new Error('Obsidian App global instance not found');
-  }
-}
-
-/**
- * Retrieves or creates a shared state wrapper object for a given key in the Obsidian app.
- *
- * @typeParam T - The type of the shared state value.
- * @param app - The Obsidian app instance.
- * @param key - The key to store or retrieve the shared state.
- * @param defaultValue - The default value to use if the shared state does not exist.
- * @returns The ValueWrapper object that stores the shared state.
- */
-export function getObsidianDevUtilsState<T>(app: App | null, key: string, defaultValue: T): ValueWrapper<T> {
-  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-  const holder = app ?? getAppOrNull() ?? globalThis;
-  const sharedStateWrapper = holder as Partial<ObsidianDevUtilsStateWrapper>;
-  sharedStateWrapper.obsidianDevUtilsState ??= {};
-  return (sharedStateWrapper.obsidianDevUtilsState[key] ??= ValueWrapper.of(defaultValue)) as ValueWrapper<T>;
-}
-
-function getAppOrNull(): App | null {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-deprecated -- We need to use the deprecated function to get the app instance.
-    return getApp();
-  } catch {
-    return null;
   }
 }

@@ -92,7 +92,6 @@ export function renderCallout(params: RenderCalloutParams): void {
         observer.unobserve(entry.target);
         addToQueue(normalizeOptionalProperties<AddToQueueParams>({
           abortSignal: params.abortSignal,
-          app: dv.app,
           operationFn: loadContent,
           operationName: t(($) => $.obsidianDevUtils.callout.loadContent)
         }));

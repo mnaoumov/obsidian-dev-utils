@@ -6,7 +6,7 @@
 
 import { Notice } from 'obsidian';
 
-import { getObsidianDevUtilsState } from '../app.ts';
+import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
 import { ComponentEx } from './component-ex.ts';
 
 const PERMANENT_NOTICES_STATE_KEY = 'plugin-notice-component:permanent-notices';
@@ -87,7 +87,7 @@ export class PluginNoticeComponent extends ComponentEx {
   }
 
   private getPermanentNotices(): Map<string, Notice> {
-    return getObsidianDevUtilsState<Map<string, Notice>>(null, PERMANENT_NOTICES_STATE_KEY, new Map<string, Notice>()).value;
+    return getObsidianDevUtilsState<Map<string, Notice>>(PERMANENT_NOTICES_STATE_KEY, new Map<string, Notice>()).value;
   }
 
   private setPermanentNotice(notice: Notice | null): void {

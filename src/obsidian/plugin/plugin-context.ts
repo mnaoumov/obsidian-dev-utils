@@ -4,10 +4,7 @@
  * Initializes the plugin context and sets up the plugin ID.
  */
 
-import type {
-  App,
-  Component
-} from 'obsidian';
+import type { Component } from 'obsidian';
 
 import { compareVersions } from 'compare-versions';
 
@@ -23,7 +20,7 @@ import {
   LIBRARY_STYLES,
   LIBRARY_VERSION
 } from '../../library.ts';
-import { getObsidianDevUtilsState } from '../app.ts';
+import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
 import {
   getPluginId,
   setPluginId
@@ -73,14 +70,13 @@ export function initDebugController(win: Window, component: Component): void {
 /**
  * Initializes the plugin context.
  *
- * @param app - The Obsidian app instance.
  * @param pluginId - The plugin ID.
  */
-export function initPluginContext(app: App, pluginId: string): void {
+export function initPluginContext(pluginId: string): void {
   setPluginId(pluginId);
   showInitialDebugMessage(pluginId);
 
-  const lastLibraryVersionWrapper = getObsidianDevUtilsState(app, 'lastLibraryVersion', '0.0.0');
+  const lastLibraryVersionWrapper = getObsidianDevUtilsState('lastLibraryVersion', '0.0.0');
   if (compareVersions(LIBRARY_VERSION, lastLibraryVersionWrapper.value) <= 0) {
     return;
   }

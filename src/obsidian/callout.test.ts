@@ -271,7 +271,6 @@ describe('renderCallout', () => {
     expect(mocks.addToQueue).toHaveBeenCalledTimes(1);
     expect(mocks.addToQueue).toHaveBeenCalledWith(
       expect.objectContaining({
-        app: dv.app,
         operationFn: expect.any(Function) as unknown,
         operationName: 'mock-translation'
       })

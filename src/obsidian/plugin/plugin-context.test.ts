@@ -1,9 +1,5 @@
-import type {
-  App as AppOriginal,
-  Component
-} from 'obsidian';
+import type { Component } from 'obsidian';
 
-import { App } from 'obsidian-test-mocks/obsidian';
 import {
   afterEach,
   beforeEach,
@@ -21,12 +17,6 @@ import {
   initDebugController,
   initPluginContext
 } from './plugin-context.ts';
-
-let app: AppOriginal;
-
-beforeEach(() => {
-  app = App.createConfigured__().asOriginalType__();
-});
 
 const mocks = vi.hoisted(() => ({
   compareVersions: vi.fn((_a: string, _b: string) => 1),
@@ -58,7 +48,7 @@ vi.mock('../../library.ts', () => ({
   LIBRARY_VERSION: '1.0.0'
 }));
 
-vi.mock('../../obsidian/app.ts', () => ({
+vi.mock('../../obsidian-dev-utils-state.ts', () => ({
   getObsidianDevUtilsState: mocks.getObsidianDevUtilsState
 }));
 
@@ -165,14 +155,14 @@ describe('initPluginContext', () => {
     vi.spyOn(document.head, 'querySelector').mockReturnValue(null);
     // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
-    initPluginContext(app, 'my-plugin');
+    initPluginContext('my-plugin');
     expect(mocks.setPluginId).toHaveBeenCalledWith('my-plugin');
     expect(mocks.showInitialDebugMessage).toHaveBeenCalledWith('my-plugin');
   });
 
   it('should skip style injection when version is not newer', () => {
     mocks.compareVersions.mockReturnValue(0);
-    initPluginContext(app, 'my-plugin');
+    initPluginContext('my-plugin');
     expect(mocks.setPluginId).toHaveBeenCalledWith('my-plugin');
   });
 
@@ -183,7 +173,7 @@ describe('initPluginContext', () => {
     vi.spyOn(document.head, 'querySelector').mockReturnValue(oldStyleEl);
     // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     const createElSpy = vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
-    initPluginContext(app, 'my-plugin');
+    initPluginContext('my-plugin');
     expect(oldStyleEl.remove).toHaveBeenCalled();
     expect(createElSpy).toHaveBeenCalledWith('style', {
       attr: { id: 'obsidian-dev-utils-styles' },
@@ -199,7 +189,7 @@ describe('initPluginContext', () => {
     vi.spyOn(document.head, 'querySelector').mockReturnValue(null);
     // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
-    initPluginContext(app, 'my-plugin');
+    initPluginContext('my-plugin');
     expect(wrapper.value).toBe('1.0.0');
   });
 });

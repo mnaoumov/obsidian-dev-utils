@@ -1,5 +1,3 @@
-import type { App as AppOriginal } from 'obsidian';
-
 import {
   describe,
   expect,
@@ -9,7 +7,6 @@ import {
 
 import type { GenerateMarkdownLinkParams } from '../link.ts';
 
-import { strictProxy } from '../../strict-proxy.ts';
 import { getGenerateMarkdownLinkDefaultParamsFns } from '../link.ts';
 import { GenerateMarkdownLinkDefaultParamsComponent } from './generate-markdown-link-default-params-component.ts';
 
@@ -24,13 +21,10 @@ describe('GenerateMarkdownLinkDefaultParamsComponent', () => {
     const fns: DefaultParamsFn[] = [];
     vi.mocked(getGenerateMarkdownLinkDefaultParamsFns).mockReturnValue(fns);
 
-    const app = strictProxy<AppOriginal>({});
-
-    const component = new GenerateMarkdownLinkDefaultParamsComponent({ app, getDefaultParams });
+    const component = new GenerateMarkdownLinkDefaultParamsComponent({ getDefaultParams });
 
     component.load();
     expect(getGenerateMarkdownLinkDefaultParamsFns).toHaveBeenCalledOnce();
-    expect(vi.mocked(getGenerateMarkdownLinkDefaultParamsFns).mock.lastCall?.[0]).toBe(app);
     expect(fns).toStrictEqual([getDefaultParams]);
 
     component.unload();

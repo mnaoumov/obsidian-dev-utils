@@ -1628,8 +1628,6 @@ describe('app-dependent functions', () => {
       })
     ).asOriginalType__();
 
-    castTo<Record<string, unknown>>(app)['obsidianDevUtilsState'] = {};
-
     app.vault.getConfig = vi.fn((key: string) => {
       if (key === 'useMarkdownLinks') {
         return false;
@@ -2757,7 +2755,6 @@ describe('app-dependent functions', () => {
   describe('GenerateMarkdownLinkDefaultParamsComponent', () => {
     it('should apply registered default params while loaded and stop applying them after unload', () => {
       const component = new GenerateMarkdownLinkDefaultParamsComponent({
-        app,
         getDefaultParams(): Partial<GenerateMarkdownLinkParams> {
           return {
             shouldUseLeadingSlashForAbsolutePaths: true

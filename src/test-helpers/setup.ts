@@ -2,23 +2,14 @@
  * @file
  *
  * Vitest setup file for obsidian-dev-utils tests.
- * Initializes `obsidianDevUtilsState` on the global app so that
- * `getObsidianDevUtilsState()` can access it through the strict proxy.
+ * Resets the shared-state bag on `globalThis.__obsidianDevUtils` so each test file starts clean.
  */
 
 import { castTo } from '../object-utils.ts';
 
 function setup(): void {
-  setupObsidianDevUtilsState();
-}
-
-function setupObsidianDevUtilsState(): void {
-  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-  const record = castTo<Record<string, unknown>>(globalThis);
-  const app = castTo<Record<string, unknown> | undefined>(record['app']);
-  if (app && !('obsidianDevUtilsState' in app)) {
-    app['obsidianDevUtilsState'] = {};
-  }
+  // eslint-disable-next-line obsidianmd/no-global-this -- The shared state intentionally lives on the realm global.
+  castTo<Record<string, unknown>>(globalThis)['__obsidianDevUtils'] = {};
 }
 
 setup();
