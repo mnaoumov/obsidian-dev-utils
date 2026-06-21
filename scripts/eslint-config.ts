@@ -56,6 +56,13 @@ function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
           }
         ],
         'jsdoc/check-template-names': 'error',
+        /*
+         * Empty JSDoc blocks are never a valid substitute for real documentation, regardless of how they appear
+         * (hand-written or inserted by `jsdoc/require-jsdoc`'s autofix as a placeholder). `enableFixer: false` keeps
+         * the empty block in place and reports it, forcing a real description to be written instead of silently
+         * deleting the placeholder and re-triggering `require-jsdoc`.
+         */
+        'jsdoc/no-blank-blocks': ['error', { enableFixer: false }],
         'jsdoc/require-description': 'error',
         'jsdoc/require-file-overview': [
           'error',
