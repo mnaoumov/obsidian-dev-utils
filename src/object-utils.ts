@@ -19,6 +19,7 @@ import type {
 
 import { errorToString } from './error.ts';
 import { getFunctionExpressionString } from './function.ts';
+import { escapeRegExp } from './reg-exp.ts';
 import { replaceAll } from './string.ts';
 import {
   assertNever,
@@ -141,6 +142,7 @@ interface TokenSubstitutions {
 }
 
 const KEY_SEPARATOR = '.';
+const PLACEHOLDER_KEY_PREFIX = 'toJson:';
 const equalityComparerEntries = createEqualityComparerEntries(
   [
     { constructor: ArrayBuffer, equalityComparer: deepEqualArrayBuffer },
@@ -565,7 +567,8 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
   const plainObject = toPlainObject(value, '', 0, true, fullOptions, functionTexts, usedObjects);
   let json = ensureNonNullable(JSON.stringify(plainObject, null, fullOptions.space));
-  json = replaceAll(json, /"\[\[(?<Key>[A-Za-z]+)(?<Index>\d*)\]\]"/g, ({ capturedGroupArgs: [key = '', indexStr = ''] }) =>
+  const placeholderRegExp = new RegExp(`"\\[\\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\\d*)\\]\\]"`, 'g');
+  json = replaceAll(json, placeholderRegExp, ({ capturedGroupArgs: [key = '', indexStr = ''] }) =>
     applySubstitutions({
       functionTexts,
       index: indexStr ? parseInt(indexStr, 10) : 0,
@@ -807,7 +810,7 @@ function makeObjectTokenSubstitution(key: TokenSubstitutionKey): string {
 }
 
 function makePlaceholder(key: TokenSubstitutionKey, index?: number): string {
-  return `[[${key}${index ? String(index) : ''}]]`;
+  return `[[${PLACEHOLDER_KEY_PREFIX}${key}${index ? String(index) : ''}]]`;
 }
 
 function toPlainObject(

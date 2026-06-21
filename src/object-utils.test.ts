@@ -625,6 +625,30 @@ describe('ObjectUtils', () => {
       obj['self'] = obj;
       expect(() => toJson(obj)).toThrow('starting at object with constructor \'Object\'');
     });
+
+    it('should preserve user strings that look like wikilink placeholders', () => {
+      const obj = { link: '[[OldTitle]]' };
+      const json = toJson(obj);
+      expect(JSON.parse(json)).toEqual(obj);
+    });
+
+    it('should preserve wikilink-like strings that collide with substitution token keys', () => {
+      const obj = {
+        circular: '[[CircularReference]]',
+        functionLink: '[[Function]]',
+        indexedFunctionLink: '[[Function1]]',
+        plain: '[[Note]]',
+        undefinedLink: '[[Undefined]]'
+      };
+      const json = toJson(obj);
+      expect(JSON.parse(json)).toEqual(obj);
+    });
+
+    it('should preserve wikilink-like strings inside arrays', () => {
+      const arr = ['[[OldTitle]]', '[[Note2]]'];
+      const json = toJson(arr);
+      expect(JSON.parse(json)).toEqual(arr);
+    });
   });
 
   describe('getAllKeys advanced', () => {
