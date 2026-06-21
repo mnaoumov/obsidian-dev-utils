@@ -119,6 +119,7 @@ export function myFunction(param: Type): ReturnType {
 ### Code Quality
 
 - Use `assertNonNullable()` from `src/type-guards.ts` in tests instead of `!`
+- Custom ESLint rule `obsidian-dev-utils/no-unused-params-members` flags `*Params`/`*Options` interface members never read by the receiving function; spreading, rest-destructuring, forwarding, returning, or storing the whole object counts as using all members.
 
 ## Rules
 
