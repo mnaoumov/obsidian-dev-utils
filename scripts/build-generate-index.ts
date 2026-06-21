@@ -58,6 +58,10 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
     return;
   }
 
+  if (dirent.isFile() && dirent.name.endsWith('-setup.ts')) {
+    return;
+  }
+
   let sourceFile: string;
   let name: string;
   if (dirent.isDirectory()) {
