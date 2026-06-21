@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 75.0.0
+
+- refactor!: rename test-setup endpoints to mirror obsidian-test-mocks
+- refactor!: store shared state on globalThis, drop app from the API
+- fix(object-utils): scope toJson placeholder regex to a "toJson:"
+
 ## 74.2.0
 
 - chore: spellcheck
