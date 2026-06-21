@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 74.2.0
+
+- chore: spellcheck
+- test: adopt async-operation tracking in the library's own unit tests
+- docs: document async-operation-tracking test-setup endpoints
+- feat: add async-operation-tracking test-setup endpoints
+- chore: unify tsconfig
+- feat: throw from waitForAllAsyncOperations when tracking is disabled
+- feat: add opt-in async-operation tracking for tests
+- feat: add no-unused-params-members ESLint rule
+- feat: distinguish methods / functions
+- feat: registerFunctionPatch to cover debouncers
+- chore: ban empty jsdocs
+- feat: ban more of anonymous types
+
 ## 74.1.0
 
 - fix: restore v8 ignore coverage on runtime-coupled exports
