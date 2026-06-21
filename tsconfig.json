@@ -11,15 +11,15 @@
     "lib": [
       "DOM",
       "DOM.Iterable",
-      "ES2022",
-      "ESNext.Disposable"
+      "es2022",
+      "es2022.Disposable"
     ],
     "libReplacement": true,
     "module": "node16",
     "moduleResolution": "node16",
     "noEmit": true,
     "skipLibCheck": true,
-    "target": "ES2022",
+    "target": "es2022",
     "types": [
       "@obsidian-typings/obsidian-public-latest",
       "@total-typescript/ts-reset",

@@ -354,11 +354,16 @@ export async function promiseAllSequentially<T>(promises: Promisable<T>[]): Prom
 /**
  * Waits for all fire-and-forget operations tracked since {@link enableAsyncOperationTracking} was called to settle.
  *
- * Operations scheduled while awaiting are also awaited, so cascading fire-and-forget chains are fully drained. Resolves immediately when tracking is disabled or no operations are pending.
+ * Operations scheduled while awaiting are also awaited, so cascading fire-and-forget chains are fully drained.
  *
  * @returns A {@link Promise} that resolves once no tracked operations remain pending.
+ * @throws If tracking is not enabled. Otherwise this would silently resolve as if all operations were finished, masking a missing {@link enableAsyncOperationTracking} call.
  */
 export async function waitForAllAsyncOperations(): Promise<void> {
+  if (!isAsyncOperationTrackingEnabled) {
+    throw new Error('Async operation tracking is not enabled. Call enableAsyncOperationTracking() before waitForAllAsyncOperations().');
+  }
+
   while (pendingAsyncOperations.size > 0) {
     await Promise.allSettled([...pendingAsyncOperations]);
   }

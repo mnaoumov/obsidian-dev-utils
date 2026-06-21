@@ -1224,25 +1224,9 @@ describe('Async', () => {
       expect(completedCount).toBe(EXPECTED_COMPLETED_COUNT);
     });
 
-    it('should forget pending operations when tracking is disabled', async () => {
-      enableAsyncOperationTracking();
-      let didComplete = false;
-      let releaseOperation: () => void = noop;
-      const gate = new Promise<void>((resolve) => {
-        releaseOperation = resolve;
-      });
-      invokeAsyncSafely(async () => {
-        await gate;
-        didComplete = true;
-      });
-
+    it('should throw when tracking is disabled instead of silently resolving', async () => {
       disableAsyncOperationTracking();
-      await waitForAllAsyncOperations();
-
-      expect(didComplete).toBe(false);
-
-      releaseOperation();
-      await gate;
+      await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
     });
   });
 
