@@ -151,9 +151,11 @@ const equalityComparerEntries = createEqualityComparerEntries(
   ] as const
 );
 
-type KeysWithUndefined<T> = {
+type KeysWithUndefined<T> = KeysWithUndefinedMap<T>[keyof T];
+
+type KeysWithUndefinedMap<T> = {
   [K in keyof T]-?: undefined extends T[K] ? K : never;
-}[keyof T];
+};
 
 type MandatoryKeysWithUndefined<T extends object> = Extract<RequiredKeysOf<T> & StringKeys<T>, KeysWithUndefined<T>>;
 

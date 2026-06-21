@@ -22,8 +22,12 @@ import type { GenericFunction } from './function.ts';
  */
 export type StrictProxyPartial<T> = T extends GenericFunction ? T
   : T extends readonly unknown[] ? T
-  : T extends object ? { [K in keyof T]?: StrictProxyPartial<T[K]> | T[K] }
+  : T extends object ? StrictProxyPartialObject<T>
   : T;
+
+type StrictProxyPartialObject<T> = {
+  [K in keyof T]?: StrictProxyPartial<T[K]> | T[K];
+};
 
 const STRICT_PROXY_TARGET_SYMBOL = Symbol.for('strictProxyTarget');
 

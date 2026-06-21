@@ -98,75 +98,79 @@ describe('noRestrictedSyntaxRuleEntries', () => {
     });
   });
 
-  describe(':function > Identifier TSTypeLiteral', () => {
-    const MESSAGE = 'Do not use anonymous inline object types in function parameters. Define a named interface instead.';
+  describe('TSTypeLiteral:not(TSTypeAliasDeclaration > TSTypeLiteral)', () => {
+    const MESSAGE = 'Do not use anonymous inline object types. Define a named interface or `type` alias instead.';
 
     it('flags inline object type on a function parameter', () => {
       expectFires('function f(p: { x: number }) {}', MESSAGE);
     });
 
-    it('allows named type on a function parameter', () => {
-      expectDoesNotFire('interface P { x: number; } function f(p: P) {}', MESSAGE);
-    });
-  });
-
-  describe(':function > TSTypeAnnotation TSTypeLiteral', () => {
-    const MESSAGE = 'Do not use anonymous inline object types in function return types. Define a named interface instead.';
-
     it('flags inline object type as a function return', () => {
       expectFires('function f(): { x: number } { return { x: 1 }; }', MESSAGE);
     });
-
-    it('allows named return type', () => {
-      expectDoesNotFire('interface R { x: number; } function f(): R { return { x: 1 }; }', MESSAGE);
-    });
-  });
-
-  describe('TSMethodSignature TSTypeLiteral', () => {
-    const MESSAGE = 'Do not use anonymous inline object types in interface/method signatures. Define a named interface instead.';
 
     it('flags inline object in an interface method signature', () => {
       expectFires('interface I { m(p: { x: number }): void; }', MESSAGE);
     });
 
-    it('allows named param type in an interface method signature', () => {
-      expectDoesNotFire('interface P { x: number; } interface I { m(p: P): void; }', MESSAGE);
-    });
-  });
-
-  describe('TSTypeParameterInstantiation TSTypeLiteral', () => {
-    const MESSAGE = 'Do not use anonymous inline object types as type arguments. Define a named interface instead.';
-
     it('flags inline object as a generic type argument', () => {
       expectFires('const xs: Array<{ a: number }> = [];', MESSAGE);
     });
-
-    it('allows named type as a generic type argument', () => {
-      expectDoesNotFire('interface A { a: number; } const xs: Array<A> = [];', MESSAGE);
-    });
-  });
-
-  describe('TSTypeAnnotation TSTypeLiteral', () => {
-    const MESSAGE = 'Do not use anonymous inline object types in type annotations. Define a named interface instead.';
 
     it('flags inline object type on a variable annotation', () => {
       expectFires('const x: { a: number } = { a: 1 };', MESSAGE);
     });
 
-    it('allows named type on a variable annotation', () => {
-      expectDoesNotFire('interface A { a: number; } const x: A = { a: 1 };', MESSAGE);
-    });
-  });
-
-  describe('TSAsExpression TSTypeLiteral', () => {
-    const MESSAGE = 'Do not use anonymous inline object types in type assertions. Define a named interface instead.';
-
     it('flags inline object type in an `as` cast', () => {
       expectFires('const x = ({} as { a: number });', MESSAGE);
     });
 
-    it('allows named type in an `as` cast', () => {
-      expectDoesNotFire('interface A { a: number; } const x = ({} as A);', MESSAGE);
+    it('flags inline object type as a union member of a type alias', () => {
+      expectFires('type T = { a: number } | { b: number };', MESSAGE);
+    });
+
+    it('flags inline object type nested inside a generic in a type alias', () => {
+      expectFires('type T = Partial<{ a: number }>;', MESSAGE);
+    });
+
+    it('flags inline object type as a generic constraint', () => {
+      expectFires('function f<T extends { a: number }>(p: T) { return p; }', MESSAGE);
+    });
+
+    it('allows an anonymous object type as the sole body of a type alias', () => {
+      expectDoesNotFire('type T = { a: number };', MESSAGE);
+    });
+
+    it('allows an exported anonymous object type as the sole body of a type alias', () => {
+      expectDoesNotFire('export type T = { a: number };', MESSAGE);
+    });
+
+    it('allows a named interface', () => {
+      expectDoesNotFire('interface I { a: number; }', MESSAGE);
+    });
+
+    it('allows named types in non-alias positions', () => {
+      expectDoesNotFire('interface A { a: number; } const x: A = { a: 1 };', MESSAGE);
+    });
+  });
+
+  describe('TSMappedType:not(TSTypeAliasDeclaration > TSMappedType)', () => {
+    const MESSAGE = 'Do not use anonymous inline mapped types. Define a named `type` alias instead.';
+
+    it('flags an anonymous mapped type nested inside a generic in a type alias', () => {
+      expectFires('type T<O> = Partial<{ [K in keyof O]: O[K] }>;', MESSAGE);
+    });
+
+    it('flags an anonymous mapped type on a variable annotation', () => {
+      expectFires('declare const x: { [K in "a" | "b"]: number };', MESSAGE);
+    });
+
+    it('allows a mapped type as the sole body of a type alias', () => {
+      expectDoesNotFire('type T<O> = { [K in keyof O]: O[K] };', MESSAGE);
+    });
+
+    it('allows an index signature object type as the sole body of a type alias', () => {
+      expectDoesNotFire('type T = { [key: string]: number };', MESSAGE);
     });
   });
 

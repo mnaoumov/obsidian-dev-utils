@@ -23,7 +23,21 @@ import { assertNonNullable } from '../type-guards.ts';
  *
  * `directory` is used instead of `folder` to preserve compatibility with `node:fs` module.
  */
-export type BufferResultOptions = 'buffer' | {
+export type BufferResultOptions = 'buffer' | BufferResultObjectOptions;
+
+/**
+ * Options for controlling the format of the result when returning Dirent objects.
+ */
+export type DirentResultOptions = DirentResultBaseOptions & ObjectEncodingOptions;
+
+/**
+ * Options for controlling the format of the result when returning strings.
+ */
+export type StringResultOptions =
+  | ObjectEncodingOptions & StringResultBaseOptions
+  | undefined;
+
+interface BufferResultObjectOptions {
   /**
    * Should be set to "buffer" to return buffers.
    */
@@ -38,39 +52,7 @@ export type BufferResultOptions = 'buffer' | {
    * Should be set to `false` to return buffers.
    */
   readonly withFileTypes?: false;
-};
-
-/**
- * Options for controlling the format of the result when returning Dirent objects.
- */
-export type DirentResultOptions = {
-  /**
-   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
-   */
-  readonly recursive?: boolean;
-
-  /**
-   * Should be set to `true` to return Dirent objects.
-   */
-  readonly withFileTypes: true;
-} & ObjectEncodingOptions;
-
-/**
- * Options for controlling the format of the result when returning strings.
- */
-export type StringResultOptions =
-  | {
-    /**
-     * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
-     */
-    readonly recursive?: boolean;
-
-    /**
-     * Should be set to `false` to return strings.
-     */
-    readonly withFileTypes?: false;
-  } & ObjectEncodingOptions
-  | undefined;
+}
 
 /**
  * Common options for controlling the format of the result.
@@ -85,6 +67,30 @@ interface CommonOptions {
    * Set `true` to return Dirent objects or `false` to return strings or buffers.
    */
   readonly withFileTypes?: boolean;
+}
+
+interface DirentResultBaseOptions {
+  /**
+   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+   */
+  readonly recursive?: boolean;
+
+  /**
+   * Should be set to `true` to return Dirent objects.
+   */
+  readonly withFileTypes: true;
+}
+
+interface StringResultBaseOptions {
+  /**
+   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+   */
+  readonly recursive?: boolean;
+
+  /**
+   * Should be set to `false` to return strings.
+   */
+  readonly withFileTypes?: false;
 }
 
 /**

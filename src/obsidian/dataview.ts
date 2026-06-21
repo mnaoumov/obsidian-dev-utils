@@ -94,7 +94,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
 /**
  * DomElementInfo with an optional container.
  */
-export type DomElementInfoWithContainer = { container?: HTMLElement } & DomElementInfo;
+export type DomElementInfoWithContainer = ContainerInfo & DomElementInfo;
 
 /**
  * A combined file type, which includes the front matter and the SMarkdownFile.
@@ -105,6 +105,10 @@ export type PageFile = SMarkdownPage['file'];
  * List of page files.
  */
 export type PageFiles = ArrayOrDataArray<PageFile>;
+
+interface ContainerInfo {
+  container?: HTMLElement;
+}
 
 /**
  * Reloads the current file cache using the Dataview API.

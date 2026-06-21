@@ -11,6 +11,10 @@ import { vi } from 'vitest';
 
 import type { GenericFunction } from '../function.ts';
 
+type FunctionPropertyMembers<T> = {
+  [P in keyof T as T[P] extends GenericFunction ? P : never]: T[P];
+};
+
 const savedOriginals = new WeakMap<object, Map<string, unknown>>();
 
 /**
@@ -24,7 +28,7 @@ const savedOriginals = new WeakMap<object, Map<string, unknown>>();
  */
 export function mockImplementation<
   T extends object,
-  K extends keyof { [P in keyof T as T[P] extends GenericFunction ? P : never]: T[P] } & string,
+  K extends keyof FunctionPropertyMembers<T> & string,
   F extends GenericFunction = T[K] extends GenericFunction ? T[K] : GenericFunction
 >(
   obj: T,

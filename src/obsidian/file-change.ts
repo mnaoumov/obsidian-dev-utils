@@ -81,17 +81,21 @@ interface ApplyContentChangesToTextResult {
   readonly frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>;
   readonly newContent: string;
 }
-type CanvasChange = { reference: CanvasReference } & FileChange;
-type CanvasFileNodeChange = { reference: CanvasFileNodeReference } & FileChange;
-type CanvasTextNodeChange = { reference: CanvasTextNodeReference } & FileChange;
-type ContentChange = { reference: ReferenceCache } & FileChange;
-type FrontmatterChange = { reference: FrontmatterLinkCache } & FileChange;
+type CanvasChange = FileChange & WithReference<CanvasReference>;
 
-type FrontmatterChangeWithOffsets = { reference: FrontmatterLinkCacheWithOffsets } & FileChange;
+type CanvasFileNodeChange = FileChange & WithReference<CanvasFileNodeReference>;
+type CanvasTextNodeChange = FileChange & WithReference<CanvasTextNodeReference>;
+type ContentChange = FileChange & WithReference<ReferenceCache>;
+type FrontmatterChange = FileChange & WithReference<FrontmatterLinkCache>;
+type FrontmatterChangeWithOffsets = FileChange & WithReference<FrontmatterLinkCacheWithOffsets>;
 
 interface ParseFrontmatterSafelyResult {
   readonly frontmatter: CombinedFrontmatter<unknown>;
   readonly hasFrontmatterError: boolean;
+}
+
+interface WithReference<R extends Reference> {
+  reference: R;
 }
 
 /**
