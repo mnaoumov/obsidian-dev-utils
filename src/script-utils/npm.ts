@@ -25,6 +25,11 @@ import {
 import { resolvePathFromRoot } from './root.ts';
 
 /**
+ * Options for {@link editNpmShrinkWrapJson}.
+ */
+export type EditNpmShrinkWrapJsonOptions = EditPackageJsonOptions;
+
+/**
  * Options for {@link editPackageJson}.
  */
 export interface EditPackageJsonOptions {
@@ -38,6 +43,21 @@ export interface EditPackageJsonOptions {
    */
   readonly shouldSkipIfMissing?: boolean;
 }
+
+/**
+ * Options for {@link editPackageJsonSync}.
+ */
+export type EditPackageJsonSyncOptions = EditPackageJsonOptions;
+
+/**
+ * Options for {@link editPackageLockJson}.
+ */
+export type EditPackageLockJsonOptions = EditPackageJsonOptions;
+
+/**
+ * Options for {@link editPackageLockJsonSync}.
+ */
+export type EditPackageLockJsonSyncOptions = EditPackageJsonOptions;
 
 /**
  * A type of the `package.json` file.
@@ -63,7 +83,7 @@ export interface PackageLockJson extends Partial<PackageJson> {
  */
 export async function editNpmShrinkWrapJson(
   editFn: (packageLockJson: PackageLockJson) => Promisable<void>,
-  options: EditPackageJsonOptions = {}
+  options: EditNpmShrinkWrapJsonOptions = {}
 ): Promise<void> {
   const {
     cwd,
@@ -98,7 +118,7 @@ export async function editPackageJson(
  */
 export function editPackageJsonSync(
   editFn: (packageJson: PackageJson) => void,
-  options: EditPackageJsonOptions = {}
+  options: EditPackageJsonSyncOptions = {}
 ): void {
   const {
     cwd,
@@ -116,7 +136,7 @@ export function editPackageJsonSync(
  */
 export async function editPackageLockJson(
   editFn: (packageLockJson: PackageLockJson) => Promisable<void>,
-  options: EditPackageJsonOptions = {}
+  options: EditPackageLockJsonOptions = {}
 ): Promise<void> {
   const {
     cwd,
@@ -133,7 +153,7 @@ export async function editPackageLockJson(
  */
 export function editPackageLockJsonSync(
   editFn: (packageLockJson: PackageLockJson) => void,
-  options: EditPackageJsonOptions = {}
+  options: EditPackageLockJsonSyncOptions = {}
 ): void {
   const {
     cwd,

@@ -10,7 +10,7 @@ import { execFromRoot } from '../root.ts';
 /**
  * Parameters for the {@link spellcheck} function.
  */
-export interface SpellcheckParams {
+export interface SpellcheckOptions {
   /**
    * Optional file paths to check. If omitted, checks the entire project.
    */
@@ -26,11 +26,11 @@ export interface SpellcheckParams {
  * Uses `--no-must-find-files` so that cspell does not fail when all provided paths
  * are excluded by built-in ignore rules (e.g., `package-lock.json`).
  *
- * @param params - The {@link SpellcheckParams}.
+ * @param options - The {@link SpellcheckOptions}.
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult}, indicating the success or failure of the spellcheck.
  */
-export async function spellcheck(params?: SpellcheckParams): Promise<void> {
-  const { paths } = params ?? {};
+export async function spellcheck(options?: SpellcheckOptions): Promise<void> {
+  const { paths } = options ?? {};
   /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : ['.'];
   /* v8 ignore stop */

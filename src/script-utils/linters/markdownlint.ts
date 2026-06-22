@@ -29,7 +29,7 @@ import {
 /**
  * Parameters for the {@link lint} function.
  */
-export interface LintParams {
+export interface LintOptions {
   /**
    * Optional file paths to lint. If omitted, lints the entire project.
    */
@@ -44,10 +44,10 @@ export interface LintParams {
 /**
  * Lint markdown documentation using `markdownlint-cli2` and `linkinator`.
  *
- * @param params - The {@link LintParams}.
+ * @param options - The {@link LintOptions}.
  */
-export async function lint(params?: LintParams): Promise<void> {
-  const { paths, shouldFix = false } = params ?? {};
+export async function lint(options?: LintOptions): Promise<void> {
+  const { paths, shouldFix = false } = options ?? {};
   const configFiles = [
     ObsidianPluginRepoPaths.MarkdownlintCli2ConfigJsonc,
     ObsidianPluginRepoPaths.MarkdownlintCli2ConfigYaml,

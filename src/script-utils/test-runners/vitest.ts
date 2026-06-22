@@ -9,9 +9,9 @@
 import { execFromRoot } from '../root.ts';
 
 /**
- * Parameters for running tests with coverage.
+ * Options for running tests with coverage.
  */
-export interface TestCoverageParams extends TestParams {
+export interface TestCoverageOptions extends TestOptions {
   /**
    * Minimum coverage percentage required. If the actual coverage falls below
    * this threshold, the process exits with a non-zero code.
@@ -20,9 +20,9 @@ export interface TestCoverageParams extends TestParams {
 }
 
 /**
- * Parameters for running tests.
+ * Options for running tests.
  */
-export interface TestParams {
+export interface TestOptions {
   /**
    * The projects to run.
    */
@@ -30,27 +30,32 @@ export interface TestParams {
 }
 
 /**
+ * Options for running tests in watch mode.
+ */
+export type TestWatchOptions = TestOptions;
+
+/**
  * Runs the test suite.
  *
- * @param params - The parameters for the test.
+ * @param options - The options for the test.
  * @returns A {@link Promise} that resolves when the tests have completed.
  */
-export async function test(params: TestParams = {}): Promise<void> {
-  await execFromRoot(['vitest', 'run', ...buildProjectFlags(params.projects)]);
+export async function test(options: TestOptions = {}): Promise<void> {
+  await execFromRoot(['vitest', 'run', ...buildProjectFlags(options.projects)]);
 }
 
 /**
  * Runs the test suite with coverage.
  *
- * @param params - Optional coverage configuration.
+ * @param options - Optional coverage configuration.
  * @returns A {@link Promise} that resolves when the tests have completed.
  */
-export async function testCoverage(params: TestCoverageParams = {}): Promise<void> {
-  const threshold = String(params.minCoverageInPercents ?? 0);
+export async function testCoverage(options: TestCoverageOptions = {}): Promise<void> {
+  const threshold = String(options.minCoverageInPercents ?? 0);
   await execFromRoot([
     'vitest',
     'run',
-    ...buildProjectFlags(params.projects),
+    ...buildProjectFlags(options.projects),
     '--coverage',
     `--coverage.thresholds.lines=${threshold}`,
     `--coverage.thresholds.functions=${threshold}`,
@@ -62,11 +67,11 @@ export async function testCoverage(params: TestCoverageParams = {}): Promise<voi
 /**
  * Runs the test suite in watch mode.
  *
- * @param params - The parameters for the test.
+ * @param options - The options for the test.
  * @returns A {@link Promise} that resolves when the tests have completed.
  */
-export async function testWatch(params: TestParams = {}): Promise<void> {
-  await execFromRoot(['vitest', ...buildProjectFlags(params.projects)]);
+export async function testWatch(options: TestWatchOptions = {}): Promise<void> {
+  await execFromRoot(['vitest', ...buildProjectFlags(options.projects)]);
 }
 
 /**

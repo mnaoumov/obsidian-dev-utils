@@ -41,7 +41,7 @@ import { obsidianDevUtilsPlugin } from './eslint-rules/obsidian-dev-utils-plugin
 /**
  * The parameters for defining ESLint configurations.
  */
-export interface DefineEslintConfigsParams {
+export interface DefineEslintConfigsOptions {
   /**
    * A function that builds custom ESLint configurations.
    *
@@ -97,10 +97,10 @@ export class EslintConfigContext {
  *
  * This function builds ESLint configurations for TypeScript projects, integrating multiple ESLint plugins
  *
- * @param params - The parameters for defining ESLint configurations.
+ * @param options - The parameters for defining ESLint configurations.
  * @returns The ESLint configurations.
  */
-export function defineEslintConfigs(params: DefineEslintConfigsParams = {}): Linter.Config[] {
+export function defineEslintConfigs(options: DefineEslintConfigsOptions = {}): Linter.Config[] {
   const context = new EslintConfigContext();
   context.rootConfigFiles.push(
     ObsidianPluginRepoPaths.CommitlintConfigTs,
@@ -120,11 +120,11 @@ export function defineEslintConfigs(params: DefineEslintConfigsParams = {}): Lin
     join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTestTs)
   );
 
-  if (params.editContext) {
-    params.editContext(context);
+  if (options.editContext) {
+    options.editContext(context);
   }
 
-  const customConfigs = params.customConfigs?.(context) ?? [];
+  const customConfigs = options.customConfigs?.(context) ?? [];
 
   return defineConfig(
     ...getGitIgnoreConfigs(),

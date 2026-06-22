@@ -205,6 +205,16 @@ export interface ConvertLinkParams {
 }
 
 /**
+ * Options for {@link editBacklinks}.
+ */
+export type EditBacklinksOptions = ProcessOptions;
+
+/**
+ * Options for {@link editLinks}.
+ */
+export type EditLinksOptions = ProcessOptions;
+
+/**
  * Params for {@link generateMarkdownLink}.
  */
 export interface GenerateMarkdownLinkParams {
@@ -748,16 +758,16 @@ export function convertLink(params: ConvertLinkParams): string {
  * @param app - The Obsidian application instance.
  * @param pathOrFile - The path or file to edit the backlinks for.
  * @param linkConverter - The function that converts each link.
- * @param processOptions - Optional options for retrying the operation.
+ * @param options - Optional options for retrying the operation.
  * @returns A {@link Promise} that resolves when the backlinks have been edited.
  */
 export async function editBacklinks(
   app: App,
   pathOrFile: PathOrFile,
   linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
-  processOptions: ProcessOptions = {}
+  options: EditBacklinksOptions = {}
 ): Promise<void> {
-  const backlinks = await getBacklinksForFileSafe(app, pathOrFile, processOptions);
+  const backlinks = await getBacklinksForFileSafe(app, pathOrFile, options);
   for (const backlinkNotePath of backlinks.keys()) {
     const currentLinks = ensureNonNullable(backlinks.get(backlinkNotePath));
     const linkJsons = new Set<string>(currentLinks.map((link) => JSON.stringify(link)));
@@ -768,24 +778,24 @@ export async function editBacklinks(
       }
 
       return linkConverter(link);
-    }, processOptions);
+    }, options);
   }
 }
 
 /**
- * Edits the backlinks for a file or path.
+ * Edits the links for a file or path.
  *
  * @param app - The Obsidian application instance.
- * @param pathOrFile - The path or file to edit the backlinks for.
+ * @param pathOrFile - The path or file to edit the links for.
  * @param linkConverter - The function that converts each link.
- * @param processOptions - Optional options for retrying the operation.
- * @returns A {@link Promise} that resolves when the backlinks have been edited.
+ * @param options - Optional options for retrying the operation.
+ * @returns A {@link Promise} that resolves when the links have been edited.
  */
 export async function editLinks(
   app: App,
   pathOrFile: PathOrFile,
   linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
-  processOptions: ProcessOptions = {}
+  options: EditLinksOptions = {}
 ): Promise<void> {
   await applyFileChanges(app, pathOrFile, async ({ abortSignal, content }) => {
     const cache = await getCacheSafe(app, pathOrFile);
@@ -798,7 +808,7 @@ export async function editLinks(
     }
 
     return await getFileChanges(cache, isCanvasFile(app, pathOrFile), linkConverter, abortSignal);
-  }, processOptions);
+  }, options);
 }
 
 /**

@@ -26,6 +26,11 @@ import { exec } from './exec.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 
 /**
+ * Options for {@link execFromRoot}.
+ */
+export type ExecFromRootOptions = ExecOptions;
+
+/**
  * Executes a command from the root folder of the project.
  *
  * @param command - The command to execute. It can be a string or an array of strings.
@@ -62,7 +67,7 @@ export function execFromRoot(command: CommandPart[] | string, options: ExecDetai
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
-export function execFromRoot(command: CommandPart[] | string, options: ExecOptions = {}): Promise<ExecResult | string> {
+export function execFromRoot(command: CommandPart[] | string, options: ExecFromRootOptions = {}): Promise<ExecResult | string> {
   let root = getRootFolder(options.cwd);
 
   if (!root) {

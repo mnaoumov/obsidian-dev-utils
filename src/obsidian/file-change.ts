@@ -59,6 +59,10 @@ import {
 import { process } from './vault.ts';
 
 /**
+ * Options for {@link applyFileChanges}.
+ */
+export type ApplyFileChangesOptions = ProcessOptions;
+/**
  * A file change in the vault.
  */
 export interface FileChange {
@@ -81,12 +85,13 @@ interface ApplyContentChangesToTextResult {
   readonly frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>;
   readonly newContent: string;
 }
-type CanvasChange = FileChange & WithReference<CanvasReference>;
 
+type CanvasChange = FileChange & WithReference<CanvasReference>;
 type CanvasFileNodeChange = FileChange & WithReference<CanvasFileNodeReference>;
 type CanvasTextNodeChange = FileChange & WithReference<CanvasTextNodeReference>;
 type ContentChange = FileChange & WithReference<ReferenceCache>;
 type FrontmatterChange = FileChange & WithReference<FrontmatterLinkCache>;
+
 type FrontmatterChangeWithOffsets = FileChange & WithReference<FrontmatterLinkCacheWithOffsets>;
 
 interface ParseFrontmatterSafelyResult {
@@ -144,7 +149,7 @@ export async function applyContentChanges(
  * @param app - The application instance where the file changes will be applied.
  * @param pathOrFile - The path or file to which the changes should be applied.
  * @param changesProvider - A provider that returns an array of file changes to apply.
- * @param processOptions - Optional options for processing/retrying the operation.
+ * @param options - Optional options for processing/retrying the operation.
  * @param shouldRetryOnInvalidChanges - Whether to retry the operation if the changes are invalid.
  *
  * @returns A {@link Promise} that resolves when the file changes have been successfully applied.
@@ -153,7 +158,7 @@ export async function applyFileChanges(
   app: App,
   pathOrFile: PathOrFile,
   changesProvider: ValueProvider<FileChange[] | null, ContentArgs>,
-  processOptions: ProcessOptions = {},
+  options: ApplyFileChangesOptions = {},
   shouldRetryOnInvalidChanges = true
 ): Promise<void> {
   await process(app, pathOrFile, async ({ abortSignal, content }) => {
@@ -162,7 +167,7 @@ export async function applyFileChanges(
     }
 
     return await applyContentChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
-  }, processOptions);
+  }, options);
 }
 
 /**

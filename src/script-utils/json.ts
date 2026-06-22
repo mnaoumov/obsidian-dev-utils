@@ -29,6 +29,11 @@ export interface EditJsonOptions {
 }
 
 /**
+ * Options for {@link editJsonSync}.
+ */
+export type EditJsonSyncOptions = EditJsonOptions;
+
+/**
  * Reads, edits, and writes back a JSON file using a provided edit function.
  *
  * @typeParam T - The type of the data to be edited.
@@ -66,7 +71,7 @@ export async function editJson<T>(
 export function editJsonSync<T>(
   path: string,
   editFn: (data: T) => void,
-  options: EditJsonOptions = {}
+  options: EditJsonSyncOptions = {}
 ): void {
   const {
     shouldSkipIfMissing

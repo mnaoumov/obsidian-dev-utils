@@ -25,6 +25,11 @@ import {
 import { process } from './vault.ts';
 
 /**
+ * Options for {@link processFrontmatter}.
+ */
+export type ProcessFrontmatterOptions = ProcessOptions;
+
+/**
  * Adds an alias to the front matter of a given file if it does not already exist.
  *
  * @param app - The Obsidian app instance.
@@ -93,14 +98,14 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or TFile object representing the note.
  * @param frontmatterFn - A function that modifies the front matter.
- * @param processOptions - Optional. Configuration options for retrying the process. If not provided, default options will be used.
+ * @param options - Optional. Configuration options for retrying the process. If not provided, default options will be used.
  * @returns A {@link Promise} that resolves when the front matter has been processed and saved.
  */
 export async function processFrontmatter<CustomFrontmatter = unknown>(
   app: App,
   pathOrFile: PathOrFile,
   frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal) => Promisable<MaybeReturn<null>>,
-  processOptions: ProcessOptions = {}
+  options: ProcessFrontmatterOptions = {}
 ): Promise<void> {
   if (!isMarkdownFile(app, pathOrFile)) {
     throw new Error(`File ${getPath(app, pathOrFile)} is not a markdown file.`);
@@ -123,5 +128,5 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(
     }
 
     return setFrontmatter(content, newFrontmatter);
-  }, processOptions);
+  }, options);
 }

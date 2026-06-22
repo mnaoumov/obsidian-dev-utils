@@ -27,7 +27,7 @@ import {
 /**
  * Parameters for the {@link lint} function.
  */
-export interface LintParams {
+export interface LintOptions {
   /**
    * Optional file paths to lint. If omitted, lints the entire project.
    */
@@ -42,10 +42,10 @@ export interface LintParams {
 /**
  * Lint the project with ESLint.
  *
- * @param params - The {@link LintParams}.
+ * @param options - The {@link LintOptions}.
  */
-export async function lint(params?: LintParams): Promise<void> {
-  const { paths, shouldFix } = params ?? {};
+export async function lint(options?: LintOptions): Promise<void> {
+  const { paths, shouldFix } = options ?? {};
   const configFiles = [
     ObsidianPluginRepoPaths.EslintConfigJs,
     ObsidianPluginRepoPaths.EslintConfigMjs,

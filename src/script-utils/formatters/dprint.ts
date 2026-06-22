@@ -21,7 +21,7 @@ import {
 /**
  * Parameters for the {@link format} function.
  */
-export interface FormatParams {
+export interface FormatOptions {
   /**
    * Optional file paths to format. If omitted, formats the entire project.
    */
@@ -36,11 +36,11 @@ export interface FormatParams {
 /**
  * Format the source code.
  *
- * @param params - The {@link FormatParams}.
+ * @param options - The {@link FormatOptions}.
  * @returns A {@link Promise} that resolves when the source code has been formatted.
  */
-export async function format(params?: FormatParams): Promise<void> {
-  const { paths, rewrite = true } = params ?? {};
+export async function format(options?: FormatOptions): Promise<void> {
+  const { paths, rewrite = true } = options ?? {};
   const rootFolder = getRootFolder();
   assertNonNullable(rootFolder, 'Root folder not found');
   let dprintJsonPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.DprintJson);

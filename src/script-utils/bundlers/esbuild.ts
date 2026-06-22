@@ -20,7 +20,7 @@ export {
  */
 export type {
   BuildObsidianPluginParams,
-  BuildParams
+  BuildOptions
 } from './esbuild-impl/obsidian-plugin-builder.ts';
 
 /* v8 ignore stop */

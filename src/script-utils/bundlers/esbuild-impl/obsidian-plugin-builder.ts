@@ -10,7 +10,7 @@
 
 import type {
   BuildContext,
-  BuildOptions,
+  BuildOptions as EsbuildOptions,
   Plugin
 } from 'esbuild';
 
@@ -76,7 +76,7 @@ export interface BuildObsidianPluginParams {
   /**
    * Customizes the `esbuild` options.
    */
-  customizeEsbuildOptions?(options: BuildOptions): void;
+  customizeEsbuildOptions?(options: EsbuildOptions): void;
 
   /**
    * A build mode, either `Development` or `Production`
@@ -92,7 +92,7 @@ export interface BuildObsidianPluginParams {
 /**
  * Build parameters without the mode field, for use with {@link build} and {@link dev}.
  */
-export interface BuildParams {
+export interface BuildOptions {
   /**
    * Custom esbuild plugins to be used during the build process.
    */
@@ -101,7 +101,7 @@ export interface BuildParams {
   /**
    * Customizes the `esbuild` options.
    */
-  customizeEsbuildOptions?(options: BuildOptions): void;
+  customizeEsbuildOptions?(options: EsbuildOptions): void;
 
   /**
    * A folder for Obsidian configuration. Defaults to the `OBSIDIAN_CONFIG_FOLDER` environment variable.
@@ -116,11 +116,11 @@ interface ObsidianPluginBuilderEnv {
 /**
  * Builds the Obsidian plugin in production mode using esbuild.
  *
- * @param params - Optional build parameters (mode is set to Production automatically).
+ * @param options - Optional build parameters (mode is set to Production automatically).
  * @returns A {@link Promise} that resolves when the build is complete.
  */
-export async function build(params?: BuildParams): Promise<void> {
-  const result = await buildObsidianPlugin({ ...params, mode: BuildMode.Production });
+export async function build(options?: BuildOptions): Promise<void> {
+  const result = await buildObsidianPlugin({ ...options, mode: BuildMode.Production });
   result.throwOnFailure();
 }
 
@@ -173,7 +173,7 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
   const packageJson = await readPackageJson();
   const pluginName = packageJson.name ?? '(unknown)';
 
-  const buildOptions: BuildOptions = {
+  const buildOptions: EsbuildOptions = {
     banner: {
       js: banner
     },
@@ -234,12 +234,12 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
 /**
  * Builds the Obsidian plugin in development mode using esbuild with watch.
  *
- * @param params - Optional build parameters (mode is set to Development automatically).
+ * @param options - Optional build parameters (mode is set to Development automatically).
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult} indicating the build result.
  */
-// eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Intentionally shares BuildParams with build().
-export async function dev(params?: BuildParams): Promise<CliTaskResult> {
-  return await buildObsidianPlugin({ ...params, mode: BuildMode.Development });
+// eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Intentionally shares BuildOptions with build().
+export async function dev(options?: BuildOptions): Promise<CliTaskResult> {
+  return await buildObsidianPlugin({ ...options, mode: BuildMode.Development });
 }
 
 /**
