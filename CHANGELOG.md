@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 76.1.0
+
+- feat(eslint): enforce params/options naming on all members and by optionality
+- refactor!: rename param-bag types to follow the Params/Options convention
+- fix(eslint): check private/protected members in params-options-name-match
+
 ## 76.0.0
 
 - refactor!: rename stats
