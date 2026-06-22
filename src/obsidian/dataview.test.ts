@@ -12,7 +12,10 @@ import {
 import type { GenericAsyncFunction } from '../function.ts';
 import type { DataviewInlineApi } from './dataview.ts';
 
-import { waitForAllAsyncOperations } from '../async.ts';
+import {
+  sleep,
+  waitForAllAsyncOperations
+} from '../async.ts';
 import {
   noop,
   noopAsync
@@ -730,9 +733,7 @@ describe('renderPaginated page navigation', () => {
     const changeEvent = new Event('change', { bubbles: true });
     // The handler is async, dispatch triggers it; we await a microtick for it to complete
     select.dispatchEvent(changeEvent);
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
-    });
+    await sleep(0);
 
     // Dv.list should have been called again with 20 items (all 30 items sliced to first 20)
 
@@ -759,9 +760,7 @@ describe('renderPaginated page navigation', () => {
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Enter' });
     assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
-    });
+    await sleep(0);
 
     // Dv.list should have been called with second page items (items 10-19)
 
@@ -787,9 +786,7 @@ describe('renderPaginated page navigation', () => {
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Tab' });
     assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
-    });
+    await sleep(0);
 
     // Dv.list should NOT have been called again
 
@@ -810,9 +807,7 @@ describe('renderPaginated page navigation', () => {
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Enter' });
     assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
-    });
+    await sleep(0);
 
     // On page 5, there should be a leading "..." since pageNumber (5) > MORE_PAGE_NUMBER (3)
     const spans = dv.container.querySelectorAll('.pagination span');
@@ -843,9 +838,7 @@ describe('renderPaginated page navigation', () => {
     const keydownEvent = new KeyboardEvent('keydown', { key: 'Enter' });
     assertNonNullable(input);
     input.dispatchEvent(keydownEvent);
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 0);
-    });
+    await sleep(0);
 
     // Dv.list should NOT have been called because page 99 is out of range
     expect(dv.list).not.toHaveBeenCalled();
