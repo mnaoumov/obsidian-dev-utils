@@ -78,7 +78,7 @@ export interface GetAvailablePathForAttachmentsExtendedFnParams {
   /**
    * A stats of the attachment file.
    */
-  readonly attachmentFileStat?: FileStats | undefined;
+  readonly attachmentFileStats?: FileStats | undefined;
 
   /**
    * A context.
@@ -225,7 +225,7 @@ export async function getAttachmentFilePath(params: GetAttachmentFilePathParams)
       attachmentFileBaseName,
       attachmentFileContent: attachmentFile ? await app.vault.readBinary(attachmentFile) : undefined,
       attachmentFileExtension: attachmentFileExtension.slice(1),
-      attachmentFileStat: attachmentFile?.stat,
+      attachmentFileStats: attachmentFile?.stat,
       context: params.context,
       notePathOrFile,
       oldAttachmentPathOrFile: params.oldAttachmentPathOrFile,
