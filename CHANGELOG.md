@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 76.0.0
+
+- refactor!: rename stats
+
 ## 75.0.0
 
 - refactor!: rename test-setup endpoints to mirror obsidian-test-mocks
