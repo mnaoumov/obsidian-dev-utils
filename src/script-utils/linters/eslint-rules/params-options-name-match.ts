@@ -4,11 +4,20 @@
  * ESLint rule: params-options-name-match
  *
  * Ensures that parameter-bag type names match the function or constructor they
- * belong to:
+ * belong to, on two axes — a prefix derived from the owner and a suffix derived
+ * from how the bag is passed.
  *
- * - `fooBar(params: FooBarParams)` — PascalCase of function name + `Params`
- * - `class Baz { constructor(params: BazConstructorParams) }` — ClassName + `ConstructorParams`
- * - `class Baz { method(params: BazMethodParams) }` — ClassName + PascalCase(methodName) + `Params`
+ * Prefix (owner):
+ * - `fooBar(params: FooBar…)` — PascalCase of the function name
+ * - `class Baz { constructor(params: BazConstructor…) }` — ClassName + `Constructor`
+ * - `class Baz { method(params: BazMethod…) }` — ClassName + PascalCase(methodName)
+ *
+ * Suffix (whether the bag is a required sole argument):
+ * - `Params` only when the bag is the SOLE and REQUIRED parameter —
+ *   `fooBar(params: FooBarParams)`
+ * - `Options` otherwise. That is: an OPTIONAL bag — `fooBar(options?: FooBarOptions)`
+ *   or `fooBar(options: FooBarOptions = {})` — or a bag SUPPLEMENTARY to other
+ *   parameters — `fooBar(baz: string, options: FooBarOptions)`.
  *
  * Only checks parameters whose type annotation name ends with `Params` or
  * `Options`. Only checks exported functions and members of exported classes
@@ -20,12 +29,18 @@
 
 import type { Rule } from 'eslint';
 
-const PARAMS_OPTIONS_SUFFIX_PATTERN = /^(?<prefix>.+?)(?<suffix>Params|Options)$/;
+const PARAMS_OPTIONS_SUFFIX_PATTERN = /(?:Params|Options)$/;
+const PARAMS_SUFFIX = 'Params';
+const OPTIONS_SUFFIX = 'Options';
 
 export const MESSAGE_ID = 'paramsOptionsNameMatch';
 
 interface FunctionNodeWithParams {
   readonly params: Rule.Node[];
+}
+
+interface MaybeOptionalNode {
+  readonly optional?: boolean;
 }
 
 interface TypeAnnotationInfo {
@@ -47,27 +62,28 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
           return;
         }
 
+        const isSoleParam = fnNode.params.length === 1;
+
         for (const param of fnNode.params) {
           const typeInfo = getTypeAnnotationInfo(param);
           if (!typeInfo) {
             continue;
           }
 
-          const match = PARAMS_OPTIONS_SUFFIX_PATTERN.exec(typeInfo.name);
-          if (!match?.groups) {
+          if (!PARAMS_OPTIONS_SUFFIX_PATTERN.test(typeInfo.name)) {
             continue;
           }
 
-          /* v8 ignore start -- Defensive fallback: regex named groups always capture when match succeeds. */
-          const actualPrefix = match.groups['prefix'] ?? '';
-          const suffix = match.groups['suffix'] ?? '';
-          /* v8 ignore stop */
+          // A required sole-argument bag → `*Params`. An optional bag (`?` or a default
+          // Value) or a bag supplementary to other parameters → `*Options`.
+          const expectedSuffix = isSoleParam && !isOptionalParam(param) ? PARAMS_SUFFIX : OPTIONS_SUFFIX;
+          const expectedName = `${expectedPrefix}${expectedSuffix}`;
 
-          if (actualPrefix !== expectedPrefix) {
+          if (typeInfo.name !== expectedName) {
             context.report({
               data: {
                 actualName: typeInfo.name,
-                expectedName: `${expectedPrefix}${suffix}`
+                expectedName
               },
               messageId: MESSAGE_ID,
               node: typeInfo.node
@@ -176,14 +192,27 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
       return undefined;
     }
 
+    function isOptionalParam(param: Rule.Node): boolean {
+      // `options: FooOptions = {}` is an AssignmentPattern; `options?: FooOptions` carries an
+      // `optional` flag. Both make the bag optional → `*Options`.
+      if (param.type === 'AssignmentPattern') {
+        return true;
+      }
+      return (param as MaybeOptionalNode).optional === true;
+    }
+
     function getTypeAnnotationInfo(param: Rule.Node): TypeAnnotationInfo | undefined {
+      // Unwrap a defaulted parameter such as `options: FooOptions = {}`.
+      // Its type annotation lives on the AssignmentPattern's left-hand binding.
+      const target = param.type === 'AssignmentPattern' ? param.left : param;
+
       /* v8 ignore start -- Defensive guard: TypeScript-parsed params always have typeAnnotation when typed. */
-      if (!('typeAnnotation' in param) || !param.typeAnnotation) {
+      if (!('typeAnnotation' in target) || !target.typeAnnotation) {
         return undefined;
       }
       /* v8 ignore stop */
 
-      const annotation = param.typeAnnotation as Record<string, unknown>;
+      const annotation = target.typeAnnotation as Record<string, unknown>;
       const typeNode = annotation['typeAnnotation'];
       /* v8 ignore start -- Defensive guard: the TypeScript parser always produces an AST node for typeAnnotation. */
       if (!typeNode || typeof typeNode !== 'object') {
@@ -212,7 +241,7 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
   },
   meta: {
     docs: {
-      description: 'Require `*Params`/`*Options` type names to match the function or constructor they belong to'
+      description: 'Require `*Params`/`*Options` type names to match the owning function/constructor (prefix) and the sole-vs-supplementary argument convention (suffix)'
     },
     messages: {
       [MESSAGE_ID]: 'Type "{{ actualName }}" does not match the expected name "{{ expectedName }}" for this function/constructor.'

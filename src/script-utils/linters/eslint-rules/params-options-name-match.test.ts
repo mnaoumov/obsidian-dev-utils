@@ -50,17 +50,12 @@ ruleTester.run('params-options-name-match', toRuleTesterModule(paramsOptionsName
       name: 'exported function param type has wrong prefix'
     },
     {
-      code: 'export function fooBar(options: WrongOptions): void {}',
-      errors: [{ messageId: MESSAGE_ID }],
-      name: 'exported function options type does not match function name'
-    },
-    {
       code: 'export class Foo { protected method(params: WrongParams): void {} }',
       errors: [{ messageId: MESSAGE_ID }],
       name: 'protected method param type does not match'
     },
     {
-      code: 'export class Foo { private helper(options: SharedOptions): void {} }',
+      code: 'export class Foo { private helper(params: WrongParams): void {} }',
       errors: [{ messageId: MESSAGE_ID }],
       name: 'private method param type does not match'
     },
@@ -68,36 +63,92 @@ ruleTester.run('params-options-name-match', toRuleTesterModule(paramsOptionsName
       code: 'export class Foo { private constructor(params: WrongConstructorParams) {} }',
       errors: [{ messageId: MESSAGE_ID }],
       name: 'private constructor param type does not match'
+    },
+    {
+      code: 'export function fooBar(options: FooBarOptions): void {}',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'sole-argument bag must be named Params, not Options (function)'
+    },
+    {
+      code: 'export class Foo { method(options: FooMethodOptions): void {} }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'sole-argument bag must be named Params, not Options (method)'
+    },
+    {
+      code: 'export class Foo { constructor(options: FooConstructorOptions) {} }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'sole-argument bag must be named Params, not Options (constructor)'
+    },
+    {
+      code: 'export class Foo { private helper(options: FooHelperOptions): void {} }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'sole-argument bag must be named Params, not Options (private method)'
+    },
+    {
+      code: 'export function fooBar(baz: string, params: FooBarParams): void {}',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'supplementary bag must be named Options, not Params (function)'
+    },
+    {
+      code: 'export class Foo { method(baz: string, params: FooMethodParams): void {} }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'supplementary bag must be named Options, not Params (method)'
+    },
+    {
+      code: 'export function fooBar(params?: FooBarParams): void {}',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'optional sole bag must be named Options, not Params'
+    },
+    {
+      code: 'export function fooBar(params: FooBarParams = {}): void {}',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'defaulted sole bag must be named Options, not Params'
     }
   ],
   valid: [
     {
       code: 'export function fooBar(params: FooBarParams): void {}',
-      name: 'exported function param type matches function name with Params suffix'
-    },
-    {
-      code: 'export function fooBar(options: FooBarOptions): void {}',
-      name: 'exported function param type matches function name with Options suffix'
+      name: 'sole-argument bag named Params matches function name'
     },
     {
       code: 'export const fooBar = (params: FooBarParams): void => {};',
-      name: 'exported arrow function param type matches variable name'
+      name: 'sole-argument bag named Params matches arrow variable name'
     },
     {
       code: 'export class Foo { method(params: FooMethodParams): void {} }',
-      name: 'exported class public method param type matches ClassName + PascalCase(methodName) + Params'
-    },
-    {
-      code: 'export class Foo { method(options: FooMethodOptions): void {} }',
-      name: 'exported class public method options type matches ClassName + PascalCase(methodName) + Options'
+      name: 'sole-argument bag named Params matches ClassName + PascalCase(methodName)'
     },
     {
       code: 'export class Foo { constructor(params: FooConstructorParams) {} }',
-      name: 'exported class constructor param type matches ClassName + ConstructorParams'
+      name: 'sole-argument bag named Params matches ClassName + Constructor'
     },
     {
-      code: 'export class Foo { constructor(options: FooConstructorOptions) {} }',
-      name: 'exported class constructor options type matches ClassName + ConstructorOptions'
+      code: 'export class Foo { private helper(params: FooHelperParams): void {} }',
+      name: 'private sole-argument bag named Params is checked and matches'
+    },
+    {
+      code: 'export function fooBar(options?: FooBarOptions): void {}',
+      name: 'optional sole bag named Options matches function name'
+    },
+    {
+      code: 'export function fooBar(options: FooBarOptions = {}): void {}',
+      name: 'defaulted sole bag named Options matches function name'
+    },
+    {
+      code: 'export function fooBar(baz: string, options?: FooBarOptions): void {}',
+      name: 'optional supplementary bag named Options matches function name'
+    },
+    {
+      code: 'export function fooBar(baz: string, options: FooBarOptions = {}): void {}',
+      name: 'defaulted supplementary bag named Options matches function name'
+    },
+    {
+      code: 'export class Foo { method(baz: string, options: FooMethodOptions): void {} }',
+      name: 'supplementary bag named Options matches ClassName + PascalCase(methodName)'
+    },
+    {
+      code: 'export class Foo { constructor(baz: string, options: FooConstructorOptions) {} }',
+      name: 'supplementary constructor bag named Options matches ClassName + Constructor'
     },
     {
       code: 'class Foo { constructor(params: WrongParams) {} }',
@@ -133,7 +184,7 @@ ruleTester.run('params-options-name-match', toRuleTesterModule(paramsOptionsName
     },
     {
       code: 'export function fooBar({ a, b }: FooBarParams): void {}',
-      name: 'destructured param with type annotation is not checked due to structure'
+      name: 'destructured sole-argument bag with matching name is valid'
     },
     {
       code: 'const obj = { method(params: MethodParams): void {} };',
@@ -150,10 +201,6 @@ ruleTester.run('params-options-name-match', toRuleTesterModule(paramsOptionsName
     {
       code: 'const internal = (params: SharedParams): void => {};',
       name: 'non-exported arrow function is not checked (passthrough pattern)'
-    },
-    {
-      code: 'export class Foo { private helper(options: FooHelperOptions): void {} }',
-      name: 'private method is checked and matches ClassName + PascalCase(methodName) + Options'
     }
   ]
 });
