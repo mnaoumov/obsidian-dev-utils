@@ -11,8 +11,9 @@
  * - `class Baz { method(params: BazMethodParams) }` — ClassName + PascalCase(methodName) + `Params`
  *
  * Only checks parameters whose type annotation name ends with `Params` or
- * `Options`. Only checks exported functions and public/protected class members
- * to avoid false positives from internal options-passthrough helpers.
+ * `Options`. Only checks exported functions and members of exported classes
+ * (regardless of accessibility — `public`, `protected`, and `private` are all
+ * checked) to avoid false positives from internal options-passthrough helpers.
  */
 
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- Rule.Node parent/property types are wider than what the type checker infers; defensive checks are appropriate for AST traversal. */
@@ -36,7 +37,7 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
   create(context) {
     return {
       ':function[params.length>0]'(node: Rule.Node): void {
-        if (!isPublicOrExported(node)) {
+        if (!isInExportedScope(node)) {
           return;
         }
 
@@ -76,16 +77,11 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
       }
     };
 
-    function isPublicOrExported(node: Rule.Node): boolean {
-      // Class method or constructor: check accessibility AND that the class is exported
+    function isInExportedScope(node: Rule.Node): boolean {
+      // Class method or constructor: check that the class is exported, regardless of accessibility
+      // (public/protected/private members are all checked).
       const methodDef = node.parent;
       if (methodDef?.type === 'MethodDefinition') {
-        /* v8 ignore start -- Defensive guard: TypeScript parser always includes accessibility on MethodDefinition. */
-        const accessibility = 'accessibility' in methodDef ? methodDef.accessibility : undefined;
-        /* v8 ignore stop */
-        if (accessibility === 'private') {
-          return false;
-        }
         // Check if the class itself is exported
         const classBody = methodDef.parent;
         const classNode = classBody?.parent;

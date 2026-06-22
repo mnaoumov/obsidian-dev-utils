@@ -58,6 +58,16 @@ ruleTester.run('params-options-name-match', toRuleTesterModule(paramsOptionsName
       code: 'export class Foo { protected method(params: WrongParams): void {} }',
       errors: [{ messageId: MESSAGE_ID }],
       name: 'protected method param type does not match'
+    },
+    {
+      code: 'export class Foo { private helper(options: SharedOptions): void {} }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'private method param type does not match'
+    },
+    {
+      code: 'export class Foo { private constructor(params: WrongConstructorParams) {} }',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'private constructor param type does not match'
     }
   ],
   valid: [
@@ -142,8 +152,8 @@ ruleTester.run('params-options-name-match', toRuleTesterModule(paramsOptionsName
       name: 'non-exported arrow function is not checked (passthrough pattern)'
     },
     {
-      code: 'export class Foo { private helper(options: SharedOptions): void {} }',
-      name: 'private method is not checked even in exported class'
+      code: 'export class Foo { private helper(options: FooHelperOptions): void {} }',
+      name: 'private method is checked and matches ClassName + PascalCase(methodName) + Options'
     }
   ]
 });
