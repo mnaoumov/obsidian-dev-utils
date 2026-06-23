@@ -369,6 +369,27 @@ describe('analyzeOverExposure', () => {
     expect(hasFinding(findings, 'value')).toBe(false);
   });
 
+  it('should ignore object-literal accessors nested inside a class method (property descriptors)', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class A {
+          public define(target: object): void {
+            Object.defineProperty(target, 'stack', {
+              get(): number {
+                return 1;
+              },
+              set(next: number): void {
+                void next;
+              }
+            });
+          }
+        }
+      `
+    });
+    expect(hasFinding(findings, 'get')).toBe(false);
+    expect(hasFinding(findings, 'set')).toBe(false);
+  });
+
   it('should tolerate a member whose name yields no reference symbols (computed name)', () => {
     const findings = analyze({
       '/proj/src/a.ts': `

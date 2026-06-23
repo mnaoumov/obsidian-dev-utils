@@ -426,13 +426,10 @@ function analyzeExport(node: Node, context: AnalysisContext): void {
 
 function analyzeMember(node: Node, context: AnalysisContext): void {
   const nameNode = getMemberNameNode(node);
-  if (!nameNode) {
+  if (!nameNode || !isClassLike(node.parent)) {
     return;
   }
-  const declaringClass = getEnclosingClass(node);
-  if (!declaringClass) {
-    return;
-  }
+  const declaringClass = node.parent;
 
   const modifierKinds = getModifierKinds(node);
   if (modifierKinds.has(SyntaxKind.StaticKeyword) || modifierKinds.has(SyntaxKind.OverrideKeyword) || LIFECYCLE_ALLOWLIST.has(nameNode.getText())) {
