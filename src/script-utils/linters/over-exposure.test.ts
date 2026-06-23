@@ -21,7 +21,8 @@ import {
 import type { ParsedTsConfig } from '../check-project-types.ts';
 import type {
   OverExposureFileSystem,
-  OverExposureFinding
+  OverExposureFinding,
+  OverExposureProgress
 } from './over-exposure.ts';
 
 import { strictProxy } from '../../strict-proxy.ts';
@@ -382,6 +383,40 @@ describe('analyzeOverExposure', () => {
     expect(Array.isArray(findings)).toBe(true);
   });
 
+  it('should report progress once per analyzed source file, skipping test files', () => {
+    const files = {
+      '/proj/src/a.test.ts': `
+        import { helper } from './a.ts';
+        export const value = helper();
+      `,
+      '/proj/src/a.ts': `
+        export function helper(): number {
+          return 1;
+        }
+      `,
+      '/proj/src/b.ts': `
+        export function other(): number {
+          return 2;
+        }
+      `
+    };
+    const fileSystem = createSpyFileSystem(files);
+    const host = createLanguageServiceHost({ compilerOptions: COMPILER_OPTIONS, fileNames: Object.keys(files), fileSystem });
+    const languageService = createLanguageService(host, createDocumentRegistry());
+
+    const progressEvents: OverExposureProgress[] = [];
+    analyzeOverExposure({
+      languageService,
+      onProgress: (progress) => progressEvents.push(progress),
+      srcFolder: SRC_FOLDER
+    });
+
+    expect(progressEvents).toHaveLength(2);
+    expect(new Set(progressEvents.map((event) => event.currentFilePath))).toEqual(new Set(['/proj/src/a.ts', '/proj/src/b.ts']));
+    expect(progressEvents.map((event) => event.analyzedFileCount)).toEqual([0, 1]);
+    expect(progressEvents.map((event) => event.totalFileCount)).toEqual([2, 2]);
+  });
+
   it('should report a member of an anonymous class expression used externally as public', () => {
     const findings = analyze({
       '/proj/src/a.ts': `
@@ -558,7 +593,15 @@ describe('formatOverExposureFindings', () => {
     expect(report).toContain('(exposed only for tests)');
     expect(report).toContain('(no references at all)');
     expect(report).toContain('5 finding(s).');
-    expect(report.indexOf('L2')).toBeLessThan(report.indexOf('L9'));
+    expect(report.indexOf('/proj/src/b.ts:2:')).toBeLessThan(report.indexOf('/proj/src/b.ts:9:'));
+  });
+
+  it('should prefix each finding with a clickable path:line:column location', () => {
+    const report = formatOverExposureFindings([
+      buildFinding({ column: 8, filePath: '/proj/src/a.ts', line: 22, name: 'helper', suggestedExposure: 'private' })
+    ]);
+
+    expect(report).toContain('/proj/src/a.ts:22:8 public helper -> private');
   });
 });
 
@@ -598,6 +641,14 @@ describe('findOverExposure', () => {
     expect(mockParseTsConfig).toHaveBeenCalledWith('/proj/tsconfig.json');
     expect(findings).toEqual([]);
   });
+
+  it('should forward the onProgress callback to the analyzer', () => {
+    mockParseTsConfig.mockReturnValue({ fileNames: [], options: COMPILER_OPTIONS });
+    const onProgress = vi.fn<(progress: OverExposureProgress) => void>();
+    const findings = findOverExposure({ onProgress, projectFolder: '/proj' });
+    expect(findings).toEqual([]);
+    expect(onProgress).not.toHaveBeenCalled();
+  });
 });
 
 describe('LIFECYCLE_ALLOWLIST', () => {
@@ -616,6 +667,7 @@ function analyze(files: Record<string, string>): OverExposureFinding[] {
 
 function buildFinding(overrides: Partial<OverExposureFinding>): OverExposureFinding {
   return {
+    column: 1,
     currentExposure: 'public',
     filePath: '/proj/src/a.ts',
     hasNoReferences: false,

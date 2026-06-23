@@ -74,6 +74,13 @@ export interface AnalyzeOverExposureParams {
   readonly languageService: LanguageService;
 
   /**
+   * Optional callback invoked once per analyzed source file, before that file is processed. The
+   * whole-program reference analysis is slow, so this lets callers report live progress instead of
+   * appearing to hang.
+   */
+  onProgress?(this: void, progress: OverExposureProgress): void;
+
+  /**
    * Absolute (canonical) path of the project's `src` folder. Only declarations in non-test files
    * under this folder are analyzed; declarations elsewhere (test files, dependencies) are ignored
    * but still counted as reference sites.
@@ -112,6 +119,12 @@ export type CurrentExposure = 'export' | 'protected' | 'public';
  * Parameters for {@link findOverExposure}.
  */
 export interface FindOverExposureParams {
+  /**
+   * Optional callback invoked once per analyzed source file, for live progress reporting. Forwarded
+   * to {@link analyzeOverExposure}.
+   */
+  onProgress?(this: void, progress: OverExposureProgress): void;
+
   /** Absolute path to the project root (the folder containing `tsconfig.json` and `src`). */
   readonly projectFolder: string;
 }
@@ -166,6 +179,9 @@ export interface OverExposureFileSystem {
  * A single over-exposed declaration.
  */
 export interface OverExposureFinding {
+  /** 1-based column of the declaration's name. */
+  readonly column: number;
+
   /** The current exposure level. */
   readonly currentExposure: CurrentExposure;
 
@@ -192,6 +208,20 @@ export interface OverExposureFinding {
 
   /** The exposure the declaration could be tightened to. */
   readonly suggestedExposure: SuggestedExposure;
+}
+
+/**
+ * Progress reported while analyzing a project, one event per analyzed source file.
+ */
+export interface OverExposureProgress {
+  /** Number of source files fully analyzed before the current one (0-based). */
+  readonly analyzedFileCount: number;
+
+  /** Absolute (canonical) path of the source file about to be analyzed. */
+  readonly currentFilePath: string;
+
+  /** Total number of source files that will be analyzed. */
+  readonly totalFileCount: number;
 }
 
 /**
@@ -236,8 +266,6 @@ interface ReferenceLocation {
   readonly start: number;
 }
 
-const CHANGE_COLUMN_WIDTH = 48;
-const LINE_LABEL_WIDTH = 4;
 const MEMBER_EXPOSURE_ORDER: readonly MemberExposure[] = ['private', 'protected', 'public'];
 const SCOPE_DESCRIPTION: Record<SuggestedExposure, string> = {
   'file-local': 'within its own file',
@@ -252,7 +280,7 @@ const SCOPE_DESCRIPTION: Record<SuggestedExposure, string> = {
  * @returns The over-exposed declarations, in discovery order.
  */
 export function analyzeOverExposure(params: AnalyzeOverExposureParams): OverExposureFinding[] {
-  const { languageService, srcFolder } = params;
+  const { languageService, onProgress, srcFolder } = params;
   const program = languageService.getProgram();
   if (!program) {
     return [];
@@ -265,11 +293,17 @@ export function analyzeOverExposure(params: AnalyzeOverExposureParams): OverExpo
     program
   };
 
-  for (const sourceFile of program.getSourceFiles()) {
+  const sourceFilesToAnalyze = program.getSourceFiles().filter((sourceFile) => {
     const filePath = toCanonical(sourceFile.fileName);
-    if (!isOwnSourceFile(filePath, srcFolder) || isTestFile(filePath)) {
-      continue;
-    }
+    return isOwnSourceFile(filePath, srcFolder) && !isTestFile(filePath);
+  });
+
+  for (const [analyzedFileCount, sourceFile] of sourceFilesToAnalyze.entries()) {
+    onProgress?.({
+      analyzedFileCount,
+      currentFilePath: toCanonical(sourceFile.fileName),
+      totalFileCount: sourceFilesToAnalyze.length
+    });
     visit(sourceFile);
   }
   return context.findings;
@@ -327,11 +361,17 @@ export function createProjectLanguageService(params: CreateProjectLanguageServic
 export function findOverExposure(params: FindOverExposureParams): OverExposureFinding[] {
   const projectFolder = toCanonical(params.projectFolder);
   const languageService = createProjectLanguageService({ tsConfigPath: `${projectFolder}/tsconfig.json` });
-  return analyzeOverExposure({ languageService, srcFolder: `${projectFolder}/src` });
+  return analyzeOverExposure({
+    languageService,
+    srcFolder: `${projectFolder}/src`,
+    ...params.onProgress ? { onProgress: params.onProgress } : {}
+  });
 }
 
 /**
- * Formats over-exposure findings as a human-readable report, grouped by file.
+ * Formats over-exposure findings as a human-readable report. Findings are grouped by file and each
+ * line begins with a `path:line:column` location so terminals (e.g. VS Code) render it as a
+ * clickable link that jumps to the declaration.
  *
  * @param findings - The findings to format.
  * @returns The report text. Empty-finding input yields a single "no findings" line.
@@ -350,10 +390,10 @@ export function formatOverExposureFindings(findings: readonly OverExposureFindin
 
   const lines: string[] = [];
   for (const [filePath, list] of byFile) {
-    lines.push(filePath);
     for (const finding of [...list].sort((a, b) => a.line - b.line)) {
+      const location = `${filePath}:${String(finding.line)}:${String(finding.column)}`;
       const change = `${finding.currentExposure} ${finding.name} -> ${finding.suggestedExposure}`;
-      lines.push(`  L${String(finding.line).padEnd(LINE_LABEL_WIDTH)} ${change.padEnd(CHANGE_COLUMN_WIDTH)} ${describeReason(finding)}`);
+      lines.push(`${location} ${change} -- ${describeReason(finding)}`);
     }
   }
   lines.push('', `${String(findings.length)} finding(s).`);
@@ -434,8 +474,9 @@ function buildFinding(
   flags: FindingFlags
 ): OverExposureFinding {
   const sourceFile = node.getSourceFile();
-  const { line } = sourceFile.getLineAndCharacterOfPosition(nameNode.getStart());
+  const { character, line } = sourceFile.getLineAndCharacterOfPosition(nameNode.getStart());
   return {
+    column: character + 1,
     currentExposure,
     filePath: toCanonical(sourceFile.fileName),
     hasNoReferences: flags.hasNoReferences,
