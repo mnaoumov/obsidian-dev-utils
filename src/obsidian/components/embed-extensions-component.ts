@@ -4,10 +4,10 @@
  * Contains class {@link EmbedExtensionsComponent} that registers embed extensions.
  */
 
+import type { EmbedCreator } from '@obsidian-typings/obsidian-public-latest';
 import type { App } from 'obsidian';
 
 import { ComponentEx } from './component-ex.ts';
-import type { EmbedCreator } from '@obsidian-typings/obsidian-public-latest';
 
 /**
  * A component that registers and unregisters embed extensions.
