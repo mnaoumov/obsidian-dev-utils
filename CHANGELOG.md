@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 77.1.0
+
+- docs(over-exposure): pass baseFolder in the find-overexposed example script
+- build(nano-staged): exclude static/ templates from the pre-commit lint step
+- feat(over-exposure): support rendering finding paths relative to a base folder
+- feat(over-exposure): render each finding on its own location and change line
+- fix(over-exposure): do not flag object-literal accessors nested in class methods
+
 ## 77.0.0
 
 - refactor! remove unused _app
