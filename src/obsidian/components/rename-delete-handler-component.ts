@@ -223,7 +223,7 @@ class DeleteHandler {
   public async handle(): Promise<void> {
     this.abortSignal.throwIfAborted();
     getLibDebugger('RenameDeleteHandler:handleDelete')(`Handle Delete ${this.file.path}`);
-    if (!isNote(this.app, this.file)) {
+    if (!isNote(this.file)) {
       return;
     }
 
@@ -295,7 +295,7 @@ class DeleteHandler {
 class SettingsManager {
   public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
 
-  public constructor(private readonly app: App) {
+  public constructor() {
     this.renameDeleteHandlersMap = getObsidianDevUtilsState('renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
   }
 
@@ -303,7 +303,7 @@ class SettingsManager {
     const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
 
     const settings: Partial<RenameDeleteHandlerSettings> = {};
-    settings.isNote = (path: string): boolean => isNote(this.app, path);
+    settings.isNote = (path: string): boolean => isNote(path);
     settings.isPathIgnored = (): boolean => false;
 
     for (const settingsBuilder of settingsBuilders) {
@@ -446,7 +446,6 @@ class HandledRenames {
 
 class MetadataDeletedHandler {
   public constructor(
-    private readonly app: App,
     private readonly file: TAbstractFile,
     private readonly prevCache: CachedMetadata | null,
     private readonly settingsManager: SettingsManager,
@@ -466,7 +465,7 @@ class MetadataDeletedHandler {
       return;
     }
 
-    if (isMarkdownFile(this.app, this.file) && this.prevCache) {
+    if (isMarkdownFile(this.file) && this.prevCache) {
       this.deletedMetadataCacheMap.set(this.file.path, this.prevCache);
     }
   }
@@ -591,7 +590,7 @@ class RenameHandler {
         this.abortSignal.throwIfAborted();
       }
 
-      if (isNote(this.app, this.newPath)) {
+      if (isNote(this.newPath)) {
         await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileParams>({
           app: this.app,
           newSourcePathOrFile: this.newPath,
@@ -750,7 +749,7 @@ class RenameMap {
     this.abortSignal.throwIfAborted();
     this.map.set(this.oldPath, this.newPath);
 
-    if (!isNote(this.app, this.oldPath)) {
+    if (!isNote(this.oldPath)) {
       return;
     }
 
@@ -928,7 +927,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     this.app = params.app;
     this.pluginId = params.pluginId;
     this.settingsBuilder = params.settingsBuilder;
-    this.settingsManager = new SettingsManager(this.app);
+    this.settingsManager = new SettingsManager();
   }
 
   /**
@@ -972,7 +971,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     if (!this.shouldInvokeHandler()) {
       return;
     }
-    new MetadataDeletedHandler(this.app, file, prevCache, this.settingsManager, this.deletedMetadataCacheMap).handle();
+    new MetadataDeletedHandler(file, prevCache, this.settingsManager, this.deletedMetadataCacheMap).handle();
   }
 
   private handleRename(file: TAbstractFile, oldPath: string): void {

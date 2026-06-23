@@ -267,8 +267,7 @@ coverage, lint/compile/spellcheck/format clean). Summary of what landed:
 2. **Fix 3 level 1 (extname-based `checkExtension`)** — `checkExtension`
    (`src/obsidian/file-system.ts`) compares `extname(path).slice(1).toLowerCase()` for string inputs
    instead of resolving via `getFileOrNull`, eliminating the O(vault) miss-scan for
-   `isCanvasFile`/`isMarkdownFile`/`isBaseFile`/`isNote`. The `app` parameter is now unused
-   (`_app`), kept for backwards compatibility.
+   `isCanvasFile`/`isMarkdownFile`/`isBaseFile`/`isNote.
 3. **Fix 3 level 2 (opt-in O(1) case-insensitive resolver)** — new
    `src/obsidian/case-insensitive-file-index.ts` (`CaseInsensitiveFileIndex` + getter/setter
    reading the realm-global shared-state bag, app-scoped via `ownsApp`) and

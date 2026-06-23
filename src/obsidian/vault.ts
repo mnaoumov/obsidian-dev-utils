@@ -314,7 +314,7 @@ export function getMarkdownFilesSorted(app: App): TFile[] {
  * @returns An array of all note files in the vault sorted by file path.
  */
 export function getNoteFilesSorted(app: App): TFile[] {
-  return app.vault.getAllLoadedFiles().filter((file) => isFile(file) && isNote(app, file)).sort((a, b) => a.path.localeCompare(b.path)) as TFile[];
+  return app.vault.getAllLoadedFiles().filter((file) => isFile(file) && isNote(file)).sort((a, b) => a.path.localeCompare(b.path)) as TFile[];
 }
 
 /**
@@ -672,7 +672,7 @@ export async function renameSafe(app: App, oldPathOrAbstractFile: PathOrAbstract
  * @returns A {@link Promise} that resolves when the note is saved.
  */
 export async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> {
-  if (!isMarkdownFile(app, pathOrFile)) {
+  if (!isMarkdownFile(pathOrFile)) {
     return;
   }
 

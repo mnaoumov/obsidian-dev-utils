@@ -44,7 +44,7 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
 
   const file = getFile(app, pathOrFile);
 
-  if (!isMarkdownFile(app, file)) {
+  if (!isMarkdownFile(file)) {
     throw new Error(`File ${file.path} is not a markdown file.`);
   }
 
@@ -74,7 +74,7 @@ export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: stri
     return;
   }
 
-  if (!isMarkdownFile(app, pathOrFile)) {
+  if (!isMarkdownFile(pathOrFile)) {
     throw new Error(`File ${getPath(app, pathOrFile)} is not a markdown file.`);
   }
 
@@ -107,7 +107,7 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(
   frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal) => Promisable<MaybeReturn<null>>,
   options: ProcessFrontmatterOptions = {}
 ): Promise<void> {
-  if (!isMarkdownFile(app, pathOrFile)) {
+  if (!isMarkdownFile(pathOrFile)) {
     throw new Error(`File ${getPath(app, pathOrFile)} is not a markdown file.`);
   }
 

@@ -278,36 +278,36 @@ describe('checkExtension', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
-    expect(checkExtension(app, file, 'md')).toBe(true);
+    expect(checkExtension(file, 'md')).toBe(true);
   });
 
   it('should return false when a TFile has a different extension', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
-    expect(checkExtension(app, file, 'canvas')).toBe(false);
+    expect(checkExtension(file, 'canvas')).toBe(false);
   });
 
   it('should check extension by path string when the file exists in the vault', () => {
     app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
-    expect(checkExtension(app, 'drawing.canvas', 'canvas')).toBe(true);
+    expect(checkExtension('drawing.canvas', 'canvas')).toBe(true);
   });
 
   it('should check extension by path string when the file does not exist in the vault', () => {
-    expect(checkExtension(app, 'notes/test.md', 'md')).toBe(true);
+    expect(checkExtension('notes/test.md', 'md')).toBe(true);
   });
 
   it('should compare the path extension case-insensitively', () => {
-    expect(checkExtension(app, 'notes/TEST.MD', 'md')).toBe(true);
+    expect(checkExtension('notes/TEST.MD', 'md')).toBe(true);
   });
 
   it('should return false for null', () => {
-    expect(checkExtension(app, null, 'md')).toBe(false);
+    expect(checkExtension(null, 'md')).toBe(false);
   });
 
   it('should return false for a TFolder', () => {
     app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
     const folder = app.vault.getFolderByPath('my-folder');
-    expect(checkExtension(app, folder, 'md')).toBe(false);
+    expect(checkExtension(folder, 'md')).toBe(false);
   });
 });
 
@@ -315,21 +315,21 @@ describe('isMarkdownFile', () => {
   it('should return true for a markdown file', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
-    expect(isMarkdownFile(app, file)).toBe(true);
+    expect(isMarkdownFile(file)).toBe(true);
   });
 
   it('should return false for a canvas file', () => {
     app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('drawing.canvas');
-    expect(isMarkdownFile(app, file)).toBe(false);
+    expect(isMarkdownFile(file)).toBe(false);
   });
 
   it('should return true for a path string ending with .md', () => {
-    expect(isMarkdownFile(app, 'note.md')).toBe(true);
+    expect(isMarkdownFile('note.md')).toBe(true);
   });
 
   it('should return false for null', () => {
-    expect(isMarkdownFile(app, null)).toBe(false);
+    expect(isMarkdownFile(null)).toBe(false);
   });
 });
 
@@ -337,17 +337,17 @@ describe('isCanvasFile', () => {
   it('should return true for a canvas file', () => {
     app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('drawing.canvas');
-    expect(isCanvasFile(app, file)).toBe(true);
+    expect(isCanvasFile(file)).toBe(true);
   });
 
   it('should return false for a markdown file', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
-    expect(isCanvasFile(app, file)).toBe(false);
+    expect(isCanvasFile(file)).toBe(false);
   });
 
   it('should return true for a path string ending with .canvas', () => {
-    expect(isCanvasFile(app, 'drawing.canvas')).toBe(true);
+    expect(isCanvasFile('drawing.canvas')).toBe(true);
   });
 });
 
@@ -355,13 +355,13 @@ describe('isBaseFile', () => {
   it('should return true for a base file', () => {
     app = App.createConfigured__({ files: { 'config.base': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('config.base');
-    expect(isBaseFile(app, file)).toBe(true);
+    expect(isBaseFile(file)).toBe(true);
   });
 
   it('should return false for a markdown file', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
-    expect(isBaseFile(app, file)).toBe(false);
+    expect(isBaseFile(file)).toBe(false);
   });
 });
 
@@ -369,29 +369,29 @@ describe('isNote', () => {
   it('should return true for a markdown file', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('note.md');
-    expect(isNote(app, file)).toBe(true);
+    expect(isNote(file)).toBe(true);
   });
 
   it('should return true for a canvas file', () => {
     app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('drawing.canvas');
-    expect(isNote(app, file)).toBe(true);
+    expect(isNote(file)).toBe(true);
   });
 
   it('should return true for a base file', () => {
     app = App.createConfigured__({ files: { 'config.base': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('config.base');
-    expect(isNote(app, file)).toBe(true);
+    expect(isNote(file)).toBe(true);
   });
 
   it('should return false for an image file', () => {
     app = App.createConfigured__({ files: { 'image.png': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('image.png');
-    expect(isNote(app, file)).toBe(false);
+    expect(isNote(file)).toBe(false);
   });
 
   it('should return false for null', () => {
-    expect(isNote(app, null)).toBe(false);
+    expect(isNote(null)).toBe(false);
   });
 });
 
@@ -621,21 +621,21 @@ describe('trimMarkdownExtension', () => {
     app = App.createConfigured__({ files: { 'folder/note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('folder/note.md');
     assertNonNullable(file);
-    expect(trimMarkdownExtension(app, file)).toBe('folder/note');
+    expect(trimMarkdownExtension(file)).toBe('folder/note');
   });
 
   it('should not trim the extension from a non-markdown file', () => {
     app = App.createConfigured__({ files: { 'drawing.canvas': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('drawing.canvas');
     assertNonNullable(file);
-    expect(trimMarkdownExtension(app, file)).toBe('drawing.canvas');
+    expect(trimMarkdownExtension(file)).toBe('drawing.canvas');
   });
 
   it('should not trim from a folder', () => {
     app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
     const folder = app.vault.getFolderByPath('my-folder');
     assertNonNullable(folder);
-    expect(trimMarkdownExtension(app, folder)).toBe('my-folder');
+    expect(trimMarkdownExtension(folder)).toBe('my-folder');
   });
 });
 

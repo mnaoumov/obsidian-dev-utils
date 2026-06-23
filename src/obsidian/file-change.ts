@@ -162,7 +162,7 @@ export async function applyFileChanges(
   shouldRetryOnInvalidChanges = true
 ): Promise<void> {
   await process(app, pathOrFile, async ({ abortSignal, content }) => {
-    if (isCanvasFile(app, pathOrFile)) {
+    if (isCanvasFile(pathOrFile)) {
       return await applyCanvasChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
     }
 

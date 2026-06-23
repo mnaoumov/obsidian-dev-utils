@@ -153,12 +153,11 @@ export function asFolderOrNull(abstractFile: null | TAbstractFile): null | TFold
 /**
  * Checks if the given path or file has the specified extension.
  *
- * @param _app - The Obsidian App instance. Kept for backwards compatibility; no longer used.
  * @param pathOrFile - The path or abstract file to check.
  * @param extension - The extension to compare against.
  * @returns Returns `true` if the path or file has the specified extension, `false` otherwise.
  */
-export function checkExtension(_app: App, pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
+export function checkExtension(pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
   if (isFile(pathOrFile)) {
     return pathOrFile.extension === extension;
   }
@@ -367,12 +366,12 @@ export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, isRecursi
 
   if (isRecursive) {
     Vault.recurseChildren(folder, (abstractFile) => {
-      if (isMarkdownFile(app, abstractFile) && abstractFile instanceof TFile) {
+      if (isMarkdownFile(abstractFile) && abstractFile instanceof TFile) {
         markdownFiles.push(abstractFile);
       }
     });
   } else {
-    markdownFiles = folder.children.filter((file) => isMarkdownFile(app, file)) as TFile[];
+    markdownFiles = folder.children.filter((file) => isMarkdownFile(file)) as TFile[];
   }
 
   markdownFiles = markdownFiles.sort((a, b) => a.path.localeCompare(b.path));
@@ -447,23 +446,21 @@ export function isAbstractFile(file: unknown): file is TAbstractFile {
 /**
  *   Checks if the given file is a base file.
  *
- * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a base file.
  */
-export function isBaseFile(app: App, pathOrFile: null | PathOrAbstractFile): boolean {
-  return checkExtension(app, pathOrFile, BASE_FILE_EXTENSION);
+export function isBaseFile(pathOrFile: null | PathOrAbstractFile): boolean {
+  return checkExtension(pathOrFile, BASE_FILE_EXTENSION);
 }
 
 /**
  * Checks if the given file is a canvas file.
  *
- * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a canvas file or not.
  */
-export function isCanvasFile(app: App, pathOrFile: null | PathOrAbstractFile): boolean {
-  return checkExtension(app, pathOrFile, CANVAS_FILE_EXTENSION);
+export function isCanvasFile(pathOrFile: null | PathOrAbstractFile): boolean {
+  return checkExtension(pathOrFile, CANVAS_FILE_EXTENSION);
 }
 
 /**
@@ -489,35 +486,32 @@ export function isFolder(file: unknown): file is TFolder {
 /**
  * Checks if the given file is a Markdown file.
  *
- * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a Markdown file.
  */
-export function isMarkdownFile(app: App, pathOrFile: null | PathOrAbstractFile): boolean {
-  return checkExtension(app, pathOrFile, MARKDOWN_FILE_EXTENSION);
+export function isMarkdownFile(pathOrFile: null | PathOrAbstractFile): boolean {
+  return checkExtension(pathOrFile, MARKDOWN_FILE_EXTENSION);
 }
 
 /**
  * Checks if the given file is a note.
  *
- * @param app - The Obsidian App instance.
  * @param pathOrFile - The path or file to check.
  * @returns A boolean indicating whether the file is a note.
  */
-export function isNote(app: App, pathOrFile: null | PathOrAbstractFile): boolean {
-  return isMarkdownFile(app, pathOrFile) || isCanvasFile(app, pathOrFile) || isBaseFile(app, pathOrFile);
+export function isNote(pathOrFile: null | PathOrAbstractFile): boolean {
+  return isMarkdownFile(pathOrFile) || isCanvasFile(pathOrFile) || isBaseFile(pathOrFile);
 }
 
 /**
  * Trims the markdown extension from the file path if the file is a markdown file.
  * If the file is not a markdown file, the original file path is returned.
  *
- * @param app - The Obsidian App instance.
  * @param file - The file to trim the markdown extension from.
  * @returns The file path with the markdown extension trimmed.
  */
-export function trimMarkdownExtension(app: App, file: TAbstractFile): string {
-  if (!isMarkdownFile(app, file)) {
+export function trimMarkdownExtension(file: TAbstractFile): string {
+  if (!isMarkdownFile(file)) {
     return file.path;
   }
 

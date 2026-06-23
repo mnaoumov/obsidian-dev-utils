@@ -807,7 +807,7 @@ export async function editLinks(
       return null;
     }
 
-    return await getFileChanges(cache, isCanvasFile(app, pathOrFile), linkConverter, abortSignal);
+    return await getFileChanges(cache, isCanvasFile(pathOrFile), linkConverter, abortSignal);
   }, options);
 }
 
@@ -1246,7 +1246,7 @@ export function updateLink(params: UpdateLinkParams): string {
   const { subpath } = splitSubpath(link.link);
   let shouldKeepAlias = !shouldUpdateFileNameAlias;
 
-  if (isCanvasFile(app, newSourcePathOrFile)) {
+  if (isCanvasFile(newSourcePathOrFile)) {
     /* v8 ignore start -- Canvas file node reference branch is hard to reproduce in unit tests. */
     if (isCanvasFileNodeReference(link)) {
       return newTargetFile.path + subpath;
@@ -1346,7 +1346,7 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
     shouldUpdateFileNameAlias
   } = params;
 
-  if (isCanvasFile(app, newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
+  if (isCanvasFile(newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
     return;
   }
 
@@ -1478,7 +1478,7 @@ function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpa
         }
         break;
       case FinalLinkPathStyle.ShortestPathWhenPossible: {
-        const shortestName = isMarkdownFile(app, targetFile) ? targetFile.basename : targetFile.name;
+        const shortestName = isMarkdownFile(targetFile) ? targetFile.basename : targetFile.name;
         const matchedFiles = app.metadataCache.getLinkpathDest(shortestName, sourcePath);
         linkText = matchedFiles.length === 1 && matchedFiles[0] === targetFile ? targetFile.name : targetFile.path;
         break;
@@ -1511,12 +1511,10 @@ function generateMarkdownLinkImpl(params: GenerateMarkdownLinkParams): string {
 }
 
 function generateMarkdownStyleLink(linkText: string, targetFile: TFile, params: GenerateMarkdownLinkParams, config: LinkConfig): string {
-  const { app } = params;
-
   let alias = params.alias ?? '';
   let shouldEscapeAlias = params.shouldEscapeAlias ?? false;
-  if (!alias && (isMarkdownFile(app, targetFile) || !params.isEmptyEmbedAliasAllowed)) {
-    alias = !params.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(app, targetFile)
+  if (!alias && (isMarkdownFile(targetFile) || !params.isEmptyEmbedAliasAllowed)) {
+    alias = !params.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(targetFile)
       ? targetFile.basename
       : targetFile.name;
     shouldEscapeAlias = true;
@@ -1618,7 +1616,7 @@ function getLinkConfig(params: GenerateMarkdownLinkParams, targetFile: TFile): L
   return {
     /* v8 ignore start -- requireApiVersion fallback is only reached in older Obsidian versions. */
     isEmbed: params.isEmbed ?? (params.originalLink ? testEmbed(params.originalLink) : undefined)
-      ?? (!requireApiVersion('1.10.0') && !isMarkdownFile(app, targetFile)),
+      ?? (!requireApiVersion('1.10.0') && !isMarkdownFile(targetFile)),
     /* v8 ignore stop */
     isSingleSubpathAllowed: params.isSingleSubpathAllowed ?? true,
     isWikilink: shouldUseWikilinkStyle(app, params.originalLink, params.linkStyle),
