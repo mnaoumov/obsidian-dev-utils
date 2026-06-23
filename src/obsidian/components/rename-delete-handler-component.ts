@@ -227,6 +227,13 @@ class DeleteHandler {
       return;
     }
 
+    if (await this.app.vault.adapter.exists(this.file.path)) {
+      getLibDebugger('RenameDeleteHandler:handleDelete')(
+        `Skipping delete handler of ${this.file.path} as the file still exists on disk (index-only removal, not a real deletion).`
+      );
+      return;
+    }
+
     const settings = this.settingsManager.getSettings();
 
     if (settings.isPathIgnored?.(this.file.path)) {
