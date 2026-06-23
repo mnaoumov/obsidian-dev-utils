@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 77.0.0
+
+- refactor! remove unused _app
+- chore: update libs
+- docs: record performance fixes and pending consumer follow-up
+- feat!: read attachment content lazily in getAttachmentFilePath
+- perf: make case-insensitive path resolution O(1) on a miss
+- fix: skip rename/delete handling for synthetic index-only deletions
+- chore: add extname dictionary word and sort embed-extensions import
+- feat: add progress
+- docs: track eager attachment readBinary perf issue and lazy-content fix
+- feat: view registrars
+- feat: over-exposure
+- refactor: use sleep helper instead of inline setTimeout
+
 ## 76.1.0
 
 - feat(eslint): enforce params/options naming on all members and by optionality
