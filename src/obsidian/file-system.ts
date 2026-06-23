@@ -26,6 +26,7 @@ import {
 } from '../path.ts';
 import { trimEnd } from '../string.ts';
 import { ensureNonNullable } from '../type-guards.ts';
+import { getCaseInsensitiveFileIndex } from './case-insensitive-file-index.ts';
 
 /**
  * A file extension for `base` files.
@@ -152,23 +153,22 @@ export function asFolderOrNull(abstractFile: null | TAbstractFile): null | TFold
 /**
  * Checks if the given path or file has the specified extension.
  *
- * @param app - The Obsidian App instance.
+ * @param _app - The Obsidian App instance. Kept for backwards compatibility; no longer used.
  * @param pathOrFile - The path or abstract file to check.
  * @param extension - The extension to compare against.
  * @returns Returns `true` if the path or file has the specified extension, `false` otherwise.
  */
-export function checkExtension(app: App, pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
+export function checkExtension(_app: App, pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
   if (isFile(pathOrFile)) {
     return pathOrFile.extension === extension;
   }
 
   if (typeof pathOrFile === 'string') {
-    const file = getFileOrNull(app, pathOrFile);
-    if (file) {
-      return file.extension === extension;
-    }
-
-    return extname(pathOrFile).slice(1) === extension;
+    // Compare the path's own extension instead of resolving the file.
+    // Resolving a string path is O(vault) on a miss on a case-insensitive filesystem.
+    // That miss is the hot path during deletion cascades.
+    // Obsidian lowercases a file's canonical extension, so compare case-insensitively.
+    return extname(pathOrFile).slice(1).toLowerCase() === extension;
   }
 
   return false;
@@ -527,6 +527,10 @@ export function trimMarkdownExtension(app: App, file: TAbstractFile): string {
 function getFileInternal(app: App, path: string, isCaseInsensitive?: boolean): null | TAbstractFile {
   isCaseInsensitive ??= getDataAdapterEx(app).insensitive;
   if (isCaseInsensitive) {
+    const caseInsensitiveFileIndex = getCaseInsensitiveFileIndex(app);
+    if (caseInsensitiveFileIndex) {
+      return caseInsensitiveFileIndex.get(path);
+    }
     return app.vault.getAbstractFileByPathInsensitive(path);
   }
 

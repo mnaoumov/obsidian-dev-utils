@@ -20,6 +20,7 @@ import {
 import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { assertNonNullable } from '../type-guards.ts';
+import { CaseInsensitiveFileIndexComponent } from './components/case-insensitive-file-index-component.ts';
 import {
   asArrayOfFiles,
   asArrayOfFolders,
@@ -293,6 +294,10 @@ describe('checkExtension', () => {
 
   it('should check extension by path string when the file does not exist in the vault', () => {
     expect(checkExtension(app, 'notes/test.md', 'md')).toBe(true);
+  });
+
+  it('should compare the path extension case-insensitively', () => {
+    expect(checkExtension(app, 'notes/TEST.MD', 'md')).toBe(true);
   });
 
   it('should return false for null', () => {
@@ -663,6 +668,19 @@ describe('getAbstractFileOrNull (case-insensitive)', () => {
     const result = getAbstractFileOrNull(app, 'note.md');
     assertNonNullable(result);
     expect(result.path).toBe('Note.md');
+  });
+
+  it('should resolve via the installed case-insensitive index when present', () => {
+    app = App.createConfigured__({ files: { 'Note.md': '' } }).asOriginalType__();
+    const component = new CaseInsensitiveFileIndexComponent(app);
+    component.load();
+    try {
+      const result = getAbstractFileOrNull(app, 'note.md', true);
+      assertNonNullable(result);
+      expect(result.path).toBe('Note.md');
+    } finally {
+      component.unload();
+    }
   });
 });
 
