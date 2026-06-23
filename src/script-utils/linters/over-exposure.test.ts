@@ -3,6 +3,7 @@ import type {
   LanguageService
 } from 'typescript';
 
+import dedent from 'dedent';
 import {
   createDocumentRegistry,
   createLanguageService,
@@ -617,12 +618,17 @@ describe('formatOverExposureFindings', () => {
     expect(report.indexOf('/proj/src/b.ts:2:')).toBeLessThan(report.indexOf('/proj/src/b.ts:9:'));
   });
 
-  it('should prefix each finding with a clickable path:line:column location', () => {
+  it('should put each finding on its own clickable location line followed by the change, then a blank line', () => {
     const report = formatOverExposureFindings([
       buildFinding({ column: 8, filePath: '/proj/src/a.ts', line: 22, name: 'helper', suggestedExposure: 'private' })
     ]);
 
-    expect(report).toContain('/proj/src/a.ts:22:8 public helper -> private');
+    expect(report).toBe(`${dedent`
+      /proj/src/a.ts:22:8
+      public helper -> private -- referenced only inside its own class
+
+      1 finding(s).
+    `}\n`);
   });
 });
 

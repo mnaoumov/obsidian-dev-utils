@@ -369,9 +369,10 @@ export function findOverExposure(params: FindOverExposureParams): OverExposureFi
 }
 
 /**
- * Formats over-exposure findings as a human-readable report. Findings are grouped by file and each
- * line begins with a `path:line:column` location so terminals (e.g. VS Code) render it as a
- * clickable link that jumps to the declaration.
+ * Formats over-exposure findings as a human-readable report. Findings are grouped by file and sorted
+ * by line. Each finding spans two lines — a `path:line:column` location (which terminals such as VS
+ * Code render as a clickable link that jumps to the declaration) followed by the suggested change and
+ * its reason — separated from the next finding by a blank line.
  *
  * @param findings - The findings to format.
  * @returns The report text. Empty-finding input yields a single "no findings" line.
@@ -393,10 +394,10 @@ export function formatOverExposureFindings(findings: readonly OverExposureFindin
     for (const finding of [...list].sort((a, b) => a.line - b.line)) {
       const location = `${filePath}:${String(finding.line)}:${String(finding.column)}`;
       const change = `${finding.currentExposure} ${finding.name} -> ${finding.suggestedExposure}`;
-      lines.push(`${location} ${change} -- ${describeReason(finding)}`);
+      lines.push(location, `${change} -- ${describeReason(finding)}`, '');
     }
   }
-  lines.push('', `${String(findings.length)} finding(s).`);
+  lines.push(`${String(findings.length)} finding(s).`);
   return `${lines.join('\n')}\n`;
 }
 
