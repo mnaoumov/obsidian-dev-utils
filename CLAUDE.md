@@ -615,6 +615,35 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 
 None.
 
+## Known Issues
+
+### Eager per-attachment `readBinary` in `getAttachmentFilePath`
+
+`getAttachmentFilePath` (`src/obsidian/attachment-path.ts`), whenever a consumer has installed a
+patched `Vault.getAvailablePathForAttachments.extended` handler, eagerly does
+`attachmentFileContent: attachmentFile ? await app.vault.readBinary(attachmentFile) : undefined` to
+read the WHOLE binary of each attachment *before* dispatching to the handler. For a consumer that
+resolves an attachment path once per attachment link per file during a bulk delete/rename cascade
+(`consistent-attachments-and-links`), this is the dominant, size-proportional cost and froze the UI
+on large vaults.
+
+Empirically localized 2026-06-22 by `custom-attachment-location`'s
+`src/attachment-path-bottleneck.desktop-performance.integration.test.ts`: at 512 KB attachments the
+`readBinary` is ~83% of the per-call cost and scales with file size, while the handler itself is flat
+(~0.2 ms) and content-independent. The read is pure waste for the default templates — no built-in
+token consumes the bytes (the only content consumer, `${attachmentFileSize}`, now derives its value
+from `TFile.stat.size` in the plugin).
+
+**Fix (designed, not done — breaking, release-gated):** replace the eagerly-read
+`attachmentFileContent?: ArrayBuffer | undefined` field of `GetAvailablePathForAttachmentsExtendedFnParams`
+with a lazy provider `readAttachmentFileContent?: (() => Promise<ArrayBuffer>) | undefined`, and have
+`getAttachmentFilePath` pass `() => app.vault.readBinary(attachmentFile)` instead of awaiting the
+read. The read then happens only if a token actually pulls the bytes (zero reads with default
+settings). The only consumer of `.extended` is `custom-attachment-location`, whose
+`AttachmentPathManager`/`Substitutions` content plumbing must switch to the lazy provider (memoizing
+the first call) in lockstep; coordinate the dev-utils release with the plugin bump and a
+`consistent-attachments-and-links` rebuild against the new dev-utils.
+
 ## Commits
 
 - Conventional Commits enforced via commitlint + husky (commit-msg hook)
