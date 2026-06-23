@@ -8,5 +8,5 @@ import {
 
 await wrapCliTask(() => {
   const findings = findOverExposure({ projectFolder: process.cwd() });
-  process.stdout.write(formatOverExposureFindings(findings));
+  process.stdout.write(formatOverExposureFindings(findings, { baseFolder: process.cwd() }));
 });
