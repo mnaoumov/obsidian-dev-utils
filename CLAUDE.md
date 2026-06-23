@@ -257,11 +257,46 @@ See `static/scripts/` for the full set of consumer examples.
 
 ## Current Task
 
-None. The "manual `skipLibCheck` wrapper" port (see **Type Validation** under Architecture →
-Build) is complete: `tsconfig.json` now uses `skipLibCheck: true`, `buildCompileTypeScript()`
-runs the filtered in-memory `checkProjectTypes()` validation, and both new files
-(`src/script-utils/check-project-types.ts` + test, plus `build.ts`/`build.test.ts` updates) are at
-100% coverage with lint/format/spellcheck clean.
+All three performance Known Issues are now fixed in the library (full gate green: 3435 tests, 100%
+coverage, lint/compile/spellcheck/format clean). Summary of what landed:
+
+1. **Fix 2 (synthetic index-only deletions)** — `DeleteHandler.handle`
+   (`src/obsidian/components/rename-delete-handler-component.ts`) early-returns after the `isNote`
+   check when `await this.app.vault.adapter.exists(this.file.path)` is `true`. Plugin-agnostic,
+   non-breaking. `RenameHandler` deliberately left unguarded (index-only renames not observed).
+2. **Fix 3 level 1 (extname-based `checkExtension`)** — `checkExtension`
+   (`src/obsidian/file-system.ts`) compares `extname(path).slice(1).toLowerCase()` for string inputs
+   instead of resolving via `getFileOrNull`, eliminating the O(vault) miss-scan for
+   `isCanvasFile`/`isMarkdownFile`/`isBaseFile`/`isNote`. The `app` parameter is now unused
+   (`_app`), kept for backwards compatibility.
+3. **Fix 3 level 2 (opt-in O(1) case-insensitive resolver)** — new
+   `src/obsidian/case-insensitive-file-index.ts` (`CaseInsensitiveFileIndex` + getter/setter
+   reading the realm-global shared-state bag, app-scoped via `ownsApp`) and
+   `src/obsidian/components/case-insensitive-file-index-component.ts`
+   (`CaseInsensitiveFileIndexComponent`). `getFileInternal` consults the installed index first and
+   falls back to native `getAbstractFileByPathInsensitive` when none is installed. The index handles
+   folder-delete subtree removal and folder/case-only rename re-keying by lowercased-path prefix.
+   **Opt-in**: a consumer must `addChild(new CaseInsensitiveFileIndexComponent(app))` to enable it.
+4. **Fix 1 (lazy attachment content provider)** — breaking: `GetAvailablePathForAttachmentsExtendedFnParams`
+   (`src/obsidian/attachment-path.ts`) dropped the eagerly-read `attachmentFileContent?: ArrayBuffer`
+   field for a lazy `readAttachmentFileContent: (() => Promise<ArrayBuffer>) | null` provider;
+   `getAttachmentFilePath` passes `() => app.vault.readBinary(attachmentFile)` (or `null`) instead
+   of awaiting. Uses `null` (not `undefined`) per API preference.
+
+### Pending follow-up (cross-repo, requires user consent for npm publish)
+
+Fix 1 is breaking for the only `.extended` consumer, `custom-attachment-location`. Before/with the
+dev-utils release:
+
+- Migrate `custom-attachment-location`'s `AttachmentPathManager`/`Substitutions` content plumbing
+  from `attachmentFileContent` to the lazy `readAttachmentFileContent` provider (memoizing the first
+  call) — the field name + boundary type (`AttachmentPathManagerGetAvailablePathForAttachmentsParams`)
+  must match the new lib interface.
+- Coordinate the dev-utils version bump with the `custom-attachment-location` bump and a
+  `consistent-attachments-and-links` rebuild against the new dev-utils.
+
+The local working tree also had pre-existing unrelated modifications (`CLAUDE.md`, `cspell.json`)
+present before this task started.
 
 ### Architectural Vision: Improve DX + Testability of Plugin Base Classes
 
@@ -617,32 +652,10 @@ None.
 
 ## Known Issues
 
-### Eager per-attachment `readBinary` in `getAttachmentFilePath`
-
-`getAttachmentFilePath` (`src/obsidian/attachment-path.ts`), whenever a consumer has installed a
-patched `Vault.getAvailablePathForAttachments.extended` handler, eagerly does
-`attachmentFileContent: attachmentFile ? await app.vault.readBinary(attachmentFile) : undefined` to
-read the WHOLE binary of each attachment *before* dispatching to the handler. For a consumer that
-resolves an attachment path once per attachment link per file during a bulk delete/rename cascade
-(`consistent-attachments-and-links`), this is the dominant, size-proportional cost and froze the UI
-on large vaults.
-
-Empirically localized 2026-06-22 by `custom-attachment-location`'s
-`src/attachment-path-bottleneck.desktop-performance.integration.test.ts`: at 512 KB attachments the
-`readBinary` is ~83% of the per-call cost and scales with file size, while the handler itself is flat
-(~0.2 ms) and content-independent. The read is pure waste for the default templates — no built-in
-token consumes the bytes (the only content consumer, `${attachmentFileSize}`, now derives its value
-from `TFile.stat.size` in the plugin).
-
-**Fix (designed, not done — breaking, release-gated):** replace the eagerly-read
-`attachmentFileContent?: ArrayBuffer | undefined` field of `GetAvailablePathForAttachmentsExtendedFnParams`
-with a lazy provider `readAttachmentFileContent?: (() => Promise<ArrayBuffer>) | undefined`, and have
-`getAttachmentFilePath` pass `() => app.vault.readBinary(attachmentFile)` instead of awaiting the
-read. The read then happens only if a token actually pulls the bytes (zero reads with default
-settings). The only consumer of `.extended` is `custom-attachment-location`, whose
-`AttachmentPathManager`/`Substitutions` content plumbing must switch to the lazy provider (memoizing
-the first call) in lockstep; coordinate the dev-utils release with the plugin bump and a
-`consistent-attachments-and-links` rebuild against the new dev-utils.
+None. The three performance issues previously tracked here (eager per-attachment `readBinary`,
+`RenameDeleteHandler` acting on synthetic index-only deletions, and O(vault) string-path resolution
+on a miss) are all fixed in the library — see **Current Task** for what landed and the remaining
+cross-repo follow-up for the `custom-attachment-location` lazy-provider migration.
 
 ## Commits
 
