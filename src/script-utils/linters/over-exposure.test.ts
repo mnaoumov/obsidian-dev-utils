@@ -630,6 +630,32 @@ describe('formatOverExposureFindings', () => {
       1 finding(s).
     `}\n`);
   });
+
+  it('should render paths relative to baseFolder when provided', () => {
+    const report = formatOverExposureFindings([
+      buildFinding({ column: 8, filePath: '/proj/src/a.ts', line: 22, name: 'helper', suggestedExposure: 'private' })
+    ], { baseFolder: '/proj' });
+
+    expect(report).toContain('src/a.ts:22:8');
+    expect(report).not.toContain('/proj/src/a.ts');
+  });
+
+  it('should keep paths outside baseFolder absolute', () => {
+    const report = formatOverExposureFindings([
+      buildFinding({ column: 8, filePath: '/other/b.ts', line: 3, name: 'helper', suggestedExposure: 'private' })
+    ], { baseFolder: '/proj' });
+
+    expect(report).toContain('/other/b.ts:3:8');
+  });
+
+  it('should canonicalize a backslash baseFolder (Windows process.cwd()) before matching posix finding paths', () => {
+    const report = formatOverExposureFindings([
+      buildFinding({ column: 8, filePath: '/proj/sub/a.ts', line: 22, name: 'helper', suggestedExposure: 'private' })
+    ], { baseFolder: '\\proj\\sub' });
+
+    expect(report).toContain('a.ts:22:8');
+    expect(report).not.toContain('/proj/sub/a.ts');
+  });
 });
 
 describe('createLanguageServiceHost', () => {

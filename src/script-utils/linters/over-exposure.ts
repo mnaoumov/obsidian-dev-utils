@@ -130,6 +130,17 @@ export interface FindOverExposureParams {
 }
 
 /**
+ * Options for {@link formatOverExposureFindings}.
+ */
+export interface FormatOverExposureFindingsOptions {
+  /**
+   * When set, file paths in the report are rendered relative to this folder (typically the current
+   * working directory) instead of as absolute paths. Paths outside the folder stay absolute.
+   */
+  readonly baseFolder?: string;
+}
+
+/**
  * The subset of file-system operations the language-service host needs. Injecting this (rather than
  * always using `typescript`'s `sys`) lets tests drive the analyzer against in-memory sources with no
  * real file-system access.
@@ -375,12 +386,15 @@ export function findOverExposure(params: FindOverExposureParams): OverExposureFi
  * its reason — separated from the next finding by a blank line.
  *
  * @param findings - The findings to format.
+ * @param options - The {@link FormatOverExposureFindingsOptions}.
  * @returns The report text. Empty-finding input yields a single "no findings" line.
  */
-export function formatOverExposureFindings(findings: readonly OverExposureFinding[]): string {
+export function formatOverExposureFindings(findings: readonly OverExposureFinding[], options?: FormatOverExposureFindingsOptions): string {
   if (findings.length === 0) {
     return 'No over-exposed declarations found.\n';
   }
+
+  const baseFolder = options?.baseFolder === undefined ? undefined : toCanonical(options.baseFolder);
 
   const byFile = new Map<string, OverExposureFinding[]>();
   for (const finding of findings) {
@@ -391,8 +405,9 @@ export function formatOverExposureFindings(findings: readonly OverExposureFindin
 
   const lines: string[] = [];
   for (const [filePath, list] of byFile) {
+    const displayPath = toDisplayPath(filePath, baseFolder);
     for (const finding of [...list].sort((a, b) => a.line - b.line)) {
-      const location = `${filePath}:${String(finding.line)}:${String(finding.column)}`;
+      const location = `${displayPath}:${String(finding.line)}:${String(finding.column)}`;
       const change = `${finding.currentExposure} ${finding.name} -> ${finding.suggestedExposure}`;
       lines.push(location, `${change} -- ${describeReason(finding)}`, '');
     }
@@ -640,4 +655,11 @@ function isTestFile(filePath: string): boolean {
 
 function rankExposure(exposure: MemberExposure): number {
   return MEMBER_EXPOSURE_ORDER.indexOf(exposure);
+}
+
+function toDisplayPath(filePath: string, baseFolder: string | undefined): string {
+  if (baseFolder !== undefined && filePath.startsWith(`${baseFolder}/`)) {
+    return filePath.slice(baseFolder.length + 1);
+  }
+  return filePath;
 }
