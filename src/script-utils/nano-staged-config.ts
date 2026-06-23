@@ -15,11 +15,19 @@
  * Commands use `npm run ... --` so nano-staged file paths are forwarded as CLI arguments.
  */
 export const obsidianDevUtilsConfig: Record<string, string[]> = {
+  /*
+   * Lint everything except the `static/` consumer templates: ESLint globally ignores them, and they
+   * ship their own consumer-facing `eslint.config` that cannot resolve in-repo, so linting one by
+   * explicit path crashes config loading. The `!(static)` negation drops any path that begins with
+   * `static`. Formatting and spellchecking still cover `static/` via the entries above and below.
+   */
+  '!(static)*.{ts,tsx,mts}': [
+    'npm run lint:fix --'
+  ],
   '*': [
     'npm run spellcheck --'
   ],
   '*.{ts,tsx,mts}': [
-    'npm run lint:fix --',
     'npm run format --'
   ],
   '*.md': [
