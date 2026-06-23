@@ -66,11 +66,6 @@ export interface GetAvailablePathForAttachmentsExtendedFnParams {
   readonly attachmentFileBaseName: string;
 
   /**
-   * A content of the attachment file.
-   */
-  readonly attachmentFileContent?: ArrayBuffer | undefined;
-
-  /**
    * An extension of the attachment.
    */
   readonly attachmentFileExtension: string;
@@ -99,6 +94,18 @@ export interface GetAvailablePathForAttachmentsExtendedFnParams {
    * A path or file of the old note.
    */
   readonly oldNotePathOrFile?: PathOrFile | undefined;
+
+  /**
+   * Lazily reads the content of the attachment file.
+   *
+   * The content is read on demand only when a consumer actually needs the bytes (e.g. a template
+   * token that embeds them). For the default templates nothing pulls the bytes, so the potentially
+   * expensive (size-proportional) `readBinary` never runs. Consumers that may call this more than
+   * once should memoize the first call. `null` when there is no attachment file to read.
+   *
+   * @returns A {@link Promise} that resolves to the content of the attachment file.
+   */
+  readonly readAttachmentFileContent: (() => Promise<ArrayBuffer>) | null;
 
   /**
    * Should the duplicate check be skipped.
@@ -223,13 +230,13 @@ export async function getAttachmentFilePath(params: GetAttachmentFilePathParams)
   if (extendedFn) {
     return extendedFn({
       attachmentFileBaseName,
-      attachmentFileContent: attachmentFile ? await app.vault.readBinary(attachmentFile) : undefined,
       attachmentFileExtension: attachmentFileExtension.slice(1),
       attachmentFileStats: attachmentFile?.stat,
       context: params.context,
       notePathOrFile,
       oldAttachmentPathOrFile: params.oldAttachmentPathOrFile,
       oldNotePathOrFile: params.oldNotePathOrFile,
+      readAttachmentFileContent: attachmentFile ? (): Promise<ArrayBuffer> => app.vault.readBinary(attachmentFile) : null,
       shouldSkipDuplicateCheck,
       shouldSkipMissingAttachmentFolderCreation: true
     });
