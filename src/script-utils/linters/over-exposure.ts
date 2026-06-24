@@ -22,24 +22,42 @@
  * A member referenced only from test files is reported with {@link OverExposureFinding.isForcedByTestOnly}
  * set, surfacing members widened purely for testability — the canonical case for extracting logic
  * into an independently testable component instead.
+ *
+ * Beyond reporting, passing `shouldFix` to {@link findOverExposure} / {@link analyzeOverExposure}
+ * rewrites the source in place: dropping the `export` keyword, or replacing/inserting a `private`
+ * or `protected` modifier. Each finding then carries {@link OverExposureFinding.wasFixed} /
+ * {@link OverExposureFinding.skipReason}. Changes that cannot be safely automated — those forced
+ * only by test references, decorated members, or an `export` shared with a still-exported sibling —
+ * are reported as skipped and left untouched.
  */
 
 import type {
+  ClassDeclaration,
   ClassLikeDeclaration,
   CompilerOptions,
+  EnumDeclaration,
+  FunctionDeclaration,
+  GetAccessorDeclaration,
+  InterfaceDeclaration,
   IScriptSnapshot,
   LanguageService,
   LanguageServiceHost,
+  MethodDeclaration,
   Node,
   Program,
+  PropertyDeclaration,
   ReferencedSymbol,
-  TypeChecker
+  SetAccessorDeclaration,
+  TypeAliasDeclaration,
+  TypeChecker,
+  VariableStatement
 } from 'typescript';
 
 import {
   canHaveModifiers,
   createDocumentRegistry,
   createLanguageService,
+  getDecorators,
   getDefaultLibFilePath,
   getModifiers,
   isClassDeclaration,
@@ -81,11 +99,27 @@ export interface AnalyzeOverExposureParams {
   onProgress?(this: void, progress: OverExposureProgress): void;
 
   /**
+   * When `true`, each fixable finding is tightened in place via {@link writeFile} (which must then
+   * be provided), and the returned findings carry {@link OverExposureFinding.wasFixed} /
+   * {@link OverExposureFinding.skipReason}. When `false` or omitted, the analysis only reports.
+   */
+  readonly shouldFix?: boolean | undefined;
+
+  /**
    * Absolute (canonical) path of the project's `src` folder. Only declarations in non-test files
    * under this folder are analyzed; declarations elsewhere (test files, dependencies) are ignored
    * but still counted as reference sites.
    */
   readonly srcFolder: string;
+
+  /**
+   * Writes the tightened contents of a changed file back to disk. Required when {@link shouldFix}
+   * is `true`; ignored otherwise.
+   *
+   * @param path - Absolute path of the file to write (original casing, as stored in the program).
+   * @param content - The full new file contents.
+   */
+  writeFile?(this: void, path: string, content: string): void;
 }
 
 /**
@@ -127,6 +161,13 @@ export interface FindOverExposureParams {
 
   /** Absolute path to the project root (the folder containing `tsconfig.json` and `src`). */
   readonly projectFolder: string;
+
+  /**
+   * When `true`, fixable findings are tightened in place on disk (the `export` keyword is dropped,
+   * or a `private` / `protected` modifier is inserted/replaced). When `false` or omitted, the
+   * project is only analyzed.
+   */
+  readonly shouldFix?: boolean | undefined;
 }
 
 /**
@@ -217,8 +258,17 @@ export interface OverExposureFinding {
   /** The declared name. */
   readonly name: string;
 
+  /**
+   * In a fix run, why this finding was left untouched instead of tightened; `null` when it was
+   * fixed or when the analysis only reported (`shouldFix` off).
+   */
+  readonly skipReason: null | OverExposureSkipReason;
+
   /** The exposure the declaration could be tightened to. */
   readonly suggestedExposure: SuggestedExposure;
+
+  /** `true` when a fix run tightened this declaration in place. Always `false` in a report run. */
+  readonly wasFixed: boolean;
 }
 
 /**
@@ -234,6 +284,15 @@ export interface OverExposureProgress {
   /** Total number of source files that will be analyzed. */
   readonly totalFileCount: number;
 }
+
+/**
+ * Why a fix run left a finding untouched:
+ *
+ * - `decorated` — the member carries a decorator, so the modifier insertion point is ambiguous.
+ * - `shared-export` — the `export` keyword is shared with a still-exported sibling declarator.
+ * - `test-only` — the declaration is exposed purely for tests, so tightening would break the test.
+ */
+export type OverExposureSkipReason = 'decorated' | 'shared-export' | 'test-only';
 
 /**
  * The (tighter) exposure level a declaration could be reduced to.
@@ -260,9 +319,24 @@ export const LIFECYCLE_ALLOWLIST: ReadonlySet<string> = new Set<string>([
 
 interface AnalysisContext {
   readonly checker: TypeChecker;
+  readonly edits: (null | OverExposureTextEdit)[];
   readonly findings: OverExposureFinding[];
   readonly languageService: LanguageService;
   readonly program: Program;
+}
+
+interface AnalysisResult {
+  readonly edits: readonly (null | OverExposureTextEdit)[];
+  readonly findings: readonly OverExposureFinding[];
+}
+
+type ClassMemberDeclaration = GetAccessorDeclaration | MethodDeclaration | PropertyDeclaration | SetAccessorDeclaration;
+
+type ExportableDeclaration = ClassDeclaration | EnumDeclaration | FunctionDeclaration | InterfaceDeclaration | TypeAliasDeclaration | VariableStatement;
+
+interface ExportFindingCandidate {
+  readonly finding: OverExposureFinding;
+  readonly isPlainFileLocal: boolean;
 }
 
 interface FindingFlags {
@@ -272,9 +346,25 @@ interface FindingFlags {
 
 type MemberExposure = 'private' | 'protected' | 'public';
 
+/**
+ * A single in-place text replacement that tightens a declaration's exposure. A zero-length edit is
+ * an insertion (e.g. adding an explicit `private` modifier to an implicitly-`public` member).
+ */
+interface OverExposureTextEdit {
+  readonly fileName: string;
+  readonly length: number;
+  readonly newText: string;
+  readonly start: number;
+}
+
 interface ReferenceLocation {
   readonly fileName: string;
   readonly start: number;
+}
+
+interface SourceFileText {
+  readonly fileName: string;
+  readonly text: string;
 }
 
 const MEMBER_EXPOSURE_ORDER: readonly MemberExposure[] = ['private', 'protected', 'public'];
@@ -283,47 +373,33 @@ const SCOPE_DESCRIPTION: Record<SuggestedExposure, string> = {
   'private': 'inside its own class',
   'protected': 'inside its class + subclasses'
 };
+const SKIP_REASON_DESCRIPTION: Record<OverExposureSkipReason, string> = {
+  'decorated': 'decorated member',
+  'shared-export': 'export shared with a still-exported sibling',
+  'test-only': 'exposed only for tests'
+};
+const VISIBILITY_MODIFIER_KINDS: ReadonlySet<SyntaxKind> = new Set<SyntaxKind>([SyntaxKind.PrivateKeyword, SyntaxKind.ProtectedKeyword, SyntaxKind.PublicKeyword]);
+const WHITESPACE_PATTERN = /\s/;
 
 /**
- * Analyzes a project (already loaded into a language service) for over-exposed declarations.
+ * Analyzes a project (already loaded into a language service) for over-exposed declarations, and —
+ * when {@link AnalyzeOverExposureParams.shouldFix} is set — tightens every fixable finding in place
+ * via {@link AnalyzeOverExposureParams.writeFile}. Findings that cannot be safely automated (exposed
+ * only for tests, decorated, or sharing an `export` keyword with a still-exported sibling) carry a
+ * {@link OverExposureFinding.skipReason} and are left untouched.
  *
  * @param params - The {@link AnalyzeOverExposureParams}.
  * @returns The over-exposed declarations, in discovery order.
  */
 export function analyzeOverExposure(params: AnalyzeOverExposureParams): OverExposureFinding[] {
-  const { languageService, onProgress, srcFolder } = params;
-  const program = languageService.getProgram();
-  if (!program) {
-    return [];
+  const result = runOverExposureAnalysis(params);
+  if (!params.shouldFix) {
+    return [...result.findings];
   }
 
-  const context: AnalysisContext = {
-    checker: program.getTypeChecker(),
-    findings: [],
-    languageService,
-    program
-  };
-
-  const sourceFilesToAnalyze = program.getSourceFiles().filter((sourceFile) => {
-    const filePath = toCanonical(sourceFile.fileName);
-    return isOwnSourceFile(filePath, srcFolder) && !isTestFile(filePath);
-  });
-
-  for (const [analyzedFileCount, sourceFile] of sourceFilesToAnalyze.entries()) {
-    onProgress?.({
-      analyzedFileCount,
-      currentFilePath: toCanonical(sourceFile.fileName),
-      totalFileCount: sourceFilesToAnalyze.length
-    });
-    visit(sourceFile);
-  }
-  return context.findings;
-
-  function visit(node: Node): void {
-    analyzeMember(node, context);
-    analyzeExport(node, context);
-    node.forEachChild(visit);
-  }
+  const { writeFile } = params;
+  assertNonNullable(writeFile, 'writeFile is required when shouldFix is true.');
+  return applyOverExposureFixes(result, params.languageService.getProgram(), writeFile);
 }
 
 /**
@@ -364,7 +440,9 @@ export function createProjectLanguageService(params: CreateProjectLanguageServic
 }
 
 /**
- * Finds over-exposed declarations in a project on disk.
+ * Finds over-exposed declarations in a project on disk. When
+ * {@link FindOverExposureParams.shouldFix} is set, each fixable finding is also tightened in place
+ * (rewriting the affected source files via `typescript`'s `sys.writeFile`).
  *
  * @param params - The {@link FindOverExposureParams}.
  * @returns The over-exposed declarations.
@@ -374,16 +452,25 @@ export function findOverExposure(params: FindOverExposureParams): OverExposureFi
   const languageService = createProjectLanguageService({ tsConfigPath: `${projectFolder}/tsconfig.json` });
   return analyzeOverExposure({
     languageService,
+    shouldFix: params.shouldFix,
     srcFolder: `${projectFolder}/src`,
+    writeFile: (path, content) => {
+      sys.writeFile(path, content);
+    },
     ...params.onProgress ? { onProgress: params.onProgress } : {}
   });
 }
 
 /**
- * Formats over-exposure findings as a human-readable report. Findings are grouped by file and sorted
- * by line. Each finding spans two lines — a `path:line:column` location (which terminals such as VS
- * Code render as a clickable link that jumps to the declaration) followed by the suggested change and
- * its reason — separated from the next finding by a blank line.
+ * Formats over-exposure findings as a human-readable report, using the grouped layout of ESLint's
+ * `stylish` formatter. Findings are grouped by file and sorted by line: each file is rendered as a
+ * `path` header line, followed by one indented `  line:column  change -- reason` row per finding (the
+ * `line:column` is right-padded so the rows align within a file). Terminals such as VS Code render
+ * each indented `line:column` as a clickable link — resolved against the file header above it — that
+ * jumps straight to the declaration. File groups are separated by a blank line. In a fix run (findings
+ * carrying {@link OverExposureFinding.wasFixed} / {@link OverExposureFinding.skipReason}) each change
+ * row is suffixed with `[fixed]` or `[skipped: …]`, and the trailing summary appends the fixed/skipped
+ * counts.
  *
  * @param findings - The findings to format.
  * @param options - The {@link FormatOverExposureFindingsOptions}.
@@ -395,24 +482,8 @@ export function formatOverExposureFindings(findings: readonly OverExposureFindin
   }
 
   const baseFolder = options?.baseFolder === undefined ? undefined : toCanonical(options.baseFolder);
-
-  const byFile = new Map<string, OverExposureFinding[]>();
-  for (const finding of findings) {
-    const list = byFile.get(finding.filePath) ?? [];
-    list.push(finding);
-    byFile.set(finding.filePath, list);
-  }
-
-  const lines: string[] = [];
-  for (const [filePath, list] of byFile) {
-    const displayPath = toDisplayPath(filePath, baseFolder);
-    for (const finding of [...list].sort((a, b) => a.line - b.line)) {
-      const location = `${displayPath}:${String(finding.line)}:${String(finding.column)}`;
-      const change = `${finding.currentExposure} ${finding.name} -> ${finding.suggestedExposure}`;
-      lines.push(location, `${change} -- ${describeReason(finding)}`, '');
-    }
-  }
-  lines.push(`${String(findings.length)} finding(s).`);
+  const lines = formatFindingBlocks(findings, baseFolder);
+  lines.push(formatSummary(findings));
   return `${lines.join('\n')}\n`;
 }
 
@@ -422,32 +493,56 @@ function analyzeExport(node: Node, context: AnalysisContext): void {
     return;
   }
 
+  const declaration = asExportableDeclaration(node);
+  if (!declaration) {
+    return;
+  }
+
   const declFilePath = toCanonical(sourceFile.fileName);
-  for (const nameNode of getExportedNameNodes(node)) {
+  const nameNodes = getExportedNameNodes(declaration);
+  const candidates: ExportFindingCandidate[] = [];
+  for (const nameNode of nameNodes) {
     const references = collectReferences(context.languageService.findReferences(sourceFile.fileName, nameNode.getStart()))
       .filter((reference) => !isDeclarationItself(reference, nameNode));
     const otherFileReferences = references.filter((reference) => toCanonical(reference.fileName) !== declFilePath);
 
     if (otherFileReferences.length === 0) {
-      context.findings.push(buildFinding(node, nameNode, 'export', 'file-local', { hasNoReferences: references.length === 0, isForcedByTestOnly: false }));
+      candidates.push({
+        finding: buildFinding(declaration, nameNode, 'export', 'file-local', { hasNoReferences: references.length === 0, isForcedByTestOnly: false }),
+        isPlainFileLocal: true
+      });
       continue;
     }
 
     const nonTestReferences = otherFileReferences.filter((reference) => !isTestFile(toCanonical(reference.fileName)));
     if (nonTestReferences.length === 0) {
-      context.findings.push(buildFinding(node, nameNode, 'export', 'file-local', { hasNoReferences: false, isForcedByTestOnly: true }));
+      candidates.push({
+        finding: buildFinding(declaration, nameNode, 'export', 'file-local', { hasNoReferences: false, isForcedByTestOnly: true }),
+        isPlainFileLocal: false
+      });
     }
+  }
+
+  if (candidates.length === 0) {
+    return;
+  }
+
+  const canDropExport = candidates.length === nameNodes.length && candidates.every((candidate) => candidate.isPlainFileLocal);
+  const exportEdit = canDropExport ? computeExportRemovalEdit(declaration) : null;
+  for (const candidate of candidates) {
+    record(context, candidate.finding, exportEdit);
   }
 }
 
 function analyzeMember(node: Node, context: AnalysisContext): void {
-  const nameNode = getMemberNameNode(node);
-  if (!nameNode || !isClassLike(node.parent)) {
+  const member = asClassMember(node);
+  if (!member || !isClassLike(node.parent)) {
     return;
   }
+  const nameNode = member.name;
   const declaringClass = node.parent;
 
-  const modifierKinds = getModifierKinds(node);
+  const modifierKinds = getModifierKinds(member);
   if (modifierKinds.has(SyntaxKind.StaticKeyword) || modifierKinds.has(SyntaxKind.OverrideKeyword) || LIFECYCLE_ALLOWLIST.has(nameNode.getText())) {
     return;
   }
@@ -457,7 +552,7 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
     return;
   }
 
-  const sourceFile = node.getSourceFile();
+  const sourceFile = member.getSourceFile();
   const references = collectReferences(context.languageService.findReferences(sourceFile.fileName, nameNode.getStart()))
     .filter((reference) => !isDeclarationItself(reference, nameNode));
   const nonTestReferences = references.filter((reference) => !isTestFile(toCanonical(reference.fileName)));
@@ -473,10 +568,87 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
     return;
   }
 
-  context.findings.push(buildFinding(node, nameNode, currentExposure, neededForSrc, {
+  const finding = buildFinding(member, nameNode, currentExposure, neededForSrc, {
     hasNoReferences: references.length === 0,
     isForcedByTestOnly: rankExposure(neededWithTests) > rankExposure(neededForSrc)
-  }));
+  });
+  record(context, finding, computeMemberExposureEdit(member, neededForSrc));
+}
+
+function applyEdits(text: string, edits: readonly OverExposureTextEdit[]): string {
+  const seen = new Set<string>();
+  const uniqueEdits = edits
+    .filter((edit) => {
+      const key = `${String(edit.start)}:${String(edit.length)}:${edit.newText}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => b.start - a.start);
+
+  let result = text;
+  for (const edit of uniqueEdits) {
+    result = `${result.slice(0, edit.start)}${edit.newText}${result.slice(edit.start + edit.length)}`;
+  }
+  return result;
+}
+
+function applyOverExposureFixes(
+  result: AnalysisResult,
+  program: Program | undefined,
+  writeFile: (this: void, path: string, content: string) => void
+): OverExposureFinding[] {
+  const editsByFile = new Map<string, OverExposureTextEdit[]>();
+  const findings = result.findings.map((finding, index) => {
+    const edit = result.edits[index] ?? null;
+    const skipReason = determineSkipReason(finding, edit);
+    if (skipReason !== null) {
+      return { ...finding, skipReason, wasFixed: false };
+    }
+    assertNonNullable(edit, 'A fixable finding must carry a text edit.');
+    const fileEdits = editsByFile.get(edit.fileName) ?? [];
+    fileEdits.push(edit);
+    editsByFile.set(edit.fileName, fileEdits);
+    return { ...finding, skipReason: null, wasFixed: true };
+  });
+
+  if (editsByFile.size > 0) {
+    assertNonNullable(program, 'A program is expected when there are edits to apply.');
+    const sourceTextByFile = new Map<string, SourceFileText>();
+    for (const sourceFile of program.getSourceFiles()) {
+      sourceTextByFile.set(toCanonical(sourceFile.fileName), { fileName: sourceFile.fileName, text: sourceFile.text });
+    }
+    for (const [canonicalFileName, fileEdits] of editsByFile) {
+      const source = sourceTextByFile.get(canonicalFileName);
+      assertNonNullable(source, `Source file not found in program: ${canonicalFileName}`);
+      writeFile(source.fileName, applyEdits(source.text, fileEdits));
+    }
+  }
+
+  return findings;
+}
+
+function asClassMember(node: Node): ClassMemberDeclaration | undefined {
+  if (isMethodDeclaration(node) || isPropertyDeclaration(node) || isGetAccessorDeclaration(node) || isSetAccessorDeclaration(node)) {
+    return node;
+  }
+  return undefined;
+}
+
+function asExportableDeclaration(node: Node): ExportableDeclaration | undefined {
+  if (
+    isFunctionDeclaration(node)
+    || isClassDeclaration(node)
+    || isInterfaceDeclaration(node)
+    || isTypeAliasDeclaration(node)
+    || isEnumDeclaration(node)
+    || isVariableStatement(node)
+  ) {
+    return node;
+  }
+  return undefined;
 }
 
 function buildFinding(
@@ -497,7 +669,9 @@ function buildFinding(
     isMember: currentExposure !== 'export',
     line: line + 1,
     name: nameNode.getText(),
-    suggestedExposure
+    skipReason: null,
+    suggestedExposure,
+    wasFixed: false
   };
 }
 
@@ -509,6 +683,53 @@ function collectReferences(referencedSymbols: ReferencedSymbol[] | undefined): R
     }
   }
   return references;
+}
+
+function computeExportRemovalEdit(declaration: ExportableDeclaration): OverExposureTextEdit {
+  const sourceFile = declaration.getSourceFile();
+  const modifiers = getModifiers(declaration);
+  assertNonNullable(modifiers, 'Modifiers expected on an exported declaration.');
+  const exportModifier = modifiers.find((modifier) => modifier.kind === SyntaxKind.ExportKeyword);
+  assertNonNullable(exportModifier, 'Export modifier expected on an exported declaration.');
+  const { text } = sourceFile;
+  let end = exportModifier.getEnd();
+  while (end < text.length && WHITESPACE_PATTERN.test(text.charAt(end))) {
+    end++;
+  }
+  return {
+    fileName: toCanonical(sourceFile.fileName),
+    length: end - exportModifier.getStart(),
+    newText: '',
+    start: exportModifier.getStart()
+  };
+}
+
+function computeMemberExposureEdit(member: ClassMemberDeclaration, suggestedExposure: 'private' | 'protected'): null | OverExposureTextEdit {
+  if ((getDecorators(member) ?? []).length > 0) {
+    return null;
+  }
+
+  const sourceFile = member.getSourceFile();
+  const fileName = toCanonical(sourceFile.fileName);
+  const modifiers = getModifiers(member) ?? [];
+  const visibilityModifier = modifiers.find((modifier) => VISIBILITY_MODIFIER_KINDS.has(modifier.kind));
+  if (visibilityModifier) {
+    return {
+      fileName,
+      length: visibilityModifier.getEnd() - visibilityModifier.getStart(),
+      newText: suggestedExposure,
+      start: visibilityModifier.getStart()
+    };
+  }
+
+  const firstModifier = modifiers[0];
+  const insertStart = firstModifier ? firstModifier.getStart() : member.getStart();
+  return {
+    fileName,
+    length: 0,
+    newText: `${suggestedExposure} `,
+    start: insertStart
+  };
 }
 
 function computeNeededExposure(
@@ -535,6 +756,16 @@ function computeNeededExposure(
   return needed;
 }
 
+function describeFixStatus(finding: OverExposureFinding): string {
+  if (finding.wasFixed) {
+    return ' [fixed]';
+  }
+  if (finding.skipReason !== null) {
+    return ` [skipped: ${SKIP_REASON_DESCRIPTION[finding.skipReason]}]`;
+  }
+  return '';
+}
+
 function describeReason(finding: OverExposureFinding): string {
   const base = `referenced only ${SCOPE_DESCRIPTION[finding.suggestedExposure]}`;
   if (finding.isForcedByTestOnly) {
@@ -544,6 +775,16 @@ function describeReason(finding: OverExposureFinding): string {
     return `${base} (no references at all)`;
   }
   return base;
+}
+
+function determineSkipReason(finding: OverExposureFinding, edit: null | OverExposureTextEdit): null | OverExposureSkipReason {
+  if (finding.isForcedByTestOnly) {
+    return 'test-only';
+  }
+  if (!edit) {
+    return finding.isMember ? 'decorated' : 'shared-export';
+  }
+  return null;
 }
 
 function findNodeAtPosition(node: Node, position: number): Node | undefined {
@@ -558,6 +799,39 @@ function findNodeAtPosition(node: Node, position: number): Node | undefined {
     }
   });
   return result;
+}
+
+function formatFindingBlocks(findings: readonly OverExposureFinding[], baseFolder: string | undefined): string[] {
+  const byFile = new Map<string, OverExposureFinding[]>();
+  for (const finding of findings) {
+    const list = byFile.get(finding.filePath) ?? [];
+    list.push(finding);
+    byFile.set(finding.filePath, list);
+  }
+
+  const lines: string[] = [];
+  for (const [filePath, list] of byFile) {
+    const sorted = [...list].sort((a, b) => a.line - b.line);
+    const locationWidth = Math.max(...sorted.map((finding) => `${String(finding.line)}:${String(finding.column)}`.length));
+    lines.push(toDisplayPath(filePath, baseFolder));
+    for (const finding of sorted) {
+      const location = `${String(finding.line)}:${String(finding.column)}`.padEnd(locationWidth);
+      const change = `${finding.currentExposure} ${finding.name} -> ${finding.suggestedExposure}`;
+      lines.push(`  ${location}  ${change} -- ${describeReason(finding)}${describeFixStatus(finding)}`);
+    }
+    lines.push('');
+  }
+  return lines;
+}
+
+function formatSummary(findings: readonly OverExposureFinding[]): string {
+  const summary = `${String(findings.length)} finding(s).`;
+  const fixedCount = findings.filter((finding) => finding.wasFixed).length;
+  const skippedCount = findings.filter((finding) => finding.skipReason !== null).length;
+  if (fixedCount === 0 && skippedCount === 0) {
+    return summary;
+  }
+  return `${summary} ${String(fixedCount)} fixed, ${String(skippedCount)} skipped.`;
 }
 
 function getClassAtPosition(program: Program, fileName: string, position: number): ClassLikeDeclaration | undefined {
@@ -589,21 +863,11 @@ function getEnclosingClass(node: Node): ClassLikeDeclaration | undefined {
   return undefined;
 }
 
-function getExportedNameNodes(node: Node): Node[] {
-  if (isFunctionDeclaration(node) || isClassDeclaration(node) || isInterfaceDeclaration(node) || isTypeAliasDeclaration(node) || isEnumDeclaration(node)) {
-    return node.name ? [node.name] : [];
+function getExportedNameNodes(declaration: ExportableDeclaration): Node[] {
+  if (isVariableStatement(declaration)) {
+    return declaration.declarationList.declarations.map((variableDeclaration) => variableDeclaration.name).filter(isIdentifier);
   }
-  if (isVariableStatement(node)) {
-    return node.declarationList.declarations.map((declaration) => declaration.name).filter(isIdentifier);
-  }
-  return [];
-}
-
-function getMemberNameNode(node: Node): Node | undefined {
-  if (isMethodDeclaration(node) || isPropertyDeclaration(node) || isGetAccessorDeclaration(node) || isSetAccessorDeclaration(node)) {
-    return node.name;
-  }
-  return undefined;
+  return declaration.name ? [declaration.name] : [];
 }
 
 function getModifierKinds(node: Node): ReadonlySet<SyntaxKind> {
@@ -655,6 +919,48 @@ function isTestFile(filePath: string): boolean {
 
 function rankExposure(exposure: MemberExposure): number {
   return MEMBER_EXPOSURE_ORDER.indexOf(exposure);
+}
+
+function record(context: AnalysisContext, finding: OverExposureFinding, edit: null | OverExposureTextEdit): void {
+  context.findings.push(finding);
+  context.edits.push(edit);
+}
+
+function runOverExposureAnalysis(params: AnalyzeOverExposureParams): AnalysisResult {
+  const { languageService, onProgress, srcFolder } = params;
+  const program = languageService.getProgram();
+  if (!program) {
+    return { edits: [], findings: [] };
+  }
+
+  const context: AnalysisContext = {
+    checker: program.getTypeChecker(),
+    edits: [],
+    findings: [],
+    languageService,
+    program
+  };
+
+  const sourceFilesToAnalyze = program.getSourceFiles().filter((sourceFile) => {
+    const filePath = toCanonical(sourceFile.fileName);
+    return isOwnSourceFile(filePath, srcFolder) && !isTestFile(filePath);
+  });
+
+  for (const [analyzedFileCount, sourceFile] of sourceFilesToAnalyze.entries()) {
+    onProgress?.({
+      analyzedFileCount,
+      currentFilePath: toCanonical(sourceFile.fileName),
+      totalFileCount: sourceFilesToAnalyze.length
+    });
+    visit(sourceFile);
+  }
+  return { edits: context.edits, findings: context.findings };
+
+  function visit(node: Node): void {
+    analyzeMember(node, context);
+    analyzeExport(node, context);
+    node.forEachChild(visit);
+  }
 }
 
 function toDisplayPath(filePath: string, baseFolder: string | undefined): string {

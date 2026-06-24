@@ -9,7 +9,8 @@ import {
   createLanguageService,
   ModuleKind,
   ModuleResolutionKind,
-  ScriptTarget
+  ScriptTarget,
+  sys
 } from 'typescript';
 import {
   afterEach,
@@ -44,6 +45,11 @@ vi.mock('../check-project-types.ts', async (importOriginal) => ({
   ...await importOriginal<typeof import('../check-project-types.ts')>(),
   parseTsConfig: mockParseTsConfig
 }));
+
+interface ApplyFixesOutcome {
+  readonly findings: readonly OverExposureFinding[];
+  readonly writes: Map<string, string>;
+}
 
 const SRC_FOLDER = '/proj/src';
 
@@ -615,19 +621,34 @@ describe('formatOverExposureFindings', () => {
     expect(report).toContain('(exposed only for tests)');
     expect(report).toContain('(no references at all)');
     expect(report).toContain('5 finding(s).');
-    expect(report.indexOf('/proj/src/b.ts:2:')).toBeLessThan(report.indexOf('/proj/src/b.ts:9:'));
+    expect(report.indexOf('early')).toBeLessThan(report.indexOf('late'));
   });
 
-  it('should put each finding on its own clickable location line followed by the change, then a blank line', () => {
+  it('should render each file as a path header followed by indented clickable line:column rows, then a blank line', () => {
     const report = formatOverExposureFindings([
       buildFinding({ column: 8, filePath: '/proj/src/a.ts', line: 22, name: 'helper', suggestedExposure: 'private' })
     ]);
 
     expect(report).toBe(`${dedent`
-      /proj/src/a.ts:22:8
-      public helper -> private -- referenced only inside its own class
+      /proj/src/a.ts
+        22:8  public helper -> private -- referenced only inside its own class
 
       1 finding(s).
+    `}\n`);
+  });
+
+  it('should align the line:column column within a file group', () => {
+    const report = formatOverExposureFindings([
+      buildFinding({ column: 8, filePath: '/proj/src/a.ts', line: 2, name: 'early', suggestedExposure: 'private' }),
+      buildFinding({ column: 8, filePath: '/proj/src/a.ts', line: 120, name: 'late', suggestedExposure: 'private' })
+    ]);
+
+    expect(report).toBe(`${dedent`
+      /proj/src/a.ts
+        2:8    public early -> private -- referenced only inside its own class
+        120:8  public late -> private -- referenced only inside its own class
+
+      2 finding(s).
     `}\n`);
   });
 
@@ -636,7 +657,8 @@ describe('formatOverExposureFindings', () => {
       buildFinding({ column: 8, filePath: '/proj/src/a.ts', line: 22, name: 'helper', suggestedExposure: 'private' })
     ], { baseFolder: '/proj' });
 
-    expect(report).toContain('src/a.ts:22:8');
+    expect(report).toContain('src/a.ts\n');
+    expect(report).toContain('22:8');
     expect(report).not.toContain('/proj/src/a.ts');
   });
 
@@ -645,7 +667,8 @@ describe('formatOverExposureFindings', () => {
       buildFinding({ column: 8, filePath: '/other/b.ts', line: 3, name: 'helper', suggestedExposure: 'private' })
     ], { baseFolder: '/proj' });
 
-    expect(report).toContain('/other/b.ts:3:8');
+    expect(report).toContain('/other/b.ts\n');
+    expect(report).toContain('3:8');
   });
 
   it('should canonicalize a backslash baseFolder (Windows process.cwd()) before matching posix finding paths', () => {
@@ -653,7 +676,8 @@ describe('formatOverExposureFindings', () => {
       buildFinding({ column: 8, filePath: '/proj/sub/a.ts', line: 22, name: 'helper', suggestedExposure: 'private' })
     ], { baseFolder: '\\proj\\sub' });
 
-    expect(report).toContain('a.ts:22:8');
+    expect(report).toContain('a.ts\n');
+    expect(report).toContain('22:8');
     expect(report).not.toContain('/proj/sub/a.ts');
   });
 });
@@ -704,6 +728,366 @@ describe('findOverExposure', () => {
   });
 });
 
+describe('analyzeOverExposure with shouldFix', () => {
+  it('should return no findings when the language service has no program', () => {
+    const languageService = strictProxy<LanguageService>({
+      getProgram: () => undefined
+    });
+    const writes = new Map<string, string>();
+    const findings = analyzeOverExposure({
+      languageService,
+      shouldFix: true,
+      srcFolder: SRC_FOLDER,
+      writeFile: (path, content) => {
+        writes.set(path, content);
+      }
+    });
+    expect(findings).toEqual([]);
+    expect(writes.size).toBe(0);
+  });
+
+  it('should replace an explicit public member modifier with private', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export class A {
+          public helper(): number {
+            return this.run();
+          }
+          public run(): number {
+            return 1;
+          }
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { A } from './a.ts';
+        const value = new A().helper();
+        void value;
+      `
+    });
+    expect(fixedNames(findings)).toContain('run');
+    const fixed = writes.get('/proj/src/a.ts') ?? '';
+    expect(fixed).toContain('private run(): number');
+    expect(fixed).not.toContain('public run(): number');
+    expect(fixed).toContain('public helper(): number');
+  });
+
+  it('should apply multiple edits to a single file from last to first', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export class A {
+          public first(): number {
+            return this.entry();
+          }
+          public second(): number {
+            return this.first();
+          }
+          public entry(): number {
+            return this.second();
+          }
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { A } from './a.ts';
+        const value = new A().entry();
+        void value;
+      `
+    });
+    expect(fixedNames(findings).sort()).toEqual(['first', 'second']);
+    const fixed = writes.get('/proj/src/a.ts') ?? '';
+    expect(fixed).toContain('private first(): number');
+    expect(fixed).toContain('private second(): number');
+    expect(fixed).toContain('public entry(): number');
+  });
+
+  it('should insert a private modifier on an implicitly public member', () => {
+    const { writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export class A {
+          helper(): number {
+            return this.run();
+          }
+          run(): number {
+            return 1;
+          }
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { A } from './a.ts';
+        const value = new A().helper();
+        void value;
+      `
+    });
+    const fixed = writes.get('/proj/src/a.ts') ?? '';
+    expect(fixed).toContain('private run(): number');
+    expect(fixed).toContain('helper(): number');
+    expect(fixed).not.toContain('private helper');
+  });
+
+  it('should insert a private modifier before a non-visibility modifier', () => {
+    const { writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export class A {
+          async run(): Promise<number> {
+            return this.helper();
+          }
+          async helper(): Promise<number> {
+            return 1;
+          }
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { A } from './a.ts';
+        const value = new A().run();
+        void value;
+      `
+    });
+    expect(writes.get('/proj/src/a.ts') ?? '').toContain('private async helper(): Promise<number>');
+  });
+
+  it('should insert a private modifier before the get keyword of an accessor', () => {
+    const { writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export class A {
+          get secret(): number {
+            return 1;
+          }
+          run(): number {
+            return this.secret;
+          }
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { A } from './a.ts';
+        const value = new A().run();
+        void value;
+      `
+    });
+    expect(writes.get('/proj/src/a.ts') ?? '').toContain('private get secret(): number');
+  });
+
+  it('should tighten a public member used only in a subclass to protected', () => {
+    const { writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export class Base {
+          shared(): number {
+            return 1;
+          }
+        }
+        export class Derived extends Base {
+          use(): number {
+            return this.shared();
+          }
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { Base, Derived } from './a.ts';
+        const instance: Base = new Derived();
+        void instance;
+        const value = new Derived().use();
+        void value;
+      `
+    });
+    expect(writes.get('/proj/src/a.ts') ?? '').toContain('protected shared(): number');
+  });
+
+  it('should replace a protected member modifier with private', () => {
+    const { writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export class A {
+          protected helper(): number {
+            return 1;
+          }
+          run(): number {
+            return this.helper();
+          }
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { A } from './a.ts';
+        const value = new A().run();
+        void value;
+      `
+    });
+    const fixed = writes.get('/proj/src/a.ts') ?? '';
+    expect(fixed).toContain('private helper(): number');
+    expect(fixed).not.toContain('protected helper');
+  });
+
+  it('should drop the export keyword from a file-local export', () => {
+    const { writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export function helper(): number {
+          return 1;
+        }
+        export function main(): number {
+          return helper();
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { main } from './a.ts';
+        const value = main();
+        void value;
+      `
+    });
+    const fixed = writes.get('/proj/src/a.ts') ?? '';
+    expect(fixed).toContain('function helper(): number');
+    expect(fixed).not.toContain('export function helper');
+    expect(fixed).toContain('export function main(): number');
+  });
+
+  it('should drop a shared export keyword once when every declarator is file-local', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export const first = 1, second = 2;
+        const sum = first + second;
+        void sum;
+      `
+    });
+    expect(fixedNames(findings)).toEqual(['first', 'second']);
+    const fixed = writes.get('/proj/src/a.ts') ?? '';
+    expect(fixed).toContain('const first = 1, second = 2;');
+    expect(fixed).not.toContain('export const');
+  });
+
+  it('should skip dropping an export shared with a still-exported sibling', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.ts': `
+        export const local = 1, shared = 2;
+        const sum = local;
+        void sum;
+      `,
+      '/proj/src/b.ts': `
+        import { shared } from './a.ts';
+        const value = shared;
+        void value;
+      `
+    });
+    expect(fixedNames(findings)).toHaveLength(0);
+    expect(skipReasonFor(findings, 'local')).toBe('shared-export');
+    expect(writes.has('/proj/src/a.ts')).toBe(false);
+  });
+
+  it('should skip a member exposed only for tests', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.test.ts': `
+        import { A } from './a.ts';
+        const value = new A().probe();
+        void value;
+      `,
+      '/proj/src/a.ts': `
+        export class A {
+          probe(): number {
+            return 1;
+          }
+        }
+      `
+    });
+    expect(fixedNames(findings)).toHaveLength(0);
+    expect(skipReasonFor(findings, 'probe')).toBe('test-only');
+    expect(writes.has('/proj/src/a.ts')).toBe(false);
+  });
+
+  it('should skip a decorated member', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.ts': `
+        function deco(_target: unknown, _context: unknown): void {
+          void 0;
+        }
+        export class A {
+          @deco
+          helper(): number {
+            return 1;
+          }
+          run(): number {
+            return this.helper();
+          }
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { A } from './a.ts';
+        const value = new A().run();
+        void value;
+      `
+    });
+    expect(skipReasonFor(findings, 'helper')).toBe('decorated');
+    expect(writes.has('/proj/src/a.ts')).toBe(false);
+  });
+
+  it('should forward the onProgress callback to the analyzer', () => {
+    const files = {
+      '/proj/src/a.ts': `
+        export function helper(): number {
+          return 1;
+        }
+      `
+    };
+    const fileSystem = createSpyFileSystem(files);
+    const host = createLanguageServiceHost({ compilerOptions: COMPILER_OPTIONS, fileNames: Object.keys(files), fileSystem });
+    const languageService = createLanguageService(host, createDocumentRegistry());
+    const onProgress = vi.fn<(progress: OverExposureProgress) => void>();
+    analyzeOverExposure({
+      languageService,
+      onProgress,
+      shouldFix: true,
+      srcFolder: SRC_FOLDER,
+      writeFile: () => {
+        // No-op.
+      }
+    });
+    expect(onProgress).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('findOverExposure with shouldFix', () => {
+  it('should parse the project tsconfig and rewrite files on disk via ts.sys', () => {
+    const files: Record<string, string> = {
+      '/proj/src/a.ts': 'export function helper(): number {\n  return 1;\n}\nexport function main(): number {\n  return helper();\n}\n',
+      '/proj/src/b.ts': 'import { main } from \'./a.ts\';\nconst value = main();\nvoid value;\n'
+    };
+    mockParseTsConfig.mockReturnValue({ fileNames: Object.keys(files), options: COMPILER_OPTIONS });
+    const fileMap = new Map<string, string>(Object.entries(files));
+    const writes = new Map<string, string>();
+    vi.spyOn(sys, 'readFile').mockImplementation((path: string) => fileMap.get(path));
+    vi.spyOn(sys, 'fileExists').mockImplementation((path: string) => fileMap.has(path));
+    vi.spyOn(sys, 'directoryExists').mockImplementation((path: string) => path === '/proj' || [...fileMap.keys()].some((fileName) => fileName.startsWith(`${path}/`)));
+    vi.spyOn(sys, 'getDirectories').mockReturnValue([]);
+    vi.spyOn(sys, 'readDirectory').mockReturnValue([...fileMap.keys()]);
+    vi.spyOn(sys, 'getCurrentDirectory').mockReturnValue('/proj');
+    vi.spyOn(sys, 'writeFile').mockImplementation((path: string, data: string) => {
+      writes.set(path, data);
+    });
+
+    const findings = findOverExposure({ projectFolder: '/proj', shouldFix: true });
+    expect(mockParseTsConfig).toHaveBeenCalledWith('/proj/tsconfig.json');
+    expect(fixedNames(findings)).toContain('helper');
+    const fixed = writes.get('/proj/src/a.ts') ?? '';
+    expect(fixed).toContain('function helper(): number');
+    expect(fixed).not.toContain('export function helper');
+  });
+});
+
+describe('formatOverExposureFindings in fix mode', () => {
+  it('should suffix a fixed finding with [fixed] and append the fix counts', () => {
+    const report = formatOverExposureFindings([
+      buildFinding({ filePath: '/proj/src/a.ts', line: 2, name: 'helper', suggestedExposure: 'private', wasFixed: true })
+    ]);
+    expect(report).toContain('public helper -> private -- referenced only inside its own class [fixed]');
+    expect(report).toContain('1 finding(s). 1 fixed, 0 skipped.');
+  });
+
+  it('should suffix skipped findings with their reason and append the skip count', () => {
+    const report = formatOverExposureFindings([
+      buildFinding({ filePath: '/proj/src/a.ts', line: 2, name: 'tested', skipReason: 'test-only', suggestedExposure: 'private' }),
+      buildFinding({ filePath: '/proj/src/a.ts', line: 3, name: 'decorated', skipReason: 'decorated', suggestedExposure: 'private' }),
+      buildFinding({ currentExposure: 'export', filePath: '/proj/src/a.ts', isMember: false, line: 4, name: 'shared', skipReason: 'shared-export', suggestedExposure: 'file-local' })
+    ]);
+    expect(report).toContain('[skipped: exposed only for tests]');
+    expect(report).toContain('[skipped: decorated member]');
+    expect(report).toContain('[skipped: export shared with a still-exported sibling]');
+    expect(report).toContain('3 finding(s). 0 fixed, 3 skipped.');
+  });
+});
+
 describe('LIFECYCLE_ALLOWLIST', () => {
   it('should contain the Obsidian lifecycle hooks', () => {
     expect(LIFECYCLE_ALLOWLIST.has('onload')).toBe(true);
@@ -718,6 +1102,22 @@ function analyze(files: Record<string, string>): OverExposureFinding[] {
   return analyzeOverExposure({ languageService, srcFolder: SRC_FOLDER });
 }
 
+function applyFixes(files: Record<string, string>): ApplyFixesOutcome {
+  const fileSystem = createSpyFileSystem(files);
+  const host = createLanguageServiceHost({ compilerOptions: COMPILER_OPTIONS, fileNames: Object.keys(files), fileSystem });
+  const languageService = createLanguageService(host, createDocumentRegistry());
+  const writes = new Map<string, string>();
+  const findings = analyzeOverExposure({
+    languageService,
+    shouldFix: true,
+    srcFolder: SRC_FOLDER,
+    writeFile: (path, content) => {
+      writes.set(path, content);
+    }
+  });
+  return { findings, writes };
+}
+
 function buildFinding(overrides: Partial<OverExposureFinding>): OverExposureFinding {
   return {
     column: 1,
@@ -728,7 +1128,9 @@ function buildFinding(overrides: Partial<OverExposureFinding>): OverExposureFind
     isMember: true,
     line: 1,
     name: 'member',
+    skipReason: null,
     suggestedExposure: 'private',
+    wasFixed: false,
     ...overrides
   };
 }
@@ -753,6 +1155,18 @@ function findFinding(findings: readonly OverExposureFinding[], name: string): Ov
   return finding;
 }
 
+function fixedNames(findings: readonly OverExposureFinding[]): string[] {
+  return findings.filter((finding) => finding.wasFixed).map((finding) => finding.name);
+}
+
 function hasFinding(findings: readonly OverExposureFinding[], name: string): boolean {
   return findings.some((finding) => finding.name === name);
+}
+
+function skipReasonFor(findings: readonly OverExposureFinding[], name: string): OverExposureFinding['skipReason'] {
+  const finding = findings.find((candidate) => candidate.name === name);
+  if (!finding) {
+    throw new Error(`No finding for ${name}.`);
+  }
+  return finding.skipReason;
 }
