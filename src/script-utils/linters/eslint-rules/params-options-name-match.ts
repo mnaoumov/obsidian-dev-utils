@@ -33,6 +33,7 @@ const PARAMS_OPTIONS_SUFFIX_PATTERN = /(?:Params|Options)$/;
 const PARAMS_SUFFIX = 'Params';
 const OPTIONS_SUFFIX = 'Options';
 
+/** Message ID reported when a parameter-bag type's name does not match the expected name (prefix and required/optional suffix) for its function or constructor. */
 export const MESSAGE_ID = 'paramsOptionsNameMatch';
 
 interface FunctionNodeWithParams {

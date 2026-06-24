@@ -168,6 +168,20 @@ describe('analyzeOverExposure', () => {
     expect(findFinding(findings, 'undocumented').suggestedExposure).toBe('private');
   });
 
+  it('should not flag an ECMAScript hard-private member', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class A {
+          readonly #hidden = 1;
+          public run(): number {
+            return this.#hidden;
+          }
+        }
+      `
+    });
+    expect(hasFinding(findings, '#hidden')).toBe(false);
+  });
+
   it('should still flag a member whose only leading comments are not TSDoc', () => {
     const findings = analyze({
       '/proj/src/a.ts': `
@@ -547,6 +561,73 @@ describe('analyzeOverExposure exports', () => {
     expect(helper.isMember).toBe(false);
     expect(helper.hasNoReferences).toBe(false);
     expect(hasFinding(findings, 'main')).toBe(false);
+  });
+
+  it('should not flag a documented export referenced only within its own file', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        /**
+         * A documented helper.
+         *
+         * @returns A number.
+         */
+        export function helper(): number {
+          return 1;
+        }
+        export function main(): number {
+          return helper();
+        }
+      `
+    });
+    expect(hasFinding(findings, 'helper')).toBe(false);
+  });
+
+  it('should not flag a documented exported interface, type, enum, or const', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        /** A documented shape. */
+        export interface LocalShape {
+          tag: string;
+        }
+        /** A documented alias. */
+        export type LocalAlias = number;
+        /** A documented enum. */
+        export enum LocalEnum {
+          A,
+          B
+        }
+        /** A documented value. */
+        export const localValue = 1;
+        const shape: LocalShape = { tag: 'x' };
+        const alias: LocalAlias = 1;
+        const fromEnum = LocalEnum.A;
+        const fromValue = localValue;
+        void shape;
+        void alias;
+        void fromEnum;
+        void fromValue;
+      `
+    });
+    expect(hasFinding(findings, 'LocalShape')).toBe(false);
+    expect(hasFinding(findings, 'LocalAlias')).toBe(false);
+    expect(hasFinding(findings, 'LocalEnum')).toBe(false);
+    expect(hasFinding(findings, 'localValue')).toBe(false);
+  });
+
+  it('should still flag a documented export whose only leading comment is not TSDoc', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        // line comment
+        /* block comment */
+        export function helper(): number {
+          return 1;
+        }
+        export function main(): number {
+          return helper();
+        }
+      `
+    });
+    expect(findFinding(findings, 'helper').suggestedExposure).toBe('file-local');
   });
 
   it('should flag an export with no references at all', () => {

@@ -12,6 +12,7 @@ import type { Rule } from 'eslint';
 
 import { ensureNonNullable } from '../../../type-guards.ts';
 
+/** Message ID reported when a member of a `*Params`/`*Options`/`*Result` interface is not declared `readonly`. */
 export const MESSAGE_ID = 'readonlyParamsOptionsResultMembers';
 
 interface PropertySignatureNode {

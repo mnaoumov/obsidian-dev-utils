@@ -12,6 +12,7 @@
 import type { TSESTree } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
 
+/** Message ID reported when `Promise.resolve()` is used for an async no-op instead of `noopAsync()`. */
 export const MESSAGE_ID = 'preferNoopAsync';
 
 export const preferNoopAsync: Rule.RuleModule = {

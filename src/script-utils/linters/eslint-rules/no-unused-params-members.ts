@@ -39,6 +39,7 @@ import { ensureNonNullable } from '../../../type-guards.ts';
 
 const PARAMS_OPTIONS_SUFFIX_PATTERN = /(?:Params|Options)$/;
 
+/** Message ID reported when a `*Params`/`*Options` interface member is never accessed by the function that receives it. */
 export const MESSAGE_ID = 'unusedParamsMember';
 
 interface IdentifierBinding {

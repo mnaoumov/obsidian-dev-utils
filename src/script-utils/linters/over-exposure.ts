@@ -17,9 +17,11 @@
  * exposure that still covers all references. Members invoked by the framework via registration
  * rather than by visible references (Obsidian lifecycle hooks, settings-tab `display`, etc.) are
  * excluded via {@link LIFECYCLE_ALLOWLIST}, as are `override` and `static` members whose exposure is
- * constrained by a base declaration. A class member carrying a TSDoc (`/** … *\/`) documentation
- * comment is also excluded — documenting a member is a deliberate signal that it is part of the
- * intended public API, regardless of where it currently happens to be referenced.
+ * constrained by a base declaration. ECMAScript hard-private members (`#name`) are also excluded —
+ * they are already maximally private and cannot carry a visibility modifier. A declaration carrying
+ * a TSDoc (`/** … *\/`) documentation comment is likewise excluded — whether a top-level `export` or
+ * a class member, documenting it is a deliberate signal that it is part of the intended public API,
+ * regardless of where it currently happens to be referenced.
  *
  * A member referenced only from test files is reported with {@link OverExposureFinding.isForcedByTestOnly}
  * set, surfacing members widened purely for testability — the canonical case for extracting logic
@@ -71,6 +73,7 @@ import {
   isIdentifier,
   isInterfaceDeclaration,
   isMethodDeclaration,
+  isPrivateIdentifier,
   isPropertyDeclaration,
   isSetAccessorDeclaration,
   isSourceFile,
@@ -504,6 +507,10 @@ function analyzeExport(node: Node, context: AnalysisContext): void {
     return;
   }
 
+  if (hasTsDocComment(declaration)) {
+    return;
+  }
+
   const declFilePath = toCanonical(sourceFile.fileName);
   const nameNodes = getExportedNameNodes(declaration);
   const candidates: ExportFindingCandidate[] = [];
@@ -547,6 +554,10 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
   }
   const nameNode = member.name;
   const declaringClass = node.parent;
+
+  if (isPrivateIdentifier(nameNode)) {
+    return;
+  }
 
   const modifierKinds = getModifierKinds(member);
   if (modifierKinds.has(SyntaxKind.StaticKeyword) || modifierKinds.has(SyntaxKind.OverrideKeyword) || LIFECYCLE_ALLOWLIST.has(nameNode.getText())) {
