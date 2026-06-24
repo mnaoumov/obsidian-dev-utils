@@ -12,7 +12,7 @@ const BUILD_STEPS = [
   'build:validate-declarations',
   'build:lib',
   'build:generate-exports',
-  'build:static',
+  'build:templates',
   'build:styles'
 ];
 

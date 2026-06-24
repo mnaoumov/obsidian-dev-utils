@@ -17,7 +17,7 @@ import {
   buildCompile,
   buildCompileSvelte,
   buildCompileTypeScript,
-  buildStatic
+  buildTemplates
 } from './build.ts';
 
 const {
@@ -194,21 +194,30 @@ describe('buildCompileSvelte', () => {
   });
 });
 
-describe('buildStatic', () => {
-  it('should copy static files to the dist/templates folder', async () => {
+describe('buildTemplates', () => {
+  it('should copy template files to the dist/templates folder', async () => {
     mockReaddirPosix.mockResolvedValue([
-      { isFile: (): boolean => true, name: 'style.css', parentPath: 'static' }
+      { isFile: (): boolean => true, name: 'style.css', parentPath: 'templates' }
     ]);
-    await buildStatic();
+    await buildTemplates();
     expect(mockCp).toHaveBeenCalledTimes(1);
-    expect(mockCp).toHaveBeenCalledWith('static/style.css', 'dist/templates/style.css');
+    expect(mockCp).toHaveBeenCalledWith('templates/style.css', 'dist/templates/style.css');
+  });
+
+  it('should strip the .template suffix from the destination file name', async () => {
+    mockReaddirPosix.mockResolvedValue([
+      { isFile: (): boolean => true, name: 'eslint.config.mts.template', parentPath: 'templates' }
+    ]);
+    await buildTemplates();
+    expect(mockCp).toHaveBeenCalledTimes(1);
+    expect(mockCp).toHaveBeenCalledWith('templates/eslint.config.mts.template', 'dist/templates/eslint.config.mts');
   });
 
   it('should skip directories', async () => {
     mockReaddirPosix.mockResolvedValue([
-      { isFile: (): boolean => false, name: 'subdir', parentPath: 'static' }
+      { isFile: (): boolean => false, name: 'subdir', parentPath: 'templates' }
     ]);
-    await buildStatic();
+    await buildTemplates();
     expect(mockCp).not.toHaveBeenCalled();
   });
 });

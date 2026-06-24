@@ -50,13 +50,14 @@ import { buildCompileTypeScript } from 'obsidian-dev-utils/script-utils/build';
 
 Checks if TypeScript code compiles.
 
-### Build static assets
+### Build templates
 
 ```typescript
-import { buildStatic } from 'obsidian-dev-utils/script-utils/build';
+import { buildTemplates } from 'obsidian-dev-utils/script-utils/build';
 ```
 
-Copies `static` folder to `dist` folder.
+Copies the `templates` folder to the `dist/templates` folder, stripping a trailing `.template` from
+each file name (e.g. `eslint.config.mts.template` is copied as `eslint.config.mts`).
 
 ### Build Development Version
 
@@ -230,7 +231,7 @@ To use these commands in your `package.json`, create script entry points using [
     "build": "jiti scripts/build.ts",
     "build:clean": "jiti scripts/build-clean.ts",
     "build:compile:typescript": "jiti scripts/build-compile-typescript.ts",
-    "build:static": "jiti scripts/build-static.ts",
+    "build:templates": "jiti scripts/build-templates.ts",
     "dev": "jiti scripts/dev.ts",
     "find-overexposed": "jiti scripts/find-overexposed.ts",
     "find-overexposed:fix": "jiti scripts/find-overexposed-fix.ts",

@@ -97,25 +97,31 @@ export async function buildCompileTypeScript(): Promise<void> {
 }
 
 /**
- * Copies all static files from the static assets folder to the `templates` folder within the
+ * Copies all template files from the templates folder to the `templates` folder within the
  * distribution folder.
  *
- * This function recursively reads the contents of the static assets folder and copies each file to
- * the corresponding path under {@link ObsidianDevUtilsRepoPaths.DistTemplates}, so consumers can copy
- * the templates from `node_modules/obsidian-dev-utils/dist/templates`.
+ * This function recursively reads the contents of the templates folder and copies each file to the
+ * corresponding path under {@link ObsidianDevUtilsRepoPaths.DistTemplates}, so consumers can copy the
+ * templates from `node_modules/obsidian-dev-utils/dist/templates`. A trailing `.template` on a source
+ * file name is stripped in the destination (e.g. `eslint.config.mts.template` is copied as
+ * `eslint.config.mts`), so an active config template can live in the repo under a name that the
+ * corresponding tool does not auto-discover.
  *
  * @returns A {@link Promise} that resolves when all files have been copied.
  */
-export async function buildStatic(): Promise<void> {
-  for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.Static, { recursive: true, withFileTypes: true })) {
+export async function buildTemplates(): Promise<void> {
+  for (const dirent of await readdirPosix(ObsidianDevUtilsRepoPaths.Templates, { recursive: true, withFileTypes: true })) {
     if (!dirent.isFile()) {
       continue;
     }
 
-    const path = trimStart(join(dirent.parentPath, dirent.name), `${ObsidianDevUtilsRepoPaths.Static}/`);
-    await cp(join(ObsidianDevUtilsRepoPaths.Static, path), join(ObsidianDevUtilsRepoPaths.DistTemplates, path));
+    const path = trimStart(join(dirent.parentPath, dirent.name), `${ObsidianDevUtilsRepoPaths.Templates}/`);
+    const destinationPath = path.endsWith(TEMPLATE_FILE_SUFFIX) ? path.slice(0, -TEMPLATE_FILE_SUFFIX.length) : path;
+    await cp(join(ObsidianDevUtilsRepoPaths.Templates, path), join(ObsidianDevUtilsRepoPaths.DistTemplates, destinationPath));
   }
 }
+
+const TEMPLATE_FILE_SUFFIX = '.template';
 
 const NODE_MODULES_SEGMENT = '/node_modules/';
 

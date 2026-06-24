@@ -1,6 +1,6 @@
-import { buildStatic } from '../src/script-utils/build.ts';
+import { buildTemplates } from '../src/script-utils/build.ts';
 import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 
 await wrapCliTask(async () => {
-  await buildStatic();
+  await buildTemplates();
 });

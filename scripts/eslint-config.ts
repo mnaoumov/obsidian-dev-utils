@@ -27,7 +27,7 @@ function getIgnoreConfigs(): Linter.Config[] {
       join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
       ObsidianDevUtilsRepoPaths.DataviewTypes,
       join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts),
-      join(ObsidianDevUtilsRepoPaths.Static, ObsidianDevUtilsRepoPaths.AnyPath)
+      join(ObsidianDevUtilsRepoPaths.Templates, ObsidianDevUtilsRepoPaths.AnyPath)
     ])
   ]);
 }

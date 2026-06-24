@@ -130,14 +130,14 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Source folder. */
   Src = 'src',
 
-  /** Static folder. */
-  Static = 'static',
-
   /** Styles folder. */
   Styles = 'styles',
 
   /** Styles CSS file. */
   StylesCss = 'styles.css',
+
+  /** Templates folder. */
+  Templates = 'templates',
 
   /** Test helpers folder. */
   TestHelpers = 'test-helpers',

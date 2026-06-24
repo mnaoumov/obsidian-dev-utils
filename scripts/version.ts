@@ -20,7 +20,7 @@ import {
 const [, , ...args] = process.argv;
 
 await wrapCliTask(async () => {
-  await execFromRoot(['npm', 'run', 'build:static']);
+  await execFromRoot(['npm', 'run', 'build:templates']);
   const { options, versionUpdateType } = parseVersionArgs(args);
   await updateVersion(versionUpdateType, {
     ...options,

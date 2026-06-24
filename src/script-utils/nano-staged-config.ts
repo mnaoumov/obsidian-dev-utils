@@ -17,12 +17,12 @@ import process from 'node:process';
  */
 export const obsidianDevUtilsConfig: Record<string, string[]> = {
   /*
-   * Lint everything except the `static/` consumer templates: ESLint globally ignores them, and they
-   * ship their own consumer-facing `eslint.config` that cannot resolve in-repo, so linting one by
-   * explicit path crashes config loading. The `!(static)` negation drops any path that begins with
-   * `static`. Formatting and spellchecking still cover `static/` via the entries above and below.
+   * Lint everything except the `templates/` consumer templates: ESLint globally ignores them, and
+   * they ship their own consumer-facing config/scripts that cannot resolve in-repo, so passing one
+   * by explicit path errors out. The `!(templates)` negation drops any path that begins with
+   * `templates`. Formatting and spellchecking still cover `templates/` via the entries above and below.
    */
-  '!(static)*.{ts,tsx,mts}': [
+  '!(templates)*.{ts,tsx,mts}': [
     'npm run lint:fix --'
   ],
   '*': [
