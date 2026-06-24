@@ -18,7 +18,10 @@ import type {
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
-import { invokeAsyncSafely } from '../../async.ts';
+import {
+  convertAsyncToSync,
+  invokeAsyncSafely
+} from '../../async.ts';
 import { CommandHandler } from './command-handler.ts';
 
 /**
@@ -209,9 +212,7 @@ export abstract class EditorCommandHandler extends CommandHandler {
         .setTitle(this.editorMenuItemName ?? this.name)
         .setIcon(this.icon)
         .setSection(section)
-        .onClick(() => {
-          invokeAsyncSafely(() => this.executeEditor(editor, ctx));
-        });
+        .onClick(convertAsyncToSync(async () => this.executeEditor(editor, ctx)));
     });
   }
 }

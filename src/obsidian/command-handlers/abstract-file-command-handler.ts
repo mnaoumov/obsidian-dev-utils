@@ -20,7 +20,7 @@ import type {
 
 import {
   chain,
-  invokeAsyncSafely
+  convertAsyncToSync
 } from '../../async.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { GlobalCommandHandler } from './global-command-handler.ts';
@@ -320,9 +320,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
         .setTitle(this.fileMenuItemName ?? this.name)
         .setIcon(this.icon)
         .setSection(section)
-        .onClick(() => {
-          invokeAsyncSafely(() => this.executeAbstractFile(abstractFile));
-        });
+        .onClick(convertAsyncToSync(async () => this.executeAbstractFile(abstractFile)));
     });
   }
 
@@ -348,9 +346,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
         .setTitle(this.filesMenuItemName ?? this.fileMenuItemName ?? this.name)
         .setIcon(this.icon)
         .setSection(section)
-        .onClick(() => {
-          invokeAsyncSafely(() => this.executeAbstractFiles(abstractFiles));
-        });
+        .onClick(convertAsyncToSync(async () => this.executeAbstractFiles(abstractFiles)));
     });
   }
 }
