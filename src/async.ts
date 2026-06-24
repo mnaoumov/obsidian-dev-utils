@@ -551,7 +551,7 @@ export async function nextTickAsync(): Promise<void> {
  */
 export function normalizePromisable<T>(promisable: Promisable<T>): Promise<T> | T {
   if (!promisable) {
-    return promisable as T;
+    return promisable;
   }
 
   if (promisable instanceof Promise) {
