@@ -65,17 +65,17 @@ export abstract class CommandHandler {
   /**
    * The icon for the command.
    */
-  public readonly icon: IconName;
+  protected readonly icon: IconName;
 
   /**
    * The ID of the command.
    */
-  public readonly id: string;
+  protected readonly id: string;
 
   /**
    * The display name of the command.
    */
-  public readonly name: string;
+  protected readonly name: string;
 
   /**
    * Gets the plugin name.

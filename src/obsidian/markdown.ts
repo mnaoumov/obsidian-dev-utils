@@ -100,7 +100,7 @@ class EmbedByExtensionMdPatchComponent extends MonkeyAroundComponent {
 
 class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
   public readonly app: App;
-  public readonly el: HTMLElement;
+  private readonly el: HTMLElement;
   public readonly path: string;
 
   public get hoverPopover(): HoverPopover | null {
