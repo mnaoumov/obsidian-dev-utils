@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 78.0.0
+
+- feat: waitUntilConnected
+- refactor: constructors
+- chore: cleanup
+- chore: clean over exposed
+- feat!: all plugin registrars
+- feat: add fix over exposure
+
 ## 77.1.0
 
 - docs(over-exposure): pass baseFolder in the find-overexposed example script
