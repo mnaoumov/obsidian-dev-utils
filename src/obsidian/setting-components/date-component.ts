@@ -35,7 +35,11 @@ export class DateComponent extends TypedRangeTextComponent<Date> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'date', CssClass.DateComponent);
+    super({
+      containerEl,
+      cssClass: CssClass.DateComponent,
+      type: 'date'
+    });
   }
 
   /**

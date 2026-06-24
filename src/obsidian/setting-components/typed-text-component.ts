@@ -17,6 +17,26 @@ import { CssClass } from '../../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 /**
+ * The parameters for constructing a {@link TypedTextComponent}.
+ */
+export interface TypedTextComponentConstructorParams {
+  /**
+   * The container element for the component.
+   */
+  readonly containerEl: HTMLElement;
+
+  /**
+   * A CSS class to apply to the component.
+   */
+  readonly cssClass?: CssClass;
+
+  /**
+   * The type of the input element.
+   */
+  readonly type: string;
+}
+
+/**
  * A component that displays and edits a text-based value.
  *
  * @typeParam T - The type of the value to set.
@@ -44,16 +64,14 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
   /**
    * Creates a new typed text component.
    *
-   * @param containerEl - The container element of the component.
-   * @param type - The type of the input element.
-   * @param cssClass - The CSS class of the component.
+   * @param params - The parameters for the typed text component.
    */
-  public constructor(containerEl: HTMLElement, type: string, cssClass: CssClass) {
+  public constructor(params: TypedTextComponentConstructorParams) {
     super();
-    this.textComponent = new TextComponent(containerEl);
+    this.textComponent = new TextComponent(params.containerEl);
     this.inputEl = this.textComponent.inputEl;
-    this.inputEl.type = type;
-    addPluginCssClasses(containerEl, cssClass);
+    this.inputEl.type = params.type;
+    addPluginCssClasses(params.containerEl, params.cssClass);
   }
 
   /**

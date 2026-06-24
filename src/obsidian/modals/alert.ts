@@ -9,12 +9,13 @@
 import { t } from 'i18next';
 import { ButtonComponent } from 'obsidian';
 
-import type { PromiseResolve } from '../../async.ts';
-import type { ModalParamsBase } from './modal.ts';
+import type {
+  ModalBaseConstructorParams,
+  ModalParamsBase
+} from './modal.ts';
 
 import { CssClass } from '../../css-class.ts';
 import {
-  addCssClass,
   ModalBase,
   showModal
 } from './modal.ts';
@@ -39,20 +40,23 @@ export interface AlertParams extends ModalParamsBase {
   readonly title?: DocumentFragment | string;
 }
 
+type AlertModalConstructorParams = AlertParams & ModalBaseConstructorParams<void>;
+
 class AlertModal extends ModalBase<void> {
   private readonly message: DocumentFragment | string;
   private readonly okButtonText: string;
   private readonly title: DocumentFragment | string;
 
-  public constructor(params: AlertParams, resolve: PromiseResolve<void>) {
-    super(addCssClass(params, CssClass.AlertModal), resolve);
+  public constructor(params: AlertModalConstructorParams) {
+    super(params);
+    this.addCssClasses(CssClass.AlertModal);
     this.message = params.message;
     this.okButtonText = params.okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok);
     this.title = params.title ?? '';
   }
 
   public override onClose(): void {
-    this.resolve();
+    this.promiseResolve();
   }
 
   public override onOpen(): void {
@@ -73,5 +77,10 @@ class AlertModal extends ModalBase<void> {
  * @returns A {@link Promise} that resolves when the modal is closed.
  */
 export async function alert(params: AlertParams): Promise<void> {
-  await showModal((resolve) => new AlertModal(params, resolve));
+  await showModal((promiseResolve) =>
+    new AlertModal({
+      ...params,
+      promiseResolve
+    })
+  );
 }

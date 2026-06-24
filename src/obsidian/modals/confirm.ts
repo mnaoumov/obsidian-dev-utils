@@ -6,16 +6,16 @@
  * This module exports a function to display a modal with a message in Obsidian. The modal includes "OK" and "Cancel" buttons to confirm or cancel the action.
  */
 
-import type { App } from 'obsidian';
-
 import { ButtonComponent } from 'obsidian';
 
-import type { PromiseResolve } from '../../async.ts';
+import type {
+  ModalBaseConstructorParams,
+  ModalParamsBase
+} from './modal.ts';
 
 import { CssClass } from '../../css-class.ts';
 import { t } from '../i18n/i18n.ts';
 import {
-  addCssClass,
   ModalBase,
   showModal
 } from './modal.ts';
@@ -23,21 +23,11 @@ import {
 /**
  * Parameters for {@link confirm}.
  */
-export interface ConfirmParams {
-  /**
-   * An Obsidian app instance.
-   */
-  readonly app: App;
-
+export interface ConfirmParams extends ModalParamsBase {
   /**
    * A text for the "Cancel" button.
    */
   readonly cancelButtonText?: string;
-
-  /**
-   * A CSS class to apply to the modal.
-   */
-  readonly cssClass?: string;
 
   /**
    * A message to display in the modal.
@@ -55,6 +45,8 @@ export interface ConfirmParams {
   readonly title?: DocumentFragment | string;
 }
 
+type ConfirmModalConstructorParams = ConfirmParams & ModalBaseConstructorParams<boolean>;
+
 class ConfirmModal extends ModalBase<boolean> {
   private readonly cancelButtonText: string;
   private isConfirmed = false;
@@ -62,8 +54,9 @@ class ConfirmModal extends ModalBase<boolean> {
   private readonly okButtonText: string;
   private readonly title: DocumentFragment | string;
 
-  public constructor(params: ConfirmParams, resolve: PromiseResolve<boolean>) {
-    super(addCssClass(params, CssClass.ConfirmModal), resolve);
+  public constructor(params: ConfirmModalConstructorParams) {
+    super(params);
+    this.addCssClasses(CssClass.ConfirmModal);
     this.cancelButtonText = params.cancelButtonText ?? t(($) => $.obsidianDevUtils.buttons.cancel);
     this.message = params.message;
     this.okButtonText = params.okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok);
@@ -71,7 +64,7 @@ class ConfirmModal extends ModalBase<boolean> {
   }
 
   public override onClose(): void {
-    this.resolve(this.isConfirmed);
+    this.promiseResolve(this.isConfirmed);
   }
 
   public override onOpen(): void {
@@ -100,5 +93,10 @@ class ConfirmModal extends ModalBase<boolean> {
  * @returns A {@link Promise} that resolves with a boolean indicating whether the "OK" button was clicked.
  */
 export async function confirm(params: ConfirmParams): Promise<boolean> {
-  return await showModal<boolean>((resolve) => new ConfirmModal(params, resolve));
+  return await showModal<boolean>((promiseResolve) =>
+    new ConfirmModal({
+      ...params,
+      promiseResolve
+    })
+  );
 }

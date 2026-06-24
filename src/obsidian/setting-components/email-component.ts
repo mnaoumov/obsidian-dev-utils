@@ -29,7 +29,11 @@ export class EmailComponent extends TypedTextComponent<string> implements TextBa
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'email', CssClass.EmailComponent);
+    super({
+      containerEl,
+      cssClass: CssClass.EmailComponent,
+      type: 'email'
+    });
   }
 
   /**

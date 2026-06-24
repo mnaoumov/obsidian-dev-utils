@@ -28,10 +28,14 @@ export class TelephoneComponent extends TypedTextComponent<string> implements Te
   /**
    * Creates a new telephone component.
    *
-   * @param container - The container element of the component.
+   * @param containerEl - The container element of the component.
    */
-  public constructor(container: HTMLElement) {
-    super(container, 'tel', CssClass.TelephoneComponent);
+  public constructor(containerEl: HTMLElement) {
+    super({
+      containerEl,
+      cssClass: CssClass.TelephoneComponent,
+      type: 'tel'
+    });
   }
 
   /**

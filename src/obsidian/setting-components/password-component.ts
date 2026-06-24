@@ -25,10 +25,14 @@ export class PasswordComponent extends TypedTextComponent<string> {
   /**
    * Creates a new password component.
    *
-   * @param container - The container element of the component.
+   * @param containerEl - The container element of the component.
    */
-  public constructor(container: HTMLElement) {
-    super(container, 'password', CssClass.PasswordComponent);
+  public constructor(containerEl: HTMLElement) {
+    super({
+      containerEl,
+      cssClass: CssClass.PasswordComponent,
+      type: 'password'
+    });
   }
 
   /**

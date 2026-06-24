@@ -6,7 +6,6 @@
  * This module exports a function to display a modal that prompts the user for input. The modal includes "OK" and "Cancel" buttons.
  */
 
-import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
 import {
@@ -14,8 +13,11 @@ import {
   TextComponent
 } from 'obsidian';
 
-import type { PromiseResolve } from '../../async.ts';
 import type { MaybeReturn } from '../../type.ts';
+import type {
+  ModalBaseConstructorParams,
+  ModalParamsBase
+} from './modal.ts';
 
 import {
   convertAsyncToSync,
@@ -25,7 +27,6 @@ import { CssClass } from '../../css-class.ts';
 import { noop } from '../../function.ts';
 import { t } from '../i18n/i18n.ts';
 import {
-  addCssClass,
   ModalBase,
   showModal
 } from './modal.ts';
@@ -33,12 +34,7 @@ import {
 /**
  * Options for {@link prompt}.
  */
-export interface PromptParams {
-  /**
-   * An Obsidian app instance.
-   */
-  readonly app: App;
-
+export interface PromptParams extends ModalParamsBase {
   /**
    * A text for the "Cancel" button.
    */
@@ -73,6 +69,8 @@ export interface PromptParams {
   valueValidator?(this: void, value: string): Promisable<MaybeReturn<string>>;
 }
 
+type PromptModalConstructorParams = ModalBaseConstructorParams<null | string> & PromptParams;
+
 class PromptModal extends ModalBase<null | string> {
   private readonly cancelButtonText: string;
   private isOkClicked = false;
@@ -82,8 +80,9 @@ class PromptModal extends ModalBase<null | string> {
   private value: string;
   private readonly valueValidator: (value: string) => Promisable<MaybeReturn<string>>;
 
-  public constructor(params: PromptParams, resolve: PromiseResolve<null | string>) {
-    super(addCssClass(params, CssClass.PromptModal), resolve);
+  public constructor(params: PromptModalConstructorParams) {
+    super(params);
+    this.addCssClasses(CssClass.PromptModal);
     this.cancelButtonText = params.cancelButtonText ?? t(($) => $.obsidianDevUtils.buttons.cancel);
     this.okButtonText = params.okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok);
     this.placeholder = params.placeholder ?? '';
@@ -93,7 +92,7 @@ class PromptModal extends ModalBase<null | string> {
   }
 
   public override onClose(): void {
-    this.resolve(this.isOkClicked ? this.value : null);
+    this.promiseResolve(this.isOkClicked ? this.value : null);
   }
 
   public override onOpen(): void {
@@ -155,5 +154,10 @@ class PromptModal extends ModalBase<null | string> {
  * @returns A {@link Promise} that resolves with the user input or `null` if the prompt was cancelled.
  */
 export async function prompt(params: PromptParams): Promise<null | string> {
-  return await showModal<null | string>((resolve) => new PromptModal(params, resolve));
+  return await showModal<null | string>((promiseResolve) =>
+    new PromptModal({
+      ...params,
+      promiseResolve
+    })
+  );
 }

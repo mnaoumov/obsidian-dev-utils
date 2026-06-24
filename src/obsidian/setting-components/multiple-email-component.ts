@@ -28,7 +28,11 @@ export class MultipleEmailComponent extends TypedTextComponent<readonly string[]
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'email', CssClass.MultipleEmailComponent);
+    super({
+      containerEl,
+      cssClass: CssClass.MultipleEmailComponent,
+      type: 'email'
+    });
     this.inputEl.multiple = true;
   }
 

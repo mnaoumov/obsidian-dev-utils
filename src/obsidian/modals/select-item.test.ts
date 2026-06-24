@@ -65,7 +65,7 @@ describe('selectItem', () => {
   it('should accept custom css class', async () => {
     const result = await selectItem({
       app,
-      cssClass: 'custom-select',
+      cssClasses: ['custom-select'],
       items: ['x'],
       itemTextFunc: (item: string) => item
     });

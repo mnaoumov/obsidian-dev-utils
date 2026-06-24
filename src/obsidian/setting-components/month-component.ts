@@ -50,7 +50,11 @@ export class MonthComponent extends TypedRangeTextComponent<IsoMonth> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'month', CssClass.MonthComponent);
+    super({
+      containerEl,
+      cssClass: CssClass.MonthComponent,
+      type: 'month'
+    });
   }
 
   /**

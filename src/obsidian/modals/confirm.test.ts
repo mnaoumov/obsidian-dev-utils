@@ -99,7 +99,7 @@ describe('confirm', () => {
   it('should accept custom css class', async () => {
     const result = await confirm({
       app,
-      cssClass: 'custom-confirm',
+      cssClasses: ['custom-confirm'],
       message: 'Continue?'
     });
     expect(typeof result).toBe('boolean');

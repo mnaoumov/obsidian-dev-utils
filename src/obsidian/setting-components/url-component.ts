@@ -29,7 +29,11 @@ export class UrlComponent extends TypedTextComponent<string> implements TextBase
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'url', CssClass.UrlComponent);
+    super({
+      containerEl,
+      cssClass: CssClass.UrlComponent,
+      type: 'url'
+    });
   }
 
   /**

@@ -35,7 +35,11 @@ export class DateTimeComponent extends TypedRangeTextComponent<Date> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'datetime-local', CssClass.DateTimeComponent);
+    super({
+      containerEl,
+      cssClass: CssClass.DateTimeComponent,
+      type: 'datetime-local'
+    });
   }
 
   /**

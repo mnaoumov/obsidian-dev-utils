@@ -197,9 +197,24 @@ interface RenameMapConstructorParams {
 
 const PATCH_TOKEN = Symbol.for('renameDeleteHandler');
 
+interface DeleteHandlerConstructorParams {
+  readonly abortSignal: AbortSignal;
+  readonly app: App;
+  readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
+  readonly file: TAbstractFile;
+  readonly settingsManager: SettingsManager;
+}
+
 interface FileManagerRunAsyncLinkUpdatePatchComponentConstructorParams {
   readonly app: App;
   readonly fileManager: FileManager;
+  readonly settingsManager: SettingsManager;
+}
+
+interface MetadataDeletedHandlerConstructorParams {
+  readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
+  readonly file: TAbstractFile;
+  readonly prevCache: CachedMetadata | null;
   readonly settingsManager: SettingsManager;
 }
 
@@ -210,14 +225,60 @@ interface RenameDeleteHandlerComponentConstructorParams {
   settingsBuilder(this: void): Partial<RenameDeleteHandlerSettings>;
 }
 
+class SettingsManager {
+  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
+
+  public constructor() {
+    this.renameDeleteHandlersMap = getObsidianDevUtilsState('renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
+  }
+
+  public getSettings(): Partial<RenameDeleteHandlerSettings> {
+    const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
+
+    const settings: Partial<RenameDeleteHandlerSettings> = {};
+    settings.isNote = (path: string): boolean => isNote(path);
+    settings.isPathIgnored = (): boolean => false;
+
+    for (const settingsBuilder of settingsBuilders) {
+      const newSettings = settingsBuilder();
+      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
+      if (newSettings.emptyFolderBehavior) {
+        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
+      }
+      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
+      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
+      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
+      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
+      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
+      const isPathIgnored = settings.isPathIgnored;
+      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
+      const currentIsNote = settings.isNote;
+      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
+    }
+
+    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
+    return settings;
+  }
+
+  public isNoteEx(path: string): boolean {
+    const settings = this.getSettings();
+    return settings.isNote?.(path) ?? false;
+  }
+}
+
 class DeleteHandler {
-  public constructor(
-    private readonly app: App,
-    private readonly file: TAbstractFile,
-    private readonly abortSignal: AbortSignal,
-    private readonly settingsManager: SettingsManager,
-    private readonly deletedMetadataCacheMap: Map<string, CachedMetadata>
-  ) {
+  private readonly abortSignal: AbortSignal;
+  private readonly app: App;
+  private readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
+  private readonly file: TAbstractFile;
+  private readonly settingsManager: SettingsManager;
+
+  public constructor(params: DeleteHandlerConstructorParams) {
+    this.app = params.app;
+    this.file = params.file;
+    this.abortSignal = params.abortSignal;
+    this.settingsManager = params.settingsManager;
+    this.deletedMetadataCacheMap = params.deletedMetadataCacheMap;
   }
 
   public async handle(): Promise<void> {
@@ -289,47 +350,6 @@ class DeleteHandler {
 
     await deleteIfNotUsed(this.app, attachmentFolder, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
     this.abortSignal.throwIfAborted();
-  }
-}
-
-class SettingsManager {
-  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
-
-  public constructor() {
-    this.renameDeleteHandlersMap = getObsidianDevUtilsState('renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
-  }
-
-  public getSettings(): Partial<RenameDeleteHandlerSettings> {
-    const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
-
-    const settings: Partial<RenameDeleteHandlerSettings> = {};
-    settings.isNote = (path: string): boolean => isNote(path);
-    settings.isPathIgnored = (): boolean => false;
-
-    for (const settingsBuilder of settingsBuilders) {
-      const newSettings = settingsBuilder();
-      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
-      if (newSettings.emptyFolderBehavior) {
-        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
-      }
-      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
-      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
-      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
-      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
-      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
-      const isPathIgnored = settings.isPathIgnored;
-      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
-      const currentIsNote = settings.isNote;
-      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
-    }
-
-    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
-    return settings;
-  }
-
-  public isNoteEx(path: string): boolean {
-    const settings = this.getSettings();
-    return settings.isNote?.(path) ?? false;
   }
 }
 
@@ -445,12 +465,16 @@ class HandledRenames {
 }
 
 class MetadataDeletedHandler {
-  public constructor(
-    private readonly file: TAbstractFile,
-    private readonly prevCache: CachedMetadata | null,
-    private readonly settingsManager: SettingsManager,
-    private readonly deletedMetadataCacheMap: Map<string, CachedMetadata>
-  ) {
+  private readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
+  private readonly file: TAbstractFile;
+  private readonly prevCache: CachedMetadata | null;
+  private readonly settingsManager: SettingsManager;
+
+  public constructor(params: MetadataDeletedHandlerConstructorParams) {
+    this.deletedMetadataCacheMap = params.deletedMetadataCacheMap;
+    this.file = params.file;
+    this.prevCache = params.prevCache;
+    this.settingsManager = params.settingsManager;
   }
 
   public handle(): void {
@@ -962,7 +986,14 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
       return;
     }
     addToQueue({
-      operationFn: (abortSignal) => new DeleteHandler(this.app, file, abortSignal, this.settingsManager, this.deletedMetadataCacheMap).handle(),
+      operationFn: (abortSignal) =>
+        new DeleteHandler({
+          abortSignal,
+          app: this.app,
+          deletedMetadataCacheMap: this.deletedMetadataCacheMap,
+          file,
+          settingsManager: this.settingsManager
+        }).handle(),
       operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleDelete, { filePath: file.path })
     });
   }
@@ -971,7 +1002,12 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     if (!this.shouldInvokeHandler()) {
       return;
     }
-    new MetadataDeletedHandler(file, prevCache, this.settingsManager, this.deletedMetadataCacheMap).handle();
+    new MetadataDeletedHandler({
+      deletedMetadataCacheMap: this.deletedMetadataCacheMap,
+      file,
+      prevCache,
+      settingsManager: this.settingsManager
+    }).handle();
   }
 
   private handleRename(file: TAbstractFile, oldPath: string): void {

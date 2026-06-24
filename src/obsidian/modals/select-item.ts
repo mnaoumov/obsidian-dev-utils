@@ -6,14 +6,15 @@
  * This module exports a function to display a modal that allows the user to select an item from a list. The modal uses fuzzy search to help the user find the item.
  */
 
-import type {
-  App,
-  FuzzyMatch
-} from 'obsidian';
+import type { FuzzyMatch } from 'obsidian';
 
 import { FuzzySuggestModal } from 'obsidian';
 
 import type { PromiseResolve } from '../../async.ts';
+import type {
+  ModalBaseConstructorParams,
+  ModalParamsBase
+} from './modal.ts';
 
 import { CssClass } from '../../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
@@ -24,17 +25,7 @@ import { showModal } from './modal.ts';
  *
  * @typeParam T - The type of the selectable items.
  */
-export interface SelectItemParams<T> {
-  /**
-   * An Obsidian app instance.
-   */
-  readonly app: App;
-
-  /**
-   * A CSS class to apply to the modal.
-   */
-  readonly cssClass?: string;
-
+export interface SelectItemParams<T> extends ModalParamsBase {
   /**
    * A list of items to choose from.
    */
@@ -46,7 +37,7 @@ export interface SelectItemParams<T> {
    * @param item - The item to get the display text for.
    * @returns The display text for the item.
    */
-  itemTextFunc(item: T): string;
+  itemTextFunc(this: void, item: T): string;
 
   /**
    * A placeholder text for the input field.
@@ -54,40 +45,46 @@ export interface SelectItemParams<T> {
   readonly placeholder?: string;
 }
 
+type ItemSelectModalConstructorParams<T> = ModalBaseConstructorParams<null | T> & SelectItemParams<T>;
+
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   private isSelected = false;
+  private readonly items: T[];
+  private readonly itemTextFunc: (this: void, item: T) => string;
+  private readonly placeholder: string | undefined;
+  private readonly promiseResolve: PromiseResolve<null | T>;
 
-  public constructor(private readonly params: SelectItemParams<T>, private readonly resolve: PromiseResolve<null | T>) {
+  public constructor(params: ItemSelectModalConstructorParams<T>) {
     super(params.app);
-    this.setPlaceholder(params.placeholder ?? '');
+    this.items = params.items;
+    this.itemTextFunc = params.itemTextFunc;
+    this.placeholder = params.placeholder;
+    this.promiseResolve = params.promiseResolve;
+
+    this.setPlaceholder(this.placeholder ?? '');
+    addPluginCssClasses(this.containerEl, params.cssClasses);
     addPluginCssClasses(this.containerEl, CssClass.SelectItemModal);
-    if (params.cssClass) {
-      this.containerEl.addClass(params.cssClass);
-    }
   }
 
   public override getItems(): T[] {
-    return this.params.items;
+    return this.items;
   }
 
   public override getItemText(item: T): string {
-    return this.params.itemTextFunc(item);
+    return this.itemTextFunc(item);
   }
 
   public override onChooseItem(item: T): void {
-    this.resolve(item);
+    this.promiseResolve(item);
   }
 
   public override onClose(): void {
     if (!this.isSelected) {
-      this.resolve(null);
+      this.promiseResolve(null);
     }
   }
 
-  public override selectSuggestion(
-    value: FuzzyMatch<T>,
-    evt: KeyboardEvent | MouseEvent
-  ): void {
+  public override selectSuggestion(value: FuzzyMatch<T>, evt: KeyboardEvent | MouseEvent): void {
     this.isSelected = true;
     super.selectSuggestion(value, evt);
   }
@@ -101,5 +98,10 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
  * @returns A {@link Promise} that resolves with the selected item or `null` if no item was selected.
  */
 export async function selectItem<T>(params: SelectItemParams<T>): Promise<null | T> {
-  return await showModal<null | T>((resolve) => new ItemSelectModal(params, resolve));
+  return await showModal<null | T>((promiseResolve) =>
+    new ItemSelectModal({
+      ...params,
+      promiseResolve
+    })
+  );
 }

@@ -13,6 +13,18 @@ import type { PromiseResolve } from '../../async.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 /**
+ * The parameters for constructing a {@link ModalBase}.
+ *
+ * @typeParam Value - The type of the value resolved by the modal.
+ */
+export interface ModalBaseConstructorParams<Value> extends ModalParamsBase {
+  /**
+   * A function to resolve the value of the modal.
+   */
+  readonly promiseResolve: PromiseResolve<Value>;
+}
+
+/**
  * Base options for a modal.
  */
 export interface ModalParamsBase {
@@ -34,29 +46,29 @@ export interface ModalParamsBase {
  */
 export abstract class ModalBase<Value> extends Modal {
   /**
+   * A function to resolve the value of the modal.
+   */
+  protected readonly promiseResolve: PromiseResolve<Value>;
+
+  /**
    * Creates a new modal.
    *
    * @param params - The options.
-   * @param resolve - The resolve function.
    */
-  public constructor(params: ModalParamsBase, protected readonly resolve: PromiseResolve<Value>) {
+  public constructor(params: ModalBaseConstructorParams<Value>) {
     super(params.app);
-    addPluginCssClasses(this.containerEl, params.cssClasses);
+    this.promiseResolve = params.promiseResolve;
+    this.addCssClasses(params.cssClasses);
   }
-}
 
-/**
- * Adds a CSS class to the modal parameters.
- *
- * @param params - The modal parameters.
- * @param cssClass - The CSS class to add.
- * @returns The modal parameters with the CSS class added.
- */
-export function addCssClass(params: ModalParamsBase, cssClass: string): ModalParamsBase {
-  return {
-    ...params,
-    cssClasses: [...(params.cssClasses ?? []), cssClass]
-  };
+  /**
+   * Adds CSS classes to the modal's container element.
+   *
+   * @param cssClasses - The CSS classes to add.
+   */
+  protected addCssClasses(cssClasses?: string | string[]): void {
+    addPluginCssClasses(this.containerEl, cssClasses);
+  }
 }
 
 /**

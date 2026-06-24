@@ -33,7 +33,7 @@ vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
 
 class TestModal extends ModalBase<string> {
   public override onClose(): void {
-    this.resolve('closed');
+    this.promiseResolve('closed');
   }
 
   public override onOpen(): void {
@@ -48,25 +48,41 @@ describe('ModalBase', () => {
 
   it('should create a modal and apply plugin css classes', async () => {
     await noopAsync();
-    const resolve = vi.fn();
-    const modal = new TestModal({ app, cssClasses: ['test-modal-class'] }, resolve);
+    const promiseResolve = vi.fn();
+    const modal = new TestModal({
+      app,
+      cssClasses: ['test-modal-class'],
+      promiseResolve
+    });
     expect(addPluginCssClasses).toHaveBeenCalledWith(modal.containerEl, ['test-modal-class']);
   });
 
   it('should apply custom css class when provided', () => {
-    const resolve = vi.fn();
+    const promiseResolve = vi.fn();
     const addClass = vi.fn();
-    const modal = new TestModal({ app, cssClasses: ['custom-class', 'test-modal-class'] }, resolve);
+    const modal = new TestModal({
+      app,
+      cssClasses: ['custom-class', 'test-modal-class'],
+      promiseResolve
+    });
     modal.containerEl.addClass = addClass;
     // Re-create to test the constructor branch
-    const modal2 = new TestModal({ app, cssClasses: ['custom-class', 'test-modal-class'] }, resolve);
+    const modal2 = new TestModal({
+      app,
+      cssClasses: ['custom-class', 'test-modal-class'],
+      promiseResolve
+    });
     // The addClass should have been called in the constructor
     expect(modal2).toBeDefined();
   });
 
   it('should not add custom class when not provided', () => {
-    const resolve = vi.fn();
-    const modal = new TestModal({ app, cssClasses: ['test-modal-class'] }, resolve);
+    const promiseResolve = vi.fn();
+    const modal = new TestModal({
+      app,
+      cssClasses: ['test-modal-class'],
+      promiseResolve
+    });
     expect(modal).toBeDefined();
   });
 });
@@ -77,8 +93,12 @@ describe('showModal', () => {
   });
 
   it('should create and open modal, resolving when closed', async () => {
-    const result = await showModal<string>((resolve) => {
-      const modal = new TestModal({ app, cssClasses: ['test'] }, resolve);
+    const result = await showModal<string>((promiseResolve) => {
+      const modal = new TestModal({
+        app,
+        cssClasses: ['test'],
+        promiseResolve
+      });
       return modal;
     });
     expect(result).toBe('closed');

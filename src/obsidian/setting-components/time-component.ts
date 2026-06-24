@@ -30,7 +30,11 @@ export class TimeComponent extends TypedRangeTextComponent<moment.Duration> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'time', CssClass.TimeComponent);
+    super({
+      containerEl,
+      cssClass: CssClass.TimeComponent,
+      type: 'time'
+    });
   }
 
   /**

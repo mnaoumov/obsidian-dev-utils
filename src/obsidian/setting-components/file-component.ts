@@ -28,7 +28,11 @@ export class FileComponent extends TypedTextComponent<File | null> {
    * @param containerEl - The container element of the component.
    */
   public constructor(containerEl: HTMLElement) {
-    super(containerEl, 'file', CssClass.FileComponent);
+    super({
+      containerEl,
+      cssClass: CssClass.FileComponent,
+      type: 'file'
+    });
   }
 
   /**
