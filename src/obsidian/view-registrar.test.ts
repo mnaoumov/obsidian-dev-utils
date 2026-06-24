@@ -26,7 +26,10 @@ describe('PluginViewRegistrar', () => {
     const registrar = new PluginViewRegistrar(plugin);
     const viewCreator: ViewCreatorOriginal = vi.fn();
 
-    registrar.registerView('test-view', viewCreator);
+    registrar.registerView({
+      type: 'test-view',
+      viewCreator
+    });
 
     expect(registerView).toHaveBeenCalledWith('test-view', viewCreator);
   });

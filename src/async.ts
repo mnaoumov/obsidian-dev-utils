@@ -543,6 +543,29 @@ export async function nextTickAsync(): Promise<void> {
 }
 
 /**
+ * Converts to native promisable, converting {@link PromiseLike} (aka Thenable) to a native {@link Promise}.
+ *
+ * @typeParam T - The type of the value.
+ * @param promisable - The promisable to normalize.
+ * @returns The value itself or a native {@link Promise} if the value is a {@link PromiseLike}.
+ */
+export function normalizePromisable<T>(promisable: Promisable<T>): Promise<T> | T {
+  if (!promisable) {
+    return promisable as T;
+  }
+
+  if (promisable instanceof Promise) {
+    return promisable as Promise<T>;
+  }
+
+  if ((promisable as Partial<PromiseLike<T>>).then) {
+    return Promise.resolve(promisable);
+  }
+
+  return promisable as T;
+}
+
+/**
  * Gets the next queue microtask.
  *
  * @returns A promise that resolves when the next queue microtask is available.

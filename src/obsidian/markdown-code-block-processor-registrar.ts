@@ -19,17 +19,34 @@ export interface MarkdownCodeBlockProcessorRegistrar {
   /**
    * Registers a markdown code block processor.
    *
-   * @param language - The language of the code block.
-   * @param handler - The handler for the code block.
-   * @param sortOrder - The sort order of the code block.
+   * @param params - The parameters for the markdown code block processor.
    * @returns The markdown post processor.
    */
-  registerMarkdownCodeBlockProcessor(
-    language: string,
-    handler: (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => MaybeReturn<Promise<unknown>>,
-    sortOrder?: number
-  ): MarkdownPostProcessor;
+  registerMarkdownCodeBlockProcessor(params: MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams): MarkdownPostProcessor;
 }
+
+interface MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams {
+  /**
+   * Handler function for the code block processor.
+   *
+   * @param source - The source code of the code block.
+   * @param el - The HTML element representing the code block.
+   * @param ctx - The context for the markdown post processor.
+   */
+  handler(this: void, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): MaybeReturn<Promise<unknown>>;
+
+  /**
+   * The language of the code block to register the processor for.
+   */
+  readonly language: string;
+
+  /**
+   * The sort order of the processor. Lower numbers are processed first. Defaults to 0.
+   */
+  readonly sortOrder?: number;
+}
+
+type PluginMarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams = MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams;
 
 /**
  * A registrar for markdown code block processors.
@@ -49,16 +66,10 @@ export class PluginMarkdownCodeBlockProcessorRegistrar implements MarkdownCodeBl
   /**
    * Registers a markdown code block processor.
    *
-   * @param language - The language of the code block.
-   * @param handler - The handler for the code block.
-   * @param sortOrder - The sort order of the code block.
+   * @param params - The parameters for the markdown code block processor.
    * @returns The markdown post processor.
    */
-  public registerMarkdownCodeBlockProcessor(
-    language: string,
-    handler: (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => MaybeReturn<Promise<unknown>>,
-    sortOrder?: number
-  ): MarkdownPostProcessor {
-    return this.plugin.registerMarkdownCodeBlockProcessor(language, handler, sortOrder);
+  public registerMarkdownCodeBlockProcessor(params: PluginMarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams): MarkdownPostProcessor {
+    return this.plugin.registerMarkdownCodeBlockProcessor(params.language, params.handler, params.sortOrder);
   }
 }

@@ -1,11 +1,11 @@
 /**
  * @file
  *
- * Registers an Obsidian protocol handler.
+ * Obsidian protocol handler registrars.
  */
 
 import type {
-  ObsidianProtocolHandler,
+  ObsidianProtocolData,
   Plugin
 } from 'obsidian';
 
@@ -16,20 +16,36 @@ export interface ObsidianProtocolHandlerRegistrar {
   /**
    * Registers an Obsidian protocol handler.
    *
-   * @param action - The action to register the handler for.
-   * @param handler - The handler to register.
+   * @param params - The parameters for the Obsidian protocol handler registration.
    */
-  registerObsidianProtocolHandler(action: string, handler: ObsidianProtocolHandler): void;
+  registerObsidianProtocolHandler(params: ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams): void;
 }
 
+interface ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams {
+  /**
+   * The action to register the handler for.
+   */
+  readonly action: string;
+
+  /**
+   * The handler to register.
+   *
+   * @param obsidianProtocolData - The data passed to the handler.
+   * @returns The result of the handler.
+   */
+  handler(this: void, obsidianProtocolData: ObsidianProtocolData): unknown;
+}
+
+type PluginObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams = ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams;
+
 /**
- * A registrar for Obsidian protocol handlers.
+ * Obsidian protocol handler registrar in an Obsidian plugin.
  */
 export class PluginObsidianProtocolHandlerRegistrar implements ObsidianProtocolHandlerRegistrar {
   private readonly plugin: Plugin;
 
   /**
-   * Creates a new Obsidian protocol handler registrar.
+   * Creates a new instance of the {@link PluginObsidianProtocolHandlerRegistrar} class.
    *
    * @param plugin - The plugin to register the protocol handler with.
    */
@@ -40,10 +56,9 @@ export class PluginObsidianProtocolHandlerRegistrar implements ObsidianProtocolH
   /**
    * Registers an Obsidian protocol handler.
    *
-   * @param action - The action to register the handler for.
-   * @param handler - The handler to register.
+   * @param params - The parameters for the Obsidian protocol handler registration.
    */
-  public registerObsidianProtocolHandler(action: string, handler: ObsidianProtocolHandler): void {
-    this.plugin.registerObsidianProtocolHandler(action, handler);
+  public registerObsidianProtocolHandler(params: PluginObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams): void {
+    this.plugin.registerObsidianProtocolHandler(params.action, params.handler);
   }
 }

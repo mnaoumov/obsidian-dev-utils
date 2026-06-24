@@ -25,7 +25,11 @@ describe('PluginMarkdownCodeBlockProcessorRegistrar', () => {
     const registrar = new PluginMarkdownCodeBlockProcessorRegistrar(plugin);
     const handler = vi.fn();
 
-    const result = registrar.registerMarkdownCodeBlockProcessor('dataview', handler, 100);
+    const result = registrar.registerMarkdownCodeBlockProcessor({
+      handler,
+      language: 'dataview',
+      sortOrder: 100
+    });
 
     expect(registerMarkdownCodeBlockProcessor).toHaveBeenCalledWith('dataview', handler, 100);
     expect(result).toBe(mockPostProcessor);

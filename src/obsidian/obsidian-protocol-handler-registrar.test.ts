@@ -23,7 +23,10 @@ describe('PluginObsidianProtocolHandlerRegistrar', () => {
     const registrar = new PluginObsidianProtocolHandlerRegistrar(plugin);
     const handler = vi.fn();
 
-    registrar.registerObsidianProtocolHandler('my-action', handler);
+    registrar.registerObsidianProtocolHandler({
+      action: 'my-action',
+      handler
+    });
 
     expect(registerObsidianProtocolHandler).toHaveBeenCalledWith('my-action', handler);
   });

@@ -4,7 +4,10 @@
  * This file defines the {@link ViewRegistrar} interface and the {@link PluginViewRegistrar} class.
  */
 
-import type { ViewCreator } from 'obsidian';
+import type {
+  View,
+  WorkspaceLeaf
+} from 'obsidian';
 
 import { Plugin } from 'obsidian';
 
@@ -15,10 +18,26 @@ export interface ViewRegistrar {
   /**
    * Registers a view type with a view creator.
    *
-   * @param type - The view type to register.
-   * @param viewCreator - The view creator function that creates a view instance for the given type.
+   * @param params - The parameters for the view registration.
    */
-  registerView(type: string, viewCreator: ViewCreator): void;
+  registerView(params: PluginViewRegistrarRegisterViewParams): void;
+}
+
+type PluginViewRegistrarRegisterViewParams = ViewRegistrarRegisterViewParams;
+
+interface ViewRegistrarRegisterViewParams {
+  /**
+   * The type of the view to register.
+   */
+  readonly type: string;
+
+  /**
+   * The view creator function that creates a view instance for the given type.
+   *
+   * @param leaf - The workspace leaf where the view will be created.
+   * @returns The created view instance.
+   */
+  viewCreator(this: void, leaf: WorkspaceLeaf): View;
 }
 
 /**
@@ -36,10 +55,9 @@ export class PluginViewRegistrar implements ViewRegistrar {
   /**
    * Registers a view type with a view creator.
    *
-   * @param type - The view type to register.
-   * @param viewCreator - The view creator function that creates a view instance for the given type.
+   * @param params - The parameters for the view registration.
    */
-  public registerView(type: string, viewCreator: ViewCreator): void {
-    this.plugin.registerView(type, viewCreator);
+  public registerView(params: PluginViewRegistrarRegisterViewParams): void {
+    this.plugin.registerView(params.type, params.viewCreator);
   }
 }

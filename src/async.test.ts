@@ -27,6 +27,7 @@ import {
   marksAsTerminateRetry,
   neverEnds,
   nextTickAsync,
+  normalizePromisable,
   promiseAllAsyncFnsSequentially,
   promiseAllSequentially,
   queueMicrotaskAsync,
@@ -1459,6 +1460,36 @@ describe('Async', () => {
   describe('nextTickAsync', () => {
     it('should resolve on the next tick', async () => {
       await expect(nextTickAsync()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('normalizePromisable', () => {
+    it('should return the same native Promise instance', async () => {
+      const promise = Promise.resolve(42);
+      const result = normalizePromisable(promise);
+      expect(result).toBe(promise);
+      await expect(result).resolves.toBe(42);
+    });
+
+    it('should wrap a non-Promise thenable into a native Promise', async () => {
+      const thenable: PromiseLike<number> = {
+        then(onFulfilled) {
+          return normalizePromisable(Promise.resolve(onFulfilled?.(7)));
+        }
+      };
+      const result = normalizePromisable(thenable);
+      expect(result).toBeInstanceOf(Promise);
+      expect(result).not.toBe(thenable);
+      await expect(result).resolves.toBe(7);
+    });
+
+    it('should return a plain value as-is', () => {
+      expect(normalizePromisable(42)).toBe(42);
+    });
+
+    it('should return a nullish value as-is without probing then', () => {
+      expect(normalizePromisable(undefined)).toBeUndefined();
+      expect(normalizePromisable(null)).toBeNull();
     });
   });
 
