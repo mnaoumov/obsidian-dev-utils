@@ -128,6 +128,26 @@ Lints your markdown documentation and automatically applies fixes where possible
 
 This command is looking for existing `markdownlint-cli2` config file in the root of your project and if it's not found, it creates it referencing the default configuration.
 
+### Find Over-Exposed Declarations
+
+```typescript
+import { findOverExposure } from 'obsidian-dev-utils/script-utils/linters/over-exposure';
+```
+
+Reports declarations that are exposed more broadly than their references require, so the exposure can be tightened: an `export`ed symbol referenced only within its own file (the `export` can be dropped), or a `public`/`protected` class member referenced only inside its own class (it can be `private`) or its subclasses (it can be `protected`). The analysis is whole-program and type-aware, so it cannot run per-file — like the unit tests, it parses the entire project.
+
+The command exits with a non-zero code when any over-exposure is found, so it can gate a release. A class member that carries a TSDoc (`/** … */`) documentation comment is treated as intentional public API and is never reported; lifecycle, `override`, and `static` members are likewise excluded, and a member kept wide only because of references from test files is flagged separately. When a `find-overexposed` npm script is defined, [Version Management](#version-management) runs it automatically as part of its preflight checks.
+
+### Find and Fix Over-Exposed Declarations
+
+```typescript
+import { findOverExposure } from 'obsidian-dev-utils/script-utils/linters/over-exposure';
+
+findOverExposure({ projectFolder: process.cwd(), shouldFix: true });
+```
+
+Tightens every safely-fixable over-exposure in place (drops the `export` keyword, or inserts/replaces a `private`/`protected` modifier). Findings that cannot be safely automated — exposed only for tests, decorated, or sharing an `export` with a still-exported sibling — are reported and left untouched. The command exits with a non-zero code if any such unfixable finding remains.
+
 ### Publish
 
 ```typescript
@@ -176,7 +196,7 @@ Runs the test suite in watch mode.
 import { updateVersion } from 'obsidian-dev-utils/script-utils/version';
 ```
 
-Runs build checks before updating the version and releases if all checks pass.
+Runs preflight checks before updating the version and releases if all checks pass. The checks are the clean-repo check, formatting, spellcheck, lint, over-exposure analysis (when a `find-overexposed` script is defined), and tests. The build always runs as well — it is a publishing prerequisite, not a verification check, so even a fast release ships artifacts that match the current code (use `--no-build` only when the build output is already known to be current).
 
 If you use `beta` as version update type for your Obsidian plugin, the plugin will be deployed compatible to install with [BRAT](https://community.obsidian.md/plugins/obsidian42-brat).
 
@@ -212,6 +232,8 @@ To use these commands in your `package.json`, create script entry points using [
     "build:compile:typescript": "jiti scripts/build-compile-typescript.ts",
     "build:static": "jiti scripts/build-static.ts",
     "dev": "jiti scripts/dev.ts",
+    "find-overexposed": "jiti scripts/find-overexposed.ts",
+    "find-overexposed:fix": "jiti scripts/find-overexposed-fix.ts",
     "format": "jiti scripts/format.ts",
     "format:check": "jiti scripts/format-check.ts",
     "lint": "jiti scripts/lint.ts",
@@ -233,5 +255,24 @@ await build();
 ```
 
 This setup allows you to run the commands using `npm run`, like `npm run build`.
+
+### Copying the bundled templates
+
+You do not have to write these script and config files by hand. Ready-made templates ship inside the installed package, so after `npm install obsidian-dev-utils` you can copy them out of `node_modules/obsidian-dev-utils/dist/templates`:
+
+- `dist/templates/scripts/` — the script entry points. The per-tool scripts are grouped by the module they use (`build/`, `bundlers/`, `formatters/`, `linters/`, `test-runners/`, `version/`), and the shared config logic files sit at the top level (`commitlint-config.ts`, `eslint-config.ts`, `vitest-config.ts`, `markdownlint-cli2-config.ts`, `nano-staged-config.ts`). Copy the files you need into your project's `scripts/` folder, naming each one to match the `package.json` script that runs it.
+- `dist/templates/` (top level) — the thin root config files a project keeps at its root: `commitlint.config.ts`, `eslint.config.mts`, `vitest.config.ts`, `dprint.json`, `.markdownlint-cli2.mjs`, and `.nano-staged.mjs`. Each one re-exports its matching `scripts/*-config.ts`, so copy both halves together.
+
+The `commitlint-config`, `markdownlint-cli2-config`, and `nano-staged-config` templates work as-is; `eslint-config` and `vitest-config` are baselines you adapt to your plugin.
+
+## Skipping pre-commit checks
+
+The shared nano-staged configuration runs file-based lint, format, and spellcheck on staged files via the husky pre-commit hook. To skip these checks for a single developer or machine — without exporting a shell-specific environment variable — set `NANO_STAGED` to an off value (`0`, `false`, `off`, or `no`) in a gitignored `.env` file at the project root:
+
+```dotenv
+NANO_STAGED=0
+```
+
+The `.env` file is read by Node itself, so this works the same on every platform and shell. It mirrors husky's own `HUSKY=0`, but scoped to the nano-staged step — the commit-message (commitlint) hook still runs. Remove the line (or set any other value) to re-enable the checks.
 
 [Hot Reload]: https://github.com/pjeby/hot-reload

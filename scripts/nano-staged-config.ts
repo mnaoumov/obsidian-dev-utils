@@ -1,3 +1,3 @@
-import { obsidianDevUtilsConfig } from '../src/script-utils/nano-staged-config.ts';
+import { getNanoStagedConfig } from '../src/script-utils/nano-staged-config.ts';
 
-export const config = obsidianDevUtilsConfig;
+export const config = getNanoStagedConfig();

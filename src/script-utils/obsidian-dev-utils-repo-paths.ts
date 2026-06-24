@@ -55,6 +55,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** A path to the `lib` folder within the {@link Dist} folder. */
   DistLib = 'dist/lib',
 
+  /** A path to the `templates` folder within the {@link Dist} folder, holding the consumer-facing templates. */
+  DistTemplates = 'dist/templates',
+
   /** Transpiled TypeScript declaration file extension. */
   DjsExtension = '.d.js',
 

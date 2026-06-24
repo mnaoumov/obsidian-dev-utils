@@ -40,7 +40,10 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - `src/script-utils/formatters/dprint.ts` — dprint formatting
 - `src/script-utils/test-runners/vitest.ts` — Vitest test runner
 - `scripts/` — npm script entry points (executed via `jiti`), each wraps its call in `wrapCliTask()` for error handling and exit codes
-- `static/scripts/` — consumer example scripts organized by module (bundlers, formatters, linters, test-runners, build, version)
+- `static/` — consumer-facing templates copied verbatim into `dist/templates/` by `build:static` (so they ship in the package, copyable from `node_modules/obsidian-dev-utils/dist/templates`). Two kinds of file live here:
+  - Root config templates (`static/commitlint.config.ts`, `static/eslint.config.mts`, `static/vitest.config.ts`, `static/.markdownlint-cli2.mjs`, `static/.nano-staged.mjs`, `static/dprint.json`) — thin re-exports a consumer drops at their project root.
+  - `static/scripts/` — the script entry points a consumer drops in their `scripts/` folder. This holds both the per-tool example scripts grouped by category (`bundlers/`, `formatters/`, `linters/`, `test-runners/`, `build/`, `version/`) and the flat `*-config.ts` logic files that the root config templates re-export (`commitlint-config.ts`, `eslint-config.ts`, `vitest-config.ts`, `markdownlint-cli2-config.ts`, `nano-staged-config.ts`).
+  - `static/` is kept self-contained: every root config template resolves to a real `static/scripts/*-config.ts`, so the imports never dangle. `commitlint-config`/`markdownlint-cli2-config`/`nano-staged-config` are pure re-exports (identical for every plugin); `eslint-config`/`vitest-config` are generic baselines a consumer customizes.
 - `src/script-utils/commitlint-config.ts` — shared commitlint configuration
 - `src/script-utils/nano-staged-config.ts` — shared nano-staged pre-commit configuration
 - `dist/` — compiled output (ESM `.mjs` + CJS `.cjs` + type declarations)
@@ -253,7 +256,20 @@ import { obsidianDevUtilsConfig } from 'obsidian-dev-utils/script-utils/commitli
 export const config = obsidianDevUtilsConfig;
 ```
 
-See `static/scripts/` for the full set of consumer examples.
+The nano-staged config script calls `getNanoStagedConfig()` (not a bare re-export) so the pre-commit
+checks honor the `NANO_STAGED=0` `.env` opt-out:
+
+```typescript
+// scripts/nano-staged-config.ts
+import { getNanoStagedConfig } from 'obsidian-dev-utils/script-utils/nano-staged-config';
+export const config = getNanoStagedConfig();
+```
+
+Every root config template under `static/` (`commitlint.config.ts`, `eslint.config.mts`,
+`vitest.config.ts`, `.markdownlint-cli2.mjs`, `.nano-staged.mjs`) is a thin re-export of a matching
+`static/scripts/*-config.ts`, which ships alongside it — so the copied templates resolve without
+hand-writing the `scripts/*-config.ts` logic file. See `static/scripts/` for the full set of consumer
+examples.
 
 ## Current Task
 
@@ -660,6 +676,10 @@ cross-repo follow-up for the `custom-attachment-location` lazy-provider migratio
 
 - Conventional Commits enforced via commitlint + husky (commit-msg hook)
 - nano-staged runs spellcheck, compilation, lint, and format on staged files via husky pre-commit hook
+  - Opt out per-developer by setting `NANO_STAGED=0` (or `false`/`off`/`no`) in a gitignored `.env`
+    (cross-platform, mirrors husky's own `HUSKY=0`); the `.env` is read by `getNanoStagedConfig()` in
+    `src/script-utils/nano-staged-config.ts`, which the thin `scripts/nano-staged-config.ts` entry calls.
+    The commit-msg/commitlint hook still runs.
 - Use `npm run commit` (Commitizen) for guided commit messages
 - Before each commit, run these commands and ensure they complete without errors:
   - `npm run spellcheck`

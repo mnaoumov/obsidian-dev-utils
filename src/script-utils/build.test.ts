@@ -195,12 +195,13 @@ describe('buildCompileSvelte', () => {
 });
 
 describe('buildStatic', () => {
-  it('should copy static files to dist folder', async () => {
+  it('should copy static files to the dist/templates folder', async () => {
     mockReaddirPosix.mockResolvedValue([
       { isFile: (): boolean => true, name: 'style.css', parentPath: 'static' }
     ]);
     await buildStatic();
     expect(mockCp).toHaveBeenCalledTimes(1);
+    expect(mockCp).toHaveBeenCalledWith('static/style.css', 'dist/templates/style.css');
   });
 
   it('should skip directories', async () => {

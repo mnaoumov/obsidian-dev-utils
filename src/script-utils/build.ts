@@ -97,10 +97,12 @@ export async function buildCompileTypeScript(): Promise<void> {
 }
 
 /**
- * Copies all static files from the static assets folder to the distribution folder.
+ * Copies all static files from the static assets folder to the `templates` folder within the
+ * distribution folder.
  *
- * This function recursively reads the contents of the static assets folder and copies
- * each file to the corresponding path in the distribution folder.
+ * This function recursively reads the contents of the static assets folder and copies each file to
+ * the corresponding path under {@link ObsidianDevUtilsRepoPaths.DistTemplates}, so consumers can copy
+ * the templates from `node_modules/obsidian-dev-utils/dist/templates`.
  *
  * @returns A {@link Promise} that resolves when all files have been copied.
  */
@@ -111,7 +113,7 @@ export async function buildStatic(): Promise<void> {
     }
 
     const path = trimStart(join(dirent.parentPath, dirent.name), `${ObsidianDevUtilsRepoPaths.Static}/`);
-    await cp(join(ObsidianDevUtilsRepoPaths.Static, path), join(ObsidianDevUtilsRepoPaths.Dist, path));
+    await cp(join(ObsidianDevUtilsRepoPaths.Static, path), join(ObsidianDevUtilsRepoPaths.DistTemplates, path));
   }
 }
 

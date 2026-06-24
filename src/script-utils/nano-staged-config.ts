@@ -4,7 +4,8 @@
  * Shared nano-staged configuration for pre-commit hooks.
  */
 
-/* v8 ignore start -- Declarative nano-staged configuration; correctness is verified by running nano-staged, not unit tests. */
+import { existsSync } from 'node:fs';
+import process from 'node:process';
 
 /**
  * Nano-staged configuration that runs file-based lint, format, and spellcheck on staged files.
@@ -35,4 +36,35 @@ export const obsidianDevUtilsConfig: Record<string, string[]> = {
   ]
 };
 
-/* v8 ignore stop */
+const NANO_STAGED_OFF_VALUES: ReadonlySet<string> = new Set(['0', 'false', 'no', 'off']);
+
+/**
+ * Resolves the nano-staged configuration to use, honoring a per-developer opt-out.
+ *
+ * Loads a gitignored `.env` if present (via Node's own `process.loadEnvFile`, so it behaves the same
+ * on every platform and shell), then — when `NANO_STAGED` is set to an off value (`0`, `false`, `off`,
+ * or `no`) — prints a notice and exits the process successfully so the pre-commit checks are skipped.
+ * This mirrors husky's own `HUSKY=0` switch, but scoped to the nano-staged step (so the commit-msg
+ * hook still runs). Otherwise it returns {@link obsidianDevUtilsConfig}.
+ *
+ * This is a function rather than module-level code so importing the package barrel never triggers the
+ * `.env` read or the process exit; call it from the thin `scripts/nano-staged-config.ts` entry.
+ *
+ * @returns The nano-staged task configuration. Does not return when the opt-out is active.
+ */
+export function getNanoStagedConfig(): Record<string, string[]> {
+  if (existsSync('.env')) {
+    process.loadEnvFile('.env');
+  }
+
+  if (isNanoStagedDisabled(process.env['NANO_STAGED'])) {
+    process.stdout.write('nano-staged: skipped (NANO_STAGED is off).\n');
+    process.exit(0);
+  }
+
+  return obsidianDevUtilsConfig;
+}
+
+function isNanoStagedDisabled(value: string | undefined): boolean {
+  return NANO_STAGED_OFF_VALUES.has((value ?? '').trim().toLowerCase());
+}
