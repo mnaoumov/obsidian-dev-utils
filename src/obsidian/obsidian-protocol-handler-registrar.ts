@@ -8,6 +8,9 @@ import type {
   ObsidianProtocolData,
   Plugin
 } from 'obsidian';
+import type { Promisable } from 'type-fest';
+
+import { normalizePromisable } from '../async.ts';
 
 /**
  * A registrar for Obsidian protocol handlers.
@@ -33,7 +36,7 @@ interface ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams 
    * @param obsidianProtocolData - The data passed to the handler.
    * @returns The result of the handler.
    */
-  handler(this: void, obsidianProtocolData: ObsidianProtocolData): unknown;
+  handler(this: void, obsidianProtocolData: ObsidianProtocolData): Promisable<void>;
 }
 
 type PluginObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams = ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams;
@@ -59,6 +62,6 @@ export class PluginObsidianProtocolHandlerRegistrar implements ObsidianProtocolH
    * @param params - The parameters for the Obsidian protocol handler registration.
    */
   public registerObsidianProtocolHandler(params: PluginObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams): void {
-    this.plugin.registerObsidianProtocolHandler(params.action, params.handler);
+    this.plugin.registerObsidianProtocolHandler(params.action, (obsidianProtocolData) => normalizePromisable(params.handler(obsidianProtocolData)));
   }
 }

@@ -9,8 +9,9 @@ import type {
   MarkdownPostProcessorContext,
   Plugin
 } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
-import type { MaybeReturn } from '../type.ts';
+import { normalizePromisable } from '../async.ts';
 
 /**
  * A registrar for markdown code block processors.
@@ -33,7 +34,7 @@ interface MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorP
    * @param el - The HTML element representing the code block.
    * @param ctx - The context for the markdown post processor.
    */
-  handler(this: void, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): MaybeReturn<Promise<unknown>>;
+  handler(this: void, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promisable<void>;
 
   /**
    * The language of the code block to register the processor for.
@@ -70,6 +71,6 @@ export class PluginMarkdownCodeBlockProcessorRegistrar implements MarkdownCodeBl
    * @returns The markdown post processor.
    */
   public registerMarkdownCodeBlockProcessor(params: PluginMarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams): MarkdownPostProcessor {
-    return this.plugin.registerMarkdownCodeBlockProcessor(params.language, params.handler, params.sortOrder);
+    return this.plugin.registerMarkdownCodeBlockProcessor(params.language, (source, el, ctx) => normalizePromisable(params.handler(source, el, ctx)), params.sortOrder);
   }
 }
