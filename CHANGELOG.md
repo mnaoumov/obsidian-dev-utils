@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 79.0.0
+
+- chore: over-exposure
+- feat: templates
+- feat!: over-exposure scripts
+- refactor: convertAsyncToSync
+
 ## 78.1.0
 
 - feat: improve typing
