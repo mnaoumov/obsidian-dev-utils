@@ -24,7 +24,11 @@ import {
 
 import type { PathOrAbstractFile } from './file-system.ts';
 
-import { getZIndex } from '../html-element.ts';
+import { invokeAsyncSafely } from '../async.ts';
+import {
+  getZIndex,
+  waitUntilConnected
+} from '../html-element.ts';
 import { MonkeyAroundComponent } from './components/monkey-around-component.ts';
 import { getDomEventsHandlersConstructor } from './constructors/getDomEventsHandlersConstructor.ts';
 import {
@@ -125,13 +129,10 @@ class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
     this.path = params.path;
     this.el = params.el;
 
-    if (this.el.isConnected) {
+    invokeAsyncSafely(async () => {
+      await waitUntilConnected(this.el);
       this.updateZIndex(this.el);
-    } else {
-      this.el.onNodeInserted(() => {
-        this.updateZIndex(this.el);
-      });
-    }
+    });
   }
 
   private updateZIndex(el: HTMLElement): void {

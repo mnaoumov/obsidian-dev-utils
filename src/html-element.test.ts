@@ -11,7 +11,10 @@ import {
 
 import type { GenericObject } from './type-guards.ts';
 
-import { noopAsync } from './function.ts';
+import {
+  noop,
+  noopAsync
+} from './function.ts';
 import {
   appendCodeBlock,
   createDivAsync,
@@ -24,7 +27,8 @@ import {
   isElementVisibleInOffsetParent,
   isLoaded,
   onAncestorScrollOrResize,
-  toPx
+  toPx,
+  waitUntilConnected
 } from './html-element.ts';
 import { strictProxy } from './strict-proxy.ts';
 import {
@@ -912,6 +916,45 @@ describe('ensureLoaded', () => {
     el.dispatchEvent(new Event('load'));
 
     await expect(promise).resolves.toBeUndefined();
+  });
+});
+
+describe('waitUntilConnected', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should resolve immediately when the element is already connected', async () => {
+    const el = buildElement({ parent: activeDocument.body });
+    expect(el.isConnected).toBe(true);
+    await expect(waitUntilConnected(el)).resolves.toBeUndefined();
+    el.remove();
+  });
+
+  it('should resolve when a disconnected element is later inserted', async () => {
+    const el = buildElement();
+    expect(el.isConnected).toBe(false);
+
+    let insertedListener: (() => unknown) | undefined;
+    const onNodeInsertedSpy = vi.fn((listener: () => unknown): () => void => {
+      insertedListener = listener;
+      return noop;
+    });
+    el.onNodeInserted = onNodeInsertedSpy;
+
+    let isResolved = false;
+    const promise = waitUntilConnected(el).then(() => {
+      isResolved = true;
+    });
+
+    expect(onNodeInsertedSpy).toHaveBeenCalledTimes(1);
+    expect(onNodeInsertedSpy).toHaveBeenCalledWith(expect.any(Function), true);
+    expect(isResolved).toBe(false);
+
+    assertNonNullable(insertedListener);
+    insertedListener();
+    await promise;
+    expect(isResolved).toBe(true);
   });
 });
 

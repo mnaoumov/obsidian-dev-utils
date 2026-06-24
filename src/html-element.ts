@@ -310,6 +310,24 @@ export function toPx(value: number): string {
   return `${String(value)}px`;
 }
 
+/**
+ * Waits until the given element is connected to the DOM.
+ *
+ * @param el - The element to check.
+ * @returns A promise that resolves when the element is connected.
+ */
+export function waitUntilConnected(el: HTMLElement): Promise<void> {
+  return new Promise((resolve) => {
+    if (el.isConnected) {
+      resolve();
+    } else {
+      el.onNodeInserted(() => {
+        resolve();
+      }, true);
+    }
+  });
+}
+
 function getLoadableElements(el: Element): Element[] {
   return Array.from(el.querySelectorAll('body, img, iframe, embed, link, object, script, style, track'));
 }
