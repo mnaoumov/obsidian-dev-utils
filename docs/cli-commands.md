@@ -186,18 +186,19 @@ For the script to be able to publish releases in your repository, you need to en
 
 #### Flags
 
-The version script accepts the following optional flags (pass them after the version update type). When invoking via `npm run`, separate the flags with `--`, e.g. `npm run version -- patch --dry-run`:
+The version script accepts the following optional flags (pass them after the version update type). Each behavior is enabled by default; the corresponding `--no-*` flag turns it off. When invoking via `npm run`, separate the flags with `--`, e.g. `npm run version -- patch --no-release`:
 
-| Flag                           | Effect                                                                                                                                  |
-|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| `--bypass-changelog-editing`   | Generates the changelog from commit messages but skips opening it for manual review.                                                    |
-| `--bypass-commit-verification` | Passes `--no-verify` to the release commit, skipping the pre-commit hook.                                                               |
-| `--dry-run`                    | Runs all local steps (version bump, changelog, commit, tag) but skips the push and the GitHub release.                                  |
-| `--skip-preflight-checks`      | Skips the clean-repo check, formatting, spellcheck, lint, build, and tests. Useful when resuming a release whose code is already green. |
+| Flag                       | Effect                                                                                                                                                                 |
+|----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--no-build`               | Skips the build step. Use only when the build output is already known to match the current code; otherwise the release would publish stale artifacts.                  |
+| `--no-changelog-editing`   | Generates the changelog from commit messages but skips opening it for manual review.                                                                                   |
+| `--no-checks`              | Skips the clean-repo check, formatting, spellcheck, lint, over-exposure analysis, and tests. The build still runs. Useful when resuming a release whose code is green. |
+| `--no-commit-verification` | Passes `--no-verify` to the release commit, skipping the pre-commit hook.                                                                                              |
+| `--no-release`             | Runs all local steps (version bump, changelog, commit, tag) but skips the push and the GitHub release.                                                                 |
 
 If the release commit fails (for example, the pre-commit hook rejects a new word in the freshly generated changelog) and you are running in an interactive terminal, the script prints the error and prompts you to fix the issue (for example, add the missing word to `cspell.json`) and press Enter to retry. The retry re-stages all files and re-commits, so the fix is picked up without restarting the whole release lifecycle and without bumping the version again.
 
-In a non-interactive environment (no TTY, such as CI), the script does not prompt — it re-throws the commit error and fails fast instead of hanging. For automated releases, use `--bypass-commit-verification` to skip the pre-commit hook so the commit cannot fail on it in the first place.
+In a non-interactive environment (no TTY, such as CI), the script does not prompt — it re-throws the commit error and fails fast instead of hanging. For automated releases, use `--no-commit-verification` to skip the pre-commit hook so the commit cannot fail on it in the first place.
 
 ## Simplified Usage
 

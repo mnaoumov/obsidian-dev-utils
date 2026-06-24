@@ -126,6 +126,67 @@ describe('analyzeOverExposure', () => {
     expect(unused.hasNoReferences).toBe(true);
   });
 
+  it('should not flag a member documented with a TSDoc comment', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class A {
+          /**
+           * Helper.
+           *
+           * @returns A number.
+           */
+          public helper(): number {
+            return 1;
+          }
+          public run(): number {
+            return this.helper();
+          }
+        }
+      `
+    });
+    expect(hasFinding(findings, 'helper')).toBe(false);
+  });
+
+  it('should still flag an undocumented member alongside a documented one', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class A {
+          /** Documented. */
+          public documented(): number {
+            return 1;
+          }
+          public undocumented(): number {
+            return 2;
+          }
+          public run(): number {
+            return this.documented() + this.undocumented();
+          }
+        }
+      `
+    });
+    expect(hasFinding(findings, 'documented')).toBe(false);
+    expect(findFinding(findings, 'undocumented').suggestedExposure).toBe('private');
+  });
+
+  it('should still flag a member whose only leading comments are not TSDoc', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class A {
+          // line comment
+          /* block comment */
+          /**/
+          public helper(): number {
+            return 1;
+          }
+          public run(): number {
+            return this.helper();
+          }
+        }
+      `
+    });
+    expect(findFinding(findings, 'helper').suggestedExposure).toBe('private');
+  });
+
   it('should suggest protected for a public member used only in a subclass', () => {
     const findings = analyze({
       '/proj/src/a.ts': `

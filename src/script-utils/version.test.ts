@@ -369,8 +369,8 @@ describe('addUpdatedFilesToGit', () => {
     expect(mockExecFromRoot).toHaveBeenCalledWith(['git', 'commit', '-m', 'chore: release 1.0.0', '--allow-empty'], { isQuiet: true });
   });
 
-  it('should add --no-verify when bypassing commit verification', async () => {
-    await addUpdatedFilesToGit('1.0.0', { shouldBypassCommitVerification: true });
+  it('should add --no-verify when commit verification is disabled', async () => {
+    await addUpdatedFilesToGit('1.0.0', { shouldVerifyCommit: false });
     expect(mockExecFromRoot).toHaveBeenCalledWith(['git', 'commit', '-m', 'chore: release 1.0.0', '--allow-empty', '--no-verify'], { isQuiet: true });
   });
 
@@ -689,10 +689,10 @@ describe('updateChangelog', () => {
     );
   });
 
-  it('should skip the interactive review when bypassing changelog editing', async () => {
+  it('should skip the interactive review when changelog editing is disabled', async () => {
     mockExistsSync.mockReturnValue(false);
     mockExecFromRoot.mockResolvedValueOnce('msg\0');
-    await updateChangelog('1.0.0', { shouldBypassChangelogEditing: true });
+    await updateChangelog('1.0.0', { shouldEditChangelog: false });
     expect(mockWriteFile).toHaveBeenCalledWith(
       expect.stringContaining('CHANGELOG.md'),
       expect.stringContaining('## 1.0.0'),
@@ -709,32 +709,35 @@ describe('parseVersionArgs', () => {
     const { options, versionUpdateType } = parseVersionArgs(['patch']);
     expect(versionUpdateType).toBe('patch');
     expect(options).toEqual({
-      isDryRun: false,
-      shouldBypassChangelogEditing: false,
-      shouldBypassCommitVerification: false,
-      shouldSkipPreflightChecks: false
+      shouldBuild: true,
+      shouldEditChangelog: true,
+      shouldRelease: true,
+      shouldRunChecks: true,
+      shouldVerifyCommit: true
     });
   });
 
   it('should parse all flags', () => {
     const { options, versionUpdateType } = parseVersionArgs([
       'patch',
-      '--bypass-changelog-editing',
-      '--bypass-commit-verification',
-      '--dry-run',
-      '--skip-preflight-checks'
+      '--no-build',
+      '--no-changelog-editing',
+      '--no-checks',
+      '--no-commit-verification',
+      '--no-release'
     ]);
     expect(versionUpdateType).toBe('patch');
     expect(options).toEqual({
-      isDryRun: true,
-      shouldBypassChangelogEditing: true,
-      shouldBypassCommitVerification: true,
-      shouldSkipPreflightChecks: true
+      shouldBuild: false,
+      shouldEditChangelog: false,
+      shouldRelease: false,
+      shouldRunChecks: false,
+      shouldVerifyCommit: false
     });
   });
 
   it('should return undefined version update type when no positional is provided', () => {
-    const { versionUpdateType } = parseVersionArgs(['--dry-run']);
+    const { versionUpdateType } = parseVersionArgs(['--no-release']);
     expect(versionUpdateType).toBeUndefined();
   });
 });
@@ -779,6 +782,7 @@ describe('updateVersion', () => {
     expect(mockNpmRun).toHaveBeenCalledWith('lint:md');
     expect(mockNpmRun).toHaveBeenCalledWith('build');
     expect(mockNpmRun).toHaveBeenCalledWith('lint');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('find-overexposed');
     expect(mockNpmRunOptional).toHaveBeenCalledWith('test');
     expect(mockEditPackageJson).toHaveBeenCalled();
   });
@@ -791,43 +795,55 @@ describe('updateVersion', () => {
     expect(prepareRelease).toHaveBeenCalledWith('1.0.1');
   });
 
-  it('should skip preflight checks and clean-repo check when shouldSkipPreflightChecks is set', async () => {
+  it('should skip the verification checks but still build when shouldRunChecks is false', async () => {
     setupFullMocks();
     mockReaddirPosix.mockResolvedValue([]);
-    await updateVersion('patch', { shouldSkipPreflightChecks: true });
-    expect(mockNpmRun).not.toHaveBeenCalled();
+    await updateVersion('patch', { shouldRunChecks: false });
+    expect(mockNpmRun).toHaveBeenCalledWith('build');
+    expect(mockNpmRun).not.toHaveBeenCalledWith('lint');
+    expect(mockNpmRun).not.toHaveBeenCalledWith('format:check');
     expect(mockNpmRunOptional).not.toHaveBeenCalled();
     expect(mockExecFromRoot).not.toHaveBeenCalledWith('git status --porcelain --untracked-files=all', expect.any(Object));
     expect(mockEditPackageJson).toHaveBeenCalled();
   });
 
-  it('should stop before push and release when isDryRun is set', async () => {
+  it('should skip the build but still run the verification checks when shouldBuild is false', async () => {
+    setupFullMocks();
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('patch', { shouldBuild: false });
+    expect(mockNpmRun).not.toHaveBeenCalledWith('build');
+    expect(mockNpmRun).toHaveBeenCalledWith('lint');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('find-overexposed');
+    expect(mockEditPackageJson).toHaveBeenCalled();
+  });
+
+  it('should stop before push and release when shouldRelease is false', async () => {
     setupFullMocks();
     mockReaddirPosix.mockResolvedValue([]);
     const prepareRelease = vi.fn().mockResolvedValue(undefined);
     await updateVersion('patch', {
-      isDryRun: true,
-      prepareGitHubRelease: prepareRelease
+      prepareGitHubRelease: prepareRelease,
+      shouldRelease: false
     });
     expect(mockExecFromRoot).toHaveBeenCalledWith(expect.stringContaining('git tag'), expect.any(Object));
     expect(mockExecFromRoot).not.toHaveBeenCalledWith('git push --follow-tags --force', expect.any(Object));
     expect(prepareRelease).not.toHaveBeenCalled();
   });
 
-  it('should bypass commit verification when shouldBypassCommitVerification is set', async () => {
+  it('should add --no-verify to the release commit when shouldVerifyCommit is false', async () => {
     setupFullMocks();
     mockReaddirPosix.mockResolvedValue([]);
-    await updateVersion('patch', { shouldBypassCommitVerification: true });
+    await updateVersion('patch', { shouldVerifyCommit: false });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
       ['git', 'commit', '-m', 'chore: release 1.0.1', '--allow-empty', '--no-verify'],
       { isQuiet: true }
     );
   });
 
-  it('should bypass changelog editing when shouldBypassChangelogEditing is set', async () => {
+  it('should skip the interactive changelog review when shouldEditChangelog is false', async () => {
     setupFullMocks();
     mockReaddirPosix.mockResolvedValue([]);
-    await updateVersion('patch', { shouldBypassChangelogEditing: true });
+    await updateVersion('patch', { shouldEditChangelog: false });
     expect(mockExecFromRoot).not.toHaveBeenCalledWith('code --version', expect.any(Object));
   });
 

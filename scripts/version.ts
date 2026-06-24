@@ -26,7 +26,7 @@ await wrapCliTask(async () => {
     ...options,
     prepareGitHubRelease
   });
-  if (options.isDryRun) {
+  if (!options.shouldRelease) {
     return;
   }
 

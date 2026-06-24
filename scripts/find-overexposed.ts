@@ -1,6 +1,9 @@
 import process from 'node:process';
 
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
+import {
+  CliTaskResult,
+  wrapCliTask
+} from '../src/script-utils/cli-utils.ts';
 import {
   findOverExposure,
   formatOverExposureFindings
@@ -25,4 +28,5 @@ await wrapCliTask(() => {
 
   process.stderr.write(`\r${' '.repeat(previousProgressLineLength)}\r`);
   process.stdout.write(formatOverExposureFindings(findings));
+  return CliTaskResult.Success(findings.length === 0);
 });

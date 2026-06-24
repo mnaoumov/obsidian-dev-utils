@@ -1,6 +1,9 @@
 import process from 'node:process';
 
-import { wrapCliTask } from 'obsidian-dev-utils/script-utils/cli-utils';
+import {
+  CliTaskResult,
+  wrapCliTask
+} from 'obsidian-dev-utils/script-utils/cli-utils';
 import {
   findOverExposure,
   formatOverExposureFindings
@@ -9,4 +12,5 @@ import {
 await wrapCliTask(() => {
   const findings = findOverExposure({ projectFolder: process.cwd(), shouldFix: true });
   process.stdout.write(formatOverExposureFindings(findings, { baseFolder: process.cwd() }));
+  return CliTaskResult.Success(findings.every((finding) => finding.wasFixed));
 });

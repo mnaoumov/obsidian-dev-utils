@@ -57,9 +57,10 @@ import {
  */
 export interface AddUpdatedFilesToGitOptions {
   /**
-   * Whether to pass `--no-verify` to the release commit, skipping the pre-commit hook. Defaults to `false`.
+   * Whether to run the pre-commit hook when creating the release commit. When `false`, `--no-verify`
+   * is passed to the release commit to skip the hook. Defaults to `true`.
    */
-  readonly shouldBypassCommitVerification?: boolean;
+  readonly shouldVerifyCommit?: boolean;
 }
 
 /**
@@ -82,23 +83,17 @@ export interface ParsedVersionArgs {
  */
 export interface UpdateChangelogOptions {
   /**
-   * Whether to skip the interactive review of the generated changelog. When `true`, the changelog
-   * is still generated from commit messages, but it is not opened in the editor for manual review.
-   * Defaults to `false`.
+   * Whether to open the generated changelog in the editor for an interactive review. When `false`,
+   * the changelog is still generated from commit messages, but it is not opened in the editor for
+   * manual review. Defaults to `true`.
    */
-  readonly shouldBypassChangelogEditing?: boolean;
+  readonly shouldEditChangelog?: boolean;
 }
 
 /**
  * Options for {@link updateVersion}.
  */
 export interface UpdateVersionOptions {
-  /**
-   * Whether to perform a dry run. When `true`, all local steps are executed (version bump, changelog,
-   * commit, tag), but the changes are not pushed and no GitHub release is published. Defaults to `false`.
-   */
-  readonly isDryRun?: boolean;
-
   /**
    * A callback function to prepare the GitHub release.
    *
@@ -108,20 +103,38 @@ export interface UpdateVersionOptions {
   prepareGitHubRelease?(this: void, newVersion: string): Promise<void>;
 
   /**
-   * Whether to skip the interactive review of the generated changelog. Defaults to `false`.
+   * Whether to run the build step. The build is a publishing prerequisite, not a verification check,
+   * so it is governed by this flag independently of {@link shouldRunChecks} — it runs even when the
+   * checks are skipped, so a fast release still ships fresh artifacts. Set to `false` only when the
+   * build output is known to already match the current code; otherwise the release would publish
+   * stale artifacts. Defaults to `true`.
    */
-  readonly shouldBypassChangelogEditing?: boolean;
+  readonly shouldBuild?: boolean;
 
   /**
-   * Whether to pass `--no-verify` to the release commit, skipping the pre-commit hook. Defaults to `false`.
+   * Whether to open the generated changelog in the editor for an interactive review. Defaults to `true`.
    */
-  readonly shouldBypassCommitVerification?: boolean;
+  readonly shouldEditChangelog?: boolean;
 
   /**
-   * Whether to skip the preflight checks (clean-repo check, format, spellcheck, lint, build, and tests).
-   * Defaults to `false`.
+   * Whether to publish the release. When `false`, all local steps are executed (version bump,
+   * changelog, commit, tag), but the changes are not pushed and no GitHub release is published.
+   * Defaults to `true`.
    */
-  readonly shouldSkipPreflightChecks?: boolean;
+  readonly shouldRelease?: boolean;
+
+  /**
+   * Whether to run the preflight verification checks (clean-repo check, format, spellcheck, lint,
+   * over-exposure analysis, and tests). The build step is not one of these checks — it is governed
+   * separately by {@link shouldBuild}. Defaults to `true`.
+   */
+  readonly shouldRunChecks?: boolean;
+
+  /**
+   * Whether to run the pre-commit hook when creating the release commit. When `false`, `--no-verify`
+   * is passed to the release commit to skip the hook. Defaults to `true`.
+   */
+  readonly shouldVerifyCommit?: boolean;
 }
 
 interface NpmPackResult {
@@ -193,18 +206,18 @@ export async function addGitTag(newVersion: string): Promise<void> {
  * add the missing word to `cspell.json`) and press Enter to retry. The retry re-stages all files, so the
  * fix is picked up without restarting the whole release lifecycle. In a non-interactive environment (no
  * TTY, such as CI), the error is re-thrown instead of prompting, so the script fails fast rather than
- * hanging. Pass `shouldBypassCommitVerification` to skip the pre-commit hook entirely in such cases.
+ * hanging. Pass `shouldVerifyCommit: false` to skip the pre-commit hook entirely in such cases.
  *
  * @param newVersion - The new version number used as the commit message.
  * @param options - The {@link AddUpdatedFilesToGitOptions} controlling the commit behavior.
  * @returns A {@link Promise} that resolves when the files have been added and committed.
  */
 export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdatedFilesToGitOptions = {}): Promise<void> {
-  const { shouldBypassCommitVerification = false } = options;
+  const { shouldVerifyCommit = true } = options;
   const versionDebugger = getLibDebugger('Version');
 
   const commitArgs = ['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty'];
-  if (shouldBypassCommitVerification) {
+  if (!shouldVerifyCommit) {
     commitArgs.push('--no-verify');
   }
 
@@ -389,11 +402,12 @@ export async function gitPush(): Promise<void> {
  * Parses the command-line arguments for a version update into a version update type and
  * {@link UpdateVersionOptions}.
  *
- * Recognized flags:
- * - `--bypass-changelog-editing` — generate the changelog without opening it for manual review.
- * - `--bypass-commit-verification` — pass `--no-verify` to the release commit.
- * - `--dry-run` — run all local steps but skip the push and the GitHub release.
- * - `--skip-preflight-checks` — skip the clean-repo check, format, spellcheck, lint, build, and tests.
+ * Each behavior is enabled by default; the corresponding `--no-*` flag turns it off. Recognized flags:
+ * - `--no-build` — skip the build step (only safe when the build output already matches the current code).
+ * - `--no-changelog-editing` — generate the changelog without opening it for manual review.
+ * - `--no-checks` — skip the clean-repo check, format, spellcheck, lint, over-exposure analysis, and tests (the build still runs).
+ * - `--no-commit-verification` — pass `--no-verify` to the release commit, skipping the pre-commit hook.
+ * - `--no-release` — run all local steps but skip the push and the GitHub release.
  *
  * @param args - The command-line arguments to parse (typically `process.argv.slice(2)`).
  * @returns The {@link ParsedVersionArgs} containing the version update type and the options.
@@ -403,19 +417,21 @@ export function parseVersionArgs(args: string[]): ParsedVersionArgs {
     allowPositionals: true,
     args,
     options: {
-      'bypass-changelog-editing': { type: 'boolean' },
-      'bypass-commit-verification': { type: 'boolean' },
-      'dry-run': { type: 'boolean' },
-      'skip-preflight-checks': { type: 'boolean' }
+      'no-build': { type: 'boolean' },
+      'no-changelog-editing': { type: 'boolean' },
+      'no-checks': { type: 'boolean' },
+      'no-commit-verification': { type: 'boolean' },
+      'no-release': { type: 'boolean' }
     }
   });
 
   return {
     options: {
-      isDryRun: values['dry-run'] ?? false,
-      shouldBypassChangelogEditing: values['bypass-changelog-editing'] ?? false,
-      shouldBypassCommitVerification: values['bypass-commit-verification'] ?? false,
-      shouldSkipPreflightChecks: values['skip-preflight-checks'] ?? false
+      shouldBuild: !(values['no-build'] ?? false),
+      shouldEditChangelog: !(values['no-changelog-editing'] ?? false),
+      shouldRelease: !(values['no-release'] ?? false),
+      shouldRunChecks: !(values['no-checks'] ?? false),
+      shouldVerifyCommit: !(values['no-commit-verification'] ?? false)
     },
     versionUpdateType: positionals[0]
   };
@@ -481,7 +497,7 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
  * @returns A {@link Promise} that resolves when the changelog update is complete.
  */
 export async function updateChangelog(newVersion: string, options: UpdateChangelogOptions = {}): Promise<void> {
-  const { shouldBypassChangelogEditing = false } = options;
+  const { shouldEditChangelog = true } = options;
   const HEADER_LINES_COUNT = 2;
   const changelogPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ChangelogMd);
   let previousChangelogLines: string[];
@@ -515,7 +531,7 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
 
   await writeFile(changelogPath, newChangeLog, 'utf-8');
 
-  if (shouldBypassChangelogEditing) {
+  if (!shouldEditChangelog) {
     return;
   }
 
@@ -557,11 +573,12 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
  */
 export async function updateVersion(versionUpdateType?: string, options: UpdateVersionOptions = {}): Promise<void> {
   const {
-    isDryRun = false,
     prepareGitHubRelease,
-    shouldBypassChangelogEditing = false,
-    shouldBypassCommitVerification = false,
-    shouldSkipPreflightChecks = false
+    shouldBuild = true,
+    shouldEditChangelog = true,
+    shouldRelease = true,
+    shouldRunChecks = true,
+    shouldVerifyCommit = true
   } = options;
 
   if (!versionUpdateType) {
@@ -583,13 +600,21 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   await checkGitInstalled();
   await checkGitHubCliInstalled();
 
-  if (!shouldSkipPreflightChecks) {
+  if (shouldRunChecks) {
     await checkGitRepoClean();
     await npmRun('format:check');
     await npmRun('spellcheck');
     await npmRun('lint:md');
+  }
+
+  // The build is a prerequisite for publishing, not a verification check, so it runs unless `shouldBuild` is `false` — this keeps the released artifacts in sync with the current code even on a fast release.
+  if (shouldBuild) {
     await npmRun('build');
+  }
+
+  if (shouldRunChecks) {
     await npmRun('lint');
+    await npmRunOptional('find-overexposed');
     await npmRunOptional('test');
     await npmRunOptional('test:integration');
     await npmRunOptional('test:coverage');
@@ -601,12 +626,12 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
     await updateVersionInFilesForPlugin(newVersion);
   }
 
-  await updateChangelog(newVersion, { shouldBypassChangelogEditing });
-  await addUpdatedFilesToGit(newVersion, { shouldBypassCommitVerification });
+  await updateChangelog(newVersion, { shouldEditChangelog });
+  await addUpdatedFilesToGit(newVersion, { shouldVerifyCommit });
   await addGitTag(newVersion);
 
-  if (isDryRun) {
-    getLibDebugger('Version')('Dry run: skipping git push and GitHub release. The version bump, changelog, commit, and tag have been created locally.');
+  if (!shouldRelease) {
+    getLibDebugger('Version')('Skipping git push and GitHub release (--no-release). The version bump, changelog, commit, and tag have been created locally.');
     return;
   }
 

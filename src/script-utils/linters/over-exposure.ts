@@ -17,7 +17,9 @@
  * exposure that still covers all references. Members invoked by the framework via registration
  * rather than by visible references (Obsidian lifecycle hooks, settings-tab `display`, etc.) are
  * excluded via {@link LIFECYCLE_ALLOWLIST}, as are `override` and `static` members whose exposure is
- * constrained by a base declaration.
+ * constrained by a base declaration. A class member carrying a TSDoc (`/** … *\/`) documentation
+ * comment is also excluded — documenting a member is a deliberate signal that it is part of the
+ * intended public API, regardless of where it currently happens to be referenced.
  *
  * A member referenced only from test files is reported with {@link OverExposureFinding.isForcedByTestOnly}
  * set, surfacing members widened purely for testability — the canonical case for extracting logic
@@ -59,6 +61,7 @@ import {
   createLanguageService,
   getDecorators,
   getDefaultLibFilePath,
+  getLeadingCommentRanges,
   getModifiers,
   isClassDeclaration,
   isClassLike,
@@ -367,6 +370,9 @@ interface SourceFileText {
   readonly text: string;
 }
 
+// A JSDoc/TSDoc comment opens with `/**`: the character at offset 2 is the second `*`, and to exclude the empty `/**/` comment the character at offset 3 must not be the closing `/`.
+const JSDOC_SECOND_ASTERISK_OFFSET = 2;
+const JSDOC_FOURTH_CHARACTER_OFFSET = 3;
 const MEMBER_EXPOSURE_ORDER: readonly MemberExposure[] = ['private', 'protected', 'public'];
 const SCOPE_DESCRIPTION: Record<SuggestedExposure, string> = {
   'file-local': 'within its own file',
@@ -544,6 +550,10 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
 
   const modifierKinds = getModifierKinds(member);
   if (modifierKinds.has(SyntaxKind.StaticKeyword) || modifierKinds.has(SyntaxKind.OverrideKeyword) || LIFECYCLE_ALLOWLIST.has(nameNode.getText())) {
+    return;
+  }
+
+  if (hasTsDocComment(member)) {
     return;
   }
 
@@ -878,6 +888,17 @@ function getModifierKinds(node: Node): ReadonlySet<SyntaxKind> {
     }
   }
   return kinds;
+}
+
+function hasTsDocComment(node: Node): boolean {
+  const sourceFile = node.getSourceFile();
+  const fullText = sourceFile.getFullText();
+  const commentRanges = getLeadingCommentRanges(fullText, node.getFullStart()) ?? [];
+  return commentRanges.some((range) =>
+    range.kind === SyntaxKind.MultiLineCommentTrivia
+    && fullText.charAt(range.pos + JSDOC_SECOND_ASTERISK_OFFSET) === '*'
+    && fullText.charAt(range.pos + JSDOC_FOURTH_CHARACTER_OFFSET) !== '/'
+  );
 }
 
 function isDeclarationItself(reference: ReferenceLocation, nameNode: Node): boolean {

@@ -622,6 +622,8 @@
     "build:types": "jiti scripts/build-types.ts",
     "build:validate-declarations": "jiti scripts/build-validate-declarations.ts",
     "commit": "jiti scripts/commit.ts",
+    "find-overexposed": "jiti scripts/find-overexposed.ts",
+    "find-overexposed:fix": "jiti scripts/find-overexposed-fix.ts",
     "format": "jiti scripts/format.ts",
     "format:check": "jiti scripts/format-check.ts",
     "lint": "jiti scripts/lint.ts",
