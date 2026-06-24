@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 78.1.0
+
+- feat: improve typing
+
 ## 78.0.0
 
 - feat: waitUntilConnected
