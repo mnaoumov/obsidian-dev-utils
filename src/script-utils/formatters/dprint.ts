@@ -47,7 +47,7 @@ export async function format(options?: FormatOptions): Promise<void> {
   if (!existsSync(dprintJsonPath)) {
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
     assertNonNullable(packageFolder, 'Could not find package folder.');
-    dprintJsonPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.DprintJson), packageFolder);
+    dprintJsonPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.DistTemplates, ObsidianDevUtilsRepoPaths.DprintJson), packageFolder);
   }
 
   if (!existsSync(dprintJsonPath)) {

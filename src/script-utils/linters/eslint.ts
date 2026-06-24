@@ -65,7 +65,7 @@ export async function lint(options?: LintOptions): Promise<void> {
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
     assertNonNullable(packageFolder, 'Package folder not found');
     await cp(
-      join(packageFolder, ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.EslintConfigMts),
+      join(packageFolder, ObsidianDevUtilsRepoPaths.DistTemplates, ObsidianDevUtilsRepoPaths.EslintConfigMts),
       resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMts)
     );
   }

@@ -85,6 +85,10 @@ describe('lint', () => {
     mockGetRootFolder.mockReturnValue('/pkg');
     await lint();
     expect(mockCp).toHaveBeenCalledTimes(1);
+    expect(mockCp).toHaveBeenCalledWith(
+      expect.stringMatching(/dist[\\/]templates[\\/]eslint\.config\.mts$/),
+      '/root/eslint.config.mts'
+    );
     expect(mockExecFromRoot).toHaveBeenCalledTimes(1);
   });
 

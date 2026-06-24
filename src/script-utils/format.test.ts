@@ -84,5 +84,8 @@ describe('format', () => {
     mockGetRootFolder.mockImplementation((cwd?: string) => cwd ? '/pkg' : '/root');
     await format();
     expect(mockExecFromRoot).toHaveBeenCalledTimes(1);
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      expect.arrayContaining(['--config', expect.stringMatching(/dist[\\/]templates[\\/]dprint\.json$/)])
+    );
   });
 });

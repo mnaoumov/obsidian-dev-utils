@@ -103,9 +103,6 @@ export enum ObsidianDevUtilsRepoPaths {
   /** ESM Markdownlint CLI2 configuration file. */
   MarkdownlintCli2ConfigMjs = '.markdownlint-cli2.mjs',
 
-  /** ESM TypeScript Markdownlint CLI2 configuration file. */
-  MarkdownlintCli2ConfigMts = '.markdownlint-cli2.mts',
-
   /** Markdownlint CLI2 configuration schema TypeScript declaration file. */
   MarkdownlintTypesMarkdownlintCli2ConfigSchemaDts = 'src/script-utils/linters/markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts',
 

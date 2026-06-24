@@ -91,11 +91,15 @@ describe('lint', () => {
     expect(firstCall[0]).not.toContain('--fix');
   });
 
-  it('should copy default configs when no config file exists', async () => {
+  it('should copy default config when no config file exists', async () => {
     mockExistsSync.mockReturnValue(false);
     mockGetRootFolder.mockReturnValue('/pkg');
     await lint();
-    expect(mockCp).toHaveBeenCalledTimes(2);
+    expect(mockCp).toHaveBeenCalledTimes(1);
+    expect(mockCp).toHaveBeenCalledWith(
+      expect.stringMatching(/dist[\\/]templates[\\/]\.markdownlint-cli2\.mjs$/),
+      '/root/.markdownlint-cli2.mjs'
+    );
     expect(mockExecFromRoot).toHaveBeenCalledTimes(2);
   });
 

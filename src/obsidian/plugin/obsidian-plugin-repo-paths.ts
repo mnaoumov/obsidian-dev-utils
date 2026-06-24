@@ -92,9 +92,6 @@ export enum ObsidianPluginRepoPaths {
   /** ESM Markdownlint CLI2 configuration file. */
   MarkdownlintCli2ConfigMjs = '.markdownlint-cli2.mjs',
 
-  /** ESM TypeScript Markdownlint CLI2 configuration file. */
-  MarkdownlintCli2ConfigMts = '.markdownlint-cli2.mts',
-
   /** YAML Markdownlint CLI2 configuration file. */
   MarkdownlintCli2ConfigYaml = '.markdownlint-cli2.yaml',
 
