@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 80.0.0
+
+- fix: resolve consumer config templates from dist/templates
+- refactor!: rename static folder to templates and strip .template on build
+
 ## 79.0.0
 
 - chore: over-exposure
