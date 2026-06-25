@@ -74,14 +74,14 @@ vi.mock('../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 
-function sleepImmediate(_ms: number): Promise<void> {
-  return noopAsync();
-}
-
 function createMockPluginNoticeComponent(): PluginNoticeComponent {
   return strictProxy<PluginNoticeComponent>({
     showNotice: () => new Notice('', 0)
   });
+}
+
+function sleepImmediate(_ms: number): Promise<void> {
+  return noopAsync();
 }
 
 describe('loop', () => {

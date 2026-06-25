@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import type { Debugger } from 'debug';
+import type { Notice as NoticeOriginal } from 'obsidian';
 
 import {
   beforeEach,
@@ -9,8 +10,6 @@ import {
   it,
   vi
 } from 'vitest';
-
-import type { Notice as NoticeOriginal } from 'obsidian';
 
 import type { TimeoutContext } from '../async.ts';
 import type { GenericObject } from '../type-guards.ts';
@@ -89,6 +88,17 @@ interface CreateFragmentGlobalResult {
 }
 
 /**
+ * Creates a mock plugin notice component whose showNotice returns a notice that can be hidden.
+ *
+ * @returns A mock plugin notice component.
+ */
+function createMockPluginNoticeComponent(): PluginNoticeComponent {
+  return strictProxy<PluginNoticeComponent>({
+    showNotice: vi.fn(() => strictProxy<NoticeOriginal>({ hide: vi.fn() }))
+  });
+}
+
+/**
  * Wraps the global createFragment (provided by obsidian-globals) to capture
  * the last created fragment for test assertions.
  *
@@ -113,17 +123,6 @@ function setupCreateFragmentGlobal(): CreateFragmentGlobalResult {
     },
     getLastFragment: (): DocumentFragment | null => lastFragment
   };
-}
-
-/**
- * Creates a mock plugin notice component whose showNotice returns a hideable notice.
- *
- * @returns A mock plugin notice component.
- */
-function createMockPluginNoticeComponent(): PluginNoticeComponent {
-  return strictProxy<PluginNoticeComponent>({
-    showNotice: vi.fn(() => strictProxy<NoticeOriginal>({ hide: vi.fn() }))
-  });
 }
 
 describe('AsyncWithNotice', () => {
