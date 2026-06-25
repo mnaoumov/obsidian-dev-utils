@@ -1,6 +1,5 @@
 import process from 'node:process';
 import { parseArgs } from 'node:util';
-
 import {
   CliTaskResult,
   wrapCliTask
