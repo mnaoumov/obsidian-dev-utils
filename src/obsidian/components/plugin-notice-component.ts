@@ -67,8 +67,9 @@ export class PluginNoticeComponent extends ComponentEx {
    *
    * @param message - The message to display.
    * @param options - The options for displaying the notice.
+   * @returns The notice object.
    */
-  public showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): void {
+  public showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): Notice {
     this.notice?.hide();
 
     const prefix = `${this.pluginName}${this._loaded ? '' : ' (unloaded)'}\n`;
@@ -80,6 +81,7 @@ export class PluginNoticeComponent extends ComponentEx {
     } else {
       this.setPermanentNotice(null);
     }
+    return this.notice;
   }
 
   private getPermanentNotice(): Notice | null {

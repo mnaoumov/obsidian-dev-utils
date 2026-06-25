@@ -74,6 +74,13 @@ describe('PluginNoticeComponent', () => {
     expect(mocks.NoticeMock).toHaveBeenCalledWith('My Plugin\nSomething happened', undefined);
   });
 
+  it('should return the created notice', () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+    const notice = component.showNotice('Something happened');
+    expect(notice).toBe(mocks.instances[0]);
+  });
+
   it('should mark the notice as unloaded when shown while not loaded', () => {
     const component = new PluginNoticeComponent(PLUGIN_NAME);
     component.showNotice('Something happened');
