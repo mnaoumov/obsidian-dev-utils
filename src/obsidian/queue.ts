@@ -7,6 +7,7 @@
 import type { Promisable } from 'type-fest';
 
 import type { ValueWrapper } from '../value-wrapper.ts';
+import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 
 import {
   abortSignalAny,
@@ -22,6 +23,7 @@ import {
   noopAsync
 } from '../function.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { runWithTimeoutNotice } from './async-with-notice.ts';
 import { t } from './i18n/i18n.ts';
 import { invokeAsyncAndLog } from './logger.ts';
@@ -181,6 +183,7 @@ async function processNextQueueItem(): Promise<void> {
         );
       },
       operationName: item.operationName,
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       shouldShowTimeoutNotice: item.shouldShowTimeoutNotice,
       stackTrace: item.stackTrace,
       timeoutInMilliseconds: item.timeoutInMilliseconds

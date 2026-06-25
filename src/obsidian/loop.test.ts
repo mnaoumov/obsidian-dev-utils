@@ -9,6 +9,8 @@ import {
   vi
 } from 'vitest';
 
+import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
+
 import { abortSignalNever } from '../abort-controller.ts';
 import {
   invokeAsyncSafely,
@@ -24,6 +26,7 @@ import {
   noopAsync
 } from '../function.ts';
 import { castTo } from '../object-utils.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { mockImplementation } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { loop } from './loop.ts';
@@ -75,6 +78,12 @@ function sleepImmediate(_ms: number): Promise<void> {
   return noopAsync();
 }
 
+function createMockPluginNoticeComponent(): PluginNoticeComponent {
+  return strictProxy<PluginNoticeComponent>({
+    showNotice: () => new Notice('', 0)
+  });
+}
+
 describe('loop', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -96,6 +105,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage,
       items: [],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem
     });
 
@@ -110,6 +120,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items,
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -127,6 +138,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage,
       items,
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn(),
       shouldShowNotice: false
     });
@@ -145,6 +157,7 @@ describe('loop', () => {
       abortSignal: controller.signal,
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -163,6 +176,7 @@ describe('loop', () => {
       abortSignal: controller.signal,
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b', 'c'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -185,6 +199,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b', 'c'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -210,6 +225,7 @@ describe('loop', () => {
     await expect(loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b', 'c'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldContinueOnError: false,
       shouldShowNotice: false
@@ -226,6 +242,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn(),
       shouldShowNotice: false
     });
@@ -243,6 +260,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn(),
       shouldShowNotice: false
     });
@@ -258,6 +276,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'debug msg'),
       items: ['a'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn(),
       shouldShowNotice: false
     });
@@ -270,6 +289,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn(),
       shouldShowNotice: false
     });
@@ -297,6 +317,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items,
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn(),
       shouldShowNotice: false
     });
@@ -316,6 +337,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn((_item: number, iterationStr: string) => `Processing ${iterationStr}`),
       items,
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -336,6 +358,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['first', 'second', 'third'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -356,6 +379,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b', 'c'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -372,6 +396,7 @@ describe('loop', () => {
       items: ['a'],
       noticeBeforeShownTimeoutInMilliseconds: 1000,
       noticeMinTimeoutInMilliseconds: 5000,
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn(),
       progressBarTitle: 'Custom Title',
       shouldContinueOnError: false,
@@ -387,6 +412,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn(),
       shouldShowNotice: false
     });
@@ -403,6 +429,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: [10, 20, 30, 40, 50],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -431,6 +458,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b', 'c'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -463,6 +491,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn().mockRejectedValue(new Error('fail')),
       shouldContinueOnError: true,
       shouldShowNotice: false
@@ -482,6 +511,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage,
       items: ['only'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
       shouldShowNotice: false
     });
@@ -501,6 +531,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b'],
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem: vi.fn(),
       shouldShowNotice: false
     });
@@ -521,6 +552,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'progress message'),
       items: ['a', 'b'],
+      pluginNoticeComponent: createMockPluginNoticeComponent(),
       processItem: vi.fn(),
       shouldShowNotice: true,
       shouldShowProgressBar: false
@@ -543,6 +575,7 @@ describe('loop', () => {
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
+      pluginNoticeComponent: createMockPluginNoticeComponent(),
       processItem: vi.fn(),
       shouldShowNotice: true,
       shouldShowProgressBar: false
@@ -555,6 +588,31 @@ describe('loop', () => {
       expect(typeof call[0]).toBe('string');
     }
 
+    vi.mocked(Notice.prototype.setMessage).mockRestore();
+  });
+
+  it('should set progress bar message when shouldShowProgressBar is true and notice exists', async () => {
+    // Make invokeAsyncSafely actually await the function so the notice gets created
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
+    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
+      await fn();
+    });
+
+    vi.spyOn(Notice.prototype, 'setMessage');
+
+    await loop({
+      buildNoticeMessage: vi.fn(() => 'msg'),
+      items: ['a', 'b'],
+      pluginNoticeComponent: createMockPluginNoticeComponent(),
+      processItem: vi.fn(),
+      progressBarTitle: 'My Progress',
+      shouldShowNotice: true,
+      shouldShowProgressBar: true
+    });
+
+    // With the progress bar enabled, setMessage is called with the fragment containing the progress bar
+    const fragmentCalls = vi.mocked(Notice.prototype.setMessage).mock.calls.filter((call) => typeof call[0] !== 'string');
+    expect(fragmentCalls.length).toBeGreaterThanOrEqual(1);
     vi.mocked(Notice.prototype.setMessage).mockRestore();
   });
 });

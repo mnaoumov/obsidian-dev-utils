@@ -8,6 +8,8 @@ import type { Promisable } from 'type-fest';
 
 import { Notice } from 'obsidian';
 
+import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
+
 import { abortSignalNever } from '../abort-controller.ts';
 import {
   invokeAsyncSafely,
@@ -59,6 +61,11 @@ export interface LoopParams<T> {
   readonly noticeMinTimeoutInMilliseconds?: number;
 
   /**
+   * A component to show notices.
+   */
+  readonly pluginNoticeComponent: PluginNoticeComponent;
+
+  /**
    * Process each item.
    *
    * @param item - The current item.
@@ -98,10 +105,10 @@ export interface LoopParams<T> {
  * @param params - The parameters for the loop.
  */
 export async function loop<T>(params: LoopParams<T>): Promise<void> {
-  const DEFAULT_OPTIONS: Required<LoopParams<T>> = {
+  const DEFAULT_OPTIONS = {
     abortSignal: abortSignalNever(),
     /* v8 ignore start -- buildNoticeMessage is required in LoopParams and always overridden by the spread. */
-    buildNoticeMessage() {
+    buildNoticeMessage(): string {
       throw new Error('buildNoticeMessage is required');
     },
     /* v8 ignore stop */
@@ -183,7 +190,7 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
     if (isDone) {
       return;
     }
-    notice = new Notice('', 0);
+    notice = params.pluginNoticeComponent.showNotice('', {});
     if (!fullOptions.shouldShowProgressBar) {
       return;
     }

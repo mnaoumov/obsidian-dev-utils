@@ -23,16 +23,14 @@ import {
   InternalPluginName
 } from '@obsidian-typings/obsidian-public-latest/implementations';
 import { t } from 'i18next';
-import {
-  Notice,
-  Vault
-} from 'obsidian';
+import { Vault } from 'obsidian';
 
 import type {
   UpdateLinkParams,
   UpdateLinksInFileParams
 } from '../link.ts';
 import type { AbortSignalComponent } from './abort-signal-component.ts';
+import type { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 import { filterInPlace } from '../../array.ts';
 import { getLibDebugger } from '../../debug.ts';
@@ -183,6 +181,7 @@ interface RenameHandlerConstructorParams {
   readonly oldCache: CachedMetadata | null;
   readonly oldPath: string;
   readonly oldPathBacklinksMap: Map<string, Reference[]>;
+  readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly settingsManager: SettingsManager;
 }
 
@@ -222,6 +221,7 @@ interface RenameDeleteHandlerComponentConstructorParams {
   readonly abortSignalComponent: AbortSignalComponent;
   readonly app: App;
   readonly pluginId: string;
+  readonly pluginNoticeComponent: PluginNoticeComponent;
   settingsBuilder(this: void): Partial<RenameDeleteHandlerSettings>;
 }
 
@@ -321,7 +321,12 @@ class DeleteHandler {
           }
 
           parentFolderPaths.add(attachmentFile.parent?.path ?? '');
-          await deleteIfNotUsed(this.app, attachmentFile, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
+          await deleteIfNotUsed({
+            app: this.app,
+            deletedNotePath: this.file.path,
+            pathOrFile: attachmentFile,
+            shouldDeleteEmptyFolders: settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep
+          });
           this.abortSignal.throwIfAborted();
         }
       }
@@ -348,7 +353,12 @@ class DeleteHandler {
 
     this.abortSignal.throwIfAborted();
 
-    await deleteIfNotUsed(this.app, attachmentFolder, this.file.path, false, settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep);
+    await deleteIfNotUsed({
+      app: this.app,
+      deletedNotePath: this.file.path,
+      pathOrFile: attachmentFolder,
+      shouldDeleteEmptyFolders: settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep
+    });
     this.abortSignal.throwIfAborted();
   }
 }
@@ -506,20 +516,22 @@ class RenameHandler {
   private readonly oldPath: string;
   private readonly oldPathBacklinksMap: Map<string, Reference[]>;
   private readonly oldPathLinks: Reference[];
+  private readonly pluginNoticeComponent: PluginNoticeComponent;
   private readonly settingsManager: SettingsManager;
 
   public constructor(params: RenameHandlerConstructorParams) {
-    this.app = params.app;
-    this.oldPath = params.oldPath;
-    this.newPath = params.newPath;
-    this.oldPathBacklinksMap = params.oldPathBacklinksMap;
-    this.oldCache = params.oldCache;
     this.abortSignal = params.abortSignal;
-    this.settingsManager = params.settingsManager;
-    this.interruptedRenamesMap = params.interruptedRenamesMap;
-    this.oldPathLinks = this.oldCache ? getAllLinks(this.oldCache) : [];
+    this.app = params.app;
     this.handledRenames = params.handledRenames;
     this.interruptedCombinedBacklinksMap = params.interruptedCombinedBacklinksMap ?? new Map<string, Map<string, string>>();
+    this.interruptedRenamesMap = params.interruptedRenamesMap;
+    this.newPath = params.newPath;
+    this.oldCache = params.oldCache;
+    this.oldPath = params.oldPath;
+    this.oldPathBacklinksMap = params.oldPathBacklinksMap;
+    this.oldPathLinks = this.oldCache ? getAllLinks(this.oldCache) : [];
+    this.pluginNoticeComponent = params.pluginNoticeComponent;
+    this.settingsManager = params.settingsManager;
   }
 
   public async handle(): Promise<void> {
@@ -536,6 +548,8 @@ class RenameHandler {
     }
 
     this.abortSignal.throwIfAborted();
+
+    const pluginNoticeComponent = this.pluginNoticeComponent;
 
     const renamedFilePaths = getObsidianDevUtilsState('renamedFilePaths', new Set<string>()).value;
     const renamedLinks = getObsidianDevUtilsState('renamedLinkPaths', new Set<string>()).value;
@@ -648,7 +662,7 @@ class RenameHandler {
           if (renamedLinks.size === 0) {
             return;
           }
-          new Notice(t(($) => $.obsidianDevUtils.renameDeleteHandler.updatedLinks, { filesCount: renamedFilePaths.size, linksCount: renamedLinks.size }));
+          pluginNoticeComponent.showNotice(t(($) => $.obsidianDevUtils.renameDeleteHandler.updatedLinks, { filesCount: renamedFilePaths.size, linksCount: renamedLinks.size }));
           renamedFilePaths.clear();
           renamedLinks.clear();
         },
@@ -672,6 +686,7 @@ class RenameHandler {
           oldCache: this.oldCache,
           oldPath: interruptedRename.oldPath,
           oldPathBacklinksMap: this.oldPathBacklinksMap,
+          pluginNoticeComponent: this.pluginNoticeComponent,
           settingsManager: this.settingsManager
         }).handle();
       }
@@ -695,6 +710,7 @@ class RenameHandler {
       oldCache: this.oldCache,
       oldPath: this.oldPath,
       oldPathBacklinksMap: this.oldPathBacklinksMap,
+      pluginNoticeComponent: this.pluginNoticeComponent,
       settingsManager: this.settingsManager
     }).handle();
 
@@ -937,6 +953,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   private readonly handledRenames = new HandledRenames();
   private readonly interruptedRenamesMap = new Map<string, InterruptedRename[]>();
   private readonly pluginId: string;
+  private readonly pluginNoticeComponent: PluginNoticeComponent;
   private readonly settingsBuilder: () => Partial<RenameDeleteHandlerSettings>;
   private readonly settingsManager: SettingsManager;
 
@@ -950,6 +967,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     this.abortSignalComponent = params.abortSignalComponent;
     this.app = params.app;
     this.pluginId = params.pluginId;
+    this.pluginNoticeComponent = params.pluginNoticeComponent;
     this.settingsBuilder = params.settingsBuilder;
     this.settingsManager = new SettingsManager();
   }
@@ -1056,6 +1074,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
           oldCache,
           oldPath,
           oldPathBacklinksMap,
+          pluginNoticeComponent: this.pluginNoticeComponent,
           settingsManager: this.settingsManager
         }).handle(),
       operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleRename, { newPath, oldPath })

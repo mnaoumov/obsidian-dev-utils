@@ -9,10 +9,7 @@
 import type { Component } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
-import {
-  Notice,
-  Plugin as ObsidianPlugin
-} from 'obsidian';
+import { Plugin } from 'obsidian';
 
 import type { TranslationsMap } from '../i18n/i18n.ts';
 import type {
@@ -39,7 +36,7 @@ import { defaultTranslationsMap } from '../i18n/locales/translations-map.ts';
  * Registers universal components automatically. Subclasses add or replace components
  * via {@link removeChild} / {@link addChild}.
  */
-export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(ObsidianPlugin) implements PluginEventSource {
+export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plugin) implements PluginEventSource {
   /**
    * Gets abort signal component.
    *
@@ -238,7 +235,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Obsi
  * @param plugin - The plugin to reload.
  * @returns A {@link Promise} that resolves when the plugin is reloaded.
  */
-export async function reloadPlugin(plugin: ObsidianPlugin): Promise<void> {
+export async function reloadPlugin(plugin: Plugin): Promise<void> {
   const plugins = plugin.app.plugins;
   const pluginId = plugin.manifest.id;
   await plugins.disablePlugin(pluginId);
@@ -252,8 +249,9 @@ export async function reloadPlugin(plugin: ObsidianPlugin): Promise<void> {
  * @param message - The error message to display and log.
  * @returns A {@link Promise} that resolves when the plugin is disabled.
  */
-export async function showErrorAndDisablePlugin(plugin: ObsidianPlugin, message: string): Promise<void> {
-  new Notice(message);
+export async function showErrorAndDisablePlugin(plugin: Plugin, message: string): Promise<void> {
+  const pluginNoticeComponent = new PluginNoticeComponent(plugin.manifest.name);
+  pluginNoticeComponent.showNotice(message);
   printError(new Error(message));
   await plugin.app.plugins.disablePlugin(plugin.manifest.id);
 }

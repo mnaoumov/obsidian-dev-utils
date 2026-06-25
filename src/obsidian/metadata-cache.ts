@@ -20,11 +20,13 @@ import {
 } from '@obsidian-typings/obsidian-public-latest/implementations';
 
 import type { RetryOptions } from '../async.ts';
+import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 import type { PathOrFile } from './file-system.ts';
 import type { CombinedFrontmatter } from './frontmatter.ts';
 
 import { getNestedPropertyValue } from '../object-utils.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { ensureNonNullable } from '../type-guards.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
 import {
@@ -212,6 +214,7 @@ export async function getBacklinksForFileSafe(
       return true;
     },
     operationName: t(($) => $.obsidianDevUtils.metadataCache.getBacklinksForFilePath, { filePath: getPath(app, pathOrFile) }),
+    pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
     retryOptions: options,
     shouldShowTimeoutNotice: options.shouldShowTimeoutNotice ?? true
   });

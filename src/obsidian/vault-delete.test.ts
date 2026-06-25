@@ -19,7 +19,10 @@ import {
   vi
 } from 'vitest';
 
+import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
+
 import { castTo } from '../object-utils.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { deleteIfNotUsed } from './vault-delete.ts';
 
 const mocks = vi.hoisted(() => ({
@@ -73,7 +76,10 @@ beforeEach(() => {
 describe('deleteIfNotUsed', () => {
   it('should return false when file does not exist', async () => {
     mocks.getAbstractFileOrNull.mockReturnValue(null);
-    const result = await deleteIfNotUsed(app, 'nonexistent.md');
+    const result = await deleteIfNotUsed({
+      app,
+      pathOrFile: 'nonexistent.md'
+    });
     expect(result).toBe(false);
   });
 
@@ -81,7 +87,10 @@ describe('deleteIfNotUsed', () => {
     const file = TFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
-    const result = await deleteIfNotUsed(app, file);
+    const result = await deleteIfNotUsed({
+      app,
+      pathOrFile: file
+    });
     expect(result).toBe(true);
 
     expect(mocks.trashSafe).toHaveBeenCalledWith(app, file);
@@ -91,7 +100,10 @@ describe('deleteIfNotUsed', () => {
     const file = TFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 2) });
-    const result = await deleteIfNotUsed(app, file);
+    const result = await deleteIfNotUsed({
+      app,
+      pathOrFile: file
+    });
     expect(result).toBe(false);
 
     expect(mocks.trashSafe).not.toHaveBeenCalled();
@@ -102,16 +114,26 @@ describe('deleteIfNotUsed', () => {
     const clearFn = vi.fn();
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: clearFn, count: vi.fn(() => 0) });
-    await deleteIfNotUsed(app, file, 'deleted-note.md');
+    await deleteIfNotUsed({
+      app,
+      deletedNotePath: 'deleted-note.md',
+      pathOrFile: file
+    });
     expect(clearFn).toHaveBeenCalledWith('deleted-note.md');
   });
 
-  it('should show notice for used attachments when shouldReportUsedAttachments is true', async () => {
+  it('should show notice for used attachments when pluginNoticeComponent is provided', async () => {
     const file = TFile.create__(castTo(app.vault), 'attachment.png').asOriginalType2__();
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 1) });
-    await deleteIfNotUsed(app, file, undefined, true);
+    const showNotice = vi.fn();
+    await deleteIfNotUsed({
+      app,
+      pathOrFile: file,
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({ showNotice })
+    });
 
+    expect(showNotice).toHaveBeenCalledTimes(1);
     expect(mocks.trashSafe).not.toHaveBeenCalled();
   });
 
@@ -123,7 +145,10 @@ describe('deleteIfNotUsed', () => {
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
     mocks.listSafe.mockResolvedValue({ files: [childFile], folders: [] });
     mocks.isEmptyFolder.mockResolvedValue(true);
-    const result = await deleteIfNotUsed(app, folder);
+    const result = await deleteIfNotUsed({
+      app,
+      pathOrFile: folder
+    });
     expect(result).toBe(true);
   });
 
@@ -132,7 +157,11 @@ describe('deleteIfNotUsed', () => {
     mocks.getAbstractFileOrNull.mockReturnValue(folder);
     mocks.listSafe.mockResolvedValue({ files: [], folders: [] });
     mocks.isEmptyFolder.mockResolvedValue(true);
-    const result = await deleteIfNotUsed(app, folder, undefined, undefined, false);
+    const result = await deleteIfNotUsed({
+      app,
+      pathOrFile: folder,
+      shouldDeleteEmptyFolders: false
+    });
     expect(result).toBe(false);
 
     expect(mocks.trashSafe).not.toHaveBeenCalled();
@@ -144,7 +173,10 @@ describe('deleteIfNotUsed', () => {
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
     mocks.trashSafe.mockRejectedValue(new Error('trash failed'));
 
-    const result = await deleteIfNotUsed(app, file);
+    const result = await deleteIfNotUsed({
+      app,
+      pathOrFile: file
+    });
     expect(result).toBe(false);
   });
 });

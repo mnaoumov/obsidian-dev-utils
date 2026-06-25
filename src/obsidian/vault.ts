@@ -24,6 +24,7 @@ import {
 
 import type { RetryOptions } from '../async.ts';
 import type { ValueProvider } from '../value-provider.ts';
+import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 import type {
   PathOrAbstractFile,
   PathOrFile,
@@ -39,6 +40,7 @@ import {
   extname,
   join
 } from '../path.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { assertNever } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
@@ -598,6 +600,7 @@ export async function process(
         }
       },
       operationName: t(($) => $.obsidianDevUtils.vault.processFile, { filePath: path }),
+      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       retryOptions: fullOptions,
       shouldShowTimeoutNotice: fullOptions.shouldShowTimeoutNotice
     });

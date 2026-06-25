@@ -10,8 +10,11 @@ import {
   vi
 } from 'vitest';
 
+import type { Notice as NoticeOriginal } from 'obsidian';
+
 import type { TimeoutContext } from '../async.ts';
 import type { GenericObject } from '../type-guards.ts';
+import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 
 import {
   retryWithTimeout,
@@ -20,6 +23,7 @@ import {
 import { getDebugger } from '../debug.ts';
 import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import {
   assertNonNullable,
   ensureNonNullable
@@ -111,6 +115,17 @@ function setupCreateFragmentGlobal(): CreateFragmentGlobalResult {
   };
 }
 
+/**
+ * Creates a mock plugin notice component whose showNotice returns a hideable notice.
+ *
+ * @returns A mock plugin notice component.
+ */
+function createMockPluginNoticeComponent(): PluginNoticeComponent {
+  return strictProxy<PluginNoticeComponent>({
+    showNotice: vi.fn(() => strictProxy<NoticeOriginal>({ hide: vi.fn() }))
+  });
+}
+
 describe('AsyncWithNotice', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -124,7 +139,8 @@ describe('AsyncWithNotice', () => {
       });
       await retryWithTimeoutNotice({
         operationFn,
-        operationName: 'testOp'
+        operationName: 'testOp',
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
       expect(retryWithTimeout).toHaveBeenCalledTimes(1);
     });
@@ -134,7 +150,10 @@ describe('AsyncWithNotice', () => {
         await noopAsync();
         return true;
       });
-      await retryWithTimeoutNotice({ operationFn });
+      await retryWithTimeoutNotice({
+        operationFn,
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
+      });
       const callArgs = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
       expect(callArgs.operationFn).toBe(operationFn);
     });
@@ -146,7 +165,8 @@ describe('AsyncWithNotice', () => {
       });
       await retryWithTimeoutNotice({
         operationFn,
-        operationName: 'myOperation'
+        operationName: 'myOperation',
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
       const callArgs = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
       expect(callArgs.operationName).toBe('myOperation');
@@ -160,6 +180,7 @@ describe('AsyncWithNotice', () => {
       const retryOptions = { retryDelayInMilliseconds: 200, timeoutInMilliseconds: 3000 };
       await retryWithTimeoutNotice({
         operationFn,
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         retryOptions
       });
       const callArgs = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
@@ -173,6 +194,7 @@ describe('AsyncWithNotice', () => {
       });
       await retryWithTimeoutNotice({
         operationFn,
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         stackTrace: 'custom-stack'
       });
       const callArgs = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
@@ -191,6 +213,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return true;
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         shouldShowTimeoutNotice: true
       });
 
@@ -209,6 +232,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return true;
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         shouldShowTimeoutNotice: false
       });
 
@@ -228,6 +252,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return true;
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         shouldShowTimeoutNotice: false
       });
 
@@ -239,7 +264,8 @@ describe('AsyncWithNotice', () => {
         operationFn: async () => {
           await noopAsync();
           return true;
-        }
+        },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
 
       // Both false and undefined should use the same onTimeout function (onTimeoutWithoutNotice)
@@ -259,6 +285,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return true;
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         shouldShowTimeoutNotice: true
       });
 
@@ -271,6 +298,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return true;
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         shouldShowTimeoutNotice: false
       });
 
@@ -286,6 +314,7 @@ describe('AsyncWithNotice', () => {
       });
       await runWithTimeoutNotice({
         operationFn,
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
       expect(runWithTimeout).toHaveBeenCalledTimes(1);
@@ -297,6 +326,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return 'test-result';
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
       expect(result).toBe('test-result');
@@ -305,6 +335,7 @@ describe('AsyncWithNotice', () => {
     it('should return the result for synchronous operationFn', async () => {
       const result = await runWithTimeoutNotice({
         operationFn: () => 123,
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
       expect(result).toBe(123);
@@ -317,6 +348,7 @@ describe('AsyncWithNotice', () => {
       });
       await runWithTimeoutNotice({
         operationFn,
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
       const callArgs = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
@@ -330,6 +362,7 @@ describe('AsyncWithNotice', () => {
           return 'value';
         },
         operationName: 'myOp',
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
       const callArgs = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
@@ -342,6 +375,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return 'value';
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 3000
       });
       const callArgs = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
@@ -354,6 +388,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return 'value';
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         stackTrace: 'my-stack',
         timeoutInMilliseconds: 5000
       });
@@ -369,6 +404,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return 'value';
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
       const callArgs = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
@@ -376,23 +412,35 @@ describe('AsyncWithNotice', () => {
     });
 
     it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is true', async () => {
-      let capturedOnTimeout: ((ctx: TimeoutContext) => void) | null = null;
-      vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
-        await noopAsync();
-        capturedOnTimeout = options.onTimeout as (ctx: TimeoutContext) => void;
-        return undefined;
-      });
-
-      await runWithTimeoutNotice({
-        operationFn: async () => {
+      const onTimeout = await new Promise<(ctx: TimeoutContext) => void>((resolve) => {
+        vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
           await noopAsync();
-          return 'value';
-        },
-        shouldShowTimeoutNotice: true,
-        timeoutInMilliseconds: 5000
+          resolve(options.onTimeout as (ctx: TimeoutContext) => void);
+          return undefined;
+        });
+        runWithTimeoutNotice({
+          operationFn: async () => {
+            await noopAsync();
+            return 'value';
+          },
+          pluginNoticeComponent: createMockPluginNoticeComponent(),
+          shouldShowTimeoutNotice: true,
+          timeoutInMilliseconds: 5000
+        }).catch(() => {
+          // Ignore
+        });
       });
 
-      expect(capturedOnTimeout).toBeTypeOf('function');
+      expect(onTimeout).toBeTypeOf('function');
+
+      const { cleanup } = setupCreateFragmentGlobal();
+      onTimeout({
+        duration: 5000,
+        onOperationCompleted: vi.fn(),
+        operationName: 'runOp',
+        terminateOperation: vi.fn()
+      });
+      cleanup();
     });
 
     it('should pass onTimeoutWithoutNotice as onTimeout when shouldShowTimeoutNotice is false', async () => {
@@ -408,6 +456,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return 'value';
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         shouldShowTimeoutNotice: false,
         timeoutInMilliseconds: 5000
       });
@@ -429,6 +478,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return 'value';
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         shouldShowTimeoutNotice: true,
         timeoutInMilliseconds: 5000
       });
@@ -443,6 +493,7 @@ describe('AsyncWithNotice', () => {
           await noopAsync();
           return 'value';
         },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         shouldShowTimeoutNotice: false,
         timeoutInMilliseconds: 5000
       });
@@ -463,6 +514,7 @@ describe('AsyncWithNotice', () => {
             await noopAsync();
             return true;
           },
+          pluginNoticeComponent: createMockPluginNoticeComponent(),
           shouldShowTimeoutNotice: true
         }).catch(() => {
           // Ignore
@@ -662,6 +714,7 @@ describe('AsyncWithNotice', () => {
             await noopAsync();
             return true;
           },
+          pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
           shouldShowTimeoutNotice: false
         }).catch(() => {
           // Ignore

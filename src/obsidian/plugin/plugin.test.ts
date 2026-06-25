@@ -19,6 +19,7 @@ import type { TranslationsMap } from '../i18n/i18n.ts';
 import { noopAsync } from '../../function.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { ComponentEx } from '../components/component-ex.ts';
+import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
 import { initI18N } from '../i18n/i18n.ts';
 import {
   PluginBase,
@@ -280,13 +281,19 @@ describe('showErrorAndDisablePlugin', () => {
           disablePlugin: vi.fn(() => noopAsync())
         }
       },
-      manifest: { id: 'test-plugin' }
+      manifest: {
+        id: 'test-plugin',
+        name: 'Test Plugin'
+      }
     });
   }
 
   it('should show error and disable plugin', async () => {
+    const showNoticeSpy = vi.spyOn(PluginNoticeComponent.prototype, 'showNotice');
     const plugin = createMockPlugin();
     await showErrorAndDisablePlugin(plugin, 'Test error');
+    expect(showNoticeSpy).toHaveBeenCalledWith('Test error');
     expect(plugin.app.plugins.disablePlugin).toHaveBeenCalledWith('test-plugin');
+    showNoticeSpy.mockRestore();
   });
 });

@@ -6,12 +6,11 @@
 
 import type { Promisable } from 'type-fest';
 
-import { Notice } from 'obsidian';
-
 import type {
   RetryOptions,
   TimeoutContext
 } from '../async.ts';
+import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 
 import {
   retryWithTimeout,
@@ -36,6 +35,11 @@ export interface RetryWithTimeoutNoticeParams {
    * The name of the operation.
    */
   readonly operationName?: string;
+
+  /**
+   * Plugin notice component to show notices.
+   */
+  readonly pluginNoticeComponent: PluginNoticeComponent;
 
   /**
    * The retry options.
@@ -78,6 +82,11 @@ export interface RunWithTimeoutNoticeParams<Result> {
   readonly operationName?: string;
 
   /**
+   * Plugin notice component to show notices.
+   */
+  readonly pluginNoticeComponent: PluginNoticeComponent;
+
+  /**
    * Whether to show a timeout notice. Default is `true`.
    */
   readonly shouldShowTimeoutNotice?: boolean;
@@ -102,7 +111,11 @@ export interface RunWithTimeoutNoticeParams<Result> {
 export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParams): Promise<void> {
   return retryWithTimeout({
     ...params,
-    onTimeout: params.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice
+    onTimeout: params.shouldShowTimeoutNotice
+      ? (ctx): void => {
+        onTimeoutNotice(ctx, params.pluginNoticeComponent);
+      }
+      : onTimeoutWithoutNotice
   });
 }
 
@@ -116,17 +129,21 @@ export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParam
 export async function runWithTimeoutNotice<Result>(params: RunWithTimeoutNoticeParams<Result>): Promise<Result> {
   return runWithTimeout({
     ...params,
-    onTimeout: params.shouldShowTimeoutNotice ? onTimeoutNotice : onTimeoutWithoutNotice
+    onTimeout: params.shouldShowTimeoutNotice
+      ? (ctx): void => {
+        onTimeoutNotice(ctx, params.pluginNoticeComponent);
+      }
+      : onTimeoutWithoutNotice
   });
 }
 
-function onTimeoutNotice(ctx: TimeoutContext): void {
+function onTimeoutNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent): void {
   const startTime = Math.trunc(performance.now() - ctx.duration);
   let runningTimeEl: HTMLSpanElement;
   const SECOND_IN_MILLISECONDS = 1000;
   const cleanup = { intervalId: 0 };
 
-  const notice = new Notice(createFragment((f) => {
+  const notice = pluginNoticeComponent.showNotice(createFragment((f) => {
     if (ctx.operationName) {
       f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.operation));
       f.appendText(': ');
