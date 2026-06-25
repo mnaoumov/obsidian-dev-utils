@@ -140,7 +140,7 @@ export function getAllLinks(cache: CachedMetadata): Reference[] {
  * @returns The backlinks for the file.
  */
 export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<Reference> {
-  const file = getFile(app, pathOrFile, true);
+  const file = getFile(app, pathOrFile, { shouldIncludeNonExisting: true });
   return tempRegisterFilesAndRun(app, [file], () => app.metadataCache.getBacklinksForFile(file));
 }
 
@@ -295,7 +295,7 @@ export async function parseMetadata(app: App, str: string): Promise<CachedMetada
  * @param cache - The file cache to register.
  */
 export function registerFileCacheForNonExistingFile(app: App, pathOrFile: PathOrFile, cache: CachedMetadata): void {
-  const file = getFile(app, pathOrFile, true);
+  const file = getFile(app, pathOrFile, { shouldIncludeNonExisting: true });
   if (!file.deleted) {
     throw new Error('File is existing');
   }
@@ -330,7 +330,7 @@ export function registerFiles(app: App, files: TAbstractFile[]): void {
         app.metadataCache.uniqueFileLookup.add(file.name.toLowerCase(), file);
       }
 
-      file = getFolder(app, parentFolderPath(file.path), true);
+      file = getFolder(app, parentFolderPath(file.path), { shouldIncludeNonExisting: true });
     }
   }
 }
@@ -378,7 +378,7 @@ export async function tempRegisterFilesAndRunAsync<T>(app: App, files: TAbstract
  * @param pathOrFile - The path or file to unregister the file cache for.
  */
 export function unregisterFileCacheForNonExistingFile(app: App, pathOrFile: PathOrFile): void {
-  const file = getFile(app, pathOrFile, true);
+  const file = getFile(app, pathOrFile, { shouldIncludeNonExisting: true });
   if (!file.deleted) {
     throw new Error('File is existing');
   }
@@ -412,7 +412,7 @@ export function unregisterFiles(app: App, files: TAbstractFile[]): void {
         }
       }
 
-      file = getFolder(app, parentFolderPath(file.path), true);
+      file = getFolder(app, parentFolderPath(file.path), { shouldIncludeNonExisting: true });
     }
   }
 }

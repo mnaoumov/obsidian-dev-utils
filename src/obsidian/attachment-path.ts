@@ -301,11 +301,11 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
   attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
   const attachmentFileBaseName = normalize(normalizeSlashes(params.attachmentFileBaseName));
 
-  let folder = getFolderOrNull(app, attachmentFolderPath, true);
+  let folder = getFolderOrNull(app, attachmentFolderPath, { isCaseInsensitive: true });
 
   if (!folder && relativePath) {
     folder = shouldSkipMissingAttachmentFolderCreation
-      ? getFolder(app, attachmentFolderPath, true)
+      ? getFolder(app, attachmentFolderPath, { shouldIncludeNonExisting: true })
       : await app.vault.createFolder(attachmentFolderPath);
   }
 

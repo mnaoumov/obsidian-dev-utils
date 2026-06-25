@@ -493,7 +493,7 @@ describe('getFile', () => {
   describe('should create a new TFile when not found and shouldIncludeNonExisting is true', () => {
     let result: ReturnType<typeof getFile>;
     beforeAll(() => {
-      result = getFile(app, 'new-note.md', true);
+      result = getFile(app, 'new-note.md', { shouldIncludeNonExisting: true });
     });
 
     it('should be a TFile instance', () => {
@@ -550,7 +550,7 @@ describe('getFolder', () => {
   describe('should create a new TFolder when not found and shouldIncludeNonExisting is true', () => {
     let result: ReturnType<typeof getFolder>;
     beforeAll(() => {
-      result = getFolder(app, 'new-folder', true);
+      result = getFolder(app, 'new-folder', { shouldIncludeNonExisting: true });
     });
 
     it('should be a TFolder instance', () => {
@@ -597,22 +597,22 @@ describe('exists', () => {
 
   it('should return true when checking for a file with File type', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
-    expect(exists(app, 'note.md', FileSystemType.File)).toBe(true);
+    expect(exists(app, 'note.md', { type: FileSystemType.File })).toBe(true);
   });
 
   it('should return false when checking for a file with Folder type', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
-    expect(exists(app, 'note.md', FileSystemType.Folder)).toBe(false);
+    expect(exists(app, 'note.md', { type: FileSystemType.Folder })).toBe(false);
   });
 
   it('should return true when checking for a folder with Folder type', () => {
     app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
-    expect(exists(app, 'my-folder', FileSystemType.Folder)).toBe(true);
+    expect(exists(app, 'my-folder', { type: FileSystemType.Folder })).toBe(true);
   });
 
   it('should return false when checking for a folder with File type', () => {
     app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
-    expect(exists(app, 'my-folder', FileSystemType.File)).toBe(false);
+    expect(exists(app, 'my-folder', { type: FileSystemType.File })).toBe(false);
   });
 });
 
@@ -658,7 +658,7 @@ describe('getAbstractFileOrNull (resolved path fallback)', () => {
 describe('getAbstractFileOrNull (case-insensitive)', () => {
   it('should find a file case-insensitively when isCaseInsensitive is true', () => {
     app = App.createConfigured__({ files: { 'Note.md': '' } }).asOriginalType__();
-    const result = getAbstractFileOrNull(app, 'note.md', true);
+    const result = getAbstractFileOrNull(app, 'note.md', { isCaseInsensitive: true });
     assertNonNullable(result);
     expect(result.path).toBe('Note.md');
   });
@@ -675,7 +675,7 @@ describe('getAbstractFileOrNull (case-insensitive)', () => {
     const component = new CaseInsensitiveFileIndexComponent(app);
     component.load();
     try {
-      const result = getAbstractFileOrNull(app, 'note.md', true);
+      const result = getAbstractFileOrNull(app, 'note.md', { isCaseInsensitive: true });
       assertNonNullable(result);
       expect(result.path).toBe('Note.md');
     } finally {
@@ -730,7 +730,7 @@ describe('getMarkdownFiles', () => {
     folder.children = [fileA, subFolder];
     subFolder.children = [fileB];
 
-    const result = getMarkdownFiles(app, folder, true);
+    const result = getMarkdownFiles(app, folder, { isRecursive: true });
     expect(result).toHaveLength(2);
     expect(result.map((f) => f.path)).toEqual(['docs/a.md', 'docs/sub/b.md']);
   });

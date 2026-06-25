@@ -771,7 +771,7 @@ class RenameHandler {
   private async refreshLinks(): Promise<void> {
     const cache = this.app.metadataCache.getCache(this.oldPath) ?? this.app.metadataCache.getCache(this.newPath);
     const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
-    const fakeOldFile = getFile(this.app, this.oldPath, true);
+    const fakeOldFile = getFile(this.app, this.oldPath, { shouldIncludeNonExisting: true });
     let oldPathBacklinksMapRefreshed = new Map<string, Reference[]>();
     await tempRegisterFilesAndRun(this.app, [fakeOldFile], async () => {
       oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe(this.app, fakeOldFile)).data;
@@ -845,7 +845,7 @@ class RenameMap {
 
     const settings = this.settingsManager.getSettings();
 
-    const oldFile = getFile(this.app, this.oldPath, true);
+    const oldFile = getFile(this.app, this.oldPath, { shouldIncludeNonExisting: true });
     let oldAttachmentFolderPath = '';
     await tempRegisterFilesAndRunAsync(this.app, [oldFile], async () => {
       const shouldFakeOldPathCache = this.oldCache && oldFile.deleted;
