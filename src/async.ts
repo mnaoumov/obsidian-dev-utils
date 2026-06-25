@@ -581,14 +581,21 @@ export async function queueMicrotaskAsync(): Promise<void> {
 /**
  * Gets the next request animation frame.
  *
- * @returns A promise that resolves when the next request animation frame is available.
+ * @param fallbackTimeoutInMilliseconds - The fallback timeout in milliseconds to resolve the promise if `requestAnimationFrame` does not fire (e.g. the window is not active).
+ *                                        Defaults to `100` milliseconds. Use `0` to disable the fallback.
+ * @returns A promise that resolves when the next request animation frame is available (or when the fallback time is reached).
  */
-export async function requestAnimationFrameAsync(): Promise<void> {
-  return new Promise((resolve) => {
+export async function requestAnimationFrameAsync(fallbackTimeoutInMilliseconds?: number): Promise<void> {
+  const requestAnimationFrameAsyncPromise = new Promise<void>((resolve) => {
     window.requestAnimationFrame(() => {
       resolve();
     });
   });
+
+  const DEFAULT_FALLBACK_TIMEOUT_IN_MILLISECONDS = 100;
+  fallbackTimeoutInMilliseconds ??= DEFAULT_FALLBACK_TIMEOUT_IN_MILLISECONDS;
+
+  return Promise.race([requestAnimationFrameAsyncPromise, fallbackTimeoutInMilliseconds > 0 ? sleep(fallbackTimeoutInMilliseconds) : neverEnds()]);
 }
 
 /**

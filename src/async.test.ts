@@ -1710,5 +1710,26 @@ describe('Async', () => {
       expect(requestAnimationFrameSpy).toHaveBeenCalledOnce();
       requestAnimationFrameSpy.mockRestore();
     });
+
+    it('should resolve via the fallback timeout when the animation frame does not fire', async () => {
+      const requestAnimationFrameSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(0);
+
+      await requestAnimationFrameAsync(1);
+
+      expect(requestAnimationFrameSpy).toHaveBeenCalledOnce();
+      requestAnimationFrameSpy.mockRestore();
+    });
+
+    it('should disable the fallback timeout when fallbackInMilliseconds is 0', async () => {
+      const requestAnimationFrameSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+        callback(0);
+        return 0;
+      });
+
+      await requestAnimationFrameAsync(0);
+
+      expect(requestAnimationFrameSpy).toHaveBeenCalledOnce();
+      requestAnimationFrameSpy.mockRestore();
+    });
   });
 });
