@@ -273,12 +273,25 @@ examples.
 
 ## Current Task
 
-**Extract `*Params`/`*Options` parameter bags (non-breaking, internal helpers only). — DONE
-(non-breaking portion). Breaking public-API work deferred (see Pending Questions).**
-Branch: `refactor/extract-params-options`. Done: the non-exported helpers in `file-change.ts`,
-`link.ts`, `markdown-code-block-processor.ts`, `rename-delete-handler-component.ts`, and
-`over-exposure.ts` now take single params objects (5 atomic commits). Full gate green: 3508 tests,
-100% coverage, compile/lint/format/spellcheck clean. Branch not yet merged/pushed — awaiting review.
+**Extract `*Params`/`*Options` parameter bags — BREAKING public-API conversion (option C).**
+Branch: `refactor/extract-params-options`.
+
+Phase 1 (non-breaking internal helpers) — DONE (5 atomic commits): `file-change.ts`, `link.ts`,
+`markdown-code-block-processor.ts`, `rename-delete-handler-component.ts`, `over-exposure.ts`.
+
+Phase 2 (BREAKING, in progress) — convert all exported candidate functions to params/options bags.
+Design rule (consistent with existing lib style, e.g. `process(app, pathOrFile, provider, options?)`):
+keep unambiguously-typed leading args positional (`app: App`, a single `pathOrFile`/`path`/`content`,
+a callback); move ambiguous same-typed pairs (old/new path), boolean/enum flags, and optional config
+into a trailing bag. Pure 2-string utils with no obvious anchor (`makeFileName`, `ensureStartsWith`)
+become a sole required bag. Naming per `params-options-name-match`: sole+required → `...Params`;
+optional/supplementary → `...Options`. Use `refactor!:` commits (release tool derives the major bump
+from conventional commits — do NOT hand-edit `package.json` version).
+
+**Execution boundary (unattended):** library refactor only — all commits local on the branch.
+**Publishing to npm is NOT done unattended** (irreversible outward-facing release). The ~23-plugin
+migration is BLOCKED until the new major is published (plugins depend on `obsidian-dev-utils@^80`
+from npm), so it is handed off, not executed here.
 
 Applying the parameter-bag convention to functions/methods with 3+ params, or 2 params whose
 roles aren't obvious from types (same-typed pairs, boolean traps). The lint rule
@@ -653,19 +666,11 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 
 ## Pending Questions
 
-**Q: Apply the parameter-bag convention to the exported (public-API) functions too?**
-This is breaking — it changes call signatures consumers depend on, so it needs a major version
-bump and a migration sweep across the ~23 consuming plugins. Candidates: `getFile`/`getFolder`/
-`exists` (boolean traps), `applyFileChanges` (trailing boolean after an options bag), and the
-exported 2-string utilities in `string.ts`/`path.ts`/`obsidian/markdown.ts`/`obsidian/vault.ts`.
-
-- A) Defer until confirmed (auto-selected for the current unattended run) — do non-breaking
-     internal refactors only.
-- B) Do the exported boolean-trap functions only (`getFile`/`getFolder`/`exists`/`applyFileChanges`),
-     accept a major bump, migrate plugins.
-- C) Do all exported candidates, major bump, full plugin migration.
-
-Auto-selected **A**. Remove this entry once the user confirms a direction.
+**Q: Publish the new major + migrate the ~23 plugins?** User chose option **C** (all exported
+candidates). The library refactor is being done unattended on `refactor/extract-params-options`, but
+the npm publish (irreversible) and the dependent 23-plugin migration are NOT done unattended.
+Once the library branch is reviewed: (1) merge + publish the new major via the release tool, then
+(2) run the plugin-migration sweep against the published version. Awaiting go-ahead on the release.
 
 ## Known Issues
 
