@@ -81,8 +81,96 @@ export interface FileChange {
    */
   reference: Reference;
 }
+interface ApplyCanvasChangesParams {
+  /**
+   * The abort signal to control the execution of the function.
+   */
+  readonly abortSignal: AbortSignal;
+
+  /**
+   * A provider that returns an array of file changes to apply.
+   */
+  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArgs>;
+
+  /**
+   * The content to which the changes should be applied.
+   */
+  readonly content: string;
+
+  /**
+   * The path to which the changes should be applied.
+   */
+  readonly path: string;
+
+  /**
+   * Whether to retry the operation if the changes are invalid.
+   */
+  readonly shouldRetryOnInvalidChanges?: boolean;
+}
+
+interface ApplyContentChangesToTextParams {
+  /**
+   * The content changes to apply.
+   */
+  readonly changes: FileChange[];
+
+  /**
+   * The content to which the changes should be applied.
+   */
+  readonly content: string;
+
+  /**
+   * Whether parsing the frontmatter failed.
+   */
+  readonly hasFrontmatterError: boolean;
+
+  /**
+   * The path to which the changes should be applied.
+   */
+  readonly path: string;
+}
+
 interface ApplyContentChangesToTextResult {
   readonly frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>;
+  readonly newContent: string;
+}
+
+interface ApplyFrontmatterChangesWithOffsetsParams {
+  /**
+   * The abort signal to control the execution of the function.
+   */
+  readonly abortSignal: AbortSignal;
+
+  /**
+   * The frontmatter to which the changes should be applied.
+   */
+  readonly frontmatter: CombinedFrontmatter<unknown>;
+
+  /**
+   * A map of frontmatter keys to the frontmatter changes with offsets to apply.
+   */
+  readonly frontmatterChangesWithOffsetMap: Map<string, FrontmatterChangeWithOffsets[]>;
+
+  /**
+   * The path to which the changes should be applied.
+   */
+  readonly path: string;
+}
+
+interface BuildFinalContentParams {
+  /**
+   * The frontmatter to write into the final content.
+   */
+  readonly frontmatter: CombinedFrontmatter<unknown>;
+
+  /**
+   * A map of frontmatter keys to the frontmatter changes with offsets that were applied.
+   */
+  readonly frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>;
+
+  /**
+   * The content to which the frontmatter should be applied.
+   */
   readonly newContent: string;
 }
 
@@ -94,9 +182,43 @@ type FrontmatterChange = FileChange & WithReference<FrontmatterLinkCache>;
 
 type FrontmatterChangeWithOffsets = FileChange & WithReference<FrontmatterLinkCacheWithOffsets>;
 
+interface ParseFrontmatterSafelyParams {
+  /**
+   * The content to parse the frontmatter from.
+   */
+  readonly content: string;
+
+  /**
+   * The path the content belongs to.
+   */
+  readonly path: string;
+}
+
 interface ParseFrontmatterSafelyResult {
   readonly frontmatter: CombinedFrontmatter<unknown>;
   readonly hasFrontmatterError: boolean;
+}
+
+interface ValidateChangesParams {
+  /**
+   * The content changes to validate.
+   */
+  readonly changes: FileChange[];
+
+  /**
+   * The content the changes should be validated against.
+   */
+  readonly content: string;
+
+  /**
+   * The frontmatter the changes should be validated against.
+   */
+  readonly frontmatter: CombinedFrontmatter<unknown>;
+
+  /**
+   * The path the changes should be validated against.
+   */
+  readonly path: string;
 }
 
 interface WithReference<R extends Reference> {
@@ -127,20 +249,25 @@ export async function applyContentChanges(
     return null;
   }
 
-  const { frontmatter, hasFrontmatterError } = parseFrontmatterSafely(content, path);
+  const { frontmatter, hasFrontmatterError } = parseFrontmatterSafely({ content, path });
 
-  if (!validateChanges(changes, content, frontmatter, path)) {
+  if (!validateChanges({ changes, content, frontmatter, path })) {
     return shouldRetryOnInvalidChanges ? null : content;
   }
 
   changes = sortAndFilterChanges(changes);
 
-  const { frontmatterChanged, newContent } = applyContentChangesToText(changes, content, hasFrontmatterError, path);
+  const { frontmatterChanged, newContent } = applyContentChangesToText({ changes, content, hasFrontmatterError, path });
 
-  await applyFrontmatterChangesWithOffsets(abortSignal, frontmatter, frontmatterChanged, path);
+  await applyFrontmatterChangesWithOffsets({
+    abortSignal,
+    frontmatter,
+    frontmatterChangesWithOffsetMap: frontmatterChanged,
+    path
+  });
   abortSignal.throwIfAborted();
 
-  return buildFinalContent(newContent, frontmatter, frontmatterChanged);
+  return buildFinalContent({ frontmatter, frontmatterChanged, newContent });
 }
 
 /**
@@ -163,7 +290,13 @@ export async function applyFileChanges(
 ): Promise<void> {
   await process(app, pathOrFile, async ({ abortSignal, content }) => {
     if (isCanvasFile(pathOrFile)) {
-      return await applyCanvasChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
+      return await applyCanvasChanges({
+        abortSignal,
+        changesProvider,
+        content,
+        path: getPath(app, pathOrFile),
+        shouldRetryOnInvalidChanges
+      });
     }
 
     return await applyContentChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
@@ -247,13 +380,14 @@ export function toFrontmatterChangeWithOffsets(fileChange: FrontmatterChange): F
   };
 }
 
-async function applyCanvasChanges(
-  abortSignal: AbortSignal,
-  content: string,
-  path: string,
-  changesProvider: ValueProvider<FileChange[] | null, ContentArgs>,
-  shouldRetryOnInvalidChanges = true
-): Promise<null | string> {
+async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<null | string> {
+  const {
+    abortSignal,
+    changesProvider,
+    content,
+    path,
+    shouldRetryOnInvalidChanges = true
+  } = params;
   const changes = await resolveValue(changesProvider, { abortSignal, content });
   abortSignal.throwIfAborted();
   if (changes === null) {
@@ -347,12 +481,13 @@ async function applyCanvasChanges(
   return JSON.stringify(canvasData, null, '\t');
 }
 
-function applyContentChangesToText(
-  changes: FileChange[],
-  content: string,
-  hasFrontmatterError: boolean,
-  path: string
-): ApplyContentChangesToTextResult {
+function applyContentChangesToText(params: ApplyContentChangesToTextParams): ApplyContentChangesToTextResult {
+  const {
+    changes,
+    content,
+    hasFrontmatterError,
+    path
+  } = params;
   let newContent = '';
   let lastIndex = 0;
   let lastContentChange: ContentChange = {
@@ -415,12 +550,13 @@ function applyContentChangesToText(
   return { frontmatterChanged: frontmatterChangesWithOffsetMap, newContent };
 }
 
-async function applyFrontmatterChangesWithOffsets(
-  abortSignal: AbortSignal,
-  frontmatter: CombinedFrontmatter<unknown>,
-  frontmatterChangesWithOffsetMap: Map<string, FrontmatterChangeWithOffsets[]>,
-  path: string
-): Promise<void> {
+async function applyFrontmatterChangesWithOffsets(params: ApplyFrontmatterChangesWithOffsetsParams): Promise<void> {
+  const {
+    abortSignal,
+    frontmatter,
+    frontmatterChangesWithOffsetMap,
+    path
+  } = params;
   for (const [key, frontmatterChangesWithOffsets] of frontmatterChangesWithOffsetMap.entries()) {
     const propertyValue = getNestedPropertyValue(frontmatter, key);
     /* v8 ignore start -- Validation ensures the property is a string before reaching this point. */
@@ -461,18 +597,20 @@ async function applyFrontmatterChangesWithOffsets(
   }
 }
 
-function buildFinalContent(
-  newContent: string,
-  frontmatter: CombinedFrontmatter<unknown>,
-  frontmatterChanged: Map<string, FrontmatterChangeWithOffsets[]>
-): string {
+function buildFinalContent(params: BuildFinalContentParams): string {
+  const {
+    frontmatter,
+    frontmatterChanged,
+    newContent
+  } = params;
   if (frontmatterChanged.size > 0) {
     return setFrontmatter(newContent, frontmatter);
   }
   return newContent;
 }
 
-function parseFrontmatterSafely(content: string, path: string): ParseFrontmatterSafelyResult {
+function parseFrontmatterSafely(params: ParseFrontmatterSafelyParams): ParseFrontmatterSafelyResult {
+  const { content, path } = params;
   let frontmatter: CombinedFrontmatter<unknown> = {};
   let hasFrontmatterError = false;
 
@@ -531,7 +669,13 @@ function sortAndFilterChanges(changes: FileChange[]): FileChange[] {
   });
 }
 
-function validateChanges(changes: FileChange[], content: string, frontmatter: CombinedFrontmatter<unknown>, path: string): boolean {
+function validateChanges(params: ValidateChangesParams): boolean {
+  const {
+    changes,
+    content,
+    frontmatter,
+    path
+  } = params;
   const validateChangesDebugger = getLibDebugger('FileChange:validateChanges');
   for (const change of changes) {
     /* v8 ignore start -- All change types are handled; the false branch leads to other else-if checks. */
