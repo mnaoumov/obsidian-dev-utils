@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 80.1.0
+
+- feat: return notice
+
 ## 80.0.2
 
 - fix: recognize string-literal key references in over-exposure analyzer
