@@ -370,7 +370,86 @@ interface AnalysisResult {
   readonly findings: readonly OverExposureFinding[];
 }
 
+/**
+ * Parameters for {@link applyOverExposureFixes}.
+ */
+interface ApplyOverExposureFixesParams {
+  /** The program whose source files supply the original text the edits are applied to; `undefined` when no program is available. */
+  readonly program: Program | undefined;
+
+  /** The analysis result whose findings and edits are turned into in-place fixes. */
+  readonly result: AnalysisResult;
+
+  /** When `true`, declarations held wide purely by test references are tightened too instead of being skipped. */
+  readonly shouldForce: boolean;
+
+  /** Writes the tightened contents of a changed file back to disk. */
+  writeFile(this: void, path: string, content: string): void;
+}
+
+/**
+ * Parameters for {@link buildFinding}.
+ */
+interface BuildFindingParams {
+  /** The current exposure level of the declaration. */
+  readonly currentExposure: CurrentExposure;
+
+  /** Flags describing whether the declaration has no references at all or is forced wide by test-only references. */
+  readonly flags: FindingFlags;
+
+  /** The declaration's name node, used to resolve its position and text. */
+  readonly nameNode: Node;
+
+  /** The declaration node, used to resolve its source file. */
+  readonly node: Node;
+
+  /** The tighter exposure level the declaration could be reduced to. */
+  readonly suggestedExposure: SuggestedExposure;
+}
+
 type ClassMemberDeclaration = GetAccessorDeclaration | MethodDeclaration | PropertyDeclaration | SetAccessorDeclaration;
+
+/**
+ * Parameters for {@link collectStringLiteralReferences}.
+ */
+interface CollectStringLiteralReferencesParams {
+  /** The analysis context providing the string-literal index and type checker. */
+  readonly context: AnalysisContext;
+
+  /** The class declaring the member whose name the string literals might reference. */
+  readonly declaringClass: ClassLikeDeclaration;
+
+  /** The member's name node, whose text is matched against string-literal occurrences. */
+  readonly nameNode: Node;
+}
+
+/**
+ * Parameters for {@link computeNeededExposure}.
+ */
+interface ComputeNeededExposureParams {
+  /** The analysis context providing the program and type checker. */
+  readonly context: AnalysisContext;
+
+  /** The class declaring the member whose needed exposure is computed. */
+  readonly declaringClass: ClassLikeDeclaration;
+
+  /** The reference locations that must remain reachable at the computed exposure. */
+  readonly references: readonly ReferenceLocation[];
+}
+
+/**
+ * Parameters for {@link determineSkipReason}.
+ */
+interface DetermineSkipReasonParams {
+  /** The text edit that would tighten the finding, or `null` when no safe edit exists. */
+  readonly edit: null | OverExposureTextEdit;
+
+  /** The finding under consideration. */
+  readonly finding: OverExposureFinding;
+
+  /** When `true`, test-only findings are tightened rather than skipped. */
+  readonly shouldForce: boolean;
+}
 
 type ExportableDeclaration = ClassDeclaration | EnumDeclaration | FunctionDeclaration | InterfaceDeclaration | TypeAliasDeclaration | VariableStatement;
 
@@ -382,6 +461,59 @@ interface ExportFindingCandidate {
 interface FindingFlags {
   readonly hasNoReferences: boolean;
   readonly isForcedByTestOnly: boolean;
+}
+
+/**
+ * Parameters for {@link getClassAtPosition}.
+ */
+interface GetClassAtPositionParams {
+  /** Absolute path of the file containing the position. */
+  readonly fileName: string;
+
+  /** 0-based character offset of the reference within the file. */
+  readonly position: number;
+
+  /** The program used to resolve the source file. */
+  readonly program: Program;
+}
+
+/**
+ * Parameters for {@link isDerivedFrom}.
+ */
+interface IsDerivedFromParams {
+  /** The candidate base class. */
+  readonly base: ClassLikeDeclaration;
+
+  /** The type checker used to resolve heritage symbols. */
+  readonly checker: TypeChecker;
+
+  /** The candidate derived class. */
+  readonly derived: ClassLikeDeclaration;
+}
+
+/**
+ * Parameters for {@link isKeyReferenceToClass}.
+ */
+interface IsKeyReferenceToClassParams {
+  /** The type checker used to resolve the literal's contextual type. */
+  readonly checker: TypeChecker;
+
+  /** The set of property keys declared by the class. */
+  readonly keySet: ReadonlySet<string>;
+
+  /** The string-literal node being tested. */
+  readonly node: StringLiteralLike;
+}
+
+/**
+ * Parameters for {@link isOwnSourceFile}.
+ */
+interface IsOwnSourceFileParams {
+  /** Absolute (canonical) path of the file under test. */
+  readonly filePath: string;
+
+  /** Absolute (canonical) path of the project's `src` folder. */
+  readonly srcFolder: string;
 }
 
 type MemberExposure = 'private' | 'protected' | 'public';
@@ -410,6 +542,17 @@ interface SourceFileText {
 interface StringLiteralOccurrence {
   readonly node: StringLiteralLike;
   readonly sourceFile: SourceFile;
+}
+
+/**
+ * Parameters for {@link toDisplayPath}.
+ */
+interface ToDisplayPathParams {
+  /** When set, the path is rendered relative to this folder; paths outside it stay absolute. */
+  readonly baseFolder: string | undefined;
+
+  /** Absolute (canonical) path to render. */
+  readonly filePath: string;
 }
 
 // A JSDoc/TSDoc comment opens with `/**`: the character at offset 2 is the second `*`, and to exclude the empty `/**/` comment the character at offset 3 must not be the closing `/`.
@@ -449,7 +592,12 @@ export function analyzeOverExposure(params: AnalyzeOverExposureParams): OverExpo
 
   const { writeFile } = params;
   assertNonNullable(writeFile, 'writeFile is required when shouldFix is true.');
-  return applyOverExposureFixes(result, params.languageService.getProgram(), writeFile, params.shouldForce ?? false);
+  return applyOverExposureFixes({
+    program: params.languageService.getProgram(),
+    result,
+    shouldForce: params.shouldForce ?? false,
+    writeFile
+  });
 }
 
 /**
@@ -563,7 +711,13 @@ function analyzeExport(node: Node, context: AnalysisContext): void {
 
     if (otherFileReferences.length === 0) {
       candidates.push({
-        finding: buildFinding(declaration, nameNode, 'export', 'file-local', { hasNoReferences: references.length === 0, isForcedByTestOnly: false }),
+        finding: buildFinding({
+          currentExposure: 'export',
+          flags: { hasNoReferences: references.length === 0, isForcedByTestOnly: false },
+          nameNode,
+          node: declaration,
+          suggestedExposure: 'file-local'
+        }),
         isPlainFileLocal: true
       });
       continue;
@@ -572,7 +726,13 @@ function analyzeExport(node: Node, context: AnalysisContext): void {
     const nonTestReferences = otherFileReferences.filter((reference) => !isTestFile(toCanonical(reference.fileName)));
     if (nonTestReferences.length === 0) {
       candidates.push({
-        finding: buildFinding(declaration, nameNode, 'export', 'file-local', { hasNoReferences: false, isForcedByTestOnly: true }),
+        finding: buildFinding({
+          currentExposure: 'export',
+          flags: { hasNoReferences: false, isForcedByTestOnly: true },
+          nameNode,
+          node: declaration,
+          suggestedExposure: 'file-local'
+        }),
         isPlainFileLocal: false
       });
     }
@@ -618,11 +778,11 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
   const sourceFile = member.getSourceFile();
   const directReferences = collectReferences(context.languageService.findReferences(sourceFile.fileName, nameNode.getStart()))
     .filter((reference) => !isDeclarationItself(reference, nameNode));
-  const references = [...directReferences, ...collectStringLiteralReferences(nameNode, declaringClass, context)];
+  const references = [...directReferences, ...collectStringLiteralReferences({ context, declaringClass, nameNode })];
   const nonTestReferences = references.filter((reference) => !isTestFile(toCanonical(reference.fileName)));
 
-  const neededForSrc = computeNeededExposure(nonTestReferences, declaringClass, context);
-  const neededWithTests = computeNeededExposure(references, declaringClass, context);
+  const neededForSrc = computeNeededExposure({ context, declaringClass, references: nonTestReferences });
+  const neededWithTests = computeNeededExposure({ context, declaringClass, references });
 
   if (neededForSrc === 'public') {
     return;
@@ -632,9 +792,15 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
     return;
   }
 
-  const finding = buildFinding(member, nameNode, currentExposure, neededForSrc, {
-    hasNoReferences: references.length === 0,
-    isForcedByTestOnly: rankExposure(neededWithTests) > rankExposure(neededForSrc)
+  const finding = buildFinding({
+    currentExposure,
+    flags: {
+      hasNoReferences: references.length === 0,
+      isForcedByTestOnly: rankExposure(neededWithTests) > rankExposure(neededForSrc)
+    },
+    nameNode,
+    node: member,
+    suggestedExposure: neededForSrc
   });
   record(context, finding, computeMemberExposureEdit(member, neededForSrc));
 }
@@ -659,16 +825,12 @@ function applyEdits(text: string, edits: readonly OverExposureTextEdit[]): strin
   return result;
 }
 
-function applyOverExposureFixes(
-  result: AnalysisResult,
-  program: Program | undefined,
-  writeFile: (this: void, path: string, content: string) => void,
-  shouldForce: boolean
-): OverExposureFinding[] {
+function applyOverExposureFixes(params: ApplyOverExposureFixesParams): OverExposureFinding[] {
+  const { program, result, shouldForce, writeFile } = params;
   const editsByFile = new Map<string, OverExposureTextEdit[]>();
   const findings = result.findings.map((finding, index) => {
     const edit = result.edits[index] ?? null;
-    const skipReason = determineSkipReason(finding, edit, shouldForce);
+    const skipReason = determineSkipReason({ edit, finding, shouldForce });
     if (skipReason !== null) {
       return { ...finding, skipReason, wasFixed: false };
     }
@@ -716,13 +878,8 @@ function asExportableDeclaration(node: Node): ExportableDeclaration | undefined 
   return undefined;
 }
 
-function buildFinding(
-  node: Node,
-  nameNode: Node,
-  currentExposure: CurrentExposure,
-  suggestedExposure: SuggestedExposure,
-  flags: FindingFlags
-): OverExposureFinding {
+function buildFinding(params: BuildFindingParams): OverExposureFinding {
+  const { currentExposure, flags, nameNode, node, suggestedExposure } = params;
   const sourceFile = node.getSourceFile();
   const { character, line } = sourceFile.getLineAndCharacterOfPosition(nameNode.getStart());
   return {
@@ -770,7 +927,8 @@ function collectReferences(referencedSymbols: ReferencedSymbol[] | undefined): R
   return references;
 }
 
-function collectStringLiteralReferences(nameNode: Node, declaringClass: ClassLikeDeclaration, context: AnalysisContext): ReferenceLocation[] {
+function collectStringLiteralReferences(params: CollectStringLiteralReferencesParams): ReferenceLocation[] {
+  const { context, declaringClass, nameNode } = params;
   const occurrences = context.stringLiteralOccurrencesByText.get(nameNode.getText());
   if (!occurrences || occurrences.length === 0) {
     return [];
@@ -779,7 +937,7 @@ function collectStringLiteralReferences(nameNode: Node, declaringClass: ClassLik
   const keySet = getClassKeySet(declaringClass, context.checker);
   const references: ReferenceLocation[] = [];
   for (const occurrence of occurrences) {
-    if (isKeyReferenceToClass(occurrence.node, keySet, context.checker)) {
+    if (isKeyReferenceToClass({ checker: context.checker, keySet, node: occurrence.node })) {
       references.push({ fileName: occurrence.sourceFile.fileName, start: occurrence.node.getStart() });
     }
   }
@@ -833,22 +991,19 @@ function computeMemberExposureEdit(member: ClassMemberDeclaration, suggestedExpo
   };
 }
 
-function computeNeededExposure(
-  references: readonly ReferenceLocation[],
-  declaringClass: ClassLikeDeclaration,
-  context: AnalysisContext
-): MemberExposure {
+function computeNeededExposure(params: ComputeNeededExposureParams): MemberExposure {
+  const { context, declaringClass, references } = params;
   if (references.length === 0) {
     return 'private';
   }
 
   let needed: MemberExposure = 'private';
   for (const reference of references) {
-    const referenceClass = getClassAtPosition(context.program, reference.fileName, reference.start);
+    const referenceClass = getClassAtPosition({ fileName: reference.fileName, position: reference.start, program: context.program });
     if (referenceClass === declaringClass) {
       continue;
     }
-    if (referenceClass && isDerivedFrom(referenceClass, declaringClass, context.checker)) {
+    if (referenceClass && isDerivedFrom({ base: declaringClass, checker: context.checker, derived: referenceClass })) {
       needed = 'protected';
       continue;
     }
@@ -878,7 +1033,8 @@ function describeReason(finding: OverExposureFinding): string {
   return base;
 }
 
-function determineSkipReason(finding: OverExposureFinding, edit: null | OverExposureTextEdit, shouldForce: boolean): null | OverExposureSkipReason {
+function determineSkipReason(params: DetermineSkipReasonParams): null | OverExposureSkipReason {
+  const { edit, finding, shouldForce } = params;
   if (finding.isForcedByTestOnly && !shouldForce) {
     return 'test-only';
   }
@@ -914,7 +1070,7 @@ function formatFindingBlocks(findings: readonly OverExposureFinding[], baseFolde
   for (const [filePath, list] of byFile) {
     const sorted = [...list].sort((a, b) => a.line - b.line);
     const locationWidth = Math.max(...sorted.map((finding) => `${String(finding.line)}:${String(finding.column)}`.length));
-    lines.push(toDisplayPath(filePath, baseFolder));
+    lines.push(toDisplayPath({ baseFolder, filePath }));
     for (const finding of sorted) {
       const location = `${String(finding.line)}:${String(finding.column)}`.padEnd(locationWidth);
       const change = `${finding.currentExposure} ${finding.name} -> ${finding.suggestedExposure}`;
@@ -935,7 +1091,8 @@ function formatSummary(findings: readonly OverExposureFinding[]): string {
   return `${summary} ${String(fixedCount)} fixed, ${String(skippedCount)} skipped.`;
 }
 
-function getClassAtPosition(program: Program, fileName: string, position: number): ClassLikeDeclaration | undefined {
+function getClassAtPosition(params: GetClassAtPositionParams): ClassLikeDeclaration | undefined {
+  const { fileName, position, program } = params;
   const sourceFile = program.getSourceFile(fileName);
   assertNonNullable(sourceFile, `Source file not found in program: ${fileName}`);
   const node = findNodeAtPosition(sourceFile, position);
@@ -1019,7 +1176,8 @@ function isDeclarationItself(reference: ReferenceLocation, nameNode: Node): bool
   return toCanonical(reference.fileName) === toCanonical(nameNode.getSourceFile().fileName) && reference.start === nameNode.getStart();
 }
 
-function isDerivedFrom(derived: ClassLikeDeclaration, base: ClassLikeDeclaration, checker: TypeChecker): boolean {
+function isDerivedFrom(params: IsDerivedFromParams): boolean {
+  const { base, checker, derived } = params;
   const baseSymbol = base.name ? checker.getSymbolAtLocation(base.name) : undefined;
   if (!baseSymbol) {
     return false;
@@ -1035,7 +1193,7 @@ function isDerivedFrom(derived: ClassLikeDeclaration, base: ClassLikeDeclaration
         return true;
       }
       for (const declaration of symbol?.declarations ?? []) {
-        if (isClassLike(declaration) && isDerivedFrom(declaration, base, checker)) {
+        if (isClassLike(declaration) && isDerivedFrom({ base, checker, derived: declaration })) {
           return true;
         }
       }
@@ -1044,7 +1202,8 @@ function isDerivedFrom(derived: ClassLikeDeclaration, base: ClassLikeDeclaration
   return false;
 }
 
-function isKeyReferenceToClass(node: StringLiteralLike, keySet: ReadonlySet<string>, checker: TypeChecker): boolean {
+function isKeyReferenceToClass(params: IsKeyReferenceToClassParams): boolean {
+  const { checker, keySet, node } = params;
   const contextualType = checker.getContextualType(node);
   if (!contextualType) {
     return false;
@@ -1056,7 +1215,8 @@ function isKeyReferenceToClass(node: StringLiteralLike, keySet: ReadonlySet<stri
   return literals.every((literal) => keySet.has(literal));
 }
 
-function isOwnSourceFile(filePath: string, srcFolder: string): boolean {
+function isOwnSourceFile(params: IsOwnSourceFileParams): boolean {
+  const { filePath, srcFolder } = params;
   return filePath.startsWith(`${srcFolder}/`) && filePath.endsWith('.ts') && !filePath.endsWith('.d.ts');
 }
 
@@ -1092,7 +1252,7 @@ function runOverExposureAnalysis(params: AnalyzeOverExposureParams): AnalysisRes
 
   const sourceFilesToAnalyze = program.getSourceFiles().filter((sourceFile) => {
     const filePath = toCanonical(sourceFile.fileName);
-    return isOwnSourceFile(filePath, srcFolder) && !isTestFile(filePath);
+    return isOwnSourceFile({ filePath, srcFolder }) && !isTestFile(filePath);
   });
 
   for (const [analyzedFileCount, sourceFile] of sourceFilesToAnalyze.entries()) {
@@ -1112,7 +1272,8 @@ function runOverExposureAnalysis(params: AnalyzeOverExposureParams): AnalysisRes
   }
 }
 
-function toDisplayPath(filePath: string, baseFolder: string | undefined): string {
+function toDisplayPath(params: ToDisplayPathParams): string {
+  const { baseFolder, filePath } = params;
   if (baseFolder !== undefined && filePath.startsWith(`${baseFolder}/`)) {
     return filePath.slice(baseFolder.length + 1);
   }
