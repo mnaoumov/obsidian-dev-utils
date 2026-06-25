@@ -18,6 +18,7 @@ import type { ContentArgs } from './vault.ts';
 
 import { abortSignalAny } from '../abort-controller.ts';
 import { requestAnimationFrameAsync } from '../async.ts';
+import { normalizeOptionalProperties } from '../object-utils.ts';
 import {
   ensureLfEndings,
   getLfNormalizedOffsetToOriginalOffsetMapper,
@@ -124,6 +125,50 @@ interface CreateMarkdownInfoFromMatchParams {
   readonly textLineOffsets: ReadonlyMap<number, number>;
 }
 
+interface InsertTextParams {
+  /**
+   * The content to insert the text into.
+   */
+  readonly content: string;
+
+  /**
+   * The line index to insert the text at.
+   */
+  readonly insertLineIndex: number;
+
+  /**
+   * Whether to preserve the line prefix of the line at the insertion point. Default is `false`.
+   */
+  readonly shouldPreserveLinePrefix?: boolean;
+
+  /**
+   * The text to insert.
+   */
+  readonly text: string;
+}
+
+interface IsSuitableCodeBlockParams {
+  /**
+   * Whether the code block is inside a callout.
+   */
+  readonly isInCallout: boolean;
+
+  /**
+   * The language the code block is expected to have.
+   */
+  readonly language: string;
+
+  /**
+   * The regular expression match of the code block candidate.
+   */
+  readonly match: RegExpMatchArray;
+
+  /**
+   * The LF-normalized source of the code block.
+   */
+  readonly sourceLf: string;
+}
+
 /**
  * Gets the information about a code block in a Markdown section.
  *
@@ -183,7 +228,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
     const REG_EXP = /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t](?<CodeBlockArgs>.*?))?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
 
     for (const match of potentialCodeBlockText.matchAll(REG_EXP)) {
-      if (!isSuitableCodeBlock(match, language, sourceLf, isInCallout)) {
+      if (!isSuitableCodeBlock({ isInCallout, language, match, sourceLf })) {
         continue;
       }
 
@@ -236,7 +281,12 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
     }
 
     const insertLineIndex = markdownInfo.positionInNote.end.line + lineOffset + 1;
-    return insertText(content, insertLineIndex, text, params.shouldPreserveLinePrefix);
+    return insertText(normalizeOptionalProperties<InsertTextParams>({
+      content,
+      insertLineIndex,
+      shouldPreserveLinePrefix: params.shouldPreserveLinePrefix,
+      text
+    }));
   });
 }
 
@@ -260,7 +310,12 @@ export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Prom
     }
 
     const insertLineIndex = markdownInfo.positionInNote.start.line - lineOffset;
-    return insertText(content, insertLineIndex, text, params.shouldPreserveLinePrefix);
+    return insertText(normalizeOptionalProperties<InsertTextParams>({
+      content,
+      insertLineIndex,
+      shouldPreserveLinePrefix: params.shouldPreserveLinePrefix,
+      text
+    }));
   });
 }
 
@@ -384,7 +439,10 @@ function getLanguageFromElement(el: HTMLElement): string {
   return Array.from(el.classList).find((cls) => cls.startsWith(BLOCK_LANGUAGE_PREFIX))?.slice(BLOCK_LANGUAGE_PREFIX.length) ?? '';
 }
 
-function insertText(content: string, insertLineIndex: number, text: string, shouldPreserveLinePrefix?: boolean): string {
+function insertText(params: InsertTextParams): string {
+  const { content, shouldPreserveLinePrefix = false, text } = params;
+  let { insertLineIndex } = params;
+
   const lines = content.split('\n');
   const newLines = lines.slice();
   const textLines = text.split('\n');
@@ -403,12 +461,9 @@ function insertText(content: string, insertLineIndex: number, text: string, shou
   return newLines.join('\n');
 }
 
-function isSuitableCodeBlock(
-  match: RegExpMatchArray,
-  language: string,
-  sourceLf: string,
-  isInCallout: boolean
-): boolean {
+function isSuitableCodeBlock(params: IsSuitableCodeBlockParams): boolean {
+  const { isInCallout, language, match, sourceLf } = params;
+
   const codeBlockLanguage = match.groups?.['CodeBlockLanguage'] ?? '';
   if (codeBlockLanguage !== language) {
     return false;
