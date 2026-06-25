@@ -194,7 +194,41 @@ interface RenameMapConstructorParams {
   readonly settingsManager: SettingsManager;
 }
 
+interface RenameMapInitBacklinksMapParams {
+  /**
+   * The combined backlinks map, keyed by new backlink path, accumulating link-JSON to source-path mappings.
+   */
+  readonly combinedBacklinksMap: Map<string, Map<string, string>>;
+
+  /**
+   * The path whose backlinks are being recorded.
+   */
+  readonly path: string;
+
+  /**
+   * The backlinks map for a single file, keyed by backlink path.
+   */
+  readonly singleBacklinksMap: Map<string, Reference[]>;
+}
+
 const PATCH_TOKEN = Symbol.for('renameDeleteHandler');
+
+interface CleanupParentFoldersParams {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The paths of the parent folders to clean up.
+   */
+  readonly parentFolderPaths: string[];
+
+  /**
+   * The rename/delete handler settings that determine the empty-folder behavior.
+   */
+  readonly settings: Partial<RenameDeleteHandlerSettings>;
+}
 
 interface DeleteHandlerConstructorParams {
   readonly abortSignal: AbortSignal;
@@ -333,7 +367,11 @@ class DeleteHandler {
     }
 
     parentFolderPaths.delete('');
-    await cleanupParentFolders(this.app, this.settingsManager.getSettings(), Array.from(parentFolderPaths));
+    await cleanupParentFolders({
+      app: this.app,
+      parentFolderPaths: Array.from(parentFolderPaths),
+      settings: this.settingsManager.getSettings()
+    });
     this.abortSignal.throwIfAborted();
 
     if (!settings.shouldHandleDeletions) {
@@ -568,7 +606,11 @@ class RenameHandler {
 
       const combinedBacklinksMap = new Map<string, Map<string, string>>();
       renameMap.initOriginalLinksMap(combinedBacklinksMap);
-      renameMap.initBacklinksMap(this.oldPathBacklinksMap, combinedBacklinksMap, this.oldPath);
+      renameMap.initBacklinksMap({
+        combinedBacklinksMap,
+        path: this.oldPath,
+        singleBacklinksMap: this.oldPathBacklinksMap
+      });
 
       for (const attachmentOldPath of renameMap.keys()) {
         if (attachmentOldPath === this.oldPath) {
@@ -576,7 +618,11 @@ class RenameHandler {
         }
         const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe(this.app, attachmentOldPath)).data;
         this.abortSignal.throwIfAborted();
-        renameMap.initBacklinksMap(attachmentOldPathBacklinksMap, combinedBacklinksMap, attachmentOldPath);
+        renameMap.initBacklinksMap({
+          combinedBacklinksMap,
+          path: attachmentOldPath,
+          singleBacklinksMap: attachmentOldPathBacklinksMap
+        });
       }
 
       const parentFolderPaths = new Set<string>();
@@ -592,7 +638,11 @@ class RenameHandler {
         }
       }
 
-      await cleanupParentFolders(this.app, this.settingsManager.getSettings(), Array.from(parentFolderPaths));
+      await cleanupParentFolders({
+        app: this.app,
+        parentFolderPaths: Array.from(parentFolderPaths),
+        settings: this.settingsManager.getSettings()
+      });
       this.abortSignal.throwIfAborted();
       const settings = this.settingsManager.getSettings();
 
@@ -905,11 +955,12 @@ class RenameMap {
     return this.map.get(oldPath);
   }
 
-  public initBacklinksMap(
-    singleBacklinksMap: Map<string, Reference[]>,
-    combinedBacklinksMap: Map<string, Map<string, string>>,
-    path: string
-  ): void {
+  public initBacklinksMap(params: RenameMapInitBacklinksMapParams): void {
+    const {
+      combinedBacklinksMap,
+      path,
+      singleBacklinksMap
+    } = params;
     for (const [backlinkPath, links] of singleBacklinksMap.entries()) {
       const newBacklinkPath = this.map.get(backlinkPath) ?? backlinkPath;
       const linkJsonToPathMap = combinedBacklinksMap.get(newBacklinkPath) ?? new Map<string, string>();
@@ -928,7 +979,11 @@ class RenameMap {
       }
       const backlinksMap = new Map<string, Reference[]>();
       backlinksMap.set(this.newPath, [oldPathLink]);
-      this.initBacklinksMap(backlinksMap, combinedBacklinksMap, oldAttachmentFile.path);
+      this.initBacklinksMap({
+        combinedBacklinksMap,
+        path: oldAttachmentFile.path,
+        singleBacklinksMap: backlinksMap
+      });
     }
   }
 
@@ -1095,7 +1150,12 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   }
 }
 
-async function cleanupParentFolders(app: App, settings: Partial<RenameDeleteHandlerSettings>, parentFolderPaths: string[]): Promise<void> {
+async function cleanupParentFolders(params: CleanupParentFoldersParams): Promise<void> {
+  const {
+    app,
+    parentFolderPaths,
+    settings
+  } = params;
   if (settings.emptyFolderBehavior === EmptyFolderBehavior.Keep) {
     return;
   }
