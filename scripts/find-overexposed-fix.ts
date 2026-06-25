@@ -1,4 +1,5 @@
 import process from 'node:process';
+import { parseArgs } from 'node:util';
 
 import {
   CliTaskResult,
@@ -9,11 +10,21 @@ import {
   formatOverExposureFindings
 } from '../src/script-utils/linters/over-exposure.ts';
 
-const [, , projectFolderArg] = process.argv;
+const [, , ...args] = process.argv;
+
+const { positionals, values } = parseArgs({
+  allowPositionals: true,
+  args,
+  options: {
+    force: { type: 'boolean' }
+  }
+});
+
+const shouldForce = values.force ?? false;
 
 await wrapCliTask(() => {
-  const projectFolder = projectFolderArg ?? process.cwd();
-  process.stderr.write(`Tightening over-exposed declarations in ${projectFolder}...\n`);
+  const projectFolder = positionals[0] ?? process.cwd();
+  process.stderr.write(`Tightening${shouldForce ? ' (forced)' : ''} over-exposed declarations in ${projectFolder}...\n`);
 
   let previousProgressLineLength = 0;
 
@@ -24,7 +35,8 @@ await wrapCliTask(() => {
       previousProgressLineLength = label.length;
     },
     projectFolder,
-    shouldFix: true
+    shouldFix: true,
+    shouldForce
   });
 
   process.stderr.write(`\r${' '.repeat(previousProgressLineLength)}\r`);

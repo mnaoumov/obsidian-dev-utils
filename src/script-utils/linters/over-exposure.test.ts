@@ -46,6 +46,10 @@ vi.mock('../check-project-types.ts', async (importOriginal) => ({
   parseTsConfig: mockParseTsConfig
 }));
 
+interface ApplyFixesOptions {
+  readonly shouldForce?: boolean;
+}
+
 interface ApplyFixesOutcome {
   readonly findings: readonly OverExposureFinding[];
   readonly writes: Map<string, string>;
@@ -1180,6 +1184,96 @@ describe('analyzeOverExposure with shouldFix', () => {
   });
 });
 
+describe('analyzeOverExposure with shouldForce', () => {
+  it('should tighten a member exposed only for tests instead of skipping it', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.test.ts': `
+        import { A } from './a.ts';
+        const value = new A().probe();
+        void value;
+      `,
+      '/proj/src/a.ts': `
+        export class A {
+          probe(): number {
+            return 1;
+          }
+        }
+      `
+    }, { shouldForce: true });
+    expect(fixedNames(findings)).toContain('probe');
+    expect(skipReasonFor(findings, 'probe')).toBeNull();
+    const fixed = writes.get('/proj/src/a.ts') ?? '';
+    expect(fixed).toContain('private probe(): number');
+  });
+
+  it('should drop the export keyword from a declaration used only from tests', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.test.ts': `
+        import { probe } from './a.ts';
+        export const value = probe();
+      `,
+      '/proj/src/a.ts': `
+        export function probe(): number {
+          return 1;
+        }
+      `
+    }, { shouldForce: true });
+    expect(fixedNames(findings)).toContain('probe');
+    const fixed = writes.get('/proj/src/a.ts') ?? '';
+    expect(fixed).toContain('function probe(): number');
+    expect(fixed).not.toContain('export function probe');
+  });
+
+  it('should still skip a decorated member', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.test.ts': `
+        import { A } from './a.ts';
+        const value = new A().helper();
+        void value;
+      `,
+      '/proj/src/a.ts': `
+        function deco(_target: unknown, _context: unknown): void {
+          void 0;
+        }
+        export class A {
+          @deco
+          helper(): number {
+            return 1;
+          }
+        }
+      `,
+      '/proj/src/b.ts': `
+        import { A } from './a.ts';
+        const instance = new A();
+        void instance;
+      `
+    }, { shouldForce: true });
+    expect(skipReasonFor(findings, 'helper')).toBe('decorated');
+    expect(writes.has('/proj/src/a.ts')).toBe(false);
+  });
+
+  it('should still skip an export shared with a still-exported sibling', () => {
+    const { findings, writes } = applyFixes({
+      '/proj/src/a.test.ts': `
+        import { local } from './a.ts';
+        export const value = local;
+      `,
+      '/proj/src/a.ts': `
+        export const local = 1, shared = 2;
+        const sum = local;
+        void sum;
+      `,
+      '/proj/src/b.ts': `
+        import { shared } from './a.ts';
+        const value = shared;
+        void value;
+      `
+    }, { shouldForce: true });
+    expect(skipReasonFor(findings, 'local')).toBe('shared-export');
+    expect(writes.has('/proj/src/a.ts')).toBe(false);
+  });
+});
+
 describe('findOverExposure with shouldFix', () => {
   it('should parse the project tsconfig and rewrite files on disk via ts.sys', () => {
     const files: Record<string, string> = {
@@ -1244,7 +1338,7 @@ function analyze(files: Record<string, string>): OverExposureFinding[] {
   return analyzeOverExposure({ languageService, srcFolder: SRC_FOLDER });
 }
 
-function applyFixes(files: Record<string, string>): ApplyFixesOutcome {
+function applyFixes(files: Record<string, string>, options?: ApplyFixesOptions): ApplyFixesOutcome {
   const fileSystem = createSpyFileSystem(files);
   const host = createLanguageServiceHost({ compilerOptions: COMPILER_OPTIONS, fileNames: Object.keys(files), fileSystem });
   const languageService = createLanguageService(host, createDocumentRegistry());
@@ -1252,6 +1346,7 @@ function applyFixes(files: Record<string, string>): ApplyFixesOutcome {
   const findings = analyzeOverExposure({
     languageService,
     shouldFix: true,
+    shouldForce: options?.shouldForce ?? false,
     srcFolder: SRC_FOLDER,
     writeFile: (path, content) => {
       writes.set(path, content);

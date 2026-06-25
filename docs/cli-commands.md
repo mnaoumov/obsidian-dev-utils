@@ -149,6 +149,8 @@ findOverExposure({ projectFolder: process.cwd(), shouldFix: true });
 
 Tightens every safely-fixable over-exposure in place (drops the `export` keyword, or inserts/replaces a `private`/`protected` modifier). Findings that cannot be safely automated — exposed only for tests, decorated, or sharing an `export` with a still-exported sibling — are reported and left untouched. The command exits with a non-zero code if any such unfixable finding remains.
 
+Pass `shouldForce: true` (or the `--force` flag on the `find-overexposed:fix` script, e.g. `npm run find-overexposed:fix -- --force`) to additionally tighten the declarations held wide purely by test references. This performs the production half of the test-only migration — the member becomes `private` / the `export` is dropped — leaving only the test to switch to a cast-based access (after which it no longer references the now-tightened symbol). Decorated members and exports shared with a still-exported sibling stay skipped even under `--force`, because no edit can be applied safely.
+
 ### Publish
 
 ```typescript

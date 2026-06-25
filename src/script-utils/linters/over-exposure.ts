@@ -33,6 +33,12 @@
  * {@link OverExposureFinding.skipReason}. Changes that cannot be safely automated — those forced
  * only by test references, decorated members, or an `export` shared with a still-exported sibling —
  * are reported as skipped and left untouched.
+ *
+ * Additionally passing `shouldForce` (only meaningful together with `shouldFix`) tightens the
+ * declarations held wide purely by test references too — the production half of the canonical
+ * test-only migration: the member becomes `private` / the `export` is dropped, leaving only the
+ * test to switch to a cast-based access. Decorated members and exports shared with a still-exported
+ * sibling stay skipped even under `shouldForce`, because no edit can be applied safely.
  */
 
 import type {
@@ -112,6 +118,14 @@ export interface AnalyzeOverExposureParams {
   readonly shouldFix?: boolean | undefined;
 
   /**
+   * When `true` (only meaningful together with {@link shouldFix}), declarations held wide purely by
+   * test references are tightened too, instead of being skipped with a `test-only`
+   * {@link OverExposureFinding.skipReason}. Decorated members and exports shared with a
+   * still-exported sibling stay skipped regardless, because no edit can be applied safely.
+   */
+  readonly shouldForce?: boolean | undefined;
+
+  /**
    * Absolute (canonical) path of the project's `src` folder. Only declarations in non-test files
    * under this folder are analyzed; declarations elsewhere (test files, dependencies) are ignored
    * but still counted as reference sites.
@@ -174,6 +188,14 @@ export interface FindOverExposureParams {
    * project is only analyzed.
    */
   readonly shouldFix?: boolean | undefined;
+
+  /**
+   * When `true` (only meaningful together with {@link shouldFix}), declarations held wide purely by
+   * test references are tightened too, instead of being skipped. Decorated members and exports
+   * shared with a still-exported sibling stay skipped regardless. Forwarded to
+   * {@link analyzeOverExposure}.
+   */
+  readonly shouldForce?: boolean | undefined;
 }
 
 /**
@@ -329,6 +351,7 @@ interface AnalysisContext {
   readonly findings: OverExposureFinding[];
   readonly languageService: LanguageService;
   readonly program: Program;
+  readonly shouldForce: boolean;
 }
 
 interface AnalysisResult {
@@ -395,7 +418,9 @@ const WHITESPACE_PATTERN = /\s/;
  * when {@link AnalyzeOverExposureParams.shouldFix} is set — tightens every fixable finding in place
  * via {@link AnalyzeOverExposureParams.writeFile}. Findings that cannot be safely automated (exposed
  * only for tests, decorated, or sharing an `export` keyword with a still-exported sibling) carry a
- * {@link OverExposureFinding.skipReason} and are left untouched.
+ * {@link OverExposureFinding.skipReason} and are left untouched — unless
+ * {@link AnalyzeOverExposureParams.shouldForce} is set, which additionally tightens the test-only
+ * findings (decorated and shared-export ones still stay skipped).
  *
  * @param params - The {@link AnalyzeOverExposureParams}.
  * @returns The over-exposed declarations, in discovery order.
@@ -408,7 +433,7 @@ export function analyzeOverExposure(params: AnalyzeOverExposureParams): OverExpo
 
   const { writeFile } = params;
   assertNonNullable(writeFile, 'writeFile is required when shouldFix is true.');
-  return applyOverExposureFixes(result, params.languageService.getProgram(), writeFile);
+  return applyOverExposureFixes(result, params.languageService.getProgram(), writeFile, params.shouldForce ?? false);
 }
 
 /**
@@ -462,6 +487,7 @@ export function findOverExposure(params: FindOverExposureParams): OverExposureFi
   return analyzeOverExposure({
     languageService,
     shouldFix: params.shouldFix,
+    shouldForce: params.shouldForce,
     srcFolder: `${projectFolder}/src`,
     writeFile: (path, content) => {
       sys.writeFile(path, content);
@@ -540,7 +566,7 @@ function analyzeExport(node: Node, context: AnalysisContext): void {
     return;
   }
 
-  const canDropExport = candidates.length === nameNodes.length && candidates.every((candidate) => candidate.isPlainFileLocal);
+  const canDropExport = candidates.length === nameNodes.length && candidates.every((candidate) => candidate.isPlainFileLocal || context.shouldForce);
   const exportEdit = canDropExport ? computeExportRemovalEdit(declaration) : null;
   for (const candidate of candidates) {
     record(context, candidate.finding, exportEdit);
@@ -619,12 +645,13 @@ function applyEdits(text: string, edits: readonly OverExposureTextEdit[]): strin
 function applyOverExposureFixes(
   result: AnalysisResult,
   program: Program | undefined,
-  writeFile: (this: void, path: string, content: string) => void
+  writeFile: (this: void, path: string, content: string) => void,
+  shouldForce: boolean
 ): OverExposureFinding[] {
   const editsByFile = new Map<string, OverExposureTextEdit[]>();
   const findings = result.findings.map((finding, index) => {
     const edit = result.edits[index] ?? null;
-    const skipReason = determineSkipReason(finding, edit);
+    const skipReason = determineSkipReason(finding, edit, shouldForce);
     if (skipReason !== null) {
       return { ...finding, skipReason, wasFixed: false };
     }
@@ -798,8 +825,8 @@ function describeReason(finding: OverExposureFinding): string {
   return base;
 }
 
-function determineSkipReason(finding: OverExposureFinding, edit: null | OverExposureTextEdit): null | OverExposureSkipReason {
-  if (finding.isForcedByTestOnly) {
+function determineSkipReason(finding: OverExposureFinding, edit: null | OverExposureTextEdit, shouldForce: boolean): null | OverExposureSkipReason {
+  if (finding.isForcedByTestOnly && !shouldForce) {
     return 'test-only';
   }
   if (!edit) {
@@ -970,7 +997,8 @@ function runOverExposureAnalysis(params: AnalyzeOverExposureParams): AnalysisRes
     edits: [],
     findings: [],
     languageService,
-    program
+    program,
+    shouldForce: params.shouldForce ?? false
   };
 
   const sourceFilesToAnalyze = program.getSourceFiles().filter((sourceFile) => {
