@@ -665,6 +665,186 @@ export interface UpdateLinksInFileParams extends ProcessOptions {
   readonly shouldUpdateFileNameAlias?: boolean;
 }
 
+/**
+ * Params for {@link decodeUrlSafely}.
+ */
+interface DecodeUrlSafelyParams {
+  /**
+   * Whether the link uses angle brackets.
+   */
+  readonly hasAngleBrackets: boolean;
+
+  /**
+   * Whether the link is external.
+   */
+  readonly isExternal: boolean;
+
+  /**
+   * A URL to decode.
+   */
+  readonly url: string;
+}
+
+/**
+ * Params for {@link extractAlias}.
+ */
+interface ExtractAliasParams {
+  /**
+   * An end offset of the alias in the string.
+   */
+  readonly aliasEndOffset: number;
+
+  /**
+   * A start offset of the alias in the string.
+   */
+  readonly aliasStartOffset: number;
+
+  /**
+   * A string to extract the alias from.
+   */
+  readonly str: string;
+}
+
+/**
+ * Params for {@link extractTextLinks}.
+ */
+interface ExtractTextLinksParams {
+  /**
+   * An end offset of the text part in the string.
+   */
+  readonly endOffset: number;
+
+  /**
+   * A start offset of the text part in the string.
+   */
+  readonly startOffset: number;
+
+  /**
+   * A string to extract the text links from.
+   */
+  readonly str: string;
+
+  /**
+   * A list of parsed links to append the extracted text links to.
+   */
+  readonly textLinks: ParseLinkResult[];
+}
+
+/**
+ * Params for {@link generateLinkText}.
+ */
+interface GenerateLinkTextParams {
+  /**
+   * An Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * A configuration of the link.
+   */
+  readonly config: LinkConfig;
+
+  /**
+   * A source path of the link.
+   */
+  readonly sourcePath: string;
+
+  /**
+   * A subpath of the link.
+   */
+  readonly subpath: string;
+
+  /**
+   * A target file of the link.
+   */
+  readonly targetFile: TFile;
+}
+
+/**
+ * Params for {@link generateMarkdownStyleLink}.
+ */
+interface GenerateMarkdownStyleLinkParams {
+  /**
+   * A configuration of the link.
+   */
+  readonly config: LinkConfig;
+
+  /**
+   * A text of the link.
+   */
+  readonly linkText: string;
+
+  /**
+   * The params for generating the markdown link.
+   */
+  readonly markdownLinkParams: GenerateMarkdownLinkParams;
+
+  /**
+   * A target file of the link.
+   */
+  readonly targetFile: TFile;
+}
+
+/**
+ * Params for {@link generateWikiLink}.
+ */
+interface GenerateWikiLinkParams {
+  /**
+   * An alias of the link.
+   */
+  readonly alias: string | undefined;
+
+  /**
+   * Whether the link should be an embed link.
+   */
+  readonly isEmbed: boolean;
+
+  /**
+   * A text of the link.
+   */
+  readonly linkText: string;
+}
+
+/**
+ * Params for {@link getFileChanges}.
+ */
+interface GetFileChangesParams {
+  /**
+   * An abort signal to control the execution of the function.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * A metadata cache to extract the links from.
+   */
+  readonly cache: CachedMetadata | null;
+
+  /**
+   * Whether the cache belongs to a canvas file.
+   */
+  readonly isCanvasFileCache: boolean;
+
+  /**
+   * A function that converts each link.
+   */
+  linkConverter(this: void, link: Reference, abortSignal: AbortSignal): Promisable<MaybeReturn<string>>;
+}
+
+/**
+ * Params for {@link hasAngleBracketsInLink}.
+ */
+interface HasAngleBracketsInLinkParams {
+  /**
+   * A raw link text.
+   */
+  readonly raw: string;
+
+  /**
+   * A raw URL of the link.
+   */
+  readonly rawUrl: string;
+}
+
 interface LinkConfig {
   readonly isEmbed: boolean;
   readonly isSingleSubpathAllowed: boolean;
@@ -673,6 +853,26 @@ interface LinkConfig {
   readonly shouldUseAngleBrackets: boolean;
   readonly shouldUseLeadingDotForRelativePaths: boolean;
   readonly shouldUseLeadingSlashForAbsolutePaths: boolean;
+}
+
+/**
+ * Params for {@link shouldUseWikilinkStyle}.
+ */
+interface ShouldUseWikilinkStyleParams {
+  /**
+   * An Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * A style of the link.
+   */
+  readonly linkStyle?: LinkStyle;
+
+  /**
+   * An original link text.
+   */
+  readonly originalLink?: string;
 }
 
 interface TablePosition {
@@ -807,7 +1007,12 @@ export async function editLinks(
       return null;
     }
 
-    return await getFileChanges(cache, isCanvasFile(pathOrFile), linkConverter, abortSignal);
+    return await getFileChanges({
+      abortSignal,
+      cache,
+      isCanvasFileCache: isCanvasFile(pathOrFile),
+      linkConverter
+    });
   }, options);
 }
 
@@ -832,7 +1037,12 @@ export async function editLinksInContent(
   const newContent = await applyContentChanges(abortSignal, content, '', async () => {
     const cache = await parseMetadata(app, content);
     abortSignal.throwIfAborted();
-    const changes = await getFileChanges(cache, false, linkConverter, abortSignal);
+    const changes = await getFileChanges({
+      abortSignal,
+      cache,
+      isCanvasFileCache: false,
+      linkConverter
+    });
     abortSignal.throwIfAborted();
     return changes;
   });
@@ -1042,11 +1252,21 @@ export function parseLinks(str: string): ParseLinkResult[] {
   let textStartOffset = 0;
 
   for (const link of links) {
-    extractTextLinks(str, textStartOffset, link.startOffset - 1, textLinks);
+    extractTextLinks({
+      endOffset: link.startOffset - 1,
+      startOffset: textStartOffset,
+      str,
+      textLinks
+    });
     textStartOffset = link.endOffset + 1;
   }
 
-  extractTextLinks(str, textStartOffset, str.length - 1, textLinks);
+  extractTextLinks({
+    endOffset: str.length - 1,
+    startOffset: textStartOffset,
+    str,
+    textLinks
+  });
 
   links.push(...textLinks);
   links.sort((a, b) => a.startOffset - b.startOffset);
@@ -1241,7 +1461,11 @@ export function updateLink(params: UpdateLinkParams): string {
   const newTargetFile = getFile(app, newTargetPathOrFile, true);
   const oldSourcePath = getPath(app, oldSourcePathOrFile ?? newSourcePathOrFile);
   const oldTargetPath = getPath(app, oldTargetPathOrFile ?? newTargetPathOrFile);
-  const isWikilink = shouldUseWikilinkStyle(app, link.original, linkStyle);
+  const isWikilink = shouldUseWikilinkStyle(normalizeOptionalProperties<ShouldUseWikilinkStyleParams>({
+    app,
+    linkStyle,
+    originalLink: link.original
+  }));
 
   const { subpath } = splitSubpath(link.link);
   let shouldKeepAlias = !shouldUpdateFileNameAlias;
@@ -1366,7 +1590,8 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
   }, params);
 }
 
-function decodeUrlSafely(url: string, isExternal: boolean, hasAngleBrackets: boolean): string {
+function decodeUrlSafely(params: DecodeUrlSafelyParams): string {
+  const { hasAngleBrackets, isExternal, url } = params;
   if (isExternal || hasAngleBrackets) {
     return url;
   }
@@ -1379,13 +1604,15 @@ function decodeUrlSafely(url: string, isExternal: boolean, hasAngleBrackets: boo
   }
 }
 
-function extractAlias(str: string, aliasStartOffset: number, aliasEndOffset: number): string | undefined {
+function extractAlias(params: ExtractAliasParams): string | undefined {
+  const { aliasEndOffset, aliasStartOffset, str } = params;
   return aliasStartOffset < aliasEndOffset
     ? str.slice(aliasStartOffset, aliasEndOffset)
     : undefined;
 }
 
-function extractTextLinks(str: string, startOffset: number, endOffset: number, textLinks: ParseLinkResult[]): void {
+function extractTextLinks(params: ExtractTextLinksParams): void {
+  const { endOffset, startOffset, str, textLinks } = params;
   if (startOffset > endOffset) {
     return;
   }
@@ -1452,7 +1679,9 @@ function fixFrontmatterMarkdownLinksImpl(value: unknown, key: string, cache: Cac
   return hasFrontmatterLinks;
 }
 
-function generateLinkText(app: App, targetFile: TFile, sourcePath: string, subpath: string, config: LinkConfig): string {
+function generateLinkText(params: GenerateLinkTextParams): string {
+  const { app, config, subpath, targetFile } = params;
+  let { sourcePath } = params;
   if (sourcePath === '/') {
     sourcePath = '';
   }
@@ -1503,18 +1732,34 @@ function generateMarkdownLinkImpl(params: GenerateMarkdownLinkParams): string {
   const subpath = params.subpath ?? '';
 
   const linkConfig = getLinkConfig(params, targetFile);
-  const linkText = generateLinkText(app, targetFile, sourcePath, subpath, linkConfig);
+  const linkText = generateLinkText({
+    app,
+    config: linkConfig,
+    sourcePath,
+    subpath,
+    targetFile
+  });
 
   return linkConfig.isWikilink
-    ? generateWikiLink(linkText, params.alias, linkConfig.isEmbed)
-    : generateMarkdownStyleLink(linkText, targetFile, params, linkConfig);
+    ? generateWikiLink({
+      alias: params.alias,
+      isEmbed: linkConfig.isEmbed,
+      linkText
+    })
+    : generateMarkdownStyleLink({
+      config: linkConfig,
+      linkText,
+      markdownLinkParams: params,
+      targetFile
+    });
 }
 
-function generateMarkdownStyleLink(linkText: string, targetFile: TFile, params: GenerateMarkdownLinkParams, config: LinkConfig): string {
-  let alias = params.alias ?? '';
-  let shouldEscapeAlias = params.shouldEscapeAlias ?? false;
-  if (!alias && (isMarkdownFile(targetFile) || !params.isEmptyEmbedAliasAllowed)) {
-    alias = !params.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(targetFile)
+function generateMarkdownStyleLink(params: GenerateMarkdownStyleLinkParams): string {
+  const { config, linkText, markdownLinkParams, targetFile } = params;
+  let alias = markdownLinkParams.alias ?? '';
+  let shouldEscapeAlias = markdownLinkParams.shouldEscapeAlias ?? false;
+  if (!alias && (isMarkdownFile(targetFile) || !markdownLinkParams.isEmptyEmbedAliasAllowed)) {
+    alias = !markdownLinkParams.shouldIncludeAttachmentExtensionToEmbedAlias || isMarkdownFile(targetFile)
       ? targetFile.basename
       : targetFile.name;
     shouldEscapeAlias = true;
@@ -1530,7 +1775,8 @@ function generateMarkdownStyleLink(linkText: string, targetFile: TFile, params: 
   });
 }
 
-function generateWikiLink(linkText: string, alias: string | undefined, isEmbed: boolean): string {
+function generateWikiLink(params: GenerateWikiLinkParams): string {
+  const { alias, isEmbed, linkText } = params;
   if (alias?.toLowerCase() === linkText.toLowerCase()) {
     return generateRawMarkdownLink({
       isEmbed,
@@ -1547,12 +1793,9 @@ function generateWikiLink(linkText: string, alias: string | undefined, isEmbed: 
   });
 }
 
-async function getFileChanges(
-  cache: CachedMetadata | null,
-  isCanvasFileCache: boolean,
-  linkConverter: (link: Reference, abortSignal: AbortSignal) => Promisable<MaybeReturn<string>>,
-  abortSignal?: AbortSignal
-): Promise<FileChange[]> {
+async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[]> {
+  const { cache, isCanvasFileCache, linkConverter } = params;
+  let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
 
@@ -1619,7 +1862,11 @@ function getLinkConfig(params: GenerateMarkdownLinkParams, targetFile: TFile): L
       ?? (!requireApiVersion('1.10.0') && !isMarkdownFile(targetFile)),
     /* v8 ignore stop */
     isSingleSubpathAllowed: params.isSingleSubpathAllowed ?? true,
-    isWikilink: shouldUseWikilinkStyle(app, params.originalLink, params.linkStyle),
+    isWikilink: shouldUseWikilinkStyle(normalizeOptionalProperties<ShouldUseWikilinkStyleParams>({
+      app,
+      linkStyle: params.linkStyle,
+      originalLink: params.originalLink
+    })),
     linkPathStyle: getFinalLinkPathStyle(app, params.linkPathStyle),
     shouldUseAngleBrackets: params.shouldUseAngleBrackets ?? (params.originalLink ? testAngleBrackets(params.originalLink) : undefined) ?? false,
     shouldUseLeadingDotForRelativePaths: params.shouldUseLeadingDotForRelativePaths
@@ -1634,7 +1881,8 @@ function getRawLink(node: Node, str: string): string {
   return str.slice(pos.start.offset, pos.end.offset);
 }
 
-function hasAngleBracketsInLink(raw: string, rawUrl: string): boolean {
+function hasAngleBracketsInLink(params: HasAngleBracketsInLinkParams): boolean {
+  const { raw, rawUrl } = params;
   const OPEN_ANGLE_BRACKET = '<';
   return raw.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
 }
@@ -1649,10 +1897,21 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
   const nodeEndOffset = ensureNonNullable(position.end.offset);
   const nodeStartOffset = ensureNonNullable(position.start.offset);
   const rawUrl = str.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, nodeEndOffset - LINK_SUFFIX.length);
-  const hasAngleBrackets = hasAngleBracketsInLink(raw, rawUrl);
+  const hasAngleBrackets = hasAngleBracketsInLink({
+    raw,
+    rawUrl
+  });
   const isExternal = isUrl(node.url);
-  const url = decodeUrlSafely(node.url, isExternal, hasAngleBrackets);
-  const alias = extractAlias(str, aliasNodeStartOffset, aliasNodeEndOffset);
+  const url = decodeUrlSafely({
+    hasAngleBrackets,
+    isExternal,
+    url: node.url
+  });
+  const alias = extractAlias({
+    aliasEndOffset: aliasNodeEndOffset,
+    aliasStartOffset: aliasNodeStartOffset,
+    str
+  });
   return normalizeOptionalProperties<ParseLinkResult>({
     alias,
     encodedUrl: isExternal ? encodeUrl(url) : undefined,
@@ -1711,7 +1970,8 @@ function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: Tab
   return tablePositions.some((tablePosition) => tablePosition.start <= fileChange.reference.position.start.offset && fileChange.reference.position.end.offset <= tablePosition.end);
 }
 
-function shouldUseWikilinkStyle(app: App, originalLink?: string, linkStyle?: LinkStyle): boolean {
+function shouldUseWikilinkStyle(params: ShouldUseWikilinkStyleParams): boolean {
+  const { app, linkStyle, originalLink } = params;
   const resolvedStyle = linkStyle ?? LinkStyle.PreserveExisting;
   switch (resolvedStyle) {
     case LinkStyle.Markdown:
