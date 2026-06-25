@@ -279,7 +279,7 @@ None.
 
 **Goal:** Make all base classes testable (remove v8 ignore comments) and simplify DX for ~23 consuming plugins. Currently PluginBase and related classes are fully untested.
 
-#### Plugin Audit Results (2026-04-14)
+### Plugin Audit Results (2026-04-14)
 
 Reviewed all 23 plugins in `F:\dev\projects\@obsidian\`. Key findings:
 
@@ -304,7 +304,7 @@ Reviewed all 23 plugins in `F:\dev\projects\@obsidian\`. Key findings:
 
 **Plugins without settings (4):** edit-link-alias, nested-properties, root-folder-context-menu, file-explorer-reload
 
-#### Boilerplate Analysis (2026-04-14)
+### Boilerplate Analysis (2026-04-14)
 
 Reviewed plugin source code across simple/medium/complex plugins:
 
@@ -328,11 +328,11 @@ Reviewed plugin source code across simple/medium/complex plugins:
 - i18n: createTranslationsMap (only 2 plugins use)
 - Error handling: handleAsyncError (0 plugins override)
 
-#### Proposed Architecture: Ideal DX
+### Proposed Architecture: Ideal DX
 
-##### Goal: Minimal boilerplate, maximum testability, beginner-friendly
+#### Goal: Minimal boilerplate, maximum testability, beginner-friendly
 
-##### 1. Simplest possible plugin (no settings)
+#### 1. Simplest possible plugin (no settings)
 
 **Current (3 files, ~26 LOC boilerplate):**
 
@@ -363,7 +363,7 @@ export class Plugin extends PluginBase {
 - No PluginTypes interface needed — PluginBase is non-generic
 - main.ts still needed (Obsidian requires `export default Plugin`)
 
-##### 2. Plugin with settings
+#### 2. Plugin with settings
 
 **Current (6 files):**
 
@@ -429,7 +429,7 @@ export class Plugin extends PluginBase {
 }
 ```
 
-##### 3. Plugin with custom settings tab
+#### 3. Plugin with custom settings tab
 
 For plugins that need custom UI (code highlighters, secret fields, grouped sections):
 
@@ -448,7 +448,7 @@ export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
 - Generic is just `<PluginSettings>`, not `<PluginTypes>`
 - `bind()` API stays the same — it's one of the best parts of the current design
 
-##### 4. Component-based architecture
+#### 4. Component-based architecture
 
 **Universal features PluginBase provides automatically:**
 
@@ -481,7 +481,7 @@ await checker.onload();
 expect(checker.lastCheckTime).toBeDefined();
 ```
 
-##### 5. Command simplification
+#### 5. Command simplification
 
 **Current (2 classes per command, ~30 LOC):**
 
@@ -504,7 +504,7 @@ this.addCommand({
 
 For editor commands that need more structure, keep the class pattern as opt-in.
 
-#### Summary of changes
+### Summary of changes
 
 | What | Current | Proposed | Benefit |
 | --- | --- | --- | --- |
@@ -517,47 +517,47 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 | Universal features | All in PluginBase god-object | Auto-registered by PluginBase | Same DX, better internals |
 | Testing | Requires full Plugin mock | Each component testable alone | Enables 100% coverage |
 
-#### Implementation plan (incremental PRs)
+### Implementation plan (incremental PRs)
 
-##### PR 1 (non-breaking): Internal testability refactor
+#### PR 1 (non-breaking): Internal testability refactor
 
 - Break `plugin` dependency in manager/tab internals
 - Add tests for all base classes
 - Remove v8 ignore comments
 - No consumer-facing API changes
 
-##### PR 2 (breaking): Simplify generics + eliminate PluginTypes
+#### PR 2 (breaking): Simplify generics + eliminate PluginTypes
 
 - PluginBase becomes non-generic
 - `PluginSettingsManagerBase<S>` and `PluginSettingsTabBase<S>`
 - Delete plugin-types-base.ts and Extract* helpers
 - Migration: delete PluginTypes.ts, update extends clauses
 
-##### PR 3 (breaking): Merge settings triple + auto-generate tab
+#### PR 3 (breaking): Merge settings triple + auto-generate tab
 
 - PluginSettingsBase = data + validation + persistence
 - Default settings tab auto-generated from properties
 - Custom tab still supported via override
 - Migration: merge 3 files into 1, update Plugin class
 
-##### PR 4 (breaking): Command simplification
+#### PR 4 (breaking): Command simplification
 
 - Keep `addCommand()` as the primary API (it's already Obsidian-native)
 - Deprecate CommandInvocationBase / CommandBase classes
 - Migration: inline simple commands, keep classes for complex ones
 
-##### PR 5 (optional): Decorator-based settings metadata
+#### PR 5 (optional): Decorator-based settings metadata
 
 - `@setting()` decorator for auto-generating tab UI
 - Only if the simpler approaches prove insufficient
 
-##### Migration tooling
+#### Migration tooling
 
 - Provide a codemod script (`jscodeshift` transform) for PRs 2-4
 - Each PR gets its own migration guide
 - Major version bump covers all breaking PRs
 
-#### Files modified
+### Files modified
 
 - `src/obsidian/plugin/plugin-base.ts` — non-generic, component-based architecture
 - `src/obsidian/plugin/plugin-settings-manager-base.ts` — **deleted**, merged into `plugin-settings-component.ts`
