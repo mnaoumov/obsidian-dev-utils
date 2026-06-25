@@ -273,7 +273,31 @@ examples.
 
 ## Current Task
 
-None.
+**Extract `*Params`/`*Options` parameter bags (non-breaking, internal helpers only).**
+Branch: `refactor/extract-params-options`.
+
+Applying the parameter-bag convention to functions/methods with 3+ params, or 2 params whose
+roles aren't obvious from types (same-typed pairs, boolean traps). The lint rule
+`params-options-name-match` already enforces this for *exported* functions and members of
+exported classes, so this task targets the **non-exported / private helpers** the rule skips —
+these changes are non-breaking (no consumer impact, no version bump).
+
+Scope (non-breaking) — internal helpers in:
+
+- `obsidian/file-change.ts`
+- `obsidian/link.ts`
+- `obsidian/markdown-code-block-processor.ts`
+- `obsidian/components/rename-delete-handler-component.ts`
+- `script-utils/linters/over-exposure.ts`
+
+**Deferred — needs explicit confirmation (breaking, major version bump + migrate ~23 plugins):**
+the exported boolean-trap / multi-param functions — `getFile`/`getFolder`/`exists`
+(`obsidian/file-system.ts`), `applyFileChanges` (`obsidian/file-change.ts`), and the exported
+`string.ts`/`path.ts`/`obsidian/markdown.ts`/`obsidian/vault.ts` utilities. Not touched in this
+task. See **Pending Questions**.
+
+Naming rule: `<Owner>Params` only when the bag is the sole+required arg; `<Owner>Options` when
+optional or supplementary. Constructor bag = `<ClassName>ConstructorParams`.
 
 ## Architectural Vision: Improve DX + Testability of Plugin Base Classes
 
@@ -625,7 +649,19 @@ For editor commands that need more structure, keep the class pattern as opt-in.
 
 ## Pending Questions
 
-None.
+**Q: Apply the parameter-bag convention to the exported (public-API) functions too?**
+This is breaking — it changes call signatures consumers depend on, so it needs a major version
+bump and a migration sweep across the ~23 consuming plugins. Candidates: `getFile`/`getFolder`/
+`exists` (boolean traps), `applyFileChanges` (trailing boolean after an options bag), and the
+exported 2-string utilities in `string.ts`/`path.ts`/`obsidian/markdown.ts`/`obsidian/vault.ts`.
+
+- A) Defer until confirmed (auto-selected for the current unattended run) — do non-breaking
+     internal refactors only.
+- B) Do the exported boolean-trap functions only (`getFile`/`getFolder`/`exists`/`applyFileChanges`),
+     accept a major bump, migrate plugins.
+- C) Do all exported candidates, major bump, full plugin migration.
+
+Auto-selected **A**. Remove this entry once the user confirms a direction.
 
 ## Known Issues
 
