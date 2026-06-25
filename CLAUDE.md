@@ -273,8 +273,12 @@ examples.
 
 ## Current Task
 
-**Extract `*Params`/`*Options` parameter bags (non-breaking, internal helpers only).**
-Branch: `refactor/extract-params-options`.
+**Extract `*Params`/`*Options` parameter bags (non-breaking, internal helpers only). — DONE
+(non-breaking portion). Breaking public-API work deferred (see Pending Questions).**
+Branch: `refactor/extract-params-options`. Done: the non-exported helpers in `file-change.ts`,
+`link.ts`, `markdown-code-block-processor.ts`, `rename-delete-handler-component.ts`, and
+`over-exposure.ts` now take single params objects (5 atomic commits). Full gate green: 3508 tests,
+100% coverage, compile/lint/format/spellcheck clean. Branch not yet merged/pushed — awaiting review.
 
 Applying the parameter-bag convention to functions/methods with 3+ params, or 2 params whose
 roles aren't obvious from types (same-typed pairs, boolean traps). The lint rule
