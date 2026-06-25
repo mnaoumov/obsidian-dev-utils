@@ -293,28 +293,61 @@ from conventional commits — do NOT hand-edit `package.json` version).
 migration is BLOCKED until the new major is published (plugins depend on `obsidian-dev-utils@^80`
 from npm), so it is handed off, not executed here.
 
-Applying the parameter-bag convention to functions/methods with 3+ params, or 2 params whose
-roles aren't obvious from types (same-typed pairs, boolean traps). The lint rule
-`params-options-name-match` already enforces this for *exported* functions and members of
-exported classes, so this task targets the **non-exported / private helpers** the rule skips —
-these changes are non-breaking (no consumer impact, no version bump).
+### Exhaustive candidate inventory (AST pass over all `src/**/*.ts`, excl. tests/`.d.ts`/`index.ts`)
 
-Scope (non-breaking) — internal helpers in:
+Source of truth: `F:/tmp/analyze-params.ts` (re-run with `npx jiti F:/tmp/analyze-params.ts`). Found
+**112 functions/methods with 3+ params** and **202 with exactly 2**. Categorized:
 
-- `obsidian/file-change.ts`
-- `obsidian/link.ts`
-- `obsidian/markdown-code-block-processor.ts`
-- `obsidian/components/rename-delete-handler-component.ts`
-- `script-utils/linters/over-exposure.ts`
+**DONE:**
+- Phase 1 internal helpers (file-change, link, markdown-code-block-processor,
+  rename-delete-handler-component, over-exposure) — commits `003e3b04`..`1f306c96`.
+- `file-system.ts` getters (`exists`/`getAbstractFile`/`getAbstractFileOrNull`/`getFile`/
+  `getFileOrNull`/`getFolder`/`getFolderOrNull`/`getMarkdownFiles`) — `refactor!` `db994812`.
+- `object-utils.ts` toJson family (`toPlainObject`/`handleObject`/`handleArray`/`handlePlainObject`/
+  `tryHandleToJSON`/`handleCircularReference`/`handleFunction` + shared `ToJsonContext`) — `1e8505e6`.
 
-**Deferred — needs explicit confirmation (breaking, major version bump + migrate ~23 plugins):**
-the exported boolean-trap / multi-param functions — `getFile`/`getFolder`/`exists`
-(`obsidian/file-system.ts`), `applyFileChanges` (`obsidian/file-change.ts`), and the exported
-`string.ts`/`path.ts`/`obsidian/markdown.ts`/`obsidian/vault.ts` utilities. Not touched in this
-task. See **Pending Questions**.
+**EXCLUDED — signature-locked (do NOT convert):** event-source `on`/`once`/`onSaveSettings`
+(async-events, plugin-settings-component, plugin-event-source); command-handler `shouldAddTo*Menu`/
+`handle*Menu`/`editorCheckCallback` (Obsidian event arg contracts); `registerAll*DomEvent` (DOM
+addEventListener); `createElAsync`/`createSvgAsync` (Obsidian `createEl`); `strict-proxy` `get`
+(Proxy handler); transformer `canTransform`/`transformValue`/`getTransformerId` (framework); `bind`
+(already options); `checkExtension` (hot path — see file-system commit).
 
-Naming rule: `<Owner>Params` only when the bag is the sole+required arg; `<Owner>Options` when
-optional or supplementary. Constructor bag = `<ClassName>ConstructorParams`.
+**EXCLUDED — not a candidate (distinct-typed args + trailing options/callback; roles obvious):**
+`editLinks`/`editBacklinks`/`process`/`processFrontmatter`/`getBacklinksForFileSafe`/`exec`/
+`execFromRoot`/`editJson*`/`editPackage*`/`readdirPosix`/`tempRegisterFilesAndRun(Async)`/
+`writeJson*`/`writePackage*`/2-arg `app+path` family in vault.ts/metadata-cache.ts.
+
+**REMAINING — to convert (breaking where exported):**
+- `string.ts`: `insertAt`(4), `replaceAllAsync`(4), `replaceAll`(3), `trimEnd`(3), `trimStart`(3),
+  `unindent`(3); 2-string ambiguous: `ensureEndsWith`, `ensureStartsWith`, `hasSingleOccurrence`, `indent`.
+- `path.ts`: `makeFileName` (2 strings).
+- `async.ts`: `invokeAsyncSafelyAfterDelay`(4), `sleep`(3), `timeout`(3).
+- `debug.ts`: `printWithStackTrace`(4), `logWithCaller`(4, intern).
+- `error.ts`: `CustomStackTraceError` ctor(3).
+- `object-utils.ts`: `setNestedPropertyValue`(3), `tryEntryEquality`(3, intern; a/b ambiguous).
+- `reg-exp.ts`: `shouldPickFlag`(3), `addSemanticFlags`(3), `addUnicodeFlags`(3) (intern).
+- `obsidian/vault.ts`: `copySafe`, `getSafeRenamePath`, `renameSafe` (old/new swap risk),
+  `isChild`, `isChildOrSelf` (a/b ambiguous), `getAbstractFilePathSafe`, `getOrCreateAbstractFileSafe`,
+  `invokeWithFileSystemLock`, `invokeFileActionSafe`(intern).
+- `obsidian/markdown.ts`: `markdownToHtml`, `registerLinkHandlers`, `renderExternalLink`, `renderInternalLink`.
+- `obsidian/file-manager.ts`: `addAlias`, `deleteAlias`.
+- `obsidian/attachment-path.ts`: `getAttachmentFolderPath`, `hasOwnAttachmentFolder` (trailing enum).
+- `obsidian/dataview.ts`: `insertCodeBlock`; `createPageLink`(intern).
+- `obsidian/dataview-link.ts`: `fixTitle`.
+- `obsidian/resource-url.ts`: `relativePathToResourceUrl`.
+- `obsidian/file-change.ts`: `applyContentChanges`(5, exported), `applyFileChanges`(5, trailing bool after options).
+- `obsidian/link.ts`: `editLinksInContent`(4), `extractLinkFile`(4).
+- `obsidian/metadata-cache.ts`: `registerFileCacheForNonExistingFile`(3).
+- `obsidian/logger.ts`: `invokeAsyncAndLog`(4).
+- script-utils: `copyToObsidianPluginsFolderPlugin`(4), `fixSourceMapsPlugin`(3), `execString`(3),
+  `executeBatches`(3), `spawnViaShell`(3), `over-exposure` `record`(3), assorted eslint-rule intern helpers.
+- `test-helpers/mock-implementation.ts`: `mockImplementation`(3).
+
+Design rule: keep unambiguously-typed leading args positional (`app`, single `path`/`content`,
+callback); bag ambiguous same-typed pairs, flags, optional config. Pure ambiguous utils → sole
+required bag. `<Owner>Params` (sole+required) / `<Owner>Options` (optional/supplementary). Constructor
+bag = `<ClassName>ConstructorParams`. Use `refactor!:` for breaking commits.
 
 ## Architectural Vision: Improve DX + Testability of Plugin Base Classes
 
