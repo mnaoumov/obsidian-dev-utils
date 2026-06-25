@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 80.0.1
+
+- style: remove stray blank line between import groups in over-exposure templates
+- feat: add --force to find-overexposed:fix to tighten test-only declarations
+
 ## 80.0.0
 
 - fix: resolve consumer config templates from dist/templates
