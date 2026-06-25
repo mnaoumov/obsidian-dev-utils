@@ -14,7 +14,13 @@
  *
  * The analysis is whole-program and type-aware: it uses the TypeScript language service's
  * find-all-references to locate every use of each declaration, then classifies the tightest
- * exposure that still covers all references. Members invoked by the framework via registration
+ * exposure that still covers all references. Because `findReferences` does not link a string-literal
+ * argument back to a member declaration when the parameter is a conditional/mapped key type (e.g.
+ * `bind(component, 'someSetting')` where the key is typed `ConditionalKeys<Settings, …>`), member
+ * analysis additionally treats a string literal whose text equals the member name as a reference —
+ * but only when its contextual type is a string-literal type (or union of them) all of whose members
+ * are keys of the declaring class, so incidental same-named strings (`console.log('name')`) are not
+ * miscounted. Members invoked by the framework via registration
  * rather than by visible references (Obsidian lifecycle hooks, settings-tab `display`, etc.) are
  * excluded via {@link LIFECYCLE_ALLOWLIST}, as are `override` and `static` members whose exposure is
  * constrained by a base declaration. ECMAScript hard-private members (`#name`) are also excluded —
@@ -58,6 +64,9 @@ import type {
   PropertyDeclaration,
   ReferencedSymbol,
   SetAccessorDeclaration,
+  SourceFile,
+  StringLiteralLike,
+  Type,
   TypeAliasDeclaration,
   TypeChecker,
   VariableStatement
@@ -83,6 +92,7 @@ import {
   isPropertyDeclaration,
   isSetAccessorDeclaration,
   isSourceFile,
+  isStringLiteralLike,
   isTypeAliasDeclaration,
   isVariableStatement,
   ScriptSnapshot,
@@ -352,6 +362,7 @@ interface AnalysisContext {
   readonly languageService: LanguageService;
   readonly program: Program;
   readonly shouldForce: boolean;
+  readonly stringLiteralOccurrencesByText: ReadonlyMap<string, readonly StringLiteralOccurrence[]>;
 }
 
 interface AnalysisResult {
@@ -394,6 +405,11 @@ interface ReferenceLocation {
 interface SourceFileText {
   readonly fileName: string;
   readonly text: string;
+}
+
+interface StringLiteralOccurrence {
+  readonly node: StringLiteralLike;
+  readonly sourceFile: SourceFile;
 }
 
 // A JSDoc/TSDoc comment opens with `/**`: the character at offset 2 is the second `*`, and to exclude the empty `/**/` comment the character at offset 3 must not be the closing `/`.
@@ -600,8 +616,9 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
   }
 
   const sourceFile = member.getSourceFile();
-  const references = collectReferences(context.languageService.findReferences(sourceFile.fileName, nameNode.getStart()))
+  const directReferences = collectReferences(context.languageService.findReferences(sourceFile.fileName, nameNode.getStart()))
     .filter((reference) => !isDeclarationItself(reference, nameNode));
+  const references = [...directReferences, ...collectStringLiteralReferences(nameNode, declaringClass, context)];
   const nonTestReferences = references.filter((reference) => !isTestFile(toCanonical(reference.fileName)));
 
   const neededForSrc = computeNeededExposure(nonTestReferences, declaringClass, context);
@@ -723,11 +740,47 @@ function buildFinding(
   };
 }
 
+function buildStringLiteralIndex(program: Program): ReadonlyMap<string, readonly StringLiteralOccurrence[]> {
+  const index = new Map<string, StringLiteralOccurrence[]>();
+  for (const sourceFile of program.getSourceFiles()) {
+    if (sourceFile.isDeclarationFile) {
+      continue;
+    }
+    collectInNode(sourceFile);
+  }
+  return index;
+
+  function collectInNode(node: Node): void {
+    if (isStringLiteralLike(node)) {
+      const occurrences = index.get(node.text) ?? [];
+      occurrences.push({ node, sourceFile: node.getSourceFile() });
+      index.set(node.text, occurrences);
+    }
+    node.forEachChild(collectInNode);
+  }
+}
+
 function collectReferences(referencedSymbols: ReferencedSymbol[] | undefined): ReferenceLocation[] {
   const references: ReferenceLocation[] = [];
   for (const referencedSymbol of referencedSymbols ?? []) {
     for (const reference of referencedSymbol.references) {
       references.push({ fileName: reference.fileName, start: reference.textSpan.start });
+    }
+  }
+  return references;
+}
+
+function collectStringLiteralReferences(nameNode: Node, declaringClass: ClassLikeDeclaration, context: AnalysisContext): ReferenceLocation[] {
+  const occurrences = context.stringLiteralOccurrencesByText.get(nameNode.getText());
+  if (!occurrences || occurrences.length === 0) {
+    return [];
+  }
+
+  const keySet = getClassKeySet(declaringClass, context.checker);
+  const references: ReferenceLocation[] = [];
+  for (const occurrence of occurrences) {
+    if (isKeyReferenceToClass(occurrence.node, keySet, context.checker)) {
+      references.push({ fileName: occurrence.sourceFile.fileName, start: occurrence.node.getStart() });
     }
   }
   return references;
@@ -890,6 +943,12 @@ function getClassAtPosition(program: Program, fileName: string, position: number
   return getEnclosingClass(node);
 }
 
+function getClassKeySet(declaringClass: ClassLikeDeclaration, checker: TypeChecker): ReadonlySet<string> {
+  const classSymbol = declaringClass.name ? checker.getSymbolAtLocation(declaringClass.name) : undefined;
+  const classType = classSymbol ? checker.getDeclaredTypeOfSymbol(classSymbol) : checker.getTypeAtLocation(declaringClass);
+  return new Set(classType.getProperties().map((property) => property.name));
+}
+
 function getCurrentMemberExposure(modifierKinds: ReadonlySet<SyntaxKind>): MemberExposure {
   if (modifierKinds.has(SyntaxKind.PrivateKeyword)) {
     return 'private';
@@ -926,6 +985,23 @@ function getModifierKinds(node: Node): ReadonlySet<SyntaxKind> {
     }
   }
   return kinds;
+}
+
+function getStringLiteralConstituents(type: Type): null | string[] {
+  if (type.isStringLiteral()) {
+    return [type.value];
+  }
+  if (type.isUnion()) {
+    const literals: string[] = [];
+    for (const constituent of type.types) {
+      if (!constituent.isStringLiteral()) {
+        return null;
+      }
+      literals.push(constituent.value);
+    }
+    return literals;
+  }
+  return null;
 }
 
 function hasTsDocComment(node: Node): boolean {
@@ -968,6 +1044,18 @@ function isDerivedFrom(derived: ClassLikeDeclaration, base: ClassLikeDeclaration
   return false;
 }
 
+function isKeyReferenceToClass(node: StringLiteralLike, keySet: ReadonlySet<string>, checker: TypeChecker): boolean {
+  const contextualType = checker.getContextualType(node);
+  if (!contextualType) {
+    return false;
+  }
+  const literals = getStringLiteralConstituents(contextualType);
+  if (!literals) {
+    return false;
+  }
+  return literals.every((literal) => keySet.has(literal));
+}
+
 function isOwnSourceFile(filePath: string, srcFolder: string): boolean {
   return filePath.startsWith(`${srcFolder}/`) && filePath.endsWith('.ts') && !filePath.endsWith('.d.ts');
 }
@@ -998,7 +1086,8 @@ function runOverExposureAnalysis(params: AnalyzeOverExposureParams): AnalysisRes
     findings: [],
     languageService,
     program,
-    shouldForce: params.shouldForce ?? false
+    shouldForce: params.shouldForce ?? false,
+    stringLiteralOccurrencesByText: buildStringLiteralIndex(program)
   };
 
   const sourceFilesToAnalyze = program.getSourceFiles().filter((sourceFile) => {

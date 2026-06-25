@@ -541,6 +541,175 @@ describe('analyzeOverExposure', () => {
     });
     expect(hasFinding(findings, 'solo')).toBe(false);
   });
+
+  it('should not flag a member referenced via a string-literal key whose contextual type is a single literal', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        type ConditionalKeys<Base, Condition> = {
+          [Key in keyof Base]-?: Base[Key] extends Condition ? Key : never;
+        }[keyof Base];
+        export class Settings {
+          public included = '';
+          public count = 0;
+        }
+        export class Tab {
+          public bind<Value>(value: Value, key: ConditionalKeys<Settings, Value>): void {
+            void value;
+            void key;
+          }
+          public render(): void {
+            this.bind<string>('', 'included');
+          }
+        }
+      `
+    });
+    expect(hasFinding(findings, 'included')).toBe(false);
+  });
+
+  it('should not flag a member used in production via a string-literal key even when only tests reference it directly', () => {
+    const findings = analyze({
+      '/proj/src/settings.test.ts': `
+        import { Settings } from './settings.ts';
+        const settings = new Settings();
+        settings.included = 'x';
+        void settings;
+      `,
+      '/proj/src/settings.ts': `
+        type ConditionalKeys<Base, Condition> = {
+          [Key in keyof Base]-?: Base[Key] extends Condition ? Key : never;
+        }[keyof Base];
+        export class Settings {
+          public included = '';
+        }
+        export class Tab {
+          public bind<Value>(value: Value, key: ConditionalKeys<Settings, Value>): void {
+            void value;
+            void key;
+          }
+          public render(): void {
+            this.bind<string>('', 'included');
+          }
+        }
+      `
+    });
+    expect(hasFinding(findings, 'included')).toBe(false);
+  });
+
+  it('should not flag a member referenced via a keyof string-literal key argument', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class Settings {
+          public alpha = 1;
+          public beta = 2;
+        }
+        export class Reader {
+          public read(key: keyof Settings): void {
+            void key;
+          }
+          public run(): void {
+            this.read('alpha');
+          }
+        }
+      `
+    });
+    expect(hasFinding(findings, 'alpha')).toBe(false);
+  });
+
+  it('should still flag a member when a same-named string literal has no contextual type', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class A {
+          public helper(): number {
+            return 1;
+          }
+        }
+        export const label = 'helper';
+      `
+    });
+    expect(findFinding(findings, 'helper').suggestedExposure).toBe('private');
+  });
+
+  it('should still flag a member when a same-named string literal is contextually typed as a plain string', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class A {
+          public helper(): number {
+            return 1;
+          }
+        }
+        export function log(message: string): void {
+          void message;
+        }
+        log('helper');
+      `
+    });
+    expect(findFinding(findings, 'helper').suggestedExposure).toBe('private');
+  });
+
+  it('should still flag a member when the key argument also accepts a non-string-literal type', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class A {
+          public helper(): number {
+            return 1;
+          }
+        }
+        export function take(key: 'helper' | number): void {
+          void key;
+        }
+        take('helper');
+      `
+    });
+    expect(findFinding(findings, 'helper').suggestedExposure).toBe('private');
+  });
+
+  it('should still flag a member when the string-literal key argument expects keys of a different shape', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        export class A {
+          public helper(): number {
+            return 1;
+          }
+        }
+        export function take(key: 'helper' | 'other'): void {
+          void key;
+        }
+        take('helper');
+      `
+    });
+    expect(findFinding(findings, 'helper').suggestedExposure).toBe('private');
+  });
+
+  it('should resolve the key set of an anonymous class via its instance type', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        const Holder = class {
+          public solo(): number {
+            return 1;
+          }
+        };
+        void Holder;
+        export const label = 'solo';
+      `
+    });
+    expect(findFinding(findings, 'solo').suggestedExposure).toBe('private');
+  });
+
+  it('should not index string literals declared in declaration files', () => {
+    const findings = analyze({
+      '/proj/src/a.d.ts': `
+        export type HelperKey = 'helper';
+      `,
+      '/proj/src/a.ts': `
+        export class A {
+          public helper(): number {
+            return 1;
+          }
+        }
+      `
+    });
+    expect(findFinding(findings, 'helper').suggestedExposure).toBe('private');
+  });
 });
 
 describe('analyzeOverExposure exports', () => {
