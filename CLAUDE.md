@@ -273,47 +273,9 @@ examples.
 
 ## Current Task
 
-All three performance Known Issues are now fixed in the library (full gate green: 3435 tests, 100%
-coverage, lint/compile/spellcheck/format clean). Summary of what landed:
+None.
 
-1. **Fix 2 (synthetic index-only deletions)** — `DeleteHandler.handle`
-   (`src/obsidian/components/rename-delete-handler-component.ts`) early-returns after the `isNote`
-   check when `await this.app.vault.adapter.exists(this.file.path)` is `true`. Plugin-agnostic,
-   non-breaking. `RenameHandler` deliberately left unguarded (index-only renames not observed).
-2. **Fix 3 level 1 (extname-based `checkExtension`)** — `checkExtension`
-   (`src/obsidian/file-system.ts`) compares `extname(path).slice(1).toLowerCase()` for string inputs
-   instead of resolving via `getFileOrNull`, eliminating the O(vault) miss-scan for
-   `isCanvasFile`/`isMarkdownFile`/`isBaseFile`/`isNote.
-3. **Fix 3 level 2 (opt-in O(1) case-insensitive resolver)** — new
-   `src/obsidian/case-insensitive-file-index.ts` (`CaseInsensitiveFileIndex` + getter/setter
-   reading the realm-global shared-state bag, app-scoped via `ownsApp`) and
-   `src/obsidian/components/case-insensitive-file-index-component.ts`
-   (`CaseInsensitiveFileIndexComponent`). `getFileInternal` consults the installed index first and
-   falls back to native `getAbstractFileByPathInsensitive` when none is installed. The index handles
-   folder-delete subtree removal and folder/case-only rename re-keying by lowercased-path prefix.
-   **Opt-in**: a consumer must `addChild(new CaseInsensitiveFileIndexComponent(app))` to enable it.
-4. **Fix 1 (lazy attachment content provider)** — breaking: `GetAvailablePathForAttachmentsExtendedFnParams`
-   (`src/obsidian/attachment-path.ts`) dropped the eagerly-read `attachmentFileContent?: ArrayBuffer`
-   field for a lazy `readAttachmentFileContent: (() => Promise<ArrayBuffer>) | null` provider;
-   `getAttachmentFilePath` passes `() => app.vault.readBinary(attachmentFile)` (or `null`) instead
-   of awaiting. Uses `null` (not `undefined`) per API preference.
-
-### Pending follow-up (cross-repo, requires user consent for npm publish)
-
-Fix 1 is breaking for the only `.extended` consumer, `custom-attachment-location`. Before/with the
-dev-utils release:
-
-- Migrate `custom-attachment-location`'s `AttachmentPathManager`/`Substitutions` content plumbing
-  from `attachmentFileContent` to the lazy `readAttachmentFileContent` provider (memoizing the first
-  call) — the field name + boundary type (`AttachmentPathManagerGetAvailablePathForAttachmentsParams`)
-  must match the new lib interface.
-- Coordinate the dev-utils version bump with the `custom-attachment-location` bump and a
-  `consistent-attachments-and-links` rebuild against the new dev-utils.
-
-The local working tree also had pre-existing unrelated modifications (`CLAUDE.md`, `cspell.json`)
-present before this task started.
-
-### Architectural Vision: Improve DX + Testability of Plugin Base Classes
+## Architectural Vision: Improve DX + Testability of Plugin Base Classes
 
 **Goal:** Make all base classes testable (remove v8 ignore comments) and simplify DX for ~23 consuming plugins. Currently PluginBase and related classes are fully untested.
 
