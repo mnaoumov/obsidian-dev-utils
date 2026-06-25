@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 80.0.2
+
+- fix: recognize string-literal key references in over-exposure analyzer
+
 ## 80.0.1
 
 - style: remove stray blank line between import groups in over-exposure templates
