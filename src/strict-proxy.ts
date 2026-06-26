@@ -123,6 +123,15 @@ function wrapProxy<T>(value: unknown): T {
   const proxiedChildren = new Map<string | symbol>();
 
   return new Proxy(value, {
+    /**
+     * Intercepts property access on the proxied object, throwing on unmocked properties.
+     *
+     * @param target - The proxied target object.
+     * @param prop - The property being accessed.
+     * @param receiver - The proxy or an object that inherits from it.
+     * @returns The property value.
+     * @remarks Not refactored to parameter-object pattern, to keep the parity with the {@link ProxyHandler.get} trap.
+     */
     get(target, prop, receiver): unknown {
       if (prop in target) {
         if (proxiedChildren.has(prop)) {
