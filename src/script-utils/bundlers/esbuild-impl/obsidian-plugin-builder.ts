@@ -132,7 +132,7 @@ export async function build(options?: BuildOptions): Promise<void> {
  */
 export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Promise<CliTaskResult> {
   await npmRun('build:compile');
-  const envPath = resolvePathFromRoot('.env');
+  const envPath = resolvePathFromRoot({ path: '.env' });
   if (envPath && existsSync(envPath)) {
     loadEnvFile(envPath);
   }
@@ -142,7 +142,7 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
   const isProductionBuild = params.mode === BuildMode.Production;
 
   const distFolder = ensureNonNullable(
-    resolvePathFromRoot(isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev),
+    resolvePathFromRoot({ path: isProductionBuild ? ObsidianPluginRepoPaths.DistBuild : ObsidianPluginRepoPaths.DistDev }),
     'Could not determine the dist folder'
   );
 
@@ -159,7 +159,7 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
   }
 
   for (const fileName of distFileNames) {
-    const localFile = ensureNonNullable(resolvePathFromRoot(fileName), `Could not determine the local file for ${fileName}`);
+    const localFile = ensureNonNullable(resolvePathFromRoot({ path: fileName }), `Could not determine the local file for ${fileName}`);
     const distFile = join(distFolder, fileName);
 
     if (existsSync(localFile)) {
@@ -181,7 +181,7 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
     conditions: ['browser'],
     entryPoints: [
       ensureNonNullable(
-        resolvePathFromRoot(join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs)),
+        resolvePathFromRoot({ path: join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.MainTs) }),
         'Could not determine the entry point for the plugin'
       )
     ],
@@ -218,9 +218,9 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
       renameCssPlugin(distFolder),
       preprocessPlugin(),
       fixEsmPlugin(),
-      fixSourceMapsPlugin(isProductionBuild, [distPath, cssPath], pluginName),
+      fixSourceMapsPlugin({ distPaths: [distPath, cssPath], isProductionBuild, pluginName }),
       ...params.customEsbuildPlugins ?? [],
-      copyToObsidianPluginsFolderPlugin(isProductionBuild, distFolder, obsidianConfigFolder, pluginName)
+      copyToObsidianPluginsFolderPlugin({ distFolder, isProductionBuild, obsidianConfigFolder, pluginName })
     ],
     sourcemap: isProductionBuild ? false : 'inline',
     target: 'ES2022',

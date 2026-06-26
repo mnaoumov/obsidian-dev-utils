@@ -28,20 +28,45 @@ import {
 } from '../../../path.ts';
 
 /**
+ * Parameters for {@link copyToObsidianPluginsFolderPlugin}.
+ */
+export interface CopyToObsidianPluginsFolderPluginParams {
+  /**
+   * The folder where the built files are located.
+   */
+  readonly distFolder: string;
+
+  /**
+   * A boolean indicating whether the build is a production build.
+   */
+  readonly isProductionBuild: boolean;
+
+  /**
+   * The folder of the Obsidian configuration. If not provided, the plugin will not copy files.
+   */
+  readonly obsidianConfigFolder: string;
+
+  /**
+   * The name of the Obsidian plugin.
+   */
+  readonly pluginName: string;
+}
+
+/**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
  *
- * @param isProductionBuild - A boolean indicating whether the build is a production build.
- * @param distFolder - The folder where the built files are located.
- * @param obsidianConfigFolder - The folder of the Obsidian configuration. If not provided, the plugin will not copy files.
- * @param pluginName - The name of the Obsidian plugin.
+ * @param params - The parameters for the function.
  * @returns An esbuild `Plugin` object.
  */
-export function copyToObsidianPluginsFolderPlugin(
-  isProductionBuild: boolean,
-  distFolder: string,
-  obsidianConfigFolder: string,
-  pluginName: string
-): Plugin {
+export function copyToObsidianPluginsFolderPlugin(params: CopyToObsidianPluginsFolderPluginParams): Plugin {
+  const {
+    distFolder,
+    isProductionBuild,
+    pluginName
+  } = params;
+  let {
+    obsidianConfigFolder
+  } = params;
   return {
     name: 'copy-to-obsidian-plugins-folder',
     setup(build): void {

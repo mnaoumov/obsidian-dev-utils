@@ -6,6 +6,8 @@ import {
   vi
 } from 'vitest';
 
+import type { ResolvePathFromRootSafeParams } from './root.ts';
+
 import { lint } from './linters/eslint.ts';
 
 const {
@@ -19,7 +21,7 @@ const {
   mockExecFromRoot: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
   mockGetRootFolder: vi.fn<(cwd?: string) => null | string>(),
-  mockResolvePathFromRootSafe: vi.fn<(path: string) => string>()
+  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>()
 }));
 
 vi.mock('../script-utils/root.ts', () => ({
@@ -52,7 +54,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mockExecFromRoot.mockResolvedValue('');
   mockCp.mockResolvedValue(undefined);
-  mockResolvePathFromRootSafe.mockImplementation((path: string) => `/root/${path}`);
+  mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
 });
 
 describe('lint', () => {

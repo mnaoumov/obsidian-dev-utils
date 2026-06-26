@@ -15,6 +15,7 @@ import type {
   ExecSimpleOptions
 } from './exec.ts';
 
+import { normalizeOptionalProperties } from '../object-utils.ts';
 import {
   dirname,
   join,
@@ -29,6 +30,49 @@ import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
  * Options for {@link execFromRoot}.
  */
 export type ExecFromRootOptions = ExecOptions;
+
+/**
+ * Parameters for {@link resolvePathFromRoot}.
+ */
+export interface ResolvePathFromRootParams {
+  /**
+   * The current working folder to resolve from.
+   */
+  readonly cwd?: string;
+
+  /**
+   * The path to resolve.
+   */
+  readonly path: string;
+}
+/**
+ * Parameters for {@link resolvePathFromRootSafe}.
+ */
+export interface ResolvePathFromRootSafeParams {
+  /**
+   * The current working folder to resolve from.
+   */
+  readonly cwd?: string;
+
+  /**
+   * The path to resolve.
+   */
+  readonly path: string;
+}
+/**
+ * Parameters for {@link toRelativeFromRoot}.
+ */
+export interface ToRelativeFromRootParams {
+  /**
+   * The current working folder to resolve from.
+   */
+  readonly cwd?: string;
+
+  /**
+   * The absolute path to convert.
+   */
+  readonly path: string;
+}
 
 /**
  * Executes a command from the root folder of the project.
@@ -107,11 +151,14 @@ export function getRootFolder(cwd?: string): null | string {
 /**
  * Resolves a path relative to the root folder of the project.
  *
- * @param path - The path to resolve.
- * @param cwd - The current working folder to resolve from.
+ * @param params - The parameters for the function.
  * @returns The resolved absolute path.
  */
-export function resolvePathFromRoot(path: string, cwd?: string): null | string {
+export function resolvePathFromRoot(params: ResolvePathFromRootParams): null | string {
+  const {
+    cwd,
+    path
+  } = params;
   const rootFolder = getRootFolder(cwd);
   if (!rootFolder) {
     return null;
@@ -123,22 +170,30 @@ export function resolvePathFromRoot(path: string, cwd?: string): null | string {
 /**
  * Resolves a path relative to the root folder, returning the resolved path or the original path if it does not exist.
  *
- * @param path - The path to resolve.
- * @param cwd - The current working folder to resolve from.
+ * @param params - The parameters for the function.
  * @returns The resolved path or the original path if it does not exist.
  */
-export function resolvePathFromRootSafe(path: string, cwd?: string): string {
-  return resolvePathFromRoot(path, cwd) ?? path;
+export function resolvePathFromRootSafe(params: ResolvePathFromRootSafeParams): string {
+  const {
+    cwd,
+    path
+  } = params;
+  return resolvePathFromRoot(normalizeOptionalProperties<ResolvePathFromRootParams>({ cwd, path })) ?? path;
 }
 
 /**
  * Converts an absolute path to a relative path from the root folder of the project.
  *
- * @param path - The absolute path to convert.
- * @param cwd - The current working folder to resolve from.
+ * @param params - The parameters for the function.
  * @returns The relative path from the root folder.
  */
-export function toRelativeFromRoot(path: string, cwd?: string): null | string {
+export function toRelativeFromRoot(params: ToRelativeFromRootParams): null | string {
+  const {
+    cwd
+  } = params;
+  let {
+    path
+  } = params;
   const rootFolder = getRootFolder(cwd);
   if (!rootFolder) {
     return null;

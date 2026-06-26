@@ -56,7 +56,7 @@ export async function lint(options?: LintOptions): Promise<void> {
   ];
 
   const configFileExist = configFiles.some((configFile) => {
-    const configFilePath = resolvePathFromRootSafe(configFile);
+    const configFilePath = resolvePathFromRootSafe({ path: configFile });
     return existsSync(configFilePath);
   });
 
@@ -66,7 +66,7 @@ export async function lint(options?: LintOptions): Promise<void> {
     assertNonNullable(packageFolder, 'Package folder not found');
     await cp(
       join(packageFolder, ObsidianDevUtilsRepoPaths.DistTemplates, ObsidianDevUtilsRepoPaths.EslintConfigMts),
-      resolvePathFromRootSafe(ObsidianPluginRepoPaths.EslintConfigMts)
+      resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.EslintConfigMts })
     );
   }
 

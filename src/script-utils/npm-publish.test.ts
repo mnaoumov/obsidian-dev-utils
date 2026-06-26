@@ -6,6 +6,8 @@ import {
   vi
 } from 'vitest';
 
+import type { ResolvePathFromRootParams } from './root.ts';
+
 import { publish } from './npm-publish.ts';
 
 const {
@@ -20,7 +22,7 @@ const {
   mockLoadEnvFile: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- Assertion needed for dynamic property access.
   mockProcess: { env: {} as Record<string, string | undefined> },
-  mockResolvePathFromRoot: vi.fn<(path: string) => null | string>()
+  mockResolvePathFromRoot: vi.fn<(params: ResolvePathFromRootParams) => null | string>()
 }));
 
 vi.mock('../script-utils/root.ts', () => ({

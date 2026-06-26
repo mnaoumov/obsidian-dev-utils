@@ -6,6 +6,8 @@ import {
   vi
 } from 'vitest';
 
+import type { ResolvePathFromRootSafeParams } from './root.ts';
+
 import { noopAsync } from '../function.ts';
 import { lint } from './linters/markdownlint.ts';
 
@@ -22,7 +24,7 @@ const {
   mockExistsSync: vi.fn<(path: string) => boolean>(),
   mockGetRootFolder: vi.fn<(cwd?: string) => null | string>(),
   mockGlob: vi.fn(),
-  mockResolvePathFromRootSafe: vi.fn<(path: string) => string>()
+  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>()
 }));
 
 vi.mock('../script-utils/root.ts', () => ({
@@ -56,7 +58,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mockExecFromRoot.mockResolvedValue('');
   mockCp.mockResolvedValue(undefined);
-  mockResolvePathFromRootSafe.mockImplementation((path: string) => `/root/${path}`);
+  mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
   mockGlob.mockReturnValue((async function* generateMdFiles(): AsyncGenerator<string, void> {
     await noopAsync();
     yield 'README.md';

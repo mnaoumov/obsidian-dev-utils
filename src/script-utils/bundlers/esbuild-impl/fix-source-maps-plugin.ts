@@ -19,6 +19,26 @@ import {
 import { toPosixPath } from '../../../path.ts';
 import { replaceAll } from '../../../string.ts';
 
+/**
+ * Parameters for {@link fixSourceMapsPlugin}.
+ */
+export interface FixSourceMapsPluginParams {
+  /**
+   * The paths to the output files containing the source maps.
+   */
+  readonly distPaths: string[];
+
+  /**
+   * A boolean indicating whether the build is a production build. The plugin only runs in non-production builds.
+   */
+  readonly isProductionBuild: boolean;
+
+  /**
+   * The name of the Obsidian plugin, used to construct the Obsidian-specific URLs.
+   */
+  readonly pluginName: string;
+}
+
 interface SourceMap {
   sources: string[];
 }
@@ -27,12 +47,15 @@ interface SourceMap {
  * Creates an esbuild plugin that fixes source maps by adjusting the paths to be compatible
  * with Obsidian's internal URL scheme.
  *
- * @param isProductionBuild - A boolean indicating whether the build is a production build. The plugin only runs in non-production builds.
- * @param distPaths - The paths to the output files containing the source maps.
- * @param pluginName - The name of the Obsidian plugin, used to construct the Obsidian-specific URLs.
+ * @param params - The parameters for the function.
  * @returns An esbuild `Plugin` object that fixes source maps.
  */
-export function fixSourceMapsPlugin(isProductionBuild: boolean, distPaths: string[], pluginName: string): Plugin {
+export function fixSourceMapsPlugin(params: FixSourceMapsPluginParams): Plugin {
+  const {
+    distPaths,
+    isProductionBuild,
+    pluginName
+  } = params;
   return {
     name: 'fix-source-maps',
     setup(build): void {

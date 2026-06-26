@@ -10,6 +10,7 @@ import type {
   CheckProjectTypesParams,
   ParsedTsConfig
 } from './check-project-types.ts';
+import type { ResolvePathFromRootSafeParams } from './root.ts';
 
 import { noopAsync } from '../function.ts';
 import {
@@ -43,7 +44,7 @@ const {
   mockParseTsConfig: vi.fn<(tsConfigPath: string) => ParsedTsConfig>(),
   mockReaddirPosix: vi.fn(),
   mockReadJson: vi.fn(),
-  mockResolvePathFromRootSafe: vi.fn<(path: string) => string>(),
+  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
   mockRm: vi.fn(),
   mockToCanonical: vi.fn<(fileName: string) => string>()
 }));
@@ -92,7 +93,7 @@ beforeEach(() => {
   mockNpmRunOptional.mockResolvedValue(true);
   mockRm.mockResolvedValue(undefined);
   mockCp.mockResolvedValue(undefined);
-  mockResolvePathFromRootSafe.mockImplementation((path: string) => `/root/${path}`);
+  mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
   mockGetRootFolder.mockReturnValue('/root');
   mockToCanonical.mockImplementation((fileName: string) => fileName.toLowerCase());
   mockParseTsConfig.mockReturnValue({ fileNames: ['/root/src/a.ts'], options: {} });

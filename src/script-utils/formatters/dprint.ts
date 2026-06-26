@@ -43,11 +43,11 @@ export async function format(options?: FormatOptions): Promise<void> {
   const { paths, rewrite = true } = options ?? {};
   const rootFolder = getRootFolder();
   assertNonNullable(rootFolder, 'Root folder not found');
-  let dprintJsonPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.DprintJson);
+  let dprintJsonPath = resolvePathFromRootSafe({ path: ObsidianDevUtilsRepoPaths.DprintJson });
   if (!existsSync(dprintJsonPath)) {
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
     assertNonNullable(packageFolder, 'Could not find package folder.');
-    dprintJsonPath = resolvePathFromRootSafe(join(ObsidianDevUtilsRepoPaths.DistTemplates, ObsidianDevUtilsRepoPaths.DprintJson), packageFolder);
+    dprintJsonPath = resolvePathFromRootSafe({ cwd: packageFolder, path: join(ObsidianDevUtilsRepoPaths.DistTemplates, ObsidianDevUtilsRepoPaths.DprintJson) });
   }
 
   if (!existsSync(dprintJsonPath)) {

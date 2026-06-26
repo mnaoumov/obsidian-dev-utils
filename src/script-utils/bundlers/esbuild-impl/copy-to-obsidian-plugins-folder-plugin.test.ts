@@ -48,7 +48,7 @@ describe('copyToObsidianPluginsFolderPlugin', () => {
   });
 
   it('should pass vault root path (not config folder) to evalInObsidian', async () => {
-    const plugin = copyToObsidianPluginsFolderPlugin(false, 'dist', OBSIDIAN_CONFIG_FOLDER, 'my-plugin');
+    const plugin = copyToObsidianPluginsFolderPlugin({ distFolder: 'dist', isProductionBuild: false, obsidianConfigFolder: OBSIDIAN_CONFIG_FOLDER, pluginName: 'my-plugin' });
 
     let onEndCallback: ((result: BuildResult) => Promise<void> | void) | undefined;
     const mockBuild = strictProxy<PluginBuild>({

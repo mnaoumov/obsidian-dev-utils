@@ -61,14 +61,14 @@ describe('getRootFolder', () => {
 describe('resolvePathFromRoot', () => {
   it('should resolve a path relative to root', () => {
     mockExistsSync.mockImplementation((p: string) => p === 'C:/project/package.json');
-    const result = resolvePathFromRoot('dist/index.js', 'C:/project/src');
+    const result = resolvePathFromRoot({ cwd: 'C:/project/src', path: 'dist/index.js' });
     expect(result).toContain('dist');
     expect(result).toContain('index.js');
   });
 
   it('should return null when root is not found', () => {
     mockExistsSync.mockReturnValue(false);
-    const result = resolvePathFromRoot('dist/index.js', 'C:/no/root');
+    const result = resolvePathFromRoot({ cwd: 'C:/no/root', path: 'dist/index.js' });
     expect(result).toBeNull();
   });
 });
@@ -76,14 +76,14 @@ describe('resolvePathFromRoot', () => {
 describe('resolvePathFromRootSafe', () => {
   it('should resolve path when root is found', () => {
     mockExistsSync.mockImplementation((p: string) => p === 'C:/project/package.json');
-    const result = resolvePathFromRootSafe('dist/index.js', 'C:/project');
+    const result = resolvePathFromRootSafe({ cwd: 'C:/project', path: 'dist/index.js' });
     expect(result).toContain('dist');
     expect(result).toContain('index.js');
   });
 
   it('should return original path when root is not found', () => {
     mockExistsSync.mockReturnValue(false);
-    const result = resolvePathFromRootSafe('some/path.ts', 'C:/no/root');
+    const result = resolvePathFromRootSafe({ cwd: 'C:/no/root', path: 'some/path.ts' });
     expect(result).toBe('some/path.ts');
   });
 });
@@ -91,13 +91,13 @@ describe('resolvePathFromRootSafe', () => {
 describe('toRelativeFromRoot', () => {
   it('should convert absolute path to relative from root', () => {
     mockExistsSync.mockImplementation((p: string) => p === 'C:/project/package.json');
-    const result = toRelativeFromRoot('C:/project/src/file.ts', 'C:/project');
+    const result = toRelativeFromRoot({ cwd: 'C:/project', path: 'C:/project/src/file.ts' });
     expect(result).toBe('src/file.ts');
   });
 
   it('should return null when root is not found', () => {
     mockExistsSync.mockReturnValue(false);
-    const result = toRelativeFromRoot('C:/some/file.ts', 'C:/no/root');
+    const result = toRelativeFromRoot({ cwd: 'C:/no/root', path: 'C:/some/file.ts' });
     expect(result).toBeNull();
   });
 });

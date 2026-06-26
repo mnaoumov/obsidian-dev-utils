@@ -9,7 +9,11 @@ import type {
   Promisable
 } from 'type-fest';
 
-import type { EditJsonOptions } from './json.ts';
+import type {
+  EditJsonParams,
+  EditJsonSyncParams
+} from './json.ts';
+import type { ResolvePathFromRootParams } from './root.ts';
 
 import { normalizeOptionalProperties } from '../object-utils.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/plugin/obsidian-plugin-repo-paths.ts';
@@ -89,7 +93,7 @@ export async function editNpmShrinkWrapJson(
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(getNpmShrinkWrapJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn, path: getNpmShrinkWrapJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
@@ -107,7 +111,7 @@ export async function editPackageJson(
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(getPackageJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
@@ -124,7 +128,7 @@ export function editPackageJsonSync(
     cwd,
     shouldSkipIfMissing
   } = options;
-  editJsonSync<PackageJson>(getPackageJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
+  editJsonSync<PackageJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageJson>>({ editFn, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
@@ -142,7 +146,7 @@ export async function editPackageLockJson(
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(getPackageLockJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
@@ -159,7 +163,7 @@ export function editPackageLockJsonSync(
     cwd,
     shouldSkipIfMissing
   } = options;
-  editJsonSync<PackageLockJson>(getPackageLockJsonPath(cwd), editFn, normalizeOptionalProperties<EditJsonOptions>({ shouldSkipIfMissing }));
+  editJsonSync<PackageLockJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageLockJson>>({ editFn, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
@@ -169,7 +173,10 @@ export function editPackageLockJsonSync(
  * @returns The resolved path to the `npm-shrinkwrap.json` file.
  */
 export function getNpmShrinkWrapJsonPath(cwd?: string): string {
-  return ensureNonNullable(resolvePathFromRoot(ObsidianPluginRepoPaths.NpmShrinkwrapJson, cwd), 'Could not determine the npm-shrinkwrap.json path');
+  return ensureNonNullable(
+    resolvePathFromRoot(normalizeOptionalProperties<ResolvePathFromRootParams>({ cwd, path: ObsidianPluginRepoPaths.NpmShrinkwrapJson })),
+    'Could not determine the npm-shrinkwrap.json path'
+  );
 }
 
 /**
@@ -179,7 +186,10 @@ export function getNpmShrinkWrapJsonPath(cwd?: string): string {
  * @returns The resolved path to the `package.json` file.
  */
 export function getPackageJsonPath(cwd?: string): string {
-  return ensureNonNullable(resolvePathFromRoot(ObsidianPluginRepoPaths.PackageJson, cwd), 'Could not determine the package.json path');
+  return ensureNonNullable(
+    resolvePathFromRoot(normalizeOptionalProperties<ResolvePathFromRootParams>({ cwd, path: ObsidianPluginRepoPaths.PackageJson })),
+    'Could not determine the package.json path'
+  );
 }
 
 /**
@@ -189,7 +199,10 @@ export function getPackageJsonPath(cwd?: string): string {
  * @returns The resolved path to the `package-lock.json` file.
  */
 export function getPackageLockJsonPath(cwd?: string): string {
-  return ensureNonNullable(resolvePathFromRoot(ObsidianPluginRepoPaths.PackageLockJson, cwd), 'Could not determine the package-lock.json path');
+  return ensureNonNullable(
+    resolvePathFromRoot(normalizeOptionalProperties<ResolvePathFromRootParams>({ cwd, path: ObsidianPluginRepoPaths.PackageLockJson })),
+    'Could not determine the package-lock.json path'
+  );
 }
 
 /**

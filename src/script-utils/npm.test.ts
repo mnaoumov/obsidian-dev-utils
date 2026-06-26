@@ -6,6 +6,8 @@ import {
   vi
 } from 'vitest';
 
+import type { ResolvePathFromRootParams } from './root.ts';
+
 import {
   editNpmShrinkWrapJson,
   editPackageJson,
@@ -38,7 +40,7 @@ const {
   mockEditJsonSync: vi.fn(),
   mockReadJson: vi.fn(),
   mockReadJsonSync: vi.fn(),
-  mockResolvePathFromRoot: vi.fn<(path: string, cwd?: string) => null | string>(),
+  mockResolvePathFromRoot: vi.fn<(params: ResolvePathFromRootParams) => null | string>(),
   mockWriteJson: vi.fn(),
   mockWriteJsonSync: vi.fn()
 }));
@@ -58,7 +60,7 @@ vi.mock('../script-utils/root.ts', () => ({
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mockResolvePathFromRoot.mockImplementation((path: string) => `/root/${path}`);
+  mockResolvePathFromRoot.mockImplementation((params: ResolvePathFromRootParams) => `/root/${params.path}`);
   mockEditJson.mockResolvedValue(undefined);
   mockWriteJson.mockResolvedValue(undefined);
   mockReadJson.mockResolvedValue({});
@@ -136,16 +138,14 @@ describe('editPackageJson', () => {
   it('should call editJson with resolved path', async () => {
     const editFn = vi.fn();
     await editPackageJson(editFn);
-    expect(mockEditJson).toHaveBeenCalledWith('/root/package.json', editFn, expect.any(Object));
+    expect(mockEditJson).toHaveBeenCalledWith(expect.objectContaining({ editFn, path: '/root/package.json' }));
   });
 
   it('should pass shouldSkipIfMissing option', async () => {
     const editFn = vi.fn();
     await editPackageJson(editFn, { shouldSkipIfMissing: true });
     expect(mockEditJson).toHaveBeenCalledWith(
-      '/root/package.json',
-      editFn,
-      expect.objectContaining({ shouldSkipIfMissing: true })
+      expect.objectContaining({ editFn, path: '/root/package.json', shouldSkipIfMissing: true })
     );
   });
 });
@@ -154,7 +154,7 @@ describe('editPackageJsonSync', () => {
   it('should call editJsonSync with resolved path', () => {
     const editFn = vi.fn();
     editPackageJsonSync(editFn);
-    expect(mockEditJsonSync).toHaveBeenCalledWith('/root/package.json', editFn, expect.any(Object));
+    expect(mockEditJsonSync).toHaveBeenCalledWith(expect.objectContaining({ editFn, path: '/root/package.json' }));
   });
 });
 
@@ -193,7 +193,7 @@ describe('editPackageLockJson', () => {
   it('should call editJson with resolved path', async () => {
     const editFn = vi.fn();
     await editPackageLockJson(editFn);
-    expect(mockEditJson).toHaveBeenCalledWith('/root/package-lock.json', editFn, expect.any(Object));
+    expect(mockEditJson).toHaveBeenCalledWith(expect.objectContaining({ editFn, path: '/root/package-lock.json' }));
   });
 });
 
@@ -201,7 +201,7 @@ describe('editPackageLockJsonSync', () => {
   it('should call editJsonSync with resolved path', () => {
     const editFn = vi.fn();
     editPackageLockJsonSync(editFn);
-    expect(mockEditJsonSync).toHaveBeenCalledWith('/root/package-lock.json', editFn, expect.any(Object));
+    expect(mockEditJsonSync).toHaveBeenCalledWith(expect.objectContaining({ editFn, path: '/root/package-lock.json' }));
   });
 });
 
@@ -209,6 +209,6 @@ describe('editNpmShrinkWrapJson', () => {
   it('should call editJson with resolved npm-shrinkwrap.json path', async () => {
     const editFn = vi.fn();
     await editNpmShrinkWrapJson(editFn);
-    expect(mockEditJson).toHaveBeenCalledWith('/root/npm-shrinkwrap.json', editFn, expect.any(Object));
+    expect(mockEditJson).toHaveBeenCalledWith(expect.objectContaining({ editFn, path: '/root/npm-shrinkwrap.json' }));
   });
 });

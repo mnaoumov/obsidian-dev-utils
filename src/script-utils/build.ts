@@ -64,7 +64,7 @@ export async function buildCompile(): Promise<void> {
  * @returns A {@link Promise} that resolves when the code compiles successfully.
  */
 export async function buildCompileSvelte(): Promise<void> {
-  const tsConfigPath = resolvePathFromRootSafe(ObsidianDevUtilsRepoPaths.TsConfigJson);
+  const tsConfigPath = resolvePathFromRootSafe({ path: ObsidianDevUtilsRepoPaths.TsConfigJson });
   const tsConfig = await readJson<TsConfigJson>(tsConfigPath);
   const allFiles = await toArray(glob(tsConfig.include ?? [], { exclude: tsConfig.exclude ?? [] }));
   const svelteFiles = allFiles.filter((file) => file.endsWith('.svelte') || file.endsWith('.svelte.js') || file.endsWith('.svelte.ts'));

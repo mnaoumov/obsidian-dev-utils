@@ -29,28 +29,61 @@ export interface EditJsonOptions {
 }
 
 /**
+ * Parameters for {@link editJson}.
+ *
+ * @typeParam T - The type of the data to be edited.
+ */
+export interface EditJsonParams<T> extends EditJsonOptions {
+  /**
+   * The function to edit the parsed JSON data.
+   *
+   * @param data - The parsed JSON data to edit.
+   */
+  editFn(this: void, data: T): Promisable<void>;
+
+  /**
+   * The path to the JSON file.
+   */
+  readonly path: string;
+}
+
+/**
  * Options for {@link editJsonSync}.
  */
 export type EditJsonSyncOptions = EditJsonOptions;
 
 /**
+ * Parameters for {@link editJsonSync}.
+ *
+ * @typeParam T - The type of the data to be edited.
+ */
+export interface EditJsonSyncParams<T> extends EditJsonSyncOptions {
+  /**
+   * The function to edit the parsed JSON data.
+   *
+   * @param data - The parsed JSON data to edit.
+   */
+  editFn(this: void, data: T): void;
+
+  /**
+   * The path to the JSON file.
+   */
+  readonly path: string;
+}
+
+/**
  * Reads, edits, and writes back a JSON file using a provided edit function.
  *
  * @typeParam T - The type of the data to be edited.
- * @param path - The path to the JSON file.
- * @param editFn - The function to edit the parsed JSON data.
- * @param options - Additional options for editing.
+ * @param params - The parameters for the function.
  * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-export async function editJson<T>(
-  path: string,
-  editFn: (data: T) => Promisable<void>,
-  options: EditJsonOptions = {}
-): Promise<void> {
+export async function editJson<T>(params: EditJsonParams<T>): Promise<void> {
   const {
+    editFn,
+    path,
     shouldSkipIfMissing
-  } = options;
+  } = params;
   if (shouldSkipIfMissing && !existsSync(path)) {
     return;
   }
@@ -63,19 +96,14 @@ export async function editJson<T>(
  * Reads, edits, and writes back a JSON file using a provided edit function.
  *
  * @typeParam T - The type of the data to be edited.
- * @param path - The path to the JSON file.
- * @param editFn - The function to edit the parsed JSON data.
- * @param options - Additional options for editing.
+ * @param params - The parameters for the function.
  */
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-export function editJsonSync<T>(
-  path: string,
-  editFn: (data: T) => void,
-  options: EditJsonSyncOptions = {}
-): void {
+export function editJsonSync<T>(params: EditJsonSyncParams<T>): void {
   const {
+    editFn,
+    path,
     shouldSkipIfMissing
-  } = options;
+  } = params;
   if (shouldSkipIfMissing && !existsSync(path)) {
     return;
   }
