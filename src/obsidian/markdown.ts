@@ -29,6 +29,7 @@ import {
   getZIndex,
   waitUntilConnected
 } from '../html-element.ts';
+import { normalizeOptionalProperties } from '../object-utils.ts';
 import { MonkeyAroundComponent } from './components/monkey-around-component.ts';
 import { getDomEventsHandlersConstructor } from './constructors/getDomEventsHandlersConstructor.ts';
 import {
@@ -74,6 +75,86 @@ export interface FullRenderParams {
    * The source path to resolve relative links.
    */
   readonly sourcePath?: string;
+}
+
+/**
+ * Parameters for {@link markdownToHtml}.
+ */
+export interface MarkdownToHtmlParams {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The Markdown string to convert.
+   */
+  readonly markdown: string;
+
+  /**
+   * The source path to resolve relative links.
+   */
+  readonly sourcePath?: string;
+}
+
+/**
+ * Parameters for {@link registerLinkHandlers}.
+ */
+export interface RegisterLinkHandlersParams {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The HTMLElement to register link handlers for.
+   */
+  readonly el: HTMLElement;
+
+  /**
+   * The source path to resolve relative links from.
+   */
+  readonly sourcePath?: string;
+}
+
+/**
+ * Parameters for {@link renderExternalLink}.
+ */
+export interface RenderExternalLinkParams {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The text to display for the external link.
+   */
+  readonly displayText?: string;
+
+  /**
+   * The URL to render the external link for.
+   */
+  readonly url: string;
+}
+
+/**
+ * Parameters for {@link renderInternalLink}.
+ */
+export interface RenderInternalLinkParams {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The text to display for the internal link.
+   */
+  readonly displayText?: string;
+
+  /**
+   * The path or abstract file to render the internal link for.
+   */
+  readonly pathOrAbstractFile: PathOrAbstractFile;
 }
 
 interface FixedZIndexDomEventsHandlersInfoConstructorParams {
@@ -167,19 +248,26 @@ export async function fullRender(params: FullRenderParams): Promise<void> {
   }
 
   if (params.shouldRegisterLinkHandlers) {
-    await registerLinkHandlers(params.app, params.el, params.sourcePath);
+    await registerLinkHandlers(normalizeOptionalProperties<RegisterLinkHandlersParams>({
+      app: params.app,
+      el: params.el,
+      sourcePath: params.sourcePath
+    }));
   }
 }
 
 /**
  * Converts Markdown to HTML.
  *
- * @param app - The Obsidian app instance.
- * @param markdown - The Markdown string to convert.
- * @param sourcePath - (optional) The source path to resolve relative links.
+ * @param params - The parameters for the conversion.
  * @returns The HTML string.
  */
-export async function markdownToHtml(app: App, markdown: string, sourcePath?: string): Promise<string> {
+export async function markdownToHtml(params: MarkdownToHtmlParams): Promise<string> {
+  const {
+    app,
+    markdown,
+    sourcePath
+  } = params;
   const component = new Component();
   component.load();
   const renderDiv = createDiv();
@@ -192,11 +280,14 @@ export async function markdownToHtml(app: App, markdown: string, sourcePath?: st
 /**
  * Registers link handlers for the given element.
  *
- * @param app - The Obsidian app instance.
- * @param el - The HTMLElement to register link handlers for.
- * @param sourcePath - The source path to resolve relative links from.
+ * @param params - The parameters for registering link handlers.
  */
-export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath?: string): Promise<void> {
+export async function registerLinkHandlers(params: RegisterLinkHandlersParams): Promise<void> {
+  const {
+    app,
+    el,
+    sourcePath
+  } = params;
   // eslint-disable-next-line require-atomic-updates -- No race condition.
   domEventsHandlersConstructor ??= await getDomEventsHandlersConstructor(app);
   MarkdownPreviewRenderer.registerDomEvents(
@@ -214,13 +305,15 @@ export async function registerLinkHandlers(app: App, el: HTMLElement, sourcePath
 /**
  * Renders an external link.
  *
- * @param app - The Obsidian app instance.
- * @param url - The URL to render the external link for.
- * @param displayText - The text to display for the external link.
+ * @param params - The parameters for rendering the external link.
  * @returns The HTMLAnchorElement containing the rendered external link.
  */
-export async function renderExternalLink(app: App, url: string, displayText?: string): Promise<HTMLAnchorElement> {
-  displayText ??= url;
+export async function renderExternalLink(params: RenderExternalLinkParams): Promise<HTMLAnchorElement> {
+  const {
+    app,
+    url
+  } = params;
+  const displayText = params.displayText ?? url;
   const wrapperEl = createSpan();
   await fullRender({
     app,
@@ -228,22 +321,27 @@ export async function renderExternalLink(app: App, url: string, displayText?: st
     markdown: `[${displayText}](${url})`
   });
   const aEl = wrapperEl.find('a') as HTMLAnchorElement;
-  await registerLinkHandlers(app, aEl);
+  await registerLinkHandlers({
+    app,
+    el: aEl
+  });
   return aEl;
 }
 
 /**
  * Renders an internal link.
  *
- * @param app - The Obsidian app instance.
- * @param pathOrAbstractFile - The path or abstract file to render the internal link for.
- * @param displayText - The text to display for the internal link.
+ * @param params - The parameters for rendering the internal link.
  * @returns The HTMLAnchorElement containing the rendered internal link.
  */
-export async function renderInternalLink(app: App, pathOrAbstractFile: PathOrAbstractFile, displayText?: string): Promise<HTMLAnchorElement> {
+export async function renderInternalLink(params: RenderInternalLinkParams): Promise<HTMLAnchorElement> {
+  const {
+    app,
+    pathOrAbstractFile
+  } = params;
   const abstractFile = getAbstractFileOrNull({ app, pathOrFile: pathOrAbstractFile });
   const path = getPath(app, pathOrAbstractFile);
-  displayText ??= path;
+  const displayText = params.displayText ?? path;
   if (isFolder(abstractFile)) {
     return createEl('a', { text: displayText }, (aEl) => {
       aEl.addEventListener('click', (evt) => {
@@ -260,7 +358,10 @@ export async function renderInternalLink(app: App, pathOrAbstractFile: PathOrAbs
     markdown: `[[${path}|${displayText}]]`
   });
   const aEl = wrapperEl.find('a') as HTMLAnchorElement;
-  await registerLinkHandlers(app, aEl);
+  await registerLinkHandlers({
+    app,
+    el: aEl
+  });
   return aEl;
 }
 

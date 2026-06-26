@@ -179,6 +179,26 @@ export interface GetAttachmentFilePathParams {
 }
 
 /**
+ * Parameters for {@link getAttachmentFolderPath}.
+ */
+export interface GetAttachmentFolderPathParams {
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The context.
+   */
+  readonly context?: AttachmentPathContext;
+
+  /**
+   * The path of the note.
+   */
+  readonly notePathOrFile: PathOrFile;
+}
+
+/**
  * Options for the getAvailablePathForAttachments function.
  */
 export interface GetAvailablePathForAttachmentsParams {
@@ -206,6 +226,26 @@ export interface GetAvailablePathForAttachmentsParams {
    * Should missing attachment folder creation be skipped.
    */
   readonly shouldSkipMissingAttachmentFolderCreation?: boolean;
+}
+
+/**
+ * Parameters for {@link hasOwnAttachmentFolder}.
+ */
+export interface HasOwnAttachmentFolderParams {
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The context.
+   */
+  readonly context?: AttachmentPathContext;
+
+  /**
+   * The path of the note.
+   */
+  readonly path: string;
 }
 
 /**
@@ -255,12 +295,15 @@ export async function getAttachmentFilePath(params: GetAttachmentFilePathParams)
 /**
  * Retrieves the attachment folder path for a given note.
  *
- * @param app - The Obsidian application instance.
- * @param notePathOrFile - The path of the note.
- * @param context - The context.
+ * @param params - Parameters for the get attachment folder path function.
  * @returns A {@link Promise} that resolves to the attachment folder path.
  */
-export async function getAttachmentFolderPath(app: App, notePathOrFile: PathOrFile, context = AttachmentPathContext.Unknown): Promise<string> {
+export async function getAttachmentFolderPath(params: GetAttachmentFolderPathParams): Promise<string> {
+  const {
+    app,
+    context = AttachmentPathContext.Unknown,
+    notePathOrFile
+  } = params;
   return parentFolderPath(
     await getAttachmentFilePath({
       app,
@@ -326,14 +369,25 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
 /**
  * Checks if a note has its own attachment folder.
  *
- * @param app - The Obsidian application instance.
- * @param path - The path of the note.
- * @param context - The context.
+ * @param params - Parameters for the has own attachment folder function.
  * @returns A {@link Promise} that resolves to a boolean indicating whether the note has its own attachment folder.
  */
-export async function hasOwnAttachmentFolder(app: App, path: string, context = AttachmentPathContext.Unknown): Promise<boolean> {
-  const attachmentFolderPath = await getAttachmentFolderPath(app, path, context);
-  const dummyAttachmentFolderPath = await getAttachmentFolderPath(app, join(dirname(path), `${DUMMY_PATH}.${MARKDOWN_FILE_EXTENSION}`), context);
+export async function hasOwnAttachmentFolder(params: HasOwnAttachmentFolderParams): Promise<boolean> {
+  const {
+    app,
+    context = AttachmentPathContext.Unknown,
+    path
+  } = params;
+  const attachmentFolderPath = await getAttachmentFolderPath({
+    app,
+    context,
+    notePathOrFile: path
+  });
+  const dummyAttachmentFolderPath = await getAttachmentFolderPath({
+    app,
+    context,
+    notePathOrFile: join(dirname(path), `${DUMMY_PATH}.${MARKDOWN_FILE_EXTENSION}`)
+  });
   return attachmentFolderPath !== dummyAttachmentFolderPath;
 }
 

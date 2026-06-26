@@ -6,6 +6,7 @@
 
 import type { Promisable } from 'type-fest';
 
+import { abortSignalNever } from '../abort-controller.ts';
 import {
   getLibDebugger,
   printWithStackTrace
@@ -13,23 +14,48 @@ import {
 import { getStackTrace } from '../error.ts';
 
 /**
+ * Parameters for {@link invokeAsyncAndLog}.
+ */
+export interface InvokeAsyncAndLogParams {
+  /**
+   * The abort signal to control the execution of the function.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * The function to invoke.
+   *
+   * @param abortSignal - The abort signal to control the execution of the function.
+   * @returns A {@link Promisable} that resolves when the function is complete.
+   */
+  fn(this: void, abortSignal: AbortSignal): Promisable<void>;
+
+  /**
+   * Optional stack trace.
+   */
+  readonly stackTrace?: string;
+
+  /**
+   * The title of the log.
+   */
+  readonly title: string;
+}
+
+/**
  * Invokes a function and logs the start, end, and duration of the invocation.
  *
- * @param title - The title of the log.
- * @param fn - The function to invoke.
- * @param abortSignal - The abort signal to control the execution of the function.
- * @param stackTrace - Optional stack trace.
+ * @param params - The parameters for the invocation.
  */
-export async function invokeAsyncAndLog(
-  title: string,
-  fn: (abortSignal: AbortSignal) => Promisable<void>,
-  abortSignal: AbortSignal,
-  stackTrace?: string
-): Promise<void> {
+export async function invokeAsyncAndLog(params: InvokeAsyncAndLogParams): Promise<void> {
+  const {
+    abortSignal = abortSignalNever(),
+    fn,
+    title
+  } = params;
   abortSignal.throwIfAborted();
   const invokeAsyncAndLogDebugger = getLibDebugger('Logger:invokeAsyncAndLog');
   const timestampStart = performance.now();
-  stackTrace ??= getStackTrace(1);
+  const stackTrace = params.stackTrace ?? getStackTrace(1);
   printWithStackTrace({
     args: [{
       fn,

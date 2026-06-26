@@ -12,6 +12,7 @@ import {
 import type { GenericAsyncFunction } from '../function.ts';
 import type { DataviewInlineApi } from './dataview.ts';
 import type { GetFileParams } from './file-system.ts';
+import type { RelativePathToResourceUrlParams } from './resource-url.ts';
 
 import { waitForAllAsyncOperations } from '../async.ts';
 import {
@@ -49,7 +50,7 @@ vi.mock('../obsidian/file-system.ts', () => ({
 
 vi.mock('../obsidian/resource-url.ts', () => ({
   relativePathToResourceUrl: vi.fn(
-    (_app: unknown, path: string, _notePath: string) => `app://resource/${path}`
+    (params: RelativePathToResourceUrlParams) => `app://resource/${params.relativePath}`
   )
 }));
 
@@ -227,7 +228,7 @@ describe('insertCodeBlock', () => {
   it('should create a paragraph with fenced code block', () => {
     const dv = createMockDv();
 
-    insertCodeBlock(dv, 'js', 'const x = 1;');
+    insertCodeBlock({ code: 'const x = 1;', dv, language: 'js' });
 
     expect(dv.paragraph).toHaveBeenCalledWith('```js\nconst x = 1;\n```');
   });
@@ -235,7 +236,7 @@ describe('insertCodeBlock', () => {
   it('should use 3 backticks for code without backtick fences', () => {
     const dv = createMockDv();
 
-    insertCodeBlock(dv, 'python', 'print("hello")');
+    insertCodeBlock({ code: 'print("hello")', dv, language: 'python' });
 
     const call = vi.mocked(dv.paragraph).mock.calls[0];
     const text = call?.[0] as string;
@@ -247,7 +248,7 @@ describe('insertCodeBlock', () => {
     const dv = createMockDv();
     const codeWithFence = '```\ninner code\n```';
 
-    insertCodeBlock(dv, 'md', codeWithFence);
+    insertCodeBlock({ code: codeWithFence, dv, language: 'md' });
 
     const call = vi.mocked(dv.paragraph).mock.calls[0];
     const text = call?.[0] as string;
@@ -259,7 +260,7 @@ describe('insertCodeBlock', () => {
     const dv = createMockDv();
     const codeWithFence = '````\ninner code\n````';
 
-    insertCodeBlock(dv, 'md', codeWithFence);
+    insertCodeBlock({ code: codeWithFence, dv, language: 'md' });
 
     const call = vi.mocked(dv.paragraph).mock.calls[0];
     const text = call?.[0] as string;
@@ -270,7 +271,7 @@ describe('insertCodeBlock', () => {
   it('should handle empty code string', () => {
     const dv = createMockDv();
 
-    insertCodeBlock(dv, 'text', '');
+    insertCodeBlock({ code: '', dv, language: 'text' });
 
     expect(dv.paragraph).toHaveBeenCalledWith('```text\n\n```');
   });
@@ -279,7 +280,7 @@ describe('insertCodeBlock', () => {
     const dv = createMockDv();
     const codeWithMixedFences = '```\nshort\n```\n`````\nlong\n`````';
 
-    insertCodeBlock(dv, 'md', codeWithMixedFences);
+    insertCodeBlock({ code: codeWithMixedFences, dv, language: 'md' });
 
     const call = vi.mocked(dv.paragraph).mock.calls[0];
     const text = call?.[0] as string;

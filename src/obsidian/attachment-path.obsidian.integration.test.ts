@@ -24,7 +24,7 @@ describe('attachment-path', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian['attachment-path'].getAttachmentFolderPath(app, 'test-note.md');
+          return lib.obsidian['attachment-path'].getAttachmentFolderPath({ app, notePathOrFile: 'test-note.md' });
         },
         vaultPath: inject('tempVaultPath')
       });
@@ -97,7 +97,7 @@ describe('attachment-path', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian['attachment-path'].hasOwnAttachmentFolder(app, 'test-note.md');
+          return lib.obsidian['attachment-path'].hasOwnAttachmentFolder({ app, path: 'test-note.md' });
         },
         vaultPath: inject('tempVaultPath')
       });

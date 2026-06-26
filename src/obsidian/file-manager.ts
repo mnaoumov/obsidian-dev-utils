@@ -31,6 +31,46 @@ import {
 import { process } from './vault.ts';
 
 /**
+ * Parameters for {@link addAlias}.
+ */
+export interface AddAliasParams {
+  /**
+   * The alias to add.
+   */
+  readonly alias?: string;
+
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or TFile object representing the note.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
+ * Parameters for {@link deleteAlias}.
+ */
+export interface DeleteAliasParams {
+  /**
+   * The alias to delete.
+   */
+  readonly alias?: string;
+
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or TFile object representing the note.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
  * Options for {@link processFrontmatter}.
  */
 export type ProcessFrontmatterOptions = ProcessOptions;
@@ -38,12 +78,15 @@ export type ProcessFrontmatterOptions = ProcessOptions;
 /**
  * Adds an alias to the front matter of a given file if it does not already exist.
  *
- * @param app - The Obsidian app instance.
- * @param pathOrFile - The path or TFile object representing the note.
- * @param alias - The alias to add.
+ * @param params - The parameters for adding the alias.
  * @returns A {@link Promise} that resolves when the alias has been added.
  */
-export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string): Promise<void> {
+export async function addAlias(params: AddAliasParams): Promise<void> {
+  const {
+    alias,
+    app,
+    pathOrFile
+  } = params;
   if (!alias) {
     return;
   }
@@ -70,12 +113,15 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
 /**
  * Deletes an alias from the front matter of a given file if it exists.
  *
- * @param app - The Obsidian app instance.
- * @param pathOrFile - The path or TFile object representing the note.
- * @param alias - The alias to delete.
+ * @param params - The parameters for deleting the alias.
  * @returns A {@link Promise} that resolves when the alias has been deleted.
  */
-export async function deleteAlias(app: App, pathOrFile: PathOrFile, alias?: string): Promise<void> {
+export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
+  const {
+    alias,
+    app,
+    pathOrFile
+  } = params;
   if (!alias) {
     return;
   }

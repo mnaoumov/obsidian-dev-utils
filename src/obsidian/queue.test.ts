@@ -7,6 +7,7 @@ import {
 } from 'vitest';
 
 import type { RunWithTimeoutNoticeParams } from './async-with-notice.ts';
+import type { InvokeAsyncAndLogParams } from './logger.ts';
 
 import {
   noop,
@@ -23,8 +24,8 @@ const mocks = vi.hoisted(() => ({
     await fn();
   }),
   getObsidianDevUtilsState: vi.fn(),
-  invokeAsyncAndLog: vi.fn(async (_name: string, fn: (signal: AbortSignal) => Promise<void>, signal: AbortSignal) => {
-    await fn(signal);
+  invokeAsyncAndLog: vi.fn(async (params: InvokeAsyncAndLogParams) => {
+    await params.fn(params.abortSignal ?? new AbortController().signal);
   }),
   invokeAsyncSafely: vi.fn((fn: () => Promise<unknown>) => {
     fn().catch(() => undefined);

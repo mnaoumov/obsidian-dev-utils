@@ -158,6 +158,26 @@ const paginationCss = `
 export type ArrayOrDataArray<T> = DataArray<T> | T[];
 
 /**
+ * Parameters for {@link insertCodeBlock}.
+ */
+export interface InsertCodeBlockParams {
+  /**
+   * The code content to be inserted into the code block.
+   */
+  readonly code: string;
+
+  /**
+   * The DataviewInlineApi instance to insert the code block into.
+   */
+  readonly dv: DataviewInlineApi;
+
+  /**
+   * The language identifier for the code block.
+   */
+  readonly language: string;
+}
+
+/**
  * Options for {@link renderIframe}.
  */
 export interface RenderIframeParams {
@@ -262,6 +282,26 @@ export interface RenderPaginatedTableParams<T> {
 }
 
 /**
+ * Parameters for {@link createPageLink}.
+ */
+interface CreatePageLinkParams {
+  /**
+   * The page number the link points to.
+   */
+  readonly currentPageNumber: number;
+
+  /**
+   * Whether the link is disabled.
+   */
+  readonly disabled?: boolean;
+
+  /**
+   * The text to display for the link.
+   */
+  readonly text: string;
+}
+
+/**
  * Renders the content using the provided renderer function in a temporary container,
  * and then returns the container.
  *
@@ -292,11 +332,14 @@ export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () =
 /**
  * Inserts a code block into the specified Dataview instance using the provided language and code.
  *
- * @param dv - The DataviewInlineApi instance to insert the code block into.
- * @param language - The language identifier for the code block.
- * @param code - The code content to be inserted into the code block.
+ * @param params - The parameters for inserting the code block.
  */
-export function insertCodeBlock(dv: DataviewInlineApi, language: string, code: string): void {
+export function insertCodeBlock(params: InsertCodeBlockParams): void {
+  const {
+    code,
+    dv,
+    language
+  } = params;
   const MIN_FENCE_LENGTH = 3;
   const fenceRegExp = new RegExp(`^\`{${String(MIN_FENCE_LENGTH)},}`, 'gm');
   const fenceMatches = code.matchAll(fenceRegExp);
@@ -325,7 +368,11 @@ export function renderIframe(params: RenderIframeParams): void {
   dv.el('iframe', '', {
     attr: {
       height,
-      src: relativePathToResourceUrl(dv.app, getPath(dv.app, relativePathOrFile), dv.current().file.path),
+      src: relativePathToResourceUrl({
+        app: dv.app,
+        notePath: dv.current().file.path,
+        relativePath: getPath(dv.app, relativePathOrFile)
+      }),
       width
     }
   });
@@ -415,15 +462,15 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
     const paginationDiv = container.createDiv({ cls: 'pagination' });
     const paginationRow1Div = paginationDiv.createDiv();
 
-    createPageLink('First', 1, pageNumber === 1);
-    createPageLink('Prev', pageNumber - 1, pageNumber === 1);
+    createPageLink({ currentPageNumber: 1, disabled: pageNumber === 1, text: 'First' });
+    createPageLink({ currentPageNumber: pageNumber - 1, disabled: pageNumber === 1, text: 'Prev' });
 
     if (pageNumber > MORE_PAGE_NUMBER) {
       paginationRow1Div.createSpan({ text: '...' });
     }
 
     for (let i = Math.max(1, pageNumber - SECOND_PAGE_NUMBER); i <= Math.min(totalPages, pageNumber + SECOND_PAGE_NUMBER); i++) {
-      const pageLink = createPageLink(String(i), i, i === pageNumber);
+      const pageLink = createPageLink({ currentPageNumber: i, disabled: i === pageNumber, text: String(i) });
       if (i === pageNumber) {
         pageLink.addClass('current');
       }
@@ -433,8 +480,8 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
       paginationRow1Div.createSpan({ text: '...' });
     }
 
-    createPageLink('Next', pageNumber + 1, pageNumber === totalPages);
-    createPageLink('Last', totalPages, pageNumber === totalPages);
+    createPageLink({ currentPageNumber: pageNumber + 1, disabled: pageNumber === totalPages, text: 'Next' });
+    createPageLink({ currentPageNumber: totalPages, disabled: pageNumber === totalPages, text: 'Last' });
 
     const paginationRow2Div = paginationDiv.createDiv();
 
@@ -471,7 +518,7 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
 
     paginationRow2Div.createSpan({ text: t(($) => $.obsidianDevUtils.dataview.pageHeader, { pageNumber, totalItems: rows.length, totalPages }) });
 
-    function createPageLink(text: string, currentPageNumber: number, disabled = false): HTMLAnchorElement {
+    function createPageLink({ currentPageNumber, disabled = false, text }: CreatePageLinkParams): HTMLAnchorElement {
       const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${String(currentPageNumber)}`, text });
       if (disabled) {
         link.addClass('disabled');

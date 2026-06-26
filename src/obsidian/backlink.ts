@@ -99,7 +99,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
   const backlinkRows: [Link, string[]][] = [];
 
   for (const file of files) {
-    const link = fixTitle(dv, file.path);
+    const link = fixTitle({ dv, pathOrFile: file.path });
     const backlinks = await getBacklinksForFileSafe(dv.app, file);
     const backlinkLinks = backlinks.keys().map((backLinkPath) => {
       const markdownLink = generateMarkdownLink({

@@ -86,29 +86,29 @@ describe('addAlias', () => {
   });
 
   it('should do nothing when alias is empty', async () => {
-    await addAlias(app, 'note.md', '');
+    await addAlias({ alias: '', app, pathOrFile: 'note.md' });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias is undefined', async () => {
-    await addAlias(app, 'note.md', undefined);
+    await addAlias({ app, pathOrFile: 'note.md' });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(addAlias(app, 'image.png', 'my-alias')).rejects.toThrow('not a markdown file');
+    await expect(addAlias({ alias: 'my-alias', app, pathOrFile: 'image.png' })).rejects.toThrow('not a markdown file');
   });
 
   it('should do nothing when alias matches basename', async () => {
     vi.mocked(getFile).mockReturnValue(strictProxy<TFile>({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' }));
-    await addAlias(app, 'note.md', 'note');
+    await addAlias({ alias: 'note', app, pathOrFile: 'note.md' });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias matches file name', async () => {
     vi.mocked(getFile).mockReturnValue(strictProxy<TFile>({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' }));
-    await addAlias(app, 'note.md', 'note.md');
+    await addAlias({ alias: 'note.md', app, pathOrFile: 'note.md' });
     expect(process).not.toHaveBeenCalled();
   });
 
@@ -122,7 +122,7 @@ describe('addAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
 
-    await addAlias(app, 'note.md', 'my-alias');
+    await addAlias({ alias: 'my-alias', app, pathOrFile: 'note.md' });
     expect(process).toHaveBeenCalled();
   });
 
@@ -136,7 +136,7 @@ describe('addAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\naliases: existing-alias\n---\ncontent' });
     });
 
-    await addAlias(app, 'note.md', 'existing-alias');
+    await addAlias({ alias: 'existing-alias', app, pathOrFile: 'note.md' });
     expect(frontmatter.aliases).toEqual(['existing-alias']);
   });
 });
@@ -154,18 +154,18 @@ describe('deleteAlias', () => {
   });
 
   it('should do nothing when alias is empty', async () => {
-    await deleteAlias(app, 'note.md', '');
+    await deleteAlias({ alias: '', app, pathOrFile: 'note.md' });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias is undefined', async () => {
-    await deleteAlias(app, 'note.md', undefined);
+    await deleteAlias({ app, pathOrFile: 'note.md' });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(deleteAlias(app, 'image.png', 'my-alias')).rejects.toThrow('not a markdown file');
+    await expect(deleteAlias({ alias: 'my-alias', app, pathOrFile: 'image.png' })).rejects.toThrow('not a markdown file');
   });
 
   it('should delete an alias from frontmatter', async () => {
@@ -177,7 +177,7 @@ describe('deleteAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\naliases:\n  - keep\n  - remove\n---\ncontent' });
     });
 
-    await deleteAlias(app, 'note.md', 'remove');
+    await deleteAlias({ alias: 'remove', app, pathOrFile: 'note.md' });
     expect(process).toHaveBeenCalled();
   });
 
@@ -190,7 +190,7 @@ describe('deleteAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\naliases: only\n---\ncontent' });
     });
 
-    await deleteAlias(app, 'note.md', 'only');
+    await deleteAlias({ alias: 'only', app, pathOrFile: 'note.md' });
     expect(process).toHaveBeenCalled();
   });
 
@@ -202,7 +202,7 @@ describe('deleteAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
 
-    await deleteAlias(app, 'note.md', 'my-alias');
+    await deleteAlias({ alias: 'my-alias', app, pathOrFile: 'note.md' });
     expect(process).toHaveBeenCalled();
   });
 });

@@ -378,14 +378,24 @@ class DeleteHandler {
       return;
     }
 
-    const attachmentFolderPath = await getAttachmentFolderPath(this.app, this.file.path, AttachmentPathContext.DeleteNote);
+    const attachmentFolderPath = await getAttachmentFolderPath({
+      app: this.app,
+      context: AttachmentPathContext.DeleteNote,
+      notePathOrFile: this.file.path
+    });
     const attachmentFolder = getFolderOrNull({ app: this.app, pathOrFolder: attachmentFolderPath });
 
     if (!attachmentFolder) {
       return;
     }
 
-    if (!await hasOwnAttachmentFolder(this.app, this.file.path, AttachmentPathContext.DeleteNote)) {
+    if (
+      !await hasOwnAttachmentFolder({
+        app: this.app,
+        context: AttachmentPathContext.DeleteNote,
+        path: this.file.path
+      })
+    ) {
       return;
     }
 
@@ -854,7 +864,11 @@ class RenameMap {
       }
 
       try {
-        oldAttachmentFolderPath = await getAttachmentFolderPath(this.app, this.oldPath, AttachmentPathContext.RenameNote);
+        oldAttachmentFolderPath = await getAttachmentFolderPath({
+          app: this.app,
+          context: AttachmentPathContext.RenameNote,
+          notePathOrFile: this.oldPath
+        });
       } finally {
         if (shouldFakeOldPathCache) {
           unregisterFileCacheForNonExistingFile(this.app, oldFile);
@@ -863,7 +877,11 @@ class RenameMap {
     });
 
     const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
-      ? await getAttachmentFolderPath(this.app, this.newPath, AttachmentPathContext.RenameNote)
+      ? await getAttachmentFolderPath({
+        app: this.app,
+        context: AttachmentPathContext.RenameNote,
+        notePathOrFile: this.newPath
+      })
       : oldAttachmentFolderPath;
 
     const isOldAttachmentFolderAtRoot = oldAttachmentFolderPath === '/';
@@ -880,7 +898,13 @@ class RenameMap {
 
     const oldAttachmentFiles: TFile[] = [];
 
-    if (await hasOwnAttachmentFolder(this.app, this.oldPath, AttachmentPathContext.RenameNote)) {
+    if (
+      await hasOwnAttachmentFolder({
+        app: this.app,
+        context: AttachmentPathContext.RenameNote,
+        path: this.oldPath
+      })
+    ) {
       Vault.recurseChildren(oldAttachmentFolder, (oldAttachmentFile) => {
         this.abortSignal.throwIfAborted();
         if (isFile(oldAttachmentFile)) {

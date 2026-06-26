@@ -24,7 +24,7 @@ describe('markdown', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian.markdown.markdownToHtml(app, '**bold** and *italic*');
+          return lib.obsidian.markdown.markdownToHtml({ app, markdown: '**bold** and *italic*' });
         },
         vaultPath: inject('tempVaultPath')
       });
@@ -40,7 +40,7 @@ describe('markdown', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian.markdown.markdownToHtml(app, '# Heading 1\n## Heading 2');
+          return lib.obsidian.markdown.markdownToHtml({ app, markdown: '# Heading 1\n## Heading 2' });
         },
         vaultPath: inject('tempVaultPath')
       });
@@ -56,7 +56,7 @@ describe('markdown', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian.markdown.markdownToHtml(app, '- item 1\n- item 2\n- item 3');
+          return lib.obsidian.markdown.markdownToHtml({ app, markdown: '- item 1\n- item 2\n- item 3' });
         },
         vaultPath: inject('tempVaultPath')
       });
@@ -74,7 +74,7 @@ describe('markdown', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian.markdown.markdownToHtml(app, 'use `console.log()` here');
+          return lib.obsidian.markdown.markdownToHtml({ app, markdown: 'use `console.log()` here' });
         },
         vaultPath: inject('tempVaultPath')
       });
@@ -90,7 +90,7 @@ describe('markdown', () => {
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
-          return lib.obsidian.markdown.markdownToHtml(app, '');
+          return lib.obsidian.markdown.markdownToHtml({ app, markdown: '' });
         },
         vaultPath: inject('tempVaultPath')
       });

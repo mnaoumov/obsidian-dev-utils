@@ -33,25 +33,25 @@ function createMockApp(fullRealPath: string): App {
 describe('relativePathToResourceUrl', () => {
   it('should convert a relative path to a resource URL', () => {
     const app = createMockApp('C:\\vault\\notes\\note.md');
-    const result = relativePathToResourceUrl(app, 'image.png', 'notes/note.md');
+    const result = relativePathToResourceUrl({ app, notePath: 'notes/note.md', relativePath: 'image.png' });
     expect(result).toBe('app://local/C:/vault/notes/image.png');
   });
 
   it('should handle relative paths with subdirectories', () => {
     const app = createMockApp('C:\\vault\\notes\\note.md');
-    const result = relativePathToResourceUrl(app, 'attachments/photo.jpg', 'notes/note.md');
+    const result = relativePathToResourceUrl({ app, notePath: 'notes/note.md', relativePath: 'attachments/photo.jpg' });
     expect(result).toBe('app://local/C:/vault/notes/attachments/photo.jpg');
   });
 
   it('should handle parent directory references', () => {
     const app = createMockApp('C:\\vault\\notes\\sub\\note.md');
-    const result = relativePathToResourceUrl(app, '../image.png', 'notes/sub/note.md');
+    const result = relativePathToResourceUrl({ app, notePath: 'notes/sub/note.md', relativePath: '../image.png' });
     expect(result).toBe('app://local/C:/vault/notes/image.png');
   });
 
   it('should handle already-POSIX paths from adapter', () => {
     const app = createMockApp('/home/user/vault/note.md');
-    const result = relativePathToResourceUrl(app, 'file.pdf', 'note.md');
+    const result = relativePathToResourceUrl({ app, notePath: 'note.md', relativePath: 'file.pdf' });
     expect(result).toBe('app://local//home/user/vault/file.pdf');
   });
 });

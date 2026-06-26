@@ -175,12 +175,12 @@ async function processNextQueueItem(): Promise<void> {
     runWithTimeoutNotice({
       context: { queuedFn: item.operationFn },
       async operationFn(abortSignal: AbortSignal): Promise<void> {
-        await invokeAsyncAndLog(
-          item.operationName || processNextQueueItem.name,
-          item.operationFn,
-          abortSignalAny(abortSignal, item.abortSignal),
-          item.stackTrace
-        );
+        await invokeAsyncAndLog({
+          abortSignal: abortSignalAny(abortSignal, item.abortSignal),
+          fn: item.operationFn,
+          stackTrace: item.stackTrace,
+          title: item.operationName || processNextQueueItem.name
+        });
       },
       operationName: item.operationName,
       pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
