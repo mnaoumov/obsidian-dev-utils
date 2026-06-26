@@ -41,7 +41,7 @@ describe('backlinks via metadata cache', () => {
         await lib.obsidian['metadata-cache'].ensureMetadataCacheReady(app);
 
         try {
-          const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe(app, 'backlink-target.md');
+          const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe({ app, pathOrFile: 'backlink-target.md' });
           return {
             backlinkCount: backlinks.count(),
             backlinkKeys: backlinks.keys()
@@ -77,7 +77,7 @@ describe('backlinks via metadata cache', () => {
         await lib.obsidian['metadata-cache'].ensureMetadataCacheReady(app);
 
         try {
-          const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe(app, 'backlink-isolated.md');
+          const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe({ app, pathOrFile: 'backlink-isolated.md' });
           return {
             backlinkCount: backlinks.count(),
             backlinkKeys: backlinks.keys()

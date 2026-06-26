@@ -1648,7 +1648,7 @@ describe('app-dependent functions', () => {
     });
 
     vi.mocked(tempRegisterFilesAndRun).mockImplementation(
-      (_theApp: AppOriginal, _files: unknown[], fn: () => unknown) => fn()
+      (params) => params.fn()
     );
     vi.mocked(getCacheSafe).mockResolvedValue(null);
     vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({}));
@@ -1657,7 +1657,7 @@ describe('app-dependent functions', () => {
       keys: () => []
     }));
     vi.mocked(applyContentChanges).mockImplementation(
-      async (_signal, content, _path, changesProvider) => {
+      async ({ changesProvider, content }) => {
         if (typeof changesProvider === 'function') {
           await (changesProvider as () => Promise<unknown>)();
         }
@@ -1670,21 +1670,21 @@ describe('app-dependent functions', () => {
   describe('extractLinkFile', () => {
     it('should return the file when found by getFirstLinkpathDest', () => {
       const link = { link: 'target', original: '[[target]]' } as Reference;
-      const result = extractLinkFile(app, link, 'note.md');
+      const result = extractLinkFile({ app, link, sourcePathOrFile: 'note.md' });
       assertNonNullable(result);
       expect(result.path).toBe('target.md');
     });
 
     it('should return null when file not found and shouldAllowNonExistingFile is false', () => {
       const link = { link: 'nonexistent', original: '[[nonexistent]]' } as Reference;
-      const result = extractLinkFile(app, link, 'note.md');
+      const result = extractLinkFile({ app, link, sourcePathOrFile: 'note.md' });
       expect(result).toBeNull();
     });
 
     it('should return file for absolute path when shouldAllowNonExistingFile is true', () => {
       const link = { link: '/target.md', original: '[[/target.md]]' } as Reference;
       app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
-      const result = extractLinkFile(app, link, 'note.md', true);
+      const result = extractLinkFile({ app, link, shouldAllowNonExistingFile: true, sourcePathOrFile: 'note.md' });
       assertNonNullable(result);
       expect(result.path).toBe('target.md');
     });
@@ -1692,7 +1692,7 @@ describe('app-dependent functions', () => {
     it('should return file for relative path when shouldAllowNonExistingFile is true', () => {
       const link = { link: 'other.md', original: '[[other.md]]' } as Reference;
       app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
-      const result = extractLinkFile(app, link, 'folder/source.md', true);
+      const result = extractLinkFile({ app, link, shouldAllowNonExistingFile: true, sourcePathOrFile: 'folder/source.md' });
       assertNonNullable(result);
       expect(result.path).toBe('folder/other.md');
     });
@@ -1700,7 +1700,7 @@ describe('app-dependent functions', () => {
     it('should return null when relative path goes outside vault', () => {
       const link = { link: '../../outside', original: '[[../../outside]]' } as Reference;
       app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
-      const result = extractLinkFile(app, link, 'note.md', true);
+      const result = extractLinkFile({ app, link, shouldAllowNonExistingFile: true, sourcePathOrFile: 'note.md' });
       expect(result).toBeNull();
     });
   });
@@ -2377,11 +2377,11 @@ describe('app-dependent functions', () => {
         sections: undefined
       }));
 
-      const result = await editLinksInContent(
+      const result = await editLinksInContent({
         app,
-        '# Note\n[[target]]',
-        () => '[[new-target]]'
-      );
+        content: '# Note\n[[target]]',
+        linkConverter: () => '[[new-target]]'
+      });
 
       expect(result).toBeDefined();
     });
@@ -2399,11 +2399,11 @@ describe('app-dependent functions', () => {
         sections: undefined
       }));
 
-      const result = await editLinksInContent(
+      const result = await editLinksInContent({
         app,
-        '[[target]]',
-        () => undefined
-      );
+        content: '[[target]]',
+        linkConverter: () => undefined
+      });
 
       expect(result).toBeDefined();
     });
@@ -2424,11 +2424,11 @@ describe('app-dependent functions', () => {
         }]
       }));
 
-      const result = await editLinksInContent(
+      const result = await editLinksInContent({
         app,
-        '| [[target]] |',
-        () => '[[new|alias]]'
-      );
+        content: '| [[target]] |',
+        linkConverter: () => '[[new|alias]]'
+      });
 
       expect(result).toBeDefined();
     });
@@ -2436,11 +2436,11 @@ describe('app-dependent functions', () => {
     it('should handle null cache', async () => {
       vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>(null));
 
-      const result = await editLinksInContent(
+      const result = await editLinksInContent({
         app,
-        'no links',
-        () => '[[new]]'
-      );
+        content: 'no links',
+        linkConverter: () => '[[new]]'
+      });
 
       expect(result).toBeDefined();
     });
@@ -2448,18 +2448,18 @@ describe('app-dependent functions', () => {
 
   describe('editLinks', () => {
     it('should call applyFileChanges', async () => {
-      await editLinks(
+      await editLinks({
         app,
-        'note.md',
-        () => '[[updated]]'
-      );
+        linkConverter: () => '[[updated]]',
+        pathOrFile: 'note.md'
+      });
 
       expect(applyFileChanges).toHaveBeenCalled();
     });
 
     it('should invoke changesProvider when applyFileChanges calls it', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
-        async (_theApp, _pathOrFile, changesProvider) => {
+        async ({ changesProvider }) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
             await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
@@ -2479,18 +2479,18 @@ describe('app-dependent functions', () => {
         sections: undefined
       }));
 
-      await editLinks(
+      await editLinks({
         app,
-        'note.md',
-        () => '[[updated]]'
-      );
+        linkConverter: () => '[[updated]]',
+        pathOrFile: 'note.md'
+      });
 
       expect(applyFileChanges).toHaveBeenCalled();
     });
 
     it('should return null from changesProvider when content differs from cachedRead', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
-        async (_theApp, _pathOrFile, changesProvider) => {
+        async ({ changesProvider }) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
             await resolveValue(changesProvider, { abortSignal, content: 'different content' });
@@ -2500,11 +2500,11 @@ describe('app-dependent functions', () => {
 
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({}));
 
-      await editLinks(
+      await editLinks({
         app,
-        'note.md',
-        () => '[[updated]]'
-      );
+        linkConverter: () => '[[updated]]',
+        pathOrFile: 'note.md'
+      });
 
       expect(applyFileChanges).toHaveBeenCalled();
     });
@@ -2530,7 +2530,7 @@ describe('app-dependent functions', () => {
 
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
-        async (_theApp, _pathOrFile, changesProvider) => {
+        async ({ changesProvider }) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
             await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
@@ -2547,11 +2547,11 @@ describe('app-dependent functions', () => {
       }));
 
       const linkConverter = vi.fn(() => '[[new-target]]');
-      await editBacklinks(
+      await editBacklinks({
         app,
-        'target.md',
-        linkConverter
-      );
+        linkConverter,
+        pathOrFile: 'target.md'
+      });
 
       expect(applyFileChanges).toHaveBeenCalled();
       expect(linkConverter).toHaveBeenCalled();
@@ -2571,7 +2571,7 @@ describe('app-dependent functions', () => {
 
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
-        async (_theApp, _pathOrFile, changesProvider) => {
+        async ({ changesProvider }) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
             await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
@@ -2587,11 +2587,11 @@ describe('app-dependent functions', () => {
       }));
 
       const linkConverter = vi.fn(() => '[[new-target]]');
-      await editBacklinks(
+      await editBacklinks({
         app,
-        'target.md',
-        linkConverter
-      );
+        linkConverter,
+        pathOrFile: 'target.md'
+      });
 
       expect(applyFileChanges).toHaveBeenCalled();
       // LinkConverter should NOT be called because the link is not in the backlinks set
@@ -2694,7 +2694,7 @@ describe('app-dependent functions', () => {
 
     it('should skip links when shouldUpdateEmbedOnlyLinks does not match', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
-        async (_theApp, _pathOrFile, changesProvider) => {
+        async ({ changesProvider }) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
             await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
@@ -2724,7 +2724,7 @@ describe('app-dependent functions', () => {
 
     it('should invoke convertLink for matching links', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
-        async (_theApp, _pathOrFile, changesProvider) => {
+        async ({ changesProvider }) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
             await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
@@ -2799,7 +2799,7 @@ describe('app-dependent functions', () => {
       canvasFile.extension = 'canvas';
 
       vi.mocked(applyFileChanges).mockImplementation(
-        async (_theApp, _pathOrFile, changesProvider) => {
+        async ({ changesProvider }) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
             await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
@@ -2821,11 +2821,11 @@ describe('app-dependent functions', () => {
         sections: undefined
       }));
 
-      await editLinks(
-        canvasApp,
-        canvasFile,
-        () => 'new-target.md'
-      );
+      await editLinks({
+        app: canvasApp,
+        linkConverter: () => 'new-target.md',
+        pathOrFile: canvasFile
+      });
 
       expect(applyFileChanges).toHaveBeenCalled();
     });
@@ -2843,7 +2843,7 @@ describe('app-dependent functions', () => {
       canvasFile.extension = 'canvas';
 
       vi.mocked(applyFileChanges).mockImplementation(
-        async (_theApp, _pathOrFile, changesProvider) => {
+        async ({ changesProvider }) => {
           if (typeof changesProvider === 'function') {
             const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
             await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
@@ -2865,11 +2865,11 @@ describe('app-dependent functions', () => {
 
       vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-      await editLinks(
-        canvasApp,
-        canvasFile,
-        () => '[[new-target]]'
-      );
+      await editLinks({
+        app: canvasApp,
+        linkConverter: () => '[[new-target]]',
+        pathOrFile: canvasFile
+      });
 
       expect(vi.mocked(console.error)).toHaveBeenCalledWith('Unsupported file change', expect.anything());
       vi.mocked(console.error).mockRestore();

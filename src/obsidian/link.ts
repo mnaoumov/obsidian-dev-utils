@@ -213,9 +213,99 @@ export interface ConvertLinkParams {
 export type EditBacklinksOptions = ProcessOptions;
 
 /**
+ * Parameters for {@link editBacklinks}.
+ */
+export interface EditBacklinksParams extends EditBacklinksOptions {
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The function that converts each link.
+   */
+  linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+
+  /**
+   * The path or file to edit the backlinks for.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
+ * Parameters for {@link editLinksInContent}.
+ */
+export interface EditLinksInContentParams {
+  /**
+   * The abort signal to control the execution of the function.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The content to edit the links in.
+   */
+  readonly content: string;
+
+  /**
+   * The function that converts each link.
+   */
+  linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+}
+
+/**
  * Options for {@link editLinks}.
  */
 export type EditLinksOptions = ProcessOptions;
+
+/**
+ * Parameters for {@link editLinks}.
+ */
+export interface EditLinksParams extends EditLinksOptions {
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The function that converts each link.
+   */
+  linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+
+  /**
+   * The path or file to edit the links for.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
+ * Parameters for {@link extractLinkFile}.
+ */
+export interface ExtractLinkFileParams {
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The reference cache for the link.
+   */
+  readonly link: Reference;
+
+  /**
+   * Whether to allow non-existing files. Defaults to `false`.
+   */
+  readonly shouldAllowNonExistingFile?: boolean;
+
+  /**
+   * The source path or file.
+   */
+  readonly sourcePathOrFile: PathOrFile;
+}
 
 /**
  * Params for {@link generateMarkdownLink}.
@@ -939,7 +1029,11 @@ interface WikiLinkNodeData extends Record<string, unknown> {
  * @returns The converted link.
  */
 export function convertLink(params: ConvertLinkParams): string {
-  const targetFile = extractLinkFile(params.app, params.link, params.oldSourcePathOrFile ?? params.newSourcePathOrFile);
+  const targetFile = extractLinkFile({
+    app: params.app,
+    link: params.link,
+    sourcePathOrFile: params.oldSourcePathOrFile ?? params.newSourcePathOrFile
+  });
   if (!targetFile) {
     return params.link.original;
   }
@@ -958,96 +1052,101 @@ export function convertLink(params: ConvertLinkParams): string {
 /**
  * Edits the backlinks for a file or path.
  *
- * @param app - The Obsidian application instance.
- * @param pathOrFile - The path or file to edit the backlinks for.
- * @param linkConverter - The function that converts each link.
- * @param options - Optional options for retrying the operation.
+ * @param params - The parameters for editing the backlinks.
  * @returns A {@link Promise} that resolves when the backlinks have been edited.
  */
-export async function editBacklinks(
-  app: App,
-  pathOrFile: PathOrFile,
-  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
-  options: EditBacklinksOptions = {}
-): Promise<void> {
-  const backlinks = await getBacklinksForFileSafe(app, pathOrFile, options);
+export async function editBacklinks(params: EditBacklinksParams): Promise<void> {
+  const {
+    app,
+    linkConverter,
+    pathOrFile,
+    ...options
+  } = params;
+  const backlinks = await getBacklinksForFileSafe({ app, pathOrFile, ...options });
   for (const backlinkNotePath of backlinks.keys()) {
     const currentLinks = ensureNonNullable(backlinks.get(backlinkNotePath));
     const linkJsons = new Set<string>(currentLinks.map((link) => JSON.stringify(link)));
-    await editLinks(app, backlinkNotePath, (link) => {
-      const linkJson = JSON.stringify(link);
-      if (!linkJsons.has(linkJson)) {
-        return;
-      }
+    await editLinks({
+      app,
+      linkConverter: (link) => {
+        const linkJson = JSON.stringify(link);
+        if (!linkJsons.has(linkJson)) {
+          return;
+        }
 
-      return linkConverter(link);
-    }, options);
+        return linkConverter(link);
+      },
+      pathOrFile: backlinkNotePath,
+      ...options
+    });
   }
 }
 
 /**
  * Edits the links for a file or path.
  *
- * @param app - The Obsidian application instance.
- * @param pathOrFile - The path or file to edit the links for.
- * @param linkConverter - The function that converts each link.
- * @param options - Optional options for retrying the operation.
+ * @param params - The parameters for editing the links.
  * @returns A {@link Promise} that resolves when the links have been edited.
  */
-export async function editLinks(
-  app: App,
-  pathOrFile: PathOrFile,
-  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
-  options: EditLinksOptions = {}
-): Promise<void> {
-  await applyFileChanges(app, pathOrFile, async ({ abortSignal, content }) => {
-    const cache = await getCacheSafe(app, pathOrFile);
-    abortSignal.throwIfAborted();
-    const file = getFile({ app, pathOrFile });
-    const cachedContent = await app.vault.cachedRead(file);
-    abortSignal.throwIfAborted();
-    if (content !== cachedContent) {
-      return null;
-    }
+export async function editLinks(params: EditLinksParams): Promise<void> {
+  const {
+    app,
+    linkConverter,
+    pathOrFile,
+    ...options
+  } = params;
+  await applyFileChanges({
+    app,
+    changesProvider: async ({ abortSignal, content }) => {
+      const cache = await getCacheSafe(app, pathOrFile);
+      abortSignal.throwIfAborted();
+      const file = getFile({ app, pathOrFile });
+      const cachedContent = await app.vault.cachedRead(file);
+      abortSignal.throwIfAborted();
+      if (content !== cachedContent) {
+        return null;
+      }
 
-    return await getFileChanges({
-      abortSignal,
-      cache,
-      isCanvasFileCache: isCanvasFile(pathOrFile),
-      linkConverter
-    });
-  }, options);
+      return await getFileChanges({
+        abortSignal,
+        cache,
+        isCanvasFileCache: isCanvasFile(pathOrFile),
+        linkConverter
+      });
+    },
+    pathOrFile,
+    ...options
+  });
 }
 
 /**
  * Edits the links in a content string.
  *
- * @param app - The Obsidian application instance.
- * @param content - The content to edit the links in.
- * @param linkConverter - The function that converts each link.
- * @param abortSignal - The abort signal to control the execution of the function.
+ * @param params - The parameters for editing the links in the content.
  * @returns The promise that resolves to the updated content.
  */
-export async function editLinksInContent(
-  app: App,
-  content: string,
-  linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>,
-  abortSignal?: AbortSignal
-): Promise<string> {
+export async function editLinksInContent(params: EditLinksInContentParams): Promise<string> {
+  const { app, content, linkConverter } = params;
+  let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
 
-  const newContent = await applyContentChanges(abortSignal, content, '', async () => {
-    const cache = await parseMetadata(app, content);
-    abortSignal.throwIfAborted();
-    const changes = await getFileChanges({
-      abortSignal,
-      cache,
-      isCanvasFileCache: false,
-      linkConverter
-    });
-    abortSignal.throwIfAborted();
-    return changes;
+  const newContent = await applyContentChanges({
+    abortSignal,
+    changesProvider: async () => {
+      const cache = await parseMetadata(app, content);
+      abortSignal.throwIfAborted();
+      const changes = await getFileChanges({
+        abortSignal,
+        cache,
+        isCanvasFileCache: false,
+        linkConverter
+      });
+      abortSignal.throwIfAborted();
+      return changes;
+    },
+    content,
+    path: ''
   });
   abortSignal.throwIfAborted();
 
@@ -1092,13 +1191,16 @@ export function escapeAlias(alias: string): string {
 /**
  * Extracts the file associated with a link.
  *
- * @param app - The Obsidian application instance.
- * @param link - The reference cache for the link.
- * @param sourcePathOrFile - The source path or file.
- * @param shouldAllowNonExistingFile - Whether to allow non-existing files. Defaults to `false`.
+ * @param params - The parameters for extracting the link file.
  * @returns The file associated with the link, or `null` if not found.
  */
-export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: PathOrFile, shouldAllowNonExistingFile = false): null | TFile {
+export function extractLinkFile(params: ExtractLinkFileParams): null | TFile {
+  const {
+    app,
+    link,
+    shouldAllowNonExistingFile = false,
+    sourcePathOrFile
+  } = params;
   const { linkPath } = splitSubpath(link.link);
   const sourcePath = getPath(app, sourcePathOrFile);
   const file = app.metadataCache.getFirstLinkpathDest(linkPath, sourcePath);
@@ -1150,7 +1252,7 @@ export function generateMarkdownLink(params: GenerateMarkdownLinkParams): string
   params = Object.assign({}, DEFAULT_PARAMS, ...customDefaultParams, params);
   const targetFile = getFile(normalizeOptionalProperties<GetFileParams>({ app, pathOrFile: params.targetPathOrFile, shouldIncludeNonExisting: params.isNonExistingFileAllowed }));
 
-  return tempRegisterFilesAndRun(app, [targetFile], () => generateMarkdownLinkImpl(params));
+  return tempRegisterFilesAndRun({ app, files: [targetFile], fn: () => generateMarkdownLinkImpl(params) });
 }
 
 /**
@@ -1561,19 +1663,23 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
     shouldUpdateFileNameAlias
   } = params;
 
-  return await editLinksInContent(app, content, (link) => {
-    const isEmbedLink = testEmbed(link.original);
-    if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
-      return;
+  return await editLinksInContent({
+    app,
+    content,
+    linkConverter: (link) => {
+      const isEmbedLink = testEmbed(link.original);
+      if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
+        return;
+      }
+      return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
+        app,
+        link,
+        linkStyle,
+        newSourcePathOrFile,
+        oldSourcePathOrFile,
+        shouldUpdateFileNameAlias
+      }));
     }
-    return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
-      app,
-      link,
-      linkStyle,
-      newSourcePathOrFile,
-      oldSourcePathOrFile,
-      shouldUpdateFileNameAlias
-    }));
   });
 }
 
@@ -1597,20 +1703,24 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
     return;
   }
 
-  await editLinks(app, newSourcePathOrFile, (link) => {
-    const isEmbedLink = testEmbed(link.original);
-    if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
-      return;
-    }
-    return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
-      app,
-      link,
-      linkStyle,
-      newSourcePathOrFile,
-      oldSourcePathOrFile,
-      shouldUpdateFileNameAlias
-    }));
-  }, params);
+  await editLinks({
+    ...params,
+    linkConverter: (link) => {
+      const isEmbedLink = testEmbed(link.original);
+      if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
+        return;
+      }
+      return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
+        app,
+        link,
+        linkStyle,
+        newSourcePathOrFile,
+        oldSourcePathOrFile,
+        shouldUpdateFileNameAlias
+      }));
+    },
+    pathOrFile: newSourcePathOrFile
+  });
 }
 
 function decodeUrlSafely(params: DecodeUrlSafelyParams): string {

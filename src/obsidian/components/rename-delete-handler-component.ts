@@ -345,7 +345,7 @@ class DeleteHandler {
         const links = getAllLinks(cache);
 
         for (const link of links) {
-          const attachmentFile = extractLinkFile(this.app, link, this.file.path);
+          const attachmentFile = extractLinkFile({ app: this.app, link, sourcePathOrFile: this.file.path });
           if (!attachmentFile) {
             continue;
           }
@@ -626,7 +626,7 @@ class RenameHandler {
         if (attachmentOldPath === this.oldPath) {
           continue;
         }
-        const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe(this.app, attachmentOldPath)).data;
+        const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: attachmentOldPath })).data;
         this.abortSignal.throwIfAborted();
         renameMap.initBacklinksMap({
           combinedBacklinksMap,
@@ -662,27 +662,30 @@ class RenameHandler {
         )
       ) {
         let linkIndex = 0;
-        await editLinks(this.app, newBacklinkPath, (link) => {
-          linkIndex++;
-          const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
-          if (!oldAttachmentPath) {
-            return;
-          }
+        await editLinks({
+          app: this.app,
+          linkConverter: (link) => {
+            linkIndex++;
+            const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
+            if (!oldAttachmentPath) {
+              return;
+            }
 
-          const newAttachmentPath = renameMap.get(oldAttachmentPath) ?? oldAttachmentPath;
+            const newAttachmentPath = renameMap.get(oldAttachmentPath) ?? oldAttachmentPath;
 
-          renamedFilePaths.add(newBacklinkPath);
-          renamedLinks.add(`${newBacklinkPath}//${String(linkIndex)}`);
+            renamedFilePaths.add(newBacklinkPath);
+            renamedLinks.add(`${newBacklinkPath}//${String(linkIndex)}`);
 
-          return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
-            app: this.app,
-            link,
-            newSourcePathOrFile: newBacklinkPath,
-            newTargetPathOrFile: newAttachmentPath,
-            oldTargetPathOrFile: oldAttachmentPath,
-            shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
-          }));
-        }, {
+            return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
+              app: this.app,
+              link,
+              newSourcePathOrFile: newBacklinkPath,
+              newTargetPathOrFile: newAttachmentPath,
+              oldTargetPathOrFile: oldAttachmentPath,
+              shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
+            }));
+          },
+          pathOrFile: newBacklinkPath,
           shouldFailOnMissingFile: false
         });
         this.abortSignal.throwIfAborted();
@@ -783,8 +786,12 @@ class RenameHandler {
     const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
     const fakeOldFile = getFile({ app: this.app, pathOrFile: this.oldPath, shouldIncludeNonExisting: true });
     let oldPathBacklinksMapRefreshed = new Map<string, Reference[]>();
-    await tempRegisterFilesAndRun(this.app, [fakeOldFile], async () => {
-      oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe(this.app, fakeOldFile)).data;
+    await tempRegisterFilesAndRun({
+      app: this.app,
+      files: [fakeOldFile],
+      fn: async () => {
+        oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: fakeOldFile })).data;
+      }
     });
 
     for (const link of oldPathLinksRefreshed) {
@@ -857,21 +864,25 @@ class RenameMap {
 
     const oldFile = getFile({ app: this.app, pathOrFile: this.oldPath, shouldIncludeNonExisting: true });
     let oldAttachmentFolderPath = '';
-    await tempRegisterFilesAndRunAsync(this.app, [oldFile], async () => {
-      const shouldFakeOldPathCache = this.oldCache && oldFile.deleted;
-      if (shouldFakeOldPathCache) {
-        registerFileCacheForNonExistingFile(this.app, oldFile, this.oldCache);
-      }
-
-      try {
-        oldAttachmentFolderPath = await getAttachmentFolderPath({
-          app: this.app,
-          context: AttachmentPathContext.RenameNote,
-          notePathOrFile: this.oldPath
-        });
-      } finally {
+    await tempRegisterFilesAndRunAsync({
+      app: this.app,
+      files: [oldFile],
+      fn: async () => {
+        const shouldFakeOldPathCache = this.oldCache && oldFile.deleted;
         if (shouldFakeOldPathCache) {
-          unregisterFileCacheForNonExistingFile(this.app, oldFile);
+          registerFileCacheForNonExistingFile({ app: this.app, cache: this.oldCache, pathOrFile: oldFile });
+        }
+
+        try {
+          oldAttachmentFolderPath = await getAttachmentFolderPath({
+            app: this.app,
+            context: AttachmentPathContext.RenameNote,
+            notePathOrFile: this.oldPath
+          });
+        } finally {
+          if (shouldFakeOldPathCache) {
+            unregisterFileCacheForNonExistingFile(this.app, oldFile);
+          }
         }
       }
     });
@@ -914,13 +925,13 @@ class RenameMap {
     } else {
       for (const oldPathLink of this.oldPathLinks) {
         this.abortSignal.throwIfAborted();
-        const oldAttachmentFile = extractLinkFile(this.app, oldPathLink, this.oldPath);
+        const oldAttachmentFile = extractLinkFile({ app: this.app, link: oldPathLink, sourcePathOrFile: this.oldPath });
         if (!oldAttachmentFile) {
           continue;
         }
 
         if (isOldAttachmentFolderAtRoot || oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
-          const oldAttachmentBacklinks = await getBacklinksForFileSafe(this.app, oldAttachmentFile);
+          const oldAttachmentBacklinks = await getBacklinksForFileSafe({ app: this.app, pathOrFile: oldAttachmentFile });
           this.abortSignal.throwIfAborted();
           const keys = new Set<string>(oldAttachmentBacklinks.keys());
           keys.delete(this.oldPath);
@@ -997,7 +1008,7 @@ class RenameMap {
 
   public initOriginalLinksMap(combinedBacklinksMap: Map<string, Map<string, string>>): void {
     for (const oldPathLink of this.oldPathLinks) {
-      const oldAttachmentFile = extractLinkFile(this.app, oldPathLink, this.oldPath);
+      const oldAttachmentFile = extractLinkFile({ app: this.app, link: oldPathLink, sourcePathOrFile: this.oldPath });
       if (!oldAttachmentFile) {
         continue;
       }

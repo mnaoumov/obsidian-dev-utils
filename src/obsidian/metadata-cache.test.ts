@@ -409,7 +409,7 @@ describe('registerFileCacheForNonExistingFile', () => {
 
     mockedGetFile.mockReturnValue(castTo<ReturnType<typeof getFile>>(file));
 
-    registerFileCacheForNonExistingFile(app, castTo<PathOrFile>(file), cache);
+    registerFileCacheForNonExistingFile({ app, cache, pathOrFile: castTo<PathOrFile>(file) });
 
     expect(app.metadataCache.fileCache['folder/note.md']).toEqual({
       hash: 'folder/note.md',
@@ -425,7 +425,7 @@ describe('registerFileCacheForNonExistingFile', () => {
     mockedGetFile.mockReturnValue(castTo<ReturnType<typeof getFile>>(file));
 
     expect(() => {
-      registerFileCacheForNonExistingFile(app, castTo<PathOrFile>(file), {});
+      registerFileCacheForNonExistingFile({ app, cache: {}, pathOrFile: castTo<PathOrFile>(file) });
     })
       .toThrow('File is existing');
   });
@@ -553,15 +553,19 @@ describe('unregisterFiles', () => {
 describe('tempRegisterFilesAndRun', () => {
   it('should run the function and return its result', () => {
     const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
-    const result = tempRegisterFilesAndRun(app, [file], () => 42);
+    const result = tempRegisterFilesAndRun({ app, files: [file], fn: () => 42 });
     expect(result).toBe(42);
   });
 
   it('should still unregister files even when fn throws', () => {
     const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
     expect(() =>
-      tempRegisterFilesAndRun(app, [file], () => {
-        throw new Error('test error');
+      tempRegisterFilesAndRun({
+        app,
+        files: [file],
+        fn: () => {
+          throw new Error('test error');
+        }
       })
     ).toThrow('test error');
   });
@@ -570,18 +574,26 @@ describe('tempRegisterFilesAndRun', () => {
 describe('tempRegisterFilesAndRunAsync', () => {
   it('should run the async function and return its result', async () => {
     const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
-    const result = await tempRegisterFilesAndRunAsync(app, [file], async () => {
-      await noopAsync();
-      return 'hello';
+    const result = await tempRegisterFilesAndRunAsync({
+      app,
+      files: [file],
+      fn: async () => {
+        await noopAsync();
+        return 'hello';
+      }
     });
     expect(result).toBe('hello');
   });
 
   it('should still unregister files even when fn rejects', async () => {
     const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
-    await expect(tempRegisterFilesAndRunAsync(app, [file], async () => {
-      await noopAsync();
-      throw new Error('async error');
+    await expect(tempRegisterFilesAndRunAsync({
+      app,
+      files: [file],
+      fn: async () => {
+        await noopAsync();
+        throw new Error('async error');
+      }
     })).rejects.toThrow('async error');
   });
 });
@@ -775,7 +787,7 @@ describe('getBacklinksForFileSafe', () => {
 
     ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = safeFn;
 
-    const result = await getBacklinksForFileSafe(app, 'test.md');
+    const result = await getBacklinksForFileSafe({ app, pathOrFile: 'test.md' });
     expect(safeFn).toHaveBeenCalledWith('test.md');
     expect(result).toBe(mockResult);
   });
@@ -783,7 +795,7 @@ describe('getBacklinksForFileSafe', () => {
   it('should default shouldShowTimeoutNotice to true', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    await getBacklinksForFileSafe(app, 'test.md');
+    await getBacklinksForFileSafe({ app, pathOrFile: 'test.md' });
 
     const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
@@ -792,7 +804,7 @@ describe('getBacklinksForFileSafe', () => {
   it('should pass shouldShowTimeoutNotice from params', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    await getBacklinksForFileSafe(app, 'test.md', { shouldShowTimeoutNotice: false });
+    await getBacklinksForFileSafe({ app, pathOrFile: 'test.md', shouldShowTimeoutNotice: false });
 
     const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(false);
@@ -804,7 +816,7 @@ describe('getBacklinksForFileSafe', () => {
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(backlinksDict);
 
-    const result = await getBacklinksForFileSafe(app, 'test.md');
+    const result = await getBacklinksForFileSafe({ app, pathOrFile: 'test.md' });
     expect(result).toBe(backlinksDict);
   });
 
@@ -817,7 +829,7 @@ describe('getBacklinksForFileSafe', () => {
     );
     mockedGetFileOrNull.mockReturnValue(null);
 
-    await getBacklinksForFileSafe(app, 'target.md');
+    await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(mockedGetFileOrNull).toHaveBeenCalled();
   });
 
@@ -831,7 +843,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
     mockedReadSafe.mockResolvedValue(null);
 
-    await getBacklinksForFileSafe(app, 'target.md');
+    await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(mockedReadSafe).toHaveBeenCalled();
   });
 
@@ -847,7 +859,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('some content');
     mockedParseFrontmatter.mockReturnValue({});
 
-    await getBacklinksForFileSafe(app, 'target.md');
+    await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(mockedParseFrontmatter).toHaveBeenCalled();
   });
 
@@ -863,7 +875,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue(content);
     mockedParseFrontmatter.mockReturnValue({});
 
-    const result = await getBacklinksForFileSafe(app, 'target.md');
+    const result = await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(result.keys()).toEqual(['source.md']);
   });
 
@@ -884,7 +896,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue(content);
     mockedParseFrontmatter.mockReturnValue({});
 
-    await getBacklinksForFileSafe(app, 'target.md');
+    await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(operationResult).toBe(false);
   });
 
@@ -899,7 +911,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('---\naliases: target-note\n---');
     mockedParseFrontmatter.mockReturnValue({ aliases: ['target-note'] });
 
-    const result = await getBacklinksForFileSafe(app, 'target.md');
+    const result = await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(result.keys()).toEqual(['source.md']);
   });
 
@@ -919,7 +931,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('---\naliases: 123\n---');
     mockedParseFrontmatter.mockReturnValue(castTo<ReturnType<typeof parseFrontmatter>>({ aliases: 123 }));
 
-    await getBacklinksForFileSafe(app, 'target.md');
+    await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(operationResult).toBe(false);
   });
 
@@ -939,7 +951,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('---\naliases: different\n---');
     mockedParseFrontmatter.mockReturnValue(castTo<ReturnType<typeof parseFrontmatter>>({ aliases: 'different-value' }));
 
-    await getBacklinksForFileSafe(app, 'target.md');
+    await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(operationResult).toBe(false);
   });
 
@@ -954,7 +966,7 @@ describe('getBacklinksForFileSafe', () => {
     mockedReadSafe.mockResolvedValue('content');
     mockedParseFrontmatter.mockReturnValue({});
 
-    const result = await getBacklinksForFileSafe(app, 'target.md');
+    const result = await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(result.keys()).toEqual(['source.md']);
   });
 });

@@ -61,9 +61,62 @@ import {
 import { process } from './vault.ts';
 
 /**
+ * Parameters for {@link applyContentChanges}.
+ */
+export interface ApplyContentChangesParams {
+  /**
+   * The abort signal to control the execution of the function.
+   */
+  readonly abortSignal: AbortSignal;
+
+  /**
+   * A provider that returns an array of content changes to apply.
+   */
+  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArgs>;
+
+  /**
+   * The content to which the changes should be applied.
+   */
+  readonly content: string;
+
+  /**
+   * The path to which the changes should be applied.
+   */
+  readonly path: string;
+
+  /**
+   * Whether to retry the operation if the changes are invalid.
+   */
+  readonly shouldRetryOnInvalidChanges?: boolean;
+}
+/**
  * Options for {@link applyFileChanges}.
  */
 export type ApplyFileChangesOptions = ProcessOptions;
+/**
+ * Parameters for {@link applyFileChanges}.
+ */
+export interface ApplyFileChangesParams extends ApplyFileChangesOptions {
+  /**
+   * The application instance where the file changes will be applied.
+   */
+  readonly app: App;
+
+  /**
+   * A provider that returns an array of file changes to apply.
+   */
+  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArgs>;
+
+  /**
+   * The path or file to which the changes should be applied.
+   */
+  readonly pathOrFile: PathOrFile;
+
+  /**
+   * Whether to retry the operation if the changes are invalid.
+   */
+  readonly shouldRetryOnInvalidChanges?: boolean;
+}
 /**
  * A file change in the vault.
  */
@@ -230,20 +283,17 @@ interface WithReference<R extends Reference> {
 /**
  * Applies a series of content changes to the specified content.
  *
- * @param abortSignal - The abort signal to control the execution of the function.
- * @param content - The content to which the changes should be applied.
- * @param path - The path to which the changes should be applied.
- * @param changesProvider - A provider that returns an array of content changes to apply.
- * @param shouldRetryOnInvalidChanges - Whether to retry the operation if the changes are invalid.
+ * @param params - The parameters for applying the content changes.
  * @returns A {@link Promise} that resolves to the updated content or to `null` if update didn't succeed.
  */
-export async function applyContentChanges(
-  abortSignal: AbortSignal,
-  content: string,
-  path: string,
-  changesProvider: ValueProvider<FileChange[] | null, ContentArgs>,
-  shouldRetryOnInvalidChanges = true
-): Promise<null | string> {
+export async function applyContentChanges(params: ApplyContentChangesParams): Promise<null | string> {
+  const {
+    abortSignal,
+    changesProvider,
+    content,
+    path,
+    shouldRetryOnInvalidChanges = true
+  } = params;
   abortSignal.throwIfAborted();
   let changes = await resolveValue(changesProvider, { abortSignal, content });
   abortSignal.throwIfAborted();
@@ -275,21 +325,17 @@ export async function applyContentChanges(
 /**
  * Applies a series of file changes to the specified file or path within the application.
  *
- * @param app - The application instance where the file changes will be applied.
- * @param pathOrFile - The path or file to which the changes should be applied.
- * @param changesProvider - A provider that returns an array of file changes to apply.
- * @param options - Optional options for processing/retrying the operation.
- * @param shouldRetryOnInvalidChanges - Whether to retry the operation if the changes are invalid.
- *
+ * @param params - The parameters for applying the file changes.
  * @returns A {@link Promise} that resolves when the file changes have been successfully applied.
  */
-export async function applyFileChanges(
-  app: App,
-  pathOrFile: PathOrFile,
-  changesProvider: ValueProvider<FileChange[] | null, ContentArgs>,
-  options: ApplyFileChangesOptions = {},
-  shouldRetryOnInvalidChanges = true
-): Promise<void> {
+export async function applyFileChanges(params: ApplyFileChangesParams): Promise<void> {
+  const {
+    app,
+    changesProvider,
+    pathOrFile,
+    shouldRetryOnInvalidChanges = true,
+    ...options
+  } = params;
   await process(normalizeOptionalProperties<ProcessParams>({
     app,
     async newContentProvider({ abortSignal, content }) {
@@ -303,7 +349,13 @@ export async function applyFileChanges(
         });
       }
 
-      return await applyContentChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
+      return await applyContentChanges({
+        abortSignal,
+        changesProvider,
+        content,
+        path: getPath(app, pathOrFile),
+        shouldRetryOnInvalidChanges
+      });
     },
     pathOrFile,
     ...options
@@ -476,13 +528,13 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
     }
 
     const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.reference.originalReference, change.newContent));
-    node.text = await applyContentChanges(
+    node.text = await applyContentChanges({
       abortSignal,
-      node.text,
-      `${path}.node${String(nodeIndex)}.VIRTUAL_FILE.md`,
-      contentChanges,
+      changesProvider: contentChanges,
+      content: node.text,
+      path: `${path}.node${String(nodeIndex)}.VIRTUAL_FILE.md`,
       shouldRetryOnInvalidChanges
-    );
+    });
   }
 
   return JSON.stringify(canvasData, null, '\t');
@@ -593,7 +645,12 @@ async function applyFrontmatterChangesWithOffsets(params: ApplyFrontmatterChange
       }
     }));
 
-    const newPropertyValue = await applyContentChanges(abortSignal, propertyValue, `${path}.frontmatter.${key}.VIRTUAL_FILE.md`, contentChanges);
+    const newPropertyValue = await applyContentChanges({
+      abortSignal,
+      changesProvider: contentChanges,
+      content: propertyValue,
+      path: `${path}.frontmatter.${key}.VIRTUAL_FILE.md`
+    });
     /* v8 ignore start -- Inner applyContentChanges uses validated offsets, so null is not expected. */
     if (newPropertyValue === null) {
       return;

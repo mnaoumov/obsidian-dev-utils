@@ -50,7 +50,7 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<bo
   /* v8 ignore start -- TAbstractFile is always TFile or TFolder in Obsidian; the false branch of isFile leads to isFolder. */
   if (isFile(file)) {
     /* v8 ignore stop */
-    const backlinks = await getBacklinksForFileSafe(params.app, file);
+    const backlinks = await getBacklinksForFileSafe({ app: params.app, pathOrFile: file });
     if (params.deletedNotePath) {
       backlinks.clear(params.deletedNotePath);
     }

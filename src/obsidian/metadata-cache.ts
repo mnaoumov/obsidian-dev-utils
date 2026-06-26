@@ -59,6 +59,21 @@ export interface GetBacklinksForFileSafeOptions extends RetryOptions {
 }
 
 /**
+ * Parameters for {@link getBacklinksForFileSafe}.
+ */
+export interface GetBacklinksForFileSafeParams extends GetBacklinksForFileSafeOptions {
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or file object.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
  * Wrapper for the getBacklinksForFile method that provides a safe overload.
  */
 export interface GetBacklinksForFileSafeWrapper {
@@ -69,6 +84,70 @@ export interface GetBacklinksForFileSafeWrapper {
    * @returns A {@link Promise} that resolves to an array dictionary of backlinks.
    */
   safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<Reference>>;
+}
+
+/**
+ * Parameters for {@link registerFileCacheForNonExistingFile}.
+ */
+export interface RegisterFileCacheForNonExistingFileParams {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The file cache to register.
+   */
+  readonly cache: CachedMetadata;
+
+  /**
+   * The path or file to register the file cache for.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
+ * Parameters for {@link tempRegisterFilesAndRunAsync}.
+ *
+ * @typeParam T - The return type of the function to run.
+ */
+export interface TempRegisterFilesAndRunAsyncParams<T> {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The files to temporarily register.
+   */
+  readonly files: TAbstractFile[];
+
+  /**
+   * The function to run.
+   */
+  fn(this: void): Promise<T>;
+}
+
+/**
+ * Parameters for {@link tempRegisterFilesAndRun}.
+ *
+ * @typeParam T - The return type of the function to run.
+ */
+export interface TempRegisterFilesAndRunParams<T> {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The files to temporarily register.
+   */
+  readonly files: TAbstractFile[];
+
+  /**
+   * The function to run.
+   */
+  fn(this: void): T;
 }
 
 /**
@@ -141,22 +220,17 @@ export function getAllLinks(cache: CachedMetadata): Reference[] {
  */
 export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<Reference> {
   const file = getFile({ app, pathOrFile, shouldIncludeNonExisting: true });
-  return tempRegisterFilesAndRun(app, [file], () => app.metadataCache.getBacklinksForFile(file));
+  return tempRegisterFilesAndRun({ app, files: [file], fn: () => app.metadataCache.getBacklinksForFile(file) });
 }
 
 /**
  * Retrieves the backlinks for a file safely.
  *
- * @param app - The Obsidian application instance.
- * @param pathOrFile - The path or file object.
- * @param options - Other options.
+ * @param params - The parameters for retrieving the backlinks.
  * @returns A {@link Promise} that resolves to an array dictionary of backlinks.
  */
-export async function getBacklinksForFileSafe(
-  app: App,
-  pathOrFile: PathOrFile,
-  options: GetBacklinksForFileSafeOptions = {}
-): Promise<CustomArrayDict<Reference>> {
+export async function getBacklinksForFileSafe(params: GetBacklinksForFileSafeParams): Promise<CustomArrayDict<Reference>> {
+  const { app, pathOrFile, ...options } = params;
   const safeOverload = (app.metadataCache.getBacklinksForFile as Partial<GetBacklinksForFileSafeWrapper>).safe;
   if (safeOverload) {
     return safeOverload(pathOrFile);
@@ -290,11 +364,10 @@ export async function parseMetadata(app: App, str: string): Promise<CachedMetada
 /**
  * Registers the file cache for a non-existing file.
  *
- * @param app - The Obsidian app instance.
- * @param pathOrFile - The path or file to register the file cache for.
- * @param cache - The file cache to register.
+ * @param params - The parameters for registering the file cache.
  */
-export function registerFileCacheForNonExistingFile(app: App, pathOrFile: PathOrFile, cache: CachedMetadata): void {
+export function registerFileCacheForNonExistingFile(params: RegisterFileCacheForNonExistingFileParams): void {
+  const { app, cache, pathOrFile } = params;
   const file = getFile({ app, pathOrFile, shouldIncludeNonExisting: true });
   if (!file.deleted) {
     throw new Error('File is existing');
@@ -343,12 +416,11 @@ export function registerFiles(app: App, files: TAbstractFile[]): void {
  * Temporarily registers files and runs a function.
  *
  * @typeParam T - The type of the result of the function.
- * @param app - The Obsidian app instance.
- * @param files - The files to temporarily register.
- * @param fn - The function to run.
+ * @param params - The parameters for temporarily registering the files and running the function.
  * @returns The result of the function.
  */
-export function tempRegisterFilesAndRun<T>(app: App, files: TAbstractFile[], fn: () => T): T {
+export function tempRegisterFilesAndRun<T>(params: TempRegisterFilesAndRunParams<T>): T {
+  const { app, files, fn } = params;
   try {
     registerFiles(app, files);
     return fn();
@@ -361,12 +433,11 @@ export function tempRegisterFilesAndRun<T>(app: App, files: TAbstractFile[], fn:
  * Temporarily registers files and runs an async function.
  *
  * @typeParam T - The type of the result of the function.
- * @param app - The Obsidian app instance.
- * @param files - The files to temporarily register.
- * @param fn - The function to run.
+ * @param params - The parameters for temporarily registering the files and running the async function.
  * @returns The result of the function.
  */
-export async function tempRegisterFilesAndRunAsync<T>(app: App, files: TAbstractFile[], fn: () => Promise<T>): Promise<T> {
+export async function tempRegisterFilesAndRunAsync<T>(params: TempRegisterFilesAndRunAsyncParams<T>): Promise<T> {
+  const { app, files, fn } = params;
   try {
     registerFiles(app, files);
     return await fn();
