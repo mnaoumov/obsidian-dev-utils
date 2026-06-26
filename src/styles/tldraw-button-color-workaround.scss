@@ -1,0 +1,13 @@
+// The tldraw Obsidian plugin (tldraw/obsidian-plugin) ships an unscoped global rule
+// `button:not(.clickable-icon) { color: currentColor }` that overrides Obsidian's own
+// `button:not(.clickable-icon) { color: var(--text-color) }` app-wide. Obsidian sets
+// `--text-color` contextually per button variant (`--text-normal` by default,
+// `--text-on-accent` for `.mod-cta`, `--text-error` for `.mod-warning`), so tldraw's
+// `currentColor` discards that and breaks button contrast outside tldraw — e.g.
+// White-on-white action buttons inside a Notice. Re-assert Obsidian's own value with a
+// `body`-prefixed selector (specificity 0,1,2) so it wins over tldraw's (0,1,1) while
+// Staying correct for every button variant (it reuses the same contextual `--text-color`).
+// Defensive workaround — remove once the upstream fix ships (tldraw/obsidian-plugin#210).
+body button:not(.clickable-icon) {
+  color: var(--text-color);
+}
