@@ -140,6 +140,28 @@ interface PluginSettingsComponentBaseEventMap<PluginSettings extends object> {
   ];
 }
 
+/**
+ * Parameters for {@link PluginSettingsComponentBase.setPropertyImpl}.
+ *
+ * @typeParam PluginSettings - The type of the plugin settings.
+ */
+interface PluginSettingsComponentBaseSetPropertyImplParams<PluginSettings extends object> {
+  /**
+   * The name of the property to set.
+   */
+  readonly propertyName: PropertyNames<PluginSettings>;
+
+  /**
+   * The validation message. Empty or unset means valid.
+   */
+  readonly validationMessage?: string | undefined;
+
+  /**
+   * The value to set.
+   */
+  readonly value: PropertyValues<PluginSettings>;
+}
+
 type PropertyNames<PluginSettings extends object> = StringKeys<PluginSettings>;
 
 type PropertyValues<PluginSettings extends object> = PluginSettings[PropertyNames<PluginSettings>];
@@ -282,7 +304,11 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
       const validationResult = await this.validate(parsedSettings);
 
       for (const propertyName of this.propertyNames) {
-        this.setPropertyImpl(propertyName, parsedSettings[propertyName], validationResult[propertyName]);
+        this.setPropertyImpl({
+          propertyName,
+          validationMessage: validationResult[propertyName],
+          value: parsedSettings[propertyName]
+        });
       }
 
       this.lastSavedState = await this.cloneState(this.currentState);
@@ -658,11 +684,12 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     await this.dataHandler.saveData(await this.settingsToRawRecord(this.currentState.inputValues));
   }
 
-  private setPropertyImpl(
-    propertyName: PropertyNames<PluginSettings>,
-    value: PropertyValues<PluginSettings>,
-    validationMessage?: string
-  ): void {
+  private setPropertyImpl(params: PluginSettingsComponentBaseSetPropertyImplParams<PluginSettings>): void {
+    const {
+      propertyName,
+      validationMessage,
+      value
+    } = params;
     const defaults = this.defaultSettings as PluginSettings;
     this.currentState.inputValues[propertyName] = value;
     this.currentState.validationMessages[propertyName] = validationMessage ?? '';

@@ -76,6 +76,32 @@ export interface DeleteAliasParams {
 export type ProcessFrontmatterOptions = ProcessOptions;
 
 /**
+ * Parameters for {@link processFrontmatter}.
+ *
+ * @typeParam CustomFrontmatter - The type of custom front matter.
+ */
+export interface ProcessFrontmatterParams<CustomFrontmatter = unknown> extends ProcessFrontmatterOptions {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * A function that modifies the front matter.
+   *
+   * @param frontmatter - The front matter to modify.
+   * @param abortSignal - The abort signal to listen to.
+   * @returns A value that may be `null` to abort the process.
+   */
+  frontmatterFn(this: void, frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal): Promisable<MaybeReturn<null>>;
+
+  /**
+   * The path or TFile object representing the note.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
  * Adds an alias to the front matter of a given file if it does not already exist.
  *
  * @param params - The parameters for adding the alias.
@@ -101,12 +127,16 @@ export async function addAlias(params: AddAliasParams): Promise<void> {
     return;
   }
 
-  await processFrontmatter(app, pathOrFile, (frontmatter) => {
-    frontmatter.aliases ??= [];
+  await processFrontmatter({
+    app,
+    frontmatterFn: (frontmatter) => {
+      frontmatter.aliases ??= [];
 
-    if (!frontmatter.aliases.includes(alias)) {
-      frontmatter.aliases.push(alias);
-    }
+      if (!frontmatter.aliases.includes(alias)) {
+        frontmatter.aliases.push(alias);
+      }
+    },
+    pathOrFile
   });
 }
 
@@ -130,16 +160,20 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
     throw new Error(`File ${getPath(app, pathOrFile)} is not a markdown file.`);
   }
 
-  await processFrontmatter(app, pathOrFile, (frontmatter) => {
-    if (!frontmatter.aliases) {
-      return;
-    }
+  await processFrontmatter({
+    app,
+    frontmatterFn: (frontmatter) => {
+      if (!frontmatter.aliases) {
+        return;
+      }
 
-    frontmatter.aliases = frontmatter.aliases.filter((a) => a !== alias);
+      frontmatter.aliases = frontmatter.aliases.filter((a) => a !== alias);
 
-    if (frontmatter.aliases.length === 0) {
-      delete frontmatter.aliases;
-    }
+      if (frontmatter.aliases.length === 0) {
+        delete frontmatter.aliases;
+      }
+    },
+    pathOrFile
   });
 }
 
@@ -147,18 +181,16 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
  * Processes the front matter of a given file, allowing modifications via a provided function.
  *
  * @typeParam CustomFrontmatter - The type of custom front matter.
- * @param app - The Obsidian app instance.
- * @param pathOrFile - The path or TFile object representing the note.
- * @param frontmatterFn - A function that modifies the front matter.
- * @param options - Optional. Configuration options for retrying the process. If not provided, default options will be used.
+ * @param params - The parameters for processing the front matter.
  * @returns A {@link Promise} that resolves when the front matter has been processed and saved.
  */
-export async function processFrontmatter<CustomFrontmatter = unknown>(
-  app: App,
-  pathOrFile: PathOrFile,
-  frontmatterFn: (frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal) => Promisable<MaybeReturn<null>>,
-  options: ProcessFrontmatterOptions = {}
-): Promise<void> {
+export async function processFrontmatter<CustomFrontmatter = unknown>(params: ProcessFrontmatterParams<CustomFrontmatter>): Promise<void> {
+  const {
+    app,
+    frontmatterFn,
+    pathOrFile,
+    ...options
+  } = params;
   if (!isMarkdownFile(pathOrFile)) {
     throw new Error(`File ${getPath(app, pathOrFile)} is not a markdown file.`);
   }

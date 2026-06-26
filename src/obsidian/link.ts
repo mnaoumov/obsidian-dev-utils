@@ -824,6 +824,26 @@ interface ExtractTextLinksParams {
 }
 
 /**
+ * Parameters for {@link fixFrontmatterMarkdownLinksImpl}.
+ */
+interface FixFrontmatterMarkdownLinksImplParams {
+  /**
+   * The metadata cache to fix the frontmatter markdown links in.
+   */
+  readonly cache: CachedMetadata;
+
+  /**
+   * The key path of the current value within the frontmatter.
+   */
+  readonly key: string;
+
+  /**
+   * The current frontmatter value to inspect.
+   */
+  readonly value: unknown;
+}
+
+/**
  * Params for {@link generateLinkText}.
  */
 interface GenerateLinkTextParams {
@@ -1232,7 +1252,7 @@ export function extractLinkFile(params: ExtractLinkFileParams): null | TFile {
  * @returns Whether the frontmatter markdown links were fixed.
  */
 export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
-  return fixFrontmatterMarkdownLinksImpl(cache.frontmatter, '', cache);
+  return fixFrontmatterMarkdownLinksImpl({ cache, key: '', value: cache.frontmatter });
 }
 
 /**
@@ -1774,7 +1794,12 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
   });
 }
 
-function fixFrontmatterMarkdownLinksImpl(value: unknown, key: string, cache: CachedMetadata): boolean {
+function fixFrontmatterMarkdownLinksImpl(params: FixFrontmatterMarkdownLinksImplParams): boolean {
+  const {
+    cache,
+    key,
+    value
+  } = params;
   if (typeof value === 'string') {
     const parseLinkResult = parseLink(value);
     if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
@@ -1809,7 +1834,7 @@ function fixFrontmatterMarkdownLinksImpl(value: unknown, key: string, cache: Cac
   let hasFrontmatterLinks = false;
 
   for (const [childKey, childValue] of Object.entries(value as GenericObject)) {
-    const hasChildFrontmatterLinks = fixFrontmatterMarkdownLinksImpl(childValue, key ? `${key}.${childKey}` : childKey, cache);
+    const hasChildFrontmatterLinks = fixFrontmatterMarkdownLinksImpl({ cache, key: key ? `${key}.${childKey}` : childKey, value: childValue });
     hasFrontmatterLinks ||= hasChildFrontmatterLinks;
   }
 
