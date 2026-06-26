@@ -277,12 +277,19 @@ examples.
 LIBRARY CONVERSION COMPLETE on branch `refactor/extract-params-options` (~25 commits, all green:
 3508 tests, 100% coverage, compile/lint/format/spellcheck clean). NOT merged/published.**
 
-Re-running `npx jiti F:/tmp/analyze-params.ts` shows the 3+-param count down from 112 → ~35, and
-every remaining entry is intentionally excluded: signature-locked event/DOM/Obsidian/Proxy contracts
-(async-events/plugin event-source `on`/`once`/`onSaveSettings`, command-handler `shouldAddTo*Menu`/
-`handle*Menu`/`editorCheckCallback`, `registerAll*DomEvent`, `createElAsync`/`createSvgAsync`,
-`strict-proxy` `get`, `bind`) and the `ToJsonConverter` class methods (remaining params are genuine
-per-call recursion values per G10o). `checkExtension` stays positional (documented hot path).
+Re-running `npx jiti F:/tmp/analyze-params.ts` shows the 3+-param count down from 112 → **11**, and
+every one of those 11 is an event/DOM/Proxy-parity signature deliberately kept positional AND now
+documented with an `@remarks` note: `on`/`once` (async-events, plugin-settings-component,
+plugin-event-source — keep parity with `obsidian#Events#on`/`once`), `createElAsync`/`createSvgAsync`
+(keep parity with `obsidian#createEl`/`createSvg`), and `strict-proxy` `get` (keeps parity with the
+`ProxyHandler.get` trap). `checkExtension` stays positional (documented hot path).
+
+Everything else from the prior "excluded" set was subsequently bagged on user instruction (group-by-
+group): `onSaveSettings` (event-parity arrow adapter at registration), command-handler
+`shouldAddTo*Menu`/`handle*Menu`/`editorCheckCallback` (Obsidian callbacks adapted at registration),
+`registerAll*DomEvent` (callback member keeps `this: HTMLElement` per the DOM API), `ToJsonConverter`
+private methods, and `PluginSettingsTabBase.bind` (both overloads + impl, folding `BindOptions` via
+`extends`). The reg-exp flag-merge cluster also became a `RegExpFlagMerger` class per G10o.
 
 **Remaining (handed off, NOT done here):** merge + npm publish the new major (irreversible — needs
 explicit go-ahead), then migrate the ~23 consuming plugins against the published version.
