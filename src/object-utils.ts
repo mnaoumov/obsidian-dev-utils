@@ -173,18 +173,95 @@ export interface SetNestedPropertyValueParams {
   readonly value: unknown;
 }
 
+interface HandleArrayParams {
+  /**
+   * Whether `toJSON()` may be used during conversion.
+   */
+  readonly canUseToJSON: boolean;
+
+  /**
+   * The current recursion depth.
+   */
+  readonly depth: number;
+
+  /**
+   * The array value to convert.
+   */
+  readonly value: unknown[];
+}
+
+interface HandleObjectParams {
+  /**
+   * Whether `toJSON()` may be used during conversion.
+   */
+  readonly canUseToJSON: boolean;
+
+  /**
+   * The current recursion depth.
+   */
+  readonly depth: number;
+
+  /**
+   * The key under which the value is stored in its parent.
+   */
+  readonly key: string;
+
+  /**
+   * The object value to convert.
+   */
+  readonly value: object;
+}
+
+interface HandlePlainObjectParams {
+  /**
+   * Whether `toJSON()` may be used during conversion.
+   */
+  readonly canUseToJSON: boolean;
+
+  /**
+   * The current recursion depth.
+   */
+  readonly depth: number;
+
+  /**
+   * The plain object value to convert.
+   */
+  readonly value: object;
+}
+
 type KeysWithUndefined<T> = KeysWithUndefinedMap<T>[keyof T];
 
 type KeysWithUndefinedMap<T> = {
   [K in keyof T]-?: undefined extends T[K] ? K : never;
 };
-
 type MandatoryKeysWithUndefined<T extends object> = Extract<RequiredKeysOf<T> & StringKeys<T>, KeysWithUndefined<T>>;
-
 type RemoveUndefinedOverload<T extends object> = MandatoryKeysWithUndefined<T> extends never ? [obj: T]
   : never;
 
 type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string[]> = [obj: T, keysToKeep: ExactMembers<MandatoryKeysWithUndefined<T>, K>];
+
+interface ToPlainObjectParams {
+  /**
+   * Whether `toJSON()` may be used during conversion.
+   */
+  readonly canUseToJSON: boolean;
+
+  /**
+   * The current recursion depth.
+   */
+  readonly depth: number;
+
+  /**
+   * The key under which the value is stored in its parent.
+   */
+  readonly key: string;
+
+  /**
+   * The value to convert.
+   */
+  readonly value: unknown;
+}
+
 /**
  * Parameters for {@link tryEntryEquality}.
  */
@@ -204,6 +281,24 @@ interface TryEntryEqualityParams {
    */
   readonly entry: EqualityComparerEntry<unknown>;
 }
+
+interface TryHandleToJSONParams {
+  /**
+   * The current recursion depth.
+   */
+  readonly depth: number;
+
+  /**
+   * The key under which the value is stored in its parent.
+   */
+  readonly key: string;
+
+  /**
+   * The object value to convert.
+   */
+  readonly value: object;
+}
+
 /**
  * Converts a value to a JSON-serializable plain object and renders it as a JSON string.
  *
@@ -261,7 +356,12 @@ class ToJsonConverter {
    * @returns The JSON string representation of the value.
    */
   public convert(value: unknown): string {
-    const plainObject = this.toPlainObject(value, '', 0, true);
+    const plainObject = this.toPlainObject({
+      canUseToJSON: true,
+      depth: 0,
+      key: '',
+      value
+    });
     let json = ensureNonNullable(JSON.stringify(plainObject, null, this.fullOptions.space));
     const placeholderRegExp = new RegExp(`"\\[\\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\\d*)\\]\\]"`, 'g');
     json = replaceAll({
@@ -278,12 +378,24 @@ class ToJsonConverter {
     return json;
   }
 
-  private handleArray(value: unknown[], depth: number, canUseToJSON: boolean): unknown {
+  private handleArray(params: HandleArrayParams): unknown {
+    const {
+      canUseToJSON,
+      depth,
+      value
+    } = params;
     if (depth > this.fullOptions.maxDepth) {
       return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length);
     }
 
-    return value.map((item, index) => this.toPlainObject(item, String(index), depth + 1, canUseToJSON));
+    return value.map((item, index) =>
+      this.toPlainObject({
+        canUseToJSON,
+        depth: depth + 1,
+        key: String(index),
+        value: item
+      })
+    );
   }
 
   private handleCircularReference(value: object, key: string): unknown {
@@ -309,7 +421,13 @@ class ToJsonConverter {
     return makePlaceholder(TokenSubstitutionKey.Function, index);
   }
 
-  private handleObject(value: object, key: string, depth: number, canUseToJSON: boolean): unknown {
+  private handleObject(params: HandleObjectParams): unknown {
+    const {
+      canUseToJSON,
+      depth,
+      key,
+      value
+    } = params;
     if (this.usedObjects.has(value)) {
       return this.handleCircularReference(value, key);
     }
@@ -317,14 +435,22 @@ class ToJsonConverter {
     this.usedObjects.add(value);
 
     if (canUseToJSON) {
-      const toJSONResult = this.tryHandleToJSON(value, key, depth);
+      const toJSONResult = this.tryHandleToJSON({
+        depth,
+        key,
+        value
+      });
       if (toJSONResult !== undefined) {
         return toJSONResult;
       }
     }
 
     if (Array.isArray(value)) {
-      return this.handleArray(value, depth, canUseToJSON);
+      return this.handleArray({
+        canUseToJSON,
+        depth,
+        value
+      });
     }
 
     if (depth > this.fullOptions.maxDepth) {
@@ -335,10 +461,19 @@ class ToJsonConverter {
       return errorToString(value);
     }
 
-    return this.handlePlainObject(value, depth, canUseToJSON);
+    return this.handlePlainObject({
+      canUseToJSON,
+      depth,
+      value
+    });
   }
 
-  private handlePlainObject(value: object, depth: number, canUseToJSON: boolean): unknown {
+  private handlePlainObject(params: HandlePlainObjectParams): unknown {
+    const {
+      canUseToJSON,
+      depth,
+      value
+    } = params;
     const entries = Object.entries(value);
     if (this.fullOptions.shouldSortKeys) {
       entries.sort(([key1], [key2]) => key1.localeCompare(key2));
@@ -347,12 +482,23 @@ class ToJsonConverter {
     return Object.fromEntries(
       entries.map(([key2, value2]) => [
         key2,
-        this.toPlainObject(value2, key2, depth + 1, canUseToJSON)
+        this.toPlainObject({
+          canUseToJSON,
+          depth: depth + 1,
+          key: key2,
+          value: value2
+        })
       ])
     );
   }
 
-  private toPlainObject(value: unknown, key: string, depth: number, canUseToJSON: boolean): unknown {
+  private toPlainObject(params: ToPlainObjectParams): unknown {
+    const {
+      canUseToJSON,
+      depth,
+      key,
+      value
+    } = params;
     if (value === undefined) {
       return (depth === 0 || this.fullOptions.shouldHandleUndefined)
         ? makePlaceholder(TokenSubstitutionKey.Undefined)
@@ -367,15 +513,30 @@ class ToJsonConverter {
       return value;
     }
 
-    return this.handleObject(value, key, depth, canUseToJSON);
+    return this.handleObject({
+      canUseToJSON,
+      depth,
+      key,
+      value
+    });
   }
 
-  private tryHandleToJSON(value: object, key: string, depth: number): unknown {
+  private tryHandleToJSON(params: TryHandleToJSONParams): unknown {
+    const {
+      depth,
+      key,
+      value
+    } = params;
     const toJSON = (value as Partial<JSONSerializable>).toJSON;
     if (typeof toJSON === 'function') {
       try {
         const newValue = toJSON.call(value, key);
-        return this.toPlainObject(newValue, key, depth, false);
+        return this.toPlainObject({
+          canUseToJSON: false,
+          depth,
+          key,
+          value: newValue
+        });
       } catch (e) {
         if (this.fullOptions.shouldCatchToJSONErrors) {
           return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
