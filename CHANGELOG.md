@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 81.0.0
+
+- chore: update libs
+- feat: add return type
+- refactor!: full-bag vault.ts functions into single params objects copySafe, getAbstractFilePathSafe, getOrCreateAbstractFileSafe, getSafeRenamePath, invokeWithFileSystemLock, isChild, isChildOrSelf, renameSafe, process (and internal invokeFileActionSafe) now take a single *Params object including app. isChild/ isChildOrSelf rename the ambiguous a/b to childPathOrFile/parentPathOrFile. ProcessParams folds in ProcessOptions (kept exported). All call sites and test mocks updated. BREAKING CHANGE: these vault functions take a single params object; app and the former positional args are now named members. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+- fix: restore button text color broken by tldraw's unscoped global rule
+- refactor!: extract param bags
+- docs: record params/options extraction task
+- feat: add fallback to requestAnimationFrameAsync
+- refactor: notice component
+
 ## 80.1.0
 
 - feat: return notice
