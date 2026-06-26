@@ -17,13 +17,15 @@ import { strictProxy } from '../strict-proxy.ts';
 import { PluginStatusBarItemRegistrar } from './status-bar-item-registrar.ts';
 
 describe('PluginStatusBarItemRegistrar', () => {
-  it('should delegate addStatusBarItem to the plugin', () => {
-    const addStatusBarItem = vi.fn();
+  it('should delegate addStatusBarItem to the plugin and return its element', () => {
+    const statusBarItemEl = strictProxy<HTMLElement>({});
+    const addStatusBarItem = vi.fn(() => statusBarItemEl);
     const plugin = strictProxy<PluginOriginal>({ addStatusBarItem });
     const registrar = new PluginStatusBarItemRegistrar(plugin);
 
-    registrar.addStatusBarItem();
+    const result = registrar.addStatusBarItem();
 
     expect(addStatusBarItem).toHaveBeenCalledWith();
+    expect(result).toBe(statusBarItemEl);
   });
 });

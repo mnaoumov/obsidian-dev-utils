@@ -13,7 +13,7 @@ export interface StatusBarItemRegistrar {
   /**
    * Registers a status bar item.
    */
-  addStatusBarItem(): void;
+  addStatusBarItem(): HTMLElement;
 }
 
 /**
@@ -30,7 +30,7 @@ export class PluginStatusBarItemRegistrar implements StatusBarItemRegistrar {
   /**
    * Registers a status bar item.
    */
-  public addStatusBarItem(): void {
-    this.plugin.addStatusBarItem();
+  public addStatusBarItem(): HTMLElement {
+    return this.plugin.addStatusBarItem();
   }
 }
