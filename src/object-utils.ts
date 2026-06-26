@@ -153,6 +153,26 @@ const equalityComparerEntries = createEqualityComparerEntries(
   ] as const
 );
 
+/**
+ * Parameters for {@link setNestedPropertyValue}.
+ */
+export interface SetNestedPropertyValueParams {
+  /**
+   * The object to set the nested property value in.
+   */
+  readonly obj: GenericObject;
+
+  /**
+   * The path to the nested property.
+   */
+  readonly path: string;
+
+  /**
+   * The value to set.
+   */
+  readonly value: unknown;
+}
+
 type KeysWithUndefined<T> = KeysWithUndefinedMap<T>[keyof T];
 
 type KeysWithUndefinedMap<T> = {
@@ -165,7 +185,25 @@ type RemoveUndefinedOverload<T extends object> = MandatoryKeysWithUndefined<T> e
   : never;
 
 type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string[]> = [obj: T, keysToKeep: ExactMembers<MandatoryKeysWithUndefined<T>, K>];
+/**
+ * Parameters for {@link tryEntryEquality}.
+ */
+interface TryEntryEqualityParams {
+  /**
+   * The first value to compare.
+   */
+  readonly a: unknown;
 
+  /**
+   * The second value to compare.
+   */
+  readonly b: unknown;
+
+  /**
+   * The equality comparer entry to use.
+   */
+  readonly entry: EqualityComparerEntry<unknown>;
+}
 /**
  * Converts a value to a JSON-serializable plain object and renders it as a JSON string.
  *
@@ -394,6 +432,7 @@ export function assignWithNonEnumerableProperties<T extends object, U, V, W>(tar
 export function assignWithNonEnumerableProperties(target: object, ...sources: object[]): object {
   return assignWithNonEnumerablePropertiesImpl(target, ...sources);
 }
+
 /**
  * Casts a value to a specific type.
  *
@@ -405,6 +444,7 @@ export function assignWithNonEnumerableProperties(target: object, ...sources: ob
 export function castTo<T>(value: unknown): T {
   return value as T;
 }
+
 /**
  * Clones an object, including non-enumerable properties.
  *
@@ -606,7 +646,6 @@ export function getPrototypeOf<T>(instance: T): T {
   }
   return Object.getPrototypeOf(instance) as T;
 }
-
 /**
  * Retrieves the name of a property of a given type `T`.
  *
@@ -617,7 +656,6 @@ export function getPrototypeOf<T>(instance: T): T {
 export function nameof<T extends object>(name: StringKeys<T>): StringKeys<T> {
   return name;
 }
-
 /**
  * Normalizes optional properties to allow `undefined` assignment in strict mode.
  *
@@ -683,11 +721,14 @@ export function removeUndefinedProperties<Type extends object>(obj: Type, keysTo
 /**
  * Sets the value of a nested property in an object.
  *
- * @param obj - The object to set the nested property value in.
- * @param path - The path to the nested property.
- * @param value - The value to set.
+ * @param params - The parameters for setting the nested property value.
  */
-export function setNestedPropertyValue(obj: GenericObject, path: string, value: unknown): void {
+export function setNestedPropertyValue(params: SetNestedPropertyValueParams): void {
+  const {
+    obj,
+    path,
+    value
+  } = params;
   const error = new Error(`Property path ${path} not found`);
   let node: GenericObject | undefined = obj;
   const keys = path.split(KEY_SEPARATOR);
@@ -840,7 +881,11 @@ function deepEqualSet(a: Set<unknown>, b: Set<unknown>): boolean {
 
 function deepEqualTyped(a: unknown, b: unknown): boolean | undefined {
   for (const entry of equalityComparerEntries) {
-    const result = tryEntryEquality(entry, a, b);
+    const result = tryEntryEquality({
+      a,
+      b,
+      entry
+    });
     if (result !== undefined) {
       return result;
     }
@@ -856,7 +901,12 @@ function makePlaceholder(key: TokenSubstitutionKey, index?: number): string {
   return `[[${PLACEHOLDER_KEY_PREFIX}${key}${index ? String(index) : ''}]]`;
 }
 
-function tryEntryEquality(entry: EqualityComparerEntry<unknown>, a: unknown, b: unknown): boolean | undefined {
+function tryEntryEquality(params: TryEntryEqualityParams): boolean | undefined {
+  const {
+    a,
+    b,
+    entry
+  } = params;
   if (a instanceof entry.constructor && b instanceof entry.constructor) {
     return entry.equalityComparer(a, b);
   }

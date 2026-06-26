@@ -600,7 +600,11 @@ async function applyFrontmatterChangesWithOffsets(params: ApplyFrontmatterChange
     }
     /* v8 ignore stop */
 
-    setNestedPropertyValue(frontmatter, key, newPropertyValue);
+    setNestedPropertyValue({
+      obj: frontmatter,
+      path: key,
+      value: newPropertyValue
+    });
   }
 }
 

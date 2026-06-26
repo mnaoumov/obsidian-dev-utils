@@ -9,6 +9,7 @@ import {
   vi
 } from 'vitest';
 
+import type { CustomStackTraceErrorConstructorParams } from '../error.ts';
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 
 import { abortSignalNever } from '../abort-controller.ts';
@@ -50,8 +51,11 @@ vi.mock('../debug.ts', () => ({
 vi.mock('../error.ts', () => ({
   ASYNC_WRAPPER_ERROR_MESSAGE: 'async wrapper error',
   CustomStackTraceError: class CustomStackTraceError extends Error {
-    public constructor(message: string, public stackTraceStr: string, public override cause?: unknown) {
-      super(message, { cause });
+    public stackTraceStr: string;
+
+    public constructor(params: CustomStackTraceErrorConstructorParams) {
+      super(params.message, { cause: params.cause });
+      this.stackTraceStr = params.stackTrace;
       this.name = 'CustomStackTraceError';
     }
   },

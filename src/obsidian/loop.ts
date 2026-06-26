@@ -169,10 +169,20 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
       console.error('Error processing item', item);
       if (!fullOptions.shouldContinueOnError) {
         notice?.hide();
-        throw new CustomStackTraceError('loop failed', stackTrace, error);
+        throw new CustomStackTraceError({
+          cause: error,
+          message: 'loop failed',
+          stackTrace
+        });
       }
 
-      emitAsyncErrorEvent(new CustomStackTraceError(ASYNC_WRAPPER_ERROR_MESSAGE, stackTrace, error));
+      emitAsyncErrorEvent(
+        new CustomStackTraceError({
+          cause: error,
+          message: ASYNC_WRAPPER_ERROR_MESSAGE,
+          stackTrace
+        })
+      );
     }
     progressBarEl.value++;
   }

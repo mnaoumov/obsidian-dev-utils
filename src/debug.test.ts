@@ -291,7 +291,12 @@ describe('Debug', () => {
       debug.enable('print-test');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
-      printWithStackTrace(spy, 'fake-stack', 'hello %s', 'world');
+      printWithStackTrace({
+        args: ['world'],
+        debuggerInstance: spy,
+        message: 'hello %s',
+        stackTrace: 'fake-stack'
+      });
       expect(spy).toHaveBeenCalledWith('hello %s', 'world');
     });
 
@@ -300,7 +305,12 @@ describe('Debug', () => {
       debug.enable('print-test-2');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
-      printWithStackTrace(spy, 'fake-stack', 'msg');
+      printWithStackTrace({
+        args: [],
+        debuggerInstance: spy,
+        message: 'msg',
+        stackTrace: 'fake-stack'
+      });
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy).toHaveBeenCalledWith('msg');
     });
@@ -310,7 +320,12 @@ describe('Debug', () => {
       debug.enable('print-test-obsidian');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
-      printWithStackTrace(spy, 'fake-stack', 'msg');
+      printWithStackTrace({
+        args: [],
+        debuggerInstance: spy,
+        message: 'msg',
+        stackTrace: 'fake-stack'
+      });
       expect(spy).toHaveBeenCalledTimes(1);
       expect(spy).toHaveBeenCalledWith('msg', expect.stringContaining('stack trace'), expect.anything());
     });

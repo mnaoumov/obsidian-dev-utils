@@ -98,16 +98,25 @@ describe('makeFileName', () => {
     ['document', 'txt', 'document.txt'],
     ['image', 'png', 'image.png']
   ])('should append extension: makeFileName(%s, %s) -> %s', (name: string, ext: string, expected: string) => {
-    expect(makeFileName(name, ext)).toBe(expected);
+    expect(makeFileName({
+      fileBaseName: name,
+      fileExtension: ext
+    })).toBe(expected);
   });
 
   it('should return just the base name when extension is empty', () => {
-    expect(makeFileName('document', '')).toBe('document');
+    expect(makeFileName({
+      fileBaseName: 'document',
+      fileExtension: ''
+    })).toBe('document');
   });
 
   it('should not add a leading dot to the extension', () => {
     // If extension already has a dot, it will appear as name..ext
-    expect(makeFileName('file', '.txt')).toBe('file..txt');
+    expect(makeFileName({
+      fileBaseName: 'file',
+      fileExtension: '.txt'
+    })).toBe('file..txt');
   });
 });
 

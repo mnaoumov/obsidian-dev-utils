@@ -229,27 +229,43 @@ describe('ObjectUtils', () => {
   describe('setNestedPropertyValue', () => {
     it('should set a top-level property', () => {
       const obj: GenericObject = { a: 1 };
-      setNestedPropertyValue(obj, 'a', 2);
+      setNestedPropertyValue({
+        obj,
+        path: 'a',
+        value: 2
+      });
       expect(obj['a']).toBe(2);
     });
 
     it('should set a nested property', () => {
       const obj = { a: { b: { c: 1 } } };
-      setNestedPropertyValue(ensureGenericObject(obj), 'a.b.c', 42);
+      setNestedPropertyValue({
+        obj: ensureGenericObject(obj),
+        path: 'a.b.c',
+        value: 42
+      });
       expect(obj.a.b.c).toBe(42);
     });
 
     it('should throw for missing intermediate path', () => {
       const obj: GenericObject = { a: 1 };
       expect(() => {
-        setNestedPropertyValue(obj, 'x.y.z', 42);
+        setNestedPropertyValue({
+          obj,
+          path: 'x.y.z',
+          value: 42
+        });
       }).toThrow('Property path x.y.z not found');
     });
 
     it('should throw when last intermediate resolves to undefined', () => {
       const obj: GenericObject = { a: undefined };
       expect(() => {
-        setNestedPropertyValue(obj, 'a.b', 42);
+        setNestedPropertyValue({
+          obj,
+          path: 'a.b',
+          value: 42
+        });
       }).toThrow('Property path a.b not found');
     });
   });

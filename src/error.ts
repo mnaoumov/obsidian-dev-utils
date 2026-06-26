@@ -22,17 +22,36 @@ export const ASYNC_WRAPPER_ERROR_MESSAGE = 'An unhandled error occurred executin
 const STACK_TRACE_PREFIX = '    at';
 
 /**
+ * Parameters for the {@link CustomStackTraceError} constructor.
+ */
+export interface CustomStackTraceErrorConstructorParams {
+  /**
+   * The cause of the error.
+   */
+  readonly cause: unknown;
+
+  /**
+   * The message of the error.
+   */
+  readonly message: string;
+
+  /**
+   * The stack trace of the error.
+   */
+  readonly stackTrace: string;
+}
+
+/**
  * An error that wraps an error with a custom stack trace.
  */
 export class CustomStackTraceError extends Error {
   /**
    * Creates a new CustomStackTraceError.
    *
-   * @param message - The message of the error.
-   * @param stackTrace - The stack trace of the error.
-   * @param cause - The cause of the error.
+   * @param params - The parameters for the error.
    */
-  public constructor(message: string, stackTrace: string, cause: unknown) {
+  public constructor(params: CustomStackTraceErrorConstructorParams) {
+    const { cause, message, stackTrace } = params;
     super(message, { cause });
     this.name = 'CustomStackTraceError';
 

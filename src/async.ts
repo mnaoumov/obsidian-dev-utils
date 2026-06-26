@@ -85,7 +85,11 @@ export async function addErrorHandler(asyncFn: () => Promise<unknown>, stackTrac
   try {
     await asyncFn();
   } catch (asyncError) {
-    const wrappedError = new CustomStackTraceError(ASYNC_WRAPPER_ERROR_MESSAGE, stackTrace, asyncError);
+    const wrappedError = new CustomStackTraceError({
+      cause: asyncError,
+      message: ASYNC_WRAPPER_ERROR_MESSAGE,
+      stackTrace
+    });
     if (handleSilentError(wrappedError)) {
       return;
     }
@@ -254,7 +258,14 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue?: T): Pr
   try {
     return await promise;
   } catch (e) {
-    ignoreErrorDebugger('Ignored error', new CustomStackTraceError('Ignored error', stackTrace, e));
+    ignoreErrorDebugger(
+      'Ignored error',
+      new CustomStackTraceError({
+        cause: e,
+        message: 'Ignored error',
+        stackTrace
+      })
+    );
     return fallbackValue;
   }
 }
@@ -632,28 +643,37 @@ export async function retryWithTimeout(params: RetryWithTimeoutParams): Promise<
         } catch (error) {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed inside `fn()`. ESLint mistakenly does not recognize it.
           if (combinedAbortSignal.aborted || !fullOptions.shouldRetryOnError || terminateRetryErrors.has(error as Error)) {
-            throw new CustomStackTraceError('retryWithTimeout failed', stackTrace, error);
+            throw new CustomStackTraceError({
+              cause: error,
+              message: 'retryWithTimeout failed',
+              stackTrace
+            });
           }
           printError(error);
           isSuccess = false;
         }
         if (isSuccess) {
-          printWithStackTrace(retryWithTimeoutDebugger, stackTrace, `Retry completed successfully after ${String(attempt)} attempts`, {
-            operationFn: params.operationFn,
-            operationName: params.operationName ?? ''
+          printWithStackTrace({
+            args: [{
+              operationFn: params.operationFn,
+              operationName: params.operationName ?? ''
+            }],
+            debuggerInstance: retryWithTimeoutDebugger,
+            message: `Retry completed successfully after ${String(attempt)} attempts`,
+            stackTrace
           });
           return;
         }
 
-        printWithStackTrace(
-          retryWithTimeoutDebugger,
-          stackTrace,
-          `Retry attempt ${String(attempt)} completed unsuccessfully. Trying again in ${String(fullOptions.retryDelayInMilliseconds)} milliseconds`,
-          {
+        printWithStackTrace({
+          args: [{
             operationFn: params.operationFn,
             operationName: params.operationName ?? ''
-          }
-        );
+          }],
+          debuggerInstance: retryWithTimeoutDebugger,
+          message: `Retry attempt ${String(attempt)} completed unsuccessfully. Trying again in ${String(fullOptions.retryDelayInMilliseconds)} milliseconds`,
+          stackTrace
+        });
 
         await sleep(fullOptions.retryDelayInMilliseconds, abortSignal);
       }
@@ -692,16 +712,25 @@ export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result
     return result as Result;
   }
 
-  throw new CustomStackTraceError('Run with timeout failed', stackTrace, runAbortController.signal.reason);
+  throw new CustomStackTraceError({
+    cause: runAbortController.signal.reason,
+    message: 'Run with timeout failed',
+    stackTrace
+  });
 
   async function run(): Promise<void> {
     try {
       result = await params.operationFn(runAbortController.signal);
       const duration = Math.trunc(performance.now() - startTime);
-      printWithStackTrace(runWithTimeoutDebugger, stackTrace, `Execution time: ${String(duration)} milliseconds`, {
-        context: params.context,
-        operationFn: params.operationFn,
-        operationName: params.operationName ?? ''
+      printWithStackTrace({
+        args: [{
+          context: params.context,
+          operationFn: params.operationFn,
+          operationName: params.operationName ?? ''
+        }],
+        debuggerInstance: runWithTimeoutDebugger,
+        message: `Execution time: ${String(duration)} milliseconds`,
+        stackTrace
       });
       hasResult = true;
     } catch (e) {
@@ -719,10 +748,15 @@ export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result
       return;
     }
     const duration = Math.trunc(performance.now() - startTime);
-    printWithStackTrace(runWithTimeoutDebugger, stackTrace, `Timed out after ${String(duration)} milliseconds`, {
-      context: params.context,
-      operationFn: params.operationFn,
-      operationName: params.operationName ?? ''
+    printWithStackTrace({
+      args: [{
+        context: params.context,
+        operationFn: params.operationFn,
+        operationName: params.operationName ?? ''
+      }],
+      debuggerInstance: runWithTimeoutDebugger,
+      message: `Timed out after ${String(duration)} milliseconds`,
+      stackTrace
     });
 
     const timeoutContext: TimeoutContext = normalizeOptionalProperties<TimeoutContext>({

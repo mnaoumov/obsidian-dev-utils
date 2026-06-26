@@ -107,6 +107,21 @@ export const parse = posix.parse;
 export const relative = posix.relative;
 
 /**
+ * Parameters for {@link makeFileName}.
+ */
+export interface MakeFileNameParams {
+  /**
+   * The file name to append the extension to.
+   */
+  readonly fileBaseName: string;
+
+  /**
+   * The extension to append to the file name.
+   */
+  readonly fileExtension: string;
+}
+
+/**
  * Gets the file name from the `import(dot)meta(dot)url`, converting it to a POSIX-style path.
  *
  * @param importMetaUrl - The `import(dot)meta(dot)url` from which to extract the file name.
@@ -130,12 +145,11 @@ export function getFolderName(importMetaUrl: string): string {
  * Makes a file name by appending an extension to a given file name.
  * If the extension is empty, the file name is returned as is.
  *
- * @param fileBaseName - The file name to append the extension to.
- * @param fileExtension - The extension to append to the file name.
+ * @param params - The parameters for making the file name.
  * @returns The file name with the extension appended.
  */
-export function makeFileName(fileBaseName: string, fileExtension: string): string {
-  return fileExtension ? `${fileBaseName}.${fileExtension}` : fileBaseName;
+export function makeFileName(params: MakeFileNameParams): string {
+  return params.fileExtension ? `${params.fileBaseName}.${params.fileExtension}` : params.fileBaseName;
 }
 
 /**

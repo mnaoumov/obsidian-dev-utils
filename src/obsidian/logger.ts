@@ -30,38 +30,58 @@ export async function invokeAsyncAndLog(
   const invokeAsyncAndLogDebugger = getLibDebugger('Logger:invokeAsyncAndLog');
   const timestampStart = performance.now();
   stackTrace ??= getStackTrace(1);
-  printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:start`, {
-    fn,
-    timestampStart
+  printWithStackTrace({
+    args: [{
+      fn,
+      timestampStart
+    }],
+    debuggerInstance: invokeAsyncAndLogDebugger,
+    message: `${title}:start`,
+    stackTrace
   });
   try {
     await fn(abortSignal);
     const timestampEnd = performance.now();
     const duration = Math.trunc(timestampEnd - timestampStart);
     if (abortSignal.aborted) {
-      printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:aborted`, {
-        abortReason: abortSignal.reason as unknown,
+      printWithStackTrace({
+        args: [{
+          abortReason: abortSignal.reason as unknown,
+          duration,
+          fn,
+          timestampEnd,
+          timestampStart
+        }],
+        debuggerInstance: invokeAsyncAndLogDebugger,
+        message: `${title}:aborted`,
+        stackTrace
+      });
+      abortSignal.throwIfAborted();
+    }
+    printWithStackTrace({
+      args: [{
         duration,
         fn,
         timestampEnd,
         timestampStart
-      });
-      abortSignal.throwIfAborted();
-    }
-    printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:end`, {
-      duration,
-      fn,
-      timestampEnd,
-      timestampStart
+      }],
+      debuggerInstance: invokeAsyncAndLogDebugger,
+      message: `${title}:end`,
+      stackTrace
     });
   } catch (error) {
     const timestampEnd = performance.now();
-    printWithStackTrace(invokeAsyncAndLogDebugger, stackTrace, `${title}:error`, {
-      duration: Math.trunc(timestampEnd - timestampStart),
-      error,
-      fn,
-      timestampEnd,
-      timestampStart
+    printWithStackTrace({
+      args: [{
+        duration: Math.trunc(timestampEnd - timestampStart),
+        error,
+        fn,
+        timestampEnd,
+        timestampStart
+      }],
+      debuggerInstance: invokeAsyncAndLogDebugger,
+      message: `${title}:error`,
+      stackTrace
     });
     throw error;
   }

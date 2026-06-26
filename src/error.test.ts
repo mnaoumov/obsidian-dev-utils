@@ -213,91 +213,164 @@ describe('CustomStackTraceError', () => {
   it('should be an instance of Error', () => {
     const customStack = '    at customFunction (file.ts:10:5)\n    at main (file.ts:20:3)';
     const cause = new Error('original');
-    const error = new CustomStackTraceError('wrapped', customStack, cause);
+    const error = new CustomStackTraceError({
+      cause,
+      message: 'wrapped',
+      stackTrace: customStack
+    });
     expect(error).toBeInstanceOf(Error);
   });
 
   it('should be an instance of CustomStackTraceError', () => {
     const customStack = '    at customFunction (file.ts:10:5)\n    at main (file.ts:20:3)';
     const cause = new Error('original');
-    const error = new CustomStackTraceError('wrapped', customStack, cause);
+    const error = new CustomStackTraceError({
+      cause,
+      message: 'wrapped',
+      stackTrace: customStack
+    });
     expect(error).toBeInstanceOf(CustomStackTraceError);
   });
 
   it('should have name set to CustomStackTraceError', () => {
     const customStack = '    at customFunction (file.ts:10:5)\n    at main (file.ts:20:3)';
     const cause = new Error('original');
-    const error = new CustomStackTraceError('wrapped', customStack, cause);
+    const error = new CustomStackTraceError({
+      cause,
+      message: 'wrapped',
+      stackTrace: customStack
+    });
     expect(error.name).toBe('CustomStackTraceError');
   });
 
   it('should have the correct message', () => {
     const customStack = '    at customFunction (file.ts:10:5)\n    at main (file.ts:20:3)';
     const cause = new Error('original');
-    const error = new CustomStackTraceError('wrapped', customStack, cause);
+    const error = new CustomStackTraceError({
+      cause,
+      message: 'wrapped',
+      stackTrace: customStack
+    });
     expect(error.message).toBe('wrapped');
   });
 
   it('should have the correct cause', () => {
     const customStack = '    at customFunction (file.ts:10:5)\n    at main (file.ts:20:3)';
     const cause = new Error('original');
-    const error = new CustomStackTraceError('wrapped', customStack, cause);
+    const error = new CustomStackTraceError({
+      cause,
+      message: 'wrapped',
+      stackTrace: customStack
+    });
     expect(error.cause).toBe(cause);
   });
 
   it('should include the custom stack frames', () => {
     const customStack = '    at customFunction (file.ts:10:5)\n    at main (file.ts:20:3)';
     const cause = new Error('original');
-    const error = new CustomStackTraceError('wrapped', customStack, cause);
+    const error = new CustomStackTraceError({
+      cause,
+      message: 'wrapped',
+      stackTrace: customStack
+    });
     expect(error.stack).toContain('customFunction');
   });
 
   it('should include all provided stack frames', () => {
     const customStack = '    at customFunction (file.ts:10:5)\n    at main (file.ts:20:3)';
     const cause = new Error('original');
-    const error = new CustomStackTraceError('wrapped', customStack, cause);
+    const error = new CustomStackTraceError({
+      cause,
+      message: 'wrapped',
+      stackTrace: customStack
+    });
     expect(error.stack).toContain('main');
   });
 
   it('should replace the error header with CustomStackTraceError header', () => {
     const customStack = 'Error: some message\n    at fn (file.ts:1:1)';
-    const error = new CustomStackTraceError('test', customStack, null);
+    const error = new CustomStackTraceError({
+      cause: null,
+      message: 'test',
+      stackTrace: customStack
+    });
     expect(error.stack).toContain('CustomStackTraceError: test');
   });
 
   it('should preserve stack frames when stripping the error header', () => {
     const customStack = 'Error: some message\n    at fn (file.ts:1:1)';
-    const error = new CustomStackTraceError('test', customStack, null);
+    const error = new CustomStackTraceError({
+      cause: null,
+      message: 'test',
+      stackTrace: customStack
+    });
     expect(error.stack).toContain('at fn (file.ts:1:1)');
   });
 
   it('should detect circular causes and throw', () => {
-    const error1 = new CustomStackTraceError('first', '    at a (a.ts:1:1)', null);
+    const error1 = new CustomStackTraceError({
+      cause: null,
+      message: 'first',
+      stackTrace: '    at a (a.ts:1:1)'
+    });
     // Manually set circular cause
     Object.defineProperty(error1, 'cause', { value: error1, writable: true });
 
     expect(
-      () => new CustomStackTraceError('second', '    at b (b.ts:1:1)', error1)
+      () =>
+        new CustomStackTraceError({
+          cause: error1,
+          message: 'second',
+          stackTrace: '    at b (b.ts:1:1)'
+        })
     ).toThrow('Circular cause detected');
   });
 
   it('should set the correct message for deeply nested causes without circularity', () => {
-    const inner = new CustomStackTraceError('inner', '    at inner (inner.ts:1:1)', null);
-    const middle = new CustomStackTraceError('middle', '    at middle (middle.ts:1:1)', inner);
-    const outer = new CustomStackTraceError('outer', '    at outer (outer.ts:1:1)', middle);
+    const inner = new CustomStackTraceError({
+      cause: null,
+      message: 'inner',
+      stackTrace: '    at inner (inner.ts:1:1)'
+    });
+    const middle = new CustomStackTraceError({
+      cause: inner,
+      message: 'middle',
+      stackTrace: '    at middle (middle.ts:1:1)'
+    });
+    const outer = new CustomStackTraceError({
+      cause: middle,
+      message: 'outer',
+      stackTrace: '    at outer (outer.ts:1:1)'
+    });
     expect(outer.message).toBe('outer');
   });
 
   it('should set the correct cause for deeply nested causes without circularity', () => {
-    const inner = new CustomStackTraceError('inner', '    at inner (inner.ts:1:1)', null);
-    const middle = new CustomStackTraceError('middle', '    at middle (middle.ts:1:1)', inner);
-    const outer = new CustomStackTraceError('outer', '    at outer (outer.ts:1:1)', middle);
+    const inner = new CustomStackTraceError({
+      cause: null,
+      message: 'inner',
+      stackTrace: '    at inner (inner.ts:1:1)'
+    });
+    const middle = new CustomStackTraceError({
+      cause: inner,
+      message: 'middle',
+      stackTrace: '    at middle (middle.ts:1:1)'
+    });
+    const outer = new CustomStackTraceError({
+      cause: middle,
+      message: 'outer',
+      stackTrace: '    at outer (outer.ts:1:1)'
+    });
     expect(outer.cause).toBe(middle);
   });
 
   it('should handle non-CustomStackTraceError cause', () => {
     const cause = 'string cause';
-    const error = new CustomStackTraceError('test', '    at fn (file.ts:1:1)', cause);
+    const error = new CustomStackTraceError({
+      cause,
+      message: 'test',
+      stackTrace: '    at fn (file.ts:1:1)'
+    });
     expect(error.cause).toBe('string cause');
   });
 });

@@ -24,6 +24,56 @@ const NAMESPACE_SEPARATOR = ',';
 const NEGATED_NAMESPACE_PREFIX = '-';
 
 /**
+ * Parameters for {@link printWithStackTrace}.
+ */
+export interface PrintWithStackTraceParams {
+  /**
+   * The arguments to print.
+   */
+  readonly args: unknown[];
+
+  /**
+   * The debugger instance.
+   */
+  readonly debuggerInstance: Debugger;
+
+  /**
+   * The message to print.
+   */
+  readonly message: string;
+
+  /**
+   * The stack trace to print.
+   */
+  readonly stackTrace: string;
+}
+
+/**
+ * Parameters for {@link logWithCaller}.
+ */
+interface LogWithCallerParams {
+  /**
+   * The arguments to print.
+   */
+  readonly args: unknown[];
+
+  /**
+   * The number of frames to skip in the stack trace.
+   */
+  readonly framesToSkip: number;
+
+  /**
+   * The message to print.
+   */
+  readonly message: string;
+
+  /**
+   * The namespace for the debugger instance.
+   */
+  readonly namespace: string;
+}
+
+/**
  * Enables the debuggers for the `obsidian-dev-utils` library.
  */
 export function enableLibraryDebuggers(): void {
@@ -58,7 +108,12 @@ export function getDebugger(namespace: string, framesToSkip = 0): Debugger {
   if (!debuggerEx) {
     debuggerEx = getSharedDebugLibInstance()(namespace);
     debuggerEx.log = (message: string, ...args: unknown[]): void => {
-      logWithCaller(namespace, framesToSkip, message, ...args);
+      logWithCaller({
+        args,
+        framesToSkip,
+        message,
+        namespace
+      });
     };
 
     debuggersMap.set(key, debuggerEx);
@@ -82,12 +137,15 @@ export function getLibDebugger(namespace: string): Debugger {
 /**
  * Prints a message with a stack trace.
  *
- * @param debuggerInstance - The debugger instance.
- * @param stackTrace - The stack trace to print.
- * @param message - The message to print.
- * @param args - The arguments to print.
+ * @param params - The parameters for printing the message.
  */
-export function printWithStackTrace(debuggerInstance: Debugger, stackTrace: string, message: string, ...args: unknown[]): void {
+export function printWithStackTrace(params: PrintWithStackTraceParams): void {
+  const {
+    args,
+    debuggerInstance,
+    message,
+    stackTrace
+  } = params;
   if (!isInObsidian()) {
     debuggerInstance(message, ...args);
     return;
@@ -153,7 +211,13 @@ function getSharedDebugLibInstance(): typeof debug {
   return getObsidianDevUtilsState('debug', debug).value;
 }
 
-function logWithCaller(namespace: string, framesToSkip: number, message: string, ...args: unknown[]): void {
+function logWithCaller(params: LogWithCallerParams): void {
+  const {
+    args,
+    framesToSkip,
+    message,
+    namespace
+  } = params;
   if (!getSharedDebugLibInstance().enabled(namespace)) {
     return;
   }
@@ -183,11 +247,11 @@ function logWithCaller(namespace: string, framesToSkip: number, message: string,
 }
 
 function makeStackTraceError(stackTrace: string): CustomStackTraceError {
-  return new CustomStackTraceError(
-    'Debug mode: intentional placeholder error. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md.',
-    stackTrace,
-    undefined
-  );
+  return new CustomStackTraceError({
+    cause: undefined,
+    message: 'Debug mode: intentional placeholder error. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md.',
+    stackTrace
+  });
 }
 
 /**

@@ -316,7 +316,10 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
 
   const prefix = folder?.getParentPrefix() ?? '';
   return shouldSkipDuplicateCheck
-    ? makeFileName(prefix + attachmentFileBaseName, attachmentFileExtension)
+    ? makeFileName({
+      fileBaseName: prefix + attachmentFileBaseName,
+      fileExtension: attachmentFileExtension
+    })
     : app.vault.getAvailablePath(prefix + attachmentFileBaseName, attachmentFileExtension);
 }
 
