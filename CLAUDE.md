@@ -273,13 +273,24 @@ examples.
 
 ## Current Task
 
-**Extract `*Params`/`*Options` parameter bags — BREAKING public-API conversion (option C).**
-Branch: `refactor/extract-params-options`.
+**Extract `*Params`/`*Options` parameter bags — BREAKING public-API conversion (option C).
+LIBRARY CONVERSION COMPLETE on branch `refactor/extract-params-options` (~25 commits, all green:
+3508 tests, 100% coverage, compile/lint/format/spellcheck clean). NOT merged/published.**
+
+Re-running `npx jiti F:/tmp/analyze-params.ts` shows the 3+-param count down from 112 → ~35, and
+every remaining entry is intentionally excluded: signature-locked event/DOM/Obsidian/Proxy contracts
+(async-events/plugin event-source `on`/`once`/`onSaveSettings`, command-handler `shouldAddTo*Menu`/
+`handle*Menu`/`editorCheckCallback`, `registerAll*DomEvent`, `createElAsync`/`createSvgAsync`,
+`strict-proxy` `get`, `bind`) and the `ToJsonConverter` class methods (remaining params are genuine
+per-call recursion values per G10o). `checkExtension` stays positional (documented hot path).
+
+**Remaining (handed off, NOT done here):** merge + npm publish the new major (irreversible — needs
+explicit go-ahead), then migrate the ~23 consuming plugins against the published version.
 
 Phase 1 (non-breaking internal helpers) — DONE (5 atomic commits): `file-change.ts`, `link.ts`,
 `markdown-code-block-processor.ts`, `rename-delete-handler-component.ts`, `over-exposure.ts`.
 
-Phase 2 (BREAKING, in progress) — convert all exported candidate functions to params/options bags.
+Phase 2 (BREAKING) — DONE — all exported candidate functions converted to params/options bags.
 Design rule (consistent with existing lib style, e.g. `process(app, pathOrFile, provider, options?)`):
 keep unambiguously-typed leading args positional (`app: App`, a single `pathOrFile`/`path`/`content`,
 a callback); move ambiguous same-typed pairs (old/new path), boolean/enum flags, and optional config
