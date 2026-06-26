@@ -67,13 +67,13 @@ describe('Async', () => {
     it('should not resolve before the specified delay', async () => {
       await noopAsync();
       const callback = vi.fn();
-      sleep(1000).then(callback).catch(noop);
+      sleep({ milliseconds: 1000 }).then(callback).catch(noop);
       expect(callback).not.toHaveBeenCalled();
     });
 
     it('should resolve after the specified delay', async () => {
       const callback = vi.fn();
-      const promise = sleep(1000).then(callback);
+      const promise = sleep({ milliseconds: 1000 }).then(callback);
       await vi.advanceTimersByTimeAsync(1000);
       await promise;
       expect(callback).toHaveBeenCalledOnce();
@@ -81,7 +81,7 @@ describe('Async', () => {
 
     it('should resolve immediately for 0ms delay', async () => {
       const callback = vi.fn();
-      const promise = sleep(0).then(callback);
+      const promise = sleep({ milliseconds: 0 }).then(callback);
       await vi.advanceTimersByTimeAsync(0);
       await promise;
       expect(callback).toHaveBeenCalledOnce();
@@ -1237,7 +1237,7 @@ describe('Async', () => {
         // Success
       });
 
-      invokeAsyncSafelyAfterDelay(fn, 50);
+      invokeAsyncSafelyAfterDelay({ asyncFn: fn, delayInMilliseconds: 50 });
 
       expect(fn).not.toHaveBeenCalled();
     });
@@ -1247,7 +1247,7 @@ describe('Async', () => {
         // Success
       });
 
-      invokeAsyncSafelyAfterDelay(fn, 50);
+      invokeAsyncSafelyAfterDelay({ asyncFn: fn, delayInMilliseconds: 50 });
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 150);
@@ -1261,24 +1261,26 @@ describe('Async', () => {
       controller.abort(new Error('already aborted'));
 
       expect(() => {
-        invokeAsyncSafelyAfterDelay(
-          async () => {
+        invokeAsyncSafelyAfterDelay({
+          abortSignal: controller.signal,
+          asyncFn: async () => {
             // Should not reach
           },
-          0,
-          undefined,
-          controller.signal
-        );
+          delayInMilliseconds: 0
+        });
       }).toThrow();
     });
 
     it('should pass a non-null abortSignal to the async function', async () => {
       let receivedSignal: AbortSignal | null = null;
 
-      invokeAsyncSafelyAfterDelay(async (abortSignal) => {
-        await noopAsync();
-        receivedSignal = abortSignal;
-      }, 10);
+      invokeAsyncSafelyAfterDelay({
+        asyncFn: async (abortSignal) => {
+          await noopAsync();
+          receivedSignal = abortSignal;
+        },
+        delayInMilliseconds: 10
+      });
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 100);
@@ -1290,10 +1292,13 @@ describe('Async', () => {
     it('should pass an AbortSignal instance to the async function', async () => {
       let receivedSignal: AbortSignal | null = null;
 
-      invokeAsyncSafelyAfterDelay(async (abortSignal) => {
-        await noopAsync();
-        receivedSignal = abortSignal;
-      }, 10);
+      invokeAsyncSafelyAfterDelay({
+        asyncFn: async (abortSignal) => {
+          await noopAsync();
+          receivedSignal = abortSignal;
+        },
+        delayInMilliseconds: 10
+      });
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 100);
@@ -1307,7 +1312,7 @@ describe('Async', () => {
         // Success
       });
 
-      invokeAsyncSafelyAfterDelay(fn);
+      invokeAsyncSafelyAfterDelay({ asyncFn: fn });
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 100);
@@ -1395,7 +1400,7 @@ describe('Async', () => {
       }, 50);
 
       const start = Date.now();
-      await sleep(10000, controller.signal);
+      await sleep({ abortSignal: controller.signal, milliseconds: 10000 });
       const elapsed = Date.now() - start;
 
       // Should have resolved much sooner than 10s
@@ -1409,7 +1414,7 @@ describe('Async', () => {
         controller.abort(new Error('abort reason'));
       }, 50);
 
-      await expect(sleep(10000, controller.signal, true)).rejects.toThrow();
+      await expect(sleep({ abortSignal: controller.signal, milliseconds: 10000, shouldThrowOnAbort: true })).rejects.toThrow();
     });
 
     it('should not throw when shouldThrowOnAbort is false and signal is aborted', async () => {
@@ -1419,19 +1424,19 @@ describe('Async', () => {
         controller.abort(new Error('abort reason'));
       }, 50);
 
-      await expect(sleep(10000, controller.signal, false)).resolves.toBeUndefined();
+      await expect(sleep({ abortSignal: controller.signal, milliseconds: 10000, shouldThrowOnAbort: false })).resolves.toBeUndefined();
     });
 
     it('should resolve normally when abortSignal is not aborted', async () => {
       const controller = new AbortController();
 
-      await expect(sleep(50, controller.signal)).resolves.toBeUndefined();
+      await expect(sleep({ abortSignal: controller.signal, milliseconds: 50 })).resolves.toBeUndefined();
     });
   });
 
   describe('timeout', () => {
     it('should reject with timeout error after the specified period', async () => {
-      await expect(timeout(50)).rejects.toThrow('Timed out in 50 milliseconds');
+      await expect(timeout({ timeoutInMilliseconds: 50 })).rejects.toThrow('Timed out in 50 milliseconds');
     });
 
     it('should throw when shouldThrowOnAbort is true and signal is aborted before timeout', async () => {
@@ -1440,7 +1445,7 @@ describe('Async', () => {
         controller.abort(new Error('aborted early'));
       }, 10);
 
-      await expect(timeout(5000, controller.signal, true)).rejects.toThrow();
+      await expect(timeout({ abortSignal: controller.signal, shouldThrowOnAbort: true, timeoutInMilliseconds: 5000 })).rejects.toThrow();
     });
   });
 
@@ -1634,14 +1639,14 @@ describe('Async', () => {
     it('should never resolve', async () => {
       const resolve = vi.fn();
       neverEnds().then(resolve).catch(noop);
-      await sleep(100);
+      await sleep({ milliseconds: 100 });
       expect(resolve).not.toHaveBeenCalled();
     });
 
     it('should never reject', async () => {
       const reject = vi.fn();
       neverEnds().catch(reject).catch(noop);
-      await sleep(100);
+      await sleep({ milliseconds: 100 });
       expect(reject).not.toHaveBeenCalled();
     });
   });

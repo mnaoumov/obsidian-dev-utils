@@ -274,6 +274,33 @@ const pendingAsyncOperations = new Set<Promise<void>>();
 let isAsyncOperationTrackingEnabled = false;
 
 /**
+ * Parameters for {@link invokeAsyncSafelyAfterDelay}.
+ */
+export interface InvokeAsyncSafelyAfterDelayParams {
+  /**
+   * The abort signal to listen to.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * The asynchronous function to invoke.
+   *
+   * @param abortSignal - The abort signal to listen to.
+   */
+  asyncFn(this: void, abortSignal: AbortSignal): Promisable<void>;
+
+  /**
+   * The delay in milliseconds.
+   */
+  readonly delayInMilliseconds?: number;
+
+  /**
+   * The stack trace of the source function.
+   */
+  readonly stackTrace?: string;
+}
+
+/**
  * Disables tracking previously enabled via {@link enableAsyncOperationTracking} and forgets any currently-tracked operations.
  */
 export function disableAsyncOperationTracking(): void {
@@ -316,22 +343,18 @@ export function invokeAsyncSafely(asyncFn: () => Promisable<unknown>, stackTrace
 /**
  * Invokes an asynchronous function after a delay.
  *
- * @param asyncFn - The asynchronous function to invoke.
- * @param delayInMilliseconds - The delay in milliseconds.
- * @param stackTrace - The stack trace of the source function.
- * @param abortSignal - The abort signal to listen to.
+ * @param params - The parameters for the function.
  */
-export function invokeAsyncSafelyAfterDelay(
-  asyncFn: (abortSignal: AbortSignal) => Promisable<void>,
-  delayInMilliseconds = 0,
-  stackTrace?: string,
-  abortSignal?: AbortSignal
-): void {
-  abortSignal ??= abortSignalNever();
+export function invokeAsyncSafelyAfterDelay(params: InvokeAsyncSafelyAfterDelayParams): void {
+  const {
+    asyncFn,
+    delayInMilliseconds = 0
+  } = params;
+  const abortSignal = params.abortSignal ?? abortSignalNever();
   abortSignal.throwIfAborted();
-  stackTrace ??= getStackTrace(1);
+  const stackTrace = params.stackTrace ?? getStackTrace(1);
   invokeAsyncSafely(async () => {
-    await sleep(delayInMilliseconds, abortSignal, true);
+    await sleep({ abortSignal, milliseconds: delayInMilliseconds, shouldThrowOnAbort: true });
     await asyncFn(abortSignal);
   }, stackTrace);
 }
@@ -472,6 +495,26 @@ export interface RunWithTimeoutParams<Result> {
 }
 
 /**
+ * Parameters for {@link sleep}.
+ */
+export interface SleepParams {
+  /**
+   * The abort signal to listen to.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * The time to wait in milliseconds.
+   */
+  readonly milliseconds: number;
+
+  /**
+   * Whether to throw an error if the abort signal is aborted.
+   */
+  readonly shouldThrowOnAbort?: boolean;
+}
+
+/**
  * Context provided to the timeout handler.
  */
 export interface TimeoutContext {
@@ -493,6 +536,26 @@ export interface TimeoutContext {
    * Terminates the operation that timed out.
    */
   terminateOperation(): void;
+}
+
+/**
+ * Parameters for {@link timeout}.
+ */
+export interface TimeoutParams {
+  /**
+   * The abort signal to listen to.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * Whether to throw an error if the abort signal is aborted.
+   */
+  readonly shouldThrowOnAbort?: boolean;
+
+  /**
+   * The timeout period in milliseconds.
+   */
+  readonly timeoutInMilliseconds: number;
 }
 
 /**
@@ -606,7 +669,7 @@ export async function requestAnimationFrameAsync(fallbackTimeoutInMilliseconds?:
   const DEFAULT_FALLBACK_TIMEOUT_IN_MILLISECONDS = 100;
   fallbackTimeoutInMilliseconds ??= DEFAULT_FALLBACK_TIMEOUT_IN_MILLISECONDS;
 
-  return Promise.race([requestAnimationFrameAsyncPromise, fallbackTimeoutInMilliseconds > 0 ? sleep(fallbackTimeoutInMilliseconds) : neverEnds()]);
+  return Promise.race([requestAnimationFrameAsyncPromise, fallbackTimeoutInMilliseconds > 0 ? sleep({ milliseconds: fallbackTimeoutInMilliseconds }) : neverEnds()]);
 }
 
 /**
@@ -675,7 +738,7 @@ export async function retryWithTimeout(params: RetryWithTimeoutParams): Promise<
           stackTrace
         });
 
-        await sleep(fullOptions.retryDelayInMilliseconds, abortSignal);
+        await sleep({ abortSignal, milliseconds: fullOptions.retryDelayInMilliseconds });
       }
     },
     operationName: params.operationName ?? '',
@@ -742,7 +805,7 @@ export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result
   }
 
   async function innerTimeout(): Promise<void> {
-    await sleep(params.timeoutInMilliseconds, timeoutAbortController.signal);
+    await sleep({ abortSignal: timeoutAbortController.signal, milliseconds: params.timeoutInMilliseconds });
 
     if (isCompleted) {
       return;
@@ -809,12 +872,15 @@ export async function setTimeoutAsync(delay?: number): Promise<void> {
 /**
  * Delays execution for a specified number of milliseconds.
  *
- * @param milliseconds - The time to wait in milliseconds.
- * @param abortSignal - The abort signal to listen to.
- * @param shouldThrowOnAbort - Whether to throw an error if the abort signal is aborted.
+ * @param params - The parameters for the function.
  * @returns A {@link Promise} that resolves after the specified delay.
  */
-export async function sleep(milliseconds: number, abortSignal?: AbortSignal, shouldThrowOnAbort?: boolean): Promise<void> {
+export async function sleep(params: SleepParams): Promise<void> {
+  const {
+    abortSignal,
+    milliseconds,
+    shouldThrowOnAbort
+  } = params;
   await waitForAbort(abortSignalAny(abortSignal, abortSignalTimeout(milliseconds)));
   if (shouldThrowOnAbort) {
     abortSignal?.throwIfAborted();
@@ -824,13 +890,20 @@ export async function sleep(milliseconds: number, abortSignal?: AbortSignal, sho
 /**
  * Returns a {@link Promise} that rejects after the specified timeout period.
  *
- * @param timeoutInMilliseconds - The timeout period in milliseconds.
- * @param abortSignal - The abort signal to listen to.
- * @param shouldThrowOnAbort - Whether to throw an error if the abort signal is aborted.
+ * @param params - The parameters for the function.
  * @returns A {@link Promise} that always rejects with a timeout error.
  */
-export async function timeout(timeoutInMilliseconds: number, abortSignal?: AbortSignal, shouldThrowOnAbort?: boolean): Promise<never> {
-  await sleep(timeoutInMilliseconds, abortSignal, shouldThrowOnAbort);
+export async function timeout(params: TimeoutParams): Promise<never> {
+  const {
+    abortSignal,
+    shouldThrowOnAbort,
+    timeoutInMilliseconds
+  } = params;
+  await sleep(normalizeOptionalProperties<SleepParams>({
+    abortSignal,
+    milliseconds: timeoutInMilliseconds,
+    shouldThrowOnAbort
+  }));
   throw new Error(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`);
 }
 

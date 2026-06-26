@@ -13,10 +13,7 @@ import type { GenericAsyncFunction } from '../function.ts';
 import type { DataviewInlineApi } from './dataview.ts';
 import type { GetFileParams } from './file-system.ts';
 
-import {
-  sleep,
-  waitForAllAsyncOperations
-} from '../async.ts';
+import { waitForAllAsyncOperations } from '../async.ts';
 import {
   noop,
   noopAsync
