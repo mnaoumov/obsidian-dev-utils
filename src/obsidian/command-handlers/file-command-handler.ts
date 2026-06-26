@@ -11,7 +11,11 @@ import type {
 } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
-import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
+import type {
+  AbstractFileCommandHandlerConstructorParams,
+  AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams,
+  AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams
+} from './abstract-file-command-handler.ts';
 
 import { chain } from '../../async.ts';
 import {
@@ -20,6 +24,46 @@ import {
   isFile
 } from '../file-system.ts';
 import { AbstractFileCommandHandler } from './abstract-file-command-handler.ts';
+
+/**
+ * Parameters for {@link FileCommandHandler.shouldAddToFileMenu}.
+ */
+export interface FileCommandHandlerShouldAddToFileMenuParams {
+  /**
+   * The file.
+   */
+  readonly file: TFile;
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
+ * Parameters for {@link FileCommandHandler.shouldAddToFilesMenu}.
+ */
+export interface FileCommandHandlerShouldAddToFilesMenuParams {
+  /**
+   * The files.
+   */
+  readonly files: TFile[];
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
 
 /**
  * Command handler for file-specific commands.
@@ -127,54 +171,68 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
   /**
    * Filters to only show menu for TFile instances.
    *
-   * @param abstractFile - The file or folder.
-   * @param source - The source of the event.
-   * @param leaf - The workspace leaf, if available.
+   * @param params - The parameters for the single-file menu check.
    * @returns Whether to add to the file menu.
    */
-  protected override shouldAddToAbstractFileMenu(abstractFile: TAbstractFile, source: string, leaf?: WorkspaceLeaf): boolean {
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Override keeps the base class param type.
+  protected override shouldAddToAbstractFileMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams): boolean {
+    const {
+      abstractFile,
+      leaf,
+      source
+    } = params;
     if (!isFile(abstractFile)) {
       return false;
     }
-    return this.shouldAddToFileMenu(abstractFile, source, leaf);
+    return this.shouldAddToFileMenu({
+      file: abstractFile,
+      leaf,
+      source
+    });
   }
 
   /**
    * Filters to only show menu for TFile arrays.
    *
-   * @param abstractFiles - The files or folders.
-   * @param source - The source of the event.
-   * @param leaf - The workspace leaf, if available.
+   * @param params - The parameters for the multi-file menu check.
    * @returns Whether to add to the files menu.
    */
-  protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFile[], source: string, leaf?: WorkspaceLeaf): boolean {
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Override keeps the base class param type.
+  protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+    const {
+      abstractFiles,
+      leaf,
+      source
+    } = params;
     if (!abstractFiles.every((f) => isFile(f))) {
       return false;
     }
-    return this.shouldAddToFilesMenu(asArrayOfFiles(abstractFiles), source, leaf);
+    return this.shouldAddToFilesMenu({
+      files: asArrayOfFiles(abstractFiles),
+      leaf,
+      source
+    });
   }
 
   /**
    * Checks whether the command should appear in the single-file context menu.
    *
-   * @param _file - The file.
-   * @param _source - The source of the event.
-   * @param _leaf - The workspace leaf, if available.
+   * @param params - The parameters for the single-file menu check.
    * @returns Whether to add to the file menu.
    */
-  protected shouldAddToFileMenu(_file: TFile, _source: string, _leaf?: WorkspaceLeaf): boolean {
+  protected shouldAddToFileMenu(params: FileCommandHandlerShouldAddToFileMenuParams): boolean {
+    const { file: _file, leaf: _leaf, source: _source } = params;
     return false;
   }
 
   /**
    * Checks whether the command should appear in the multi-file context menu.
    *
-   * @param _files - The files.
-   * @param _source - The source of the event.
-   * @param _leaf - The workspace leaf, if available.
+   * @param params - The parameters for the multi-file menu check.
    * @returns Whether to add to the files menu.
    */
-  protected shouldAddToFilesMenu(_files: TFile[], _source: string, _leaf?: WorkspaceLeaf): boolean {
+  protected shouldAddToFilesMenu(params: FileCommandHandlerShouldAddToFilesMenuParams): boolean {
+    const { files: _files, leaf: _leaf, source: _source } = params;
     return false;
   }
 }

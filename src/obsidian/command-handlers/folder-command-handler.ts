@@ -11,7 +11,11 @@ import type {
 } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
-import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
+import type {
+  AbstractFileCommandHandlerConstructorParams,
+  AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams,
+  AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams
+} from './abstract-file-command-handler.ts';
 
 import { chain } from '../../async.ts';
 import {
@@ -20,6 +24,46 @@ import {
   isFolder
 } from '../file-system.ts';
 import { AbstractFileCommandHandler } from './abstract-file-command-handler.ts';
+
+/**
+ * Parameters for {@link FolderCommandHandler.shouldAddToFolderMenu}.
+ */
+export interface FolderCommandHandlerShouldAddToFolderMenuParams {
+  /**
+   * The folder.
+   */
+  readonly folder: TFolder;
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
+ * Parameters for {@link FolderCommandHandler.shouldAddToFoldersMenu}.
+ */
+export interface FolderCommandHandlerShouldAddToFoldersMenuParams {
+  /**
+   * The folders.
+   */
+  readonly folders: TFolder[];
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
 
 /**
  * Command handler for folder-specific commands.
@@ -136,54 +180,68 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
   /**
    * Filters to only show menu for TFolder instances.
    *
-   * @param abstractFile - The file or folder.
-   * @param source - The source of the event.
-   * @param leaf - The workspace leaf, if available.
+   * @param params - The parameters for the single-file menu check.
    * @returns Whether to add to the file menu.
    */
-  protected override shouldAddToAbstractFileMenu(abstractFile: TAbstractFile, source: string, leaf?: WorkspaceLeaf): boolean {
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Override keeps the base class param type.
+  protected override shouldAddToAbstractFileMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams): boolean {
+    const {
+      abstractFile,
+      leaf,
+      source
+    } = params;
     if (!isFolder(abstractFile)) {
       return false;
     }
-    return this.shouldAddToFolderMenu(abstractFile, source, leaf);
+    return this.shouldAddToFolderMenu({
+      folder: abstractFile,
+      leaf,
+      source
+    });
   }
 
   /**
    * Filters to only show menu for TFolder arrays.
    *
-   * @param abstractFiles - The files or folders.
-   * @param source - The source of the event.
-   * @param leaf - The workspace leaf, if available.
+   * @param params - The parameters for the multi-file menu check.
    * @returns Whether to add to the files menu.
    */
-  protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFile[], source: string, leaf?: WorkspaceLeaf): boolean {
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Override keeps the base class param type.
+  protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+    const {
+      abstractFiles,
+      leaf,
+      source
+    } = params;
     if (!abstractFiles.every((f) => isFolder(f))) {
       return false;
     }
-    return this.shouldAddToFoldersMenu(asArrayOfFolders(abstractFiles), source, leaf);
+    return this.shouldAddToFoldersMenu({
+      folders: asArrayOfFolders(abstractFiles),
+      leaf,
+      source
+    });
   }
 
   /**
    * Checks whether the command should appear in the single-folder context menu.
    *
-   * @param _folder - The folder.
-   * @param _source - The source of the event.
-   * @param _leaf - The workspace leaf, if available.
+   * @param params - The parameters for the single-folder menu check.
    * @returns Whether to add to the folder menu.
    */
-  protected shouldAddToFolderMenu(_folder: TFolder, _source: string, _leaf?: WorkspaceLeaf): boolean {
+  protected shouldAddToFolderMenu(params: FolderCommandHandlerShouldAddToFolderMenuParams): boolean {
+    const { folder: _folder, leaf: _leaf, source: _source } = params;
     return false;
   }
 
   /**
    * Checks whether the command should appear in the multi-folder context menu.
    *
-   * @param _folders - The folders.
-   * @param _source - The source of the event.
-   * @param _leaf - The workspace leaf, if available.
+   * @param params - The parameters for the multi-folder menu check.
    * @returns Whether to add to the folders menu.
    */
-  protected shouldAddToFoldersMenu(_folders: TFolder[], _source: string, _leaf?: WorkspaceLeaf): boolean {
+  protected shouldAddToFoldersMenu(params: FolderCommandHandlerShouldAddToFoldersMenuParams): boolean {
+    const { folders: _folders, leaf: _leaf, source: _source } = params;
     return false;
   }
 }

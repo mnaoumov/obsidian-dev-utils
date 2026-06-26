@@ -8,8 +8,7 @@ import type {
   App as AppOriginal,
   Menu as MenuOriginal,
   TAbstractFile as TAbstractFileOriginal,
-  TFolder as TFolderOriginal,
-  WorkspaceLeaf as WorkspaceLeafOriginal
+  TFolder as TFolderOriginal
 } from 'obsidian';
 
 import {
@@ -31,6 +30,10 @@ import type {
 } from '../menu-event-registrar.ts';
 import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
+import type {
+  FolderCommandHandlerShouldAddToFolderMenuParams,
+  FolderCommandHandlerShouldAddToFoldersMenuParams
+} from './folder-command-handler.ts';
 
 import { noopAsync } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
@@ -62,8 +65,8 @@ class TestFolderHandler extends FolderCommandHandler {
     await this.executeFn();
   }
 
-  protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-    super.shouldAddToFolderMenu(folder, source, leaf);
+  protected override shouldAddToFolderMenu(params: FolderCommandHandlerShouldAddToFolderMenuParams): boolean {
+    super.shouldAddToFolderMenu(params);
     return true;
   }
 }
@@ -202,8 +205,8 @@ describe('FolderCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFolderMenu(folder, source, leaf);
+        protected override shouldAddToFolderMenu(params: FolderCommandHandlerShouldAddToFolderMenuParams): boolean {
+          super.shouldAddToFolderMenu(params);
           return true;
         }
       }
@@ -267,13 +270,13 @@ describe('FolderCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFolderMenu(folder, source, leaf);
+        protected override shouldAddToFolderMenu(params: FolderCommandHandlerShouldAddToFolderMenuParams): boolean {
+          super.shouldAddToFolderMenu(params);
           return true;
         }
 
-        protected override shouldAddToFoldersMenu(folders: TFolderOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFoldersMenu(folders, source, leaf);
+        protected override shouldAddToFoldersMenu(params: FolderCommandHandlerShouldAddToFoldersMenuParams): boolean {
+          super.shouldAddToFoldersMenu(params);
           return true;
         }
       }
@@ -314,8 +317,8 @@ describe('FolderCommandHandler', () => {
           executedFolders.push(folder.path);
         }
 
-        protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFolderMenu(folder, source, leaf);
+        protected override shouldAddToFolderMenu(params: FolderCommandHandlerShouldAddToFolderMenuParams): boolean {
+          super.shouldAddToFolderMenu(params);
           return true;
         }
       }
@@ -342,13 +345,13 @@ describe('FolderCommandHandler', () => {
           executedFolders.push(folder.path);
         }
 
-        protected override shouldAddToFolderMenu(folder: TFolderOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFolderMenu(folder, source, leaf);
+        protected override shouldAddToFolderMenu(params: FolderCommandHandlerShouldAddToFolderMenuParams): boolean {
+          super.shouldAddToFolderMenu(params);
           return true;
         }
 
-        protected override shouldAddToFoldersMenu(folders: TFolderOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFoldersMenu(folders, source, leaf);
+        protected override shouldAddToFoldersMenu(params: FolderCommandHandlerShouldAddToFoldersMenuParams): boolean {
+          super.shouldAddToFoldersMenu(params);
           return true;
         }
       }

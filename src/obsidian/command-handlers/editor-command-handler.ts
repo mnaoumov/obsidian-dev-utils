@@ -50,6 +50,46 @@ export interface EditorCommandHandlerConstructorParams extends CommandHandlerCon
 }
 
 /**
+ * Parameters for {@link EditorCommandHandler.editorCheckCallback}.
+ */
+export interface EditorCommandHandlerEditorCheckCallbackParams {
+  /**
+   * Whether Obsidian is only checking availability (not executing).
+   */
+  readonly checking: boolean;
+
+  /**
+   * The markdown file context.
+   */
+  readonly ctx: MarkdownFileInfo;
+
+  /**
+   * The editor instance.
+   */
+  readonly editor: Editor;
+}
+
+/**
+ * Parameters for {@link EditorCommandHandler.handleEditorMenu}.
+ */
+export interface EditorCommandHandlerHandleEditorMenuParams {
+  /**
+   * The markdown file context.
+   */
+  readonly ctx: MarkdownFileInfo;
+
+  /**
+   * The editor instance.
+   */
+  readonly editor: Editor;
+
+  /**
+   * The menu to add items to.
+   */
+  readonly menu: Menu;
+}
+
+/**
  * Command handler for editor commands.
  *
  * Subclasses override {@link canExecuteEditor} and {@link executeEditor} to provide behavior.
@@ -109,7 +149,12 @@ export abstract class EditorCommandHandler extends CommandHandler {
    */
   public override buildCommand(): Command {
     return {
-      editorCheckCallback: (checking, editor, ctx) => this.editorCheckCallback(checking, editor, ctx),
+      editorCheckCallback: (checking, editor, ctx) =>
+        this.editorCheckCallback({
+          checking,
+          ctx,
+          editor
+        }),
       icon: this.icon,
       id: this.id,
       name: this.name
@@ -123,7 +168,13 @@ export abstract class EditorCommandHandler extends CommandHandler {
    */
   public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
     await super.onRegistered(context);
-    context.menuEventRegistrar.registerEditorMenuEventHandler(this.handleEditorMenu.bind(this));
+    context.menuEventRegistrar.registerEditorMenuEventHandler((menu, editor, ctx) => {
+      this.handleEditorMenu({
+        ctx,
+        editor,
+        menu
+      });
+    });
   }
 
   /**
@@ -174,7 +225,12 @@ export abstract class EditorCommandHandler extends CommandHandler {
     return false;
   }
 
-  private editorCheckCallback(checking: boolean, editor: Editor, ctx: MarkdownFileInfo): boolean {
+  private editorCheckCallback(params: EditorCommandHandlerEditorCheckCallbackParams): boolean {
+    const {
+      checking,
+      ctx,
+      editor
+    } = params;
     if (!this.shouldAddToCommandPalette()) {
       return false;
     }
@@ -190,7 +246,12 @@ export abstract class EditorCommandHandler extends CommandHandler {
     return true;
   }
 
-  private handleEditorMenu(menu: Menu, editor: Editor, ctx: MarkdownFileInfo): void {
+  private handleEditorMenu(params: EditorCommandHandlerHandleEditorMenuParams): void {
+    const {
+      ctx,
+      editor,
+      menu
+    } = params;
     if (!this.shouldAddToEditorMenu(editor, ctx)) {
       return;
     }

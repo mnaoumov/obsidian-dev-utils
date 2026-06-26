@@ -66,6 +66,96 @@ export interface AbstractFileCommandHandlerConstructorParams extends CommandHand
 }
 
 /**
+ * Parameters for {@link AbstractFileCommandHandler.handleAbstractFileMenu}.
+ */
+export interface AbstractFileCommandHandlerHandleAbstractFileMenuParams {
+  /**
+   * The file or folder.
+   */
+  readonly abstractFile: TAbstractFile;
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The menu to add items to.
+   */
+  readonly menu: Menu;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
+ * Parameters for {@link AbstractFileCommandHandler.handleAbstractFilesMenu}.
+ */
+export interface AbstractFileCommandHandlerHandleAbstractFilesMenuParams {
+  /**
+   * The files or folders.
+   */
+  readonly abstractFiles: TAbstractFile[];
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The menu to add items to.
+   */
+  readonly menu: Menu;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
+ * Parameters for {@link AbstractFileCommandHandler.shouldAddToAbstractFileMenu}.
+ */
+export interface AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams {
+  /**
+   * The file or folder.
+   */
+  readonly abstractFile: TAbstractFile;
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
+ * Parameters for {@link AbstractFileCommandHandler.shouldAddToAbstractFilesMenu}.
+ */
+export interface AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams {
+  /**
+   * The files or folders.
+   */
+  readonly abstractFiles: TAbstractFile[];
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
  * Command handler for abstract file commands.
  *
  * Handles both single-file and multi-file context menus.
@@ -169,8 +259,22 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
     await super.onRegistered(context);
     this._activeFileProvider = context.activeFileProvider;
-    context.menuEventRegistrar.registerFileMenuEventHandler(this.handleAbstractFileMenu.bind(this));
-    context.menuEventRegistrar.registerFilesMenuEventHandler(this.handleAbstractFilesMenu.bind(this));
+    context.menuEventRegistrar.registerFileMenuEventHandler((menu, abstractFile, source, leaf) => {
+      this.handleAbstractFileMenu({
+        abstractFile,
+        leaf,
+        menu,
+        source
+      });
+    });
+    context.menuEventRegistrar.registerFilesMenuEventHandler((menu, abstractFiles, source, leaf) => {
+      this.handleAbstractFilesMenu({
+        abstractFiles,
+        leaf,
+        menu,
+        source
+      });
+    });
   }
 
   /**
@@ -267,12 +371,11 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   /**
    * Checks whether the command should appear in the single-file context menu.
    *
-   * @param _abstractFile - The file or folder.
-   * @param _source - The source of the event.
-   * @param _leaf - The workspace leaf, if available.
+   * @param params - The parameters for the single-file menu check.
    * @returns Whether to add to the file menu.
    */
-  protected shouldAddToAbstractFileMenu(_abstractFile: TAbstractFile, _source: string, _leaf?: WorkspaceLeaf): boolean {
+  protected shouldAddToAbstractFileMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams): boolean {
+    const { abstractFile: _abstractFile, leaf: _leaf, source: _source } = params;
     return false;
   }
 
@@ -280,13 +383,17 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
    * Checks whether the command should appear in the multi-file context menu.
    * Default implementation checks each file individually.
    *
-   * @param abstractFiles - The files or folders.
-   * @param source - The source of the event.
-   * @param leaf - The workspace leaf, if available.
+   * @param params - The parameters for the multi-file menu check.
    * @returns Whether to add to the files menu.
    */
-  protected shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFile[], source: string, leaf?: WorkspaceLeaf): boolean {
-    return abstractFiles.every((f) => this.shouldAddToAbstractFileMenu(f, source, leaf));
+  protected shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+    return params.abstractFiles.every((f) =>
+      this.shouldAddToAbstractFileMenu({
+        abstractFile: f,
+        leaf: params.leaf,
+        source: params.source
+      })
+    );
   }
 
   /**
@@ -298,8 +405,20 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
     return true;
   }
 
-  private handleAbstractFileMenu(menu: Menu, abstractFile: TAbstractFile, source: string, leaf?: WorkspaceLeaf): void {
-    if (!this.shouldAddToAbstractFileMenu(abstractFile, source, leaf)) {
+  private handleAbstractFileMenu(params: AbstractFileCommandHandlerHandleAbstractFileMenuParams): void {
+    const {
+      abstractFile,
+      leaf,
+      menu,
+      source
+    } = params;
+    if (
+      !this.shouldAddToAbstractFileMenu({
+        abstractFile,
+        leaf,
+        source
+      })
+    ) {
       return;
     }
 
@@ -324,8 +443,20 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
     });
   }
 
-  private handleAbstractFilesMenu(menu: Menu, abstractFiles: TAbstractFile[], source: string, leaf?: WorkspaceLeaf): void {
-    if (!this.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf)) {
+  private handleAbstractFilesMenu(params: AbstractFileCommandHandlerHandleAbstractFilesMenuParams): void {
+    const {
+      abstractFiles,
+      leaf,
+      menu,
+      source
+    } = params;
+    if (
+      !this.shouldAddToAbstractFilesMenu({
+        abstractFiles,
+        leaf,
+        source
+      })
+    ) {
       return;
     }
 

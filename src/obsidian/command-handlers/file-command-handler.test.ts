@@ -7,8 +7,7 @@
 import type {
   App as AppOriginal,
   Menu as MenuOriginal,
-  TFile as TFileOriginal,
-  WorkspaceLeaf as WorkspaceLeafOriginal
+  TFile as TFileOriginal
 } from 'obsidian';
 
 import {
@@ -30,6 +29,10 @@ import type {
 } from '../menu-event-registrar.ts';
 import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
+import type {
+  FileCommandHandlerShouldAddToFileMenuParams,
+  FileCommandHandlerShouldAddToFilesMenuParams
+} from './file-command-handler.ts';
 
 import { noopAsync } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
@@ -57,8 +60,8 @@ class TestFileHandler extends FileCommandHandler {
     await this.executeFn();
   }
 
-  protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-    super.shouldAddToFileMenu(file, source, leaf);
+  protected override shouldAddToFileMenu(params: FileCommandHandlerShouldAddToFileMenuParams): boolean {
+    super.shouldAddToFileMenu(params);
     return true;
   }
 }
@@ -183,8 +186,8 @@ describe('FileCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFileMenu(file, source, leaf);
+        protected override shouldAddToFileMenu(params: FileCommandHandlerShouldAddToFileMenuParams): boolean {
+          super.shouldAddToFileMenu(params);
           return true;
         }
       }
@@ -248,13 +251,13 @@ describe('FileCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFileMenu(file, source, leaf);
+        protected override shouldAddToFileMenu(params: FileCommandHandlerShouldAddToFileMenuParams): boolean {
+          super.shouldAddToFileMenu(params);
           return true;
         }
 
-        protected override shouldAddToFilesMenu(files: TFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFilesMenu(files, source, leaf);
+        protected override shouldAddToFilesMenu(params: FileCommandHandlerShouldAddToFilesMenuParams): boolean {
+          super.shouldAddToFilesMenu(params);
           return true;
         }
       }
@@ -295,8 +298,8 @@ describe('FileCommandHandler', () => {
           executedFiles.push(file.path);
         }
 
-        protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFileMenu(file, source, leaf);
+        protected override shouldAddToFileMenu(params: FileCommandHandlerShouldAddToFileMenuParams): boolean {
+          super.shouldAddToFileMenu(params);
           return true;
         }
       }
@@ -324,13 +327,13 @@ describe('FileCommandHandler', () => {
           executedFiles.push(file.path);
         }
 
-        protected override shouldAddToFileMenu(file: TFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFileMenu(file, source, leaf);
+        protected override shouldAddToFileMenu(params: FileCommandHandlerShouldAddToFileMenuParams): boolean {
+          super.shouldAddToFileMenu(params);
           return true;
         }
 
-        protected override shouldAddToFilesMenu(files: TFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToFilesMenu(files, source, leaf);
+        protected override shouldAddToFilesMenu(params: FileCommandHandlerShouldAddToFilesMenuParams): boolean {
+          super.shouldAddToFilesMenu(params);
           return true;
         }
       }

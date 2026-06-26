@@ -7,8 +7,7 @@
 import type {
   Menu as MenuOriginal,
   TAbstractFile as TAbstractFileOriginal,
-  TFile as TFileOriginal,
-  WorkspaceLeaf as WorkspaceLeafOriginal
+  TFile as TFileOriginal
 } from 'obsidian';
 
 import {
@@ -23,7 +22,11 @@ import type {
   FileMenuEventHandler,
   FilesMenuEventHandler
 } from '../menu-event-registrar.ts';
-import type { AbstractFileCommandHandlerConstructorParams } from './abstract-file-command-handler.ts';
+import type {
+  AbstractFileCommandHandlerConstructorParams,
+  AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams,
+  AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams
+} from './abstract-file-command-handler.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
 import { noopAsync } from '../../function.ts';
@@ -50,8 +53,8 @@ class TestAbstractFileHandler extends AbstractFileCommandHandler {
     await this.executeFn();
   }
 
-  protected override shouldAddToAbstractFileMenu(abstractFile: TAbstractFileOriginal, source: string, leaf?: WorkspaceLeafOriginal): boolean {
-    super.shouldAddToAbstractFileMenu(abstractFile, source, leaf);
+  protected override shouldAddToAbstractFileMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams): boolean {
+    super.shouldAddToAbstractFileMenu(params);
     return this.shouldAddToMenuFn();
   }
 }
@@ -203,8 +206,8 @@ describe('AbstractFileCommandHandler', () => {
           executionOrder.push(abstractFile.path);
         }
 
-        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
+        protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+          super.shouldAddToAbstractFilesMenu(params);
           return true;
         }
       }
@@ -245,8 +248,8 @@ describe('AbstractFileCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
+        protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+          super.shouldAddToAbstractFilesMenu(params);
           return true;
         }
       }
@@ -377,8 +380,8 @@ describe('AbstractFileCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
+        protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+          super.shouldAddToAbstractFilesMenu(params);
           return true;
         }
       }
@@ -413,8 +416,8 @@ describe('AbstractFileCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
+        protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+          super.shouldAddToAbstractFilesMenu(params);
           return true;
         }
       }
@@ -449,8 +452,8 @@ describe('AbstractFileCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
+        protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+          super.shouldAddToAbstractFilesMenu(params);
           return true;
         }
       }
@@ -490,8 +493,8 @@ describe('AbstractFileCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
+        protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+          super.shouldAddToAbstractFilesMenu(params);
           return true;
         }
       }
@@ -531,8 +534,8 @@ describe('AbstractFileCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
+        protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+          super.shouldAddToAbstractFilesMenu(params);
           return true;
         }
       }
@@ -562,8 +565,8 @@ describe('AbstractFileCommandHandler', () => {
           executionOrder.push(abstractFile.path);
         }
 
-        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
+        protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+          super.shouldAddToAbstractFilesMenu(params);
           return true;
         }
       }
@@ -686,8 +689,8 @@ describe('AbstractFileCommandHandler', () => {
           await noopAsync();
         }
 
-        protected override shouldAddToAbstractFilesMenu(abstractFiles: TAbstractFileOriginal[], source: string, leaf?: WorkspaceLeafOriginal): boolean {
-          super.shouldAddToAbstractFilesMenu(abstractFiles, source, leaf);
+        protected override shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+          super.shouldAddToAbstractFilesMenu(params);
           return true;
         }
       }
