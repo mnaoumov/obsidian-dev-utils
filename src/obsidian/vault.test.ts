@@ -95,26 +95,26 @@ beforeEach(() => {
 
 describe('isChild', () => {
   it('should return false when both paths are the same', () => {
-    expect(isChild(app, 'folder/note.md', 'folder/note.md')).toBe(false);
+    expect(isChild({ app, childPathOrFile: 'folder/note.md', parentPathOrFile: 'folder/note.md' })).toBe(false);
   });
 
   it('should return true when b is root "/"', () => {
     const mockRoot = TFolder.create__(mockApp.vault, '/');
     const root = mockRoot.asOriginalType2__();
     mockApp.vault.setVaultAbstractFile__('/', mockRoot);
-    expect(isChild(app, 'folder/note.md', root)).toBe(true);
+    expect(isChild({ app, childPathOrFile: 'folder/note.md', parentPathOrFile: root })).toBe(true);
   });
 
   it('should return true when a is inside b', () => {
-    expect(isChild(app, 'folder/subfolder/note.md', 'folder')).toBe(true);
+    expect(isChild({ app, childPathOrFile: 'folder/subfolder/note.md', parentPathOrFile: 'folder' })).toBe(true);
   });
 
   it('should return false when a is not inside b', () => {
-    expect(isChild(app, 'other/note.md', 'folder')).toBe(false);
+    expect(isChild({ app, childPathOrFile: 'other/note.md', parentPathOrFile: 'folder' })).toBe(false);
   });
 
   it('should return false when a only starts with b but not as a folder', () => {
-    expect(isChild(app, 'folderExtra/note.md', 'folder')).toBe(false);
+    expect(isChild({ app, childPathOrFile: 'folderExtra/note.md', parentPathOrFile: 'folder' })).toBe(false);
   });
 
   it('should work with TAbstractFile instances', () => {
@@ -124,21 +124,21 @@ describe('isChild', () => {
     const folderB = mockFolderB.asOriginalType2__();
     mockApp.vault.setVaultAbstractFile__('parent/child.md', mockFileA);
     mockApp.vault.setVaultAbstractFile__('parent', mockFolderB);
-    expect(isChild(app, fileA, folderB)).toBe(true);
+    expect(isChild({ app, childPathOrFile: fileA, parentPathOrFile: folderB })).toBe(true);
   });
 });
 
 describe('isChildOrSelf', () => {
   it('should return true when both paths are the same', () => {
-    expect(isChildOrSelf(app, 'folder/note.md', 'folder/note.md')).toBe(true);
+    expect(isChildOrSelf({ app, childPathOrFile: 'folder/note.md', parentPathOrFile: 'folder/note.md' })).toBe(true);
   });
 
   it('should return true when a is a child of b', () => {
-    expect(isChildOrSelf(app, 'folder/subfolder/note.md', 'folder')).toBe(true);
+    expect(isChildOrSelf({ app, childPathOrFile: 'folder/subfolder/note.md', parentPathOrFile: 'folder' })).toBe(true);
   });
 
   it('should return false when a is not a child or self of b', () => {
-    expect(isChildOrSelf(app, 'other/note.md', 'folder')).toBe(false);
+    expect(isChildOrSelf({ app, childPathOrFile: 'other/note.md', parentPathOrFile: 'folder' })).toBe(false);
   });
 
   it('should return true when both refer to root', () => {
@@ -146,7 +146,7 @@ describe('isChildOrSelf', () => {
     const rootA = mockRootA.asOriginalType2__();
     const rootB = TFolder.create__(mockApp.vault, '/').asOriginalType2__();
     mockApp.vault.setVaultAbstractFile__('/', mockRootA);
-    expect(isChildOrSelf(app, rootA, rootB)).toBe(true);
+    expect(isChildOrSelf({ app, childPathOrFile: rootA, parentPathOrFile: rootB })).toBe(true);
   });
 });
 
@@ -282,14 +282,14 @@ describe('copySafe', () => {
   });
 
   it('should return same path when old and new paths are the same', async () => {
-    const result = await copySafe(app, 'source.md', 'source.md');
+    const result = await copySafe({ app, newPath: 'source.md', oldPathOrFile: 'source.md' });
     expect(result).toBe('source.md');
   });
 
   it('should copy file to new path', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'copy');
-    const result = await copySafe(app, 'source.md', 'dest/target.md');
+    const result = await copySafe({ app, newPath: 'dest/target.md', oldPathOrFile: 'source.md' });
     expect(vi.mocked(app.vault.copy)).toHaveBeenCalled();
     expect(typeof result).toBe('string');
   });
@@ -297,14 +297,14 @@ describe('copySafe', () => {
   it('should create parent folder before copying', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder');
-    await copySafe(app, 'source.md', 'newdir/target.md');
+    await copySafe({ app, newPath: 'newdir/target.md', oldPathOrFile: 'source.md' });
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
   });
 
   it('should return available path if copy succeeds', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('dest/target 1');
-    const result = await copySafe(app, 'source.md', 'dest/target.md');
+    const result = await copySafe({ app, newPath: 'dest/target.md', oldPathOrFile: 'source.md' });
     expect(result).toBe('dest/target 1');
   });
 
@@ -312,7 +312,7 @@ describe('copySafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'copy').mockRejectedValue(new Error('Copy failed'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(true);
-    const result = await copySafe(app, 'source.md', 'dest/target.md');
+    const result = await copySafe({ app, newPath: 'dest/target.md', oldPathOrFile: 'source.md' });
     expect(typeof result).toBe('string');
   });
 
@@ -320,14 +320,14 @@ describe('copySafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'copy').mockRejectedValue(new Error('Copy failed'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(false);
-    await expect(copySafe(app, 'source.md', 'dest/target.md')).rejects.toThrow('Copy failed');
+    await expect(copySafe({ app, newPath: 'dest/target.md', oldPathOrFile: 'source.md' })).rejects.toThrow('Copy failed');
   });
 
   it('should work with TFile instances', async () => {
     const file = app.vault.getFileByPath('source.md');
     assertNonNullable(file);
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
-    const result = await copySafe(app, file, 'dest/copy.md');
+    const result = await copySafe({ app, newPath: 'dest/copy.md', oldPathOrFile: file });
     expect(typeof result).toBe('string');
   });
 });
@@ -370,25 +370,25 @@ describe('getAbstractFilePathSafe', () => {
   });
 
   it('should return path when file exists and type matches File', () => {
-    const result = getAbstractFilePathSafe(app, 'existing.md', FileSystemType.File);
+    const result = getAbstractFilePathSafe({ app, path: 'existing.md', type: FileSystemType.File });
     expect(result).toBe('existing.md');
   });
 
   it('should return path when folder exists and type matches Folder', () => {
-    const result = getAbstractFilePathSafe(app, 'existing-folder', FileSystemType.Folder);
+    const result = getAbstractFilePathSafe({ app, path: 'existing-folder', type: FileSystemType.Folder });
     expect(result).toBe('existing-folder');
   });
 
   it('should return available path when file does not exist', () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('nonexistent 1');
-    const result = getAbstractFilePathSafe(app, 'nonexistent.md', FileSystemType.File);
+    const result = getAbstractFilePathSafe({ app, path: 'nonexistent.md', type: FileSystemType.File });
     expect(result).toBe('nonexistent 1');
   });
 
   it('should return available path when type does not match', () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('existing');
     // Existing.md is a File, but we ask for Folder type
-    const result = getAbstractFilePathSafe(app, 'existing.md', FileSystemType.Folder);
+    const result = getAbstractFilePathSafe({ app, path: 'existing.md', type: FileSystemType.Folder });
     expect(result).toBe('existing');
   });
 });
@@ -610,13 +610,13 @@ describe('getSafeRenamePath', () => {
 
   it('should return available path when paths differ (case-sensitive)', () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new');
-    const result = getSafeRenamePath(app, 'old.md', 'new.md');
+    const result = getSafeRenamePath({ app, newPath: 'new.md', oldPathOrAbstractFile: 'old.md' });
     expect(result).toBe('new');
   });
 
   it('should return newPath directly when only case differs (case-sensitive filesystem)', () => {
     // OldPath.toLowerCase() === newPath.toLowerCase(), so returns newPath directly
-    const result = getSafeRenamePath(app, 'old.md', 'Old.md');
+    const result = getSafeRenamePath({ app, newPath: 'Old.md', oldPathOrAbstractFile: 'old.md' });
     expect(result).toBe('Old.md');
   });
 
@@ -631,7 +631,7 @@ describe('getSafeRenamePath', () => {
     const mockDirFile = TFile.create__(mockApp.vault, 'dir/old.md');
     mockApp.vault.setVaultAbstractFile__('dir/old.md', mockDirFile);
 
-    const result = getSafeRenamePath(app, 'dir/old.md', 'dir/OLD.md');
+    const result = getSafeRenamePath({ app, newPath: 'dir/OLD.md', oldPathOrAbstractFile: 'dir/old.md' });
     expect(result).toBe('dir/OLD.md');
   });
 
@@ -643,7 +643,7 @@ describe('getSafeRenamePath', () => {
     mockApp.vault.setVaultAbstractFile__('parent', mockParentFolder);
 
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('parent/sub/new');
-    const result = getSafeRenamePath(app, 'old.md', 'parent/sub/new.md');
+    const result = getSafeRenamePath({ app, newPath: 'parent/sub/new.md', oldPathOrAbstractFile: 'old.md' });
     expect(result).toBe('parent/sub/new');
   });
 });
@@ -658,7 +658,7 @@ describe('renameSafe', () => {
 
   it('should not rename if old and new paths are the same', async () => {
     vi.spyOn(app.fileManager, 'renameFile');
-    const result = await renameSafe(app, 'source.md', 'source.md');
+    const result = await renameSafe({ app, newPath: 'source.md', oldPathOrAbstractFile: 'source.md' });
     expect(vi.mocked(app.fileManager.renameFile)).not.toHaveBeenCalled();
     expect(result).toBe('source.md');
   });
@@ -666,7 +666,7 @@ describe('renameSafe', () => {
   it('should rename when case differs (case rename)', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('Source.md');
     vi.spyOn(app.fileManager, 'renameFile');
-    const result = await renameSafe(app, 'source.md', 'Source.md');
+    const result = await renameSafe({ app, newPath: 'Source.md', oldPathOrAbstractFile: 'source.md' });
     // Source.md and Source.md differ in case, so lowercase compare matches
     // GetSafeRenamePath returns getAvailablePath result
     // Then oldAbstractFile.path.toLowerCase() === newAvailablePath.toLowerCase() is checked
@@ -678,7 +678,7 @@ describe('renameSafe', () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('dest/target');
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder');
-    await renameSafe(app, 'source.md', 'dest/target.md');
+    await renameSafe({ app, newPath: 'dest/target.md', oldPathOrAbstractFile: 'source.md' });
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
   });
 
@@ -689,7 +689,7 @@ describe('renameSafe', () => {
     vi.spyOn(app.vault, 'exists')
       .mockResolvedValueOnce(true) // NewAvailablePath exists
       .mockResolvedValueOnce(false); // OldPath doesn't exist
-    const result = await renameSafe(app, 'source.md', 'dest/target.md');
+    const result = await renameSafe({ app, newPath: 'dest/target.md', oldPathOrAbstractFile: 'source.md' });
     expect(result).toBe('dest/target');
   });
 
@@ -698,7 +698,7 @@ describe('renameSafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.fileManager, 'renameFile').mockRejectedValue(new Error('Rename failed'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(false);
-    await expect(renameSafe(app, 'source.md', 'dest/target.md')).rejects.toThrow('Rename failed');
+    await expect(renameSafe({ app, newPath: 'dest/target.md', oldPathOrAbstractFile: 'source.md' })).rejects.toThrow('Rename failed');
   });
 
   it('should throw if rename fails and old path still exists', async () => {
@@ -708,7 +708,7 @@ describe('renameSafe', () => {
     vi.spyOn(app.vault, 'exists')
       .mockResolvedValueOnce(true) // NewAvailablePath exists
       .mockResolvedValueOnce(true); // OldPath still exists
-    await expect(renameSafe(app, 'source.md', 'dest/target.md')).rejects.toThrow('Rename failed');
+    await expect(renameSafe({ app, newPath: 'dest/target.md', oldPathOrAbstractFile: 'source.md' })).rejects.toThrow('Rename failed');
   });
 });
 
@@ -716,14 +716,14 @@ describe('getOrCreateAbstractFileSafe', () => {
   it('should return existing file if it exists', async () => {
     const mockFile = TFile.create__(mockApp.vault, 'existing.md');
     mockApp.vault.setVaultAbstractFile__('existing.md', mockFile);
-    const result = await getOrCreateAbstractFileSafe(app, 'existing.md', FileSystemType.File);
+    const result = await getOrCreateAbstractFileSafe({ app, path: 'existing.md', type: FileSystemType.File });
     expect(result.path).toBe('existing.md');
   });
 
   it('should create a new file when it does not exist', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new-file');
     vi.spyOn(app.vault, 'create');
-    const result = await getOrCreateAbstractFileSafe(app, 'new-file.md', FileSystemType.File);
+    const result = await getOrCreateAbstractFileSafe({ app, path: 'new-file.md', type: FileSystemType.File });
     expect(vi.mocked(app.vault.create)).toHaveBeenCalled();
     expect(result).toBeDefined();
   });
@@ -731,14 +731,14 @@ describe('getOrCreateAbstractFileSafe', () => {
   it('should return existing folder if it exists', async () => {
     const mockFolder = TFolder.create__(mockApp.vault, 'existing-folder');
     mockApp.vault.setVaultAbstractFile__('existing-folder', mockFolder);
-    const result = await getOrCreateAbstractFileSafe(app, 'existing-folder', FileSystemType.Folder);
+    const result = await getOrCreateAbstractFileSafe({ app, path: 'existing-folder', type: FileSystemType.Folder });
     expect(result.path).toBe('existing-folder');
   });
 
   it('should create a new folder when it does not exist', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('new-folder');
     vi.spyOn(app.vault, 'createFolder');
-    const result = await getOrCreateAbstractFileSafe(app, 'new-folder', FileSystemType.Folder);
+    const result = await getOrCreateAbstractFileSafe({ app, path: 'new-folder', type: FileSystemType.Folder });
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalled();
     expect(result).toBeDefined();
   });
@@ -746,7 +746,7 @@ describe('getOrCreateAbstractFileSafe', () => {
   it('should throw for invalid file system type', async () => {
     vi.spyOn(app.vault, 'getAvailablePath').mockReturnValue('path');
     await expect(
-      getOrCreateAbstractFileSafe(app, 'path', castTo<FileSystemType>('invalid'))
+      getOrCreateAbstractFileSafe({ app, path: 'path', type: castTo<FileSystemType>('invalid') })
     ).rejects.toThrow('Unhandled value: invalid');
   });
 });
@@ -793,13 +793,13 @@ describe('invokeWithFileSystemLock', () => {
 
   it('should call the function with the file content', async () => {
     const fn = vi.fn();
-    await invokeWithFileSystemLock(app, 'locked.md', fn);
+    await invokeWithFileSystemLock({ app, fn, pathOrFile: 'locked.md' });
     expect(fn).toHaveBeenCalledWith('');
   });
 
   it('should call vault.process with the file', async () => {
     vi.spyOn(app.vault, 'process');
-    await invokeWithFileSystemLock(app, 'locked.md', vi.fn());
+    await invokeWithFileSystemLock({ app, fn: vi.fn(), pathOrFile: 'locked.md' });
     expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
@@ -807,13 +807,13 @@ describe('invokeWithFileSystemLock', () => {
     const file = app.vault.getFileByPath('locked.md');
     assertNonNullable(file);
     const fn = vi.fn();
-    await invokeWithFileSystemLock(app, file, fn);
+    await invokeWithFileSystemLock({ app, fn, pathOrFile: file });
     expect(fn).toHaveBeenCalled();
   });
 
   it('should return the content unchanged after fn is called', async () => {
     vi.spyOn(app.vault, 'process');
-    await invokeWithFileSystemLock(app, 'locked.md', vi.fn());
+    await invokeWithFileSystemLock({ app, fn: vi.fn(), pathOrFile: 'locked.md' });
     // The process function should return the same content
     const call = vi.mocked(app.vault.process).mock.calls[0];
     expect(call).toBeDefined();
@@ -990,7 +990,7 @@ describe('processFile', () => {
 
   it('should call retryWithTimeoutNotice with correct params', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
-    await processFile(app, 'note.md', 'new content');
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md' });
 
     expect(mockedRetryWithTimeoutNotice).toHaveBeenCalledOnce();
     const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
@@ -999,7 +999,7 @@ describe('processFile', () => {
 
   it('should pass shouldShowTimeoutNotice from params', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
-    await processFile(app, 'note.md', 'new content', { shouldShowTimeoutNotice: false });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', shouldShowTimeoutNotice: false });
 
     const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(false);
@@ -1014,7 +1014,7 @@ describe('processFile', () => {
       return fn('old content');
     });
 
-    await processFile(app, 'note.md', 'new content');
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md' });
     expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
@@ -1031,14 +1031,14 @@ describe('processFile', () => {
       return fn('changed content');
     });
 
-    await processFile(app, 'note.md', 'new content');
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md' });
     expect(operationResult).toBe(false);
   });
 
   it('should throw when file is missing and shouldFailOnMissingFile is true', async () => {
     setupRetryToInvokeOperationFn();
 
-    await expect(processFile(app, 'missing.md', 'content', { shouldFailOnMissingFile: true }))
+    await expect(processFile({ app, newContentProvider: 'content', pathOrFile: 'missing.md', shouldFailOnMissingFile: true }))
       .rejects.toThrow('File \'missing.md\' not found');
   });
 
@@ -1047,7 +1047,7 @@ describe('processFile', () => {
     mockApp = App.createConfigured__(); // No files
     app = mockApp.asOriginalType__();
 
-    await expect(processFile(app, 'missing.md', 'content', { shouldFailOnMissingFile: false }))
+    await expect(processFile({ app, newContentProvider: 'content', pathOrFile: 'missing.md', shouldFailOnMissingFile: false }))
       .resolves.toBeUndefined();
   });
 
@@ -1059,7 +1059,7 @@ describe('processFile', () => {
       operationResult = await operationFn(abortSignal);
     });
 
-    await processFile(app, 'note.md', () => null);
+    await processFile({ app, newContentProvider: () => null, pathOrFile: 'note.md' });
     expect(operationResult).toBe(false);
   });
 
@@ -1074,7 +1074,7 @@ describe('processFile', () => {
       return 'old content';
     });
 
-    await expect(processFile(app, 'note.md', 'new content'))
+    await expect(processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md' }))
       .rejects.toThrow('File \'note.md\' not found');
   });
 
@@ -1093,7 +1093,7 @@ describe('processFile', () => {
     ]);
     vi.spyOn(app.workspace, 'on');
 
-    await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: true });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', shouldLockEditorWhileProcessing: true });
     expect(vi.mocked(app.workspace.on)).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
   });
 
@@ -1115,7 +1115,7 @@ describe('processFile', () => {
       return { e: app.workspace, fn: callback, name };
     });
 
-    await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: true });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', shouldLockEditorWhileProcessing: true });
 
     assertNonNullable(capturedCallback);
     // Invoke the callback with a matching leaf
@@ -1135,7 +1135,7 @@ describe('processFile', () => {
 
     vi.spyOn(app.workspace, 'on');
 
-    await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: false });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', shouldLockEditorWhileProcessing: false });
     expect(vi.mocked(app.workspace.on)).not.toHaveBeenCalled();
   });
 
@@ -1145,7 +1145,7 @@ describe('processFile', () => {
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
     vi.spyOn(app.workspace, 'on');
 
-    await expect(processFile(app, 'note.md', 'new content')).rejects.toThrow('Timeout');
+    await expect(processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md' })).rejects.toThrow('Timeout');
     expect(vi.mocked(app.workspace.on)).toHaveBeenCalled();
   });
 
@@ -1164,7 +1164,7 @@ describe('processFile', () => {
     const mockedLockEditor = vi.mocked(lockEditor);
     mockedLockEditor.mockClear();
 
-    await processFile(app, 'note.md', 'new content', { shouldLockEditorWhileProcessing: true });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', shouldLockEditorWhileProcessing: true });
 
     expect(mockedLockEditor).not.toHaveBeenCalled();
   });

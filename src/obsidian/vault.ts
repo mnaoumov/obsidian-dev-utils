@@ -74,6 +74,148 @@ export interface ContentArgs {
 }
 
 /**
+ * Parameters for {@link copySafe}.
+ */
+export interface CopySafeParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The new path to copy the file to.
+   */
+  readonly newPath: string;
+
+  /**
+   * The old path or file to copy.
+   */
+  readonly oldPathOrFile: PathOrFile;
+}
+
+/**
+ * Parameters for {@link getAbstractFilePathSafe}.
+ */
+export interface GetAbstractFilePathSafeParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path of the file or folder to get a safe path for.
+   */
+  readonly path: string;
+
+  /**
+   * The type of the file system object.
+   */
+  readonly type: FileSystemType;
+}
+
+/**
+ * Parameters for {@link getOrCreateAbstractFileSafe}.
+ */
+export interface GetOrCreateAbstractFileSafeParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path of the abstract file to get or create.
+   */
+  readonly path: string;
+
+  /**
+   * The type of the abstract file to get or create.
+   */
+  readonly type: FileSystemType;
+}
+
+/**
+ * Parameters for {@link getSafeRenamePath}.
+ */
+export interface GetSafeRenamePathParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The new path to rename the abstract file to.
+   */
+  readonly newPath: string;
+
+  /**
+   * The old path or abstract file to rename.
+   */
+  readonly oldPathOrAbstractFile: PathOrAbstractFile;
+}
+
+/**
+ * Parameters for {@link invokeWithFileSystemLock}.
+ */
+export interface InvokeWithFileSystemLockParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The function to execute.
+   *
+   * @param content - The content of the file.
+   */
+  fn(this: void, content: string): void;
+
+  /**
+   * The path or file to execute the function with the file system lock of.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
+ * Parameters for {@link isChildOrSelf}.
+ */
+export interface IsChildOrSelfParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or file to check whether it is a child or self.
+   */
+  readonly childPathOrFile: PathOrAbstractFile;
+
+  /**
+   * The path or file to check whether it is a parent or self.
+   */
+  readonly parentPathOrFile: PathOrAbstractFile;
+}
+
+/**
+ * Parameters for {@link isChild}.
+ */
+export interface IsChildParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or file to check whether it is a child.
+   */
+  readonly childPathOrFile: PathOrAbstractFile;
+
+  /**
+   * The path or file to check whether it is a parent.
+   */
+  readonly parentPathOrFile: PathOrAbstractFile;
+}
+
+/**
  * Options for {@link process}.
  */
 export interface ProcessOptions extends RetryOptions {
@@ -94,14 +236,79 @@ export interface ProcessOptions extends RetryOptions {
 }
 
 /**
+ * Parameters for {@link process}.
+ */
+export interface ProcessParams extends ProcessOptions {
+  /**
+   * The application instance, typically used for accessing the vault.
+   */
+  readonly app: App;
+
+  /**
+   * A value provider that returns the new content based on the old content of the file.
+   * It can be a string or a function that takes the old content as an argument and returns the new content.
+   * If function is provided, it should return `null` if the process should be retried.
+   */
+  readonly newContentProvider: ValueProvider<null | string, ContentArgs>;
+
+  /**
+   * The path or file to be processed. It can be a string representing the path or a file object.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
+ * Parameters for {@link renameSafe}.
+ */
+export interface RenameSafeParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The new path to rename the file to.
+   */
+  readonly newPath: string;
+
+  /**
+   * The old path or abstract file to rename.
+   */
+  readonly oldPathOrAbstractFile: PathOrAbstractFile;
+}
+
+interface InvokeFileActionSafeParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The action to perform on the file.
+   *
+   * @param file - The file to perform the action on.
+   * @returns A {@link Promise} that resolves when the action is complete.
+   */
+  fileAction(this: void, file: TFile): Promise<void>;
+
+  /**
+   * The path or file to perform the action on.
+   */
+  readonly pathOrFile: PathOrFile;
+}
+
+/**
  * Copies a file safely in the vault.
  *
- * @param app - The application instance.
- * @param oldPathOrFile - The old path or file to copy.
- * @param newPath - The new path to copy the file to.
+ * @param params - The parameters for copying the file.
  * @returns A {@link Promise} that resolves to the new path of the copied file.
  */
-export async function copySafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
+export async function copySafe(params: CopySafeParams): Promise<string> {
+  const {
+    app,
+    newPath,
+    oldPathOrFile
+  } = params;
   const file = getFile({ app, pathOrFile: oldPathOrFile });
 
   if (file.path === newPath) {
@@ -250,12 +457,15 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | 
 /**
  * Gets a safe path for a file or folder.
  *
- * @param app - The application instance.
- * @param path - The path of the file or folder to get a safe path for.
- * @param type - The type of the file system object.
+ * @param params - The parameters for getting a safe path.
  * @returns The safe path for the file or folder.
  */
-export function getAbstractFilePathSafe(app: App, path: string, type: FileSystemType): string {
+export function getAbstractFilePathSafe(params: GetAbstractFilePathSafeParams): string {
+  const {
+    app,
+    path,
+    type
+  } = params;
   const abstractFile = getAbstractFileOrNull({ app, pathOrFile: path });
 
   if (abstractFile && getFileSystemType(abstractFile) === type) {
@@ -285,7 +495,7 @@ export function getAvailablePath(app: App, path: string): string {
  * @returns The safe path for the file or folder.
  */
 export function getFilePathSafe(app: App, path: string): string {
-  return getAbstractFilePathSafe(app, path, FileSystemType.File);
+  return getAbstractFilePathSafe({ app, path, type: FileSystemType.File });
 }
 
 /**
@@ -296,7 +506,7 @@ export function getFilePathSafe(app: App, path: string): string {
  * @returns The safe path for the file or folder.
  */
 export function getFolderPathSafe(app: App, path: string): string {
-  return getAbstractFilePathSafe(app, path, FileSystemType.Folder);
+  return getAbstractFilePathSafe({ app, path, type: FileSystemType.Folder });
 }
 
 /**
@@ -325,13 +535,16 @@ export function getNoteFilesSorted(app: App): TFile[] {
  * If the file already exists, it will be returned.
  * If the file does not exist, it will be created and returned.
  *
- * @param app - The application instance.
- * @param path - The path of the abstract file to get or create.
- * @param type - The type of the abstract file to get or create.
+ * @param params - The parameters for getting or creating the abstract file.
  * @returns A {@link Promise} that resolves to the abstract file.
  */
-export async function getOrCreateAbstractFileSafe(app: App, path: string, type: FileSystemType): Promise<TAbstractFile> {
-  path = getAbstractFilePathSafe(app, path, type);
+export async function getOrCreateAbstractFileSafe(params: GetOrCreateAbstractFileSafeParams): Promise<TAbstractFile> {
+  const {
+    app,
+    type
+  } = params;
+  let { path } = params;
+  path = getAbstractFilePathSafe({ app, path, type });
   const abstractFile = getAbstractFileOrNull({ app, pathOrFile: path });
   if (abstractFile) {
     return abstractFile;
@@ -358,7 +571,7 @@ export async function getOrCreateAbstractFileSafe(app: App, path: string, type: 
  * @returns A {@link Promise} that resolves to the file.
  */
 export async function getOrCreateFileSafe(app: App, path: string): Promise<TFile> {
-  return asFile(await getOrCreateAbstractFileSafe(app, path, FileSystemType.File));
+  return asFile(await getOrCreateAbstractFileSafe({ app, path, type: FileSystemType.File }));
 }
 
 /**
@@ -372,18 +585,18 @@ export async function getOrCreateFileSafe(app: App, path: string): Promise<TFile
  * @returns A {@link Promise} that resolves to the folder.
  */
 export async function getOrCreateFolderSafe(app: App, path: string): Promise<TFolder> {
-  return asFolder(await getOrCreateAbstractFileSafe(app, path, FileSystemType.Folder));
+  return asFolder(await getOrCreateAbstractFileSafe({ app, path, type: FileSystemType.Folder }));
 }
 
 /**
  * Gets a safe rename path for a file.
  *
- * @param app - The application instance.
- * @param oldPathOrAbstractFile - The old path or abstract file to rename.
- * @param newPath - The new path to rename the abstract file to.
+ * @param params - The parameters for getting a safe rename path.
  * @returns The safe rename path for the abstract file.
  */
-export function getSafeRenamePath(app: App, oldPathOrAbstractFile: PathOrAbstractFile, newPath: string): string {
+export function getSafeRenamePath(params: GetSafeRenamePathParams): string {
+  const { app, oldPathOrAbstractFile } = params;
+  let { newPath } = params;
   const oldPath = getPath(app, oldPathOrAbstractFile);
 
   if (getDataAdapterEx(app).insensitive) {
@@ -412,11 +625,15 @@ export function getSafeRenamePath(app: App, oldPathOrAbstractFile: PathOrAbstrac
 /**
  * Invokes a function with the file system lock.
  *
- * @param app - The application instance.
- * @param pathOrFile - The path or file to execute the function with the file system lock of.
- * @param fn - The function to execute.
+ * @param params - The parameters for invoking the function with the file system lock.
+ * @returns A {@link Promise} that resolves when the function is invoked.
  */
-export async function invokeWithFileSystemLock(app: App, pathOrFile: PathOrFile, fn: (content: string) => void): Promise<void> {
+export async function invokeWithFileSystemLock(params: InvokeWithFileSystemLockParams): Promise<void> {
+  const {
+    app,
+    fn,
+    pathOrFile
+  } = params;
   const file = getFile({ app, pathOrFile });
   await app.vault.process(file, (content) => {
     fn(content);
@@ -427,38 +644,44 @@ export async function invokeWithFileSystemLock(app: App, pathOrFile: PathOrFile,
 /**
  * Checks if a path or file is a child of another path or file.
  *
- * @param app - The application instance.
- * @param a - The first path or file.
- * @param b - The second path or file.
- * @returns A boolean indicating whether the first path or file is a child of the second path or file.
+ * @param params - The parameters for checking whether the child path or file is a child of the parent path or file.
+ * @returns A boolean indicating whether the child path or file is a child of the parent path or file.
  */
-export function isChild(app: App, a: PathOrAbstractFile, b: PathOrAbstractFile): boolean {
-  const aPath = getPath(app, a);
-  const bPath = getPath(app, b);
+export function isChild(params: IsChildParams): boolean {
+  const {
+    app,
+    childPathOrFile,
+    parentPathOrFile
+  } = params;
+  const childPath = getPath(app, childPathOrFile);
+  const parentPath = getPath(app, parentPathOrFile);
 
-  if (aPath === bPath) {
+  if (childPath === parentPath) {
     return false;
   }
 
-  if (bPath === '/') {
+  if (parentPath === '/') {
     return true;
   }
 
-  return aPath.startsWith(`${bPath}/`);
+  return childPath.startsWith(`${parentPath}/`);
 }
 
 /**
  * Checks if a path or file is a child or self of another path or file.
  *
- * @param app - The application instance.
- * @param a - The first path or file.
- * @param b - The second path or file.
- * @returns A boolean indicating whether the first path or file is a child or self of the second path or file.
+ * @param params - The parameters for checking whether the child path or file is a child or self of the parent path or file.
+ * @returns A boolean indicating whether the child path or file is a child or self of the parent path or file.
  */
-export function isChildOrSelf(app: App, a: PathOrAbstractFile, b: PathOrAbstractFile): boolean {
-  const aPath = getPath(app, a);
-  const bPath = getPath(app, b);
-  return aPath === bPath || isChild(app, a, b);
+export function isChildOrSelf(params: IsChildOrSelfParams): boolean {
+  const {
+    app,
+    childPathOrFile,
+    parentPathOrFile
+  } = params;
+  const childPath = getPath(app, childPathOrFile);
+  const parentPath = getPath(app, parentPathOrFile);
+  return childPath === parentPath || isChild({ app, childPathOrFile, parentPathOrFile });
 }
 
 /**
@@ -501,23 +724,18 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
 /**
  * Processes a file with retry logic, updating its content based on a provided value or function.
  *
- * @param app - The application instance, typically used for accessing the vault.
- * @param pathOrFile - The path or file to be processed. It can be a string representing the path or a file object.
- * @param newContentProvider - A value provider that returns the new content based on the old content of the file.
- * It can be a string or a function that takes the old content as an argument and returns the new content.
- * If function is provided, it should return `null` if the process should be retried.
- * @param options - Optional options for processing/retrying the operation.
+ * @param params - The parameters for processing the file.
  *
  * @returns A {@link Promise} that resolves once the process is complete.
  *
  * @throws Will throw an error if the process fails after the specified number of retries or timeout.
  */
-export async function process(
-  app: App,
-  pathOrFile: PathOrFile,
-  newContentProvider: ValueProvider<null | string, ContentArgs>,
-  options: ProcessOptions = {}
-): Promise<void> {
+export async function process(params: ProcessParams): Promise<void> {
+  const {
+    app,
+    newContentProvider,
+    pathOrFile
+  } = params;
   const DEFAULT_RETRY_OPTIONS = {
     shouldFailOnMissingFile: true,
     shouldLockEditorWhileProcessing: true,
@@ -525,7 +743,7 @@ export async function process(
     // eslint-disable-next-line no-magic-numbers -- Default value.
     timeoutInMilliseconds: 500
   };
-  const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...options };
+  const fullOptions = { ...DEFAULT_RETRY_OPTIONS, ...params };
   const abortController = new AbortController();
   fullOptions.abortSignal = abortSignalAny(fullOptions.abortSignal, abortController.signal);
   const path = getPath(app, pathOrFile);
@@ -566,24 +784,28 @@ export async function process(
         }
 
         let isSuccess = true;
-        const doesFileExist = await invokeFileActionSafe(app, pathOrFile, async (file) => {
-          abortSignal.throwIfAborted();
-          await app.vault.process(file, (content) => {
+        const doesFileExist = await invokeFileActionSafe({
+          app,
+          async fileAction(file) {
             abortSignal.throwIfAborted();
-            if (content !== oldContent) {
-              getLibDebugger('Vault:process')('Content has changed since it was read. Retrying...', {
-                actualContent: content,
-                expectedContent: oldContent,
-                path: file.path
-              });
-              isSuccess = false;
-              return content;
-            }
+            await app.vault.process(file, (content) => {
+              abortSignal.throwIfAborted();
+              if (content !== oldContent) {
+                getLibDebugger('Vault:process')('Content has changed since it was read. Retrying...', {
+                  actualContent: content,
+                  expectedContent: oldContent,
+                  path: file.path
+                });
+                isSuccess = false;
+                return content;
+              }
 
-            return newContent;
-          });
+              return newContent;
+            });
 
-          abortSignal.throwIfAborted();
+            abortSignal.throwIfAborted();
+          },
+          pathOrFile
         });
 
         if (!doesFileExist) {
@@ -625,9 +847,13 @@ export async function process(
  */
 export async function readSafe(app: App, pathOrFile: PathOrFile): Promise<null | string> {
   let content: null | string = null;
-  await invokeFileActionSafe(app, pathOrFile, async (file) => {
-    await saveNote(app, file);
-    content = await app.vault.read(file);
+  await invokeFileActionSafe({
+    app,
+    async fileAction(file) {
+      await saveNote(app, file);
+      content = await app.vault.read(file);
+    },
+    pathOrFile
   });
   return content;
 }
@@ -636,15 +862,18 @@ export async function readSafe(app: App, pathOrFile: PathOrFile): Promise<null |
  * Renames a file safely in the vault.
  * If the new path already exists, the file will be renamed to an available path.
  *
- * @param app - The application instance.
- * @param oldPathOrAbstractFile - The old path or file to rename.
- * @param newPath - The new path to rename the file to.
+ * @param params - The parameters for renaming the file.
  * @returns A {@link Promise} that resolves to the new path of the file.
  */
-export async function renameSafe(app: App, oldPathOrAbstractFile: PathOrAbstractFile, newPath: string): Promise<string> {
+export async function renameSafe(params: RenameSafeParams): Promise<string> {
+  const {
+    app,
+    newPath,
+    oldPathOrAbstractFile
+  } = params;
   const oldAbstractFile = getAbstractFile({ app, pathOrFile: oldPathOrAbstractFile });
 
-  const newAvailablePath = getSafeRenamePath(app, oldPathOrAbstractFile, newPath);
+  const newAvailablePath = getSafeRenamePath({ app, newPath, oldPathOrAbstractFile });
 
   if (oldAbstractFile.path.toLowerCase() === newAvailablePath.toLowerCase()) {
     if (oldAbstractFile.path !== newPath) {
@@ -712,7 +941,12 @@ export async function trashSafe(app: App, pathOrFile: PathOrAbstractFile): Promi
   }
 }
 
-async function invokeFileActionSafe(app: App, pathOrFile: PathOrFile, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {
+async function invokeFileActionSafe(params: InvokeFileActionSafeParams): Promise<boolean> {
+  const {
+    app,
+    fileAction,
+    pathOrFile
+  } = params;
   const path = getPath(app, pathOrFile);
   let file = getFileOrNull({ app, pathOrFile: path });
   if (!file || file.deleted) {

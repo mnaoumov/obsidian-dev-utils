@@ -10,9 +10,15 @@ import type { Promisable } from 'type-fest';
 import type { MaybeReturn } from '../type.ts';
 import type { PathOrFile } from './file-system.ts';
 import type { CombinedFrontmatter } from './frontmatter.ts';
-import type { ProcessOptions } from './vault.ts';
+import type {
+  ProcessOptions,
+  ProcessParams
+} from './vault.ts';
 
-import { deepEqual } from '../object-utils.ts';
+import {
+  deepEqual,
+  normalizeOptionalProperties
+} from '../object-utils.ts';
 import {
   getFile,
   getPath,
@@ -111,22 +117,27 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(
     throw new Error(`File ${getPath(app, pathOrFile)} is not a markdown file.`);
   }
 
-  await process(app, pathOrFile, async ({ abortSignal, content }) => {
-    abortSignal.throwIfAborted();
+  await process(normalizeOptionalProperties<ProcessParams>({
+    app,
+    async newContentProvider({ abortSignal, content }) {
+      abortSignal.throwIfAborted();
 
-    const oldFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
-    const newFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
-    const result = await frontmatterFn(newFrontmatter, abortSignal);
-    abortSignal.throwIfAborted();
+      const oldFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
+      const newFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
+      const result = await frontmatterFn(newFrontmatter, abortSignal);
+      abortSignal.throwIfAborted();
 
-    if (result === null) {
-      return null;
-    }
+      if (result === null) {
+        return null;
+      }
 
-    if (deepEqual(oldFrontmatter, newFrontmatter)) {
-      return content;
-    }
+      if (deepEqual(oldFrontmatter, newFrontmatter)) {
+        return content;
+      }
 
-    return setFrontmatter(content, newFrontmatter);
-  }, options);
+      return setFrontmatter(content, newFrontmatter);
+    },
+    pathOrFile,
+    ...options
+  }));
 }

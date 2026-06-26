@@ -14,9 +14,11 @@ import {
 } from 'vitest';
 
 import type { GenericObject } from '../type-guards.ts';
-import type { ValueProvider } from '../value-provider.ts';
 import type { FileChange } from './file-change.ts';
-import type { ContentArgs } from './vault.ts';
+import type {
+  ContentArgs,
+  ProcessParams
+} from './vault.ts';
 
 import { getLibDebugger } from '../debug.ts';
 import { printError } from '../error.ts';
@@ -66,9 +68,9 @@ vi.mock('../obsidian/frontmatter.ts', async (importOriginal) => {
 });
 
 vi.mock('../obsidian/vault.ts', () => ({
-  process: vi.fn(async (_app: unknown, _pathOrFile: unknown, newContentProvider: unknown) => {
+  process: vi.fn(async (params: ProcessParams) => {
     const controller = new AbortController();
-    await resolveValue(newContentProvider as ValueProvider<null | string, ContentArgs>, { abortSignal: controller.signal, content: 'test content' });
+    await resolveValue(params.newContentProvider, { abortSignal: controller.signal, content: 'test content' });
   })
 }));
 
@@ -490,20 +492,27 @@ describe('applyFileChanges', () => {
   it('should call process with the correct arguments', async () => {
     const changes: FileChange[] = [];
     await applyFileChanges(app, 'test.md', changes);
-    expect(process).toHaveBeenCalledWith(app, 'test.md', expect.any(Function), {});
+    expect(process).toHaveBeenCalledTimes(1);
+    const params = vi.mocked(process).mock.calls[0]?.[0];
+    expect(params?.app).toBe(app);
+    expect(params?.pathOrFile).toBe('test.md');
+    expect(params?.newContentProvider).toBeInstanceOf(Function);
   });
 
   it('should pass processOptions to process', async () => {
     const options = { timeoutInMilliseconds: 3000 };
     await applyFileChanges(app, 'test.md', [], options);
-    expect(process).toHaveBeenCalledWith(app, 'test.md', expect.any(Function), options);
+    const params = vi.mocked(process).mock.calls[0]?.[0];
+    expect(params?.app).toBe(app);
+    expect(params?.pathOrFile).toBe('test.md');
+    expect(params?.timeoutInMilliseconds).toBe(3000);
   });
 
   it('should invoke applyContentChanges for non-canvas files', async () => {
     vi.mocked(isCanvasFile).mockReturnValue(false);
     const changes = [makeContentChange('test', 'replaced', 0)];
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: 'test content' });
     });
@@ -520,7 +529,7 @@ describe('applyFileChanges', () => {
     });
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
     });
@@ -545,7 +554,7 @@ describe('canvas changes via applyFileChanges', () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
@@ -569,7 +578,7 @@ describe('canvas changes via applyFileChanges', () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
@@ -586,7 +595,7 @@ describe('canvas changes via applyFileChanges', () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 5)];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
@@ -598,7 +607,7 @@ describe('canvas changes via applyFileChanges', () => {
   it('should return null when changesProvider returns null for canvas', async () => {
     let resultContent: null | string = 'not null';
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '{}' });
     });
@@ -618,7 +627,7 @@ describe('canvas changes via applyFileChanges', () => {
       noop();
     });
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
@@ -636,7 +645,7 @@ describe('canvas changes via applyFileChanges', () => {
     const changes = [makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 6)];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
@@ -663,7 +672,7 @@ describe('canvas changes via applyFileChanges', () => {
     ];
     let resultContent: null | string = null;
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
@@ -683,7 +692,7 @@ describe('canvas changes via applyFileChanges', () => {
   it('should handle invalid JSON canvas content by throwing', async () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: 'not valid json' });
     });
@@ -705,7 +714,7 @@ describe('canvas changes via applyFileChanges', () => {
       noop();
     });
 
-    vi.mocked(process).mockImplementation(async (_app, _pathOrFile, newContentProvider) => {
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });

@@ -186,78 +186,82 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
 
   let markdownInfo: CodeBlockMarkdownInformation | null = null;
 
-  await invokeWithFileSystemLock(app, sourceFile, (noteContent) => {
-    const noteContentLf = ensureLfEndings(noteContent);
+  await invokeWithFileSystemLock({
+    app,
+    fn(noteContent) {
+      const noteContentLf = ensureLfEndings(noteContent);
 
-    const approximateSectionInfo: MarkdownSectionInformation = {
-      lineEnd: noteContentLf.split('\n').length - 1,
-      lineStart: 0,
-      text: noteContentLf
-    };
+      const approximateSectionInfo: MarkdownSectionInformation = {
+        lineEnd: noteContentLf.split('\n').length - 1,
+        lineStart: 0,
+        text: noteContentLf
+      };
 
-    approximateSectionInfo.text = ensureLfEndings(approximateSectionInfo.text);
-    const sourceLf = ensureLfEndings(source);
+      approximateSectionInfo.text = ensureLfEndings(approximateSectionInfo.text);
+      const sourceLf = ensureLfEndings(source);
 
-    if (!hasSingleOccurrence(noteContentLf, approximateSectionInfo.text)) {
-      return;
-    }
-
-    const sectionOffset = noteContentLf.indexOf(approximateSectionInfo.text);
-    const linesBeforeSectionCount = noteContentLf.slice(0, sectionOffset).split('\n').length - 1;
-
-    const isInCallout = !!el.parentElement?.classList.contains('callout-content');
-
-    const language = getLanguageFromElement(el);
-    const sourceLines = sourceLf.split('\n');
-
-    const textLines = approximateSectionInfo.text.split('\n');
-    const textLineOffsets = new Map<number, number>();
-    textLineOffsets.set(linesBeforeSectionCount, sectionOffset);
-
-    let lastTextLineOffset = sectionOffset;
-    for (let i = 0; i < textLines.length; i++) {
-      const textLine = textLines[i] ?? '';
-      const lineOffset = lastTextLineOffset + textLine.length + 1;
-      textLineOffsets.set(linesBeforeSectionCount + i + 1, lineOffset);
-      lastTextLineOffset = lineOffset;
-    }
-
-    const potentialCodeBlockTextLines = textLines.map((line, index) => approximateSectionInfo.lineStart <= index && index <= approximateSectionInfo.lineEnd ? line : '');
-    const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
-
-    const REG_EXP = /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t](?<CodeBlockArgs>.*?))?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
-
-    for (const match of potentialCodeBlockText.matchAll(REG_EXP)) {
-      if (!isSuitableCodeBlock({ isInCallout, language, match, sourceLf })) {
-        continue;
-      }
-
-      if (markdownInfo) {
+      if (!hasSingleOccurrence(noteContentLf, approximateSectionInfo.text)) {
         return;
       }
 
-      markdownInfo = createMarkdownInfoFromMatch({
-        approximateSectionInfo,
-        linesBeforeSectionCount,
-        match,
-        noteContent,
-        potentialCodeBlockText,
-        sourceLinesCount: sourceLines.length,
-        textLineOffsets
-      });
-    }
+      const sectionOffset = noteContentLf.indexOf(approximateSectionInfo.text);
+      const linesBeforeSectionCount = noteContentLf.slice(0, sectionOffset).split('\n').length - 1;
 
-    if (!markdownInfo) {
-      return;
-    }
+      const isInCallout = !!el.parentElement?.classList.contains('callout-content');
 
-    if (noteContentLf === noteContent) {
-      return;
-    }
+      const language = getLanguageFromElement(el);
+      const sourceLines = sourceLf.split('\n');
 
-    const lfOffsetMapper = getLfNormalizedOffsetToOriginalOffsetMapper(noteContent);
-    markdownInfo.positionInNote.start.offset = lfOffsetMapper(markdownInfo.positionInNote.start.offset);
-    markdownInfo.positionInNote.end.offset = lfOffsetMapper(markdownInfo.positionInNote.end.offset);
+      const textLines = approximateSectionInfo.text.split('\n');
+      const textLineOffsets = new Map<number, number>();
+      textLineOffsets.set(linesBeforeSectionCount, sectionOffset);
+
+      let lastTextLineOffset = sectionOffset;
+      for (let i = 0; i < textLines.length; i++) {
+        const textLine = textLines[i] ?? '';
+        const lineOffset = lastTextLineOffset + textLine.length + 1;
+        textLineOffsets.set(linesBeforeSectionCount + i + 1, lineOffset);
+        lastTextLineOffset = lineOffset;
+      }
+
+      const potentialCodeBlockTextLines = textLines.map((line, index) => approximateSectionInfo.lineStart <= index && index <= approximateSectionInfo.lineEnd ? line : '');
+      const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
+
+      const REG_EXP = /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t](?<CodeBlockArgs>.*?))?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
+
+      for (const match of potentialCodeBlockText.matchAll(REG_EXP)) {
+        if (!isSuitableCodeBlock({ isInCallout, language, match, sourceLf })) {
+          continue;
+        }
+
+        if (markdownInfo) {
+          return;
+        }
+
+        markdownInfo = createMarkdownInfoFromMatch({
+          approximateSectionInfo,
+          linesBeforeSectionCount,
+          match,
+          noteContent,
+          potentialCodeBlockText,
+          sourceLinesCount: sourceLines.length,
+          textLineOffsets
+        });
+      }
+
+      if (!markdownInfo) {
+        return;
+      }
+
+      if (noteContentLf === noteContent) {
+        return;
+      }
+
+      const lfOffsetMapper = getLfNormalizedOffsetToOriginalOffsetMapper(noteContent);
+      markdownInfo.positionInNote.start.offset = lfOffsetMapper(markdownInfo.positionInNote.start.offset);
+      markdownInfo.positionInNote.end.offset = lfOffsetMapper(markdownInfo.positionInNote.end.offset);
+    },
+    pathOrFile: sourceFile
   });
 
   return markdownInfo;
@@ -272,21 +276,25 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
 export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promise<void> {
   const { app, ctx, lineOffset = 0, text } = params;
 
-  await process(app, ctx.sourcePath, async ({ content }) => {
-    const markdownInfo = await getCodeBlockMarkdownInfo(params);
-    assertNonNullable(markdownInfo, 'Could not uniquely identify the code block.');
+  await process({
+    app,
+    async newContentProvider({ content }) {
+      const markdownInfo = await getCodeBlockMarkdownInfo(params);
+      assertNonNullable(markdownInfo, 'Could not uniquely identify the code block.');
 
-    if (content !== markdownInfo.noteContent) {
-      return null;
-    }
+      if (content !== markdownInfo.noteContent) {
+        return null;
+      }
 
-    const insertLineIndex = markdownInfo.positionInNote.end.line + lineOffset + 1;
-    return insertText(normalizeOptionalProperties<InsertTextParams>({
-      content,
-      insertLineIndex,
-      shouldPreserveLinePrefix: params.shouldPreserveLinePrefix,
-      text
-    }));
+      const insertLineIndex = markdownInfo.positionInNote.end.line + lineOffset + 1;
+      return insertText(normalizeOptionalProperties<InsertTextParams>({
+        content,
+        insertLineIndex,
+        shouldPreserveLinePrefix: params.shouldPreserveLinePrefix,
+        text
+      }));
+    },
+    pathOrFile: ctx.sourcePath
   });
 }
 
@@ -299,23 +307,27 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
 export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Promise<void> {
   const { app, ctx, lineOffset = 0, text } = params;
 
-  await process(app, ctx.sourcePath, async ({ content }) => {
-    const markdownInfo = await getCodeBlockMarkdownInfo(params);
-    if (!markdownInfo) {
-      throw new Error('Could not uniquely identify the code block.');
-    }
+  await process({
+    app,
+    async newContentProvider({ content }) {
+      const markdownInfo = await getCodeBlockMarkdownInfo(params);
+      if (!markdownInfo) {
+        throw new Error('Could not uniquely identify the code block.');
+      }
 
-    if (content !== markdownInfo.noteContent) {
-      return null;
-    }
+      if (content !== markdownInfo.noteContent) {
+        return null;
+      }
 
-    const insertLineIndex = markdownInfo.positionInNote.start.line - lineOffset;
-    return insertText(normalizeOptionalProperties<InsertTextParams>({
-      content,
-      insertLineIndex,
-      shouldPreserveLinePrefix: params.shouldPreserveLinePrefix,
-      text
-    }));
+      const insertLineIndex = markdownInfo.positionInNote.start.line - lineOffset;
+      return insertText(normalizeOptionalProperties<InsertTextParams>({
+        content,
+        insertLineIndex,
+        shouldPreserveLinePrefix: params.shouldPreserveLinePrefix,
+        text
+      }));
+    },
+    pathOrFile: ctx.sourcePath
   });
 }
 
@@ -341,45 +353,49 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
   const { app, codeBlockProvider, ctx } = params;
   params.abortSignal?.throwIfAborted();
 
-  await process(app, ctx.sourcePath, async ({ abortSignal, content }) => {
-    abortSignal = abortSignalAny(abortSignal, params.abortSignal);
-    abortSignal.throwIfAborted();
-    const markdownInfo = await getCodeBlockMarkdownInfo(params);
-    if (!markdownInfo) {
-      throw new Error('Could not uniquely identify the code block.');
-    }
+  await process({
+    app,
+    async newContentProvider({ abortSignal, content }) {
+      abortSignal = abortSignalAny(abortSignal, params.abortSignal);
+      abortSignal.throwIfAborted();
+      const markdownInfo = await getCodeBlockMarkdownInfo(params);
+      if (!markdownInfo) {
+        throw new Error('Could not uniquely identify the code block.');
+      }
 
-    if (content !== markdownInfo.noteContent) {
-      return null;
-    }
+      if (content !== markdownInfo.noteContent) {
+        return null;
+      }
 
-    let oldCodeBlock = content.slice(markdownInfo.positionInNote.start.offset, markdownInfo.positionInNote.end.offset);
-    if (params.shouldPreserveLinePrefix) {
-      oldCodeBlock = unindent(oldCodeBlock, markdownInfo.linePrefix);
-    }
+      let oldCodeBlock = content.slice(markdownInfo.positionInNote.start.offset, markdownInfo.positionInNote.end.offset);
+      if (params.shouldPreserveLinePrefix) {
+        oldCodeBlock = unindent(oldCodeBlock, markdownInfo.linePrefix);
+      }
 
-    let newCodeBlock = await resolveValue(codeBlockProvider, { abortSignal, content: oldCodeBlock });
-    abortSignal.throwIfAborted();
-    if ((newCodeBlock || params.shouldKeepGapWhenEmpty) && params.shouldPreserveLinePrefix) {
-      newCodeBlock = indent(newCodeBlock, markdownInfo.linePrefix);
-    }
+      let newCodeBlock = await resolveValue(codeBlockProvider, { abortSignal, content: oldCodeBlock });
+      abortSignal.throwIfAborted();
+      if ((newCodeBlock || params.shouldKeepGapWhenEmpty) && params.shouldPreserveLinePrefix) {
+        newCodeBlock = indent(newCodeBlock, markdownInfo.linePrefix);
+      }
 
-    const textBeforeCodeBlock = content.slice(0, markdownInfo.positionInNote.start.offset);
-    const textAfterCodeBlock = content.slice(markdownInfo.positionInNote.end.offset);
+      const textBeforeCodeBlock = content.slice(0, markdownInfo.positionInNote.start.offset);
+      const textAfterCodeBlock = content.slice(markdownInfo.positionInNote.end.offset);
 
-    if (newCodeBlock || params.shouldKeepGapWhenEmpty) {
-      return `${textBeforeCodeBlock}${newCodeBlock}${textAfterCodeBlock}`;
-    }
+      if (newCodeBlock || params.shouldKeepGapWhenEmpty) {
+        return `${textBeforeCodeBlock}${newCodeBlock}${textAfterCodeBlock}`;
+      }
 
-    if (!textBeforeCodeBlock && !textAfterCodeBlock) {
-      return '';
-    }
+      if (!textBeforeCodeBlock && !textAfterCodeBlock) {
+        return '';
+      }
 
-    if (textBeforeCodeBlock) {
-      return `${textBeforeCodeBlock.slice(0, -1)}${textAfterCodeBlock}`;
-    }
+      if (textBeforeCodeBlock) {
+        return `${textBeforeCodeBlock.slice(0, -1)}${textAfterCodeBlock}`;
+      }
 
-    return `${textBeforeCodeBlock}${textAfterCodeBlock.slice(1)}`;
+      return `${textBeforeCodeBlock}${textAfterCodeBlock.slice(1)}`;
+    },
+    pathOrFile: ctx.sourcePath
   });
 }
 

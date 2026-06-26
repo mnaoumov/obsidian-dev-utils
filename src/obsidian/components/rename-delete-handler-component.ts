@@ -801,12 +801,12 @@ class RenameHandler {
   }
 
   private async renameHandled(oldPath: string, newPath: string): Promise<string> {
-    newPath = getSafeRenamePath(this.app, oldPath, newPath);
+    newPath = getSafeRenamePath({ app: this.app, newPath, oldPathOrAbstractFile: oldPath });
     if (oldPath === newPath) {
       return newPath;
     }
     this.handledRenames.add(oldPath, newPath);
-    newPath = await renameSafe(this.app, oldPath, newPath);
+    newPath = await renameSafe({ app: this.app, newPath, oldPathOrAbstractFile: oldPath });
     return newPath;
   }
 }

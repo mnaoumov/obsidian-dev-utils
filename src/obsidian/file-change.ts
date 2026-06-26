@@ -29,7 +29,8 @@ import type {
 } from './reference.ts';
 import type {
   ContentArgs,
-  ProcessOptions
+  ProcessOptions,
+  ProcessParams
 } from './vault.ts';
 
 import { getLibDebugger } from '../debug.ts';
@@ -37,6 +38,7 @@ import { printError } from '../error.ts';
 import {
   deepEqual,
   getNestedPropertyValue,
+  normalizeOptionalProperties,
   setNestedPropertyValue
 } from '../object-utils.ts';
 import { resolveValue } from '../value-provider.ts';
@@ -288,19 +290,24 @@ export async function applyFileChanges(
   options: ApplyFileChangesOptions = {},
   shouldRetryOnInvalidChanges = true
 ): Promise<void> {
-  await process(app, pathOrFile, async ({ abortSignal, content }) => {
-    if (isCanvasFile(pathOrFile)) {
-      return await applyCanvasChanges({
-        abortSignal,
-        changesProvider,
-        content,
-        path: getPath(app, pathOrFile),
-        shouldRetryOnInvalidChanges
-      });
-    }
+  await process(normalizeOptionalProperties<ProcessParams>({
+    app,
+    async newContentProvider({ abortSignal, content }) {
+      if (isCanvasFile(pathOrFile)) {
+        return await applyCanvasChanges({
+          abortSignal,
+          changesProvider,
+          content,
+          path: getPath(app, pathOrFile),
+          shouldRetryOnInvalidChanges
+        });
+      }
 
-    return await applyContentChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
-  }, options);
+      return await applyContentChanges(abortSignal, content, getPath(app, pathOrFile), changesProvider, shouldRetryOnInvalidChanges);
+    },
+    pathOrFile,
+    ...options
+  }));
 }
 
 /**
