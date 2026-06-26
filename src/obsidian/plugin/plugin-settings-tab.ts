@@ -135,6 +135,28 @@ interface PluginSettingsTabBaseEventMap {
 }
 
 /**
+ * Parameters for {@link PluginSettingsTabBase.onSaveSettings}.
+ *
+ * @typeParam PluginSettings - The type of the plugin settings.
+ */
+interface PluginSettingsTabBaseOnSaveSettingsParams<PluginSettings extends object> {
+  /**
+   * The save context.
+   */
+  readonly context: unknown;
+
+  /**
+   * The new settings state.
+   */
+  readonly newState: ReadonlyPluginSettingsState<PluginSettings>;
+
+  /**
+   * The old settings state.
+   */
+  readonly oldState: ReadonlyPluginSettingsState<PluginSettings>;
+}
+
+/**
  * Base class for creating plugin settings tabs in Obsidian.
  * Provides a method for binding value components to plugin settings and handling changes.
  *
@@ -426,7 +448,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     this._isOpen = true;
     this.component.load();
     registerAsyncEvent(this.component, this.pluginSettingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
-    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('saveSettings', this.onSaveSettings.bind(this)));
+    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('saveSettings', (newState, oldState, context) => this.onSaveSettings({ context, newState, oldState })));
   }
 
   /**
@@ -485,11 +507,12 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     return settings[propertyName] as ReadonlyDeep<PluginSettings[PropertyName]>;
   }
 
-  private async onSaveSettings(
-    newState: ReadonlyPluginSettingsState<PluginSettings>,
-    _oldState: ReadonlyPluginSettingsState<PluginSettings>,
-    context: unknown
-  ): Promise<void> {
+  private async onSaveSettings(params: PluginSettingsTabBaseOnSaveSettingsParams<PluginSettings>): Promise<void> {
+    const {
+      context,
+      newState,
+      oldState: _oldState
+    } = params;
     if (context === SAVE_TO_FILE_CONTEXT) {
       await this.updateValidations(newState.validationMessages as Record<StringKeys<PluginSettings>, string>);
       return;

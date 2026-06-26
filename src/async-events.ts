@@ -93,6 +93,8 @@ export interface AsyncEventSource<EventMap extends EventMapConstraint<EventMap> 
    * @param thisArg - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
+   * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
+   *
    * @example
    * ```ts
    * events.on('my-event', async (arg1, arg2) => {
@@ -116,6 +118,8 @@ export interface AsyncEventSource<EventMap extends EventMapConstraint<EventMap> 
    * @param callback - The callback to call when the event is triggered.
    * @param thisArg - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
+   *
+   * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
    *
    * @example
    * ```ts
@@ -307,6 +311,8 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * @param thisArg - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
+   * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
+   *
    * @example
    * ```ts
    * events.on('my-event', async (arg1, arg2) => {
@@ -346,6 +352,8 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * @param callback - The callback to call when the event is triggered.
    * @param thisArg - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
+   *
+   * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
    *
    * @example
    * ```ts
@@ -565,6 +573,8 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        * @param callback - The callback to call when the event is triggered.
        * @param thisArg - The context passed as `this` to the `callback`.
        * @returns A reference to the event listener.
+       *
+       * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
       public on<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
@@ -584,6 +594,8 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        * @param callback - The callback to call when the event is triggered.
        * @param thisArg - The context passed as `this` to the `callback`.
        * @returns A reference to the event listener.
+       *
+       * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
       public once<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(

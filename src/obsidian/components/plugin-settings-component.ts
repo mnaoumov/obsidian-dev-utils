@@ -81,6 +81,28 @@ export interface PluginSettingsComponentBaseConstructorParams<PluginSettings> {
 }
 
 /**
+ * Parameters for {@link PluginSettingsComponentBase.onSaveSettings}.
+ *
+ * @typeParam PluginSettings - The type of the plugin settings.
+ */
+export interface PluginSettingsComponentBaseOnSaveSettingsParams<PluginSettings extends object> {
+  /**
+   * The save context.
+   */
+  readonly context: unknown;
+
+  /**
+   * The new settings state.
+   */
+  readonly newState: ReadonlyPluginSettingsState<PluginSettings>;
+
+  /**
+   * The old settings state.
+   */
+  readonly oldState: ReadonlyPluginSettingsState<PluginSettings>;
+}
+
+/**
  * A snapshot of plugin settings state, including raw input values, effective (validated) values,
  * and per-property validation messages.
  *
@@ -358,6 +380,8 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @param callback - The callback to call when the event is triggered.
    * @param thisArg - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
+   *
+   * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
    */
   public on<
     EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings>,
@@ -379,6 +403,8 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @param callback - The callback to call when the event is triggered.
    * @param thisArg - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
+   *
+   * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
    */
   public once<
     EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings>,
@@ -404,7 +430,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    */
   public override async onloadAsync(): Promise<void> {
     registerAsyncEvent(this, this.on('loadSettings', this.onLoadSettings.bind(this)));
-    registerAsyncEvent(this, this.on('saveSettings', this.onSaveSettings.bind(this)));
+    registerAsyncEvent(this, this.on('saveSettings', (newState, oldState, context) => this.onSaveSettings({ context, newState, oldState })));
     registerAsyncEvent(this, this.pluginEventSource.on('externalSettingsChange', this.onExternalSettingsChange.bind(this)));
     await this.loadFromFile(true);
   }
@@ -564,15 +590,14 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   /**
    * Called when settings are saved.
    *
-   * @param _newState - The new settings state.
-   * @param _oldState - The old settings state.
-   * @param _context - The save context.
+   * @param params - The parameters.
    */
-  protected async onSaveSettings(
-    _newState: ReadonlyPluginSettingsState<PluginSettings>,
-    _oldState: ReadonlyPluginSettingsState<PluginSettings>,
-    _context: unknown
-  ): Promise<void> {
+  protected async onSaveSettings(params: PluginSettingsComponentBaseOnSaveSettingsParams<PluginSettings>): Promise<void> {
+    const {
+      context: _context,
+      newState: _newState,
+      oldState: _oldState
+    } = params;
     await noopAsync();
   }
 
