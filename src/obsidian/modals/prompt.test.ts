@@ -72,24 +72,24 @@ describe('prompt', () => {
     vi.clearAllMocks();
     buttonInstances.length = 0;
     textInstances.length = 0;
-    mockImplementation(
-      ButtonComponentOriginal.prototype,
-      'constructor2__',
-      function captureButton(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
+    mockImplementation({
+      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
-      }
-    );
-    mockImplementation(
-      TextComponentOriginal.prototype,
-      'constructor4__',
-      function captureText(this: TextComponentOriginal, originalImplementation, containerEl: HTMLElement): TextComponentOriginal {
+      },
+      method: 'constructor2__',
+      obj: ButtonComponentOriginal.prototype
+    });
+    mockImplementation({
+      impl: function impl(this: TextComponentOriginal, originalImplementation, containerEl: HTMLElement): TextComponentOriginal {
         originalImplementation.call(this, containerEl);
         textInstances.push(this);
         return this;
-      }
-    );
+      },
+      method: 'constructor4__',
+      obj: TextComponentOriginal.prototype
+    });
   });
 
   it('should resolve null when modal is closed without clicking OK', async () => {

@@ -51,15 +51,15 @@ describe('confirm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     buttonInstances.length = 0;
-    mockImplementation(
-      ButtonComponentOriginal.prototype,
-      'constructor2__',
-      function captureButton(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
+    mockImplementation({
+      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
-      }
-    );
+      },
+      method: 'constructor2__',
+      obj: ButtonComponentOriginal.prototype
+    });
   });
 
   it('should resolve false when modal is closed without confirming', async () => {

@@ -57,30 +57,6 @@ function hasFlag(regExp: RegExp, flag: string): boolean {
   return regExp.flags.includes(flag);
 }
 
-function shouldPickFlag(regExps: RegExp[], flag: string, strategy: RegExpMergeFlagsConflictStrategy): boolean {
-  const count = regExps.filter((regExp) => hasFlag(regExp, flag)).length;
-  /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
-  switch (strategy) {
-    /* v8 ignore stop */
-    case RegExpMergeFlagsConflictStrategy.Intersect:
-      return count === regExps.length;
-    case RegExpMergeFlagsConflictStrategy.Throw:
-      break;
-    case RegExpMergeFlagsConflictStrategy.Union:
-      return count > 0;
-    default:
-      /* v8 ignore start -- Exhaustive switch guard. */
-      assertNever(strategy);
-      /* v8 ignore stop */
-  }
-
-  const allSame = count === 0 || count === regExps.length;
-  if (!allSame) {
-    throw new Error(`Conflicting flag '${flag}' across patterns.`);
-  }
-  return count === regExps.length;
-}
-
 /**
  * A regular expression that always matches.
  */
@@ -90,6 +66,130 @@ export const ALWAYS_MATCH_REG_EXP = /(?:)/;
  * A regular expression that never matches.
  */
 export const NEVER_MATCH_REG_EXP = /.^/;
+
+/**
+ * Merges the flags of multiple regexes into a single flag string, applying a conflict strategy.
+ *
+ * The cooperating per-flag helpers share the same regexes, strategy, and accumulated flag set, so
+ * they are grouped here as methods over those fields rather than threading the state through
+ * positional arguments.
+ */
+class RegExpFlagMerger {
+  private readonly finalFlags = new Set<string>();
+
+  /**
+   * Creates a new merger.
+   *
+   * @param regExps - The regexes whose flags are merged.
+   * @param strategy - The strategy to use when flags conflict.
+   */
+  public constructor(private readonly regExps: RegExp[], private readonly strategy: RegExpMergeFlagsConflictStrategy) {}
+
+  /**
+   * Computes the merged flag string for the configured regexes.
+   *
+   * @returns The merged flags joined into a single string.
+   */
+  public computeFlags(): string {
+    this.addSemanticFlags();
+    this.addUnicodeFlags();
+    this.addMetaFlags();
+    return [...this.finalFlags].join('');
+  }
+
+  private addMetaFlags(): void {
+    const META_FLAGS = ['g', 'd'];
+    for (const flag of META_FLAGS) {
+      if (this.regExps.some((regExp) => hasFlag(regExp, flag))) {
+        this.finalFlags.add(flag);
+      }
+    }
+  }
+
+  private addSemanticFlags(): void {
+    const SEMANTIC_FLAGS = ['i', 'm', 's', 'y'];
+    for (const flag of SEMANTIC_FLAGS) {
+      if (this.shouldPickFlag(flag)) {
+        this.finalFlags.add(flag);
+      }
+    }
+  }
+
+  private addUnicodeFlags(): void {
+    const countU = this.regExps.filter((regExp) => hasFlag(regExp, 'u')).length;
+    const countV = this.regExps.filter((regExp) => hasFlag(regExp, 'v')).length;
+
+    let shouldUseUFlag: boolean;
+    let shouldUseVFlag: boolean;
+
+    /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
+    switch (this.strategy) {
+      /* v8 ignore stop */
+      case RegExpMergeFlagsConflictStrategy.Intersect:
+        shouldUseUFlag = countU === this.regExps.length;
+        shouldUseVFlag = countV === this.regExps.length;
+        break;
+      case RegExpMergeFlagsConflictStrategy.Throw: {
+        const allU = countU === this.regExps.length;
+        const noneU = countU === 0;
+        const allV = countV === this.regExps.length;
+        const noneV = countV === 0;
+
+        if (!(allU || noneU) || !(allV || noneV)) {
+          throw new Error('Conflicting \'u\'/\'v\' flags across patterns.');
+        }
+
+        shouldUseUFlag = allU;
+        shouldUseVFlag = allV;
+        break;
+      }
+      case RegExpMergeFlagsConflictStrategy.Union:
+        shouldUseUFlag = countU > 0;
+        shouldUseVFlag = countV > 0;
+        break;
+      default:
+        /* v8 ignore start -- Exhaustive switch guard. */
+        assertNever(this.strategy);
+        /* v8 ignore stop */
+    }
+
+    if (shouldUseUFlag && shouldUseVFlag) {
+      assert(this.strategy !== RegExpMergeFlagsConflictStrategy.Throw, 'Cannot combine both \'u\'/\'v\' flags in one RegExp.');
+      shouldUseUFlag = false;
+    }
+
+    if (shouldUseUFlag) {
+      this.finalFlags.add('u');
+    }
+    if (shouldUseVFlag) {
+      this.finalFlags.add('v');
+    }
+  }
+
+  private shouldPickFlag(flag: string): boolean {
+    const count = this.regExps.filter((regExp) => hasFlag(regExp, flag)).length;
+    /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
+    switch (this.strategy) {
+      /* v8 ignore stop */
+      case RegExpMergeFlagsConflictStrategy.Intersect:
+        return count === this.regExps.length;
+      case RegExpMergeFlagsConflictStrategy.Throw:
+        break;
+      case RegExpMergeFlagsConflictStrategy.Union:
+        return count > 0;
+      default:
+        /* v8 ignore start -- Exhaustive switch guard. */
+        assertNever(this.strategy);
+        /* v8 ignore stop */
+    }
+
+    const allSame = count === 0 || count === this.regExps.length;
+    if (!allSame) {
+      throw new Error(`Conflicting flag '${flag}' across patterns.`);
+    }
+    return count === this.regExps.length;
+  }
+}
 
 /**
  * Combine multiple regexes into one alternation, handling flags.
@@ -111,88 +211,6 @@ export function oneOf(
   }
 
   const source = regExps.map((regExp) => `(?:${regExp.source})`).join('|');
-
-  const finalFlags = new Set<string>();
-  addSemanticFlags(finalFlags, regExps, strategy);
-  addUnicodeFlags(finalFlags, regExps, strategy);
-  addMetaFlags(finalFlags, regExps);
-
-  return new RegExp(source, [...finalFlags].join(''));
-}
-
-function addMetaFlags(finalFlags: Set<string>, regExps: RegExp[]): void {
-  const META_FLAGS = ['g', 'd'];
-  for (const flag of META_FLAGS) {
-    if (regExps.some((regExp) => hasFlag(regExp, flag))) {
-      finalFlags.add(flag);
-    }
-  }
-}
-
-function addSemanticFlags(
-  finalFlags: Set<string>,
-  regExps: RegExp[],
-  strategy: RegExpMergeFlagsConflictStrategy
-): void {
-  const SEMANTIC_FLAGS = ['i', 'm', 's', 'y'];
-  for (const flag of SEMANTIC_FLAGS) {
-    if (shouldPickFlag(regExps, flag, strategy)) {
-      finalFlags.add(flag);
-    }
-  }
-}
-
-function addUnicodeFlags(
-  finalFlags: Set<string>,
-  regExps: RegExp[],
-  strategy: RegExpMergeFlagsConflictStrategy
-): void {
-  const countU = regExps.filter((regExp) => hasFlag(regExp, 'u')).length;
-  const countV = regExps.filter((regExp) => hasFlag(regExp, 'v')).length;
-
-  let shouldUseUFlag: boolean;
-  let shouldUseVFlag: boolean;
-
-  /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
-  switch (strategy) {
-    /* v8 ignore stop */
-    case RegExpMergeFlagsConflictStrategy.Intersect:
-      shouldUseUFlag = countU === regExps.length;
-      shouldUseVFlag = countV === regExps.length;
-      break;
-    case RegExpMergeFlagsConflictStrategy.Throw: {
-      const allU = countU === regExps.length;
-      const noneU = countU === 0;
-      const allV = countV === regExps.length;
-      const noneV = countV === 0;
-
-      if (!(allU || noneU) || !(allV || noneV)) {
-        throw new Error('Conflicting \'u\'/\'v\' flags across patterns.');
-      }
-
-      shouldUseUFlag = allU;
-      shouldUseVFlag = allV;
-      break;
-    }
-    case RegExpMergeFlagsConflictStrategy.Union:
-      shouldUseUFlag = countU > 0;
-      shouldUseVFlag = countV > 0;
-      break;
-    default:
-      /* v8 ignore start -- Exhaustive switch guard. */
-      assertNever(strategy);
-      /* v8 ignore stop */
-  }
-
-  if (shouldUseUFlag && shouldUseVFlag) {
-    assert(strategy !== RegExpMergeFlagsConflictStrategy.Throw, 'Cannot combine both \'u\'/\'v\' flags in one RegExp.');
-    shouldUseUFlag = false;
-  }
-
-  if (shouldUseUFlag) {
-    finalFlags.add('u');
-  }
-  if (shouldUseVFlag) {
-    finalFlags.add('v');
-  }
+  const flags = new RegExpFlagMerger(regExps, strategy).computeFlags();
+  return new RegExp(source, flags);
 }

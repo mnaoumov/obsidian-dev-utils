@@ -309,13 +309,17 @@ describe('loop', () => {
     const items = ['a', 'b', 'c', 'd', 'e'];
 
     let capturedProgressEl: HTMLProgressElement | null = null;
-    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-    const createElSpy = mockImplementation(globalThis, 'createEl', (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
-      const el = originalImplementation(tag);
-      if (tag === 'progress') {
-        capturedProgressEl = el as HTMLProgressElement;
-      }
-      return el;
+    const createElSpy = mockImplementation({
+      impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
+        const el = originalImplementation(tag);
+        if (tag === 'progress') {
+          capturedProgressEl = el as HTMLProgressElement;
+        }
+        return el;
+      },
+      method: 'createEl',
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
+      obj: globalThis
     });
 
     await loop({
@@ -443,13 +447,17 @@ describe('loop', () => {
 
   it('should increment progress bar value for each processed item', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
-    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-    const createElSpy = mockImplementation(globalThis, 'createEl', (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
-      const el = originalImplementation(tag);
-      if (tag === 'progress') {
-        capturedProgressEl = el as HTMLProgressElement;
-      }
-      return el;
+    const createElSpy = mockImplementation({
+      impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
+        const el = originalImplementation(tag);
+        if (tag === 'progress') {
+          capturedProgressEl = el as HTMLProgressElement;
+        }
+        return el;
+      },
+      method: 'createEl',
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
+      obj: globalThis
     });
 
     const values: number[] = [];
@@ -479,13 +487,17 @@ describe('loop', () => {
 
   it('should still increment progress bar value even when processItem throws', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
-    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-    const createElSpy = mockImplementation(globalThis, 'createEl', (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
-      const el = originalImplementation(tag);
-      if (tag === 'progress') {
-        capturedProgressEl = el as HTMLProgressElement;
-      }
-      return el;
+    const createElSpy = mockImplementation({
+      impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
+        const el = originalImplementation(tag);
+        if (tag === 'progress') {
+          capturedProgressEl = el as HTMLProgressElement;
+        }
+        return el;
+      },
+      method: 'createEl',
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
+      obj: globalThis
     });
 
     vi.spyOn(console, 'error').mockImplementation(() => {

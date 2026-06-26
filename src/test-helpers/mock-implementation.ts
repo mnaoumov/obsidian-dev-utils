@@ -11,6 +11,38 @@ import { vi } from 'vitest';
 
 import type { GenericFunction } from '../function.ts';
 
+/**
+ * Parameters for {@link mockImplementation}.
+ *
+ * @typeParam T - The type of the object whose method is spied on.
+ * @typeParam K - The name of the method to spy on.
+ * @typeParam F - The type of the method to spy on.
+ */
+export interface MockImplementationParams<
+  T extends object,
+  K extends keyof FunctionPropertyMembers<T> & string,
+  F extends GenericFunction = T[K] extends GenericFunction ? T[K] : GenericFunction
+> {
+  /**
+   * Replacement function receiving the original implementation and call args.
+   *
+   * @param originalImplementation - The original implementation of the method.
+   * @param args - The real call arguments.
+   * @returns The return value of the method.
+   */
+  impl(this: T, originalImplementation: F, ...args: Parameters<F>): ReturnType<F>;
+
+  /**
+   * The method name.
+   */
+  readonly method: K;
+
+  /**
+   * The object whose method to spy on.
+   */
+  readonly obj: T;
+}
+
 type FunctionPropertyMembers<T> = {
   [P in keyof T as T[P] extends GenericFunction ? P : never]: T[P];
 };
@@ -21,20 +53,19 @@ const savedOriginals = new WeakMap<object, Map<string, unknown>>();
  * Spies on a method and replaces it with an implementation that receives
  * `originalImplementation` as its first argument, followed by the real call arguments.
  *
- * @param obj - The object whose method to spy on.
- * @param method - The method name.
- * @param impl - Replacement function receiving the original implementation and call args.
+ * @param params - The parameters for the spy.
  * @returns The spy instance.
  */
 export function mockImplementation<
   T extends object,
   K extends keyof FunctionPropertyMembers<T> & string,
   F extends GenericFunction = T[K] extends GenericFunction ? T[K] : GenericFunction
->(
-  obj: T,
-  method: K,
-  impl: (this: T, originalImplementation: F, ...args: Parameters<F>) => ReturnType<F>
-): MockInstance {
+>(params: MockImplementationParams<T, K, F>): MockInstance {
+  const {
+    impl,
+    method,
+    obj
+  } = params;
   let map = savedOriginals.get(obj);
   if (!map) {
     map = new Map();
