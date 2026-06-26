@@ -80,7 +80,7 @@ export interface RenderDelayedBacklinksParams {
 export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: PathOrAbstractFile[]): Promise<void> {
   pathOrFiles ??= [];
   const files: TFile[] = pathOrFiles.flatMap((abstractFileOrPath) => {
-    const abstractFile = getAbstractFileOrNull(dv.app, abstractFileOrPath);
+    const abstractFile = getAbstractFileOrNull({ app: dv.app, pathOrFile: abstractFileOrPath });
     if (!abstractFile) {
       return [];
     }
@@ -93,7 +93,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
       throw new Error('Expected a folder');
     }
 
-    return getMarkdownFiles(dv.app, abstractFile, { isRecursive: true });
+    return getMarkdownFiles({ app: dv.app, isRecursive: true, pathOrFolder: abstractFile });
   });
 
   const backlinkRows: [Link, string[]][] = [];
@@ -156,7 +156,7 @@ export function renderDelayedBacklinksForFolder(params: RenderDelayedBacklinksFo
   const folder2 = folder ?? dv.current().file.folder;
   renderDelayedBacklinks({
     dv,
-    files: getMarkdownFiles(dv.app, folder2, { isRecursive: true }),
+    files: getMarkdownFiles({ app: dv.app, isRecursive: true, pathOrFolder: folder2 }),
     title
   });
 }

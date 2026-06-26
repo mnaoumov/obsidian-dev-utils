@@ -379,7 +379,7 @@ class DeleteHandler {
     }
 
     const attachmentFolderPath = await getAttachmentFolderPath(this.app, this.file.path, AttachmentPathContext.DeleteNote);
-    const attachmentFolder = getFolderOrNull(this.app, attachmentFolderPath);
+    const attachmentFolder = getFolderOrNull({ app: this.app, pathOrFolder: attachmentFolderPath });
 
     if (!attachmentFolder) {
       return;
@@ -689,7 +689,7 @@ class RenameHandler {
         this.abortSignal.throwIfAborted();
       }
 
-      if (!getFileOrNull(this.app, this.newPath)) {
+      if (!getFileOrNull({ app: this.app, pathOrFile: this.newPath })) {
         let interruptedRenames = this.interruptedRenamesMap.get(this.newPath);
         if (!interruptedRenames) {
           interruptedRenames = [];
@@ -764,14 +764,14 @@ class RenameHandler {
       settingsManager: this.settingsManager
     }).handle();
 
-    await this.app.fileManager.renameFile(getFile(this.app, tempPath), this.newPath);
+    await this.app.fileManager.renameFile(getFile({ app: this.app, pathOrFile: tempPath }), this.newPath);
     return true;
   }
 
   private async refreshLinks(): Promise<void> {
     const cache = this.app.metadataCache.getCache(this.oldPath) ?? this.app.metadataCache.getCache(this.newPath);
     const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
-    const fakeOldFile = getFile(this.app, this.oldPath, { shouldIncludeNonExisting: true });
+    const fakeOldFile = getFile({ app: this.app, pathOrFile: this.oldPath, shouldIncludeNonExisting: true });
     let oldPathBacklinksMapRefreshed = new Map<string, Reference[]>();
     await tempRegisterFilesAndRun(this.app, [fakeOldFile], async () => {
       oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe(this.app, fakeOldFile)).data;
@@ -845,7 +845,7 @@ class RenameMap {
 
     const settings = this.settingsManager.getSettings();
 
-    const oldFile = getFile(this.app, this.oldPath, { shouldIncludeNonExisting: true });
+    const oldFile = getFile({ app: this.app, pathOrFile: this.oldPath, shouldIncludeNonExisting: true });
     let oldAttachmentFolderPath = '';
     await tempRegisterFilesAndRunAsync(this.app, [oldFile], async () => {
       const shouldFakeOldPathCache = this.oldCache && oldFile.deleted;
@@ -868,7 +868,7 @@ class RenameMap {
 
     const isOldAttachmentFolderAtRoot = oldAttachmentFolderPath === '/';
 
-    const oldAttachmentFolder = getFolderOrNull(this.app, oldAttachmentFolderPath);
+    const oldAttachmentFolder = getFolderOrNull({ app: this.app, pathOrFolder: oldAttachmentFolderPath });
 
     if (!oldAttachmentFolder) {
       return;
@@ -935,7 +935,7 @@ class RenameMap {
         continue;
       }
       if (settings.shouldDeleteConflictingAttachments) {
-        const newAttachmentFile = getFileOrNull(this.app, newAttachmentFilePath);
+        const newAttachmentFile = getFileOrNull({ app: this.app, pathOrFile: newAttachmentFilePath });
         if (newAttachmentFile) {
           getLibDebugger('RenameDeleteHandler:fillRenameMap')(`Removing conflicting attachment ${newAttachmentFile.path}.`);
           await trashSafe(this.app, newAttachmentFile);

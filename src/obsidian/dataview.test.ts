@@ -11,6 +11,7 @@ import {
 
 import type { GenericAsyncFunction } from '../function.ts';
 import type { DataviewInlineApi } from './dataview.ts';
+import type { GetFileParams } from './file-system.ts';
 
 import {
   sleep,
@@ -45,7 +46,7 @@ vi.mock('../error.ts', () => ({
 }));
 
 vi.mock('../obsidian/file-system.ts', () => ({
-  getFile: vi.fn((_app: unknown, path: unknown) => ({ path })),
+  getFile: vi.fn((params: GetFileParams) => ({ path: params.pathOrFile })),
   getPath: vi.fn((_app: unknown, path: unknown) => typeof path === 'string' ? path : (path as PathHolder).path)
 }));
 
@@ -588,7 +589,7 @@ describe('reloadCurrentFileCache', () => {
 
     await reloadCurrentFileCache(dv);
 
-    expect(getFile).toHaveBeenCalledWith(dv.app, 'current.md');
+    expect(getFile).toHaveBeenCalledWith({ app: dv.app, pathOrFile: 'current.md' });
     vi.unstubAllGlobals();
   });
 });

@@ -42,7 +42,7 @@ export async function addAlias(app: App, pathOrFile: PathOrFile, alias?: string)
     return;
   }
 
-  const file = getFile(app, pathOrFile);
+  const file = getFile({ app, pathOrFile });
 
   if (!isMarkdownFile(file)) {
     throw new Error(`File ${file.path} is not a markdown file.`);

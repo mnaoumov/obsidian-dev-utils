@@ -102,7 +102,7 @@ export interface ProcessOptions extends RetryOptions {
  * @returns A {@link Promise} that resolves to the new path of the copied file.
  */
 export async function copySafe(app: App, oldPathOrFile: PathOrFile, newPath: string): Promise<string> {
-  const file = getFile(app, oldPathOrFile);
+  const file = getFile({ app, pathOrFile: oldPathOrFile });
 
   if (file.path === newPath) {
     return newPath;
@@ -156,7 +156,7 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
  * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary file and all its created parents.
  */
 export async function createTempFile(app: App, path: string): Promise<() => Promise<void>> {
-  let file = getFileOrNull(app, path);
+  let file = getFileOrNull({ app, pathOrFile: path });
   if (file) {
     return noopAsync;
   }
@@ -172,7 +172,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
   }
 
   return async () => {
-    file = getFile(app, path);
+    file = getFile({ app, pathOrFile: path });
     if (!file.deleted) {
       await trashSafe(app, file);
     }
@@ -188,7 +188,7 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
  * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary folder and all its created parents.
  */
 export async function createTempFolder(app: App, path: string): Promise<() => Promise<void>> {
-  let folder = getFolderOrNull(app, path);
+  let folder = getFolderOrNull({ app, pathOrFolder: path });
   if (folder) {
     return noopAsync;
   }
@@ -201,7 +201,7 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
   await createFolderSafe(app, path);
 
   return async () => {
-    folder = getFolder(app, path);
+    folder = getFolder({ app, pathOrFolder: path });
     if (!folder.deleted) {
       await trashSafe(app, folder);
     }
@@ -217,7 +217,7 @@ export async function createTempFolder(app: App, path: string): Promise<() => Pr
  * @returns A {@link Promise} that resolves when the folder is deleted.
  */
 export async function deleteEmptyFolder(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
-  const folder = getFolderOrNull(app, pathOrFolder);
+  const folder = getFolderOrNull({ app, pathOrFolder });
   if (!folder) {
     return;
   }
@@ -235,7 +235,7 @@ export async function deleteEmptyFolder(app: App, pathOrFolder: null | PathOrFol
  * @returns A {@link Promise} that resolves when the empty hierarchy is deleted.
  */
 export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
-  let folder = getFolderOrNull(app, pathOrFolder);
+  let folder = getFolderOrNull({ app, pathOrFolder });
 
   while (folder) {
     if (!await isEmptyFolder(app, folder)) {
@@ -256,7 +256,7 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | 
  * @returns The safe path for the file or folder.
  */
 export function getAbstractFilePathSafe(app: App, path: string, type: FileSystemType): string {
-  const abstractFile = getAbstractFileOrNull(app, path);
+  const abstractFile = getAbstractFileOrNull({ app, pathOrFile: path });
 
   if (abstractFile && getFileSystemType(abstractFile) === type) {
     return path;
@@ -332,7 +332,7 @@ export function getNoteFilesSorted(app: App): TFile[] {
  */
 export async function getOrCreateAbstractFileSafe(app: App, path: string, type: FileSystemType): Promise<TAbstractFile> {
   path = getAbstractFilePathSafe(app, path, type);
-  const abstractFile = getAbstractFileOrNull(app, path);
+  const abstractFile = getAbstractFileOrNull({ app, pathOrFile: path });
   if (abstractFile) {
     return abstractFile;
   }
@@ -392,7 +392,7 @@ export function getSafeRenamePath(app: App, oldPathOrAbstractFile: PathOrAbstrac
     let folder: null | TFolder;
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- There is no elegant way to perform infinite loops.
     while (true) {
-      folder = getFolderOrNull(app, folderPath, { isCaseInsensitive: true });
+      folder = getFolderOrNull({ app, isCaseInsensitive: true, pathOrFolder: folderPath });
       if (folder) {
         break;
       }
@@ -417,7 +417,7 @@ export function getSafeRenamePath(app: App, oldPathOrAbstractFile: PathOrAbstrac
  * @param fn - The function to execute.
  */
 export async function invokeWithFileSystemLock(app: App, pathOrFile: PathOrFile, fn: (content: string) => void): Promise<void> {
-  const file = getFile(app, pathOrFile);
+  const file = getFile({ app, pathOrFile });
   await app.vault.process(file, (content) => {
     fn(content);
     return content;
@@ -642,7 +642,7 @@ export async function readSafe(app: App, pathOrFile: PathOrFile): Promise<null |
  * @returns A {@link Promise} that resolves to the new path of the file.
  */
 export async function renameSafe(app: App, oldPathOrAbstractFile: PathOrAbstractFile, newPath: string): Promise<string> {
-  const oldAbstractFile = getAbstractFile(app, oldPathOrAbstractFile);
+  const oldAbstractFile = getAbstractFile({ app, pathOrFile: oldPathOrAbstractFile });
 
   const newAvailablePath = getSafeRenamePath(app, oldPathOrAbstractFile, newPath);
 
@@ -696,7 +696,7 @@ export async function saveNote(app: App, pathOrFile: PathOrFile): Promise<void> 
  * @returns A {@link Promise} that resolves when the file is trashed.
  */
 export async function trashSafe(app: App, pathOrFile: PathOrAbstractFile): Promise<void> {
-  const file = getAbstractFileOrNull(app, pathOrFile);
+  const file = getAbstractFileOrNull({ app, pathOrFile });
   if (!file) {
     return;
   }
@@ -714,7 +714,7 @@ export async function trashSafe(app: App, pathOrFile: PathOrAbstractFile): Promi
 
 async function invokeFileActionSafe(app: App, pathOrFile: PathOrFile, fileAction: (file: TFile) => Promise<void>): Promise<boolean> {
   const path = getPath(app, pathOrFile);
-  let file = getFileOrNull(app, path);
+  let file = getFileOrNull({ app, pathOrFile: path });
   if (!file || file.deleted) {
     return false;
   }
@@ -722,7 +722,7 @@ async function invokeFileActionSafe(app: App, pathOrFile: PathOrFile, fileAction
     await fileAction(file);
     return true;
   } catch (e) {
-    file = getFileOrNull(app, path);
+    file = getFileOrNull({ app, pathOrFile: path });
     if (!file || file.deleted) {
       return false;
     }

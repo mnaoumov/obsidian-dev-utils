@@ -178,7 +178,7 @@ interface IsSuitableCodeBlockParams {
 export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoParams): Promise<CodeBlockMarkdownInformation | null> {
   const { app, ctx, el, source } = params;
 
-  const sourceFile = getFileOrNull(app, ctx.sourcePath);
+  const sourceFile = getFileOrNull({ app, pathOrFile: ctx.sourcePath });
   assertNonNullable(sourceFile, `Source file ${ctx.sourcePath} not found.`);
 
   await requestAnimationFrameAsync();

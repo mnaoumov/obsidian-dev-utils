@@ -13,6 +13,7 @@ import {
 } from 'vitest';
 
 import type { GenericObject } from '../type-guards.ts';
+import type { GetFileParams } from './file-system.ts';
 
 import { deepEqual } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
@@ -42,7 +43,8 @@ vi.mock('../object-utils.ts', () => ({
 }));
 
 vi.mock('../obsidian/file-system.ts', () => ({
-  getFile: vi.fn((_app: unknown, pathOrFile: unknown) => {
+  getFile: vi.fn((params: GetFileParams) => {
+    const { pathOrFile } = params;
     if (typeof pathOrFile === 'string') {
       return { basename: pathOrFile.replace(/\.[^.]+$/, ''), extension: 'md', name: pathOrFile, path: pathOrFile };
     }

@@ -20,7 +20,12 @@ import {
 
 import type { GenericObject } from '../type-guards.ts';
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
-import type { PathOrFile } from './file-system.ts';
+import type {
+  GetFileOrNullParams,
+  GetFileParams,
+  GetFolderParams,
+  PathOrFile
+} from './file-system.ts';
 import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-with-offsets.ts';
 
 import { noopAsync } from '../function.ts';
@@ -90,19 +95,21 @@ vi.mock('../obsidian/i18n/i18n.ts', () => ({
 }));
 
 vi.mock('../obsidian/file-system.ts', () => ({
-  getFile: vi.fn((_app: unknown, pathOrFile: unknown) => {
+  getFile: vi.fn((params: GetFileParams) => {
+    const { pathOrFile } = params;
     if (typeof pathOrFile === 'string') {
       return { deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile };
     }
     return pathOrFile;
   }),
-  getFileOrNull: vi.fn((_app: unknown, pathOrFile: unknown) => {
+  getFileOrNull: vi.fn((params: GetFileOrNullParams) => {
+    const { pathOrFile } = params;
     if (typeof pathOrFile === 'string') {
       return { deleted: false, name: pathOrFile.split('/').pop(), path: pathOrFile, stat: { ctime: 0, mtime: 0, size: 0 } };
     }
     return pathOrFile;
   }),
-  getFolder: vi.fn((_app: unknown, path: string) => ({ children: [], deleted: false, path })),
+  getFolder: vi.fn((params: GetFolderParams) => ({ children: [], deleted: false, path: params.pathOrFolder })),
   getPath: vi.fn((_app: unknown, pathOrFile: unknown) => typeof pathOrFile === 'string' ? pathOrFile : (pathOrFile as PathHolder).path),
   isFile: vi.fn((file: unknown) => file !== null && typeof file === 'object' && 'name' in (file as GenericObject) && !('children' in (file as GenericObject)))
 }));
@@ -582,11 +589,12 @@ describe('tempRegisterFilesAndRunAsync', () => {
 describe('getBacklinksForFileOrPath', () => {
   beforeEach(() => {
     mockedGetFile.mockReset();
-    mockedGetFile.mockImplementation((_app: unknown, pathOrFile: unknown) => {
+    mockedGetFile.mockImplementation((params: GetFileParams) => {
+      const { pathOrFile } = params;
       if (typeof pathOrFile === 'string') {
         return castTo<ReturnType<typeof getFile>>({ deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile });
       }
-      return pathOrFile as ReturnType<typeof getFile>;
+      return pathOrFile;
     });
   });
 
@@ -752,11 +760,12 @@ describe('getBacklinksForFileSafe', () => {
     mockedRetryWithTimeoutNotice.mockReset();
     mockedSaveNote.mockResolvedValue(undefined);
 
-    mockedGetFile.mockImplementation((_app: unknown, pathOrFile: unknown) => {
+    mockedGetFile.mockImplementation((params: GetFileParams) => {
+      const { pathOrFile } = params;
       if (typeof pathOrFile === 'string') {
         return castTo<ReturnType<typeof getFile>>({ deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile });
       }
-      return pathOrFile as ReturnType<typeof getFile>;
+      return pathOrFile;
     });
   });
 

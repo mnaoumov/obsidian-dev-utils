@@ -344,10 +344,21 @@ addEventListener); `createElAsync`/`createSvgAsync` (Obsidian `createEl`); `stri
   `executeBatches`(3), `spawnViaShell`(3), `over-exposure` `record`(3), assorted eslint-rule intern helpers.
 - `test-helpers/mock-implementation.ts`: `mockImplementation`(3).
 
-Design rule: keep unambiguously-typed leading args positional (`app`, single `path`/`content`,
-callback); bag ambiguous same-typed pairs, flags, optional config. Pure ambiguous utils → sole
-required bag. `<Owner>Params` (sole+required) / `<Owner>Options` (optional/supplementary). Constructor
-bag = `<ClassName>ConstructorParams`. Use `refactor!:` for breaking commits.
+**CONFIRMED DESIGN (user, this session): FULL BAG EVERYTHING.** Every converted function takes ONE
+object that includes ALL arguments (incl. `app`) as named members → always `<Owner>Params` (sole
+required). Fully labeled, order-independent call sites: `copySafe({ app, oldPathOrFile, newPath })`,
+`getFile({ app, pathOrFile, isCaseInsensitive: true })`, `isChild({ app, childPathOrFile,
+parentPathOrFile })`. Rename meaningless params (`a`/`b` → `childPathOrFile`/`parentPathOrFile`).
+Optional args → optional members. Fold any pre-existing options type into the single Params bag (e.g.
+`ProcessParams extends ProcessOptions`). Constructor bag = `<ClassName>ConstructorParams`. Use
+`refactor!:` for breaking commits.
+
+**Also confirmed:** convert the hot 2-string utils (`ensureStartsWith`/`ensureEndsWith`/`indent`/
+`hasSingleOccurrence`) too.
+
+**REWORK NEEDED:** `file-system.ts` getters shipped in `db994812` as `(app, path, options?)` must be
+re-done as full bags (`getFile({ app, pathOrFile, ... })`), folding the `*Options` interfaces into
+`*Params`.
 
 ## Architectural Vision: Improve DX + Testability of Plugin Base Classes
 

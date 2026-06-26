@@ -30,7 +30,7 @@ import type { GenericObject } from '../type-guards.ts';
 import type { MaybeReturn } from '../type.ts';
 import type { FileChange } from './file-change.ts';
 import type {
-  GetFileOptions,
+  GetFileParams,
   PathOrFile
 } from './file-system.ts';
 import type { ProcessOptions } from './vault.ts';
@@ -1003,7 +1003,7 @@ export async function editLinks(
   await applyFileChanges(app, pathOrFile, async ({ abortSignal, content }) => {
     const cache = await getCacheSafe(app, pathOrFile);
     abortSignal.throwIfAborted();
-    const file = getFile(app, pathOrFile);
+    const file = getFile({ app, pathOrFile });
     const cachedContent = await app.vault.cachedRead(file);
     abortSignal.throwIfAborted();
     if (content !== cachedContent) {
@@ -1103,7 +1103,7 @@ export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: Pat
   }
 
   if (linkPath.startsWith('/')) {
-    return getFile(app, linkPath, { shouldIncludeNonExisting: true });
+    return getFile({ app, pathOrFile: linkPath, shouldIncludeNonExisting: true });
   }
 
   const fullLinkPath = join(dirname(sourcePath), `./${linkPath}`);
@@ -1112,7 +1112,7 @@ export function extractLinkFile(app: App, link: Reference, sourcePathOrFile: Pat
     return null;
   }
 
-  return getFile(app, fullLinkPath, { shouldIncludeNonExisting: true });
+  return getFile({ app, pathOrFile: fullLinkPath, shouldIncludeNonExisting: true });
 }
 
 /**
@@ -1140,7 +1140,7 @@ export function generateMarkdownLink(params: GenerateMarkdownLinkParams): string
 
   const customDefaultParams = getGenerateMarkdownLinkDefaultParamsFns().map((defaultParamsFn) => defaultParamsFn());
   params = Object.assign({}, DEFAULT_PARAMS, ...customDefaultParams, params);
-  const targetFile = getFile(app, params.targetPathOrFile, normalizeOptionalProperties<GetFileOptions>({ shouldIncludeNonExisting: params.isNonExistingFileAllowed }));
+  const targetFile = getFile(normalizeOptionalProperties<GetFileParams>({ app, pathOrFile: params.targetPathOrFile, shouldIncludeNonExisting: params.isNonExistingFileAllowed }));
 
   return tempRegisterFilesAndRun(app, [targetFile], () => generateMarkdownLinkImpl(params));
 }
@@ -1301,7 +1301,7 @@ export function shouldResetAlias(params: ShouldResetAliasParams): boolean {
     return true;
   }
 
-  const targetFile = getFile(app, targetPathOrFile, { shouldIncludeNonExisting: true });
+  const targetFile = getFile({ app, pathOrFile: targetPathOrFile, shouldIncludeNonExisting: true });
   const newSourcePath = getPath(app, newSourcePathOrFile);
   const oldSourcePath = getPath(app, oldSourcePathOrFile ?? newSourcePathOrFile);
   const newSourceFolder = dirname(newSourcePath);
@@ -1461,7 +1461,7 @@ export function updateLink(params: UpdateLinkParams): string {
   if (!newTargetPathOrFile) {
     return link.original;
   }
-  const newTargetFile = getFile(app, newTargetPathOrFile, { shouldIncludeNonExisting: true });
+  const newTargetFile = getFile({ app, pathOrFile: newTargetPathOrFile, shouldIncludeNonExisting: true });
   const oldSourcePath = getPath(app, oldSourcePathOrFile ?? newSourcePathOrFile);
   const oldTargetPath = getPath(app, oldTargetPathOrFile ?? newTargetPathOrFile);
   const isWikilink = shouldUseWikilinkStyle(normalizeOptionalProperties<ShouldUseWikilinkStyleParams>({
@@ -1730,7 +1730,7 @@ function generateLinkText(params: GenerateLinkTextParams): string {
 
 function generateMarkdownLinkImpl(params: GenerateMarkdownLinkParams): string {
   const { app } = params;
-  const targetFile = getFile(app, params.targetPathOrFile, normalizeOptionalProperties<GetFileOptions>({ shouldIncludeNonExisting: params.isNonExistingFileAllowed }));
+  const targetFile = getFile(normalizeOptionalProperties<GetFileParams>({ app, pathOrFile: params.targetPathOrFile, shouldIncludeNonExisting: params.isNonExistingFileAllowed }));
   const sourcePath = getPath(app, params.sourcePathOrFile);
   const subpath = params.subpath ?? '';
 

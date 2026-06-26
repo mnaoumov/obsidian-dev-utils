@@ -20,6 +20,7 @@ import {
 } from 'vitest';
 
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
+import type { GetAbstractFileOrNullParams } from './file-system.ts';
 
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
@@ -141,7 +142,7 @@ describe('deleteIfNotUsed', () => {
     const folder = TFolder.create__(castTo(app.vault), 'folder').asOriginalType2__();
     const childFile = TFile.create__(castTo(app.vault), 'folder/note.md').asOriginalType2__();
 
-    mocks.getAbstractFileOrNull.mockImplementation((_app: unknown, f: unknown) => f);
+    mocks.getAbstractFileOrNull.mockImplementation((params: GetAbstractFileOrNullParams) => params.pathOrFile);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
     mocks.listSafe.mockResolvedValue({ files: [childFile], folders: [] });
     mocks.isEmptyFolder.mockResolvedValue(true);

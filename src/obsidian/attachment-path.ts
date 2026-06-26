@@ -224,7 +224,7 @@ export async function getAttachmentFilePath(params: GetAttachmentFilePathParams)
   const attachmentPath = getPath(app, oldAttachmentPathOrFile);
   const attachmentFileExtension = extname(attachmentPath);
   const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
-  const attachmentFile = getFileOrNull(app, attachmentPath);
+  const attachmentFile = getFileOrNull({ app, pathOrFile: attachmentPath });
 
   const extendedFn = (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFnExtended>).extended;
   if (extendedFn) {
@@ -290,7 +290,7 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
   const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
   const relativePath = attachmentFolderPath.startsWith('./') ? trimStart(attachmentFolderPath, './') : null;
 
-  const noteFileOrNull = getFileOrNull(app, notePathOrFile);
+  const noteFileOrNull = getFileOrNull({ app, pathOrFile: notePathOrFile });
 
   if (isCurrentFolder) {
     attachmentFolderPath = noteFileOrNull ? noteFileOrNull.parent?.path ?? '' : '';
@@ -301,11 +301,11 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
   attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
   const attachmentFileBaseName = normalize(normalizeSlashes(params.attachmentFileBaseName));
 
-  let folder = getFolderOrNull(app, attachmentFolderPath, { isCaseInsensitive: true });
+  let folder = getFolderOrNull({ app, isCaseInsensitive: true, pathOrFolder: attachmentFolderPath });
 
   if (!folder && relativePath) {
     folder = shouldSkipMissingAttachmentFolderCreation
-      ? getFolder(app, attachmentFolderPath, { shouldIncludeNonExisting: true })
+      ? getFolder({ app, pathOrFolder: attachmentFolderPath, shouldIncludeNonExisting: true })
       : await app.vault.createFolder(attachmentFolderPath);
   }
 

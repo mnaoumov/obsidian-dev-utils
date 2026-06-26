@@ -241,7 +241,7 @@ export async function renderExternalLink(app: App, url: string, displayText?: st
  * @returns The HTMLAnchorElement containing the rendered internal link.
  */
 export async function renderInternalLink(app: App, pathOrAbstractFile: PathOrAbstractFile, displayText?: string): Promise<HTMLAnchorElement> {
-  const abstractFile = getAbstractFileOrNull(app, pathOrAbstractFile);
+  const abstractFile = getAbstractFileOrNull({ app, pathOrFile: pathOrAbstractFile });
   const path = getPath(app, pathOrAbstractFile);
   displayText ??= path;
   if (isFolder(abstractFile)) {

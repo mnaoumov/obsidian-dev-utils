@@ -140,7 +140,7 @@ export function getAllLinks(cache: CachedMetadata): Reference[] {
  * @returns The backlinks for the file.
  */
 export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<Reference> {
-  const file = getFile(app, pathOrFile, { shouldIncludeNonExisting: true });
+  const file = getFile({ app, pathOrFile, shouldIncludeNonExisting: true });
   return tempRegisterFilesAndRun(app, [file], () => app.metadataCache.getBacklinksForFile(file));
 }
 
@@ -165,13 +165,13 @@ export async function getBacklinksForFileSafe(
   await retryWithTimeoutNotice({
     async operationFn(abortSignal) {
       abortSignal.throwIfAborted();
-      const file = getFile(app, pathOrFile);
+      const file = getFile({ app, pathOrFile });
       await ensureMetadataCacheReady(app);
       abortSignal.throwIfAborted();
       backlinks = getBacklinksForFileOrPath(app, file);
       for (const notePath of backlinks.keys()) {
         abortSignal.throwIfAborted();
-        const note = getFileOrNull(app, notePath);
+        const note = getFileOrNull({ app, pathOrFile: notePath });
         if (!note) {
           return false;
         }
@@ -230,7 +230,7 @@ export async function getBacklinksForFileSafe(
  * @returns The cached metadata for the file, or `null` if it doesn't exist.
  */
 export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<CachedMetadata | null> {
-  const file = getFileOrNull(app, fileOrPath);
+  const file = getFileOrNull({ app, pathOrFile: fileOrPath });
 
   try {
     if (!file) {
@@ -295,7 +295,7 @@ export async function parseMetadata(app: App, str: string): Promise<CachedMetada
  * @param cache - The file cache to register.
  */
 export function registerFileCacheForNonExistingFile(app: App, pathOrFile: PathOrFile, cache: CachedMetadata): void {
-  const file = getFile(app, pathOrFile, { shouldIncludeNonExisting: true });
+  const file = getFile({ app, pathOrFile, shouldIncludeNonExisting: true });
   if (!file.deleted) {
     throw new Error('File is existing');
   }
@@ -330,7 +330,11 @@ export function registerFiles(app: App, files: TAbstractFile[]): void {
         app.metadataCache.uniqueFileLookup.add(file.name.toLowerCase(), file);
       }
 
-      file = getFolder(app, parentFolderPath(file.path), { shouldIncludeNonExisting: true });
+      file = getFolder({
+        app,
+        pathOrFolder: parentFolderPath(file.path),
+        shouldIncludeNonExisting: true
+      });
     }
   }
 }
@@ -378,7 +382,7 @@ export async function tempRegisterFilesAndRunAsync<T>(app: App, files: TAbstract
  * @param pathOrFile - The path or file to unregister the file cache for.
  */
 export function unregisterFileCacheForNonExistingFile(app: App, pathOrFile: PathOrFile): void {
-  const file = getFile(app, pathOrFile, { shouldIncludeNonExisting: true });
+  const file = getFile({ app, pathOrFile, shouldIncludeNonExisting: true });
   if (!file.deleted) {
     throw new Error('File is existing');
   }
@@ -412,7 +416,11 @@ export function unregisterFiles(app: App, files: TAbstractFile[]): void {
         }
       }
 
-      file = getFolder(app, parentFolderPath(file.path), { shouldIncludeNonExisting: true });
+      file = getFolder({
+        app,
+        pathOrFolder: parentFolderPath(file.path),
+        shouldIncludeNonExisting: true
+      });
     }
   }
 }

@@ -20,6 +20,7 @@ import {
   Vault
 } from 'obsidian';
 
+import { normalizeOptionalProperties } from '../object-utils.ts';
 import {
   extname,
   resolve
@@ -58,13 +59,23 @@ export enum FileSystemType {
 }
 
 /**
- * Options for {@link exists}.
+ * Parameters for {@link exists}.
  */
-export interface ExistsOptions {
+export interface ExistsParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
   /**
    * Specifies whether to perform a case-insensitive search. Default is `undefined`.
    */
   readonly isCaseInsensitive?: boolean;
+
+  /**
+   * The path to check.
+   */
+  readonly path: string;
 
   /**
    * The type of the file system object to check. Default is `undefined`.
@@ -73,33 +84,83 @@ export interface ExistsOptions {
 }
 
 /**
- * Options for {@link getAbstractFile}.
+ * Parameters for {@link getAbstractFileOrNull}.
  */
-export interface GetAbstractFileOptions {
+export interface GetAbstractFileOrNullParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
   /**
    * Specifies whether to perform a case-insensitive search. Default is `false`.
    */
   readonly isCaseInsensitive?: boolean;
+
+  /**
+   * The path or abstract file to retrieve.
+   */
+  readonly pathOrFile: null | PathOrAbstractFile;
 }
 
 /**
- * Options for {@link getAbstractFileOrNull}.
+ * Parameters for {@link getAbstractFile}.
  */
-export interface GetAbstractFileOrNullOptions {
+export interface GetAbstractFileParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
   /**
    * Specifies whether to perform a case-insensitive search. Default is `false`.
    */
   readonly isCaseInsensitive?: boolean;
+
+  /**
+   * The path or abstract file to retrieve the abstract file for.
+   */
+  readonly pathOrFile: PathOrAbstractFile;
 }
 
 /**
- * Options for {@link getFile}.
+ * Parameters for {@link getFileOrNull}.
  */
-export interface GetFileOptions {
+export interface GetFileOrNullParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
   /**
    * Specifies whether to perform a case-insensitive search. Default is `false`.
    */
   readonly isCaseInsensitive?: boolean;
+
+  /**
+   * The path or file.
+   */
+  readonly pathOrFile: null | PathOrFile;
+}
+
+/**
+ * Parameters for {@link getFile}.
+ */
+export interface GetFileParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
+  /**
+   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   */
+  readonly isCaseInsensitive?: boolean;
+
+  /**
+   * The path or file to retrieve the file for.
+   */
+  readonly pathOrFile: PathOrFile;
 
   /**
    * Whether to include a non-existing file.
@@ -110,23 +171,43 @@ export interface GetFileOptions {
 }
 
 /**
- * Options for {@link getFileOrNull}.
+ * Parameters for {@link getFolderOrNull}.
  */
-export interface GetFileOrNullOptions {
+export interface GetFolderOrNullParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
   /**
    * Specifies whether to perform a case-insensitive search. Default is `false`.
    */
   readonly isCaseInsensitive?: boolean;
+
+  /**
+   * The path or folder to retrieve the folder from.
+   */
+  readonly pathOrFolder: null | PathOrFolder;
 }
 
 /**
- * Options for {@link getFolder}.
+ * Parameters for {@link getFolder}.
  */
-export interface GetFolderOptions {
+export interface GetFolderParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
   /**
    * Specifies whether to perform a case-insensitive search. Default is `false`.
    */
   readonly isCaseInsensitive?: boolean;
+
+  /**
+   * The path or folder identifier.
+   */
+  readonly pathOrFolder: PathOrFolder;
 
   /**
    * Whether to allow the folder to not exist.
@@ -137,23 +218,23 @@ export interface GetFolderOptions {
 }
 
 /**
- * Options for {@link getFolderOrNull}.
+ * Parameters for {@link getMarkdownFiles}.
  */
-export interface GetFolderOrNullOptions {
+export interface GetMarkdownFilesParams {
   /**
-   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   * The Obsidian App instance.
    */
-  readonly isCaseInsensitive?: boolean;
-}
+  readonly app: App;
 
-/**
- * Options for {@link getMarkdownFiles}.
- */
-export interface GetMarkdownFilesOptions {
   /**
    * Specifies whether to recursively search for markdown files within subfolders. Default is `false`.
    */
   readonly isRecursive?: boolean;
+
+  /**
+   * The path or folder to retrieve the markdown files from.
+   */
+  readonly pathOrFolder: PathOrFolder;
 }
 
 /**
@@ -170,6 +251,26 @@ export type PathOrFile = string | TFile;
  * A path or a folder.
  */
 export type PathOrFolder = string | TFolder;
+
+/**
+ * Parameters for {@link getFileInternal}.
+ */
+interface GetFileInternalParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
+  /**
+   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   */
+  readonly isCaseInsensitive?: boolean;
+
+  /**
+   * The path to retrieve the abstract file for.
+   */
+  readonly path: string;
+}
 
 /**
  * Converts an array of abstract files to an array of files.
@@ -275,46 +376,67 @@ export function checkExtension(pathOrFile: null | PathOrAbstractFile, extension:
 /**
  * Checks if the given path exists.
  *
- * @param app - The Obsidian App instance.
- * @param path - The path to check.
- * @param options - The options for the check.
+ * @param params - The parameters for the check.
  * @returns `true` if the path exists, `false` otherwise.
  */
-export function exists(app: App, path: string, options?: ExistsOptions): boolean {
-  const abstractFile = getAbstractFileOrNull(app, path, options);
+export function exists(params: ExistsParams): boolean {
+  const {
+    app,
+    isCaseInsensitive,
+    path,
+    type
+  } = params;
+  const abstractFile = getAbstractFileOrNull(normalizeOptionalProperties<GetAbstractFileOrNullParams>({
+    app,
+    isCaseInsensitive,
+    pathOrFile: path
+  }));
   if (!abstractFile) {
     return false;
   }
 
-  if (options?.type === undefined) {
+  if (type === undefined) {
     return true;
   }
 
-  return getFileSystemType(abstractFile) === options.type;
+  return getFileSystemType(abstractFile) === type;
 }
 
 /**
  * Retrieves the TAbstractFile object for the given path or abstract file.
  *
- * @param app - The App instance.
- * @param pathOrFile - The path or abstract file to retrieve the abstract file for.
- * @param options - The options for the retrieval.
+ * @param params - The parameters for the retrieval.
  * @returns The abstract file.
  * @throws Error if the abstract file is not found.
  */
-export function getAbstractFile(app: App, pathOrFile: PathOrAbstractFile, options?: GetAbstractFileOptions): TAbstractFile {
-  return ensureNonNullable(getAbstractFileOrNull(app, pathOrFile, options), `Abstract file not found: ${pathOrFile as string}`);
+export function getAbstractFile(params: GetAbstractFileParams): TAbstractFile {
+  const {
+    app,
+    isCaseInsensitive,
+    pathOrFile
+  } = params;
+  return ensureNonNullable(
+    getAbstractFileOrNull(normalizeOptionalProperties<GetAbstractFileOrNullParams>({
+      app,
+      isCaseInsensitive,
+      pathOrFile
+    })),
+    `Abstract file not found: ${pathOrFile as string}`
+  );
 }
 
 /**
  * Retrieves an abstract file or `null` based on the provided path or abstract file.
  *
- * @param app - The application instance.
- * @param pathOrFile - The path or abstract file to retrieve.
- * @param options - The options for the retrieval.
+ * @param params - The parameters for the retrieval.
  * @returns The abstract file if found, otherwise `null`.
  */
-export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstractFile, options?: GetAbstractFileOrNullOptions): null | TAbstractFile {
+export function getAbstractFileOrNull(params: GetAbstractFileOrNullParams): null | TAbstractFile {
+  const {
+    app,
+    isCaseInsensitive,
+    pathOrFile
+  } = params;
   if (pathOrFile === null) {
     return null;
   }
@@ -333,7 +455,11 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
     /* v8 ignore stop */
   }
 
-  const file = getFileInternal(app, pathOrFile, options?.isCaseInsensitive);
+  const file = getFileInternal(normalizeOptionalProperties<GetFileInternalParams>({
+    app,
+    isCaseInsensitive,
+    path: pathOrFile
+  }));
 
   if (file) {
     return file;
@@ -345,22 +471,34 @@ export function getAbstractFileOrNull(app: App, pathOrFile: null | PathOrAbstrac
     return null;
   }
 
-  return getFileInternal(app, resolvedPath, options?.isCaseInsensitive);
+  return getFileInternal(normalizeOptionalProperties<GetFileInternalParams>({
+    app,
+    isCaseInsensitive,
+    path: resolvedPath
+  }));
 }
 
 /**
  * Retrieves a file based on the provided path or file.
  *
- * @param app - The Obsidian App instance.
- * @param pathOrFile - The path or file to retrieve the file for.
- * @param options - The options for the retrieval.
+ * @param params - The parameters for the retrieval.
  * @returns The file corresponding to the provided path or file.
  * @throws Error if the file is not found.
  */
-export function getFile(app: App, pathOrFile: PathOrFile, options?: GetFileOptions): TFile {
-  let file = getFileOrNull(app, pathOrFile, options);
+export function getFile(params: GetFileParams): TFile {
+  const {
+    app,
+    isCaseInsensitive,
+    pathOrFile,
+    shouldIncludeNonExisting
+  } = params;
+  let file = getFileOrNull(normalizeOptionalProperties<GetFileOrNullParams>({
+    app,
+    isCaseInsensitive,
+    pathOrFile
+  }));
   if (!file) {
-    if (options?.shouldIncludeNonExisting) {
+    if (shouldIncludeNonExisting) {
       file = createTFileInstance(app, pathOrFile as string);
     } else {
       throw new Error(`File not found: ${pathOrFile as string}`);
@@ -375,13 +513,20 @@ export function getFile(app: App, pathOrFile: PathOrFile, options?: GetFileOptio
  * If the provided argument is already a file, it is returned as is.
  * Otherwise, the function uses the app's vault to retrieve the file by its path.
  *
- * @param app - The Obsidian App instance.
- * @param pathOrFile - The path or file.
- * @param options - The options for the retrieval.
+ * @param params - The parameters for the retrieval.
  * @returns The file if found, otherwise `null`.
  */
-export function getFileOrNull(app: App, pathOrFile: null | PathOrFile, options?: GetFileOrNullOptions): null | TFile {
-  const file = getAbstractFileOrNull(app, pathOrFile, options);
+export function getFileOrNull(params: GetFileOrNullParams): null | TFile {
+  const {
+    app,
+    isCaseInsensitive,
+    pathOrFile
+  } = params;
+  const file = getAbstractFileOrNull(normalizeOptionalProperties<GetAbstractFileOrNullParams>({
+    app,
+    isCaseInsensitive,
+    pathOrFile
+  }));
   if (isFile(file)) {
     return file;
   }
@@ -408,16 +553,24 @@ export function getFileSystemType(abstractFile: TAbstractFile): FileSystemType {
 /**
  * Retrieves a folder based on the provided app and pathOrFolder.
  *
- * @param app - The Obsidian app instance.
- * @param pathOrFolder - The path or folder identifier.
- * @param options - The options for the retrieval.
+ * @param params - The parameters for the retrieval.
  * @returns The retrieved folder.
  * @throws If the folder is not found.
  */
-export function getFolder(app: App, pathOrFolder: PathOrFolder, options?: GetFolderOptions): TFolder {
-  let folder = getFolderOrNull(app, pathOrFolder, options);
+export function getFolder(params: GetFolderParams): TFolder {
+  const {
+    app,
+    isCaseInsensitive,
+    pathOrFolder,
+    shouldIncludeNonExisting
+  } = params;
+  let folder = getFolderOrNull(normalizeOptionalProperties<GetFolderOrNullParams>({
+    app,
+    isCaseInsensitive,
+    pathOrFolder
+  }));
   if (!folder) {
-    if (options?.shouldIncludeNonExisting) {
+    if (shouldIncludeNonExisting) {
       folder = createTFolderInstance(app, pathOrFolder as string);
     } else {
       throw new Error(`Folder not found: ${pathOrFolder as string}`);
@@ -430,13 +583,20 @@ export function getFolder(app: App, pathOrFolder: PathOrFolder, options?: GetFol
 /**
  * Retrieves a folder or `null` based on the provided path or folder.
  *
- * @param app - The Obsidian application instance.
- * @param pathOrFolder - The path or folder to retrieve the folder from.
- * @param options - The options for the retrieval.
+ * @param params - The parameters for the retrieval.
  * @returns The folder if found, otherwise `null`.
  */
-export function getFolderOrNull(app: App, pathOrFolder: null | PathOrFolder, options?: GetFolderOrNullOptions): null | TFolder {
-  const folder = getAbstractFileOrNull(app, pathOrFolder, options);
+export function getFolderOrNull(params: GetFolderOrNullParams): null | TFolder {
+  const {
+    app,
+    isCaseInsensitive,
+    pathOrFolder
+  } = params;
+  const folder = getAbstractFileOrNull(normalizeOptionalProperties<GetAbstractFileOrNullParams>({
+    app,
+    isCaseInsensitive,
+    pathOrFile: pathOrFolder
+  }));
   if (isFolder(folder)) {
     return folder;
   }
@@ -446,17 +606,23 @@ export function getFolderOrNull(app: App, pathOrFolder: null | PathOrFolder, opt
 /**
  * Retrieves an array of files representing the markdown files within a specified folder or path.
  *
- * @param app - The Obsidian App instance.
- * @param pathOrFolder - The path or folder to retrieve the markdown files from.
- * @param options - The options for the retrieval.
+ * @param params - The parameters for the retrieval.
  * @returns An array of files representing the markdown files.
  */
-export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, options?: GetMarkdownFilesOptions): TFile[] {
-  const folder = getFolder(app, pathOrFolder);
+export function getMarkdownFiles(params: GetMarkdownFilesParams): TFile[] {
+  const {
+    app,
+    isRecursive,
+    pathOrFolder
+  } = params;
+  const folder = getFolder({
+    app,
+    pathOrFolder
+  });
 
   let markdownFiles: TFile[] = [];
 
-  if (options?.isRecursive) {
+  if (isRecursive) {
     Vault.recurseChildren(folder, (abstractFile) => {
       if (isMarkdownFile(abstractFile) && abstractFile instanceof TFile) {
         markdownFiles.push(abstractFile);
@@ -478,7 +644,10 @@ export function getMarkdownFiles(app: App, pathOrFolder: PathOrFolder, options?:
  * @returns The file representing the file
  */
 export async function getOrCreateFile(app: App, path: string): Promise<TFile> {
-  const file = getFileOrNull(app, path);
+  const file = getFileOrNull({
+    app,
+    pathOrFile: path
+  });
   if (file) {
     return file;
   }
@@ -497,7 +666,10 @@ export async function getOrCreateFile(app: App, path: string): Promise<TFile> {
  * @returns The folder representing the folder.
  */
 export async function getOrCreateFolder(app: App, path: string): Promise<TFolder> {
-  const folder = getFolderOrNull(app, path);
+  const folder = getFolderOrNull({
+    app,
+    pathOrFolder: path
+  });
   if (folder) {
     return folder;
   }
@@ -517,7 +689,10 @@ export function getPath(app: App, pathOrFile: PathOrAbstractFile): string {
     return pathOrFile.path;
   }
 
-  const file = getAbstractFileOrNull(app, pathOrFile);
+  const file = getAbstractFileOrNull({
+    app,
+    pathOrFile
+  });
   if (file) {
     return file.path;
   }
@@ -610,7 +785,12 @@ export function trimMarkdownExtension(file: TAbstractFile): string {
   return trimEnd(file.path, `.${MARKDOWN_FILE_EXTENSION}`);
 }
 
-function getFileInternal(app: App, path: string, isCaseInsensitive?: boolean): null | TAbstractFile {
+function getFileInternal(params: GetFileInternalParams): null | TAbstractFile {
+  const {
+    app,
+    path
+  } = params;
+  let { isCaseInsensitive } = params;
   isCaseInsensitive ??= getDataAdapterEx(app).insensitive;
   if (isCaseInsensitive) {
     const caseInsensitiveFileIndex = getCaseInsensitiveFileIndex(app);

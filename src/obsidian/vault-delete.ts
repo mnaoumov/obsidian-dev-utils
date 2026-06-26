@@ -39,7 +39,7 @@ interface DeleteIfNotUsedParams {
  * @returns A {@link Promise} that resolves to a boolean indicating whether the removal was successful.
  */
 export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<boolean> {
-  const file = getAbstractFileOrNull(params.app, params.pathOrFile);
+  const file = getAbstractFileOrNull({ app: params.app, pathOrFile: params.pathOrFile });
 
   if (!file) {
     return false;
