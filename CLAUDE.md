@@ -317,6 +317,7 @@ Source of truth: `F:/tmp/analyze-params.ts` (re-run with `npx jiti F:/tmp/analyz
 **112 functions/methods with 3+ params** and **202 with exactly 2**. Categorized:
 
 **DONE:**
+
 - Phase 1 internal helpers (file-change, link, markdown-code-block-processor,
   rename-delete-handler-component, over-exposure) — commits `003e3b04`..`1f306c96`.
 - `file-system.ts` getters — full-bagged (single `*Params` incl. `app`) in `a6d72e64`
@@ -340,6 +341,7 @@ addEventListener); `createElAsync`/`createSvgAsync` (Obsidian `createEl`); `stri
 `writeJson*`/`writePackage*`/2-arg `app+path` family in vault.ts/metadata-cache.ts.
 
 **REMAINING — to convert (breaking where exported):**
+
 - `string.ts`: `insertAt`(4), `replaceAllAsync`(4), `replaceAll`(3), `trimEnd`(3), `trimStart`(3),
   `unindent`(3); 2-string ambiguous: `ensureEndsWith`, `ensureStartsWith`, `hasSingleOccurrence`, `indent`.
 - `path.ts`: `makeFileName` (2 strings).
