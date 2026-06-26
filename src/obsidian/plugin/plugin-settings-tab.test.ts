@@ -200,7 +200,7 @@ describe('PluginSettingsTabBase', () => {
       setValue
     });
 
-    const result = tab.bind(mockComponent, 'name');
+    const result = tab.bind({ propertyName: 'name', valueComponent: mockComponent });
     expect(result).toBe(mockComponent);
     expect(setValue).toHaveBeenCalledWith('test');
   });
@@ -222,7 +222,7 @@ describe('PluginSettingsTabBase', () => {
     });
 
     const onChangedSpy = vi.fn();
-    tab.bind(mockComponent, 'name', { onChanged: onChangedSpy });
+    tab.bind({ onChanged: onChangedSpy, propertyName: 'name', valueComponent: mockComponent });
 
     if (changeCallback) {
       await changeCallback('newValue');
@@ -264,7 +264,7 @@ describe('PluginSettingsTabBase', () => {
 
     const mockComponent = createTextBasedMockComponent();
 
-    tab.bind(mockComponent, 'name');
+    tab.bind({ propertyName: 'name', valueComponent: mockComponent });
     expect(mockComponent.setPlaceholderValue).toHaveBeenCalledWith('default');
   });
 
@@ -283,11 +283,13 @@ describe('PluginSettingsTabBase', () => {
       setValue: vi.fn()
     });
 
-    tab.bind(mockComponent, 'name', {
+    tab.bind({
       componentToPluginSettingsValueConverter: () => ({
         validationMessage: 'Invalid value'
       }),
-      pluginSettingsToComponentValueConverter: (v) => v
+      pluginSettingsToComponentValueConverter: (v: string) => v,
+      propertyName: 'name',
+      valueComponent: mockComponent
     });
 
     if (changeCallback) {
@@ -312,7 +314,7 @@ describe('PluginSettingsTabBase', () => {
     }));
     mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => true));
 
-    tab.bind(mockComponent, 'name');
+    tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
     if (changeCallback) {
       await changeCallback('');
@@ -336,7 +338,7 @@ describe('PluginSettingsTabBase', () => {
       setValue: vi.fn()
     });
 
-    tab.bind(mockComponent, 'name');
+    tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
     // First call sets things up
     if (changeCallback) {
@@ -362,7 +364,7 @@ describe('PluginSettingsTabBase', () => {
       validatorEl
     });
 
-    const result = tab.bind(mockComponent, 'name');
+    const result = tab.bind({ propertyName: 'name', valueComponent: mockComponent });
     expect(result).toBe(mockComponent);
   });
 
@@ -389,7 +391,7 @@ describe('PluginSettingsTabBase', () => {
 
     vi.mocked(pluginSettingsComponent.setProperty).mockResolvedValue('Some error');
 
-    tab.bind(mockComponent, 'name', { shouldShowValidationMessage: false });
+    tab.bind({ propertyName: 'name', shouldShowValidationMessage: false, valueComponent: mockComponent });
 
     if (changeCallback) {
       await changeCallback('value');
@@ -472,7 +474,7 @@ describe('PluginSettingsTabBase', () => {
     }));
     mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => false));
 
-    tab.bind(mockComponent, 'name');
+    tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
     // Trigger onChange with value equal to default to set shouldEmptyOnBlur
     if (changeCallback) {
@@ -513,7 +515,7 @@ describe('PluginSettingsTabBase', () => {
         validatorEl
       });
 
-      tab.bind(mockComponent, 'name');
+      tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       // Trigger the initial debounced updateValidatorEl
       vi.advanceTimersByTime(200);
@@ -551,7 +553,7 @@ describe('PluginSettingsTabBase', () => {
         validatorEl
       });
 
-      tab.bind(mockComponent, 'name');
+      tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       // Trigger focus, blur, click events on validatorEl
       validatorEl.dispatchEvent(new Event('focus'));
@@ -592,7 +594,7 @@ describe('PluginSettingsTabBase', () => {
 
       vi.mocked(pluginSettingsComponent.setProperty).mockResolvedValue('Validation error');
 
-      tab.bind(mockComponent, 'name', { shouldShowValidationMessage: false });
+      tab.bind({ propertyName: 'name', shouldShowValidationMessage: false, valueComponent: mockComponent });
 
       if (changeCallback) {
         await changeCallback('badValue');
@@ -633,7 +635,7 @@ describe('PluginSettingsTabBase', () => {
         changeCallback?.('');
       }));
 
-      tab.bind(mockComponent, 'name');
+      tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       // Trigger onChange with value equal to default to set shouldEmptyOnBlur=true
       if (changeCallback) {
@@ -671,7 +673,7 @@ describe('PluginSettingsTabBase', () => {
       // IsEmpty returns true during onChange (triggers shouldRevertToDefaultValueOnBlur)
       mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => true));
 
-      tab.bind(mockComponent, 'name');
+      tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       if (changeCallback) {
         await changeCallback('');
@@ -711,7 +713,7 @@ describe('PluginSettingsTabBase', () => {
         return !isInUpdateValidator;
       }));
 
-      tab.bind(mockComponent, 'name');
+      tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       if (changeCallback) {
         await changeCallback('');
@@ -752,7 +754,7 @@ describe('PluginSettingsTabBase', () => {
       vi.mocked(pluginSettingsComponent.setProperty).mockResolvedValue('Error message');
 
       // ShouldShowValidationMessage defaults to true
-      tab.bind(mockComponent, 'name');
+      tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       if (changeCallback) {
         await changeCallback('badValue');
@@ -789,7 +791,7 @@ describe('PluginSettingsTabBase', () => {
         validatorEl
       });
 
-      tab.bind(mockComponent, 'name');
+      tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       if (changeCallback) {
         await changeCallback('value');
@@ -827,7 +829,7 @@ describe('PluginSettingsTabBase', () => {
         return isInUpdateValidator;
       }));
 
-      tab.bind(mockComponent, 'name');
+      tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       if (changeCallback) {
         // Trigger with default value to set shouldEmptyOnBlur
@@ -869,7 +871,7 @@ describe('PluginSettingsTabBase', () => {
       // No validation error
       vi.mocked(pluginSettingsComponent.setProperty).mockResolvedValue('');
 
-      tab.bind(mockComponent, 'name', { shouldShowValidationMessage: false });
+      tab.bind({ propertyName: 'name', shouldShowValidationMessage: false, valueComponent: mockComponent });
 
       if (changeCallback) {
         await changeCallback('validValue');
@@ -912,7 +914,7 @@ describe('PluginSettingsTabBase', () => {
       setValue: vi.fn()
     });
 
-    tab.bind(mockComponent, 'name');
+    tab.bind({ propertyName: 'name', valueComponent: mockComponent });
   });
 
   it('should handle validationMessageChanged event in bind', async () => {
@@ -935,7 +937,7 @@ describe('PluginSettingsTabBase', () => {
         validatorEl
       });
 
-      tab.bind(mockComponent, 'name');
+      tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       // Trigger the validationMessageChanged event through updateValidations
       const saveSettingsCall = vi.mocked(pluginSettingsComponent.on).mock.calls.find(

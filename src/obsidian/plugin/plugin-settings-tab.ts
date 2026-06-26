@@ -114,6 +114,54 @@ export interface BindOptionsExtended<
 }
 
 /**
+ * Extended params for {@link PluginSettingsTabBase.bind} with value converters.
+ *
+ * @typeParam PluginSettings - The plugin settings type.
+ * @typeParam UIValue - The type of the UI component's value.
+ * @typeParam TValueComponent - The type of the value component.
+ * @typeParam PropertyName - The settings property name being bound.
+ */
+export interface PluginSettingsTabBaseBindExtendedParams<
+  PluginSettings extends object,
+  UIValue,
+  TValueComponent,
+  PropertyName extends StringKeys<PluginSettings>
+> extends BindOptionsExtended<PluginSettings, UIValue, PropertyName> {
+  /**
+   * The property name of the plugin settings to bind to.
+   */
+  readonly propertyName: PropertyName;
+
+  /**
+   * The value component to bind.
+   */
+  readonly valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>;
+}
+
+/**
+ * Params for {@link PluginSettingsTabBase.bind}.
+ *
+ * @typeParam PluginSettings - The plugin settings type.
+ * @typeParam UIValue - The type of the UI component's value.
+ * @typeParam TValueComponent - The type of the value component.
+ */
+export interface PluginSettingsTabBaseBindParams<
+  PluginSettings extends object,
+  UIValue,
+  TValueComponent
+> extends BindOptions<UIValue> {
+  /**
+   * The property of the plugin settings to bind to.
+   */
+  readonly propertyName: ConditionalKeys<PluginSettings, UIValue>;
+
+  /**
+   * The value component to bind.
+   */
+  readonly valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>;
+}
+
+/**
  * Params for creating a {@link PluginSettingsTabBase}.
  *
  * @typeParam PluginSettings - The plugin settings type.
@@ -128,6 +176,31 @@ export interface PluginSettingsTabBaseConstructorParams<PluginSettings extends o
    * The settings component.
    */
   readonly pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
+}
+
+/**
+ * Implementation params for {@link PluginSettingsTabBase.bind}.
+ *
+ * @typeParam PluginSettings - The plugin settings type.
+ * @typeParam UIValue - The type of the UI component's value.
+ * @typeParam TValueComponent - The type of the value component.
+ * @typeParam PropertyName - The settings property name being bound.
+ */
+interface PluginSettingsTabBaseBindImplParams<
+  PluginSettings extends object,
+  UIValue,
+  TValueComponent,
+  PropertyName extends StringKeys<PluginSettings>
+> extends BindOptions<PluginSettings[PropertyName]> {
+  /**
+   * The property name of the plugin settings to bind to.
+   */
+  readonly propertyName: PropertyName;
+
+  /**
+   * The value component to bind.
+   */
+  readonly valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>;
 }
 
 interface PluginSettingsTabBaseEventMap {
@@ -216,18 +289,14 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    *
    * @typeParam UIValue - The type of the value of the UI component.
    * @typeParam TValueComponent - The type of the value component.
-   * @param valueComponent - The value component to bind.
-   * @param propertyName - The property of the plugin settings to bind to.
-   * @param options - The options for binding the value component.
+   * @param params - The params for binding the value component.
    * @returns The value component.
    */
   public bind<
     UIValue,
     TValueComponent
   >(
-    valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
-    propertyName: ConditionalKeys<PluginSettings, UIValue>,
-    options?: BindOptions<UIValue>
+    params: PluginSettingsTabBaseBindParams<PluginSettings, UIValue, TValueComponent>
   ): TValueComponent;
   /**
    * Binds a value component to a plugin setting.
@@ -235,9 +304,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * @typeParam UIValue - The type of the value of the UI component.
    * @typeParam TValueComponent - The type of the value component.
    * @typeParam PropertyName - The property name of the plugin settings to bind to.
-   * @param valueComponent - The value component to bind.
-   * @param propertyName - The property name of the plugin settings to bind to.
-   * @param options - The options for binding the value component.
+   * @param params - The params for binding the value component.
    * @returns The value component.
    */
   public bind<
@@ -245,9 +312,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     TValueComponent,
     PropertyName extends StringKeys<PluginSettings>
   >(
-    valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
-    propertyName: PropertyName,
-    options: BindOptionsExtended<PluginSettings, UIValue, PropertyName>
+    params: PluginSettingsTabBaseBindExtendedParams<PluginSettings, UIValue, TValueComponent, PropertyName>
   ): TValueComponent;
   /**
    * Binds a value component to a plugin setting.
@@ -255,9 +320,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * @typeParam UIValue - The type of the value of the UI component.
    * @typeParam TValueComponent - The type of the value component.
    * @typeParam PropertyName - The property name of the plugin settings to bind to.
-   * @param valueComponent - The value component to bind.
-   * @param propertyName - The property name of the plugin settings to bind to.
-   * @param options - The options for binding the value component.
+   * @param params - The params for binding the value component.
    * @returns The value component.
    */
   public bind<
@@ -265,10 +328,13 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     TValueComponent,
     PropertyName extends StringKeys<PluginSettings>
   >(
-    valueComponent: TValueComponent & ValueComponentWithChangeTracking<UIValue>,
-    propertyName: PropertyName,
-    options?: BindOptions<PluginSettings[PropertyName]> // eslint-disable-line obsidian-dev-utils/params-options-name-match -- BindOptions is a generic utility shared across binding methods.
+    params: PluginSettingsTabBaseBindImplParams<PluginSettings, UIValue, TValueComponent, PropertyName> // eslint-disable-line obsidian-dev-utils/params-options-name-match -- bind overload shares the Bind* param family.
   ): TValueComponent {
+    const {
+      propertyName,
+      valueComponent,
+      ...options
+    } = params;
     type PropertyType = PluginSettings[PropertyName];
     const DEFAULT_OPTIONS: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = {
       componentToPluginSettingsValueConverter: (value: UIValue): PropertyType => value as PropertyType,
