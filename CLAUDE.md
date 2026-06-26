@@ -301,10 +301,13 @@ Source of truth: `F:/tmp/analyze-params.ts` (re-run with `npx jiti F:/tmp/analyz
 **DONE:**
 - Phase 1 internal helpers (file-change, link, markdown-code-block-processor,
   rename-delete-handler-component, over-exposure) — commits `003e3b04`..`1f306c96`.
-- `file-system.ts` getters (`exists`/`getAbstractFile`/`getAbstractFileOrNull`/`getFile`/
-  `getFileOrNull`/`getFolder`/`getFolderOrNull`/`getMarkdownFiles`) — `refactor!` `db994812`.
-- `object-utils.ts` toJson family (`toPlainObject`/`handleObject`/`handleArray`/`handlePlainObject`/
-  `tryHandleToJSON`/`handleCircularReference`/`handleFunction` + shared `ToJsonContext`) — `1e8505e6`.
+- `file-system.ts` getters — full-bagged (single `*Params` incl. `app`) in `a6d72e64`
+  (superseding the earlier `db994812` `(app, path, options?)` shape).
+- `object-utils.ts` toJson family — now a `ToJsonConverter` CLASS (state as fields, helpers as
+  methods) per the new R2 **G10o**; commit `9a31c6ac` (superseding the `ToJsonContext` param approach).
+- `vault.ts` — `copySafe`/`getAbstractFilePathSafe`/`getOrCreateAbstractFileSafe`/`getSafeRenamePath`/
+  `invokeWithFileSystemLock`/`isChild`/`isChildOrSelf`/`renameSafe`/`process`/`invokeFileActionSafe`
+  full-bagged; `process` → `ProcessParams extends ProcessOptions` — `refactor!` `4249db15`.
 
 **EXCLUDED — signature-locked (do NOT convert):** event-source `on`/`once`/`onSaveSettings`
 (async-events, plugin-settings-component, plugin-event-source); command-handler `shouldAddTo*Menu`/
@@ -327,9 +330,6 @@ addEventListener); `createElAsync`/`createSvgAsync` (Obsidian `createEl`); `stri
 - `error.ts`: `CustomStackTraceError` ctor(3).
 - `object-utils.ts`: `setNestedPropertyValue`(3), `tryEntryEquality`(3, intern; a/b ambiguous).
 - `reg-exp.ts`: `shouldPickFlag`(3), `addSemanticFlags`(3), `addUnicodeFlags`(3) (intern).
-- `obsidian/vault.ts`: `copySafe`, `getSafeRenamePath`, `renameSafe` (old/new swap risk),
-  `isChild`, `isChildOrSelf` (a/b ambiguous), `getAbstractFilePathSafe`, `getOrCreateAbstractFileSafe`,
-  `invokeWithFileSystemLock`, `invokeFileActionSafe`(intern).
 - `obsidian/markdown.ts`: `markdownToHtml`, `registerLinkHandlers`, `renderExternalLink`, `renderInternalLink`.
 - `obsidian/file-manager.ts`: `addAlias`, `deleteAlias`.
 - `obsidian/attachment-path.ts`: `getAttachmentFolderPath`, `hasOwnAttachmentFolder` (trailing enum).
