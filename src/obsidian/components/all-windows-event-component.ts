@@ -11,6 +11,56 @@ import { ComponentEx } from './component-ex.ts';
 import { CallbackLayoutReadyComponent } from './layout-ready-component.ts';
 
 /**
+ * Parameters for {@link AllWindowsEventComponent.registerAllDocumentsDomEvent}.
+ *
+ * @typeParam DocumentEventType - The type of the event.
+ */
+export interface AllWindowsEventComponentRegisterAllDocumentsDomEventParams<DocumentEventType extends keyof DocumentEventMap> {
+  /**
+   * The callback to execute.
+   *
+   * @param evt - The event.
+   * @returns The result of the callback.
+   */
+  callback(this: HTMLElement, evt: DocumentEventMap[DocumentEventType]): unknown;
+
+  /**
+   * The options for the event.
+   */
+  readonly options?: AddEventListenerOptions | boolean;
+
+  /**
+   * The type of the event.
+   */
+  readonly type: DocumentEventType;
+}
+
+/**
+ * Parameters for {@link AllWindowsEventComponent.registerAllWindowsDomEvent}.
+ *
+ * @typeParam WindowEventType - The type of the event.
+ */
+export interface AllWindowsEventComponentRegisterAllWindowsDomEventParams<WindowEventType extends keyof WindowEventMap> {
+  /**
+   * The callback to execute.
+   *
+   * @param evt - The event.
+   * @returns The result of the callback.
+   */
+  callback(this: HTMLElement, evt: WindowEventMap[WindowEventType]): unknown;
+
+  /**
+   * The options for the event.
+   */
+  readonly options?: AddEventListenerOptions | boolean;
+
+  /**
+   * The type of the event.
+   */
+  readonly type: WindowEventType;
+}
+
+/**
  * Handles registering DOM events and handlers for all windows (main window and all existing/future popup windows) and their documents.
  */
 export class AllWindowsEventComponent extends ComponentEx {
@@ -27,15 +77,17 @@ export class AllWindowsEventComponent extends ComponentEx {
    * Registers a DOM event for all documents (main window document and all existing/future popup window documents).
    *
    * @typeParam DocumentEventType - The type of the event.
-   * @param type - The type of the event.
-   * @param callback - The callback to execute.
-   * @param options - The options for the event.
+   * @param params - The parameters for registering the DOM event.
    */
   public registerAllDocumentsDomEvent<DocumentEventType extends keyof DocumentEventMap>(
-    type: DocumentEventType,
-    callback: (this: HTMLElement, evt: DocumentEventMap[DocumentEventType]) => unknown,
-    options?: AddEventListenerOptions | boolean
+    params: AllWindowsEventComponentRegisterAllDocumentsDomEventParams<DocumentEventType>
   ): void {
+    const {
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- The callback is a DOM event handler forwarded to registerDomEvent, which binds this to the element.
+      callback,
+      options,
+      type
+    } = params;
     this.ensureLoaded();
 
     this.registerAllWindowsHandler((win) => {
@@ -47,15 +99,17 @@ export class AllWindowsEventComponent extends ComponentEx {
    * Registers a DOM event for all windows (main window and all existing/future popup windows).
    *
    * @typeParam WindowEventType - The type of the event.
-   * @param type - The type of the event.
-   * @param callback - The callback to execute.
-   * @param options - The options for the event.
+   * @param params - The parameters for registering the DOM event.
    */
   public registerAllWindowsDomEvent<WindowEventType extends keyof WindowEventMap>(
-    type: WindowEventType,
-    callback: (this: HTMLElement, evt: WindowEventMap[WindowEventType]) => unknown,
-    options?: AddEventListenerOptions | boolean
+    params: AllWindowsEventComponentRegisterAllWindowsDomEventParams<WindowEventType>
   ): void {
+    const {
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- The callback is a DOM event handler forwarded to registerDomEvent, which binds this to the element.
+      callback,
+      options,
+      type
+    } = params;
     this.ensureLoaded();
 
     this.registerAllWindowsHandler((win) => {

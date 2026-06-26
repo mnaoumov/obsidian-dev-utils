@@ -211,7 +211,10 @@ describe('AllWindowsEventComponent', () => {
       const registerDomEventSpy = vi.spyOn(component, 'registerDomEvent');
       const callback = vi.fn();
 
-      component.registerAllWindowsDomEvent('click', callback);
+      component.registerAllWindowsDomEvent({
+        callback,
+        type: 'click'
+      });
 
       expect(registerDomEventSpy).toHaveBeenCalledWith(activeWindow, 'click', callback, undefined);
     });
@@ -223,7 +226,11 @@ describe('AllWindowsEventComponent', () => {
       const callback = vi.fn();
       const options = { capture: true };
 
-      component.registerAllWindowsDomEvent('click', callback, options);
+      component.registerAllWindowsDomEvent({
+        callback,
+        options,
+        type: 'click'
+      });
 
       expect(registerDomEventSpy).toHaveBeenCalledWith(activeWindow, 'click', callback, options);
     });
@@ -236,7 +243,10 @@ describe('AllWindowsEventComponent', () => {
       const registerDomEventSpy = vi.spyOn(component, 'registerDomEvent');
       const callback = vi.fn();
 
-      component.registerAllDocumentsDomEvent('click', callback);
+      component.registerAllDocumentsDomEvent({
+        callback,
+        type: 'click'
+      });
 
       expect(registerDomEventSpy).toHaveBeenCalledWith(activeWindow.document, 'click', callback, undefined);
     });
@@ -248,7 +258,11 @@ describe('AllWindowsEventComponent', () => {
       const callback = vi.fn();
       const options = { passive: true };
 
-      component.registerAllDocumentsDomEvent('click', callback, options);
+      component.registerAllDocumentsDomEvent({
+        callback,
+        options,
+        type: 'click'
+      });
 
       expect(registerDomEventSpy).toHaveBeenCalledWith(activeWindow.document, 'click', callback, options);
     });
