@@ -12,6 +12,8 @@ import { Plugin } from 'obsidian';
 export interface StatusBarItemRegistrar {
   /**
    * Registers a status bar item.
+   *
+   * @returns The registered status bar item element.
    */
   addStatusBarItem(): HTMLElement;
 }
@@ -29,6 +31,8 @@ export class PluginStatusBarItemRegistrar implements StatusBarItemRegistrar {
 
   /**
    * Registers a status bar item.
+   *
+   * @returns The registered status bar item element.
    */
   public addStatusBarItem(): HTMLElement {
     return this.plugin.addStatusBarItem();
