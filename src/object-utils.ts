@@ -123,122 +123,6 @@ interface EqualityComparerEntry<T> {
   equalityComparer(a: T, b: T): boolean;
 }
 
-/**
- * The parameters for {@link handleArray}.
- */
-interface HandleArrayParams {
-  /**
-   * Whether the value's `toJSON` method may be used for nested values.
-   */
-  readonly canUseToJSON: boolean;
-
-  /**
-   * The shared conversion context threaded through the recursion.
-   */
-  readonly context: ToJsonContext;
-
-  /**
-   * The current recursion depth.
-   */
-  readonly depth: number;
-
-  /**
-   * The array being converted.
-   */
-  readonly value: unknown[];
-}
-
-/**
- * The parameters for {@link handleCircularReference}.
- */
-interface HandleCircularReferenceParams {
-  /**
-   * The shared conversion context threaded through the recursion.
-   */
-  readonly context: ToJsonContext;
-
-  /**
-   * The property key at which the circular reference was found.
-   */
-  readonly key: string;
-
-  /**
-   * The object that closes the circular reference.
-   */
-  readonly value: object;
-}
-
-/**
- * The parameters for {@link handleFunction}.
- */
-interface HandleFunctionParams {
-  /**
-   * The shared conversion context threaded through the recursion.
-   */
-  readonly context: ToJsonContext;
-
-  /**
-   * The function being converted.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type to handle them separately.
-  readonly value: Function;
-}
-
-/**
- * The parameters for {@link handleObject}.
- */
-interface HandleObjectParams {
-  /**
-   * Whether the value's `toJSON` method may be used.
-   */
-  readonly canUseToJSON: boolean;
-
-  /**
-   * The shared conversion context threaded through the recursion.
-   */
-  readonly context: ToJsonContext;
-
-  /**
-   * The current recursion depth.
-   */
-  readonly depth: number;
-
-  /**
-   * The property key at which the object was found.
-   */
-  readonly key: string;
-
-  /**
-   * The object being converted.
-   */
-  readonly value: object;
-}
-
-/**
- * The parameters for {@link handlePlainObject}.
- */
-interface HandlePlainObjectParams {
-  /**
-   * Whether the value's `toJSON` method may be used for nested values.
-   */
-  readonly canUseToJSON: boolean;
-
-  /**
-   * The shared conversion context threaded through the recursion.
-   */
-  readonly context: ToJsonContext;
-
-  /**
-   * The current recursion depth.
-   */
-  readonly depth: number;
-
-  /**
-   * The plain object being converted.
-   */
-  readonly value: object;
-}
-
 interface JSONSerializable {
   toJSON(...args: unknown[]): unknown;
 }
@@ -251,88 +135,10 @@ interface ResolvedToJsonOptions extends ToJsonOptions {
   readonly tokenSubstitutions: TokenSubstitutions;
 }
 
-/**
- * The shared, invariant context threaded unchanged through the entire `toJson` recursion.
- *
- * The same instance must be passed to every recursive call so that `functionTexts` and
- * `usedObjects` accumulate across the whole traversal.
- */
-interface ToJsonContext {
-  /**
-   * The fully resolved options for the JSON conversion.
-   */
-  readonly fullOptions: ToJsonOptions;
-
-  /**
-   * The accumulated function texts collected during the conversion.
-   */
-  readonly functionTexts: string[];
-
-  /**
-   * The set of objects already visited, used to detect circular references.
-   */
-  readonly usedObjects: WeakSet<object>;
-}
-
 interface TokenSubstitutions {
   circularReference: string;
   maxDepthLimitReached: string;
   toJSONFailed: string;
-}
-
-/**
- * The parameters for {@link toPlainObject}.
- */
-interface ToPlainObjectParams {
-  /**
-   * Whether the value's `toJSON` method may be used.
-   */
-  readonly canUseToJSON: boolean;
-
-  /**
-   * The shared conversion context threaded through the recursion.
-   */
-  readonly context: ToJsonContext;
-
-  /**
-   * The current recursion depth.
-   */
-  readonly depth: number;
-
-  /**
-   * The property key at which the value was found.
-   */
-  readonly key: string;
-
-  /**
-   * The value being converted.
-   */
-  readonly value: unknown;
-}
-
-/**
- * The parameters for {@link tryHandleToJSON}.
- */
-interface TryHandleToJSONParams {
-  /**
-   * The shared conversion context threaded through the recursion.
-   */
-  readonly context: ToJsonContext;
-
-  /**
-   * The current recursion depth.
-   */
-  readonly depth: number;
-
-  /**
-   * The property key at which the object was found.
-   */
-  readonly key: string;
-
-  /**
-   * The object whose `toJSON` method is being invoked.
-   */
-  readonly value: object;
 }
 
 const KEY_SEPARATOR = '.';
@@ -360,6 +166,184 @@ type RemoveUndefinedOverload<T extends object> = MandatoryKeysWithUndefined<T> e
 
 type RemoveUndefinedWithKeysOverload<T extends object, K extends readonly string[]> = [obj: T, keysToKeep: ExactMembers<MandatoryKeysWithUndefined<T>, K>];
 
+/**
+ * Converts a value to a JSON-serializable plain object and renders it as a JSON string.
+ *
+ * A fresh instance is created per {@link toJson} call so that the accumulated `functionTexts`
+ * and the `usedObjects` circular-reference set never leak between conversions.
+ */
+class ToJsonConverter {
+  private readonly fullOptions: ResolvedToJsonOptions;
+  private readonly functionTexts: string[] = [];
+  private readonly usedObjects = new WeakSet();
+
+  /**
+   * Creates a new converter, resolving the provided options against the defaults.
+   *
+   * @param options - The options for the JSON conversion.
+   */
+  public constructor(options: Partial<ToJsonOptions>) {
+    const DEFAULT_OPTIONS: ResolvedToJsonOptions = {
+      functionHandlingMode: FunctionHandlingMode.Exclude,
+      maxDepth: -1,
+      shouldCatchToJSONErrors: false,
+      shouldHandleCircularReferences: false,
+      shouldHandleErrors: false,
+      shouldHandleUndefined: false,
+      shouldSortKeys: false,
+      // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
+      space: 2,
+      tokenSubstitutions: {
+        circularReference: makeObjectTokenSubstitution(TokenSubstitutionKey.CircularReference),
+        maxDepthLimitReached: makeObjectTokenSubstitution(TokenSubstitutionKey.MaxDepthLimitReached),
+        toJSONFailed: makeObjectTokenSubstitution(TokenSubstitutionKey.ToJSONFailed)
+      }
+    };
+
+    const fullOptions = {
+      ...DEFAULT_OPTIONS,
+      ...options,
+      tokenSubstitutions: {
+        ...DEFAULT_OPTIONS.tokenSubstitutions,
+        ...options.tokenSubstitutions
+      }
+    };
+
+    if (fullOptions.maxDepth === -1) {
+      fullOptions.maxDepth = Infinity;
+    }
+
+    this.fullOptions = fullOptions;
+  }
+
+  /**
+   * Converts the given value to a JSON string, applying the configured token substitutions.
+   *
+   * @param value - The value to convert.
+   * @returns The JSON string representation of the value.
+   */
+  public convert(value: unknown): string {
+    const plainObject = this.toPlainObject(value, '', 0, true);
+    let json = ensureNonNullable(JSON.stringify(plainObject, null, this.fullOptions.space));
+    const placeholderRegExp = new RegExp(`"\\[\\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\\d*)\\]\\]"`, 'g');
+    json = replaceAll(json, placeholderRegExp, ({ capturedGroupArgs: [key = '', indexStr = ''] }) =>
+      applySubstitutions({
+        functionTexts: this.functionTexts,
+        index: indexStr ? parseInt(indexStr, 10) : 0,
+        key: key as TokenSubstitutionKey,
+        substitutions: this.fullOptions.tokenSubstitutions
+      }));
+    return json;
+  }
+
+  private handleArray(value: unknown[], depth: number, canUseToJSON: boolean): unknown {
+    if (depth > this.fullOptions.maxDepth) {
+      return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length);
+    }
+
+    return value.map((item, index) => this.toPlainObject(item, String(index), depth + 1, canUseToJSON));
+  }
+
+  private handleCircularReference(value: object, key: string): unknown {
+    if (this.fullOptions.shouldHandleCircularReferences) {
+      return makePlaceholder(TokenSubstitutionKey.CircularReference);
+    }
+    const valueConstructorName = value.constructor.name || 'Object';
+    throw new TypeError(`Converting circular structure to JSON
+--> starting at object with constructor '${valueConstructorName}'
+--- property '${key}' closes the circle`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type to handle them separately.
+  private handleFunction(value: Function): unknown {
+    if (this.fullOptions.functionHandlingMode === FunctionHandlingMode.Exclude) {
+      return undefined;
+    }
+    const index = this.functionTexts.length;
+    const functionText = this.fullOptions.functionHandlingMode === FunctionHandlingMode.Full
+      ? getFunctionExpressionString(value)
+      : `function ${value.name || 'anonymous'}() { /* ... */ }`;
+    this.functionTexts.push(functionText);
+    return makePlaceholder(TokenSubstitutionKey.Function, index);
+  }
+
+  private handleObject(value: object, key: string, depth: number, canUseToJSON: boolean): unknown {
+    if (this.usedObjects.has(value)) {
+      return this.handleCircularReference(value, key);
+    }
+
+    this.usedObjects.add(value);
+
+    if (canUseToJSON) {
+      const toJSONResult = this.tryHandleToJSON(value, key, depth);
+      if (toJSONResult !== undefined) {
+        return toJSONResult;
+      }
+    }
+
+    if (Array.isArray(value)) {
+      return this.handleArray(value, depth, canUseToJSON);
+    }
+
+    if (depth > this.fullOptions.maxDepth) {
+      return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReached);
+    }
+
+    if (value instanceof Error && this.fullOptions.shouldHandleErrors) {
+      return errorToString(value);
+    }
+
+    return this.handlePlainObject(value, depth, canUseToJSON);
+  }
+
+  private handlePlainObject(value: object, depth: number, canUseToJSON: boolean): unknown {
+    const entries = Object.entries(value);
+    if (this.fullOptions.shouldSortKeys) {
+      entries.sort(([key1], [key2]) => key1.localeCompare(key2));
+    }
+
+    return Object.fromEntries(
+      entries.map(([key2, value2]) => [
+        key2,
+        this.toPlainObject(value2, key2, depth + 1, canUseToJSON)
+      ])
+    );
+  }
+
+  private toPlainObject(value: unknown, key: string, depth: number, canUseToJSON: boolean): unknown {
+    if (value === undefined) {
+      return (depth === 0 || this.fullOptions.shouldHandleUndefined)
+        ? makePlaceholder(TokenSubstitutionKey.Undefined)
+        : undefined;
+    }
+
+    if (typeof value === 'function') {
+      return this.handleFunction(value);
+    }
+
+    if (typeof value !== 'object' || value === null) {
+      return value;
+    }
+
+    return this.handleObject(value, key, depth, canUseToJSON);
+  }
+
+  private tryHandleToJSON(value: object, key: string, depth: number): unknown {
+    const toJSON = (value as Partial<JSONSerializable>).toJSON;
+    if (typeof toJSON === 'function') {
+      try {
+        const newValue = toJSON.call(value, key);
+        return this.toPlainObject(newValue, key, depth, false);
+      } catch (e) {
+        if (this.fullOptions.shouldCatchToJSONErrors) {
+          return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
+        }
+        throw e;
+      }
+    }
+    return undefined;
+  }
+}
 /**
  * Assigns properties from one or more source objects to a target object, including non-enumerable properties.
  *
@@ -427,6 +411,7 @@ export function castTo<T>(value: unknown): T {
 export function cloneWithNonEnumerableProperties<T extends object>(obj: T): T {
   return Object.create(getPrototypeOf(obj), Object.getOwnPropertyDescriptors(obj)) as T;
 }
+
 /**
  * Compares two values to determine if they are deeply equal.
  *
@@ -652,7 +637,6 @@ export function nameof<T extends object>(name: StringKeys<T>): StringKeys<T> {
 export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): T {
   return obj as T;
 }
-
 /**
  * Removes all `undefined` properties from an object when there are no mandatory keys with `undefined` values.
  *
@@ -726,59 +710,7 @@ export function setNestedPropertyValue(obj: GenericObject, path: string, value: 
  * @returns The JSON string representation of the input value.
  */
 export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): string {
-  const DEFAULT_OPTIONS: ResolvedToJsonOptions = {
-    functionHandlingMode: FunctionHandlingMode.Exclude,
-    maxDepth: -1,
-    shouldCatchToJSONErrors: false,
-    shouldHandleCircularReferences: false,
-    shouldHandleErrors: false,
-    shouldHandleUndefined: false,
-    shouldSortKeys: false,
-    // eslint-disable-next-line no-magic-numbers -- Extracting magic number as a constant would be repetitive, as the value is used only once and its name would be the same as the property.
-    space: 2,
-    tokenSubstitutions: {
-      circularReference: makeObjectTokenSubstitution(TokenSubstitutionKey.CircularReference),
-      maxDepthLimitReached: makeObjectTokenSubstitution(TokenSubstitutionKey.MaxDepthLimitReached),
-      toJSONFailed: makeObjectTokenSubstitution(TokenSubstitutionKey.ToJSONFailed)
-    }
-  };
-
-  const fullOptions = {
-    ...DEFAULT_OPTIONS,
-    ...options,
-    tokenSubstitutions: {
-      ...DEFAULT_OPTIONS.tokenSubstitutions,
-      ...options.tokenSubstitutions
-    }
-  };
-
-  if (fullOptions.maxDepth === -1) {
-    fullOptions.maxDepth = Infinity;
-  }
-
-  const context: ToJsonContext = {
-    fullOptions,
-    functionTexts: [],
-    usedObjects: new WeakSet()
-  };
-
-  const plainObject = toPlainObject({
-    canUseToJSON: true,
-    context,
-    depth: 0,
-    key: '',
-    value
-  });
-  let json = ensureNonNullable(JSON.stringify(plainObject, null, fullOptions.space));
-  const placeholderRegExp = new RegExp(`"\\[\\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\\d*)\\]\\]"`, 'g');
-  json = replaceAll(json, placeholderRegExp, ({ capturedGroupArgs: [key = '', indexStr = ''] }) =>
-    applySubstitutions({
-      functionTexts: context.functionTexts,
-      index: indexStr ? parseInt(indexStr, 10) : 0,
-      key: key as TokenSubstitutionKey,
-      substitutions: fullOptions.tokenSubstitutions
-    }));
-  return json;
+  return new ToJsonConverter(options).convert(value);
 }
 
 function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<string> {
@@ -912,103 +844,6 @@ function deepEqualTyped(a: unknown, b: unknown): boolean | undefined {
   return undefined;
 }
 
-function handleArray(params: HandleArrayParams): unknown {
-  const { canUseToJSON, context, depth, value } = params;
-  const { fullOptions } = context;
-  if (depth > fullOptions.maxDepth) {
-    return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length);
-  }
-
-  return value.map((item, index) =>
-    toPlainObject({
-      canUseToJSON,
-      context,
-      depth: depth + 1,
-      key: String(index),
-      value: item
-    })
-  );
-}
-
-function handleCircularReference(params: HandleCircularReferenceParams): unknown {
-  const { context, key, value } = params;
-  const { fullOptions } = context;
-  if (fullOptions.shouldHandleCircularReferences) {
-    return makePlaceholder(TokenSubstitutionKey.CircularReference);
-  }
-  const valueConstructorName = value.constructor.name || 'Object';
-  throw new TypeError(`Converting circular structure to JSON
---> starting at object with constructor '${valueConstructorName}'
---- property '${key}' closes the circle`);
-}
-
-function handleFunction(params: HandleFunctionParams): unknown {
-  const { context, value } = params;
-  const { fullOptions, functionTexts } = context;
-  if (fullOptions.functionHandlingMode === FunctionHandlingMode.Exclude) {
-    return undefined;
-  }
-  const index = functionTexts.length;
-  const functionText = fullOptions.functionHandlingMode === FunctionHandlingMode.Full
-    ? getFunctionExpressionString(value)
-    : `function ${value.name || 'anonymous'}() { /* ... */ }`;
-  functionTexts.push(functionText);
-  return makePlaceholder(TokenSubstitutionKey.Function, index);
-}
-
-function handleObject(params: HandleObjectParams): unknown {
-  const { canUseToJSON, context, depth, key, value } = params;
-  const { fullOptions, usedObjects } = context;
-  if (usedObjects.has(value)) {
-    return handleCircularReference({ context, key, value });
-  }
-
-  usedObjects.add(value);
-
-  if (canUseToJSON) {
-    const toJSONResult = tryHandleToJSON({ context, depth, key, value });
-    if (toJSONResult !== undefined) {
-      return toJSONResult;
-    }
-  }
-
-  if (Array.isArray(value)) {
-    return handleArray({ canUseToJSON, context, depth, value });
-  }
-
-  if (depth > fullOptions.maxDepth) {
-    return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReached);
-  }
-
-  if (value instanceof Error && fullOptions.shouldHandleErrors) {
-    return errorToString(value);
-  }
-
-  return handlePlainObject({ canUseToJSON, context, depth, value });
-}
-
-function handlePlainObject(params: HandlePlainObjectParams): unknown {
-  const { canUseToJSON, context, depth, value } = params;
-  const { fullOptions } = context;
-  const entries = Object.entries(value);
-  if (fullOptions.shouldSortKeys) {
-    entries.sort(([key1], [key2]) => key1.localeCompare(key2));
-  }
-
-  return Object.fromEntries(
-    entries.map(([key2, value2]) => [
-      key2,
-      toPlainObject({
-        canUseToJSON,
-        context,
-        depth: depth + 1,
-        key: key2,
-        value: value2
-      })
-    ])
-  );
-}
-
 function makeObjectTokenSubstitution(key: TokenSubstitutionKey): string {
   return `{ "[[${key}]]": null }`;
 }
@@ -1017,53 +852,9 @@ function makePlaceholder(key: TokenSubstitutionKey, index?: number): string {
   return `[[${PLACEHOLDER_KEY_PREFIX}${key}${index ? String(index) : ''}]]`;
 }
 
-function toPlainObject(params: ToPlainObjectParams): unknown {
-  const { canUseToJSON, context, depth, key, value } = params;
-  const { fullOptions } = context;
-  if (value === undefined) {
-    return (depth === 0 || fullOptions.shouldHandleUndefined)
-      ? makePlaceholder(TokenSubstitutionKey.Undefined)
-      : undefined;
-  }
-
-  if (typeof value === 'function') {
-    return handleFunction({ context, value });
-  }
-
-  if (typeof value !== 'object' || value === null) {
-    return value;
-  }
-
-  return handleObject({ canUseToJSON, context, depth, key, value });
-}
-
 function tryEntryEquality(entry: EqualityComparerEntry<unknown>, a: unknown, b: unknown): boolean | undefined {
   if (a instanceof entry.constructor && b instanceof entry.constructor) {
     return entry.equalityComparer(a, b);
-  }
-  return undefined;
-}
-
-function tryHandleToJSON(params: TryHandleToJSONParams): unknown {
-  const { context, depth, key, value } = params;
-  const { fullOptions } = context;
-  const toJSON = (value as Partial<JSONSerializable>).toJSON;
-  if (typeof toJSON === 'function') {
-    try {
-      const newValue = toJSON.call(value, key);
-      return toPlainObject({
-        canUseToJSON: false,
-        context,
-        depth,
-        key,
-        value: newValue
-      });
-    } catch (e) {
-      if (fullOptions.shouldCatchToJSONErrors) {
-        return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
-      }
-      throw e;
-    }
   }
   return undefined;
 }
