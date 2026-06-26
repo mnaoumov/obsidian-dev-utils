@@ -21,7 +21,11 @@ export function fixEsmPlugin(): Plugin {
     setup(build): void {
       build.onEnd((result) => {
         for (const file of result.outputFiles ?? []) {
-          const newText = replaceAll(file.text, /(?<Caller>__toESM\d*)\((?<Module>.+), 1\);/g, '$1(__extractDefault($2), 1);');
+          const newText = replaceAll({
+            replacer: '$1(__extractDefault($2), 1);',
+            searchValue: /(?<Caller>__toESM\d*)\((?<Module>.+), 1\);/g,
+            str: file.text
+          });
           file.contents = new TextEncoder().encode(newText);
         }
       });

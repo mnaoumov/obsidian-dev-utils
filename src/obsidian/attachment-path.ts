@@ -288,7 +288,12 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
   } = params;
   let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
   const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
-  const relativePath = attachmentFolderPath.startsWith('./') ? trimStart(attachmentFolderPath, './') : null;
+  const relativePath = attachmentFolderPath.startsWith('./')
+    ? trimStart({
+      prefix: './',
+      str: attachmentFolderPath
+    })
+    : null;
 
   const noteFileOrNull = getFileOrNull({ app, pathOrFile: notePathOrFile });
 
@@ -336,8 +341,16 @@ export async function hasOwnAttachmentFolder(app: App, path: string, context = A
  * @returns The normalized path.
  */
 function normalizeSlashes(path: string): string {
-  path = replaceAll(path, /(?:[\\/])+/g, '/');
-  path = replaceAll(path, /^\/+|\/+$/g, '');
+  path = replaceAll({
+    replacer: '/',
+    searchValue: /(?:[\\/])+/g,
+    str: path
+  });
+  path = replaceAll({
+    replacer: '',
+    searchValue: /^\/+|\/+$/g,
+    str: path
+  });
   return path || '/';
 }
 

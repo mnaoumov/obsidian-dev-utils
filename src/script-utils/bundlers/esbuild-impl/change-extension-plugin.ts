@@ -29,24 +29,44 @@ export function changeExtensionPlugin(extension: string): Plugin {
             continue;
           }
 
-          const newPath = replaceAll(file.path, /\.js$/g, extension);
-
-          let newText = replaceAll(file.text, /require\(["'](?<ImportPath>.+?)["']\)/g, ({ capturedGroupArgs: [importPath = ''] }) => {
-            if (importPath.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
-              return 'undefined';
-            }
-
-            const fixedImportPath = replaceAll(importPath, /\.ts$/g, extension);
-            return `require('${fixedImportPath}')`;
+          const newPath = replaceAll({
+            replacer: extension,
+            searchValue: /\.js$/g,
+            str: file.path
           });
 
-          newText = replaceAll(newText, /from "(?<ImportPath>.+?)"/g, ({ capturedGroupArgs: [importPath = ''] }) => {
-            if (importPath.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
-              return 'undefined';
-            }
+          let newText = replaceAll({
+            replacer: ({ capturedGroupArgs: [importPath = ''] }) => {
+              if (importPath.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
+                return 'undefined';
+              }
 
-            const fixedImportPath = replaceAll(importPath, /\.ts$/g, extension);
-            return `from "${fixedImportPath}"`;
+              const fixedImportPath = replaceAll({
+                replacer: extension,
+                searchValue: /\.ts$/g,
+                str: importPath
+              });
+              return `require('${fixedImportPath}')`;
+            },
+            searchValue: /require\(["'](?<ImportPath>.+?)["']\)/g,
+            str: file.text
+          });
+
+          newText = replaceAll({
+            replacer: ({ capturedGroupArgs: [importPath = ''] }) => {
+              if (importPath.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
+                return 'undefined';
+              }
+
+              const fixedImportPath = replaceAll({
+                replacer: extension,
+                searchValue: /\.ts$/g,
+                str: importPath
+              });
+              return `from "${fixedImportPath}"`;
+            },
+            searchValue: /from "(?<ImportPath>.+?)"/g,
+            str: newText
           });
 
           await writeFile(newPath, newText);

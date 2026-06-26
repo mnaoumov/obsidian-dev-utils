@@ -200,7 +200,12 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       approximateSectionInfo.text = ensureLfEndings(approximateSectionInfo.text);
       const sourceLf = ensureLfEndings(source);
 
-      if (!hasSingleOccurrence(noteContentLf, approximateSectionInfo.text)) {
+      if (
+        !hasSingleOccurrence({
+          searchValue: approximateSectionInfo.text,
+          str: noteContentLf
+        })
+      ) {
         return;
       }
 
@@ -369,13 +374,19 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
 
       let oldCodeBlock = content.slice(markdownInfo.positionInNote.start.offset, markdownInfo.positionInNote.end.offset);
       if (params.shouldPreserveLinePrefix) {
-        oldCodeBlock = unindent(oldCodeBlock, markdownInfo.linePrefix);
+        oldCodeBlock = unindent({
+          prefix: markdownInfo.linePrefix,
+          text: oldCodeBlock
+        });
       }
 
       let newCodeBlock = await resolveValue(codeBlockProvider, { abortSignal, content: oldCodeBlock });
       abortSignal.throwIfAborted();
       if ((newCodeBlock || params.shouldKeepGapWhenEmpty) && params.shouldPreserveLinePrefix) {
-        newCodeBlock = indent(newCodeBlock, markdownInfo.linePrefix);
+        newCodeBlock = indent({
+          prefix: markdownInfo.linePrefix,
+          text: newCodeBlock
+        });
       }
 
       const textBeforeCodeBlock = content.slice(0, markdownInfo.positionInNote.start.offset);
@@ -473,7 +484,18 @@ function insertText(params: InsertTextParams): string {
   const PREFIX_LINE_REG_EXP = /^ {0,3}(?:> {1,3})*/g;
   const match = (lines[insertLineIndex] ?? '').match(PREFIX_LINE_REG_EXP);
   const linePrefix = match?.[0] ?? '';
-  newLines.splice(insertLineIndex, 0, ...(shouldPreserveLinePrefix ? textLines.map((line) => indent(line, linePrefix)) : textLines));
+  newLines.splice(
+    insertLineIndex,
+    0,
+    ...(shouldPreserveLinePrefix
+      ? textLines.map((line) =>
+        indent({
+          prefix: linePrefix,
+          text: line
+        })
+      )
+      : textLines)
+  );
   return newLines.join('\n');
 }
 

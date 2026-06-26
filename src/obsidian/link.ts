@@ -1063,7 +1063,11 @@ export async function editLinksInContent(
  * @returns The encoded URL.
  */
 export function encodeUrl(url: string): string {
-  return replaceAll(url, SPECIAL_LINK_SYMBOLS_REGEXP, ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol));
+  return replaceAll({
+    replacer: ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol),
+    searchValue: SPECIAL_LINK_SYMBOLS_REGEXP,
+    str: url
+  });
 }
 
 /**
@@ -1078,7 +1082,11 @@ export function encodeUrl(url: string): string {
  * ```
  */
 export function escapeAlias(alias: string): string {
-  return replaceAll(alias, SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX, '\\$&');
+  return replaceAll({
+    replacer: '\\$&',
+    searchValue: SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX,
+    str: alias
+  });
 }
 
 /**
@@ -1210,14 +1218,22 @@ export function parseLinks(str: string): ParseLinkResult[] {
   const DUMMY_CHARACTER = '@';
 
   const EMBED_INSIDE_LINK_REG_EXP = /\[(?<LinkAlias>!\[.*?\]\(.+?\))\]\((?<Link>.+?)\)/g;
-  const noInsideEmbedsLinksStr = replaceAll(str, EMBED_INSIDE_LINK_REG_EXP, ({ capturedGroupArgs: [linkAlias = '', link = ''] }) => {
-    const dummyAlias = DUMMY_CHARACTER.repeat(linkAlias.length);
-    return `[${dummyAlias}](${link})`;
+  const noInsideEmbedsLinksStr = replaceAll({
+    replacer: ({ capturedGroupArgs: [linkAlias = '', link = ''] }) => {
+      const dummyAlias = DUMMY_CHARACTER.repeat(linkAlias.length);
+      return `[${dummyAlias}](${link})`;
+    },
+    searchValue: EMBED_INSIDE_LINK_REG_EXP,
+    str
   });
 
-  const noEmbedStr = replaceAll(noInsideEmbedsLinksStr, EMBED_LINK_PREFIX, (args) => {
-    embedSymbolOffsets.add(args.offset);
-    return NO_EMBED_LINK_PREFIX;
+  const noEmbedStr = replaceAll({
+    replacer: (args) => {
+      embedSymbolOffsets.add(args.offset);
+      return NO_EMBED_LINK_PREFIX;
+    },
+    searchValue: EMBED_LINK_PREFIX,
+    str: noInsideEmbedsLinksStr
   });
 
   const processor = remark().use(remarkParse).use(wikiLinkPlugin, { aliasDivider: WIKILINK_DIVIDER });
@@ -1324,7 +1340,11 @@ export function shouldResetAlias(params: ShouldResetAliasParams): boolean {
     aliasesToReset.add(app.metadataCache.fileToLinktext(targetFile, sourcePath, false));
   }
 
-  const cleanDisplayText = replaceAll(normalizePath(ensureNonNullable(displayText.split(' > ')[0])), /^\.\//g, '').toLowerCase();
+  const cleanDisplayText = replaceAll({
+    replacer: '',
+    searchValue: /^\.\//g,
+    str: normalizePath(ensureNonNullable(displayText.split(' > ')[0]))
+  }).toLowerCase();
 
   for (const alias of aliasesToReset) {
     if (alias.toLowerCase() === cleanDisplayText) {
@@ -1429,16 +1449,16 @@ export function testWikilink(link: string): boolean {
  * ```
  */
 export function unescapeAlias(escapedAlias: string): string {
-  return replaceAll(
-    escapedAlias,
-    /(?<Backslashes>\\+)(?<SpecialCharacter>[!"#$%&'()*+,-./:;<=>?@[\\\]^_`{|}~])/g,
-    ({ capturedGroupArgs: [backslashes = '', specialChar = ''] }) => {
+  return replaceAll({
+    replacer: ({ capturedGroupArgs: [backslashes = '', specialChar = ''] }) => {
       const ESCAPED_BACKSLASH_LENGTH = 2;
       const backslashCount = backslashes.length;
       const keepCount = Math.floor(backslashCount / ESCAPED_BACKSLASH_LENGTH);
       return '\\'.repeat(keepCount) + specialChar;
-    }
-  );
+    },
+    searchValue: /(?<Backslashes>\\+)(?<SpecialCharacter>[!"#$%&'()*+,-./:;<=>?@[\\\]^_`{|}~])/g,
+    str: escapedAlias
+  });
 }
 
 /**
@@ -1621,22 +1641,26 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
   }
 
   const textPart = str.slice(startOffset, endOffset + 1);
-  replaceAll(textPart, /(?<Url>\S+)/g, ({ capturedGroupArgs: [url = ''], offset }) => {
-    if (!isUrl(url)) {
-      return;
-    }
+  replaceAll({
+    replacer: ({ capturedGroupArgs: [url = ''], offset }) => {
+      if (!isUrl(url)) {
+        return;
+      }
 
-    textLinks.push({
-      encodedUrl: encodeUrl(url),
-      endOffset: startOffset + offset + url.length,
-      hasAngleBrackets: false,
-      isEmbed: false,
-      isExternal: true,
-      isWikilink: false,
-      raw: url,
-      startOffset: startOffset + offset,
-      url
-    });
+      textLinks.push({
+        encodedUrl: encodeUrl(url),
+        endOffset: startOffset + offset + url.length,
+        hasAngleBrackets: false,
+        isEmbed: false,
+        isExternal: true,
+        isWikilink: false,
+        raw: url,
+        startOffset: startOffset + offset,
+        url
+      });
+    },
+    searchValue: /(?<Url>\S+)/g,
+    str: textPart
   });
 }
 
@@ -1722,7 +1746,12 @@ function generateLinkText(params: GenerateLinkTextParams): string {
     }
   }
 
-  linkText = config.isWikilink ? trimEnd(linkText, `.${MARKDOWN_FILE_EXTENSION}`) : linkText;
+  linkText = config.isWikilink
+    ? trimEnd({
+      str: linkText,
+      suffix: `.${MARKDOWN_FILE_EXTENSION}`
+    })
+    : linkText;
   linkText += subpath;
 
   return linkText;

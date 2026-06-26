@@ -782,7 +782,10 @@ export function trimMarkdownExtension(file: TAbstractFile): string {
     return file.path;
   }
 
-  return trimEnd(file.path, `.${MARKDOWN_FILE_EXTENSION}`);
+  return trimEnd({
+    str: file.path,
+    suffix: `.${MARKDOWN_FILE_EXTENSION}`
+  });
 }
 
 function getFileInternal(params: GetFileInternalParams): null | TAbstractFile {

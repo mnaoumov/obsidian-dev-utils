@@ -340,7 +340,11 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
 export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRootSafe(ObsidianPluginRepoPaths.ChangelogMd);
   const content = await readFile(changelogPath, 'utf-8');
-  const newVersionEscaped = replaceAll(newVersion, '.', '\\.');
+  const newVersionEscaped = replaceAll({
+    replacer: '\\.',
+    searchValue: '.',
+    str: newVersion
+  });
   const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
   /* v8 ignore start -- v8 tracks optional chaining and ternary as separate branches; both paths are tested. */
   let releaseNotes = match?.[1] ? `${match[1]}\n\n` : '';
@@ -511,7 +515,11 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
     previousChangelogLines = [];
   }
 
-  const lastTag = replaceAll(previousChangelogLines[0] ?? '', '## ', '');
+  const lastTag = replaceAll({
+    replacer: '',
+    searchValue: '## ',
+    str: previousChangelogLines[0] ?? ''
+  });
   const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
   const commitMessagesStr = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
   const commitMessages = commitMessagesStr.split('\0').filter(Boolean).map(toSingleLine);

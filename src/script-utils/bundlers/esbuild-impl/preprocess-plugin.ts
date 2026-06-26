@@ -57,7 +57,13 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
   const replacements = isEsm
     ? {}
     : {
-      [replaceAll('import(dot)meta(dot)url', '(dot)', '.')]: (): string => {
+      [
+        replaceAll({
+          replacer: '.',
+          searchValue: '(dot)',
+          str: 'import(dot)meta(dot)url'
+        })
+      ]: (): string => {
         if (typeof __filename === 'string') {
           const localRequire = require;
           const url = localRequire('node:url') as UrlModule;
@@ -105,8 +111,13 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 
         // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
         // Otherwise, it stops loading after the first line of the sourceMappingURL comment.
-        // eslint-disable-next-line no-template-curly-in-string -- It is intentional, the string looks like a template literal, but it is not.
-        contents = replaceAll(contents, /`\r?\n\/\/# sourceMappingURL/g, '`\n//#${\'\'} sourceMappingURL');
+
+        contents = replaceAll({
+          // eslint-disable-next-line no-template-curly-in-string -- It is intentional, the string looks like a template literal, but it is not.
+          replacer: '`\n//#${\'\'} sourceMappingURL',
+          searchValue: /`\r?\n\/\/# sourceMappingURL/g,
+          str: contents
+        });
 
         return {
           contents,

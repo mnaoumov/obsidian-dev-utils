@@ -135,7 +135,10 @@ function makeRegExp(paths: string[], defaultRegExp: RegExp): RegExp {
       return path.slice(1, -1);
     }
 
-    path = trimEnd(path, '/');
+    path = trimEnd({
+      str: path,
+      suffix: '/'
+    });
     return `^${escapeRegExp(path)}(/|$)`;
   })
     .map((regExpStr) => `(${regExpStr})`)

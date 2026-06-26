@@ -221,7 +221,10 @@ function execString(command: string, options: ExecOptions = {}, rawArgs?: string
     });
 
     child.stdout.on('end', () => {
-      stdout = trimEnd(stdout, '\n');
+      stdout = trimEnd({
+        str: stdout,
+        suffix: '\n'
+      });
     });
 
     child.stderr.on('data', (data: Buffer) => {
@@ -232,7 +235,10 @@ function execString(command: string, options: ExecOptions = {}, rawArgs?: string
     });
 
     child.stderr.on('end', () => {
-      stderr = trimEnd(stderr, '\n');
+      stderr = trimEnd({
+        str: stderr,
+        suffix: '\n'
+      });
     });
 
     child.on('close', (exitCode, exitSignal) => {

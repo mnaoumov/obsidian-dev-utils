@@ -66,7 +66,11 @@ await wrapCliTask(async () => {
 });
 
 async function setExport(exportConditions: PackageJson.ExportConditions, srcFolder: string, isWildcard: boolean): Promise<void> {
-  const importPath = replaceAll(srcFolder, ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.CurrentFolder);
+  const importPath = replaceAll({
+    replacer: ObsidianDevUtilsRepoPaths.CurrentFolder,
+    searchValue: ObsidianDevUtilsRepoPaths.Src,
+    str: srcFolder
+  });
   const conditionPath = isWildcard ? `${importPath}/${ObsidianDevUtilsRepoPaths.Any}` : importPath;
   const dmtsPath = normalizeIfRelative(
     join(

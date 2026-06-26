@@ -115,7 +115,10 @@ export async function buildTemplates(): Promise<void> {
       continue;
     }
 
-    const path = trimStart(join(dirent.parentPath, dirent.name), `${ObsidianDevUtilsRepoPaths.Templates}/`);
+    const path = trimStart({
+      prefix: `${ObsidianDevUtilsRepoPaths.Templates}/`,
+      str: join(dirent.parentPath, dirent.name)
+    });
     const destinationPath = path.endsWith(TEMPLATE_FILE_SUFFIX) ? path.slice(0, -TEMPLATE_FILE_SUFFIX.length) : path;
     await cp(join(ObsidianDevUtilsRepoPaths.Templates, path), join(ObsidianDevUtilsRepoPaths.DistTemplates, destinationPath));
   }

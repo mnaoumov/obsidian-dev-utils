@@ -60,11 +60,27 @@ await wrapCliTask(async () => {
 
     const isLibraryFile = name === LIBRARY_FILE_NAME && folder === '.';
 
-    let ctsContent = replaceAll(content, STATIC_IMPORT_REG_EXP, 'from \'$<ImportPath>.cjs\';');
-    ctsContent = replaceAll(ctsContent, DYNAMIC_IMPORT_REG_EXP, 'import("$<ImportPath>.cjs")');
+    let ctsContent = replaceAll({
+      replacer: 'from \'$<ImportPath>.cjs\';',
+      searchValue: STATIC_IMPORT_REG_EXP,
+      str: content
+    });
+    ctsContent = replaceAll({
+      replacer: 'import("$<ImportPath>.cjs")',
+      searchValue: DYNAMIC_IMPORT_REG_EXP,
+      str: ctsContent
+    });
 
-    let mtsContent = replaceAll(content, STATIC_IMPORT_REG_EXP, 'from \'$<ImportPath>.mjs\';');
-    mtsContent = replaceAll(mtsContent, DYNAMIC_IMPORT_REG_EXP, 'import("$<ImportPath>.mjs")');
+    let mtsContent = replaceAll({
+      replacer: 'from \'$<ImportPath>.mjs\';',
+      searchValue: STATIC_IMPORT_REG_EXP,
+      str: content
+    });
+    mtsContent = replaceAll({
+      replacer: 'import("$<ImportPath>.mjs")',
+      searchValue: DYNAMIC_IMPORT_REG_EXP,
+      str: mtsContent
+    });
 
     if (isLibraryFile) {
       const libDirectives = buildAllReferenceLibDirectives(allLibs);

@@ -230,7 +230,11 @@ const CMD_META_RE = /[()%!^"<>&|]/g;
  * @returns The string with all cmd metacharacters `^`-escaped.
  */
 export function cmdEscapeCommandLine(commandLine: string): string {
-  return replaceAll(commandLine, CMD_META_RE, '^$&');
+  return replaceAll({
+    replacer: '^$&',
+    searchValue: CMD_META_RE,
+    str: commandLine
+  });
 }
 
 /**

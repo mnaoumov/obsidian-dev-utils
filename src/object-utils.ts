@@ -226,13 +226,17 @@ class ToJsonConverter {
     const plainObject = this.toPlainObject(value, '', 0, true);
     let json = ensureNonNullable(JSON.stringify(plainObject, null, this.fullOptions.space));
     const placeholderRegExp = new RegExp(`"\\[\\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\\d*)\\]\\]"`, 'g');
-    json = replaceAll(json, placeholderRegExp, ({ capturedGroupArgs: [key = '', indexStr = ''] }) =>
-      applySubstitutions({
-        functionTexts: this.functionTexts,
-        index: indexStr ? parseInt(indexStr, 10) : 0,
-        key: key as TokenSubstitutionKey,
-        substitutions: this.fullOptions.tokenSubstitutions
-      }));
+    json = replaceAll({
+      replacer: ({ capturedGroupArgs: [key = '', indexStr = ''] }) =>
+        applySubstitutions({
+          functionTexts: this.functionTexts,
+          index: indexStr ? parseInt(indexStr, 10) : 0,
+          key: key as TokenSubstitutionKey,
+          substitutions: this.fullOptions.tokenSubstitutions
+        }),
+      searchValue: placeholderRegExp,
+      str: json
+    });
     return json;
   }
 

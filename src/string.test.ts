@@ -28,37 +28,61 @@ import {
 
 describe('ensureEndsWith', () => {
   it('should add the suffix if not already present', () => {
-    expect(ensureEndsWith('hello', '/')).toBe('hello/');
+    expect(ensureEndsWith({
+      str: 'hello',
+      suffix: '/'
+    })).toBe('hello/');
   });
 
   it('should not add the suffix if already present', () => {
-    expect(ensureEndsWith('hello/', '/')).toBe('hello/');
+    expect(ensureEndsWith({
+      str: 'hello/',
+      suffix: '/'
+    })).toBe('hello/');
   });
 
   it('should handle empty string input', () => {
-    expect(ensureEndsWith('', '.txt')).toBe('.txt');
+    expect(ensureEndsWith({
+      str: '',
+      suffix: '.txt'
+    })).toBe('.txt');
   });
 
   it('should handle empty suffix', () => {
-    expect(ensureEndsWith('hello', '')).toBe('hello');
+    expect(ensureEndsWith({
+      str: 'hello',
+      suffix: ''
+    })).toBe('hello');
   });
 });
 
 describe('ensureStartsWith', () => {
   it('should add the prefix if not already present', () => {
-    expect(ensureStartsWith('world', '/')).toBe('/world');
+    expect(ensureStartsWith({
+      prefix: '/',
+      str: 'world'
+    })).toBe('/world');
   });
 
   it('should not add the prefix if already present', () => {
-    expect(ensureStartsWith('/world', '/')).toBe('/world');
+    expect(ensureStartsWith({
+      prefix: '/',
+      str: '/world'
+    })).toBe('/world');
   });
 
   it('should handle empty string input', () => {
-    expect(ensureStartsWith('', 'pre')).toBe('pre');
+    expect(ensureStartsWith({
+      prefix: 'pre',
+      str: ''
+    })).toBe('pre');
   });
 
   it('should handle empty prefix', () => {
-    expect(ensureStartsWith('hello', '')).toBe('hello');
+    expect(ensureStartsWith({
+      prefix: '',
+      str: 'hello'
+    })).toBe('hello');
   });
 });
 
@@ -90,147 +114,265 @@ describe('ensureLfEndings', () => {
 
 describe('trimEnd', () => {
   it('should remove the suffix if present', () => {
-    expect(trimEnd('hello.txt', '.txt')).toBe('hello');
+    expect(trimEnd({
+      str: 'hello.txt',
+      suffix: '.txt'
+    })).toBe('hello');
   });
 
   it('should return the string unchanged if suffix is not present', () => {
-    expect(trimEnd('hello', '.txt')).toBe('hello');
+    expect(trimEnd({
+      str: 'hello',
+      suffix: '.txt'
+    })).toBe('hello');
   });
 
   it('should throw when validate is true and suffix is not present', () => {
-    expect(() => trimEnd('hello', '.txt', true)).toThrow('String hello does not end with suffix .txt');
+    expect(() =>
+      trimEnd({
+        shouldValidate: true,
+        str: 'hello',
+        suffix: '.txt'
+      })
+    ).toThrow('String hello does not end with suffix .txt');
   });
 
   it('should not throw when validate is true and suffix is present', () => {
-    expect(trimEnd('hello.txt', '.txt', true)).toBe('hello');
+    expect(trimEnd({
+      shouldValidate: true,
+      str: 'hello.txt',
+      suffix: '.txt'
+    })).toBe('hello');
   });
 
   it('should handle empty suffix', () => {
     // Str.endsWith('') is true, so str.slice(0, -0) = str.slice(0, 0) = ''
-    expect(trimEnd('hello', '')).toBe('');
+    expect(trimEnd({
+      str: 'hello',
+      suffix: ''
+    })).toBe('');
   });
 
   it('should handle empty string', () => {
-    expect(trimEnd('', 'suffix')).toBe('');
+    expect(trimEnd({
+      str: '',
+      suffix: 'suffix'
+    })).toBe('');
   });
 });
 
 describe('trimStart', () => {
   it('should remove the prefix if present', () => {
-    expect(trimStart('/path/to/file', '/path')).toBe('/to/file');
+    expect(trimStart({
+      prefix: '/path',
+      str: '/path/to/file'
+    })).toBe('/to/file');
   });
 
   it('should return the string unchanged if prefix is not present', () => {
-    expect(trimStart('hello', 'xyz')).toBe('hello');
+    expect(trimStart({
+      prefix: 'xyz',
+      str: 'hello'
+    })).toBe('hello');
   });
 
   it('should throw when validate is true and prefix is not present', () => {
-    expect(() => trimStart('hello', 'xyz', true)).toThrow('String hello does not start with prefix xyz');
+    expect(() =>
+      trimStart({
+        prefix: 'xyz',
+        shouldValidate: true,
+        str: 'hello'
+      })
+    ).toThrow('String hello does not start with prefix xyz');
   });
 
   it('should not throw when validate is true and prefix is present', () => {
-    expect(trimStart('/path', '/', true)).toBe('path');
+    expect(trimStart({
+      prefix: '/',
+      shouldValidate: true,
+      str: '/path'
+    })).toBe('path');
   });
 
   it('should handle empty prefix', () => {
-    expect(trimStart('hello', '')).toBe('hello');
+    expect(trimStart({
+      prefix: '',
+      str: 'hello'
+    })).toBe('hello');
   });
 
   it('should handle empty string', () => {
-    expect(trimStart('', 'prefix')).toBe('');
+    expect(trimStart({
+      prefix: 'prefix',
+      str: ''
+    })).toBe('');
   });
 });
 
 describe('hasSingleOccurrence', () => {
   it('should return true for exactly one occurrence', () => {
-    expect(hasSingleOccurrence('hello world', 'world')).toBe(true);
+    expect(hasSingleOccurrence({
+      searchValue: 'world',
+      str: 'hello world'
+    })).toBe(true);
   });
 
   it('should return false for zero occurrences', () => {
-    expect(hasSingleOccurrence('hello world', 'xyz')).toBe(false);
+    expect(hasSingleOccurrence({
+      searchValue: 'xyz',
+      str: 'hello world'
+    })).toBe(false);
   });
 
   it('should return false for multiple occurrences', () => {
-    expect(hasSingleOccurrence('hello hello', 'hello')).toBe(false);
+    expect(hasSingleOccurrence({
+      searchValue: 'hello',
+      str: 'hello hello'
+    })).toBe(false);
   });
 
   it('should handle empty search value', () => {
     // Empty string is found at every position, so indexOf(0) !== lastIndexOf(end)
-    expect(hasSingleOccurrence('test', '')).toBe(false);
+    expect(hasSingleOccurrence({
+      searchValue: '',
+      str: 'test'
+    })).toBe(false);
   });
 
   it('should handle empty string', () => {
-    expect(hasSingleOccurrence('', 'a')).toBe(false);
+    expect(hasSingleOccurrence({
+      searchValue: 'a',
+      str: ''
+    })).toBe(false);
   });
 
   it('should handle single character match', () => {
-    expect(hasSingleOccurrence('a', 'a')).toBe(true);
+    expect(hasSingleOccurrence({
+      searchValue: 'a',
+      str: 'a'
+    })).toBe(true);
   });
 });
 
 describe('indent', () => {
   it('should prefix each line with the given prefix', () => {
-    expect(indent('line1\nline2\nline3', '  ')).toBe('  line1\n  line2\n  line3');
+    expect(indent({
+      prefix: '  ',
+      text: 'line1\nline2\nline3'
+    })).toBe('  line1\n  line2\n  line3');
   });
 
   it('should handle single line', () => {
-    expect(indent('hello', '> ')).toBe('> hello');
+    expect(indent({
+      prefix: '> ',
+      text: 'hello'
+    })).toBe('> hello');
   });
 
   it('should handle empty string', () => {
-    expect(indent('', '  ')).toBe('  ');
+    expect(indent({
+      prefix: '  ',
+      text: ''
+    })).toBe('  ');
   });
 
   it('should handle empty prefix', () => {
-    expect(indent('line1\nline2', '')).toBe('line1\nline2');
+    expect(indent({
+      prefix: '',
+      text: 'line1\nline2'
+    })).toBe('line1\nline2');
   });
 });
 
 describe('unindent', () => {
   it('should remove the prefix from each line', () => {
-    expect(unindent('  line1\n  line2\n  line3', '  ')).toBe('line1\nline2\nline3');
+    expect(unindent({
+      prefix: '  ',
+      text: '  line1\n  line2\n  line3'
+    })).toBe('line1\nline2\nline3');
   });
 
   it('should leave lines without the prefix unchanged when shouldThrowIfNotIndented is false', () => {
-    expect(unindent('  line1\nline2', '  ')).toBe('line1\nline2');
+    expect(unindent({
+      prefix: '  ',
+      text: '  line1\nline2'
+    })).toBe('line1\nline2');
   });
 
   it('should throw when shouldThrowIfNotIndented is true and a line lacks the prefix', () => {
-    expect(() => unindent('  line1\nline2', '  ', true)).toThrow('Line "line2" is not indented with "  "');
+    expect(() =>
+      unindent({
+        prefix: '  ',
+        shouldThrowIfNotIndented: true,
+        text: '  line1\nline2'
+      })
+    ).toThrow('Line "line2" is not indented with "  "');
   });
 
   it('should handle empty string', () => {
-    expect(unindent('', '  ')).toBe('');
+    expect(unindent({
+      prefix: '  ',
+      text: ''
+    })).toBe('');
   });
 
   it('should handle empty prefix', () => {
-    expect(unindent('line1\nline2', '')).toBe('line1\nline2');
+    expect(unindent({
+      prefix: '',
+      text: 'line1\nline2'
+    })).toBe('line1\nline2');
   });
 });
 
 describe('insertAt', () => {
   it('should insert a substring at the specified position', () => {
-    expect(insertAt('hello world', ' beautiful', 5)).toBe('hello beautiful world');
+    expect(insertAt({
+      startIndex: 5,
+      str: 'hello world',
+      substring: ' beautiful'
+    })).toBe('hello beautiful world');
   });
 
   it('should insert at the beginning', () => {
-    expect(insertAt('world', 'hello ', 0)).toBe('hello world');
+    expect(insertAt({
+      startIndex: 0,
+      str: 'world',
+      substring: 'hello '
+    })).toBe('hello world');
   });
 
   it('should insert at the end', () => {
-    expect(insertAt('hello', ' world', 5)).toBe('hello world');
+    expect(insertAt({
+      startIndex: 5,
+      str: 'hello',
+      substring: ' world'
+    })).toBe('hello world');
   });
 
   it('should replace a range when endIndex is provided', () => {
-    expect(insertAt('hello world', 'universe', 6, 11)).toBe('hello universe');
+    expect(insertAt({
+      endIndex: 11,
+      startIndex: 6,
+      str: 'hello world',
+      substring: 'universe'
+    })).toBe('hello universe');
   });
 
   it('should handle replacing with a different length string', () => {
-    expect(insertAt('abcdef', 'XY', 2, 4)).toBe('abXYef');
+    expect(insertAt({
+      endIndex: 4,
+      startIndex: 2,
+      str: 'abcdef',
+      substring: 'XY'
+    })).toBe('abXYef');
   });
 
   it('should handle empty substring insertion', () => {
-    expect(insertAt('hello', '', 3)).toBe('hello');
+    expect(insertAt({
+      startIndex: 3,
+      str: 'hello',
+      substring: ''
+    })).toBe('hello');
   });
 });
 
@@ -394,74 +536,126 @@ describe('replace', () => {
 
 describe('replaceAll', () => {
   it('should replace all occurrences of a string with another string', () => {
-    expect(replaceAll('aaa', 'a', 'b')).toBe('bbb');
+    expect(replaceAll({
+      replacer: 'b',
+      searchValue: 'a',
+      str: 'aaa'
+    })).toBe('bbb');
   });
 
   it('should replace all occurrences using a regex', () => {
-    expect(replaceAll('hello123world456', /\d+/g, 'NUM')).toBe('helloNUMworldNUM');
+    expect(replaceAll({
+      replacer: 'NUM',
+      searchValue: /\d+/g,
+      str: 'hello123world456'
+    })).toBe('helloNUMworldNUM');
   });
 
   it('should add global flag to regex if missing', () => {
-    expect(replaceAll('aaa', /a/, 'b')).toBe('bbb');
+    expect(replaceAll({
+      replacer: 'b',
+      searchValue: /a/,
+      str: 'aaa'
+    })).toBe('bbb');
   });
 
   it('should support function replacer', () => {
-    const result = replaceAll('hello world', /\w+/g, ({ substring }) => substring.toUpperCase());
+    const result = replaceAll({
+      replacer: ({ substring }) => substring.toUpperCase(),
+      searchValue: /\w+/g,
+      str: 'hello world'
+    });
     expect(result).toBe('HELLO WORLD');
   });
 
   it('should pass offset and source in function replacer args', () => {
     const offsets: number[] = [];
-    replaceAll('abab', 'ab', ({ offset }) => {
-      offsets.push(offset);
-      return 'x';
+    replaceAll({
+      replacer: ({ offset }) => {
+        offsets.push(offset);
+        return 'x';
+      },
+      searchValue: 'ab',
+      str: 'abab'
     });
     expect(offsets).toEqual([0, 2]);
   });
 
   it('should handle regex with capture groups', () => {
-    const result = replaceAll('2024-01-15', /(?<Year>\d{4})-(?<Month>\d{2})-(?<Day>\d{2})/g, ({ capturedGroupArgs: [year = '', month = '', day = ''] }) => {
-      return `${day}/${month}/${year}`;
+    const result = replaceAll({
+      replacer: ({ capturedGroupArgs: [year = '', month = '', day = ''] }) => {
+        return `${day}/${month}/${year}`;
+      },
+      searchValue: /(?<Year>\d{4})-(?<Month>\d{2})-(?<Day>\d{2})/g,
+      str: '2024-01-15'
     });
     expect(result).toBe('15/01/2024');
   });
 
   it('should return the string unchanged when replacer is undefined', () => {
-    expect(replaceAll('hello', 'x', castTo<string>(undefined))).toBe('hello');
+    expect(replaceAll({
+      replacer: castTo<string>(undefined),
+      searchValue: 'x',
+      str: 'hello'
+    })).toBe('hello');
   });
 
   it('should handle no matches', () => {
-    expect(replaceAll('hello', 'xyz', 'abc')).toBe('hello');
+    expect(replaceAll({
+      replacer: 'abc',
+      searchValue: 'xyz',
+      str: 'hello'
+    })).toBe('hello');
   });
 
   it('should handle empty string', () => {
-    expect(replaceAll('', 'a', 'b')).toBe('');
+    expect(replaceAll({
+      replacer: 'b',
+      searchValue: 'a',
+      str: ''
+    })).toBe('');
   });
 
   it('should return original substring when function replacer returns undefined', () => {
-    const result = replaceAll('abc', /./g, () => castTo<string>(undefined));
+    const result = replaceAll({
+      replacer: () => castTo<string>(undefined),
+      searchValue: /./g,
+      str: 'abc'
+    });
     expect(result).toBe('abc');
   });
 });
 
 describe('replaceAllAsync', () => {
   it('should replace all occurrences asynchronously with a string replacer', async () => {
-    const result = await replaceAllAsync('aaa', 'a', 'b');
+    const result = await replaceAllAsync({
+      replacer: 'b',
+      searchValue: 'a',
+      str: 'aaa'
+    });
     expect(result).toBe('bbb');
   });
 
   it('should replace all occurrences asynchronously with a function replacer', async () => {
-    const result = await replaceAllAsync('hello world', /\w+/g, async ({ substring }) => {
-      await noopAsync();
-      return substring.toUpperCase();
+    const result = await replaceAllAsync({
+      replacer: async ({ substring }) => {
+        await noopAsync();
+        return substring.toUpperCase();
+      },
+      searchValue: /\w+/g,
+      str: 'hello world'
     });
     expect(result).toBe('HELLO WORLD');
   });
 
   it('should handle no matches', async () => {
-    const result = await replaceAllAsync('hello', 'xyz', async () => {
-      await noopAsync();
-      return 'abc';
+    const result = await replaceAllAsync({
+      replacer: async () => {
+        await noopAsync();
+        return 'abc';
+      },
+      searchValue: 'xyz',
+      str: 'hello'
     });
     expect(result).toBe('hello');
   });
@@ -471,22 +665,35 @@ describe('replaceAllAsync', () => {
     controller.abort(new Error('aborted'));
 
     await expect(
-      replaceAllAsync('hello', 'h', 'H', controller.signal)
+      replaceAllAsync({
+        abortSignal: controller.signal,
+        replacer: 'H',
+        searchValue: 'h',
+        str: 'hello'
+      })
     ).rejects.toThrow();
   });
 
   it('should handle empty string', async () => {
-    const result = await replaceAllAsync('', 'a', 'b');
+    const result = await replaceAllAsync({
+      replacer: 'b',
+      searchValue: 'a',
+      str: ''
+    });
     expect(result).toBe('');
   });
 
   it('should handle undefined replacer', async () => {
-    const result = await replaceAllAsync('foobar', /foo|bar/g, ({ substring }) => {
-      if (substring === 'foo') {
-        return;
-      }
+    const result = await replaceAllAsync({
+      replacer: ({ substring }) => {
+        if (substring === 'foo') {
+          return;
+        }
 
-      return 'baz';
+        return 'baz';
+      },
+      searchValue: /foo|bar/g,
+      str: 'foobar'
     });
     expect(result).toBe('foobaz');
   });
@@ -571,36 +778,52 @@ describe('replaceAll - missingGroupIndices and named groups', () => {
   it('should populate missingGroupIndices for undefined capture groups', () => {
     const missingIndices: number[] = [];
     // Regex with optional groups: one matches, one does not
-    replaceAll('test', /(?:(?<Group1>x)|(?<Group2>t))/g, ({ missingGroupIndices, substring }) => {
-      missingIndices.push(...missingGroupIndices);
-      return substring;
+    replaceAll({
+      replacer: ({ missingGroupIndices, substring }) => {
+        missingIndices.push(...missingGroupIndices);
+        return substring;
+      },
+      searchValue: /(?:(?<Group1>x)|(?<Group2>t))/g,
+      str: 'test'
     });
     expect(missingIndices).toEqual([0, 0]);
   });
 
   it('should pass named groups when regex has named capture groups', () => {
     const capturedGroups: (Record<string, string | undefined> | undefined)[] = [];
-    replaceAll('2024-01-15', /(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})/g, (common) => {
-      capturedGroups.push(common.groups);
-      return common.substring;
+    replaceAll({
+      replacer: (common) => {
+        capturedGroups.push(common.groups);
+        return common.substring;
+      },
+      searchValue: /(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})/g,
+      str: '2024-01-15'
     });
     expect(capturedGroups).toEqual([{ day: '15', month: '01', year: '2024' }]);
   });
 
   it('should set groups to undefined when regex has no named groups', () => {
     const capturedGroups: (Record<string, string | undefined> | undefined)[] = [];
-    replaceAll('abc', /(?:.)/g, (common) => {
-      capturedGroups.push(common.groups);
-      return common.substring;
+    replaceAll({
+      replacer: (common) => {
+        capturedGroups.push(common.groups);
+        return common.substring;
+      },
+      searchValue: /(?:.)/g,
+      str: 'abc'
     });
     expect(capturedGroups).toEqual([undefined, undefined, undefined]);
   });
 
   it('should have empty missingGroupIndices when all groups match', () => {
     const missingIndices: number[][] = [];
-    replaceAll('ab', /(?<Group1>a)(?<Group2>b)/g, (common) => {
-      missingIndices.push([...common.missingGroupIndices]);
-      return common.substring;
+    replaceAll({
+      replacer: (common) => {
+        missingIndices.push([...common.missingGroupIndices]);
+        return common.substring;
+      },
+      searchValue: /(?<Group1>a)(?<Group2>b)/g,
+      str: 'ab'
     });
     expect(missingIndices).toEqual([[]]);
   });

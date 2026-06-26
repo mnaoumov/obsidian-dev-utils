@@ -149,7 +149,10 @@ export function normalizeIfRelative(path: string): string {
     return path;
   }
 
-  return ensureStartsWith(path, './');
+  return ensureStartsWith({
+    prefix: './',
+    str: path
+  });
 }
 
 /**
@@ -182,5 +185,9 @@ export function toPosixBuffer(buffer: Buffer): Buffer {
  * @returns The POSIX-style path.
  */
 export function toPosixPath(path: string): string {
-  return replaceAll(path, '\\', '/');
+  return replaceAll({
+    replacer: '/',
+    searchValue: '\\',
+    str: path
+  });
 }
