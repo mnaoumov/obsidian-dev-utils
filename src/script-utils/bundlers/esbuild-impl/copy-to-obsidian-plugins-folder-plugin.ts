@@ -53,6 +53,21 @@ export interface CopyToObsidianPluginsFolderPluginParams {
 }
 
 /**
+ * Parameters for {@link enableCommunityPlugin}.
+ */
+interface EnableCommunityPluginParams {
+  /**
+   * The folder of the Obsidian configuration.
+   */
+  readonly obsidianConfigFolder: string;
+
+  /**
+   * The ID of the community plugin to enable.
+   */
+  readonly pluginId: string;
+}
+
+/**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
  *
  * @param params - The parameters for the function.
@@ -105,14 +120,27 @@ export function copyToObsidianPluginsFolderPlugin(params: CopyToObsidianPluginsF
           }
         }
 
-        await enableCommunityPlugin(obsidianConfigFolder, 'hot-reload');
-        await enableCommunityPlugin(obsidianConfigFolder, pluginName);
+        await enableCommunityPlugin({
+          obsidianConfigFolder,
+          pluginId: 'hot-reload'
+        });
+        await enableCommunityPlugin({
+          obsidianConfigFolder,
+          pluginId: pluginName
+        });
       });
     }
   };
 }
 
-async function enableCommunityPlugin(obsidianConfigFolder: string, pluginId: string): Promise<void> {
+/**
+ * Enables a community plugin in the Obsidian configuration.
+ *
+ * @param params - The parameters for enabling the community plugin.
+ * @returns A {@link Promise} that resolves when the plugin is enabled.
+ */
+async function enableCommunityPlugin(params: EnableCommunityPluginParams): Promise<void> {
+  const { obsidianConfigFolder, pluginId } = params;
   const communityPluginsPath = join(obsidianConfigFolder, 'community-plugins.json');
   let plugins: string[] = [];
   if (existsSync(communityPluginsPath)) {

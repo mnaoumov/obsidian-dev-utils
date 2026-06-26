@@ -10,6 +10,7 @@ import { spawn } from 'node:child_process';
 import process from 'node:process';
 
 import { getLibDebugger } from '../debug.ts';
+import { normalizeOptionalProperties } from '../object-utils.ts';
 import { trimEnd } from '../string.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
@@ -115,6 +116,26 @@ export interface ExecSimpleOptions extends ExecOptions {
 }
 
 /**
+ * Parameters for {@link execString}.
+ */
+interface ExecStringParams {
+  /**
+   * The command string.
+   */
+  readonly command: string;
+
+  /**
+   * The exec options.
+   */
+  readonly options?: ExecOptions;
+
+  /**
+   * The original argument array (if available), used by the PowerShell
+   * fallback path to quote arguments with PowerShell-native single quotes.
+   */
+  readonly rawArgs?: string[];
+}
+/**
  * Executes a command.
  *
  * @param command - The command to execute. It can be a string or an array of strings.
@@ -169,7 +190,11 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
       );
     }
 
-    return execString(commandLine, options, args);
+    return execString({
+      command: commandLine,
+      options,
+      rawArgs: args
+    });
   }
 
   const maxCommandLength = getMaxCommandLength();
@@ -181,19 +206,24 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
     );
   }
 
-  return execString(command, options);
+  return execString({
+    command,
+    options
+  });
 }
 
 /**
  * Executes a single string command.
  *
- * @param command - The command string.
- * @param options - The exec options.
- * @param rawArgs - The original argument array (if available), used by the PowerShell
- *   fallback path to quote arguments with PowerShell-native single quotes.
+ * @param params - The parameters for the execution.
  * @returns A Promise resolving to the result.
  */
-function execString(command: string, options: ExecOptions = {}, rawArgs?: string[]): Promise<ExecResult | string> {
+function execString(params: ExecStringParams): Promise<ExecResult | string> {
+  const {
+    command,
+    options = {},
+    rawArgs
+  } = params;
   const {
     cwd = process.cwd(),
     isQuiet: quiet = false,
@@ -205,7 +235,11 @@ function execString(command: string, options: ExecOptions = {}, rawArgs?: string
   return new Promise((resolve, reject) => {
     getLibDebugger('Exec')(`Executing command: ${command}`);
 
-    const child = spawnViaShell(command, cwd, rawArgs);
+    const child = spawnViaShell(normalizeOptionalProperties<SpawnViaShellParams>({
+      command,
+      cwd,
+      rawArgs
+    }));
 
     let stdout = '';
     let stderr = '';
@@ -289,19 +323,61 @@ const CHILD_ENV = {
 };
 
 /**
+ * Parameters for {@link executeBatches}.
+ */
+interface ExecuteBatchesParams {
+  /**
+   * The base command without batched args.
+   */
+  readonly baseCommand: string;
+
+  /**
+   * The batches of args.
+   */
+  readonly batches: string[][];
+
+  /**
+   * The exec options.
+   */
+  readonly options: ExecOptions;
+}
+
+/**
+ * Parameters for {@link spawnViaShell}.
+ */
+interface SpawnViaShellParams {
+  /**
+   * The command string to execute.
+   */
+  readonly command: string;
+
+  /**
+   * The working directory.
+   */
+  readonly cwd: string;
+
+  /**
+   * The original argument array (if available).
+   */
+  readonly rawArgs?: string[];
+}
+
+/**
  * Executes batched commands sequentially and concatenates stdout.
  *
- * @param baseCommand - The base command without batched args.
- * @param batches - The batches of args.
- * @param options - The exec options.
+ * @param params - The parameters for the batched execution.
  * @returns A Promise resolving to the concatenated result.
  */
-async function executeBatches(baseCommand: string, batches: string[][], options: ExecOptions): Promise<ExecResult | string> {
+async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult | string> {
+  const { baseCommand, batches, options } = params;
   const results: string[] = [];
 
   for (const batch of batches) {
     const batchCommand = `${baseCommand} ${batch.join(' ')}`;
-    const result = await execString(batchCommand, options);
+    const result = await execString({
+      command: batchCommand,
+      options
+    });
     if (typeof result === 'string') {
       results.push(result);
     }
@@ -352,7 +428,10 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
   // Try expanding all args inline
   const fullCommand = `${baseCommand} ${execArg.batchedArgs.join(' ')}`;
   if (fullCommand.length <= maxCommandLength) {
-    return execString(fullCommand, options);
+    return execString({
+      command: fullCommand,
+      options
+    });
   }
 
   // Split into batches
@@ -381,7 +460,11 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
     batches.push(currentBatch);
   }
 
-  return executeBatches(baseCommand, batches, options);
+  return executeBatches({
+    baseCommand,
+    batches,
+    options
+  });
 }
 
 /**
@@ -403,12 +486,11 @@ function isExecArg(part: CommandPart): part is ExecArg {
  *
  * On Windows (cmd.exe path), applies `^`-escaping for cmd metacharacters.
  *
- * @param command - The command string to execute.
- * @param cwd - The working directory.
- * @param rawArgs - The original argument array (if available).
+ * @param params - The parameters for spawning the child process.
  * @returns The spawned child process.
  */
-function spawnViaShell(command: string, cwd: string, rawArgs?: string[]): ChildProcessWithoutNullStreams {
+function spawnViaShell(params: SpawnViaShellParams): ChildProcessWithoutNullStreams {
+  const { command, cwd, rawArgs } = params;
   if (process.platform === 'win32' && command.includes('\n')) {
     if (!rawArgs) {
       throw new Error('Commands containing newlines cannot be executed through cmd.exe on Windows. Pass an argument array instead of a string.');

@@ -128,7 +128,29 @@ const TEMPLATE_FILE_SUFFIX = '.template';
 
 const NODE_MODULES_SEGMENT = '/node_modules/';
 
-function shouldKeepProjectFile(fileName: string, rootCanonical: string): boolean {
+/**
+ * Parameters for {@link shouldKeepProjectFile}.
+ */
+interface ShouldKeepProjectFileParams {
+  /**
+   * Absolute path of the file under consideration.
+   */
+  readonly fileName: string;
+
+  /**
+   * Absolute (canonical) path of the project root.
+   */
+  readonly rootCanonical: string;
+}
+
+/**
+ * Determines whether a file belongs to the project (under the root folder, outside `node_modules`).
+ *
+ * @param params - The parameters for the check.
+ * @returns `true` when the file belongs to the project.
+ */
+function shouldKeepProjectFile(params: ShouldKeepProjectFileParams): boolean {
+  const { fileName, rootCanonical } = params;
   return fileName.startsWith(`${rootCanonical}/`) && !fileName.includes(NODE_MODULES_SEGMENT);
 }
 
@@ -152,6 +174,6 @@ function validateProjectTypes(): boolean {
   return checkProjectTypes({
     options,
     rootNames: fileNames,
-    shouldKeepFile: (fileName) => shouldKeepProjectFile(fileName, rootCanonical)
+    shouldKeepFile: (fileName) => shouldKeepProjectFile({ fileName, rootCanonical })
   });
 }

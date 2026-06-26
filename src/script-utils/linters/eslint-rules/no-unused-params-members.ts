@@ -85,7 +85,11 @@ export const noUnusedParamsMembers: Rule.RuleModule = {
           if (info.binding.type === 'pattern') {
             collectPatternMembers(info.binding.pattern, usage);
           } else {
-            collectReferenceMembers(context.sourceCode.getScope(node), info.binding.name, usage);
+            collectReferenceMembers({
+              paramName: info.binding.name,
+              scope: context.sourceCode.getScope(node),
+              usage
+            });
           }
         }
       },
@@ -140,6 +144,26 @@ export const noUnusedParamsMembers: Rule.RuleModule = {
   }
 };
 
+/**
+ * Parameters for {@link collectReferenceMembers}.
+ */
+interface CollectReferenceMembersParams {
+  /**
+   * The name of the parameter whose references are inspected.
+   */
+  readonly paramName: string;
+
+  /**
+   * The scope in which the parameter is bound.
+   */
+  readonly scope: Scope.Scope;
+
+  /**
+   * The usage accumulator to record accessed members into.
+   */
+  readonly usage: InterfaceUsage;
+}
+
 function classifyReference(reference: object, usage: InterfaceUsage): void {
   const parent = record(reference)['parent'] as Rule.Node;
   if (parent.type === 'MemberExpression' && record(parent)['object'] === reference) {
@@ -191,7 +215,8 @@ function collectPatternMembers(pattern: Rule.Node, usage: InterfaceUsage): void 
   }
 }
 
-function collectReferenceMembers(scope: Scope.Scope, paramName: string, usage: InterfaceUsage): void {
+function collectReferenceMembers(params: CollectReferenceMembersParams): void {
+  const { paramName, scope, usage } = params;
   const variable = ensureNonNullable(scope.set.get(paramName));
   for (const reference of variable.references) {
     classifyReference(reference.identifier, usage);

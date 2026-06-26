@@ -46,6 +46,21 @@ const VALIDATE_DECLARATIONS_TS_CONFIG_FILE_NAMES = [
 ];
 
 /**
+ * Parameters for {@link shouldKeepProjectFile}.
+ */
+interface ShouldKeepProjectFileParams {
+  /**
+   * Absolute path of the file under consideration.
+   */
+  readonly fileName: string;
+
+  /**
+   * Absolute (canonical) path of the project root.
+   */
+  readonly rootCanonical: string;
+}
+
+/**
  * Validates the generated declaration files against the `tsconfig.validate-declarations*.json`
  * configs, reporting only diagnostics that concern the library's own declarations and ignoring those
  * caused by importing third-party packages.
@@ -70,7 +85,7 @@ export function validateDeclarations(): boolean {
       options,
       rootNames: fileNames,
       shouldKeepDiagnostic: (diagnostic) => !isThirdPartyModuleImportDiagnostic(diagnostic),
-      shouldKeepFile: (fileName) => shouldKeepProjectFile(fileName, rootCanonical)
+      shouldKeepFile: (fileName) => shouldKeepProjectFile({ fileName, rootCanonical })
     });
     isValid &&= isConfigValid;
   }
@@ -123,6 +138,13 @@ function isThirdPartyModuleImportDiagnostic(diagnostic: Diagnostic): boolean {
   return specifier !== null && !specifier.startsWith(RELATIVE_SPECIFIER_PREFIX);
 }
 
-function shouldKeepProjectFile(fileName: string, rootCanonical: string): boolean {
+/**
+ * Determines whether a file belongs to the project (under the root folder, outside `node_modules`).
+ *
+ * @param params - The parameters for the check.
+ * @returns `true` when the file belongs to the project.
+ */
+function shouldKeepProjectFile(params: ShouldKeepProjectFileParams): boolean {
+  const { fileName, rootCanonical } = params;
   return fileName.startsWith(`${rootCanonical}/`) && !fileName.includes(NODE_MODULES_SEGMENT);
 }

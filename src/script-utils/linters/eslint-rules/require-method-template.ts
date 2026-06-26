@@ -53,7 +53,10 @@ export const requireMethodTemplate: Rule.RuleModule = {
           return;
         }
 
-        const parsedTags = parseTypeParamTags(jsdocComment.value, preferredTagName);
+        const parsedTags = parseTypeParamTags({
+          commentBody: jsdocComment.value,
+          tagName: preferredTagName
+        });
 
         for (const typeParam of typeParams) {
           const paramName = typeParam.name.name;
@@ -101,6 +104,21 @@ interface ParsedTag {
 }
 
 /**
+ * Parameters for {@link parseTypeParamTags}.
+ */
+interface ParseTypeParamTagsParams {
+  /**
+   * The raw comment body (without the leading and trailing comment delimiters).
+   */
+  readonly commentBody: string;
+
+  /**
+   * The preferred tag name (`typeParam` or `template`).
+   */
+  readonly tagName: string;
+}
+
+/**
  * Finds the JSDoc block comment from a list of comments.
  *
  * @param comments - The comments before the node.
@@ -120,11 +138,11 @@ function findJsdocComment(comments: readonly Comment[]): Comment | undefined {
 /**
  * Parses `@typeParam` / `@template` tags from a JSDoc comment body.
  *
- * @param commentBody - The raw comment body (without the leading and trailing comment delimiters).
- * @param tagName - The preferred tag name (`typeParam` or `template`).
+ * @param params - The parameters for the parse.
  * @returns An array of parsed tag entries.
  */
-function parseTypeParamTags(commentBody: string, tagName: string): ParsedTag[] {
+function parseTypeParamTags(params: ParseTypeParamTagsParams): ParsedTag[] {
+  const { commentBody, tagName } = params;
   const tags: ParsedTag[] = [];
   const tagPattern = new RegExp(`@(?:${tagName}|template|typeParam)\\s+(?<typeName>\\w+)(?<rest>.*)`, 'g');
 

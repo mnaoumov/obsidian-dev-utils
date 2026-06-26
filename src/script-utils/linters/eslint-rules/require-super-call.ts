@@ -117,7 +117,13 @@ export const requireSuperCall: Rule.RuleModule = {
           return;
         }
 
-        if (checkIsParentMethodAbstract(context, info.node, info.methodName)) {
+        if (
+          checkIsParentMethodAbstract({
+            context,
+            methodName: info.methodName,
+            methodNode: info.node
+          })
+        ) {
           return;
         }
 
@@ -142,6 +148,26 @@ export const requireSuperCall: Rule.RuleModule = {
 };
 
 /**
+ * Parameters for {@link checkIsParentMethodAbstract}.
+ */
+interface CheckIsParentMethodAbstractParams {
+  /**
+   * The ESLint rule context.
+   */
+  readonly context: Rule.RuleContext;
+
+  /**
+   * The method name to look up in the parent class.
+   */
+  readonly methodName: string;
+
+  /**
+   * The override method definition AST node.
+   */
+  readonly methodNode: TSESTree.MethodDefinition;
+}
+
+/**
  * Checks whether a declaration has the `abstract` modifier.
  *
  * @param decl - The TypeScript declaration to inspect.
@@ -160,16 +186,11 @@ function checkIsAbstract(decl: Declaration): boolean {
  * When type information is not available (e.g., parser configured without
  * `projectService`), returns `false` so the rule conservatively reports.
  *
- * @param context - The ESLint rule context.
- * @param methodNode - The override method definition AST node.
- * @param methodName - The method name to look up in the parent class.
+ * @param params - The parameters for the check.
  * @returns `true` if the parent method is abstract.
  */
-function checkIsParentMethodAbstract(
-  context: Rule.RuleContext,
-  methodNode: TSESTree.MethodDefinition,
-  methodName: string
-): boolean {
+function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams): boolean {
+  const { context, methodName, methodNode } = params;
   const services = context.sourceCode.parserServices as Partial<ParserServicesWithTypeInformation>;
 
   if (!services.program || !services.esTreeNodeToTSNodeMap) {

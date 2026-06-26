@@ -49,10 +49,20 @@ export const requireComponentSuffix: Rule.RuleModule = {
 
     return {
       'ClassDeclaration[id]'(node: Rule.Node): void {
-        checkClass(context, services, checker, node);
+        checkClass({
+          checker,
+          context,
+          node,
+          services
+        });
       },
       'ClassExpression[id]'(node: Rule.Node): void {
-        checkClass(context, services, checker, node);
+        checkClass({
+          checker,
+          context,
+          node,
+          services
+        });
       }
     };
   },
@@ -71,19 +81,57 @@ export const requireComponentSuffix: Rule.RuleModule = {
 };
 
 /**
+ * Parameters for {@link checkClass}.
+ */
+interface CheckClassParams {
+  /**
+   * The TypeScript type checker.
+   */
+  readonly checker: ReturnType<ParserServicesWithTypeInformation['program']['getTypeChecker']>;
+
+  /**
+   * The ESLint rule context.
+   */
+  readonly context: Rule.RuleContext;
+
+  /**
+   * The class AST node.
+   */
+  readonly node: Rule.Node;
+
+  /**
+   * The parser services with type information.
+   */
+  readonly services: ParserServicesWithTypeInformation;
+}
+
+/**
+ * Parameters for {@link walkAncestors}.
+ */
+interface WalkAncestorsParams {
+  /**
+   * The set to add discovered ancestor names to.
+   */
+  readonly collectedNames: Set<string>;
+
+  /**
+   * The current type to inspect.
+   */
+  readonly currentType: Type;
+
+  /**
+   * Types already visited, to prevent infinite loops.
+   */
+  readonly visitedTypes: Set<Type>;
+}
+
+/**
  * Checks a single class declaration or expression.
  *
- * @param context - The ESLint rule context.
- * @param services - The parser services with type information.
- * @param checker - The TypeScript type checker.
- * @param node - The class AST node.
+ * @param params - The parameters for the check.
  */
-function checkClass(
-  context: Rule.RuleContext,
-  services: ParserServicesWithTypeInformation,
-  checker: ReturnType<ParserServicesWithTypeInformation['program']['getTypeChecker']>,
-  node: Rule.Node
-): void {
+function checkClass(params: CheckClassParams): void {
+  const { checker, context, node, services } = params;
   const classNode = node as TSESTree.ClassDeclaration | TSESTree.ClassExpression;
   const classId = classNode.id;
 
@@ -153,18 +201,21 @@ function collectAncestorNames(type: Type): Set<string> {
   const names = new Set<string>();
   const visited = new Set<Type>();
 
-  walkAncestors(type, names, visited);
+  walkAncestors({
+    collectedNames: names,
+    currentType: type,
+    visitedTypes: visited
+  });
 
   return names;
 
   /**
    * Recursively walks the base types of a type, collecting their names.
    *
-   * @param currentType - The current type to inspect.
-   * @param collectedNames - The set to add discovered ancestor names to.
-   * @param visitedTypes - Types already visited, to prevent infinite loops.
+   * @param params - The parameters for the walk.
    */
-  function walkAncestors(currentType: Type, collectedNames: Set<string>, visitedTypes: Set<Type>): void {
+  function walkAncestors(params: WalkAncestorsParams): void {
+    const { collectedNames, currentType, visitedTypes } = params;
     if (visitedTypes.has(currentType)) {
       return;
     }
@@ -184,7 +235,11 @@ function collectAncestorNames(type: Type): Set<string> {
         collectedNames.add(symbol.getName());
       }
 
-      walkAncestors(baseType, collectedNames, visitedTypes);
+      walkAncestors({
+        collectedNames,
+        currentType: baseType,
+        visitedTypes
+      });
     }
   }
 }

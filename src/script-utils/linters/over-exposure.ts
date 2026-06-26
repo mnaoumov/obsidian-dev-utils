@@ -529,6 +529,20 @@ interface OverExposureTextEdit {
   readonly start: number;
 }
 
+/**
+ * Parameters for {@link record}.
+ */
+interface RecordParams {
+  /** The analysis context whose findings and edits are appended to. */
+  readonly context: AnalysisContext;
+
+  /** The text edit that would tighten the finding, or `null` when no safe edit exists. */
+  readonly edit: null | OverExposureTextEdit;
+
+  /** The finding to record. */
+  readonly finding: OverExposureFinding;
+}
+
 interface ReferenceLocation {
   readonly fileName: string;
   readonly start: number;
@@ -745,7 +759,11 @@ function analyzeExport(node: Node, context: AnalysisContext): void {
   const canDropExport = candidates.length === nameNodes.length && candidates.every((candidate) => candidate.isPlainFileLocal || context.shouldForce);
   const exportEdit = canDropExport ? computeExportRemovalEdit(declaration) : null;
   for (const candidate of candidates) {
-    record(context, candidate.finding, exportEdit);
+    record({
+      context,
+      edit: exportEdit,
+      finding: candidate.finding
+    });
   }
 }
 
@@ -802,7 +820,11 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
     node: member,
     suggestedExposure: neededForSrc
   });
-  record(context, finding, computeMemberExposureEdit(member, neededForSrc));
+  record({
+    context,
+    edit: computeMemberExposureEdit(member, neededForSrc),
+    finding
+  });
 }
 
 function applyEdits(text: string, edits: readonly OverExposureTextEdit[]): string {
@@ -1228,7 +1250,8 @@ function rankExposure(exposure: MemberExposure): number {
   return MEMBER_EXPOSURE_ORDER.indexOf(exposure);
 }
 
-function record(context: AnalysisContext, finding: OverExposureFinding, edit: null | OverExposureTextEdit): void {
+function record(params: RecordParams): void {
+  const { context, edit, finding } = params;
   context.findings.push(finding);
   context.edits.push(edit);
 }
