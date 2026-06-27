@@ -271,6 +271,92 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
+## Planned Task — Note-scoped editor locking + minimizable modal
+
+Requested while fixing `obsidian-advanced-note-composer` issue #120 (long-running merge/split
+operations must prevent accidental edits to the involved notes, and show a progress UI the user can
+get out of the way). Both pieces are general-purpose and belong here, not in the plugin.
+
+### Status (2026-06-27) — LIBRARY WORK DONE on branch `feat/editor-lock-and-minimizable-modal` (NOT merged/published)
+
+Both pieces implemented via TDD; full gate green (3538 tests, 100% coverage, compile/lint/format/spellcheck clean). Two atomic commits on the branch:
+
+1. `feat: add reference-counted note-scoped editor locking` — new module `src/obsidian/editor-lock.ts`
+   exporting `lockEditorForPath(app, pathOrFile)` / `unlockEditorForPath(app, pathOrFile)` /
+   `isEditorLockedForPath(app, pathOrFile)`. Ref-counted `path → count` map on the shared
+   `getObsidianDevUtilsState` bag; locks every current + future `MarkdownView` of the path (reconciled
+   on `active-leaf-change` / `layout-change`, registered only while ≥1 path locked); adds a `lock`
+   action icon; `lockEditorForPath` returns an idempotent `Disposable` for `using`. New i18n key
+   `obsidianDevUtils.editorLock.lockedNoteTooltip`.
+2. `feat: add minimizable modal` — new `src/obsidian/modals/minimizable-modal.ts` `MinimizableModal`
+   (extends `Modal`): `minimize()` / `restore()` / `isMinimized`, floating bar with restore button,
+   hides the blocking backdrop while minimized, cleans up on close. Content (incl. `renderInternalLink`
+   anchors) goes in `contentEl`. New `CssClass` entries.
+
+**Design decisions (made unattended):**
+
+- Signature is positional `(app, pathOrFile)` — consistent with the shipped `app+path` family in
+  `vault.ts`/`metadata-cache.ts` (both args are unambiguously typed), NOT a full params bag.
+- Path locking lives in a **separate** `editor-lock.ts` (not appended to `editor.ts`) so the per-editor
+  `lockEditor`/`unlockEditor` primitives stay mockable in unit tests, mirroring how `vault.ts` consumes them.
+- The modal exposes `contentEl` rather than calling `renderInternalLink` itself — `renderInternalLink`
+  sits in a v8-ignored (integration-only) block, so baking it in would create untestable paths.
+
+**Deferred (NOT done unattended — outward-facing / touches existing tests, wants review):**
+
+- `vault.ts process()` already contains the non-ref-counted inline lock/unlock pattern this generalizes;
+  refactoring it to consume `lockEditorForPath` (fixing the concurrent-unlock bug) changes behavior +
+  existing `vault.test.ts` → left as a follow-up.
+- npm publish of the new minor, then `advanced-note-composer` (+ other consumers) bump & consume to
+  finish issue #120 (Slices 2 & 3).
+
+### Original spec (below) — kept for reference
+
+### 1. Reference-counted editor locking — by note path (primary) and by editor instance
+
+Today `src/obsidian/editor.ts` exposes only `lockEditor(editor)` / `unlockEditor(editor)` (a per-`Editor`
+CodeMirror `Compartment` toggling `EditorState.readOnly.of(true)` + `EditorView.editable.of(false)`).
+Extend to:
+
+- **By path (most usable):** `lockEditorForPath(pathOrFile)` / `unlockEditorForPath(pathOrFile)` backed by
+  a `path → lockCounter` map stored in the global state via
+  `getObsidianDevUtilsState` (`obsidian-dev-utils/obsidian-dev-utils-state`). Counter > 0 ⇒ the note is
+  read-only in **all current and future editors and popup windows**; counter == 0 ⇒ fully unlocked.
+  Reference-counting makes nested/concurrent locks safe (two operations on the same note both lock; the
+  note unlocks only when the last releases).
+- **By instance:** keep/extend the existing `lockEditor` / `unlockEditor` for the single-editor case.
+- **Disposable / `using` ergonomics (preferred call style):** the acquirers return a `Disposable`
+  implementing `[Symbol.dispose]()` (decrements the counter / unlocks), so callers can write:
+
+  ```ts
+  using _lock = lockEditorForPath(path); // locked for this scope
+  // ... long-running work (process, processFrontMatter, merge/split) ...
+  // auto-unlocked at scope exit, including on throw
+  ```
+
+  Keep the explicit `unlock*` pair for non-`using` call sites.
+- **Coverage of current + future editors:** apply the compartment read-only state to every open
+  `MarkdownView` of the path across all windows (`app.workspace.getLeavesOfType('markdown')` filtered by
+  `view.file`, plus popout windows); hook file-open / layout-change events so an editor opened for a
+  locked path afterwards is locked too, and unhooked when the counter hits 0.
+- **Indicator:** show a "blocked"/lock **icon** on locked notes (e.g. on the view header / tab) so the
+  read-only state is visible.
+- **Intended usage:** wherever a long async op mutates a note, acquire at the start (ideally `using`) and
+  release in `finally` / at scope exit.
+
+### 2. Minimizable modal abstraction
+
+A general-purpose progress panel that can **minimize / restore** while keeping the app usable (Obsidian's
+`Modal` is blocking and not minimizable; `PluginNoticeComponent` allows only one notice and no
+minimize). It should render arbitrary content including clickable note links (via
+`renderInternalLink`), expose `minimize()` / `restore()`, and tear down cleanly. Consider building on the
+existing `ModalBase` (`src/obsidian/modals/modal.ts`) or a new floating-panel component.
+
+### Method
+
+TDD in this repo; `feat`/`refactor!` commits as appropriate; release; then `advanced-note-composer`
+(and other consumers) bump and consume these to finish issue #120 (Slices 2 & 3 of the plugin plan).
+
 ## Current Task
 
 **Extract `*Params`/`*Options` parameter bags — BREAKING public-API conversion (option C).
