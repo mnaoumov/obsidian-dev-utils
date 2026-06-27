@@ -64,6 +64,26 @@ export enum CssClass {
   LibraryName = 'obsidian-dev-utils',
 
   /**
+   * A CSS class for the minimizable modal.
+   */
+  MinimizableModal = 'minimizable-modal',
+
+  /**
+   * A CSS class for the minimize button of the minimizable modal.
+   */
+  MinimizeButton = 'minimize-button',
+
+  /**
+   * A CSS class for the minimized bar of the minimizable modal.
+   */
+  MinimizedModalBar = 'minimized-modal-bar',
+
+  /**
+   * A CSS class for the title of the minimized bar of the minimizable modal.
+   */
+  MinimizedModalBarTitle = 'minimized-modal-bar-title',
+
+  /**
    * A CSS class for the month component.
    */
   MonthComponent = 'month-component',
@@ -117,6 +137,11 @@ export enum CssClass {
    * A CSS class for the prompt modal.
    */
   PromptModal = 'prompt-modal',
+
+  /**
+   * A CSS class for the restore button of the minimized modal bar.
+   */
+  RestoreButton = 'restore-button',
 
   /**
    * A CSS class for the select item modal.
