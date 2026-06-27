@@ -28,6 +28,9 @@ export const en = {
       jumpToPage: 'Jump to page:',
       pageHeader: 'Page {{pageNumber, number}} of {{totalPages, number}}, Total items: {{totalItems, number}}'
     },
+    editorLock: {
+      lockedNoteTooltip: 'This note is locked while an operation is in progress.'
+    },
     metadataCache: {
       getBacklinksForFilePath: 'Get backlinks for {{filePath}}'
     },
