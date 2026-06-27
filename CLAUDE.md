@@ -288,10 +288,14 @@ Both pieces implemented via TDD; full gate green (3538 tests, 100% coverage, com
    on `active-leaf-change` / `layout-change`, registered only while ≥1 path locked); adds a `lock`
    action icon; `lockEditorForPath` returns an idempotent `Disposable` for `using`. New i18n key
    `obsidianDevUtils.editorLock.lockedNoteTooltip`.
-2. `feat: add minimizable modal` — new `src/obsidian/modals/minimizable-modal.ts` `MinimizableModal`
-   (extends `Modal`): `minimize()` / `restore()` / `isMinimized`, floating bar with restore button,
-   hides the blocking backdrop while minimized, cleans up on close. Content (incl. `renderInternalLink`
-   anchors) goes in `contentEl`. New `CssClass` entries.
+2. `feat: add minimizable modal` + `refactor: make minimizable modal a composition wrapper` —
+   `src/obsidian/modals/minimizable-modal.ts` exports the `MinimizableModal<TModal extends Modal>`
+   **wrapper** that holds a modal instance (`minimizable.modal`) and adds `minimize()` / `restore()` /
+   `isMinimized`. Works on ANY modal instance — including ones you do not own (no class-declaration
+   change needed). Adds a minimize button, a floating bar with a restore button, hides the blocking
+   backdrop while minimized, reuses the modal's `titleEl` as the bar label, and patches the modal's
+   `onClose` (via `monkey-around`'s `around`) so the bar is cleaned up even if the modal is closed while
+   minimized. Content (incl. `renderInternalLink` anchors) goes in `modal.contentEl`. New `CssClass` entries.
 
 **Design decisions (made unattended):**
 
@@ -301,6 +305,12 @@ Both pieces implemented via TDD; full gate green (3538 tests, 100% coverage, com
   `lockEditor`/`unlockEditor` primitives stay mockable in unit tests, mirroring how `vault.ts` consumes them.
 - The modal exposes `contentEl` rather than calling `renderInternalLink` itself — `renderInternalLink`
   sits in a v8-ignored (integration-only) block, so baking it in would create untestable paths.
+- Minimizable is a **composition wrapper** (`MinimizableModal<TModal>` holding `modal`), chosen by the
+  user over both a mixin and a fixed subclass. Rationale: simplest, decoupled, and works on modal
+  instances you do not author. Trade-offs accepted: a split API (`minimizable.modal.open()` +
+  `minimizable.minimize()`) and a small `onClose` monkey-patch for teardown (Obsidian `Modal` has no
+  close event). A literal TS `@decorator` was rejected earlier because it cannot surface the added
+  members on the decorated class's type; a mixin was prototyped then dropped in favor of this wrapper.
 
 **Deferred (NOT done unattended — outward-facing / touches existing tests, wants review):**
 

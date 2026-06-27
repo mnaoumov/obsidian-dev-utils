@@ -1,31 +1,38 @@
 /**
  * @file
  *
- * A minimizable modal.
+ * A wrapper that makes any Obsidian {@link Modal} minimizable.
  *
  * Obsidian's {@link Modal} is blocking — while it is open the rest of the app is dimmed and
- * inert — and it cannot be minimized. {@link MinimizableModal} adds a minimize button: when
- * minimized, the modal (and its blocking backdrop) is hidden and a small floating bar with a restore
- * button is shown instead, so the app stays fully usable while a long-running operation continues in
- * the background. Calling {@link MinimizableModal.restore} (or clicking the restore button) brings
- * the modal back.
+ * inert — and it cannot be minimized. {@link MinimizableModal} wraps any modal instance (plain
+ * `Modal`, `FuzzySuggestModal`, the library's `ModalBase`, your own subclass, … — including modals
+ * you do not own) and adds a minimize button: when minimized, the modal (and its blocking backdrop)
+ * is hidden and a small floating bar with a restore button is shown instead, so the app stays fully
+ * usable while a long-running operation continues in the background.
  *
- * Render arbitrary content into {@link Modal.contentEl}, including clickable note links produced by
- * `renderInternalLink` from `obsidian-dev-utils/obsidian/markdown`:
+ * The wrapper reuses the modal's own title (`titleEl`) as the minimized bar label, so set the title
+ * the usual way (`modal.setTitle(...)`). Render arbitrary content into {@link Modal.contentEl},
+ * including clickable note links produced by `renderInternalLink` from
+ * `obsidian-dev-utils/obsidian/markdown`:
  *
  * ```ts
- * const modal = new MinimizableModal({ app, title: 'Merging notes' });
- * modal.open();
+ * const modal = new MyModal(app);
+ * modal.setTitle('Merging notes');
  * modal.contentEl.appendChild(await renderInternalLink({ app, pathOrAbstractFile: file }));
+ *
+ * const minimizable = new MinimizableModal(modal);
+ * minimizable.modal.open();
+ * minimizable.minimize(); // app is usable again; a floating bar offers "restore"
  * ```
+ *
+ * The wrapped modal can still be closed normally; the floating bar is cleaned up automatically when
+ * the modal closes (even if it is closed while minimized).
  */
 
-import {
-  Modal,
-  setIcon
-} from 'obsidian';
+import type { Modal } from 'obsidian';
 
-import type { ModalParamsBase } from './modal.ts';
+import { around } from 'monkey-around';
+import { setIcon } from 'obsidian';
 
 import { CssClass } from '../../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
@@ -34,20 +41,17 @@ const MINIMIZE_ICON_ID = 'minus';
 const RESTORE_ICON_ID = 'maximize-2';
 
 /**
- * The parameters for constructing a {@link MinimizableModal}.
+ * Wraps a {@link Modal} instance to make it minimizable to a small floating bar and restorable,
+ * keeping the app usable while minimized.
+ *
+ * @typeParam TModal - The type of the wrapped modal.
  */
-export interface MinimizableModalConstructorParams extends ModalParamsBase {
+export class MinimizableModal<TModal extends Modal> {
   /**
-   * The title shown in the modal header and in the minimized bar.
+   * The wrapped modal. Open, close, and populate it as usual (e.g. `minimizable.modal.open()`).
    */
-  readonly title?: string;
-}
+  public readonly modal: TModal;
 
-/**
- * A modal that can be minimized to a small floating bar and restored, keeping the app usable while
- * it is minimized.
- */
-export class MinimizableModal extends Modal {
   /**
    * Whether the modal is currently minimized.
    *
@@ -58,22 +62,19 @@ export class MinimizableModal extends Modal {
   }
 
   private isMinimizedValue = false;
+  private readonly minimizeButtonEl: HTMLElement;
   private minimizedBarEl: HTMLElement | null = null;
-  private readonly title: string;
 
   /**
-   * Creates a new minimizable modal.
+   * Wraps the given modal, adding a minimize button and wiring up cleanup on close.
    *
-   * @param params - The parameters.
+   * @param modal - The modal instance to make minimizable.
    */
-  public constructor(params: MinimizableModalConstructorParams) {
-    super(params.app);
-    this.title = params.title ?? '';
-    addPluginCssClasses(this.containerEl, [...(params.cssClasses ?? []), CssClass.MinimizableModal]);
-    if (this.title) {
-      this.setTitle(this.title);
-    }
-    this.createMinimizeButton();
+  public constructor(modal: TModal) {
+    this.modal = modal;
+    addPluginCssClasses(modal.containerEl, [CssClass.MinimizableModal]);
+    this.minimizeButtonEl = this.createMinimizeButton();
+    this.patchOnClose(modal);
   }
 
   /**
@@ -86,17 +87,9 @@ export class MinimizableModal extends Modal {
     }
 
     this.isMinimizedValue = true;
-    this.containerEl.hide();
+    this.minimizeButtonEl.hide();
+    this.modal.containerEl.hide();
     this.minimizedBarEl = this.createMinimizedBar();
-  }
-
-  /**
-   * Cleans up the floating bar and minimized state when the modal is closed.
-   */
-  public override onClose(): void {
-    super.onClose();
-    this.removeMinimizedBar();
-    this.isMinimizedValue = false;
   }
 
   /**
@@ -110,22 +103,24 @@ export class MinimizableModal extends Modal {
 
     this.isMinimizedValue = false;
     this.removeMinimizedBar();
-    this.containerEl.show();
+    this.modal.containerEl.show();
+    this.minimizeButtonEl.show();
   }
 
-  private createMinimizeButton(): void {
-    const buttonEl = this.modalEl.createEl('button', { cls: CssClass.MinimizeButton });
+  private createMinimizeButton(): HTMLElement {
+    const buttonEl = this.modal.modalEl.createEl('button', { cls: CssClass.MinimizeButton });
     setIcon(buttonEl, MINIMIZE_ICON_ID);
     buttonEl.addEventListener('click', () => {
       this.minimize();
     });
+    return buttonEl;
   }
 
   private createMinimizedBar(): HTMLElement {
-    const barEl = this.containerEl.ownerDocument.body.createDiv({ cls: CssClass.MinimizedModalBar });
+    const barEl = this.modal.containerEl.ownerDocument.body.createDiv({ cls: CssClass.MinimizedModalBar });
     barEl.createSpan({
       cls: CssClass.MinimizedModalBarTitle,
-      text: this.title
+      text: this.modal.titleEl.textContent
     });
     const restoreButtonEl = barEl.createEl('button', { cls: CssClass.RestoreButton });
     setIcon(restoreButtonEl, RESTORE_ICON_ID);
@@ -133,6 +128,22 @@ export class MinimizableModal extends Modal {
       this.restore();
     });
     return barEl;
+  }
+
+  private handleClose(): void {
+    this.removeMinimizedBar();
+    this.isMinimizedValue = false;
+  }
+
+  private patchOnClose(modal: Modal): void {
+    around(modal, {
+      onClose: (next: () => void): () => void => {
+        return (): void => {
+          next.call(modal);
+          this.handleClose();
+        };
+      }
+    });
   }
 
   private removeMinimizedBar(): void {
