@@ -68,7 +68,9 @@ export interface ExistsParams {
   readonly app: App;
 
   /**
-   * Specifies whether to perform a case-insensitive search. Default is `undefined`.
+   * Specifies whether to perform a case-insensitive search. When `undefined` or not specified, the behavior is determined by the actual file system.
+   *
+   * @default `undefined`
    */
   readonly isCaseInsensitive?: boolean;
 
@@ -93,7 +95,9 @@ export interface GetAbstractFileOrNullParams {
   readonly app: App;
 
   /**
-   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   * Specifies whether to perform a case-insensitive search. When `undefined` or not specified, the behavior is determined by the actual file system.
+   *
+   * @default `undefined`
    */
   readonly isCaseInsensitive?: boolean;
 
@@ -113,7 +117,9 @@ export interface GetAbstractFileParams {
   readonly app: App;
 
   /**
-   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   * Specifies whether to perform a case-insensitive search. When `undefined` or not specified, the behavior is determined by the actual file system.
+   *
+   * @default `undefined`
    */
   readonly isCaseInsensitive?: boolean;
 
@@ -133,7 +139,9 @@ export interface GetFileOrNullParams {
   readonly app: App;
 
   /**
-   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   * Specifies whether to perform a case-insensitive search. When `undefined` or not specified, the behavior is determined by the actual file system.
+   *
+   * @default `undefined`
    */
   readonly isCaseInsensitive?: boolean;
 
@@ -153,7 +161,9 @@ export interface GetFileParams {
   readonly app: App;
 
   /**
-   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   * Specifies whether to perform a case-insensitive search. When `undefined` or not specified, the behavior is determined by the actual file system.
+   *
+   * @default `undefined`
    */
   readonly isCaseInsensitive?: boolean;
 
@@ -182,7 +192,9 @@ export interface GetFolderOrNullParams {
   readonly app: App;
 
   /**
-   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   * Specifies whether to perform a case-insensitive search. When `undefined` or not specified, the behavior is determined by the actual file system.
+   *
+   * @default `undefined`
    */
   readonly isCaseInsensitive?: boolean;
 
@@ -202,7 +214,9 @@ export interface GetFolderParams {
   readonly app: App;
 
   /**
-   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   * Specifies whether to perform a case-insensitive search. When `undefined` or not specified, the behavior is determined by the actual file system.
+   *
+   * @default `undefined`
    */
   readonly isCaseInsensitive?: boolean;
 
@@ -268,7 +282,9 @@ interface GetFileInternalParams {
   readonly app: App;
 
   /**
-   * Specifies whether to perform a case-insensitive search. Default is `false`.
+   * Specifies whether to perform a case-insensitive search. When `undefined` or not specified, the behavior is determined by the actual file system.
+   *
+   * @default `undefined`
    */
   readonly isCaseInsensitive?: boolean;
 
