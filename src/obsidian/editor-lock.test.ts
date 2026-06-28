@@ -139,6 +139,7 @@ describe('lockEditorForPath', () => {
 
     expect(onSpy).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
     expect(onSpy).toHaveBeenCalledWith('layout-change', expect.any(Function));
+    expect(onSpy).toHaveBeenCalledWith('file-open', expect.any(Function));
   });
 
   it('should register workspace events only once across multiple locks', () => {
@@ -148,7 +149,7 @@ describe('lockEditorForPath', () => {
     lockEditorForPath(app, 'note.md');
     lockEditorForPath(app, 'other.md');
 
-    expect(onSpy).toHaveBeenCalledTimes(2);
+    expect(onSpy).toHaveBeenCalledTimes(3);
   });
 
   it('should lock a view opened after the lock via active-leaf-change', () => {
@@ -205,7 +206,7 @@ describe('unlockEditorForPath', () => {
     expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
     expect(vi.mocked(unlockEditor)).toHaveBeenCalledWith(view.editor);
     expect(removeSpy).toHaveBeenCalledTimes(1);
-    expect(offrefSpy).toHaveBeenCalledTimes(2);
+    expect(offrefSpy).toHaveBeenCalledTimes(3);
   });
 
   it('should keep the note locked until every lock is released', () => {
@@ -241,7 +242,7 @@ describe('unlockEditorForPath', () => {
     expect(offrefSpy).not.toHaveBeenCalled();
 
     unlockEditorForPath(app, 'other.md');
-    expect(offrefSpy).toHaveBeenCalledTimes(2);
+    expect(offrefSpy).toHaveBeenCalledTimes(3);
   });
 });
 
