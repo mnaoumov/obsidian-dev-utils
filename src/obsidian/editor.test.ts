@@ -99,6 +99,29 @@ describe('lockEditor', () => {
     assertNonNullable(dispatchCall);
     expect(dispatchCall[0]).toHaveProperty('effects');
   });
+
+  it('should unlock the editor when the returned disposable is disposed', async () => {
+    await noopAsync();
+    const editor = createMockEditor();
+    const disposable = lockEditor(editor);
+    disposable[Symbol.dispose]();
+
+    expect(mocks.mockReadOnlyOf).toHaveBeenLastCalledWith(false);
+    expect(mocks.mockEditableOf).toHaveBeenLastCalledWith(true);
+    expect(editor.cm.dispatch).toHaveBeenCalledTimes(2);
+  });
+
+  it('should unlock the editor at the end of a using scope', async () => {
+    await noopAsync();
+    const editor = createMockEditor();
+    {
+      using _lock = lockEditor(editor);
+      expect(mocks.mockReadOnlyOf).toHaveBeenLastCalledWith(true);
+    }
+
+    expect(mocks.mockReadOnlyOf).toHaveBeenLastCalledWith(false);
+    expect(mocks.mockEditableOf).toHaveBeenLastCalledWith(true);
+  });
 });
 
 describe('unlockEditor', () => {

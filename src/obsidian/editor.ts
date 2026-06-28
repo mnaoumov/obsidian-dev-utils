@@ -12,20 +12,28 @@ import {
 } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 
+import { CallbackDisposable } from '../disposable.ts';
+
 const editorCompartmentMap = new WeakMap<Editor, Compartment>();
 
 /**
  * Locks the editor.
  *
  * @param editor - The editor to lock.
+ * @returns A {@link Disposable} that unlocks the editor when disposed, for use with `using`.
  */
-export function lockEditor(editor: Editor): void {
+export function lockEditor(editor: Editor): Disposable {
   const compartment = ensureCompartment(editor);
   editor.cm.dispatch({
     effects: compartment.reconfigure([
       EditorState.readOnly.of(true),
       EditorView.editable.of(false)
     ])
+  });
+  return new CallbackDisposable({
+    callback: (): void => {
+      unlockEditor(editor);
+    }
   });
 }
 
