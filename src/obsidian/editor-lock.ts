@@ -89,7 +89,9 @@ class EditorPathLockManager {
     };
     this.eventRefs.push(
       app.workspace.on('active-leaf-change', reconcile),
-      app.workspace.on('layout-change', reconcile)
+      app.workspace.on('layout-change', reconcile),
+      // Same-leaf navigation to another note fires no leaf/layout change; without this it stays read-only.
+      app.workspace.on('file-open', reconcile)
     );
   }
 
