@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 82.0.0-beta.2
+
+- fix: actually apply the editor lock and keep app hotkeys working lockEditor created a fresh Compartment and reconfigured it, but never added the compartment to the editor's configuration, so CodeMirror silently ignored the reconfigure and the editor was never locked. Install the compartment (initially empty) via StateEffect.appendConfig on first use so reconfigure takes effect. Also lock with EditorState.readOnly only, dropping EditorView.editable.of(false): readOnly blocks document edits while keeping the editor focusable, so selection, copy, and app hotkeys (e.g. the command palette) keep working. editable.of(false) made the content non-editable and is unnecessary. Verified live over CDP: appendConfig + reconfigure(readOnly.of(true)) sets state.readOnly=true with contentEditable unchanged; reconfigure([]) unlocks. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
+- test: cover the file-open listener in editor-lock events test The file-open listener added to keep newly-opened notes in sync registers a third workspace event; update the event-count assertions accordingly. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
+- feat: restart dev build on node_modules changes esbuild's own watch only tracks files in its build graph and only re-bundles; it never re-runs the type-check and ignores node_modules changes outside the graph (a reinstall, or a dependency file not currently imported). The dev (watch) build now also watches the whole node_modules tree and, on a debounced change, disposes the build context and restarts the full pipeline. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
 ## 82.0.0-beta.1
 
 - feat: style minimizable modal
