@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 82.0.0-beta.1
+
+- feat: style minimizable modal
+- fix: reconcile editor locks on file-open
+
 ## 82.0.0-beta.0
 
 - refactor!: remove tempRegisterFilesAndRun(Async) in favor of registerFiles
