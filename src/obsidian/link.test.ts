@@ -23,6 +23,8 @@ import {
 import type { GenerateMarkdownLinkParams } from './link.ts';
 import type { CanvasReference } from './reference.ts';
 
+import { CallbackDisposable } from '../disposable.ts';
+import { noop } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import {
@@ -66,7 +68,7 @@ import {
   getBacklinksForFileSafe,
   getCacheSafe,
   parseMetadata,
-  tempRegisterFilesAndRun
+  registerFiles
 } from './metadata-cache.ts';
 
 vi.mock('../obsidian/metadata-cache.ts', async (importOriginal) => {
@@ -76,7 +78,7 @@ vi.mock('../obsidian/metadata-cache.ts', async (importOriginal) => {
     getBacklinksForFileSafe: vi.fn(),
     getCacheSafe: vi.fn(),
     parseMetadata: vi.fn(),
-    tempRegisterFilesAndRun: vi.fn((_app: unknown, _files: unknown[], fn: () => unknown) => fn())
+    registerFiles: vi.fn()
   };
 });
 
@@ -1647,9 +1649,7 @@ describe('app-dependent functions', () => {
       getEnabledPluginById: castTo<InternalPlugins['getEnabledPluginById']>(vi.fn(() => ({})))
     });
 
-    vi.mocked(tempRegisterFilesAndRun).mockImplementation(
-      (params) => params.fn()
-    );
+    vi.mocked(registerFiles).mockReturnValue(new CallbackDisposable({ callback: noop }));
     vi.mocked(getCacheSafe).mockResolvedValue(null);
     vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({}));
     vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({

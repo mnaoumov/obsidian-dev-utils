@@ -5,6 +5,7 @@ import {
   vi
 } from 'vitest';
 
+import { CallbackDisposable } from '../../disposable.ts';
 import { noop } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
 import { AsyncErrorHandlerComponent } from './async-error-handler-component.ts';
@@ -13,7 +14,7 @@ import { PluginNoticeComponent } from './plugin-notice-component.ts';
 type TranslationsArg = Parameters<Parameters<typeof import('../i18n/i18n.ts')['t']>[0]>[0];
 
 const mocks = vi.hoisted(() => ({
-  registerAsyncErrorEventHandler: vi.fn<(handler: (error: unknown) => void) => () => void>(),
+  registerAsyncErrorEventHandler: vi.fn<(handler: (error: unknown) => void) => Disposable>(),
   t: vi.fn((fn: (translations: TranslationsArg) => string) =>
     fn(castTo<TranslationsArg>({
       obsidianDevUtils: {
@@ -35,6 +36,7 @@ vi.mock('../i18n/i18n.ts', () => ({
 
 describe('AsyncErrorHandlerComponent', () => {
   it('should register error handler on load', () => {
+    mocks.registerAsyncErrorEventHandler.mockReturnValue(new CallbackDisposable({ callback: noop }));
     const noticeComponent = new PluginNoticeComponent('Test');
     const component = new AsyncErrorHandlerComponent(noticeComponent);
     const registerSpy = vi.spyOn(component, 'register');
@@ -43,6 +45,18 @@ describe('AsyncErrorHandlerComponent', () => {
 
     expect(mocks.registerAsyncErrorEventHandler).toHaveBeenCalled();
     expect(registerSpy).toHaveBeenCalled();
+  });
+
+  it('should dispose the registration when unloaded', () => {
+    const disposeSpy = vi.fn();
+    mocks.registerAsyncErrorEventHandler.mockReturnValue(new CallbackDisposable({ callback: disposeSpy }));
+    const noticeComponent = new PluginNoticeComponent('Test');
+    const component = new AsyncErrorHandlerComponent(noticeComponent);
+
+    component.load();
+    component.unload();
+
+    expect(disposeSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should show notice when async error occurs', () => {
@@ -57,7 +71,7 @@ describe('AsyncErrorHandlerComponent', () => {
     };
     mocks.registerAsyncErrorEventHandler.mockImplementation((handler) => {
       errorHandler = handler;
-      return vi.fn();
+      return new CallbackDisposable({ callback: noop });
     });
 
     component.onload();

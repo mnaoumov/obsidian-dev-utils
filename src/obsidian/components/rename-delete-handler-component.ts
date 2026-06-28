@@ -72,9 +72,7 @@ import {
   getBacklinksForFileOrPath,
   getBacklinksForFileSafe,
   registerFileCacheForNonExistingFile,
-  tempRegisterFilesAndRun,
-  tempRegisterFilesAndRunAsync,
-  unregisterFileCacheForNonExistingFile
+  registerFiles
 } from '../metadata-cache.ts';
 import { addToQueue } from '../queue.ts';
 import { deleteIfNotUsed } from '../vault-delete.ts';
@@ -785,14 +783,11 @@ class RenameHandler {
     const cache = this.app.metadataCache.getCache(this.oldPath) ?? this.app.metadataCache.getCache(this.newPath);
     const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
     const fakeOldFile = getFile({ app: this.app, pathOrFile: this.oldPath, shouldIncludeNonExisting: true });
-    let oldPathBacklinksMapRefreshed = new Map<string, Reference[]>();
-    await tempRegisterFilesAndRun({
-      app: this.app,
-      files: [fakeOldFile],
-      fn: async () => {
-        oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: fakeOldFile })).data;
-      }
-    });
+    let oldPathBacklinksMapRefreshed: Map<string, Reference[]>;
+    {
+      using _registration = registerFiles(this.app, [fakeOldFile]);
+      oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: fakeOldFile })).data;
+    }
 
     for (const link of oldPathLinksRefreshed) {
       if (this.oldPathLinks.includes(link)) {
@@ -863,29 +858,7 @@ class RenameMap {
     const settings = this.settingsManager.getSettings();
 
     const oldFile = getFile({ app: this.app, pathOrFile: this.oldPath, shouldIncludeNonExisting: true });
-    let oldAttachmentFolderPath = '';
-    await tempRegisterFilesAndRunAsync({
-      app: this.app,
-      files: [oldFile],
-      fn: async () => {
-        const shouldFakeOldPathCache = this.oldCache && oldFile.deleted;
-        if (shouldFakeOldPathCache) {
-          registerFileCacheForNonExistingFile({ app: this.app, cache: this.oldCache, pathOrFile: oldFile });
-        }
-
-        try {
-          oldAttachmentFolderPath = await getAttachmentFolderPath({
-            app: this.app,
-            context: AttachmentPathContext.RenameNote,
-            notePathOrFile: this.oldPath
-          });
-        } finally {
-          if (shouldFakeOldPathCache) {
-            unregisterFileCacheForNonExistingFile(this.app, oldFile);
-          }
-        }
-      }
-    });
+    const oldAttachmentFolderPath = await this.getOldAttachmentFolderPath(oldFile);
 
     const newAttachmentFolderPath = settings.shouldRenameAttachmentFolder
       ? await getAttachmentFolderPath({
@@ -1028,6 +1001,18 @@ class RenameMap {
 
   public set(oldPath: string, newPath: string): void {
     this.map.set(oldPath, newPath);
+  }
+
+  private async getOldAttachmentFolderPath(oldFile: TFile): Promise<string> {
+    using _registration = registerFiles(this.app, [oldFile]);
+    using _cacheRegistration = this.oldCache && oldFile.deleted
+      ? registerFileCacheForNonExistingFile({ app: this.app, cache: this.oldCache, pathOrFile: oldFile })
+      : undefined;
+    return await getAttachmentFolderPath({
+      app: this.app,
+      context: AttachmentPathContext.RenameNote,
+      notePathOrFile: this.oldPath
+    });
   }
 }
 

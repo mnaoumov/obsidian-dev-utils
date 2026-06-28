@@ -110,50 +110,6 @@ export interface RegisterFileCacheForNonExistingFileParams {
 }
 
 /**
- * Parameters for {@link tempRegisterFilesAndRunAsync}.
- *
- * @typeParam T - The return type of the function to run.
- */
-export interface TempRegisterFilesAndRunAsyncParams<T> {
-  /**
-   * The Obsidian app instance.
-   */
-  readonly app: App;
-
-  /**
-   * The files to temporarily register.
-   */
-  readonly files: TAbstractFile[];
-
-  /**
-   * The function to run.
-   */
-  fn(this: void): Promise<T>;
-}
-
-/**
- * Parameters for {@link tempRegisterFilesAndRun}.
- *
- * @typeParam T - The return type of the function to run.
- */
-export interface TempRegisterFilesAndRunParams<T> {
-  /**
-   * The Obsidian app instance.
-   */
-  readonly app: App;
-
-  /**
-   * The files to temporarily register.
-   */
-  readonly files: TAbstractFile[];
-
-  /**
-   * The function to run.
-   */
-  fn(this: void): T;
-}
-
-/**
  * Ensures that the metadata cache is ready for all files.
  *
  * @param app - The Obsidian app instance.
@@ -223,7 +179,8 @@ export function getAllLinks(cache: CachedMetadata): Reference[] {
  */
 export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<Reference> {
   const file = getFile({ app, pathOrFile, shouldIncludeNonExisting: true });
-  return tempRegisterFilesAndRun({ app, files: [file], fn: () => app.metadataCache.getBacklinksForFile(file) });
+  using _registration = registerFiles(app, [file]);
+  return app.metadataCache.getBacklinksForFile(file);
 }
 
 /**
@@ -427,40 +384,6 @@ export function registerFiles(app: App, files: TAbstractFile[]): Disposable {
       unregisterFiles(app, files);
     }
   });
-}
-
-/**
- * Temporarily registers files and runs a function.
- *
- * @typeParam T - The type of the result of the function.
- * @param params - The parameters for temporarily registering the files and running the function.
- * @returns The result of the function.
- */
-export function tempRegisterFilesAndRun<T>(params: TempRegisterFilesAndRunParams<T>): T {
-  const { app, files, fn } = params;
-  try {
-    registerFiles(app, files);
-    return fn();
-  } finally {
-    unregisterFiles(app, files);
-  }
-}
-
-/**
- * Temporarily registers files and runs an async function.
- *
- * @typeParam T - The type of the result of the function.
- * @param params - The parameters for temporarily registering the files and running the async function.
- * @returns The result of the function.
- */
-export async function tempRegisterFilesAndRunAsync<T>(params: TempRegisterFilesAndRunAsyncParams<T>): Promise<T> {
-  const { app, files, fn } = params;
-  try {
-    registerFiles(app, files);
-    return await fn();
-  } finally {
-    unregisterFiles(app, files);
-  }
 }
 
 /**

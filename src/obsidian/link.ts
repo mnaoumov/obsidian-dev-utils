@@ -74,7 +74,7 @@ import {
   getBacklinksForFileSafe,
   getCacheSafe,
   parseMetadata,
-  tempRegisterFilesAndRun
+  registerFiles
 } from './metadata-cache.ts';
 import {
   getNewLinkFormat,
@@ -1305,7 +1305,8 @@ export function generateMarkdownLink(params: GenerateMarkdownLinkParams): string
   params = Object.assign({}, DEFAULT_PARAMS, ...customDefaultParams, params);
   const targetFile = getFile(normalizeOptionalProperties<GetFileParams>({ app, pathOrFile: params.targetPathOrFile, shouldIncludeNonExisting: params.isNonExistingFileAllowed }));
 
-  return tempRegisterFilesAndRun({ app, files: [targetFile], fn: () => generateMarkdownLinkImpl(params) });
+  using _registration = registerFiles(app, [targetFile]);
+  return generateMarkdownLinkImpl(params);
 }
 
 /**

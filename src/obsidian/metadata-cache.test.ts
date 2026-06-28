@@ -28,7 +28,6 @@ import type {
 } from './file-system.ts';
 import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-with-offsets.ts';
 
-import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { strictProxy } from '../strict-proxy.ts';
@@ -53,8 +52,6 @@ import {
   parseMetadata,
   registerFileCacheForNonExistingFile,
   registerFiles,
-  tempRegisterFilesAndRun,
-  tempRegisterFilesAndRunAsync,
   unregisterFileCacheForNonExistingFile,
   unregisterFiles
 } from './metadata-cache.ts';
@@ -573,54 +570,6 @@ describe('unregisterFiles', () => {
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBe(file);
 
     mockedGetState.mockImplementation((_key: string, defaultValue: unknown) => ValueWrapper.of(defaultValue));
-  });
-});
-
-describe('tempRegisterFilesAndRun', () => {
-  it('should run the function and return its result', () => {
-    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
-    const result = tempRegisterFilesAndRun({ app, files: [file], fn: () => 42 });
-    expect(result).toBe(42);
-  });
-
-  it('should still unregister files even when fn throws', () => {
-    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
-    expect(() =>
-      tempRegisterFilesAndRun({
-        app,
-        files: [file],
-        fn: () => {
-          throw new Error('test error');
-        }
-      })
-    ).toThrow('test error');
-  });
-});
-
-describe('tempRegisterFilesAndRunAsync', () => {
-  it('should run the async function and return its result', async () => {
-    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
-    const result = await tempRegisterFilesAndRunAsync({
-      app,
-      files: [file],
-      fn: async () => {
-        await noopAsync();
-        return 'hello';
-      }
-    });
-    expect(result).toBe('hello');
-  });
-
-  it('should still unregister files even when fn rejects', async () => {
-    const file = strictProxy<TAbstractFile>({ deleted: false, name: 'note.md', path: 'note.md' });
-    await expect(tempRegisterFilesAndRunAsync({
-      app,
-      files: [file],
-      fn: async () => {
-        await noopAsync();
-        throw new Error('async error');
-      }
-    })).rejects.toThrow('async error');
   });
 });
 
