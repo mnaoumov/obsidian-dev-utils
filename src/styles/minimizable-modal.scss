@@ -1,0 +1,63 @@
+.obsidian-dev-utils {
+  // The minimize button lives inside the modal container, left of Obsidian's close button.
+  &.minimizable-modal {
+    .minimize-button {
+      position: absolute;
+      top: var(--size-4-2);
+      right: calc(var(--size-4-2) + var(--size-4-9));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--size-2-2);
+      border: none;
+      border-radius: var(--radius-s);
+      background: transparent;
+      color: var(--icon-color);
+      cursor: pointer;
+      box-shadow: none;
+
+      &:hover {
+        background: var(--background-modifier-hover);
+        color: var(--icon-color-hover);
+      }
+    }
+  }
+
+  // The minimized bar is appended to document.body. It floats at the bottom-right while minimized.
+  &.minimized-modal-bar {
+    position: fixed;
+    right: var(--size-4-4);
+    bottom: var(--size-4-4);
+    z-index: var(--layer-modal);
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+    padding: var(--size-4-2) var(--size-4-3);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m);
+    background: var(--background-secondary);
+    box-shadow: var(--shadow-s);
+
+    .minimized-modal-bar-title {
+      font-weight: var(--font-medium);
+    }
+
+    .restore-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--size-2-2);
+      border: none;
+      border-radius: var(--radius-s);
+      background: transparent;
+      color: var(--icon-color);
+      cursor: pointer;
+      box-shadow: none;
+
+      &:hover {
+        background: var(--background-modifier-hover);
+        color: var(--icon-color-hover);
+      }
+    }
+  }
+}

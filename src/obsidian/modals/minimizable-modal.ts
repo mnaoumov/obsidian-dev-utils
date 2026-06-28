@@ -117,7 +117,8 @@ export class MinimizableModal<TModal extends Modal> {
   }
 
   private createMinimizedBar(): HTMLElement {
-    const barEl = this.modal.containerEl.ownerDocument.body.createDiv({ cls: CssClass.MinimizedModalBar });
+    const barEl = this.modal.containerEl.ownerDocument.body.createDiv();
+    addPluginCssClasses(barEl, [CssClass.MinimizedModalBar]);
     barEl.createSpan({
       cls: CssClass.MinimizedModalBarTitle,
       text: this.modal.titleEl.textContent
