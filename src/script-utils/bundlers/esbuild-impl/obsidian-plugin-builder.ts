@@ -17,7 +17,10 @@ import type {
 import { context } from 'esbuild';
 // eslint-disable-next-line import-x/no-rename-default -- We need a temp variable to apply `extractDefaultExportInterop()` fix below.
 import sassPlugin_ from 'esbuild-sass-plugin';
-import { existsSync } from 'node:fs';
+import {
+  existsSync,
+  watch
+} from 'node:fs';
 import {
   cp,
   mkdir,
@@ -27,6 +30,7 @@ import {
 import { builtinModules } from 'node:module';
 import process, { loadEnvFile } from 'node:process';
 
+import { invokeAsyncSafely } from '../../../async.ts';
 import { extractDefaultExportInterop } from '../../../object-utils.ts';
 import { ObsidianPluginRepoPaths } from '../../../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import { join } from '../../../path.ts';
@@ -44,6 +48,13 @@ import { renameCssPlugin } from './rename-css-plugin.ts';
 import { svelteWrapperPlugin } from './svelte-wrapper-plugin.ts';
 
 const sassPlugin = extractDefaultExportInterop(sassPlugin_);
+
+/**
+ * Debounce window for restarting a development build after `node_modules` changes. A reinstall or a
+ * dependency rebuild touches many files in quick succession, so we wait for the churn to settle
+ * before restarting once.
+ */
+const NODE_MODULES_RESTART_DEBOUNCE_IN_MILLISECONDS = 1000;
 
 /**
  * Enumeration representing the build modes.
@@ -228,11 +239,19 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
   };
 
   const buildContext = await context(buildOptions);
-  return await invokeEsbuild(buildContext, isProductionBuild);
+  const result = await invokeEsbuild(buildContext, isProductionBuild);
+  if (!isProductionBuild) {
+    watchNodeModulesAndRestart(params, buildContext);
+  }
+  return result;
 }
 
 /**
  * Builds the Obsidian plugin in development mode using esbuild with watch.
+ *
+ * In addition to esbuild's own source-graph watch, the development build also watches the plugin's
+ * `node_modules` folder and restarts the whole build (including the type-check) when it changes, so a
+ * dependency reinstall or rebuild is picked up.
  *
  * @param options - Optional build parameters (mode is set to Development automatically).
  * @returns A {@link Promise} that resolves to a {@link CliTaskResult} indicating the build result.
@@ -257,6 +276,44 @@ export async function invokeEsbuild(buildContext: BuildContext, isProductionBuil
   }
   await buildContext.watch();
   return CliTaskResult.DoNotExit();
+}
+
+/**
+ * Watches the plugin's `node_modules` folder and restarts the development build when it changes.
+ *
+ * The esbuild watcher only tracks files in its build graph and only ever re-bundles — it never
+ * re-runs the `build:compile` type-check, and it ignores `node_modules` changes outside the graph
+ * (a reinstall, or a dependency file not currently imported). On any (debounced) change anywhere in
+ * the `node_modules` tree, the current build context is disposed and the whole development build is
+ * restarted, re-running the full pipeline.
+ *
+ * @param params - The parameters the build was started with, used to restart it.
+ * @param buildContext - The esbuild context to dispose before restarting.
+ */
+function watchNodeModulesAndRestart(params: BuildObsidianPluginParams, buildContext: BuildContext): void {
+  const nodeModulesPath = resolvePathFromRoot({ path: ObsidianPluginRepoPaths.NodeModules });
+  if (!nodeModulesPath || !existsSync(nodeModulesPath)) {
+    return;
+  }
+
+  let restartTimeout: ReturnType<typeof setTimeout> | undefined;
+  const watcher = watch(nodeModulesPath, { recursive: true }, () => {
+    if (restartTimeout) {
+      // eslint-disable-next-line obsidianmd/prefer-window-timers -- Node build-tool context; `window` is not available.
+      clearTimeout(restartTimeout);
+    }
+    // eslint-disable-next-line obsidianmd/prefer-window-timers -- Node build-tool context; `window` is not available.
+    restartTimeout = setTimeout(() => {
+      invokeAsyncSafely(restart);
+    }, NODE_MODULES_RESTART_DEBOUNCE_IN_MILLISECONDS);
+  });
+
+  async function restart(): Promise<void> {
+    console.warn('Detected changes in node_modules. Restarting the build...');
+    watcher.close();
+    await buildContext.dispose();
+    await buildObsidianPlugin(params);
+  }
 }
 
 /* v8 ignore stop */

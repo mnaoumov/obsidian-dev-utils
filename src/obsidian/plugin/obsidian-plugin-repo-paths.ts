@@ -116,6 +116,9 @@ export enum ObsidianPluginRepoPaths {
   /** Mocks folder. */
   Mocks = 'src/test-helpers',
 
+  /** Node modules folder. */
+  NodeModules = 'node_modules',
+
   /** NPM shrinkwrap file. */
   NpmShrinkwrapJson = 'npm-shrinkwrap.json',
 
