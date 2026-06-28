@@ -32,6 +32,10 @@ import { MarkdownView } from 'obsidian';
 
 import type { PathOrFile } from './file-system.ts';
 
+import {
+  CallbackDisposable,
+  MultipleDisposeBehavior
+} from '../disposable.ts';
 import { noop } from '../function.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import {
@@ -63,16 +67,12 @@ class EditorPathLockManager {
     this.ensureEventsRegistered(app);
     this.reconcile(app);
 
-    let isDisposed = false;
-    return {
-      [Symbol.dispose]: (): void => {
-        if (isDisposed) {
-          return;
-        }
-        isDisposed = true;
+    return new CallbackDisposable({
+      callback: (): void => {
         this.unlockPath(app, path);
-      }
-    };
+      },
+      multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
+    });
   }
 
   public unlock(app: App, pathOrFile: PathOrFile): void {

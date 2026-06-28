@@ -279,15 +279,15 @@ get out of the way). Both pieces are general-purpose and belong here, not in the
 
 ### Status (2026-06-27) — LIBRARY WORK DONE on branch `feat/editor-lock-and-minimizable-modal` (NOT merged/published)
 
-Both pieces implemented via TDD; full gate green (3538 tests, 100% coverage, compile/lint/format/spellcheck clean). Two atomic commits on the branch:
+Both pieces implemented via TDD; full gate green (100% coverage, compile/lint/format/spellcheck clean). Commits on the branch:
 
 1. `feat: add reference-counted note-scoped editor locking` — new module `src/obsidian/editor-lock.ts`
    exporting `lockEditorForPath(app, pathOrFile)` / `unlockEditorForPath(app, pathOrFile)` /
    `isEditorLockedForPath(app, pathOrFile)`. Ref-counted `path → count` map on the shared
    `getObsidianDevUtilsState` bag; locks every current + future `MarkdownView` of the path (reconciled
    on `active-leaf-change` / `layout-change`, registered only while ≥1 path locked); adds a `lock`
-   action icon; `lockEditorForPath` returns an idempotent `Disposable` for `using`. New i18n key
-   `obsidianDevUtils.editorLock.lockedNoteTooltip`.
+   action icon; `lockEditorForPath` returns a `CallbackDisposable` (see #3, `MultipleDisposeBehavior.Ignore`)
+   for `using`. New i18n key `obsidianDevUtils.editorLock.lockedNoteTooltip`.
 2. `feat: add minimizable modal` + `refactor: make minimizable modal a composition wrapper` —
    `src/obsidian/modals/minimizable-modal.ts` exports the `MinimizableModal<TModal extends Modal>`
    **wrapper** that holds a modal instance (`minimizable.modal`) and adds `minimize()` / `restore()` /
@@ -296,6 +296,13 @@ Both pieces implemented via TDD; full gate green (3538 tests, 100% coverage, com
    backdrop while minimized, reuses the modal's `titleEl` as the bar label, and patches the modal's
    `onClose` (via `monkey-around`'s `around`) so the bar is cleaned up even if the modal is closed while
    minimized. Content (incl. `renderInternalLink` anchors) goes in `modal.contentEl`. New `CssClass` entries.
+3. `refactor: extract CallbackDisposable` — new module `src/disposable.ts` (started by the user) now
+   holds `CallbackDisposable`, `AsyncCallbackDisposable` (constructor params bags; callback + optional
+   `multipleDisposeBehavior`), the `MultipleDisposeBehavior` enum (`Invoke` / `Ignore` / `Throw`,
+   default `Invoke`), the `DisposeCallback` / `AsyncDisposeCallback` types, and the `isDisposable` /
+   `isAsyncDisposable` guards (`isDisposable` moved out of `disposable-component.ts`; its test moved to
+   `disposable.test.ts`). `editor-lock` consumes `CallbackDisposable` with `Ignore` instead of a
+   hand-rolled idempotency guard.
 
 **Design decisions (made unattended):**
 
