@@ -88,6 +88,18 @@ describe('validateDeclarations', () => {
     expect(validateDeclarations()).toBe(false);
   });
 
+  it('should forward isVerbose to checkProjectTypes when provided', () => {
+    validateDeclarations({ isVerbose: true });
+
+    expect(firstCallParams().isVerbose).toBe(true);
+  });
+
+  it('should default isVerbose to false when no options are provided', () => {
+    validateDeclarations();
+
+    expect(firstCallParams().isVerbose).toBe(false);
+  });
+
   describe('shouldKeepFile', () => {
     it('should keep files under the root that are not in node_modules and drop the rest', () => {
       validateDeclarations();

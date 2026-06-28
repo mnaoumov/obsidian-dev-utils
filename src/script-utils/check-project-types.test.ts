@@ -172,6 +172,41 @@ describe('checkProjectTypes', () => {
     expect(process.stdout.write).toHaveBeenCalledWith('Ignored 1 diagnostic(s) outside the validated set.\n');
   });
 
+  it('should print the ignored diagnostics when isVerbose is true and some are ignored', () => {
+    const keptError = createDiagnostic({ category: DiagnosticCategory.Error, fileName: '/root/keep.ts' });
+    const droppedError = createDiagnostic({ category: DiagnosticCategory.Error, fileName: '/root/drop.ts' });
+    mockGetPreEmitDiagnostics.mockReturnValue([keptError, droppedError]);
+    mockFormatWithColor.mockReturnValueOnce('formatted-kept').mockReturnValueOnce('formatted-ignored');
+
+    const result = checkProjectTypes({
+      isVerbose: true,
+      options: {},
+      rootNames: ['/root/keep.ts'],
+      shouldKeepFile: (fileName) => fileName.includes('keep')
+    });
+
+    expect(result).toBe(false);
+    expect(mockFormatWithColor).toHaveBeenNthCalledWith(1, [keptError], expect.anything());
+    expect(mockFormatWithColor).toHaveBeenNthCalledWith(2, [droppedError], expect.anything());
+    expect(process.stdout.write).toHaveBeenCalledWith('Ignored 1 diagnostic(s) outside the validated set.\n');
+    expect(process.stdout.write).toHaveBeenCalledWith('formatted-ignored');
+  });
+
+  it('should not print ignored diagnostics when isVerbose is true but none are ignored', () => {
+    const keptError = createDiagnostic({ category: DiagnosticCategory.Error, fileName: '/root/keep.ts' });
+    mockGetPreEmitDiagnostics.mockReturnValue([keptError]);
+
+    checkProjectTypes({
+      isVerbose: true,
+      options: {},
+      rootNames: ['/root/keep.ts'],
+      shouldKeepFile: () => true
+    });
+
+    expect(mockFormatWithColor).toHaveBeenCalledTimes(1);
+    expect(process.stdout.write).toHaveBeenCalledWith('Ignored 0 diagnostic(s) outside the validated set.\n');
+  });
+
   it('should skip output and return true when every diagnostic is ignored', () => {
     const droppedError = createDiagnostic({ category: DiagnosticCategory.Error, fileName: '/root/drop.ts' });
     mockGetPreEmitDiagnostics.mockReturnValue([droppedError]);

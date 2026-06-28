@@ -46,6 +46,19 @@ const VALIDATE_DECLARATIONS_TS_CONFIG_FILE_NAMES = [
 ];
 
 /**
+ * Options for {@link validateDeclarations}.
+ */
+export interface ValidateDeclarationsOptions {
+  /**
+   * When `true`, the ignored third-party diagnostics are printed in full in addition to their count,
+   * so they can be inspected. When omitted or `false`, only the count is printed.
+   *
+   * @default `false`
+   */
+  readonly isVerbose?: boolean;
+}
+
+/**
  * Parameters for {@link shouldKeepProjectFile}.
  */
 interface ShouldKeepProjectFileParams {
@@ -65,10 +78,11 @@ interface ShouldKeepProjectFileParams {
  * configs, reporting only diagnostics that concern the library's own declarations and ignoring those
  * caused by importing third-party packages.
  *
+ * @param options - The options controlling validation output.
  * @returns `true` when the library's own declarations have no type errors, `false` otherwise.
  * @throws If the root folder cannot be found.
  */
-export function validateDeclarations(): boolean {
+export function validateDeclarations(options: ValidateDeclarationsOptions = {}): boolean {
   const root = getRootFolder();
 
   if (!root) {
@@ -80,9 +94,10 @@ export function validateDeclarations(): boolean {
   let isValid = true;
 
   for (const tsConfigFileName of VALIDATE_DECLARATIONS_TS_CONFIG_FILE_NAMES) {
-    const { fileNames, options } = parseTsConfig(join(root, tsConfigFileName));
+    const { fileNames, options: compilerOptions } = parseTsConfig(join(root, tsConfigFileName));
     const isConfigValid = checkProjectTypes({
-      options,
+      isVerbose: options.isVerbose ?? false,
+      options: compilerOptions,
       rootNames: fileNames,
       shouldKeepDiagnostic: (diagnostic) => !isThirdPartyModuleImportDiagnostic(diagnostic),
       shouldKeepFile: (fileName) => shouldKeepProjectFile({ fileName, rootCanonical })
