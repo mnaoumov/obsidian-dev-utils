@@ -182,11 +182,15 @@ class EditorPathLockManager {
       if (this.isPathLocked(path)) {
         viewsToLock.add(view);
         const tooltip = this.lockTooltip(app, path);
+        // Re-apply the read-only toggle on every reconcile, not only the first time a view is tracked.
+        // The toggle is idempotent, so re-applying to an already-locked view is cheap.
+        // A view opened after the lock is reconciled synchronously, before its CodeMirror is ready.
+        // Its first toggle is therefore a no-op; re-applying makes the lock take hold once it settles.
+        toggleEditorReadOnly(view.editor, true);
         const indicators = this.indicatorsByView.get(view);
         if (indicators) {
           this.updateIndicatorTooltips(indicators, tooltip);
         } else {
-          toggleEditorReadOnly(view.editor, true);
           this.indicatorsByView.set(view, this.createIndicators(view, tooltip));
         }
       }

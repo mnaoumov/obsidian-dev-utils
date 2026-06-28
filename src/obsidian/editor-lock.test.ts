@@ -150,14 +150,18 @@ describe('lockEditorForPath', () => {
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
-  it('should not re-lock a view that is already locked on a subsequent reconcile', () => {
+  it('should re-apply the read-only toggle on a subsequent reconcile', () => {
     const view = createMarkdownView('note.md');
     stubLeaves(leafOf(view));
 
     lockEditorForPath(app, 'note.md');
     app.workspace.trigger('layout-change');
 
-    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledTimes(1);
+    // The toggle is re-applied on every reconcile (idempotent).
+    // A view opened before its editor was ready still becomes read-only once a later reconcile runs.
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenNthCalledWith(1, view.editor, true);
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenNthCalledWith(2, view.editor, true);
   });
 
   it('should register active-leaf-change and layout-change on the first lock', () => {

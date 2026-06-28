@@ -12,7 +12,9 @@ import {
   StateEffect
 } from '@codemirror/state';
 
-const editorCompartmentMap = new WeakMap<Editor, Compartment>();
+import { castTo } from '../object-utils.ts';
+
+const compartmentByCodeMirror = new WeakMap<Editor['cm'], Compartment>();
 
 /**
  * Toggles the read-only state of a single CodeMirror instance — the low-level primitive behind
@@ -38,16 +40,28 @@ export function toggleEditorReadOnly(editor: Editor, isReadOnly: boolean): void 
 }
 
 function ensureCompartment(editor: Editor): Compartment {
-  let compartment = editorCompartmentMap.get(editor);
-  if (!compartment) {
-    compartment = new Compartment();
-    editorCompartmentMap.set(editor, compartment);
-    // A `Compartment` only takes effect once it is part of the editor's configuration.
-    // The compartment is created lazily here, so install it (initially empty) via `appendConfig`.
-    // Without this step `reconfigure` is silently ignored and the editor never actually locks.
-    editor.cm.dispatch({
-      effects: StateEffect.appendConfig.of(compartment.of([]))
-    });
+  // Key the cache by the CodeMirror instance, not by the `Editor` wrapper.
+  // An `Editor` keeps its identity while its underlying CodeMirror view is swapped out.
+  const codeMirror = editor.cm;
+  const cachedCompartment = compartmentByCodeMirror.get(codeMirror);
+  // Reuse the cached compartment only while it is still part of the current configuration.
+  // A view can silently drop an appended compartment when it rebuilds its state.
+  // Opening a note into a freshly created leaf does this: it installs the compartment mid-open.
+  // The subsequent load then replaces the whole state, taking the compartment with it.
+  // Then `Compartment.get` returns `undefined`, since the compartment is no longer configured.
+  // Re-install it in that case, or every later `reconfigure` is silently ignored and nothing locks.
+  // The `castTo` bridges the dual CommonJS and ESM `EditorState` declarations of `@codemirror/state`.
+  // They are structurally identical, but TypeScript treats them as nominally incompatible.
+  if (cachedCompartment?.get(castTo<EditorState>(codeMirror.state)) !== undefined) {
+    return cachedCompartment;
   }
+
+  const compartment = new Compartment();
+  compartmentByCodeMirror.set(codeMirror, compartment);
+  // A `Compartment` only takes effect once it is part of the editor's configuration.
+  // The compartment is created lazily here, so install it (initially empty) via `appendConfig`.
+  codeMirror.dispatch({
+    effects: StateEffect.appendConfig.of(compartment.of([]))
+  });
   return compartment;
 }

@@ -6,17 +6,17 @@
  * These run against a live Obsidian instance, so they exercise the real reconcile across every open
  * view of a note — including a separate split and a popout window — which the unit tests (mocked
  * workspace) cannot. They verify that locking a path makes its editor read-only everywhere the note
- * is open, while editors for other notes stay editable, and that unlocking restores editability.
+ * is open, that a view opened AFTER the lock (a future editor) is auto-locked, that editors for other
+ * notes stay editable, and that unlocking restores editability.
  *
  * An Obsidian {@link Editor} instance is reused as its leaf navigates between notes and goes stale
  * after a re-layout, so this test NEVER holds an `Editor` reference across another open: it keeps
  * only the (stable) {@link WorkspaceLeaf} handles and re-reads `leaf.view.editor` fresh at read time.
  *
- * The views are all opened (and given a beat to settle) BEFORE the path is locked: a CodeMirror
- * instance is not fully wired up the instant `openFile` resolves, so a read-only reconfigure
- * dispatched against a not-yet-settled editor does not take hold. Opening everything first means the
- * single lock reconcile runs against editors that are all ready, which is what makes the assertions
- * deterministic.
+ * A CodeMirror instance is not fully wired up the instant `openFile` resolves, so a read-only
+ * reconfigure dispatched against a not-yet-settled editor does not take hold. For a future editor the
+ * test therefore settles after the open and triggers a reconcile (`layout-change`) so the manager
+ * re-applies the read-only toggle against the now-ready editor.
  */
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
@@ -59,7 +59,7 @@ interface ReadableView {
 
 describe('editor-lock', () => {
   describe('lockEditorForPath', () => {
-    it('should lock the note in the current tab, a separate split, and a popout window, leaving other notes editable', async () => {
+    it('should lock the current tab, auto-lock a future split and popout of the same note, and leave other notes editable', async () => {
       const result = await evalInObsidian<Record<string, never>, LockForPathResult>({
         async fn({ app }) {
           const lib = window.__obsidianDevUtilsModule__;
@@ -67,43 +67,48 @@ describe('editor-lock', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
 
-          // This file shares its live Obsidian instance with the other integration suites, which leave
-          // their own leaves and popouts open. Start from a clean workspace so the reconcile below sees
-          // only the views this test opens.
+          // This file shares its live Obsidian instance with the other integration suites.
+          // Those suites leave their own leaves and popouts open.
+          // Start from a clean workspace so the reconcile below sees only the views this test opens.
           app.workspace.detachLeavesOfType('markdown');
           await settle();
 
           const lockedFile = await app.vault.create('editor-lock-path-locked.md', 'locked note');
           const otherFile = await app.vault.create('editor-lock-path-other.md', 'other note');
 
-          // Open the locked note in the current tab, a separate split, and a popout window.
-          // Open a different note in its own split. Settle after each so every editor is ready before locking.
+          // Open the locked note in the current tab and lock its path.
+          // The current editor is already settled, so the lock reconcile makes it read-only straight away.
           const currentTabLeaf = app.workspace.getLeaf();
           await currentTabLeaf.openFile(lockedFile);
           await settle();
+          const disposable = lib.obsidian['editor-lock'].lockEditorForPath(app, lockedFile);
+          await settle();
+          const isCurrentTabLocked = readLeafReadOnly(currentTabLeaf);
 
+          // Open the SAME note in a split — a future editor.
+          // Its first (synchronous) reconcile runs before the editor is ready.
+          // Settle and trigger a reconcile so the manager re-applies the lock to the now-ready editor.
           const separateTabLeaf = app.workspace.getLeaf('split');
           await separateTabLeaf.openFile(lockedFile);
           await settle();
+          await reconcile();
+          const isSeparateTabLocked = readLeafReadOnly(separateTabLeaf);
 
+          // Open the same note a third time in a popout window — another future editor.
           const popoutLeaf = app.workspace.openPopoutLeaf();
           await popoutLeaf.openFile(lockedFile);
           await settle();
+          await reconcile();
+          const isPopoutLocked = readLeafReadOnly(popoutLeaf);
 
+          // Open a different note, which must stay editable.
           const otherNoteLeaf = app.workspace.getLeaf('split');
           await otherNoteLeaf.openFile(otherFile);
           await settle();
-
-          // A single lock reconcile now locks every open view of the path; other notes stay editable.
-          const disposable = lib.obsidian['editor-lock'].lockEditorForPath(app, lockedFile);
-          await settle();
-
-          const isCurrentTabLocked = readLeafReadOnly(currentTabLeaf);
-          const isSeparateTabLocked = readLeafReadOnly(separateTabLeaf);
-          const isPopoutLocked = readLeafReadOnly(popoutLeaf);
+          await reconcile();
           const isOtherNoteLocked = readLeafReadOnly(otherNoteLeaf);
 
-          // Releasing the lock makes the note editable again everywhere it is open.
+          // Releasing the lock makes the note editable again.
           disposable[Symbol.dispose]();
           await settle();
           const isCurrentTabLockedAfterUnlock = readLeafReadOnly(currentTabLeaf);
@@ -124,6 +129,13 @@ describe('editor-lock', () => {
             return editor.cm.state.readOnly;
           }
 
+          async function reconcile(): Promise<void> {
+            // Re-run the manager's reconcile against the now-settled editor.
+            // The read-only re-apply then takes hold on a freshly-opened (future) view.
+            app.workspace.trigger('layout-change');
+            await settle();
+          }
+
           async function settle(): Promise<void> {
             const SETTLE_DELAY_MILLISECONDS = 300;
             await new Promise<void>((resolve) => {
@@ -134,7 +146,7 @@ describe('editor-lock', () => {
         vaultPath: inject('tempVaultPath')
       });
 
-      // The locked note is read-only in every place it is open (current tab, split, popout).
+      // The locked note is read-only in the current tab and in every future view (split, popout).
       expect(result.isCurrentTabLocked).toBe(true);
       expect(result.isSeparateTabLocked).toBe(true);
       expect(result.isPopoutLocked).toBe(true);

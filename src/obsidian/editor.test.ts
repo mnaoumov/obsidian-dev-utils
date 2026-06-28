@@ -20,8 +20,13 @@ import { toggleEditorReadOnly } from './editor.ts';
 const mocks = vi.hoisted(() => {
   const mockReconfigure = vi.fn((extension: unknown): StateEffect<unknown> => castTo<StateEffect<unknown>>({ reconfigure: extension }));
   const mockCompartmentOf = vi.fn((extension: unknown): Extension => castTo<Extension>({ compartmentOf: extension }));
+  // Mock for `Compartment.get`, which reports whether the compartment is part of the configuration.
+  // A non-`undefined` value means installed (so the compartment is reused); `undefined` means absent.
+  // Defaults to installed; the re-install test overrides it to `undefined`.
+  const mockCompartmentGet = vi.fn((): unknown => []);
 
   class MockCompartment {
+    public get = mockCompartmentGet;
     public of = mockCompartmentOf;
     public reconfigure = mockReconfigure;
   }
@@ -32,6 +37,7 @@ const mocks = vi.hoisted(() => {
   return {
     mockAppendConfigOf,
     MockCompartment,
+    mockCompartmentGet,
     mockCompartmentOf,
     mockReadOnlyOf,
     mockReconfigure
@@ -55,7 +61,8 @@ vi.mock('@codemirror/state', () => ({
 function createMockEditor(): Editor {
   return strictProxy<Editor>({
     cm: {
-      dispatch: vi.fn()
+      dispatch: vi.fn(),
+      state: castTo<Editor['cm']['state']>({})
     }
   });
 }
@@ -63,6 +70,7 @@ function createMockEditor(): Editor {
 describe('toggleEditorReadOnly', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.mockCompartmentGet.mockReturnValue([]);
   });
 
   it('should install the compartment and reconfigure it read-only on the first read-only toggle', async () => {
@@ -86,16 +94,32 @@ describe('toggleEditorReadOnly', () => {
     expect(mocks.mockReadOnlyOf).not.toHaveBeenCalled();
   });
 
-  it('should not re-install the compartment on a subsequent toggle of the same editor', async () => {
+  it('should reuse the installed compartment on a subsequent toggle of the same editor', async () => {
     await noopAsync();
     const editor = createMockEditor();
     toggleEditorReadOnly(editor, true);
     vi.clearAllMocks();
+    mocks.mockCompartmentGet.mockReturnValue([]);
     toggleEditorReadOnly(editor, true);
 
     expect(mocks.mockAppendConfigOf).not.toHaveBeenCalled();
     expect(mocks.mockReadOnlyOf).toHaveBeenCalledWith(true);
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('should re-install the compartment when the cached one is no longer in the configuration', async () => {
+    await noopAsync();
+    const editor = createMockEditor();
+    toggleEditorReadOnly(editor, true);
+    vi.clearAllMocks();
+    // A `get` returning `undefined` simulates the view rebuilding its state and dropping the compartment.
+    // The compartment must be installed again before the reconfigure can take hold.
+    mocks.mockCompartmentGet.mockReturnValue(undefined);
+    toggleEditorReadOnly(editor, true);
+
+    expect(mocks.mockAppendConfigOf).toHaveBeenCalledTimes(1);
+    expect(mocks.mockReadOnlyOf).toHaveBeenCalledWith(true);
+    expect(editor.cm.dispatch).toHaveBeenCalledTimes(2);
   });
 
   it('should install the compartment only once across repeated toggles on the same editor', async () => {
@@ -105,9 +129,9 @@ describe('toggleEditorReadOnly', () => {
     toggleEditorReadOnly(editor, true);
     toggleEditorReadOnly(editor, false);
 
-    // The `appendConfig` runs only on the first call (compartment installed once).
+    // The `appendConfig` runs only on the first call (the compartment stays in the configuration).
     expect(mocks.mockAppendConfigOf).toHaveBeenCalledTimes(1);
-    // Lock: appendConfig + reconfigure (2 dispatches); unlock: reconfigure (1 dispatch).
+    // First toggle: appendConfig + reconfigure (2 dispatches); second toggle: reconfigure (1 dispatch).
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(3);
   });
 });
