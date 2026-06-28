@@ -53,7 +53,9 @@ import {
  */
 export interface GetBacklinksForFileSafeOptions extends RetryOptions {
   /**
-   * Whether to show a timeout notice. Default is `true`.
+   * Whether to show a timeout notice.
+   *
+   * @default `true`
    */
   readonly shouldShowTimeoutNotice?: boolean;
 }

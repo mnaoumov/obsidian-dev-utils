@@ -41,6 +41,8 @@ export interface ConfirmParams extends ModalParamsBase {
 
   /**
    * A title of the modal.
+   *
+   * @default `''`
    */
   readonly title?: DocumentFragment | string;
 }

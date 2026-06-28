@@ -37,6 +37,8 @@ export interface LintOptions {
 
   /**
    * Whether to fix linting issues automatically.
+   *
+   * @default `false`
    */
   readonly shouldFix?: boolean | undefined;
 }

@@ -189,6 +189,8 @@ export interface GetAttachmentFolderPathParams {
 
   /**
    * The context.
+   *
+   * @default {@link AttachmentPathContext.Unknown}
    */
   readonly context?: AttachmentPathContext;
 
@@ -220,10 +222,14 @@ export interface GetAvailablePathForAttachmentsParams {
   readonly notePathOrFile: null | PathOrFile;
   /**
    * Should the duplicate check be skipped.
+   *
+   * @default `false`
    */
   readonly shouldSkipDuplicateCheck?: boolean;
   /**
    * Should missing attachment folder creation be skipped.
+   *
+   * @default `false`
    */
   readonly shouldSkipMissingAttachmentFolderCreation?: boolean;
 }
@@ -239,6 +245,8 @@ export interface HasOwnAttachmentFolderParams {
 
   /**
    * The context.
+   *
+   * @default {@link AttachmentPathContext.Unknown}
    */
   readonly context?: AttachmentPathContext;
 

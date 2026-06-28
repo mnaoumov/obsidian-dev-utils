@@ -61,6 +61,8 @@ export interface AbstractFileCommandHandlerConstructorParams extends CommandHand
 
   /**
    * Whether to add the command to a submenu.
+   *
+   * @default `false`
    */
   readonly shouldAddCommandToSubmenu?: boolean | undefined;
 }

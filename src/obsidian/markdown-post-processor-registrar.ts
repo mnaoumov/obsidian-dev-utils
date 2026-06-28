@@ -37,7 +37,9 @@ export interface MarkdownPostProcessorRegistrarRegisterMarkdownPostProcessorPara
   postProcessor(el: HTMLElement, ctx: MarkdownPostProcessorContext): Promisable<void>;
 
   /**
-   * Optional sort order for the post processor. Lower numbers are processed first. Default is 0.
+   * Optional sort order for the post processor. Lower numbers are processed first.
+   *
+   * @default `0`
    */
   readonly sortOrder?: number;
 }

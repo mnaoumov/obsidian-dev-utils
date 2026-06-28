@@ -27,8 +27,10 @@ export interface FixTitleParams {
   readonly dv: DataviewInlineApi;
 
   /**
-   * A boolean indicating whether the file is a folder note. Defaults to `false`.
+   * A boolean indicating whether the file is a folder note.
    * If `true`, the title is derived from the folder name.
+   *
+   * @default `false`
    */
   readonly isFolderNote?: boolean;
 

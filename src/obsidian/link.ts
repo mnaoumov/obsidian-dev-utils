@@ -297,7 +297,9 @@ export interface ExtractLinkFileParams {
   readonly link: Reference;
 
   /**
-   * Whether to allow non-existing files. Defaults to `false`.
+   * Whether to allow non-existing files.
+   *
+   * @default `false`
    */
   readonly shouldAllowNonExistingFile?: boolean;
 
@@ -334,31 +336,37 @@ export interface GenerateMarkdownLinkParams {
   readonly isEmbed?: boolean;
 
   /**
-   * Whether to allow an empty alias for embeds. Defaults to `true`.
+   * Whether to allow an empty alias for embeds.
    *
    * Applicable only if the result link style is {@link LinkStyle.Markdown}.
    *
    * If `true`: `![](foo.png)`.
    *
    * If `false`: `![foo](foo.png)`.
+   *
+   * @default `true`
    */
   readonly isEmptyEmbedAliasAllowed?: boolean;
 
   /**
-   * Whether to allow non-existing files. Defaults to `false`.
+   * Whether to allow non-existing files.
    *
    * If `false` and {@link targetPathOrFile} is a non-existing file, an error will be thrown.
+   *
+   * @default `false`
    */
   readonly isNonExistingFileAllowed?: boolean;
 
   /**
-   * Whether to allow a single subpath. Defaults to `true`.
+   * Whether to allow a single subpath.
    *
    * Applicable only if {@link targetPathOrFile} and {@link sourcePathOrFile} are the same file.
    *
    * If `true`: `[[#subpath]]`.
    *
    * If `false`: `[[source#subpath]]`
+   *
+   * @default `true`
    */
   readonly isSingleSubpathAllowed?: boolean;
 
@@ -388,57 +396,67 @@ export interface GenerateMarkdownLinkParams {
   readonly originalLink?: string;
 
   /**
-   * Whether to escape the alias. Defaults to `false`.
+   * Whether to escape the alias.
    *
    * Applicable only if the result link style is {@link LinkStyle.Markdown}.
    *
    * If `true`: `[\*\*alias\*\*](link.md)`.
    *
    * If `false`: `[**alias**](link.md)`.
+   *
+   * @default `false`
    */
   readonly shouldEscapeAlias?: boolean;
 
   /**
-   * Whether to include the attachment extension in the embed alias. Defaults to `false`.
+   * Whether to include the attachment extension in the embed alias.
    *
    * Applicable only if {@link isEmptyEmbedAliasAllowed} is `false`.
    *
    * If `true`: `[foo.png](foo.png)`.
    *
    * If `false`: `[foo](foo.png)`.
+   *
+   * @default `false`
    */
   readonly shouldIncludeAttachmentExtensionToEmbedAlias?: boolean;
 
   /**
-   * Indicates if the link should use angle brackets. Defaults to `false`.
+   * Indicates if the link should use angle brackets.
    *
    * Applicable only if {@link linkStyle} is {@link LinkStyle.Markdown}.
    *
    * If `true`: `[alias](<path with spaces.md>)`.
    *
    * If `false`: `[alias](path%20with%20spaces.md)`.
+   *
+   * @default `false`
    */
   readonly shouldUseAngleBrackets?: boolean;
 
   /**
-   * Indicates if the link should use a leading dot. Defaults to `false`.
+   * Indicates if the link should use a leading dot.
    *
    * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToSource}.
    *
    * If `true`: `[[./relative/path/to/target]]`
    *
    * If `false`: `[[relative/path/to/target]]`
+   *
+   * @default `false`
    */
   readonly shouldUseLeadingDotForRelativePaths?: boolean;
 
   /**
-   * Indicates if the link should use a leading slash. Defaults to `false`.
+   * Indicates if the link should use a leading slash.
    *
    * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.AbsolutePathInVault}.
    *
    * If `true`: `[[/absolute/path/to/target]]`
    *
    * If `false`: `[[absolute/path/to/target]]`
+   *
+   * @default `false`
    */
   readonly shouldUseLeadingSlashForAbsolutePaths?: boolean;
 
@@ -455,6 +473,7 @@ export interface GenerateMarkdownLinkParams {
    * @example `[[link-with-empty-subpath]]`
    * @example `[[link-with-subpath#subpath]]`
    * @example `[[link-with-subpath#subpath#nested-subpath]]`
+   * @default `''`
    */
   readonly subpath?: string;
 
@@ -474,7 +493,9 @@ export interface GenerateRawMarkdownLinkParams {
   readonly alias?: string | undefined;
 
   /**
-   * Whether the link should be an embed link. Defaults to `false`.
+   * Whether the link should be an embed link.
+   *
+   * @default `false`
    */
   readonly isEmbed?: boolean;
 
@@ -484,12 +505,16 @@ export interface GenerateRawMarkdownLinkParams {
   readonly isWikilink: boolean;
 
   /**
-   * Whether to escape the alias. Applicable only if {@link isWikilink} is `false`. Defaults to `false`.
+   * Whether to escape the alias. Applicable only if {@link isWikilink} is `false`.
+   *
+   * @default `false`
    */
   readonly shouldEscapeAlias?: boolean;
 
   /**
-   * Whether to use angle brackets. Applicable only if {@link isWikilink} is `false`. Defaults to `false`.
+   * Whether to use angle brackets. Applicable only if {@link isWikilink} is `false`.
+   *
+   * @default `false`
    */
   readonly shouldUseAngleBrackets?: boolean;
 

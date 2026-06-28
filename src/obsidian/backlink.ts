@@ -45,7 +45,9 @@ export interface RenderDelayedBacklinksForFolderParams {
   readonly folder?: string;
 
   /**
-   * A title for the rendered backlinks. Defaults to "Folder Backlinks".
+   * A title for the rendered backlinks.
+   *
+   * @default `'Folder Backlinks'`
    */
   readonly title?: string;
 }
@@ -65,7 +67,9 @@ export interface RenderDelayedBacklinksParams {
   readonly files: PathOrFile[];
 
   /**
-   * A title for the rendered backlinks. Defaults to "Backlinks".
+   * A title for the rendered backlinks.
+   *
+   * @default `'Backlinks'`
    */
   readonly title?: string;
 }

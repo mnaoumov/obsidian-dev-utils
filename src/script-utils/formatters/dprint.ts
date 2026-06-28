@@ -29,6 +29,8 @@ export interface FormatOptions {
 
   /**
    * Whether to rewrite the source code.
+   *
+   * @default `true`
    */
   readonly rewrite?: boolean | undefined;
 }

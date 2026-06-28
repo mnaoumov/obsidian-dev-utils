@@ -42,6 +42,8 @@ export interface PromptParams extends ModalParamsBase {
 
   /**
    * A default value to pre-fill the input field.
+   *
+   * @default `''`
    */
   readonly defaultValue?: string;
 
@@ -52,11 +54,15 @@ export interface PromptParams extends ModalParamsBase {
 
   /**
    * A placeholder text for the input field.
+   *
+   * @default `''`
    */
   readonly placeholder?: string;
 
   /**
    * A title of the modal.
+   *
+   * @default `''`
    */
   readonly title?: DocumentFragment | string;
 

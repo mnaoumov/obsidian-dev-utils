@@ -124,6 +124,8 @@ export interface AnalyzeOverExposureParams {
    * When `true`, each fixable finding is tightened in place via {@link writeFile} (which must then
    * be provided), and the returned findings carry {@link OverExposureFinding.wasFixed} /
    * {@link OverExposureFinding.skipReason}. When `false` or omitted, the analysis only reports.
+   *
+   * @default `false`
    */
   readonly shouldFix?: boolean | undefined;
 
@@ -132,6 +134,8 @@ export interface AnalyzeOverExposureParams {
    * test references are tightened too, instead of being skipped with a `test-only`
    * {@link OverExposureFinding.skipReason}. Decorated members and exports shared with a
    * still-exported sibling stay skipped regardless, because no edit can be applied safely.
+   *
+   * @default `false`
    */
   readonly shouldForce?: boolean | undefined;
 
@@ -196,6 +200,8 @@ export interface FindOverExposureParams {
    * When `true`, fixable findings are tightened in place on disk (the `export` keyword is dropped,
    * or a `private` / `protected` modifier is inserted/replaced). When `false` or omitted, the
    * project is only analyzed.
+   *
+   * @default `false`
    */
   readonly shouldFix?: boolean | undefined;
 
@@ -204,6 +210,8 @@ export interface FindOverExposureParams {
    * test references are tightened too, instead of being skipped. Decorated members and exports
    * shared with a still-exported sibling stay skipped regardless. Forwarded to
    * {@link analyzeOverExposure}.
+   *
+   * @default `false`
    */
   readonly shouldForce?: boolean | undefined;
 }

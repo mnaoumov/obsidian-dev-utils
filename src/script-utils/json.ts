@@ -24,6 +24,8 @@ import { toJson } from '../object-utils.ts';
 export interface EditJsonOptions {
   /**
    * If `true`, skips editing if the file does not exist.
+   *
+   * @default `false`
    */
   readonly shouldSkipIfMissing?: boolean;
 }

@@ -68,11 +68,15 @@ export interface FullRenderParams {
 
   /**
    * Whether to register link handlers for the rendered element.
+   *
+   * @default `false`
    */
   readonly shouldRegisterLinkHandlers?: boolean;
 
   /**
    * The source path to resolve relative links.
+   *
+   * @default `'/'`
    */
   readonly sourcePath?: string;
 }
@@ -93,6 +97,8 @@ export interface MarkdownToHtmlParams {
 
   /**
    * The source path to resolve relative links.
+   *
+   * @default `''`
    */
   readonly sourcePath?: string;
 }
@@ -113,6 +119,8 @@ export interface RegisterLinkHandlersParams {
 
   /**
    * The source path to resolve relative links from.
+   *
+   * @default `''`
    */
   readonly sourcePath?: string;
 }

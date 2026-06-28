@@ -44,11 +44,15 @@ export interface AddToQueueAndWaitParams {
 
   /**
    * Optional name of the operation.
+   *
+   * @default `''`
    */
   readonly operationName?: string;
 
   /**
-   * Whether to show a timeout notice. Default is `true`.
+   * Whether to show a timeout notice.
+   *
+   * @default `true`
    */
   readonly shouldShowTimeoutNotice?: boolean;
 
@@ -59,6 +63,8 @@ export interface AddToQueueAndWaitParams {
 
   /**
    * The timeout in milliseconds.
+   *
+   * @default `60000`
    */
   readonly timeoutInMilliseconds?: number;
 }
@@ -79,11 +85,15 @@ export interface AddToQueueParams {
 
   /**
    * Optional name of the operation.
+   *
+   * @default `''`
    */
   readonly operationName?: string;
 
   /**
-   * Whether to show a timeout notice. Default is `true`.
+   * Whether to show a timeout notice.
+   *
+   * @default `true`
    */
   readonly shouldShowTimeoutNotice?: boolean;
 
@@ -94,6 +104,8 @@ export interface AddToQueueParams {
 
   /**
    * The timeout in milliseconds.
+   *
+   * @default `60000`
    */
   readonly timeoutInMilliseconds?: number;
 }

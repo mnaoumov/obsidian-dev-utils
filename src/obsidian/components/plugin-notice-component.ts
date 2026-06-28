@@ -17,13 +17,14 @@ const PERMANENT_NOTICE_DURATION_IN_MILLISECONDS = 0;
  */
 export interface PluginNoticeComponentShowNoticeOptions {
   /**
-   * Whether the notice should stay until it is replaced, the plugin is reloaded, or the user dismisses it. Defaults to
-   * `false`.
+   * Whether the notice should stay until it is replaced, the plugin is reloaded, or the user dismisses it.
    *
    * A permanent notice is shown with an infinite duration and is not hidden when the component unloads, so it can
    * communicate state that outlives the plugin (e.g. a cleanup that requires a reload). There is at most one permanent
    * notice per plugin: it is hidden by the next {@link PluginNoticeComponent.showNotice} call and dismissed
    * automatically the next time the component loads (i.e. when the plugin is re-enabled).
+   *
+   * @default `false`
    */
   readonly isPermanent?: boolean;
 }

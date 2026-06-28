@@ -188,6 +188,8 @@ export interface RenderIframeParams {
 
   /**
    * A height of the iframe.
+   *
+   * @default `'600px'`
    */
   readonly height?: string;
 
@@ -198,6 +200,8 @@ export interface RenderIframeParams {
 
   /**
    * A width of the iframe.
+   *
+   * @default `'100%'`
    */
   readonly width?: string;
 }
@@ -214,7 +218,9 @@ export interface RenderPaginatedListParams<T> {
   readonly dv: DataviewInlineApi;
 
   /**
-   * Options for items per page. Defaults to `[10, 20, 50, 100]`.
+   * Options for items per page.
+   *
+   * @default `[10, 20, 50, 100]`
    */
   readonly itemsPerPageOptions?: number[];
 
@@ -237,6 +243,8 @@ export interface RenderPaginatedParams<T> {
 
   /**
    * Options for items per page.
+   *
+   * @default `[10, 20, 50, 100]`
    */
   readonly itemsPerPageOptions?: number[];
 
@@ -271,7 +279,9 @@ export interface RenderPaginatedTableParams<T> {
   readonly headers: string[];
 
   /**
-   * Options for items per page. Defaults to `[10, 20, 50, 100]`.
+   * Options for items per page.
+   *
+   * @default `[10, 20, 50, 100]`
    */
   readonly itemsPerPageOptions?: number[];
 

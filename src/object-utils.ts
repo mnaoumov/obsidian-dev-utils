@@ -59,49 +59,59 @@ enum TokenSubstitutionKey {
  */
 export interface ToJsonOptions {
   /**
-   * Specifies how functions should be handled in the JSON output (default: `exclude`).
+   * Specifies how functions should be handled in the JSON output.
+   *
+   * @default {@link FunctionHandlingMode.Exclude}
    */
   readonly functionHandlingMode: FunctionHandlingMode;
 
   /**
    * Specifies the maximum depth of nested objects to include in the JSON output.
    * Use `-1` for no limit.
-   * Defaults to `-1`.
+   *
+   * @default `-1`
    */
   readonly maxDepth: number;
 
   /**
    * Specifies whether to catch errors in `toJSON()` and replace them with a placeholder.
-   * Defaults to `false`.
+   *
+   * @default `false`
    */
   readonly shouldCatchToJSONErrors: boolean;
 
   /**
    * Specifies whether to handle circular references in the JSON output.
-   * Defaults to `false`.
+   *
+   * @default `false`
    */
   readonly shouldHandleCircularReferences: boolean;
 
   /**
    * Specifies whether to handle errors in the JSON output.
-   * Defaults to `false`.
+   *
+   * @default `false`
    */
   readonly shouldHandleErrors: boolean;
 
   /**
    * Specifies whether to handle `undefined` values in the JSON output.
-   * Defaults to `false`.
+   *
+   * @default `false`
    */
   readonly shouldHandleUndefined: boolean;
 
   /**
    * Specifies whether to sort the keys of the JSON output.
-   * Defaults to `false`.
+   *
+   * @default `false`
    */
   readonly shouldSortKeys: boolean;
 
   /**
-   * Specifies the indentation of the JSON output. This can be a number of spaces or a string. Defaults to `2`.
+   * Specifies the indentation of the JSON output. This can be a number of spaces or a string.
+   *
+   * @default `2`
    */
   readonly space: number | string;
 

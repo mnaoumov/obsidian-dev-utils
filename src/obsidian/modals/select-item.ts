@@ -41,6 +41,8 @@ export interface SelectItemParams<T> extends ModalParamsBase {
 
   /**
    * A placeholder text for the input field.
+   *
+   * @default `''`
    */
   readonly placeholder?: string;
 }

@@ -41,7 +41,7 @@ export interface AsyncCallbackDisposableConstructorParams {
   /**
    * How the disposable behaves when disposed more than once.
    *
-   * @default `MultipleDisposeBehavior.Invoke`
+   * @default {@link MultipleDisposeBehavior.Invoke}
    */
   readonly multipleDisposeBehavior?: MultipleDisposeBehavior;
 }
@@ -63,7 +63,7 @@ export interface CallbackDisposableConstructorParams {
   /**
    * How the disposable behaves when disposed more than once.
    *
-   * @default `MultipleDisposeBehavior.Invoke`
+   * @default {@link MultipleDisposeBehavior.Invoke}
    */
   readonly multipleDisposeBehavior?: MultipleDisposeBehavior;
 }

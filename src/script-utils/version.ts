@@ -58,7 +58,9 @@ import {
 export interface AddUpdatedFilesToGitOptions {
   /**
    * Whether to run the pre-commit hook when creating the release commit. When `false`, `--no-verify`
-   * is passed to the release commit to skip the hook. Defaults to `true`.
+   * is passed to the release commit to skip the hook.
+   *
+   * @default `true`
    */
   readonly shouldVerifyCommit?: boolean;
 }
@@ -85,7 +87,9 @@ export interface UpdateChangelogOptions {
   /**
    * Whether to open the generated changelog in the editor for an interactive review. When `false`,
    * the changelog is still generated from commit messages, but it is not opened in the editor for
-   * manual review. Defaults to `true`.
+   * manual review.
+   *
+   * @default `true`
    */
   readonly shouldEditChangelog?: boolean;
 }
@@ -107,32 +111,41 @@ export interface UpdateVersionOptions {
    * so it is governed by this flag independently of {@link shouldRunChecks} — it runs even when the
    * checks are skipped, so a fast release still ships fresh artifacts. Set to `false` only when the
    * build output is known to already match the current code; otherwise the release would publish
-   * stale artifacts. Defaults to `true`.
+   * stale artifacts.
+   *
+   * @default `true`
    */
   readonly shouldBuild?: boolean;
 
   /**
-   * Whether to open the generated changelog in the editor for an interactive review. Defaults to `true`.
+   * Whether to open the generated changelog in the editor for an interactive review.
+   *
+   * @default `true`
    */
   readonly shouldEditChangelog?: boolean;
 
   /**
    * Whether to publish the release. When `false`, all local steps are executed (version bump,
    * changelog, commit, tag), but the changes are not pushed and no GitHub release is published.
-   * Defaults to `true`.
+   *
+   * @default `true`
    */
   readonly shouldRelease?: boolean;
 
   /**
    * Whether to run the preflight verification checks (clean-repo check, format, spellcheck, lint,
    * over-exposure analysis, and tests). The build step is not one of these checks — it is governed
-   * separately by {@link shouldBuild}. Defaults to `true`.
+   * separately by {@link shouldBuild}.
+   *
+   * @default `true`
    */
   readonly shouldRunChecks?: boolean;
 
   /**
    * Whether to run the pre-commit hook when creating the release commit. When `false`, `--no-verify`
-   * is passed to the release commit to skip the hook. Defaults to `true`.
+   * is passed to the release commit to skip the hook.
+   *
+   * @default `true`
    */
   readonly shouldVerifyCommit?: boolean;
 }

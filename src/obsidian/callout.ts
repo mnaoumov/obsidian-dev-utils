@@ -44,6 +44,8 @@ export interface RenderCalloutParams {
 
   /**
    * An optional provider for the content, which can be either a string or a Node.
+   *
+   * @default `''`
    */
   readonly contentProvider?: ValueProvider<MaybeReturn<Node | string>>;
 
@@ -54,16 +56,22 @@ export interface RenderCalloutParams {
 
   /**
    * A header text of the callout, default is an empty string.
+   *
+   * @default `''`
    */
   readonly header?: string;
 
   /**
    * A callout mode, default is `CalloutMode.FoldableCollapsed`.
+   *
+   * @default {@link CalloutMode.FoldableCollapsed}
    */
   readonly mode?: CalloutMode;
 
   /**
    * A type of the callout, default is `"NOTE"`.
+   *
+   * @default `'NOTE'`
    */
   readonly type?: string;
 }

@@ -15,6 +15,8 @@ export interface TestCoverageOptions extends TestOptions {
   /**
    * Minimum coverage percentage required. If the actual coverage falls below
    * this threshold, the process exits with a non-zero code.
+   *
+   * @default `0`
    */
   readonly minCoverageInPercents?: number;
 }

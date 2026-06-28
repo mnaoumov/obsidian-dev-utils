@@ -166,6 +166,8 @@ export interface GetFileParams {
    * Whether to include a non-existing file.
    *  If `true`, a new file is created for the provided path.
    *  If `false`, an error is thrown if the file is not found.
+   *
+   * @default `false`
    */
   readonly shouldIncludeNonExisting?: boolean;
 }
@@ -213,6 +215,8 @@ export interface GetFolderParams {
    * Whether to allow the folder to not exist.
    *  If `true`, a new folder is created for the provided path.
    *  If `false`, an error is thrown if the folder is not found.
+   *
+   * @default `false`
    */
   readonly shouldIncludeNonExisting?: boolean;
 }
@@ -228,6 +232,8 @@ export interface GetMarkdownFilesParams {
 
   /**
    * Specifies whether to recursively search for markdown files within subfolders. Default is `false`.
+   *
+   * @default `false`
    */
   readonly isRecursive?: boolean;
 

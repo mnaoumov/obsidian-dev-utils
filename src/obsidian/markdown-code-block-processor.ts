@@ -65,12 +65,16 @@ export interface GetCodeBlockMarkdownInfoParams {
  */
 export interface InsertCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
-   * A number of lines to offset the insertion by. Default is `0`.
+   * A number of lines to offset the insertion by.
+   *
+   * @default `0`
    */
   readonly lineOffset?: number;
 
   /**
-   * Whether to preserve the line prefix of the code block. Default is `false`.
+   * Whether to preserve the line prefix of the code block.
+   *
+   * @default `false`
    */
   readonly shouldPreserveLinePrefix?: boolean;
 
@@ -85,7 +89,9 @@ export interface InsertCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
  */
 export interface RemoveCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
-   * Whether to keep the gap after removing the code block. Default is `false`.
+   * Whether to keep the gap after removing the code block.
+   *
+   * @default `false`
    */
   readonly shouldKeepGap?: boolean;
 }
@@ -105,12 +111,16 @@ export interface ReplaceCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   readonly codeBlockProvider: ValueProvider<string, ContentArgs>;
 
   /**
-   * Whether to keep the gap when the new code block is empty. Default is `false`.
+   * Whether to keep the gap when the new code block is empty.
+   *
+   * @default `false`
    */
   readonly shouldKeepGapWhenEmpty?: boolean;
 
   /**
-   * Whether to preserve the line prefix of the code block. Default is `false`.
+   * Whether to preserve the line prefix of the code block.
+   *
+   * @default `false`
    */
   readonly shouldPreserveLinePrefix?: boolean;
 }
@@ -137,7 +147,9 @@ interface InsertTextParams {
   readonly insertLineIndex: number;
 
   /**
-   * Whether to preserve the line prefix of the line at the insertion point. Default is `false`.
+   * Whether to preserve the line prefix of the line at the insertion point.
+   *
+   * @default `false`
    */
   readonly shouldPreserveLinePrefix?: boolean;
 

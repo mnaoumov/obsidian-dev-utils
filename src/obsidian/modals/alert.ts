@@ -36,6 +36,8 @@ export interface AlertParams extends ModalParamsBase {
 
   /**
    * A title of the modal.
+   *
+   * @default `''`
    */
   readonly title?: DocumentFragment | string;
 }

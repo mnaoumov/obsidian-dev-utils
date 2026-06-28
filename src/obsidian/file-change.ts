@@ -86,6 +86,8 @@ export interface ApplyContentChangesParams {
 
   /**
    * Whether to retry the operation if the changes are invalid.
+   *
+   * @default `true`
    */
   readonly shouldRetryOnInvalidChanges?: boolean;
 }
@@ -114,6 +116,8 @@ export interface ApplyFileChangesParams extends ApplyFileChangesOptions {
 
   /**
    * Whether to retry the operation if the changes are invalid.
+   *
+   * @default `true`
    */
   readonly shouldRetryOnInvalidChanges?: boolean;
 }

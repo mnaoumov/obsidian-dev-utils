@@ -67,19 +67,25 @@ export interface BindOptions<T> {
   onChanged?(newValue: ReadonlyDeep<T>, oldValue: ReadonlyDeep<T>): Promisable<void>;
 
   /**
-   * Whether to reset the setting when the component value is empty. Default is `true`.
+   * Whether to reset the setting when the component value is empty.
    * Applicable only to text-based components.
+   *
+   * @default `true`
    */
   readonly shouldResetSettingWhenComponentIsEmpty?: boolean;
 
   /**
-   * Whether to show the placeholder for default values. Default is `true`.
+   * Whether to show the placeholder for default values.
    * Applicable only to text-based components.
+   *
+   * @default `true`
    */
   readonly shouldShowPlaceholderForDefaultValues?: boolean;
 
   /**
-   * Whether to show the validation message when the component value is invalid. Default is `true`.
+   * Whether to show the validation message when the component value is invalid.
+   *
+   * @default `true`
    */
   readonly shouldShowValidationMessage?: boolean;
 }

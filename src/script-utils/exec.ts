@@ -56,26 +56,36 @@ export interface ExecOptions {
 
   /**
    * If `true`, suppresses the output of the command.
+   *
+   * @default `false`
    */
   readonly isQuiet?: boolean;
 
   /**
    * If `true`, throws an error if the command fails.
+   *
+   * @default `true`
    */
   readonly shouldFailIfCalledFromOutsideRoot?: boolean;
 
   /**
    * If `true`, ignores the exit code of the command.
+   *
+   * @default `false`
    */
   readonly shouldIgnoreExitCode?: boolean;
 
   /**
    * If `false`, only returns the output of the command.
+   *
+   * @default `false`
    */
   readonly shouldIncludeDetails?: boolean;
 
   /**
    * An input to be passed to the command.
+   *
+   * @default `''`
    */
   readonly stdin?: string;
 }
@@ -111,6 +121,8 @@ export interface ExecResult {
 export interface ExecSimpleOptions extends ExecOptions {
   /**
    * Must be `false` or omitted to receive only stdout.
+   *
+   * @default `false`
    */
   readonly shouldIncludeDetails?: false;
 }

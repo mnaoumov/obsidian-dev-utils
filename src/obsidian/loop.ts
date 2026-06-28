@@ -51,12 +51,16 @@ export interface LoopParams<T> {
   readonly items: T[];
 
   /**
-   * A timeout for the notice before it is shown. Default is `500`.
+   * A timeout for the notice before it is shown.
+   *
+   * @default `500`
    */
   readonly noticeBeforeShownTimeoutInMilliseconds?: number;
 
   /**
-   * A minimum timeout for the notice. Default is `2000`.
+   * A minimum timeout for the notice.
+   *
+   * @default `2000`
    */
   readonly noticeMinTimeoutInMilliseconds?: number;
 
@@ -73,27 +77,37 @@ export interface LoopParams<T> {
   processItem(item: T): Promisable<void>;
 
   /**
-   * A title of the progress bar. Default is `''`.
+   * A title of the progress bar.
+   *
+   * @default `''`
    */
   readonly progressBarTitle?: string;
 
   /**
-   * Whether to continue the loop on error. Default is `true`.
+   * Whether to continue the loop on error.
+   *
+   * @default `true`
    */
   readonly shouldContinueOnError?: boolean;
 
   /**
-   * Whether to show a notice. Default is `true`.
+   * Whether to show a notice.
+   *
+   * @default `true`
    */
   readonly shouldShowNotice?: boolean;
 
   /**
-   * Whether to show a progress bar. Default is `true`.
+   * Whether to show a progress bar.
+   *
+   * @default `true`
    */
   readonly shouldShowProgressBar?: boolean;
 
   /**
-   * A threshold for the UI update. Default is `100`.
+   * A threshold for the UI update.
+   *
+   * @default `100`
    */
   readonly uiUpdateThresholdInMilliseconds?: number;
 }

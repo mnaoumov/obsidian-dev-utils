@@ -59,16 +59,22 @@ export interface RetryOptions {
 
   /**
    * A delay in milliseconds between retry attempts.
+   *
+   * @default `100`
    */
   readonly retryDelayInMilliseconds?: number;
 
   /**
    * Whether to retry the function on error.
+   *
+   * @default `false`
    */
   readonly shouldRetryOnError?: boolean;
 
   /**
    * A maximum time in milliseconds to wait before giving up on retrying.
+   *
+   * @default `5000`
    */
   readonly timeoutInMilliseconds?: number;
 }
@@ -291,6 +297,8 @@ export interface InvokeAsyncSafelyAfterDelayParams {
 
   /**
    * The delay in milliseconds.
+   *
+   * @default `0`
    */
   readonly delayInMilliseconds?: number;
 
@@ -438,6 +446,8 @@ export interface RetryWithTimeoutParams {
 
   /**
    * The name of the operation.
+   *
+   * @default `''`
    */
   readonly operationName?: string;
 
@@ -480,6 +490,8 @@ export interface RunWithTimeoutParams<Result> {
 
   /**
    * The name of the operation.
+   *
+   * @default `''`
    */
   readonly operationName?: string;
 
@@ -510,6 +522,8 @@ export interface SleepParams {
 
   /**
    * Whether to throw an error if the abort signal is aborted.
+   *
+   * @default `false`
    */
   readonly shouldThrowOnAbort?: boolean;
 }
@@ -549,6 +563,8 @@ export interface TimeoutParams {
 
   /**
    * Whether to throw an error if the abort signal is aborted.
+   *
+   * @default `false`
    */
   readonly shouldThrowOnAbort?: boolean;
 

@@ -44,6 +44,8 @@ export interface EditPackageJsonOptions {
 
   /**
    * If `true`, skips editing if the file does not exist.
+   *
+   * @default `false`
    */
   readonly shouldSkipIfMissing?: boolean;
 }

@@ -234,6 +234,8 @@ export interface ReplaceAllParams<CapturedGroupArgs extends string[]> {
 export interface TrimEndParams {
   /**
    * If `true`, throws an error if the string does not end with the suffix.
+   *
+   * @default `false`
    */
   readonly shouldValidate?: boolean;
 
@@ -259,6 +261,8 @@ export interface TrimStartParams {
 
   /**
    * If `true`, throws an error if the string does not start with the prefix.
+   *
+   * @default `false`
    */
   readonly shouldValidate?: boolean;
 
@@ -279,6 +283,8 @@ export interface UnindentParams {
 
   /**
    * If `true`, throws an error if a line is not indented with the prefix.
+   *
+   * @default `false`
    */
   readonly shouldThrowIfNotIndented?: boolean;
 
