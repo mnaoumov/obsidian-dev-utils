@@ -172,25 +172,30 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * Do NOT override this method. Override {@link onloadImpl} instead.
    */
   public override async onload(): Promise<void> {
-    await initI18N(this.createTranslationsMap());
-    this.pluginContextComponent = this.addChild(
-      new PluginContextComponent({
-        app: this.app,
-        pluginId: this.manifest.id
-      })
-    );
-    this.pluginNoticeComponent = this.addChild(new PluginNoticeComponent(this.manifest.name));
-    this.asyncErrorHandlerComponent = this.addChild(new AsyncErrorHandlerComponent(this.pluginNoticeComponent));
-    this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
-    this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
+    try {
+      await initI18N(this.createTranslationsMap());
+      this.pluginContextComponent = this.addChild(
+        new PluginContextComponent({
+          app: this.app,
+          pluginId: this.manifest.id
+        })
+      );
+      this.pluginNoticeComponent = this.addChild(new PluginNoticeComponent(this.manifest.name));
+      this.asyncErrorHandlerComponent = this.addChild(new AsyncErrorHandlerComponent(this.pluginNoticeComponent));
+      this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
+      this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
 
-    await this.onloadImpl();
+      await this.onloadImpl();
 
-    // Add the wrapper to the native plugin only now, after all children are queued.
-    // The plugin is already loaded, so this loads the wrapper's children sequentially (children-first).
-    // It also registers the wrapper for automatic teardown on plugin unload.
-    super.addChild(this.wrapperComponent);
-    await this.wrapperComponent.loadWithPromises();
+      // Add the wrapper to the native plugin only now, after all children are queued.
+      // The plugin is already loaded, so this loads the wrapper's children sequentially (children-first).
+      // It also registers the wrapper for automatic teardown on plugin unload.
+      super.addChild(this.wrapperComponent);
+      await this.wrapperComponent.loadWithPromises();
+    } catch (error) {
+      printError(new Error(`Error loading plugin ${this.manifest.name} (${this.manifest.id})`, { cause: error }));
+      throw error;
+    }
   }
 
   /**
