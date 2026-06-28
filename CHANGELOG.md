@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 82.0.0-beta.5
+
+- feat: add EditorLockComponent for per-plugin lock ownership and auto-release Adds EditorLockComponent, a per-plugin ComponentEx handle for note-scoped locking: a plugin does `this.addChild(new EditorLockComponent(this.app))` and locks via lockForPath/unlockForPath/isLockedForPath. Its onunload releases every lock the plugin still holds (new EditorPathLockManager.unlockAllForPlugin), so a note is never left stuck read-only because the locking plugin was disabled or reloaded mid-operation. Other plugins' locks on the same note are untouched. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
+
 ## 82.0.0-beta.4
 
 - feat: list the locking plugins in the editor-lock indicator tooltip Lock counts are now tracked per locking plugin (the caller is identified via getPluginId), so the tab-header, action-bar, and status-bar indicators show a "Locked by\n<plugin names>" tooltip naming every plugin that currently holds a lock on the note, updated live as plugins lock and unlock. Plugin display names are resolved from app.plugins.manifests, falling back to the plugin id. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
