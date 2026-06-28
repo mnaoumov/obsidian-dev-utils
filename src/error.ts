@@ -137,7 +137,8 @@ export function emitAsyncErrorEvent(asyncError: unknown): void {
 }
 
 /**
- * Converts an error to a string representation, including nested causes with indentation.
+ * Converts an error to a string representation, including nested causes and the aggregated errors of
+ * an `AggregateError`, with indentation.
  *
  * @param error - The error to convert to a string.
  * @returns The string representation of the error.
@@ -149,15 +150,12 @@ export function errorToString(error: unknown): string {
 
   let message = error.stack ?? `${error.name}: ${error.message}`;
   if (error.cause !== undefined) {
-    const causeStrLines = errorToString(error.cause).split('\n');
-    message += `\n${generateStackTraceLine('Caused by:')}`;
-    for (const line of causeStrLines) {
-      if (!line.trim()) {
-        continue;
-      }
-      message += line.startsWith(STACK_TRACE_PREFIX)
-        ? `\n${line}`
-        : `\n${generateStackTraceLine(line)}`;
+    message = appendNestedError(message, error.cause, 'Caused by:');
+  }
+  if (error instanceof AggregateError) {
+    const aggregatedErrors: readonly unknown[] = error.errors;
+    for (const [index, aggregatedError] of aggregatedErrors.entries()) {
+      message = appendNestedError(message, aggregatedError, `Aggregated error #${String(index + 1)}:`);
     }
   }
   return message;
@@ -210,6 +208,19 @@ export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) =>
  */
 export function throwExpression(error: unknown): never {
   throw error;
+}
+
+function appendNestedError(message: string, nestedError: unknown, title: string): string {
+  let result = `${message}\n${generateStackTraceLine(title)}`;
+  for (const line of errorToString(nestedError).split('\n')) {
+    if (!line.trim()) {
+      continue;
+    }
+    result += line.startsWith(STACK_TRACE_PREFIX)
+      ? `\n${line}`
+      : `\n${generateStackTraceLine(line)}`;
+  }
+  return result;
 }
 
 function generateStackTraceLine(title: string): string {

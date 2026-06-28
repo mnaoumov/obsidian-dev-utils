@@ -142,6 +142,48 @@ describe('errorToString', () => {
     const result = errorToString(error);
     expect(result).toContain('something');
   });
+
+  it('should include the message of an AggregateError', () => {
+    const error = new AggregateError([new Error('first'), new Error('second')], 'multiple failures');
+    const result = errorToString(error);
+    expect(result).toContain('multiple failures');
+  });
+
+  it('should include the first aggregated error label for an AggregateError', () => {
+    const error = new AggregateError([new Error('first'), new Error('second')]);
+    const result = errorToString(error);
+    expect(result).toContain('Aggregated error #1:');
+  });
+
+  it('should include the second aggregated error label for an AggregateError', () => {
+    const error = new AggregateError([new Error('first'), new Error('second')]);
+    const result = errorToString(error);
+    expect(result).toContain('Aggregated error #2:');
+  });
+
+  it('should include the first aggregated error message for an AggregateError', () => {
+    const error = new AggregateError([new Error('first failure'), new Error('second failure')]);
+    const result = errorToString(error);
+    expect(result).toContain('first failure');
+  });
+
+  it('should include the second aggregated error message for an AggregateError', () => {
+    const error = new AggregateError([new Error('first failure'), new Error('second failure')]);
+    const result = errorToString(error);
+    expect(result).toContain('second failure');
+  });
+
+  it('should include a non-Error aggregated value of an AggregateError', () => {
+    const error = new AggregateError(['string failure']);
+    const result = errorToString(error);
+    expect(result).toContain('string failure');
+  });
+
+  it('should include the cause of an AggregateError that also has a cause', () => {
+    const error = new AggregateError([new Error('aggregated')], 'agg', { cause: new Error('root cause') });
+    const result = errorToString(error);
+    expect(result).toContain('root cause');
+  });
 });
 
 describe('getStackTrace', () => {
@@ -450,6 +492,18 @@ describe('printError', () => {
     assertNonNullable(firstCall);
     const output = firstCall[0] as string;
     expect(output).toContain('root');
+  });
+
+  it('should include the aggregated errors when printing an AggregateError', () => {
+    const mockConsole = strictProxy<Console>({ error: vi.fn() });
+    const error = new AggregateError([new Error('child failure')], 'multiple failures');
+
+    printError(error, mockConsole);
+
+    const firstCall = (mockConsole.error as ReturnType<typeof vi.fn>).mock.calls[0];
+    assertNonNullable(firstCall);
+    const output = firstCall[0] as string;
+    expect(output).toContain('child failure');
   });
 });
 
