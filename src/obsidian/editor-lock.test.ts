@@ -27,6 +27,7 @@ import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
+  EditorLockComponent,
   isEditorLockedForPath,
   lockEditorForPath,
   unlockEditorForPath
@@ -356,5 +357,39 @@ describe('lock indicators', () => {
     lockEditorForPath(app, 'note.md');
 
     expect(view.containerEl.ownerDocument.body.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
+  });
+});
+
+describe('EditorLockComponent', () => {
+  it('should lock, query, and unlock a note on behalf of its plugin', () => {
+    stubLeaves();
+    const component = new EditorLockComponent(app);
+
+    component.lockForPath('note.md');
+    expect(component.isLockedForPath('note.md')).toBe(true);
+
+    component.unlockForPath('note.md');
+    expect(component.isLockedForPath('note.md')).toBe(false);
+  });
+
+  it('should release only its own plugin\'s locks when unloaded', () => {
+    stubLeaves();
+
+    vi.mocked(getPluginId).mockReturnValue('other-plugin');
+    lockEditorForPath(app, 'other-only.md');
+    lockEditorForPath(app, 'shared.md');
+
+    vi.mocked(getPluginId).mockReturnValue('test-plugin');
+    const component = new EditorLockComponent(app);
+    component.load();
+    component.lockForPath('shared.md');
+    component.lockForPath('own.md');
+
+    component.unload();
+
+    // The other-plugin locks survive (its own note and its share of shared.md); test-plugin's are released.
+    expect(isEditorLockedForPath(app, 'other-only.md')).toBe(true);
+    expect(isEditorLockedForPath(app, 'shared.md')).toBe(true);
+    expect(isEditorLockedForPath(app, 'own.md')).toBe(false);
   });
 });

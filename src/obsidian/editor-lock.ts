@@ -119,6 +119,15 @@ class EditorPathLockManager {
     this.unlockPath(app, getPath(app, pathOrFile), pluginId);
   }
 
+  public unlockAllForPlugin(app: App, pluginId: string): void {
+    for (const [path, lockCountByPluginId] of this.lockCountByPluginIdByPath) {
+      if (lockCountByPluginId.delete(pluginId) && lockCountByPluginId.size === 0) {
+        this.lockCountByPluginIdByPath.delete(path);
+      }
+    }
+    this.reconcileAndCleanup(app);
+  }
+
   private createIndicators(view: MarkdownView, tooltip: string): LockIndicators {
     const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
 
@@ -198,6 +207,14 @@ class EditorPathLockManager {
     this.updateStatusBar(app);
   }
 
+  private reconcileAndCleanup(app: App): void {
+    this.reconcile(app);
+    if (this.lockCountByPluginIdByPath.size === 0) {
+      this.eventsComponent?.unload();
+      this.eventsComponent = undefined;
+    }
+  }
+
   private unlockPath(app: App, path: string, pluginId: string): void {
     const lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
     if (!lockCountByPluginId) {
@@ -219,12 +236,7 @@ class EditorPathLockManager {
       this.lockCountByPluginIdByPath.delete(path);
     }
 
-    this.reconcile(app);
-
-    if (this.lockCountByPluginIdByPath.size === 0) {
-      this.eventsComponent?.unload();
-      this.eventsComponent = undefined;
-    }
+    this.reconcileAndCleanup(app);
   }
 
   private updateIndicatorTooltips(indicators: LockIndicators, tooltip: string): void {
@@ -255,6 +267,71 @@ class EditorPathLockManager {
     }
 
     setTooltip(this.statusBarItemEl, this.lockTooltip(app, activePath));
+  }
+}
+
+/**
+ * A per-plugin handle for note-scoped editor locking. Add it as a child of your plugin
+ * (`this.addChild(new EditorLockComponent(this.app))`) so that any locks it still holds are released
+ * automatically when the plugin unloads — a note can never be left stuck read-only because the
+ * plugin that locked it was disabled or reloaded mid-operation.
+ *
+ * Locks are reference-counted and attributed to this plugin, so the lock indicators' tooltip names
+ * it among the plugins currently holding a lock.
+ */
+export class EditorLockComponent extends ComponentEx {
+  private readonly app: App;
+  private readonly pluginId: string;
+
+  /**
+   * Creates an editor-lock handle owned by the current plugin (identified via its plugin context).
+   *
+   * @param app - The Obsidian app instance.
+   */
+  public constructor(app: App) {
+    super();
+    this.app = app;
+    this.pluginId = getPluginId();
+  }
+
+  /**
+   * Checks whether the note at the given path is currently locked by any plugin.
+   *
+   * @param pathOrFile - The path or file of the note to check.
+   * @returns `true` if the note has at least one active lock, `false` otherwise.
+   */
+  public isLockedForPath(pathOrFile: PathOrFile): boolean {
+    return getManager().isLocked(this.app, pathOrFile);
+  }
+
+  /**
+   * Locks the note at the given path on behalf of this plugin, making it read-only in every current
+   * and future {@link MarkdownView} until the lock is released. Reference-counted: balance each call
+   * with a dispose of the returned {@link Disposable} (ideally via `using`) or {@link unlockForPath}.
+   *
+   * @param pathOrFile - The path or file of the note to lock.
+   * @returns A {@link Disposable} that releases this lock when disposed. Disposing more than once is a no-op.
+   */
+  public lockForPath(pathOrFile: PathOrFile): Disposable {
+    return getManager().lock(this.app, pathOrFile, this.pluginId);
+  }
+
+  /**
+   * Releases every lock still held by this plugin when the component (and thus the plugin) unloads,
+   * so no note is left stuck read-only by an operation that never completed.
+   */
+  public override onunload(): void {
+    getManager().unlockAllForPlugin(this.app, this.pluginId);
+    super.onunload();
+  }
+
+  /**
+   * Releases one lock previously acquired for the note at the given path via {@link lockForPath}.
+   *
+   * @param pathOrFile - The path or file of the note to unlock.
+   */
+  public unlockForPath(pathOrFile: PathOrFile): void {
+    getManager().unlock(this.app, pathOrFile, this.pluginId);
   }
 }
 
