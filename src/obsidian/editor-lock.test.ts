@@ -35,6 +35,7 @@ import {
   lockEditor,
   unlockEditor
 } from './editor.ts';
+import { getPluginId } from './plugin/plugin-id.ts';
 
 vi.mock('./editor.ts', () => ({
   lockEditor: vi.fn(),
@@ -42,16 +43,27 @@ vi.mock('./editor.ts', () => ({
 }));
 
 vi.mock('./i18n/i18n.ts', () => ({
-  t: vi.fn((fn: (messages: GenericObject) => unknown) => {
-    try {
-      fn({ obsidianDevUtils: { editorLock: { lockedNoteTooltip: 'mock' } } });
-    } catch { /* Ignore */ }
-    return 'mock-tooltip';
-  })
+  t: vi.fn((fn: (messages: GenericObject) => unknown) => fn({ obsidianDevUtils: { editorLock: { lockedByTooltip: 'Locked by', lockedNoteTooltip: 'Locked note' } } }))
 }));
+
+vi.mock('./plugin/plugin-id.ts', () => ({
+  getPluginId: vi.fn(() => 'test-plugin')
+}));
+
+interface MockAppPlugins {
+  plugins: MockPlugins;
+}
 
 interface MockLeafTabStatus {
   tabHeaderStatusContainerEl: HTMLElement | null;
+}
+
+interface MockManifest {
+  name: string;
+}
+
+interface MockPlugins {
+  manifests: Record<string, MockManifest>;
 }
 
 interface MockWorkspaceActiveView {
@@ -70,7 +82,9 @@ beforeEach(() => {
   });
   app = mockApp.asOriginalType__();
   vi.clearAllMocks();
+  vi.mocked(getPluginId).mockReturnValue('test-plugin');
   castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => null);
+  castTo<MockAppPlugins>(app).plugins = { manifests: {} };
 });
 
 afterEach(() => {
@@ -113,7 +127,7 @@ describe('lockEditorForPath', () => {
     lockEditorForPath(app, 'note.md');
 
     expect(vi.mocked(lockEditor)).toHaveBeenCalledWith(view.editor);
-    expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'mock-tooltip', expect.any(Function));
+    expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'Locked by\ntest-plugin', expect.any(Function));
   });
 
   it('should ignore leaves whose view is not a MarkdownView', () => {
@@ -262,6 +276,25 @@ describe('unlockEditorForPath', () => {
     unlockEditorForPath(app, 'other.md');
     expect(offrefSpy).toHaveBeenCalledTimes(3);
   });
+
+  it('should keep a note locked until every plugin that locked it releases its lock', () => {
+    stubLeaves();
+
+    vi.mocked(getPluginId).mockReturnValue('plugin-a');
+    lockEditorForPath(app, 'note.md');
+    vi.mocked(getPluginId).mockReturnValue('plugin-b');
+    lockEditorForPath(app, 'note.md');
+
+    // The plugin-b lock is released twice; the redundant release hits the per-plugin no-op guard.
+    // Plugin-a still holds its lock, so the note stays locked.
+    unlockEditorForPath(app, 'note.md');
+    unlockEditorForPath(app, 'note.md');
+    expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
+
+    vi.mocked(getPluginId).mockReturnValue('plugin-a');
+    unlockEditorForPath(app, 'note.md');
+    expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
+  });
 });
 
 describe('isEditorLockedForPath', () => {
@@ -280,9 +313,22 @@ describe('lock indicators', () => {
     stubLeaves(leafOf(view));
 
     lockEditorForPath(app, 'note.md');
+    // A second reconcile updates tooltips on the existing indicators; with no tab icon it must not throw.
+    app.workspace.trigger('layout-change');
 
     expect(vi.mocked(lockEditor)).toHaveBeenCalledWith(view.editor);
     expect(view.leaf.tabHeaderStatusContainerEl).toBeNull();
+  });
+
+  it('should list the locking plugin name in the tooltip when a manifest is available', () => {
+    const view = createMarkdownView('note.md');
+    vi.spyOn(view, 'addAction');
+    castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
+    stubLeaves(leafOf(view));
+
+    lockEditorForPath(app, 'note.md');
+
+    expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'Locked by\nTest Plugin', expect.any(Function));
   });
 
   it('should add a status-bar item when the active note is locked and remove it on unlock', () => {

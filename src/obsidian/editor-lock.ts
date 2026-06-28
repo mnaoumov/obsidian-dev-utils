@@ -7,8 +7,9 @@
  * single {@link Editor} instance, the helpers here lock a note by its **path**: while a path is
  * locked, every current and future {@link MarkdownView} of that note (in any window, including
  * popouts) is made read-only and shows a lock indicator in its tab header, its view action bar, and
- * the status bar (while the note is active). Locks are reference-counted, so nested or concurrent
- * operations on the same note are safe — the note is unlocked only when the last lock is released.
+ * the status bar (while the note is active). Locks are reference-counted per locking plugin, so
+ * nested or concurrent operations on the same note are safe — the note is unlocked only when the
+ * last lock is released — and the indicators' tooltip lists which plugins currently hold a lock.
  *
  * The acquirers return a {@link Disposable}, so the preferred call style is a `using` declaration
  * that releases automatically at scope exit (including on throw):
@@ -39,6 +40,7 @@ import {
 } from '../disposable.ts';
 import { noop } from '../function.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
+import { assertNonNullable } from '../type-guards.ts';
 import { ComponentEx } from './components/component-ex.ts';
 import {
   lockEditor,
@@ -46,6 +48,7 @@ import {
 } from './editor.ts';
 import { getPath } from './file-system.ts';
 import { t } from './i18n/i18n.ts';
+import { getPluginId } from './plugin/plugin-id.ts';
 
 const EDITOR_LOCK_STATE_KEY = 'editorLock';
 const LOCK_ICON_ID = 'lock';
@@ -80,37 +83,43 @@ class EditorLockEventsComponent extends ComponentEx {
 /**
  * Tracks reference-counted, path-scoped editor locks and keeps every open {@link MarkdownView} in
  * sync with the locked-path set. A single instance lives on the shared `obsidian-dev-utils` state.
+ * For each locked path the lock count is tracked per locking plugin, so the indicators can report
+ * which plugins currently hold a lock.
  */
 class EditorPathLockManager {
   private eventsComponent: EditorLockEventsComponent | undefined;
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
-  private readonly lockCountByPath = new Map<string, number>();
+  private readonly lockCountByPluginIdByPath = new Map<string, Map<string, number>>();
   private statusBarItemEl: HTMLElement | null = null;
 
   public isLocked(app: App, pathOrFile: PathOrFile): boolean {
-    return (this.lockCountByPath.get(getPath(app, pathOrFile)) ?? 0) > 0;
+    return this.isPathLocked(getPath(app, pathOrFile));
   }
 
-  public lock(app: App, pathOrFile: PathOrFile): Disposable {
+  public lock(app: App, pathOrFile: PathOrFile, pluginId: string): Disposable {
     const path = getPath(app, pathOrFile);
-    this.lockCountByPath.set(path, (this.lockCountByPath.get(path) ?? 0) + 1);
+    let lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
+    if (!lockCountByPluginId) {
+      lockCountByPluginId = new Map<string, number>();
+      this.lockCountByPluginIdByPath.set(path, lockCountByPluginId);
+    }
+    lockCountByPluginId.set(pluginId, (lockCountByPluginId.get(pluginId) ?? 0) + 1);
     this.ensureSubscribed(app);
     this.reconcile(app);
 
     return new CallbackDisposable({
       callback: (): void => {
-        this.unlockPath(app, path);
+        this.unlockPath(app, path, pluginId);
       },
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
   }
 
-  public unlock(app: App, pathOrFile: PathOrFile): void {
-    this.unlockPath(app, getPath(app, pathOrFile));
+  public unlock(app: App, pathOrFile: PathOrFile, pluginId: string): void {
+    this.unlockPath(app, getPath(app, pathOrFile), pluginId);
   }
 
-  private createIndicators(view: MarkdownView): LockIndicators {
-    const tooltip = t(($) => $.obsidianDevUtils.editorLock.lockedNoteTooltip);
+  private createIndicators(view: MarkdownView, tooltip: string): LockIndicators {
     const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
 
     let tabIconEl: HTMLElement | null = null;
@@ -137,6 +146,20 @@ class EditorPathLockManager {
     this.eventsComponent.load();
   }
 
+  private isPathLocked(path: string): boolean {
+    return (this.lockCountByPluginIdByPath.get(path)?.size ?? 0) > 0;
+  }
+
+  private lockTooltip(app: App, path: string): string {
+    const lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
+    // `lockTooltip` is only ever called for a locked path, so the per-plugin map is always present.
+    assertNonNullable(lockCountByPluginId);
+    const header = t(($) => $.obsidianDevUtils.editorLock.lockedByTooltip);
+    const pluginNames = Array.from(lockCountByPluginId.keys()).map((pluginId) => app.plugins.manifests[pluginId]?.name ?? pluginId);
+    // A runtime-length list of plugin names, one per line under the header.
+    return [header, ...pluginNames].join('\n');
+  }
+
   private reconcile(app: App): void {
     const viewsToLock = new Set<MarkdownView>();
     for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
@@ -150,11 +173,15 @@ class EditorPathLockManager {
         continue;
       }
 
-      if ((this.lockCountByPath.get(path) ?? 0) > 0) {
+      if (this.isPathLocked(path)) {
         viewsToLock.add(view);
-        if (!this.indicatorsByView.has(view)) {
+        const tooltip = this.lockTooltip(app, path);
+        const indicators = this.indicatorsByView.get(view);
+        if (indicators) {
+          this.updateIndicatorTooltips(indicators, tooltip);
+        } else {
           lockEditor(view.editor);
-          this.indicatorsByView.set(view, this.createIndicators(view));
+          this.indicatorsByView.set(view, this.createIndicators(view, tooltip));
         }
       }
     }
@@ -171,30 +198,46 @@ class EditorPathLockManager {
     this.updateStatusBar(app);
   }
 
-  private unlockPath(app: App, path: string): void {
-    const count = this.lockCountByPath.get(path) ?? 0;
+  private unlockPath(app: App, path: string, pluginId: string): void {
+    const lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
+    if (!lockCountByPluginId) {
+      return;
+    }
+
+    const count = lockCountByPluginId.get(pluginId) ?? 0;
     if (count <= 0) {
       return;
     }
 
     if (count === 1) {
-      this.lockCountByPath.delete(path);
+      lockCountByPluginId.delete(pluginId);
     } else {
-      this.lockCountByPath.set(path, count - 1);
+      lockCountByPluginId.set(pluginId, count - 1);
+    }
+
+    if (lockCountByPluginId.size === 0) {
+      this.lockCountByPluginIdByPath.delete(path);
     }
 
     this.reconcile(app);
 
-    if (this.lockCountByPath.size === 0) {
+    if (this.lockCountByPluginIdByPath.size === 0) {
       this.eventsComponent?.unload();
       this.eventsComponent = undefined;
+    }
+  }
+
+  private updateIndicatorTooltips(indicators: LockIndicators, tooltip: string): void {
+    setTooltip(indicators.actionIconEl, tooltip);
+    if (indicators.tabIconEl) {
+      setTooltip(indicators.tabIconEl, tooltip);
     }
   }
 
   private updateStatusBar(app: App): void {
     const activeView = app.workspace.getActiveViewOfType(MarkdownView);
     const activePath = activeView?.file?.path;
-    const isActiveLocked = activePath !== undefined && (this.lockCountByPath.get(activePath) ?? 0) > 0;
+    const isActiveLocked = activePath !== undefined && this.isPathLocked(activePath);
 
     if (!isActiveLocked || !activeView) {
       this.statusBarItemEl?.remove();
@@ -202,18 +245,16 @@ class EditorPathLockManager {
       return;
     }
 
-    if (this.statusBarItemEl) {
-      return;
+    if (!this.statusBarItemEl) {
+      const statusBarEl = activeView.containerEl.ownerDocument.body.querySelector<HTMLElement>(STATUS_BAR_CSS_SELECTOR);
+      if (!statusBarEl) {
+        return;
+      }
+      this.statusBarItemEl = statusBarEl.createDiv({ cls: [STATUS_BAR_ITEM_CSS_CLASS, LOCK_INDICATOR_CSS_CLASS] });
+      setIcon(this.statusBarItemEl, LOCK_ICON_ID);
     }
 
-    const statusBarEl = activeView.containerEl.ownerDocument.body.querySelector<HTMLElement>(STATUS_BAR_CSS_SELECTOR);
-    if (!statusBarEl) {
-      return;
-    }
-
-    this.statusBarItemEl = statusBarEl.createDiv({ cls: [STATUS_BAR_ITEM_CSS_CLASS, LOCK_INDICATOR_CSS_CLASS] });
-    setIcon(this.statusBarItemEl, LOCK_ICON_ID);
-    setTooltip(this.statusBarItemEl, t(($) => $.obsidianDevUtils.editorLock.lockedNoteTooltip));
+    setTooltip(this.statusBarItemEl, this.lockTooltip(app, activePath));
   }
 }
 
@@ -231,18 +272,19 @@ export function isEditorLockedForPath(app: App, pathOrFile: PathOrFile): boolean
 /**
  * Locks the note at the given path, making it read-only in every current and future
  * {@link MarkdownView} until the lock is released, and showing a lock indicator in the tab header,
- * view action bar, and (while active) the status bar.
+ * view action bar, and (while active) the status bar. The indicators' tooltip lists the plugins
+ * that currently hold a lock on the note.
  *
- * The lock is reference-counted: each call must be balanced by exactly one release (either disposing
- * the returned {@link Disposable} — ideally via a `using` declaration — or a matching
- * {@link unlockEditorForPath} call).
+ * The lock is reference-counted per calling plugin: each call must be balanced by exactly one
+ * release (either disposing the returned {@link Disposable} — ideally via a `using` declaration — or
+ * a matching {@link unlockEditorForPath} call).
  *
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or file of the note to lock.
  * @returns A {@link Disposable} that releases this lock when disposed. Disposing more than once is a no-op.
  */
 export function lockEditorForPath(app: App, pathOrFile: PathOrFile): Disposable {
-  return getManager().lock(app, pathOrFile);
+  return getManager().lock(app, pathOrFile, getPluginId());
 }
 
 /**
@@ -255,7 +297,7 @@ export function lockEditorForPath(app: App, pathOrFile: PathOrFile): Disposable 
  * @param pathOrFile - The path or file of the note to unlock.
  */
 export function unlockEditorForPath(app: App, pathOrFile: PathOrFile): void {
-  getManager().unlock(app, pathOrFile);
+  getManager().unlock(app, pathOrFile, getPluginId());
 }
 
 function getManager(): EditorPathLockManager {

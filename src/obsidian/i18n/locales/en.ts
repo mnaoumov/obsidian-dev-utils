@@ -29,6 +29,7 @@ export const en = {
       pageHeader: 'Page {{pageNumber, number}} of {{totalPages, number}}, Total items: {{totalItems, number}}'
     },
     editorLock: {
+      lockedByTooltip: 'Locked by',
       lockedNoteTooltip: 'This note is locked while an operation is in progress.'
     },
     metadataCache: {
