@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 82.0.0-beta.3
+
+- feat: pulse the minimized modal bar to keep it noticeable A minimized modal is easy to forget; the floating bar now gently pulses an accent ring so the user remembers an operation is still in progress. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
+- feat: show editor-lock indicators in tab header and status bar While a note is locked it now shows a lock icon in its tab header (tabHeaderStatusContainerEl) and, while it is the active note, in the status bar, in addition to the existing view-action-bar icon. Workspace event subscriptions are now managed by an internal ComponentEx that subscribes on load and unsubscribes on unload, replacing the hand-rolled EventRef tracking. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
+
 ## 82.0.0-beta.2
 
 - fix: actually apply the editor lock and keep app hotkeys working lockEditor created a fresh Compartment and reconfigured it, but never added the compartment to the editor's configuration, so CodeMirror silently ignored the reconfigure and the editor was never locked. Install the compartment (initially empty) via StateEffect.appendConfig on first use so reconfigure takes effect. Also lock with EditorState.readOnly only, dropping EditorView.editable.of(false): readOnly blocks document edits while keeping the editor focusable, so selection, copy, and app hotkeys (e.g. the command palette) keep working. editable.of(false) made the content non-editable and is unnecessary. Verified live over CDP: appendConfig + reconfigure(readOnly.of(true)) sets state.readOnly=true with contentEditable unchanged; reconfigure([]) unlocks. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
