@@ -202,7 +202,9 @@ export interface ConvertLinkParams {
   readonly oldSourcePathOrFile?: PathOrFile;
 
   /**
-   * Whether to update file name alias. Defaults to `true`.
+   * Whether to update file name alias.
+   *
+   * @default `true`
    */
   readonly shouldUpdateFileNameAlias?: boolean;
 }
@@ -743,7 +745,9 @@ export interface UpdateLinkParams {
   readonly oldTargetPathOrFile?: PathOrFile;
 
   /**
-   * Whether to update file name alias. Defaults to `true`.
+   * Whether to update file name alias.
+   *
+   * @default `true`
    */
   readonly shouldUpdateFileNameAlias?: boolean;
 }
@@ -778,7 +782,9 @@ export interface UpdateLinksInFileParams extends ProcessOptions {
   readonly shouldUpdateEmbedOnlyLinks?: boolean;
 
   /**
-   * Whether to update file name alias. Defaults to `true`.
+   * Whether to update file name alias.
+   *
+   * @default `true`
    */
   readonly shouldUpdateFileNameAlias?: boolean;
 }
@@ -1054,6 +1060,8 @@ interface UpdateLinksInContentParams {
 
   /**
    * Whether to update file name alias.
+   *
+   * @default `true`
    */
   readonly shouldUpdateFileNameAlias?: boolean;
 }
@@ -1623,7 +1631,7 @@ export function updateLink(params: UpdateLinkParams): string {
     newTargetPathOrFile,
     oldSourcePathOrFile,
     oldTargetPathOrFile,
-    shouldUpdateFileNameAlias
+    shouldUpdateFileNameAlias = true
   } = params;
   if (!newTargetPathOrFile) {
     return link.original;
