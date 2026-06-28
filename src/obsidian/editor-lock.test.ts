@@ -13,6 +13,7 @@ import {
   WorkspaceLeaf
 } from 'obsidian-test-mocks/obsidian';
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -22,6 +23,7 @@ import {
 
 import type { GenericObject } from '../type-guards.ts';
 
+import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
@@ -48,6 +50,14 @@ vi.mock('./i18n/i18n.ts', () => ({
   })
 }));
 
+interface MockLeafTabStatus {
+  tabHeaderStatusContainerEl: HTMLElement | null;
+}
+
+interface MockWorkspaceActiveView {
+  getActiveViewOfType(): unknown;
+}
+
 let app: AppOriginal;
 let mockApp: App;
 
@@ -60,10 +70,18 @@ beforeEach(() => {
   });
   app = mockApp.asOriginalType__();
   vi.clearAllMocks();
+  castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => null);
 });
 
-function createMarkdownView(path: string): MarkdownViewOriginal {
+afterEach(() => {
+  for (const el of Array.from(activeDocument.body.querySelectorAll('.status-bar'))) {
+    el.remove();
+  }
+});
+
+function createMarkdownView(path: string, hasTabStatusContainer = true): MarkdownViewOriginal {
   const mockLeaf = WorkspaceLeaf.create2__(mockApp);
+  castTo<MockLeafTabStatus>(mockLeaf).tabHeaderStatusContainerEl = hasTabStatusContainer ? createDiv() : null;
   const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
   const file = app.vault.getFileByPath(path);
   assertNonNullable(file);
@@ -249,5 +267,48 @@ describe('unlockEditorForPath', () => {
 describe('isEditorLockedForPath', () => {
   it('should return false for a never-locked path', () => {
     expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
+  });
+});
+
+describe('lock indicators', () => {
+  function setActiveView(view: MarkdownViewOriginal | null): void {
+    castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => view);
+  }
+
+  it('should not add a tab icon when the leaf has no tab status container', () => {
+    const view = createMarkdownView('note.md', false);
+    stubLeaves(leafOf(view));
+
+    lockEditorForPath(app, 'note.md');
+
+    expect(vi.mocked(lockEditor)).toHaveBeenCalledWith(view.editor);
+    expect(view.leaf.tabHeaderStatusContainerEl).toBeNull();
+  });
+
+  it('should add a status-bar item when the active note is locked and remove it on unlock', () => {
+    const view = createMarkdownView('note.md');
+    setActiveView(view);
+    const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    stubLeaves(leafOf(view));
+
+    lockEditorForPath(app, 'note.md');
+    expect(statusBarEl.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
+
+    // A second reconcile must not duplicate the item.
+    app.workspace.trigger('layout-change');
+    expect(statusBarEl.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
+
+    unlockEditorForPath(app, 'note.md');
+    expect(statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
+  });
+
+  it('should not add a status-bar item when the window has no status bar', () => {
+    const view = createMarkdownView('note.md');
+    setActiveView(view);
+    stubLeaves(leafOf(view));
+
+    lockEditorForPath(app, 'note.md');
+
+    expect(view.containerEl.ownerDocument.body.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
   });
 });

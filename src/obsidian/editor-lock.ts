@@ -6,9 +6,9 @@
  * Where {@link lockEditor} / {@link unlockEditor} from `./editor.ts` toggle the read-only state of a
  * single {@link Editor} instance, the helpers here lock a note by its **path**: while a path is
  * locked, every current and future {@link MarkdownView} of that note (in any window, including
- * popouts) is made read-only and shows a lock icon. Locks are reference-counted, so nested or
- * concurrent operations on the same note are safe — the note is unlocked only when the last lock is
- * released.
+ * popouts) is made read-only and shows a lock indicator in its tab header, its view action bar, and
+ * the status bar (while the note is active). Locks are reference-counted, so nested or concurrent
+ * operations on the same note are safe — the note is unlocked only when the last lock is released.
  *
  * The acquirers return a {@link Disposable}, so the preferred call style is a `using` declaration
  * that releases automatically at scope exit (including on throw):
@@ -22,13 +22,14 @@
  * The explicit {@link unlockEditorForPath} pair remains available for non-`using` call sites.
  */
 
-import type {
-  App,
-  EventRef
-} from 'obsidian';
+import type { App } from 'obsidian';
 
 import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
-import { MarkdownView } from 'obsidian';
+import {
+  MarkdownView,
+  setIcon,
+  setTooltip
+} from 'obsidian';
 
 import type { PathOrFile } from './file-system.ts';
 
@@ -38,6 +39,7 @@ import {
 } from '../disposable.ts';
 import { noop } from '../function.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
+import { ComponentEx } from './components/component-ex.ts';
 import {
   lockEditor,
   unlockEditor
@@ -47,15 +49,43 @@ import { t } from './i18n/i18n.ts';
 
 const EDITOR_LOCK_STATE_KEY = 'editorLock';
 const LOCK_ICON_ID = 'lock';
+const LOCK_INDICATOR_CSS_CLASS = 'obsidian-dev-utils-lock-indicator';
+const STATUS_BAR_ITEM_CSS_CLASS = 'status-bar-item';
+const STATUS_BAR_CSS_SELECTOR = '.status-bar';
+
+interface LockIndicators {
+  readonly actionIconEl: HTMLElement;
+  readonly tabIconEl: HTMLElement | null;
+}
+
+/**
+ * Subscribes to the workspace events that should trigger a lock reconcile. Implemented as a
+ * {@link ComponentEx} so the subscriptions are registered on `load()` and automatically removed on
+ * `unload()`, instead of being tracked and torn down by hand.
+ */
+class EditorLockEventsComponent extends ComponentEx {
+  public constructor(private readonly app: App, private readonly onChange: () => void) {
+    super();
+  }
+
+  public override onload(): void {
+    super.onload();
+    this.registerEvent(this.app.workspace.on('active-leaf-change', this.onChange));
+    this.registerEvent(this.app.workspace.on('layout-change', this.onChange));
+    // Same-leaf navigation to another note fires no leaf/layout change; without this it stays read-only.
+    this.registerEvent(this.app.workspace.on('file-open', this.onChange));
+  }
+}
 
 /**
  * Tracks reference-counted, path-scoped editor locks and keeps every open {@link MarkdownView} in
  * sync with the locked-path set. A single instance lives on the shared `obsidian-dev-utils` state.
  */
 class EditorPathLockManager {
-  private eventRefs: EventRef[] = [];
+  private eventsComponent: EditorLockEventsComponent | undefined;
+  private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
   private readonly lockCountByPath = new Map<string, number>();
-  private readonly lockedIconElByView = new Map<MarkdownView, HTMLElement>();
+  private statusBarItemEl: HTMLElement | null = null;
 
   public isLocked(app: App, pathOrFile: PathOrFile): boolean {
     return (this.lockCountByPath.get(getPath(app, pathOrFile)) ?? 0) > 0;
@@ -64,7 +94,7 @@ class EditorPathLockManager {
   public lock(app: App, pathOrFile: PathOrFile): Disposable {
     const path = getPath(app, pathOrFile);
     this.lockCountByPath.set(path, (this.lockCountByPath.get(path) ?? 0) + 1);
-    this.ensureEventsRegistered(app);
+    this.ensureSubscribed(app);
     this.reconcile(app);
 
     return new CallbackDisposable({
@@ -79,20 +109,32 @@ class EditorPathLockManager {
     this.unlockPath(app, getPath(app, pathOrFile));
   }
 
-  private ensureEventsRegistered(app: App): void {
-    if (this.eventRefs.length > 0) {
-      return;
+  private createIndicators(view: MarkdownView): LockIndicators {
+    const tooltip = t(($) => $.obsidianDevUtils.editorLock.lockedNoteTooltip);
+    const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
+
+    let tabIconEl: HTMLElement | null = null;
+    const tabStatusContainerEl = view.leaf.tabHeaderStatusContainerEl;
+    if (tabStatusContainerEl) {
+      tabIconEl = tabStatusContainerEl.createSpan({ cls: LOCK_INDICATOR_CSS_CLASS });
+      setIcon(tabIconEl, LOCK_ICON_ID);
+      setTooltip(tabIconEl, tooltip);
     }
 
-    const reconcile = (): void => {
-      this.reconcile(app);
+    return {
+      actionIconEl,
+      tabIconEl
     };
-    this.eventRefs.push(
-      app.workspace.on('active-leaf-change', reconcile),
-      app.workspace.on('layout-change', reconcile),
-      // Same-leaf navigation to another note fires no leaf/layout change; without this it stays read-only.
-      app.workspace.on('file-open', reconcile)
-    );
+  }
+
+  private ensureSubscribed(app: App): void {
+    if (this.eventsComponent) {
+      return;
+    }
+    this.eventsComponent = new EditorLockEventsComponent(app, () => {
+      this.reconcile(app);
+    });
+    this.eventsComponent.load();
   }
 
   private reconcile(app: App): void {
@@ -110,21 +152,23 @@ class EditorPathLockManager {
 
       if ((this.lockCountByPath.get(path) ?? 0) > 0) {
         viewsToLock.add(view);
-        if (!this.lockedIconElByView.has(view)) {
+        if (!this.indicatorsByView.has(view)) {
           lockEditor(view.editor);
-          const iconEl = view.addAction(LOCK_ICON_ID, t(($) => $.obsidianDevUtils.editorLock.lockedNoteTooltip), noop);
-          this.lockedIconElByView.set(view, iconEl);
+          this.indicatorsByView.set(view, this.createIndicators(view));
         }
       }
     }
 
-    for (const [view, iconEl] of this.lockedIconElByView) {
+    for (const [view, indicators] of this.indicatorsByView) {
       if (!viewsToLock.has(view)) {
         unlockEditor(view.editor);
-        iconEl.remove();
-        this.lockedIconElByView.delete(view);
+        indicators.actionIconEl.remove();
+        indicators.tabIconEl?.remove();
+        this.indicatorsByView.delete(view);
       }
     }
+
+    this.updateStatusBar(app);
   }
 
   private unlockPath(app: App, path: string): void {
@@ -142,15 +186,34 @@ class EditorPathLockManager {
     this.reconcile(app);
 
     if (this.lockCountByPath.size === 0) {
-      this.unregisterEvents(app);
+      this.eventsComponent?.unload();
+      this.eventsComponent = undefined;
     }
   }
 
-  private unregisterEvents(app: App): void {
-    for (const eventRef of this.eventRefs) {
-      app.workspace.offref(eventRef);
+  private updateStatusBar(app: App): void {
+    const activeView = app.workspace.getActiveViewOfType(MarkdownView);
+    const activePath = activeView?.file?.path;
+    const isActiveLocked = activePath !== undefined && (this.lockCountByPath.get(activePath) ?? 0) > 0;
+
+    if (!isActiveLocked || !activeView) {
+      this.statusBarItemEl?.remove();
+      this.statusBarItemEl = null;
+      return;
     }
-    this.eventRefs = [];
+
+    if (this.statusBarItemEl) {
+      return;
+    }
+
+    const statusBarEl = activeView.containerEl.ownerDocument.body.querySelector<HTMLElement>(STATUS_BAR_CSS_SELECTOR);
+    if (!statusBarEl) {
+      return;
+    }
+
+    this.statusBarItemEl = statusBarEl.createDiv({ cls: [STATUS_BAR_ITEM_CSS_CLASS, LOCK_INDICATOR_CSS_CLASS] });
+    setIcon(this.statusBarItemEl, LOCK_ICON_ID);
+    setTooltip(this.statusBarItemEl, t(($) => $.obsidianDevUtils.editorLock.lockedNoteTooltip));
   }
 }
 
@@ -167,7 +230,8 @@ export function isEditorLockedForPath(app: App, pathOrFile: PathOrFile): boolean
 
 /**
  * Locks the note at the given path, making it read-only in every current and future
- * {@link MarkdownView} until the lock is released.
+ * {@link MarkdownView} until the lock is released, and showing a lock indicator in the tab header,
+ * view action bar, and (while active) the status bar.
  *
  * The lock is reference-counted: each call must be balanced by exactly one release (either disposing
  * the returned {@link Disposable} — ideally via a `using` declaration — or a matching
@@ -184,8 +248,8 @@ export function lockEditorForPath(app: App, pathOrFile: PathOrFile): Disposable 
 /**
  * Releases one lock previously acquired for the note at the given path via {@link lockEditorForPath}.
  *
- * When the last lock is released the note becomes fully editable again and its lock icon is removed.
- * Calling this when the note is not locked is a no-op.
+ * When the last lock is released the note becomes fully editable again and its lock indicators are
+ * removed. Calling this when the note is not locked is a no-op.
  *
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or file of the note to unlock.

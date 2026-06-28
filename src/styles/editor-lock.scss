@@ -1,0 +1,13 @@
+// Lock indicators shown in the tab header and the status bar while a note is locked. These live in
+// global Obsidian DOM (tab header / status bar), so they are styled with a global class rather than
+// scoped under `.obsidian-dev-utils`.
+.obsidian-dev-utils-lock-indicator {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+
+  .svg-icon {
+    width: var(--icon-s);
+    height: var(--icon-s);
+  }
+}
