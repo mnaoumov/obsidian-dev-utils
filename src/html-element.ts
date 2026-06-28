@@ -6,6 +6,8 @@
 
 import type { Promisable } from 'type-fest';
 
+import { CallbackDisposable } from './disposable.ts';
+
 /**
  * A HTML element that can be validated.
  */
@@ -257,9 +259,9 @@ export function isLoaded(el: Element): boolean {
  *
  * @param node - The node to add the event listener to.
  * @param callback - The callback to call when the event is triggered.
- * @returns A function to remove the event listener.
+ * @returns A {@link Disposable} that removes the event listeners when disposed, for use with `using`.
  */
-export function onAncestorScrollOrResize(node: Node, callback: () => void): () => void {
+export function onAncestorScrollOrResize(node: Node, callback: () => void): Disposable {
   const ancestors: EventTarget[] = [];
   ancestors.push(activeDocument);
   ancestors.push(activeWindow);
@@ -278,12 +280,14 @@ export function onAncestorScrollOrResize(node: Node, callback: () => void): () =
     ancestor.addEventListener('resize', callbackSmooth, { capture: true });
   }
 
-  return () => {
-    for (const ancestor of ancestors) {
-      ancestor.removeEventListener('scroll', callbackSmooth, { capture: true });
-      ancestor.removeEventListener('resize', callbackSmooth, { capture: true });
+  return new CallbackDisposable({
+    callback: (): void => {
+      for (const ancestor of ancestors) {
+        ancestor.removeEventListener('scroll', callbackSmooth, { capture: true });
+        ancestor.removeEventListener('resize', callbackSmooth, { capture: true });
+      }
     }
-  };
+  });
 
   function callbackSmooth(): void {
     if (isEventTriggered) {

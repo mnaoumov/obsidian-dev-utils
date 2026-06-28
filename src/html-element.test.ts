@@ -657,10 +657,10 @@ describe('onAncestorScrollOrResize', () => {
     vi.restoreAllMocks();
   });
 
-  it('should return a cleanup function', () => {
+  it('should return a disposable', () => {
     const node = buildElement();
-    const cleanup = onAncestorScrollOrResize(node, vi.fn());
-    expect(typeof cleanup).toBe('function');
+    const disposable = onAncestorScrollOrResize(node, vi.fn());
+    expect(typeof disposable[Symbol.dispose]).toBe('function');
   });
 
   it('should add scroll and resize listeners to document, window, and the node', () => {
@@ -697,9 +697,9 @@ describe('onAncestorScrollOrResize', () => {
     expect(vi.mocked(grandparent.addEventListener)).toHaveBeenCalledWith('scroll', expect.any(Function), { capture: true });
   });
 
-  it('should remove all listeners when cleanup is called', () => {
+  it('should remove all listeners when the disposable is disposed', () => {
     const node = buildElement();
-    const cleanup = onAncestorScrollOrResize(node, vi.fn());
+    const disposable = onAncestorScrollOrResize(node, vi.fn());
 
     const documentRemoveEventListeners = vi.fn();
     activeDocument.removeEventListener = documentRemoveEventListeners;
@@ -708,7 +708,7 @@ describe('onAncestorScrollOrResize', () => {
     const nodeRemoveEventListeners = vi.fn();
     node.removeEventListener = nodeRemoveEventListeners;
 
-    cleanup();
+    disposable[Symbol.dispose]();
 
     expect(documentRemoveEventListeners).toHaveBeenCalledWith(
       'scroll',
