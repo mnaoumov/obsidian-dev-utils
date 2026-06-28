@@ -3,8 +3,8 @@
  *
  * Note-scoped, reference-counted editor locking.
  *
- * Where {@link lockEditor} / {@link unlockEditor} from `./editor.ts` toggle the read-only state of a
- * single {@link Editor} instance, the helpers here lock a note by its **path**: while a path is
+ * Where {@link toggleEditorReadOnly} from `./editor.ts` toggles the read-only state of a single
+ * {@link Editor} instance, the helpers here lock a note by its **path**: while a path is
  * locked, every current and future {@link MarkdownView} of that note (in any window, including
  * popouts) is made read-only and shows a lock indicator in its tab header, its view action bar, and
  * the status bar (while the note is active). Locks are reference-counted per locking plugin, so
@@ -42,10 +42,7 @@ import { noop } from '../function.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { ComponentEx } from './components/component-ex.ts';
-import {
-  lockEditor,
-  unlockEditor
-} from './editor.ts';
+import { toggleEditorReadOnly } from './editor.ts';
 import { getPath } from './file-system.ts';
 import { t } from './i18n/i18n.ts';
 import { getPluginId } from './plugin/plugin-id.ts';
@@ -189,7 +186,7 @@ class EditorPathLockManager {
         if (indicators) {
           this.updateIndicatorTooltips(indicators, tooltip);
         } else {
-          lockEditor(view.editor);
+          toggleEditorReadOnly(view.editor, true);
           this.indicatorsByView.set(view, this.createIndicators(view, tooltip));
         }
       }
@@ -197,7 +194,7 @@ class EditorPathLockManager {
 
     for (const [view, indicators] of this.indicatorsByView) {
       if (!viewsToLock.has(view)) {
-        unlockEditor(view.editor);
+        toggleEditorReadOnly(view.editor, false);
         indicators.actionIconEl.remove();
         indicators.tabIconEl?.remove();
         this.indicatorsByView.delete(view);

@@ -15,10 +15,7 @@ import {
 import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
-import {
-  lockEditor,
-  unlockEditor
-} from './editor.ts';
+import { toggleEditorReadOnly } from './editor.ts';
 
 const mocks = vi.hoisted(() => {
   const mockReconfigure = vi.fn((extension: unknown): StateEffect<unknown> => castTo<StateEffect<unknown>>({ reconfigure: extension }));
@@ -63,15 +60,15 @@ function createMockEditor(): Editor {
   });
 }
 
-describe('lockEditor', () => {
+describe('toggleEditorReadOnly', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should install the compartment and reconfigure it read-only on first lock', async () => {
+  it('should install the compartment and reconfigure it read-only on the first read-only toggle', async () => {
     await noopAsync();
     const editor = createMockEditor();
-    lockEditor(editor);
+    toggleEditorReadOnly(editor, true);
 
     // The compartment is installed (initially empty) via appendConfig, then reconfigured read-only.
     expect(mocks.mockAppendConfigOf).toHaveBeenCalledTimes(1);
@@ -80,69 +77,33 @@ describe('lockEditor', () => {
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(2);
   });
 
-  it('should not re-install the compartment on a subsequent lock of the same editor', async () => {
+  it('should reconfigure the compartment to an empty extension when toggled editable', async () => {
     await noopAsync();
     const editor = createMockEditor();
-    lockEditor(editor);
+    toggleEditorReadOnly(editor, false);
+
+    expect(mocks.mockReconfigure).toHaveBeenLastCalledWith([]);
+    expect(mocks.mockReadOnlyOf).not.toHaveBeenCalled();
+  });
+
+  it('should not re-install the compartment on a subsequent toggle of the same editor', async () => {
+    await noopAsync();
+    const editor = createMockEditor();
+    toggleEditorReadOnly(editor, true);
     vi.clearAllMocks();
-    lockEditor(editor);
+    toggleEditorReadOnly(editor, true);
 
     expect(mocks.mockAppendConfigOf).not.toHaveBeenCalled();
     expect(mocks.mockReadOnlyOf).toHaveBeenCalledWith(true);
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(1);
   });
 
-  it('should unlock the editor when the returned disposable is disposed', async () => {
-    await noopAsync();
-    const editor = createMockEditor();
-    const disposable = lockEditor(editor);
-    vi.clearAllMocks();
-    disposable[Symbol.dispose]();
-
-    // Unlock reconfigures the compartment back to an empty extension (no read-only).
-    expect(mocks.mockReconfigure).toHaveBeenCalledWith([]);
-    expect(mocks.mockReadOnlyOf).not.toHaveBeenCalled();
-    expect(editor.cm.dispatch).toHaveBeenCalledTimes(1);
-  });
-
-  it('should unlock the editor at the end of a using scope', async () => {
-    await noopAsync();
-    const editor = createMockEditor();
-    {
-      using _lock = lockEditor(editor);
-      expect(mocks.mockReadOnlyOf).toHaveBeenLastCalledWith(true);
-    }
-
-    expect(mocks.mockReconfigure).toHaveBeenLastCalledWith([]);
-  });
-});
-
-describe('unlockEditor', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should reconfigure the compartment to an empty extension', async () => {
-    await noopAsync();
-    const editor = createMockEditor();
-    unlockEditor(editor);
-
-    expect(mocks.mockReconfigure).toHaveBeenLastCalledWith([]);
-    expect(mocks.mockReadOnlyOf).not.toHaveBeenCalled();
-  });
-});
-
-describe('ensureCompartment', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should install the compartment only once across repeated lock/unlock on the same editor', async () => {
+  it('should install the compartment only once across repeated toggles on the same editor', async () => {
     await noopAsync();
     const editor = createMockEditor();
 
-    lockEditor(editor);
-    unlockEditor(editor);
+    toggleEditorReadOnly(editor, true);
+    toggleEditorReadOnly(editor, false);
 
     // The `appendConfig` runs only on the first call (compartment installed once).
     expect(mocks.mockAppendConfigOf).toHaveBeenCalledTimes(1);

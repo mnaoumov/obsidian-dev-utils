@@ -12,40 +12,28 @@ import {
   StateEffect
 } from '@codemirror/state';
 
-import { CallbackDisposable } from '../disposable.ts';
-
 const editorCompartmentMap = new WeakMap<Editor, Compartment>();
 
 /**
- * Locks the editor, making it read-only.
+ * Toggles the read-only state of a single CodeMirror instance — the low-level primitive behind
+ * editor locking.
  *
- * The editor stays focusable and interactive (selection, copy, and app hotkeys such as the command
- * palette keep working) — only document edits are prevented, via the CodeMirror `readOnly` state.
+ * When read-only, the editor stays focusable and interactive (selection, copy, and app hotkeys such
+ * as the command palette keep working) — only document edits are prevented, via the CodeMirror
+ * `readOnly` state.
  *
- * @param editor - The editor to lock.
- * @returns A {@link Disposable} that unlocks the editor when disposed, for use with `using`.
+ * This toggles ONE CodeMirror instance, not "a file": an Obsidian {@link Editor} is reused as its
+ * leaf navigates between notes, so this primitive does not follow a note around. To lock a note
+ * across every editor that shows it (current and future, in any window), use `lockEditorForPath`
+ * from `./editor-lock.ts`.
+ *
+ * @param editor - The editor whose CodeMirror instance to toggle.
+ * @param isReadOnly - `true` to make the editor read-only, `false` to make it editable again.
  */
-export function lockEditor(editor: Editor): Disposable {
+export function toggleEditorReadOnly(editor: Editor, isReadOnly: boolean): void {
   const compartment = ensureCompartment(editor);
   editor.cm.dispatch({
-    effects: compartment.reconfigure(EditorState.readOnly.of(true))
-  });
-  return new CallbackDisposable({
-    callback: (): void => {
-      unlockEditor(editor);
-    }
-  });
-}
-
-/**
- * Unlocks the editor, making it editable again.
- *
- * @param editor - The editor to unlock.
- */
-export function unlockEditor(editor: Editor): void {
-  const compartment = ensureCompartment(editor);
-  editor.cm.dispatch({
-    effects: compartment.reconfigure([])
+    effects: compartment.reconfigure(isReadOnly ? EditorState.readOnly.of(true) : [])
   });
 }
 

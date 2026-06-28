@@ -32,15 +32,11 @@ import {
   lockEditorForPath,
   unlockEditorForPath
 } from './editor-lock.ts';
-import {
-  lockEditor,
-  unlockEditor
-} from './editor.ts';
+import { toggleEditorReadOnly } from './editor.ts';
 import { getPluginId } from './plugin/plugin-id.ts';
 
 vi.mock('./editor.ts', () => ({
-  lockEditor: vi.fn(),
-  unlockEditor: vi.fn()
+  toggleEditorReadOnly: vi.fn()
 }));
 
 vi.mock('./i18n/i18n.ts', () => ({
@@ -127,14 +123,14 @@ describe('lockEditorForPath', () => {
 
     lockEditorForPath(app, 'note.md');
 
-    expect(vi.mocked(lockEditor)).toHaveBeenCalledWith(view.editor);
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
     expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'Locked by\ntest-plugin', expect.any(Function));
   });
 
   it('should ignore leaves whose view is not a MarkdownView', () => {
     stubLeaves(leafOf(strictProxy<ViewOriginal>({})));
     lockEditorForPath(app, 'note.md');
-    expect(vi.mocked(lockEditor)).not.toHaveBeenCalled();
+    expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
   it('should ignore matching-type views without a file', () => {
@@ -143,7 +139,7 @@ describe('lockEditorForPath', () => {
     stubLeaves(leafOf(view));
 
     lockEditorForPath(app, 'note.md');
-    expect(vi.mocked(lockEditor)).not.toHaveBeenCalled();
+    expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
   it('should not lock views whose path differs', () => {
@@ -151,7 +147,7 @@ describe('lockEditorForPath', () => {
     stubLeaves(leafOf(view));
 
     lockEditorForPath(app, 'note.md');
-    expect(vi.mocked(lockEditor)).not.toHaveBeenCalled();
+    expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
   it('should not re-lock a view that is already locked on a subsequent reconcile', () => {
@@ -161,7 +157,7 @@ describe('lockEditorForPath', () => {
     lockEditorForPath(app, 'note.md');
     app.workspace.trigger('layout-change');
 
-    expect(vi.mocked(lockEditor)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledTimes(1);
   });
 
   it('should register active-leaf-change and layout-change on the first lock', () => {
@@ -188,13 +184,13 @@ describe('lockEditorForPath', () => {
   it('should lock a view opened after the lock via active-leaf-change', () => {
     stubLeaves();
     lockEditorForPath(app, 'note.md');
-    expect(vi.mocked(lockEditor)).not.toHaveBeenCalled();
+    expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
 
     const view = createMarkdownView('note.md');
     stubLeaves(leafOf(view));
     app.workspace.trigger('active-leaf-change');
 
-    expect(vi.mocked(lockEditor)).toHaveBeenCalledWith(view.editor);
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
   });
 
   it('should return a Disposable that releases the lock on dispose', () => {
@@ -208,7 +204,7 @@ describe('lockEditorForPath', () => {
     disposable[Symbol.dispose]();
 
     expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
-    expect(vi.mocked(unlockEditor)).toHaveBeenCalledWith(view.editor);
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, false);
     expect(removeSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -237,7 +233,7 @@ describe('unlockEditorForPath', () => {
     unlockEditorForPath(app, 'note.md');
 
     expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
-    expect(vi.mocked(unlockEditor)).toHaveBeenCalledWith(view.editor);
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, false);
     expect(removeSpy).toHaveBeenCalledTimes(1);
     expect(offrefSpy).toHaveBeenCalledTimes(3);
   });
@@ -260,7 +256,7 @@ describe('unlockEditorForPath', () => {
 
     unlockEditorForPath(app, 'note.md');
 
-    expect(vi.mocked(unlockEditor)).not.toHaveBeenCalled();
+    expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
     expect(offrefSpy).not.toHaveBeenCalled();
   });
 
@@ -317,7 +313,7 @@ describe('lock indicators', () => {
     // A second reconcile updates tooltips on the existing indicators; with no tab icon it must not throw.
     app.workspace.trigger('layout-change');
 
-    expect(vi.mocked(lockEditor)).toHaveBeenCalledWith(view.editor);
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
     expect(view.leaf.tabHeaderStatusContainerEl).toBeNull();
   });
 
