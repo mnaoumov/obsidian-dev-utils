@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 82.0.0-beta.4
+
+- feat: list the locking plugins in the editor-lock indicator tooltip Lock counts are now tracked per locking plugin (the caller is identified via getPluginId), so the tab-header, action-bar, and status-bar indicators show a "Locked by\n<plugin names>" tooltip naming every plugin that currently holds a lock on the note, updated live as plugins lock and unlock. Plugin display names are resolved from app.plugins.manifests, falling back to the plugin id. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
+
 ## 82.0.0-beta.3
 
 - feat: pulse the minimized modal bar to keep it noticeable A minimized modal is easy to forget; the floating bar now gently pulses an accent ring so the user remembers an operation is still in progress. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
