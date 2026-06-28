@@ -14,6 +14,7 @@ import type {
 
 import type { ValueProvider } from '../value-provider.ts';
 import type { CodeBlockMarkdownInformation } from './code-block-markdown-information.ts';
+import type { EditorLockComponent } from './editor-lock.ts';
 import type { ContentArgs } from './vault.ts';
 
 import { abortSignalAny } from '../abort-controller.ts';
@@ -65,6 +66,11 @@ export interface GetCodeBlockMarkdownInfoParams {
  */
 export interface InsertCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
+   * The editor-lock component used to lock the note while it is being modified.
+   */
+  readonly editorLockComponent: EditorLockComponent | undefined;
+
+  /**
    * A number of lines to offset the insertion by.
    *
    * @default `0`
@@ -89,6 +95,11 @@ export interface InsertCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
  */
 export interface RemoveCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
+   * The editor-lock component used to lock the note while it is being modified.
+   */
+  readonly editorLockComponent: EditorLockComponent | undefined;
+
+  /**
    * Whether to keep the gap after removing the code block.
    *
    * @default `false`
@@ -109,6 +120,11 @@ export interface ReplaceCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
    * Provides a new code block.
    */
   readonly codeBlockProvider: ValueProvider<string, ContentArgs>;
+
+  /**
+   * The editor-lock component used to lock the note while it is being modified.
+   */
+  readonly editorLockComponent: EditorLockComponent | undefined;
 
   /**
    * Whether to keep the gap when the new code block is empty.
@@ -295,6 +311,7 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
 
   await process({
     app,
+    editorLockComponent: params.editorLockComponent,
     async newContentProvider({ content }) {
       const markdownInfo = await getCodeBlockMarkdownInfo(params);
       assertNonNullable(markdownInfo, 'Could not uniquely identify the code block.');
@@ -326,6 +343,7 @@ export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Prom
 
   await process({
     app,
+    editorLockComponent: params.editorLockComponent,
     async newContentProvider({ content }) {
       const markdownInfo = await getCodeBlockMarkdownInfo(params);
       if (!markdownInfo) {
@@ -372,6 +390,7 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
 
   await process({
     app,
+    editorLockComponent: params.editorLockComponent,
     async newContentProvider({ abortSignal, content }) {
       abortSignal = abortSignalAny(abortSignal, params.abortSignal);
       abortSignal.throwIfAborted();

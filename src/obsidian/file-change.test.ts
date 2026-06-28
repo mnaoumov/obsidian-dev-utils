@@ -14,6 +14,7 @@ import {
 } from 'vitest';
 
 import type { GenericObject } from '../type-guards.ts';
+import type { EditorLockComponent } from './editor-lock.ts';
 import type { FileChange } from './file-change.ts';
 import type {
   ContentArgs,
@@ -24,6 +25,7 @@ import { getLibDebugger } from '../debug.ts';
 import { printError } from '../error.ts';
 import { noop } from '../function.ts';
 import { castTo } from '../object-utils.ts';
+import { strictProxy } from '../strict-proxy.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
 import {
@@ -73,6 +75,10 @@ vi.mock('../obsidian/vault.ts', () => ({
     await resolveValue(params.newContentProvider, { abortSignal: controller.signal, content: 'test content' });
   })
 }));
+
+const editorLockComponent = strictProxy<EditorLockComponent>({
+  lockForPath: () => ({ [Symbol.dispose]: noop })
+});
 
 let app: AppOriginal;
 
@@ -491,7 +497,7 @@ describe('applyFileChanges', () => {
 
   it('should call process with the correct arguments', async () => {
     const changes: FileChange[] = [];
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.md' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.md' });
     expect(process).toHaveBeenCalledTimes(1);
     const params = vi.mocked(process).mock.calls[0]?.[0];
     expect(params?.app).toBe(app);
@@ -501,7 +507,7 @@ describe('applyFileChanges', () => {
 
   it('should pass processOptions to process', async () => {
     const options = { timeoutInMilliseconds: 3000 };
-    await applyFileChanges({ app, changesProvider: [], pathOrFile: 'test.md', ...options });
+    await applyFileChanges({ app, changesProvider: [], editorLockComponent, pathOrFile: 'test.md', ...options });
     const params = vi.mocked(process).mock.calls[0]?.[0];
     expect(params?.app).toBe(app);
     expect(params?.pathOrFile).toBe('test.md');
@@ -517,7 +523,7 @@ describe('applyFileChanges', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: 'test content' });
     });
 
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.md' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.md' });
     expect(process).toHaveBeenCalled();
   });
 
@@ -534,7 +540,7 @@ describe('applyFileChanges', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
     });
 
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'drawing.canvas' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'drawing.canvas' });
     expect(process).toHaveBeenCalled();
   });
 });
@@ -559,7 +565,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.canvas' });
     expect(resultContent).not.toBeNull();
     assertNonNullable(resultContent);
     const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
@@ -583,7 +589,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.canvas' });
     expect(resultContent).toBeNull();
   });
 
@@ -600,7 +606,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.canvas' });
     expect(resultContent).toBeNull();
   });
 
@@ -612,7 +618,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '{}' });
     });
 
-    await applyFileChanges({ app, changesProvider: null, pathOrFile: 'test.canvas' });
+    await applyFileChanges({ app, changesProvider: null, editorLockComponent, pathOrFile: 'test.canvas' });
     expect(resultContent).toBeNull();
   });
 
@@ -632,7 +638,7 @@ describe('canvas changes via applyFileChanges', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.canvas' });
     expect(vi.mocked(console.error)).toHaveBeenCalled();
     vi.mocked(console.error).mockRestore();
   });
@@ -650,7 +656,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.canvas' });
     expect(resultContent).not.toBeNull();
     assertNonNullable(resultContent);
     const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
@@ -677,7 +683,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.canvas' });
     expect(resultContent).not.toBeNull();
     assertNonNullable(resultContent);
     const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
@@ -699,7 +705,7 @@ describe('canvas changes via applyFileChanges', () => {
 
     // When JSON is invalid, it is parsed as {} without a nodes property,
     // Causing a TypeError when accessing canvasData.nodes[nodeIndex]
-    await expect(applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas' })).rejects.toThrow(TypeError);
+    await expect(applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.canvas' })).rejects.toThrow(TypeError);
   });
 
   it('should return null when canvas text node text is not a string', async () => {
@@ -719,7 +725,7 @@ describe('canvas changes via applyFileChanges', () => {
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
     });
 
-    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas' });
+    await applyFileChanges({ app, changesProvider: changes, editorLockComponent, pathOrFile: 'test.canvas' });
     expect(resultContent).toBeNull();
     expect(vi.mocked(console.error)).toHaveBeenCalled();
     vi.mocked(console.error).mockRestore();

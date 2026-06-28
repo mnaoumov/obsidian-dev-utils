@@ -20,6 +20,7 @@ import {
   vi
 } from 'vitest';
 
+import type { EditorLockComponent } from './editor-lock.ts';
 import type { GenerateMarkdownLinkParams } from './link.ts';
 import type { CanvasReference } from './reference.ts';
 
@@ -89,6 +90,10 @@ vi.mock('../obsidian/file-change.ts', async (importOriginal) => {
     applyContentChanges: vi.fn(),
     applyFileChanges: vi.fn()
   };
+});
+
+const editorLockComponent = strictProxy<EditorLockComponent>({
+  lockForPath: () => ({ [Symbol.dispose]: noop })
 });
 
 describe('splitSubpath', () => {
@@ -2450,6 +2455,7 @@ describe('app-dependent functions', () => {
     it('should call applyFileChanges', async () => {
       await editLinks({
         app,
+        editorLockComponent,
         linkConverter: () => '[[updated]]',
         pathOrFile: 'note.md'
       });
@@ -2481,6 +2487,7 @@ describe('app-dependent functions', () => {
 
       await editLinks({
         app,
+        editorLockComponent,
         linkConverter: () => '[[updated]]',
         pathOrFile: 'note.md'
       });
@@ -2502,6 +2509,7 @@ describe('app-dependent functions', () => {
 
       await editLinks({
         app,
+        editorLockComponent,
         linkConverter: () => '[[updated]]',
         pathOrFile: 'note.md'
       });
@@ -2549,6 +2557,7 @@ describe('app-dependent functions', () => {
       const linkConverter = vi.fn(() => '[[new-target]]');
       await editBacklinks({
         app,
+        editorLockComponent,
         linkConverter,
         pathOrFile: 'target.md'
       });
@@ -2589,6 +2598,7 @@ describe('app-dependent functions', () => {
       const linkConverter = vi.fn(() => '[[new-target]]');
       await editBacklinks({
         app,
+        editorLockComponent,
         linkConverter,
         pathOrFile: 'target.md'
       });
@@ -2662,6 +2672,7 @@ describe('app-dependent functions', () => {
     it('should call editLinks for markdown files', async () => {
       await updateLinksInFile({
         app,
+        editorLockComponent,
         newSourcePathOrFile: 'note.md'
       });
 
@@ -2686,6 +2697,7 @@ describe('app-dependent functions', () => {
 
       await updateLinksInFile({
         app: canvasApp,
+        editorLockComponent,
         newSourcePathOrFile: canvasFile
       });
 
@@ -2715,6 +2727,7 @@ describe('app-dependent functions', () => {
 
       await updateLinksInFile({
         app,
+        editorLockComponent,
         newSourcePathOrFile: 'note.md',
         shouldUpdateEmbedOnlyLinks: true
       });
@@ -2745,6 +2758,7 @@ describe('app-dependent functions', () => {
 
       await updateLinksInFile({
         app,
+        editorLockComponent,
         newSourcePathOrFile: 'note.md'
       });
 
@@ -2823,6 +2837,7 @@ describe('app-dependent functions', () => {
 
       await editLinks({
         app: canvasApp,
+        editorLockComponent,
         linkConverter: () => 'new-target.md',
         pathOrFile: canvasFile
       });
@@ -2867,6 +2882,7 @@ describe('app-dependent functions', () => {
 
       await editLinks({
         app: canvasApp,
+        editorLockComponent,
         linkConverter: () => '[[new-target]]',
         pathOrFile: canvasFile
       });

@@ -8,6 +8,7 @@ import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
 import type { MaybeReturn } from '../type.ts';
+import type { EditorLockComponent } from './editor-lock.ts';
 import type { PathOrFile } from './file-system.ts';
 import type { CombinedFrontmatter } from './frontmatter.ts';
 import type {
@@ -45,6 +46,11 @@ export interface AddAliasParams {
   readonly app: App;
 
   /**
+   * The editor-lock component used to lock the note while it is being modified.
+   */
+  readonly editorLockComponent: EditorLockComponent | undefined;
+
+  /**
    * The path or TFile object representing the note.
    */
   readonly pathOrFile: PathOrFile;
@@ -63,6 +69,11 @@ export interface DeleteAliasParams {
    * The Obsidian app instance.
    */
   readonly app: App;
+
+  /**
+   * The editor-lock component used to lock the note while it is being modified.
+   */
+  readonly editorLockComponent: EditorLockComponent | undefined;
 
   /**
    * The path or TFile object representing the note.
@@ -111,6 +122,7 @@ export async function addAlias(params: AddAliasParams): Promise<void> {
   const {
     alias,
     app,
+    editorLockComponent,
     pathOrFile
   } = params;
   if (!alias) {
@@ -129,6 +141,7 @@ export async function addAlias(params: AddAliasParams): Promise<void> {
 
   await processFrontmatter({
     app,
+    editorLockComponent,
     frontmatterFn: (frontmatter) => {
       frontmatter.aliases ??= [];
 
@@ -150,6 +163,7 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
   const {
     alias,
     app,
+    editorLockComponent,
     pathOrFile
   } = params;
   if (!alias) {
@@ -162,6 +176,7 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
 
   await processFrontmatter({
     app,
+    editorLockComponent,
     frontmatterFn: (frontmatter) => {
       if (!frontmatter.aliases) {
         return;

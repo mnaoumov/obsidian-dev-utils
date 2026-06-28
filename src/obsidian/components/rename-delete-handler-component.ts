@@ -25,6 +25,7 @@ import {
 import { t } from 'i18next';
 import { Vault } from 'obsidian';
 
+import type { EditorLockComponent } from '../editor-lock.ts';
 import type {
   UpdateLinkParams,
   UpdateLinksInFileParams
@@ -172,6 +173,7 @@ interface InterruptedRename {
 interface RenameHandlerConstructorParams {
   readonly abortSignal: AbortSignal;
   readonly app: App;
+  readonly editorLockComponent: EditorLockComponent | undefined;
   readonly handledRenames: HandledRenames;
   readonly interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>;
   readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
@@ -252,6 +254,7 @@ interface MetadataDeletedHandlerConstructorParams {
 interface RenameDeleteHandlerComponentConstructorParams {
   readonly abortSignalComponent: AbortSignalComponent;
   readonly app: App;
+  readonly editorLockComponent: EditorLockComponent | undefined;
   readonly pluginId: string;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   settingsBuilder(this: void): Partial<RenameDeleteHandlerSettings>;
@@ -554,6 +557,7 @@ class MetadataDeletedHandler {
 class RenameHandler {
   private readonly abortSignal: AbortSignal;
   private readonly app: App;
+  private readonly editorLockComponent: EditorLockComponent | undefined;
   private readonly handledRenames: HandledRenames;
   private readonly interruptedCombinedBacklinksMap: Map<string, Map<string, string>>;
   private readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
@@ -568,6 +572,7 @@ class RenameHandler {
   public constructor(params: RenameHandlerConstructorParams) {
     this.abortSignal = params.abortSignal;
     this.app = params.app;
+    this.editorLockComponent = params.editorLockComponent;
     this.handledRenames = params.handledRenames;
     this.interruptedCombinedBacklinksMap = params.interruptedCombinedBacklinksMap ?? new Map<string, Map<string, string>>();
     this.interruptedRenamesMap = params.interruptedRenamesMap;
@@ -662,6 +667,7 @@ class RenameHandler {
         let linkIndex = 0;
         await editLinks({
           app: this.app,
+          editorLockComponent: this.editorLockComponent,
           linkConverter: (link) => {
             linkIndex++;
             const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
@@ -692,6 +698,7 @@ class RenameHandler {
       if (isNote(this.newPath)) {
         await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileParams>({
           app: this.app,
+          editorLockComponent: this.editorLockComponent,
           newSourcePathOrFile: this.newPath,
           oldSourcePathOrFile: this.oldPath,
           shouldFailOnMissingFile: false,
@@ -740,6 +747,7 @@ class RenameHandler {
         await new RenameHandler({
           abortSignal: this.abortSignal,
           app: this.app,
+          editorLockComponent: this.editorLockComponent,
           handledRenames: this.handledRenames,
           interruptedCombinedBacklinksMap: interruptedRename.combinedBacklinksMap,
           interruptedRenamesMap: this.interruptedRenamesMap,
@@ -765,6 +773,7 @@ class RenameHandler {
     await new RenameHandler({
       abortSignal: this.abortSignal,
       app: this.app,
+      editorLockComponent: this.editorLockComponent,
       handledRenames: this.handledRenames,
       interruptedRenamesMap: this.interruptedRenamesMap,
       newPath: tempPath,
@@ -1025,6 +1034,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   private readonly abortSignalComponent: AbortSignalComponent;
   private readonly app: App;
   private readonly deletedMetadataCacheMap = new Map<string, CachedMetadata>();
+  private readonly editorLockComponent: EditorLockComponent | undefined;
   private readonly handledRenames = new HandledRenames();
   private readonly interruptedRenamesMap = new Map<string, InterruptedRename[]>();
   private readonly pluginId: string;
@@ -1041,6 +1051,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     super();
     this.abortSignalComponent = params.abortSignalComponent;
     this.app = params.app;
+    this.editorLockComponent = params.editorLockComponent;
     this.pluginId = params.pluginId;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
     this.settingsBuilder = params.settingsBuilder;
@@ -1143,6 +1154,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
         new RenameHandler({
           abortSignal,
           app: this.app,
+          editorLockComponent: this.editorLockComponent,
           handledRenames: this.handledRenames,
           interruptedRenamesMap: this.interruptedRenamesMap,
           newPath,

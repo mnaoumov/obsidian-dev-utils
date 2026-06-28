@@ -218,9 +218,9 @@ export interface ProcessOptions extends RetryOptions {
   /**
    * An editor-lock component used to lock the file's editor read-only for the duration of
    * processing. The lock is reference-counted, so it composes with any outer operation-level lock
-   * on the same note. When omitted, the editor is not locked while processing.
+   * on the same note.
    */
-  readonly editorLockComponent?: EditorLockComponent;
+  readonly editorLockComponent: EditorLockComponent | undefined;
 
   /**
    * Whether to fail if the file is missing or deleted.
@@ -750,7 +750,7 @@ export async function process(params: ProcessParams): Promise<void> {
   fullOptions.abortSignal = abortSignalAny(fullOptions.abortSignal, abortController.signal);
   const path = getPath(app, pathOrFile);
 
-  // Reference-counted lock; a no-op when no component is provided. Released at function scope exit.
+  // Reference-counted lock; composes with any outer lock. Released at function scope exit.
   using _lock = editorLockComponent?.lockForPath(pathOrFile);
 
   await retryWithTimeoutNotice({
