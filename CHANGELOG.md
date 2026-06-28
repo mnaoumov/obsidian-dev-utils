@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 82.0.0-beta.0
+
+- refactor!: remove tempRegisterFilesAndRun(Async) in favor of registerFiles
+- refactor!: return Disposables from enableAsyncOperationTracking and registerAsyncErrorEventHandler
+- refactor!: return a Disposable from onAncestorScrollOrResize
+- refactor!: return a Disposable from onAbort `onAbort` now returns a `Disposable`
+- feat: return a Disposable from registerFiles and registerFileCacheForNonExistingFile
+- feat: return a Disposable from lockEditor
+- feat: log and rethrow errors thrown during plugin onload
+- feat: expand AggregateError sub-errors in errorToString
+- docs: clarify isCaseInsensitive default resolves to the file system
+- fix: update file name alias by default in updateLink
+- fix: show timeout notice by default in retry/runWithTimeoutNotice
+- docs: add @default tags across TSDoc params/options bags
+- fix(build): validate own declarations, ignore only node_modules
+- feat: add --verbose flag to build:validate-declarations
+- refactor: use CallbackDisposable for editor-lock disposables
+- refactor: extract CallbackDisposable and AsyncCallbackDisposable
+- refactor: make minimizable modal a composition wrapper
+- docs: record editor-lock + minimizable-modal task status
+- feat: add minimizable modal
+- feat: add reference-counted note-scoped editor locking
+
 ## 81.0.0
 
 - chore: update libs
