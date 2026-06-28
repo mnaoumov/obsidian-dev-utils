@@ -30,6 +30,12 @@ const REFERENCE_LIB_REG_EXP = /\/\/\/ <reference lib="(?<Lib>[^"]+)" \/>/gm;
 const DECLARATION_REFERENCE_TYPES = new Set(['node']);
 const LIBRARY_FILE_NAME = 'library';
 
+// A bare-specifier (non-relative) type-only import, e.g. `import type { Promisable } from 'type-fest';`.
+const BARE_TYPE_IMPORT_REG_EXP = /^import type (?<Clause>.+?) from '(?<Specifier>[^.'][^']*)';$/gm;
+
+// A bare-specifier (non-relative) inline import type node, e.g. `import("type-fest").Promisable`.
+const BARE_INLINE_IMPORT_TYPE_REG_EXP = /import\("(?<Specifier>[^."][^"]*)"\)/g;
+
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');
   const STATIC_IMPORT_REG_EXP = /from '(?<ImportPath>.+?)\.ts';/gm;
@@ -68,6 +74,21 @@ await wrapCliTask(async () => {
     ctsContent = replaceAll({
       replacer: 'import("$<ImportPath>.cjs")',
       searchValue: DYNAMIC_IMPORT_REG_EXP,
+      str: ctsContent
+    });
+
+    // A `.d.cts` file is a CommonJS module. Type-only imports of a bare specifier resolving to an
+    // ESM-only package need a `resolution-mode` attribute, else `tsc` reports TS1541 / TS1542.
+    // Passing `'import'` is valid for CommonJS targets too, so every bare specifier receives it.
+    // The ESM `.d.mts` needs no such attribute, so this transform runs on CommonJS content only.
+    ctsContent = replaceAll({
+      replacer: 'import type $<Clause> from \'$<Specifier>\' with { \'resolution-mode\': \'import\' };',
+      searchValue: BARE_TYPE_IMPORT_REG_EXP,
+      str: ctsContent
+    });
+    ctsContent = replaceAll({
+      replacer: 'import("$<Specifier>", { with: { \'resolution-mode\': \'import\' } })',
+      searchValue: BARE_INLINE_IMPORT_TYPE_REG_EXP,
       str: ctsContent
     });
 
