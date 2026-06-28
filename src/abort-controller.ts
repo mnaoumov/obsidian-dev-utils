@@ -4,6 +4,7 @@
  * AbortController utilities.
  */
 
+import { CallbackDisposable } from './disposable.ts';
 import { noop } from './function.ts';
 
 /**
@@ -42,17 +43,17 @@ export function abortSignalAny(...maybeAbortSignals: (AbortSignal | undefined)[]
     }
   }
 
-  const abortHandlerRemovers: (() => void)[] = [];
+  const abortHandlerDisposables: Disposable[] = [];
 
   for (const abortSignal of abortSignals) {
-    abortHandlerRemovers.push(onAbort(abortSignal, handleAbort));
+    abortHandlerDisposables.push(onAbort(abortSignal, handleAbort));
   }
 
   return abortController.signal;
 
   function handleAbort(abortSignal: AbortSignal): void {
-    for (const abortHandlerRemover of abortHandlerRemovers) {
-      abortHandlerRemover();
+    for (const abortHandlerDisposable of abortHandlerDisposables) {
+      abortHandlerDisposable[Symbol.dispose]();
     }
 
     abortController.abort(abortSignal.reason);
@@ -97,18 +98,20 @@ export function abortSignalTimeout(timeoutInMilliseconds: number): AbortSignal {
  *
  * @param abortSignal - The abort signal to add the listener to.
  * @param callback - The callback to call when the abort signal aborts.
- * @returns A function to remove the abort listener.
+ * @returns A {@link Disposable} that removes the abort listener when disposed, for use with `using`.
  */
-export function onAbort(abortSignal: AbortSignal, callback: (abortSignal: AbortSignal) => void): () => void {
+export function onAbort(abortSignal: AbortSignal, callback: (abortSignal: AbortSignal) => void): Disposable {
   if (abortSignal.aborted) {
     callback(abortSignal);
-    return noop;
+    return new CallbackDisposable({ callback: noop });
   }
 
   abortSignal.addEventListener('abort', wrappedCallback, { once: true });
-  return () => {
-    abortSignal.removeEventListener('abort', wrappedCallback);
-  };
+  return new CallbackDisposable({
+    callback: (): void => {
+      abortSignal.removeEventListener('abort', wrappedCallback);
+    }
+  });
 
   function wrappedCallback(evt: Event): void {
     callback(evt.target as AbortSignal);

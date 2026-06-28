@@ -435,11 +435,11 @@ describe('onAbort', () => {
     controller.abort(new Error('already done'));
 
     const callback = vi.fn();
-    const remover = onAbort(controller.signal, callback);
+    const disposable = onAbort(controller.signal, callback);
 
-    // Remover should be a noop (no error when called)
+    // Disposing should be a noop (no error when disposed)
     expect(() => {
-      remover();
+      disposable[Symbol.dispose]();
     }).not.toThrow();
   });
 
@@ -486,12 +486,24 @@ describe('onAbort', () => {
     expect(receivedSignal.aborted).toBe(true);
   });
 
-  it('should not call callback after remover is invoked', () => {
+  it('should not call callback after the disposable is disposed', () => {
     const controller = new AbortController();
     const callback = vi.fn();
 
-    const remover = onAbort(controller.signal, callback);
-    remover();
+    const disposable = onAbort(controller.signal, callback);
+    disposable[Symbol.dispose]();
+
+    controller.abort(new Error('should not fire'));
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('should remove the abort listener at the end of a using scope', () => {
+    const controller = new AbortController();
+    const callback = vi.fn();
+
+    {
+      using _subscription = onAbort(controller.signal, callback);
+    }
 
     controller.abort(new Error('should not fire'));
     expect(callback).not.toHaveBeenCalled();
