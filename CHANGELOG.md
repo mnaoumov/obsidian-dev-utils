@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 82.0.0-beta.7
+
+- feat!: require an editorLockComponent on the file-mutation API editorLockComponent becomes a required (but nullable) field across the whole process()-based mutation surface: process, processFrontMatter, applyFileChanges, editLinks, updateLinksInFile, editBacklinks, the code-block helpers, and the rename/delete handler. The compiler now forces every call site to consciously pass an editor-lock component (to lock the note read-only while it mutates) or `undefined` (to opt out). process() locks via the component when present. BREAKING CHANGE: every caller of the above APIs must now pass editorLockComponent (a component or `undefined`). Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
+- style: fix wrapped-comment capitalization in editor lock helpers The capitalized-comments rule had capitalized mid-sentence continuation words across wrapped comments (and the appendConfig identifier); reword so each line is its own capitalized sentence and backtick the identifier. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
+
 ## 82.0.0-beta.6
 
 - feat!: lock the editor during process() only via an opt-in component process() previously always locked matching editors with the raw, non -reference-counted lockEditor/unlockEditor, which clobbered any outer operation -level path lock (its finally would unlockEditor a note an enclosing operation still held). Replace that with an optional editorLockComponent on ProcessOptions: when provided, process() takes a reference-counted lockForPath for the duration (composing correctly with outer locks); when omitted, it does not lock at all. BREAKING CHANGE: removes the shouldLockEditorWhileProcessing option. To lock the editor while processing, pass an editorLockComponent instead. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav
