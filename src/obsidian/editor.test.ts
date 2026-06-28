@@ -15,26 +15,27 @@ import {
 import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
-import { assertNonNullable } from '../type-guards.ts';
 import {
   lockEditor,
   unlockEditor
 } from './editor.ts';
 
 const mocks = vi.hoisted(() => {
-  const mockReconfigure = vi.fn((extensions: unknown[]): StateEffect<unknown> => castTo<StateEffect<unknown>>({ effects: extensions }));
+  const mockReconfigure = vi.fn((extension: unknown): StateEffect<unknown> => castTo<StateEffect<unknown>>({ reconfigure: extension }));
+  const mockCompartmentOf = vi.fn((extension: unknown): Extension => castTo<Extension>({ compartmentOf: extension }));
 
   class MockCompartment {
+    public of = mockCompartmentOf;
     public reconfigure = mockReconfigure;
   }
 
   const mockReadOnlyOf = vi.fn((value: boolean): Extension => castTo<Extension>({ facet: 'readOnly', value }));
-
-  const mockEditableOf = vi.fn((value: boolean): Extension => castTo<Extension>({ facet: 'editable', value }));
+  const mockAppendConfigOf = vi.fn((extension: unknown): StateEffect<unknown> => castTo<StateEffect<unknown>>({ appendConfig: extension }));
 
   return {
     MockCompartment,
-    mockEditableOf,
+    mockAppendConfigOf,
+    mockCompartmentOf,
     mockReadOnlyOf,
     mockReconfigure
   };
@@ -46,13 +47,10 @@ vi.mock('@codemirror/state', () => ({
     readOnly: {
       of: mocks.mockReadOnlyOf
     }
-  }
-}));
-
-vi.mock('@codemirror/view', () => ({
-  EditorView: {
-    editable: {
-      of: mocks.mockEditableOf
+  },
+  StateEffect: {
+    appendConfig: {
+      of: mocks.mockAppendConfigOf
     }
   }
 }));
@@ -70,45 +68,41 @@ describe('lockEditor', () => {
     vi.clearAllMocks();
   });
 
-  it('should dispatch readOnly true and editable false', async () => {
+  it('should install the compartment and reconfigure it read-only on first lock', async () => {
     await noopAsync();
     const editor = createMockEditor();
     lockEditor(editor);
 
+    // The compartment is installed (initially empty) via appendConfig, then reconfigured read-only.
+    expect(mocks.mockAppendConfigOf).toHaveBeenCalledTimes(1);
+    expect(mocks.mockCompartmentOf).toHaveBeenCalledWith([]);
     expect(mocks.mockReadOnlyOf).toHaveBeenCalledWith(true);
-    expect(mocks.mockEditableOf).toHaveBeenCalledWith(false);
+    expect(editor.cm.dispatch).toHaveBeenCalledTimes(2);
+  });
 
+  it('should not re-install the compartment on a subsequent lock of the same editor', async () => {
+    await noopAsync();
+    const editor = createMockEditor();
+    lockEditor(editor);
+    vi.clearAllMocks();
+    lockEditor(editor);
+
+    expect(mocks.mockAppendConfigOf).not.toHaveBeenCalled();
+    expect(mocks.mockReadOnlyOf).toHaveBeenCalledWith(true);
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(1);
-  });
-
-  it('should create a compartment on first call', async () => {
-    await noopAsync();
-    const editor = createMockEditor();
-    lockEditor(editor);
-
-    expect(mocks.mockReconfigure).toHaveBeenCalledTimes(1);
-  });
-
-  it('should dispatch effects from compartment reconfigure', async () => {
-    await noopAsync();
-    const editor = createMockEditor();
-    lockEditor(editor);
-
-    const dispatch = vi.mocked(editor.cm.dispatch);
-    const dispatchCall = dispatch.mock.calls[0];
-    assertNonNullable(dispatchCall);
-    expect(dispatchCall[0]).toHaveProperty('effects');
   });
 
   it('should unlock the editor when the returned disposable is disposed', async () => {
     await noopAsync();
     const editor = createMockEditor();
     const disposable = lockEditor(editor);
+    vi.clearAllMocks();
     disposable[Symbol.dispose]();
 
-    expect(mocks.mockReadOnlyOf).toHaveBeenLastCalledWith(false);
-    expect(mocks.mockEditableOf).toHaveBeenLastCalledWith(true);
-    expect(editor.cm.dispatch).toHaveBeenCalledTimes(2);
+    // Unlock reconfigures the compartment back to an empty extension (no read-only).
+    expect(mocks.mockReconfigure).toHaveBeenCalledWith([]);
+    expect(mocks.mockReadOnlyOf).not.toHaveBeenCalled();
+    expect(editor.cm.dispatch).toHaveBeenCalledTimes(1);
   });
 
   it('should unlock the editor at the end of a using scope', async () => {
@@ -119,8 +113,7 @@ describe('lockEditor', () => {
       expect(mocks.mockReadOnlyOf).toHaveBeenLastCalledWith(true);
     }
 
-    expect(mocks.mockReadOnlyOf).toHaveBeenLastCalledWith(false);
-    expect(mocks.mockEditableOf).toHaveBeenLastCalledWith(true);
+    expect(mocks.mockReconfigure).toHaveBeenLastCalledWith([]);
   });
 });
 
@@ -129,23 +122,13 @@ describe('unlockEditor', () => {
     vi.clearAllMocks();
   });
 
-  it('should dispatch readOnly false and editable true', async () => {
+  it('should reconfigure the compartment to an empty extension', async () => {
     await noopAsync();
     const editor = createMockEditor();
     unlockEditor(editor);
 
-    expect(mocks.mockReadOnlyOf).toHaveBeenCalledWith(false);
-    expect(mocks.mockEditableOf).toHaveBeenCalledWith(true);
-
-    expect(editor.cm.dispatch).toHaveBeenCalledTimes(1);
-  });
-
-  it('should create a compartment on first call', async () => {
-    await noopAsync();
-    const editor = createMockEditor();
-    unlockEditor(editor);
-
-    expect(mocks.mockReconfigure).toHaveBeenCalledTimes(1);
+    expect(mocks.mockReconfigure).toHaveBeenLastCalledWith([]);
+    expect(mocks.mockReadOnlyOf).not.toHaveBeenCalled();
   });
 });
 
@@ -154,30 +137,16 @@ describe('ensureCompartment', () => {
     vi.clearAllMocks();
   });
 
-  it('should reuse the same compartment for repeated calls on the same editor', async () => {
+  it('should install the compartment only once across repeated lock/unlock on the same editor', async () => {
     await noopAsync();
     const editor = createMockEditor();
 
     lockEditor(editor);
     unlockEditor(editor);
 
-    // Reconfigure should be called twice (once per lock/unlock), but with the same compartment instance
-    expect(mocks.mockReconfigure).toHaveBeenCalledTimes(2);
-
-    // Verify dispatch was called twice (once for lock, once for unlock)
-    expect(editor.cm.dispatch).toHaveBeenCalledTimes(2);
-  });
-
-  it('should create different compartments for different editors', async () => {
-    await noopAsync();
-    const editor1 = createMockEditor();
-    const editor2 = createMockEditor();
-
-    lockEditor(editor1);
-    lockEditor(editor2);
-
-    // Each editor should trigger its own dispatch
-    expect(editor1.cm.dispatch).toHaveBeenCalledTimes(1);
-    expect(editor2.cm.dispatch).toHaveBeenCalledTimes(1);
+    // appendConfig runs only on the first call (compartment installed once).
+    expect(mocks.mockAppendConfigOf).toHaveBeenCalledTimes(1);
+    // lock: appendConfig + reconfigure (2 dispatches); unlock: reconfigure (1 dispatch).
+    expect(editor.cm.dispatch).toHaveBeenCalledTimes(3);
   });
 });
