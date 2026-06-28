@@ -1071,7 +1071,7 @@ describe('Async', () => {
 
     it('should emit async error event when the async function throws', async () => {
       const handler = vi.fn();
-      const unregister = registerAsyncErrorEventHandler(handler);
+      using _registration = registerAsyncErrorEventHandler(handler);
 
       await addErrorHandler(async () => {
         await noopAsync();
@@ -1079,12 +1079,11 @@ describe('Async', () => {
       });
 
       expect(handler).toHaveBeenCalledTimes(1);
-      unregister();
     });
 
     it('should silently handle SilentError without emitting', async () => {
       const handler = vi.fn();
-      const unregister = registerAsyncErrorEventHandler(handler);
+      using _registration = registerAsyncErrorEventHandler(handler);
 
       await addErrorHandler(async () => {
         await noopAsync();
@@ -1092,12 +1091,11 @@ describe('Async', () => {
       });
 
       expect(handler).not.toHaveBeenCalled();
-      unregister();
     });
 
     it('should silently handle errors whose cause is a SilentError', async () => {
       const handler = vi.fn();
-      const unregister = registerAsyncErrorEventHandler(handler);
+      using _registration = registerAsyncErrorEventHandler(handler);
 
       await addErrorHandler(async () => {
         await noopAsync();
@@ -1107,7 +1105,6 @@ describe('Async', () => {
       // The addErrorHandler wraps the thrown error in CustomStackTraceError,
       // So the chain is CustomStackTraceError -> Error -> SilentError
       expect(handler).not.toHaveBeenCalled();
-      unregister();
     });
   });
 
@@ -1132,7 +1129,7 @@ describe('Async', () => {
 
     it('should emit async error event when function throws', async () => {
       const handler = vi.fn();
-      const unregister = registerAsyncErrorEventHandler(handler);
+      using _registration = registerAsyncErrorEventHandler(handler);
 
       invokeAsyncSafely(async () => {
         await noopAsync();
@@ -1145,7 +1142,6 @@ describe('Async', () => {
       });
 
       expect(handler).toHaveBeenCalledTimes(1);
-      unregister();
     });
 
     it('should not throw when a sync function succeeds', () => {
@@ -1158,7 +1154,7 @@ describe('Async', () => {
 
     it('should emit async error event when a sync function throws', async () => {
       const handler = vi.fn();
-      const unregister = registerAsyncErrorEventHandler(handler);
+      using _registration = registerAsyncErrorEventHandler(handler);
 
       invokeAsyncSafely(() => {
         throw new Error('sync invoke error');
@@ -1170,12 +1166,11 @@ describe('Async', () => {
       });
 
       expect(handler).toHaveBeenCalledTimes(1);
-      unregister();
     });
 
     it('should emit async error event when a non-async function returns a rejecting promise', async () => {
       const handler = vi.fn();
-      const unregister = registerAsyncErrorEventHandler(handler);
+      using _registration = registerAsyncErrorEventHandler(handler);
 
       invokeAsyncSafely(() => Promise.reject(new Error('rejected promise')));
 
@@ -1185,7 +1180,6 @@ describe('Async', () => {
       });
 
       expect(handler).toHaveBeenCalledTimes(1);
-      unregister();
     });
   });
 
@@ -1227,6 +1221,20 @@ describe('Async', () => {
 
     it('should throw when tracking is disabled instead of silently resolving', async () => {
       disableAsyncOperationTracking();
+      await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
+    });
+
+    it('should disable tracking when the returned disposable is disposed', async () => {
+      const disposable = enableAsyncOperationTracking();
+      disposable[Symbol.dispose]();
+      await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
+    });
+
+    it('should keep tracking enabled inside a using scope and disable it on exit', async () => {
+      {
+        using _tracking = enableAsyncOperationTracking();
+        await expect(waitForAllAsyncOperations()).resolves.toBeUndefined();
+      }
       await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
     });
   });
@@ -1372,7 +1380,7 @@ describe('Async', () => {
 
     it('should emit async error event when async function rejects', async () => {
       const handler = vi.fn();
-      const unregister = registerAsyncErrorEventHandler(handler);
+      using _registration = registerAsyncErrorEventHandler(handler);
 
       async function asyncFn(): Promise<never> {
         await noopAsync();
@@ -1387,7 +1395,6 @@ describe('Async', () => {
       });
 
       expect(handler).toHaveBeenCalledTimes(1);
-      unregister();
     });
   });
 

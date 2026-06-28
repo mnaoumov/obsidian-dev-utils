@@ -5,6 +5,7 @@
  */
 
 import { AsyncEvents } from './async-events.ts';
+import { CallbackDisposable } from './disposable.ts';
 import { ensureNonNullable } from './type-guards.ts';
 
 interface ErrorAsyncEventMap {
@@ -191,13 +192,15 @@ export function printError(error: unknown, console?: Console): void {
  * Registers an event handler for asynchronous errors.
  *
  * @param handler - The handler function to be called when an asynchronous error event occurs.
- * @returns A function to unregister the handler.
+ * @returns A {@link Disposable} that unregisters the handler when disposed, for use with `using`.
  */
-export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): () => void {
+export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): Disposable {
   const eventRef = errorAsyncEvents.on('asyncError', handler);
-  return () => {
-    errorAsyncEvents.offref(eventRef);
-  };
+  return new CallbackDisposable({
+    callback: (): void => {
+      errorAsyncEvents.offref(eventRef);
+    }
+  });
 }
 
 /**

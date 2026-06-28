@@ -510,22 +510,30 @@ describe('printError', () => {
 describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
   it('should call the registered handler when an async error is emitted', () => {
     const handler = vi.fn();
-    const unregister = registerAsyncErrorEventHandler(handler);
+    using _registration = registerAsyncErrorEventHandler(handler);
 
     const error = new Error('async error');
     emitAsyncErrorEvent(error);
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith(error);
-
-    unregister();
   });
 
-  it('should not call the handler after unregistering', () => {
+  it('should not call the handler after the disposable is disposed', () => {
     const handler = vi.fn();
-    const unregister = registerAsyncErrorEventHandler(handler);
+    const registration = registerAsyncErrorEventHandler(handler);
 
-    unregister();
+    registration[Symbol.dispose]();
+
+    emitAsyncErrorEvent(new Error('should not reach handler'));
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('should not call the handler after the registration using scope exits', () => {
+    const handler = vi.fn();
+    {
+      using _registration = registerAsyncErrorEventHandler(handler);
+    }
 
     emitAsyncErrorEvent(new Error('should not reach handler'));
     expect(handler).not.toHaveBeenCalled();
@@ -534,8 +542,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
   it('should call all registered handlers', () => {
     const handler1 = vi.fn();
     const handler2 = vi.fn();
-    const unregister1 = registerAsyncErrorEventHandler(handler1);
-    const unregister2 = registerAsyncErrorEventHandler(handler2);
+    using _registration1 = registerAsyncErrorEventHandler(handler1);
+    using _registration2 = registerAsyncErrorEventHandler(handler2);
 
     const error = new Error('multi');
     emitAsyncErrorEvent(error);
@@ -544,25 +552,20 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
     expect(handler1).toHaveBeenCalledWith(error);
     expect(handler2).toHaveBeenCalledTimes(1);
     expect(handler2).toHaveBeenCalledWith(error);
-
-    unregister1();
-    unregister2();
   });
 
   it('should only unregister the specific handler', () => {
     const handler1 = vi.fn();
     const handler2 = vi.fn();
-    const unregister1 = registerAsyncErrorEventHandler(handler1);
-    const unregister2 = registerAsyncErrorEventHandler(handler2);
+    const registration1 = registerAsyncErrorEventHandler(handler1);
+    using _registration2 = registerAsyncErrorEventHandler(handler2);
 
-    unregister1();
+    registration1[Symbol.dispose]();
 
     emitAsyncErrorEvent(new Error('selective'));
 
     expect(handler1).not.toHaveBeenCalled();
     expect(handler2).toHaveBeenCalledTimes(1);
-
-    unregister2();
   });
 
   it.each([
@@ -570,11 +573,9 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
     [42]
   ])('should handle non-Error value %j as async error', (value) => {
     const handler = vi.fn();
-    const unregister = registerAsyncErrorEventHandler(handler);
+    using _registration = registerAsyncErrorEventHandler(handler);
 
     emitAsyncErrorEvent(value);
     expect(handler).toHaveBeenCalledWith(value);
-
-    unregister();
   });
 });

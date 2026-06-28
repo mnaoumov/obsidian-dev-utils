@@ -26,7 +26,10 @@ export class AsyncErrorHandlerComponent extends ComponentEx {
    * Registers the error handler.
    */
   public override onload(): void {
-    this.register(registerAsyncErrorEventHandler(this.handleAsyncError.bind(this)));
+    const asyncErrorHandlerDisposable = registerAsyncErrorEventHandler(this.handleAsyncError.bind(this));
+    this.register(() => {
+      asyncErrorHandlerDisposable[Symbol.dispose]();
+    });
   }
 
   /**

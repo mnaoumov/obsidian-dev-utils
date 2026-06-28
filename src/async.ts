@@ -22,6 +22,7 @@ import {
   getLibDebugger,
   printWithStackTrace
 } from './debug.ts';
+import { CallbackDisposable } from './disposable.ts';
 import {
   ASYNC_WRAPPER_ERROR_MESSAGE,
   CustomStackTraceError,
@@ -322,9 +323,14 @@ export function disableAsyncOperationTracking(): void {
  * While enabled, each scheduled operation is recorded until it settles so that tests can await them all via {@link waitForAllAsyncOperations}, removing the need to override {@link invokeAsyncSafely} / {@link convertAsyncToSync} in tests.
  *
  * Tracking is disabled by default, so production code carries no bookkeeping overhead. Intended to be enabled in test environments only.
+ *
+ * @returns A {@link Disposable} that disables tracking again (via {@link disableAsyncOperationTracking}) when disposed, for use with `using`.
  */
-export function enableAsyncOperationTracking(): void {
+export function enableAsyncOperationTracking(): Disposable {
   isAsyncOperationTrackingEnabled = true;
+  return new CallbackDisposable({
+    callback: disableAsyncOperationTracking
+  });
 }
 
 /**
