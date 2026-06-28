@@ -24,6 +24,7 @@ import type { PluginNoticeComponent } from './components/plugin-notice-component
 import type { PathOrFile } from './file-system.ts';
 import type { CombinedFrontmatter } from './frontmatter.ts';
 
+import { CallbackDisposable } from '../disposable.ts';
 import { getNestedPropertyValue } from '../object-utils.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { strictProxy } from '../strict-proxy.ts';
@@ -367,8 +368,9 @@ export async function parseMetadata(app: App, str: string): Promise<CachedMetada
  * Registers the file cache for a non-existing file.
  *
  * @param params - The parameters for registering the file cache.
+ * @returns A {@link Disposable} that unregisters the file cache when disposed, for use with `using`.
  */
-export function registerFileCacheForNonExistingFile(params: RegisterFileCacheForNonExistingFileParams): void {
+export function registerFileCacheForNonExistingFile(params: RegisterFileCacheForNonExistingFileParams): Disposable {
   const { app, cache, pathOrFile } = params;
   const file = getFile({ app, pathOrFile, shouldIncludeNonExisting: true });
   if (!file.deleted) {
@@ -382,6 +384,12 @@ export function registerFileCacheForNonExistingFile(params: RegisterFileCacheFor
   };
 
   app.metadataCache.metadataCache[file.path] = cache;
+
+  return new CallbackDisposable({
+    callback: (): void => {
+      unregisterFileCacheForNonExistingFile(app, file);
+    }
+  });
 }
 
 /**
@@ -389,8 +397,9 @@ export function registerFileCacheForNonExistingFile(params: RegisterFileCacheFor
  *
  * @param app - The Obsidian app instance.
  * @param files - The files to register.
+ * @returns A {@link Disposable} that unregisters the files when disposed, for use with `using`.
  */
-export function registerFiles(app: App, files: TAbstractFile[]): void {
+export function registerFiles(app: App, files: TAbstractFile[]): Disposable {
   const registeredFilesCounts = getRegisteredFilesCounts();
 
   for (let file of files) {
@@ -412,6 +421,12 @@ export function registerFiles(app: App, files: TAbstractFile[]): void {
       });
     }
   }
+
+  return new CallbackDisposable({
+    callback: (): void => {
+      unregisterFiles(app, files);
+    }
+  });
 }
 
 /**

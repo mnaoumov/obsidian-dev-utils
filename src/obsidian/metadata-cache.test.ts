@@ -429,6 +429,21 @@ describe('registerFileCacheForNonExistingFile', () => {
     })
       .toThrow('File is existing');
   });
+
+  it('should unregister the file cache when the returned disposable is disposed', () => {
+    const file = { deleted: true, name: 'note.md', path: 'folder/note.md' };
+    const cache: CachedMetadata = { links: [] };
+
+    mockedGetFile.mockReturnValue(castTo<ReturnType<typeof getFile>>(file));
+
+    const disposable = registerFileCacheForNonExistingFile({ app, cache, pathOrFile: castTo<PathOrFile>(file) });
+    expect(app.metadataCache.metadataCache['folder/note.md']).toBe(cache);
+
+    disposable[Symbol.dispose]();
+
+    expect(app.metadataCache.fileCache['folder/note.md']).toBeUndefined();
+    expect(app.metadataCache.metadataCache['folder/note.md']).toBeUndefined();
+  });
 });
 
 describe('unregisterFileCacheForNonExistingFile', () => {
@@ -492,6 +507,17 @@ describe('registerFiles', () => {
 
     expect(app.vault.getAbstractFileByPath('folder')).toBe(folder);
     expect(app.metadataCache.uniqueFileLookup.add).not.toHaveBeenCalled();
+  });
+
+  it('should unregister the files when the returned disposable is disposed', () => {
+    const file = strictProxy<TAbstractFile>({ deleted: true, name: 'note.md', path: 'folder/note.md' });
+
+    const disposable = registerFiles(app, [file]);
+    expect(app.vault.getAbstractFileByPath('folder/note.md')).toBe(file);
+
+    disposable[Symbol.dispose]();
+
+    expect(app.vault.getAbstractFileByPath('folder/note.md')).toBeNull();
   });
 });
 
