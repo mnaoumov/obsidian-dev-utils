@@ -6,7 +6,6 @@
 
 import type {
   App,
-  EventRef,
   ListedFiles
 } from 'obsidian';
 
@@ -25,6 +24,7 @@ import {
 import type { RetryOptions } from '../async.ts';
 import type { ValueProvider } from '../value-provider.ts';
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
+import type { EditorLockComponent } from './editor-lock.ts';
 import type {
   PathOrAbstractFile,
   PathOrFile,
@@ -44,10 +44,6 @@ import { strictProxy } from '../strict-proxy.ts';
 import { assertNever } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
-import {
-  lockEditor,
-  unlockEditor
-} from './editor.ts';
 import {
   asFile,
   asFolder,
@@ -220,18 +216,18 @@ export interface IsChildParams {
  */
 export interface ProcessOptions extends RetryOptions {
   /**
+   * An editor-lock component used to lock the file's editor read-only for the duration of
+   * processing. The lock is reference-counted, so it composes with any outer operation-level lock
+   * on the same note. When omitted, the editor is not locked while processing.
+   */
+  readonly editorLockComponent?: EditorLockComponent;
+
+  /**
    * Whether to fail if the file is missing or deleted.
    *
    * @default `true`
    */
   readonly shouldFailOnMissingFile?: boolean;
-
-  /**
-   * Whether to lock the editor while processing the file. Applicable only for markdown files.
-   *
-   * @default `true`
-   */
-  readonly shouldLockEditorWhileProcessing?: boolean;
 
   /**
    * Whether to show a timeout notice.
@@ -739,12 +735,12 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
 export async function process(params: ProcessParams): Promise<void> {
   const {
     app,
+    editorLockComponent,
     newContentProvider,
     pathOrFile
   } = params;
   const DEFAULT_RETRY_OPTIONS = {
     shouldFailOnMissingFile: true,
-    shouldLockEditorWhileProcessing: true,
     shouldShowTimeoutNotice: true,
     // eslint-disable-next-line no-magic-numbers -- Default value.
     timeoutInMilliseconds: 500
@@ -754,92 +750,70 @@ export async function process(params: ProcessParams): Promise<void> {
   fullOptions.abortSignal = abortSignalAny(fullOptions.abortSignal, abortController.signal);
   const path = getPath(app, pathOrFile);
 
-  let activeLeafChangeEventRef: EventRef | null = null;
+  // Reference-counted lock; a no-op when no component is provided. Released at function scope exit.
+  using _lock = editorLockComponent?.lockForPath(pathOrFile);
 
-  if (fullOptions.shouldLockEditorWhileProcessing) {
-    for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
-      if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
-        lockEditor(leaf.view.editor);
+  await retryWithTimeoutNotice({
+    async operationFn(abortSignal) {
+      abortSignal.throwIfAborted();
+
+      const oldContent = await readSafe(app, pathOrFile);
+      abortSignal.throwIfAborted();
+
+      if (oldContent === null) {
+        return handleMissingFile();
       }
-    }
 
-    activeLeafChangeEventRef = app.workspace.on('active-leaf-change', (leaf) => {
-      if (leaf?.view instanceof MarkdownView && leaf.view.file?.path === path) {
-        lockEditor(leaf.view.editor);
+      const newContent = await resolveValue(newContentProvider, { abortSignal, content: oldContent });
+      abortSignal.throwIfAborted();
+
+      if (newContent === null) {
+        return false;
       }
-    });
-  }
 
-  try {
-    await retryWithTimeoutNotice({
-      async operationFn(abortSignal) {
-        abortSignal.throwIfAborted();
-
-        const oldContent = await readSafe(app, pathOrFile);
-        abortSignal.throwIfAborted();
-
-        if (oldContent === null) {
-          return handleMissingFile();
-        }
-
-        const newContent = await resolveValue(newContentProvider, { abortSignal, content: oldContent });
-        abortSignal.throwIfAborted();
-
-        if (newContent === null) {
-          return false;
-        }
-
-        let isSuccess = true;
-        const doesFileExist = await invokeFileActionSafe({
-          app,
-          async fileAction(file) {
+      let isSuccess = true;
+      const doesFileExist = await invokeFileActionSafe({
+        app,
+        async fileAction(file) {
+          abortSignal.throwIfAborted();
+          await app.vault.process(file, (content) => {
             abortSignal.throwIfAborted();
-            await app.vault.process(file, (content) => {
-              abortSignal.throwIfAborted();
-              if (content !== oldContent) {
-                getLibDebugger('Vault:process')('Content has changed since it was read. Retrying...', {
-                  actualContent: content,
-                  expectedContent: oldContent,
-                  path: file.path
-                });
-                isSuccess = false;
-                return content;
-              }
+            if (content !== oldContent) {
+              getLibDebugger('Vault:process')('Content has changed since it was read. Retrying...', {
+                actualContent: content,
+                expectedContent: oldContent,
+                path: file.path
+              });
+              isSuccess = false;
+              return content;
+            }
 
-              return newContent;
-            });
+            return newContent;
+          });
 
-            abortSignal.throwIfAborted();
-          },
-          pathOrFile
-        });
+          abortSignal.throwIfAborted();
+        },
+        pathOrFile
+      });
 
-        if (!doesFileExist) {
-          return handleMissingFile();
-        }
-
-        return isSuccess;
-
-        function handleMissingFile(): boolean {
-          if (fullOptions.shouldFailOnMissingFile) {
-            throw new Error(`File '${path}' not found`);
-          }
-          return true;
-        }
-      },
-      operationName: t(($) => $.obsidianDevUtils.vault.processFile, { filePath: path }),
-      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
-      retryOptions: fullOptions,
-      shouldShowTimeoutNotice: fullOptions.shouldShowTimeoutNotice
-    });
-  } finally {
-    activeLeafChangeEventRef?.e.offref(activeLeafChangeEventRef);
-    for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
-      if (leaf.view instanceof MarkdownView && leaf.view.file?.path === path) {
-        unlockEditor(leaf.view.editor);
+      if (!doesFileExist) {
+        return handleMissingFile();
       }
-    }
-  }
+
+      return isSuccess;
+
+      function handleMissingFile(): boolean {
+        if (fullOptions.shouldFailOnMissingFile) {
+          throw new Error(`File '${path}' not found`);
+        }
+        return true;
+      }
+    },
+    operationName: t(($) => $.obsidianDevUtils.vault.processFile, { filePath: path }),
+    pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
+    retryOptions: fullOptions,
+    shouldShowTimeoutNotice: fullOptions.shouldShowTimeoutNotice
+  });
 }
 
 /**

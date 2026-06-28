@@ -2,7 +2,6 @@
 
 import type {
   App as AppOriginal,
-  Editor,
   WorkspaceLeaf as WorkspaceLeafOriginal
 } from 'obsidian';
 
@@ -22,16 +21,15 @@ import {
   vi
 } from 'vitest';
 
-import type { GenericFunction } from '../function.ts';
 import type { GenericObject } from '../type-guards.ts';
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
+import type { EditorLockComponent } from './editor-lock.ts';
 
 import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
-import { lockEditor } from './editor.ts';
 import { FileSystemType } from './file-system.ts';
 import {
   copySafe,
@@ -64,11 +62,6 @@ import {
 
 vi.mock('../obsidian/async-with-notice.ts', () => ({
   retryWithTimeoutNotice: vi.fn()
-}));
-
-vi.mock('../obsidian/editor.ts', () => ({
-  lockEditor: vi.fn(),
-  unlockEditor: vi.fn()
 }));
 
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
@@ -1078,95 +1071,39 @@ describe('processFile', () => {
       .rejects.toThrow('File \'note.md\' not found');
   });
 
-  it('should lock and unlock editors when shouldLockEditorWhileProcessing is true', async () => {
+  it('should lock the file via the provided editor lock component while processing and release it after', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
 
-    const mockLeaf = WorkspaceLeaf.create2__(mockApp);
-    const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
-    const file = app.vault.getFileByPath('note.md');
-    assertNonNullable(file);
-    view.file = file;
-    view.editor = strictProxy<Editor>({});
+    const dispose = vi.fn();
+    const lockDisposable: Disposable = { [Symbol.dispose]: dispose };
+    const lockForPath = vi.fn(() => lockDisposable);
+    const editorLockComponent = strictProxy<EditorLockComponent>({ lockForPath });
 
-    vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
-      strictProxy<WorkspaceLeafOriginal>({ view })
-    ]);
-    vi.spyOn(app.workspace, 'on');
+    await processFile({ app, editorLockComponent, newContentProvider: 'new content', pathOrFile: 'note.md' });
 
-    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', shouldLockEditorWhileProcessing: true });
-    expect(vi.mocked(app.workspace.on)).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
+    expect(lockForPath).toHaveBeenCalledWith('note.md');
+    expect(dispose).toHaveBeenCalledTimes(1);
   });
 
-  it('should invoke active-leaf-change callback that locks matching editors', async () => {
-    mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
-
-    const mockLeaf = WorkspaceLeaf.create2__(mockApp);
-    const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
-    const file = app.vault.getFileByPath('note.md');
-    assertNonNullable(file);
-    view.file = file;
-    view.editor = strictProxy<Editor>({});
-
-    vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
-
-    let capturedCallback: GenericFunction<unknown[]> | undefined;
-    vi.spyOn(app.workspace, 'on').mockImplementation((name: string, callback: GenericFunction<unknown[]>, _ctx?: unknown) => {
-      capturedCallback = callback;
-      return { e: app.workspace, fn: callback, name };
-    });
-
-    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', shouldLockEditorWhileProcessing: true });
-
-    assertNonNullable(capturedCallback);
-    // Invoke the callback with a matching leaf
-    const mockedLockEditor = vi.mocked(lockEditor);
-    mockedLockEditor.mockClear();
-    capturedCallback({ view });
-    expect(mockedLockEditor).toHaveBeenCalledTimes(1);
-    expect(mockedLockEditor).toHaveBeenCalledWith(view.editor);
-    // Also invoke with null leaf for branch coverage
-    mockedLockEditor.mockClear();
-    capturedCallback(null);
-    expect(mockedLockEditor).not.toHaveBeenCalled();
-  });
-
-  it('should not lock editors when shouldLockEditorWhileProcessing is false', async () => {
-    mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
-
-    vi.spyOn(app.workspace, 'on');
-
-    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', shouldLockEditorWhileProcessing: false });
-    expect(vi.mocked(app.workspace.on)).not.toHaveBeenCalled();
-  });
-
-  it('should clean up event ref in finally block', async () => {
+  it('should release the editor lock component even when processing throws', async () => {
     mockedRetryWithTimeoutNotice.mockRejectedValue(new Error('Timeout'));
 
-    vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
-    vi.spyOn(app.workspace, 'on');
+    const dispose = vi.fn();
+    const lockDisposable: Disposable = { [Symbol.dispose]: dispose };
+    const editorLockComponent = strictProxy<EditorLockComponent>({ lockForPath: vi.fn(() => lockDisposable) });
 
-    await expect(processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md' })).rejects.toThrow('Timeout');
-    expect(vi.mocked(app.workspace.on)).toHaveBeenCalled();
+    await expect(processFile({ app, editorLockComponent, newContentProvider: 'new content', pathOrFile: 'note.md' }))
+      .rejects.toThrow('Timeout');
+    expect(dispose).toHaveBeenCalledTimes(1);
   });
 
-  it('should skip locking editors when view.file is null', async () => {
+  it('should not lock the editor when no component is provided', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
+    vi.spyOn(app.workspace, 'on');
 
-    const mockLeaf = WorkspaceLeaf.create2__(mockApp);
-    const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
-    // View.file defaults to null in the mock — don't set it
-    view.editor = strictProxy<Editor>({});
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md' });
 
-    vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([
-      strictProxy<WorkspaceLeafOriginal>({ view })
-    ]);
-
-    const mockedLockEditor = vi.mocked(lockEditor);
-    mockedLockEditor.mockClear();
-
-    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', shouldLockEditorWhileProcessing: true });
-
-    expect(mockedLockEditor).not.toHaveBeenCalled();
+    expect(vi.mocked(app.workspace.on)).not.toHaveBeenCalled();
   });
 });
 
