@@ -238,7 +238,7 @@ describe('AsyncWithNotice', () => {
       expect(capturedOnTimeout).toBeTypeOf('function');
     });
 
-    it('should pass onTimeoutWithoutNotice as onTimeout when shouldShowTimeoutNotice is undefined', async () => {
+    it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is undefined', async () => {
       let capturedOnTimeoutWithFalse: ((ctx: TimeoutContext) => void) | null = null;
       let capturedOnTimeoutWithUndefined: ((ctx: TimeoutContext) => void) | null = null;
 
@@ -267,8 +267,8 @@ describe('AsyncWithNotice', () => {
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
 
-      // Both false and undefined should use the same onTimeout function (onTimeoutWithoutNotice)
-      expect(capturedOnTimeoutWithFalse).toBe(capturedOnTimeoutWithUndefined);
+      // Undefined defaults to true, so it must use the notice-showing handler, not the no-notice one used for false.
+      expect(capturedOnTimeoutWithUndefined).not.toBe(capturedOnTimeoutWithFalse);
     });
 
     it('should use a different onTimeout for true vs false shouldShowTimeoutNotice', async () => {
@@ -498,6 +498,43 @@ describe('AsyncWithNotice', () => {
       });
 
       expect(capturedOnTimeoutTrue).not.toBe(capturedOnTimeoutFalse);
+    });
+
+    it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is undefined', async () => {
+      let capturedOnTimeoutWithFalse: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedOnTimeoutWithUndefined: ((ctx: TimeoutContext) => void) | null = null;
+
+      vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
+        await noopAsync();
+        capturedOnTimeoutWithFalse = options.onTimeout as (ctx: TimeoutContext) => void;
+        return undefined;
+      });
+      await runWithTimeoutNotice({
+        operationFn: async () => {
+          await noopAsync();
+          return 'value';
+        },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
+        shouldShowTimeoutNotice: false,
+        timeoutInMilliseconds: 5000
+      });
+
+      vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
+        await noopAsync();
+        capturedOnTimeoutWithUndefined = options.onTimeout as (ctx: TimeoutContext) => void;
+        return undefined;
+      });
+      await runWithTimeoutNotice({
+        operationFn: async () => {
+          await noopAsync();
+          return 'value';
+        },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
+        timeoutInMilliseconds: 5000
+      });
+
+      // Undefined defaults to true, so it must use the notice-showing handler, not the no-notice one used for false.
+      expect(capturedOnTimeoutWithUndefined).not.toBe(capturedOnTimeoutWithFalse);
     });
   });
 

@@ -47,7 +47,9 @@ export interface RetryWithTimeoutNoticeParams {
   readonly retryOptions?: RetryOptions;
 
   /**
-   * Whether to show a timeout notice. Default is `true`.
+   * Whether to show a timeout notice.
+   *
+   * @default `true`
    */
   readonly shouldShowTimeoutNotice?: boolean;
 
@@ -87,7 +89,9 @@ export interface RunWithTimeoutNoticeParams<Result> {
   readonly pluginNoticeComponent: PluginNoticeComponent;
 
   /**
-   * Whether to show a timeout notice. Default is `true`.
+   * Whether to show a timeout notice.
+   *
+   * @default `true`
    */
   readonly shouldShowTimeoutNotice?: boolean;
 
@@ -111,7 +115,7 @@ export interface RunWithTimeoutNoticeParams<Result> {
 export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParams): Promise<void> {
   return retryWithTimeout({
     ...params,
-    onTimeout: params.shouldShowTimeoutNotice
+    onTimeout: params.shouldShowTimeoutNotice ?? true
       ? (ctx): void => {
         onTimeoutNotice(ctx, params.pluginNoticeComponent);
       }
@@ -129,7 +133,7 @@ export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParam
 export async function runWithTimeoutNotice<Result>(params: RunWithTimeoutNoticeParams<Result>): Promise<Result> {
   return runWithTimeout({
     ...params,
-    onTimeout: params.shouldShowTimeoutNotice
+    onTimeout: params.shouldShowTimeoutNotice ?? true
       ? (ctx): void => {
         onTimeoutNotice(ctx, params.pluginNoticeComponent);
       }
