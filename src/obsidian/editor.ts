@@ -54,9 +54,9 @@ function ensureCompartment(editor: Editor): Compartment {
   if (!compartment) {
     compartment = new Compartment();
     editorCompartmentMap.set(editor, compartment);
-    // A `Compartment` only takes effect once it is part of the editor's configuration. Since the
-    // compartment is created lazily here, install it (initially empty) via `appendConfig`; without
-    // this step `reconfigure` is silently ignored and the editor never actually locks.
+    // A `Compartment` only takes effect once it is part of the editor's configuration.
+    // The compartment is created lazily here, so install it (initially empty) via `appendConfig`.
+    // Without this step `reconfigure` is silently ignored and the editor never actually locks.
     editor.cm.dispatch({
       effects: StateEffect.appendConfig.of(compartment.of([]))
     });

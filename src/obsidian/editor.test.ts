@@ -33,8 +33,8 @@ const mocks = vi.hoisted(() => {
   const mockAppendConfigOf = vi.fn((extension: unknown): StateEffect<unknown> => castTo<StateEffect<unknown>>({ appendConfig: extension }));
 
   return {
-    MockCompartment,
     mockAppendConfigOf,
+    MockCompartment,
     mockCompartmentOf,
     mockReadOnlyOf,
     mockReconfigure
@@ -144,9 +144,9 @@ describe('ensureCompartment', () => {
     lockEditor(editor);
     unlockEditor(editor);
 
-    // appendConfig runs only on the first call (compartment installed once).
+    // The `appendConfig` runs only on the first call (compartment installed once).
     expect(mocks.mockAppendConfigOf).toHaveBeenCalledTimes(1);
-    // lock: appendConfig + reconfigure (2 dispatches); unlock: reconfigure (1 dispatch).
+    // Lock: appendConfig + reconfigure (2 dispatches); unlock: reconfigure (1 dispatch).
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(3);
   });
 });
