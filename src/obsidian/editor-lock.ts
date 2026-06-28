@@ -284,14 +284,17 @@ export class EditorLockComponent extends ComponentEx {
   private readonly pluginId: string;
 
   /**
-   * Creates an editor-lock handle owned by the current plugin (identified via its plugin context).
+   * Creates an editor-lock handle owned by a plugin.
    *
    * @param app - The Obsidian app instance.
+   * @param pluginId - The id of the owning plugin. Defaults to the current plugin context's id; pass
+   * it explicitly (e.g. from a plugin's `manifest.id`) when constructing before the plugin context is
+   * initialized, such as inside `PluginBase.onload`.
    */
-  public constructor(app: App) {
+  public constructor(app: App, pluginId: string = getPluginId()) {
     super();
     this.app = app;
-    this.pluginId = getPluginId();
+    this.pluginId = pluginId;
   }
 
   /**
