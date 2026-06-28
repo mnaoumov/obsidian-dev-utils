@@ -6,6 +6,8 @@
 
 import { Component } from 'obsidian';
 
+import { isDisposable } from '../../disposable.ts';
+
 type DisposableComponentWrapper<TComponent extends Component> = Disposable & TComponent;
 
 /**
@@ -26,15 +28,4 @@ export function asDisposableComponent<TComponent extends Component>(component: T
     component.unload();
   };
   return disposable as DisposableComponentWrapper<TComponent>;
-}
-
-/**
- * Type guard to check if an object implements the `Disposable` interface.
- *
- * @param obj The object to check for the `Disposable` interface
- * @returns Whether the object implements the `Disposable` interface
- */
-export function isDisposable(obj: unknown): obj is Disposable {
-  const disposable = obj as Partial<Disposable>;
-  return !!disposable[Symbol.dispose];
 }

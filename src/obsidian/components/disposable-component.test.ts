@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Tests for {@link DisposableComponent}, {@link asDisposableComponent}, and {@link isDisposable}.
+ * Tests for {@link asDisposableComponent}.
  */
 
 import { Component } from 'obsidian';
@@ -12,11 +12,8 @@ import {
   vi
 } from 'vitest';
 
-import { noop } from '../../function.ts';
-import {
-  asDisposableComponent,
-  isDisposable
-} from './disposable-component.ts';
+import { isDisposable } from '../../disposable.ts';
+import { asDisposableComponent } from './disposable-component.ts';
 
 describe('asDisposableComponent', () => {
   it('should add Symbol.dispose to a plain Component', () => {
@@ -36,16 +33,5 @@ describe('asDisposableComponent', () => {
     const wrappedAgain = asDisposableComponent(wrapped);
 
     expect(wrappedAgain).toBe(wrapped);
-  });
-});
-
-describe('isDisposable', () => {
-  it('should return true for objects with Symbol.dispose', () => {
-    const obj = { [Symbol.dispose]: noop };
-    expect(isDisposable(obj)).toBe(true);
-  });
-
-  it('should return false for objects without Symbol.dispose', () => {
-    expect(isDisposable({})).toBe(false);
   });
 });
