@@ -15,11 +15,34 @@ import {
 } from 'eslint/config';
 
 import { join } from '../src/path.ts';
+import { agnosticCoreBoundaryNoRestrictedImportPatterns } from '../src/script-utils/linters/eslint-agnostic-core-boundary.ts';
 import {
   defineEslintConfigs,
   EslintConfigContext
 } from '../src/script-utils/linters/eslint-config.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+
+function getAgnosticCoreBoundaryConfigs(context: EslintConfigContext): Linter.Config[] {
+  return defineConfig([
+    {
+      // Scoped to the agnostic top-level `src/*.ts` modules only.
+      // Nested layers (`src/obsidian/**`, `src/script-utils/**`), the generated barrel, and test files are excluded.
+      files: [join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.AnyTs)],
+      ignores: [
+        join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.IndexTs),
+        ...context.testFiles
+      ],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [...agnosticCoreBoundaryNoRestrictedImportPatterns]
+          }
+        ]
+      }
+    }
+  ]);
+}
 
 function getIgnoreConfigs(): Linter.Config[] {
   return defineConfig([
@@ -188,6 +211,7 @@ export const configs: Linter.Config[] = defineEslintConfigs({
       ...getTsdocsConfigs(context),
       ...getJsdocsConfigs(context),
       ...getNoRestrictedSyntaxOverrideConfigs(),
+      ...getAgnosticCoreBoundaryConfigs(context),
       {
         files: [ObsidianDevUtilsRepoPaths.PackageJson],
         rules: {
