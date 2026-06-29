@@ -17,7 +17,7 @@ vi.mock('../../async.ts', () => ({
   })
 }));
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     CodeHighlighterComponent: 'code-highlighter-component',
     IsPlaceholder: 'is-placeholder',

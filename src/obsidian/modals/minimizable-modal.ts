@@ -34,7 +34,7 @@ import type { Modal } from 'obsidian';
 import { around } from 'monkey-around';
 import { setIcon } from 'obsidian';
 
-import { CssClass } from '../../css-class.ts';
+import { CssClass } from '../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 const MINIMIZE_ICON_ID = 'minus';

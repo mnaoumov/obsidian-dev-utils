@@ -9,7 +9,7 @@ import {
 
 import { WeekComponent } from './week-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     WeekComponent: 'week-component'
   }

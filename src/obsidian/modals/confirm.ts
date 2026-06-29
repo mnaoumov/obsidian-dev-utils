@@ -13,7 +13,7 @@ import type {
   ModalParamsBase
 } from './modal.ts';
 
-import { CssClass } from '../../css-class.ts';
+import { CssClass } from '../css-class.ts';
 import { t } from '../i18n/i18n.ts';
 import {
   ModalBase,

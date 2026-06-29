@@ -21,7 +21,7 @@ import { noopAsync } from '../../function.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { getValidatorComponent } from './validator-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     OverlayValidator: 'overlay-validator',
     SettingComponentWrapper: 'setting-component-wrapper'

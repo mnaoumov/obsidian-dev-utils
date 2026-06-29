@@ -35,7 +35,6 @@ import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from '../../async.ts';
-import { CssClass } from '../../css-class.ts';
 import {
   noop,
   noopAsync
@@ -44,6 +43,7 @@ import { deepEqual } from '../../object-utils.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { registerAsyncEvent } from '../components/async-events-component.ts';
 import { ComponentEx } from '../components/component-ex.ts';
+import { CssClass } from '../css-class.ts';
 import { ensureWrapped } from '../setting-components/setting-component-wrapper.ts';
 import { getTextBasedComponentValue } from '../setting-components/text-based-component.ts';
 import { getValidatorComponent } from '../setting-components/validator-component.ts';

@@ -18,7 +18,7 @@ import type { TextBasedComponent } from './text-based-component.ts';
 import type { ValidatorComponent } from './validator-component.ts';
 import type { ValueComponentWithChangeTracking } from './value-component-with-change-tracking.ts';
 
-import { CssClass } from '../../css-class.ts';
+import { CssClass } from '../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 /**

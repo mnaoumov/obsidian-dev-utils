@@ -14,7 +14,7 @@ import type { SettingEx } from '../setting-ex.ts';
 import type { ValidatorComponent } from './validator-component.ts';
 import type { ValueComponentWithChangeTracking } from './value-component-with-change-tracking.ts';
 
-import { CssClass } from '../../css-class.ts';
+import { CssClass } from '../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import { MultipleDropdownComponent } from './multiple-dropdown-component.ts';
 

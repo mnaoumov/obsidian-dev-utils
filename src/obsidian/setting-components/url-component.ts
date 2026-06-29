@@ -10,7 +10,7 @@ import type { initPluginContext } from '../plugin/plugin-context.ts';
 import type { SettingEx } from '../setting-ex.ts';
 import type { TextBasedComponent } from './text-based-component.ts';
 
-import { CssClass } from '../../css-class.ts';
+import { CssClass } from '../css-class.ts';
 import { TypedTextComponent } from './typed-text-component.ts';
 
 /**

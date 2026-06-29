@@ -16,7 +16,7 @@ import type {
   ModalParamsBase
 } from './modal.ts';
 
-import { CssClass } from '../../css-class.ts';
+import { CssClass } from '../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import { showModal } from './modal.ts';
 

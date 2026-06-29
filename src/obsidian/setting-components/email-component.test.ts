@@ -9,7 +9,7 @@ import {
 
 import { EmailComponent } from './email-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     EmailComponent: 'email-component'
   }

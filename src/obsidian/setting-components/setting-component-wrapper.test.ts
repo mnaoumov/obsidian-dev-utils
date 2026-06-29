@@ -9,7 +9,7 @@ import {
 
 import { ensureWrapped } from './setting-component-wrapper.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     SettingComponentWrapper: 'setting-component-wrapper'
   }

@@ -28,7 +28,7 @@ vi.mock('i18next', () => ({
   })
 }));
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     AlertModal: 'alert-modal',
     OkButton: 'ok-button'

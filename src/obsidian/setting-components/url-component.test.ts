@@ -9,7 +9,7 @@ import {
 
 import { UrlComponent } from './url-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     UrlComponent: 'url-component'
   }

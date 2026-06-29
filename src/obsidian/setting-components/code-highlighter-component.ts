@@ -23,8 +23,8 @@ import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from '../../async.ts';
-import { CssClass } from '../../css-class.ts';
 import { toPx } from '../../html-element.ts';
+import { CssClass } from '../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 /**

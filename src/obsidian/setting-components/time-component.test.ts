@@ -10,7 +10,7 @@ import {
 
 import { TimeComponent } from './time-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     TimeComponent: 'time-component'
   }

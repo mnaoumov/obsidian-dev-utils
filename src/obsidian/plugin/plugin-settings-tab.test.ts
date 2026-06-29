@@ -27,7 +27,7 @@ import {
   SAVE_TO_FILE_CONTEXT
 } from './plugin-settings-tab.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     LibraryName: 'obsidian-dev-utils',
     PluginSettingsTab: 'plugin-settings-tab',

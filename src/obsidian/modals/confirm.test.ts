@@ -23,7 +23,7 @@ beforeEach(() => {
   app = App.createConfigured__().asOriginalType__();
 });
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     CancelButton: 'cancel-button',
     ConfirmModal: 'confirm-modal',

@@ -23,8 +23,8 @@ import {
   convertAsyncToSync,
   invokeAsyncSafely
 } from '../../async.ts';
-import { CssClass } from '../../css-class.ts';
 import { noop } from '../../function.ts';
+import { CssClass } from '../css-class.ts';
 import { t } from '../i18n/i18n.ts';
 import {
   ModalBase,

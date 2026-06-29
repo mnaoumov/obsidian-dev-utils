@@ -13,8 +13,8 @@ import {
   vi
 } from 'vitest';
 
-import { CssClass } from '../../css-class.ts';
 import { assertNonNullable } from '../../type-guards.ts';
+import { CssClass } from '../css-class.ts';
 import { MinimizableModal } from './minimizable-modal.ts';
 
 class TrackingModal extends Modal {

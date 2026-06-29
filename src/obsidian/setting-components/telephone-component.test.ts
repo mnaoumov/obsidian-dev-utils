@@ -9,7 +9,7 @@ import {
 
 import { TelephoneComponent } from './telephone-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     TelephoneComponent: 'telephone-component'
   }

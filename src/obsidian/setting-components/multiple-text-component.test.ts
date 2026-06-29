@@ -9,7 +9,7 @@ import {
 
 import { MultipleTextComponent } from './multiple-text-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     MultipleTextComponent: 'multiple-text-component'
   }

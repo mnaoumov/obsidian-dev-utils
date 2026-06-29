@@ -9,7 +9,7 @@ import {
 
 import { MultipleFileComponent } from './multiple-file-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     MultipleFileComponent: 'multiple-file-component'
   }

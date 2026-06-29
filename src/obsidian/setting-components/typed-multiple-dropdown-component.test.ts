@@ -10,7 +10,7 @@ import {
 import { assertNonNullable } from '../../type-guards.ts';
 import { TypedMultipleDropdownComponent } from './typed-multiple-dropdown-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     MultipleDropdownComponent: 'multiple-dropdown-component',
     TypedMultipleDropdownComponent: 'typed-multiple-dropdown-component'

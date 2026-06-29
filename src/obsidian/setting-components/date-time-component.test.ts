@@ -9,7 +9,7 @@ import {
 
 import { DateTimeComponent } from './date-time-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     DateTimeComponent: 'datetime-component'
   }

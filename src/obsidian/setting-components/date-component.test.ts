@@ -9,7 +9,7 @@ import {
 
 import { DateComponent } from './date-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     DateComponent: 'date-component'
   }

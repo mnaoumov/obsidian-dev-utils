@@ -9,7 +9,7 @@ import {
 
 import { PasswordComponent } from './password-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     PasswordComponent: 'password-component'
   }

@@ -71,7 +71,7 @@ vi.mock('../../obsidian-dev-utils-state.ts', () => ({
   getObsidianDevUtilsState: vi.fn((_key: string, defaultValue: unknown) => ({ value: defaultValue }))
 }));
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     LibraryName: 'obsidian-dev-utils',
     PluginSettingsTab: 'plugin-settings-tab',

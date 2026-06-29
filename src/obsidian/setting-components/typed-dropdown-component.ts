@@ -16,7 +16,7 @@ import type { initPluginContext } from '../plugin/plugin-context.ts';
 import type { SettingEx } from '../setting-ex.ts';
 import type { ValueComponentWithChangeTracking } from './value-component-with-change-tracking.ts';
 
-import { CssClass } from '../../css-class.ts';
+import { CssClass } from '../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 /**

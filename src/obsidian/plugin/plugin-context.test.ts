@@ -36,7 +36,7 @@ vi.mock('compare-versions', () => ({
 
 vi.mock('../../debug-controller.ts', () => ({}));
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: { LibraryName: 'obsidian-dev-utils' }
 }));
 

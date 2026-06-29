@@ -9,7 +9,7 @@ import {
 
 import { MonthComponent } from './month-component.ts';
 
-vi.mock('../../css-class.ts', () => ({
+vi.mock('../css-class.ts', () => ({
   CssClass: {
     MonthComponent: 'month-component'
   }

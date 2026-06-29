@@ -10,7 +10,6 @@ import { compareVersions } from 'compare-versions';
 
 import type { DebugController } from '../../debug-controller.ts';
 
-import { CssClass } from '../../css-class.ts';
 import {
   getDebugController,
   showInitialDebugMessage
@@ -22,6 +21,7 @@ import {
   LIBRARY_VERSION
 } from '../../library.ts';
 import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
+import { CssClass } from '../css-class.ts';
 
 interface PluginContextWindow {
   DEBUG: DebugController | undefined;
