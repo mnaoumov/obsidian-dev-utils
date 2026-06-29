@@ -55,6 +55,10 @@ import { t } from './i18n/i18n.ts';
 import { confirm } from './modals/confirm.ts';
 import { getPluginId } from './plugin/plugin-id.ts';
 
+const BEEP_DURATION_SECONDS = 0.08;
+const BEEP_FREQUENCY_HZ = 660;
+const BEEP_GAIN = 0.05;
+const BEEP_THROTTLE_MILLISECONDS = 200;
 const EDITOR_LOCK_STATE_KEY = 'editorLock';
 const LOCK_ICON_ID = 'lock';
 const LOCK_INDICATOR_CSS_CLASS = 'obsidian-dev-utils-lock-indicator';
@@ -127,8 +131,10 @@ class EditorLockEventsComponent extends ComponentEx {
  */
 class EditorPathLockManager {
   private readonly abortControllersByPath = new Map<string, Set<AbortController>>();
+  private audioContext: AudioContext | null = null;
   private eventsComponent: EditorLockEventsComponent | undefined;
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
+  private lastBeepMilliseconds = 0;
   private readonly lockCountByPluginIdByPath = new Map<string, Map<string, number>>();
   private statusBarItemEl: HTMLElement | null = null;
 
@@ -223,6 +229,34 @@ class EditorPathLockManager {
     });
   }
 
+  private beep(): void {
+    // Throttle so a burst of keystrokes does not stack overlapping tones into a buzz.
+    const nowMilliseconds = Date.now();
+    if (nowMilliseconds - this.lastBeepMilliseconds < BEEP_THROTTLE_MILLISECONDS) {
+      return;
+    }
+    this.lastBeepMilliseconds = nowMilliseconds;
+
+    // `lib.dom` types `AudioContext` as always present, but it is absent in some runtimes
+    // (e.g. the jsdom test environment), so this guard is real, not redundant.
+    const AudioContextClass = window.AudioContext;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- see the comment above.
+    if (!AudioContextClass) {
+      return;
+    }
+    this.audioContext ??= new AudioContextClass();
+    const audioContext = this.audioContext;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = BEEP_FREQUENCY_HZ;
+    gainNode.gain.value = BEEP_GAIN;
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + BEEP_DURATION_SECONDS);
+  }
+
   private createIndicators(app: App, view: MarkdownView, path: string, tooltip: string): LockIndicators {
     const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
     this.registerUnlockMenu(app, actionIconEl, () => path);
@@ -237,17 +271,18 @@ class EditorPathLockManager {
     }
 
     // A locked view is read-only but still editable-focusable, so a keystroke fires `beforeinput`.
-    // Flash the indicators on that rejected attempt for immediate "note is locked" feedback.
+    // On that rejected attempt, flash the indicators and beep so it's clear the note is locked.
     // The listener is removed on unlock.
-    const flashOnTypeAttempt = (): void => {
+    const onTypeAttempt = (): void => {
       this.flashIndicators(view);
+      this.beep();
     };
-    view.contentEl.addEventListener('beforeinput', flashOnTypeAttempt);
+    view.contentEl.addEventListener('beforeinput', onTypeAttempt);
 
     return {
       actionIconEl,
       disposeTypeListener: (): void => {
-        view.contentEl.removeEventListener('beforeinput', flashOnTypeAttempt);
+        view.contentEl.removeEventListener('beforeinput', onTypeAttempt);
       },
       tabIconEl
     };

@@ -701,4 +701,30 @@ describe('lock type-attempt flash', () => {
 
     expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(false);
   });
+
+  it('should beep once (throttled) on repeated type attempts in a locked view', () => {
+    const view = createMarkdownView('note.md');
+    vi.spyOn(view, 'addAction').mockReturnValue(createDiv());
+    stubLeaves(leafOf(view));
+
+    const startMock = vi.fn();
+    const createOscillatorMock = vi.fn(() => ({ connect: vi.fn(), frequency: { value: 0 }, start: startMock, stop: vi.fn(), type: '' }));
+    const fakeAudioContext = { createGain: vi.fn(() => ({ connect: vi.fn(), gain: { value: 0 } })), createOscillator: createOscillatorMock, currentTime: 0, destination: {} };
+    const originalAudioContext = window.AudioContext;
+    // eslint-disable-next-line prefer-arrow-callback -- vitest needs a real function (not an arrow) to construct via `new`.
+    window.AudioContext = castTo<typeof AudioContext>(vi.fn(function fakeAudioContextCtor() {
+      return fakeAudioContext;
+    }));
+
+    try {
+      new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+      view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
+      view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
+    } finally {
+      window.AudioContext = originalAudioContext;
+    }
+
+    expect(createOscillatorMock).toHaveBeenCalledTimes(1);
+    expect(startMock).toHaveBeenCalledTimes(1);
+  });
 });
