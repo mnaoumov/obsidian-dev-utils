@@ -10,6 +10,7 @@
 /* v8 ignore start -- esbuild plugin that copies build output to Obsidian plugins folder; requires a live esbuild context. */
 
 import type { Plugin } from 'esbuild';
+import type { ObsidianTransport } from 'obsidian-integration-testing';
 
 import { existsSync } from 'node:fs';
 import {
@@ -18,7 +19,11 @@ import {
   readFile,
   writeFile
 } from 'node:fs/promises';
-import { evalInObsidian } from 'obsidian-integration-testing';
+import process from 'node:process';
+import {
+  createTransportFromOptions,
+  evalInObsidian
+} from 'obsidian-integration-testing';
 
 import { getLibDebugger } from '../../../debug.ts';
 import {
@@ -66,6 +71,12 @@ interface EnableCommunityPluginParams {
    */
   readonly pluginId: string;
 }
+
+// The `npm run dev`-owned Obsidian instance: launched on the first rebuild and reused across rebuilds.
+// It is closed when the `npm run dev` process terminates (see `registerDevInstanceCleanup`).
+let devInstanceTransportPromise: Promise<ObsidianTransport> | undefined;
+let isDevInstanceCleanupRegistered = false;
+let isDevInstanceDisposed = false;
 
 /**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
@@ -154,23 +165,89 @@ async function enableCommunityPlugin(params: EnableCommunityPluginParams): Promi
     await writeFile(communityPluginsPath, JSON.stringify(plugins, null, JSON_INDENT), 'utf-8');
   }
 
+  const vaultPath = dirname(obsidianConfigFolder);
+
+  // Live-enabling is best-effort: the plugin is already registered in `community-plugins.json`, so it is enabled on the next vault open even if this fails (and hot-reload picks up rebuilds meanwhile).
   try {
+    const transport = await getOrLaunchDevInstance(vaultPath);
     await evalInObsidian({
       args: { pluginId },
       // eslint-disable-next-line no-shadow -- No actual shadowing as the function is executed externally.
       async fn({ app, pluginId }) {
         await app.plugins.enablePluginAndSave(pluginId);
       },
-      vaultPath: dirname(obsidianConfigFolder)
+      shouldSkipPreflightChecks: true,
+      transport,
+      vaultPath
     });
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : String(e);
-    const isNotFound = errorMessage.includes('ENOENT') || errorMessage.includes('not found') || errorMessage.includes('not recognized');
-    if (isNotFound) {
-      console.error(`Obsidian CLI is not installed. Plugin '${pluginId}' will be enabled on next vault open. See https://help.obsidian.md/cli`);
-    } else {
-      console.error(`Failed to enable plugin '${pluginId}' via Obsidian CLI.`, e);
+    getLibDebugger('copyToObsidianPluginsFolderPlugin')(`Failed to live-enable plugin '${pluginId}'. It will be enabled on the next vault open.`, e);
+  }
+}
+
+/**
+ * Returns the `npm run dev`-owned Obsidian instance for the given vault, launching it on first use and
+ * reusing it on subsequent rebuilds.
+ *
+ * @param vaultPath - The absolute path to the vault folder to open.
+ * @returns A {@link Promise} resolving to the owned {@link ObsidianTransport}.
+ */
+async function getOrLaunchDevInstance(vaultPath: string): Promise<ObsidianTransport> {
+  devInstanceTransportPromise ??= launchDevInstance(vaultPath);
+  try {
+    return await devInstanceTransportPromise;
+  } catch (e) {
+    // Clear the cache so a later rebuild retries the launch.
+    devInstanceTransportPromise = undefined;
+    throw e;
+  }
+}
+
+/**
+ * Launches a fresh owned Obsidian instance (isolated user-data dir) and opens the given vault.
+ *
+ * @param vaultPath - The absolute path to the vault folder to open.
+ * @returns A {@link Promise} resolving to the launched {@link ObsidianTransport}.
+ */
+async function launchDevInstance(vaultPath: string): Promise<ObsidianTransport> {
+  const transport = await createTransportFromOptions();
+  try {
+    await transport.registerVault(vaultPath);
+  } catch (e) {
+    transport.disposeSync?.();
+    throw e;
+  }
+  registerDevInstanceCleanup(transport);
+  return transport;
+}
+
+/**
+ * Registers process-exit and signal handlers (once) that synchronously close the owned Obsidian
+ * instance when the `npm run dev` process terminates.
+ *
+ * @param transport - The owned transport to dispose on shutdown.
+ */
+function registerDevInstanceCleanup(transport: ObsidianTransport): void {
+  if (isDevInstanceCleanupRegistered) {
+    return;
+  }
+  isDevInstanceCleanupRegistered = true;
+
+  // `exit` covers any `process.exit()`, but a default Ctrl+C terminates WITHOUT firing `exit`, so the signal handlers guarantee the owned Obsidian is killed on shutdown.
+  process.on('exit', disposeDevInstance);
+  for (const signal of ['SIGHUP', 'SIGINT', 'SIGTERM'] as const) {
+    process.once(signal, () => {
+      disposeDevInstance();
+      process.exit();
+    });
+  }
+
+  function disposeDevInstance(): void {
+    if (isDevInstanceDisposed) {
+      return;
     }
+    isDevInstanceDisposed = true;
+    transport.disposeSync?.();
   }
 }
 

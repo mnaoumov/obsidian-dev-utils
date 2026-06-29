@@ -16,6 +16,8 @@ import { assertNonNullable } from '../../../type-guards.ts';
 import { copyToObsidianPluginsFolderPlugin } from './copy-to-obsidian-plugins-folder-plugin.ts';
 
 interface EvalInObsidianCall {
+  shouldSkipPreflightChecks: boolean;
+  transport: unknown;
   vaultPath: string;
 }
 
@@ -30,11 +32,16 @@ vi.mock('node:fs/promises', () => ({
   writeFile: vi.fn().mockResolvedValue(undefined)
 }));
 
-const { mockEvalInObsidian } = vi.hoisted(() => ({
-  mockEvalInObsidian: vi.fn().mockResolvedValue(undefined)
+const { mockEvalInObsidian, mockRegisterVault } = vi.hoisted(() => ({
+  mockEvalInObsidian: vi.fn().mockResolvedValue(undefined),
+  mockRegisterVault: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('obsidian-integration-testing', () => ({
+  createTransportFromOptions: vi.fn().mockResolvedValue({
+    disposeSync: vi.fn(),
+    registerVault: mockRegisterVault
+  }),
   evalInObsidian: mockEvalInObsidian
 }));
 
@@ -68,9 +75,14 @@ describe('copyToObsidianPluginsFolderPlugin', () => {
     });
 
     expect(mockEvalInObsidian).toHaveBeenCalledTimes(2);
+    // The owned dev instance is launched once and reused across both enable calls.
+    expect(mockRegisterVault).toHaveBeenCalledTimes(1);
+    expect(mockRegisterVault).toHaveBeenCalledWith(EXPECTED_VAULT_ROOT);
 
     for (const call of mockEvalInObsidian.mock.calls as EvalInObsidianCall[][]) {
       expect(call[0]?.vaultPath).toBe(EXPECTED_VAULT_ROOT);
+      expect(call[0]?.transport).toBeDefined();
+      expect(call[0]?.shouldSkipPreflightChecks).toBe(true);
     }
   });
 });
