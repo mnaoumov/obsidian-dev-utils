@@ -28,12 +28,14 @@ import type { App } from 'obsidian';
 import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   MarkdownView,
+  Menu,
   setIcon,
   setTooltip
 } from 'obsidian';
 
 import type { PathOrFile } from './file-system.ts';
 
+import { convertAsyncToSync } from '../async.ts';
 import {
   CallbackDisposable,
   MultipleDisposeBehavior
@@ -45,6 +47,7 @@ import { ComponentEx } from './components/component-ex.ts';
 import { toggleEditorReadOnly } from './editor.ts';
 import { getPath } from './file-system.ts';
 import { t } from './i18n/i18n.ts';
+import { confirm } from './modals/confirm.ts';
 import { getPluginId } from './plugin/plugin-id.ts';
 
 const EDITOR_LOCK_STATE_KEY = 'editorLock';
@@ -52,6 +55,20 @@ const LOCK_ICON_ID = 'lock';
 const LOCK_INDICATOR_CSS_CLASS = 'obsidian-dev-utils-lock-indicator';
 const STATUS_BAR_ITEM_CSS_CLASS = 'status-bar-item';
 const STATUS_BAR_CSS_SELECTOR = '.status-bar';
+const UNLOCK_ICON_ID = 'unlock';
+
+/**
+ * Options for {@link EditorLockComponent.lockForPath}.
+ */
+export interface EditorLockComponentLockForPathOptions {
+  /**
+   * An optional {@link AbortController} associated with the lock. When the lock indicator is
+   * right-clicked and the user confirms an unlock (or {@link requestEditorUnlockForPath} is called for
+   * the path), this controller is aborted so the operation holding the lock can cancel itself and
+   * release the lock in its own cleanup.
+   */
+  readonly abortController?: AbortController;
+}
 
 interface LockIndicators {
   readonly actionIconEl: HTMLElement;
@@ -84,6 +101,7 @@ class EditorLockEventsComponent extends ComponentEx {
  * which plugins currently hold a lock.
  */
 class EditorPathLockManager {
+  private readonly abortControllersByPath = new Map<string, Set<AbortController>>();
   private eventsComponent: EditorLockEventsComponent | undefined;
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
   private readonly lockCountByPluginIdByPath = new Map<string, Map<string, number>>();
@@ -93,7 +111,7 @@ class EditorPathLockManager {
     return this.isPathLocked(getPath(app, pathOrFile));
   }
 
-  public lock(app: App, pathOrFile: PathOrFile, pluginId: string): Disposable {
+  public lock(app: App, pathOrFile: PathOrFile, pluginId: string, abortController?: AbortController): Disposable {
     const path = getPath(app, pathOrFile);
     let lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
     if (!lockCountByPluginId) {
@@ -101,15 +119,52 @@ class EditorPathLockManager {
       this.lockCountByPluginIdByPath.set(path, lockCountByPluginId);
     }
     lockCountByPluginId.set(pluginId, (lockCountByPluginId.get(pluginId) ?? 0) + 1);
+    if (abortController) {
+      let abortControllers = this.abortControllersByPath.get(path);
+      if (!abortControllers) {
+        abortControllers = new Set<AbortController>();
+        this.abortControllersByPath.set(path, abortControllers);
+      }
+      abortControllers.add(abortController);
+    }
     this.ensureSubscribed(app);
     this.reconcile(app);
 
     return new CallbackDisposable({
       callback: (): void => {
+        if (abortController) {
+          const abortControllers = this.abortControllersByPath.get(path);
+          // The set was created when this lock added its controller and is only removed here.
+          // It is therefore always present while this (single-run) disposable callback executes.
+          assertNonNullable(abortControllers);
+          abortControllers.delete(abortController);
+          if (abortControllers.size === 0) {
+            this.abortControllersByPath.delete(path);
+          }
+        }
         this.unlockPath(app, path, pluginId);
       },
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
+  }
+
+  /**
+   * Aborts every {@link AbortController} currently registered for the note at the given path, which
+   * cancels the operations holding the lock. Each operation releases its own lock in its `finally`
+   * when it observes the abort, so this does not unlock the path directly. A no-op when no controller
+   * is registered for the path.
+   *
+   * @param app - The Obsidian app instance.
+   * @param pathOrFile - The path or file of the note to request an unlock for.
+   */
+  public requestUnlock(app: App, pathOrFile: PathOrFile): void {
+    const abortControllers = this.abortControllersByPath.get(getPath(app, pathOrFile));
+    if (!abortControllers) {
+      return;
+    }
+    for (const controller of abortControllers) {
+      controller.abort();
+    }
   }
 
   public unlock(app: App, pathOrFile: PathOrFile, pluginId: string): void {
@@ -125,8 +180,9 @@ class EditorPathLockManager {
     this.reconcileAndCleanup(app);
   }
 
-  private createIndicators(view: MarkdownView, tooltip: string): LockIndicators {
+  private createIndicators(app: App, view: MarkdownView, path: string, tooltip: string): LockIndicators {
     const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
+    this.registerUnlockMenu(app, actionIconEl, () => path);
 
     let tabIconEl: HTMLElement | null = null;
     const tabStatusContainerEl = view.leaf.tabHeaderStatusContainerEl;
@@ -134,6 +190,7 @@ class EditorPathLockManager {
       tabIconEl = tabStatusContainerEl.createSpan({ cls: LOCK_INDICATOR_CSS_CLASS });
       setIcon(tabIconEl, LOCK_ICON_ID);
       setTooltip(tabIconEl, tooltip);
+      this.registerUnlockMenu(app, tabIconEl, () => path);
     }
 
     return {
@@ -156,14 +213,17 @@ class EditorPathLockManager {
     return (this.lockCountByPluginIdByPath.get(path)?.size ?? 0) > 0;
   }
 
-  private lockTooltip(app: App, path: string): string {
+  private lockingPluginNames(app: App, path: string): string[] {
     const lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
-    // `lockTooltip` is only ever called for a locked path, so the per-plugin map is always present.
+    // `lockingPluginNames` is only ever called for a locked path, so the per-plugin map is always present.
     assertNonNullable(lockCountByPluginId);
+    return Array.from(lockCountByPluginId.keys()).map((pluginId) => app.plugins.manifests[pluginId]?.name ?? pluginId);
+  }
+
+  private lockTooltip(app: App, path: string): string {
     const header = t(($) => $.obsidianDevUtils.editorLock.lockedByTooltip);
-    const pluginNames = Array.from(lockCountByPluginId.keys()).map((pluginId) => app.plugins.manifests[pluginId]?.name ?? pluginId);
     // A runtime-length list of plugin names, one per line under the header.
-    return [header, ...pluginNames].join('\n');
+    return [header, ...this.lockingPluginNames(app, path)].join('\n');
   }
 
   private reconcile(app: App): void {
@@ -191,7 +251,7 @@ class EditorPathLockManager {
         if (indicators) {
           this.updateIndicatorTooltips(indicators, tooltip);
         } else {
-          this.indicatorsByView.set(view, this.createIndicators(view, tooltip));
+          this.indicatorsByView.set(view, this.createIndicators(app, view, path, tooltip));
         }
       }
     }
@@ -214,6 +274,40 @@ class EditorPathLockManager {
       this.eventsComponent?.unload();
       this.eventsComponent = undefined;
     }
+  }
+
+  private registerUnlockMenu(app: App, el: HTMLElement, getContextPath: () => string | undefined): void {
+    // A plain listener dies with the element when it is `.remove()`d on unlock, so it never leaks.
+    el.addEventListener('contextmenu', (evt) => {
+      evt.preventDefault();
+      const path = getContextPath();
+      if (path === undefined) {
+        return;
+      }
+      const menu = new Menu();
+      menu.addItem((item) => {
+        item
+          .setTitle(t(($) => $.obsidianDevUtils.editorLock.unlockMenuItem))
+          .setIcon(UNLOCK_ICON_ID)
+          .onClick(convertAsyncToSync(async () => {
+            const isConfirmed = await confirm({
+              app,
+              message: this.unlockConfirmMessage(app, path),
+              title: t(($) => $.obsidianDevUtils.editorLock.unlockConfirmTitle)
+            });
+            if (isConfirmed) {
+              this.requestUnlock(app, path);
+            }
+          }));
+      });
+      menu.showAtMouseEvent(evt);
+    });
+  }
+
+  private unlockConfirmMessage(app: App, path: string): string {
+    const header = t(($) => $.obsidianDevUtils.editorLock.unlockConfirmMessage);
+    // A runtime-length list of the plugins currently holding a lock, one per line under the header.
+    return [header, ...this.lockingPluginNames(app, path)].join('\n');
   }
 
   private unlockPath(app: App, path: string, pluginId: string): void {
@@ -265,6 +359,9 @@ class EditorPathLockManager {
       }
       this.statusBarItemEl = statusBarEl.createDiv({ cls: [STATUS_BAR_ITEM_CSS_CLASS, LOCK_INDICATOR_CSS_CLASS] });
       setIcon(this.statusBarItemEl, LOCK_ICON_ID);
+      // The single status-bar item is reused across active-note switches.
+      // It must resolve the currently active note's path at click time rather than capturing one path.
+      this.registerUnlockMenu(app, this.statusBarItemEl, () => app.workspace.getActiveViewOfType(MarkdownView)?.file?.path);
     }
 
     setTooltip(this.statusBarItemEl, this.lockTooltip(app, activePath));
@@ -314,10 +411,13 @@ export class EditorLockComponent extends ComponentEx {
    * with a dispose of the returned {@link Disposable} (ideally via `using`) or {@link unlockForPath}.
    *
    * @param pathOrFile - The path or file of the note to lock.
+   * @param options - Optional locking options. Pass an
+   * {@link EditorLockComponentLockForPathOptions.abortController} to make the lock cancelable via the
+   * indicator's right-click "unlock" menu or {@link requestEditorUnlockForPath}.
    * @returns A {@link Disposable} that releases this lock when disposed. Disposing more than once is a no-op.
    */
-  public lockForPath(pathOrFile: PathOrFile): Disposable {
-    return getManager().lock(this.app, pathOrFile, this.pluginId);
+  public lockForPath(pathOrFile: PathOrFile, options?: EditorLockComponentLockForPathOptions): Disposable {
+    return getManager().lock(this.app, pathOrFile, this.pluginId, options?.abortController);
   }
 
   /**
@@ -366,6 +466,23 @@ export function isEditorLockedForPath(app: App, pathOrFile: PathOrFile): boolean
  */
 export function lockEditorForPath(app: App, pathOrFile: PathOrFile): Disposable {
   return getManager().lock(app, pathOrFile, getPluginId());
+}
+
+/**
+ * Requests an unlock of the note at the given path by aborting every {@link AbortController} that was
+ * associated with a lock on it (via {@link EditorLockComponent.lockForPath}'s
+ * {@link EditorLockComponentLockForPathOptions.abortController}). The operations holding the lock
+ * observe the abort and release their own locks. A no-op when no abortable lock is registered for the
+ * path.
+ *
+ * This lets a consuming plugin wire its own "unlock active note" command without reaching into the
+ * lock manager directly.
+ *
+ * @param app - The Obsidian app instance.
+ * @param pathOrFile - The path or file of the note to request an unlock for.
+ */
+export function requestEditorUnlockForPath(app: App, pathOrFile: PathOrFile): void {
+  getManager().requestUnlock(app, pathOrFile);
 }
 
 /**

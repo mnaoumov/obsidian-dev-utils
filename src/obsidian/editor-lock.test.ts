@@ -10,6 +10,7 @@ import type {
 import {
   App,
   MarkdownView,
+  Menu,
   WorkspaceLeaf
 } from 'obsidian-test-mocks/obsidian';
 import {
@@ -30,9 +31,11 @@ import {
   EditorLockComponent,
   isEditorLockedForPath,
   lockEditorForPath,
+  requestEditorUnlockForPath,
   unlockEditorForPath
 } from './editor-lock.ts';
 import { toggleEditorReadOnly } from './editor.ts';
+import { confirm } from './modals/confirm.ts';
 import { getPluginId } from './plugin/plugin-id.ts';
 
 vi.mock('./editor.ts', () => ({
@@ -40,7 +43,23 @@ vi.mock('./editor.ts', () => ({
 }));
 
 vi.mock('./i18n/i18n.ts', () => ({
-  t: vi.fn((fn: (messages: GenericObject) => unknown) => fn({ obsidianDevUtils: { editorLock: { lockedByTooltip: 'Locked by', lockedNoteTooltip: 'Locked note' } } }))
+  t: vi.fn((fn: (messages: GenericObject) => unknown) =>
+    fn({
+      obsidianDevUtils: {
+        editorLock: {
+          lockedByTooltip: 'Locked by',
+          lockedNoteTooltip: 'Locked note',
+          unlockConfirmMessage: 'Locked by',
+          unlockConfirmTitle: 'Unlock note?',
+          unlockMenuItem: 'Unlock'
+        }
+      }
+    })
+  )
+}));
+
+vi.mock('./modals/confirm.ts', () => ({
+  confirm: vi.fn()
 }));
 
 vi.mock('./plugin/plugin-id.ts', () => ({
@@ -90,6 +109,12 @@ afterEach(() => {
   }
 });
 
+function captureMenuOnShow(): () => Menu | undefined {
+  const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
+  // `mock.contexts` records the `this` of each call (the menu instance), typed as `unknown`.
+  return () => castTo<Menu | undefined>(showSpy.mock.contexts[0]);
+}
+
 function createMarkdownView(path: string, hasTabStatusContainer = true): MarkdownViewOriginal {
   const mockLeaf = WorkspaceLeaf.create2__(mockApp);
   castTo<MockLeafTabStatus>(mockLeaf).tabHeaderStatusContainerEl = hasTabStatusContainer ? createDiv() : null;
@@ -100,8 +125,22 @@ function createMarkdownView(path: string, hasTabStatusContainer = true): Markdow
   return view;
 }
 
+function dispatchContextMenu(el: EventTarget): void {
+  el.dispatchEvent(new MouseEvent('contextmenu', { cancelable: true }));
+}
+
+async function flushAsync(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    window.setTimeout(resolve, 0);
+  });
+}
+
 function leafOf(view: ViewOriginal): WorkspaceLeafOriginal {
   return strictProxy<WorkspaceLeafOriginal>({ view });
+}
+
+function setActiveView(view: MarkdownViewOriginal | null): void {
+  castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => view);
 }
 
 function stubLeaves(...leaves: WorkspaceLeafOriginal[]): void {
@@ -305,10 +344,6 @@ describe('isEditorLockedForPath', () => {
 });
 
 describe('lock indicators', () => {
-  function setActiveView(view: MarkdownViewOriginal | null): void {
-    castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => view);
-  }
-
   it('should not add a tab icon when the leaf has no tab status container', () => {
     const view = createMarkdownView('note.md', false);
     stubLeaves(leafOf(view));
@@ -391,5 +426,183 @@ describe('EditorLockComponent', () => {
     expect(isEditorLockedForPath(app, 'other-only.md')).toBe(true);
     expect(isEditorLockedForPath(app, 'shared.md')).toBe(true);
     expect(isEditorLockedForPath(app, 'own.md')).toBe(false);
+  });
+
+  it('should pass the abort controller through to the lock', () => {
+    stubLeaves();
+    const component = new EditorLockComponent(app);
+    const abortController = new AbortController();
+
+    component.lockForPath('note.md', { abortController });
+    requestEditorUnlockForPath(app, 'note.md');
+
+    expect(abortController.signal.aborted).toBe(true);
+  });
+});
+
+describe('requestEditorUnlockForPath', () => {
+  it('should abort every controller registered for the path', () => {
+    stubLeaves();
+    const component = new EditorLockComponent(app);
+    const firstController = new AbortController();
+    const secondController = new AbortController();
+
+    component.lockForPath('note.md', { abortController: firstController });
+    component.lockForPath('note.md', { abortController: secondController });
+    requestEditorUnlockForPath(app, 'note.md');
+
+    expect(firstController.signal.aborted).toBe(true);
+    expect(secondController.signal.aborted).toBe(true);
+  });
+
+  it('should be a no-op when no abortable lock is registered for the path', () => {
+    stubLeaves();
+    lockEditorForPath(app, 'note.md');
+
+    expect(() => {
+      requestEditorUnlockForPath(app, 'note.md');
+    }).not.toThrow();
+    expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
+  });
+
+  it('should keep the controller of a still-held lock and drop the disposed one', () => {
+    stubLeaves();
+    const component = new EditorLockComponent(app);
+    const disposedController = new AbortController();
+    const heldController = new AbortController();
+
+    const disposable = component.lockForPath('note.md', { abortController: disposedController });
+    component.lockForPath('note.md', { abortController: heldController });
+    disposable[Symbol.dispose]();
+
+    requestEditorUnlockForPath(app, 'note.md');
+
+    expect(disposedController.signal.aborted).toBe(false);
+    expect(heldController.signal.aborted).toBe(true);
+  });
+
+  it('should drop the controller set entirely when the last abortable lock is disposed', () => {
+    stubLeaves();
+    const component = new EditorLockComponent(app);
+    const abortController = new AbortController();
+
+    const disposable = component.lockForPath('note.md', { abortController });
+    disposable[Symbol.dispose]();
+
+    requestEditorUnlockForPath(app, 'note.md');
+
+    expect(abortController.signal.aborted).toBe(false);
+  });
+});
+
+describe('unlock context menu', () => {
+  it('should build an unlock menu item on right-click', () => {
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    dispatchContextMenu(iconEl);
+
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    expect(item.title__).toBe('Unlock');
+    expect(item.icon__).toBe('unlock');
+  });
+
+  it('should abort the lock when the unlock is confirmed', async () => {
+    vi.mocked(confirm).mockResolvedValue(true);
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    const abortController = new AbortController();
+    new EditorLockComponent(app).lockForPath('note.md', { abortController });
+    dispatchContextMenu(iconEl);
+
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    item.onClick__?.(new MouseEvent('click'));
+    await flushAsync();
+
+    expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1);
+    expect(abortController.signal.aborted).toBe(true);
+  });
+
+  it('should not abort the lock when the unlock is canceled', async () => {
+    vi.mocked(confirm).mockResolvedValue(false);
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    const abortController = new AbortController();
+    new EditorLockComponent(app).lockForPath('note.md', { abortController });
+    dispatchContextMenu(iconEl);
+
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    item.onClick__?.(new MouseEvent('click'));
+    await flushAsync();
+
+    expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1);
+    expect(abortController.signal.aborted).toBe(false);
+  });
+
+  it('should wire the unlock menu on the tab icon', () => {
+    const view = createMarkdownView('note.md');
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(tabIconEl);
+    dispatchContextMenu(tabIconEl);
+
+    assertNonNullable(getMenu());
+  });
+
+  it('should open the unlock menu from the status-bar item for the active note', () => {
+    const view = createMarkdownView('note.md');
+    setActiveView(view);
+    const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(statusBarItemEl);
+    dispatchContextMenu(statusBarItemEl);
+
+    assertNonNullable(getMenu());
+  });
+
+  it('should not open a status-bar unlock menu when there is no active note', () => {
+    const view = createMarkdownView('note.md');
+    setActiveView(view);
+    const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    stubLeaves(leafOf(view));
+    const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
+
+    lockEditorForPath(app, 'note.md');
+    const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(statusBarItemEl);
+
+    // The active note is gone by the time the status-bar item is right-clicked.
+    setActiveView(null);
+    dispatchContextMenu(statusBarItemEl);
+
+    expect(showSpy).not.toHaveBeenCalled();
   });
 });
