@@ -107,7 +107,10 @@ export const config = defineConfig({
           include: [OBSIDIAN_INTEGRATION_TEST_FILES],
           maxWorkers: 1,
           name: 'obsidian-integration-tests',
-          setupFiles: ['obsidian-integration-testing/vitest-setup'],
+          setupFiles: [
+            'obsidian-integration-testing/vitest-setup',
+            './scripts/integration-test-obsidian-setup.ts'
+          ],
           testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
       }
