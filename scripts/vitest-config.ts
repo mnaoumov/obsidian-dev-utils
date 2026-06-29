@@ -99,8 +99,13 @@ export const config = defineConfig({
       {
         test: {
           environment: 'node',
+          // These integration tests share ONE Obsidian instance and mutate its global state.
+          // Parallel files would stomp each other: focus and the active workspace are global.
+          // So this project runs serially in a single worker.
+          fileParallelism: false,
           globalSetup: ['./scripts/integration-test-obsidian-global-setup.ts'],
           include: [OBSIDIAN_INTEGRATION_TEST_FILES],
+          maxWorkers: 1,
           name: 'obsidian-integration-tests',
           setupFiles: [],
           testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
