@@ -15,7 +15,7 @@
  * that releases automatically at scope exit (including on throw):
  *
  * ```ts
- * using _lock = lockEditorForPath(app, path);
+ * using _lock = lockEditorForPath(app, path, this.manifest.id);
  * // ... long-running work (process, processFrontMatter, merge/split) ...
  * // auto-unlocked at scope exit
  * ```
@@ -45,12 +45,12 @@ import {
   MultipleDisposeBehavior
 } from '../disposable.ts';
 import { noop } from '../function.ts';
-import { appendCodeBlock } from '../html-element.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { ComponentEx } from './components/component-ex.ts';
 import { toggleEditorReadOnly } from './editor.ts';
 import { getPath } from './file-system.ts';
+import { appendCodeBlock } from './html-element.ts';
 import { t } from './i18n/i18n.ts';
 import { confirm } from './modals/confirm.ts';
 
