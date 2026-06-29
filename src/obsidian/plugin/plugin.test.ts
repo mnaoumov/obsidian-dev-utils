@@ -57,6 +57,11 @@ vi.mock('../../debug.ts', () => ({
 }));
 
 vi.mock('../../library.ts', () => ({
+  globalState: {
+    cssClassScope: '',
+    debugPrefixNamespace: '',
+    shouldPrintStackTrace: false
+  },
   LIBRARY_NAME: 'obsidian-dev-utils',
   LIBRARY_STYLES: '',
   LIBRARY_VERSION: '1.0.0'
@@ -64,11 +69,6 @@ vi.mock('../../library.ts', () => ({
 
 vi.mock('../../obsidian-dev-utils-state.ts', () => ({
   getObsidianDevUtilsState: vi.fn((_key: string, defaultValue: unknown) => ({ value: defaultValue }))
-}));
-
-vi.mock('./plugin-id.ts', () => ({
-  getPluginId: vi.fn(() => 'test-plugin'),
-  setPluginId: vi.fn()
 }));
 
 vi.mock('../../css-class.ts', () => ({

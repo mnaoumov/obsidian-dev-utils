@@ -11,13 +11,11 @@ import debug from 'debug';
 import type { DebugController } from './debug-controller.ts';
 
 import { CustomStackTraceError } from './error.ts';
-import { LIBRARY_NAME } from './library.ts';
-import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
-import { isInObsidian } from './obsidian/is-in-obsidian.ts';
 import {
-  getPluginId,
-  NO_PLUGIN_ID_INITIALIZED
-} from './obsidian/plugin/plugin-id.ts';
+  globalState,
+  LIBRARY_NAME
+} from './library.ts';
+import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
 import { ensureNonNullable } from './type-guards.ts';
 
 const NAMESPACE_SEPARATOR = ',';
@@ -129,9 +127,7 @@ export function getDebugger(namespace: string, framesToSkip = 0): Debugger {
  * @returns A debugger instance for the `obsidian-dev-utils` library.
  */
 export function getLibDebugger(namespace: string): Debugger {
-  const pluginId = getPluginId();
-  const prefix = pluginId === NO_PLUGIN_ID_INITIALIZED ? '' : `${pluginId}:`;
-  return getDebugger(`${prefix}${LIBRARY_NAME}:${namespace}`);
+  return getDebugger(`${globalState.debugPrefixNamespace}${LIBRARY_NAME}:${namespace}`);
 }
 
 /**
@@ -146,7 +142,7 @@ export function printWithStackTrace(params: PrintWithStackTraceParams): void {
     message,
     stackTrace
   } = params;
-  if (!isInObsidian()) {
+  if (!globalState.shouldPrintStackTrace) {
     debuggerInstance(message, ...args);
     return;
   }
@@ -205,9 +201,6 @@ function getNamespaces(): string[] {
 }
 
 function getSharedDebugLibInstance(): typeof debug {
-  if (!isInObsidian()) {
-    return debug;
-  }
   return getObsidianDevUtilsState('debug', debug).value;
 }
 
@@ -222,7 +215,7 @@ function logWithCaller(params: LogWithCallerParams): void {
     return;
   }
 
-  if (!isInObsidian()) {
+  if (!globalState.shouldPrintStackTrace) {
     // eslint-disable-next-line no-console -- Valid usage.
     console.debug(message, ...args);
     return;

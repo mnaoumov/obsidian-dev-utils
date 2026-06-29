@@ -36,7 +36,6 @@ import {
 } from './editor-lock.ts';
 import { toggleEditorReadOnly } from './editor.ts';
 import { confirm } from './modals/confirm.ts';
-import { getPluginId } from './plugin/plugin-id.ts';
 
 vi.mock('./editor.ts', () => ({
   toggleEditorReadOnly: vi.fn()
@@ -60,10 +59,6 @@ vi.mock('./i18n/i18n.ts', () => ({
 
 vi.mock('./modals/confirm.ts', () => ({
   confirm: vi.fn()
-}));
-
-vi.mock('./plugin/plugin-id.ts', () => ({
-  getPluginId: vi.fn(() => 'test-plugin')
 }));
 
 interface MockAppPlugins {
@@ -98,7 +93,6 @@ beforeEach(() => {
   });
   app = mockApp.asOriginalType__();
   vi.clearAllMocks();
-  vi.mocked(getPluginId).mockReturnValue('test-plugin');
   castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => null);
   castTo<MockAppPlugins>(app).plugins = { manifests: {} };
 });
@@ -150,7 +144,7 @@ function stubLeaves(...leaves: WorkspaceLeafOriginal[]): void {
 describe('lockEditorForPath', () => {
   it('should mark the path as locked', () => {
     stubLeaves();
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
     expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
     expect(isEditorLockedForPath(app, 'other.md')).toBe(false);
   });
@@ -160,7 +154,7 @@ describe('lockEditorForPath', () => {
     vi.spyOn(view, 'addAction');
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
 
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
     expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'Locked by\ntest-plugin', expect.any(Function));
@@ -168,7 +162,7 @@ describe('lockEditorForPath', () => {
 
   it('should ignore leaves whose view is not a MarkdownView', () => {
     stubLeaves(leafOf(strictProxy<ViewOriginal>({})));
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
@@ -177,7 +171,7 @@ describe('lockEditorForPath', () => {
     const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
@@ -185,7 +179,7 @@ describe('lockEditorForPath', () => {
     const view = createMarkdownView('other.md');
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
@@ -193,7 +187,7 @@ describe('lockEditorForPath', () => {
     const view = createMarkdownView('note.md');
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
     app.workspace.trigger('layout-change');
 
     // The toggle is re-applied on every reconcile (idempotent).
@@ -207,7 +201,7 @@ describe('lockEditorForPath', () => {
     stubLeaves();
     const onSpy = vi.spyOn(app.workspace, 'on');
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
 
     expect(onSpy).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
     expect(onSpy).toHaveBeenCalledWith('layout-change', expect.any(Function));
@@ -218,15 +212,15 @@ describe('lockEditorForPath', () => {
     stubLeaves();
     const onSpy = vi.spyOn(app.workspace, 'on');
 
-    lockEditorForPath(app, 'note.md');
-    lockEditorForPath(app, 'other.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockEditorForPath(app, 'other.md', 'test-plugin');
 
     expect(onSpy).toHaveBeenCalledTimes(4);
   });
 
   it('should lock a view opened after the lock via active-leaf-change', () => {
     stubLeaves();
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
 
     const view = createMarkdownView('note.md');
@@ -243,7 +237,7 @@ describe('lockEditorForPath', () => {
     const removeSpy = vi.spyOn(iconEl, 'remove');
     stubLeaves(leafOf(view));
 
-    const disposable = lockEditorForPath(app, 'note.md');
+    const disposable = lockEditorForPath(app, 'note.md', 'test-plugin');
     disposable[Symbol.dispose]();
 
     expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
@@ -253,8 +247,8 @@ describe('lockEditorForPath', () => {
 
   it('should not decrement more than once when disposed repeatedly', () => {
     stubLeaves();
-    const disposable = lockEditorForPath(app, 'note.md');
-    lockEditorForPath(app, 'note.md');
+    const disposable = lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
 
     disposable[Symbol.dispose]();
     disposable[Symbol.dispose]();
@@ -272,8 +266,8 @@ describe('unlockEditorForPath', () => {
     const offrefSpy = vi.spyOn(app.workspace, 'offref');
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md');
-    unlockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
+    unlockEditorForPath(app, 'note.md', 'test-plugin');
 
     expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, false);
@@ -283,13 +277,13 @@ describe('unlockEditorForPath', () => {
 
   it('should keep the note locked until every lock is released', () => {
     stubLeaves();
-    lockEditorForPath(app, 'note.md');
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
 
-    unlockEditorForPath(app, 'note.md');
+    unlockEditorForPath(app, 'note.md', 'test-plugin');
     expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
 
-    unlockEditorForPath(app, 'note.md');
+    unlockEditorForPath(app, 'note.md', 'test-plugin');
     expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
   });
 
@@ -297,7 +291,7 @@ describe('unlockEditorForPath', () => {
     const offrefSpy = vi.spyOn(app.workspace, 'offref');
     stubLeaves();
 
-    unlockEditorForPath(app, 'note.md');
+    unlockEditorForPath(app, 'note.md', 'test-plugin');
 
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
     expect(offrefSpy).not.toHaveBeenCalled();
@@ -307,32 +301,29 @@ describe('unlockEditorForPath', () => {
     stubLeaves();
     const offrefSpy = vi.spyOn(app.workspace, 'offref');
 
-    lockEditorForPath(app, 'note.md');
-    lockEditorForPath(app, 'other.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockEditorForPath(app, 'other.md', 'test-plugin');
 
-    unlockEditorForPath(app, 'note.md');
+    unlockEditorForPath(app, 'note.md', 'test-plugin');
     expect(offrefSpy).not.toHaveBeenCalled();
 
-    unlockEditorForPath(app, 'other.md');
+    unlockEditorForPath(app, 'other.md', 'test-plugin');
     expect(offrefSpy).toHaveBeenCalledTimes(4);
   });
 
   it('should keep a note locked until every plugin that locked it releases its lock', () => {
     stubLeaves();
 
-    vi.mocked(getPluginId).mockReturnValue('plugin-a');
-    lockEditorForPath(app, 'note.md');
-    vi.mocked(getPluginId).mockReturnValue('plugin-b');
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'plugin-a');
+    lockEditorForPath(app, 'note.md', 'plugin-b');
 
     // The plugin-b lock is released twice; the redundant release hits the per-plugin no-op guard.
     // Plugin-a still holds its lock, so the note stays locked.
-    unlockEditorForPath(app, 'note.md');
-    unlockEditorForPath(app, 'note.md');
+    unlockEditorForPath(app, 'note.md', 'plugin-b');
+    unlockEditorForPath(app, 'note.md', 'plugin-b');
     expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
 
-    vi.mocked(getPluginId).mockReturnValue('plugin-a');
-    unlockEditorForPath(app, 'note.md');
+    unlockEditorForPath(app, 'note.md', 'plugin-a');
     expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
   });
 });
@@ -348,7 +339,7 @@ describe('lock indicators', () => {
     const view = createMarkdownView('note.md', false);
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
     // A second reconcile updates tooltips on the existing indicators; with no tab icon it must not throw.
     app.workspace.trigger('layout-change');
 
@@ -362,7 +353,7 @@ describe('lock indicators', () => {
     castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
 
     expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'Locked by\nTest Plugin', expect.any(Function));
   });
@@ -373,14 +364,14 @@ describe('lock indicators', () => {
     const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
     expect(statusBarEl.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
 
     // A second reconcile must not duplicate the item.
     app.workspace.trigger('layout-change');
     expect(statusBarEl.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
 
-    unlockEditorForPath(app, 'note.md');
+    unlockEditorForPath(app, 'note.md', 'test-plugin');
     expect(statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
   });
 
@@ -389,7 +380,7 @@ describe('lock indicators', () => {
     setActiveView(view);
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
 
     expect(view.containerEl.ownerDocument.body.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
   });
@@ -398,7 +389,7 @@ describe('lock indicators', () => {
 describe('EditorLockComponent', () => {
   it('should lock, query, and unlock a note on behalf of its plugin', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app);
+    const component = new EditorLockComponent(app, 'test-plugin');
 
     component.lockForPath('note.md');
     expect(component.isLockedForPath('note.md')).toBe(true);
@@ -410,12 +401,10 @@ describe('EditorLockComponent', () => {
   it('should release only its own plugin\'s locks when unloaded', () => {
     stubLeaves();
 
-    vi.mocked(getPluginId).mockReturnValue('other-plugin');
-    lockEditorForPath(app, 'other-only.md');
-    lockEditorForPath(app, 'shared.md');
+    lockEditorForPath(app, 'other-only.md', 'other-plugin');
+    lockEditorForPath(app, 'shared.md', 'other-plugin');
 
-    vi.mocked(getPluginId).mockReturnValue('test-plugin');
-    const component = new EditorLockComponent(app);
+    const component = new EditorLockComponent(app, 'test-plugin');
     component.load();
     component.lockForPath('shared.md');
     component.lockForPath('own.md');
@@ -430,7 +419,7 @@ describe('EditorLockComponent', () => {
 
   it('should pass the abort controller through to the lock', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app);
+    const component = new EditorLockComponent(app, 'test-plugin');
     const abortController = new AbortController();
 
     component.lockForPath('note.md', { abortController });
@@ -443,7 +432,7 @@ describe('EditorLockComponent', () => {
 describe('requestEditorUnlockForPath', () => {
   it('should abort every controller registered for the path', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app);
+    const component = new EditorLockComponent(app, 'test-plugin');
     const firstController = new AbortController();
     const secondController = new AbortController();
 
@@ -457,7 +446,7 @@ describe('requestEditorUnlockForPath', () => {
 
   it('should be a no-op when no abortable lock is registered for the path', () => {
     stubLeaves();
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
 
     expect(() => {
       requestEditorUnlockForPath(app, 'note.md');
@@ -467,7 +456,7 @@ describe('requestEditorUnlockForPath', () => {
 
   it('should keep the controller of a still-held lock and drop the disposed one', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app);
+    const component = new EditorLockComponent(app, 'test-plugin');
     const disposedController = new AbortController();
     const heldController = new AbortController();
 
@@ -483,7 +472,7 @@ describe('requestEditorUnlockForPath', () => {
 
   it('should drop the controller set entirely when the last abortable lock is disposed', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app);
+    const component = new EditorLockComponent(app, 'test-plugin');
     const abortController = new AbortController();
 
     const disposable = component.lockForPath('note.md', { abortController });
@@ -503,7 +492,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     dispatchContextMenu(iconEl);
 
     const menu = getMenu();
@@ -523,7 +512,7 @@ describe('unlock context menu', () => {
     const getMenu = captureMenuOnShow();
 
     const abortController = new AbortController();
-    new EditorLockComponent(app).lockForPath('note.md', { abortController });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController });
     dispatchContextMenu(iconEl);
 
     const menu = getMenu();
@@ -546,7 +535,7 @@ describe('unlock context menu', () => {
     const getMenu = captureMenuOnShow();
 
     const abortController = new AbortController();
-    new EditorLockComponent(app).lockForPath('note.md', { abortController });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController });
     dispatchContextMenu(iconEl);
 
     const menu = getMenu();
@@ -565,7 +554,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(tabIconEl);
     dispatchContextMenu(tabIconEl);
@@ -580,7 +569,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
     dispatchContextMenu(statusBarItemEl);
@@ -595,7 +584,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
 
-    lockEditorForPath(app, 'note.md');
+    lockEditorForPath(app, 'note.md', 'test-plugin');
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
 
@@ -615,7 +604,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     dispatchContextMenu(iconEl);
     const menu = getMenu();
     assertNonNullable(menu);
@@ -637,7 +626,7 @@ describe('unlock file menu', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
 
-    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
 
@@ -651,7 +640,7 @@ describe('unlock file menu', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     // Lock a different note so the events component (and its file-menu handler) is subscribed.
-    new EditorLockComponent(app).lockForPath('other.md', { abortController: new AbortController() });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('other.md', { abortController: new AbortController() });
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
 
@@ -659,7 +648,7 @@ describe('unlock file menu', () => {
   });
 
   it('should not add an unlock item to the file menu for a folder', () => {
-    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, app.vault.getRoot(), 'file-explorer-context-menu');
 
@@ -676,7 +665,7 @@ describe('lock type-attempt flash', () => {
     vi.spyOn(view, 'addAction').mockReturnValue(actionIconEl);
     stubLeaves(leafOf(view));
 
-    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(tabIconEl);
     expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(false);
@@ -693,7 +682,7 @@ describe('lock type-attempt flash', () => {
     vi.spyOn(view, 'addAction').mockReturnValue(actionIconEl);
     stubLeaves(leafOf(view));
 
-    const component = new EditorLockComponent(app);
+    const component = new EditorLockComponent(app, 'test-plugin');
     component.lockForPath('note.md', { abortController: new AbortController() });
     component.unlockForPath('note.md');
 
@@ -717,7 +706,7 @@ describe('lock type-attempt flash', () => {
     }));
 
     try {
-      new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+      new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
       view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
       view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
     } finally {

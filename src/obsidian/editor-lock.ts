@@ -53,7 +53,6 @@ import { toggleEditorReadOnly } from './editor.ts';
 import { getPath } from './file-system.ts';
 import { t } from './i18n/i18n.ts';
 import { confirm } from './modals/confirm.ts';
-import { getPluginId } from './plugin/plugin-id.ts';
 
 const BEEP_DURATION_SECONDS = 0.08;
 const BEEP_FREQUENCY_HZ = 660;
@@ -498,11 +497,10 @@ export class EditorLockComponent extends ComponentEx {
    * Creates an editor-lock handle owned by a plugin.
    *
    * @param app - The Obsidian app instance.
-   * @param pluginId - The id of the owning plugin. Defaults to the current plugin context's id; pass
-   * it explicitly (e.g. from a plugin's `manifest.id`) when constructing before the plugin context is
-   * initialized, such as inside `PluginBase.onload`.
+   * @param pluginId - The id of the owning plugin (e.g. its `manifest.id`). Locks are attributed to
+   * it for reference-counting and the indicators' "locked by" tooltip.
    */
-  public constructor(app: App, pluginId: string = getPluginId()) {
+  public constructor(app: App, pluginId: string) {
     super();
     this.app = app;
     this.pluginId = pluginId;
@@ -575,10 +573,12 @@ export function isEditorLockedForPath(app: App, pathOrFile: PathOrFile): boolean
  *
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or file of the note to lock.
+ * @param pluginId - The id of the locking plugin (e.g. its `manifest.id`). The lock is attributed to
+ * it for reference-counting and the indicators' "locked by" tooltip.
  * @returns A {@link Disposable} that releases this lock when disposed. Disposing more than once is a no-op.
  */
-export function lockEditorForPath(app: App, pathOrFile: PathOrFile): Disposable {
-  return getManager().lock(app, pathOrFile, getPluginId());
+export function lockEditorForPath(app: App, pathOrFile: PathOrFile, pluginId: string): Disposable {
+  return getManager().lock(app, pathOrFile, pluginId);
 }
 
 /**
@@ -606,9 +606,11 @@ export function requestEditorUnlockForPath(app: App, pathOrFile: PathOrFile): vo
  *
  * @param app - The Obsidian app instance.
  * @param pathOrFile - The path or file of the note to unlock.
+ * @param pluginId - The id of the plugin that holds the lock (e.g. its `manifest.id`); one of its
+ * locks on the note is released.
  */
-export function unlockEditorForPath(app: App, pathOrFile: PathOrFile): void {
-  getManager().unlock(app, pathOrFile, getPluginId());
+export function unlockEditorForPath(app: App, pathOrFile: PathOrFile, pluginId: string): void {
+  getManager().unlock(app, pathOrFile, pluginId);
 }
 
 function getManager(): EditorPathLockManager {

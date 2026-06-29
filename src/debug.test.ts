@@ -19,13 +19,8 @@ import {
   showInitialDebugMessage
 } from './debug.ts';
 import { noop } from './function.ts';
+import { globalState } from './library.ts';
 import { castTo } from './object-utils.ts';
-// eslint-disable-next-line import-x/no-namespace -- We need to import the module to mock it.
-import * as isInObsidianModule from './obsidian/is-in-obsidian.ts';
-import {
-  NO_PLUGIN_ID_INITIALIZED,
-  setPluginId
-} from './obsidian/plugin/plugin-id.ts';
 import { assertNonNullable } from './type-guards.ts';
 
 describe('Debug', () => {
@@ -38,7 +33,6 @@ describe('Debug', () => {
 
   afterEach(() => {
     debug.enable(savedNamespaces);
-    setPluginId(NO_PLUGIN_ID_INITIALIZED);
     vi.restoreAllMocks();
   });
 
@@ -267,27 +261,27 @@ describe('Debug', () => {
   });
 
   describe('getLibDebugger', () => {
-    it('should return a debugger with library namespace prefix when no plugin ID is set', () => {
+    it('should return a debugger with library namespace prefix when no prefix namespace is set', () => {
       const dbg = getLibDebugger('my-module');
       expect(dbg.namespace).toBe('obsidian-dev-utils:my-module');
     });
 
-    it('should include plugin ID prefix when a plugin ID is set', () => {
-      setPluginId('test-plugin');
+    it('should include the debug prefix namespace when one is set', () => {
+      globalState.debugPrefixNamespace = 'test-plugin:';
       const dbg = getLibDebugger('my-module');
       expect(dbg.namespace).toBe('test-plugin:obsidian-dev-utils:my-module');
     });
 
-    it('should not include prefix when plugin ID is NOT_PLUGIN_ID_INITIALIZED', () => {
+    it('should not prepend a prefix when the prefix namespace is empty', () => {
+      globalState.debugPrefixNamespace = '';
       const dbg = getLibDebugger('some-module');
-      expect(dbg.namespace).not.toContain(NO_PLUGIN_ID_INITIALIZED);
       expect(dbg.namespace).toBe('obsidian-dev-utils:some-module');
     });
   });
 
   describe('printWithStackTrace', () => {
-    it('should call the debugger with message and args outside Obsidian', () => {
-      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(false);
+    it('should call the debugger with message and args when stack traces are disabled', () => {
+      globalState.shouldPrintStackTrace = false;
       debug.enable('print-test');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
@@ -300,8 +294,8 @@ describe('Debug', () => {
       expect(spy).toHaveBeenCalledWith('hello %s', 'world');
     });
 
-    it('should not include stack trace info outside Obsidian', () => {
-      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(false);
+    it('should not include stack trace info when stack traces are disabled', () => {
+      globalState.shouldPrintStackTrace = false;
       debug.enable('print-test-2');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
@@ -315,8 +309,8 @@ describe('Debug', () => {
       expect(spy).toHaveBeenCalledWith('msg');
     });
 
-    it('should include stack trace info inside Obsidian', () => {
-      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(true);
+    it('should include stack trace info when stack traces are enabled', () => {
+      globalState.shouldPrintStackTrace = true;
       debug.enable('print-test-obsidian');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
@@ -332,8 +326,8 @@ describe('Debug', () => {
   });
 
   describe('logWithCaller (via debugger call)', () => {
-    it('should call console.debug without stack trace outside Obsidian', () => {
-      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(false);
+    it('should call console.debug without stack trace when stack traces are disabled', () => {
+      globalState.shouldPrintStackTrace = false;
       const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
       const namespace = 'log-caller-outside';
       debug.enable(namespace);
@@ -342,8 +336,8 @@ describe('Debug', () => {
       expect(consoleSpy).toHaveBeenCalled();
     });
 
-    it('should call console.debug with stack trace inside Obsidian', () => {
-      vi.spyOn(isInObsidianModule, 'isInObsidian').mockReturnValue(true);
+    it('should call console.debug with stack trace when stack traces are enabled', () => {
+      globalState.shouldPrintStackTrace = true;
       const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
       const namespace = 'log-caller-inside';
       debug.enable(namespace);

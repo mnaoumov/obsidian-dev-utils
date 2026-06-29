@@ -10,6 +10,7 @@ import {
   disableAsyncOperationTracking,
   waitForAllAsyncOperations
 } from './async.ts';
+import { globalState } from './library.ts';
 import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
 import { setup } from './setup.ts';
 
@@ -53,12 +54,14 @@ describe('setup', () => {
 
     const before = getObsidianDevUtilsState('setup-test-key', 'a');
     before.value = 'mutated';
+    globalState.cssClassScope = 'mutated-scope';
 
     beforeEachCallback?.();
 
     const after = getObsidianDevUtilsState('setup-test-key', 'b');
     expect(after).not.toBe(before);
     expect(after.value).toBe('b');
+    expect(globalState.cssClassScope).toBe('');
 
     await expect(waitForAllAsyncOperations()).resolves.toBeUndefined();
 

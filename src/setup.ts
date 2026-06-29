@@ -5,9 +5,10 @@
  *
  * Wires the library's per-test setup into a test framework's `beforeEach` / `afterEach` lifecycle
  * hooks. Before each test it resets the shared-state bag on `globalThis.__obsidianDevUtils` (so
- * accumulated state such as debuggers, queues, and registered handlers does not leak between tests)
- * and enables async-operation tracking; after each test it disables tracking. Tests can therefore
- * `await waitForAllAsyncOperations()` against a clean, isolated state.
+ * accumulated state such as debuggers, queues, and registered handlers does not leak between tests),
+ * resets the injected cosmetic global-state bag, and enables async-operation tracking; after
+ * each test it disables tracking. Tests can therefore `await waitForAllAsyncOperations()` against a
+ * clean, isolated state.
  *
  * This module has no import-time side effects and no dependency on any specific test framework. The
  * thin Vitest/Jest setup files (`vitest-setup.ts` / `jest-setup.ts`) call {@link setup} with the
@@ -18,6 +19,7 @@ import {
   disableAsyncOperationTracking,
   enableAsyncOperationTracking
 } from './async.ts';
+import { resetGlobalState } from './library.ts';
 import { resetObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
 
 /**
@@ -45,8 +47,9 @@ export interface SetupParams {
 /**
  * Registers `obsidian-dev-utils` per-test setup with a test framework's lifecycle hooks.
  *
- * Before each test (via the supplied `beforeEach`) it resets the shared-state bag and enables
- * async-operation tracking; after each test (via the supplied `afterEach`) it disables tracking.
+ * Before each test (via the supplied `beforeEach`) it resets the shared-state bag and the cosmetic
+ * global-state bag, and enables async-operation tracking; after each test (via the supplied
+ * `afterEach`) it disables tracking.
  *
  * @param params - The lifecycle hook registrars to wire setup into.
  */
@@ -57,5 +60,6 @@ export function setup(params: SetupParams): void {
 
 function beforeEachHandler(): void {
   resetObsidianDevUtilsState();
+  resetGlobalState();
   enableAsyncOperationTracking();
 }

@@ -22,8 +22,11 @@ const mocks = vi.hoisted(() => ({
   compareVersions: vi.fn((_a: string, _b: string) => 1),
   getDebugController: vi.fn(() => ({})),
   getObsidianDevUtilsState: vi.fn(() => ({ value: '0.0.0' })),
-  getPluginId: vi.fn(() => 'test-plugin'),
-  setPluginId: vi.fn(),
+  globalState: {
+    cssClassScope: '',
+    debugPrefixNamespace: '',
+    shouldPrintStackTrace: false
+  },
   showInitialDebugMessage: vi.fn()
 }));
 
@@ -43,6 +46,7 @@ vi.mock('../../debug.ts', () => ({
 }));
 
 vi.mock('../../library.ts', () => ({
+  globalState: mocks.globalState,
   LIBRARY_NAME: 'obsidian-dev-utils',
   LIBRARY_STYLES: '.test { color: red; }',
   LIBRARY_VERSION: '1.0.0'
@@ -52,14 +56,10 @@ vi.mock('../../obsidian-dev-utils-state.ts', () => ({
   getObsidianDevUtilsState: mocks.getObsidianDevUtilsState
 }));
 
-vi.mock('../../obsidian/plugin/plugin-id.ts', () => ({
-  getPluginId: mocks.getPluginId,
-  setPluginId: mocks.setPluginId
-}));
-
 describe('addPluginCssClasses', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.globalState.cssClassScope = 'test-plugin';
   });
 
   it('should add library name, plugin id, and custom css class string', () => {
@@ -81,6 +81,14 @@ describe('addPluginCssClasses', () => {
     const el = strictProxy<HTMLElement>({ addClass });
     addPluginCssClasses(el);
     expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin');
+  });
+
+  it('should omit the scope class when the css class scope is empty', () => {
+    mocks.globalState.cssClassScope = '';
+    const addClass = vi.fn();
+    const el = strictProxy<HTMLElement>({ addClass });
+    addPluginCssClasses(el, 'custom-class');
+    expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'custom-class');
   });
 });
 
@@ -143,27 +151,32 @@ describe('initDebugController', () => {
 describe('initPluginContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.globalState.cssClassScope = '';
+    mocks.globalState.debugPrefixNamespace = '';
+    mocks.globalState.shouldPrintStackTrace = false;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('should set plugin id and show debug message', () => {
+  it('should push the plugin id into global state and show debug message', () => {
     mocks.compareVersions.mockReturnValue(1);
     // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     vi.spyOn(document.head, 'querySelector').mockReturnValue(null);
     // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext('my-plugin');
-    expect(mocks.setPluginId).toHaveBeenCalledWith('my-plugin');
+    expect(mocks.globalState.cssClassScope).toBe('my-plugin');
+    expect(mocks.globalState.debugPrefixNamespace).toBe('my-plugin:');
+    expect(mocks.globalState.shouldPrintStackTrace).toBe(true);
     expect(mocks.showInitialDebugMessage).toHaveBeenCalledWith('my-plugin');
   });
 
   it('should skip style injection when version is not newer', () => {
     mocks.compareVersions.mockReturnValue(0);
     initPluginContext('my-plugin');
-    expect(mocks.setPluginId).toHaveBeenCalledWith('my-plugin');
+    expect(mocks.globalState.cssClassScope).toBe('my-plugin');
   });
 
   it('should remove old styles and inject new ones when version is newer', () => {

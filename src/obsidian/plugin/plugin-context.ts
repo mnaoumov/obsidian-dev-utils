@@ -16,15 +16,12 @@ import {
   showInitialDebugMessage
 } from '../../debug.ts';
 import {
+  globalState,
   LIBRARY_NAME,
   LIBRARY_STYLES,
   LIBRARY_VERSION
 } from '../../library.ts';
 import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
-import {
-  getPluginId,
-  setPluginId
-} from './plugin-id.ts';
 
 interface PluginContextWindow {
   DEBUG: DebugController | undefined;
@@ -39,7 +36,11 @@ const STYLES_ID = `${LIBRARY_NAME}-styles`;
  * @param cssClasses - The CSS classes to set.
  */
 export function addPluginCssClasses(el: HTMLElement, cssClasses?: string | string[]): void {
-  const cssClassesArr = [CssClass.LibraryName, getPluginId()];
+  const cssClassesArr: string[] = [CssClass.LibraryName];
+  // The scope is empty until the plugin context is initialized; skip it so we never add an empty class.
+  if (globalState.cssClassScope) {
+    cssClassesArr.push(globalState.cssClassScope);
+  }
   if (Array.isArray(cssClasses)) {
     cssClassesArr.push(...cssClasses);
   } else if (typeof cssClasses === 'string') {
@@ -73,7 +74,9 @@ export function initDebugController(win: Window, component: Component): void {
  * @param pluginId - The plugin ID.
  */
 export function initPluginContext(pluginId: string): void {
-  setPluginId(pluginId);
+  globalState.cssClassScope = pluginId;
+  globalState.debugPrefixNamespace = `${pluginId}:`;
+  globalState.shouldPrintStackTrace = true;
   showInitialDebugMessage(pluginId);
 
   const lastLibraryVersionWrapper = getObsidianDevUtilsState('lastLibraryVersion', '0.0.0');

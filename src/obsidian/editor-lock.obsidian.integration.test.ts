@@ -97,7 +97,7 @@ describe('editor-lock', () => {
           const currentTabLeaf = app.workspace.getLeaf();
           await currentTabLeaf.openFile(lockedFile);
           await settle();
-          const disposable = lib.obsidian['editor-lock'].lockEditorForPath(app, lockedFile);
+          const disposable = lib.obsidian['editor-lock'].lockEditorForPath(app, lockedFile, 'integration-test');
           await settle();
           const isCurrentTabLocked = readLeafReadOnly(currentTabLeaf);
 
@@ -195,7 +195,7 @@ describe('editor-lock', () => {
           await otherLeaf.openFile(otherFile);
           await settle();
 
-          const disposable = lib.obsidian['editor-lock'].lockEditorForPath(app, lockedFile);
+          const disposable = lib.obsidian['editor-lock'].lockEditorForPath(app, lockedFile, 'integration-test');
           await settle();
           await reconcile();
 
