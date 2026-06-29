@@ -738,7 +738,7 @@
     "jsdom": "^29.1.1",
     "moment": "^2.30.1",
     "nano-staged": "^1.0.2",
-    "obsidian-integration-testing": "^5.1.0",
+    "obsidian-integration-testing": "^5.1.1",
     "obsidian-test-mocks": "^3.4.0",
     "ts-declaration-location": "^1.0.7",
     "vitest": "^4.1.9",
