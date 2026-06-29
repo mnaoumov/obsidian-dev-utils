@@ -271,17 +271,40 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
+## Completed — dev-build live-enable + integration library styles
+
+Two independent fixes that also landed on `refactor/restore-agnostic-core-boundary` (so they ride the
+pending major; not released):
+
+- **`npm run dev` owns a reused CDP Obsidian instance.** The dev-build live-enable broke when
+  `obsidian-integration-testing` 5.x retired the CLI transport — `enableCommunityPlugin` called
+  `evalInObsidian` with no transport, so it hit `fetch('/json')` and threw on every rebuild.
+  `copy-to-obsidian-plugins-folder-plugin.ts` now launches ONE owned instance
+  (`createTransportFromOptions()` + `transport.registerVault()`) on the first rebuild, caches/reuses
+  it, and `disposeSync`s it on `process` `exit`/`SIGINT`/`SIGTERM`/`SIGHUP`. Live-enable is best-effort
+  (the plugin still enables via `community-plugins.json` + hot-reload; failures log quietly via
+  `getLibDebugger`). The owned instance uses an isolated temp `--user-data-dir` but opens the REAL
+  configured vault — revisit if it should reuse the user's real profile.
+- **Integration tests inject the library CSS.** The harness plugin only exposes the module on `window`
+  (it never runs `initPluginContext`), so the library styles were absent from the shared instance. A
+  new `obsidian-integration-tests` setup file (`scripts/integration-test-obsidian-setup.ts`) reads the
+  already-built `dist/styles.css` (build is assumed to have run beforehand) and injects it into the
+  instance once per test file (idempotent, keyed by a `<style>` id). Covered by
+  `library-styles.obsidian.integration.test.ts`.
+
 ## Completed — Restore the agnostic-core ⊥ Obsidian-layer boundary
 
 DONE on branch `refactor/restore-agnostic-core-boundary` (NOT merged/published). Breaking refactor;
 the lib is mid-major (82.x), so the major bump + consumer migration come afterward.
 
-- **Prong A** — replaced the ambient `pluginId` (a capability backdoor) with one explicitly-injected
-  cosmetic `globalState` (`debugPrefixNamespace`/`cssClassScope`/`shouldPrintStackTrace`) on
-  `src/library.ts`. `debug.ts` is now fully agnostic (no `src/obsidian/` imports). `initPluginContext`
-  pushes the three fields; `setup.ts` resets `globalState` per test. `EditorLockComponent` and the free
-  `lockEditorForPath`/`unlockEditorForPath` now take an explicit `pluginId`. Deleted `plugin-id.ts`
-  (`getPluginId`/`setPluginId`/`NO_PLUGIN_ID_INITIALIZED`). (`refactor!`)
+- **Prong A** — replaced the ambient `pluginId` (a capability backdoor) with a single deterministic
+  `Library` init entry point on `src/library.ts`: `Library.init({ cssClassScope, debugPrefixNamespace,
+  shouldPrintStackTrace })` (throws if called twice) and `Library.resetToDefault()` (re-allows init).
+  `debug.ts` is fully agnostic (no `src/obsidian/` imports) and reads `Library` getters;
+  `addPluginCssClasses` reads `Library.cssClassScope`. `initPluginContext` calls `Library.init`;
+  `PluginContextComponent` resets it on unload (reload safety); `setup.ts` resets it per test.
+  `EditorLockComponent` and the free `lockEditorForPath`/`unlockEditorForPath` now take an explicit
+  `pluginId`. Deleted `plugin-id.ts` (`getPluginId`/`setPluginId`/`NO_PLUGIN_ID_INITIALIZED`). (`refactor!`)
 - **Prong B** — removed the Obsidian-runtime dependency from `blob.ts` (standard
   `document.createElement`/`atob`); moved `css-class.ts` → `src/obsidian/css-class.ts`; extracted the
   build-substituted `LIBRARY_VERSION`/`LIBRARY_STYLES` into `src/generated-during-build.ts` (and updated
@@ -308,8 +331,8 @@ the lib is mid-major (82.x), so the major bump + consumer migration come afterwa
   config (NOT the shared consumer config). Pattern is unit-tested in
   `src/script-utils/linters/eslint-agnostic-core-boundary.test.ts`.
 - **Verified** — full unit gate green (compile + `test:coverage` 100% + lint + format + spellcheck);
-  full `npm run build` exit 0; `npm run test:integration` green (41 tests in real Obsidian — validates
-  the moves + the editor-lock A4 signature at runtime).
+  full `npm run build` exit 0; `npm run test:integration` green (42 tests in real Obsidian — validates
+  the moves, the editor-lock A4 signature, and the injected library styles at runtime).
 
 **Deferred hardening (NOT done):** the plan also wanted `integration-test-plugin/main.ts` upgraded from
 `extends Plugin` to a `PluginBase` subclass so `initPluginContext` runs in the harness, plus
@@ -317,8 +340,8 @@ the lib is mid-major (82.x), so the major bump + consumer migration come afterwa
 `addPluginCssClasses` applies the scope class, and explicit harness coverage of the relocated
 `html-element` helpers. The `PluginBase` upgrade was attempted but the harness plugin **fails to load**
 in the harness's minimal owned Obsidian vault (`AggregateError` from a child component; reverted to keep
-the suite green). The `globalState` injection is already unit-covered by `plugin.test.ts` (real
-`PluginBase.onload` → real `initPluginContext` → `globalState` write). Picking this up needs separate
+the suite green). The `Library` injection is already unit-covered by `plugin.test.ts` (real
+`PluginBase.onload` → real `initPluginContext` → `Library.init`). Picking this up needs separate
 diagnosis of why a bare `PluginBase` subclass fails to load in the owned-instance harness.
 
 **Remaining (handed off):** merge + publish the new major via the release tool (irreversible — needs
