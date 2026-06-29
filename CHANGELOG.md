@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 83.0.0
+
+- docs: refresh CLAUDE.md for the Library refactor and landed branch fixes
+- test: inject the library styles into the integration harness instance
+- fix: npm run dev owns a reused CDP Obsidian instance for live-enable
+- refactor: replace globalState with a Library init/resetToDefault entry point
+- refactor!: reimplement html-element helpers agnostically (port enhance.js)
+- docs: record the completed agnostic-core boundary refactor
+- feat: enforce the agnostic-core boundary with an ESLint rule
+- refactor: extract build-substituted constants into generated-during-build.ts
+- refactor!: split the Obsidian-coupled html-element helpers into the obsidian layer
+- refactor!: move css-class into the obsidian layer
+- refactor!: inject globalState instead of an ambient plugin id
+- refactor: de-Obsidian-ify blob.ts to use standard DOM
+
 ## 82.0.0
 
 - chore: update libs
