@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 82.0.0-beta.10
+
+- test: add editor-lock typing integration test with trusted input
+- test: verify the editor stays typable while a modal is minimized
+- test: run obsidian integration tests serially
+- test: add typeIntoEditor helper for trusted keyboard input
+- fix: keep editors typable while a MinimizableModal is minimized
+
 ## 82.0.0-beta.9
 
 - refactor: use null, not undefined, for the explicit no-lock case editorLockComponent is required across the mutation API so every call site must consciously decide; express the "no lock here" choice as `| null` rather than `| undefined`, since undefined reads as "unset/use default" while null reads as a deliberate explicit absence (and cannot be satisfied by an omitted spread field). Genuinely-optional members (abortController, lockForPath options) stay optional. Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com> Claude-Session: https://claude.ai/code/session_01XxKwqvKdb73qgXQjJcEvav

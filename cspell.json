@@ -145,6 +145,7 @@
     "tsdocs",
     "TSES",
     "tseslint",
+    "typable",
     "Unescapes",
     "unregisters",
     "unstub",
