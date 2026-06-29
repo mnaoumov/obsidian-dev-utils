@@ -10,42 +10,42 @@
 
 ## 82.0.0-beta.9
 
-- refactor: use null, not undefined, for the explicit no-lock case editorLockComponent is required across the mutation API so every call site must consciously decide; express the "no lock here" choice as `| null` rather than `| undefined`, since undefined reads as "unset/use default" while null reads as a deliberate explicit absence (and cannot be satisfied by an omitted spread field). Genuinely-optional members (abortController, lockForPath options) stay optional.
-- feat: right-click a lock indicator to unlock and abort the operation A path lock can now carry an AbortController (EditorLockComponent.lockForPath options). Right-clicking any lock indicator (tab header, view action bar, status bar) opens an "Unlock" menu item that confirms ("this will cancel the operation(s) holding a lock on this note, locked by: `plugins`") and then aborts every controller registered for that path, so the owning operations cancel and release their locks. Also exposes requestEditorUnlockForPath(app, pathOrFile) so a plugin can wire its own "unlock active note" command.
+- refactor: use null, not undefined, for the explicit no-lock case
+- feat: right-click a lock indicator to unlock and abort the operation
 
 ## 82.0.0-beta.8
 
-- fix: lock editors opened after a note's path is already locked A note opened in a new tab or popout while its path was already locked stayed editable. Two causes: (1) reconcile only toggled read-only when a view was first tracked, and (2) more fundamentally, opening a note into a fresh leaf installs the lock compartment mid-open and then rebuilds the view's state — dropping the appended compartment while keeping the same CodeMirror view — so the old `WeakMap<Editor>` cache believed it was installed and every later reconfigure hit a dead compartment and was ignored. Fix: cache the compartment by the CodeMirror view and reuse it only while it is still in the live configuration (Compartment.get(state) !== undefined), re-installing it otherwise; and re-apply the read-only toggle on every reconcile for locked-path views (idempotent). Verified by a live-Obsidian regression test: locking a note, then opening it in a split and a popout, locks both.
-- refactor!: rename lockEditor/unlockEditor to toggleEditorReadOnly An Obsidian Editor is a file-agnostic container — the same instance is reused as its leaf navigates between notes — so "lock the editor" was a misleading name for what is really a low-level read-only toggle on one CodeMirror instance. Replace the lockEditor(): Disposable / unlockEditor(): void pair with a single toggleEditorReadOnly(editor, isReadOnly): void, and document that note-wide locking is the file-scoped lockEditorForPath. Also add live-Obsidian integration tests: the read-only toggle actually toggles CM readOnly (keeping the editor focusable), and lockEditorForPath locks the note in the current tab, a split, and a popout window while other notes stay editable. BREAKING CHANGE: lockEditor/unlockEditor are removed; use toggleEditorReadOnly(editor, isReadOnly) instead.
+- fix: lock editors opened after a note's path is already locked
+- refactor!: rename lockEditor/unlockEditor to toggleEditorReadOnly
 
 ## 82.0.0-beta.7
 
-- feat!: require an editorLockComponent on the file-mutation API editorLockComponent becomes a required (but nullable) field across the whole process()-based mutation surface: process, processFrontMatter, applyFileChanges, editLinks, updateLinksInFile, editBacklinks, the code-block helpers, and the rename/delete handler. The compiler now forces every call site to consciously pass an editor-lock component (to lock the note read-only while it mutates) or `undefined` (to opt out). process() locks via the component when present. BREAKING CHANGE: every caller of the above APIs must now pass editorLockComponent (a component or `undefined`).
-- style: fix wrapped-comment capitalization in editor lock helpers The capitalized-comments rule had capitalized mid-sentence continuation words across wrapped comments (and the appendConfig identifier); reword so each line is its own capitalized sentence and backtick the identifier.
+- feat!: require an editorLockComponent on the file-mutation API
+- style: fix wrapped-comment capitalization in editor lock helpers
 
 ## 82.0.0-beta.6
 
-- feat!: lock the editor during process() only via an opt-in component process() previously always locked matching editors with the raw, non -reference-counted lockEditor/unlockEditor, which clobbered any outer operation -level path lock (its finally would unlockEditor a note an enclosing operation still held). Replace that with an optional editorLockComponent on ProcessOptions: when provided, process() takes a reference-counted lockForPath for the duration (composing correctly with outer locks); when omitted, it does not lock at all. BREAKING CHANGE: removes the shouldLockEditorWhileProcessing option. To lock the editor while processing, pass an editorLockComponent instead.
-- feat: own an EditorLockComponent in PluginBase PluginBase now creates and owns an EditorLockComponent (this.editorLockComponent), so every plugin gets editor locking with automatic release on plugin unload, with no per-plugin wiring. The component's constructor accepts an explicit pluginId (defaulting to getPluginId()) so it can be created during PluginBase.onload, before the plugin context that backs getPluginId() has loaded — PluginBase passes this.manifest.id.
+- feat!: lock the editor during process() only via an opt-in component
+- feat: own an EditorLockComponent in PluginBase
 
 ## 82.0.0-beta.5
 
-- feat: add EditorLockComponent for per-plugin lock ownership and auto-release Adds EditorLockComponent, a per-plugin ComponentEx handle for note-scoped locking: a plugin does `this.addChild(new EditorLockComponent(this.app))` and locks via lockForPath/unlockForPath/isLockedForPath. Its onunload releases every lock the plugin still holds (new EditorPathLockManager.unlockAllForPlugin), so a note is never left stuck read-only because the locking plugin was disabled or reloaded mid-operation. Other plugins' locks on the same note are untouched.
+- feat: add EditorLockComponent for per-plugin lock ownership and auto-release
 
 ## 82.0.0-beta.4
 
-- feat: list the locking plugins in the editor-lock indicator tooltip Lock counts are now tracked per locking plugin (the caller is identified via getPluginId), so the tab-header, action-bar, and status-bar indicators show a "Locked by\n`plugin names`" tooltip naming every plugin that currently holds a lock on the note, updated live as plugins lock and unlock. Plugin display names are resolved from app.plugins.manifests, falling back to the plugin id.
+- feat: list the locking plugins in the editor-lock indicator tooltip
 
 ## 82.0.0-beta.3
 
-- feat: pulse the minimized modal bar to keep it noticeable A minimized modal is easy to forget; the floating bar now gently pulses an accent ring so the user remembers an operation is still in progress.
-- feat: show editor-lock indicators in tab header and status bar While a note is locked it now shows a lock icon in its tab header (tabHeaderStatusContainerEl) and, while it is the active note, in the status bar, in addition to the existing view-action-bar icon. Workspace event subscriptions are now managed by an internal ComponentEx that subscribes on load and unsubscribes on unload, replacing the hand-rolled EventRef tracking.
+- feat: pulse the minimized modal bar to keep it noticeable
+- feat: show editor-lock indicators in tab header and status bar
 
 ## 82.0.0-beta.2
 
-- fix: actually apply the editor lock and keep app hotkeys working lockEditor created a fresh Compartment and reconfigured it, but never added the compartment to the editor's configuration, so CodeMirror silently ignored the reconfigure and the editor was never locked. Install the compartment (initially empty) via StateEffect.appendConfig on first use so reconfigure takes effect. Also lock with EditorState.readOnly only, dropping EditorView.editable.of(false): readOnly blocks document edits while keeping the editor focusable, so selection, copy, and app hotkeys (e.g. the command palette) keep working. editable.of(false) made the content non-editable and is unnecessary. Verified live over CDP: appendConfig + reconfigure(readOnly.of(true)) sets state.readOnly=true with contentEditable unchanged; reconfigure([]) unlocks.
-- test: cover the file-open listener in editor-lock events test The file-open listener added to keep newly-opened notes in sync registers a third workspace event; update the event-count assertions accordingly.
-- feat: restart dev build on node_modules changes esbuild's own watch only tracks files in its build graph and only re-bundles; it never re-runs the type-check and ignores node_modules changes outside the graph (a reinstall, or a dependency file not currently imported). The dev (watch) build now also watches the whole node_modules tree and, on a debounced change, disposes the build context and restarts the full pipeline.
+- fix: actually apply the editor lock and keep app hotkeys working
+- test: cover the file-open listener in editor-lock events test
+- feat: restart dev build on node_modules changes
 
 ## 82.0.0-beta.1
 
