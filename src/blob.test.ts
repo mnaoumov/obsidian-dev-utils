@@ -80,15 +80,6 @@ class MockImage {
 }
 
 describe('dataUrlToArrayBuffer', () => {
-  beforeEach(() => {
-    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-    vi.stubGlobal('window', { atob: globalThis.atob });
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('should convert a valid base64 data URL to an ArrayBuffer', () => {
     const dataUrl = 'data:text/plain;base64,aGVsbG8=';
     const buffer = dataUrlToArrayBuffer(dataUrl);
@@ -240,8 +231,6 @@ describe('blobToJpegArrayBuffer', () => {
   beforeEach(() => {
     vi.stubGlobal('FileReader', MockFileReader);
     vi.stubGlobal('Image', MockImage);
-    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-    vi.stubGlobal('window', { atob: globalThis.atob });
 
     mockToDataURL = vi.fn().mockReturnValue('data:image/jpeg;base64,/9j/4AAQ');
     mockGetContext = vi.fn().mockReturnValue({

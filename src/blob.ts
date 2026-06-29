@@ -57,7 +57,8 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
     image.src = dataUrl;
 
     function handleLoad(): void {
-      const canvas = createEl('canvas');
+      // eslint-disable-next-line obsidianmd/prefer-active-doc -- This is an Obsidian-runtime-agnostic module; it uses the standard DOM `document`, not Obsidian's `activeDocument`.
+      const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       assertNonNullable(context, 'Could not get 2D context.');
       const imageWidth = image.width;
@@ -95,7 +96,7 @@ export function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
     throw new Error('Invalid data URL');
   }
 
-  const raw = activeWindow.atob(base64);
+  const raw = atob(base64);
   const rawLength = raw.length;
 
   const uInt8Array = new Uint8Array(rawLength);
