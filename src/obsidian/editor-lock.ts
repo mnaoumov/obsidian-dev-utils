@@ -58,6 +58,7 @@ import { getPluginId } from './plugin/plugin-id.ts';
 const EDITOR_LOCK_STATE_KEY = 'editorLock';
 const LOCK_ICON_ID = 'lock';
 const LOCK_INDICATOR_CSS_CLASS = 'obsidian-dev-utils-lock-indicator';
+const LOCK_INDICATOR_FLASH_CSS_CLASS = 'obsidian-dev-utils-lock-indicator-flash';
 const STATUS_BAR_ITEM_CSS_CLASS = 'status-bar-item';
 const STATUS_BAR_CSS_SELECTOR = '.status-bar';
 const UNLOCK_ICON_ID = 'unlock';
@@ -86,6 +87,7 @@ interface EditorLockEventsComponentConstructorParams {
 
 interface LockIndicators {
   readonly actionIconEl: HTMLElement;
+  disposeTypeListener(): void;
   readonly tabIconEl: HTMLElement | null;
 }
 
@@ -234,8 +236,19 @@ class EditorPathLockManager {
       this.registerUnlockMenu(app, tabIconEl, () => path);
     }
 
+    // A locked view is read-only but still editable-focusable, so a keystroke fires `beforeinput`.
+    // Flash the indicators on that rejected attempt for immediate "note is locked" feedback.
+    // The listener is removed on unlock.
+    const flashOnTypeAttempt = (): void => {
+      this.flashIndicators(view);
+    };
+    view.contentEl.addEventListener('beforeinput', flashOnTypeAttempt);
+
     return {
       actionIconEl,
+      disposeTypeListener: (): void => {
+        view.contentEl.removeEventListener('beforeinput', flashOnTypeAttempt);
+      },
       tabIconEl
     };
   }
@@ -254,6 +267,22 @@ class EditorPathLockManager {
       }
     });
     this.eventsComponent.load();
+  }
+
+  private flashElement(el: HTMLElement): void {
+    el.removeClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
+    // Read layout to force a reflow so the flash animation restarts on every rejected keystroke.
+    el.getBoundingClientRect();
+    el.addClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
+  }
+
+  private flashIndicators(view: MarkdownView): void {
+    const indicators = this.indicatorsByView.get(view);
+    for (const el of [indicators?.actionIconEl, indicators?.tabIconEl, this.statusBarItemEl]) {
+      if (el) {
+        this.flashElement(el);
+      }
+    }
   }
 
   private handleFileMenu(app: App, menu: Menu, file: TAbstractFile): void {
@@ -316,6 +345,7 @@ class EditorPathLockManager {
     for (const [view, indicators] of this.indicatorsByView) {
       if (!viewsToLock.has(view)) {
         toggleEditorReadOnly(view.editor, false);
+        indicators.disposeTypeListener();
         indicators.actionIconEl.remove();
         indicators.tabIconEl?.remove();
         this.indicatorsByView.delete(view);

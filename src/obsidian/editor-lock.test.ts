@@ -666,3 +666,39 @@ describe('unlock file menu', () => {
     expect(menu.items__).toHaveLength(0);
   });
 });
+
+describe('lock type-attempt flash', () => {
+  const FLASH_CLASS = 'obsidian-dev-utils-lock-indicator-flash';
+
+  it('should flash the lock indicators when typing is attempted in a locked view', () => {
+    const view = createMarkdownView('note.md');
+    const actionIconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(actionIconEl);
+    stubLeaves(leafOf(view));
+
+    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(tabIconEl);
+    expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(false);
+
+    view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
+
+    expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(true);
+    expect(tabIconEl.hasClass(FLASH_CLASS)).toBe(true);
+  });
+
+  it('should stop flashing after the view is unlocked', () => {
+    const view = createMarkdownView('note.md');
+    const actionIconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(actionIconEl);
+    stubLeaves(leafOf(view));
+
+    const component = new EditorLockComponent(app);
+    component.lockForPath('note.md', { abortController: new AbortController() });
+    component.unlockForPath('note.md');
+
+    view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
+
+    expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(false);
+  });
+});

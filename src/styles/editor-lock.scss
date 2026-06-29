@@ -11,3 +11,16 @@
     height: var(--icon-s);
   }
 }
+
+// Flashed on every lock indicator (tab header, view action, status bar) when the user attempts to
+// type in a locked note, to make clear the note is read-only. Re-added per rejected keystroke.
+@keyframes obsidian-dev-utils-lock-indicator-flash {
+  40% {
+    color: var(--text-error);
+    transform: scale(1.4);
+  }
+}
+
+.obsidian-dev-utils-lock-indicator-flash {
+  animation: obsidian-dev-utils-lock-indicator-flash 0.35s ease-in-out;
+}
