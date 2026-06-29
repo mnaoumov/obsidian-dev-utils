@@ -15,7 +15,7 @@ import {
 
 class MyPlugin extends Plugin {
   public override onload(): void {
-    initPluginContext(this.app, this.manifest.id);
+    initPluginContext(this.manifest.id);
     // ...
   }
 }

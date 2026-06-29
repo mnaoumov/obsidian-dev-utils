@@ -271,83 +271,57 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
-## Current Task — Restore the agnostic-core ⊥ Obsidian-layer boundary
+## Completed — Restore the agnostic-core ⊥ Obsidian-layer boundary
 
-This section is the self-contained summary of the full plan. Breaking refactor — do it on a feature
-branch via TDD; the lib is mid-major (82.x), so the major bump + consumer migration come afterward.
+DONE on branch `refactor/restore-agnostic-core-boundary` (NOT merged/published). Breaking refactor;
+the lib is mid-major (82.x), so the major bump + consumer migration come afterward.
 
-**Problem.** Top-level `src/*.ts` is meant to be Obsidian-runtime-agnostic; everything Obsidian-only
-belongs under `src/obsidian/`. `src/debug.ts` violates this by importing `getPluginId` (and
-`isInObsidian`) from the Obsidian layer just to prefix a debug namespace. A publicly-readable ambient
-`pluginId` is also a capability backdoor (`app.plugins.plugins[getPluginId()]` reconstructs the graph),
-defeating the "pass dependencies explicitly" discipline.
+- **Prong A** — replaced the ambient `pluginId` (a capability backdoor) with one explicitly-injected
+  cosmetic `globalState` (`debugPrefixNamespace`/`cssClassScope`/`shouldPrintStackTrace`) on
+  `src/library.ts`. `debug.ts` is now fully agnostic (no `src/obsidian/` imports). `initPluginContext`
+  pushes the three fields; `setup.ts` resets `globalState` per test. `EditorLockComponent` and the free
+  `lockEditorForPath`/`unlockEditorForPath` now take an explicit `pluginId`. Deleted `plugin-id.ts`
+  (`getPluginId`/`setPluginId`/`NO_PLUGIN_ID_INITIALIZED`). (`refactor!`)
+- **Prong B** — removed the Obsidian-runtime dependency from `blob.ts` (standard
+  `document.createElement`/`atob`); moved `css-class.ts` → `src/obsidian/css-class.ts`; split the
+  Obsidian-coupled half of `html-element.ts` into `src/obsidian/html-element.ts` (agnostic
+  `getZIndex`/`toPx`/`isElementVisibleInOffsetParent`/`ValidatorElement` stay top-level); extracted the
+  build-substituted `LIBRARY_VERSION`/`LIBRARY_STYLES` into `src/generated-during-build.ts` (and updated
+  the `scripts/version.ts` release substitution to target it).
+- **Prong C** — `no-restricted-imports` rule banning `./obsidian/**` from the agnostic top-level
+  `src/*.ts` modules (excluding the barrel + test files), wired into obsidian-dev-utils' own ESLint
+  config (NOT the shared consumer config). Pattern is unit-tested in
+  `src/script-utils/linters/eslint-agnostic-core-boundary.test.ts`.
+- **Verified** — full unit gate green (compile + `test:coverage` 100% + lint + format + spellcheck);
+  full `npm run build` exit 0; `npm run test:integration` green (41 tests in real Obsidian — validates
+  the moves + the editor-lock A4 signature at runtime).
 
-**Prong A — one explicit injected `globalState` (push at init; agnostic core only reads).** Add to
-`src/library.ts`:
+**Deferred hardening (NOT done):** the plan also wanted `integration-test-plugin/main.ts` upgraded from
+`extends Plugin` to a `PluginBase` subclass so `initPluginContext` runs in the harness, plus
+`evalInObsidian` assertions that `getLibDebugger` carries the `<pluginId>:` prefix and
+`addPluginCssClasses` applies the scope class, and explicit harness coverage of the relocated
+`html-element` helpers. The `PluginBase` upgrade was attempted but the harness plugin **fails to load**
+in the harness's minimal owned Obsidian vault (`AggregateError` from a child component; reverted to keep
+the suite green). The `globalState` injection is already unit-covered by `plugin.test.ts` (real
+`PluginBase.onload` → real `initPluginContext` → `globalState` write). Picking this up needs separate
+diagnosis of why a bare `PluginBase` subclass fails to load in the owned-instance harness.
 
-```ts
-interface GlobalState {
-  debugPrefixNamespace: string;   // set to `${pluginId}:` at init
-  cssClassScope: string;          // set to pluginId at init (per-plugin CSS scoping)
-  shouldPrintStackTrace: boolean; // set true at init (rich DevTools stack-trace logging)
-}
-const DEFAULT_GLOBAL_STATE: GlobalState = { debugPrefixNamespace: '', cssClassScope: '', shouldPrintStackTrace: false };
-export const globalState: GlobalState = { ...DEFAULT_GLOBAL_STATE };
-```
-
-Note: `globalState` holds only cosmetic strings/a flag — NO `pluginId` field, so it cannot be laundered
-into a capability; agnostic field names; `library.ts` imports nothing from `src/obsidian/`.
-
-- A1 — `debug.ts`: `getLibDebugger(ns)` → ``getDebugger(`${globalState.debugPrefixNamespace}${LIBRARY_NAME}:${ns}`)``;
-  `logWithCaller`/`printWithStackTrace` branch on `globalState.shouldPrintStackTrace` (not `isInObsidian()`);
-  `getSharedDebugLibInstance()` drops the `isInObsidian()` branch and ALWAYS reads
-  `getObsidianDevUtilsState('debug', debug).value` (behavior-identical). Remove BOTH Obsidian imports
-  (`getPluginId`/`NO_PLUGIN_ID_INITIALIZED`, `isInObsidian`) — `debug.ts` ends agnostic.
-- A2 — `addPluginCssClasses` (in `plugin-context.ts`) reads `globalState.cssClassScope` instead of `getPluginId()`.
-- A3 — `initPluginContext(pluginId)` replaces `setPluginId(pluginId)` with writes to the three
-  `globalState` fields. The agnostic `setup.ts` also resets `globalState` per test
-  (`Object.assign(globalState, DEFAULT_GLOBAL_STATE)`).
-- A4 — `editor-lock.ts` → explicit DI (it has a construction point): `EditorLockComponent` ctor drops the
-  `= getPluginId()` default → required `pluginId` (`PluginBase` already passes `this.manifest.id`); the
-  free `lockEditorForPath`/`unlockEditorForPath` (no external consumers) take explicit `pluginId` or are
-  removed.
-- A5 — DELETE `src/obsidian/plugin/plugin-id.ts` (`getPluginId`/`setPluginId`/`NO_PLUGIN_ID_INITIALIZED`)
-  plus its barrel entry; zero readers remain.
-
-**Prong B — relocate / fix mislocated symbols (three buckets).**
-
-- MOVE into `src/obsidian/` (genuine Obsidian import/API or cross-realm helper, public-path break):
-  whole `src/css-class.ts`; the Obsidian-augmentation half of `src/html-element.ts` (`appendCodeBlock`
-  hardcodes `markdown-rendered`; `create*Async` are `DomElementInfo`-shaped; `ensureLoaded`/`isLoaded`
-  use `el.instanceOf`; `onAncestorScrollOrResize` uses `activeWindow`/`activeDocument`;
-  `waitUntilConnected` uses `el.onNodeInserted`). KEEP agnostic in `html-element.ts`: `getZIndex`,
-  `toPx`, `isElementVisibleInOffsetParent`, `ValidatorElement`.
-- DE-OBSIDIAN-IFY in place (incidental — standard browser API is equivalent, no move): `src/blob.ts`
-  `createEl('canvas')` → `document.createElement('canvas')`, `activeWindow.atob` → `atob`.
-- INERT DATA, stays agnostic by build-provenance grouping (NOT moved — it's a build-substituted string,
-  no Obsidian import/API): extract `LIBRARY_VERSION` + `LIBRARY_STYLES` into a new
-  `src/generated-during-build.ts` (one `$(...)` substitution target); point the build's replacement
-  there. `LIBRARY_NAME` (literal) + `globalState` stay in `src/library.ts`.
-
-**Prong C — enforce.** Add an ESLint `no-restricted-imports`/path-zone rule: agnostic top-level
-`src/*.ts` may not import `src/obsidian/**` (exclude barrels + `src/script-utils/**`); add the rule's
-positive/negative `Linter` test.
-
-**Verification.** Full gate (compile + `test:coverage` 100% + lint + format + spellcheck). Plus the
-`obsidian-integration-testing` runtime gate (`npm run test:integration`): FIRST upgrade
-`integration-test-plugin/main.ts` from `extends Plugin` to a minimal `PluginBase` subclass so
-`initPluginContext` (and thus the Prong-A injection) actually runs in the harness; then assert via
-`evalInObsidian` that `getLibDebugger` carries the `<pluginId>:` prefix + stack trace and
-`addPluginCssClasses` applies the scope class; update `editor-lock.obsidian.integration.test.ts` for the
-A4 signature; cover the relocated `html-element` helpers in the harness (not jsdom).
-`obsidian-integration-testing` does NOT depend on `obsidian-dev-utils`, so it isn't broken by the moves.
+**Remaining (handed off):** merge + publish the new major via the release tool (irreversible — needs
+explicit go-ahead), then migrate the consuming plugins (public import paths changed:
+`obsidian-dev-utils/css-class` → `.../obsidian/css-class`, and the Obsidian-coupled `html-element`
+helpers → `.../obsidian/html-element`). At merge time, also flip the `docs/styling.md` CssClass link
+from `src/css-class.ts` → `src/obsidian/css-class.ts` — it was left pointing at the old path because the
+`lint:md` link-checker (linkinator) validates against GitHub `main`, where the moved file does not exist
+until this branch lands.
 
 ## Known Issues
 
-None. The three performance issues previously tracked here (eager per-attachment `readBinary`,
-`RenameDeleteHandler` acting on synthetic index-only deletions, and O(vault) string-path resolution
-on a miss) are all fixed in the library — see **Current Task** for what landed and the remaining
-cross-repo follow-up for the `custom-attachment-location` lazy-provider migration.
+- The `package.json` integration scripts `test:integration:desktop`, `test:integration:android`, and
+  `test:integration:no-app` reference `scripts/test-integration-{desktop,android,no-app}.ts`, which do
+  NOT exist — only `scripts/test-integration.ts` (run via `npm run test:integration`, covering the
+  `integration-tests` + `obsidian-integration-tests` vitest projects) is present. Pre-existing; unrelated
+  to the boundary refactor. Either add the missing per-target entry scripts or drop the stale
+  `package.json` entries.
 
 ## Commits
 
