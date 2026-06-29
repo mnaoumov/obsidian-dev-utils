@@ -31,8 +31,6 @@ import {
   it
 } from 'vitest';
 
-import { typeIntoEditor } from '../test-helpers/type-into-editor.ts';
-
 interface LockForPathResult {
   readonly isCurrentTabLocked: boolean;
   readonly isCurrentTabLockedAfterUnlock: boolean;
@@ -176,8 +174,7 @@ describe('editor-lock', () => {
 
     it('should prevent the user from typing in a locked note while allowing it in an unlocked one', async () => {
       const result = await evalInObsidian({
-        args: { typeIntoEditor },
-        async fn({ app, typeIntoEditor: typeIntoEditorInObsidian }): Promise<TypingResult> {
+        async fn({ app, typeIntoEditor }): Promise<TypingResult> {
           const lib = window.__obsidianDevUtilsModule__;
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
@@ -204,19 +201,19 @@ describe('editor-lock', () => {
 
           // Typing into the locked note is rejected: its document is unchanged.
           const lockedBefore = readValue(lockedLeaf);
-          await typeIntoEditorInObsidian({ editor: getEditor(lockedLeaf), text: 'X' });
+          await typeIntoEditor({ editor: getEditor(lockedLeaf), text: 'X' });
           const didLockedNoteRejectTyping = readValue(lockedLeaf) === lockedBefore;
 
           // Typing into the never-locked note is accepted: its document gains the typed text.
           const otherBefore = readValue(otherLeaf);
-          await typeIntoEditorInObsidian({ editor: getEditor(otherLeaf), text: 'Y' });
+          await typeIntoEditor({ editor: getEditor(otherLeaf), text: 'Y' });
           const didOtherNoteAcceptTyping = readValue(otherLeaf) !== otherBefore;
 
           // Releasing the lock makes the previously-locked note typable again.
           disposable[Symbol.dispose]();
           await settle();
           const unlockedBefore = readValue(lockedLeaf);
-          await typeIntoEditorInObsidian({ editor: getEditor(lockedLeaf), text: 'Z' });
+          await typeIntoEditor({ editor: getEditor(lockedLeaf), text: 'Z' });
           const didUnlockedNoteAcceptTyping = readValue(lockedLeaf) !== unlockedBefore;
 
           return {

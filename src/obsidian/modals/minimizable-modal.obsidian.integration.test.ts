@@ -10,8 +10,9 @@
  * now-hidden `containerEl`): focusing the editor gets stolen back and the user cannot type. The fix
  * pops the modal's keymap scope on `minimize()` (and pushes it back on `restore()`).
  *
- * Typing goes through {@link typeIntoEditor}, which injects **trusted** Electron keyboard input — so
- * the document changes only if the editor genuinely holds focus. With the focus trap still active the
+ * Typing goes through the `typeIntoEditor` helper that `obsidian-integration-testing` provides on every
+ * `evalInObsidian` callback's args, which injects **trusted** Electron keyboard input — so the document
+ * changes only if the editor genuinely holds focus. With the focus trap still active the
  * trusted keystroke lands nowhere and the assertion fails, making this a faithful end-to-end guard
  * (unlike `execCommand`, which would insert text even while focus is trapped away).
  */
@@ -26,8 +27,6 @@ import {
   it
 } from 'vitest';
 
-import { typeIntoEditor } from '../../test-helpers/type-into-editor.ts';
-
 interface TypingWhileMinimizedResult {
   readonly didAcceptTypingAfterRestore: boolean;
   readonly didAcceptTypingWhileMinimized: boolean;
@@ -38,8 +37,7 @@ describe('MinimizableModal', () => {
   describe('minimize', () => {
     it('should keep the editor typable while the modal is minimized and after it is restored', async () => {
       const result = await evalInObsidian({
-        args: { typeIntoEditor },
-        async fn({ app, obsidianModule, typeIntoEditor: typeIntoEditorInObsidian }): Promise<TypingWhileMinimizedResult> {
+        async fn({ app, obsidianModule, typeIntoEditor }): Promise<TypingWhileMinimizedResult> {
           const lib = window.__obsidianDevUtilsModule__;
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
@@ -71,7 +69,7 @@ describe('MinimizableModal', () => {
           // Typing into the editor while the modal is minimized must reach the document.
           // A trusted keystroke only lands if the editor holds focus (i.e. the focus trap released).
           const beforeMinimized = readValue();
-          await typeIntoEditorInObsidian({ editor: getEditor(), text: 'X' });
+          await typeIntoEditor({ editor: getEditor(), text: 'X' });
           const didAcceptTypingWhileMinimized = readValue() !== beforeMinimized;
 
           // Restoring then closing the modal must leave the editor typable.
@@ -80,7 +78,7 @@ describe('MinimizableModal', () => {
           minimizable.modal.close();
           await settle();
           const beforeRestore = readValue();
-          await typeIntoEditorInObsidian({ editor: getEditor(), text: 'Y' });
+          await typeIntoEditor({ editor: getEditor(), text: 'Y' });
           const didAcceptTypingAfterRestore = readValue() !== beforeRestore;
 
           return {
