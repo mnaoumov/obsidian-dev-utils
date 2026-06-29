@@ -9,7 +9,8 @@ import {
   beforeEach,
   describe,
   expect,
-  it
+  it,
+  vi
 } from 'vitest';
 
 import { CssClass } from '../../css-class.ts';
@@ -103,6 +104,15 @@ describe('MinimizableModal', () => {
       expect(minimizable.isMinimized).toBe(true);
       expect(getBar()).not.toBeNull();
     });
+
+    it('should pop the modal scope so the app stays usable while minimized', () => {
+      const modal = new Modal(app);
+      const popScopeSpy = vi.spyOn(app.keymap, 'popScope');
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+
+      expect(popScopeSpy).toHaveBeenCalledWith(modal.scope);
+    });
   });
 
   describe('restore', () => {
@@ -124,6 +134,16 @@ describe('MinimizableModal', () => {
 
       expect(minimizable.isMinimized).toBe(false);
       expect(getBar()).toBeNull();
+    });
+
+    it('should push the modal scope back when restored so the modal blocks the app again', () => {
+      const modal = new Modal(app);
+      const pushScopeSpy = vi.spyOn(app.keymap, 'pushScope');
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+      minimizable.restore();
+
+      expect(pushScopeSpy).toHaveBeenCalledWith(modal.scope);
     });
 
     it('should restore when the restore button is clicked', () => {

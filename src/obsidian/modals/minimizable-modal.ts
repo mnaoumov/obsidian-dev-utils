@@ -89,6 +89,10 @@ export class MinimizableModal<TModal extends Modal> {
     this.isMinimizedValue = true;
     this.minimizeButtonEl.hide();
     this.modal.containerEl.hide();
+    // The modal stays open while minimized, so its keymap scope would otherwise stay active.
+    // Obsidian's focus trap then steals focus back to the hidden modal, so the editor cannot type.
+    // Popping the scope releases the trap and the `Escape` capture; `restore()` re-pushes it.
+    this.modal.app.keymap.popScope(this.modal.scope);
     this.minimizedBarEl = this.createMinimizedBar();
   }
 
@@ -103,6 +107,9 @@ export class MinimizableModal<TModal extends Modal> {
 
     this.isMinimizedValue = false;
     this.removeMinimizedBar();
+    // Re-push the scope popped in minimize() so the restored modal blocks the app again (focus trap
+    // + Escape capture).
+    this.modal.app.keymap.pushScope(this.modal.scope);
     this.modal.containerEl.show();
     this.minimizeButtonEl.show();
   }
