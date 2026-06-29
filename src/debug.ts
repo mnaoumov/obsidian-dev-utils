@@ -12,7 +12,7 @@ import type { DebugController } from './debug-controller.ts';
 
 import { CustomStackTraceError } from './error.ts';
 import {
-  globalState,
+  Library,
   LIBRARY_NAME
 } from './library.ts';
 import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
@@ -127,7 +127,7 @@ export function getDebugger(namespace: string, framesToSkip = 0): Debugger {
  * @returns A debugger instance for the `obsidian-dev-utils` library.
  */
 export function getLibDebugger(namespace: string): Debugger {
-  return getDebugger(`${globalState.debugPrefixNamespace}${LIBRARY_NAME}:${namespace}`);
+  return getDebugger(`${Library.debugPrefixNamespace}${LIBRARY_NAME}:${namespace}`);
 }
 
 /**
@@ -142,7 +142,7 @@ export function printWithStackTrace(params: PrintWithStackTraceParams): void {
     message,
     stackTrace
   } = params;
-  if (!globalState.shouldPrintStackTrace) {
+  if (!Library.shouldPrintStackTrace) {
     debuggerInstance(message, ...args);
     return;
   }
@@ -215,7 +215,7 @@ function logWithCaller(params: LogWithCallerParams): void {
     return;
   }
 
-  if (!globalState.shouldPrintStackTrace) {
+  if (!Library.shouldPrintStackTrace) {
     // eslint-disable-next-line no-console -- Valid usage.
     console.debug(message, ...args);
     return;

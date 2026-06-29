@@ -19,7 +19,7 @@ import {
   showInitialDebugMessage
 } from './debug.ts';
 import { noop } from './function.ts';
-import { globalState } from './library.ts';
+import { Library } from './library.ts';
 import { castTo } from './object-utils.ts';
 import { assertNonNullable } from './type-guards.ts';
 
@@ -267,13 +267,12 @@ describe('Debug', () => {
     });
 
     it('should include the debug prefix namespace when one is set', () => {
-      globalState.debugPrefixNamespace = 'test-plugin:';
+      Library.init({ cssClassScope: '', debugPrefixNamespace: 'test-plugin:', shouldPrintStackTrace: false });
       const dbg = getLibDebugger('my-module');
       expect(dbg.namespace).toBe('test-plugin:obsidian-dev-utils:my-module');
     });
 
     it('should not prepend a prefix when the prefix namespace is empty', () => {
-      globalState.debugPrefixNamespace = '';
       const dbg = getLibDebugger('some-module');
       expect(dbg.namespace).toBe('obsidian-dev-utils:some-module');
     });
@@ -281,7 +280,6 @@ describe('Debug', () => {
 
   describe('printWithStackTrace', () => {
     it('should call the debugger with message and args when stack traces are disabled', () => {
-      globalState.shouldPrintStackTrace = false;
       debug.enable('print-test');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
@@ -295,7 +293,6 @@ describe('Debug', () => {
     });
 
     it('should not include stack trace info when stack traces are disabled', () => {
-      globalState.shouldPrintStackTrace = false;
       debug.enable('print-test-2');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
@@ -310,7 +307,7 @@ describe('Debug', () => {
     });
 
     it('should include stack trace info when stack traces are enabled', () => {
-      globalState.shouldPrintStackTrace = true;
+      Library.init({ cssClassScope: '', debugPrefixNamespace: '', shouldPrintStackTrace: true });
       debug.enable('print-test-obsidian');
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
@@ -327,7 +324,6 @@ describe('Debug', () => {
 
   describe('logWithCaller (via debugger call)', () => {
     it('should call console.debug without stack trace when stack traces are disabled', () => {
-      globalState.shouldPrintStackTrace = false;
       const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
       const namespace = 'log-caller-outside';
       debug.enable(namespace);
@@ -337,7 +333,7 @@ describe('Debug', () => {
     });
 
     it('should call console.debug with stack trace when stack traces are enabled', () => {
-      globalState.shouldPrintStackTrace = true;
+      Library.init({ cssClassScope: '', debugPrefixNamespace: '', shouldPrintStackTrace: true });
       const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
       const namespace = 'log-caller-inside';
       debug.enable(namespace);

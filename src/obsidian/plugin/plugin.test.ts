@@ -61,15 +61,6 @@ vi.mock('../../generated-during-build.ts', () => ({
   LIBRARY_VERSION: '1.0.0'
 }));
 
-vi.mock('../../library.ts', () => ({
-  globalState: {
-    cssClassScope: '',
-    debugPrefixNamespace: '',
-    shouldPrintStackTrace: false
-  },
-  LIBRARY_NAME: 'obsidian-dev-utils'
-}));
-
 vi.mock('../../obsidian-dev-utils-state.ts', () => ({
   getObsidianDevUtilsState: vi.fn((_key: string, defaultValue: unknown) => ({ value: defaultValue }))
 }));

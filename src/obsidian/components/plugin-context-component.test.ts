@@ -9,6 +9,8 @@ import {
   vi
 } from 'vitest';
 
+import { Library } from '../../library.ts';
+import { assertNonNullable } from '../../type-guards.ts';
 import { PluginContextComponent } from './plugin-context-component.ts';
 
 const mocks = vi.hoisted(() => ({
@@ -52,5 +54,19 @@ describe('PluginContextComponent', () => {
     component.onload();
 
     expect(mocks.initDebugController).toHaveBeenCalledWith(window, component);
+  });
+
+  it('should reset the Library on unload so a reload can re-initialize', () => {
+    Library.init({ cssClassScope: 'test-plugin', debugPrefixNamespace: 'test-plugin:', shouldPrintStackTrace: true });
+    const component = new PluginContextComponent({ app, pluginId: 'test-plugin' });
+    const registerSpy = vi.spyOn(component, 'register');
+    component.onload();
+
+    // `initDebugController` is mocked, so the only registered cleanup is the Library reset.
+    const cleanup = registerSpy.mock.calls[0]?.[0];
+    assertNonNullable(cleanup);
+    cleanup();
+
+    expect(Library.cssClassScope).toBe('');
   });
 });

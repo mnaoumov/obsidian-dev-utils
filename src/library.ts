@@ -10,51 +10,99 @@
 export const LIBRARY_NAME = 'obsidian-dev-utils';
 
 /**
- * Process-wide cosmetic state for the `obsidian-dev-utils` library.
+ * Parameters for {@link Library.init}.
  *
- * The host plugin pushes these values once at initialization (see `initPluginContext`); the
- * Obsidian-runtime-agnostic core only ever reads them. The bag holds purely cosmetic strings and a
- * flag — deliberately NOT the plugin ID itself — so it cannot be used to reconstruct a capability
- * such as the plugin graph.
+ * These are purely cosmetic values the host plugin injects once at initialization — deliberately NOT
+ * the plugin ID itself, so the agnostic core cannot reconstruct a capability from them.
  */
-export interface GlobalState {
+export interface LibraryInitParams {
   /**
    * The per-plugin CSS class scope applied alongside the library class by `addPluginCssClasses`.
-   * Set to the plugin ID at initialization; empty until then.
    */
-  cssClassScope: string;
+  readonly cssClassScope: string;
 
   /**
-   * The namespace prefix prepended to the library's debug namespaces (e.g. `${pluginId}:`). Set at
-   * initialization so a plugin's library debuggers are namespaced under it; empty until then.
+   * The namespace prefix prepended to the library's debug namespaces (e.g. `${pluginId}:`).
    */
-  debugPrefixNamespace: string;
+  readonly debugPrefixNamespace: string;
 
   /**
-   * Whether debug logging should append a rich DevTools stack trace. Set to `true` at
-   * initialization (the host runs inside Obsidian's DevTools-capable renderer); `false` until then.
+   * Whether debug logging should append a rich DevTools stack trace.
    */
-  shouldPrintStackTrace: boolean;
+  readonly shouldPrintStackTrace: boolean;
 }
 
-const DEFAULT_GLOBAL_STATE: GlobalState = {
+const DEFAULT_PARAMS: LibraryInitParams = {
   cssClassScope: '',
   debugPrefixNamespace: '',
   shouldPrintStackTrace: false
 };
 
 /**
- * The process-wide cosmetic {@link GlobalState} for the `obsidian-dev-utils` library. Written once at
- * initialization by the host plugin and read by the agnostic core.
+ * The single, deterministic initialization entry point for the `obsidian-dev-utils` library.
+ *
+ * The host plugin calls {@link Library.init} exactly once (via `initPluginContext`) to push the
+ * cosmetic per-plugin configuration; the Obsidian-runtime-agnostic core only reads it through the
+ * getters. Calling {@link Library.init} more than once throws — {@link Library.resetToDefault} clears
+ * the state (e.g. between tests, or on plugin unload) and allows re-initialization.
  */
-export const globalState: GlobalState = { ...DEFAULT_GLOBAL_STATE };
+class LibraryContext {
+  /**
+   * The per-plugin CSS class scope applied alongside the library class by `addPluginCssClasses`.
+   * Empty until {@link init} is called.
+   *
+   * @returns The CSS class scope.
+   */
+  public get cssClassScope(): string {
+    return this.params.cssClassScope;
+  }
+
+  /**
+   * The namespace prefix prepended to the library's debug namespaces. Empty until {@link init} is called.
+   *
+   * @returns The debug namespace prefix.
+   */
+  public get debugPrefixNamespace(): string {
+    return this.params.debugPrefixNamespace;
+  }
+
+  /**
+   * Whether debug logging should append a rich DevTools stack trace. `false` until {@link init} is called.
+   *
+   * @returns Whether to print stack traces.
+   */
+  public get shouldPrintStackTrace(): boolean {
+    return this.params.shouldPrintStackTrace;
+  }
+
+  private isInitialized = false;
+
+  private params: LibraryInitParams = { ...DEFAULT_PARAMS };
+
+  /**
+   * Initializes the library with the host plugin's cosmetic configuration. Must be called exactly
+   * once; calling it again before {@link resetToDefault} throws.
+   *
+   * @param params - The cosmetic configuration to inject.
+   */
+  public init(params: LibraryInitParams): void {
+    if (this.isInitialized) {
+      throw new Error(`${LIBRARY_NAME} is already initialized. Call Library.resetToDefault() before initializing again.`);
+    }
+    this.isInitialized = true;
+    this.params = { ...params };
+  }
+
+  /**
+   * Resets the library back to its default (uninitialized) state, allowing {@link init} to be called again.
+   */
+  public resetToDefault(): void {
+    this.isInitialized = false;
+    this.params = { ...DEFAULT_PARAMS };
+  }
+}
 
 /**
- * Resets {@link globalState} back to its defaults.
- *
- * Intended for test isolation: call it before each test so values pushed by one test's
- * initialization do not leak into the next.
+ * The single {@link LibraryContext} instance — the library's deterministic initialization entry point.
  */
-export function resetGlobalState(): void {
-  Object.assign(globalState, DEFAULT_GLOBAL_STATE);
-}
+export const Library = new LibraryContext();
