@@ -221,7 +221,7 @@ describe('lockEditorForPath', () => {
     lockEditorForPath(app, 'note.md');
     lockEditorForPath(app, 'other.md');
 
-    expect(onSpy).toHaveBeenCalledTimes(3);
+    expect(onSpy).toHaveBeenCalledTimes(4);
   });
 
   it('should lock a view opened after the lock via active-leaf-change', () => {
@@ -278,7 +278,7 @@ describe('unlockEditorForPath', () => {
     expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, false);
     expect(removeSpy).toHaveBeenCalledTimes(1);
-    expect(offrefSpy).toHaveBeenCalledTimes(3);
+    expect(offrefSpy).toHaveBeenCalledTimes(4);
   });
 
   it('should keep the note locked until every lock is released', () => {
@@ -314,7 +314,7 @@ describe('unlockEditorForPath', () => {
     expect(offrefSpy).not.toHaveBeenCalled();
 
     unlockEditorForPath(app, 'other.md');
-    expect(offrefSpy).toHaveBeenCalledTimes(3);
+    expect(offrefSpy).toHaveBeenCalledTimes(4);
   });
 
   it('should keep a note locked until every plugin that locked it releases its lock', () => {
@@ -604,5 +604,65 @@ describe('unlock context menu', () => {
     dispatchContextMenu(statusBarItemEl);
 
     expect(showSpy).not.toHaveBeenCalled();
+  });
+
+  it('should render the locking plugin names as code blocks in the unlock confirmation', async () => {
+    vi.mocked(confirm).mockResolvedValue(false);
+    castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    dispatchContextMenu(iconEl);
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    item.onClick__?.(new MouseEvent('click'));
+    await flushAsync();
+
+    const message = vi.mocked(confirm).mock.calls[0]?.[0].message;
+    expect(message).toBeInstanceOf(DocumentFragment);
+    expect(castTo<DocumentFragment>(message).querySelector('code')?.textContent).toBe('Test Plugin');
+  });
+});
+
+describe('unlock file menu', () => {
+  it('should add an unlock item to the file menu when the note is locked', () => {
+    const view = createMarkdownView('note.md');
+    stubLeaves(leafOf(view));
+    const file = app.vault.getFileByPath('note.md');
+    assertNonNullable(file);
+
+    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    const menu = Menu.create2__();
+    app.workspace.trigger('file-menu', menu, file, 'tab-header');
+
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    expect(item.title__).toBe('Unlock');
+    expect(item.icon__).toBe('unlock');
+  });
+
+  it('should not add an unlock item to the file menu when the note is not locked', () => {
+    const file = app.vault.getFileByPath('note.md');
+    assertNonNullable(file);
+    // Lock a different note so the events component (and its file-menu handler) is subscribed.
+    new EditorLockComponent(app).lockForPath('other.md', { abortController: new AbortController() });
+    const menu = Menu.create2__();
+    app.workspace.trigger('file-menu', menu, file, 'tab-header');
+
+    expect(menu.items__).toHaveLength(0);
+  });
+
+  it('should not add an unlock item to the file menu for a folder', () => {
+    new EditorLockComponent(app).lockForPath('note.md', { abortController: new AbortController() });
+    const menu = Menu.create2__();
+    app.workspace.trigger('file-menu', menu, app.vault.getRoot(), 'file-explorer-context-menu');
+
+    expect(menu.items__).toHaveLength(0);
   });
 });

@@ -23,14 +23,18 @@
  * The explicit {@link unlockEditorForPath} pair remains available for non-`using` call sites.
  */
 
-import type { App } from 'obsidian';
+import type {
+  App,
+  TAbstractFile
+} from 'obsidian';
 
 import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   MarkdownView,
   Menu,
   setIcon,
-  setTooltip
+  setTooltip,
+  TFile
 } from 'obsidian';
 
 import type { PathOrFile } from './file-system.ts';
@@ -41,6 +45,7 @@ import {
   MultipleDisposeBehavior
 } from '../disposable.ts';
 import { noop } from '../function.ts';
+import { appendCodeBlock } from '../html-element.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { ComponentEx } from './components/component-ex.ts';
@@ -70,19 +75,35 @@ export interface EditorLockComponentLockForPathOptions {
   readonly abortController?: AbortController;
 }
 
+/**
+ * Constructor parameters for {@link EditorLockEventsComponent}.
+ */
+interface EditorLockEventsComponentConstructorParams {
+  readonly app: App;
+  onChange(this: void): void;
+  onFileMenu(this: void, menu: Menu, file: TAbstractFile): void;
+}
+
 interface LockIndicators {
   readonly actionIconEl: HTMLElement;
   readonly tabIconEl: HTMLElement | null;
 }
 
 /**
- * Subscribes to the workspace events that should trigger a lock reconcile. Implemented as a
- * {@link ComponentEx} so the subscriptions are registered on `load()` and automatically removed on
- * `unload()`, instead of being tracked and torn down by hand.
+ * Subscribes to the workspace events that should trigger a lock reconcile (and the file context-menu
+ * event that offers an "Unlock" item). Implemented as a {@link ComponentEx} so the subscriptions are
+ * registered on `load()` and automatically removed on `unload()`, instead of being tracked by hand.
  */
 class EditorLockEventsComponent extends ComponentEx {
-  public constructor(private readonly app: App, private readonly onChange: () => void) {
+  private readonly app: App;
+  private readonly onChange: () => void;
+  private readonly onFileMenu: (menu: Menu, file: TAbstractFile) => void;
+
+  public constructor(params: EditorLockEventsComponentConstructorParams) {
     super();
+    this.app = params.app;
+    this.onChange = params.onChange;
+    this.onFileMenu = params.onFileMenu;
   }
 
   public override onload(): void {
@@ -91,6 +112,8 @@ class EditorLockEventsComponent extends ComponentEx {
     this.registerEvent(this.app.workspace.on('layout-change', this.onChange));
     // Same-leaf navigation to another note fires no leaf/layout change; without this it stays read-only.
     this.registerEvent(this.app.workspace.on('file-open', this.onChange));
+    // Adds an "Unlock" item to a locked note's tab/file context menu (alongside the indicator menus).
+    this.registerEvent(this.app.workspace.on('file-menu', this.onFileMenu));
   }
 }
 
@@ -180,6 +203,24 @@ class EditorPathLockManager {
     this.reconcileAndCleanup(app);
   }
 
+  private addUnlockMenuItem(app: App, menu: Menu, path: string): void {
+    menu.addItem((item) => {
+      item
+        .setTitle(t(($) => $.obsidianDevUtils.editorLock.unlockMenuItem))
+        .setIcon(UNLOCK_ICON_ID)
+        .onClick(convertAsyncToSync(async () => {
+          const isConfirmed = await confirm({
+            app,
+            message: this.unlockConfirmMessage(app, path),
+            title: t(($) => $.obsidianDevUtils.editorLock.unlockConfirmTitle)
+          });
+          if (isConfirmed) {
+            this.requestUnlock(app, path);
+          }
+        }));
+    });
+  }
+
   private createIndicators(app: App, view: MarkdownView, path: string, tooltip: string): LockIndicators {
     const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
     this.registerUnlockMenu(app, actionIconEl, () => path);
@@ -203,10 +244,26 @@ class EditorPathLockManager {
     if (this.eventsComponent) {
       return;
     }
-    this.eventsComponent = new EditorLockEventsComponent(app, () => {
-      this.reconcile(app);
+    this.eventsComponent = new EditorLockEventsComponent({
+      app,
+      onChange: (): void => {
+        this.reconcile(app);
+      },
+      onFileMenu: (menu, file): void => {
+        this.handleFileMenu(app, menu, file);
+      }
     });
     this.eventsComponent.load();
+  }
+
+  private handleFileMenu(app: App, menu: Menu, file: TAbstractFile): void {
+    if (!(file instanceof TFile)) {
+      return;
+    }
+    if (!this.isPathLocked(file.path)) {
+      return;
+    }
+    this.addUnlockMenuItem(app, menu, file.path);
   }
 
   private isPathLocked(path: string): boolean {
@@ -285,29 +342,20 @@ class EditorPathLockManager {
         return;
       }
       const menu = new Menu();
-      menu.addItem((item) => {
-        item
-          .setTitle(t(($) => $.obsidianDevUtils.editorLock.unlockMenuItem))
-          .setIcon(UNLOCK_ICON_ID)
-          .onClick(convertAsyncToSync(async () => {
-            const isConfirmed = await confirm({
-              app,
-              message: this.unlockConfirmMessage(app, path),
-              title: t(($) => $.obsidianDevUtils.editorLock.unlockConfirmTitle)
-            });
-            if (isConfirmed) {
-              this.requestUnlock(app, path);
-            }
-          }));
-      });
+      this.addUnlockMenuItem(app, menu, path);
       menu.showAtMouseEvent(evt);
     });
   }
 
-  private unlockConfirmMessage(app: App, path: string): string {
-    const header = t(($) => $.obsidianDevUtils.editorLock.unlockConfirmMessage);
-    // A runtime-length list of the plugins currently holding a lock, one per line under the header.
-    return [header, ...this.lockingPluginNames(app, path)].join('\n');
+  private unlockConfirmMessage(app: App, path: string): DocumentFragment {
+    const fragment = createFragment();
+    fragment.appendText(t(($) => $.obsidianDevUtils.editorLock.unlockConfirmMessage));
+    // A runtime-length list of the plugins currently holding a lock, each as a code block on its own line.
+    for (const name of this.lockingPluginNames(app, path)) {
+      fragment.createEl('br');
+      appendCodeBlock(fragment, name);
+    }
+    return fragment;
   }
 
   private unlockPath(app: App, path: string, pluginId: string): void {
