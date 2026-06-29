@@ -173,7 +173,7 @@ interface InterruptedRename {
 interface RenameHandlerConstructorParams {
   readonly abortSignal: AbortSignal;
   readonly app: App;
-  readonly editorLockComponent: EditorLockComponent | undefined;
+  readonly editorLockComponent: EditorLockComponent | null;
   readonly handledRenames: HandledRenames;
   readonly interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>;
   readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
@@ -254,7 +254,7 @@ interface MetadataDeletedHandlerConstructorParams {
 interface RenameDeleteHandlerComponentConstructorParams {
   readonly abortSignalComponent: AbortSignalComponent;
   readonly app: App;
-  readonly editorLockComponent: EditorLockComponent | undefined;
+  readonly editorLockComponent: EditorLockComponent | null;
   readonly pluginId: string;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   settingsBuilder(this: void): Partial<RenameDeleteHandlerSettings>;
@@ -557,7 +557,7 @@ class MetadataDeletedHandler {
 class RenameHandler {
   private readonly abortSignal: AbortSignal;
   private readonly app: App;
-  private readonly editorLockComponent: EditorLockComponent | undefined;
+  private readonly editorLockComponent: EditorLockComponent | null;
   private readonly handledRenames: HandledRenames;
   private readonly interruptedCombinedBacklinksMap: Map<string, Map<string, string>>;
   private readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
@@ -1034,7 +1034,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   private readonly abortSignalComponent: AbortSignalComponent;
   private readonly app: App;
   private readonly deletedMetadataCacheMap = new Map<string, CachedMetadata>();
-  private readonly editorLockComponent: EditorLockComponent | undefined;
+  private readonly editorLockComponent: EditorLockComponent | null;
   private readonly handledRenames = new HandledRenames();
   private readonly interruptedRenamesMap = new Map<string, InterruptedRename[]>();
   private readonly pluginId: string;

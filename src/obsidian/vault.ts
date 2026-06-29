@@ -220,7 +220,7 @@ export interface ProcessOptions extends RetryOptions {
    * processing. The lock is reference-counted, so it composes with any outer operation-level lock
    * on the same note.
    */
-  readonly editorLockComponent: EditorLockComponent | undefined;
+  readonly editorLockComponent: EditorLockComponent | null;
 
   /**
    * Whether to fail if the file is missing or deleted.

@@ -68,7 +68,7 @@ export interface InsertCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
    * The editor-lock component used to lock the note while it is being modified.
    */
-  readonly editorLockComponent: EditorLockComponent | undefined;
+  readonly editorLockComponent: EditorLockComponent | null;
 
   /**
    * A number of lines to offset the insertion by.
@@ -97,7 +97,7 @@ export interface RemoveCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
    * The editor-lock component used to lock the note while it is being modified.
    */
-  readonly editorLockComponent: EditorLockComponent | undefined;
+  readonly editorLockComponent: EditorLockComponent | null;
 
   /**
    * Whether to keep the gap after removing the code block.
@@ -124,7 +124,7 @@ export interface ReplaceCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
    * The editor-lock component used to lock the note while it is being modified.
    */
-  readonly editorLockComponent: EditorLockComponent | undefined;
+  readonly editorLockComponent: EditorLockComponent | null;
 
   /**
    * Whether to keep the gap when the new code block is empty.

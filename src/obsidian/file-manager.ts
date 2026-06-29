@@ -48,7 +48,7 @@ export interface AddAliasParams {
   /**
    * The editor-lock component used to lock the note while it is being modified.
    */
-  readonly editorLockComponent: EditorLockComponent | undefined;
+  readonly editorLockComponent: EditorLockComponent | null;
 
   /**
    * The path or TFile object representing the note.
@@ -73,7 +73,7 @@ export interface DeleteAliasParams {
   /**
    * The editor-lock component used to lock the note while it is being modified.
    */
-  readonly editorLockComponent: EditorLockComponent | undefined;
+  readonly editorLockComponent: EditorLockComponent | null;
 
   /**
    * The path or TFile object representing the note.

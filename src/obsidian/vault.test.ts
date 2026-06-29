@@ -1108,7 +1108,7 @@ describe('processFile', () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
     vi.spyOn(app.workspace, 'on');
 
-    await expect(processFile({ app, editorLockComponent: undefined, newContentProvider: 'new content', pathOrFile: 'note.md' }))
+    await expect(processFile({ app, editorLockComponent: null, newContentProvider: 'new content', pathOrFile: 'note.md' }))
       .resolves.toBeUndefined();
 
     expect(vi.mocked(app.workspace.on)).not.toHaveBeenCalled();
