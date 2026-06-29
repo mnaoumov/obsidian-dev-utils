@@ -271,108 +271,77 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
-## Planned Task — Note-scoped editor locking + minimizable modal
+## Planned Task — Restore the agnostic-core ⊥ Obsidian-layer boundary (NOT STARTED)
 
-Requested while fixing `obsidian-advanced-note-composer` issue #120 (long-running merge/split
-operations must prevent accidental edits to the involved notes, and show a progress UI the user can
-get out of the way). Both pieces are general-purpose and belong here, not in the plugin.
+Deferred until the current bug is finished. This section is the self-contained summary of the full
+plan. Breaking refactor — do it on a feature branch via TDD; the lib is mid-major (82.x), so the
+major bump + consumer migration come afterward.
 
-### Status (2026-06-27) — LIBRARY WORK DONE on branch `feat/editor-lock-and-minimizable-modal` (NOT merged/published)
+**Problem.** Top-level `src/*.ts` is meant to be Obsidian-runtime-agnostic; everything Obsidian-only
+belongs under `src/obsidian/`. `src/debug.ts` violates this by importing `getPluginId` (and
+`isInObsidian`) from the Obsidian layer just to prefix a debug namespace. A publicly-readable ambient
+`pluginId` is also a capability backdoor (`app.plugins.plugins[getPluginId()]` reconstructs the graph),
+defeating the "pass dependencies explicitly" discipline.
 
-Both pieces implemented via TDD; full gate green (100% coverage, compile/lint/format/spellcheck clean). Commits on the branch:
+**Prong A — one explicit injected `globalState` (push at init; agnostic core only reads).** Add to
+`src/library.ts`:
 
-1. `feat: add reference-counted note-scoped editor locking` — new module `src/obsidian/editor-lock.ts`
-   exporting `lockEditorForPath(app, pathOrFile)` / `unlockEditorForPath(app, pathOrFile)` /
-   `isEditorLockedForPath(app, pathOrFile)`. Ref-counted `path → count` map on the shared
-   `getObsidianDevUtilsState` bag; locks every current + future `MarkdownView` of the path (reconciled
-   on `active-leaf-change` / `layout-change`, registered only while ≥1 path locked); adds a `lock`
-   action icon; `lockEditorForPath` returns a `CallbackDisposable` (see #3, `MultipleDisposeBehavior.Ignore`)
-   for `using`. New i18n key `obsidianDevUtils.editorLock.lockedNoteTooltip`.
-2. `feat: add minimizable modal` + `refactor: make minimizable modal a composition wrapper` —
-   `src/obsidian/modals/minimizable-modal.ts` exports the `MinimizableModal<TModal extends Modal>`
-   **wrapper** that holds a modal instance (`minimizable.modal`) and adds `minimize()` / `restore()` /
-   `isMinimized`. Works on ANY modal instance — including ones you do not own (no class-declaration
-   change needed). Adds a minimize button, a floating bar with a restore button, hides the blocking
-   backdrop while minimized, reuses the modal's `titleEl` as the bar label, and patches the modal's
-   `onClose` (via `monkey-around`'s `around`) so the bar is cleaned up even if the modal is closed while
-   minimized. Content (incl. `renderInternalLink` anchors) goes in `modal.contentEl`. New `CssClass` entries.
-3. `refactor: extract CallbackDisposable` — new module `src/disposable.ts` (started by the user) now
-   holds `CallbackDisposable`, `AsyncCallbackDisposable` (constructor params bags; callback + optional
-   `multipleDisposeBehavior`), the `MultipleDisposeBehavior` enum (`Invoke` / `Ignore` / `Throw`,
-   default `Invoke`), the `DisposeCallback` / `AsyncDisposeCallback` types, and the `isDisposable` /
-   `isAsyncDisposable` guards (`isDisposable` moved out of `disposable-component.ts`; its test moved to
-   `disposable.test.ts`). `editor-lock` consumes `CallbackDisposable` with `Ignore` instead of a
-   hand-rolled idempotency guard.
+```ts
+interface GlobalState {
+  debugPrefixNamespace: string;   // set to `${pluginId}:` at init
+  cssClassScope: string;          // set to pluginId at init (per-plugin CSS scoping)
+  shouldPrintStackTrace: boolean; // set true at init (rich DevTools stack-trace logging)
+}
+const DEFAULT_GLOBAL_STATE: GlobalState = { debugPrefixNamespace: '', cssClassScope: '', shouldPrintStackTrace: false };
+export const globalState: GlobalState = { ...DEFAULT_GLOBAL_STATE };
+```
 
-**Design decisions (made unattended):**
+Note: `globalState` holds only cosmetic strings/a flag — NO `pluginId` field, so it cannot be laundered
+into a capability; agnostic field names; `library.ts` imports nothing from `src/obsidian/`.
 
-- Signature is positional `(app, pathOrFile)` — consistent with the shipped `app+path` family in
-  `vault.ts`/`metadata-cache.ts` (both args are unambiguously typed), NOT a full params bag.
-- Path locking lives in a **separate** `editor-lock.ts` (not appended to `editor.ts`) so the per-editor
-  `lockEditor`/`unlockEditor` primitives stay mockable in unit tests, mirroring how `vault.ts` consumes them.
-- The modal exposes `contentEl` rather than calling `renderInternalLink` itself — `renderInternalLink`
-  sits in a v8-ignored (integration-only) block, so baking it in would create untestable paths.
-- Minimizable is a **composition wrapper** (`MinimizableModal<TModal>` holding `modal`), chosen by the
-  user over both a mixin and a fixed subclass. Rationale: simplest, decoupled, and works on modal
-  instances you do not author. Trade-offs accepted: a split API (`minimizable.modal.open()` +
-  `minimizable.minimize()`) and a small `onClose` monkey-patch for teardown (Obsidian `Modal` has no
-  close event). A literal TS `@decorator` was rejected earlier because it cannot surface the added
-  members on the decorated class's type; a mixin was prototyped then dropped in favor of this wrapper.
+- A1 — `debug.ts`: `getLibDebugger(ns)` → ``getDebugger(`${globalState.debugPrefixNamespace}${LIBRARY_NAME}:${ns}`)``;
+  `logWithCaller`/`printWithStackTrace` branch on `globalState.shouldPrintStackTrace` (not `isInObsidian()`);
+  `getSharedDebugLibInstance()` drops the `isInObsidian()` branch and ALWAYS reads
+  `getObsidianDevUtilsState('debug', debug).value` (behavior-identical). Remove BOTH Obsidian imports
+  (`getPluginId`/`NO_PLUGIN_ID_INITIALIZED`, `isInObsidian`) — `debug.ts` ends agnostic.
+- A2 — `addPluginCssClasses` (in `plugin-context.ts`) reads `globalState.cssClassScope` instead of `getPluginId()`.
+- A3 — `initPluginContext(pluginId)` replaces `setPluginId(pluginId)` with writes to the three
+  `globalState` fields. The agnostic `setup.ts` also resets `globalState` per test
+  (`Object.assign(globalState, DEFAULT_GLOBAL_STATE)`).
+- A4 — `editor-lock.ts` → explicit DI (it has a construction point): `EditorLockComponent` ctor drops the
+  `= getPluginId()` default → required `pluginId` (`PluginBase` already passes `this.manifest.id`); the
+  free `lockEditorForPath`/`unlockEditorForPath` (no external consumers) take explicit `pluginId` or are
+  removed.
+- A5 — DELETE `src/obsidian/plugin/plugin-id.ts` (`getPluginId`/`setPluginId`/`NO_PLUGIN_ID_INITIALIZED`)
+  plus its barrel entry; zero readers remain.
 
-**Deferred (NOT done unattended — outward-facing / touches existing tests, wants review):**
+**Prong B — relocate / fix mislocated symbols (three buckets).**
 
-- `vault.ts process()` already contains the non-ref-counted inline lock/unlock pattern this generalizes;
-  refactoring it to consume `lockEditorForPath` (fixing the concurrent-unlock bug) changes behavior +
-  existing `vault.test.ts` → left as a follow-up.
-- npm publish of the new minor, then `advanced-note-composer` (+ other consumers) bump & consume to
-  finish issue #120 (Slices 2 & 3).
+- MOVE into `src/obsidian/` (genuine Obsidian import/API or cross-realm helper, public-path break):
+  whole `src/css-class.ts`; the Obsidian-augmentation half of `src/html-element.ts` (`appendCodeBlock`
+  hardcodes `markdown-rendered`; `create*Async` are `DomElementInfo`-shaped; `ensureLoaded`/`isLoaded`
+  use `el.instanceOf`; `onAncestorScrollOrResize` uses `activeWindow`/`activeDocument`;
+  `waitUntilConnected` uses `el.onNodeInserted`). KEEP agnostic in `html-element.ts`: `getZIndex`,
+  `toPx`, `isElementVisibleInOffsetParent`, `ValidatorElement`.
+- DE-OBSIDIAN-IFY in place (incidental — standard browser API is equivalent, no move): `src/blob.ts`
+  `createEl('canvas')` → `document.createElement('canvas')`, `activeWindow.atob` → `atob`.
+- INERT DATA, stays agnostic by build-provenance grouping (NOT moved — it's a build-substituted string,
+  no Obsidian import/API): extract `LIBRARY_VERSION` + `LIBRARY_STYLES` into a new
+  `src/generated-during-build.ts` (one `$(...)` substitution target); point the build's replacement
+  there. `LIBRARY_NAME` (literal) + `globalState` stay in `src/library.ts`.
 
-### Original spec (below) — kept for reference
+**Prong C — enforce.** Add an ESLint `no-restricted-imports`/path-zone rule: agnostic top-level
+`src/*.ts` may not import `src/obsidian/**` (exclude barrels + `src/script-utils/**`); add the rule's
+positive/negative `Linter` test.
 
-### 1. Reference-counted editor locking — by note path (primary) and by editor instance
-
-Today `src/obsidian/editor.ts` exposes only `lockEditor(editor)` / `unlockEditor(editor)` (a per-`Editor`
-CodeMirror `Compartment` toggling `EditorState.readOnly.of(true)` + `EditorView.editable.of(false)`).
-Extend to:
-
-- **By path (most usable):** `lockEditorForPath(pathOrFile)` / `unlockEditorForPath(pathOrFile)` backed by
-  a `path → lockCounter` map stored in the global state via
-  `getObsidianDevUtilsState` (`obsidian-dev-utils/obsidian-dev-utils-state`). Counter > 0 ⇒ the note is
-  read-only in **all current and future editors and popup windows**; counter == 0 ⇒ fully unlocked.
-  Reference-counting makes nested/concurrent locks safe (two operations on the same note both lock; the
-  note unlocks only when the last releases).
-- **By instance:** keep/extend the existing `lockEditor` / `unlockEditor` for the single-editor case.
-- **Disposable / `using` ergonomics (preferred call style):** the acquirers return a `Disposable`
-  implementing `[Symbol.dispose]()` (decrements the counter / unlocks), so callers can write:
-
-  ```ts
-  using _lock = lockEditorForPath(path); // locked for this scope
-  // ... long-running work (process, processFrontMatter, merge/split) ...
-  // auto-unlocked at scope exit, including on throw
-  ```
-
-  Keep the explicit `unlock*` pair for non-`using` call sites.
-- **Coverage of current + future editors:** apply the compartment read-only state to every open
-  `MarkdownView` of the path across all windows (`app.workspace.getLeavesOfType('markdown')` filtered by
-  `view.file`, plus popout windows); hook file-open / layout-change events so an editor opened for a
-  locked path afterwards is locked too, and unhooked when the counter hits 0.
-- **Indicator:** show a "blocked"/lock **icon** on locked notes (e.g. on the view header / tab) so the
-  read-only state is visible.
-- **Intended usage:** wherever a long async op mutates a note, acquire at the start (ideally `using`) and
-  release in `finally` / at scope exit.
-
-### 2. Minimizable modal abstraction
-
-A general-purpose progress panel that can **minimize / restore** while keeping the app usable (Obsidian's
-`Modal` is blocking and not minimizable; `PluginNoticeComponent` allows only one notice and no
-minimize). It should render arbitrary content including clickable note links (via
-`renderInternalLink`), expose `minimize()` / `restore()`, and tear down cleanly. Consider building on the
-existing `ModalBase` (`src/obsidian/modals/modal.ts`) or a new floating-panel component.
-
-### Method
-
-TDD in this repo; `feat`/`refactor!` commits as appropriate; release; then `advanced-note-composer`
-(and other consumers) bump and consume these to finish issue #120 (Slices 2 & 3 of the plugin plan).
+**Verification.** Full gate (compile + `test:coverage` 100% + lint + format + spellcheck). Plus the
+`obsidian-integration-testing` runtime gate (`npm run test:integration`): FIRST upgrade
+`integration-test-plugin/main.ts` from `extends Plugin` to a minimal `PluginBase` subclass so
+`initPluginContext` (and thus the Prong-A injection) actually runs in the harness; then assert via
+`evalInObsidian` that `getLibDebugger` carries the `<pluginId>:` prefix + stack trace and
+`addPluginCssClasses` applies the scope class; update `editor-lock.obsidian.integration.test.ts` for the
+A4 signature; cover the relocated `html-element` helpers in the harness (not jsdom).
+`obsidian-integration-testing` does NOT depend on `obsidian-dev-utils`, so it isn't broken by the moves.
 
 ## Current Task
 
@@ -482,354 +451,6 @@ Optional args → optional members. Fold any pre-existing options type into the 
 **REWORK NEEDED:** `file-system.ts` getters shipped in `db994812` as `(app, path, options?)` must be
 re-done as full bags (`getFile({ app, pathOrFile, ... })`), folding the `*Options` interfaces into
 `*Params`.
-
-## Architectural Vision: Improve DX + Testability of Plugin Base Classes
-
-**Goal:** Make all base classes testable (remove v8 ignore comments) and simplify DX for ~23 consuming plugins. Currently PluginBase and related classes are fully untested.
-
-### Plugin Audit Results (2026-04-14)
-
-Reviewed all 23 plugins in `F:\dev\projects\@obsidian\`. Key findings:
-
-| Feature | Usage | Notes |
-| --- | --- | --- |
-| PluginTypes generic interface | 23/23 | Pure boilerplate for simple plugins (4 plugins define only `plugin` member) |
-| createSettingsManager() | ~20/23 | Almost universal |
-| createSettingsTab() | ~18/23 | Almost universal |
-| onloadImpl() | ~21/23 | Main setup point |
-| onLayoutReady() | ~14/23 | Very popular lifecycle hook |
-| onSaveSettings() | ~8/23 | Re-register watchers, update timers |
-| onLoadSettings() | ~6/23 | React to loaded settings |
-| abortSignal | ~8/23 | Cancel long-running ops on unload |
-| createTranslationsMap() | 2/23 | Only consistent-attachments + custom-attachment-location |
-| consoleDebug() | ~4/23 | Underused |
-| waitForLifecycleEvent() | ~3/23 | Rare |
-| handleAsyncError() override | 0/23 | Default always sufficient |
-| onunloadImpl() | ~2/23 | Rare |
-| registerLegacySettingsConverters | ~3/23 | Migration scenarios |
-| Custom validators | ~4/23 | email-to-vault, smart-rename, etc. |
-| addChild() for components | ~3/23 | advanced-exclude, advanced-note-composer, nested-properties |
-
-**Plugins without settings (4):** edit-link-alias, nested-properties, root-folder-context-menu, file-explorer-reload
-
-### Boilerplate Analysis (2026-04-14)
-
-Reviewed plugin source code across simple/medium/complex plugins:
-
-| Plugin type | Files required | Boilerplate % | Key pain |
-| --- | --- | --- | --- |
-| Simple (no settings) | 3 (main, PluginTypes, Plugin) | ~23% | PluginTypes is 100% boilerplate |
-| Medium (with settings) | 6 (+Settings, Manager, Tab) | ~31% | Settings triple is pure ceremony |
-| Complex (settings + commands) | 6+ feature files | ~51% | Command pattern adds ~30 LOC each |
-
-**Boilerplate files that are 100% ceremony in every plugin:**
-
-- `main.ts` (3-4 lines, always identical)
-- `PluginTypes.ts` (7-13 lines, always identical structure)
-- `PluginSettingsManager.ts` (11 lines, just returns `new PluginSettings()`)
-
-**Current universal features in PluginBase:**
-
-- Lifecycle: onloadImpl, onLayoutReady, onunloadImpl, load/layoutReady/unload events
-- Settings: createSettingsManager, createSettingsTab, onLoadSettings, onSaveSettings
-- Utilities: consoleDebug, showNotice, abortSignal
-- i18n: createTranslationsMap (only 2 plugins use)
-- Error handling: handleAsyncError (0 plugins override)
-
-### Proposed Architecture: Ideal DX
-
-#### Goal: Minimal boilerplate, maximum testability, beginner-friendly
-
-#### 1. Simplest possible plugin (no settings)
-
-**Current (3 files, ~26 LOC boilerplate):**
-
-```typescript
-// main.ts (boilerplate)
-// PluginTypes.ts (boilerplate)
-// Plugin.ts
-export class Plugin extends PluginBase<PluginTypes> {
-  protected override async onloadImpl(): Promise<void> {
-    await super.onloadImpl();
-    new EditCommand(this).register();
-  }
-}
-```
-
-**Proposed (1 file + main.ts):**
-
-```typescript
-// Plugin.ts
-export class Plugin extends PluginBase {
-  protected override async onloadImpl(): Promise<void> {
-    await super.onloadImpl();
-    new EditCommand(this).register();
-  }
-}
-```
-
-- No PluginTypes interface needed — PluginBase is non-generic
-- main.ts still needed (Obsidian requires `export default Plugin`)
-
-#### 2. Plugin with settings
-
-**Current (6 files):**
-
-```text
-main.ts                    — boilerplate
-PluginTypes.ts             — boilerplate (13 LOC)
-PluginSettings.ts          — data class
-PluginSettingsManager.ts   — boilerplate (11 LOC, just returns new PluginSettings())
-PluginSettingsTab.ts       — UI definition
-Plugin.ts                  — orchestration + createSettingsManager + createSettingsTab overrides
-```
-
-**Proposed (3 files):**
-
-```text
-main.ts                    — boilerplate (unavoidable, Obsidian requirement)
-PluginSettings.ts          — data class + validation + persistence (extends PluginSettingsBase)
-Plugin.ts                  — orchestration
-```
-
-The settings tab is built declaratively from metadata on the settings class:
-
-```typescript
-// PluginSettings.ts
-export class PluginSettings extends PluginSettingsBase {
-  @setting({ name: 'Auto-refresh interval', desc: 'Seconds between refreshes' })
-  public autoRefreshIntervalInSeconds = 10;
-
-  @setting({ name: 'Should prompt for folder', desc: 'Prompt when creating notes' })
-  public shouldPromptForFolderLocation = false;
-}
-```
-
-Or, if decorators are too magical, a static method approach:
-
-```typescript
-export class PluginSettings extends PluginSettingsBase {
-  public autoRefreshIntervalInSeconds = 10;
-  public shouldPromptForFolderLocation = false;
-
-  // Optional: custom validation
-  protected override registerValidators(): void {
-    this.registerValidator('autoRefreshIntervalInSeconds', (v) =>
-      v < 1 ? 'Must be at least 1 second' : undefined
-    );
-  }
-}
-```
-
-Settings tab is auto-generated from settings properties by default but can be customized:
-
-```typescript
-// Plugin.ts
-export class Plugin extends PluginBase {
-  protected override createSettings(): PluginSettings {
-    return new PluginSettings();
-  }
-
-  // Only override if you need custom tab UI
-  protected override createSettingsTab(): PluginSettingsTab | null {
-    return new CustomTab(this.app, this.settings);
-  }
-}
-```
-
-#### 3. Plugin with custom settings tab
-
-For plugins that need custom UI (code highlighters, secret fields, grouped sections):
-
-```typescript
-// PluginSettingsTab.ts
-export class PluginSettingsTab extends PluginSettingsTabBase<PluginSettings> {
-  public override display(): void {
-    super.display();
-    new SettingEx(this.containerEl)
-      .setName('Email address')
-      .addText((text) => this.bind(text, 'emailAddress'));
-  }
-}
-```
-
-- Generic is just `<PluginSettings>`, not `<PluginTypes>`
-- `bind()` API stays the same — it's one of the best parts of the current design
-
-#### 4. Component-based architecture
-
-**Universal features PluginBase provides automatically:**
-
-- "Open settings" command (registered if settings exist)
-- consoleDebug with plugin namespace
-- abortSignal for lifecycle management
-- onLayoutReady as a first-class hook
-- Error handling with user-visible notice
-
-**Features that become opt-in components:**
-
-```typescript
-export class Plugin extends PluginBase {
-  constructor(app: App, manifest: PluginManifest) {
-    super(app, manifest);
-    // Only compose what you need
-    this.settings = this.addChild(new PluginSettings());
-    this.emailChecker = this.addChild(new EmailChecker(app, this.settings));
-  }
-}
-```
-
-Each component is independently testable:
-
-```typescript
-// In tests — no Plugin mock needed
-const settings = new PluginSettings();
-const checker = new EmailChecker(mockApp, settings);
-await checker.onload();
-expect(checker.lastCheckTime).toBeDefined();
-```
-
-#### 5. Command simplification
-
-**Current (2 classes per command, ~30 LOC):**
-
-```typescript
-class CheckEmailsInvocation extends CommandInvocationBase<Plugin> { ... }
-export class CheckEmailsCommand extends NonEditorCommandBase<Plugin> { ... }
-```
-
-**Proposed (inline registration):**
-
-```typescript
-// In Plugin.onloadImpl()
-this.addCommand({
-  id: 'check-emails',
-  name: 'Check emails',
-  icon: 'mail',
-  callback: () => this.emailChecker.checkEmails()
-});
-```
-
-For editor commands that need more structure, keep the class pattern as opt-in.
-
-### Summary of changes
-
-| What | Current | Proposed | Benefit |
-| --- | --- | --- | --- |
-| PluginTypes interface | Required (7-13 LOC) | Eliminated | -1 file per plugin |
-| PluginBase generic | `<PluginTypes>` | Non-generic | No type threading |
-| PluginSettingsManager | Required class (11+ LOC) | Folded into PluginSettingsBase | -1 file per plugin |
-| PluginSettingsTab | Always required class | Auto-generated, override for custom | -1 file for simple settings |
-| Settings validation | Separate registerValidators() | On the settings class itself | Co-located with data |
-| Commands | 2 classes per command | Inline `addCommand()` + opt-in classes | -30 LOC per command |
-| Universal features | All in PluginBase god-object | Auto-registered by PluginBase | Same DX, better internals |
-| Testing | Requires full Plugin mock | Each component testable alone | Enables 100% coverage |
-
-### Implementation plan (incremental PRs)
-
-#### PR 1 (non-breaking): Internal testability refactor
-
-- Break `plugin` dependency in manager/tab internals
-- Add tests for all base classes
-- Remove v8 ignore comments
-- No consumer-facing API changes
-
-#### PR 2 (breaking): Simplify generics + eliminate PluginTypes
-
-- PluginBase becomes non-generic
-- `PluginSettingsManagerBase<S>` and `PluginSettingsTabBase<S>`
-- Delete plugin-types-base.ts and Extract* helpers
-- Migration: delete PluginTypes.ts, update extends clauses
-
-#### PR 3 (breaking): Merge settings triple + auto-generate tab
-
-- PluginSettingsBase = data + validation + persistence
-- Default settings tab auto-generated from properties
-- Custom tab still supported via override
-- Migration: merge 3 files into 1, update Plugin class
-
-#### PR 4 (breaking): Command simplification
-
-- Keep `addCommand()` as the primary API (it's already Obsidian-native)
-- Deprecate CommandInvocationBase / CommandBase classes
-- Migration: inline simple commands, keep classes for complex ones
-
-#### PR 5 (optional): Decorator-based settings metadata
-
-- `@setting()` decorator for auto-generating tab UI
-- Only if the simpler approaches prove insufficient
-
-#### Migration tooling
-
-- Provide a codemod script (`jscodeshift` transform) for PRs 2-4
-- Each PR gets its own migration guide
-- Major version bump covers all breaking PRs
-
-### Files modified
-
-- `src/obsidian/plugin/plugin-base.ts` — non-generic, component-based architecture
-- `src/obsidian/plugin/plugin-settings-manager-base.ts` — **deleted**, merged into `plugin-settings-component.ts`
-- `src/obsidian/plugin/components/plugin-settings-component.ts` — unified settings component (data + persistence + validation + events)
-- `src/obsidian/plugin/plugin-settings-wrapper.ts` — kept as interface (used by tab)
-- `src/obsidian/plugin/plugin-settings-tab-base.ts` — simplified generic to `<PluginSettings>`, uses `settingsComponent` instead of `settingsManager`
-- `src/obsidian/plugin/plugin-types-base.ts` — kept, all types deprecated
-- All ~23 consuming plugins need migration
-
-## Progress
-
-### Library refactoring (DONE)
-
-- Branch: `refactor/plugin-architecture-v2`
-- All changes compile (0 TypeScript errors)
-- All 2795 tests pass
-- Lint clean, formatted
-
-### Key changes made
-
-1. **PluginBase** — now non-generic (was `PluginBase<PluginTypes>`), uses component-based architecture
-2. **PluginSettingsManagerBase** — deleted; all logic merged into `PluginSettingsComponentBase<PluginSettings>` in `src/obsidian/plugin/components/plugin-settings-component.ts`
-3. **PluginSettingsTabBase** — generic over `<PluginSettings extends object>` (was `<PluginTypes>`), takes `{plugin, settingsComponent}` params
-4. **i18n** — decoupled from PluginTypes, `TranslationsMap` is now a plain `Record<string, Record<string, unknown>>`
-5. **plugin-types-base.ts** — kept but all types marked `@deprecated` with eslint-disable
-
-### Command architecture refactor (DONE)
-
-- Replaced old `src/obsidian/commands/` (6 files, all v8-ignored) with `src/obsidian/command-handlers/` (8 source files + 9 test files)
-- **Eliminated 14 invocation classes** — merged canExecute/execute into handler classes directly
-- **Removed `TPlugin` generic** from all command classes — handlers take `pluginName: string`, no `Plugin` or `App` God objects
-- **Separated concerns via interfaces**: `ActiveFileProvider`, `MenuEventRegistrar` — injected via `CommandHandlerRegistrationContext` during `onRegistered()`
-- **Concrete App implementations**: `AppActiveFileProvider`, `AppMenuEventRegistrar` — consumers and `CommandHandlerComponent` use these
-- **Handlers don't implement `Command`** — `CommandHandler.buildCommand()` returns a plain `Command` object for Obsidian, eliminating `originalId`/`originalName` workaround
-- **Renamed classes**: `CommandBase` → `CommandHandler`, `NonEditorCommandBase` → `GlobalCommandHandler`, `EditorCommandBase` → `EditorCommandHandler`, `FileCommandBase` → `FileCommandHandler`, `FolderCommandBase` → `FolderCommandHandler`, `CommandComponent` → `CommandHandlerComponent`
-- **44 new tests**, all passing. No v8 ignore comments in command-handler files.
-- All 2935 tests pass, lint/format/spellcheck clean
-
-### Obsidian integration tests (IN PROGRESS)
-
-- Infrastructure: test harness plugin (`integration-test-plugin/`), build script, vitest global setup, vitest config project
-- `getDomEventsHandlersConstructor` — 2 tests (basic extraction + consistency)
-- `markdown` — 6 tests (markdownToHtml variants + fullRender)
-- `attachment-path` — 4 tests (getAttachmentFolderPath, getAvailablePathForAttachments, hasOwnAttachmentFolder)
-- `rename-delete-handler` — 5 tests (rename, move, link update, delete, export check)
-- `markdown-code-block-processor` — 5 tests (export checks + vault read)
-- `backlink` (via metadata-cache) — 4 tests (backlink retrieval, getAllLinks)
-- All tests use `obsidian-integration-testing` library with `evalInObsidian` + `TempVault`
-
-### Plugin migrations (IN PROGRESS)
-
-- **obsidian-edit-link-alias** — migrated (simple, no settings). Deleted PluginTypes.ts, removed generic from Plugin.
-- **obsidian-new-note-fixer** — migrated (medium, with settings). Updated manager/tab constructors, deleted PluginTypes.ts.
-- **Remaining ~21 plugins** — not yet migrated, awaiting approval of approach
-
-### Migration pattern for consuming plugins
-
-1. Delete `PluginTypes.ts`
-2. `Plugin.ts`: Remove `<PluginTypes>` from `extends PluginBase<PluginTypes>` → `extends PluginBase`
-3. `PluginSettingsManager.ts` → rename to `PluginSettingsComponent.ts`: Change `PluginSettingsManagerBase<PluginTypes>` → `PluginSettingsComponentBase<PluginSettings>`, constructor takes `params: PluginSettingsComponentParams`
-4. `PluginSettingsTab.ts`: Change `PluginSettingsTabBase<PluginTypes>` → `PluginSettingsTabBase<PluginSettings>`, constructor takes `params: PluginSettingsTabBaseParams<PluginSettings>`
-5. In Plugin constructor: `this.settingsComponent = this.addChild(new PluginSettingsComponent(new PluginDataHandler(this)))`
-6. `Plugin.createSettingsTab()`: Pass `{plugin: this, settingsComponent: this.settingsComponent}`
-7. `this.settings` returns `ReadonlyDeep<object>` — cast to your settings type where needed
 
 ## Pending Questions
 
