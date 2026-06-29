@@ -21,6 +21,8 @@
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
 
+import type { Editor } from 'obsidian';
+
 import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
@@ -28,6 +30,8 @@ import {
   inject,
   it
 } from 'vitest';
+
+import { typeIntoEditor } from '../test-helpers/type-into-editor.ts';
 
 interface LockForPathResult {
   readonly isCurrentTabLocked: boolean;
@@ -55,6 +59,20 @@ interface ReadableLeaf {
 
 interface ReadableView {
   editor?: ReadableEditor;
+}
+
+interface TypableLeaf {
+  view: TypableView;
+}
+
+interface TypableView {
+  editor?: Editor;
+}
+
+interface TypingResult {
+  readonly didLockedNoteRejectTyping: boolean;
+  readonly didOtherNoteAcceptTyping: boolean;
+  readonly didUnlockedNoteAcceptTyping: boolean;
 }
 
 describe('editor-lock', () => {
@@ -154,6 +172,92 @@ describe('editor-lock', () => {
       expect(result.isOtherNoteLocked).toBe(false);
       // Unlocking restores editability.
       expect(result.isCurrentTabLockedAfterUnlock).toBe(false);
+    });
+
+    it('should prevent the user from typing in a locked note while allowing it in an unlocked one', async () => {
+      const result = await evalInObsidian({
+        args: { typeIntoEditor },
+        async fn({ app, typeIntoEditor: typeIntoEditorInObsidian }): Promise<TypingResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          // Start from a clean workspace so the reconcile sees only the views this test opens.
+          app.workspace.detachLeavesOfType('markdown');
+          await settle();
+
+          const lockedFile = await app.vault.create('editor-lock-typing-locked.md', 'locked note');
+          const otherFile = await app.vault.create('editor-lock-typing-other.md', 'other note');
+
+          // Open the to-be-locked note in the current tab and a second note in a split.
+          const lockedLeaf = app.workspace.getLeaf();
+          await lockedLeaf.openFile(lockedFile);
+          await settle();
+          const otherLeaf = app.workspace.getLeaf('split');
+          await otherLeaf.openFile(otherFile);
+          await settle();
+
+          const disposable = lib.obsidian['editor-lock'].lockEditorForPath(app, lockedFile);
+          await settle();
+          await reconcile();
+
+          // Typing into the locked note is rejected: its document is unchanged.
+          const lockedBefore = readValue(lockedLeaf);
+          await typeIntoEditorInObsidian({ editor: getEditor(lockedLeaf), text: 'X' });
+          const didLockedNoteRejectTyping = readValue(lockedLeaf) === lockedBefore;
+
+          // Typing into the never-locked note is accepted: its document gains the typed text.
+          const otherBefore = readValue(otherLeaf);
+          await typeIntoEditorInObsidian({ editor: getEditor(otherLeaf), text: 'Y' });
+          const didOtherNoteAcceptTyping = readValue(otherLeaf) !== otherBefore;
+
+          // Releasing the lock makes the previously-locked note typable again.
+          disposable[Symbol.dispose]();
+          await settle();
+          const unlockedBefore = readValue(lockedLeaf);
+          await typeIntoEditorInObsidian({ editor: getEditor(lockedLeaf), text: 'Z' });
+          const didUnlockedNoteAcceptTyping = readValue(lockedLeaf) !== unlockedBefore;
+
+          return {
+            didLockedNoteRejectTyping,
+            didOtherNoteAcceptTyping,
+            didUnlockedNoteAcceptTyping
+          };
+
+          function getEditor(leaf: unknown): Editor {
+            const editor = (leaf as TypableLeaf).view.editor;
+            if (!editor) {
+              throw new Error('no editor on leaf');
+            }
+            return editor;
+          }
+
+          function readValue(leaf: unknown): string {
+            return getEditor(leaf).getValue();
+          }
+
+          async function reconcile(): Promise<void> {
+            app.workspace.trigger('layout-change');
+            await settle();
+          }
+
+          async function settle(): Promise<void> {
+            const SETTLE_DELAY_MILLISECONDS = 300;
+            await new Promise<void>((resolve) => {
+              window.setTimeout(resolve, SETTLE_DELAY_MILLISECONDS);
+            });
+          }
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // The user cannot type into the locked note.
+      expect(result.didLockedNoteRejectTyping).toBe(true);
+      // The user can type into a note that is not locked.
+      expect(result.didOtherNoteAcceptTyping).toBe(true);
+      // Once unlocked, the note accepts typing again.
+      expect(result.didUnlockedNoteAcceptTyping).toBe(true);
     });
   });
 });
