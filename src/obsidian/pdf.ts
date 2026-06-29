@@ -6,7 +6,7 @@
 
 import { Platform } from 'obsidian';
 
-import { ensureLoaded } from './html-element.ts';
+import { ensureLoaded } from '../html-element.ts';
 
 interface PrintToPdfOptions {
   readonly filepath: string;

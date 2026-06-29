@@ -283,11 +283,26 @@ the lib is mid-major (82.x), so the major bump + consumer migration come afterwa
   `lockEditorForPath`/`unlockEditorForPath` now take an explicit `pluginId`. Deleted `plugin-id.ts`
   (`getPluginId`/`setPluginId`/`NO_PLUGIN_ID_INITIALIZED`). (`refactor!`)
 - **Prong B** — removed the Obsidian-runtime dependency from `blob.ts` (standard
-  `document.createElement`/`atob`); moved `css-class.ts` → `src/obsidian/css-class.ts`; split the
-  Obsidian-coupled half of `html-element.ts` into `src/obsidian/html-element.ts` (agnostic
-  `getZIndex`/`toPx`/`isElementVisibleInOffsetParent`/`ValidatorElement` stay top-level); extracted the
+  `document.createElement`/`atob`); moved `css-class.ts` → `src/obsidian/css-class.ts`; extracted the
   build-substituted `LIBRARY_VERSION`/`LIBRARY_STYLES` into `src/generated-during-build.ts` (and updated
   the `scripts/version.ts` release substitution to target it).
+- **Prong B (html-element)** — rather than moving the Obsidian-coupled `html-element` helpers into the
+  Obsidian layer, they were **reimplemented to be Obsidian-runtime-agnostic** and kept at the top level
+  (`src/html-element.ts`): `create{Div,El,Span,Fragment,Svg}Async`, `ensureLoaded`/`isLoaded`,
+  `onAncestorScrollOrResize`, `waitUntilConnected`. The Obsidian-injected DOM behavior they relied on is
+  ported from `obsidian.asar/enhance.js` to standard DOM — `createEl`/`createSvg`/`createFragment` (a
+  partial `DomElementInfo` port: `cls`/`text`/`attr`/`title`/`parent`/`prepend`), `instanceOf`
+  (cross-realm via `node.ownerDocument.defaultView`), `activeDocument`/`activeWindow` (via
+  `ownerDocument`/`defaultView`), and `onNodeInserted` (via a `MutationObserver`). Only `appendCodeBlock`
+  stays in the Obsidian layer (`src/obsidian/html-element.ts`) — it hardcodes Obsidian's
+  `markdown-rendered` rendered-markdown CSS class (now `CssClass.MarkdownRendered`/`CssClass.Code`).
+- **Revalidation trigger:** the `src/html-element.ts` helpers are a PARTIAL port of
+  `obsidian.asar/enhance.js`. Whenever the `obsidian-versions` project gets a new Obsidian release, diff
+  that release's `enhance.js` against this port (`createEl`/`createDiv`/`createSpan`/`createSvg`/
+  `createFragment`, `Node.prototype.instanceOf`, `Element.prototype.setText`/`setAttrs`,
+  `onNodeInserted`) and re-migrate any behavioral change. The port intentionally omits the
+  element-type-specific `createEl` fields (`value`/`type`/`placeholder`/`href`) and `on*` handlers —
+  extend it if a consumer needs them.
 - **Prong C** — `no-restricted-imports` rule banning `./obsidian/**` from the agnostic top-level
   `src/*.ts` modules (excluding the barrel + test files), wired into obsidian-dev-utils' own ESLint
   config (NOT the shared consumer config). Pattern is unit-tested in
@@ -307,9 +322,10 @@ the suite green). The `globalState` injection is already unit-covered by `plugin
 diagnosis of why a bare `PluginBase` subclass fails to load in the owned-instance harness.
 
 **Remaining (handed off):** merge + publish the new major via the release tool (irreversible — needs
-explicit go-ahead), then migrate the consuming plugins (public import paths changed:
-`obsidian-dev-utils/css-class` → `.../obsidian/css-class`, and the Obsidian-coupled `html-element`
-helpers → `.../obsidian/html-element`). At merge time, also flip the `docs/styling.md` CssClass link
+explicit go-ahead), then migrate the consuming plugins. Public import paths changed:
+`obsidian-dev-utils/css-class` → `.../obsidian/css-class`, and `appendCodeBlock` moved from
+`obsidian-dev-utils/html-element` → `.../obsidian/html-element` (the other `html-element` helpers stay
+at `obsidian-dev-utils/html-element`). At merge time, also flip the `docs/styling.md` CssClass link
 from `src/css-class.ts` → `src/obsidian/css-class.ts` — it was left pointing at the old path because the
 `lint:md` link-checker (linkinator) validates against GitHub `main`, where the moved file does not exist
 until this branch lands.

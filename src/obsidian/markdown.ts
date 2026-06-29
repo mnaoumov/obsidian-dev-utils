@@ -25,7 +25,10 @@ import {
 import type { PathOrAbstractFile } from './file-system.ts';
 
 import { invokeAsyncSafely } from '../async.ts';
-import { getZIndex } from '../html-element.ts';
+import {
+  getZIndex,
+  waitUntilConnected
+} from '../html-element.ts';
 import { normalizeOptionalProperties } from '../object-utils.ts';
 import { MonkeyAroundComponent } from './components/monkey-around-component.ts';
 import { getDomEventsHandlersConstructor } from './constructors/getDomEventsHandlersConstructor.ts';
@@ -34,7 +37,6 @@ import {
   getPath,
   isFolder
 } from './file-system.ts';
-import { waitUntilConnected } from './html-element.ts';
 
 type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
 

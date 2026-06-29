@@ -24,6 +24,11 @@ export enum CssClass {
   CheckboxComponent = 'checkbox-component',
 
   /**
+   * Obsidian's class for an inline code element (used by `appendCodeBlock`).
+   */
+  Code = 'code',
+
+  /**
    * A CSS class for the code highlighter component.
    */
   CodeHighlighterComponent = 'code-highlighter-component',
@@ -62,6 +67,11 @@ export enum CssClass {
    * A CSS class for the library name.
    */
   LibraryName = 'obsidian-dev-utils',
+
+  /**
+   * Obsidian's class marking rendered-markdown content (used by `appendCodeBlock`).
+   */
+  MarkdownRendered = 'markdown-rendered',
 
   /**
    * A CSS class for the minimizable modal.
