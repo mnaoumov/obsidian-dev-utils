@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 82.0.0
+
+- chore: update libs
+- docs: cleanup
+- test: reuse typeIntoEditor from obsidian-integration-testing
+- feat(editor-lock): beep on a type attempt in a locked note
+- feat(editor-lock): flash the lock indicators when typing in a locked note
+- fix(minimizable-modal): float the minimized bar above the status bar
+- feat(editor-lock): add Unlock to the file/tab context menu and render lockers as code
+
 ## 82.0.0-beta.10
 
 - test: add editor-lock typing integration test with trusted input
