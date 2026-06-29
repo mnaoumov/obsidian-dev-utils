@@ -36,10 +36,12 @@
 
   // The minimized bar is appended to document.body. It floats at the bottom-right while minimized,
   // and gently pulses an accent ring so the user does not forget about the minimized operation.
+  // It floats a status-bar's height above the bottom edge so it never covers the bottom-right
+  // status-bar items (e.g. the editor-lock unlock indicator, which lives in the same corner).
   &.minimized-modal-bar {
     position: fixed;
     right: var(--size-4-4);
-    bottom: var(--size-4-4);
+    bottom: calc(var(--size-4-4) + var(--size-4-8));
     z-index: var(--layer-modal);
     display: flex;
     align-items: center;
