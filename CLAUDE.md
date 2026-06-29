@@ -271,11 +271,10 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
-## Planned Task — Restore the agnostic-core ⊥ Obsidian-layer boundary (NOT STARTED)
+## Current Task — Restore the agnostic-core ⊥ Obsidian-layer boundary
 
-Deferred until the current bug is finished. This section is the self-contained summary of the full
-plan. Breaking refactor — do it on a feature branch via TDD; the lib is mid-major (82.x), so the
-major bump + consumer migration come afterward.
+This section is the self-contained summary of the full plan. Breaking refactor — do it on a feature
+branch via TDD; the lib is mid-major (82.x), so the major bump + consumer migration come afterward.
 
 **Problem.** Top-level `src/*.ts` is meant to be Obsidian-runtime-agnostic; everything Obsidian-only
 belongs under `src/obsidian/`. `src/debug.ts` violates this by importing `getPluginId` (and
@@ -342,123 +341,6 @@ positive/negative `Linter` test.
 `addPluginCssClasses` applies the scope class; update `editor-lock.obsidian.integration.test.ts` for the
 A4 signature; cover the relocated `html-element` helpers in the harness (not jsdom).
 `obsidian-integration-testing` does NOT depend on `obsidian-dev-utils`, so it isn't broken by the moves.
-
-## Current Task
-
-**Extract `*Params`/`*Options` parameter bags — BREAKING public-API conversion (option C).
-LIBRARY CONVERSION COMPLETE on branch `refactor/extract-params-options` (~25 commits, all green:
-3508 tests, 100% coverage, compile/lint/format/spellcheck clean). NOT merged/published.**
-
-Re-running `npx jiti F:/tmp/analyze-params.ts` shows the 3+-param count down from 112 → **11**, and
-every one of those 11 is an event/DOM/Proxy-parity signature deliberately kept positional AND now
-documented with an `@remarks` note: `on`/`once` (async-events, plugin-settings-component,
-plugin-event-source — keep parity with `obsidian#Events#on`/`once`), `createElAsync`/`createSvgAsync`
-(keep parity with `obsidian#createEl`/`createSvg`), and `strict-proxy` `get` (keeps parity with the
-`ProxyHandler.get` trap). `checkExtension` stays positional (documented hot path).
-
-Everything else from the prior "excluded" set was subsequently bagged on user instruction (group-by-
-group): `onSaveSettings` (event-parity arrow adapter at registration), command-handler
-`shouldAddTo*Menu`/`handle*Menu`/`editorCheckCallback` (Obsidian callbacks adapted at registration),
-`registerAll*DomEvent` (callback member keeps `this: HTMLElement` per the DOM API), `ToJsonConverter`
-private methods, and `PluginSettingsTabBase.bind` (both overloads + impl, folding `BindOptions` via
-`extends`). The reg-exp flag-merge cluster also became a `RegExpFlagMerger` class per G10o.
-
-**Remaining (handed off, NOT done here):** merge + npm publish the new major (irreversible — needs
-explicit go-ahead), then migrate the ~23 consuming plugins against the published version.
-
-Phase 1 (non-breaking internal helpers) — DONE (5 atomic commits): `file-change.ts`, `link.ts`,
-`markdown-code-block-processor.ts`, `rename-delete-handler-component.ts`, `over-exposure.ts`.
-
-Phase 2 (BREAKING) — DONE — all exported candidate functions converted to params/options bags.
-Design rule (consistent with existing lib style, e.g. `process(app, pathOrFile, provider, options?)`):
-keep unambiguously-typed leading args positional (`app: App`, a single `pathOrFile`/`path`/`content`,
-a callback); move ambiguous same-typed pairs (old/new path), boolean/enum flags, and optional config
-into a trailing bag. Pure 2-string utils with no obvious anchor (`makeFileName`, `ensureStartsWith`)
-become a sole required bag. Naming per `params-options-name-match`: sole+required → `...Params`;
-optional/supplementary → `...Options`. Use `refactor!:` commits (release tool derives the major bump
-from conventional commits — do NOT hand-edit `package.json` version).
-
-**Execution boundary (unattended):** library refactor only — all commits local on the branch.
-**Publishing to npm is NOT done unattended** (irreversible outward-facing release). The ~23-plugin
-migration is BLOCKED until the new major is published (plugins depend on `obsidian-dev-utils@^80`
-from npm), so it is handed off, not executed here.
-
-### Exhaustive candidate inventory (AST pass over all `src/**/*.ts`, excl. tests/`.d.ts`/`index.ts`)
-
-Source of truth: `F:/tmp/analyze-params.ts` (re-run with `npx jiti F:/tmp/analyze-params.ts`). Found
-**112 functions/methods with 3+ params** and **202 with exactly 2**. Categorized:
-
-**DONE:**
-
-- Phase 1 internal helpers (file-change, link, markdown-code-block-processor,
-  rename-delete-handler-component, over-exposure) — commits `003e3b04`..`1f306c96`.
-- `file-system.ts` getters — full-bagged (single `*Params` incl. `app`) in `a6d72e64`
-  (superseding the earlier `db994812` `(app, path, options?)` shape).
-- `object-utils.ts` toJson family — now a `ToJsonConverter` CLASS (state as fields, helpers as
-  methods) per the new R2 **G10o**; commit `9a31c6ac` (superseding the `ToJsonContext` param approach).
-- `vault.ts` — `copySafe`/`getAbstractFilePathSafe`/`getOrCreateAbstractFileSafe`/`getSafeRenamePath`/
-  `invokeWithFileSystemLock`/`isChild`/`isChildOrSelf`/`renameSafe`/`process`/`invokeFileActionSafe`
-  full-bagged; `process` → `ProcessParams extends ProcessOptions` — `refactor!` `4249db15`.
-
-**EXCLUDED — signature-locked (do NOT convert):** event-source `on`/`once`/`onSaveSettings`
-(async-events, plugin-settings-component, plugin-event-source); command-handler `shouldAddTo*Menu`/
-`handle*Menu`/`editorCheckCallback` (Obsidian event arg contracts); `registerAll*DomEvent` (DOM
-addEventListener); `createElAsync`/`createSvgAsync` (Obsidian `createEl`); `strict-proxy` `get`
-(Proxy handler); transformer `canTransform`/`transformValue`/`getTransformerId` (framework); `bind`
-(already options); `checkExtension` (hot path — see file-system commit).
-
-**EXCLUDED — not a candidate (distinct-typed args + trailing options/callback; roles obvious):**
-`editLinks`/`editBacklinks`/`process`/`processFrontmatter`/`getBacklinksForFileSafe`/`exec`/
-`execFromRoot`/`editJson*`/`editPackage*`/`readdirPosix`/`tempRegisterFilesAndRun(Async)`/
-`writeJson*`/`writePackage*`/2-arg `app+path` family in vault.ts/metadata-cache.ts.
-
-**REMAINING — to convert (breaking where exported):**
-
-- `string.ts`: `insertAt`(4), `replaceAllAsync`(4), `replaceAll`(3), `trimEnd`(3), `trimStart`(3),
-  `unindent`(3); 2-string ambiguous: `ensureEndsWith`, `ensureStartsWith`, `hasSingleOccurrence`, `indent`.
-- `path.ts`: `makeFileName` (2 strings).
-- `async.ts`: `invokeAsyncSafelyAfterDelay`(4), `sleep`(3), `timeout`(3).
-- `debug.ts`: `printWithStackTrace`(4), `logWithCaller`(4, intern).
-- `error.ts`: `CustomStackTraceError` ctor(3).
-- `object-utils.ts`: `setNestedPropertyValue`(3), `tryEntryEquality`(3, intern; a/b ambiguous).
-- `reg-exp.ts`: `shouldPickFlag`(3), `addSemanticFlags`(3), `addUnicodeFlags`(3) (intern).
-- `obsidian/markdown.ts`: `markdownToHtml`, `registerLinkHandlers`, `renderExternalLink`, `renderInternalLink`.
-- `obsidian/file-manager.ts`: `addAlias`, `deleteAlias`.
-- `obsidian/attachment-path.ts`: `getAttachmentFolderPath`, `hasOwnAttachmentFolder` (trailing enum).
-- `obsidian/dataview.ts`: `insertCodeBlock`; `createPageLink`(intern).
-- `obsidian/dataview-link.ts`: `fixTitle`.
-- `obsidian/resource-url.ts`: `relativePathToResourceUrl`.
-- `obsidian/file-change.ts`: `applyContentChanges`(5, exported), `applyFileChanges`(5, trailing bool after options).
-- `obsidian/link.ts`: `editLinksInContent`(4), `extractLinkFile`(4).
-- `obsidian/metadata-cache.ts`: `registerFileCacheForNonExistingFile`(3).
-- `obsidian/logger.ts`: `invokeAsyncAndLog`(4).
-- script-utils: `copyToObsidianPluginsFolderPlugin`(4), `fixSourceMapsPlugin`(3), `execString`(3),
-  `executeBatches`(3), `spawnViaShell`(3), `over-exposure` `record`(3), assorted eslint-rule intern helpers.
-- `test-helpers/mock-implementation.ts`: `mockImplementation`(3).
-
-**CONFIRMED DESIGN (user, this session): FULL BAG EVERYTHING.** Every converted function takes ONE
-object that includes ALL arguments (incl. `app`) as named members → always `<Owner>Params` (sole
-required). Fully labeled, order-independent call sites: `copySafe({ app, oldPathOrFile, newPath })`,
-`getFile({ app, pathOrFile, isCaseInsensitive: true })`, `isChild({ app, childPathOrFile,
-parentPathOrFile })`. Rename meaningless params (`a`/`b` → `childPathOrFile`/`parentPathOrFile`).
-Optional args → optional members. Fold any pre-existing options type into the single Params bag (e.g.
-`ProcessParams extends ProcessOptions`). Constructor bag = `<ClassName>ConstructorParams`. Use
-`refactor!:` for breaking commits.
-
-**Also confirmed:** convert the hot 2-string utils (`ensureStartsWith`/`ensureEndsWith`/`indent`/
-`hasSingleOccurrence`) too.
-
-**REWORK NEEDED:** `file-system.ts` getters shipped in `db994812` as `(app, path, options?)` must be
-re-done as full bags (`getFile({ app, pathOrFile, ... })`), folding the `*Options` interfaces into
-`*Params`.
-
-## Pending Questions
-
-**Q: Publish the new major + migrate the ~23 plugins?** User chose option **C** (all exported
-candidates). The library refactor is being done unattended on `refactor/extract-params-options`, but
-the npm publish (irreversible) and the dependent 23-plugin migration are NOT done unattended.
-Once the library branch is reviewed: (1) merge + publish the new major via the release tool, then
-(2) run the plugin-migration sweep against the published version. Awaiting go-ahead on the release.
 
 ## Known Issues
 
