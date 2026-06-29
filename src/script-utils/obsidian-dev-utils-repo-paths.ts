@@ -76,6 +76,12 @@ export enum ObsidianDevUtilsRepoPaths {
   /** ESM JavaScript folder. */
   Esm = 'esm',
 
+  /** Generated-during-build CommonJS file. */
+  GeneratedDuringBuildCjs = 'generated-during-build.cjs',
+
+  /** Generated-during-build ESM JavaScript file. */
+  GeneratedDuringBuildMjs = 'generated-during-build.mjs',
+
   /** CommonJS JavaScript index file. */
   IndexCjs = 'index.cjs',
 
@@ -93,12 +99,6 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** JavaScript file extension. */
   JsExtension = '.js',
-
-  /** Library CommonJS file. */
-  LibraryCjs = 'library.cjs',
-
-  /** Library ESM JavaScript file. */
-  LibraryMjs = 'library.mjs',
 
   /** ESM Markdownlint CLI2 configuration file. */
   MarkdownlintCli2ConfigMjs = '.markdownlint-cli2.mjs',

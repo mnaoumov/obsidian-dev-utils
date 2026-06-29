@@ -15,10 +15,12 @@ import {
   showInitialDebugMessage
 } from '../../debug.ts';
 import {
-  globalState,
-  LIBRARY_NAME,
   LIBRARY_STYLES,
   LIBRARY_VERSION
+} from '../../generated-during-build.ts';
+import {
+  globalState,
+  LIBRARY_NAME
 } from '../../library.ts';
 import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
 import { CssClass } from '../css-class.ts';

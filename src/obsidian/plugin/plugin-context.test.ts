@@ -45,11 +45,14 @@ vi.mock('../../debug.ts', () => ({
   showInitialDebugMessage: mocks.showInitialDebugMessage
 }));
 
-vi.mock('../../library.ts', () => ({
-  globalState: mocks.globalState,
-  LIBRARY_NAME: 'obsidian-dev-utils',
+vi.mock('../../generated-during-build.ts', () => ({
   LIBRARY_STYLES: '.test { color: red; }',
   LIBRARY_VERSION: '1.0.0'
+}));
+
+vi.mock('../../library.ts', () => ({
+  globalState: mocks.globalState,
+  LIBRARY_NAME: 'obsidian-dev-utils'
 }));
 
 vi.mock('../../obsidian-dev-utils-state.ts', () => ({

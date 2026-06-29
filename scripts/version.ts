@@ -39,13 +39,13 @@ async function prepareGitHubRelease(newVersion: string): Promise<void> {
   const stylesCssContent = await readFile(stylesCssPath, 'utf-8');
   const stylesCssContentJson = JSON.stringify(stylesCssContent);
 
-  const libraryCjsPath = resolvePathFromRootSafe({ path: join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, ObsidianDevUtilsRepoPaths.LibraryCjs) });
-  const libraryMjsPath = resolvePathFromRootSafe({ path: join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, ObsidianDevUtilsRepoPaths.LibraryMjs) });
+  const generatedCjsPath = resolvePathFromRootSafe({ path: join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, ObsidianDevUtilsRepoPaths.GeneratedDuringBuildCjs) });
+  const generatedMjsPath = resolvePathFromRootSafe({ path: join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, ObsidianDevUtilsRepoPaths.GeneratedDuringBuildMjs) });
 
-  for (const libraryPath of [libraryCjsPath, libraryMjsPath]) {
-    let libraryContent = await readFile(libraryPath, 'utf-8');
-    libraryContent = libraryContent.replace('$(LIBRARY_VERSION)', newVersion);
-    libraryContent = libraryContent.replace('"$(LIBRARY_STYLES)"', stylesCssContentJson);
-    await writeFile(libraryPath, libraryContent, 'utf-8');
+  for (const generatedPath of [generatedCjsPath, generatedMjsPath]) {
+    let generatedContent = await readFile(generatedPath, 'utf-8');
+    generatedContent = generatedContent.replace('$(LIBRARY_VERSION)', newVersion);
+    generatedContent = generatedContent.replace('"$(LIBRARY_STYLES)"', stylesCssContentJson);
+    await writeFile(generatedPath, generatedContent, 'utf-8');
   }
 }
