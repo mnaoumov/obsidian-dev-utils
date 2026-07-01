@@ -86,6 +86,17 @@ describe('Async', () => {
       await promise;
       expect(callback).toHaveBeenCalledOnce();
     });
+
+    it('should be driven by fake timers even for large delays', async () => {
+      // A large delay that would exceed the test timeout if `sleep` ran in real wall-clock time.
+      // `sleep` must be fake-timer controllable here — it is built on `window.setTimeout`, not on
+      // `AbortSignal.timeout`, whose internal timer fake timers cannot advance.
+      const callback = vi.fn();
+      const promise = sleep({ milliseconds: 60_000 }).then(callback);
+      await vi.advanceTimersByTimeAsync(60_000);
+      await promise;
+      expect(callback).toHaveBeenCalledOnce();
+    });
   });
 
   describe('asyncFilter', () => {

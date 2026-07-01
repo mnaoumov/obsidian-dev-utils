@@ -18,9 +18,6 @@ import {
 import { castTo } from './object-utils.ts';
 import { assertNonNullable } from './type-guards.ts';
 
-// eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-type WindowEx = typeof globalThis & Window;
-
 describe('INFINITE_TIMEOUT', () => {
   it('should equal Number.POSITIVE_INFINITY', () => {
     expect(INFINITE_TIMEOUT).toBe(Number.POSITIVE_INFINITY);
@@ -74,111 +71,50 @@ describe('abortSignalTimeout', () => {
     expect(signal.aborted).toBe(false);
   });
 
-  describe('fallback path (when AbortSignal.timeout is unavailable)', () => {
-    let originalTimeout: typeof AbortSignal.timeout;
-
-    beforeEach(() => {
-      originalTimeout = AbortSignal.timeout;
-      AbortSignal.timeout = castTo<typeof AbortSignal.timeout>(undefined);
-    });
-
-    afterEach(() => {
-      AbortSignal.timeout = originalTimeout;
-    });
-
-    it('should return an AbortSignal instance for INFINITE_TIMEOUT (fallback)', () => {
-      const signal = abortSignalTimeout(INFINITE_TIMEOUT);
-      expect(signal).toBeInstanceOf(AbortSignal);
-    });
-
-    it('should return a non-aborted signal for INFINITE_TIMEOUT (fallback)', () => {
-      const signal = abortSignalTimeout(INFINITE_TIMEOUT);
+  it('should be controllable by fake timers via window.setTimeout', () => {
+    vi.useFakeTimers();
+    try {
+      const signal = abortSignalTimeout(5000);
       expect(signal.aborted).toBe(false);
-    });
+      vi.advanceTimersByTime(5000);
+      expect(signal.aborted).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
-    it('should not be aborted before timeout elapses (fallback)', () => {
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      const originalWindow = globalThis.window;
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      globalThis.window = globalThis as WindowEx;
+  it('should not abort one tick before the timeout elapses', () => {
+    vi.useFakeTimers();
+    try {
+      const signal = abortSignalTimeout(5000);
+      vi.advanceTimersByTime(4999);
+      expect(signal.aborted).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
-      vi.useFakeTimers();
-      try {
-        const signal = abortSignalTimeout(100);
-        expect(signal.aborted).toBe(false);
-      } finally {
-        vi.useRealTimers();
-        restoreOriginalWindow(originalWindow);
-      }
-    });
+  it('should set reason to a TimeoutError DOMException after timeout (mirroring native AbortSignal.timeout)', () => {
+    vi.useFakeTimers();
+    try {
+      const signal = abortSignalTimeout(100);
+      vi.advanceTimersByTime(100);
+      expect(signal.reason).toBeInstanceOf(DOMException);
+      expect((signal.reason as DOMException).name).toBe('TimeoutError');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
-    it('should abort after the specified timeout using window.setTimeout (fallback)', () => {
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      const originalWindow = globalThis.window;
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      globalThis.window = globalThis as WindowEx;
-
-      vi.useFakeTimers();
-      try {
-        const signal = abortSignalTimeout(100);
-        vi.advanceTimersByTime(100);
-        expect(signal.aborted).toBe(true);
-      } finally {
-        vi.useRealTimers();
-        restoreOriginalWindow(originalWindow);
-      }
-    });
-
-    it('should set reason to an Error instance after timeout (fallback)', () => {
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      const originalWindow = globalThis.window;
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      globalThis.window = globalThis as WindowEx;
-
-      vi.useFakeTimers();
-      try {
-        const signal = abortSignalTimeout(100);
-        vi.advanceTimersByTime(100);
-        expect(signal.reason).toBeInstanceOf(Error);
-      } finally {
-        vi.useRealTimers();
-        restoreOriginalWindow(originalWindow);
-      }
-    });
-
-    it('should set the correct timeout message after timeout (fallback)', () => {
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      const originalWindow = globalThis.window;
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      globalThis.window = globalThis as WindowEx;
-
-      vi.useFakeTimers();
-      try {
-        const signal = abortSignalTimeout(100);
-        vi.advanceTimersByTime(100);
-        expect((signal.reason as Error).message).toBe('Timed out in 100 milliseconds');
-      } finally {
-        vi.useRealTimers();
-        restoreOriginalWindow(originalWindow);
-      }
-    });
-
-    it('should not abort before the timeout elapses (fallback)', () => {
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      const originalWindow = globalThis.window;
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      globalThis.window = globalThis as WindowEx;
-
-      vi.useFakeTimers();
-      try {
-        const signal = abortSignalTimeout(5000);
-        vi.advanceTimersByTime(4999);
-        expect(signal.aborted).toBe(false);
-      } finally {
-        vi.useRealTimers();
-        restoreOriginalWindow(originalWindow);
-      }
-    });
+  it('should set the correct timeout message after timeout', () => {
+    vi.useFakeTimers();
+    try {
+      const signal = abortSignalTimeout(100);
+      vi.advanceTimersByTime(100);
+      expect((signal.reason as DOMException).message).toBe('Timed out in 100 milliseconds');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -549,13 +485,3 @@ describe('waitForAbort', () => {
     await expect(waitForAbort(controller.signal, true)).rejects.toBe(reason);
   });
 });
-
-function restoreOriginalWindow(originalWindow?: WindowEx): void {
-  if (originalWindow === undefined) {
-    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-    delete (globalThis as Partial<typeof globalThis>).window;
-  } else {
-    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-    globalThis.window = originalWindow;
-  }
-}

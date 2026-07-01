@@ -80,15 +80,15 @@ export function abortSignalTimeout(timeoutInMilliseconds: number): AbortSignal {
     return abortSignalNever();
   }
 
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `AbortSignal.timeout` is feature-detected here with a manual fallback below, so it is not required on older Obsidian/Electron (Chromium) versions that lack it.
-  if (typeof AbortSignal.timeout === 'function') {
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `AbortSignal.timeout` is feature-detected by the guard above with a manual fallback below, so it is not required on older Obsidian/Electron (Chromium) versions that lack it.
-    return AbortSignal.timeout(timeoutInMilliseconds);
-  }
-
+  // Intentionally NOT the native `AbortSignal.timeout`. That API owns an internal timer that
+  // Vitest fake timers cannot advance, so `sleep` (its sole consumer) would be uncontrollable in
+  // Vitest. Building the signal off `window.setTimeout` instead keeps it fake-timer controllable
+  // (matching `setTimeoutAsync`). The abort reason mirrors the native one -- a `DOMException` named
+  // `TimeoutError` -- so code that branches on `reason.name` behaves identically to the native path.
   const abortController = new AbortController();
   window.setTimeout(() => {
-    abortController.abort(new Error(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`));
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `DOMException` is a DOM global always present in the Obsidian/Electron (Chromium) runtime this code targets (same assumption as `window.setTimeout` above); the Node 17 baseline only concerns Node's standalone global.
+    abortController.abort(new DOMException(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`, 'TimeoutError'));
   }, timeoutInMilliseconds);
   return abortController.signal;
 }
