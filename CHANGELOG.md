@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 83.2.0
+
+- docs: cleanup
+- chore: update libs
+- feat: highlight the plugin name in notices with an accent color
+- feat: support custom content in runWithTimeoutNotice
+- docs: record fake-timer-controllable timing-primitive rule
+- fix: make sleep controllable by vitest fake timers
+
 ## 83.1.0
 
 - fix: link
