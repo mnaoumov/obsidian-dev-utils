@@ -27,11 +27,11 @@ import {
   InternalPluginName,
   ViewType
 } from '@obsidian-typings/obsidian-public-latest/implementations';
-import { retryWithTimeout } from '../../async.ts';
-import { trashSafe } from '../vault.ts';
-import { assertNonNullable } from '../../type-guards.ts';
 
+import { retryWithTimeout } from '../../async.ts';
+import { assertNonNullable } from '../../type-guards.ts';
 import { BASE_FILE_EXTENSION } from '../file-system.ts';
+import { trashSafe } from '../vault.ts';
 
 /**
  * The constructor of a {@link BasesContext}.

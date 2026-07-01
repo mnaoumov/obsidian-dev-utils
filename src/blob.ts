@@ -57,7 +57,7 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
     image.src = dataUrl;
 
     function handleLoad(): void {
-      // eslint-disable-next-line obsidianmd/prefer-active-doc -- This is an Obsidian-runtime-agnostic module; it uses the standard DOM `document`, not Obsidian's `activeDocument`.
+      // eslint-disable-next-line obsidianmd/prefer-create-el -- Agnostic module.
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       assertNonNullable(context, 'Could not get 2D context.');

@@ -153,9 +153,7 @@ describe('initPluginContext', () => {
 
   it('should initialize the Library and show debug message', () => {
     mocks.compareVersions.mockReturnValue(1);
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     vi.spyOn(document.head, 'querySelector').mockReturnValue(null);
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext('my-plugin');
     expect(Library.cssClassScope).toBe('my-plugin');
@@ -173,9 +171,7 @@ describe('initPluginContext', () => {
   it('should remove old styles and inject new ones when version is newer', () => {
     mocks.compareVersions.mockReturnValue(1);
     const oldStyleEl = strictProxy<Element>({ remove: vi.fn() });
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     vi.spyOn(document.head, 'querySelector').mockReturnValue(oldStyleEl);
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     const createElSpy = vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext('my-plugin');
     expect(oldStyleEl.remove).toHaveBeenCalled();
@@ -189,9 +185,7 @@ describe('initPluginContext', () => {
     mocks.compareVersions.mockReturnValue(1);
     const wrapper = { value: '0.0.0' };
     mocks.getObsidianDevUtilsState.mockReturnValue(wrapper);
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     vi.spyOn(document.head, 'querySelector').mockReturnValue(null);
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Need to access document.
     vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext('my-plugin');
     expect(wrapper.value).toBe('1.0.0');

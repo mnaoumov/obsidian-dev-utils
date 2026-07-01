@@ -4,9 +4,6 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
-import { noopAsync } from '../../function.ts';
-import { castTo } from '../../object-utils.ts';
-import { trashSafe } from '../../obsidian/vault.ts';
 import {
   afterEach,
   describe,
@@ -15,6 +12,9 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../../function.ts';
+import { castTo } from '../../object-utils.ts';
+import { trashSafe } from '../vault.ts';
 import { getBasesContextConstructor } from './get-bases-context-constructor.ts';
 
 vi.mock('../vault.ts', async (importOriginal) => {

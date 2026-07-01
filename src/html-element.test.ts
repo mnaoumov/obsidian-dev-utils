@@ -110,7 +110,7 @@ describe('createElAsync', () => {
 
   it('should apply a DocumentFragment as text content', async () => {
     const fragment = createFragment();
-    fragment.appendChild(createEl('span'));
+    fragment.appendChild(createSpan());
     const el = await createElAsync('p', { text: fragment });
     expect(el.querySelector('span')).not.toBeNull();
   });
@@ -134,7 +134,7 @@ describe('createElAsync', () => {
 
   it('should prepend to the parent', async () => {
     const parent = createDiv();
-    parent.appendChild(createEl('span'));
+    parent.appendChild(createSpan());
     const el = await createElAsync('p', { parent, prepend: true });
     expect(parent.firstElementChild).toBe(el);
   });

@@ -89,7 +89,7 @@ export async function createElAsync<K extends keyof HTMLElementTagNameMap>(
  * @returns A {@link Promise} that resolves to the DocumentFragment.
  */
 export async function createFragmentAsync(callback?: (el: DocumentFragment) => Promisable<void>): Promise<DocumentFragment> {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Agnostic module: use the standard DOM `document`, not Obsidian's `activeDocument`.
+  // eslint-disable-next-line obsidianmd/prefer-create-el -- Agnostic module.
   const fragment = document.createDocumentFragment();
   await callback?.(fragment);
   return fragment;
@@ -374,14 +374,13 @@ function applyDomElementInfo(el: HTMLElement, o: DomElementInfo | string | undef
 }
 
 function createHtmlElement<K extends keyof HTMLElementTagNameMap>(tag: K, o?: DomElementInfo | string): HTMLElementTagNameMap[K] {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Agnostic module: use the standard DOM `document`, not Obsidian's `activeDocument`.
+  // eslint-disable-next-line obsidianmd/prefer-create-el -- Agnostic module.
   const el = document.createElement(tag);
   applyDomElementInfo(el, o);
   return el;
 }
 
 function createSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, o?: string | SvgElementInfo): SVGElementTagNameMap[K] {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Agnostic module: use the standard DOM `document`, not Obsidian's `activeDocument`.
   const svg = document.createElementNS(SVG_NAMESPACE, tag);
   const info: SvgElementInfo = typeof o === 'string' ? { cls: o } : o ?? {};
 
