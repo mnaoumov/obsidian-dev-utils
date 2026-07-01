@@ -1829,7 +1829,7 @@ BREAKING CHANGE: `generateMarkdownLink()` now doesn't support default options em
 
 ## 27.2.0
 
-- Recognize urls such mailto:foo@bar.com
+- Recognize urls such <mailto:foo@bar.com>
   - fix <https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/9>
 
 ## 27.1.0
