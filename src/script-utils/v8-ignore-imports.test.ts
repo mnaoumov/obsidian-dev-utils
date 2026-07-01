@@ -15,7 +15,7 @@ import * as AttachmentPath from '../obsidian/attachment-path.ts';
 import * as Backlink from '../obsidian/backlink.ts';
 import * as CodeBlockMarkdownInformation from '../obsidian/code-block-markdown-information.ts';
 import * as RenameDeleteHandlerComponent from '../obsidian/components/rename-delete-handler-component.ts';
-import * as GetDomEventsHandlersConstructor from '../obsidian/constructors/getDomEventsHandlersConstructor.ts';
+import * as GetDomEventsHandlersConstructor from '../obsidian/constructors/get-dom-events-handlers-constructor.ts';
 import * as CustomTypeOptionsBase from '../obsidian/i18n/custom-type-options.ts';
 import * as DefaultTranslationsBase from '../obsidian/i18n/default-translations.ts';
 import * as Markdown from '../obsidian/markdown.ts';

@@ -39,7 +39,7 @@ describe('getDomEventsHandlersConstructor', () => {
         if (!lib) {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
-        const ctor = await lib.obsidian.constructors.getDomEventsHandlersConstructor.getDomEventsHandlersConstructor(app);
+        const ctor = await lib.obsidian.constructors['get-dom-events-handlers-constructor'].getDomEventsHandlersConstructor(app);
         const proto: object = ctor.prototype;
         const prototypeMethodNames = Object.getOwnPropertyNames(proto)
           .filter((name) => {

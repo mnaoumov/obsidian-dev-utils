@@ -31,7 +31,7 @@ import {
 } from '../html-element.ts';
 import { normalizeOptionalProperties } from '../object-utils.ts';
 import { MonkeyAroundComponent } from './components/monkey-around-component.ts';
-import { getDomEventsHandlersConstructor } from './constructors/getDomEventsHandlersConstructor.ts';
+import { getDomEventsHandlersConstructor } from './constructors/get-dom-events-handlers-constructor.ts';
 import {
   getAbstractFileOrNull,
   getPath,
