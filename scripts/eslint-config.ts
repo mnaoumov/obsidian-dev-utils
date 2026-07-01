@@ -8,6 +8,8 @@ import type { Linter } from 'eslint';
 
 // eslint-disable-next-line import-x/no-rename-default, import-x/no-named-as-default -- The default export name `index` is too confusing.
 import jsdoc from 'eslint-plugin-jsdoc';
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
+import obsidianmd from 'eslint-plugin-obsidianmd';
 import eslintPluginTsdoc from 'eslint-plugin-tsdoc';
 import {
   defineConfig,
@@ -42,6 +44,15 @@ function getAgnosticCoreBoundaryConfigs(context: EslintConfigContext): Linter.Co
       }
     }
   ]);
+}
+
+function getDependConfigs(): Linter.Config[] {
+  return defineConfig({
+    files: [ObsidianDevUtilsRepoPaths.PackageJson],
+    rules: {
+      'depend/ban-dependencies': ['error', { allowed: ['moment'] }]
+    }
+  });
 }
 
 function getIgnoreConfigs(): Linter.Config[] {
@@ -192,6 +203,19 @@ function getNoRestrictedSyntaxOverrideConfigs(): Linter.Config[] {
   ]);
 }
 
+function getObsidianLintConfigs(): Linter.Config[] {
+  return defineConfig([
+    {
+      plugins: {
+        obsidianmd
+      },
+      rules: {
+        'eslint-comments/no-restricted-disable': 'off'
+      }
+    }
+  ]);
+}
+
 function getTsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
     {
@@ -212,12 +236,8 @@ export const configs: Linter.Config[] = defineEslintConfigs({
       ...getJsdocsConfigs(context),
       ...getNoRestrictedSyntaxOverrideConfigs(),
       ...getAgnosticCoreBoundaryConfigs(context),
-      {
-        files: [ObsidianDevUtilsRepoPaths.PackageJson],
-        rules: {
-          'depend/ban-dependencies': ['error', { allowed: ['moment'] }]
-        }
-      }
+      ...getDependConfigs(),
+      ...getObsidianLintConfigs()
     ]);
   },
 

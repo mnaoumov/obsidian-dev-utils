@@ -27,7 +27,6 @@ import nodePlugin from 'eslint-plugin-n';
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
 import { defineConfig } from 'eslint/config';
-import globals from 'globals';
 import { existsSync } from 'node:fs';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
 import tseslint from 'typescript-eslint';
@@ -472,35 +471,10 @@ function getObsidianLintConfigs(context: EslintConfigContext): Linter.Config[] {
   });
 
   return defineConfig([
-    ...scopedObsidianRecommendedConfigs,
     {
+      extends: [scopedObsidianRecommendedConfigs],
       plugins: {
         obsidianmd
-      }
-    },
-    {
-      languageOptions: {
-        globals: {
-          ...globals.browser,
-          ...globals.node,
-          activeDocument: 'readonly',
-          activeWindow: 'readonly',
-          ajax: 'readonly',
-          ajaxPromise: 'readonly',
-          createDiv: 'readonly',
-          createEl: 'readonly',
-          createFragment: 'readonly',
-          createSpan: 'readonly',
-          createSvg: 'readonly',
-          DomElementInfo: 'readonly',
-          fish: 'readonly',
-          fishAll: 'readonly',
-          isBoolean: 'readonly',
-          nextFrame: 'readonly',
-          NodeJS: 'readonly',
-          ready: 'readonly',
-          sleep: 'readonly'
-        }
       }
     }
   ]);
