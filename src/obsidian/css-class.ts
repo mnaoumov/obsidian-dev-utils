@@ -139,6 +139,12 @@ export enum CssClass {
   PasswordComponent = 'password-component',
 
   /**
+   * A CSS class for the container wrapping a notice's content, used to keep the notice open when an
+   * interactive element inside it is clicked.
+   */
+  PluginNoticeContent = 'plugin-notice-content',
+
+  /**
    * A CSS class for the plugin name shown as the prefix of a notice.
    */
   PluginNoticeName = 'plugin-notice-name',

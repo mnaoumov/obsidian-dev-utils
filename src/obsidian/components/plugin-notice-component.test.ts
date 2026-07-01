@@ -9,6 +9,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../../object-utils.ts';
+import { ensureNonNullable } from '../../type-guards.ts';
 import { CssClass } from '../css-class.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
@@ -89,6 +90,75 @@ describe('PluginNoticeComponent', () => {
     expect(nameEl?.textContent).toBe('My Plugin');
     expect(nameEl?.classList.contains(CssClass.LibraryName)).toBe(true);
     expect(nameEl?.classList.contains(CssClass.PluginNoticeName)).toBe(true);
+  });
+
+  it('should wrap the notice content in a container carrying the plugin-notice-content class', () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+    component.showNotice('Something happened');
+
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    const contentEl = fragment.firstElementChild;
+    expect(contentEl?.classList.contains(CssClass.PluginNoticeContent)).toBe(true);
+    // The whole message lives inside that single wrapper.
+    expect(contentEl?.textContent).toBe('My Plugin\nSomething happened');
+  });
+
+  it('should keep the notice open when an interactive element inside it is clicked', () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+    const messageFragment = createFragment((f) => {
+      f.createEl('a', { text: 'link' });
+    });
+    component.showNotice(messageFragment);
+
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    // Stand in for Obsidian's noticeEl, whose own bubble-phase click handler dismisses the notice.
+    const noticeElStub = createDiv();
+    noticeElStub.appendChild(fragment);
+    const dismissListener = vi.fn();
+    noticeElStub.addEventListener('click', dismissListener);
+
+    const linkEl = ensureNonNullable(noticeElStub.querySelector('a'));
+    linkEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(dismissListener).not.toHaveBeenCalled();
+  });
+
+  it('should dismiss the notice when a non-interactive element inside it is clicked', () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+    component.showNotice('Something happened');
+
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    const noticeElStub = createDiv();
+    noticeElStub.appendChild(fragment);
+    const dismissListener = vi.fn();
+    noticeElStub.addEventListener('click', dismissListener);
+
+    // The plugin-name prefix is non-interactive, so its click must still reach the dismiss handler.
+    const nameEl = ensureNonNullable(noticeElStub.querySelector('span'));
+    nameEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(dismissListener).toHaveBeenCalledTimes(1);
+  });
+
+  it('should dismiss the notice when the click target is not an element (e.g. a text node)', () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+    component.showNotice('Something happened');
+
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    const noticeElStub = createDiv();
+    noticeElStub.appendChild(fragment);
+    const dismissListener = vi.fn();
+    noticeElStub.addEventListener('click', dismissListener);
+
+    const contentEl = ensureNonNullable(noticeElStub.querySelector(`.${CssClass.PluginNoticeContent}`));
+    const textNode = ensureNonNullable(Array.from(contentEl.childNodes).find((node) => node.nodeType === Node.TEXT_NODE));
+    textNode.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(dismissListener).toHaveBeenCalledTimes(1);
   });
 
   it('should return the created notice', () => {

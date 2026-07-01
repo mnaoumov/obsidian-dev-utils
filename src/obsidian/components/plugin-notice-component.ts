@@ -14,6 +14,10 @@ import { ComponentEx } from './component-ex.ts';
 const PERMANENT_NOTICES_STATE_KEY = 'plugin-notice-component:permanent-notices';
 const PERMANENT_NOTICE_DURATION_IN_MILLISECONDS = 0;
 
+// Elements a user clicks to act on them rather than to dismiss the notice. A click landing on (or
+// Inside) one of these is kept from bubbling to the notice, so the notice stays open.
+const INTERACTIVE_ELEMENT_SELECTOR = 'a, button, input, select, textarea, label, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="tab"], [role="menuitem"]';
+
 /**
  * Options for {@link PluginNoticeComponent.showNotice}.
  */
@@ -75,8 +79,8 @@ export class PluginNoticeComponent extends ComponentEx {
   public showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): Notice {
     this.notice?.hide();
 
-    const prefixedMessage = this.buildPrefixedMessage(message);
-    this.notice = new Notice(prefixedMessage, options?.isPermanent ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : undefined);
+    const content = this.buildNoticeContent(message);
+    this.notice = new Notice(content, options?.isPermanent ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : undefined);
 
     if (options?.isPermanent) {
       this.setPermanentNotice(this.notice);
@@ -84,6 +88,28 @@ export class PluginNoticeComponent extends ComponentEx {
       this.setPermanentNotice(null);
     }
     return this.notice;
+  }
+
+  /**
+   * Builds the notice content wrapped in a container that keeps the notice open when an interactive
+   * element inside it is clicked. Obsidian dismisses a notice on any click that bubbles up to its
+   * element; the container intercepts clicks originating on an interactive element (a link, button,
+   * input, etc.) and stops them there, so the element's own handler still runs but the notice stays.
+   *
+   * @param message - The message to display after the plugin name prefix.
+   * @returns A {@link DocumentFragment} holding the wrapped, prefixed notice content.
+   */
+  private buildNoticeContent(message: DocumentFragment | string): DocumentFragment {
+    const fragment = createFragment();
+    const contentEl = fragment.createDiv();
+    addPluginCssClasses(contentEl, CssClass.PluginNoticeContent);
+    contentEl.appendChild(this.buildPrefixedMessage(message));
+    contentEl.addEventListener('click', (evt) => {
+      if (evt.target instanceof Element && evt.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
+        evt.stopPropagation();
+      }
+    });
+    return fragment;
   }
 
   /**
