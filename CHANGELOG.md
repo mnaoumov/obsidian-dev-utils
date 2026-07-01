@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 83.1.0
+
+- fix: link
+- chore: spellcheck
+- chore: lint
+- feat: migrate obsidianmd rules
+- fix: compilation
+- refactor: constructor
+- feat: add getBasesContextConstructor
+- chore: update libs
+
 ## 83.0.0
 
 - docs: refresh CLAUDE.md for the Library refactor and landed branch fixes
