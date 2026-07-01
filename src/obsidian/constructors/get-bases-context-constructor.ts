@@ -27,9 +27,9 @@ import {
   InternalPluginName,
   ViewType
 } from '@obsidian-typings/obsidian-public-latest/implementations';
-import { retryWithTimeout } from 'obsidian-dev-utils/async';
-import { trashSafe } from 'obsidian-dev-utils/obsidian/vault';
-import { assertNonNullable } from 'obsidian-dev-utils/type-guards';
+import { retryWithTimeout } from '../../async.ts';
+import { trashSafe } from '../vault.ts';
+import { assertNonNullable } from '../../type-guards.ts';
 
 import { BASE_FILE_EXTENSION } from '../file-system.ts';
 
