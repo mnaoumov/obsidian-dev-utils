@@ -13,6 +13,7 @@ import {
 
 import type { TimeoutContext } from '../async.ts';
 import type { GenericObject } from '../type-guards.ts';
+import type { ValueProvider } from '../value-provider.ts';
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 
 import {
@@ -33,7 +34,20 @@ import {
 } from './async-with-notice.ts';
 import { t } from './i18n/i18n.ts';
 
+const asyncMock = vi.hoisted(() => {
+  const invokePromises: Promise<unknown>[] = [];
+  return {
+    invokeAsyncSafely: vi.fn((fn: () => unknown) => {
+      invokePromises.push(Promise.resolve(fn()));
+    }),
+    settleInvocations: async (): Promise<void> => {
+      await Promise.all(invokePromises);
+    }
+  };
+});
+
 vi.mock('../async.ts', () => ({
+  invokeAsyncSafely: asyncMock.invokeAsyncSafely,
   retryWithTimeout: vi.fn(async (options: GenericObject) => {
     if (typeof options['_captureOnTimeout'] === 'function') {
       (options['_captureOnTimeout'] as (fn: unknown) => void)(options['onTimeout']);
@@ -838,6 +852,87 @@ describe('AsyncWithNotice', () => {
       onTimeout(ctx);
 
       expect(terminateOperationMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onTimeoutNotice with custom content', () => {
+    function captureRunOnTimeout(content: ValueProvider<DocumentFragment | string>, pluginNoticeComponent: PluginNoticeComponent): Promise<(ctx: TimeoutContext) => void> {
+      return new Promise((resolve) => {
+        vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
+          await noopAsync();
+          resolve(options.onTimeout as (ctx: TimeoutContext) => void);
+          return undefined;
+        });
+        runWithTimeoutNotice({
+          content,
+          operationFn: async () => {
+            await noopAsync();
+            return 'value';
+          },
+          pluginNoticeComponent,
+          timeoutInMilliseconds: 5000
+        }).catch(() => {
+          // Ignore
+        });
+      });
+    }
+
+    function createContentTimeoutContext(onOperationCompleted: (callback: () => void) => void = vi.fn()): TimeoutContext {
+      return {
+        duration: 5000,
+        onOperationCompleted,
+        operationName: 'contentOp',
+        terminateOperation: vi.fn()
+      };
+    }
+
+    it('shows a permanent notice with the resolved custom content and hides it on completion', async () => {
+      const hideMock = vi.fn();
+      const showNoticeMock = vi.fn(() => strictProxy<NoticeOriginal>({ hide: hideMock }));
+      const pluginNoticeComponent = strictProxy<PluginNoticeComponent>({ showNotice: showNoticeMock });
+
+      const onTimeout = await captureRunOnTimeout(() => Promise.resolve('custom progress message'), pluginNoticeComponent);
+      let completedCallback: (() => void) | undefined;
+      onTimeout(createContentTimeoutContext((callback) => {
+        completedCallback = callback;
+      }));
+      await asyncMock.settleInvocations();
+
+      expect(showNoticeMock).toHaveBeenCalledTimes(1);
+      expect(showNoticeMock).toHaveBeenCalledWith('custom progress message', { isPermanent: true });
+
+      assertNonNullable(completedCallback);
+      completedCallback();
+      expect(hideMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('accepts a direct (non-function) content value', async () => {
+      const showNoticeMock = vi.fn(() => strictProxy<NoticeOriginal>({ hide: vi.fn() }));
+      const pluginNoticeComponent = strictProxy<PluginNoticeComponent>({ showNotice: showNoticeMock });
+
+      const onTimeout = await captureRunOnTimeout('direct message', pluginNoticeComponent);
+      onTimeout(createContentTimeoutContext());
+      await asyncMock.settleInvocations();
+
+      expect(showNoticeMock).toHaveBeenCalledWith('direct message', { isPermanent: true });
+    });
+
+    it('does not show the notice when the operation completes before the content resolves', async () => {
+      const showNoticeMock = vi.fn(() => strictProxy<NoticeOriginal>({ hide: vi.fn() }));
+      const pluginNoticeComponent = strictProxy<PluginNoticeComponent>({ showNotice: showNoticeMock });
+
+      const onTimeout = await captureRunOnTimeout(() => Promise.resolve('late message'), pluginNoticeComponent);
+      let completedCallback: (() => void) | undefined;
+      onTimeout(createContentTimeoutContext((callback) => {
+        completedCallback = callback;
+      }));
+
+      // Complete the operation before the content promise settles.
+      assertNonNullable(completedCallback);
+      completedCallback();
+      await asyncMock.settleInvocations();
+
+      expect(showNoticeMock).not.toHaveBeenCalled();
     });
   });
 });

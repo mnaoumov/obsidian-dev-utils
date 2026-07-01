@@ -4,25 +4,36 @@
  * Provides a utility to execute an asynchronous function with a notice.
  */
 
+import type { Notice } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
 import type {
   RetryOptions,
   TimeoutContext
 } from '../async.ts';
+import type { ValueProvider } from '../value-provider.ts';
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 
 import {
+  invokeAsyncSafely,
   retryWithTimeout,
   runWithTimeout
 } from '../async.ts';
 import { getDebugger } from '../debug.ts';
+import { resolveValue } from '../value-provider.ts';
 import { t } from './i18n/i18n.ts';
 
 /**
  * Options for {@link retryWithTimeoutNotice}.
  */
 export interface RetryWithTimeoutNoticeParams {
+  /**
+   * Custom content to show in the notice instead of the default timed-out message. Resolved only if
+   * the operation exceeds the timeout, shown as a permanent notice, and hidden when the operation
+   * completes.
+   */
+  readonly content?: ValueProvider<DocumentFragment | string>;
+
   /**
    * The operation function to execute.
    *
@@ -65,6 +76,13 @@ export interface RetryWithTimeoutNoticeParams {
  * @typeParam Result - The type of the result from the operation function.
  */
 export interface RunWithTimeoutNoticeParams<Result> {
+  /**
+   * Custom content to show in the notice instead of the default timed-out message. Resolved only if
+   * the operation exceeds {@link RunWithTimeoutNoticeParams.timeoutInMilliseconds}, shown as a
+   * permanent notice, and hidden when the operation completes.
+   */
+  readonly content?: ValueProvider<DocumentFragment | string>;
+
   /**
    * The context of the function.
    */
@@ -117,7 +135,7 @@ export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParam
     ...params,
     onTimeout: params.shouldShowTimeoutNotice ?? true
       ? (ctx): void => {
-        onTimeoutNotice(ctx, params.pluginNoticeComponent);
+        onTimeoutNotice(ctx, params.pluginNoticeComponent, params.content);
       }
       : onTimeoutWithoutNotice
   });
@@ -135,13 +153,18 @@ export async function runWithTimeoutNotice<Result>(params: RunWithTimeoutNoticeP
     ...params,
     onTimeout: params.shouldShowTimeoutNotice ?? true
       ? (ctx): void => {
-        onTimeoutNotice(ctx, params.pluginNoticeComponent);
+        onTimeoutNotice(ctx, params.pluginNoticeComponent, params.content);
       }
       : onTimeoutWithoutNotice
   });
 }
 
-function onTimeoutNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent): void {
+function onTimeoutNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content?: ValueProvider<DocumentFragment | string>): void {
+  if (content !== undefined) {
+    showCustomContentNotice(ctx, pluginNoticeComponent, content);
+    return;
+  }
+
   const startTime = Math.trunc(performance.now() - ctx.duration);
   let runningTimeEl: HTMLSpanElement;
   const SECOND_IN_MILLISECONDS = 1000;
@@ -196,5 +219,24 @@ function onTimeoutWithoutNotice(ctx: TimeoutContext): void {
       operationName: ctx.operationName,
       totalDuration: Math.trunc(performance.now() - startTime)
     });
+  });
+}
+
+function showCustomContentNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content: ValueProvider<DocumentFragment | string>): void {
+  let isOperationCompleted = false;
+  let notice: Notice | null = null;
+
+  ctx.onOperationCompleted(() => {
+    isOperationCompleted = true;
+    notice?.hide();
+  });
+
+  invokeAsyncSafely(async () => {
+    const resolvedContent = await resolveValue(content, {});
+    // The operation may have completed while the content was resolving; if so, do not show a stale notice.
+    if (isOperationCompleted) {
+      return;
+    }
+    notice = pluginNoticeComponent.showNotice(resolvedContent, { isPermanent: true });
   });
 }
