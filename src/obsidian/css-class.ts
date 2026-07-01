@@ -139,6 +139,11 @@ export enum CssClass {
   PasswordComponent = 'password-component',
 
   /**
+   * A CSS class for the plugin name shown as the prefix of a notice.
+   */
+  PluginNoticeName = 'plugin-notice-name',
+
+  /**
    * A CSS class for the plugin settings tab.
    */
   PluginSettingsTab = 'plugin-settings-tab',

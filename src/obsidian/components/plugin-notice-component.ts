@@ -7,6 +7,8 @@
 import { Notice } from 'obsidian';
 
 import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
+import { CssClass } from '../css-class.ts';
+import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import { ComponentEx } from './component-ex.ts';
 
 const PERMANENT_NOTICES_STATE_KEY = 'plugin-notice-component:permanent-notices';
@@ -73,8 +75,7 @@ export class PluginNoticeComponent extends ComponentEx {
   public showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): Notice {
     this.notice?.hide();
 
-    const prefix = `${this.pluginName}${this._loaded ? '' : ' (unloaded)'}\n`;
-    const prefixedMessage = prependPrefix(prefix, message);
+    const prefixedMessage = this.buildPrefixedMessage(message);
     this.notice = new Notice(prefixedMessage, options?.isPermanent ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : undefined);
 
     if (options?.isPermanent) {
@@ -83,6 +84,30 @@ export class PluginNoticeComponent extends ComponentEx {
       this.setPermanentNotice(null);
     }
     return this.notice;
+  }
+
+  /**
+   * Builds the notice content, prefixing the message with the plugin name in a styled element so it is
+   * visually distinguished from the message body.
+   *
+   * @param message - The message to display after the plugin name prefix.
+   * @returns A {@link DocumentFragment} with the styled plugin name prefix followed by the message.
+   */
+  private buildPrefixedMessage(message: DocumentFragment | string): DocumentFragment {
+    const fragment = createFragment();
+    const nameEl = createSpan({ text: this.pluginName });
+    addPluginCssClasses(nameEl, CssClass.PluginNoticeName);
+    fragment.appendChild(nameEl);
+    if (!this._loaded) {
+      fragment.appendText(' (unloaded)');
+    }
+    fragment.appendText('\n');
+    if (typeof message === 'string') {
+      fragment.appendText(message);
+    } else {
+      fragment.appendChild(message);
+    }
+    return fragment;
   }
 
   private getPermanentNotice(): Notice | null {
@@ -101,13 +126,4 @@ export class PluginNoticeComponent extends ComponentEx {
       map.delete(this.pluginName);
     }
   }
-}
-
-function prependPrefix(prefix: string, message: DocumentFragment | string): DocumentFragment | string {
-  if (typeof message === 'string') {
-    return `${prefix}${message}`;
-  }
-
-  message.prepend(prefix);
-  return message;
 }

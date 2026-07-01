@@ -9,6 +9,7 @@ import {
 } from 'vitest';
 
 import { castTo } from '../../object-utils.ts';
+import { CssClass } from '../css-class.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 interface NoticeInstance {
@@ -71,7 +72,23 @@ describe('PluginNoticeComponent', () => {
     const component = new PluginNoticeComponent(PLUGIN_NAME);
     component.load();
     component.showNotice('Something happened');
-    expect(mocks.NoticeMock).toHaveBeenCalledWith('My Plugin\nSomething happened', undefined);
+
+    const [content, duration] = mocks.NoticeMock.mock.calls[0] ?? [];
+    expect(content).toBeInstanceOf(DocumentFragment);
+    expect(castTo<DocumentFragment>(content).textContent).toBe('My Plugin\nSomething happened');
+    expect(duration).toBeUndefined();
+  });
+
+  it('should render the plugin name in a styled element distinct from the message body', () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+    component.showNotice('Something happened');
+
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    const nameEl = fragment.querySelector('span');
+    expect(nameEl?.textContent).toBe('My Plugin');
+    expect(nameEl?.classList.contains(CssClass.LibraryName)).toBe(true);
+    expect(nameEl?.classList.contains(CssClass.PluginNoticeName)).toBe(true);
   });
 
   it('should return the created notice', () => {
@@ -84,7 +101,10 @@ describe('PluginNoticeComponent', () => {
   it('should mark the notice as unloaded when shown while not loaded', () => {
     const component = new PluginNoticeComponent(PLUGIN_NAME);
     component.showNotice('Something happened');
-    expect(mocks.NoticeMock).toHaveBeenCalledWith('My Plugin (unloaded)\nSomething happened', undefined);
+
+    const content = mocks.NoticeMock.mock.calls[0]?.[0];
+    expect(content).toBeInstanceOf(DocumentFragment);
+    expect(castTo<DocumentFragment>(content).textContent).toBe('My Plugin (unloaded)\nSomething happened');
   });
 
   it('should hide previous notice when showing a new one', () => {
@@ -141,7 +161,11 @@ describe('PluginNoticeComponent', () => {
     const component = new PluginNoticeComponent(PLUGIN_NAME);
     component.load();
     component.showNotice('Persistent', { isPermanent: true });
-    expect(mocks.NoticeMock).toHaveBeenCalledWith('My Plugin\nPersistent', 0);
+
+    const [content, duration] = mocks.NoticeMock.mock.calls[0] ?? [];
+    expect(content).toBeInstanceOf(DocumentFragment);
+    expect(castTo<DocumentFragment>(content).textContent).toBe('My Plugin\nPersistent');
+    expect(duration).toBe(0);
     expect(getPermanentNotices().get(PLUGIN_NAME)).toBe(mocks.instances[0]);
   });
 
