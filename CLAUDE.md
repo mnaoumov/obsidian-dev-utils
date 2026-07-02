@@ -361,13 +361,17 @@ Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
      hand-managed scope easily drops). Decoupled (thunk, not the component); the owner's subtree bypass covers
      the compound `*Safe` internal calls; `trash`/`commit` use the adapter → no bypass. 100% unit + real-Obsidian
      integration (modify + rollback of a file under a mutation-blocking subtree lock).
-   - **Deferred to release-coordination — the breaking rename** `EditorLockComponent` →
-     `ResourceLockComponent` (**no back-compat shim**; update `PluginBase`'s field + the free-function
-     wrappers `lock/unlock/is/requestEditorUnlockForPath` + all consumers), and the public
-     `lockResource`/`unlockResource`/`isResourceLocked(ByAncestor)` facade names. Naming only — the behavior
-     already exists on `EditorLockComponent` (`lockForPath({mode, shouldBlockMutations})`,
-     `isLockedByAncestorForPath`, `isMutationBlockedByAncestorForPath`, `bypassBlockedMutations`). Sequence
-     with the major bump + consumer migration.
+   - **Breaking rename ✅ DONE (committed `09f07e79`, not released).** `src/obsidian/editor-lock.ts` →
+     `resource-lock.ts` (public import path `.../obsidian/editor-lock` → `.../obsidian/resource-lock`). Renamed:
+     `EditorLockComponent` → `ResourceLockComponent`, `EditorLockComponentLockForPathOptions` →
+     `ResourceLockComponentLockForPathOptions`, free functions `lockEditorForPath`/`unlockEditorForPath`/
+     `isEditorLockedForPath`/`requestEditorUnlockForPath` → `lock`/`unlock`/`is`/`requestResourceUnlockForPath`,
+     the `process`/`ProcessParams` field `editorLockComponent` → `resourceLockComponent`, `PluginBase`'s
+     `editorLockComponent` field → `resourceLockComponent`, and the internal `editorLock` i18n namespace →
+     `resourceLock`. No back-compat shim. Method surface (`lockForPath`, `isLockedByAncestorForPath`,
+     `isMutationBlockedByAncestorForPath`, `bypassBlockedMutations`) unchanged; behavior identical. Full gate
+     green (compile, 100% coverage, lint, format, spellcheck, integration). **dev-utils half of the plan is now
+     complete — remaining work is the release + the plugin phases 5–8 (advanced-note-composer).**
 
 Conventions: strict TS, 100% unit coverage, R2/R1 rules, dev-utils integration harness
 (`*.obsidian.integration.test.ts` via `window.__obsidianDevUtilsModule__`). Ship dev-utils release(s) as
