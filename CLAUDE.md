@@ -278,6 +278,56 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
+## Current Task — Resource locking + transactional rollback (dev-utils half)
+
+Building the dev-utils primitives that let a consumer plugin (advanced-note-composer) lock the
+files/folders an operation touches against **edit + delete + rename + move** (files, and entire folder
+**subtrees**), **detect** external/sync changes and abort, and **fully roll back** on cancel/error. Full
+approved plan (both repos): `~/.claude/plans/rustling-gliding-stearns.md`.
+
+Prevention model: monkey-patch the vault mutation methods to block locked paths (via
+`MonkeyAroundComponent`), plus vault-event detection as a backstop → abort. Owner-vs-intruder: the
+operation arms an "expected mutation" token synchronously immediately before each vault call; the patch
+allows only armed matches; the detector reconciles events and aborts on any unarmed change.
+
+Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
+
+1. **`src/obsidian/vault-transaction.ts` — `VaultTransaction`** ✅ DONE (impl + 100% unit suite +
+   real-Obsidian integration test all green; NOT yet committed/released).
+   Reversible log: `rename`/`create`/`createFolder`/`modify`/`process`/`trash` (+ `commit`/`rollback`/
+   `[Symbol.asyncDispose]`), built on the `*Safe` wrappers. **Soft-delete redesign (user-directed):**
+   `trash` moves the resource into a **dot-prefixed, untracked** staging folder
+   (`.obsidian-dev-utils-temp`) so Obsidian's file-tree + watcher ignore it (no metadata/file-explorer/
+   sync churn in flight). Because `vault.*` is blind to dot-paths, ALL staging I/O goes through
+   `app.vault.adapter` (`mkdir`/`rename`/`exists`/`trashSystem`/`trashLocal`/`rmdir`) — NOT `vault.rename`.
+   A folder moves its whole subtree in one adapter rename → cheap faithful subtree rollback; `commit`
+   trashes staged for real, `rollback` moves them back. `process` dead-branch removed (a missing file
+   throws in the inner `process` before the guard, so the pre-image is always non-null → `assertNonNullable`).
+   Consequences carried to later phases: the transaction's correctness rests on the adapter + in-memory
+   staged-path list, NOT Obsidian's tree (which reflects the change asynchronously via the watcher); and
+   **phase 3's detector must treat transaction-owned soft-deletes as armed/expected** (the watcher still
+   fires `vault.on('delete'|'create')` for the original path even though the adapter move bypassed
+   `vault.*`). No owner session yet (added in phase 4); `process` currently passes `editorLockComponent:
+   null` (no lock wiring until phase 4).
+2. **`ResourceLockManager` blocking layer** — generalize `EditorPathLockManager` (`editor-lock.ts`)
+   subtree-aware (`isLockedByAncestor` via `isChildOrSelf`); `MonkeyAroundComponent` patches on the
+   `Vault` prototype (`rename`/`delete`/`trash`/`modify`/`process`/`append`/`modifyBinary`/`create`/
+   `createBinary`/`createFolder`/`copy`) + `FileManager` `renameFile`/`trashFile`; throw
+   `ResourceLockedError` when a path is locked-by-ancestor and no armed mutation matches. Installed lazily
+   on first lock. Confirm real file-explorer delete/rename is blocked via CDP.
+3. **External-change detection backstop** — extend the lock's events component to listen to
+   `vault.on('rename'|'delete'|'create')` + `metadataCache.on('deleted')`; an event on a locked path with
+   no matching armed mutation → `requestUnlock(path)` → aborts the owning operation → rollback.
+4. **`ResourceLockComponent` + owner session** — rename/evolve `EditorLockComponent` →
+   `ResourceLockComponent` (**no back-compat shim**; update `PluginBase`'s field + free-function wrappers
+   `lock/unlock/is/requestEditorUnlockForPath`). Add `lockResource({abortController?, mode?:'file'|'subtree'})`,
+   `unlockResource`, `isResourceLocked(ByAncestor)`, `createOwnerSession(abortController).armExpectedMutation()`.
+   Integrate arming into `VaultTransaction` (arm synchronously immediately before each vault op).
+
+Conventions: strict TS, 100% unit coverage, R2/R1 rules, dev-utils integration harness
+(`*.obsidian.integration.test.ts` via `window.__obsidianDevUtilsModule__`). Ship dev-utils release(s) as
+phases land; the plugin then bumps the dep.
+
 ## Completed — dev-build live-enable + integration library styles
 
 Two independent fixes that also landed on `refactor/restore-agnostic-core-boundary` (so they ride the
