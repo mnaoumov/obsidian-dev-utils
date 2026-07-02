@@ -45,6 +45,11 @@ interface MutationBlockerResult {
   readonly wasTrashBlocked: boolean;
 }
 
+interface OwnerSessionResult {
+  readonly wasArmedModifyAllowed: boolean;
+  readonly wasUnarmedModifyBlocked: boolean;
+}
+
 interface ReadableCodeMirror {
   state: ReadableCodeMirrorState;
 }
@@ -404,6 +409,65 @@ describe('editor-lock', () => {
       expect(result.wasTrashBlocked).toBe(true);
       // Once the lock is released the blocker is uninstalled and the mutation succeeds.
       expect(result.wasRenameAllowedAfterUnlock).toBe(true);
+    });
+  });
+
+  describe('EditorLockComponent owner session', () => {
+    it('should let an armed mutation through the blocker while still rejecting an unarmed one', async () => {
+      const result = await evalInObsidian({
+        async fn({ app }): Promise<OwnerSessionResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          const { EditorLockComponent, ResourceLockedError } = lib.obsidian['editor-lock'];
+          const path = 'editor-lock-owner-target.md';
+          if (await app.vault.adapter.exists(path)) {
+            await app.vault.adapter.remove(path);
+          }
+          const file = await app.vault.create(path, 'content');
+
+          const component = new EditorLockComponent(app, 'integration-owner');
+          const lock = component.lockForPath(path, { shouldBlockMutations: true });
+          const session = component.createOwnerSession();
+
+          let wasArmedModifyAllowed = false;
+          let wasUnarmedModifyBlocked = false;
+          try {
+            // Arm exactly one modify; the blocker lets it through.
+            session.armExpectedMutation([path]);
+            try {
+              await app.vault.modify(file, 'armed content');
+              wasArmedModifyAllowed = true;
+            } catch {
+              // The armed modify should be allowed; leave the flag false if it unexpectedly throws.
+            }
+            // The arm is spent, so a second (unarmed) modify is rejected.
+            try {
+              await app.vault.modify(file, 'unarmed content');
+            } catch (error) {
+              wasUnarmedModifyBlocked = error instanceof ResourceLockedError;
+            }
+          } finally {
+            session[Symbol.dispose]();
+            lock[Symbol.dispose]();
+          }
+
+          // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+          await app.vault.delete(file, true);
+
+          return {
+            wasArmedModifyAllowed,
+            wasUnarmedModifyBlocked
+          };
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // The owner's armed mutation passes the blocker; a foreign/unarmed mutation is still rejected.
+      expect(result.wasArmedModifyAllowed).toBe(true);
+      expect(result.wasUnarmedModifyBlocked).toBe(true);
     });
   });
 });

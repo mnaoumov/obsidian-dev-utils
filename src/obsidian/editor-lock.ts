@@ -112,6 +112,25 @@ export interface EditorLockComponentLockForPathOptions {
 export type ResourceLockMode = 'file' | 'subtree';
 
 /**
+ * A session an operation opens (via {@link EditorLockComponent.createOwnerSession}) to sanction its
+ * OWN mutations of resources it has locked with
+ * {@link EditorLockComponentLockForPathOptions.shouldBlockMutations}. Arm each expected mutation
+ * synchronously **immediately before** the corresponding vault call; the blocker then lets that one
+ * call through instead of throwing {@link ResourceLockedError}. Any foreign (unarmed) mutation of a
+ * blocked path is still rejected. Dispose the session — ideally via a `using` declaration — to drop
+ * any arms that were never consumed.
+ */
+export interface ResourceLockOwnerSession extends Disposable {
+  /**
+   * Arms the given paths so the blocker allows the next mutation of each — one arm is consumed per
+   * mutation. Arm **both** the source and destination for a rename/copy.
+   *
+   * @param pathsOrFiles - The paths (or files) whose imminent mutation is expected.
+   */
+  armExpectedMutation(pathsOrFiles: readonly PathOrFile[]): void;
+}
+
+/**
  * Constructor parameters for {@link EditorLockEventsComponent}.
  */
 interface EditorLockEventsComponentConstructorParams {
@@ -140,7 +159,12 @@ interface ManagerLockOptions {
 }
 
 interface ResourceLockMutationBlockerComponentConstructorParams {
-  isMutationBlocked(this: void, path: string): boolean;
+  shouldBlockMutation(this: void, path: string): boolean;
+}
+
+interface ResourceLockOwnerSessionImplConstructorParams {
+  readonly app: App;
+  readonly manager: EditorPathLockManager;
 }
 
 /**
@@ -179,11 +203,11 @@ class EditorLockEventsComponent extends ComponentEx {
  * `unload`. Rename/copy check both source and destination; the other methods check their single path.
  */
 class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
-  private readonly isMutationBlocked: (path: string) => boolean;
+  private readonly shouldBlockMutation: (path: string) => boolean;
 
   public constructor(params: ResourceLockMutationBlockerComponentConstructorParams) {
     super();
-    this.isMutationBlocked = params.isMutationBlocked;
+    this.shouldBlockMutation = params.shouldBlockMutation;
   }
 
   public override onload(): void {
@@ -297,7 +321,7 @@ class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
 
   private assertNotBlocked(paths: string[]): void {
     for (const path of paths) {
-      if (this.isMutationBlocked(path)) {
+      if (this.shouldBlockMutation(path)) {
         throw new ResourceLockedError(path);
       }
     }
@@ -318,7 +342,14 @@ class EditorPathLockManager {
   private lastBeepMilliseconds = 0;
   private readonly lockEntriesByPath = new Map<string, LockEntry[]>();
   private mutationBlockerComponent: null | ResourceLockMutationBlockerComponent = null;
+  private readonly ownerSessions = new Set<ResourceLockOwnerSessionImpl>();
   private statusBarItemEl: HTMLElement | null = null;
+
+  public createOwnerSession(app: App): ResourceLockOwnerSession {
+    const session = new ResourceLockOwnerSessionImpl({ app, manager: this });
+    this.ownerSessions.add(session);
+    return session;
+  }
 
   public isLocked(app: App, pathOrFile: PathOrFile): boolean {
     return this.isPathLocked(getPath(app, pathOrFile));
@@ -384,6 +415,10 @@ class EditorPathLockManager {
       },
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
+  }
+
+  public removeOwnerSession(session: ResourceLockOwnerSessionImpl): void {
+    this.ownerSessions.delete(session);
   }
 
   /**
@@ -516,7 +551,7 @@ class EditorPathLockManager {
       return;
     }
     this.mutationBlockerComponent = new ResourceLockMutationBlockerComponent({
-      isMutationBlocked: (path): boolean => this.isMutationBlockedByAncestor(app, path)
+      shouldBlockMutation: (path): boolean => this.shouldBlockMutation(app, path)
     });
     this.mutationBlockerComponent.load();
   }
@@ -699,6 +734,27 @@ class EditorPathLockManager {
     return bestOwnerPath;
   }
 
+  /**
+   * Decides whether a mutation of the path must be blocked: `true` when the path is mutation-blocked
+   * and no active owner session has an arm for it. A matching arm is consumed (one-shot) and the
+   * mutation is allowed through.
+   *
+   * @param app - The Obsidian app instance.
+   * @param path - The path being mutated.
+   * @returns `true` to reject the mutation, `false` to allow it.
+   */
+  private shouldBlockMutation(app: App, path: string): boolean {
+    if (!this.isMutationBlockedByAncestor(app, path)) {
+      return false;
+    }
+    for (const session of this.ownerSessions) {
+      if (session.tryConsumeArm(path)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private unlockConfirmMessage(app: App, path: string): DocumentFragment {
     const fragment = createFragment();
     fragment.appendText(t(($) => $.obsidianDevUtils.editorLock.unlockConfirmMessage));
@@ -748,6 +804,58 @@ class EditorPathLockManager {
 }
 
 /**
+ * The concrete {@link ResourceLockOwnerSession}. Each session owns its own arm counts, so unconsumed
+ * arms simply vanish when the session is disposed and removed from the manager's active set — no
+ * cross-session bookkeeping. The manager consults every active session when deciding whether a blocked
+ * mutation was sanctioned.
+ */
+class ResourceLockOwnerSessionImpl implements ResourceLockOwnerSession {
+  private readonly app: App;
+  private readonly armedCountByPath = new Map<string, number>();
+  private isDisposed = false;
+  private readonly manager: EditorPathLockManager;
+
+  public constructor(params: ResourceLockOwnerSessionImplConstructorParams) {
+    this.app = params.app;
+    this.manager = params.manager;
+  }
+
+  public armExpectedMutation(pathsOrFiles: readonly PathOrFile[]): void {
+    for (const pathOrFile of pathsOrFiles) {
+      const path = getPath(this.app, pathOrFile);
+      this.armedCountByPath.set(path, (this.armedCountByPath.get(path) ?? 0) + 1);
+    }
+  }
+
+  public [Symbol.dispose](): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this.isDisposed = true;
+    this.manager.removeOwnerSession(this);
+  }
+
+  /**
+   * Consumes one arm for the path if this session has one, returning whether it did.
+   *
+   * @param path - The path whose mutation is being reconciled.
+   * @returns `true` if an arm was consumed (the mutation is sanctioned by this session).
+   */
+  public tryConsumeArm(path: string): boolean {
+    const count = this.armedCountByPath.get(path) ?? 0;
+    if (count === 0) {
+      return false;
+    }
+    if (count === 1) {
+      this.armedCountByPath.delete(path);
+    } else {
+      this.armedCountByPath.set(path, count - 1);
+    }
+    return true;
+  }
+}
+
+/**
  * A per-plugin handle for note-scoped editor locking. Add it as a child of your plugin
  * (`this.addChild(new EditorLockComponent(this.app))`) so that any locks it still holds are released
  * automatically when the plugin unloads — a note can never be left stuck read-only because the
@@ -771,6 +879,19 @@ export class EditorLockComponent extends ComponentEx {
     super();
     this.app = app;
     this.pluginId = pluginId;
+  }
+
+  /**
+   * Opens a {@link ResourceLockOwnerSession} so this plugin's operation can sanction its own mutations
+   * of resources it has locked with
+   * {@link EditorLockComponentLockForPathOptions.shouldBlockMutations}. Arm each expected mutation
+   * immediately before the vault call; dispose the session (ideally via `using`) when the operation
+   * ends to drop any unconsumed arms.
+   *
+   * @returns A new owner session.
+   */
+  public createOwnerSession(): ResourceLockOwnerSession {
+    return getManager().createOwnerSession(this.app);
   }
 
   /**
