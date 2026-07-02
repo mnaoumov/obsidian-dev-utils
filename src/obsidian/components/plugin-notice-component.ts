@@ -4,7 +4,10 @@
  * Component that manages displaying notices to the user.
  */
 
-import { Notice } from 'obsidian';
+import {
+  ButtonComponent,
+  Notice
+} from 'obsidian';
 
 import type { ValueProvider } from '../../value-provider.ts';
 
@@ -233,11 +236,18 @@ export class PluginNoticeComponent extends ComponentEx {
     }
 
     if (abortController) {
-      const buttonEl = fragment.createEl('button', { text: cancelButtonText ?? t(($) => $.obsidianDevUtils.buttons.cancel) });
-      addPluginCssClasses(buttonEl, CssClass.CancelButton);
-      buttonEl.addEventListener('click', () => {
+      // `ButtonComponent` requires an `HTMLElement` parent, so build it on a throwaway
+      // Detached element and move its `buttonEl` into the fragment.
+      const cancelButton = new ButtonComponent(createDiv());
+      cancelButton.setButtonText(cancelButtonText ?? t(($) => $.obsidianDevUtils.buttons.cancel));
+      addPluginCssClasses(cancelButton.buttonEl, CssClass.CancelButton);
+      // The click is wired via `addEventListener` rather than `ButtonComponent.onClick` so it
+      // Bubbles through the interactive-element guard (keeping the notice open) and stays
+      // Directly exercisable via a dispatched DOM event in unit tests.
+      cancelButton.buttonEl.addEventListener('click', () => {
         abortController.abort();
       });
+      fragment.appendChild(cancelButton.buttonEl);
     }
     return fragment;
   }
