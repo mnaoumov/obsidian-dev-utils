@@ -285,6 +285,36 @@ files/folders an operation touches against **edit + delete + rename + move** (fi
 **subtrees**), **detect** external/sync changes and abort, and **fully roll back** on cancel/error. Full
 approved plan (both repos): `~/.claude/plans/rustling-gliding-stearns.md`.
 
+### RESOLVED — `VaultTransaction` rollback under an open editor (investigated + defensive fix, 2026-07-02)
+
+**Finding (contradicts the original premise): `VaultTransaction` rollback is ALREADY editor-safe.**
+The escalation assumed a probe using **raw `app.vault.process(file, () => original)`** — which DOES
+clobber a dirty open editor (its pending autosave re-writes the stale buffer) — and inferred the
+transaction had the same gap. It does not. The transaction's content restore goes through the dev-utils
+`process` wrapper, whose `readSafe` → `saveNote` **flushes and cancels** the pending autosave before the
+restore write; the now-clean editor then **reloads** to the restored content. Verified empirically in
+real Obsidian 1.13.1 with a throwaway probe covering three scenarios (fix DISABLED):
+- raw `app.vault.process` → disk+editor both end up the **extraction** (clobber confirmed).
+- `VaultTransaction` rollback (unlocked) → disk+editor both **restored** (no clobber).
+- `VaultTransaction` rollback (**locked / read-only editor** — the real advanced-note-composer case;
+  the read-only buffer is genuinely dirtied by a programmatic whole-doc replace) → disk+editor both
+  **restored** (no clobber).
+
+**What landed (user chose "keep defensive wiring"):** a new reusable primitive
+`syncOpenEditorBuffersForPath(app, pathOrFile, content)` in `src/obsidian/editor.ts` — overwrites the
+buffer of every open `MarkdownView` still showing `pathOrFile` to `content` (guards navigation away;
+skips when already in sync). It is wired into `VaultTransaction.process`'s content-restore undo step as
+**belt-and-suspenders** (harmless no-op in the already-safe transaction flow — after `saveNote`+reload
+the buffer already matches). It is also the correct standalone fix for the **raw-`app.vault.process`
+clobber** a consumer can still hit. Unit-tested in isolation (`editor.test.ts`) and through the wiring
+(`vault-transaction.test.ts` — a genuine red: the mock has no reload, so without the sync the dirty
+buffer survives); plus an end-to-end integration test asserting disk+editor consistency after rollback.
+
+**Plugin follow-up (advanced-note-composer, NOT dev-utils):** its split-rollback is **unblocked** — route
+the content restore through `VaultTransaction.process`/`modify` (or the dev-utils `process` wrapper),
+NOT raw `app.vault.process`; the wrapper's `saveNote` flush already prevents the clobber. If it must use
+a raw disk write, call `syncOpenEditorBuffersForPath` after it.
+
 Prevention model: monkey-patch the vault mutation methods to block locked paths (via
 `MonkeyAroundComponent`), plus vault-event detection as a backstop → abort. Owner-vs-intruder: the
 operation arms an "expected mutation" token synchronously immediately before each vault call; the patch
