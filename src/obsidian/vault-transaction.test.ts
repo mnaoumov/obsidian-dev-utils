@@ -292,4 +292,40 @@ describe('VaultTransaction', () => {
       expect(await exists('a.md')).toBe(false);
     });
   });
+
+  describe('mutation bypass', () => {
+    it('should open the bypass at construction and dispose it on commit', async () => {
+      const disposeSpy = vi.fn();
+      const openMutationBypass = vi.fn((): Disposable => ({ [Symbol.dispose]: disposeSpy }));
+
+      const vaultTransaction = new VaultTransaction({ app, openMutationBypass });
+      expect(openMutationBypass).toHaveBeenCalledOnce();
+      expect(disposeSpy).not.toHaveBeenCalled();
+
+      await vaultTransaction.commit();
+      expect(disposeSpy).toHaveBeenCalledOnce();
+    });
+
+    it('should dispose the bypass on rollback', async () => {
+      await app.vault.create('a.md', 'A');
+      const disposeSpy = vi.fn();
+      const vaultTransaction = new VaultTransaction({ app, openMutationBypass: (): Disposable => ({ [Symbol.dispose]: disposeSpy }) });
+
+      await vaultTransaction.trash('a.md');
+      await vaultTransaction.rollback();
+      expect(disposeSpy).toHaveBeenCalledOnce();
+    });
+
+    it('should keep the bypass active through auto-rollback on disposal', async () => {
+      await app.vault.create('a.md', 'A');
+      const disposeSpy = vi.fn();
+      {
+        await using vaultTransaction = new VaultTransaction({ app, openMutationBypass: (): Disposable => ({ [Symbol.dispose]: disposeSpy }) });
+        await vaultTransaction.trash('a.md');
+      }
+      // Disposal auto-rolled back and only then dropped the bypass.
+      expect(disposeSpy).toHaveBeenCalledOnce();
+      expect(await read('a.md')).toBe('A');
+    });
+  });
 });

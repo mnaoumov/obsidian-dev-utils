@@ -25,6 +25,11 @@ import {
   it
 } from 'vitest';
 
+interface BypassResult {
+  readonly wasModifyAllowedUnderLock: boolean;
+  readonly wasRolledBackUnderLock: boolean;
+}
+
 interface CommitResult {
   readonly isOriginalGoneAfterCommit: boolean;
   readonly isOriginalGoneAfterTrash: boolean;
@@ -184,5 +189,57 @@ describe('VaultTransaction', () => {
 
     expect(result.areChildrenGoneAfterTrash).toBe(true);
     expect(result.restoredChildContents).toEqual(['content a', 'content c']);
+  });
+
+  it('should mutate and roll back a mutation-blocked file when given an openMutationBypass', async () => {
+    const result = await evalInObsidian({
+      async fn({ app }): Promise<BypassResult> {
+        const lib = window.__obsidianDevUtilsModule__;
+        if (!lib) {
+          throw new Error('obsidian-dev-utils module not registered on window');
+        }
+
+        const { EditorLockComponent } = lib.obsidian['editor-lock'];
+        const { VaultTransaction } = lib.obsidian['vault-transaction'];
+        const folderPath = 'vt-bypass-folder';
+        const filePath = `${folderPath}/note.md`;
+        if (await app.vault.adapter.exists(folderPath)) {
+          await app.vault.adapter.rmdir(folderPath, true);
+        }
+        await app.vault.createFolder(folderPath);
+        const file = await app.vault.create(filePath, 'original');
+
+        const component = new EditorLockComponent(app, 'vt-bypass-plugin');
+        // Lock the whole folder subtree against mutations.
+        const lock = component.lockForPath(folderPath, { mode: 'subtree', shouldBlockMutations: true });
+
+        try {
+          const vaultTransaction = new VaultTransaction({
+            app,
+            openMutationBypass: (): Disposable => component.bypassBlockedMutations([folderPath])
+          });
+          // The transaction's own write passes the blocker via the bypass scope.
+          await vaultTransaction.modify(filePath, 'changed by transaction');
+          const wasModifyAllowedUnderLock = await app.vault.read(file) === 'changed by transaction';
+          // Rollback must also pass the blocker (its restore write) — the bypass stays active through it.
+          await vaultTransaction.rollback();
+          const wasRolledBackUnderLock = await app.vault.read(file) === 'original';
+          return {
+            wasModifyAllowedUnderLock,
+            wasRolledBackUnderLock
+          };
+        } finally {
+          lock[Symbol.dispose]();
+          if (await app.vault.adapter.exists(folderPath)) {
+            await app.vault.adapter.rmdir(folderPath, true);
+          }
+        }
+      },
+      vaultPath: inject('tempVaultPath')
+    });
+
+    // The transaction mutated and rolled back a file under a mutation-blocking subtree lock.
+    expect(result.wasModifyAllowedUnderLock).toBe(true);
+    expect(result.wasRolledBackUnderLock).toBe(true);
   });
 });

@@ -48,6 +48,20 @@ export interface VaultTransactionConstructorParams {
   readonly app: App;
 
   /**
+   * Opens an ambient mutation-bypass scope covering the paths this transaction touches, so the
+   * transaction's own writes pass a `shouldBlockMutations` lock that the owning operation holds. It is
+   * called once when the transaction is constructed, and the returned {@link Disposable} is disposed
+   * when the transaction settles (on `commit`, `rollback`, or `await using` disposal) — so the bypass
+   * stays active through rollback, including auto-rollback, which a caller managing the scope itself
+   * could easily get wrong. Typically
+   * `() => resourceLockComponent.bypassBlockedMutations(lockedPathsOrFiles)`. Omit it for the common
+   * standalone case where the transaction operates on unlocked paths.
+   *
+   * @returns A {@link Disposable} that ends the bypass scope.
+   */
+  openMutationBypass?(this: void): Disposable;
+
+  /**
    * The dot-prefixed folder that soft-deleted resources are moved into until the transaction is
    * committed or rolled back. It must stay `.`-prefixed so Obsidian leaves the staged resources
    * untracked.
@@ -71,6 +85,7 @@ interface UndoStep {
 export class VaultTransaction {
   private readonly app: App;
   private hasStagingFolder = false;
+  private mutationBypass: Disposable | null = null;
   private readonly stagedTrashPaths: string[] = [];
   private readonly stagingFolderPath: string;
   private state: TransactionState = 'open';
@@ -84,6 +99,7 @@ export class VaultTransaction {
   public constructor(params: VaultTransactionConstructorParams) {
     this.app = params.app;
     this.stagingFolderPath = params.stagingFolderPath ?? DEFAULT_STAGING_FOLDER_PATH;
+    this.mutationBypass = params.openMutationBypass?.() ?? null;
   }
 
   /**
@@ -103,6 +119,7 @@ export class VaultTransaction {
       }
     }
     await this.removeStagingFolder();
+    this.disposeMutationBypass();
   }
 
   /**
@@ -213,6 +230,7 @@ export class VaultTransaction {
       await step.undo();
     }
     await this.removeStagingFolder();
+    this.disposeMutationBypass();
   }
 
   /**
@@ -263,6 +281,11 @@ export class VaultTransaction {
     if (this.state !== 'open') {
       throw new Error(`Cannot mutate a ${this.state} transaction.`);
     }
+  }
+
+  private disposeMutationBypass(): void {
+    this.mutationBypass?.[Symbol.dispose]();
+    this.mutationBypass = null;
   }
 
   private async ensureStagingFolder(): Promise<void> {
