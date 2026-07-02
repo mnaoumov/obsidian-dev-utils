@@ -121,7 +121,7 @@ interface EditorLockEventsComponentConstructorParams {
 }
 
 interface LockEntry {
-  readonly abortController: AbortController | undefined;
+  readonly abortController: AbortController | null;
   readonly blocksMutations: boolean;
   readonly mode: ResourceLockMode;
   readonly pluginId: string;
@@ -192,104 +192,104 @@ class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
     this.registerMethodPatch<Vault, 'append'>({
       methodName: 'append',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0].path]);
+      patchHandler: ({ fallback, originalArgs: [file] }) => {
+        this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'copy'>({
       methodName: 'copy',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[1]]);
+      patchHandler: ({ fallback, originalArgs: [, newPath] }) => {
+        this.assertNotBlocked([newPath]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'create'>({
       methodName: 'create',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0]]);
+      patchHandler: ({ fallback, originalArgs: [path] }) => {
+        this.assertNotBlocked([path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'createBinary'>({
       methodName: 'createBinary',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0]]);
+      patchHandler: ({ fallback, originalArgs: [path] }) => {
+        this.assertNotBlocked([path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'createFolder'>({
       methodName: 'createFolder',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0]]);
+      patchHandler: ({ fallback, originalArgs: [path] }) => {
+        this.assertNotBlocked([path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'delete'>({
       methodName: 'delete',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0].path]);
+      patchHandler: ({ fallback, originalArgs: [file] }) => {
+        this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'modify'>({
       methodName: 'modify',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0].path]);
+      patchHandler: ({ fallback, originalArgs: [file] }) => {
+        this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'modifyBinary'>({
       methodName: 'modifyBinary',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0].path]);
+      patchHandler: ({ fallback, originalArgs: [file] }) => {
+        this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'process'>({
       methodName: 'process',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0].path]);
+      patchHandler: ({ fallback, originalArgs: [file] }) => {
+        this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'rename'>({
       methodName: 'rename',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0].path, originalArgs[1]]);
+      patchHandler: ({ fallback, originalArgs: [file, newPath] }) => {
+        this.assertNotBlocked([file.path, newPath]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'trash'>({
       methodName: 'trash',
       obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0].path]);
+      patchHandler: ({ fallback, originalArgs: [file] }) => {
+        this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<FileManager, 'renameFile'>({
       methodName: 'renameFile',
       obj: FileManager.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0].path, originalArgs[1]]);
+      patchHandler: ({ fallback, originalArgs: [file, newPath] }) => {
+        this.assertNotBlocked([file.path, newPath]);
         return fallback();
       }
     });
     this.registerMethodPatch<FileManager, 'trashFile'>({
       methodName: 'trashFile',
       obj: FileManager.prototype,
-      patchHandler: ({ fallback, originalArgs }) => {
-        this.assertNotBlocked([originalArgs[0].path]);
+      patchHandler: ({ fallback, originalArgs: [file] }) => {
+        this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
@@ -361,7 +361,7 @@ class EditorPathLockManager {
   public lock(app: App, pathOrFile: PathOrFile, pluginId: string, options: ManagerLockOptions = {}): Disposable {
     const path = getPath(app, pathOrFile);
     const entry: LockEntry = {
-      abortController: options.abortController,
+      abortController: options.abortController ?? null,
       blocksMutations: options.blocksMutations ?? false,
       mode: options.mode ?? 'file',
       pluginId
