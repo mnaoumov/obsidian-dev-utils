@@ -309,12 +309,18 @@ Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
    fires `vault.on('delete'|'create')` for the original path even though the adapter move bypassed
    `vault.*`). No owner session yet (added in phase 4); `process` currently passes `editorLockComponent:
    null` (no lock wiring until phase 4).
-2. **`ResourceLockManager` blocking layer** — generalize `EditorPathLockManager` (`editor-lock.ts`)
-   subtree-aware (`isLockedByAncestor` via `isChildOrSelf`); `MonkeyAroundComponent` patches on the
-   `Vault` prototype (`rename`/`delete`/`trash`/`modify`/`process`/`append`/`modifyBinary`/`create`/
-   `createBinary`/`createFolder`/`copy`) + `FileManager` `renameFile`/`trashFile`; throw
-   `ResourceLockedError` when a path is locked-by-ancestor and no armed mutation matches. Installed lazily
-   on first lock. Confirm real file-explorer delete/rename is blocked via CDP.
+2. **`ResourceLockManager` blocking layer.**
+   - **2a ✅ DONE (committed `acaf203b`, not released).** Subtree-aware locking added additively to
+     `EditorPathLockManager`: `mode:'file'|'subtree'` option, `isLockedByAncestorForPath`, deepest-ancestor
+     owner resolution; a note inside a `subtree`-locked folder is made read-only and its
+     indicators/tooltip/unlock menu resolve to the folder lock. Existing 'file'-mode behavior unchanged
+     (every new query reduces to the old exact-match when no subtree locks exist). 100% unit + real-Obsidian
+     integration test.
+   - **2b ⏳ NEXT (blocked on a decision — see Pending Questions).** `MonkeyAroundComponent` patches on the
+     `Vault` prototype (`rename`/`delete`/`trash`/`modify`/`process`/`append`/`modifyBinary`/`create`/
+     `createBinary`/`createFolder`/`copy`) + `FileManager` `renameFile`/`trashFile`; throw
+     `ResourceLockedError` when a path is locked-by-ancestor and no armed mutation matches. Installed lazily
+     on first lock. Confirm real file-explorer delete/rename is blocked via CDP.
 3. **External-change detection backstop** — extend the lock's events component to listen to
    `vault.on('rename'|'delete'|'create')` + `metadataCache.on('deleted')`; an event on a locked path with
    no matching armed mutation → `requestUnlock(path)` → aborts the owning operation → rollback.
@@ -327,6 +333,32 @@ Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
 Conventions: strict TS, 100% unit coverage, R2/R1 rules, dev-utils integration harness
 (`*.obsidian.integration.test.ts` via `window.__obsidianDevUtilsModule__`). Ship dev-utils release(s) as
 phases land; the plugin then bumps the dep.
+
+### Pending Questions
+
+**Q (phase 2b — how to gate the Vault-mutation blocker so it does not break already-shipped consumers).**
+The plan installs the blocker lazily "on first lock" and blocks any mutation of a locked path until owner
+arming lands (phase 4). But existing `EditorLockComponent` consumers (advanced-note-composer merge/split,
+and dev-utils' own `process(editorLockComponent)`) hold an **editor lock while writing to the locked file**
+via `vault.process`. A blocker active for *every* locked path would throw on those legitimate writes →
+breaks published plugins the moment phase 2b ships (arming that would let owners through is phase 4). This
+also diverges from the plan's "one shared locked-path set".
+
+Options:
+- **A — opt-in `shouldBlockMutations` flag (auto-selected).** Add a lock option
+  `shouldBlockMutations?: boolean` (default `false`); the blocker only rejects mutations of paths locked
+  *with that flag* (subtree-aware), lazily installing the patch on the first such lock. Legacy editor locks
+  and plain subtree read-only locks are unaffected → zero regression. Phase 4 arming then lets the owner
+  through. Minimal blast radius; small divergence from "one set" (a second, opt-in block set).
+- **B — block all locked paths (as literally written).** Rejected: breaks existing merge/split consumers
+  between phase 2b and their phase-5 migration.
+- **C — defer the whole blocker to phase 4 (pair with arming).** Safe but drops phase 2b's independent
+  shippability + its CDP milestone.
+
+**Auto-selected: A.** Rationale: only option that ships phase 2b independently AND cannot regress shipped
+plugins. Awaiting user confirmation before implementing (global `Vault`-prototype patching + CDP
+verification warrant a look). If confirmed, implement `ResourceLockedError` + the gated blocker with 100%
+unit coverage and CDP-confirm real file-explorer delete/rename blocking.
 
 ## Completed — dev-build live-enable + integration library styles
 
