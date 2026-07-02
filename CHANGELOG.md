@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 84.1.0
+
+- docs: cleanup
+- docs: resolve the VaultTransaction open-editor blocker
+- feat(obsidian): add syncOpenEditorBuffersForPath, use it in VaultTransaction rollback
+
 ## 84.0.0
 
 - docs: mark the ResourceLockComponent rename done (dev-utils half complete)
