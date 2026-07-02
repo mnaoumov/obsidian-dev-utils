@@ -1113,10 +1113,11 @@ describe('mutation blocker', () => {
   });
 });
 
-describe('owner session (mutation arming)', () => {
+describe('mutation bypass scope', () => {
   beforeEach(() => {
     mockApp = App.createConfigured__({
       files: {
+        'folder/child.md': 'child',
         'other.md': '',
         'source.md': 'src',
         'target.md': 'content'
@@ -1128,82 +1129,66 @@ describe('owner session (mutation arming)', () => {
     vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
   });
 
-  function targetFile(): TFileOriginal {
-    const file = app.vault.getFileByPath('target.md');
+  function fileAt(path: string): TFileOriginal {
+    const file = app.vault.getFileByPath(path);
     assertNonNullable(file);
     return file;
   }
 
-  it('should allow an armed mutation of a blocked path', async () => {
+  it('should allow a mutation of a bypassed blocked path', async () => {
     const component = new EditorLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
-    using session = component.createOwnerSession();
+    using _bypass = component.bypassBlockedMutations(['target.md']);
 
-    session.armExpectedMutation(['target.md']);
-    await expect(app.vault.modify(targetFile(), 'new content')).resolves.toBeUndefined();
-    expect(await app.vault.read(targetFile())).toBe('new content');
+    await expect(app.vault.modify(fileAt('target.md'), 'new content')).resolves.toBeUndefined();
+    expect(await app.vault.read(fileAt('target.md'))).toBe('new content');
   });
 
-  it('should still block an unarmed mutation while a session is open', () => {
+  it('should keep blocking a path not covered by the active bypass scope', () => {
+    const component = new EditorLockComponent(app, 'test-plugin');
+    using _lockTarget = component.lockForPath('target.md', { shouldBlockMutations: true });
+    using _lockSource = component.lockForPath('source.md', { shouldBlockMutations: true });
+    using _bypass = component.bypassBlockedMutations(['target.md']);
+
+    // Target.md is bypassed; source.md is still enforced.
+    const source = fileAt('source.md');
+    expect(() => app.vault.modify(source, 'x')).toThrow(ResourceLockedError);
+  });
+
+  it('should enforce the path again once the bypass scope ends', () => {
     const component = new EditorLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
-    using _session = component.createOwnerSession();
 
-    const file = targetFile();
+    const bypass = component.bypassBlockedMutations(['target.md']);
+    expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(true);
+    bypass[Symbol.dispose]();
+
+    const file = fileAt('target.md');
     expect(() => app.vault.modify(file, 'x')).toThrow(ResourceLockedError);
   });
 
-  it('should consume an arm one-shot, blocking a second identical mutation', async () => {
+  it('should let a folder bypass cover its whole subtree', async () => {
     const component = new EditorLockComponent(app, 'test-plugin');
-    using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
-    using session = component.createOwnerSession();
+    using _lock = component.lockForPath('folder', { mode: 'subtree', shouldBlockMutations: true });
+    using _bypass = component.bypassBlockedMutations(['folder']);
 
-    session.armExpectedMutation(['target.md']);
-    await app.vault.modify(targetFile(), 'first');
-    const file = targetFile();
-    expect(() => app.vault.modify(file, 'second')).toThrow(ResourceLockedError);
+    await expect(app.vault.modify(fileAt('folder/child.md'), 'new child')).resolves.toBeUndefined();
   });
 
-  it('should allow exactly as many mutations as arms', async () => {
+  it('should not allow a path outside every bypass scope', () => {
     const component = new EditorLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
-    using session = component.createOwnerSession();
+    using _bypassOther = component.bypassBlockedMutations(['other.md']);
 
-    session.armExpectedMutation(['target.md']);
-    session.armExpectedMutation(['target.md']);
-    await app.vault.modify(targetFile(), 'a');
-    await app.vault.modify(targetFile(), 'b');
-    const file = targetFile();
-    expect(() => app.vault.modify(file, 'c')).toThrow(ResourceLockedError);
-  });
-
-  it('should arm both source and destination for a rename', async () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
-    using _lockSource = component.lockForPath('target.md', { shouldBlockMutations: true });
-    using _lockDest = component.lockForPath('renamed.md', { shouldBlockMutations: true });
-    using session = component.createOwnerSession();
-
-    session.armExpectedMutation(['target.md', 'renamed.md']);
-    await expect(app.vault.rename(targetFile(), 'renamed.md')).resolves.toBeUndefined();
-  });
-
-  it('should drop unconsumed arms when the session is disposed', () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
-    using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
-    const session = component.createOwnerSession();
-    session.armExpectedMutation(['target.md']);
-
-    session[Symbol.dispose]();
-
-    const file = targetFile();
+    const file = fileAt('target.md');
     expect(() => app.vault.modify(file, 'x')).toThrow(ResourceLockedError);
   });
 
-  it('should be safe to dispose a session twice', () => {
-    const session = new EditorLockComponent(app, 'test-plugin').createOwnerSession();
-    session[Symbol.dispose]();
+  it('should be safe to dispose a bypass scope twice', () => {
+    const bypass = new EditorLockComponent(app, 'test-plugin').bypassBlockedMutations(['target.md']);
+    bypass[Symbol.dispose]();
     expect(() => {
-      session[Symbol.dispose]();
+      bypass[Symbol.dispose]();
     }).not.toThrow();
   });
 });

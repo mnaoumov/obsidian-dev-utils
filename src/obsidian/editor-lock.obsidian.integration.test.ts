@@ -31,6 +31,11 @@ import {
   it
 } from 'vitest';
 
+interface BypassScopeResult {
+  readonly wasBypassedModifyAllowed: boolean;
+  readonly wasModifyBlockedAfterScope: boolean;
+}
+
 interface LockForPathResult {
   readonly isCurrentTabLocked: boolean;
   readonly isCurrentTabLockedAfterUnlock: boolean;
@@ -43,11 +48,6 @@ interface MutationBlockerResult {
   readonly wasRenameAllowedAfterUnlock: boolean;
   readonly wasRenameBlocked: boolean;
   readonly wasTrashBlocked: boolean;
-}
-
-interface OwnerSessionResult {
-  readonly wasArmedModifyAllowed: boolean;
-  readonly wasUnarmedModifyBlocked: boolean;
 }
 
 interface ReadableCodeMirror {
@@ -412,45 +412,44 @@ describe('editor-lock', () => {
     });
   });
 
-  describe('EditorLockComponent owner session', () => {
-    it('should let an armed mutation through the blocker while still rejecting an unarmed one', async () => {
+  describe('EditorLockComponent mutation bypass scope', () => {
+    it('should let a mutation through inside a bypass scope and enforce it again after', async () => {
       const result = await evalInObsidian({
-        async fn({ app }): Promise<OwnerSessionResult> {
+        async fn({ app }): Promise<BypassScopeResult> {
           const lib = window.__obsidianDevUtilsModule__;
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
 
           const { EditorLockComponent, ResourceLockedError } = lib.obsidian['editor-lock'];
-          const path = 'editor-lock-owner-target.md';
+          const path = 'editor-lock-bypass-target.md';
           if (await app.vault.adapter.exists(path)) {
             await app.vault.adapter.remove(path);
           }
           const file = await app.vault.create(path, 'content');
 
-          const component = new EditorLockComponent(app, 'integration-owner');
+          const component = new EditorLockComponent(app, 'integration-bypass');
           const lock = component.lockForPath(path, { shouldBlockMutations: true });
-          const session = component.createOwnerSession();
 
-          let wasArmedModifyAllowed = false;
-          let wasUnarmedModifyBlocked = false;
+          let wasBypassedModifyAllowed = false;
+          let wasModifyBlockedAfterScope = false;
           try {
-            // Arm exactly one modify; the blocker lets it through.
-            session.armExpectedMutation([path]);
+            const bypass = component.bypassBlockedMutations([path]);
             try {
-              await app.vault.modify(file, 'armed content');
-              wasArmedModifyAllowed = true;
+              await app.vault.modify(file, 'bypassed content');
+              wasBypassedModifyAllowed = true;
             } catch {
-              // The armed modify should be allowed; leave the flag false if it unexpectedly throws.
+              // The bypassed modify should be allowed; leave the flag false if it unexpectedly throws.
+            } finally {
+              bypass[Symbol.dispose]();
             }
-            // The arm is spent, so a second (unarmed) modify is rejected.
+            // Outside the scope the path is enforced again.
             try {
-              await app.vault.modify(file, 'unarmed content');
+              await app.vault.modify(file, 'enforced content');
             } catch (error) {
-              wasUnarmedModifyBlocked = error instanceof ResourceLockedError;
+              wasModifyBlockedAfterScope = error instanceof ResourceLockedError;
             }
           } finally {
-            session[Symbol.dispose]();
             lock[Symbol.dispose]();
           }
 
@@ -458,16 +457,16 @@ describe('editor-lock', () => {
           await app.vault.delete(file, true);
 
           return {
-            wasArmedModifyAllowed,
-            wasUnarmedModifyBlocked
+            wasBypassedModifyAllowed,
+            wasModifyBlockedAfterScope
           };
         },
         vaultPath: inject('tempVaultPath')
       });
 
-      // The owner's armed mutation passes the blocker; a foreign/unarmed mutation is still rejected.
-      expect(result.wasArmedModifyAllowed).toBe(true);
-      expect(result.wasUnarmedModifyBlocked).toBe(true);
+      // The owner's mutation passes while bypassed; once the scope ends the path is blocked again.
+      expect(result.wasBypassedModifyAllowed).toBe(true);
+      expect(result.wasModifyBlockedAfterScope).toBe(true);
     });
   });
 });

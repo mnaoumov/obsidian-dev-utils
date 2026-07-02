@@ -55,7 +55,10 @@ import { getPath } from './file-system.ts';
 import { appendCodeBlock } from './html-element.ts';
 import { t } from './i18n/i18n.ts';
 import { confirm } from './modals/confirm.ts';
-import { isChild } from './vault.ts';
+import {
+  isChild,
+  isChildOrSelf
+} from './vault.ts';
 
 const BEEP_DURATION_SECONDS = 0.08;
 const BEEP_FREQUENCY_HZ = 660;
@@ -112,25 +115,6 @@ export interface EditorLockComponentLockForPathOptions {
 export type ResourceLockMode = 'file' | 'subtree';
 
 /**
- * A session an operation opens (via {@link EditorLockComponent.createOwnerSession}) to sanction its
- * OWN mutations of resources it has locked with
- * {@link EditorLockComponentLockForPathOptions.shouldBlockMutations}. Arm each expected mutation
- * synchronously **immediately before** the corresponding vault call; the blocker then lets that one
- * call through instead of throwing {@link ResourceLockedError}. Any foreign (unarmed) mutation of a
- * blocked path is still rejected. Dispose the session — ideally via a `using` declaration — to drop
- * any arms that were never consumed.
- */
-export interface ResourceLockOwnerSession extends Disposable {
-  /**
-   * Arms the given paths so the blocker allows the next mutation of each — one arm is consumed per
-   * mutation. Arm **both** the source and destination for a rename/copy.
-   *
-   * @param pathsOrFiles - The paths (or files) whose imminent mutation is expected.
-   */
-  armExpectedMutation(pathsOrFiles: readonly PathOrFile[]): void;
-}
-
-/**
  * Constructor parameters for {@link EditorLockEventsComponent}.
  */
 interface EditorLockEventsComponentConstructorParams {
@@ -160,11 +144,6 @@ interface ManagerLockOptions {
 
 interface ResourceLockMutationBlockerComponentConstructorParams {
   shouldBlockMutation(this: void, path: string): boolean;
-}
-
-interface ResourceLockOwnerSessionImplConstructorParams {
-  readonly app: App;
-  readonly manager: EditorPathLockManager;
 }
 
 /**
@@ -337,18 +316,23 @@ class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
  */
 class EditorPathLockManager {
   private audioContext: AudioContext | null = null;
+  private readonly bypassPathSets = new Set<ReadonlySet<string>>();
   private eventsComponent: EditorLockEventsComponent | null = null;
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
   private lastBeepMilliseconds = 0;
   private readonly lockEntriesByPath = new Map<string, LockEntry[]>();
   private mutationBlockerComponent: null | ResourceLockMutationBlockerComponent = null;
-  private readonly ownerSessions = new Set<ResourceLockOwnerSessionImpl>();
   private statusBarItemEl: HTMLElement | null = null;
 
-  public createOwnerSession(app: App): ResourceLockOwnerSession {
-    const session = new ResourceLockOwnerSessionImpl({ app, manager: this });
-    this.ownerSessions.add(session);
-    return session;
+  public bypass(app: App, pathsOrFiles: readonly PathOrFile[]): Disposable {
+    const bypassedPaths: ReadonlySet<string> = new Set(pathsOrFiles.map((pathOrFile) => getPath(app, pathOrFile)));
+    this.bypassPathSets.add(bypassedPaths);
+    return new CallbackDisposable({
+      callback: (): void => {
+        this.bypassPathSets.delete(bypassedPaths);
+      },
+      multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
+    });
   }
 
   public isLocked(app: App, pathOrFile: PathOrFile): boolean {
@@ -415,10 +399,6 @@ class EditorPathLockManager {
       },
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
-  }
-
-  public removeOwnerSession(session: ResourceLockOwnerSessionImpl): void {
-    this.ownerSessions.delete(session);
   }
 
   /**
@@ -606,6 +586,25 @@ class EditorPathLockManager {
     return false;
   }
 
+  /**
+   * Checks whether the path is covered by an active {@link EditorPathLockManager.bypass} scope — the
+   * owner declaring that its own mutations of the path (and, for a folder, its subtree) are sanctioned.
+   *
+   * @param app - The Obsidian app instance.
+   * @param path - The path being mutated.
+   * @returns `true` if some active bypass scope covers the path.
+   */
+  private isBypassed(app: App, path: string): boolean {
+    for (const bypassedPaths of this.bypassPathSets) {
+      for (const bypassedPath of bypassedPaths) {
+        if (isChildOrSelf({ app, childPathOrFile: path, parentPathOrFile: bypassedPath })) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   private isPathLocked(path: string): boolean {
     return (this.lockEntriesByPath.get(path)?.length ?? 0) > 0;
   }
@@ -736,8 +735,7 @@ class EditorPathLockManager {
 
   /**
    * Decides whether a mutation of the path must be blocked: `true` when the path is mutation-blocked
-   * and no active owner session has an arm for it. A matching arm is consumed (one-shot) and the
-   * mutation is allowed through.
+   * and not covered by any active {@link EditorPathLockManager.bypass} scope.
    *
    * @param app - The Obsidian app instance.
    * @param path - The path being mutated.
@@ -747,12 +745,7 @@ class EditorPathLockManager {
     if (!this.isMutationBlockedByAncestor(app, path)) {
       return false;
     }
-    for (const session of this.ownerSessions) {
-      if (session.tryConsumeArm(path)) {
-        return false;
-      }
-    }
-    return true;
+    return !this.isBypassed(app, path);
   }
 
   private unlockConfirmMessage(app: App, path: string): DocumentFragment {
@@ -804,58 +797,6 @@ class EditorPathLockManager {
 }
 
 /**
- * The concrete {@link ResourceLockOwnerSession}. Each session owns its own arm counts, so unconsumed
- * arms simply vanish when the session is disposed and removed from the manager's active set — no
- * cross-session bookkeeping. The manager consults every active session when deciding whether a blocked
- * mutation was sanctioned.
- */
-class ResourceLockOwnerSessionImpl implements ResourceLockOwnerSession {
-  private readonly app: App;
-  private readonly armedCountByPath = new Map<string, number>();
-  private isDisposed = false;
-  private readonly manager: EditorPathLockManager;
-
-  public constructor(params: ResourceLockOwnerSessionImplConstructorParams) {
-    this.app = params.app;
-    this.manager = params.manager;
-  }
-
-  public armExpectedMutation(pathsOrFiles: readonly PathOrFile[]): void {
-    for (const pathOrFile of pathsOrFiles) {
-      const path = getPath(this.app, pathOrFile);
-      this.armedCountByPath.set(path, (this.armedCountByPath.get(path) ?? 0) + 1);
-    }
-  }
-
-  public [Symbol.dispose](): void {
-    if (this.isDisposed) {
-      return;
-    }
-    this.isDisposed = true;
-    this.manager.removeOwnerSession(this);
-  }
-
-  /**
-   * Consumes one arm for the path if this session has one, returning whether it did.
-   *
-   * @param path - The path whose mutation is being reconciled.
-   * @returns `true` if an arm was consumed (the mutation is sanctioned by this session).
-   */
-  public tryConsumeArm(path: string): boolean {
-    const count = this.armedCountByPath.get(path) ?? 0;
-    if (count === 0) {
-      return false;
-    }
-    if (count === 1) {
-      this.armedCountByPath.delete(path);
-    } else {
-      this.armedCountByPath.set(path, count - 1);
-    }
-    return true;
-  }
-}
-
-/**
  * A per-plugin handle for note-scoped editor locking. Add it as a child of your plugin
  * (`this.addChild(new EditorLockComponent(this.app))`) so that any locks it still holds are released
  * automatically when the plugin unloads — a note can never be left stuck read-only because the
@@ -882,16 +823,24 @@ export class EditorLockComponent extends ComponentEx {
   }
 
   /**
-   * Opens a {@link ResourceLockOwnerSession} so this plugin's operation can sanction its own mutations
-   * of resources it has locked with
-   * {@link EditorLockComponentLockForPathOptions.shouldBlockMutations}. Arm each expected mutation
-   * immediately before the vault call; dispose the session (ideally via `using`) when the operation
-   * ends to drop any unconsumed arms.
+   * Opens an **ambient bypass scope**: while the returned {@link Disposable} is not disposed, this
+   * plugin's own mutations of the given paths (and, for a folder, its whole subtree) pass through the
+   * mutation blocker instead of throwing {@link ResourceLockedError}. Any mutation of a blocked path
+   * NOT covered by an active bypass scope is still rejected. Use it with a `using` declaration around
+   * the operation that legitimately mutates resources it has locked with
+   * {@link EditorLockComponentLockForPathOptions.shouldBlockMutations}:
    *
-   * @returns A new owner session.
+   * ```ts
+   * using _bypass = component.bypassBlockedMutations([sourceFile, targetFile]);
+   * // ... the operation's own vault mutations of those paths are allowed ...
+   * // scope end: the paths are enforced again
+   * ```
+   *
+   * @param pathsOrFiles - The paths (or files/folders) whose mutation by this operation is sanctioned.
+   * @returns A {@link Disposable} that ends the bypass scope when disposed.
    */
-  public createOwnerSession(): ResourceLockOwnerSession {
-    return getManager().createOwnerSession(this.app);
+  public bypassBlockedMutations(pathsOrFiles: readonly PathOrFile[]): Disposable {
+    return getManager().bypass(this.app, pathsOrFiles);
   }
 
   /**
