@@ -8,9 +8,9 @@ import type { App } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
 import type { MaybeReturn } from '../type.ts';
-import type { EditorLockComponent } from './editor-lock.ts';
 import type { PathOrFile } from './file-system.ts';
 import type { CombinedFrontmatter } from './frontmatter.ts';
+import type { ResourceLockComponent } from './resource-lock.ts';
 import type {
   ProcessOptions,
   ProcessParams
@@ -46,14 +46,14 @@ export interface AddAliasParams {
   readonly app: App;
 
   /**
-   * The editor-lock component used to lock the note while it is being modified.
-   */
-  readonly editorLockComponent: EditorLockComponent | null;
-
-  /**
    * The path or TFile object representing the note.
    */
   readonly pathOrFile: PathOrFile;
+
+  /**
+   * The resource-lock component used to lock the note while it is being modified.
+   */
+  readonly resourceLockComponent: null | ResourceLockComponent;
 }
 
 /**
@@ -71,14 +71,14 @@ export interface DeleteAliasParams {
   readonly app: App;
 
   /**
-   * The editor-lock component used to lock the note while it is being modified.
-   */
-  readonly editorLockComponent: EditorLockComponent | null;
-
-  /**
    * The path or TFile object representing the note.
    */
   readonly pathOrFile: PathOrFile;
+
+  /**
+   * The resource-lock component used to lock the note while it is being modified.
+   */
+  readonly resourceLockComponent: null | ResourceLockComponent;
 }
 
 /**
@@ -122,8 +122,8 @@ export async function addAlias(params: AddAliasParams): Promise<void> {
   const {
     alias,
     app,
-    editorLockComponent,
-    pathOrFile
+    pathOrFile,
+    resourceLockComponent
   } = params;
   if (!alias) {
     return;
@@ -141,7 +141,6 @@ export async function addAlias(params: AddAliasParams): Promise<void> {
 
   await processFrontmatter({
     app,
-    editorLockComponent,
     frontmatterFn: (frontmatter) => {
       frontmatter.aliases ??= [];
 
@@ -149,7 +148,8 @@ export async function addAlias(params: AddAliasParams): Promise<void> {
         frontmatter.aliases.push(alias);
       }
     },
-    pathOrFile
+    pathOrFile,
+    resourceLockComponent
   });
 }
 
@@ -163,8 +163,8 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
   const {
     alias,
     app,
-    editorLockComponent,
-    pathOrFile
+    pathOrFile,
+    resourceLockComponent
   } = params;
   if (!alias) {
     return;
@@ -176,7 +176,6 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
 
   await processFrontmatter({
     app,
-    editorLockComponent,
     frontmatterFn: (frontmatter) => {
       if (!frontmatter.aliases) {
         return;
@@ -188,7 +187,8 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
         delete frontmatter.aliases;
       }
     },
-    pathOrFile
+    pathOrFile,
+    resourceLockComponent
   });
 }
 

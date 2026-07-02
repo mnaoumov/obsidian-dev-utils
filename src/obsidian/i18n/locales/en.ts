@@ -28,13 +28,6 @@ export const en = {
       jumpToPage: 'Jump to page:',
       pageHeader: 'Page {{pageNumber, number}} of {{totalPages, number}}, Total items: {{totalItems, number}}'
     },
-    editorLock: {
-      lockedByTooltip: 'Locked by',
-      lockedNoteTooltip: 'This note is locked while an operation is in progress.',
-      unlockConfirmMessage: 'This will cancel the operation(s) currently holding a lock on this note and may leave the vault in an inconsistent state. The note is locked by:',
-      unlockConfirmTitle: 'Unlock note?',
-      unlockMenuItem: 'Unlock'
-    },
     metadataCache: {
       getBacklinksForFilePath: 'Get backlinks for {{filePath}}'
     },
@@ -50,6 +43,13 @@ export const en = {
       handleOrphanedRenames: 'Handle orphaned renames',
       handleRename: 'Handle rename: {{oldPath}} -> {{newPath}}',
       updatedLinks: 'Updated {{linksCount, number}} links in {{filesCount, number}} files.'
+    },
+    resourceLock: {
+      lockedByTooltip: 'Locked by',
+      lockedNoteTooltip: 'This note is locked while an operation is in progress.',
+      unlockConfirmMessage: 'This will cancel the operation(s) currently holding a lock on this note and may leave the vault in an inconsistent state. The note is locked by:',
+      unlockConfirmTitle: 'Unlock note?',
+      unlockMenuItem: 'Unlock'
     },
     vault: {
       processFile: 'Process file {{filePath}}'

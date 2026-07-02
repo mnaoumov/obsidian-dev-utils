@@ -20,9 +20,9 @@ import {
   vi
 } from 'vitest';
 
-import type { EditorLockComponent } from './editor-lock.ts';
 import type { GenerateMarkdownLinkParams } from './link.ts';
 import type { CanvasReference } from './reference.ts';
+import type { ResourceLockComponent } from './resource-lock.ts';
 
 import { CallbackDisposable } from '../disposable.ts';
 import { noop } from '../function.ts';
@@ -92,7 +92,7 @@ vi.mock('../obsidian/file-change.ts', async (importOriginal) => {
   };
 });
 
-const editorLockComponent = strictProxy<EditorLockComponent>({
+const resourceLockComponent = strictProxy<ResourceLockComponent>({
   lockForPath: () => ({ [Symbol.dispose]: noop })
 });
 
@@ -2455,9 +2455,9 @@ describe('app-dependent functions', () => {
     it('should call applyFileChanges', async () => {
       await editLinks({
         app,
-        editorLockComponent,
         linkConverter: () => '[[updated]]',
-        pathOrFile: 'note.md'
+        pathOrFile: 'note.md',
+        resourceLockComponent
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
@@ -2487,9 +2487,9 @@ describe('app-dependent functions', () => {
 
       await editLinks({
         app,
-        editorLockComponent,
         linkConverter: () => '[[updated]]',
-        pathOrFile: 'note.md'
+        pathOrFile: 'note.md',
+        resourceLockComponent
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
@@ -2509,9 +2509,9 @@ describe('app-dependent functions', () => {
 
       await editLinks({
         app,
-        editorLockComponent,
         linkConverter: () => '[[updated]]',
-        pathOrFile: 'note.md'
+        pathOrFile: 'note.md',
+        resourceLockComponent
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
@@ -2557,9 +2557,9 @@ describe('app-dependent functions', () => {
       const linkConverter = vi.fn(() => '[[new-target]]');
       await editBacklinks({
         app,
-        editorLockComponent,
         linkConverter,
-        pathOrFile: 'target.md'
+        pathOrFile: 'target.md',
+        resourceLockComponent
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
@@ -2598,9 +2598,9 @@ describe('app-dependent functions', () => {
       const linkConverter = vi.fn(() => '[[new-target]]');
       await editBacklinks({
         app,
-        editorLockComponent,
         linkConverter,
-        pathOrFile: 'target.md'
+        pathOrFile: 'target.md',
+        resourceLockComponent
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
@@ -2672,8 +2672,8 @@ describe('app-dependent functions', () => {
     it('should call editLinks for markdown files', async () => {
       await updateLinksInFile({
         app,
-        editorLockComponent,
-        newSourcePathOrFile: 'note.md'
+        newSourcePathOrFile: 'note.md',
+        resourceLockComponent
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
@@ -2697,8 +2697,8 @@ describe('app-dependent functions', () => {
 
       await updateLinksInFile({
         app: canvasApp,
-        editorLockComponent,
-        newSourcePathOrFile: canvasFile
+        newSourcePathOrFile: canvasFile,
+        resourceLockComponent
       });
 
       expect(applyFileChanges).not.toHaveBeenCalled();
@@ -2727,8 +2727,8 @@ describe('app-dependent functions', () => {
 
       await updateLinksInFile({
         app,
-        editorLockComponent,
         newSourcePathOrFile: 'note.md',
+        resourceLockComponent,
         shouldUpdateEmbedOnlyLinks: true
       });
 
@@ -2758,8 +2758,8 @@ describe('app-dependent functions', () => {
 
       await updateLinksInFile({
         app,
-        editorLockComponent,
-        newSourcePathOrFile: 'note.md'
+        newSourcePathOrFile: 'note.md',
+        resourceLockComponent
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
@@ -2837,9 +2837,9 @@ describe('app-dependent functions', () => {
 
       await editLinks({
         app: canvasApp,
-        editorLockComponent,
         linkConverter: () => 'new-target.md',
-        pathOrFile: canvasFile
+        pathOrFile: canvasFile,
+        resourceLockComponent
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
@@ -2882,9 +2882,9 @@ describe('app-dependent functions', () => {
 
       await editLinks({
         app: canvasApp,
-        editorLockComponent,
         linkConverter: () => '[[new-target]]',
-        pathOrFile: canvasFile
+        pathOrFile: canvasFile,
+        resourceLockComponent
       });
 
       expect(vi.mocked(console.error)).toHaveBeenCalledWith('Unsupported file change', expect.anything());

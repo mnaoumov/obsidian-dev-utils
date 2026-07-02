@@ -26,8 +26,8 @@ const compartmentByCodeMirror = new WeakMap<Editor['cm'], Compartment>();
  *
  * This toggles ONE CodeMirror instance, not "a file": an Obsidian {@link Editor} is reused as its
  * leaf navigates between notes, so this primitive does not follow a note around. To lock a note
- * across every editor that shows it (current and future, in any window), use `lockEditorForPath`
- * from `./editor-lock.ts`.
+ * across every editor that shows it (current and future, in any window), use `lockResourceForPath`
+ * from `./resource-lock.ts`.
  *
  * @param editor - The editor whose CodeMirror instance to toggle.
  * @param isReadOnly - `true` to make the editor read-only, `false` to make it editable again.

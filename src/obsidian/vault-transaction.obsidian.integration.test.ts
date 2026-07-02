@@ -199,7 +199,7 @@ describe('VaultTransaction', () => {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
 
-        const { EditorLockComponent } = lib.obsidian['editor-lock'];
+        const { ResourceLockComponent } = lib.obsidian['resource-lock'];
         const { VaultTransaction } = lib.obsidian['vault-transaction'];
         const folderPath = 'vt-bypass-folder';
         const filePath = `${folderPath}/note.md`;
@@ -209,7 +209,7 @@ describe('VaultTransaction', () => {
         await app.vault.createFolder(folderPath);
         const file = await app.vault.create(filePath, 'original');
 
-        const component = new EditorLockComponent(app, 'vt-bypass-plugin');
+        const component = new ResourceLockComponent(app, 'vt-bypass-plugin');
         // Lock the whole folder subtree against mutations.
         const lock = component.lockForPath(folderPath, { mode: 'subtree', shouldBlockMutations: true });
 

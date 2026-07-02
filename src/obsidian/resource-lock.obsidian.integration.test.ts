@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Integration tests for path-scoped editor locking ({@link lockEditorForPath}).
+ * Integration tests for path-scoped editor locking ({@link lockResourceForPath}).
  *
  * These run against a live Obsidian instance, so they exercise the real reconcile across every open
  * view of a note — including a separate split and a popout window — which the unit tests (mocked
@@ -93,8 +93,8 @@ interface TypingResult {
   readonly didUnlockedNoteAcceptTyping: boolean;
 }
 
-describe('editor-lock', () => {
-  describe('lockEditorForPath', () => {
+describe('resource-lock', () => {
+  describe('lockResourceForPath', () => {
     it('should lock the current tab, auto-lock a future split and popout of the same note, and leave other notes editable', async () => {
       const result = await evalInObsidian<Record<string, never>, LockForPathResult>({
         async fn({ app }) {
@@ -109,15 +109,15 @@ describe('editor-lock', () => {
           app.workspace.detachLeavesOfType('markdown');
           await settle();
 
-          const lockedFile = await app.vault.create('editor-lock-path-locked.md', 'locked note');
-          const otherFile = await app.vault.create('editor-lock-path-other.md', 'other note');
+          const lockedFile = await app.vault.create('resource-lock-path-locked.md', 'locked note');
+          const otherFile = await app.vault.create('resource-lock-path-other.md', 'other note');
 
           // Open the locked note in the current tab and lock its path.
           // The current editor is already settled, so the lock reconcile makes it read-only straight away.
           const currentTabLeaf = app.workspace.getLeaf();
           await currentTabLeaf.openFile(lockedFile);
           await settle();
-          const disposable = lib.obsidian['editor-lock'].lockEditorForPath(app, lockedFile, 'integration-test');
+          const disposable = lib.obsidian['resource-lock'].lockResourceForPath(app, lockedFile, 'integration-test');
           await settle();
           const isCurrentTabLocked = readLeafReadOnly(currentTabLeaf);
 
@@ -204,8 +204,8 @@ describe('editor-lock', () => {
           app.workspace.detachLeavesOfType('markdown');
           await settle();
 
-          const lockedFile = await app.vault.create('editor-lock-typing-locked.md', 'locked note');
-          const otherFile = await app.vault.create('editor-lock-typing-other.md', 'other note');
+          const lockedFile = await app.vault.create('resource-lock-typing-locked.md', 'locked note');
+          const otherFile = await app.vault.create('resource-lock-typing-other.md', 'other note');
 
           // Open the to-be-locked note in the current tab and a second note in a split.
           const lockedLeaf = app.workspace.getLeaf();
@@ -215,7 +215,7 @@ describe('editor-lock', () => {
           await otherLeaf.openFile(otherFile);
           await settle();
 
-          const disposable = lib.obsidian['editor-lock'].lockEditorForPath(app, lockedFile, 'integration-test');
+          const disposable = lib.obsidian['resource-lock'].lockResourceForPath(app, lockedFile, 'integration-test');
           await settle();
           await reconcile();
 
@@ -278,7 +278,7 @@ describe('editor-lock', () => {
     });
   });
 
-  describe('EditorLockComponent subtree lock', () => {
+  describe('ResourceLockComponent subtree lock', () => {
     it('should make a note inside a subtree-locked folder read-only and editable again on unlock', async () => {
       const result = await evalInObsidian({
         async fn({ app }): Promise<SubtreeLockResult> {
@@ -290,7 +290,7 @@ describe('editor-lock', () => {
           app.workspace.detachLeavesOfType('markdown');
           await settle();
 
-          const folderPath = 'editor-lock-subtree';
+          const folderPath = 'resource-lock-subtree';
           if (!await app.vault.adapter.exists(folderPath)) {
             await app.vault.createFolder(folderPath);
           }
@@ -301,7 +301,7 @@ describe('editor-lock', () => {
           await settle();
 
           // Lock the whole folder subtree; the note inside it must become read-only.
-          const component = new lib.obsidian['editor-lock'].EditorLockComponent(app, 'integration-test-subtree');
+          const component = new lib.obsidian['resource-lock'].ResourceLockComponent(app, 'integration-test-subtree');
           const disposable = component.lockForPath(folderPath, { mode: 'subtree' });
           await settle();
           await reconcile();
@@ -345,7 +345,7 @@ describe('editor-lock', () => {
     });
   });
 
-  describe('EditorLockComponent mutation blocker', () => {
+  describe('ResourceLockComponent mutation blocker', () => {
     it('should block real vault rename and file-manager trash of a locked file, then allow them after unlock', async () => {
       const result = await evalInObsidian({
         async fn({ app }): Promise<MutationBlockerResult> {
@@ -354,9 +354,9 @@ describe('editor-lock', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
 
-          const { EditorLockComponent, ResourceLockedError } = lib.obsidian['editor-lock'];
-          const path = 'editor-lock-blocker-target.md';
-          const renamedPath = 'editor-lock-blocker-renamed.md';
+          const { ResourceLockComponent, ResourceLockedError } = lib.obsidian['resource-lock'];
+          const path = 'resource-lock-blocker-target.md';
+          const renamedPath = 'resource-lock-blocker-renamed.md';
           for (const cleanupPath of [path, renamedPath]) {
             if (await app.vault.adapter.exists(cleanupPath)) {
               await app.vault.adapter.remove(cleanupPath);
@@ -364,7 +364,7 @@ describe('editor-lock', () => {
           }
           const file = await app.vault.create(path, 'content');
 
-          const component = new EditorLockComponent(app, 'integration-blocker');
+          const component = new ResourceLockComponent(app, 'integration-blocker');
           const disposable = component.lockForPath(path, { shouldBlockMutations: true });
 
           let wasRenameBlocked = false;
@@ -416,7 +416,7 @@ describe('editor-lock', () => {
     });
   });
 
-  describe('EditorLockComponent mutation bypass scope', () => {
+  describe('ResourceLockComponent mutation bypass scope', () => {
     it('should let a mutation through inside a bypass scope and enforce it again after', async () => {
       const result = await evalInObsidian({
         async fn({ app }): Promise<BypassScopeResult> {
@@ -425,14 +425,14 @@ describe('editor-lock', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
 
-          const { EditorLockComponent, ResourceLockedError } = lib.obsidian['editor-lock'];
-          const path = 'editor-lock-bypass-target.md';
+          const { ResourceLockComponent, ResourceLockedError } = lib.obsidian['resource-lock'];
+          const path = 'resource-lock-bypass-target.md';
           if (await app.vault.adapter.exists(path)) {
             await app.vault.adapter.remove(path);
           }
           const file = await app.vault.create(path, 'content');
 
-          const component = new EditorLockComponent(app, 'integration-bypass');
+          const component = new ResourceLockComponent(app, 'integration-bypass');
           const lock = component.lockForPath(path, { shouldBlockMutations: true });
 
           let wasBypassedModifyAllowed = false;
@@ -474,7 +474,7 @@ describe('editor-lock', () => {
     });
   });
 
-  describe('EditorLockComponent external-change detection', () => {
+  describe('ResourceLockComponent external-change detection', () => {
     it('should abort the owning operation when a locked file is changed outside the blocker (raw adapter)', async () => {
       const result = await evalInObsidian({
         async fn({ app }): Promise<ExternalChangeResult> {
@@ -483,14 +483,14 @@ describe('editor-lock', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
 
-          const { EditorLockComponent } = lib.obsidian['editor-lock'];
-          const path = 'editor-lock-detector-target.md';
+          const { ResourceLockComponent } = lib.obsidian['resource-lock'];
+          const path = 'resource-lock-detector-target.md';
           if (await app.vault.adapter.exists(path)) {
             await app.vault.adapter.remove(path);
           }
           await app.vault.create(path, 'content');
 
-          const component = new EditorLockComponent(app, 'integration-detector');
+          const component = new ResourceLockComponent(app, 'integration-detector');
           const abortController = new AbortController();
           const lock = component.lockForPath(path, { abortController, shouldBlockMutations: true });
 

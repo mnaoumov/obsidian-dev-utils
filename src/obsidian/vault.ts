@@ -24,12 +24,12 @@ import {
 import type { RetryOptions } from '../async.ts';
 import type { ValueProvider } from '../value-provider.ts';
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
-import type { EditorLockComponent } from './editor-lock.ts';
 import type {
   PathOrAbstractFile,
   PathOrFile,
   PathOrFolder
 } from './file-system.ts';
+import type { ResourceLockComponent } from './resource-lock.ts';
 
 import { abortSignalAny } from '../abort-controller.ts';
 import { getLibDebugger } from '../debug.ts';
@@ -216,11 +216,11 @@ export interface IsChildParams {
  */
 export interface ProcessOptions extends RetryOptions {
   /**
-   * An editor-lock component used to lock the file's editor read-only for the duration of
+   * An resource-lock component used to lock the file's editor read-only for the duration of
    * processing. The lock is reference-counted, so it composes with any outer operation-level lock
    * on the same note.
    */
-  readonly editorLockComponent: EditorLockComponent | null;
+  readonly resourceLockComponent: null | ResourceLockComponent;
 
   /**
    * Whether to fail if the file is missing or deleted.
@@ -735,9 +735,9 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
 export async function process(params: ProcessParams): Promise<void> {
   const {
     app,
-    editorLockComponent,
     newContentProvider,
-    pathOrFile
+    pathOrFile,
+    resourceLockComponent
   } = params;
   const DEFAULT_RETRY_OPTIONS = {
     shouldFailOnMissingFile: true,
@@ -751,7 +751,7 @@ export async function process(params: ProcessParams): Promise<void> {
   const path = getPath(app, pathOrFile);
 
   // Reference-counted lock; composes with any outer lock. Released at function scope exit.
-  using _lock = editorLockComponent?.lockForPath(pathOrFile);
+  using _lock = resourceLockComponent?.lockForPath(pathOrFile);
 
   await retryWithTimeoutNotice({
     async operationFn(abortSignal) {

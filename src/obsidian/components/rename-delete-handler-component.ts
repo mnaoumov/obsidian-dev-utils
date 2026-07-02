@@ -25,11 +25,11 @@ import {
 import { t } from 'i18next';
 import { Vault } from 'obsidian';
 
-import type { EditorLockComponent } from '../editor-lock.ts';
 import type {
   UpdateLinkParams,
   UpdateLinksInFileParams
 } from '../link.ts';
+import type { ResourceLockComponent } from '../resource-lock.ts';
 import type { AbortSignalComponent } from './abort-signal-component.ts';
 import type { PluginNoticeComponent } from './plugin-notice-component.ts';
 
@@ -173,7 +173,6 @@ interface InterruptedRename {
 interface RenameHandlerConstructorParams {
   readonly abortSignal: AbortSignal;
   readonly app: App;
-  readonly editorLockComponent: EditorLockComponent | null;
   readonly handledRenames: HandledRenames;
   readonly interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>;
   readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
@@ -182,6 +181,7 @@ interface RenameHandlerConstructorParams {
   readonly oldPath: string;
   readonly oldPathBacklinksMap: Map<string, Reference[]>;
   readonly pluginNoticeComponent: PluginNoticeComponent;
+  readonly resourceLockComponent: null | ResourceLockComponent;
   readonly settingsManager: SettingsManager;
 }
 
@@ -254,9 +254,9 @@ interface MetadataDeletedHandlerConstructorParams {
 interface RenameDeleteHandlerComponentConstructorParams {
   readonly abortSignalComponent: AbortSignalComponent;
   readonly app: App;
-  readonly editorLockComponent: EditorLockComponent | null;
   readonly pluginId: string;
   readonly pluginNoticeComponent: PluginNoticeComponent;
+  readonly resourceLockComponent: null | ResourceLockComponent;
   settingsBuilder(this: void): Partial<RenameDeleteHandlerSettings>;
 }
 
@@ -557,7 +557,6 @@ class MetadataDeletedHandler {
 class RenameHandler {
   private readonly abortSignal: AbortSignal;
   private readonly app: App;
-  private readonly editorLockComponent: EditorLockComponent | null;
   private readonly handledRenames: HandledRenames;
   private readonly interruptedCombinedBacklinksMap: Map<string, Map<string, string>>;
   private readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
@@ -567,12 +566,13 @@ class RenameHandler {
   private readonly oldPathBacklinksMap: Map<string, Reference[]>;
   private readonly oldPathLinks: Reference[];
   private readonly pluginNoticeComponent: PluginNoticeComponent;
+  private readonly resourceLockComponent: null | ResourceLockComponent;
   private readonly settingsManager: SettingsManager;
 
   public constructor(params: RenameHandlerConstructorParams) {
     this.abortSignal = params.abortSignal;
     this.app = params.app;
-    this.editorLockComponent = params.editorLockComponent;
+    this.resourceLockComponent = params.resourceLockComponent;
     this.handledRenames = params.handledRenames;
     this.interruptedCombinedBacklinksMap = params.interruptedCombinedBacklinksMap ?? new Map<string, Map<string, string>>();
     this.interruptedRenamesMap = params.interruptedRenamesMap;
@@ -667,7 +667,6 @@ class RenameHandler {
         let linkIndex = 0;
         await editLinks({
           app: this.app,
-          editorLockComponent: this.editorLockComponent,
           linkConverter: (link) => {
             linkIndex++;
             const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
@@ -690,6 +689,7 @@ class RenameHandler {
             }));
           },
           pathOrFile: newBacklinkPath,
+          resourceLockComponent: this.resourceLockComponent,
           shouldFailOnMissingFile: false
         });
         this.abortSignal.throwIfAborted();
@@ -698,9 +698,9 @@ class RenameHandler {
       if (isNote(this.newPath)) {
         await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileParams>({
           app: this.app,
-          editorLockComponent: this.editorLockComponent,
           newSourcePathOrFile: this.newPath,
           oldSourcePathOrFile: this.oldPath,
+          resourceLockComponent: this.resourceLockComponent,
           shouldFailOnMissingFile: false,
           shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
         }));
@@ -747,7 +747,6 @@ class RenameHandler {
         await new RenameHandler({
           abortSignal: this.abortSignal,
           app: this.app,
-          editorLockComponent: this.editorLockComponent,
           handledRenames: this.handledRenames,
           interruptedCombinedBacklinksMap: interruptedRename.combinedBacklinksMap,
           interruptedRenamesMap: this.interruptedRenamesMap,
@@ -756,6 +755,7 @@ class RenameHandler {
           oldPath: interruptedRename.oldPath,
           oldPathBacklinksMap: this.oldPathBacklinksMap,
           pluginNoticeComponent: this.pluginNoticeComponent,
+          resourceLockComponent: this.resourceLockComponent,
           settingsManager: this.settingsManager
         }).handle();
       }
@@ -773,7 +773,6 @@ class RenameHandler {
     await new RenameHandler({
       abortSignal: this.abortSignal,
       app: this.app,
-      editorLockComponent: this.editorLockComponent,
       handledRenames: this.handledRenames,
       interruptedRenamesMap: this.interruptedRenamesMap,
       newPath: tempPath,
@@ -781,6 +780,7 @@ class RenameHandler {
       oldPath: this.oldPath,
       oldPathBacklinksMap: this.oldPathBacklinksMap,
       pluginNoticeComponent: this.pluginNoticeComponent,
+      resourceLockComponent: this.resourceLockComponent,
       settingsManager: this.settingsManager
     }).handle();
 
@@ -1034,11 +1034,11 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   private readonly abortSignalComponent: AbortSignalComponent;
   private readonly app: App;
   private readonly deletedMetadataCacheMap = new Map<string, CachedMetadata>();
-  private readonly editorLockComponent: EditorLockComponent | null;
   private readonly handledRenames = new HandledRenames();
   private readonly interruptedRenamesMap = new Map<string, InterruptedRename[]>();
   private readonly pluginId: string;
   private readonly pluginNoticeComponent: PluginNoticeComponent;
+  private readonly resourceLockComponent: null | ResourceLockComponent;
   private readonly settingsBuilder: () => Partial<RenameDeleteHandlerSettings>;
   private readonly settingsManager: SettingsManager;
 
@@ -1051,7 +1051,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     super();
     this.abortSignalComponent = params.abortSignalComponent;
     this.app = params.app;
-    this.editorLockComponent = params.editorLockComponent;
+    this.resourceLockComponent = params.resourceLockComponent;
     this.pluginId = params.pluginId;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
     this.settingsBuilder = params.settingsBuilder;
@@ -1154,7 +1154,6 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
         new RenameHandler({
           abortSignal,
           app: this.app,
-          editorLockComponent: this.editorLockComponent,
           handledRenames: this.handledRenames,
           interruptedRenamesMap: this.interruptedRenamesMap,
           newPath,
@@ -1162,6 +1161,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
           oldPath,
           oldPathBacklinksMap,
           pluginNoticeComponent: this.pluginNoticeComponent,
+          resourceLockComponent: this.resourceLockComponent,
           settingsManager: this.settingsManager
         }).handle(),
       operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleRename, { newPath, oldPath })

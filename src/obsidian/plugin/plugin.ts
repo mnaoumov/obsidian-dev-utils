@@ -27,9 +27,9 @@ import { ComponentEx } from '../components/component-ex.ts';
 import { ConsoleDebugComponent } from '../components/console-debug-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
-import { EditorLockComponent } from '../editor-lock.ts';
 import { initI18N } from '../i18n/i18n.ts';
 import { defaultTranslationsMap } from '../i18n/locales/translations-map.ts';
+import { ResourceLockComponent } from '../resource-lock.ts';
 
 /**
  * Base class for creating Obsidian plugins with a component-based architecture.
@@ -93,25 +93,6 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
   }
 
   /**
-   * Gets the editor lock component, used to lock notes read-only during long operations. Owned by
-   * the plugin, so its locks are released automatically when the plugin unloads.
-   *
-   * @returns Editor lock component.
-   */
-  protected get editorLockComponent(): EditorLockComponent {
-    return ensureNonNullable(this._editorLockComponent);
-  }
-
-  /**
-   * Sets the editor lock component.
-   *
-   * @param value - Editor lock component.
-   */
-  protected set editorLockComponent(value: EditorLockComponent) {
-    this._editorLockComponent = value;
-  }
-
-  /**
    * Gets plugin context component (plugin ID, debug controller, library styles).
    *
    * @returns plugin context component.
@@ -147,17 +128,36 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
     this._pluginNoticeComponent = value;
   }
 
+  /**
+   * Gets the editor lock component, used to lock notes read-only during long operations. Owned by
+   * the plugin, so its locks are released automatically when the plugin unloads.
+   *
+   * @returns Editor lock component.
+   */
+  protected get resourceLockComponent(): ResourceLockComponent {
+    return ensureNonNullable(this._resourceLockComponent);
+  }
+
+  /**
+   * Sets the editor lock component.
+   *
+   * @param value - Editor lock component.
+   */
+  protected set resourceLockComponent(value: ResourceLockComponent) {
+    this._resourceLockComponent = value;
+  }
+
   private _abortSignalComponent?: AbortSignalComponent;
 
   private _asyncErrorHandlerComponent?: AsyncErrorHandlerComponent;
 
   private _consoleDebugComponent?: ConsoleDebugComponent;
 
-  private _editorLockComponent?: EditorLockComponent;
-
   private _pluginContextComponent?: PluginContextComponent;
 
   private _pluginNoticeComponent?: PluginNoticeComponent;
+
+  private _resourceLockComponent?: ResourceLockComponent;
 
   private readonly wrapperComponent = new ComponentEx();
 
@@ -206,7 +206,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
       this.asyncErrorHandlerComponent = this.addChild(new AsyncErrorHandlerComponent(this.pluginNoticeComponent));
       this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
       this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
-      this.editorLockComponent = this.addChild(new EditorLockComponent(this.app, this.manifest.id));
+      this.resourceLockComponent = this.addChild(new ResourceLockComponent(this.app, this.manifest.id));
 
       await this.onloadImpl();
 

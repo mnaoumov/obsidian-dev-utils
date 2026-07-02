@@ -28,16 +28,16 @@ import type { GenericObject } from '../type-guards.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { assertNonNullable } from '../type-guards.ts';
-import {
-  EditorLockComponent,
-  isEditorLockedForPath,
-  lockEditorForPath,
-  requestEditorUnlockForPath,
-  ResourceLockedError,
-  unlockEditorForPath
-} from './editor-lock.ts';
 import { toggleEditorReadOnly } from './editor.ts';
 import { confirm } from './modals/confirm.ts';
+import {
+  isResourceLockedForPath,
+  lockResourceForPath,
+  requestResourceUnlockForPath,
+  ResourceLockComponent,
+  ResourceLockedError,
+  unlockResourceForPath
+} from './resource-lock.ts';
 
 vi.mock('./editor.ts', () => ({
   toggleEditorReadOnly: vi.fn()
@@ -47,7 +47,7 @@ vi.mock('./i18n/i18n.ts', () => ({
   t: vi.fn((fn: (messages: GenericObject) => unknown) =>
     fn({
       obsidianDevUtils: {
-        editorLock: {
+        resourceLock: {
           lockedByTooltip: 'Locked by',
           lockedNoteTooltip: 'Locked note',
           unlockConfirmMessage: 'Locked by',
@@ -143,12 +143,12 @@ function stubLeaves(...leaves: WorkspaceLeafOriginal[]): void {
   vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue(leaves);
 }
 
-describe('lockEditorForPath', () => {
+describe('lockResourceForPath', () => {
   it('should mark the path as locked', () => {
     stubLeaves();
-    lockEditorForPath(app, 'note.md', 'test-plugin');
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
-    expect(isEditorLockedForPath(app, 'other.md')).toBe(false);
+    lockResourceForPath(app, 'note.md', 'test-plugin');
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
+    expect(isResourceLockedForPath(app, 'other.md')).toBe(false);
   });
 
   it('should lock the editor and add a lock icon for a matching open view', () => {
@@ -156,7 +156,7 @@ describe('lockEditorForPath', () => {
     vi.spyOn(view, 'addAction');
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
 
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
     expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'Locked by\ntest-plugin', expect.any(Function));
@@ -164,7 +164,7 @@ describe('lockEditorForPath', () => {
 
   it('should ignore leaves whose view is not a MarkdownView', () => {
     stubLeaves(leafOf(strictProxy<ViewOriginal>({})));
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
@@ -173,7 +173,7 @@ describe('lockEditorForPath', () => {
     const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
@@ -181,7 +181,7 @@ describe('lockEditorForPath', () => {
     const view = createMarkdownView('other.md');
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
@@ -189,7 +189,7 @@ describe('lockEditorForPath', () => {
     const view = createMarkdownView('note.md');
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
     app.workspace.trigger('layout-change');
 
     // The toggle is re-applied on every reconcile (idempotent).
@@ -203,7 +203,7 @@ describe('lockEditorForPath', () => {
     stubLeaves();
     const onSpy = vi.spyOn(app.workspace, 'on');
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
 
     expect(onSpy).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
     expect(onSpy).toHaveBeenCalledWith('layout-change', expect.any(Function));
@@ -214,15 +214,15 @@ describe('lockEditorForPath', () => {
     stubLeaves();
     const onSpy = vi.spyOn(app.workspace, 'on');
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
-    lockEditorForPath(app, 'other.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'other.md', 'test-plugin');
 
     expect(onSpy).toHaveBeenCalledTimes(4);
   });
 
   it('should lock a view opened after the lock via active-leaf-change', () => {
     stubLeaves();
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
 
     const view = createMarkdownView('note.md');
@@ -239,27 +239,27 @@ describe('lockEditorForPath', () => {
     const removeSpy = vi.spyOn(iconEl, 'remove');
     stubLeaves(leafOf(view));
 
-    const disposable = lockEditorForPath(app, 'note.md', 'test-plugin');
+    const disposable = lockResourceForPath(app, 'note.md', 'test-plugin');
     disposable[Symbol.dispose]();
 
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, false);
     expect(removeSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should not decrement more than once when disposed repeatedly', () => {
     stubLeaves();
-    const disposable = lockEditorForPath(app, 'note.md', 'test-plugin');
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    const disposable = lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
 
     disposable[Symbol.dispose]();
     disposable[Symbol.dispose]();
 
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
   });
 });
 
-describe('unlockEditorForPath', () => {
+describe('unlockResourceForPath', () => {
   it('should unlock views and unregister events when the last lock is released', () => {
     const view = createMarkdownView('note.md');
     const iconEl = createDiv();
@@ -268,10 +268,10 @@ describe('unlockEditorForPath', () => {
     const offrefSpy = vi.spyOn(app.workspace, 'offref');
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
-    unlockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
+    unlockResourceForPath(app, 'note.md', 'test-plugin');
 
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, false);
     expect(removeSpy).toHaveBeenCalledTimes(1);
     expect(offrefSpy).toHaveBeenCalledTimes(4);
@@ -279,21 +279,21 @@ describe('unlockEditorForPath', () => {
 
   it('should keep the note locked until every lock is released', () => {
     stubLeaves();
-    lockEditorForPath(app, 'note.md', 'test-plugin');
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
 
-    unlockEditorForPath(app, 'note.md', 'test-plugin');
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
+    unlockResourceForPath(app, 'note.md', 'test-plugin');
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
 
-    unlockEditorForPath(app, 'note.md', 'test-plugin');
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
+    unlockResourceForPath(app, 'note.md', 'test-plugin');
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
   });
 
   it('should be a no-op when the note is not locked', () => {
     const offrefSpy = vi.spyOn(app.workspace, 'offref');
     stubLeaves();
 
-    unlockEditorForPath(app, 'note.md', 'test-plugin');
+    unlockResourceForPath(app, 'note.md', 'test-plugin');
 
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
     expect(offrefSpy).not.toHaveBeenCalled();
@@ -303,36 +303,36 @@ describe('unlockEditorForPath', () => {
     stubLeaves();
     const offrefSpy = vi.spyOn(app.workspace, 'offref');
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
-    lockEditorForPath(app, 'other.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'other.md', 'test-plugin');
 
-    unlockEditorForPath(app, 'note.md', 'test-plugin');
+    unlockResourceForPath(app, 'note.md', 'test-plugin');
     expect(offrefSpy).not.toHaveBeenCalled();
 
-    unlockEditorForPath(app, 'other.md', 'test-plugin');
+    unlockResourceForPath(app, 'other.md', 'test-plugin');
     expect(offrefSpy).toHaveBeenCalledTimes(4);
   });
 
   it('should keep a note locked until every plugin that locked it releases its lock', () => {
     stubLeaves();
 
-    lockEditorForPath(app, 'note.md', 'plugin-a');
-    lockEditorForPath(app, 'note.md', 'plugin-b');
+    lockResourceForPath(app, 'note.md', 'plugin-a');
+    lockResourceForPath(app, 'note.md', 'plugin-b');
 
     // The plugin-b lock is released twice; the redundant release hits the per-plugin no-op guard.
     // Plugin-a still holds its lock, so the note stays locked.
-    unlockEditorForPath(app, 'note.md', 'plugin-b');
-    unlockEditorForPath(app, 'note.md', 'plugin-b');
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
+    unlockResourceForPath(app, 'note.md', 'plugin-b');
+    unlockResourceForPath(app, 'note.md', 'plugin-b');
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
 
-    unlockEditorForPath(app, 'note.md', 'plugin-a');
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
+    unlockResourceForPath(app, 'note.md', 'plugin-a');
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
   });
 });
 
-describe('isEditorLockedForPath', () => {
+describe('isResourceLockedForPath', () => {
   it('should return false for a never-locked path', () => {
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(false);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
   });
 });
 
@@ -341,7 +341,7 @@ describe('lock indicators', () => {
     const view = createMarkdownView('note.md', false);
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
     // A second reconcile updates tooltips on the existing indicators; with no tab icon it must not throw.
     app.workspace.trigger('layout-change');
 
@@ -355,7 +355,7 @@ describe('lock indicators', () => {
     castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
 
     expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'Locked by\nTest Plugin', expect.any(Function));
   });
@@ -366,14 +366,14 @@ describe('lock indicators', () => {
     const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
     expect(statusBarEl.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
 
     // A second reconcile must not duplicate the item.
     app.workspace.trigger('layout-change');
     expect(statusBarEl.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
 
-    unlockEditorForPath(app, 'note.md', 'test-plugin');
+    unlockResourceForPath(app, 'note.md', 'test-plugin');
     expect(statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
   });
 
@@ -382,16 +382,16 @@ describe('lock indicators', () => {
     setActiveView(view);
     stubLeaves(leafOf(view));
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
 
     expect(view.containerEl.ownerDocument.body.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
   });
 });
 
-describe('EditorLockComponent', () => {
+describe('ResourceLockComponent', () => {
   it('should lock, query, and unlock a note on behalf of its plugin', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
 
     component.lockForPath('note.md');
     expect(component.isLockedForPath('note.md')).toBe(true);
@@ -403,10 +403,10 @@ describe('EditorLockComponent', () => {
   it('should release only its own plugin\'s locks when unloaded', () => {
     stubLeaves();
 
-    lockEditorForPath(app, 'other-only.md', 'other-plugin');
-    lockEditorForPath(app, 'shared.md', 'other-plugin');
+    lockResourceForPath(app, 'other-only.md', 'other-plugin');
+    lockResourceForPath(app, 'shared.md', 'other-plugin');
 
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     component.load();
     component.lockForPath('shared.md');
     component.lockForPath('own.md');
@@ -414,33 +414,33 @@ describe('EditorLockComponent', () => {
     component.unload();
 
     // The other-plugin locks survive (its own note and its share of shared.md); test-plugin's are released.
-    expect(isEditorLockedForPath(app, 'other-only.md')).toBe(true);
-    expect(isEditorLockedForPath(app, 'shared.md')).toBe(true);
-    expect(isEditorLockedForPath(app, 'own.md')).toBe(false);
+    expect(isResourceLockedForPath(app, 'other-only.md')).toBe(true);
+    expect(isResourceLockedForPath(app, 'shared.md')).toBe(true);
+    expect(isResourceLockedForPath(app, 'own.md')).toBe(false);
   });
 
   it('should pass the abort controller through to the lock', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     const abortController = new AbortController();
 
     component.lockForPath('note.md', { abortController });
-    requestEditorUnlockForPath(app, 'note.md');
+    requestResourceUnlockForPath(app, 'note.md');
 
     expect(abortController.signal.aborted).toBe(true);
   });
 });
 
-describe('requestEditorUnlockForPath', () => {
+describe('requestResourceUnlockForPath', () => {
   it('should abort every controller registered for the path', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     const firstController = new AbortController();
     const secondController = new AbortController();
 
     component.lockForPath('note.md', { abortController: firstController });
     component.lockForPath('note.md', { abortController: secondController });
-    requestEditorUnlockForPath(app, 'note.md');
+    requestResourceUnlockForPath(app, 'note.md');
 
     expect(firstController.signal.aborted).toBe(true);
     expect(secondController.signal.aborted).toBe(true);
@@ -448,17 +448,17 @@ describe('requestEditorUnlockForPath', () => {
 
   it('should be a no-op when no abortable lock is registered for the path', () => {
     stubLeaves();
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
 
     expect(() => {
-      requestEditorUnlockForPath(app, 'note.md');
+      requestResourceUnlockForPath(app, 'note.md');
     }).not.toThrow();
-    expect(isEditorLockedForPath(app, 'note.md')).toBe(true);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
   });
 
   it('should keep the controller of a still-held lock and drop the disposed one', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     const disposedController = new AbortController();
     const heldController = new AbortController();
 
@@ -466,7 +466,7 @@ describe('requestEditorUnlockForPath', () => {
     component.lockForPath('note.md', { abortController: heldController });
     disposable[Symbol.dispose]();
 
-    requestEditorUnlockForPath(app, 'note.md');
+    requestResourceUnlockForPath(app, 'note.md');
 
     expect(disposedController.signal.aborted).toBe(false);
     expect(heldController.signal.aborted).toBe(true);
@@ -474,13 +474,13 @@ describe('requestEditorUnlockForPath', () => {
 
   it('should drop the controller set entirely when the last abortable lock is disposed', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     const abortController = new AbortController();
 
     const disposable = component.lockForPath('note.md', { abortController });
     disposable[Symbol.dispose]();
 
-    requestEditorUnlockForPath(app, 'note.md');
+    requestResourceUnlockForPath(app, 'note.md');
 
     expect(abortController.signal.aborted).toBe(false);
   });
@@ -494,7 +494,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     dispatchContextMenu(iconEl);
 
     const menu = getMenu();
@@ -514,7 +514,7 @@ describe('unlock context menu', () => {
     const getMenu = captureMenuOnShow();
 
     const abortController = new AbortController();
-    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController });
     dispatchContextMenu(iconEl);
 
     const menu = getMenu();
@@ -537,7 +537,7 @@ describe('unlock context menu', () => {
     const getMenu = captureMenuOnShow();
 
     const abortController = new AbortController();
-    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController });
     dispatchContextMenu(iconEl);
 
     const menu = getMenu();
@@ -556,7 +556,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(tabIconEl);
     dispatchContextMenu(tabIconEl);
@@ -571,7 +571,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
     dispatchContextMenu(statusBarItemEl);
@@ -586,7 +586,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
 
-    lockEditorForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath(app, 'note.md', 'test-plugin');
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
 
@@ -606,7 +606,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     dispatchContextMenu(iconEl);
     const menu = getMenu();
     assertNonNullable(menu);
@@ -628,7 +628,7 @@ describe('unlock file menu', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
 
-    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
 
@@ -642,7 +642,7 @@ describe('unlock file menu', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     // Lock a different note so the events component (and its file-menu handler) is subscribed.
-    new EditorLockComponent(app, 'test-plugin').lockForPath('other.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('other.md', { abortController: new AbortController() });
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
 
@@ -650,7 +650,7 @@ describe('unlock file menu', () => {
   });
 
   it('should not add an unlock item to the file menu for a folder', () => {
-    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, app.vault.getRoot(), 'file-explorer-context-menu');
 
@@ -667,7 +667,7 @@ describe('lock type-attempt flash', () => {
     vi.spyOn(view, 'addAction').mockReturnValue(actionIconEl);
     stubLeaves(leafOf(view));
 
-    new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
     const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(tabIconEl);
     expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(false);
@@ -684,7 +684,7 @@ describe('lock type-attempt flash', () => {
     vi.spyOn(view, 'addAction').mockReturnValue(actionIconEl);
     stubLeaves(leafOf(view));
 
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     component.lockForPath('note.md', { abortController: new AbortController() });
     component.unlockForPath('note.md');
 
@@ -708,7 +708,7 @@ describe('lock type-attempt flash', () => {
     }));
 
     try {
-      new EditorLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+      new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
       view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
       view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
     } finally {
@@ -736,7 +736,7 @@ describe('subtree locking', () => {
 
   it('should report a path under a subtree-locked folder as locked by ancestor', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(false);
 
     component.lockForPath('folder', { mode: 'subtree' });
@@ -754,7 +754,7 @@ describe('subtree locking', () => {
     const view = createMarkdownView('folder/a.md');
     stubLeaves(leafOf(view));
 
-    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { mode: 'subtree' });
 
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
   });
@@ -765,8 +765,8 @@ describe('subtree locking', () => {
     const outerController = new AbortController();
     const innerController = new AbortController();
     // Lock the outer folder first so the inner (longer) path must replace it as the resolved owner.
-    new EditorLockComponent(app, 'outer-plugin').lockForPath('folder', { abortController: outerController, mode: 'subtree' });
-    new EditorLockComponent(app, 'inner-plugin').lockForPath('folder/sub', { abortController: innerController, mode: 'subtree' });
+    new ResourceLockComponent(app, 'outer-plugin').lockForPath('folder', { abortController: outerController, mode: 'subtree' });
+    new ResourceLockComponent(app, 'inner-plugin').lockForPath('folder/sub', { abortController: innerController, mode: 'subtree' });
 
     const file = app.vault.getFileByPath('folder/sub/b.md');
     assertNonNullable(file);
@@ -784,7 +784,7 @@ describe('subtree locking', () => {
 
   it('should keep the subtree lock until every acquisition is released', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     const first = component.lockForPath('folder', { mode: 'subtree' });
     const second = component.lockForPath('folder', { mode: 'subtree' });
 
@@ -797,33 +797,33 @@ describe('subtree locking', () => {
 
   it('should release subtree locks when the plugin unloads', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     component.load();
     component.lockForPath('folder', { mode: 'subtree' });
 
     component.unload();
 
-    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
+    expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
   });
 
   it('should keep another plugin\'s file lock when a plugin with only a subtree lock unloads', () => {
     stubLeaves();
-    lockEditorForPath(app, 'outside.md', 'file-plugin');
-    const component = new EditorLockComponent(app, 'subtree-plugin');
+    lockResourceForPath(app, 'outside.md', 'file-plugin');
+    const component = new ResourceLockComponent(app, 'subtree-plugin');
     component.load();
     component.lockForPath('folder', { mode: 'subtree' });
 
     // Unloading the subtree plugin must not touch the unrelated file lock held by file-plugin.
     component.unload();
 
-    expect(isEditorLockedForPath(app, 'outside.md')).toBe(true);
-    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
+    expect(isResourceLockedForPath(app, 'outside.md')).toBe(true);
+    expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
   });
 
   it('should keep a co-held subtree lock and ignore a late dispose after one holder unloads', () => {
     stubLeaves();
-    const componentA = new EditorLockComponent(app, 'plugin-a');
-    const componentB = new EditorLockComponent(app, 'plugin-b');
+    const componentA = new ResourceLockComponent(app, 'plugin-a');
+    const componentB = new ResourceLockComponent(app, 'plugin-b');
     componentA.load();
     componentB.load();
     const disposableA = componentA.lockForPath('folder', { mode: 'subtree' });
@@ -831,30 +831,30 @@ describe('subtree locking', () => {
 
     // Unloading A removes A but leaves B's subtree lock on the same folder (map not empty).
     componentA.unload();
-    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
+    expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
 
     // A's outstanding handle disposes after A was already cleared — a safe no-op that leaves B intact.
     disposableA[Symbol.dispose]();
-    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
+    expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
 
     componentB.unload();
-    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
+    expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
   });
 
   it('should ignore the subtree-cleanup pass for a plugin that holds no subtree lock', () => {
     stubLeaves();
-    const subtreeComponent = new EditorLockComponent(app, 'subtree-plugin');
+    const subtreeComponent = new ResourceLockComponent(app, 'subtree-plugin');
     subtreeComponent.load();
     subtreeComponent.lockForPath('folder', { mode: 'subtree' });
 
-    const fileComponent = new EditorLockComponent(app, 'file-plugin');
+    const fileComponent = new ResourceLockComponent(app, 'file-plugin');
     fileComponent.load();
     fileComponent.lockForPath('outside.md');
 
     // File-plugin holds no subtree lock, so its unload's subtree-cleanup pass finds nothing to delete.
     fileComponent.unload();
 
-    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
+    expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
   });
 
   it('should not open a status-bar menu when the active note is no longer locked at click time', () => {
@@ -865,7 +865,7 @@ describe('subtree locking', () => {
     stubLeaves(leafOf(lockedView));
     const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
 
-    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
 
@@ -878,7 +878,7 @@ describe('subtree locking', () => {
 
   it('should be a safe no-op to dispose a subtree lock after the plugin unloaded', () => {
     stubLeaves();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     component.load();
     const disposable = component.lockForPath('folder', { mode: 'subtree' });
     component.unload();
@@ -886,12 +886,12 @@ describe('subtree locking', () => {
     expect(() => {
       disposable[Symbol.dispose]();
     }).not.toThrow();
-    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
+    expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
   });
 
   it('should add an unlock item to the file menu for a subtree-locked folder', () => {
     stubLeaves();
-    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
     const folder = app.vault.getAbstractFileByPath('folder');
     assertNonNullable(folder);
     const menu = Menu.create2__();
@@ -904,7 +904,7 @@ describe('subtree locking', () => {
 
   it('should add an unlock item to the file menu for a note under a subtree-locked folder', () => {
     stubLeaves();
-    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
     const file = app.vault.getFileByPath('folder/a.md');
     assertNonNullable(file);
     const menu = Menu.create2__();
@@ -922,7 +922,7 @@ describe('subtree locking', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
     dispatchContextMenu(statusBarItemEl);
@@ -961,7 +961,7 @@ describe('mutation blocker', () => {
   });
 
   function lockTarget(): Disposable {
-    return new EditorLockComponent(app, 'blocker-plugin').lockForPath('target.md', { shouldBlockMutations: true });
+    return new ResourceLockComponent(app, 'blocker-plugin').lockForPath('target.md', { shouldBlockMutations: true });
   }
 
   function targetFile(): TFileOriginal {
@@ -971,13 +971,13 @@ describe('mutation blocker', () => {
   }
 
   it('should not block mutations for a read-only (non-blocking) lock', () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('target.md');
     expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(false);
   });
 
   it('should block mutations only while a blocking lock is held', () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     const disposable = component.lockForPath('target.md', { shouldBlockMutations: true });
     expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(true);
     expect(component.isMutationBlockedByAncestorForPath('other.md')).toBe(false);
@@ -987,7 +987,7 @@ describe('mutation blocker', () => {
   });
 
   it('should block a mutation under a subtree blocking lock', () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('folder', { mode: 'subtree', shouldBlockMutations: true });
     expect(component.isMutationBlockedByAncestorForPath('folder/child.md')).toBe(true);
     expect(component.isMutationBlockedByAncestorForPath('elsewhere.md')).toBe(false);
@@ -1136,7 +1136,7 @@ describe('mutation bypass scope', () => {
   }
 
   it('should allow a mutation of a bypassed blocked path', async () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
     using _bypass = component.bypassBlockedMutations(['target.md']);
 
@@ -1145,7 +1145,7 @@ describe('mutation bypass scope', () => {
   });
 
   it('should keep blocking a path not covered by the active bypass scope', () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _lockTarget = component.lockForPath('target.md', { shouldBlockMutations: true });
     using _lockSource = component.lockForPath('source.md', { shouldBlockMutations: true });
     using _bypass = component.bypassBlockedMutations(['target.md']);
@@ -1156,7 +1156,7 @@ describe('mutation bypass scope', () => {
   });
 
   it('should enforce the path again once the bypass scope ends', () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
 
     const bypass = component.bypassBlockedMutations(['target.md']);
@@ -1168,7 +1168,7 @@ describe('mutation bypass scope', () => {
   });
 
   it('should let a folder bypass cover its whole subtree', async () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('folder', { mode: 'subtree', shouldBlockMutations: true });
     using _bypass = component.bypassBlockedMutations(['folder']);
 
@@ -1176,7 +1176,7 @@ describe('mutation bypass scope', () => {
   });
 
   it('should not allow a path outside every bypass scope', () => {
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
     using _bypassOther = component.bypassBlockedMutations(['other.md']);
 
@@ -1185,7 +1185,7 @@ describe('mutation bypass scope', () => {
   });
 
   it('should be safe to dispose a bypass scope twice', () => {
-    const bypass = new EditorLockComponent(app, 'test-plugin').bypassBlockedMutations(['target.md']);
+    const bypass = new ResourceLockComponent(app, 'test-plugin').bypassBlockedMutations(['target.md']);
     bypass[Symbol.dispose]();
     expect(() => {
       bypass[Symbol.dispose]();
@@ -1217,7 +1217,7 @@ describe('external-change detection', () => {
 
   it('should abort the owning lock when an external delete hits a mutation-blocked path', () => {
     const abortController = new AbortController();
-    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
 
     app.vault.trigger('delete', fileAt('target.md'));
     expect(abortController.signal.aborted).toBe(true);
@@ -1225,7 +1225,7 @@ describe('external-change detection', () => {
 
   it('should abort on an external create landing on a blocked path', () => {
     const abortController = new AbortController();
-    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
 
     app.vault.trigger('create', fileAt('target.md'));
     expect(abortController.signal.aborted).toBe(true);
@@ -1233,7 +1233,7 @@ describe('external-change detection', () => {
 
   it('should abort when a rename touches a blocked path', () => {
     const abortController = new AbortController();
-    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
 
     // The file is now at target.md (a blocked path), renamed from an unblocked old path.
     app.vault.trigger('rename', fileAt('target.md'), 'was.md');
@@ -1242,7 +1242,7 @@ describe('external-change detection', () => {
 
   it('should abort on a metadataCache deleted event for a blocked path', () => {
     const abortController = new AbortController();
-    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
 
     app.metadataCache.trigger('deleted', fileAt('target.md'), null);
     expect(abortController.signal.aborted).toBe(true);
@@ -1250,7 +1250,7 @@ describe('external-change detection', () => {
 
   it('should abort the folder lock when a child under a blocking subtree lock changes externally', () => {
     const abortController = new AbortController();
-    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController, mode: 'subtree', shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController, mode: 'subtree', shouldBlockMutations: true });
 
     app.vault.trigger('delete', fileAt('folder/child.md'));
     expect(abortController.signal.aborted).toBe(true);
@@ -1258,7 +1258,7 @@ describe('external-change detection', () => {
 
   it('should not abort for a change covered by an active bypass scope', () => {
     const abortController = new AbortController();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _lock = component.lockForPath('target.md', { abortController, shouldBlockMutations: true });
     using _bypass = component.bypassBlockedMutations(['target.md']);
 
@@ -1268,7 +1268,7 @@ describe('external-change detection', () => {
 
   it('should ignore an external change on a path that is not mutation-blocked', () => {
     const abortController = new AbortController();
-    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
 
     app.vault.trigger('delete', fileAt('other.md'));
     expect(abortController.signal.aborted).toBe(false);
@@ -1276,7 +1276,7 @@ describe('external-change detection', () => {
 
   it('should ignore an external change while only a read-only (non-blocking) lock covers the path', () => {
     const abortController = new AbortController();
-    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController });
 
     app.vault.trigger('delete', fileAt('target.md'));
     expect(abortController.signal.aborted).toBe(false);
@@ -1285,7 +1285,7 @@ describe('external-change detection', () => {
   it('should only abort the blocking locks that cover the changed path', () => {
     const targetController = new AbortController();
     const sourceController = new AbortController();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _lockTarget = component.lockForPath('target.md', { abortController: targetController, shouldBlockMutations: true });
     using _lockSource = component.lockForPath('source.md', { abortController: sourceController, shouldBlockMutations: true });
 
@@ -1297,7 +1297,7 @@ describe('external-change detection', () => {
   it('should skip a non-blocking lock entry when aborting the covering blocking lock', () => {
     const blockingController = new AbortController();
     const readOnlyController = new AbortController();
-    const component = new EditorLockComponent(app, 'test-plugin');
+    const component = new ResourceLockComponent(app, 'test-plugin');
     using _blocking = component.lockForPath('target.md', { abortController: blockingController, shouldBlockMutations: true });
     using _readOnly = component.lockForPath('other.md', { abortController: readOnlyController });
 
@@ -1307,7 +1307,7 @@ describe('external-change detection', () => {
   });
 
   it('should not throw when a covering blocking lock has no abort controller', () => {
-    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { shouldBlockMutations: true });
 
     expect(() => {
       app.vault.trigger('delete', fileAt('target.md'));

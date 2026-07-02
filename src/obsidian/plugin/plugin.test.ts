@@ -127,16 +127,16 @@ class TestPlugin extends PluginBase {
     return this.consoleDebugComponent;
   }
 
-  public getEditorLockComponent(): typeof this.editorLockComponent {
-    return this.editorLockComponent;
-  }
-
   public getNoticeComponent(): typeof this.pluginNoticeComponent {
     return this.pluginNoticeComponent;
   }
 
   public getPluginContextComponent(): typeof this.pluginContextComponent {
     return this.pluginContextComponent;
+  }
+
+  public getResourceLockComponent(): typeof this.resourceLockComponent {
+    return this.resourceLockComponent;
   }
 }
 
@@ -156,7 +156,7 @@ describe('PluginBase', () => {
     expect(plugin.getAbortSignalComponent()).toBeDefined();
     expect(plugin.getAsyncErrorHandlerComponent()).toBeDefined();
     expect(plugin.getConsoleDebugComponent()).toBeDefined();
-    expect(plugin.getEditorLockComponent()).toBeDefined();
+    expect(plugin.getResourceLockComponent()).toBeDefined();
     expect(plugin.getNoticeComponent()).toBeDefined();
     expect(plugin.getPluginContextComponent()).toBeDefined();
   });

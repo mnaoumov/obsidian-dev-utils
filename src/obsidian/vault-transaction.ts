@@ -180,9 +180,9 @@ export class VaultTransaction {
     const oldContent = await readSafe(this.app, path);
     await process({
       app: this.app,
-      editorLockComponent: null,
       newContentProvider: ({ content }) => newContentProvider(content),
-      pathOrFile: path
+      pathOrFile: path,
+      resourceLockComponent: null
     });
     // Reaching this line means `process` succeeded. A missing file would have thrown above (its
     // `shouldFailOnMissingFile` default), so the pre-image was captured and can be restored on rollback.
@@ -190,9 +190,9 @@ export class VaultTransaction {
     this.pushUndo(async () => {
       await process({
         app: this.app,
-        editorLockComponent: null,
         newContentProvider: oldContent,
-        pathOrFile: path
+        pathOrFile: path,
+        resourceLockComponent: null
       });
     });
   }

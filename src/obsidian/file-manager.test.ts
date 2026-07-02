@@ -13,8 +13,8 @@ import {
 } from 'vitest';
 
 import type { GenericObject } from '../type-guards.ts';
-import type { EditorLockComponent } from './editor-lock.ts';
 import type { GetFileParams } from './file-system.ts';
+import type { ResourceLockComponent } from './resource-lock.ts';
 
 import { noop } from '../function.ts';
 import { deepEqual } from '../object-utils.ts';
@@ -69,7 +69,7 @@ vi.mock('../obsidian/vault.ts', () => ({
   process: vi.fn()
 }));
 
-const editorLockComponent = strictProxy<EditorLockComponent>({
+const resourceLockComponent = strictProxy<ResourceLockComponent>({
   lockForPath: () => ({ [Symbol.dispose]: noop })
 });
 
@@ -92,29 +92,29 @@ describe('addAlias', () => {
   });
 
   it('should do nothing when alias is empty', async () => {
-    await addAlias({ alias: '', app, editorLockComponent, pathOrFile: 'note.md' });
+    await addAlias({ alias: '', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias is undefined', async () => {
-    await addAlias({ app, editorLockComponent, pathOrFile: 'note.md' });
+    await addAlias({ app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(addAlias({ alias: 'my-alias', app, editorLockComponent, pathOrFile: 'image.png' })).rejects.toThrow('not a markdown file');
+    await expect(addAlias({ alias: 'my-alias', app, pathOrFile: 'image.png', resourceLockComponent })).rejects.toThrow('not a markdown file');
   });
 
   it('should do nothing when alias matches basename', async () => {
     vi.mocked(getFile).mockReturnValue(strictProxy<TFile>({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' }));
-    await addAlias({ alias: 'note', app, editorLockComponent, pathOrFile: 'note.md' });
+    await addAlias({ alias: 'note', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias matches file name', async () => {
     vi.mocked(getFile).mockReturnValue(strictProxy<TFile>({ basename: 'note', extension: 'md', name: 'note.md', path: 'note.md' }));
-    await addAlias({ alias: 'note.md', app, editorLockComponent, pathOrFile: 'note.md' });
+    await addAlias({ alias: 'note.md', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).not.toHaveBeenCalled();
   });
 
@@ -128,7 +128,7 @@ describe('addAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
 
-    await addAlias({ alias: 'my-alias', app, editorLockComponent, pathOrFile: 'note.md' });
+    await addAlias({ alias: 'my-alias', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).toHaveBeenCalled();
   });
 
@@ -142,7 +142,7 @@ describe('addAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\naliases: existing-alias\n---\ncontent' });
     });
 
-    await addAlias({ alias: 'existing-alias', app, editorLockComponent, pathOrFile: 'note.md' });
+    await addAlias({ alias: 'existing-alias', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(frontmatter.aliases).toEqual(['existing-alias']);
   });
 });
@@ -160,18 +160,18 @@ describe('deleteAlias', () => {
   });
 
   it('should do nothing when alias is empty', async () => {
-    await deleteAlias({ alias: '', app, editorLockComponent, pathOrFile: 'note.md' });
+    await deleteAlias({ alias: '', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should do nothing when alias is undefined', async () => {
-    await deleteAlias({ app, editorLockComponent, pathOrFile: 'note.md' });
+    await deleteAlias({ app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).not.toHaveBeenCalled();
   });
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(deleteAlias({ alias: 'my-alias', app, editorLockComponent, pathOrFile: 'image.png' })).rejects.toThrow('not a markdown file');
+    await expect(deleteAlias({ alias: 'my-alias', app, pathOrFile: 'image.png', resourceLockComponent })).rejects.toThrow('not a markdown file');
   });
 
   it('should delete an alias from frontmatter', async () => {
@@ -183,7 +183,7 @@ describe('deleteAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\naliases:\n  - keep\n  - remove\n---\ncontent' });
     });
 
-    await deleteAlias({ alias: 'remove', app, editorLockComponent, pathOrFile: 'note.md' });
+    await deleteAlias({ alias: 'remove', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).toHaveBeenCalled();
   });
 
@@ -196,7 +196,7 @@ describe('deleteAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\naliases: only\n---\ncontent' });
     });
 
-    await deleteAlias({ alias: 'only', app, editorLockComponent, pathOrFile: 'note.md' });
+    await deleteAlias({ alias: 'only', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).toHaveBeenCalled();
   });
 
@@ -208,7 +208,7 @@ describe('deleteAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
 
-    await deleteAlias({ alias: 'my-alias', app, editorLockComponent, pathOrFile: 'note.md' });
+    await deleteAlias({ alias: 'my-alias', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).toHaveBeenCalled();
   });
 });
@@ -222,7 +222,7 @@ describe('processFrontmatter', () => {
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(processFrontmatter({ app, editorLockComponent, frontmatterFn: vi.fn(), pathOrFile: 'image.png' })).rejects.toThrow('not a markdown file');
+    await expect(processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'image.png', resourceLockComponent })).rejects.toThrow('not a markdown file');
   });
 
   it('should call process with the file', async () => {
@@ -233,7 +233,7 @@ describe('processFrontmatter', () => {
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
     const frontmatterFn = vi.fn();
-    await processFrontmatter({ app, editorLockComponent, frontmatterFn, pathOrFile: 'note.md' });
+    await processFrontmatter({ app, frontmatterFn, pathOrFile: 'note.md', resourceLockComponent });
     expect(process).toHaveBeenCalled();
     expect(frontmatterFn).toHaveBeenCalled();
   });
@@ -247,7 +247,7 @@ describe('processFrontmatter', () => {
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
-    await processFrontmatter({ app, editorLockComponent, frontmatterFn: () => null, pathOrFile: 'note.md' });
+    await processFrontmatter({ app, frontmatterFn: () => null, pathOrFile: 'note.md', resourceLockComponent });
     expect(resultContent).toBeNull();
   });
 
@@ -262,7 +262,7 @@ describe('processFrontmatter', () => {
     });
     vi.mocked(parseFrontmatter).mockReturnValue({ title: 'test' });
 
-    await processFrontmatter({ app, editorLockComponent, frontmatterFn: vi.fn(), pathOrFile: 'note.md' });
+    await processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'note.md', resourceLockComponent });
     expect(resultContent).toBe(content);
     expect(setFrontmatter).not.toHaveBeenCalled();
   });
@@ -279,11 +279,11 @@ describe('processFrontmatter', () => {
 
     await processFrontmatter({
       app,
-      editorLockComponent,
       frontmatterFn: (fm) => {
         fm['title'] = 'new';
       },
-      pathOrFile: 'note.md'
+      pathOrFile: 'note.md',
+      resourceLockComponent
     });
     expect(setFrontmatter).toHaveBeenCalled();
   });
@@ -296,7 +296,7 @@ describe('processFrontmatter', () => {
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
     const processOptions = { timeoutInMilliseconds: 5000 };
-    await processFrontmatter({ app, editorLockComponent, frontmatterFn: vi.fn(), pathOrFile: 'note.md', ...processOptions });
+    await processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'note.md', resourceLockComponent, ...processOptions });
     const params = vi.mocked(process).mock.calls[0]?.[0];
     expect(params?.app).toBe(app);
     expect(params?.pathOrFile).toBe('note.md');
