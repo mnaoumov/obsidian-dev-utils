@@ -355,10 +355,14 @@ Options:
 - **C — defer the whole blocker to phase 4 (pair with arming).** Safe but drops phase 2b's independent
   shippability + its CDP milestone.
 
-**Auto-selected: A.** Rationale: only option that ships phase 2b independently AND cannot regress shipped
-plugins. Awaiting user confirmation before implementing (global `Vault`-prototype patching + CDP
-verification warrant a look). If confirmed, implement `ResourceLockedError` + the gated blocker with 100%
-unit coverage and CDP-confirm real file-explorer delete/rename blocking.
+**RESOLVED — user approved redesigning `EditorLockComponent` (2026-07-01).** Going beyond a bolt-on flag:
+refactor the manager's lock storage into a **unified per-path list of lock records** (each carries
+`pluginId` + `mode:'file'|'subtree'` + `blocksMutations` + optional `abortController`), replacing the
+parallel count maps. Mutation-blocking is then a natural per-lock property (opt-in via `shouldBlockMutations`,
+default `false`), so legacy `lockEditorForPath` / read-only locks never block writes → zero regression, and
+the structure cleanly serves phases 3–4. Landing as two commits: (A) pure storage refactor (no behavior
+change, all existing tests stay green); (B) `ResourceLockedError` + the `MonkeyAroundComponent` blocker,
+100% unit coverage, CDP-confirm real file-explorer delete/rename blocking.
 
 ## Completed — dev-build live-enable + integration library styles
 
