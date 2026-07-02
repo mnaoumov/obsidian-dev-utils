@@ -120,6 +120,7 @@ export type ResourceLockMode = 'file' | 'subtree';
 interface EditorLockEventsComponentConstructorParams {
   readonly app: App;
   onChange(this: void): void;
+  onExternalMutation(this: void, path: string): void;
   onFileMenu(this: void, menu: Menu, file: TAbstractFile): void;
 }
 
@@ -154,12 +155,14 @@ interface ResourceLockMutationBlockerComponentConstructorParams {
 class EditorLockEventsComponent extends ComponentEx {
   private readonly app: App;
   private readonly onChange: () => void;
+  private readonly onExternalMutation: (path: string) => void;
   private readonly onFileMenu: (menu: Menu, file: TAbstractFile) => void;
 
   public constructor(params: EditorLockEventsComponentConstructorParams) {
     super();
     this.app = params.app;
     this.onChange = params.onChange;
+    this.onExternalMutation = params.onExternalMutation;
     this.onFileMenu = params.onFileMenu;
   }
 
@@ -171,6 +174,20 @@ class EditorLockEventsComponent extends ComponentEx {
     this.registerEvent(this.app.workspace.on('file-open', this.onChange));
     // Adds an "Unlock" item to a locked note's tab/file context menu (alongside the indicator menus).
     this.registerEvent(this.app.workspace.on('file-menu', this.onFileMenu));
+    // External-change backstop: a vault/metadata event on a mutation-blocked path not covered by an active bypass scope is an intruder (a sync/FS/adapter change that bypassed the blocker patch).
+    this.registerEvent(this.app.vault.on('create', (file): void => {
+      this.onExternalMutation(file.path);
+    }));
+    this.registerEvent(this.app.vault.on('delete', (file): void => {
+      this.onExternalMutation(file.path);
+    }));
+    this.registerEvent(this.app.vault.on('rename', (file, oldPath): void => {
+      this.onExternalMutation(oldPath);
+      this.onExternalMutation(file.path);
+    }));
+    this.registerEvent(this.app.metadataCache.on('deleted', (file): void => {
+      this.onExternalMutation(file.path);
+    }));
   }
 }
 
@@ -545,6 +562,9 @@ class EditorPathLockManager {
       onChange: (): void => {
         this.reconcile(app);
       },
+      onExternalMutation: (path): void => {
+        this.handleExternalMutation(app, path);
+      },
       onFileMenu: (menu, file): void => {
         this.handleFileMenu(app, menu, file);
       }
@@ -564,6 +584,36 @@ class EditorPathLockManager {
     for (const el of [indicators?.actionIconEl, indicators?.tabIconEl, this.statusBarItemEl]) {
       if (el) {
         this.flashElement(el);
+      }
+    }
+  }
+
+  /**
+   * Reacts to a vault/metadata event on a path. If the path is mutation-blocked and NOT covered by an
+   * active bypass scope, the change bypassed the blocker patch (sync / filesystem / a raw-adapter
+   * write) — an intruder. Abort the `abortController` of every mutation-blocking lock covering the path
+   * so the owning operation cancels and rolls back. A no-op for the owner's own (bypassed) mutations,
+   * for unblocked paths, and for blocking locks with no `abortController`.
+   *
+   * @param app - The Obsidian app instance.
+   * @param path - The path the event fired on.
+   */
+  private handleExternalMutation(app: App, path: string): void {
+    if (!this.isMutationBlockedByAncestor(app, path)) {
+      return;
+    }
+    if (this.isBypassed(app, path)) {
+      return;
+    }
+    for (const [lockedPath, entries] of this.lockEntriesByPath) {
+      for (const entry of entries) {
+        if (!entry.blocksMutations || !entry.abortController) {
+          continue;
+        }
+        const coversPath = lockedPath === path || (entry.mode === 'subtree' && isChild({ app, childPathOrFile: path, parentPathOrFile: lockedPath }));
+        if (coversPath) {
+          entry.abortController.abort();
+        }
       }
     }
   }

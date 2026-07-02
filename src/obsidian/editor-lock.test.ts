@@ -1192,3 +1192,125 @@ describe('mutation bypass scope', () => {
     }).not.toThrow();
   });
 });
+
+describe('external-change detection', () => {
+  beforeEach(() => {
+    mockApp = App.createConfigured__({
+      files: {
+        'folder/child.md': 'child',
+        'other.md': '',
+        'source.md': 'src',
+        'target.md': 'content'
+      }
+    });
+    app = mockApp.asOriginalType__();
+    castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => null);
+    castTo<MockAppPlugins>(app).plugins = { manifests: {} };
+    vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
+  });
+
+  function fileAt(path: string): TFileOriginal {
+    const file = app.vault.getFileByPath(path);
+    assertNonNullable(file);
+    return file;
+  }
+
+  it('should abort the owning lock when an external delete hits a mutation-blocked path', () => {
+    const abortController = new AbortController();
+    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+
+    app.vault.trigger('delete', fileAt('target.md'));
+    expect(abortController.signal.aborted).toBe(true);
+  });
+
+  it('should abort on an external create landing on a blocked path', () => {
+    const abortController = new AbortController();
+    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+
+    app.vault.trigger('create', fileAt('target.md'));
+    expect(abortController.signal.aborted).toBe(true);
+  });
+
+  it('should abort when a rename touches a blocked path', () => {
+    const abortController = new AbortController();
+    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+
+    // The file is now at target.md (a blocked path), renamed from an unblocked old path.
+    app.vault.trigger('rename', fileAt('target.md'), 'was.md');
+    expect(abortController.signal.aborted).toBe(true);
+  });
+
+  it('should abort on a metadataCache deleted event for a blocked path', () => {
+    const abortController = new AbortController();
+    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+
+    app.metadataCache.trigger('deleted', fileAt('target.md'), null);
+    expect(abortController.signal.aborted).toBe(true);
+  });
+
+  it('should abort the folder lock when a child under a blocking subtree lock changes externally', () => {
+    const abortController = new AbortController();
+    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController, mode: 'subtree', shouldBlockMutations: true });
+
+    app.vault.trigger('delete', fileAt('folder/child.md'));
+    expect(abortController.signal.aborted).toBe(true);
+  });
+
+  it('should not abort for a change covered by an active bypass scope', () => {
+    const abortController = new AbortController();
+    const component = new EditorLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _bypass = component.bypassBlockedMutations(['target.md']);
+
+    app.vault.trigger('delete', fileAt('target.md'));
+    expect(abortController.signal.aborted).toBe(false);
+  });
+
+  it('should ignore an external change on a path that is not mutation-blocked', () => {
+    const abortController = new AbortController();
+    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+
+    app.vault.trigger('delete', fileAt('other.md'));
+    expect(abortController.signal.aborted).toBe(false);
+  });
+
+  it('should ignore an external change while only a read-only (non-blocking) lock covers the path', () => {
+    const abortController = new AbortController();
+    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController });
+
+    app.vault.trigger('delete', fileAt('target.md'));
+    expect(abortController.signal.aborted).toBe(false);
+  });
+
+  it('should only abort the blocking locks that cover the changed path', () => {
+    const targetController = new AbortController();
+    const sourceController = new AbortController();
+    const component = new EditorLockComponent(app, 'test-plugin');
+    using _lockTarget = component.lockForPath('target.md', { abortController: targetController, shouldBlockMutations: true });
+    using _lockSource = component.lockForPath('source.md', { abortController: sourceController, shouldBlockMutations: true });
+
+    app.vault.trigger('delete', fileAt('target.md'));
+    expect(targetController.signal.aborted).toBe(true);
+    expect(sourceController.signal.aborted).toBe(false);
+  });
+
+  it('should skip a non-blocking lock entry when aborting the covering blocking lock', () => {
+    const blockingController = new AbortController();
+    const readOnlyController = new AbortController();
+    const component = new EditorLockComponent(app, 'test-plugin');
+    using _blocking = component.lockForPath('target.md', { abortController: blockingController, shouldBlockMutations: true });
+    using _readOnly = component.lockForPath('other.md', { abortController: readOnlyController });
+
+    app.vault.trigger('delete', fileAt('target.md'));
+    expect(blockingController.signal.aborted).toBe(true);
+    expect(readOnlyController.signal.aborted).toBe(false);
+  });
+
+  it('should not throw when a covering blocking lock has no abort controller', () => {
+    using _lock = new EditorLockComponent(app, 'test-plugin').lockForPath('target.md', { shouldBlockMutations: true });
+
+    expect(() => {
+      app.vault.trigger('delete', fileAt('target.md'));
+    }).not.toThrow();
+  });
+});

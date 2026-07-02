@@ -36,6 +36,10 @@ interface BypassScopeResult {
   readonly wasModifyBlockedAfterScope: boolean;
 }
 
+interface ExternalChangeResult {
+  readonly wasAbortedOnExternalDelete: boolean;
+}
+
 interface LockForPathResult {
   readonly isCurrentTabLocked: boolean;
   readonly isCurrentTabLockedAfterUnlock: boolean;
@@ -467,6 +471,47 @@ describe('editor-lock', () => {
       // The owner's mutation passes while bypassed; once the scope ends the path is blocked again.
       expect(result.wasBypassedModifyAllowed).toBe(true);
       expect(result.wasModifyBlockedAfterScope).toBe(true);
+    });
+  });
+
+  describe('EditorLockComponent external-change detection', () => {
+    it('should abort the owning operation when a locked file is changed outside the blocker (raw adapter)', async () => {
+      const result = await evalInObsidian({
+        async fn({ app }): Promise<ExternalChangeResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          const { EditorLockComponent } = lib.obsidian['editor-lock'];
+          const path = 'editor-lock-detector-target.md';
+          if (await app.vault.adapter.exists(path)) {
+            await app.vault.adapter.remove(path);
+          }
+          await app.vault.create(path, 'content');
+
+          const component = new EditorLockComponent(app, 'integration-detector');
+          const abortController = new AbortController();
+          const lock = component.lockForPath(path, { abortController, shouldBlockMutations: true });
+
+          try {
+            // A change that bypasses the blocker patch entirely (raw adapter delete). Obsidian's file watcher then fires vault('delete'), which the detector reconciles into an abort.
+            await app.vault.adapter.remove(path);
+            const MAX_WAIT_ITERATIONS = 50;
+            const WAIT_STEP_MILLISECONDS = 100;
+            for (let iteration = 0; iteration < MAX_WAIT_ITERATIONS && !abortController.signal.aborted; iteration++) {
+              await sleep(WAIT_STEP_MILLISECONDS);
+            }
+            return { wasAbortedOnExternalDelete: abortController.signal.aborted };
+          } finally {
+            lock[Symbol.dispose]();
+          }
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // The external delete aborted the operation holding the mutation-blocking lock.
+      expect(result.wasAbortedOnExternalDelete).toBe(true);
     });
   });
 });
