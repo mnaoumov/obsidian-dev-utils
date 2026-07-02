@@ -340,20 +340,41 @@ Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
    original path. Without arming, the detector would mistake the owner's own soft-delete for an intruder and
    abort it. So **do phase 4 (arming) together with / before phase 3**, or gate the detector to only-armed
    reconciliation. Revisit the plan's 3-before-4 ordering.
-4. **`ResourceLockComponent` + owner session** — rename/evolve `EditorLockComponent` →
-   `ResourceLockComponent` (**no back-compat shim**; update `PluginBase`'s field + free-function wrappers
-   `lock/unlock/is/requestEditorUnlockForPath`). Add `lockResource({abortController?, mode?:'file'|'subtree'})`,
-   `unlockResource`, `isResourceLocked(ByAncestor)`, `createOwnerSession(abortController).armExpectedMutation()`.
-   Integrate arming into `VaultTransaction` (arm synchronously immediately before each vault op).
+4. **`ResourceLockComponent` + owner session.**
+   - **Owner-session arming core ✅ DONE (committed `f505ed87`, not released).** Added
+     `EditorLockComponent.createOwnerSession(): ResourceLockOwnerSession` +
+     `session.armExpectedMutation(pathsOrFiles)`. The blocker now calls `shouldBlockMutation(path)`: a
+     blocked path is allowed through iff some active owner session has an arm for it (consumed one-shot);
+     otherwise `ResourceLockedError`. Arm both source + dest for rename/copy. Each session owns its arm
+     counts, so unconsumed arms vanish on dispose (removed from the manager's active set) — no cross-session
+     bookkeeping. 100% unit + real-Obsidian integration (armed modify passes, unarmed rejected).
+   - **NEXT — integrate arming into `VaultTransaction`.** Arm synchronously immediately before each vault op.
+     **⚠ Design care needed:** `VaultTransaction.trash`/`commit` use `adapter.rename`/`trashSystem` (adapter
+     bypasses the patch) → NO arming needed. Only `create`/`createFolder`/`modify`/`process`/`rename` (and
+     the rollback undo steps that go through blocked methods: `hardDelete`→`vault.delete`, rename-undo→`renameSafe`,
+     process-undo→`process`) need arming. BUT the `*Safe` wrappers do **compound** blocked calls —
+     `renameSafe` calls `createFolderSafe(destParent)` (→ `vault.createFolder`, blocked if that folder is
+     locked) THEN `fileManager.renameFile`; `createFolderSafe` may create locked ancestors. So arming only
+     the final `[oldPath,newPath]` can miss an intermediate locked-folder creation. Decide arming
+     granularity (arm the transitive set the wrapper will touch, or expose a session "suspend for these
+     paths" scope) so the owner never blocks itself. `createOwnerSession` will also gain an
+     `abortController` here (phase 3 needs it to abort the owning op on intruder detection).
+   - **Deferred to release-coordination — the breaking rename** `EditorLockComponent` →
+     `ResourceLockComponent` (**no back-compat shim**; update `PluginBase`'s field + the free-function
+     wrappers `lock/unlock/is/requestEditorUnlockForPath` + all consumers), and the public
+     `lockResource`/`unlockResource`/`isResourceLocked(ByAncestor)` facade names. Naming only — the behavior
+     already exists on `EditorLockComponent` (`lockForPath({mode, shouldBlockMutations})`,
+     `isLockedByAncestorForPath`, `isMutationBlockedByAncestorForPath`, `createOwnerSession`). Sequence with
+     the major bump + consumer migration.
 
 Conventions: strict TS, 100% unit coverage, R2/R1 rules, dev-utils integration harness
 (`*.obsidian.integration.test.ts` via `window.__obsidianDevUtilsModule__`). Ship dev-utils release(s) as
 phases land; the plugin then bumps the dep.
 
-**Progress: phases 1 and 2 complete (unreleased local commits on `main`, not pushed).** Phase 3 is next but
-should be paired with phase 4's arming (see the ⚠ interdependency note above). The `EditorLockComponent` →
-`ResourceLockComponent` rename (no back-compat shim; updates `PluginBase` + free-function wrappers + all
-consumers) remains a phase-4 breaking change to sequence with the release.
+**Progress: phase 1, phase 2, and the phase-4 owner-session arming core are complete (unreleased local
+commits on `main`, not pushed).** NEXT: integrate arming into `VaultTransaction` (see the ⚠ design-care note),
+then phase 3's detector (which reuses the session's `abortController`), then the deferred breaking rename with
+the release.
 
 ## Completed — dev-build live-enable + integration library styles
 
