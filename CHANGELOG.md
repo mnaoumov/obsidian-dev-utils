@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 83.3.0
+
+- chore: update libs
+- feat: showNoticeAfterDelay
+- feat: don't close plugin notice on click on interactive els
+
 ## 83.2.0
 
 - docs: cleanup
