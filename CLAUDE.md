@@ -316,14 +316,30 @@ Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
      indicators/tooltip/unlock menu resolve to the folder lock. Existing 'file'-mode behavior unchanged
      (every new query reduces to the old exact-match when no subtree locks exist). 100% unit + real-Obsidian
      integration test.
-   - **2b ⏳ NEXT (blocked on a decision — see Pending Questions).** `MonkeyAroundComponent` patches on the
-     `Vault` prototype (`rename`/`delete`/`trash`/`modify`/`process`/`append`/`modifyBinary`/`create`/
-     `createBinary`/`createFolder`/`copy`) + `FileManager` `renameFile`/`trashFile`; throw
-     `ResourceLockedError` when a path is locked-by-ancestor and no armed mutation matches. Installed lazily
-     on first lock. Confirm real file-explorer delete/rename is blocked via CDP.
+   - **Storage refactor ✅ DONE (committed `6ee96234`).** Unified the parallel count maps into one
+     `Map<path, LockEntry[]>` (each entry carries `pluginId`/`mode`/`blocksMutations`/`abortController`);
+     behavior-preserving foundation for the blocker + owner session. (User approved redesigning the
+     component.)
+   - **2b ✅ DONE (committed `c56456b1`, not released).** Opt-in vault-mutation blocker. A lock taken with
+     `shouldBlockMutations: true` rejects edit/delete/rename/move/create of the covered path(s) —
+     subtree-aware — via a lazily-installed `MonkeyAroundComponent` patching Vault (`append`/`copy`/`create`/
+     `createBinary`/`createFolder`/`delete`/`modify`/`modifyBinary`/`process`/`rename`/`trash`) + FileManager
+     (`renameFile`/`trashFile`), throwing the new exported `ResourceLockedError`. Rename/copy check source +
+     dest; patch torn down when the last blocking lock releases. **Gating decision (implemented):** blocking
+     is OPT-IN per lock — read-only editor locks never block writes, so shipped consumers are unaffected
+     (no owner-arming yet; that is phase 4). 100% unit (real MonkeyAroundComponent patching the real
+     test-mocks prototypes) + real-Obsidian integration (blocks vault rename + fileManager trash, allows
+     after unlock).
 3. **External-change detection backstop** — extend the lock's events component to listen to
    `vault.on('rename'|'delete'|'create')` + `metadataCache.on('deleted')`; an event on a locked path with
    no matching armed mutation → `requestUnlock(path)` → aborts the owning operation → rollback.
+   **⚠ Interdependency (confirmed while building 2b):** phase 3 needs phase 4's arming to be safe. For a
+   `shouldBlockMutations` lock the owner currently cannot mutate the path at all, so any event is an
+   intruder — BUT the phase-1 `VaultTransaction` soft-delete moves resources via `adapter.rename`, which
+   bypasses the patched `vault.*` yet still fires the watcher's `vault.on('delete'|'create')` for the
+   original path. Without arming, the detector would mistake the owner's own soft-delete for an intruder and
+   abort it. So **do phase 4 (arming) together with / before phase 3**, or gate the detector to only-armed
+   reconciliation. Revisit the plan's 3-before-4 ordering.
 4. **`ResourceLockComponent` + owner session** — rename/evolve `EditorLockComponent` →
    `ResourceLockComponent` (**no back-compat shim**; update `PluginBase`'s field + free-function wrappers
    `lock/unlock/is/requestEditorUnlockForPath`). Add `lockResource({abortController?, mode?:'file'|'subtree'})`,
@@ -334,35 +350,10 @@ Conventions: strict TS, 100% unit coverage, R2/R1 rules, dev-utils integration h
 (`*.obsidian.integration.test.ts` via `window.__obsidianDevUtilsModule__`). Ship dev-utils release(s) as
 phases land; the plugin then bumps the dep.
 
-### Pending Questions
-
-**Q (phase 2b — how to gate the Vault-mutation blocker so it does not break already-shipped consumers).**
-The plan installs the blocker lazily "on first lock" and blocks any mutation of a locked path until owner
-arming lands (phase 4). But existing `EditorLockComponent` consumers (advanced-note-composer merge/split,
-and dev-utils' own `process(editorLockComponent)`) hold an **editor lock while writing to the locked file**
-via `vault.process`. A blocker active for *every* locked path would throw on those legitimate writes →
-breaks published plugins the moment phase 2b ships (arming that would let owners through is phase 4). This
-also diverges from the plan's "one shared locked-path set".
-
-Options:
-- **A — opt-in `shouldBlockMutations` flag (auto-selected).** Add a lock option
-  `shouldBlockMutations?: boolean` (default `false`); the blocker only rejects mutations of paths locked
-  *with that flag* (subtree-aware), lazily installing the patch on the first such lock. Legacy editor locks
-  and plain subtree read-only locks are unaffected → zero regression. Phase 4 arming then lets the owner
-  through. Minimal blast radius; small divergence from "one set" (a second, opt-in block set).
-- **B — block all locked paths (as literally written).** Rejected: breaks existing merge/split consumers
-  between phase 2b and their phase-5 migration.
-- **C — defer the whole blocker to phase 4 (pair with arming).** Safe but drops phase 2b's independent
-  shippability + its CDP milestone.
-
-**RESOLVED — user approved redesigning `EditorLockComponent` (2026-07-01).** Going beyond a bolt-on flag:
-refactor the manager's lock storage into a **unified per-path list of lock records** (each carries
-`pluginId` + `mode:'file'|'subtree'` + `blocksMutations` + optional `abortController`), replacing the
-parallel count maps. Mutation-blocking is then a natural per-lock property (opt-in via `shouldBlockMutations`,
-default `false`), so legacy `lockEditorForPath` / read-only locks never block writes → zero regression, and
-the structure cleanly serves phases 3–4. Landing as two commits: (A) pure storage refactor (no behavior
-change, all existing tests stay green); (B) `ResourceLockedError` + the `MonkeyAroundComponent` blocker,
-100% unit coverage, CDP-confirm real file-explorer delete/rename blocking.
+**Progress: phases 1 and 2 complete (unreleased local commits on `main`, not pushed).** Phase 3 is next but
+should be paired with phase 4's arming (see the ⚠ interdependency note above). The `EditorLockComponent` →
+`ResourceLockComponent` rename (no back-compat shim; updates `PluginBase` + free-function wrappers + all
+consumers) remains a phase-4 breaking change to sequence with the release.
 
 ## Completed — dev-build live-enable + integration library styles
 
