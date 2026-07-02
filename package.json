@@ -665,7 +665,7 @@
     "@types/doctrine": "^0.0.9",
     "@types/eslint": "^9.6.1",
     "@types/luxon": "^3.7.2",
-    "@types/node": "^26.0.1",
+    "@types/node": "^26.1.0",
     "@types/parsimmon": "^1.10.9",
     "@types/path-browserify": "^1.0.3",
     "@types/picomatch": "^4.0.3",
