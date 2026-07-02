@@ -330,16 +330,15 @@ Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
      (no owner-arming yet; that is phase 4). 100% unit (real MonkeyAroundComponent patching the real
      test-mocks prototypes) + real-Obsidian integration (blocks vault rename + fileManager trash, allows
      after unlock).
-3. **External-change detection backstop** — extend the lock's events component to listen to
-   `vault.on('rename'|'delete'|'create')` + `metadataCache.on('deleted')`; an event on a locked path with
-   no matching armed mutation → `requestUnlock(path)` → aborts the owning operation → rollback.
-   **⚠ Interdependency (confirmed while building 2b):** phase 3 needs phase 4's arming to be safe. For a
-   `shouldBlockMutations` lock the owner currently cannot mutate the path at all, so any event is an
-   intruder — BUT the phase-1 `VaultTransaction` soft-delete moves resources via `adapter.rename`, which
-   bypasses the patched `vault.*` yet still fires the watcher's `vault.on('delete'|'create')` for the
-   original path. Without arming, the detector would mistake the owner's own soft-delete for an intruder and
-   abort it. So **do phase 4 (arming) together with / before phase 3**, or gate the detector to only-armed
-   reconciliation. Revisit the plan's 3-before-4 ordering.
+3. **External-change detection backstop — NEXT.** Extend the lock's events component to listen to
+   `vault.on('rename'|'delete'|'create')` + `metadataCache.on('deleted')`; an event on a mutation-blocked
+   path NOT covered by an active bypass scope → intruder → `requestUnlock(path)` (aborts the owning op's
+   `abortController`, already wired via `lockForPath({abortController})`) → the op's `finally` rolls back. The
+   bypass set is the "expected vs intruder" filter, so this composes directly with the layers below.
+   (The interdependency flagged while building 2b is now resolved: the phase-1 `VaultTransaction` soft-delete
+   moves resources via `adapter.rename`, which bypasses the patched `vault.*` yet still fires the watcher's
+   `vault.on('delete'|'create')` for the original path — but that path sits inside the owner's active bypass
+   scope, so the detector correctly treats it as expected, not an intruder.)
 4. **`ResourceLockComponent` + owner session.**
    - **Owner mutation-bypass core ✅ DONE (committed `f505ed87` as one-shot arming, then superseded by
      `41df62eb`; not released).** After weighing one-shot arming vs. an ambient scope, the user chose an
@@ -354,20 +353,21 @@ Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
      bypassed path would also pass — but those paths are locked by this op (editor read-only), so the only
      leak is external sync during the window, caught by the mtime pre/post-check. The phase-3 detector will
      also filter on the bypass set.
-   - **NEXT — use the bypass in `VaultTransaction`.** Wrap each op's own `*Safe`/`vault.*` mutations in
-     `using _bypass = component.bypassBlockedMutations([...the paths this op touches...])`. Because the scope
-     is ambient, this cleanly covers the **compound** `*Safe` calls (e.g. `renameSafe` → `createFolderSafe`
-     dest parent → `fileManager.renameFile`) that one-shot arming made awkward — declare the op's path set
-     (source, dest, dest-parent, staging) once. `trash`/`commit` use the adapter (bypass the patch) → no
-     bypass needed. VaultTransaction will take the lock component + the paths so it can open the scope.
-     Phase 3 will abort the owning op via the lock's `abortController` (already on `lockForPath({abortController})`).
+   - **VaultTransaction bypass integration ✅ DONE (committed `b8c31a06`, not released).** VaultTransaction
+     gained an optional `openMutationBypass?(): Disposable` thunk. When the owner supplies it (pre-bound with
+     the paths it locked, e.g. `() => component.bypassBlockedMutations(lockedPaths)`), the transaction opens
+     that ambient scope at construction and disposes it only after `commit`/`rollback` completes — **including
+     auto-rollback on `await using` disposal**, so the rollback's own restore writes stay bypassed (the part a
+     hand-managed scope easily drops). Decoupled (thunk, not the component); the owner's subtree bypass covers
+     the compound `*Safe` internal calls; `trash`/`commit` use the adapter → no bypass. 100% unit + real-Obsidian
+     integration (modify + rollback of a file under a mutation-blocking subtree lock).
    - **Deferred to release-coordination — the breaking rename** `EditorLockComponent` →
      `ResourceLockComponent` (**no back-compat shim**; update `PluginBase`'s field + the free-function
      wrappers `lock/unlock/is/requestEditorUnlockForPath` + all consumers), and the public
      `lockResource`/`unlockResource`/`isResourceLocked(ByAncestor)` facade names. Naming only — the behavior
      already exists on `EditorLockComponent` (`lockForPath({mode, shouldBlockMutations})`,
-     `isLockedByAncestorForPath`, `isMutationBlockedByAncestorForPath`, `createOwnerSession`). Sequence with
-     the major bump + consumer migration.
+     `isLockedByAncestorForPath`, `isMutationBlockedByAncestorForPath`, `bypassBlockedMutations`). Sequence
+     with the major bump + consumer migration.
 
 Conventions: strict TS, 100% unit coverage, R2/R1 rules, dev-utils integration harness
 (`*.obsidian.integration.test.ts` via `window.__obsidianDevUtilsModule__`). Ship dev-utils release(s) as
