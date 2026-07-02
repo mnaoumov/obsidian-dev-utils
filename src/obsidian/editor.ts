@@ -4,17 +4,59 @@
  * This module provides utility functions for working with markdown editors in Obsidian
  */
 
-import type { Editor } from 'obsidian';
+import type {
+  App,
+  Editor
+} from 'obsidian';
 
 import {
   Compartment,
   EditorState,
   StateEffect
 } from '@codemirror/state';
+import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
+import { MarkdownView } from 'obsidian';
+
+import type { PathOrFile } from './file-system.ts';
 
 import { castTo } from '../object-utils.ts';
+import { getPath } from './file-system.ts';
 
 const compartmentByCodeMirror = new WeakMap<Editor['cm'], Compartment>();
+
+/**
+ * Overwrites the buffer of every open {@link MarkdownView} currently showing the given path so that
+ * it reflects `content`, in any window or popout.
+ *
+ * This is the fix for a subtle data-loss window: when a note is open in an editor with a **dirty
+ * buffer** (a pending, not-yet-saved edit) and its file content is rewritten on disk out from under
+ * the editor, the editor's next autosave re-writes its stale buffer and clobbers the on-disk content.
+ * A caller that restores a file's content on disk (e.g. rolling back a transaction) must also reset
+ * the open editor's buffer to the same content, so its next save is a no-op instead of a clobber.
+ *
+ * Only the view whose {@link MarkdownView.file} still matches `pathOrFile` is touched — if the editor
+ * has since navigated to another note, it is left alone. The buffer is replaced only when it actually
+ * differs from `content`, so a clean editor already in sync is not disturbed (no cursor reset).
+ *
+ * @param app - The Obsidian app instance.
+ * @param pathOrFile - The path or file whose open editors should be synchronized.
+ * @param content - The content to overwrite each matching editor's buffer with.
+ */
+export function syncOpenEditorBuffersForPath(app: App, pathOrFile: PathOrFile, content: string): void {
+  const path = getPath(app, pathOrFile);
+  for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
+    const view = leaf.view;
+    if (!(view instanceof MarkdownView)) {
+      continue;
+    }
+    if (view.file?.path !== path) {
+      continue;
+    }
+    if (view.editor.getValue() !== content) {
+      view.editor.setValue(content);
+    }
+  }
+}
 
 /**
  * Toggles the read-only state of a single CodeMirror instance — the low-level primitive behind

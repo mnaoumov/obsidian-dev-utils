@@ -1,9 +1,22 @@
+// @vitest-environment jsdom
+
 import type {
   Extension,
   StateEffect
 } from '@codemirror/state';
-import type { Editor } from 'obsidian';
+import type {
+  App as AppOriginal,
+  Editor,
+  MarkdownView as MarkdownViewOriginal,
+  View as ViewOriginal,
+  WorkspaceLeaf as WorkspaceLeafOriginal
+} from 'obsidian';
 
+import {
+  App,
+  MarkdownView,
+  WorkspaceLeaf
+} from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -15,7 +28,11 @@ import {
 import { noopAsync } from '../function.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
-import { toggleEditorReadOnly } from './editor.ts';
+import { assertNonNullable } from '../type-guards.ts';
+import {
+  syncOpenEditorBuffersForPath,
+  toggleEditorReadOnly
+} from './editor.ts';
 
 const mocks = vi.hoisted(() => {
   const mockReconfigure = vi.fn((extension: unknown): StateEffect<unknown> => castTo<StateEffect<unknown>>({ reconfigure: extension }));
@@ -134,4 +151,86 @@ describe('toggleEditorReadOnly', () => {
     // First toggle: appendConfig + reconfigure (2 dispatches); second toggle: reconfigure (1 dispatch).
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(3);
   });
+});
+
+describe('syncOpenEditorBuffersForPath', () => {
+  let app: AppOriginal;
+  let mockApp: App;
+
+  beforeEach(() => {
+    mockApp = App.createConfigured__({
+      files: {
+        'note.md': '',
+        'other.md': ''
+      }
+    });
+    app = mockApp.asOriginalType__();
+  });
+
+  it('should overwrite the buffer of a matching open editor whose content differs', () => {
+    const view = createMarkdownView('note.md');
+    stubLeaves(leafOf(view));
+
+    syncOpenEditorBuffersForPath(app, 'note.md', 'RESTORED');
+
+    expect(view.editor.getValue()).toBe('RESTORED');
+  });
+
+  it('should not overwrite a matching editor whose buffer already equals the content', () => {
+    const view = createMarkdownView('note.md');
+    view.editor.setValue('SAME');
+    const setValueSpy = vi.spyOn(view.editor, 'setValue');
+    stubLeaves(leafOf(view));
+
+    syncOpenEditorBuffersForPath(app, 'note.md', 'SAME');
+
+    expect(setValueSpy).not.toHaveBeenCalled();
+  });
+
+  it('should ignore leaves whose view is not a MarkdownView and still update a matching one', () => {
+    const view = createMarkdownView('note.md');
+    stubLeaves(leafOf(strictProxy<ViewOriginal>({})), leafOf(view));
+
+    syncOpenEditorBuffersForPath(app, 'note.md', 'RESTORED');
+
+    expect(view.editor.getValue()).toBe('RESTORED');
+  });
+
+  it('should not touch a view showing a different path', () => {
+    const view = createMarkdownView('other.md');
+    view.editor.setValue('OTHER');
+    stubLeaves(leafOf(view));
+
+    syncOpenEditorBuffersForPath(app, 'note.md', 'RESTORED');
+
+    expect(view.editor.getValue()).toBe('OTHER');
+  });
+
+  it('should not touch a matching-type view without a file', () => {
+    const mockLeaf = WorkspaceLeaf.create2__(mockApp);
+    const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
+    view.editor.setValue('NO FILE');
+    stubLeaves(leafOf(view));
+
+    syncOpenEditorBuffersForPath(app, 'note.md', 'RESTORED');
+
+    expect(view.editor.getValue()).toBe('NO FILE');
+  });
+
+  function createMarkdownView(path: string): MarkdownViewOriginal {
+    const mockLeaf = WorkspaceLeaf.create2__(mockApp);
+    const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
+    const file = app.vault.getFileByPath(path);
+    assertNonNullable(file);
+    view.file = file;
+    return view;
+  }
+
+  function leafOf(view: ViewOriginal): WorkspaceLeafOriginal {
+    return strictProxy<WorkspaceLeafOriginal>({ view });
+  }
+
+  function stubLeaves(...leaves: WorkspaceLeafOriginal[]): void {
+    vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue(leaves);
+  }
 });

@@ -25,6 +25,7 @@ import type {
 import type { PathOrAbstractFile } from './file-system.ts';
 
 import { assertNonNullable } from '../type-guards.ts';
+import { syncOpenEditorBuffersForPath } from './editor.ts';
 import {
   getAbstractFileOrNull,
   getPath
@@ -194,6 +195,12 @@ export class VaultTransaction {
         pathOrFile: path,
         resourceLockComponent: null
       });
+      // A consumer may have edited this note through the editor, leaving a dirty buffer.
+      // Its pending autosave could re-write that stale buffer over the disk restore above and clobber it.
+      // Resetting the open editor's buffer to the restored content keeps its next save a no-op.
+      // Only the view still showing this path is touched.
+      // VaultTransaction already flushes via `saveNote`, so this reset is belt-and-suspenders.
+      syncOpenEditorBuffersForPath(this.app, path, oldContent);
     });
   }
 

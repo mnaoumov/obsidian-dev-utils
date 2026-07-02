@@ -36,6 +36,11 @@ interface CommitResult {
   readonly isStagingFolderGoneAfterCommit: boolean;
 }
 
+interface EditorClobberResult {
+  readonly diskAfterRollbackAndSave: string;
+  readonly editorAfterRollbackAndSave: string;
+}
+
 interface SubtreeRollbackResult {
   readonly areChildrenGoneAfterTrash: boolean;
   readonly restoredChildContents: readonly string[];
@@ -241,5 +246,63 @@ describe('VaultTransaction', () => {
     // The transaction mutated and rolled back a file under a mutation-blocking subtree lock.
     expect(result.wasModifyAllowedUnderLock).toBe(true);
     expect(result.wasRolledBackUnderLock).toBe(true);
+  });
+
+  it('should leave both disk and an open editor at the restored content after rollback', async () => {
+    const result = await evalInObsidian({
+      async fn({ app, obsidianModule }): Promise<EditorClobberResult> {
+        const lib = window.__obsidianDevUtilsModule__;
+        if (!lib) {
+          throw new Error('obsidian-dev-utils module not registered on window');
+        }
+
+        const { MarkdownView } = obsidianModule;
+        const { VaultTransaction } = lib.obsidian['vault-transaction'];
+        const targetPath = 'vt-editor-clobber.md';
+        const originalContent = 'first\nmiddle\nlast\n';
+        const extractedContent = 'first\n\nlast\n';
+
+        const file = await app.vault.create(targetPath, originalContent);
+        const leaf = app.workspace.getLeaf(true);
+        try {
+          await leaf.openFile(file);
+          const view = leaf.view;
+          if (!(view instanceof MarkdownView)) {
+            throw new Error('expected a MarkdownView');
+          }
+          const editor = view.editor;
+
+          const vaultTransaction = new VaultTransaction({ app });
+          // Capture the pre-image (still `originalContent`) and write the extraction to disk.
+          await vaultTransaction.modify(targetPath, extractedContent);
+          // Mimic a consumer that edited the note THROUGH the editor (e.g. a split via
+          // `editor.replaceSelection`): the editor now holds a dirty buffer = the extraction.
+          editor.setValue(extractedContent);
+
+          // Rollback restores the disk content and syncs the open editor's buffer to match.
+          // VaultTransaction's restore is already editor-safe on its own.
+          // Its `readSafe` -> `saveNote` flushes the dirty buffer, then the clean editor reloads.
+          // This test therefore guards the end-to-end invariant rather than isolating that machinery.
+          await vaultTransaction.rollback();
+
+          // Force the editor's buffer to disk; it must be the restored content, not the extraction.
+          await view.save();
+
+          return {
+            diskAfterRollbackAndSave: await app.vault.adapter.read(targetPath),
+            editorAfterRollbackAndSave: editor.getValue()
+          };
+        } finally {
+          leaf.detach();
+          if (await app.vault.adapter.exists(targetPath)) {
+            await app.vault.adapter.trashLocal(targetPath);
+          }
+        }
+      },
+      vaultPath: inject('tempVaultPath')
+    });
+
+    expect(result.diskAfterRollbackAndSave).toBe('first\nmiddle\nlast\n');
+    expect(result.editorAfterRollbackAndSave).toBe('first\nmiddle\nlast\n');
   });
 });

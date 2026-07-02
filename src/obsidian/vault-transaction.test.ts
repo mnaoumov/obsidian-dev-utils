@@ -1,8 +1,15 @@
 // @vitest-environment jsdom
 
-import type { App as AppOriginal } from 'obsidian';
+import type {
+  App as AppOriginal,
+  WorkspaceLeaf as WorkspaceLeafOriginal
+} from 'obsidian';
 
-import { App } from 'obsidian-test-mocks/obsidian';
+import {
+  App,
+  MarkdownView,
+  WorkspaceLeaf
+} from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -14,6 +21,7 @@ import {
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
 
 import { strictProxy } from '../strict-proxy.ts';
+import { assertNonNullable } from '../type-guards.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
 import { VaultTransaction } from './vault-transaction.ts';
 
@@ -229,6 +237,27 @@ describe('VaultTransaction', () => {
 
       await vaultTransaction.rollback();
       expect(await read('a.md')).toBe('abc');
+    });
+
+    it('should reset a dirty open editor to the restored content on rollback so it cannot clobber the restore', async () => {
+      await app.vault.create('a.md', 'OLD');
+      const mockLeaf = WorkspaceLeaf.create2__(mockApp);
+      const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
+      const file = app.vault.getFileByPath('a.md');
+      assertNonNullable(file);
+      view.file = file;
+      // `readSafe` -> `saveNote` reads `view.dirty`; keep it clean so it never flushes the mock editor.
+      view.dirty = false;
+      vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([strictProxy<WorkspaceLeafOriginal>({ view })]);
+
+      const vaultTransaction = new VaultTransaction({ app });
+      await vaultTransaction.modify('a.md', 'NEW');
+      // The consumer edited the note THROUGH the editor: its buffer holds a dirty value.
+      view.editor.setValue('DIRTY');
+
+      await vaultTransaction.rollback();
+      expect(await read('a.md')).toBe('OLD');
+      expect(view.editor.getValue()).toBe('OLD');
     });
   });
 
