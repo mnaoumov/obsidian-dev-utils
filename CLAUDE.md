@@ -294,6 +294,7 @@ transaction had the same gap. It does not. The transaction's content restore goe
 `process` wrapper, whose `readSafe` → `saveNote` **flushes and cancels** the pending autosave before the
 restore write; the now-clean editor then **reloads** to the restored content. Verified empirically in
 real Obsidian 1.13.1 with a throwaway probe covering three scenarios (fix DISABLED):
+
 - raw `app.vault.process` → disk+editor both end up the **extraction** (clobber confirmed).
 - `VaultTransaction` rollback (unlocked) → disk+editor both **restored** (no clobber).
 - `VaultTransaction` rollback (**locked / read-only editor** — the real advanced-note-composer case;
