@@ -313,11 +313,11 @@ class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
  */
 class EditorPathLockManager {
   private audioContext: AudioContext | null = null;
-  private eventsComponent: EditorLockEventsComponent | undefined;
+  private eventsComponent: EditorLockEventsComponent | null = null;
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
   private lastBeepMilliseconds = 0;
   private readonly lockEntriesByPath = new Map<string, LockEntry[]>();
-  private mutationBlockerComponent: ResourceLockMutationBlockerComponent | undefined;
+  private mutationBlockerComponent: null | ResourceLockMutationBlockerComponent = null;
   private statusBarItemEl: HTMLElement | null = null;
 
   public isLocked(app: App, pathOrFile: PathOrFile): boolean {
@@ -638,11 +638,11 @@ class EditorPathLockManager {
     this.reconcile(app);
     if (this.lockEntriesByPath.size === 0) {
       this.eventsComponent?.unload();
-      this.eventsComponent = undefined;
+      this.eventsComponent = null;
     }
     if (!this.hasBlockingLock()) {
       this.mutationBlockerComponent?.unload();
-      this.mutationBlockerComponent = undefined;
+      this.mutationBlockerComponent = null;
     }
   }
 
