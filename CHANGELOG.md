@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## 84.0.0
+
+- docs: mark the ResourceLockComponent rename done (dev-utils half complete)
+- refactor(obsidian)!: rename EditorLockComponent to ResourceLockComponent
+- docs: mark phase 3 (external-change detection) done
+- feat(obsidian): add external-change detection backstop for locked resources
+- docs: mark VaultTransaction bypass done; phase 3 detector is next
+- feat(obsidian): let VaultTransaction hold a mutation-bypass scope
+- docs: record the ambient mutation-bypass design (supersedes one-shot arming)
+- refactor(obsidian): replace one-shot mutation arming with an ambient bypass scope
+- docs: record owner-session arming done; note VaultTransaction-arming design care
+- feat(obsidian): add owner sessions to arm sanctioned mutations past the blocker
+- refactor(obsidian): declare resettable lock components as null-reset fields
+- refactor(obsidian): apply monkey-around destructuring and null conventions
+- docs: mark phase 2 complete and flag the phase 3/4 arming interdependency
+- feat(obsidian): block vault mutations of locked resources (opt-in)
+- docs: record approval to redesign the editor lock into unified records
+- refactor(obsidian): unify editor-lock storage into per-path lock records
+- docs: mark phase 2a done and record the phase 2b blocker-gating decision
+- feat(obsidian): add subtree-aware locking to the editor lock manager
+- docs: mark VaultTransaction (phase 1) done and record staging redesign
+- feat(obsidian): add VaultTransaction reversible mutation log
+- refactor: build plugin notice cancel button via ButtonComponent
+- style: improve spacing in plugin notice
+- test: add showNoticeAfterDelay integration test for PluginNoticeComponent
+
 ## 83.3.0
 
 - chore: update libs
