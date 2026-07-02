@@ -341,24 +341,26 @@ Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
    abort it. So **do phase 4 (arming) together with / before phase 3**, or gate the detector to only-armed
    reconciliation. Revisit the plan's 3-before-4 ordering.
 4. **`ResourceLockComponent` + owner session.**
-   - **Owner-session arming core ✅ DONE (committed `f505ed87`, not released).** Added
-     `EditorLockComponent.createOwnerSession(): ResourceLockOwnerSession` +
-     `session.armExpectedMutation(pathsOrFiles)`. The blocker now calls `shouldBlockMutation(path)`: a
-     blocked path is allowed through iff some active owner session has an arm for it (consumed one-shot);
-     otherwise `ResourceLockedError`. Arm both source + dest for rename/copy. Each session owns its arm
-     counts, so unconsumed arms vanish on dispose (removed from the manager's active set) — no cross-session
-     bookkeeping. 100% unit + real-Obsidian integration (armed modify passes, unarmed rejected).
-   - **NEXT — integrate arming into `VaultTransaction`.** Arm synchronously immediately before each vault op.
-     **⚠ Design care needed:** `VaultTransaction.trash`/`commit` use `adapter.rename`/`trashSystem` (adapter
-     bypasses the patch) → NO arming needed. Only `create`/`createFolder`/`modify`/`process`/`rename` (and
-     the rollback undo steps that go through blocked methods: `hardDelete`→`vault.delete`, rename-undo→`renameSafe`,
-     process-undo→`process`) need arming. BUT the `*Safe` wrappers do **compound** blocked calls —
-     `renameSafe` calls `createFolderSafe(destParent)` (→ `vault.createFolder`, blocked if that folder is
-     locked) THEN `fileManager.renameFile`; `createFolderSafe` may create locked ancestors. So arming only
-     the final `[oldPath,newPath]` can miss an intermediate locked-folder creation. Decide arming
-     granularity (arm the transitive set the wrapper will touch, or expose a session "suspend for these
-     paths" scope) so the owner never blocks itself. `createOwnerSession` will also gain an
-     `abortController` here (phase 3 needs it to abort the owning op on intruder detection).
+   - **Owner mutation-bypass core ✅ DONE (committed `f505ed87` as one-shot arming, then superseded by
+     `41df62eb`; not released).** After weighing one-shot arming vs. an ambient scope, the user chose an
+     **ambient bypass scope** (simpler; auto-covers compound `*Safe` ops without enumerating internal calls,
+     and the same set doubles as the phase-3 "expected vs intruder" filter):
+     `EditorLockComponent.bypassBlockedMutations(pathsOrFiles): Disposable`. While the returned Disposable is
+     live, the owner's own mutations of those paths (subtree-aware via `isChildOrSelf` — bypassing a folder
+     covers its subtree) pass the blocker; everything else stays blocked. The blocker's `shouldBlockMutation`
+     = blocked-by-ancestor AND not covered by any active bypass set. 100% unit + real-Obsidian integration
+     (a modify passes inside the scope, is rejected once it ends).
+     **Residual (accepted):** the scope is ambient, so during an `await` inside it a *concurrent* mutation of a
+     bypassed path would also pass — but those paths are locked by this op (editor read-only), so the only
+     leak is external sync during the window, caught by the mtime pre/post-check. The phase-3 detector will
+     also filter on the bypass set.
+   - **NEXT — use the bypass in `VaultTransaction`.** Wrap each op's own `*Safe`/`vault.*` mutations in
+     `using _bypass = component.bypassBlockedMutations([...the paths this op touches...])`. Because the scope
+     is ambient, this cleanly covers the **compound** `*Safe` calls (e.g. `renameSafe` → `createFolderSafe`
+     dest parent → `fileManager.renameFile`) that one-shot arming made awkward — declare the op's path set
+     (source, dest, dest-parent, staging) once. `trash`/`commit` use the adapter (bypass the patch) → no
+     bypass needed. VaultTransaction will take the lock component + the paths so it can open the scope.
+     Phase 3 will abort the owning op via the lock's `abortController` (already on `lockForPath({abortController})`).
    - **Deferred to release-coordination — the breaking rename** `EditorLockComponent` →
      `ResourceLockComponent` (**no back-compat shim**; update `PluginBase`'s field + the free-function
      wrappers `lock/unlock/is/requestEditorUnlockForPath` + all consumers), and the public
