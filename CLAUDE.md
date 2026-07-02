@@ -330,15 +330,15 @@ Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
      (no owner-arming yet; that is phase 4). 100% unit (real MonkeyAroundComponent patching the real
      test-mocks prototypes) + real-Obsidian integration (blocks vault rename + fileManager trash, allows
      after unlock).
-3. **External-change detection backstop — NEXT.** Extend the lock's events component to listen to
-   `vault.on('rename'|'delete'|'create')` + `metadataCache.on('deleted')`; an event on a mutation-blocked
-   path NOT covered by an active bypass scope → intruder → `requestUnlock(path)` (aborts the owning op's
-   `abortController`, already wired via `lockForPath({abortController})`) → the op's `finally` rolls back. The
-   bypass set is the "expected vs intruder" filter, so this composes directly with the layers below.
-   (The interdependency flagged while building 2b is now resolved: the phase-1 `VaultTransaction` soft-delete
-   moves resources via `adapter.rename`, which bypasses the patched `vault.*` yet still fires the watcher's
-   `vault.on('delete'|'create')` for the original path — but that path sits inside the owner's active bypass
-   scope, so the detector correctly treats it as expected, not an intruder.)
+3. **External-change detection backstop ✅ DONE (committed `3c4f602c`, not released).** The events component
+   now also listens to `vault.on('create'|'delete'|'rename')` + `metadataCache.on('deleted')`. An event on a
+   mutation-blocked path NOT covered by an active bypass scope → intruder (Sync / raw FS / adapter write /
+   another plugin) → the manager aborts the `abortController` of every mutation-blocking lock covering the
+   path (exact or subtree-ancestor) → the owning op cancels and rolls back. The bypass set is the "expected
+   vs intruder" filter, so the interdependency flagged in 2b is resolved: the `VaultTransaction` soft-delete's
+   `adapter.rename` fires a watcher `delete` for the original path, but that path is inside the owner's active
+   bypass scope → treated as expected. 100% unit (drives real vault/metadataCache events via `trigger`) +
+   real-Obsidian integration (a raw adapter delete fires the real watcher and aborts the op).
 4. **`ResourceLockComponent` + owner session.**
    - **Owner mutation-bypass core ✅ DONE (committed `f505ed87` as one-shot arming, then superseded by
      `41df62eb`; not released).** After weighing one-shot arming vs. an ambient scope, the user chose an
