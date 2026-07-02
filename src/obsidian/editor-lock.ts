@@ -106,10 +106,21 @@ interface EditorLockEventsComponentConstructorParams {
   onFileMenu(this: void, menu: Menu, file: TAbstractFile): void;
 }
 
+interface LockEntry {
+  readonly abortController: AbortController | undefined;
+  readonly mode: ResourceLockMode;
+  readonly pluginId: string;
+}
+
 interface LockIndicators {
   readonly actionIconEl: HTMLElement;
   disposeTypeListener(): void;
   readonly tabIconEl: HTMLElement | null;
+}
+
+interface ManagerLockOptions {
+  readonly abortController?: AbortController | undefined;
+  readonly mode?: ResourceLockMode | undefined;
 }
 
 /**
@@ -141,20 +152,19 @@ class EditorLockEventsComponent extends ComponentEx {
 }
 
 /**
- * Tracks reference-counted, path-scoped editor locks and keeps every open {@link MarkdownView} in
- * sync with the locked-path set. A single instance lives on the shared `obsidian-dev-utils` state.
- * For each locked path the lock count is tracked per locking plugin, so the indicators can report
- * which plugins currently hold a lock.
+ * Tracks path-scoped editor locks and keeps every open {@link MarkdownView} in sync with the locked
+ * set. A single instance lives on the shared `obsidian-dev-utils` state. Each lock is one
+ * {@link LockEntry} in a per-path list, so a path can be held by several plugins (or several times by
+ * one) concurrently and is released only when its last entry is removed; the indicators report which
+ * plugins currently hold a lock.
  */
 class EditorPathLockManager {
-  private readonly abortControllersByPath = new Map<string, Set<AbortController>>();
   private audioContext: AudioContext | null = null;
   private eventsComponent: EditorLockEventsComponent | undefined;
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
   private lastBeepMilliseconds = 0;
-  private readonly lockCountByPluginIdByPath = new Map<string, Map<string, number>>();
+  private readonly lockEntriesByPath = new Map<string, LockEntry[]>();
   private statusBarItemEl: HTMLElement | null = null;
-  private readonly subtreeLockCountByPluginIdByPath = new Map<string, Map<string, number>>();
 
   public isLocked(app: App, pathOrFile: PathOrFile): boolean {
     return this.isPathLocked(getPath(app, pathOrFile));
@@ -172,44 +182,25 @@ class EditorPathLockManager {
     return this.resolveLockOwnerPath(app, getPath(app, pathOrFile)) !== null;
   }
 
-  public lock(app: App, pathOrFile: PathOrFile, pluginId: string, abortController?: AbortController, mode: ResourceLockMode = 'file'): Disposable {
+  public lock(app: App, pathOrFile: PathOrFile, pluginId: string, options: ManagerLockOptions = {}): Disposable {
     const path = getPath(app, pathOrFile);
-    let lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
-    if (!lockCountByPluginId) {
-      lockCountByPluginId = new Map<string, number>();
-      this.lockCountByPluginIdByPath.set(path, lockCountByPluginId);
+    const entry: LockEntry = {
+      abortController: options.abortController,
+      mode: options.mode ?? 'file',
+      pluginId
+    };
+    let entries = this.lockEntriesByPath.get(path);
+    if (!entries) {
+      entries = [];
+      this.lockEntriesByPath.set(path, entries);
     }
-    lockCountByPluginId.set(pluginId, (lockCountByPluginId.get(pluginId) ?? 0) + 1);
-    if (mode === 'subtree') {
-      this.incrementSubtreeLock(path, pluginId);
-    }
-    if (abortController) {
-      let abortControllers = this.abortControllersByPath.get(path);
-      if (!abortControllers) {
-        abortControllers = new Set<AbortController>();
-        this.abortControllersByPath.set(path, abortControllers);
-      }
-      abortControllers.add(abortController);
-    }
+    entries.push(entry);
     this.ensureSubscribed(app);
     this.reconcile(app);
 
     return new CallbackDisposable({
       callback: (): void => {
-        if (abortController) {
-          const abortControllers = this.abortControllersByPath.get(path);
-          // The set was created when this lock added its controller and is only removed here.
-          // It is therefore always present while this (single-run) disposable callback executes.
-          assertNonNullable(abortControllers);
-          abortControllers.delete(abortController);
-          if (abortControllers.size === 0) {
-            this.abortControllersByPath.delete(path);
-          }
-        }
-        if (mode === 'subtree') {
-          this.decrementSubtreeLock(path, pluginId);
-        }
-        this.unlockPath(app, path, pluginId);
+        this.removeEntry(app, path, entry);
       },
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
@@ -225,28 +216,39 @@ class EditorPathLockManager {
    * @param pathOrFile - The path or file of the note to request an unlock for.
    */
   public requestUnlock(app: App, pathOrFile: PathOrFile): void {
-    const abortControllers = this.abortControllersByPath.get(getPath(app, pathOrFile));
-    if (!abortControllers) {
+    const entries = this.lockEntriesByPath.get(getPath(app, pathOrFile));
+    if (!entries) {
       return;
     }
-    for (const controller of abortControllers) {
-      controller.abort();
+    for (const entry of entries) {
+      entry.abortController?.abort();
     }
   }
 
   public unlock(app: App, pathOrFile: PathOrFile, pluginId: string): void {
-    this.unlockPath(app, getPath(app, pathOrFile), pluginId);
+    const path = getPath(app, pathOrFile);
+    const entries = this.lockEntriesByPath.get(path);
+    if (!entries) {
+      return;
+    }
+    const index = entries.findIndex((entry) => entry.pluginId === pluginId);
+    if (index === -1) {
+      return;
+    }
+    entries.splice(index, 1);
+    if (entries.length === 0) {
+      this.lockEntriesByPath.delete(path);
+    }
+    this.reconcileAndCleanup(app);
   }
 
   public unlockAllForPlugin(app: App, pluginId: string): void {
-    for (const [path, lockCountByPluginId] of this.lockCountByPluginIdByPath) {
-      if (lockCountByPluginId.delete(pluginId) && lockCountByPluginId.size === 0) {
-        this.lockCountByPluginIdByPath.delete(path);
-      }
-    }
-    for (const [path, subtreeLockCountByPluginId] of this.subtreeLockCountByPluginIdByPath) {
-      if (subtreeLockCountByPluginId.delete(pluginId) && subtreeLockCountByPluginId.size === 0) {
-        this.subtreeLockCountByPluginIdByPath.delete(path);
+    for (const [path, entries] of this.lockEntriesByPath) {
+      const remaining = entries.filter((entry) => entry.pluginId !== pluginId);
+      if (remaining.length === 0) {
+        this.lockEntriesByPath.delete(path);
+      } else if (remaining.length !== entries.length) {
+        this.lockEntriesByPath.set(path, remaining);
       }
     }
     this.reconcileAndCleanup(app);
@@ -329,22 +331,6 @@ class EditorPathLockManager {
     };
   }
 
-  private decrementSubtreeLock(path: string, pluginId: string): void {
-    const subtreeLockCountByPluginId = this.subtreeLockCountByPluginIdByPath.get(path);
-    if (!subtreeLockCountByPluginId) {
-      return;
-    }
-    const count = subtreeLockCountByPluginId.get(pluginId) ?? 0;
-    if (count <= 1) {
-      subtreeLockCountByPluginId.delete(pluginId);
-    } else {
-      subtreeLockCountByPluginId.set(pluginId, count - 1);
-    }
-    if (subtreeLockCountByPluginId.size === 0) {
-      this.subtreeLockCountByPluginIdByPath.delete(path);
-    }
-  }
-
   private ensureSubscribed(app: App): void {
     if (this.eventsComponent) {
       return;
@@ -386,24 +372,16 @@ class EditorPathLockManager {
     this.addUnlockMenuItem(app, menu, ownerPath);
   }
 
-  private incrementSubtreeLock(path: string, pluginId: string): void {
-    let subtreeLockCountByPluginId = this.subtreeLockCountByPluginIdByPath.get(path);
-    if (!subtreeLockCountByPluginId) {
-      subtreeLockCountByPluginId = new Map<string, number>();
-      this.subtreeLockCountByPluginIdByPath.set(path, subtreeLockCountByPluginId);
-    }
-    subtreeLockCountByPluginId.set(pluginId, (subtreeLockCountByPluginId.get(pluginId) ?? 0) + 1);
-  }
-
   private isPathLocked(path: string): boolean {
-    return (this.lockCountByPluginIdByPath.get(path)?.size ?? 0) > 0;
+    return (this.lockEntriesByPath.get(path)?.length ?? 0) > 0;
   }
 
   private lockingPluginNames(app: App, path: string): string[] {
-    const lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
-    // `lockingPluginNames` is only ever called for a locked path, so the per-plugin map is always present.
-    assertNonNullable(lockCountByPluginId);
-    return Array.from(lockCountByPluginId.keys()).map((pluginId) => app.plugins.manifests[pluginId]?.name ?? pluginId);
+    const entries = this.lockEntriesByPath.get(path);
+    // `lockingPluginNames` is only ever called for a locked path, so its entries are always present.
+    assertNonNullable(entries);
+    const pluginIds = [...new Set(entries.map((entry) => entry.pluginId))];
+    return pluginIds.map((pluginId) => app.plugins.manifests[pluginId]?.name ?? pluginId);
   }
 
   private lockTooltip(app: App, path: string): string {
@@ -459,7 +437,7 @@ class EditorPathLockManager {
 
   private reconcileAndCleanup(app: App): void {
     this.reconcile(app);
-    if (this.lockCountByPluginIdByPath.size === 0) {
+    if (this.lockEntriesByPath.size === 0) {
       this.eventsComponent?.unload();
       this.eventsComponent = undefined;
     }
@@ -479,6 +457,22 @@ class EditorPathLockManager {
     });
   }
 
+  private removeEntry(app: App, path: string, entry: LockEntry): void {
+    const entries = this.lockEntriesByPath.get(path);
+    if (!entries) {
+      return;
+    }
+    const index = entries.indexOf(entry);
+    if (index === -1) {
+      return;
+    }
+    entries.splice(index, 1);
+    if (entries.length === 0) {
+      this.lockEntriesByPath.delete(path);
+    }
+    this.reconcileAndCleanup(app);
+  }
+
   /**
    * Resolves which locked path (if any) covers the given path: the path itself when directly locked,
    * otherwise the longest `subtree`-locked ancestor folder that contains it (longest so a nested
@@ -493,8 +487,9 @@ class EditorPathLockManager {
       return path;
     }
     let bestOwnerPath: null | string = null;
-    for (const lockedPath of this.subtreeLockCountByPluginIdByPath.keys()) {
-      if (isChild({ app, childPathOrFile: path, parentPathOrFile: lockedPath }) && (bestOwnerPath === null || lockedPath.length > bestOwnerPath.length)) {
+    for (const [lockedPath, entries] of this.lockEntriesByPath) {
+      const hasSubtreeLock = entries.some((entry) => entry.mode === 'subtree');
+      if (hasSubtreeLock && isChild({ app, childPathOrFile: path, parentPathOrFile: lockedPath }) && (bestOwnerPath === null || lockedPath.length > bestOwnerPath.length)) {
         bestOwnerPath = lockedPath;
       }
     }
@@ -510,30 +505,6 @@ class EditorPathLockManager {
       appendCodeBlock(fragment, name);
     }
     return fragment;
-  }
-
-  private unlockPath(app: App, path: string, pluginId: string): void {
-    const lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
-    if (!lockCountByPluginId) {
-      return;
-    }
-
-    const count = lockCountByPluginId.get(pluginId) ?? 0;
-    if (count <= 0) {
-      return;
-    }
-
-    if (count === 1) {
-      lockCountByPluginId.delete(pluginId);
-    } else {
-      lockCountByPluginId.set(pluginId, count - 1);
-    }
-
-    if (lockCountByPluginId.size === 0) {
-      this.lockCountByPluginIdByPath.delete(path);
-    }
-
-    this.reconcileAndCleanup(app);
   }
 
   private updateIndicatorTooltips(indicators: LockIndicators, tooltip: string): void {
@@ -631,7 +602,7 @@ export class EditorLockComponent extends ComponentEx {
    * @returns A {@link Disposable} that releases this lock when disposed. Disposing more than once is a no-op.
    */
   public lockForPath(pathOrFile: PathOrFile, options?: EditorLockComponentLockForPathOptions): Disposable {
-    return getManager().lock(this.app, pathOrFile, this.pluginId, options?.abortController, options?.mode);
+    return getManager().lock(this.app, pathOrFile, this.pluginId, { abortController: options?.abortController, mode: options?.mode });
   }
 
   /**
