@@ -717,3 +717,218 @@ describe('lock type-attempt flash', () => {
     expect(startMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('subtree locking', () => {
+  beforeEach(() => {
+    mockApp = App.createConfigured__({
+      files: {
+        'folder/a.md': '',
+        'folder/sub/b.md': '',
+        'outside.md': ''
+      }
+    });
+    app = mockApp.asOriginalType__();
+    castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => null);
+    castTo<MockAppPlugins>(app).plugins = { manifests: {} };
+  });
+
+  it('should report a path under a subtree-locked folder as locked by ancestor', () => {
+    stubLeaves();
+    const component = new EditorLockComponent(app, 'test-plugin');
+    expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(false);
+
+    component.lockForPath('folder', { mode: 'subtree' });
+
+    expect(component.isLockedByAncestorForPath('folder')).toBe(true);
+    expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(true);
+    expect(component.isLockedByAncestorForPath('folder/sub/b.md')).toBe(true);
+    expect(component.isLockedByAncestorForPath('outside.md')).toBe(false);
+    // A descendant is covered by ancestor but is not itself directly locked.
+    expect(component.isLockedForPath('folder/a.md')).toBe(false);
+    expect(component.isLockedForPath('folder')).toBe(true);
+  });
+
+  it('should make a note inside a subtree-locked folder read-only', () => {
+    const view = createMarkdownView('folder/a.md');
+    stubLeaves(leafOf(view));
+
+    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { mode: 'subtree' });
+
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
+  });
+
+  it('should resolve a descendant to the innermost (deepest) subtree lock', async () => {
+    vi.mocked(confirm).mockResolvedValue(true);
+    stubLeaves();
+    const outerController = new AbortController();
+    const innerController = new AbortController();
+    // Lock the outer folder first so the inner (longer) path must replace it as the resolved owner.
+    new EditorLockComponent(app, 'outer-plugin').lockForPath('folder', { abortController: outerController, mode: 'subtree' });
+    new EditorLockComponent(app, 'inner-plugin').lockForPath('folder/sub', { abortController: innerController, mode: 'subtree' });
+
+    const file = app.vault.getFileByPath('folder/sub/b.md');
+    assertNonNullable(file);
+    const menu = Menu.create2__();
+    app.workspace.trigger('file-menu', menu, file, 'tab-header');
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    item.onClick__?.(new MouseEvent('click'));
+    await flushAsync();
+
+    // The unlock targets the innermost owner, so only the inner lock's controller is aborted.
+    expect(innerController.signal.aborted).toBe(true);
+    expect(outerController.signal.aborted).toBe(false);
+  });
+
+  it('should keep the subtree lock until every acquisition is released', () => {
+    stubLeaves();
+    const component = new EditorLockComponent(app, 'test-plugin');
+    const first = component.lockForPath('folder', { mode: 'subtree' });
+    const second = component.lockForPath('folder', { mode: 'subtree' });
+
+    first[Symbol.dispose]();
+    expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(true);
+
+    second[Symbol.dispose]();
+    expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(false);
+  });
+
+  it('should release subtree locks when the plugin unloads', () => {
+    stubLeaves();
+    const component = new EditorLockComponent(app, 'test-plugin');
+    component.load();
+    component.lockForPath('folder', { mode: 'subtree' });
+
+    component.unload();
+
+    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
+  });
+
+  it('should keep another plugin\'s file lock when a plugin with only a subtree lock unloads', () => {
+    stubLeaves();
+    lockEditorForPath(app, 'outside.md', 'file-plugin');
+    const component = new EditorLockComponent(app, 'subtree-plugin');
+    component.load();
+    component.lockForPath('folder', { mode: 'subtree' });
+
+    // Unloading the subtree plugin must not touch the unrelated file lock held by file-plugin.
+    component.unload();
+
+    expect(isEditorLockedForPath(app, 'outside.md')).toBe(true);
+    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
+  });
+
+  it('should keep a co-held subtree lock and ignore a late dispose after one holder unloads', () => {
+    stubLeaves();
+    const componentA = new EditorLockComponent(app, 'plugin-a');
+    const componentB = new EditorLockComponent(app, 'plugin-b');
+    componentA.load();
+    componentB.load();
+    const disposableA = componentA.lockForPath('folder', { mode: 'subtree' });
+    componentB.lockForPath('folder', { mode: 'subtree' });
+
+    // Unloading A removes A but leaves B's subtree lock on the same folder (map not empty).
+    componentA.unload();
+    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
+
+    // A's outstanding handle disposes after A was already cleared — a safe no-op that leaves B intact.
+    disposableA[Symbol.dispose]();
+    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
+
+    componentB.unload();
+    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
+  });
+
+  it('should ignore the subtree-cleanup pass for a plugin that holds no subtree lock', () => {
+    stubLeaves();
+    const subtreeComponent = new EditorLockComponent(app, 'subtree-plugin');
+    subtreeComponent.load();
+    subtreeComponent.lockForPath('folder', { mode: 'subtree' });
+
+    const fileComponent = new EditorLockComponent(app, 'file-plugin');
+    fileComponent.load();
+    fileComponent.lockForPath('outside.md');
+
+    // File-plugin holds no subtree lock, so its unload's subtree-cleanup pass finds nothing to delete.
+    fileComponent.unload();
+
+    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
+  });
+
+  it('should not open a status-bar menu when the active note is no longer locked at click time', () => {
+    const lockedView = createMarkdownView('folder/a.md');
+    const unlockedView = createMarkdownView('outside.md');
+    setActiveView(lockedView);
+    const statusBarEl = lockedView.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    stubLeaves(leafOf(lockedView));
+    const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
+
+    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(statusBarItemEl);
+
+    // The active note switches to an unlocked one before the right-click, so no owner resolves.
+    setActiveView(unlockedView);
+    dispatchContextMenu(statusBarItemEl);
+
+    expect(showSpy).not.toHaveBeenCalled();
+  });
+
+  it('should be a safe no-op to dispose a subtree lock after the plugin unloaded', () => {
+    stubLeaves();
+    const component = new EditorLockComponent(app, 'test-plugin');
+    component.load();
+    const disposable = component.lockForPath('folder', { mode: 'subtree' });
+    component.unload();
+
+    expect(() => {
+      disposable[Symbol.dispose]();
+    }).not.toThrow();
+    expect(new EditorLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
+  });
+
+  it('should add an unlock item to the file menu for a subtree-locked folder', () => {
+    stubLeaves();
+    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    const folder = app.vault.getAbstractFileByPath('folder');
+    assertNonNullable(folder);
+    const menu = Menu.create2__();
+    app.workspace.trigger('file-menu', menu, folder, 'file-explorer-context-menu');
+
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    expect(item.title__).toBe('Unlock');
+  });
+
+  it('should add an unlock item to the file menu for a note under a subtree-locked folder', () => {
+    stubLeaves();
+    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    const file = app.vault.getFileByPath('folder/a.md');
+    assertNonNullable(file);
+    const menu = Menu.create2__();
+    app.workspace.trigger('file-menu', menu, file, 'tab-header');
+
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    expect(item.title__).toBe('Unlock');
+  });
+
+  it('should show and wire the status-bar item for an active note under a subtree lock', () => {
+    const view = createMarkdownView('folder/a.md');
+    setActiveView(view);
+    const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    new EditorLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(statusBarItemEl);
+    dispatchContextMenu(statusBarItemEl);
+
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    expect(item.title__).toBe('Unlock');
+  });
+});

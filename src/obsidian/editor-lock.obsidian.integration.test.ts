@@ -59,6 +59,11 @@ interface ReadableView {
   editor?: ReadableEditor;
 }
 
+interface SubtreeLockResult {
+  readonly isChildLockedAfterUnlock: boolean;
+  readonly isChildLockedUnderSubtree: boolean;
+}
+
 interface TypableLeaf {
   view: TypableView;
 }
@@ -255,6 +260,73 @@ describe('editor-lock', () => {
       expect(result.didOtherNoteAcceptTyping).toBe(true);
       // Once unlocked, the note accepts typing again.
       expect(result.didUnlockedNoteAcceptTyping).toBe(true);
+    });
+  });
+
+  describe('EditorLockComponent subtree lock', () => {
+    it('should make a note inside a subtree-locked folder read-only and editable again on unlock', async () => {
+      const result = await evalInObsidian({
+        async fn({ app }): Promise<SubtreeLockResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          app.workspace.detachLeavesOfType('markdown');
+          await settle();
+
+          const folderPath = 'editor-lock-subtree';
+          if (!await app.vault.adapter.exists(folderPath)) {
+            await app.vault.createFolder(folderPath);
+          }
+          const childFile = await app.vault.create(`${folderPath}/child.md`, 'child note');
+
+          const leaf = app.workspace.getLeaf();
+          await leaf.openFile(childFile);
+          await settle();
+
+          // Lock the whole folder subtree; the note inside it must become read-only.
+          const component = new lib.obsidian['editor-lock'].EditorLockComponent(app, 'integration-test-subtree');
+          const disposable = component.lockForPath(folderPath, { mode: 'subtree' });
+          await settle();
+          await reconcile();
+          const isChildLockedUnderSubtree = readLeafReadOnly(leaf);
+
+          disposable[Symbol.dispose]();
+          await settle();
+          const isChildLockedAfterUnlock = readLeafReadOnly(leaf);
+
+          return {
+            isChildLockedAfterUnlock,
+            isChildLockedUnderSubtree
+          };
+
+          function readLeafReadOnly(readLeaf: unknown): boolean {
+            const editor = (readLeaf as ReadableLeaf).view.editor;
+            if (!editor) {
+              throw new Error('no editor on leaf');
+            }
+            return editor.cm.state.readOnly;
+          }
+
+          async function reconcile(): Promise<void> {
+            app.workspace.trigger('layout-change');
+            await settle();
+          }
+
+          async function settle(): Promise<void> {
+            const SETTLE_DELAY_MILLISECONDS = 300;
+            await new Promise<void>((resolve) => {
+              window.setTimeout(resolve, SETTLE_DELAY_MILLISECONDS);
+            });
+          }
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // A note inside a subtree-locked folder is read-only, and editable again once the folder unlocks.
+      expect(result.isChildLockedUnderSubtree).toBe(true);
+      expect(result.isChildLockedAfterUnlock).toBe(false);
     });
   });
 });

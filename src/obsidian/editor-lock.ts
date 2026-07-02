@@ -33,8 +33,7 @@ import {
   MarkdownView,
   Menu,
   setIcon,
-  setTooltip,
-  TFile
+  setTooltip
 } from 'obsidian';
 
 import type { PathOrFile } from './file-system.ts';
@@ -53,6 +52,7 @@ import { getPath } from './file-system.ts';
 import { appendCodeBlock } from './html-element.ts';
 import { t } from './i18n/i18n.ts';
 import { confirm } from './modals/confirm.ts';
+import { isChild } from './vault.ts';
 
 const BEEP_DURATION_SECONDS = 0.08;
 const BEEP_FREQUENCY_HZ = 660;
@@ -77,7 +77,25 @@ export interface EditorLockComponentLockForPathOptions {
    * release the lock in its own cleanup.
    */
   readonly abortController?: AbortController;
+
+  /**
+   * The lock scope. `'subtree'` also locks every descendant of a folder path; `'file'` locks only the
+   * exact path. A `subtree` lock must be released via the returned {@link Disposable} (not the
+   * explicit {@link EditorLockComponent.unlockForPath}).
+   *
+   * @default `'file'`
+   */
+  readonly mode?: ResourceLockMode;
 }
+
+/**
+ * The scope of a lock.
+ *
+ * - `'file'` locks only the exact path.
+ * - `'subtree'` locks the path and every descendant under it (its whole folder subtree), so a file
+ *   inside a `subtree`-locked folder is treated as locked too.
+ */
+export type ResourceLockMode = 'file' | 'subtree';
 
 /**
  * Constructor parameters for {@link EditorLockEventsComponent}.
@@ -136,12 +154,25 @@ class EditorPathLockManager {
   private lastBeepMilliseconds = 0;
   private readonly lockCountByPluginIdByPath = new Map<string, Map<string, number>>();
   private statusBarItemEl: HTMLElement | null = null;
+  private readonly subtreeLockCountByPluginIdByPath = new Map<string, Map<string, number>>();
 
   public isLocked(app: App, pathOrFile: PathOrFile): boolean {
     return this.isPathLocked(getPath(app, pathOrFile));
   }
 
-  public lock(app: App, pathOrFile: PathOrFile, pluginId: string, abortController?: AbortController): Disposable {
+  /**
+   * Checks whether the given path is locked directly or is covered by a `subtree`-locked ancestor
+   * folder.
+   *
+   * @param app - The Obsidian app instance.
+   * @param pathOrFile - The path or file to check.
+   * @returns `true` if the path is itself locked or lies under a `subtree`-locked folder.
+   */
+  public isLockedByAncestor(app: App, pathOrFile: PathOrFile): boolean {
+    return this.resolveLockOwnerPath(app, getPath(app, pathOrFile)) !== null;
+  }
+
+  public lock(app: App, pathOrFile: PathOrFile, pluginId: string, abortController?: AbortController, mode: ResourceLockMode = 'file'): Disposable {
     const path = getPath(app, pathOrFile);
     let lockCountByPluginId = this.lockCountByPluginIdByPath.get(path);
     if (!lockCountByPluginId) {
@@ -149,6 +180,9 @@ class EditorPathLockManager {
       this.lockCountByPluginIdByPath.set(path, lockCountByPluginId);
     }
     lockCountByPluginId.set(pluginId, (lockCountByPluginId.get(pluginId) ?? 0) + 1);
+    if (mode === 'subtree') {
+      this.incrementSubtreeLock(path, pluginId);
+    }
     if (abortController) {
       let abortControllers = this.abortControllersByPath.get(path);
       if (!abortControllers) {
@@ -171,6 +205,9 @@ class EditorPathLockManager {
           if (abortControllers.size === 0) {
             this.abortControllersByPath.delete(path);
           }
+        }
+        if (mode === 'subtree') {
+          this.decrementSubtreeLock(path, pluginId);
         }
         this.unlockPath(app, path, pluginId);
       },
@@ -205,6 +242,11 @@ class EditorPathLockManager {
     for (const [path, lockCountByPluginId] of this.lockCountByPluginIdByPath) {
       if (lockCountByPluginId.delete(pluginId) && lockCountByPluginId.size === 0) {
         this.lockCountByPluginIdByPath.delete(path);
+      }
+    }
+    for (const [path, subtreeLockCountByPluginId] of this.subtreeLockCountByPluginIdByPath) {
+      if (subtreeLockCountByPluginId.delete(pluginId) && subtreeLockCountByPluginId.size === 0) {
+        this.subtreeLockCountByPluginIdByPath.delete(path);
       }
     }
     this.reconcileAndCleanup(app);
@@ -287,6 +329,22 @@ class EditorPathLockManager {
     };
   }
 
+  private decrementSubtreeLock(path: string, pluginId: string): void {
+    const subtreeLockCountByPluginId = this.subtreeLockCountByPluginIdByPath.get(path);
+    if (!subtreeLockCountByPluginId) {
+      return;
+    }
+    const count = subtreeLockCountByPluginId.get(pluginId) ?? 0;
+    if (count <= 1) {
+      subtreeLockCountByPluginId.delete(pluginId);
+    } else {
+      subtreeLockCountByPluginId.set(pluginId, count - 1);
+    }
+    if (subtreeLockCountByPluginId.size === 0) {
+      this.subtreeLockCountByPluginIdByPath.delete(path);
+    }
+  }
+
   private ensureSubscribed(app: App): void {
     if (this.eventsComponent) {
       return;
@@ -320,13 +378,21 @@ class EditorPathLockManager {
   }
 
   private handleFileMenu(app: App, menu: Menu, file: TAbstractFile): void {
-    if (!(file instanceof TFile)) {
+    // Offer "Unlock" for a directly-locked file/folder, or anything covered by a `subtree` lock on an ancestor. The menu targets the owner lock's path.
+    const ownerPath = this.resolveLockOwnerPath(app, file.path);
+    if (ownerPath === null) {
       return;
     }
-    if (!this.isPathLocked(file.path)) {
-      return;
+    this.addUnlockMenuItem(app, menu, ownerPath);
+  }
+
+  private incrementSubtreeLock(path: string, pluginId: string): void {
+    let subtreeLockCountByPluginId = this.subtreeLockCountByPluginIdByPath.get(path);
+    if (!subtreeLockCountByPluginId) {
+      subtreeLockCountByPluginId = new Map<string, number>();
+      this.subtreeLockCountByPluginIdByPath.set(path, subtreeLockCountByPluginId);
     }
-    this.addUnlockMenuItem(app, menu, file.path);
+    subtreeLockCountByPluginId.set(pluginId, (subtreeLockCountByPluginId.get(pluginId) ?? 0) + 1);
   }
 
   private isPathLocked(path: string): boolean {
@@ -359,9 +425,11 @@ class EditorPathLockManager {
         continue;
       }
 
-      if (this.isPathLocked(path)) {
+      // Resolve the lock covering this view: the exact path when directly locked, otherwise the enclosing `subtree`-locked folder. Indicators/tooltip/unlock menu key off that owner path.
+      const ownerPath = this.resolveLockOwnerPath(app, path);
+      if (ownerPath !== null) {
         viewsToLock.add(view);
-        const tooltip = this.lockTooltip(app, path);
+        const tooltip = this.lockTooltip(app, ownerPath);
         // Re-apply the read-only toggle on every reconcile, not only the first time a view is tracked.
         // The toggle is idempotent, so re-applying to an already-locked view is cheap.
         // A view opened after the lock is reconciled synchronously, before its CodeMirror is ready.
@@ -371,7 +439,7 @@ class EditorPathLockManager {
         if (indicators) {
           this.updateIndicatorTooltips(indicators, tooltip);
         } else {
-          this.indicatorsByView.set(view, this.createIndicators(app, view, path, tooltip));
+          this.indicatorsByView.set(view, this.createIndicators(app, view, ownerPath, tooltip));
         }
       }
     }
@@ -409,6 +477,28 @@ class EditorPathLockManager {
       this.addUnlockMenuItem(app, menu, path);
       menu.showAtMouseEvent(evt);
     });
+  }
+
+  /**
+   * Resolves which locked path (if any) covers the given path: the path itself when directly locked,
+   * otherwise the longest `subtree`-locked ancestor folder that contains it (longest so a nested
+   * subtree lock wins deterministically over an outer one).
+   *
+   * @param app - The Obsidian app instance.
+   * @param path - The path to resolve an owner lock for.
+   * @returns The covering locked path, or `null` when nothing covers it.
+   */
+  private resolveLockOwnerPath(app: App, path: string): null | string {
+    if (this.isPathLocked(path)) {
+      return path;
+    }
+    let bestOwnerPath: null | string = null;
+    for (const lockedPath of this.subtreeLockCountByPluginIdByPath.keys()) {
+      if (isChild({ app, childPathOrFile: path, parentPathOrFile: lockedPath }) && (bestOwnerPath === null || lockedPath.length > bestOwnerPath.length)) {
+        bestOwnerPath = lockedPath;
+      }
+    }
+    return bestOwnerPath;
   }
 
   private unlockConfirmMessage(app: App, path: string): DocumentFragment {
@@ -456,9 +546,9 @@ class EditorPathLockManager {
   private updateStatusBar(app: App): void {
     const activeView = app.workspace.getActiveViewOfType(MarkdownView);
     const activePath = activeView?.file?.path;
-    const isActiveLocked = activePath !== undefined && this.isPathLocked(activePath);
+    const activeOwnerPath = activePath === undefined ? null : this.resolveLockOwnerPath(app, activePath);
 
-    if (!isActiveLocked || !activeView) {
+    if (activeOwnerPath === null || !activeView) {
       this.statusBarItemEl?.remove();
       this.statusBarItemEl = null;
       return;
@@ -472,11 +562,14 @@ class EditorPathLockManager {
       this.statusBarItemEl = statusBarEl.createDiv({ cls: [STATUS_BAR_ITEM_CSS_CLASS, LOCK_INDICATOR_CSS_CLASS] });
       setIcon(this.statusBarItemEl, LOCK_ICON_ID);
       // The single status-bar item is reused across active-note switches.
-      // It must resolve the currently active note's path at click time rather than capturing one path.
-      this.registerUnlockMenu(app, this.statusBarItemEl, () => app.workspace.getActiveViewOfType(MarkdownView)?.file?.path);
+      // It must resolve the currently active note's owner lock at click time rather than capturing one path.
+      this.registerUnlockMenu(app, this.statusBarItemEl, () => {
+        const path = app.workspace.getActiveViewOfType(MarkdownView)?.file?.path;
+        return path === undefined ? undefined : this.resolveLockOwnerPath(app, path) ?? undefined;
+      });
     }
 
-    setTooltip(this.statusBarItemEl, this.lockTooltip(app, activePath));
+    setTooltip(this.statusBarItemEl, this.lockTooltip(app, activeOwnerPath));
   }
 }
 
@@ -507,6 +600,16 @@ export class EditorLockComponent extends ComponentEx {
   }
 
   /**
+   * Checks whether the path is locked directly or lies under a `subtree`-locked ancestor folder.
+   *
+   * @param pathOrFile - The path or file to check.
+   * @returns `true` if the path is itself locked or is covered by a `subtree` lock on an ancestor.
+   */
+  public isLockedByAncestorForPath(pathOrFile: PathOrFile): boolean {
+    return getManager().isLockedByAncestor(this.app, pathOrFile);
+  }
+
+  /**
    * Checks whether the note at the given path is currently locked by any plugin.
    *
    * @param pathOrFile - The path or file of the note to check.
@@ -528,7 +631,7 @@ export class EditorLockComponent extends ComponentEx {
    * @returns A {@link Disposable} that releases this lock when disposed. Disposing more than once is a no-op.
    */
   public lockForPath(pathOrFile: PathOrFile, options?: EditorLockComponentLockForPathOptions): Disposable {
-    return getManager().lock(this.app, pathOrFile, this.pluginId, options?.abortController);
+    return getManager().lock(this.app, pathOrFile, this.pluginId, options?.abortController, options?.mode);
   }
 
   /**
