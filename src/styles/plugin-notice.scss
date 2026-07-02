@@ -1,6 +1,16 @@
 .obsidian-dev-utils {
   &.plugin-notice-name {
     color: var(--text-accent);
+    display: inline-block;
     font-weight: var(--font-bold);
+    margin-bottom: var(--size-4-2);
+  }
+
+  &.plugin-notice-content {
+    .obsidian-dev-utils.cancel-button {
+      display: block;
+      margin-top: var(--size-4-2);
+      width: fit-content;
+    }
   }
 }
