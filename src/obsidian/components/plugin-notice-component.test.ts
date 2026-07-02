@@ -1,6 +1,7 @@
 import type { Notice as NoticeOriginal } from 'obsidian';
 
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -8,6 +9,7 @@ import {
   vi
 } from 'vitest';
 
+import { noop } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { CssClass } from '../css-class.ts';
@@ -15,6 +17,7 @@ import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 interface NoticeInstance {
   hide: ReturnType<typeof vi.fn>;
+  setMessage: ReturnType<typeof vi.fn>;
 }
 
 interface StateWrapper {
@@ -28,6 +31,7 @@ const mocks = vi.hoisted(() => {
   const instances: NoticeInstance[] = [];
   const NoticeMock = vi.fn(function noticeMock(this: NoticeInstance, ..._args: unknown[]) {
     this.hide = vi.fn();
+    this.setMessage = vi.fn();
     instances.push(this);
   });
   return { instances, NoticeMock };
@@ -108,7 +112,7 @@ describe('PluginNoticeComponent', () => {
     const component = new PluginNoticeComponent(PLUGIN_NAME);
     component.load();
     const messageFragment = createFragment((f) => {
-      f.createEl('a', { text: 'link' });
+      f.createEl('a', { text: 'Link' });
     });
     component.showNotice(messageFragment);
 
@@ -262,7 +266,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should dismiss a permanent notice left over from a previous load', () => {
-    const staleNotice: NoticeInstance = { hide: vi.fn() };
+    const staleNotice: NoticeInstance = { hide: vi.fn(), setMessage: vi.fn() };
     stateMocks.store.set(PERMANENT_NOTICES_STATE_KEY, { value: new Map([[PLUGIN_NAME, staleNotice]]) });
 
     const component = new PluginNoticeComponent(PLUGIN_NAME);
@@ -284,5 +288,191 @@ describe('PluginNoticeComponent', () => {
     const calledWith = mocks.NoticeMock.mock.calls[0]?.[0];
     expect(calledWith).toBeInstanceOf(DocumentFragment);
     expect(calledWith).toHaveProperty('textContent', 'My Plugin\nBody text');
+  });
+});
+
+describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
+  const DELAY_IN_MILLISECONDS = 500;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.instances.length = 0;
+    stateMocks.store.clear();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should not show a notice when disposed before the delay elapses', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    const handle = component.showNoticeAfterDelay({ content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
+    handle[Symbol.dispose]();
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    expect(mocks.NoticeMock).not.toHaveBeenCalled();
+  });
+
+  it('should show the notice after the delay and hide it on dispose', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    const handle = component.showNoticeAfterDelay({ content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    expect(mocks.NoticeMock).toHaveBeenCalledTimes(1);
+    const [content, duration] = mocks.NoticeMock.mock.calls[0] ?? [];
+    expect(castTo<DocumentFragment>(content).textContent).toBe('My Plugin\nWorking');
+    expect(duration).toBe(0);
+
+    handle[Symbol.dispose]();
+    expect(mocks.instances[0]?.hide).toHaveBeenCalledTimes(1);
+  });
+
+  it('should use the default delay of 500 ms when none is provided', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    component.showNoticeAfterDelay({ content: 'Working' });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS - 1);
+    expect(mocks.NoticeMock).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(mocks.NoticeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should show a Cancel button that aborts the controller without dismissing the notice', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+    const abortController = new AbortController();
+
+    component.showNoticeAfterDelay({ abortController, content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    const content = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    const noticeElStub = createDiv();
+    noticeElStub.appendChild(content);
+    const dismissListener = vi.fn();
+    noticeElStub.addEventListener('click', dismissListener);
+
+    const buttonEl = ensureNonNullable(noticeElStub.querySelector('button'));
+    expect(buttonEl.textContent).toBe('Cancel');
+
+    buttonEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(abortController.signal.aborted).toBe(true);
+    expect(dismissListener).not.toHaveBeenCalled();
+  });
+
+  it('should use a custom Cancel button text', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    component.showNoticeAfterDelay({
+      abortController: new AbortController(),
+      cancelButtonText: 'Stop',
+      content: 'Working',
+      delayInMilliseconds: DELAY_IN_MILLISECONDS
+    });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    const content = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    expect(content.querySelector('button')?.textContent).toBe('Stop');
+  });
+
+  it('should accept a document-fragment content', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    const contentFragment = createFragment((f) => {
+      f.appendText('Body');
+    });
+    component.showNoticeAfterDelay({ content: contentFragment, delayInMilliseconds: DELAY_IN_MILLISECONDS });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    const content = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    expect(content.textContent).toBe('My Plugin\nBody');
+  });
+
+  it('should not show the notice when disposed while the content is resolving', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    let resolveContent: (value: string) => void = noop;
+    const handle = component.showNoticeAfterDelay({
+      content: () =>
+        new Promise<string>((resolve) => {
+          resolveContent = resolve;
+        }),
+      delayInMilliseconds: DELAY_IN_MILLISECONDS
+    });
+
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+    handle[Symbol.dispose]();
+    resolveContent('late');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(mocks.NoticeMock).not.toHaveBeenCalled();
+  });
+
+  it('should cancel a pending delayed notice on unload', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    component.showNoticeAfterDelay({ content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
+    component.unload();
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    expect(mocks.NoticeMock).not.toHaveBeenCalled();
+  });
+
+  it('should update the shown notice content via setContent', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    const handle = component.showNoticeAfterDelay({ content: 'Merging 1/10', delayInMilliseconds: DELAY_IN_MILLISECONDS });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    handle.setContent('Merging 7/10');
+
+    const setMessageMock = ensureNonNullable(mocks.instances[0]).setMessage;
+    expect(setMessageMock).toHaveBeenCalledTimes(1);
+    const updatedContent = castTo<DocumentFragment>(setMessageMock.mock.calls[0]?.[0]);
+    expect(updatedContent.textContent).toBe('My Plugin\nMerging 7/10');
+  });
+
+  it('should show the latest content when setContent is called before the delay elapses', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    const handle = component.showNoticeAfterDelay({ content: 'Initial', delayInMilliseconds: DELAY_IN_MILLISECONDS });
+    handle.setContent('Updated');
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    // No live notice existed yet, so setMessage was not called; the delayed notice shows the latest content.
+    expect(mocks.instances[0]?.setMessage).not.toHaveBeenCalled();
+    const content = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    expect(content.textContent).toBe('My Plugin\nUpdated');
+  });
+
+  it('should not clear a newer notice when the delayed handle is disposed after being replaced', async () => {
+    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    component.load();
+
+    const handle = component.showNoticeAfterDelay({ content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    component.showNotice('Newer');
+    const newerNotice = mocks.instances[1];
+
+    handle[Symbol.dispose]();
+
+    // Disposing the delayed handle hides its own (already-replaced) notice but must not touch the newer one.
+    expect(newerNotice?.hide).not.toHaveBeenCalled();
+    component.unload();
+    expect(newerNotice?.hide).toHaveBeenCalledTimes(1);
   });
 });
