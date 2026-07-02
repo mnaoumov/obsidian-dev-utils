@@ -39,6 +39,12 @@ interface LockForPathResult {
   readonly isSeparateTabLocked: boolean;
 }
 
+interface MutationBlockerResult {
+  readonly wasRenameAllowedAfterUnlock: boolean;
+  readonly wasRenameBlocked: boolean;
+  readonly wasTrashBlocked: boolean;
+}
+
 interface ReadableCodeMirror {
   state: ReadableCodeMirrorState;
 }
@@ -327,6 +333,77 @@ describe('editor-lock', () => {
       // A note inside a subtree-locked folder is read-only, and editable again once the folder unlocks.
       expect(result.isChildLockedUnderSubtree).toBe(true);
       expect(result.isChildLockedAfterUnlock).toBe(false);
+    });
+  });
+
+  describe('EditorLockComponent mutation blocker', () => {
+    it('should block real vault rename and file-manager trash of a locked file, then allow them after unlock', async () => {
+      const result = await evalInObsidian({
+        async fn({ app }): Promise<MutationBlockerResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          const { EditorLockComponent, ResourceLockedError } = lib.obsidian['editor-lock'];
+          const path = 'editor-lock-blocker-target.md';
+          const renamedPath = 'editor-lock-blocker-renamed.md';
+          for (const cleanupPath of [path, renamedPath]) {
+            if (await app.vault.adapter.exists(cleanupPath)) {
+              await app.vault.adapter.remove(cleanupPath);
+            }
+          }
+          const file = await app.vault.create(path, 'content');
+
+          const component = new EditorLockComponent(app, 'integration-blocker');
+          const disposable = component.lockForPath(path, { shouldBlockMutations: true });
+
+          let wasRenameBlocked = false;
+          let wasTrashBlocked = false;
+          try {
+            try {
+              await app.vault.rename(file, renamedPath);
+            } catch (error) {
+              wasRenameBlocked = error instanceof ResourceLockedError;
+            }
+            try {
+              await app.fileManager.trashFile(file);
+            } catch (error) {
+              wasTrashBlocked = error instanceof ResourceLockedError;
+            }
+          } finally {
+            disposable[Symbol.dispose]();
+          }
+
+          // With the blocker uninstalled, the same rename now runs.
+          let wasRenameAllowedAfterUnlock: boolean;
+          try {
+            await app.vault.rename(file, renamedPath);
+            wasRenameAllowedAfterUnlock = true;
+          } catch {
+            wasRenameAllowedAfterUnlock = false;
+          }
+
+          const renamed = app.vault.getAbstractFileByPath(renamedPath);
+          if (renamed) {
+            // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+            await app.vault.delete(renamed, true);
+          }
+
+          return {
+            wasRenameAllowedAfterUnlock,
+            wasRenameBlocked,
+            wasTrashBlocked
+          };
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // A mutation-blocking lock rejects real vault rename and file-manager trash with ResourceLockedError.
+      expect(result.wasRenameBlocked).toBe(true);
+      expect(result.wasTrashBlocked).toBe(true);
+      // Once the lock is released the blocker is uninstalled and the mutation succeeds.
+      expect(result.wasRenameAllowedAfterUnlock).toBe(true);
     });
   });
 });

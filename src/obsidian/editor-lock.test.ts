@@ -3,6 +3,7 @@
 import type {
   App as AppOriginal,
   MarkdownView as MarkdownViewOriginal,
+  TFile as TFileOriginal,
   View as ViewOriginal,
   WorkspaceLeaf as WorkspaceLeafOriginal
 } from 'obsidian';
@@ -32,6 +33,7 @@ import {
   isEditorLockedForPath,
   lockEditorForPath,
   requestEditorUnlockForPath,
+  ResourceLockedError,
   unlockEditorForPath
 } from './editor-lock.ts';
 import { toggleEditorReadOnly } from './editor.ts';
@@ -930,5 +932,183 @@ describe('subtree locking', () => {
     const item = menu.items__[0];
     assertNonNullable(item);
     expect(item.title__).toBe('Unlock');
+  });
+});
+
+describe('ResourceLockedError', () => {
+  it('should carry the blocked path in its message and name', () => {
+    const error = new ResourceLockedError('folder/note.md');
+    expect(error).toBeInstanceOf(Error);
+    expect(error.name).toBe('ResourceLockedError');
+    expect(error.path).toBe('folder/note.md');
+    expect(error.message).toContain('folder/note.md');
+  });
+});
+
+describe('mutation blocker', () => {
+  beforeEach(() => {
+    mockApp = App.createConfigured__({
+      files: {
+        'other.md': '',
+        'source.md': 'src',
+        'target.md': 'content'
+      }
+    });
+    app = mockApp.asOriginalType__();
+    castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => null);
+    castTo<MockAppPlugins>(app).plugins = { manifests: {} };
+    vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
+  });
+
+  function lockTarget(): Disposable {
+    return new EditorLockComponent(app, 'blocker-plugin').lockForPath('target.md', { shouldBlockMutations: true });
+  }
+
+  function targetFile(): TFileOriginal {
+    const file = app.vault.getFileByPath('target.md');
+    assertNonNullable(file);
+    return file;
+  }
+
+  it('should not block mutations for a read-only (non-blocking) lock', () => {
+    const component = new EditorLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath('target.md');
+    expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(false);
+  });
+
+  it('should block mutations only while a blocking lock is held', () => {
+    const component = new EditorLockComponent(app, 'test-plugin');
+    const disposable = component.lockForPath('target.md', { shouldBlockMutations: true });
+    expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(true);
+    expect(component.isMutationBlockedByAncestorForPath('other.md')).toBe(false);
+
+    disposable[Symbol.dispose]();
+    expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(false);
+  });
+
+  it('should block a mutation under a subtree blocking lock', () => {
+    const component = new EditorLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath('folder', { mode: 'subtree', shouldBlockMutations: true });
+    expect(component.isMutationBlockedByAncestorForPath('folder/child.md')).toBe(true);
+    expect(component.isMutationBlockedByAncestorForPath('elsewhere.md')).toBe(false);
+  });
+
+  it('should stop blocking (uninstall the patch) once the lock is released', async () => {
+    const disposable = lockTarget();
+    const file = targetFile();
+    expect(() => app.vault.rename(file, 'renamed.md')).toThrow(ResourceLockedError);
+
+    disposable[Symbol.dispose]();
+    // The patch is uninstalled, so the same rename now runs.
+    await expect(app.vault.rename(file, 'renamed.md')).resolves.toBeUndefined();
+  });
+
+  it('should allow a mutation of an unblocked path while a blocking lock is held', async () => {
+    using _lock = lockTarget();
+    await expect(app.vault.create('allowed.md', 'x')).resolves.toBeDefined();
+  });
+
+  it('should block vault.append of a locked file', () => {
+    using _lock = lockTarget();
+    const file = targetFile();
+    expect(() => app.vault.append(file, 'x')).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.copy to a locked destination', () => {
+    using _lock = lockTarget();
+    const source = app.vault.getFileByPath('source.md');
+    assertNonNullable(source);
+    expect(() => app.vault.copy(source, 'target.md')).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.create at a locked path', () => {
+    using _lock = lockTarget();
+    expect(() => app.vault.create('target.md', 'x')).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.createBinary at a locked path', () => {
+    using _lock = lockTarget();
+    expect(() => app.vault.createBinary('target.md', new ArrayBuffer(0))).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.createFolder at a locked path', () => {
+    using _lock = lockTarget();
+    expect(() => app.vault.createFolder('target.md')).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.delete of a locked file', () => {
+    using _lock = lockTarget();
+    const file = targetFile();
+    // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Exercising the mutation blocker on this method.
+    expect(() => app.vault.delete(file)).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.modify of a locked file', () => {
+    using _lock = lockTarget();
+    const file = targetFile();
+    expect(() => app.vault.modify(file, 'x')).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.modifyBinary of a locked file', () => {
+    using _lock = lockTarget();
+    const file = targetFile();
+    expect(() => app.vault.modifyBinary(file, new ArrayBuffer(0))).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.process of a locked file', () => {
+    using _lock = lockTarget();
+    const file = targetFile();
+    expect(() => app.vault.process(file, (content) => content)).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.rename of a locked file (source)', () => {
+    using _lock = lockTarget();
+    const file = targetFile();
+    expect(() => app.vault.rename(file, 'renamed.md')).toThrow(ResourceLockedError);
+  });
+
+  it('should block a rename whose destination is locked', () => {
+    using _lock = lockTarget();
+    const source = app.vault.getFileByPath('source.md');
+    assertNonNullable(source);
+    expect(() => app.vault.rename(source, 'target.md')).toThrow(ResourceLockedError);
+  });
+
+  it('should block vault.trash of a locked file', () => {
+    using _lock = lockTarget();
+    const file = targetFile();
+    // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Exercising the mutation blocker on this method.
+    expect(() => app.vault.trash(file, false)).toThrow(ResourceLockedError);
+  });
+
+  it('should block fileManager.renameFile of a locked file', () => {
+    using _lock = lockTarget();
+    const file = targetFile();
+    expect(() => app.fileManager.renameFile(file, 'renamed.md')).toThrow(ResourceLockedError);
+  });
+
+  it('should block fileManager.trashFile of a locked file', () => {
+    using _lock = lockTarget();
+    const file = targetFile();
+    expect(() => app.fileManager.trashFile(file)).toThrow(ResourceLockedError);
+  });
+
+  it('should keep the blocker installed until the last blocking lock on the path is released', async () => {
+    const first = lockTarget();
+    // The second blocking lock reuses the already-installed patch (no re-install).
+    const second = lockTarget();
+    const file = targetFile();
+    // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Exercising the mutation blocker on this method.
+    expect(() => app.vault.delete(file)).toThrow(ResourceLockedError);
+
+    // Releasing one of the two blocking locks keeps the path blocked (the other still holds it).
+    first[Symbol.dispose]();
+    // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Exercising the mutation blocker on this method.
+    expect(() => app.vault.delete(file)).toThrow(ResourceLockedError);
+
+    // Releasing the last blocking lock uninstalls the patch, so the mutation runs.
+    second[Symbol.dispose]();
+    // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Confirming the mutation runs once the blocker is uninstalled.
+    await expect(app.vault.delete(file)).resolves.toBeUndefined();
   });
 });

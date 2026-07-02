@@ -30,10 +30,12 @@ import type {
 
 import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
+  FileManager,
   MarkdownView,
   Menu,
   setIcon,
-  setTooltip
+  setTooltip,
+  Vault
 } from 'obsidian';
 
 import type { PathOrFile } from './file-system.ts';
@@ -47,6 +49,7 @@ import { noop } from '../function.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { ComponentEx } from './components/component-ex.ts';
+import { MonkeyAroundComponent } from './components/monkey-around-component.ts';
 import { toggleEditorReadOnly } from './editor.ts';
 import { getPath } from './file-system.ts';
 import { appendCodeBlock } from './html-element.ts';
@@ -86,6 +89,17 @@ export interface EditorLockComponentLockForPathOptions {
    * @default `'file'`
    */
   readonly mode?: ResourceLockMode;
+
+  /**
+   * When `true`, the lock also **blocks vault mutations** of the covered path(s): any attempt to edit,
+   * delete, rename, move, or (re)create the resource through the `Vault`/`FileManager` API throws a
+   * {@link ResourceLockedError}. Installed lazily on the first such lock and removed when the last one
+   * is released. When `false` (the default) the lock only makes the editor read-only — legacy behavior,
+   * so existing consumers that write to a note they hold an editor lock on are unaffected.
+   *
+   * @default `false`
+   */
+  readonly shouldBlockMutations?: boolean;
 }
 
 /**
@@ -108,6 +122,7 @@ interface EditorLockEventsComponentConstructorParams {
 
 interface LockEntry {
   readonly abortController: AbortController | undefined;
+  readonly blocksMutations: boolean;
   readonly mode: ResourceLockMode;
   readonly pluginId: string;
 }
@@ -120,7 +135,12 @@ interface LockIndicators {
 
 interface ManagerLockOptions {
   readonly abortController?: AbortController | undefined;
+  readonly blocksMutations?: boolean | undefined;
   readonly mode?: ResourceLockMode | undefined;
+}
+
+interface ResourceLockMutationBlockerComponentConstructorParams {
+  isMutationBlocked(this: void, path: string): boolean;
 }
 
 /**
@@ -152,6 +172,139 @@ class EditorLockEventsComponent extends ComponentEx {
 }
 
 /**
+ * Monkey-patches the vault-mutation choke points on `Vault`/`FileManager` so that any edit, delete,
+ * rename, move, or (re)create of a mutation-blocked path throws a {@link ResourceLockedError}.
+ * Installed lazily by {@link EditorPathLockManager} on the first `shouldBlockMutations` lock and removed
+ * when the last one is released; being a {@link MonkeyAroundComponent}, every patch is torn down on
+ * `unload`. Rename/copy check both source and destination; the other methods check their single path.
+ */
+class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
+  private readonly isMutationBlocked: (path: string) => boolean;
+
+  public constructor(params: ResourceLockMutationBlockerComponentConstructorParams) {
+    super();
+    this.isMutationBlocked = params.isMutationBlocked;
+  }
+
+  public override onload(): void {
+    super.onload();
+
+    this.registerMethodPatch<Vault, 'append'>({
+      methodName: 'append',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0].path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'copy'>({
+      methodName: 'copy',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[1]]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'create'>({
+      methodName: 'create',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0]]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'createBinary'>({
+      methodName: 'createBinary',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0]]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'createFolder'>({
+      methodName: 'createFolder',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0]]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'delete'>({
+      methodName: 'delete',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0].path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'modify'>({
+      methodName: 'modify',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0].path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'modifyBinary'>({
+      methodName: 'modifyBinary',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0].path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'process'>({
+      methodName: 'process',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0].path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'rename'>({
+      methodName: 'rename',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0].path, originalArgs[1]]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'trash'>({
+      methodName: 'trash',
+      obj: Vault.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0].path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<FileManager, 'renameFile'>({
+      methodName: 'renameFile',
+      obj: FileManager.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0].path, originalArgs[1]]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<FileManager, 'trashFile'>({
+      methodName: 'trashFile',
+      obj: FileManager.prototype,
+      patchHandler: ({ fallback, originalArgs }) => {
+        this.assertNotBlocked([originalArgs[0].path]);
+        return fallback();
+      }
+    });
+  }
+
+  private assertNotBlocked(paths: string[]): void {
+    for (const path of paths) {
+      if (this.isMutationBlocked(path)) {
+        throw new ResourceLockedError(path);
+      }
+    }
+  }
+}
+
+/**
  * Tracks path-scoped editor locks and keeps every open {@link MarkdownView} in sync with the locked
  * set. A single instance lives on the shared `obsidian-dev-utils` state. Each lock is one
  * {@link LockEntry} in a per-path list, so a path can be held by several plugins (or several times by
@@ -164,6 +317,7 @@ class EditorPathLockManager {
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
   private lastBeepMilliseconds = 0;
   private readonly lockEntriesByPath = new Map<string, LockEntry[]>();
+  private mutationBlockerComponent: ResourceLockMutationBlockerComponent | undefined;
   private statusBarItemEl: HTMLElement | null = null;
 
   public isLocked(app: App, pathOrFile: PathOrFile): boolean {
@@ -182,10 +336,33 @@ class EditorPathLockManager {
     return this.resolveLockOwnerPath(app, getPath(app, pathOrFile)) !== null;
   }
 
+  /**
+   * Checks whether the given path is covered by a mutation-blocking lock (one taken with
+   * `blocksMutations`) directly or on a `subtree`-locked ancestor folder.
+   *
+   * @param app - The Obsidian app instance.
+   * @param pathOrFile - The path or file to check.
+   * @returns `true` if a mutation of the path is currently blocked.
+   */
+  public isMutationBlockedByAncestor(app: App, pathOrFile: PathOrFile): boolean {
+    const path = getPath(app, pathOrFile);
+    const exactEntries = this.lockEntriesByPath.get(path);
+    if (exactEntries?.some((entry) => entry.blocksMutations)) {
+      return true;
+    }
+    for (const [lockedPath, entries] of this.lockEntriesByPath) {
+      if (entries.some((entry) => entry.mode === 'subtree' && entry.blocksMutations) && isChild({ app, childPathOrFile: path, parentPathOrFile: lockedPath })) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public lock(app: App, pathOrFile: PathOrFile, pluginId: string, options: ManagerLockOptions = {}): Disposable {
     const path = getPath(app, pathOrFile);
     const entry: LockEntry = {
       abortController: options.abortController,
+      blocksMutations: options.blocksMutations ?? false,
       mode: options.mode ?? 'file',
       pluginId
     };
@@ -196,6 +373,9 @@ class EditorPathLockManager {
     }
     entries.push(entry);
     this.ensureSubscribed(app);
+    if (entry.blocksMutations) {
+      this.ensureBlockerInstalled(app);
+    }
     this.reconcile(app);
 
     return new CallbackDisposable({
@@ -331,6 +511,16 @@ class EditorPathLockManager {
     };
   }
 
+  private ensureBlockerInstalled(app: App): void {
+    if (this.mutationBlockerComponent) {
+      return;
+    }
+    this.mutationBlockerComponent = new ResourceLockMutationBlockerComponent({
+      isMutationBlocked: (path): boolean => this.isMutationBlockedByAncestor(app, path)
+    });
+    this.mutationBlockerComponent.load();
+  }
+
   private ensureSubscribed(app: App): void {
     if (this.eventsComponent) {
       return;
@@ -370,6 +560,15 @@ class EditorPathLockManager {
       return;
     }
     this.addUnlockMenuItem(app, menu, ownerPath);
+  }
+
+  private hasBlockingLock(): boolean {
+    for (const entries of this.lockEntriesByPath.values()) {
+      if (entries.some((entry) => entry.blocksMutations)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private isPathLocked(path: string): boolean {
@@ -440,6 +639,10 @@ class EditorPathLockManager {
     if (this.lockEntriesByPath.size === 0) {
       this.eventsComponent?.unload();
       this.eventsComponent = undefined;
+    }
+    if (!this.hasBlockingLock()) {
+      this.mutationBlockerComponent?.unload();
+      this.mutationBlockerComponent = undefined;
     }
   }
 
@@ -591,6 +794,18 @@ export class EditorLockComponent extends ComponentEx {
   }
 
   /**
+   * Checks whether a vault mutation of the path is currently blocked by a `shouldBlockMutations` lock
+   * on the path itself or on a `subtree`-locked ancestor folder.
+   *
+   * @param pathOrFile - The path or file to check.
+   * @returns `true` if editing/deleting/renaming/moving/creating the path would throw a
+   * {@link ResourceLockedError}.
+   */
+  public isMutationBlockedByAncestorForPath(pathOrFile: PathOrFile): boolean {
+    return getManager().isMutationBlockedByAncestor(this.app, pathOrFile);
+  }
+
+  /**
    * Locks the note at the given path on behalf of this plugin, making it read-only in every current
    * and future {@link MarkdownView} until the lock is released. Reference-counted: balance each call
    * with a dispose of the returned {@link Disposable} (ideally via `using`) or {@link unlockForPath}.
@@ -602,7 +817,7 @@ export class EditorLockComponent extends ComponentEx {
    * @returns A {@link Disposable} that releases this lock when disposed. Disposing more than once is a no-op.
    */
   public lockForPath(pathOrFile: PathOrFile, options?: EditorLockComponentLockForPathOptions): Disposable {
-    return getManager().lock(this.app, pathOrFile, this.pluginId, { abortController: options?.abortController, mode: options?.mode });
+    return getManager().lock(this.app, pathOrFile, this.pluginId, { abortController: options?.abortController, blocksMutations: options?.shouldBlockMutations, mode: options?.mode });
   }
 
   /**
@@ -621,6 +836,29 @@ export class EditorLockComponent extends ComponentEx {
    */
   public unlockForPath(pathOrFile: PathOrFile): void {
     getManager().unlock(this.app, pathOrFile, this.pluginId);
+  }
+}
+
+/**
+ * Thrown by the vault-mutation blocker when a plugin tries to edit, delete, rename, move, or create a
+ * resource whose path is covered by a lock taken with
+ * {@link EditorLockComponentLockForPathOptions.shouldBlockMutations}.
+ */
+export class ResourceLockedError extends Error {
+  /**
+   * The vault path whose mutation was blocked.
+   */
+  public readonly path: string;
+
+  /**
+   * Creates a {@link ResourceLockedError}.
+   *
+   * @param path - The vault path whose mutation was blocked.
+   */
+  public constructor(path: string) {
+    super(`The resource "${path}" is locked and cannot be mutated.`);
+    this.name = 'ResourceLockedError';
+    this.path = path;
   }
 }
 
