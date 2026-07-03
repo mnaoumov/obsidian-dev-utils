@@ -278,231 +278,99 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
-## Current Task — Resource locking + transactional rollback (dev-utils half)
+## Current Task — Fix frontmatter-markdown-links issue #36 (Bases context null-deref)
 
-Building the dev-utils primitives that let a consumer plugin (advanced-note-composer) lock the
-files/folders an operation touches against **edit + delete + rename + move** (files, and entire folder
-**subtrees**), **detect** external/sync changes and abort, and **fully roll back** on cancel/error. Full
-approved plan (both repos): `~/.claude/plans/rustling-gliding-stearns.md`.
+Tracking upstream bug reported at
+`https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/36` (plugin 2.6.37, Obsidian
+1.12.7, Win10, fresh install). The crash surfaces in the plugin but the root cause is 100% here in
+dev-utils. Continue the work from THIS repo.
 
-### RESOLVED — `VaultTransaction` rollback under an open editor (investigated + defensive fix, 2026-07-02)
+### Diagnosis (confirmed)
 
-**Finding (contradicts the original premise): `VaultTransaction` rollback is ALREADY editor-safe.**
-The escalation assumed a probe using **raw `app.vault.process(file, () => original)`** — which DOES
-clobber a dirty open editor (its pending autosave re-writes the stale buffer) — and inferred the
-transaction had the same gap. It does not. The transaction's content restore goes through the dev-utils
-`process` wrapper, whose `readSafe` → `saveNote` **flushes and cancels** the pending autosave before the
-restore write; the now-clean editor then **reloads** to the restored content. Verified empirically in
-real Obsidian 1.13.1 with a throwaway probe covering three scenarios (fix DISABLED):
+Reported console error:
 
-- raw `app.vault.process` → disk+editor both end up the **extraction** (clobber confirmed).
-- `VaultTransaction` rollback (unlocked) → disk+editor both **restored** (no clobber).
-- `VaultTransaction` rollback (**locked / read-only editor** — the real advanced-note-composer case;
-  the read-only buffer is genuinely dirtied by a programmatic whole-doc replace) → disk+editor both
-  **restored** (no clobber).
+```
+TypeError: Cannot read properties of null (reading 'constructor')
+  at extractFromLeaf → openAndExtract → extractFromAnyBase → extract → getBasesContextConstructor
+  → patchBasesNote → onLayoutReady
+```
 
-**What landed (user chose "keep defensive wiring"):** a new reusable primitive
-`syncOpenEditorBuffersForPath(app, pathOrFile, content)` in `src/obsidian/editor.ts` — overwrites the
-buffer of every open `MarkdownView` still showing `pathOrFile` to `content` (guards navigation away;
-skips when already in sync). It is wired into `VaultTransaction.process`'s content-restore undo step as
-**belt-and-suspenders** (harmless no-op in the already-safe transaction flow — after `saveNote`+reload
-the buffer already matches). It is also the correct standalone fix for the **raw-`app.vault.process`
-clobber** a consumer can still hit. Unit-tested in isolation (`editor.test.ts`) and through the wiring
-(`vault-transaction.test.ts` — a genuine red: the mock has no reload, so without the sync the dirty
-buffer survives); plus an end-to-end integration test asserting disk+editor consistency after rollback.
+- **Immediate site:** `src/obsidian/constructors/get-bases-context-constructor.ts`,
+  `extractFromLeaf` (~line 83). It does `await retryWithTimeout(() => …controller.ctx !== null)` and
+  then, in a **separate statement**, `return (leaf.view as BasesView).controller.ctx.constructor`.
+  On the failing machine `ctx` is null at that second read.
+- **Root cause (the real bug):** `retryWithTimeout` (`src/async.ts:703`) **resolves silently on
+  timeout** instead of rejecting, contradicting its own JSDoc ("rejects when the timeout is
+  reached"). Mechanism: on timeout `runWithTimeout` aborts the run signal; the retry loop's
+  `await sleep({ abortSignal, milliseconds })` (`async.ts:763`) is called WITHOUT
+  `shouldThrowOnAbort`, so on abort `sleep` **resolves**; the `while (!combinedAbortSignal.aborted)`
+  loop then exits and the op fn returns `undefined`, which `runWithTimeout` treats as success. The
+  current behavior is even locked in by `async.test.ts:906` ("should resolve when timeout is reached
+  and the while loop exits due to abort").
+- **Why it times out at all:** on a fresh vault `extractFromAnyBase` creates a temp `.base` file and
+  opens it; on this environment `controller.ctx` never populates within the 5s default, so the retry
+  times out → resolves → null deref.
+- **Tell-tale:** the sibling `get-dom-events-handlers-constructor.ts` does the SAME retry but follows
+  it with `assertNonNullable(…, 'Failed to get …')` before dereferencing, so it degrades to a clear
+  error. `get-bases-context-constructor.ts` omits that guard → cryptic `TypeError`.
 
-**Plugin follow-up (advanced-note-composer, NOT dev-utils):** its split-rollback is **unblocked** — route
-the content restore through `VaultTransaction.process`/`modify` (or the dev-utils `process` wrapper),
-NOT raw `app.vault.process`; the wrapper's `saveNote` flush already prevents the clobber. If it must use
-a raw disk write, call `syncOpenEditorBuffersForPath` after it.
+### Fix plan
 
-Prevention model: monkey-patch the vault mutation methods to block locked paths (via
-`MonkeyAroundComponent`), plus vault-event detection as a backstop → abort. Owner-vs-intruder: the
-operation arms an "expected mutation" token synchronously immediately before each vault call; the patch
-allows only armed matches; the detector reconciles events and aborts on any unarmed change.
+- **Layer 1 (targeted, low risk — DO THIS) — `get-bases-context-constructor.ts`.** Mirror the sibling
+  file: capture `ctx` inside the retry op fn and `assertNonNullable(ctx, 'Bases context is not
+  available')` before reading `.constructor`; also guard `controller?.` so a transiently-undefined
+  controller doesn't throw inside the op fn (which currently aborts the whole retry). Converts the
+  cryptic null-deref into a clear, correct error. TDD: red test first (retry times out → expect the
+  clear assertion error, not a `TypeError`).
+- **Layer 3 (contract fix, higher risk — SEPARATE DECISION).** Make `retryWithTimeout` actually
+  reject on timeout per its documented contract. Blast radius: internal callers
+  `get-bases-context-constructor.ts`, `get-dom-events-handlers-constructor.ts`, `metadata-cache.ts`,
+  `vault.ts`, `async-with-notice.ts`, plus every consuming plugin. Requires rewriting the existing
+  `async.test.ts:906` test (confirm before modifying an existing test) and auditing all call sites.
+  Do NOT bundle with Layer 1.
+- **Layer 2 (plugin-side, NOT dev-utils).** In `obsidian-frontmatter-markdown-links`, wrap
+  `patchBasesNote()` in `frontmatter-markdown-links-component.ts` so a Bases-context failure logs a
+  warning instead of aborting `onLayoutReady` (the Bases integration is optional). Track/execute this
+  from the plugin repo, not here.
 
-Dev-utils phases (plugin phases 5–8 are driven from the plugin repo later):
+Conventions: strict TS, 100% unit coverage, R2/R1, failing-test-first (R2 G10r) + confirm REAL
+behavior. Ship a dev-utils patch release with Layer 1; the plugin then bumps the dep and (Layer 2)
+adds the graceful-degradation wrap.
 
-1. **`src/obsidian/vault-transaction.ts` — `VaultTransaction`** ✅ DONE (impl + 100% unit suite +
-   real-Obsidian integration test all green; NOT yet committed/released).
-   Reversible log: `rename`/`create`/`createFolder`/`modify`/`process`/`trash` (+ `commit`/`rollback`/
-   `[Symbol.asyncDispose]`), built on the `*Safe` wrappers. **Soft-delete redesign (user-directed):**
-   `trash` moves the resource into a **dot-prefixed, untracked** staging folder
-   (`.obsidian-dev-utils-temp`) so Obsidian's file-tree + watcher ignore it (no metadata/file-explorer/
-   sync churn in flight). Because `vault.*` is blind to dot-paths, ALL staging I/O goes through
-   `app.vault.adapter` (`mkdir`/`rename`/`exists`/`trashSystem`/`trashLocal`/`rmdir`) — NOT `vault.rename`.
-   A folder moves its whole subtree in one adapter rename → cheap faithful subtree rollback; `commit`
-   trashes staged for real, `rollback` moves them back. `process` dead-branch removed (a missing file
-   throws in the inner `process` before the guard, so the pre-image is always non-null → `assertNonNullable`).
-   Consequences carried to later phases: the transaction's correctness rests on the adapter + in-memory
-   staged-path list, NOT Obsidian's tree (which reflects the change asynchronously via the watcher); and
-   **phase 3's detector must treat transaction-owned soft-deletes as armed/expected** (the watcher still
-   fires `vault.on('delete'|'create')` for the original path even though the adapter move bypassed
-   `vault.*`). No owner session yet (added in phase 4); `process` currently passes `editorLockComponent:
-   null` (no lock wiring until phase 4).
-2. **`ResourceLockManager` blocking layer.**
-   - **2a ✅ DONE (committed `acaf203b`, not released).** Subtree-aware locking added additively to
-     `EditorPathLockManager`: `mode:'file'|'subtree'` option, `isLockedByAncestorForPath`, deepest-ancestor
-     owner resolution; a note inside a `subtree`-locked folder is made read-only and its
-     indicators/tooltip/unlock menu resolve to the folder lock. Existing 'file'-mode behavior unchanged
-     (every new query reduces to the old exact-match when no subtree locks exist). 100% unit + real-Obsidian
-     integration test.
-   - **Storage refactor ✅ DONE (committed `6ee96234`).** Unified the parallel count maps into one
-     `Map<path, LockEntry[]>` (each entry carries `pluginId`/`mode`/`blocksMutations`/`abortController`);
-     behavior-preserving foundation for the blocker + owner session. (User approved redesigning the
-     component.)
-   - **2b ✅ DONE (committed `c56456b1`, not released).** Opt-in vault-mutation blocker. A lock taken with
-     `shouldBlockMutations: true` rejects edit/delete/rename/move/create of the covered path(s) —
-     subtree-aware — via a lazily-installed `MonkeyAroundComponent` patching Vault (`append`/`copy`/`create`/
-     `createBinary`/`createFolder`/`delete`/`modify`/`modifyBinary`/`process`/`rename`/`trash`) + FileManager
-     (`renameFile`/`trashFile`), throwing the new exported `ResourceLockedError`. Rename/copy check source +
-     dest; patch torn down when the last blocking lock releases. **Gating decision (implemented):** blocking
-     is OPT-IN per lock — read-only editor locks never block writes, so shipped consumers are unaffected
-     (no owner-arming yet; that is phase 4). 100% unit (real MonkeyAroundComponent patching the real
-     test-mocks prototypes) + real-Obsidian integration (blocks vault rename + fileManager trash, allows
-     after unlock).
-3. **External-change detection backstop ✅ DONE (committed `3c4f602c`, not released).** The events component
-   now also listens to `vault.on('create'|'delete'|'rename')` + `metadataCache.on('deleted')`. An event on a
-   mutation-blocked path NOT covered by an active bypass scope → intruder (Sync / raw FS / adapter write /
-   another plugin) → the manager aborts the `abortController` of every mutation-blocking lock covering the
-   path (exact or subtree-ancestor) → the owning op cancels and rolls back. The bypass set is the "expected
-   vs intruder" filter, so the interdependency flagged in 2b is resolved: the `VaultTransaction` soft-delete's
-   `adapter.rename` fires a watcher `delete` for the original path, but that path is inside the owner's active
-   bypass scope → treated as expected. 100% unit (drives real vault/metadataCache events via `trigger`) +
-   real-Obsidian integration (a raw adapter delete fires the real watcher and aborts the op).
-4. **`ResourceLockComponent` + owner session.**
-   - **Owner mutation-bypass core ✅ DONE (committed `f505ed87` as one-shot arming, then superseded by
-     `41df62eb`; not released).** After weighing one-shot arming vs. an ambient scope, the user chose an
-     **ambient bypass scope** (simpler; auto-covers compound `*Safe` ops without enumerating internal calls,
-     and the same set doubles as the phase-3 "expected vs intruder" filter):
-     `EditorLockComponent.bypassBlockedMutations(pathsOrFiles): Disposable`. While the returned Disposable is
-     live, the owner's own mutations of those paths (subtree-aware via `isChildOrSelf` — bypassing a folder
-     covers its subtree) pass the blocker; everything else stays blocked. The blocker's `shouldBlockMutation`
-     = blocked-by-ancestor AND not covered by any active bypass set. 100% unit + real-Obsidian integration
-     (a modify passes inside the scope, is rejected once it ends).
-     **Residual (accepted):** the scope is ambient, so during an `await` inside it a *concurrent* mutation of a
-     bypassed path would also pass — but those paths are locked by this op (editor read-only), so the only
-     leak is external sync during the window, caught by the mtime pre/post-check. The phase-3 detector will
-     also filter on the bypass set.
-   - **VaultTransaction bypass integration ✅ DONE (committed `b8c31a06`, not released).** VaultTransaction
-     gained an optional `openMutationBypass?(): Disposable` thunk. When the owner supplies it (pre-bound with
-     the paths it locked, e.g. `() => component.bypassBlockedMutations(lockedPaths)`), the transaction opens
-     that ambient scope at construction and disposes it only after `commit`/`rollback` completes — **including
-     auto-rollback on `await using` disposal**, so the rollback's own restore writes stay bypassed (the part a
-     hand-managed scope easily drops). Decoupled (thunk, not the component); the owner's subtree bypass covers
-     the compound `*Safe` internal calls; `trash`/`commit` use the adapter → no bypass. 100% unit + real-Obsidian
-     integration (modify + rollback of a file under a mutation-blocking subtree lock).
-   - **Breaking rename ✅ DONE (committed `09f07e79`, not released).** `src/obsidian/editor-lock.ts` →
-     `resource-lock.ts` (public import path `.../obsidian/editor-lock` → `.../obsidian/resource-lock`). Renamed:
-     `EditorLockComponent` → `ResourceLockComponent`, `EditorLockComponentLockForPathOptions` →
-     `ResourceLockComponentLockForPathOptions`, free functions `lockEditorForPath`/`unlockEditorForPath`/
-     `isEditorLockedForPath`/`requestEditorUnlockForPath` → `lock`/`unlock`/`is`/`requestResourceUnlockForPath`,
-     the `process`/`ProcessParams` field `editorLockComponent` → `resourceLockComponent`, `PluginBase`'s
-     `editorLockComponent` field → `resourceLockComponent`, and the internal `editorLock` i18n namespace →
-     `resourceLock`. No back-compat shim. Method surface (`lockForPath`, `isLockedByAncestorForPath`,
-     `isMutationBlockedByAncestorForPath`, `bypassBlockedMutations`) unchanged; behavior identical. Full gate
-     green (compile, 100% coverage, lint, format, spellcheck, integration). **dev-utils half of the plan is now
-     complete — remaining work is the release + the plugin phases 5–8 (advanced-note-composer).**
+## Current Task — Make minimized modal bar fully clickable (advanced-note-composer issue #121)
 
-Conventions: strict TS, 100% unit coverage, R2/R1 rules, dev-utils integration harness
-(`*.obsidian.integration.test.ts` via `window.__obsidianDevUtilsModule__`). Ship dev-utils release(s) as
-phases land; the plugin then bumps the dep.
+Tracking feature request `https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/121`
+("Make entire split box clickable"). The "split box" is the minimized-modal bar rendered by
+`MinimizableModal` HERE — when the plugin's Split-file dialog is minimized it collapses to a small
+floating bar, and only the restore icon was clickable. Root cause and fix are 100% in dev-utils; the
+plugin's `open-minimizable-modal.ts` only wraps `MinimizableModal`. Continue the work from THIS repo.
 
-**Progress: phase 1, phase 2, and the phase-4 owner-session arming core are complete (unreleased local
-commits on `main`, not pushed).** NEXT: integrate arming into `VaultTransaction` (see the ⚠ design-care note),
-then phase 3's detector (which reuses the session's `abortController`), then the deferred breaking rename with
-the release.
+### Changes made (implemented, unit-covered)
 
-## Completed — dev-build live-enable + integration library styles
+- `src/obsidian/modals/minimizable-modal.ts` — `createMinimizedBar()` attaches the `click → restore()`
+  listener to the whole `barEl`, not just the restore button. The button's own click bubbles up;
+  `restore()` guards against the double invocation (no-op). Restore button kept as a visual affordance.
+- `src/styles/minimizable-modal.scss` — `.minimized-modal-bar` gets `cursor: pointer` + a bar-level
+  `:hover` background so the whole box reads as clickable.
+- `src/obsidian/modals/minimizable-modal.test.ts` — two failing-first tests added (click the bar body,
+  click the title); red before the fix, green after. Full file 18/18; tsc + eslint clean.
 
-Two independent fixes that also landed on `refactor/restore-agnostic-core-boundary` (so they ride the
-pending major; not released):
+### Remaining steps
 
-- **`npm run dev` owns a reused CDP Obsidian instance.** The dev-build live-enable broke when
-  `obsidian-integration-testing` 5.x retired the CLI transport — `enableCommunityPlugin` called
-  `evalInObsidian` with no transport, so it hit `fetch('/json')` and threw on every rebuild.
-  `copy-to-obsidian-plugins-folder-plugin.ts` now launches ONE owned instance
-  (`createTransportFromOptions()` + `transport.registerVault()`) on the first rebuild, caches/reuses
-  it, and `disposeSync`s it on `process` `exit`/`SIGINT`/`SIGTERM`/`SIGHUP`. Live-enable is best-effort
-  (the plugin still enables via `community-plugins.json` + hot-reload; failures log quietly via
-  `getLibDebugger`). The owned instance uses an isolated temp `--user-data-dir` but opens the REAL
-  configured vault — revisit if it should reuse the user's real profile.
-- **Integration tests inject the library CSS.** The harness plugin only exposes the module on `window`
-  (it never runs `initPluginContext`), so the library styles were absent from the shared instance. A
-  new `obsidian-integration-tests` setup file (`scripts/integration-test-obsidian-setup.ts`) reads the
-  already-built `dist/styles.css` (build is assumed to have run beforehand) and injects it into the
-  instance once per test file (idempotent, keyed by a `<style>` id). Covered by
-  `library-styles.obsidian.integration.test.ts`.
+- ~~Confirm REAL behavior (R2 G10r)~~ ✅ DONE — added a real-Obsidian integration test
+  (`minimizable-modal.obsidian.integration.test.ts` → `describe('restore')`) that opens + minimizes a real
+  `MinimizableModal` and dispatches genuine DOM `click` events on the minimized bar body and its title,
+  asserting the modal restores and the bar is removed. Passes in the harness (real Obsidian drives the
+  real `addEventListener`, unlike the unit mocks).
+- Ship a dev-utils patch release; advanced-note-composer then bumps the `obsidian-dev-utils` dep. NEEDS
+  user go-ahead (irreversible).
+- Close issue #121 (public-facing — draft in chat, get approval before posting).
 
-## Completed — Restore the agnostic-core ⊥ Obsidian-layer boundary
-
-DONE on branch `refactor/restore-agnostic-core-boundary` (NOT merged/published). Breaking refactor;
-the lib is mid-major (82.x), so the major bump + consumer migration come afterward.
-
-- **Prong A** — replaced the ambient `pluginId` (a capability backdoor) with a single deterministic
-  `Library` init entry point on `src/library.ts`: `Library.init({ cssClassScope, debugPrefixNamespace,
-  shouldPrintStackTrace })` (throws if called twice) and `Library.resetToDefault()` (re-allows init).
-  `debug.ts` is fully agnostic (no `src/obsidian/` imports) and reads `Library` getters;
-  `addPluginCssClasses` reads `Library.cssClassScope`. `initPluginContext` calls `Library.init`;
-  `PluginContextComponent` resets it on unload (reload safety); `setup.ts` resets it per test.
-  `EditorLockComponent` and the free `lockEditorForPath`/`unlockEditorForPath` now take an explicit
-  `pluginId`. Deleted `plugin-id.ts` (`getPluginId`/`setPluginId`/`NO_PLUGIN_ID_INITIALIZED`). (`refactor!`)
-- **Prong B** — removed the Obsidian-runtime dependency from `blob.ts` (standard
-  `document.createElement`/`atob`); moved `css-class.ts` → `src/obsidian/css-class.ts`; extracted the
-  build-substituted `LIBRARY_VERSION`/`LIBRARY_STYLES` into `src/generated-during-build.ts` (and updated
-  the `scripts/version.ts` release substitution to target it).
-- **Prong B (html-element)** — rather than moving the Obsidian-coupled `html-element` helpers into the
-  Obsidian layer, they were **reimplemented to be Obsidian-runtime-agnostic** and kept at the top level
-  (`src/html-element.ts`): `create{Div,El,Span,Fragment,Svg}Async`, `ensureLoaded`/`isLoaded`,
-  `onAncestorScrollOrResize`, `waitUntilConnected`. The Obsidian-injected DOM behavior they relied on is
-  ported from `obsidian.asar/enhance.js` to standard DOM — `createEl`/`createSvg`/`createFragment` (a
-  partial `DomElementInfo` port: `cls`/`text`/`attr`/`title`/`parent`/`prepend`), `instanceOf`
-  (cross-realm via `node.ownerDocument.defaultView`), `activeDocument`/`activeWindow` (via
-  `ownerDocument`/`defaultView`), and `onNodeInserted` (via a `MutationObserver`). Only `appendCodeBlock`
-  stays in the Obsidian layer (`src/obsidian/html-element.ts`) — it hardcodes Obsidian's
-  `markdown-rendered` rendered-markdown CSS class (now `CssClass.MarkdownRendered`/`CssClass.Code`).
-- **Revalidation trigger:** the `src/html-element.ts` helpers are a PARTIAL port of
-  `obsidian.asar/enhance.js`. Whenever the `obsidian-versions` project gets a new Obsidian release, diff
-  that release's `enhance.js` against this port (`createEl`/`createDiv`/`createSpan`/`createSvg`/
-  `createFragment`, `Node.prototype.instanceOf`, `Element.prototype.setText`/`setAttrs`,
-  `onNodeInserted`) and re-migrate any behavioral change. The port intentionally omits the
-  element-type-specific `createEl` fields (`value`/`type`/`placeholder`/`href`) and `on*` handlers —
-  extend it if a consumer needs them.
-- **Prong C** — `no-restricted-imports` rule banning `./obsidian/**` from the agnostic top-level
-  `src/*.ts` modules (excluding the barrel + test files), wired into obsidian-dev-utils' own ESLint
-  config (NOT the shared consumer config). Pattern is unit-tested in
-  `src/script-utils/linters/eslint-agnostic-core-boundary.test.ts`.
-- **Verified** — full unit gate green (compile + `test:coverage` 100% + lint + format + spellcheck);
-  full `npm run build` exit 0; `npm run test:integration` green (42 tests in real Obsidian — validates
-  the moves, the editor-lock A4 signature, and the injected library styles at runtime).
-
-**Deferred hardening (NOT done):** the plan also wanted `integration-test-plugin/main.ts` upgraded from
-`extends Plugin` to a `PluginBase` subclass so `initPluginContext` runs in the harness, plus
-`evalInObsidian` assertions that `getLibDebugger` carries the `<pluginId>:` prefix and
-`addPluginCssClasses` applies the scope class, and explicit harness coverage of the relocated
-`html-element` helpers. The `PluginBase` upgrade was attempted but the harness plugin **fails to load**
-in the harness's minimal owned Obsidian vault (`AggregateError` from a child component; reverted to keep
-the suite green). The `Library` injection is already unit-covered by `plugin.test.ts` (real
-`PluginBase.onload` → real `initPluginContext` → `Library.init`). Picking this up needs separate
-diagnosis of why a bare `PluginBase` subclass fails to load in the owned-instance harness.
-
-**Remaining (handed off):** merge + publish the new major via the release tool (irreversible — needs
-explicit go-ahead), then migrate the consuming plugins. Public import paths changed:
-`obsidian-dev-utils/css-class` → `.../obsidian/css-class`, and `appendCodeBlock` moved from
-`obsidian-dev-utils/html-element` → `.../obsidian/html-element` (the other `html-element` helpers stay
-at `obsidian-dev-utils/html-element`). At merge time, also flip the `docs/styling.md` CssClass link
-from `src/css-class.ts` → `src/obsidian/css-class.ts` — it was left pointing at the old path because the
-`lint:md` link-checker (linkinator) validates against GitHub `main`, where the moved file does not exist
-until this branch lands.
+Conventions: strict TS, 100% unit coverage, R1/R2, failing-test-first (R2 G10r) + confirm REAL behavior.
 
 ## Known Issues
 
-- The `package.json` integration scripts `test:integration:desktop`, `test:integration:android`, and
-  `test:integration:no-app` reference `scripts/test-integration-{desktop,android,no-app}.ts`, which do
-  NOT exist — only `scripts/test-integration.ts` (run via `npm run test:integration`, covering the
-  `integration-tests` + `obsidian-integration-tests` vitest projects) is present. Pre-existing; unrelated
-  to the boundary refactor. Either add the missing per-target entry scripts or drop the stale
-  `package.json` entries.
+- None currently.
 
 ## Commits
 
