@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 84.2.0
+
+- refactor: keep only first line of each commit in changelog
+- chore: update libs
+
 ## 84.1.0
 
 - docs: cleanup
