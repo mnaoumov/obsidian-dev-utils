@@ -535,7 +535,7 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
   });
   const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
   const commitMessagesStr = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
-  const commitMessages = commitMessagesStr.split('\0').filter(Boolean).map(toSingleLine);
+  const commitMessages = commitMessagesStr.split('\0').filter(Boolean).map(toFirstLine);
 
   let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
 
@@ -716,9 +716,8 @@ function isPreRelease(version: string): boolean {
   return prerelease(version) !== null;
 }
 
-function toSingleLine(str: string): string {
-  const lines = str.split(/\r?\n/).filter(Boolean);
-  return lines.join(' ');
+function toFirstLine(str: string): string {
+  return str.split(/\r?\n/).filter(Boolean).slice(0, 1).join('');
 }
 
 async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> {

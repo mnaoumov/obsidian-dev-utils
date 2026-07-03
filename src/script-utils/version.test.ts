@@ -657,7 +657,7 @@ describe('updateChangelog', () => {
     expect(mockCreateInterface).toHaveBeenCalled();
   });
 
-  it('should handle multi-line commit messages by joining them', async () => {
+  it('should keep only the first line of multi-line commit messages', async () => {
     mockExistsSync.mockReturnValue(false);
     mockExecFromRoot
       .mockResolvedValueOnce('Line1\nLine2\0')
@@ -668,7 +668,12 @@ describe('updateChangelog', () => {
     await updateChangelog('1.0.0');
     expect(mockWriteFile).toHaveBeenCalledWith(
       expect.any(String),
-      expect.stringContaining('- Line1 Line2'),
+      expect.stringContaining('- Line1\n'),
+      'utf-8'
+    );
+    expect(mockWriteFile).not.toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringContaining('Line2'),
       'utf-8'
     );
   });
