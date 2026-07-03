@@ -27,6 +27,13 @@ import {
   it
 } from 'vitest';
 
+interface RestoreByClickResult {
+  readonly barGoneAfterBarClick: boolean;
+  readonly barGoneAfterTitleClick: boolean;
+  readonly restoredByBarClick: boolean;
+  readonly restoredByTitleClick: boolean;
+}
+
 interface TypingWhileMinimizedResult {
   readonly didAcceptTypingAfterRestore: boolean;
   readonly didAcceptTypingWhileMinimized: boolean;
@@ -113,6 +120,64 @@ describe('MinimizableModal', () => {
       expect(result.didAcceptTypingWhileMinimized).toBe(true);
       // Editing still works once the modal is restored and closed.
       expect(result.didAcceptTypingAfterRestore).toBe(true);
+    });
+  });
+
+  describe('restore', () => {
+    it('should restore when the minimized bar body or its title is clicked, not only the restore button', async () => {
+      const result = await evalInObsidian({
+        async fn({ app, obsidianModule }): Promise<RestoreByClickResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          const BAR_SELECTOR = '.minimized-modal-bar';
+          const TITLE_SELECTOR = '.minimized-modal-bar .minimized-modal-bar-title';
+          const SETTLE_DELAY_MILLISECONDS = 300;
+
+          const modal = new obsidianModule.Modal(app);
+          modal.setTitle('Working');
+          const minimizable = new lib.obsidian.modals['minimizable-modal'].MinimizableModal(modal);
+          minimizable.modal.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          // Clicking the bar's title (a child of the bar) restores via the bar-level click handler.
+          minimizable.minimize();
+          const titleEl = document.body.querySelector(TITLE_SELECTOR);
+          if (!titleEl) {
+            throw new Error('minimized bar title not found');
+          }
+          titleEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          const restoredByTitleClick = !minimizable.isMinimized;
+          const barGoneAfterTitleClick = document.body.querySelector(BAR_SELECTOR) === null;
+
+          // Clicking the bar body itself (not the restore button) restores too.
+          minimizable.minimize();
+          const barEl = document.body.querySelector(BAR_SELECTOR);
+          if (!barEl) {
+            throw new Error('minimized bar not found');
+          }
+          barEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          const restoredByBarClick = !minimizable.isMinimized;
+          const barGoneAfterBarClick = document.body.querySelector(BAR_SELECTOR) === null;
+
+          minimizable.modal.close();
+
+          return {
+            barGoneAfterBarClick,
+            barGoneAfterTitleClick,
+            restoredByBarClick,
+            restoredByTitleClick
+          };
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      expect(result.restoredByTitleClick).toBe(true);
+      expect(result.barGoneAfterTitleClick).toBe(true);
+      expect(result.restoredByBarClick).toBe(true);
+      expect(result.barGoneAfterBarClick).toBe(true);
     });
   });
 });

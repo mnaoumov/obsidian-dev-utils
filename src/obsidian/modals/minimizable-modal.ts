@@ -132,7 +132,10 @@ export class MinimizableModal<TModal extends Modal> {
     });
     const restoreButtonEl = barEl.createEl('button', { cls: CssClass.RestoreButton });
     setIcon(restoreButtonEl, RESTORE_ICON_ID);
-    restoreButtonEl.addEventListener('click', () => {
+    // The whole bar restores on click, not just the restore button — a larger, easier click target.
+    // `restore()` guards against a double invocation, so the restore button's own click bubbling up
+    // Here is a no-op. The restore button stays purely as a visual affordance for the click target.
+    barEl.addEventListener('click', () => {
       this.restore();
     });
     return barEl;

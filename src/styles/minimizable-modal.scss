@@ -51,7 +51,12 @@
     border-radius: var(--radius-m);
     background: var(--background-secondary);
     box-shadow: var(--shadow-s);
+    cursor: pointer;
     animation: obsidian-dev-utils-minimized-modal-bar-pulse 2s ease-in-out infinite;
+
+    &:hover {
+      background: var(--background-modifier-hover);
+    }
 
     .minimized-modal-bar-title {
       font-weight: var(--font-medium);

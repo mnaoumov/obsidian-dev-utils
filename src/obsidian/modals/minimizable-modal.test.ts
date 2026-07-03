@@ -159,6 +159,34 @@ describe('MinimizableModal', () => {
       expect(minimizable.isMinimized).toBe(false);
       expect(getBar()).toBeNull();
     });
+
+    it('should restore when the bar itself is clicked', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const bar = getBar();
+      assertNonNullable(bar);
+      bar.click();
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+    });
+
+    it('should restore when the bar title is clicked', () => {
+      const modal = new Modal(app);
+      modal.setTitle('Working');
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+
+      const bar = getBar();
+      assertNonNullable(bar);
+      const titleEl = bar.querySelector<HTMLElement>(`.${CssClass.MinimizedModalBarTitle}`);
+      assertNonNullable(titleEl);
+      titleEl.click();
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+    });
   });
 
   describe('close', () => {
