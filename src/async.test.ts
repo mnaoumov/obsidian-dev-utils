@@ -675,6 +675,23 @@ describe('Async', () => {
       })).rejects.toThrow('Run with timeout failed');
     });
 
+    it('should reject even when operationFn resolves after being terminated by the timeout', async () => {
+      // OperationFn watches the abort signal and resolves (does NOT throw) once aborted, mirroring how
+      // RetryWithTimeout's loop exits on abort. The timeout terminated the run, so runWithTimeout must
+      // Reject rather than return the value produced after the deadline.
+      await expect(runWithTimeout({
+        async operationFn(abortSignal) {
+          await new Promise<void>((resolve) => {
+            abortSignal.addEventListener('abort', () => {
+              resolve();
+            });
+          });
+          return 'resolved after abort';
+        },
+        timeoutInMilliseconds: 50
+      })).rejects.toThrow('Run with timeout failed');
+    });
+
     it('should reject when custom onTimeout handler terminates the operation', async () => {
       const onTimeout = vi.fn((ctx: TimeoutContext): void => {
         ctx.terminateOperation();
@@ -903,7 +920,7 @@ describe('Async', () => {
       expect(fn).toHaveBeenCalledTimes(3);
     });
 
-    it('should resolve when timeout is reached and the while loop exits due to abort', async () => {
+    it('should reject when timeout is reached and the while loop exits due to abort', async () => {
       const fn = vi.fn(async () => {
         await noopAsync();
         return false;
@@ -915,7 +932,7 @@ describe('Async', () => {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 80
         }
-      })).resolves.toBeUndefined();
+      })).rejects.toThrow();
     });
 
     it('should have called operationFn at least once before timeout', async () => {
@@ -924,13 +941,13 @@ describe('Async', () => {
         return false;
       });
 
-      await retryWithTimeout({
+      await expect(retryWithTimeout({
         operationFn: fn,
         retryOptions: {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 80
         }
-      });
+      })).rejects.toThrow();
 
       expect(fn.mock.calls.length).toBeGreaterThanOrEqual(1);
     });
@@ -1034,7 +1051,7 @@ describe('Async', () => {
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
-    it('should resolve when custom onTimeout terminates the operation', async () => {
+    it('should reject when custom onTimeout terminates the operation', async () => {
       const onTimeout = vi.fn((ctx: TimeoutContext): void => {
         ctx.terminateOperation();
       });
@@ -1049,7 +1066,7 @@ describe('Async', () => {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 80
         }
-      })).resolves.toBeUndefined();
+      })).rejects.toThrow();
     });
 
     it('should call custom onTimeout when forwarded to runWithTimeout', async () => {
@@ -1057,7 +1074,7 @@ describe('Async', () => {
         ctx.terminateOperation();
       });
 
-      await retryWithTimeout({
+      await expect(retryWithTimeout({
         onTimeout,
         operationFn: async () => {
           await noopAsync();
@@ -1067,7 +1084,7 @@ describe('Async', () => {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 80
         }
-      });
+      })).rejects.toThrow();
 
       expect(onTimeout).toHaveBeenCalled();
     });

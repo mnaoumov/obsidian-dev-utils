@@ -792,8 +792,11 @@ export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result
   const onTimeout = params.onTimeout ?? defaultOnTimeout;
 
   await Promise.race([run(), innerTimeout()]);
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed inside `run()`. ESLint mistakenly does not recognize it.
-  if (hasResult) {
+  // The result is only valid if the run finished on its own. When the timeout terminated it, the
+  // Operation might still resolve afterwards (e.g. a retry loop that exits on abort), but that value
+  // Is past the deadline and must be treated as a failure, not a success.
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Both might change inside `run()`/`innerTimeout()`. ESLint mistakenly does not recognize it.
+  if (hasResult && !runAbortController.signal.aborted) {
     return result as Result;
   }
 
