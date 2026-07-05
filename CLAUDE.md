@@ -278,65 +278,6 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
-## Current Task — Fix frontmatter-markdown-links issue #36 (Bases context null-deref)
-
-Tracking upstream bug reported at
-`https://github.com/mnaoumov/obsidian-frontmatter-markdown-links/issues/36` (plugin 2.6.37, Obsidian
-1.12.7, Win10, fresh install). The crash surfaces in the plugin but the root cause is 100% here in
-dev-utils. Continue the work from THIS repo.
-
-### Diagnosis (confirmed)
-
-Reported console error:
-
-```
-TypeError: Cannot read properties of null (reading 'constructor')
-  at extractFromLeaf → openAndExtract → extractFromAnyBase → extract → getBasesContextConstructor
-  → patchBasesNote → onLayoutReady
-```
-
-- **Immediate site:** `src/obsidian/constructors/get-bases-context-constructor.ts`,
-  `extractFromLeaf` (~line 83). It does `await retryWithTimeout(() => …controller.ctx !== null)` and
-  then, in a **separate statement**, `return (leaf.view as BasesView).controller.ctx.constructor`.
-  On the failing machine `ctx` is null at that second read.
-- **Root cause (the real bug):** `retryWithTimeout` (`src/async.ts:703`) **resolves silently on
-  timeout** instead of rejecting, contradicting its own JSDoc ("rejects when the timeout is
-  reached"). Mechanism: on timeout `runWithTimeout` aborts the run signal; the retry loop's
-  `await sleep({ abortSignal, milliseconds })` (`async.ts:763`) is called WITHOUT
-  `shouldThrowOnAbort`, so on abort `sleep` **resolves**; the `while (!combinedAbortSignal.aborted)`
-  loop then exits and the op fn returns `undefined`, which `runWithTimeout` treats as success. The
-  current behavior is even locked in by `async.test.ts:906` ("should resolve when timeout is reached
-  and the while loop exits due to abort").
-- **Why it times out at all:** on a fresh vault `extractFromAnyBase` creates a temp `.base` file and
-  opens it; on this environment `controller.ctx` never populates within the 5s default, so the retry
-  times out → resolves → null deref.
-- **Tell-tale:** the sibling `get-dom-events-handlers-constructor.ts` does the SAME retry but follows
-  it with `assertNonNullable(…, 'Failed to get …')` before dereferencing, so it degrades to a clear
-  error. `get-bases-context-constructor.ts` omits that guard → cryptic `TypeError`.
-
-### Fix plan
-
-- **Layer 1 (targeted, low risk — DO THIS) — `get-bases-context-constructor.ts`.** Mirror the sibling
-  file: capture `ctx` inside the retry op fn and `assertNonNullable(ctx, 'Bases context is not
-  available')` before reading `.constructor`; also guard `controller?.` so a transiently-undefined
-  controller doesn't throw inside the op fn (which currently aborts the whole retry). Converts the
-  cryptic null-deref into a clear, correct error. TDD: red test first (retry times out → expect the
-  clear assertion error, not a `TypeError`).
-- **Layer 3 (contract fix, higher risk — SEPARATE DECISION).** Make `retryWithTimeout` actually
-  reject on timeout per its documented contract. Blast radius: internal callers
-  `get-bases-context-constructor.ts`, `get-dom-events-handlers-constructor.ts`, `metadata-cache.ts`,
-  `vault.ts`, `async-with-notice.ts`, plus every consuming plugin. Requires rewriting the existing
-  `async.test.ts:906` test (confirm before modifying an existing test) and auditing all call sites.
-  Do NOT bundle with Layer 1.
-- **Layer 2 (plugin-side, NOT dev-utils).** In `obsidian-frontmatter-markdown-links`, wrap
-  `patchBasesNote()` in `frontmatter-markdown-links-component.ts` so a Bases-context failure logs a
-  warning instead of aborting `onLayoutReady` (the Bases integration is optional). Track/execute this
-  from the plugin repo, not here.
-
-Conventions: strict TS, 100% unit coverage, R2/R1, failing-test-first (R2 G10r) + confirm REAL
-behavior. Ship a dev-utils patch release with Layer 1; the plugin then bumps the dep and (Layer 2)
-adds the graceful-degradation wrap.
-
 ## Current Task — Make minimized modal bar fully clickable (advanced-note-composer issue #121)
 
 Tracking feature request `https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/121`
