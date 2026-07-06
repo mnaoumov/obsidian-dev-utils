@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 84.3.0
+
+- chore: cleanup
+- chore: update libs
+- docs: cleanup
+- build: drop dead per-target test:integration scripts
+- feat(obsidian): restore minimized modal by clicking anywhere on the bar
+- fix(async): reject in runWithTimeout when terminated by timeout
+
 ## 84.2.0
 
 - refactor: keep only first line of each commit in changelog
