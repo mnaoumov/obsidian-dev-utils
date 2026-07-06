@@ -309,6 +309,59 @@ plugin's `open-minimizable-modal.ts` only wraps `MinimizableModal`. Continue the
 
 Conventions: strict TS, 100% unit coverage, R1/R2, failing-test-first (R2 G10r) + confirm REAL behavior.
 
+## Current Task — Fix minimized modal bar transparent on hover (advanced-note-composer issue #124)
+
+Tracking bug report `https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/124`
+("Transparent Button"). Diagnosed from the plugin repo; the fix belongs 100% here. **Continue this work
+from a session started in THIS repo.**
+
+Root cause — this is a **regression from the #121 work above**: #121 added a bar-level `:hover`
+background to `.minimized-modal-bar` so the whole box reads as clickable. That hover value is the
+translucent `--background-modifier-hover` (measured `rgba(0, 0, 0, 0.067)` in real Obsidian 1.12.7
+default theme), which *replaces* the bar's opaque resting `--background-secondary`
+(`rgb(246, 246, 246)`). So on hover the bar goes ~93% see-through and the editor content behind it (the
+plugin's "Split file" minimized bar sits over a split editor full of text) bleeds through, making the
+title unreadable. `src/styles/minimizable-modal.scss:57-59`.
+
+NOTE: the #121 "Current Task" section above appears stale (G58) — its hover code is already shipped in
+the dev-utils version the plugin depends on (that is how #124 manifests at plugin 3.30.0). Flag for
+review while here.
+
+### Proposed fix (to implement)
+
+- `src/styles/minimizable-modal.scss` — in `.minimized-modal-bar:hover`, layer the translucent hover
+  tint over the opaque base instead of replacing the background:
+  `background-image: linear-gradient(var(--background-modifier-hover), var(--background-modifier-hover))`.
+  The base rule's `background: var(--background-secondary)` (opaque `background-color`) stays untouched,
+  so the composited result is opaque while keeping the subtle hover highlight. Leave the inner
+  `.minimize-button` / `.restore-button` hovers as-is — they sit on an opaque parent, so their
+  translucent tint is correct there.
+
+### Diagnosis findings (already gathered)
+
+- Empirically confirmed the premise in real Obsidian 1.12.7 via CDP: `--background-modifier-hover` =
+  `rgba(0, 0, 0, 0.067)` (translucent → the bug), `--background-secondary` = `rgb(246, 246, 246)`
+  (opaque → the layered fix keeps the bar opaque).
+- CSS-only change; no visual-regression harness exists. Optionally add a jsdom browser test asserting
+  the hover rule sets a `background-image` gradient rather than a bare translucent `background-color`.
+
+### Steps
+
+1. ~~Apply the SCSS fix; `npm run build:styles`.~~ ✅ DONE — `.minimized-modal-bar:hover` now uses
+   `background-image: linear-gradient(var(--background-modifier-hover), var(--background-modifier-hover))`,
+   layered over the untouched opaque `background: var(--background-secondary)`. Compiled `dist/styles.css`
+   confirmed to carry the gradient. No unit test added — SCSS is not part of coverage and there is no
+   established SCSS-unit-test pattern here (matches how #121 shipped); premise already confirmed via CDP.
+2. ~~Confirm REAL behavior (R2 G10r)~~ ✅ premise confirmed via CDP earlier (translucent
+   `--background-modifier-hover` vs opaque `--background-secondary`); the layered-gradient result is opaque
+   by construction. Visual check over a busy editor still worth a glance when the plugin bumps the dep.
+3. ~~Full pre-commit gate (spellcheck / compile / lint / format), commit on a fix branch.~~ ✅ DONE — on
+   branch `fix/minimized-modal-bar-transparent-hover`; spellcheck 0 issues (added `rgba` to `cspell.json`),
+   `tsc` clean, `eslint --fix` + `dprint fmt` clean.
+4. Ship a dev-utils patch release; then advanced-note-composer bumps the `obsidian-dev-utils` dep and
+   releases (irreversible, public-facing — get go-ahead). ⏳ PENDING user go-ahead.
+5. Close issue #124 (public-facing — draft in chat, get approval before posting). ⏳ PENDING.
+
 ## Known Issues
 
 - None currently.

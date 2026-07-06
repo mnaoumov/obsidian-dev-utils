@@ -54,8 +54,13 @@
     cursor: pointer;
     animation: obsidian-dev-utils-minimized-modal-bar-pulse 2s ease-in-out infinite;
 
+    // Layer the translucent hover tint over the opaque `background` (`--background-secondary`) via
+    // `background-image` instead of replacing the background-color. `--background-modifier-hover` is
+    // translucent, so setting it as `background` would let the editor content behind the floating bar
+    // bleed through and make the title unreadable. A gradient of the tint composited over the opaque
+    // base keeps the bar opaque while preserving the subtle hover highlight.
     &:hover {
-      background: var(--background-modifier-hover);
+      background-image: linear-gradient(var(--background-modifier-hover), var(--background-modifier-hover));
     }
 
     .minimized-modal-bar-title {
