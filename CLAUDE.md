@@ -362,6 +362,24 @@ review while here.
    releases (irreversible, public-facing — get go-ahead). ⏳ PENDING user go-ahead.
 5. Close issue #124 (public-facing — draft in chat, get approval before posting). ⏳ PENDING.
 
+### Real-hover regression test — deferred, BLOCKED on a harness helper (cross-repo)
+
+No unit/jsdom test can catch this bug: jsdom cannot resolve CSS `var()` or composite backgrounds, and
+`:hover` is a pointer **state** that can't be `dispatchEvent`-triggered. A real-Obsidian integration
+test needs a **trusted pointer move** to set a genuine `:hover` — the analog of the harness's
+`typeIntoEditor` trusted keypress — which the harness does NOT yet expose (its `evalInObsidian`
+callbacks get only `app` / `obsidianModule` / `typeIntoEditor`).
+
+Decision: add a `hoverElement({ element })` helper to `obsidian-integration-testing` (planned in THAT
+repo's `CLAUDE.md` → "Current Task", per the cross-repo workflow — the user drives it from a session
+started there). Once it ships and this repo bumps the dep, add a **red-first** integration test to
+`src/obsidian/modals/minimizable-modal.obsidian.integration.test.ts`: open + minimize a real
+`MinimizableModal`, `await hoverElement({ element: barEl })`, then assert
+`getComputedStyle(barEl).backgroundColor` alpha === 1 (opaque). Verify it goes red against the pre-fix
+translucent `background` before finalizing. Until the helper lands, the CSS fix is confirmed only by
+the earlier CDP premise check (opaque `--background-secondary` vs translucent
+`--background-modifier-hover`) — no automated regression guard exists yet.
+
 ## Known Issues
 
 - None currently.
