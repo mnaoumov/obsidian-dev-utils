@@ -362,23 +362,29 @@ review while here.
    releases (irreversible, public-facing — get go-ahead). ⏳ PENDING user go-ahead.
 5. Close issue #124 (public-facing — draft in chat, get approval before posting). ⏳ PENDING.
 
-### Real-hover regression test — deferred, BLOCKED on a harness helper (cross-repo)
+### Real-hover regression test — ✅ DONE (helper shipped, test landed)
 
-No unit/jsdom test can catch this bug: jsdom cannot resolve CSS `var()` or composite backgrounds, and
-`:hover` is a pointer **state** that can't be `dispatchEvent`-triggered. A real-Obsidian integration
-test needs a **trusted pointer move** to set a genuine `:hover` — the analog of the harness's
-`typeIntoEditor` trusted keypress — which the harness does NOT yet expose (its `evalInObsidian`
-callbacks get only `app` / `obsidianModule` / `typeIntoEditor`).
+`obsidian-integration-testing` 5.3.0 now exposes `hoverElement({ element })` / `unhoverElement({ element })`
+on every `evalInObsidian` callback (trusted pointer move → polls until `element.matches(':hover')`), so the
+deferred red-first guard is implemented in `src/obsidian/modals/minimizable-modal.obsidian.integration.test.ts`
+→ `describe('hover')`: it opens + minimizes a real `MinimizableModal`, `await hoverElement({ element: barEl })`,
+and asserts the resolved `getComputedStyle(barEl).backgroundColor` alpha is `1` (opaque). Red-first verified —
+went red (`0.067 ≠ 1`) against the pre-fix translucent `background: var(--background-modifier-hover)`, green with
+the shipped layered-gradient fix.
 
-Decision: add a `hoverElement({ element })` helper to `obsidian-integration-testing` (planned in THAT
-repo's `CLAUDE.md` → "Current Task", per the cross-repo workflow — the user drives it from a session
-started there). Once it ships and this repo bumps the dep, add a **red-first** integration test to
-`src/obsidian/modals/minimizable-modal.obsidian.integration.test.ts`: open + minimize a real
-`MinimizableModal`, `await hoverElement({ element: barEl })`, then assert
-`getComputedStyle(barEl).backgroundColor` alpha === 1 (opaque). Verify it goes red against the pre-fix
-translucent `background` before finalizing. Until the helper lands, the CSS fix is confirmed only by
-the earlier CDP premise check (opaque `--background-secondary` vs translucent
-`--background-modifier-hover`) — no automated regression guard exists yet.
+Gotcha recorded for the future: Obsidian 1.13.1's default theme resolves `--background-modifier-hover` via
+`color-mix(...)` and serializes the computed color as **CSS Color 4** `oklch(0 0 none / 0.067)` (not the
+`rgba(...)` seen on 1.12.7), so the test's `alphaOf` parser reads the slash-separated alpha and also handles the
+legacy `rgba()` comma form.
+
+Two collateral fixes were required to make the dep bump compile (the `chore: update libs` bump pulled
+`@obsidian-typings/obsidian-public-latest` to 6.22.0, whose `obsidian-public-1.12.7` 6.24.0 now declares the
+constructor pseudo-methods `constructor2__?` / `constructor4__?` as **optional**):
+
+- `src/test-helpers/mock-implementation.ts` — `FunctionPropertyMembers<T>` and the `F` default now unwrap with
+  `NonNullable<T[K]>`, so an optional function member (type `Fn | undefined`, which does not `extends
+  GenericFunction`) is still an accepted `method`. Without this, `confirm.test.ts` / `prompt.test.ts` (which patch
+  `constructor2__` / `constructor4__`) failed `tsc` with TS2322. Guarded by new `mock-implementation.test.ts`.
 
 ## Known Issues
 

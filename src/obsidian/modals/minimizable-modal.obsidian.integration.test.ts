@@ -27,6 +27,11 @@ import {
   it
 } from 'vitest';
 
+interface HoverOpacityResult {
+  readonly alphaWhileHovered: number;
+  readonly backgroundColorWhileHovered: string;
+}
+
 interface RestoreByClickResult {
   readonly barGoneAfterBarClick: boolean;
   readonly barGoneAfterTitleClick: boolean;
@@ -178,6 +183,79 @@ describe('MinimizableModal', () => {
       expect(result.barGoneAfterTitleClick).toBe(true);
       expect(result.restoredByBarClick).toBe(true);
       expect(result.barGoneAfterBarClick).toBe(true);
+    });
+  });
+
+  describe('hover', () => {
+    it('should keep the minimized bar opaque on hover so editor content behind it never bleeds through', async () => {
+      const result = await evalInObsidian({
+        async fn({ app, hoverElement, obsidianModule, unhoverElement }): Promise<HoverOpacityResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          const BAR_SELECTOR = '.minimized-modal-bar';
+          const SETTLE_DELAY_MILLISECONDS = 300;
+
+          const modal = new obsidianModule.Modal(app);
+          modal.setTitle('Working');
+          const minimizable = new lib.obsidian.modals['minimizable-modal'].MinimizableModal(modal);
+          minimizable.modal.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          minimizable.minimize();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          const barEl = document.body.querySelector<HTMLElement>(BAR_SELECTOR);
+          if (!barEl) {
+            throw new Error('minimized bar not found');
+          }
+
+          // A trusted pointer move sets a genuine `:hover`, so real theme `var()` values resolve and
+          // Composite as they do for the user. `mouseover` events are untrusted (never set `:hover`),
+          // And `jsdom` resolves neither `var()` nor composites — so a real-Obsidian test is used.
+          await hoverElement({ element: barEl });
+          const backgroundColorWhileHovered = getComputedStyle(barEl).backgroundColor;
+          const alphaWhileHovered = alphaOf(backgroundColorWhileHovered);
+
+          await unhoverElement({ element: barEl });
+          minimizable.modal.close();
+
+          return {
+            alphaWhileHovered,
+            backgroundColorWhileHovered
+          };
+
+          function alphaOf(color: string): number {
+            // CSS Color 4 serialization (`oklch(l c h / a)`, `rgb(r g b / a)`) puts the alpha after the
+            // Slash. Obsidian's default theme resolves `--background-modifier-hover` to a `color-mix(...)`
+            // Computing to `oklch(0 0 none / 0.067)`, so a naive "count the numbers" parser breaks on the
+            // Non-numeric `none` hue. Read the slash-separated alpha token directly instead.
+            const slashAlpha = /\/\s*(?<alpha>[\d.]+%?)\s*\)$/.exec(color)?.groups?.['alpha'];
+            if (slashAlpha !== undefined) {
+              const PERCENT_DIVISOR = 100;
+              return slashAlpha.endsWith('%') ? Number(slashAlpha.slice(0, -1)) / PERCENT_DIVISOR : Number(slashAlpha);
+            }
+            // Legacy comma form `rgba(r, g, b, a)` — the 4th component is the alpha.
+            const legacyAlpha = /^rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*(?<alpha>[\d.]+)\s*\)$/.exec(color)?.groups?.['alpha'];
+            if (legacyAlpha !== undefined) {
+              return Number(legacyAlpha);
+            }
+            // `rgb(r, g, b)` / `oklch(l c h)` / hex — no alpha channel serialized means fully opaque.
+            return 1;
+          }
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // The hovered bar's resolved background-color must be fully opaque (alpha 1). Before the fix, the
+      // `:hover` rule replaced the opaque base with translucent `--background-modifier-hover` (alpha
+      // ~0.067), letting the editor content behind the floating bar bleed through.
+      expect(
+        result.alphaWhileHovered,
+        `hovered background '${result.backgroundColorWhileHovered}' must be fully opaque`
+      ).toBe(1);
     });
   });
 });
