@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 84.4.0
+
+- chore: update libs
+- test: guard minimized-modal bar opacity on real hover
+- fix(test-helpers): accept optional methods in mockImplementation
+- docs: record deferred real-hover regression test for <https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/124>
+- fix: keep minimized modal bar opaque on hover
+
 ## 84.3.0
 
 - chore: cleanup
