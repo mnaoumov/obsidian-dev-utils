@@ -278,113 +278,47 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
-## Current Task — Make minimized modal bar fully clickable (advanced-note-composer issue #121)
+## Current Task — Extract `SuggestModalCommandBuilder` into dev-utils (advanced-note-composer issue #119 follow-up)
 
-Tracking feature request `https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/121`
-("Make entire split box clickable"). The "split box" is the minimized-modal bar rendered by
-`MinimizableModal` HERE — when the plugin's Split-file dialog is minimized it collapses to a small
-floating bar, and only the restore icon was clickable. Root cause and fix are 100% in dev-utils; the
-plugin's `open-minimizable-modal.ts` only wraps `MinimizableModal`. Continue the work from THIS repo.
+`obsidian-advanced-note-composer` has a general-purpose `SuggestModalCommandBuilder`
+(`src/modals/suggest-modal-command-builder.ts`) that builds a `SuggestModal` instruction bar with:
+keyboard-command hints (`addKeyboardCommand`), interactive checkboxes bound to a modifier+key shortcut
+(`addCheckbox`), dropdowns bound to a modifier+key shortcut (`addDropDown`), and a
+`build(modal, { shouldShowInstructions })` that ALWAYS registers the essential navigation/action key
+handlers but only renders the instruction UI + registers the option-toggle (Alt+N) shortcuts when
+`shouldShowInstructions` is `true`. The builder imports ONLY from `obsidian` (`Instruction`,
+`KeymapContext`, `Modifier`, `SuggestModal`, `DropdownComponent`, `Platform`, `Scope`) — no plugin-local
+deps — so it is cleanly portable and not plugin-specific. Because it is a general-purpose,
+plugin-agnostic helper, it belongs in this shared library. **Continue this work from a session started
+in THIS repo** (do not drive it from the plugin session).
 
-### Changes made (implemented, unit-covered)
+### Plan
+1. Add `src/obsidian/modals/suggest-modal-command-builder.ts` — port the class. Keep the public API
+   (`addKeyboardCommand`, `addCheckbox`, `addDropDown`, `build(modal, options?)`), and **export** the
+   command param interfaces (`KeyboardCommand`, `CheckboxCommand`, `DropDownCommand`) and
+   `SuggestModalCommandBuilderBuildOptions` so consumers can type their command definitions (the plugin
+   currently keeps these private). Honor dev-utils lint on the way in — e.g. replace the plugin's
+   `KEYS_MAP: Record<string, string>` with a `Map`/typed shape if the stricter config flags `Record`;
+   carry over the existing v8-ignore blocks (`?? []` defensive modifiers, the in-bounds
+   `purposeEls[i]` guard).
+2. Barrel: `src/obsidian/modals/index.ts` is auto-generated (`export * as 'modals'`) — `npm run build`
+   regenerates it. Consumers import from `obsidian-dev-utils/obsidian/modals/suggest-modal-command-builder`.
+3. Tests: port the plugin's `suggest-modal-command-builder.test.ts` (already 100%-covering, incl. the
+   new `shouldShowInstructions: false` cases) to the dev-utils test setup (real `Scope` /
+   `DropdownComponent` / `Platform` via the obsidian test-mocks alias, `strictProxy` mock modal). Meet
+   the 100% coverage gate.
 
-- `src/obsidian/modals/minimizable-modal.ts` — `createMinimizedBar()` attaches the `click → restore()`
-  listener to the whole `barEl`, not just the restore button. The button's own click bubbles up;
-  `restore()` guards against the double invocation (no-op). Restore button kept as a visual affordance.
-- `src/styles/minimizable-modal.scss` — `.minimized-modal-bar` gets `cursor: pointer` + a bar-level
-  `:hover` background so the whole box reads as clickable.
-- `src/obsidian/modals/minimizable-modal.test.ts` — two failing-first tests added (click the bar body,
-  click the title); red before the fix, green after. Full file 18/18; tsc + eslint clean.
+### Consumer migration (advanced-note-composer — AFTER dev-utils ships + a release + dep bump)
+- Delete `src/modals/suggest-modal-command-builder.ts` + its test; import `SuggestModalCommandBuilder`
+  (and the now-exported command interfaces) from `obsidian-dev-utils/obsidian/modals/suggest-modal-command-builder`.
+- The 4 modals (`merge-file`, `split-file`, `merge-folder`, `swap-folder`) already call
+  `builder.build(this, { shouldShowInstructions: … })` — call sites unchanged.
+- Bump the plugin's `obsidian-dev-utils` dependency to the shipping version.
 
-### Remaining steps
-
-- ~~Confirm REAL behavior (R2 G10r)~~ ✅ DONE — added a real-Obsidian integration test
-  (`minimizable-modal.obsidian.integration.test.ts` → `describe('restore')`) that opens + minimizes a real
-  `MinimizableModal` and dispatches genuine DOM `click` events on the minimized bar body and its title,
-  asserting the modal restores and the bar is removed. Passes in the harness (real Obsidian drives the
-  real `addEventListener`, unlike the unit mocks).
-- Ship a dev-utils patch release; advanced-note-composer then bumps the `obsidian-dev-utils` dep. NEEDS
-  user go-ahead (irreversible).
-- Close issue #121 (public-facing — draft in chat, get approval before posting).
-
-Conventions: strict TS, 100% unit coverage, R1/R2, failing-test-first (R2 G10r) + confirm REAL behavior.
-
-## Current Task — Fix minimized modal bar transparent on hover (advanced-note-composer issue #124)
-
-Tracking bug report `https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/124`
-("Transparent Button"). Diagnosed from the plugin repo; the fix belongs 100% here. **Continue this work
-from a session started in THIS repo.**
-
-Root cause — this is a **regression from the #121 work above**: #121 added a bar-level `:hover`
-background to `.minimized-modal-bar` so the whole box reads as clickable. That hover value is the
-translucent `--background-modifier-hover` (measured `rgba(0, 0, 0, 0.067)` in real Obsidian 1.12.7
-default theme), which *replaces* the bar's opaque resting `--background-secondary`
-(`rgb(246, 246, 246)`). So on hover the bar goes ~93% see-through and the editor content behind it (the
-plugin's "Split file" minimized bar sits over a split editor full of text) bleeds through, making the
-title unreadable. `src/styles/minimizable-modal.scss:57-59`.
-
-NOTE: the #121 "Current Task" section above appears stale (G58) — its hover code is already shipped in
-the dev-utils version the plugin depends on (that is how #124 manifests at plugin 3.30.0). Flag for
-review while here.
-
-### Proposed fix (to implement)
-
-- `src/styles/minimizable-modal.scss` — in `.minimized-modal-bar:hover`, layer the translucent hover
-  tint over the opaque base instead of replacing the background:
-  `background-image: linear-gradient(var(--background-modifier-hover), var(--background-modifier-hover))`.
-  The base rule's `background: var(--background-secondary)` (opaque `background-color`) stays untouched,
-  so the composited result is opaque while keeping the subtle hover highlight. Leave the inner
-  `.minimize-button` / `.restore-button` hovers as-is — they sit on an opaque parent, so their
-  translucent tint is correct there.
-
-### Diagnosis findings (already gathered)
-
-- Empirically confirmed the premise in real Obsidian 1.12.7 via CDP: `--background-modifier-hover` =
-  `rgba(0, 0, 0, 0.067)` (translucent → the bug), `--background-secondary` = `rgb(246, 246, 246)`
-  (opaque → the layered fix keeps the bar opaque).
-- CSS-only change; no visual-regression harness exists. Optionally add a jsdom browser test asserting
-  the hover rule sets a `background-image` gradient rather than a bare translucent `background-color`.
-
-### Steps
-
-1. ~~Apply the SCSS fix; `npm run build:styles`.~~ ✅ DONE — `.minimized-modal-bar:hover` now uses
-   `background-image: linear-gradient(var(--background-modifier-hover), var(--background-modifier-hover))`,
-   layered over the untouched opaque `background: var(--background-secondary)`. Compiled `dist/styles.css`
-   confirmed to carry the gradient. No unit test added — SCSS is not part of coverage and there is no
-   established SCSS-unit-test pattern here (matches how #121 shipped); premise already confirmed via CDP.
-2. ~~Confirm REAL behavior (R2 G10r)~~ ✅ premise confirmed via CDP earlier (translucent
-   `--background-modifier-hover` vs opaque `--background-secondary`); the layered-gradient result is opaque
-   by construction. Visual check over a busy editor still worth a glance when the plugin bumps the dep.
-3. ~~Full pre-commit gate (spellcheck / compile / lint / format), commit on a fix branch.~~ ✅ DONE — on
-   branch `fix/minimized-modal-bar-transparent-hover`; spellcheck 0 issues (added `rgba` to `cspell.json`),
-   `tsc` clean, `eslint --fix` + `dprint fmt` clean.
-4. Ship a dev-utils patch release; then advanced-note-composer bumps the `obsidian-dev-utils` dep and
-   releases (irreversible, public-facing — get go-ahead). ⏳ PENDING user go-ahead.
-5. Close issue #124 (public-facing — draft in chat, get approval before posting). ⏳ PENDING.
-
-### Real-hover regression test — ✅ DONE (helper shipped, test landed)
-
-`obsidian-integration-testing` 5.3.0 now exposes `hoverElement({ element })` / `unhoverElement({ element })`
-on every `evalInObsidian` callback (trusted pointer move → polls until `element.matches(':hover')`), so the
-deferred red-first guard is implemented in `src/obsidian/modals/minimizable-modal.obsidian.integration.test.ts`
-→ `describe('hover')`: it opens + minimizes a real `MinimizableModal`, `await hoverElement({ element: barEl })`,
-and asserts the resolved `getComputedStyle(barEl).backgroundColor` alpha is `1` (opaque). Red-first verified —
-went red (`0.067 ≠ 1`) against the pre-fix translucent `background: var(--background-modifier-hover)`, green with
-the shipped layered-gradient fix.
-
-Gotcha recorded for the future: Obsidian 1.13.1's default theme resolves `--background-modifier-hover` via
-`color-mix(...)` and serializes the computed color as **CSS Color 4** `oklch(0 0 none / 0.067)` (not the
-`rgba(...)` seen on 1.12.7), so the test's `alphaOf` parser reads the slash-separated alpha and also handles the
-legacy `rgba()` comma form.
-
-Two collateral fixes were required to make the dep bump compile (the `chore: update libs` bump pulled
-`@obsidian-typings/obsidian-public-latest` to 6.22.0, whose `obsidian-public-1.12.7` 6.24.0 now declares the
-constructor pseudo-methods `constructor2__?` / `constructor4__?` as **optional**):
-
-- `src/test-helpers/mock-implementation.ts` — `FunctionPropertyMembers<T>` and the `F` default now unwrap with
-  `NonNullable<T[K]>`, so an optional function member (type `Fn | undefined`, which does not `extends
-  GenericFunction`) is still an accepted `method`. Without this, `confirm.test.ts` / `prompt.test.ts` (which patch
-  `constructor2__` / `constructor4__`) failed `tsc` with TS2322. Guarded by new `mock-implementation.test.ts`.
+### Design decision to confirm
+- Whether the #119 `shouldShowInstructions` option belongs in the generic builder (recommended **yes** —
+  "show/hide the instruction bar" is a generic concern, not plugin-specific) vs. dev-utils exposing only
+  a lower-level hook. Recommended: keep it as `SuggestModalCommandBuilderBuildOptions.shouldShowInstructions`.
 
 ## Known Issues
 
