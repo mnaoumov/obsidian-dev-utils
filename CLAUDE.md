@@ -292,21 +292,25 @@ deps — so it is cleanly portable and not plugin-specific. Because it is a gene
 plugin-agnostic helper, it belongs in this shared library. **Continue this work from a session started
 in THIS repo** (do not drive it from the plugin session).
 
-### Plan
-1. Add `src/obsidian/modals/suggest-modal-command-builder.ts` — port the class. Keep the public API
-   (`addKeyboardCommand`, `addCheckbox`, `addDropDown`, `build(modal, options?)`), and **export** the
-   command param interfaces (`KeyboardCommand`, `CheckboxCommand`, `DropDownCommand`) and
-   `SuggestModalCommandBuilderBuildOptions` so consumers can type their command definitions (the plugin
-   currently keeps these private). Honor dev-utils lint on the way in — e.g. replace the plugin's
-   `KEYS_MAP: Record<string, string>` with a `Map`/typed shape if the stricter config flags `Record`;
-   carry over the existing v8-ignore blocks (`?? []` defensive modifiers, the in-bounds
-   `purposeEls[i]` guard).
-2. Barrel: `src/obsidian/modals/index.ts` is auto-generated (`export * as 'modals'`) — `npm run build`
-   regenerates it. Consumers import from `obsidian-dev-utils/obsidian/modals/suggest-modal-command-builder`.
-3. Tests: port the plugin's `suggest-modal-command-builder.test.ts` (already 100%-covering, incl. the
-   new `shouldShowInstructions: false` cases) to the dev-utils test setup (real `Scope` /
-   `DropdownComponent` / `Platform` via the obsidian test-mocks alias, `strictProxy` mock modal). Meet
-   the 100% coverage gate.
+### Plan — ✅ dev-utils side DONE (pending release)
+1. ~~Add `src/obsidian/modals/suggest-modal-command-builder.ts` — port the class.~~ ✅ DONE. Public API
+   kept (`addKeyboardCommand`, `addCheckbox`, `addDropDown`, `build(modal, options?)`); the command param
+   interfaces (`KeyboardCommand`, `CheckboxCommand`, `DropDownCommand`) and
+   `SuggestModalCommandBuilderBuildOptions` are now **exported**. Dev-utils lint honored — the plugin's
+   `KEYS_MAP: Record<string, string>` became a `Map<string, string>` (no `Record`); the two `?? []`
+   defensive-modifier v8-ignore blocks and the in-bounds `purposeEls[i]` guard carried over. Full JSDoc
+   added (`@file`, class + public methods + exported interface members).
+2. ~~Barrel + export path.~~ ✅ DONE — `npm run build` regenerated `src/obsidian/modals/index.ts` with
+   `export * as 'suggest-modal-command-builder'`; the `./obsidian/modals/*` wildcard export already resolves
+   `obsidian-dev-utils/obsidian/modals/suggest-modal-command-builder` (no per-file `package.json` entry
+   needed).
+3. ~~Tests.~~ ✅ DONE — ported `suggest-modal-command-builder.test.ts` (real `Scope` / `DropdownComponent` /
+   `Platform` via the obsidian test-mocks alias, `strictProxy` mock modal, `castTo`/`strictProxy` from the
+   relative `../../` paths). 33/33 pass, **100%** file coverage. Full gate green: tsc, eslint, dprint,
+   cspell all clean; full suite 3736 tests / 100% coverage.
+
+Remaining: ship a dev-utils patch release, then do the consumer migration below (cross-repo — driven from
+a session started in the plugin repo). ⏳ PENDING user go-ahead for the release.
 
 ### Consumer migration (advanced-note-composer — AFTER dev-utils ships + a release + dep bump)
 - Delete `src/modals/suggest-modal-command-builder.ts` + its test; import `SuggestModalCommandBuilder`
