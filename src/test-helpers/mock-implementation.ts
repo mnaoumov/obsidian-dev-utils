@@ -21,7 +21,7 @@ import type { GenericFunction } from '../function.ts';
 export interface MockImplementationParams<
   T extends object,
   K extends keyof FunctionPropertyMembers<T> & string,
-  F extends GenericFunction = T[K] extends GenericFunction ? T[K] : GenericFunction
+  F extends GenericFunction = NonNullable<T[K]> extends GenericFunction ? NonNullable<T[K]> : GenericFunction
 > {
   /**
    * Replacement function receiving the original implementation and call args.
@@ -43,8 +43,12 @@ export interface MockImplementationParams<
   readonly obj: T;
 }
 
+// `NonNullable<T[P]>` unwraps optional function members before the `extends GenericFunction` test.
+// `obsidian-typings` now declares the constructor pseudo-methods (`constructor2__?` etc.) optional.
+// Their type is therefore `Fn | undefined`, which a bare `T[P] extends GenericFunction` rejects.
+// Unwrapping with `NonNullable` keeps those optional methods in the accepted method-name union.
 type FunctionPropertyMembers<T> = {
-  [P in keyof T as T[P] extends GenericFunction ? P : never]: T[P];
+  [P in keyof T as NonNullable<T[P]> extends GenericFunction ? P : never]: T[P];
 };
 
 const savedOriginals = new WeakMap<object, Map<string, unknown>>();
@@ -59,7 +63,7 @@ const savedOriginals = new WeakMap<object, Map<string, unknown>>();
 export function mockImplementation<
   T extends object,
   K extends keyof FunctionPropertyMembers<T> & string,
-  F extends GenericFunction = T[K] extends GenericFunction ? T[K] : GenericFunction
+  F extends GenericFunction = NonNullable<T[K]> extends GenericFunction ? NonNullable<T[K]> : GenericFunction
 >(params: MockImplementationParams<T, K, F>): MockInstance {
   const {
     impl,
