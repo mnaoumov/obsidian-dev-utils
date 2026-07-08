@@ -232,6 +232,27 @@ describe('MyModule', () => {
 | `@lezer/common` | `1.2.3` | `obsidian` uses this version at runtime |
 | `@types/node` | `25.0.3` | Matches the Node.js version used in the project |
 
+### TypeScript 6 (tooling) + 7 (compilation)
+
+The bare `typescript` dependency is pinned to `^6.0.3`, and a `typescript-7` alias
+(`"typescript-7": "npm:typescript@^7.0.2"`) is installed alongside it.
+
+- **Why not bare `typescript@7`:** `typescript@7` is the native `tsgo` port. Its main entry exposes no
+  classic compiler API (that moved to the `typescript/unstable/*` subpaths), and — decisively —
+  `@typescript-eslint` (through at least 8.63.0, including its canary/rc channels) peer-requires
+  `typescript >=4.8.4 <6.1.0` and its parser crashes on the `tsgo` API (`ts.Extension` is undefined).
+  So type-aware ESLint, and every module that uses the classic compiler API (`check-project-types.ts`,
+  `over-exposure.ts`, the custom ESLint rules), only work on TypeScript 6. Bare `typescript` therefore
+  stays on 6 so the whole toolchain (editor, lint, tests, classic-API code) works with a clean
+  `npm install` (no `--legacy-peer-deps`).
+- **Why keep `typescript-7`:** it provides the faster `tsgo` compiler for the `tsc --build` pass.
+  `buildCompileTypeScript()` runs the build with the `typescript-7` binary
+  (`node_modules/typescript-7/bin/tsc`) when the alias is present, falling back to the default `tsc`
+  otherwise. The `skipLibCheck: false` second pass (`checkProjectTypes()`) stays on TypeScript 6
+  because it depends on the classic compiler API.
+- **Revisit when** `@typescript-eslint` ships a release whose `typescript` peer allows 7 (tsgo). At
+  that point the bare dependency can move to 7 and the `typescript-6` split can be dropped.
+
 ## Consumer Script Pattern
 
 Consumer projects import functions from `obsidian-dev-utils` and wrap them with `wrapCliTask()`:
