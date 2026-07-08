@@ -80,14 +80,18 @@ export function abortSignalTimeout(timeoutInMilliseconds: number): AbortSignal {
     return abortSignalNever();
   }
 
-  // Intentionally NOT the native `AbortSignal.timeout`. That API owns an internal timer that
-  // Vitest fake timers cannot advance, so `sleep` (its sole consumer) would be uncontrollable in
-  // Vitest. Building the signal off `window.setTimeout` instead keeps it fake-timer controllable
-  // (matching `setTimeoutAsync`). The abort reason mirrors the native one -- a `DOMException` named
-  // `TimeoutError` -- so code that branches on `reason.name` behaves identically to the native path.
+  // Intentionally NOT the native `AbortSignal.timeout`, whose internal timer cannot be advanced by
+  // `vi.useFakeTimers()`, so `sleep` (its sole consumer) would be uncontrollable in tests. Building
+  // `sleep`'s signal off `globalThis.setTimeout` keeps it fake-timer controllable (like
+  // `setTimeoutAsync`) and also works in a Node environment where `window` is undefined, since
+  // `globalThis` exists in Node too. Consumer integration-test projects run vitest under
+  // `environment: 'node'`, in which a `window`-based primitive throws a `ReferenceError`.
+  // The abort reason mirrors the native one -- a `DOMException` named `TimeoutError` -- matching
+  // `AbortSignal.timeout` for `reason.name` checks.
   const abortController = new AbortController();
-  window.setTimeout(() => {
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `DOMException` is a DOM global always present in the Obsidian/Electron (Chromium) runtime this code targets (same assumption as `window.setTimeout` above); the Node 17 baseline only concerns Node's standalone global.
+  // eslint-disable-next-line obsidianmd/no-global-this -- Intentional: `globalThis.setTimeout` (not `window`) so this timeout primitive also works in a Node environment where `window` is undefined; the specific window is irrelevant for a plain timer.
+  globalThis.setTimeout(() => {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `DOMException` is a DOM global always present in the Obsidian/Electron (Chromium) runtime this code targets, and is also a Node global from Node 17 onward.
     abortController.abort(new DOMException(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`, 'TimeoutError'));
   }, timeoutInMilliseconds);
   return abortController.signal;

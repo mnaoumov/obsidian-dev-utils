@@ -71,7 +71,7 @@ describe('abortSignalTimeout', () => {
     expect(signal.aborted).toBe(false);
   });
 
-  it('should be controllable by fake timers via window.setTimeout', () => {
+  it('should be controllable by fake timers via globalThis.setTimeout', () => {
     vi.useFakeTimers();
     try {
       const signal = abortSignalTimeout(5000);
@@ -115,6 +115,30 @@ describe('abortSignalTimeout', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  // Regression for Node portability. `abortSignalTimeout` builds its timer off
+  // `globalThis.setTimeout`, not `window.setTimeout`, so it resolves where `window` is undefined.
+  // Consumer integration-test projects run vitest under `environment: 'node'`.
+  // Every other timing test here runs under jsdom, where `window` always exists, so without this case the
+  // Node-only path would escape coverage.
+  describe('without a DOM `window` (node environment)', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('should not throw and should still abort when `window` is undefined', () => {
+      vi.stubGlobal('window', undefined);
+      vi.useFakeTimers();
+      try {
+        const signal = abortSignalTimeout(100);
+        expect(signal.aborted).toBe(false);
+        vi.advanceTimersByTime(100);
+        expect(signal.aborted).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 });
 

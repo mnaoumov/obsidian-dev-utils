@@ -135,7 +135,8 @@ export function myFunction(param: Type): ReturnType {
 
 ### L2. Timing primitives must be fake-timer controllable
 
-- Delay/timeout primitives (e.g. `sleep`, `abortSignalTimeout`, `setTimeoutAsync`) must be built on `window.setTimeout`, never on the native `AbortSignal.timeout`. Vitest fake timers patch `setTimeout` but not `AbortSignal.timeout` (it owns an internal timer they cannot advance), so a primitive built on `AbortSignal.timeout` runs in real wall-clock time even under `vi.useFakeTimers()` — making it and everything layered on it non-deterministic and slow to test.
+- Delay/timeout primitives (e.g. `sleep`, `abortSignalTimeout`, `setTimeoutAsync`) must be built on `globalThis.setTimeout`, never on the native `AbortSignal.timeout`. Vitest fake timers patch `setTimeout` but not `AbortSignal.timeout` (it owns an internal timer they cannot advance), so a primitive built on `AbortSignal.timeout` runs in real wall-clock time even under `vi.useFakeTimers()` — making it and everything layered on it non-deterministic and slow to test.
+- Use `globalThis.setTimeout`, not `window.setTimeout`. `globalThis.setTimeout` is present (and fake-timer patched) in BOTH browser/jsdom and Node — under jsdom `window === globalThis`, so nothing changes there — but it additionally works in a `node` environment where `window` is undefined. This matters because consumer integration-test projects run vitest `environment: 'node'`: a hook that awaits `sleep` there would throw `ReferenceError: window is not defined` if the primitive were built on `window.setTimeout`.
 - This applies transitively: any helper that awaits a delay (like `sleep` awaiting `abortSignalTimeout`) inherits the (un)controllability of the underlying timer, so the requirement is on the lowest-level primitive.
 - When reimplementing a native timing primitive this way, mirror the native abort reason so consumers see identical behavior: `abortSignalTimeout` aborts with a `DOMException` named `TimeoutError` (as native `AbortSignal.timeout` does), not a plain `Error`.
 - (cannot be forced by ESLint — a custom `no-restricted-syntax` selector could flag `AbortSignal.timeout` usage in `src/`)
@@ -326,6 +327,29 @@ a session started in the plugin repo). ⏳ PENDING user go-ahead for the release
 - Whether the #119 `shouldShowInstructions` option belongs in the generic builder (recommended **yes** —
   "show/hide the instruction bar" is a generic concern, not plugin-specific) vs. dev-utils exposing only
   a lower-level hook. Recommended: keep it as `SuggestModalCommandBuilderBuildOptions.shouldShowInstructions`.
+
+## Current Task — make `sleep` / `abortSignalTimeout` usable in a Node environment ✅ code DONE (pending release)
+
+`abortSignalTimeout` (`src/abort-controller.ts`) — whose sole consumer is `sleep` (`src/async.ts`) —
+now builds its timeout off `globalThis.setTimeout` instead of `window.setTimeout`. `globalThis.setTimeout`
+exists in BOTH Node and browser/jsdom and is patched by vitest fake timers (under jsdom
+`window === globalThis`, so nothing changes there), so **L2's fake-timer controllability is preserved**
+while `sleep` becomes environment-portable — it no longer throws `ReferenceError: window is not defined`
+in a vitest `environment: 'node'` project (every consumer integration-test project is `node`).
+
+- ✅ `src/abort-controller.ts`: `window.setTimeout` → `globalThis.setTimeout`, with a justified
+  `obsidianmd/no-global-this` eslint-disable and the reworded rationale comment.
+- ✅ Rule **L2** amended below to mandate `globalThis.setTimeout` (still fake-timer controllable, and works
+  where `window` is undefined).
+- ✅ Tests: added a `vi.stubGlobal('window', undefined)` node-environment regression case to both
+  `src/abort-controller.test.ts` (`abortSignalTimeout`) and `src/async.test.ts` (`sleep`); the stale
+  "via window.setTimeout" test title and the two "built on `window.setTimeout`" comments were corrected.
+  Full gate green (spellcheck, `build:compile:typescript`, lint, format, full suite / 100% coverage).
+
+Remaining: ⏳ ship a patch/minor release (pending user go-ahead). Optional consumer follow-up (after the
+release and a dep bump): plugins that worked around this with `node:timers/promises` in
+`*.integration.test.ts` hooks may revert to dev-utils `sleep`, though the node-timer form is fine to leave
+as-is.
 
 ## Known Issues
 
