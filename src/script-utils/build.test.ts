@@ -25,6 +25,7 @@ const {
   mockCheckProjectTypes,
   mockCp,
   mockExecFromRoot,
+  mockExistsSync,
   mockGetRootFolder,
   mockGlob,
   mockNpmRunOptional,
@@ -38,6 +39,7 @@ const {
   mockCheckProjectTypes: vi.fn<(params: CheckProjectTypesParams) => boolean>(),
   mockCp: vi.fn(),
   mockExecFromRoot: vi.fn(),
+  mockExistsSync: vi.fn<(path: string) => boolean>(),
   mockGetRootFolder: vi.fn<() => null | string>(),
   mockGlob: vi.fn(),
   mockNpmRunOptional: vi.fn(),
@@ -47,6 +49,11 @@ const {
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
   mockRm: vi.fn(),
   mockToCanonical: vi.fn<(fileName: string) => string>()
+}));
+
+vi.mock('node:fs', async (importOriginal) => ({
+  ...await importOriginal<typeof import('node:fs')>(),
+  existsSync: mockExistsSync
 }));
 
 vi.mock('../script-utils/root.ts', () => ({
@@ -98,6 +105,7 @@ beforeEach(() => {
   mockToCanonical.mockImplementation((fileName: string) => fileName.toLowerCase());
   mockParseTsConfig.mockReturnValue({ fileNames: ['/root/src/a.ts'], options: {} });
   mockCheckProjectTypes.mockReturnValue(true);
+  mockExistsSync.mockReturnValue(false);
 });
 
 describe('buildClean', () => {
@@ -137,6 +145,13 @@ describe('buildCompileTypeScript', () => {
       options: {},
       rootNames: ['/root/src/a.ts']
     }));
+  });
+
+  it('should use the typescript-7 compiler when its alias is installed', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await buildCompileTypeScript();
+    expect(mockExistsSync).toHaveBeenCalledWith('/root/node_modules/typescript-7/bin/tsc');
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['node', '/root/node_modules/typescript-7/bin/tsc', '--build', '--force']);
   });
 
   it('should keep only project files outside node_modules when validating', async () => {

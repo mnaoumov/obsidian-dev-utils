@@ -8,6 +8,7 @@
 
 import type { TsConfigJson } from 'type-fest';
 
+import { existsSync } from 'node:fs';
 import {
   cp,
   glob,
@@ -85,11 +86,16 @@ export async function buildCompileSvelte(): Promise<void> {
  * re-runs the type-check in-memory with `skipLibCheck: false`, reporting only diagnostics from the
  * files we own, so the declarations we author are still fully validated.
  *
+ * When the `typescript-7` alias (`npm:typescript@7`, the native `tsgo` port) is installed, its faster
+ * compiler runs the `tsc --build` pass; otherwise the project's default `tsc` is used. The
+ * {@link validateProjectTypes} second pass runs on the project's default TypeScript regardless, since
+ * it depends on the classic compiler API (unavailable in `typescript@7`).
+ *
  * @returns A {@link Promise} that resolves when the code compiles successfully.
  * @throws If the project's own declarations fail validation.
  */
 export async function buildCompileTypeScript(): Promise<void> {
-  await execFromRoot(['npx', 'tsc', '--build', '--force']);
+  await execFromRoot([...getTypeScriptCompilerCommand(), '--build', '--force']);
 
   if (!validateProjectTypes()) {
     throw new Error('TypeScript declaration validation failed.');
@@ -128,6 +134,8 @@ const TEMPLATE_FILE_SUFFIX = '.template';
 
 const NODE_MODULES_SEGMENT = '/node_modules/';
 
+const TYPESCRIPT_7_TSC_BIN_PATH = 'node_modules/typescript-7/bin/tsc';
+
 /**
  * Parameters for {@link shouldKeepProjectFile}.
  */
@@ -141,6 +149,22 @@ interface ShouldKeepProjectFileParams {
    * Absolute (canonical) path of the project root.
    */
   readonly rootCanonical: string;
+}
+
+/**
+ * Resolves the command used to run the `tsc --build` pass. Prefers the `typescript-7` alias
+ * (`npm:typescript@7`, the native `tsgo` port) when it is installed, falling back to the project's
+ * default `tsc`.
+ *
+ * @returns The command argument list (without the trailing `tsc` flags).
+ */
+function getTypeScriptCompilerCommand(): string[] {
+  const typeScript7TscBinPath = resolvePathFromRootSafe({ path: TYPESCRIPT_7_TSC_BIN_PATH });
+  if (existsSync(typeScript7TscBinPath)) {
+    return ['node', typeScript7TscBinPath];
+  }
+
+  return ['npx', 'tsc'];
 }
 
 /**
