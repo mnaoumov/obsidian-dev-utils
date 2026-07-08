@@ -279,55 +279,6 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
 
-## Current Task — Extract `SuggestModalCommandBuilder` into dev-utils (advanced-note-composer issue #119 follow-up)
-
-`obsidian-advanced-note-composer` has a general-purpose `SuggestModalCommandBuilder`
-(`src/modals/suggest-modal-command-builder.ts`) that builds a `SuggestModal` instruction bar with:
-keyboard-command hints (`addKeyboardCommand`), interactive checkboxes bound to a modifier+key shortcut
-(`addCheckbox`), dropdowns bound to a modifier+key shortcut (`addDropDown`), and a
-`build(modal, { shouldShowInstructions })` that ALWAYS registers the essential navigation/action key
-handlers but only renders the instruction UI + registers the option-toggle (Alt+N) shortcuts when
-`shouldShowInstructions` is `true`. The builder imports ONLY from `obsidian` (`Instruction`,
-`KeymapContext`, `Modifier`, `SuggestModal`, `DropdownComponent`, `Platform`, `Scope`) — no plugin-local
-deps — so it is cleanly portable and not plugin-specific. Because it is a general-purpose,
-plugin-agnostic helper, it belongs in this shared library. **Continue this work from a session started
-in THIS repo** (do not drive it from the plugin session).
-
-### Plan — ✅ dev-utils side DONE (pending release)
-
-1. ~~Add `src/obsidian/modals/suggest-modal-command-builder.ts` — port the class.~~ ✅ DONE. Public API
-   kept (`addKeyboardCommand`, `addCheckbox`, `addDropDown`, `build(modal, options?)`); the command param
-   interfaces (`KeyboardCommand`, `CheckboxCommand`, `DropDownCommand`) and
-   `SuggestModalCommandBuilderBuildOptions` are now **exported**. Dev-utils lint honored — the plugin's
-   `KEYS_MAP: Record<string, string>` became a `Map<string, string>` (no `Record`); the two `?? []`
-   defensive-modifier v8-ignore blocks and the in-bounds `purposeEls[i]` guard carried over. Full JSDoc
-   added (`@file`, class + public methods + exported interface members).
-2. ~~Barrel + export path.~~ ✅ DONE — `npm run build` regenerated `src/obsidian/modals/index.ts` with
-   `export * as 'suggest-modal-command-builder'`; the `./obsidian/modals/*` wildcard export already resolves
-   `obsidian-dev-utils/obsidian/modals/suggest-modal-command-builder` (no per-file `package.json` entry
-   needed).
-3. ~~Tests.~~ ✅ DONE — ported `suggest-modal-command-builder.test.ts` (real `Scope` / `DropdownComponent` /
-   `Platform` via the obsidian test-mocks alias, `strictProxy` mock modal, `castTo`/`strictProxy` from the
-   relative `../../` paths). 33/33 pass, **100%** file coverage. Full gate green: tsc, eslint, dprint,
-   cspell all clean; full suite 3736 tests / 100% coverage.
-
-Remaining: ship a dev-utils patch release, then do the consumer migration below (cross-repo — driven from
-a session started in the plugin repo). ⏳ PENDING user go-ahead for the release.
-
-### Consumer migration (advanced-note-composer — AFTER dev-utils ships + a release + dep bump)
-
-- Delete `src/modals/suggest-modal-command-builder.ts` + its test; import `SuggestModalCommandBuilder`
-  (and the now-exported command interfaces) from `obsidian-dev-utils/obsidian/modals/suggest-modal-command-builder`.
-- The 4 modals (`merge-file`, `split-file`, `merge-folder`, `swap-folder`) already call
-  `builder.build(this, { shouldShowInstructions: … })` — call sites unchanged.
-- Bump the plugin's `obsidian-dev-utils` dependency to the shipping version.
-
-### Design decision to confirm
-
-- Whether the #119 `shouldShowInstructions` option belongs in the generic builder (recommended **yes** —
-  "show/hide the instruction bar" is a generic concern, not plugin-specific) vs. dev-utils exposing only
-  a lower-level hook. Recommended: keep it as `SuggestModalCommandBuilderBuildOptions.shouldShowInstructions`.
-
 ## Known Issues
 
 - None currently.
