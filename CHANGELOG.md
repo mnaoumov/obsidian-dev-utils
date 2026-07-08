@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 84.5.1
+
+- fix(async): build sleep/abortSignalTimeout timer on globalThis.setTimeout
+
 ## 84.5.0
 
 - docs: fix markdown lint blanks around headings and lists
