@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 84.5.0
+
+- docs: fix markdown lint blanks around headings and lists
+- docs: mark SuggestModalCommandBuilder dev-utils extraction done
+- feat(obsidian): add SuggestModalCommandBuilder
+- docs: prune shipped task sections and drop cross-scope rule refs
+
 ## 84.4.0
 
 - chore: update libs
