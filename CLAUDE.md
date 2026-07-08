@@ -328,29 +328,6 @@ a session started in the plugin repo). ⏳ PENDING user go-ahead for the release
   "show/hide the instruction bar" is a generic concern, not plugin-specific) vs. dev-utils exposing only
   a lower-level hook. Recommended: keep it as `SuggestModalCommandBuilderBuildOptions.shouldShowInstructions`.
 
-## Current Task — make `sleep` / `abortSignalTimeout` usable in a Node environment ✅ code DONE (pending release)
-
-`abortSignalTimeout` (`src/abort-controller.ts`) — whose sole consumer is `sleep` (`src/async.ts`) —
-now builds its timeout off `globalThis.setTimeout` instead of `window.setTimeout`. `globalThis.setTimeout`
-exists in BOTH Node and browser/jsdom and is patched by vitest fake timers (under jsdom
-`window === globalThis`, so nothing changes there), so **L2's fake-timer controllability is preserved**
-while `sleep` becomes environment-portable — it no longer throws `ReferenceError: window is not defined`
-in a vitest `environment: 'node'` project (every consumer integration-test project is `node`).
-
-- ✅ `src/abort-controller.ts`: `window.setTimeout` → `globalThis.setTimeout`, with a justified
-  `obsidianmd/no-global-this` eslint-disable and the reworded rationale comment.
-- ✅ Rule **L2** amended below to mandate `globalThis.setTimeout` (still fake-timer controllable, and works
-  where `window` is undefined).
-- ✅ Tests: added a `vi.stubGlobal('window', undefined)` node-environment regression case to both
-  `src/abort-controller.test.ts` (`abortSignalTimeout`) and `src/async.test.ts` (`sleep`); the stale
-  "via window.setTimeout" test title and the two "built on `window.setTimeout`" comments were corrected.
-  Full gate green (spellcheck, `build:compile:typescript`, lint, format, full suite / 100% coverage).
-
-Remaining: ⏳ ship a patch/minor release (pending user go-ahead). Optional consumer follow-up (after the
-release and a dep bump): plugins that worked around this with `node:timers/promises` in
-`*.integration.test.ts` hooks may revert to dev-utils `sleep`, though the node-timer form is fine to leave
-as-is.
-
 ## Known Issues
 
 - None currently.
