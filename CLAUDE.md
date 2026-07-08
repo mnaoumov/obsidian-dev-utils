@@ -293,6 +293,7 @@ plugin-agnostic helper, it belongs in this shared library. **Continue this work 
 in THIS repo** (do not drive it from the plugin session).
 
 ### Plan — ✅ dev-utils side DONE (pending release)
+
 1. ~~Add `src/obsidian/modals/suggest-modal-command-builder.ts` — port the class.~~ ✅ DONE. Public API
    kept (`addKeyboardCommand`, `addCheckbox`, `addDropDown`, `build(modal, options?)`); the command param
    interfaces (`KeyboardCommand`, `CheckboxCommand`, `DropDownCommand`) and
@@ -313,6 +314,7 @@ Remaining: ship a dev-utils patch release, then do the consumer migration below 
 a session started in the plugin repo). ⏳ PENDING user go-ahead for the release.
 
 ### Consumer migration (advanced-note-composer — AFTER dev-utils ships + a release + dep bump)
+
 - Delete `src/modals/suggest-modal-command-builder.ts` + its test; import `SuggestModalCommandBuilder`
   (and the now-exported command interfaces) from `obsidian-dev-utils/obsidian/modals/suggest-modal-command-builder`.
 - The 4 modals (`merge-file`, `split-file`, `merge-folder`, `swap-folder`) already call
@@ -320,6 +322,7 @@ a session started in the plugin repo). ⏳ PENDING user go-ahead for the release
 - Bump the plugin's `obsidian-dev-utils` dependency to the shipping version.
 
 ### Design decision to confirm
+
 - Whether the #119 `shouldShowInstructions` option belongs in the generic builder (recommended **yes** —
   "show/hide the instruction bar" is a generic concern, not plugin-specific) vs. dev-utils exposing only
   a lower-level hook. Recommended: keep it as `SuggestModalCommandBuilderBuildOptions.shouldShowInstructions`.
