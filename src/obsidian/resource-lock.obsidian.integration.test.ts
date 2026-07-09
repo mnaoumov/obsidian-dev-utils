@@ -74,6 +74,11 @@ interface ReadableView {
   editor?: ReadableEditor;
 }
 
+interface ShiftEnterResult {
+  readonly didLockedNoteRejectShiftEnter: boolean;
+  readonly didUnlockedNoteAcceptShiftEnter: boolean;
+}
+
 interface SubtreeLockResult {
   readonly isChildLockedAfterUnlock: boolean;
   readonly isChildLockedUnderSubtree: boolean;
@@ -275,6 +280,95 @@ describe('resource-lock', () => {
       expect(result.didOtherNoteAcceptTyping).toBe(true);
       // Once unlocked, the note accepts typing again.
       expect(result.didUnlockedNoteAcceptTyping).toBe(true);
+    });
+
+    it('should reject a Shift+Enter keystroke in a locked note (which bypasses the read-only facet) and accept it after unlock', async () => {
+      const result = await evalInObsidian({
+        async fn({ app }): Promise<ShiftEnterResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          // Start from a clean workspace so the reconcile sees only the view this test opens.
+          app.workspace.detachLeavesOfType('markdown');
+          await settle();
+
+          const lockedFile = await app.vault.create('resource-lock-shift-enter.md', 'hello');
+          const lockedLeaf = app.workspace.getLeaf();
+          await lockedLeaf.openFile(lockedFile);
+          await settle();
+
+          const disposable = lib.obsidian['resource-lock'].lockResourceForPath(app, lockedFile, 'integration-test');
+          await settle();
+          await reconcile();
+
+          // Obsidian binds Shift+Enter to a handler that dispatches a change transaction directly,
+          // Slipping past the CodeMirror `readOnly` facet; the lock's change filter must still drop it.
+          const lockedBefore = readValue(lockedLeaf);
+          dispatchShiftEnter(lockedLeaf);
+          await settle();
+          const didLockedNoteRejectShiftEnter = readValue(lockedLeaf) === lockedBefore;
+
+          // Releasing the lock restores the normal Shift+Enter behavior (a newline is inserted).
+          disposable[Symbol.dispose]();
+          await settle();
+          await reconcile();
+          const unlockedBefore = readValue(lockedLeaf);
+          dispatchShiftEnter(lockedLeaf);
+          await settle();
+          const didUnlockedNoteAcceptShiftEnter = readValue(lockedLeaf) !== unlockedBefore;
+
+          return {
+            didLockedNoteRejectShiftEnter,
+            didUnlockedNoteAcceptShiftEnter
+          };
+
+          function dispatchShiftEnter(leaf: unknown): void {
+            const editor = getEditor(leaf);
+            const event = new KeyboardEvent('keydown', {
+              bubbles: true,
+              cancelable: true,
+              code: 'Enter',
+              key: 'Enter',
+              keyCode: 13,
+              shiftKey: true,
+              which: 13
+            });
+            editor.cm.contentDOM.dispatchEvent(event);
+          }
+
+          function getEditor(leaf: unknown): Editor {
+            const editor = (leaf as TypableLeaf).view.editor;
+            if (!editor) {
+              throw new Error('no editor on leaf');
+            }
+            return editor;
+          }
+
+          function readValue(leaf: unknown): string {
+            return getEditor(leaf).getValue();
+          }
+
+          async function reconcile(): Promise<void> {
+            app.workspace.trigger('layout-change');
+            await settle();
+          }
+
+          async function settle(): Promise<void> {
+            const SETTLE_DELAY_MILLISECONDS = 300;
+            await new Promise<void>((resolve) => {
+              window.setTimeout(resolve, SETTLE_DELAY_MILLISECONDS);
+            });
+          }
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // Shift+Enter cannot edit the locked note.
+      expect(result.didLockedNoteRejectShiftEnter).toBe(true);
+      // Once unlocked, Shift+Enter inserts a newline again.
+      expect(result.didUnlockedNoteAcceptShiftEnter).toBe(true);
     });
   });
 

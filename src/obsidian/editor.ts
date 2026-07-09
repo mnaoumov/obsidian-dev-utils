@@ -4,6 +4,7 @@
  * This module provides utility functions for working with markdown editors in Obsidian
  */
 
+import type { Extension } from '@codemirror/state';
 import type {
   App,
   Editor
@@ -12,8 +13,10 @@ import type {
 import {
   Compartment,
   EditorState,
+  Prec,
   StateEffect
 } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
 import { MarkdownView } from 'obsidian';
 
@@ -23,6 +26,11 @@ import { castTo } from '../object-utils.ts';
 import { getPath } from './file-system.ts';
 
 const compartmentByCodeMirror = new WeakMap<Editor['cm'], Compartment>();
+
+// Set true while a locked editor processes a `keydown` synchronously.
+// The read-only change filter reads it to block a keyboard-driven edit but pass a programmatic one.
+// It is reset in a microtask, after the key event's synchronous dispatch completes.
+let isProcessingLockedEditorKeydown = false;
 
 /**
  * Overwrites the buffer of every open {@link MarkdownView} currently showing the given path so that
@@ -64,7 +72,8 @@ export function syncOpenEditorBuffersForPath(app: App, pathOrFile: PathOrFile, c
  *
  * When read-only, the editor stays focusable and interactive (selection, copy, and app hotkeys such
  * as the command palette keep working) — only document edits are prevented, via the CodeMirror
- * `readOnly` state.
+ * `readOnly` state plus a change filter that drops any user-originated change (see
+ * {@link readOnlyExtension}).
  *
  * This toggles ONE CodeMirror instance, not "a file": an Obsidian {@link Editor} is reused as its
  * leaf navigates between notes, so this primitive does not follow a note around. To lock a note
@@ -77,7 +86,7 @@ export function syncOpenEditorBuffersForPath(app: App, pathOrFile: PathOrFile, c
 export function toggleEditorReadOnly(editor: Editor, isReadOnly: boolean): void {
   const compartment = ensureCompartment(editor);
   editor.cm.dispatch({
-    effects: compartment.reconfigure(isReadOnly ? EditorState.readOnly.of(true) : [])
+    effects: compartment.reconfigure(isReadOnly ? readOnlyExtension() : [])
   });
 }
 
@@ -106,4 +115,36 @@ function ensureCompartment(editor: Editor): Compartment {
     effects: StateEffect.appendConfig.of(compartment.of([]))
   });
   return compartment;
+}
+
+/**
+ * The extension installed into the read-only compartment while a note is locked.
+ *
+ * `EditorState.readOnly` alone is not enough: it blocks CodeMirror's own editing commands and DOM
+ * input, but Obsidian binds some keys (notably `Shift+Enter`) to handlers that dispatch a change
+ * transaction directly, which slips past the `readOnly` facet and edits the "locked" note. Such a
+ * transaction is indistinguishable from a programmatic one by its contents (no user-event
+ * annotation), so it is told apart by origin instead: a highest-precedence `keydown` handler marks
+ * the window during which the key is processed synchronously, and the added `changeFilter` drops the
+ * changes of any transaction produced inside that window. Programmatic edits (e.g.
+ * `syncOpenEditorBuffersForPath` restoring a buffer on rollback, or Obsidian reloading the buffer
+ * from disk) happen outside a keydown, so they still go through.
+ *
+ * @returns The extension enforcing read-only for a locked editor.
+ */
+function readOnlyExtension(): Extension {
+  return [
+    EditorState.readOnly.of(true),
+    Prec.highest(EditorView.domEventHandlers({
+      keydown: (): boolean => {
+        isProcessingLockedEditorKeydown = true;
+        queueMicrotask(() => {
+          isProcessingLockedEditorKeydown = false;
+        });
+        // Do not consume the event: let CodeMirror's keymap run so navigation/selection keys work.
+        return false;
+      }
+    })),
+    EditorState.changeFilter.of(() => !isProcessingLockedEditorKeydown)
+  ];
 }

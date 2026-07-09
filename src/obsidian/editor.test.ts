@@ -34,6 +34,10 @@ import {
   toggleEditorReadOnly
 } from './editor.ts';
 
+interface DomEventHandlers {
+  keydown(): boolean;
+}
+
 const mocks = vi.hoisted(() => {
   const mockReconfigure = vi.fn((extension: unknown): StateEffect<unknown> => castTo<StateEffect<unknown>>({ reconfigure: extension }));
   const mockCompartmentOf = vi.fn((extension: unknown): Extension => castTo<Extension>({ compartmentOf: extension }));
@@ -49,13 +53,19 @@ const mocks = vi.hoisted(() => {
   }
 
   const mockReadOnlyOf = vi.fn((value: boolean): Extension => castTo<Extension>({ facet: 'readOnly', value }));
+  const mockChangeFilterOf = vi.fn((predicate: () => boolean): Extension => castTo<Extension>({ facet: 'changeFilter', predicate }));
+  const mockPrecHighest = vi.fn((extension: Extension): Extension => extension);
+  const mockDomEventHandlers = vi.fn((handlers: DomEventHandlers): Extension => castTo<Extension>({ domEventHandlers: handlers }));
   const mockAppendConfigOf = vi.fn((extension: unknown): StateEffect<unknown> => castTo<StateEffect<unknown>>({ appendConfig: extension }));
 
   return {
     mockAppendConfigOf,
+    mockChangeFilterOf,
     MockCompartment,
     mockCompartmentGet,
     mockCompartmentOf,
+    mockDomEventHandlers,
+    mockPrecHighest,
     mockReadOnlyOf,
     mockReconfigure
   };
@@ -64,14 +74,26 @@ const mocks = vi.hoisted(() => {
 vi.mock('@codemirror/state', () => ({
   Compartment: mocks.MockCompartment,
   EditorState: {
+    changeFilter: {
+      of: mocks.mockChangeFilterOf
+    },
     readOnly: {
       of: mocks.mockReadOnlyOf
     }
+  },
+  Prec: {
+    highest: mocks.mockPrecHighest
   },
   StateEffect: {
     appendConfig: {
       of: mocks.mockAppendConfigOf
     }
+  }
+}));
+
+vi.mock('@codemirror/view', () => ({
+  EditorView: {
+    domEventHandlers: mocks.mockDomEventHandlers
   }
 }));
 
@@ -150,6 +172,30 @@ describe('toggleEditorReadOnly', () => {
     expect(mocks.mockAppendConfigOf).toHaveBeenCalledTimes(1);
     // First toggle: appendConfig + reconfigure (2 dispatches); second toggle: reconfigure (1 dispatch).
     expect(editor.cm.dispatch).toHaveBeenCalledTimes(3);
+  });
+
+  it('should drop a change produced during a keydown while allowing one produced outside a keydown', async () => {
+    await noopAsync();
+    const editor = createMockEditor();
+    toggleEditorReadOnly(editor, true);
+
+    // The read-only extension registers a highest-precedence keydown handler and a change filter.
+    const keydownHandler = mocks.mockDomEventHandlers.mock.calls[0]?.[0].keydown;
+    assertNonNullable(keydownHandler);
+    const changeFilter = mocks.mockChangeFilterOf.mock.calls[0]?.[0];
+    assertNonNullable(changeFilter);
+
+    // Outside a keydown a change (e.g. programmatic buffer sync, disk reload) is allowed.
+    expect(changeFilter()).toBe(true);
+
+    // A keydown opens the window during which a keyboard-driven change is dropped.
+    // The event is not consumed, so navigation and selection keys still work.
+    expect(keydownHandler()).toBe(false);
+    expect(changeFilter()).toBe(false);
+
+    // The window closes on the next microtask, so later programmatic changes pass again.
+    await noopAsync();
+    expect(changeFilter()).toBe(true);
   });
 });
 
