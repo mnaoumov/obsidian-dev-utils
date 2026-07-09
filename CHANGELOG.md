@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 84.5.3
+
+- fix: resolve classic TS API via typescript-6 alias so tooling survives TypeScript 7 consumers
+- chore: lock typescript
+
 ## 84.5.2
 
 - refactor: cleanup requireApiVersion
