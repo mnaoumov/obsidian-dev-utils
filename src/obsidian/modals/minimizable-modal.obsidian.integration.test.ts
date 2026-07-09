@@ -43,6 +43,11 @@ interface RestoreByClickResult {
   readonly restoredByTitleClick: boolean;
 }
 
+interface SettingsPopoutBlockedResult {
+  readonly didOpenSettingsAfterRestore: boolean;
+  readonly didOpenSettingsWhileMinimized: boolean;
+}
+
 interface TypingWhileMinimizedResult {
   readonly didAcceptTypingAfterRestore: boolean;
   readonly didAcceptTypingWhileMinimized: boolean;
@@ -179,6 +184,69 @@ describe('MinimizableModal', () => {
       expect(result.didOpenWhileMinimized).toBe(false);
       // Once restored, opening modals works normally again.
       expect(result.didOpenAfterRestore).toBe(true);
+    });
+
+    it('should block opening the settings popout while minimized so no empty settings window appears', async () => {
+      const result = await evalInObsidian({
+        async fn({ app, obsidianModule }): Promise<SettingsPopoutBlockedResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          const SETTLE_DELAY_MILLISECONDS = 300;
+
+          // Start from a clean state so a settings window a prior suite left open cannot skew the read.
+          app.setting.close();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          const modal = new obsidianModule.Modal(app);
+          modal.setTitle('Working');
+          const minimizable = new lib.obsidian.modals['minimizable-modal'].MinimizableModal(modal);
+          minimizable.modal.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          minimizable.minimize();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          // Opening Settings while minimized must be blocked BEFORE its popout window is created — the
+          // Whole point of the fix. Previously the window appeared but rendered empty (bad UX).
+          app.setting.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          const didOpenSettingsWhileMinimized = isSettingsOpen();
+          app.setting.close();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          // After restore the lock lifts, so Settings opens its popout window normally again.
+          minimizable.restore();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          app.setting.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          const didOpenSettingsAfterRestore = isSettingsOpen();
+          app.setting.close();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          minimizable.modal.close();
+
+          return {
+            didOpenSettingsAfterRestore,
+            didOpenSettingsWhileMinimized
+          };
+
+          function isSettingsOpen(): boolean {
+            // Obsidian's Settings opens in a separate popout window on desktop; `app.setting.popout` is
+            // Set only while that window exists. It is a 1.13 (catalyst) member absent from the public
+            // Typings this library targets, so read it reflectively — the peek-lock's win is that it
+            // Stays unset while minimized (no window is created).
+            return Boolean(Reflect.get(app.setting, 'popout'));
+          }
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // Settings never opened its popout window while the modal was minimized (no empty window).
+      expect(result.didOpenSettingsWhileMinimized).toBe(false);
+      // Once restored, Settings opens normally again.
+      expect(result.didOpenSettingsAfterRestore).toBe(true);
     });
   });
 

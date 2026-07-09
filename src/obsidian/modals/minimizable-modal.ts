@@ -41,6 +41,8 @@
  * the modal closes (even if it is closed while minimized).
  */
 
+import type { App } from 'obsidian';
+
 import { around } from 'monkey-around';
 import {
   Modal,
@@ -49,6 +51,7 @@ import {
 
 import { Beeper } from '../../beeper.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
+import { MonkeyAroundComponent } from '../components/monkey-around-component.ts';
 import { CssClass } from '../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
@@ -104,7 +107,56 @@ interface PeekLockEntry {
 const peekLockEntries = new Set<PeekLockEntry>();
 const documentsWithInputSuppressors = new WeakSet<Document>();
 const beeper = new Beeper();
-let isModalOpenGuardInstalled = false;
+
+/**
+ * Installs the peek-only lock's `open` patches while at least one modal is minimized. Being a
+ * {@link MonkeyAroundComponent}, both patches are torn down automatically on `unload`, so they exist
+ * only while the lock is active. A minimized modal's own re-open is always allowed (see
+ * {@link shouldBlockOpen}); every other modal open is blocked and signals a flash + beep.
+ */
+class PeekLockComponent extends MonkeyAroundComponent {
+  private readonly settingModal: App['setting'];
+
+  /**
+   * Constructs a new instance.
+   *
+   * @param app - The app whose settings modal must also be guarded.
+   */
+  public constructor(app: App) {
+    super();
+    this.settingModal = app.setting;
+  }
+
+  /**
+   * Registers the `open` patches.
+   */
+  public override onload(): void {
+    super.onload();
+
+    // Block opening any OTHER modal while a modal is minimized (the command palette, a re-fired
+    // Command, another plugin modal, …).
+    this.registerMethodPatch<Modal, 'open'>({
+      methodName: 'open',
+      obj: Modal.prototype,
+      patchHandler: ({ fallback, originalThis }): void => {
+        blockOrFallback(originalThis, fallback);
+      }
+    });
+
+    // Obsidian's Settings is a *popout* modal: on desktop its own `open()` first creates a separate OS
+    // Window (via `shouldUsePopout()`/`getPopoutOptions()`) and only THEN delegates to
+    // `Modal.prototype.open` to render the active tab into it. Guarding only `Modal.prototype.open`
+    // Therefore blocks the render but leaves an empty settings window behind — the reported bad UX.
+    // Guarding the settings modal's own `open()` blocks it *before* the window is created.
+    this.registerMethodPatch<App['setting'], 'open'>({
+      methodName: 'open',
+      obj: this.settingModal,
+      patchHandler: ({ fallback, originalThis }): void => {
+        blockOrFallback(originalThis, fallback);
+      }
+    });
+  }
+}
 
 /**
  * Wraps a {@link Modal} instance to make it minimizable to a small floating bar and restorable. While
@@ -131,6 +183,7 @@ export class MinimizableModal<TModal extends Modal> {
   private isMinimizedValue = false;
   private readonly minimizeButtonEl: HTMLElement;
   private minimizedBarEl: HTMLElement | null = null;
+  private peekLockComponent: null | PeekLockComponent = null;
   private peekLockEntry: null | PeekLockEntry = null;
 
   /**
@@ -224,6 +277,9 @@ export class MinimizableModal<TModal extends Modal> {
 
     peekLockEntries.delete(this.peekLockEntry);
     this.peekLockEntry = null;
+    // Tear the `open` patches down with the component, so they exist only while this modal is minimized.
+    this.peekLockComponent?.unload();
+    this.peekLockComponent = null;
   }
 
   private enablePeekLock(barEl: HTMLElement): void {
@@ -235,7 +291,11 @@ export class MinimizableModal<TModal extends Modal> {
       innerModal: this.modal
     };
     peekLockEntries.add(this.peekLockEntry);
-    installModalOpenGuardOnce();
+    // Install the `open` patches for as long as this modal is minimized. The block LOGIC itself keys
+    // Off the shared `peekLockEntries` (see `shouldBlockOpen`), so with several modals minimized every
+    // One's patch reaches the same verdict; the lock lifts only once the last modal restores/closes.
+    this.peekLockComponent = new PeekLockComponent(this.modal.app);
+    this.peekLockComponent.load();
     installInputSuppressorsOnce(this.modal.containerEl.ownerDocument);
   }
 
@@ -275,6 +335,15 @@ function blockEvent(evt: Event): void {
   signalBlockedAttempt();
 }
 
+function blockOrFallback(modal: Modal, fallback: () => void): void {
+  if (shouldBlockOpen(modal)) {
+    signalBlockedAttempt();
+    return;
+  }
+
+  fallback();
+}
+
 function flashMinimizedBars(): void {
   for (const entry of peekLockEntries) {
     entry.flash();
@@ -296,28 +365,6 @@ function installInputSuppressorsOnce(doc: Document): void {
   win.addEventListener('keydown', suppressKeydownWhilePeekLocked, { capture: true });
   win.addEventListener('beforeinput', suppressWhilePeekLocked, { capture: true });
   win.addEventListener('contextmenu', suppressWhilePeekLocked, { capture: true });
-}
-
-function installModalOpenGuardOnce(): void {
-  if (isModalOpenGuardInstalled) {
-    return;
-  }
-
-  isModalOpenGuardInstalled = true;
-  // Never uninstalled: the guard is inert whenever nothing is minimized (`isPeekLocked()` is false).
-  // One permanent patch is cheaper and leak-free versus installing and uninstalling it per minimize.
-  around(Modal.prototype, {
-    open: (next: () => void): (this: Modal) => void => {
-      return function open(this: Modal): void {
-        if (isPeekLocked() && !isMinimizedInnerModal(this)) {
-          signalBlockedAttempt();
-          return;
-        }
-
-        next.call(this);
-      };
-    }
-  });
 }
 
 function isMinimizedInnerModal(modal: Modal): boolean {
@@ -350,6 +397,12 @@ function isPeekLocked(): boolean {
   }
 
   return peekLockEntries.size > 0;
+}
+
+function shouldBlockOpen(modal: Modal): boolean {
+  // A modal's own re-open is never blocked — otherwise a minimized modal could not restore/re-open
+  // Itself. Every OTHER modal open is blocked while any modal is minimized (the peek-only lock).
+  return isPeekLocked() && !isMinimizedInnerModal(modal);
 }
 
 function signalBlockedAttempt(): void {

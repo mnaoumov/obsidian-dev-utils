@@ -13,15 +13,32 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../object-utils.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { CssClass } from '../css-class.ts';
 import { MinimizableModal } from './minimizable-modal.ts';
+
+interface AppWithSettingsModal {
+  setting: SettingsPopoutModalDouble;
+}
 
 class OpenTrackingModal extends Modal {
   public wasOpened = false;
 
   public override onOpen(): void {
     this.wasOpened = true;
+  }
+}
+
+class SettingsPopoutModalDouble extends Modal {
+  public wasWindowCreated = false;
+
+  public override open(): void {
+    // Mimic Obsidian's Settings popout modal: its own open() creates the (popout) window BEFORE
+    // Delegating to Modal.prototype.open to render into it. Blocking must happen here — guarding only
+    // The delegated Modal.prototype.open (the generic modal guard) would still create the empty window.
+    this.wasWindowCreated = true;
+    super.open();
   }
 }
 
@@ -34,9 +51,14 @@ class TrackingModal extends Modal {
 }
 
 let app: AppOriginal;
+let settingsModal: SettingsPopoutModalDouble;
 
 beforeEach(() => {
   app = App.createConfigured__().asOriginalType__();
+  // The strict-proxy mock App does not model `app.setting`; wire a popout-mimicking settings modal so
+  // The peek-lock's settings guard has something real to patch (mirroring Obsidian's `app.setting`).
+  settingsModal = new SettingsPopoutModalDouble(app);
+  castTo<AppWithSettingsModal>(app).setting = settingsModal;
 });
 
 afterEach(() => {
@@ -368,6 +390,45 @@ describe('MinimizableModal', () => {
       expect(bar.hasClass(CssClass.MinimizedModalBarAttention)).toBe(false);
 
       minimizable.restore();
+    });
+  });
+
+  describe('settings popout lock', () => {
+    it('should block opening the settings popout window while minimized so no empty settings window appears', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      app.setting.open();
+      // The settings modal's own open() — which would create the (empty) popout window — never runs.
+      expect(settingsModal.wasWindowCreated).toBe(false);
+
+      minimizable.restore();
+    });
+
+    it('should open the settings popout again after restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      minimizable.restore();
+
+      app.setting.open();
+      expect(settingsModal.wasWindowCreated).toBe(true);
+    });
+
+    it('should keep the settings blocked until the last of several minimized modals restores', () => {
+      const first = new MinimizableModal(new Modal(app));
+      const second = new MinimizableModal(new Modal(app));
+      first.minimize();
+      second.minimize();
+
+      // Restoring only the first must NOT lift the lock — the second is still minimized.
+      first.restore();
+      app.setting.open();
+      expect(settingsModal.wasWindowCreated).toBe(false);
+
+      // Restoring the last minimized modal lifts the lock, so settings opens normally again.
+      second.restore();
+      app.setting.open();
+      expect(settingsModal.wasWindowCreated).toBe(true);
     });
   });
 });
