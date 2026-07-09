@@ -284,7 +284,7 @@ describe('resource-lock', () => {
 
     it('should reject a Shift+Enter keystroke in a locked note (which bypasses the read-only facet) and accept it after unlock', async () => {
       const result = await evalInObsidian({
-        async fn({ app }): Promise<ShiftEnterResult> {
+        async fn({ app, pressKey, waitUntil }): Promise<ShiftEnterResult> {
           const lib = window.__obsidianDevUtilsModule__;
           if (!lib) {
             throw new Error('obsidian-dev-utils module not registered on window');
@@ -303,10 +303,10 @@ describe('resource-lock', () => {
           await settle();
           await reconcile();
 
-          // Obsidian binds Shift+Enter to a handler that dispatches a change transaction directly,
-          // Slipping past the CodeMirror `readOnly` facet; the lock's change filter must still drop it.
+          // Obsidian binds Shift+Enter to a handler that dispatches a change transaction directly.
+          // It slips past the CodeMirror `readOnly` facet, so the lock's change filter must still drop it.
           const lockedBefore = readValue(lockedLeaf);
-          dispatchShiftEnter(lockedLeaf);
+          await pressShiftEnter(lockedLeaf);
           await settle();
           const didLockedNoteRejectShiftEnter = readValue(lockedLeaf) === lockedBefore;
 
@@ -315,8 +315,11 @@ describe('resource-lock', () => {
           await settle();
           await reconcile();
           const unlockedBefore = readValue(lockedLeaf);
-          dispatchShiftEnter(lockedLeaf);
-          await settle();
+          await pressShiftEnter(lockedLeaf);
+          await waitUntil({
+            message: 'locked note to accept Shift+Enter after unlock',
+            predicate: () => readValue(lockedLeaf) !== unlockedBefore
+          });
           const didUnlockedNoteAcceptShiftEnter = readValue(lockedLeaf) !== unlockedBefore;
 
           return {
@@ -324,26 +327,18 @@ describe('resource-lock', () => {
             didUnlockedNoteAcceptShiftEnter
           };
 
-          function dispatchShiftEnter(leaf: unknown): void {
-            const editor = getEditor(leaf);
-            const event = new KeyboardEvent('keydown', {
-              bubbles: true,
-              cancelable: true,
-              code: 'Enter',
-              key: 'Enter',
-              keyCode: 13,
-              shiftKey: true,
-              which: 13
-            });
-            editor.cm.contentDOM.dispatchEvent(event);
-          }
-
           function getEditor(leaf: unknown): Editor {
             const editor = (leaf as TypableLeaf).view.editor;
             if (!editor) {
               throw new Error('no editor on leaf');
             }
             return editor;
+          }
+
+          async function pressShiftEnter(leaf: unknown): Promise<void> {
+            // `pressKey` targets the globally-focused element, so focus the editor before pressing.
+            getEditor(leaf).focus();
+            await pressKey({ key: 'Enter', modifiers: ['Shift'] });
           }
 
           function readValue(leaf: unknown): string {
