@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 84.5.2
+
+- refactor: cleanup requireApiVersion
+- chore: add subpaths to cspell dictionary
+- docs: explain the typescript 6 (tooling) + 7 (compilation) split
+- build: compile via typescript 7 (tsgo) while keeping tooling on typescript 6
+- chore: update libs
+
 ## 84.5.1
 
 - fix(async): build sleep/abortSignalTimeout timer on globalThis.setTimeout
