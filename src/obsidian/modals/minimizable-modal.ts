@@ -43,7 +43,6 @@
 
 import type { App } from 'obsidian';
 
-import { around } from 'monkey-around';
 import {
   Modal,
   setIcon
@@ -180,6 +179,10 @@ export class MinimizableModal<TModal extends Modal> {
     return this.isMinimizedValue;
   }
 
+  // Patches the wrapped modal's `onClose` to run cleanup. Persists for the wrapper's whole life (a
+  // Modal can be reopened, so the patch must survive each close), hence a dedicated component that is
+  // Never unloaded — distinct from `peekLockComponent`, whose patches live only while minimized.
+  private readonly closePatchComponent = new MonkeyAroundComponent();
   private isMinimizedValue = false;
   private readonly minimizeButtonEl: HTMLElement;
   private minimizedBarEl: HTMLElement | null = null;
@@ -195,6 +198,7 @@ export class MinimizableModal<TModal extends Modal> {
     this.modal = modal;
     addPluginCssClasses(modal.containerEl, [CssClass.MinimizableModal]);
     this.minimizeButtonEl = this.createMinimizeButton();
+    this.closePatchComponent.load();
     this.patchOnClose(modal);
   }
 
@@ -313,12 +317,12 @@ export class MinimizableModal<TModal extends Modal> {
   }
 
   private patchOnClose(modal: Modal): void {
-    around(modal, {
-      onClose: (next: () => void): () => void => {
-        return (): void => {
-          next.call(modal);
-          this.handleClose();
-        };
+    this.closePatchComponent.registerMethodPatch<Modal, 'onClose'>({
+      methodName: 'onClose',
+      obj: modal,
+      patchHandler: ({ fallback }): void => {
+        fallback();
+        this.handleClose();
       }
     });
   }
