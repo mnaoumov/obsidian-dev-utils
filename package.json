@@ -714,7 +714,7 @@
     "svelte-check": "^4.7.2",
     "svelte-preprocess": "^6.0.5",
     "type-fest": "^5.8.0",
-    "typescript": "^6.0.3",
+    "typescript": "6.0.3",
     "typescript-7": "npm:typescript@^7.0.2",
     "typescript-eslint": "^8.63.0",
     "unist-util-visit": "^5.1.0"
