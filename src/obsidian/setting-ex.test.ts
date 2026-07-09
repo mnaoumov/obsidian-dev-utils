@@ -29,16 +29,7 @@ const mocks = vi.hoisted(() => {
     }
   }
   return {
-    MockComponent: MockComponentClass,
-    requireApiVersion: vi.fn((_version: string) => true)
-  };
-});
-
-vi.mock('obsidian', async (importOriginal) => {
-  const original = await importOriginal<typeof import('obsidian')>();
-  return {
-    ...original,
-    requireApiVersion: mocks.requireApiVersion
+    MockComponent: MockComponentClass
   };
 });
 
@@ -108,42 +99,15 @@ describe('SettingEx', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.requireApiVersion.mockReturnValue(true);
     settingEx = new SettingEx(createDiv());
   });
 
   describe('addComponentClass', () => {
-    it('should create component and add it via addComponentSafe', () => {
+    it('should create component and add it', () => {
       const cb = vi.fn();
       const result = settingEx.addComponentClass(mocks.MockComponent, cb);
       expect(result).toBe(settingEx);
       expect(cb).toHaveBeenCalledWith(expect.any(mocks.MockComponent));
-      expect(settingEx.components).toHaveLength(1);
-    });
-  });
-
-  describe('addComponentSafe branches', () => {
-    it('should use addComponent when requireApiVersion 1.11.0 is true and 0.16.0 is true', () => {
-      mocks.requireApiVersion.mockReturnValue(true);
-      const cb = vi.fn();
-      settingEx.addComponentClass(mocks.MockComponent, cb);
-      expect(cb).toHaveBeenCalled();
-      expect(settingEx.components).toHaveLength(1);
-    });
-
-    it('should use addComponent inner branch when requireApiVersion 0.16.0 is false', () => {
-      mocks.requireApiVersion.mockImplementation((version: string) => version !== '0.16.0');
-      const cb = vi.fn();
-      settingEx.addComponentClass(mocks.MockComponent, cb);
-      expect(cb).toHaveBeenCalled();
-      expect(settingEx.components).toHaveLength(1);
-    });
-
-    it('should push to components directly when requireApiVersion 1.11.0 is false', () => {
-      mocks.requireApiVersion.mockReturnValue(false);
-      const cb = vi.fn();
-      settingEx.addComponentClass(mocks.MockComponent, cb);
-      expect(cb).toHaveBeenCalled();
       expect(settingEx.components).toHaveLength(1);
     });
   });

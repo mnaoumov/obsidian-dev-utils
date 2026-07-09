@@ -6,10 +6,7 @@
 
 import type { BaseComponent } from 'obsidian';
 
-import {
-  requireApiVersion,
-  Setting
-} from 'obsidian';
+import { Setting } from 'obsidian';
 
 import { CheckboxComponent } from './setting-components/checkbox-component.ts';
 import { CodeHighlighterComponent } from './setting-components/code-highlighter-component.ts';
@@ -65,7 +62,7 @@ export class SettingEx extends Setting {
    * @returns The setting instance.
    */
   public addComponentClass<T extends BaseComponent>(componentClass: new (containerEl: HTMLElement) => T, cb: (component: T) => void): this {
-    return this.addComponentSafe((el) => {
+    return this.addComponent((el) => {
       const component = new componentClass(el);
       cb(component);
       return component;
@@ -252,19 +249,5 @@ export class SettingEx extends Setting {
    */
   public addWeek(cb: (week: WeekComponent) => void): this {
     return this.addComponentClass(WeekComponent, cb);
-  }
-
-  private addComponentSafe(cb: (el: HTMLElement) => BaseComponent): this {
-    if (requireApiVersion('1.11.0')) {
-      return this.addComponent((el) => {
-        if (!requireApiVersion('0.16.0')) {
-          return cb(el);
-        }
-        return cb(el);
-      });
-    }
-
-    this.components.push(cb(this.controlEl));
-    return this;
   }
 }

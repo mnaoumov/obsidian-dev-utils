@@ -11,14 +11,6 @@ import {
 import { SettingEx } from './setting-ex.ts';
 import { SettingGroupEx } from './setting-group-ex.ts';
 
-vi.mock('obsidian', async (importOriginal) => {
-  const original = await importOriginal<typeof import('obsidian')>();
-  return {
-    ...original,
-    requireApiVersion: vi.fn(() => true)
-  };
-});
-
 vi.mock('../obsidian/setting-ex.ts', () => ({
   SettingEx: vi.fn()
 }));

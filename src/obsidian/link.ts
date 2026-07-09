@@ -18,8 +18,7 @@ import type { Node } from 'unist';
 import { InternalPluginName } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   normalizePath,
-  parseLinktext,
-  requireApiVersion
+  parseLinktext
 } from 'obsidian';
 import { remark } from 'remark';
 import remarkParse from 'remark-parse';
@@ -1932,7 +1931,7 @@ function generateMarkdownLinkImpl(params: GenerateMarkdownLinkParams): string {
   const sourcePath = getPath(app, params.sourcePathOrFile);
   const subpath = params.subpath ?? '';
 
-  const linkConfig = getLinkConfig(params, targetFile);
+  const linkConfig = getLinkConfig(params);
   const linkText = generateLinkText({
     app,
     config: linkConfig,
@@ -2055,13 +2054,10 @@ function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLi
   }
 }
 
-function getLinkConfig(params: GenerateMarkdownLinkParams, targetFile: TFile): LinkConfig {
+function getLinkConfig(params: GenerateMarkdownLinkParams): LinkConfig {
   const { app } = params;
   return {
-    /* v8 ignore start -- requireApiVersion fallback is only reached in older Obsidian versions. */
-    isEmbed: params.isEmbed ?? (params.originalLink ? testEmbed(params.originalLink) : undefined)
-      ?? (!requireApiVersion('1.10.0') && !isMarkdownFile(targetFile)),
-    /* v8 ignore stop */
+    isEmbed: params.isEmbed ?? (params.originalLink ? testEmbed(params.originalLink) : false),
     isSingleSubpathAllowed: params.isSingleSubpathAllowed ?? true,
     isWikilink: shouldUseWikilinkStyle(normalizeOptionalProperties<ShouldUseWikilinkStyleParams>({
       app,
