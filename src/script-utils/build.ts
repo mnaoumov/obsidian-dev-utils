@@ -88,8 +88,10 @@ export async function buildCompileSvelte(): Promise<void> {
  *
  * When the `typescript-7` alias (`npm:typescript@7`, the native `tsgo` port) is installed, its faster
  * compiler runs the `tsc --build` pass; otherwise the project's default `tsc` is used. The
- * {@link validateProjectTypes} second pass runs on the project's default TypeScript regardless, since
- * it depends on the classic compiler API (unavailable in `typescript@7`).
+ * {@link validateProjectTypes} second pass runs on the `typescript-6` alias regardless (through
+ * {@link checkProjectTypes}, which imports the classic compiler API from `typescript-6`), since that
+ * API is unavailable in `typescript@7`. Using the distinctly-named alias keeps this pass working even
+ * when a consumer forces the bare `typescript` dependency to v7.
  *
  * @returns A {@link Promise} that resolves when the code compiles successfully.
  * @throws If the project's own declarations fail validation.

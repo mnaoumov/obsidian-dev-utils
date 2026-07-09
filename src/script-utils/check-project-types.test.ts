@@ -8,10 +8,10 @@ import type {
   Program,
   SourceFile,
   System
-} from 'typescript';
+} from 'typescript-6';
 
 import process from 'node:process';
-import { DiagnosticCategory } from 'typescript';
+import { DiagnosticCategory } from 'typescript-6';
 import {
   afterEach,
   beforeEach,
@@ -55,8 +55,8 @@ const {
   }
 }));
 
-vi.mock('typescript', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('typescript')>();
+vi.mock('typescript-6', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('typescript-6')>();
   return {
     ...actual,
     createProgram: mockCreateProgram,

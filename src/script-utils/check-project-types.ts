@@ -15,7 +15,7 @@ import type {
   Diagnostic,
   FormatDiagnosticsHost,
   ParseConfigFileHost
-} from 'typescript';
+} from 'typescript-6';
 
 import process from 'node:process';
 import {
@@ -27,7 +27,7 @@ import {
   getParsedCommandLineOfConfigFile,
   getPreEmitDiagnostics,
   sys
-} from 'typescript';
+} from 'typescript-6';
 
 /**
  * Parameters for {@link checkProjectTypes}.

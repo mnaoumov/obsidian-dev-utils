@@ -2,7 +2,7 @@ import type { TSESTree } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
 
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { SyntaxKind } from 'typescript';
+import { SyntaxKind } from 'typescript-6';
 import {
   afterAll,
   describe,
