@@ -237,6 +237,8 @@ describe('MinimizableModal', () => {
             // Set only while that window exists. It is a 1.13 (catalyst) member absent from the public
             // Typings this library targets, so read it reflectively — the peek-lock's win is that it
             // Stays unset while minimized (no window is created).
+            // TODO: Simplify to `app.setting.popout` once Obsidian 1.13 is public and
+            // `obsidian-public-latest` typings model `AppSetting.popout`.
             return Boolean(Reflect.get(app.setting, 'popout'));
           }
         },
