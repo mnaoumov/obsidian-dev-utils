@@ -49,7 +49,7 @@ import {
 } from 'obsidian';
 
 import { Beeper } from '../../beeper.ts';
-import { ensureNonNullable } from '../../type-guards.ts';
+import { AllWindowsEventComponent } from '../components/all-windows-event-component.ts';
 import { MonkeyAroundComponent } from '../components/monkey-around-component.ts';
 import { CssClass } from '../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
@@ -104,7 +104,6 @@ interface PeekLockEntry {
 }
 
 const peekLockEntries = new Set<PeekLockEntry>();
-const documentsWithInputSuppressors = new WeakSet<Document>();
 const beeper = new Beeper();
 
 /**
@@ -114,20 +113,17 @@ const beeper = new Beeper();
  * {@link shouldBlockOpen}); every other modal open is blocked and signals a flash + beep.
  */
 class PeekLockComponent extends MonkeyAroundComponent {
-  private readonly settingModal: App['setting'];
-
   /**
    * Constructs a new instance.
    *
-   * @param app - The app whose settings modal must also be guarded.
+   * @param app - The app whose settings modal is guarded and whose windows suppress input while locked.
    */
-  public constructor(app: App) {
+  public constructor(private readonly app: App) {
     super();
-    this.settingModal = app.setting;
   }
 
   /**
-   * Registers the `open` patches.
+   * Registers the `open` patches and the input suppressors.
    */
   public override onload(): void {
     super.onload();
@@ -149,10 +145,34 @@ class PeekLockComponent extends MonkeyAroundComponent {
     // Guarding the settings modal's own `open()` blocks it *before* the window is created.
     this.registerMethodPatch<App['setting'], 'open'>({
       methodName: 'open',
-      obj: this.settingModal,
+      obj: this.app.setting,
       patchHandler: ({ fallback, originalThis }): void => {
         blockOrFallback(originalThis, fallback);
       }
+    });
+
+    // Suppress the keyboard, editor mutation, and the context menu across ALL windows — the main window
+    // And every existing/future popout — so the lock holds wherever the user's focus is, not only in
+    // The window that owns the minimized modal. Capture-phase listeners run before Obsidian's own
+    // Document/element handlers (including CodeMirror's), so `stopImmediatePropagation()` in the
+    // Suppressors keeps a blocked event from ever reaching them. `keydown` lets navigation keys through
+    // (see `isPeekAllowedKey`) but blocks command hotkeys; `beforeinput` blocks all editor mutation;
+    // `contextmenu` blocks the right-click menu.
+    const allWindowsEventComponent = this.addChild(new AllWindowsEventComponent(this.app));
+    allWindowsEventComponent.registerAllWindowsDomEvent({
+      callback: suppressKeydownWhilePeekLocked,
+      options: { capture: true },
+      type: 'keydown'
+    });
+    allWindowsEventComponent.registerAllWindowsDomEvent({
+      callback: suppressWhilePeekLocked,
+      options: { capture: true },
+      type: 'beforeinput'
+    });
+    allWindowsEventComponent.registerAllWindowsDomEvent({
+      callback: suppressWhilePeekLocked,
+      options: { capture: true },
+      type: 'contextmenu'
     });
   }
 }
@@ -295,12 +315,12 @@ export class MinimizableModal<TModal extends Modal> {
       innerModal: this.modal
     };
     peekLockEntries.add(this.peekLockEntry);
-    // Install the `open` patches for as long as this modal is minimized. The block LOGIC itself keys
-    // Off the shared `peekLockEntries` (see `shouldBlockOpen`), so with several modals minimized every
-    // One's patch reaches the same verdict; the lock lifts only once the last modal restores/closes.
+    // Install the `open` patches and input suppressors for as long as this modal is minimized. The
+    // Block LOGIC itself keys off the shared `peekLockEntries` (see `shouldBlockOpen`), so with several
+    // Modals minimized every one's patch reaches the same verdict; the lock lifts only once the last
+    // Modal restores/closes.
     this.peekLockComponent = new PeekLockComponent(this.modal.app);
     this.peekLockComponent.load();
-    installInputSuppressorsOnce(this.modal.containerEl.ownerDocument);
   }
 
   private flashBar(barEl: HTMLElement): void {
@@ -352,23 +372,6 @@ function flashMinimizedBars(): void {
   for (const entry of peekLockEntries) {
     entry.flash();
   }
-}
-
-function installInputSuppressorsOnce(doc: Document): void {
-  if (documentsWithInputSuppressors.has(doc)) {
-    return;
-  }
-
-  documentsWithInputSuppressors.add(doc);
-  const win = ensureNonNullable(doc.defaultView);
-  // Capture-phase window listeners run before Obsidian's own document/element handlers (including
-  // CodeMirror's). `stopImmediatePropagation()` then prevents those handlers from ever seeing a
-  // Blocked event. The listeners are permanent but inert whenever nothing is minimized.
-  // `keydown` lets navigation keys through (see isPeekAllowedKey) but blocks command hotkeys;
-  // `beforeinput` blocks all editor mutation; `contextmenu` blocks the right-click menu.
-  win.addEventListener('keydown', suppressKeydownWhilePeekLocked, { capture: true });
-  win.addEventListener('beforeinput', suppressWhilePeekLocked, { capture: true });
-  win.addEventListener('contextmenu', suppressWhilePeekLocked, { capture: true });
 }
 
 function isMinimizedInnerModal(modal: Modal): boolean {

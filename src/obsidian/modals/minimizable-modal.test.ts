@@ -300,6 +300,19 @@ describe('MinimizableModal', () => {
       expect(other.wasOpened).toBe(true);
     });
 
+    it('should stop suppressing input once a stale lock self-heals without restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      // The input suppressors stay installed until the peek-lock component unloads. Removing the bar
+      // Without restore()/close() leaves them installed while the lock self-heals (isPeekLocked() prunes
+      // The disconnected entry), so a suppressed event type must now pass through instead of blocking.
+      getBar()?.remove();
+
+      const contextMenuEvent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      activeDocument.body.dispatchEvent(contextMenuEvent);
+      expect(contextMenuEvent.defaultPrevented).toBe(false);
+    });
+
     it('should block a command-key keydown while minimized and allow it again after restore', () => {
       const minimizable = new MinimizableModal(new Modal(app));
       minimizable.minimize();
