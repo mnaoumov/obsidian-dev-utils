@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 84.5.4
+
+- chore: rollback typescript v7
+
 ## 84.5.3
 
 - fix: resolve classic TS API via typescript-6 alias so tooling survives TypeScript 7 consumers
