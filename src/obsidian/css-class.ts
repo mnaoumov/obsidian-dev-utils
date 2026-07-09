@@ -89,6 +89,12 @@ export enum CssClass {
   MinimizedModalBar = 'minimized-modal-bar',
 
   /**
+   * A CSS class for the one-shot attention flash of the minimized bar, played when the user attempts a
+   * blocked action (a keystroke, right-click, or opening another modal) while the modal is minimized.
+   */
+  MinimizedModalBarAttention = 'minimized-modal-bar-attention',
+
+  /**
    * A CSS class for the title of the minimized bar of the minimizable modal.
    */
   MinimizedModalBarTitle = 'minimized-modal-bar-title',

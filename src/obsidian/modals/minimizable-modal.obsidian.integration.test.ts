@@ -3,18 +3,17 @@
  *
  * Integration tests for {@link MinimizableModal} against a live Obsidian instance.
  *
- * The whole point of minimizing a blocking {@link Modal} is that the app stays usable while a
- * long-running operation continues in the background — most importantly, the user must be able to
- * keep editing notes. A minimized modal is still `open()`, so Obsidian keeps its focus trap active
- * (`Keymap.onFocusIn` re-focuses the active scope's `tabFocusContainerEl`, which `Modal` sets to its
- * now-hidden `containerEl`): focusing the editor gets stolen back and the user cannot type. The fix
- * pops the modal's keymap scope on `minimize()` (and pushes it back on `restore()`).
+ * Minimizing a blocking {@link Modal} keeps it open but out of the way so the user can peek at the
+ * involved notes — yet the modal's blocking contract must be preserved. These tests confirm the
+ * **peek-only lock** in a real Obsidian: while minimized the keyboard is blocked (a trusted keystroke
+ * never reaches the editor) and opening another modal is blocked; restoring lifts the lock and the
+ * editor is typable again.
  *
  * Typing goes through the `typeIntoEditor` helper that `obsidian-integration-testing` provides on every
  * `evalInObsidian` callback's args, which injects **trusted** Electron keyboard input — so the document
- * changes only if the editor genuinely holds focus. With the focus trap still active the
- * trusted keystroke lands nowhere and the assertion fails, making this a faithful end-to-end guard
- * (unlike `execCommand`, which would insert text even while focus is trapped away).
+ * changes only if the editor genuinely holds focus AND the keystroke is not suppressed. A suppressed
+ * trusted keystroke lands nowhere, making this a faithful end-to-end guard (unlike `execCommand`, which
+ * would insert text even while the keystroke is suppressed).
  */
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
@@ -32,6 +31,11 @@ interface HoverOpacityResult {
   readonly backgroundColorWhileHovered: string;
 }
 
+interface ModalOpenBlockedResult {
+  readonly didOpenAfterRestore: boolean;
+  readonly didOpenWhileMinimized: boolean;
+}
+
 interface RestoreByClickResult {
   readonly barGoneAfterBarClick: boolean;
   readonly barGoneAfterTitleClick: boolean;
@@ -47,7 +51,7 @@ interface TypingWhileMinimizedResult {
 
 describe('MinimizableModal', () => {
   describe('minimize', () => {
-    it('should keep the editor typable while the modal is minimized and after it is restored', async () => {
+    it('should block the keyboard while minimized and allow typing again after restore', async () => {
       const result = await evalInObsidian({
         async fn({ app, obsidianModule, typeIntoEditor }): Promise<TypingWhileMinimizedResult> {
           const lib = window.__obsidianDevUtilsModule__;
@@ -73,18 +77,18 @@ describe('MinimizableModal', () => {
           minimizable.modal.open();
           await settle();
 
-          // Minimize it: the backdrop is hidden and the app should be fully usable again.
+          // Minimize it: the backdrop is hidden, but the app is peek-only — the keyboard is blocked.
           minimizable.minimize();
           await settle();
           const isMinimized = minimizable.isMinimized;
 
-          // Typing into the editor while the modal is minimized must reach the document.
-          // A trusted keystroke only lands if the editor holds focus (i.e. the focus trap released).
+          // Typing into the editor while the modal is minimized must NOT reach the document.
+          // A suppressed trusted keystroke leaves the editor value unchanged.
           const beforeMinimized = readValue();
           await typeIntoEditor({ editor: getEditor(), text: 'X' });
           const didAcceptTypingWhileMinimized = readValue() !== beforeMinimized;
 
-          // Restoring then closing the modal must leave the editor typable.
+          // Restoring then closing the modal must leave the editor typable again.
           minimizable.restore();
           await settle();
           minimizable.modal.close();
@@ -121,10 +125,60 @@ describe('MinimizableModal', () => {
 
       // Minimizing actually minimized the modal.
       expect(result.isMinimized).toBe(true);
-      // The user can type into the editor while the modal is minimized (focus trap released).
-      expect(result.didAcceptTypingWhileMinimized).toBe(true);
-      // Editing still works once the modal is restored and closed.
+      // The keyboard is blocked while the modal is minimized (peek-only lock).
+      expect(result.didAcceptTypingWhileMinimized).toBe(false);
+      // Editing works again once the modal is restored and closed.
       expect(result.didAcceptTypingAfterRestore).toBe(true);
+    });
+
+    it('should block opening another modal while minimized and allow it again after restore', async () => {
+      const result = await evalInObsidian({
+        async fn({ app, obsidianModule }): Promise<ModalOpenBlockedResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          const SETTLE_DELAY_MILLISECONDS = 300;
+
+          const modal = new obsidianModule.Modal(app);
+          modal.setTitle('Working');
+          const minimizable = new lib.obsidian.modals['minimizable-modal'].MinimizableModal(modal);
+          minimizable.modal.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          minimizable.minimize();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          // Opening another modal while minimized is blocked, so its container never joins the DOM.
+          const blockedModal = new obsidianModule.Modal(app);
+          blockedModal.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          const didOpenWhileMinimized = blockedModal.containerEl.isConnected;
+          blockedModal.close();
+
+          // After restore the lock lifts, so opening a modal works again.
+          minimizable.restore();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          const allowedModal = new obsidianModule.Modal(app);
+          allowedModal.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          const didOpenAfterRestore = allowedModal.containerEl.isConnected;
+          allowedModal.close();
+
+          minimizable.modal.close();
+
+          return {
+            didOpenAfterRestore,
+            didOpenWhileMinimized
+          };
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // The re-entrant modal is blocked while the first is minimized (the core of the reported bug).
+      expect(result.didOpenWhileMinimized).toBe(false);
+      // Once restored, opening modals works normally again.
+      expect(result.didOpenAfterRestore).toBe(true);
     });
   });
 

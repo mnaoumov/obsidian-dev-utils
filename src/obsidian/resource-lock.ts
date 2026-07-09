@@ -48,6 +48,7 @@ import {
 import type { PathOrFile } from './file-system.ts';
 
 import { convertAsyncToSync } from '../async.ts';
+import { Beeper } from '../beeper.ts';
 import {
   CallbackDisposable,
   MultipleDisposeBehavior
@@ -67,10 +68,6 @@ import {
   isChildOrSelf
 } from './vault.ts';
 
-const BEEP_DURATION_SECONDS = 0.08;
-const BEEP_FREQUENCY_HZ = 660;
-const BEEP_GAIN = 0.05;
-const BEEP_THROTTLE_MILLISECONDS = 200;
 const RESOURCE_LOCK_STATE_KEY = 'resourceLock';
 const LOCK_ICON_ID = 'lock';
 const LOCK_INDICATOR_CSS_CLASS = 'obsidian-dev-utils-lock-indicator';
@@ -339,11 +336,10 @@ class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
  * plugins currently hold a lock.
  */
 class ResourceLockManager {
-  private audioContext: AudioContext | null = null;
+  private readonly beeper = new Beeper();
   private readonly bypassPathSets = new Set<ReadonlySet<string>>();
   private eventsComponent: null | ResourceLockEventsComponent = null;
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
-  private lastBeepMilliseconds = 0;
   private readonly lockEntriesByPath = new Map<string, LockEntry[]>();
   private mutationBlockerComponent: null | ResourceLockMutationBlockerComponent = null;
   private statusBarItemEl: HTMLElement | null = null;
@@ -491,34 +487,6 @@ class ResourceLockManager {
     });
   }
 
-  private beep(): void {
-    // Throttle so a burst of keystrokes does not stack overlapping tones into a buzz.
-    const nowMilliseconds = Date.now();
-    if (nowMilliseconds - this.lastBeepMilliseconds < BEEP_THROTTLE_MILLISECONDS) {
-      return;
-    }
-    this.lastBeepMilliseconds = nowMilliseconds;
-
-    // `lib.dom` types `AudioContext` as always present, but it is absent in some runtimes
-    // (e.g. the jsdom test environment), so this guard is real, not redundant.
-    const AudioContextClass = window.AudioContext;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- see the comment above.
-    if (!AudioContextClass) {
-      return;
-    }
-    this.audioContext ??= new AudioContextClass();
-    const audioContext = this.audioContext;
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    oscillator.type = 'sine';
-    oscillator.frequency.value = BEEP_FREQUENCY_HZ;
-    gainNode.gain.value = BEEP_GAIN;
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + BEEP_DURATION_SECONDS);
-  }
-
   private createIndicators(app: App, view: MarkdownView, path: string, tooltip: string): LockIndicators {
     const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
     this.registerUnlockMenu(app, actionIconEl, () => path);
@@ -537,7 +505,7 @@ class ResourceLockManager {
     // The listener is removed on unlock.
     const onTypeAttempt = (): void => {
       this.flashIndicators(view);
-      this.beep();
+      this.beeper.beep();
     };
     view.contentEl.addEventListener('beforeinput', onTypeAttempt);
 

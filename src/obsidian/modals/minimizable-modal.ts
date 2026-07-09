@@ -1,14 +1,26 @@
 /**
  * @file
  *
- * A wrapper that makes any Obsidian {@link Modal} minimizable.
+ * A wrapper that makes any Obsidian {@link Modal} minimizable to a floating bar — without breaking the
+ * modal's blocking contract.
  *
- * Obsidian's {@link Modal} is blocking — while it is open the rest of the app is dimmed and
- * inert — and it cannot be minimized. {@link MinimizableModal} wraps any modal instance (plain
- * `Modal`, `FuzzySuggestModal`, the library's `ModalBase`, your own subclass, … — including modals
- * you do not own) and adds a minimize button: when minimized, the modal (and its blocking backdrop)
- * is hidden and a small floating bar with a restore button is shown instead, so the app stays fully
- * usable while a long-running operation continues in the background.
+ * Obsidian's {@link Modal} is blocking: while it is open the rest of the app is meant to be inert until
+ * the modal is dismissed. {@link MinimizableModal} wraps any modal instance (plain `Modal`,
+ * `FuzzySuggestModal`, the library's `ModalBase`, your own subclass, … — including modals you do not
+ * own) and adds a minimize button. Minimizing hides the modal and its blocking backdrop and shows a
+ * small floating bar with a restore button, so the user can peek at the notes/folders the operation
+ * involves — but the modal is NOT dismissed, so its blocking contract must be preserved.
+ *
+ * To keep that contract while minimized, the wrapper puts the app into a **peek-only lock**: the user
+ * may mouse-click and scroll to inspect content, but cannot start anything new. While any modal is
+ * minimized the wrapper:
+ * - blocks the keyboard (typing, hotkeys, the command-palette shortcut),
+ * - blocks the right-click context menu, and
+ * - blocks opening any other modal (a re-fired command, the command palette, settings, …).
+ *
+ * A blocked attempt flashes the floating bar and beeps so the user sees (and hears) why nothing
+ * happened. Restoring (or the modal closing) lifts the lock. This prevents, for example, minimizing a
+ * "merge folder" picker and then firing the same command again to stack several concurrent merges.
  *
  * The wrapper reuses the modal's own title (`titleEl`) as the minimized bar label, so set the title
  * the usual way (`modal.setTitle(...)`). Render arbitrary content into {@link Modal.contentEl},
@@ -22,27 +34,82 @@
  *
  * const minimizable = new MinimizableModal(modal);
  * minimizable.modal.open();
- * minimizable.minimize(); // app is usable again; a floating bar offers "restore"
+ * minimizable.minimize(); // a floating bar offers "restore"; the app is peek-only until restored
  * ```
  *
  * The wrapped modal can still be closed normally; the floating bar is cleaned up automatically when
  * the modal closes (even if it is closed while minimized).
  */
 
-import type { Modal } from 'obsidian';
-
 import { around } from 'monkey-around';
-import { setIcon } from 'obsidian';
+import {
+  Modal,
+  setIcon
+} from 'obsidian';
 
+import { Beeper } from '../../beeper.ts';
+import { ensureNonNullable } from '../../type-guards.ts';
 import { CssClass } from '../css-class.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 const MINIMIZE_ICON_ID = 'minus';
 const RESTORE_ICON_ID = 'maximize-2';
 
+// Navigation keys pass through while minimized so the user can move the cursor and scroll to read.
+// None of them mutate the document — text changes are caught separately by the `beforeinput` guard.
+// Shift+navigation is blocked, though, since it extends the selection that inspection does not need.
+const NAVIGATION_KEYS = new Set<string>([
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'End',
+  'Home',
+  'PageDown',
+  'PageUp'
+]);
+
+// A bare modifier press does nothing on its own, so it passes through the lock.
+// This avoids a spurious flash/beep while composing a shortcut; the shortcut's command key is blocked.
+const MODIFIER_KEYS = new Set<string>([
+  'Alt',
+  'Control',
+  'Meta',
+  'Shift'
+]);
+
 /**
- * Wraps a {@link Modal} instance to make it minimizable to a small floating bar and restorable,
- * keeping the app usable while minimized.
+ * A registered entry for a currently-minimized modal. The shared peek-only lock uses it to know a
+ * modal is minimized, to leave that modal's own re-opens alone, and to flash its bar on a blocked
+ * attempt.
+ */
+interface PeekLockEntry {
+  /**
+   * The floating bar element. Used to detect a stale entry (its bar has left the DOM) so it can be
+   * pruned and never keep the app locked.
+   */
+  readonly barEl: HTMLElement;
+
+  /**
+   * Flashes the floating bar to signal a blocked attempt.
+   */
+  flash(): void;
+
+  /**
+   * The wrapped modal instance, so its own `open()` is never blocked by the lock.
+   */
+  readonly innerModal: Modal;
+}
+
+const peekLockEntries = new Set<PeekLockEntry>();
+const documentsWithInputSuppressors = new WeakSet<Document>();
+const beeper = new Beeper();
+let isModalOpenGuardInstalled = false;
+
+/**
+ * Wraps a {@link Modal} instance to make it minimizable to a small floating bar and restorable. While
+ * minimized the app is put into a peek-only lock (keyboard, context menu, and opening other modals are
+ * blocked) so the modal's blocking contract is preserved.
  *
  * @typeParam TModal - The type of the wrapped modal.
  */
@@ -64,6 +131,7 @@ export class MinimizableModal<TModal extends Modal> {
   private isMinimizedValue = false;
   private readonly minimizeButtonEl: HTMLElement;
   private minimizedBarEl: HTMLElement | null = null;
+  private peekLockEntry: null | PeekLockEntry = null;
 
   /**
    * Wraps the given modal, adding a minimize button and wiring up cleanup on close.
@@ -78,8 +146,8 @@ export class MinimizableModal<TModal extends Modal> {
   }
 
   /**
-   * Minimizes the modal: hides the modal and its backdrop and shows a floating bar with a restore
-   * button. A no-op if the modal is already minimized.
+   * Minimizes the modal: hides the modal and its backdrop, shows a floating bar with a restore button,
+   * and puts the app into the peek-only lock. A no-op if the modal is already minimized.
    */
   public minimize(): void {
     if (this.isMinimizedValue) {
@@ -89,16 +157,18 @@ export class MinimizableModal<TModal extends Modal> {
     this.isMinimizedValue = true;
     this.minimizeButtonEl.hide();
     this.modal.containerEl.hide();
-    // The modal stays open while minimized, so its keymap scope would otherwise stay active.
-    // Obsidian's focus trap then steals focus back to the hidden modal, so the editor cannot type.
-    // Popping the scope releases the trap and the `Escape` capture; `restore()` re-pushes it.
+    // The modal stays open while minimized, so its keymap scope is popped to release the focus trap.
+    // Restoring re-pushes it. An active trap would steal focus back to the hidden modal, blocking the
+    // Mouse-driven inspection (clicking notes, scrolling) that minimize exists to allow.
+    // Keyboard input remains blocked by the peek-only lock, so releasing the trap keeps the app inert.
     this.modal.app.keymap.popScope(this.modal.scope);
     this.minimizedBarEl = this.createMinimizedBar();
+    this.enablePeekLock(this.minimizedBarEl);
   }
 
   /**
-   * Restores the modal from the minimized state, removing the floating bar. A no-op if the modal is
-   * not minimized.
+   * Restores the modal from the minimized state, removing the floating bar and lifting the peek-only
+   * lock. A no-op if the modal is not minimized.
    */
   public restore(): void {
     if (!this.isMinimizedValue) {
@@ -106,6 +176,7 @@ export class MinimizableModal<TModal extends Modal> {
     }
 
     this.isMinimizedValue = false;
+    this.disablePeekLock();
     this.removeMinimizedBar();
     // Re-push the scope popped in minimize() so the restored modal blocks the app again (focus trap
     // + Escape capture).
@@ -138,10 +209,45 @@ export class MinimizableModal<TModal extends Modal> {
     barEl.addEventListener('click', () => {
       this.restore();
     });
+    // Drop the one-shot attention flash once it finishes so the bar returns to its gentle idle pulse.
+    // The idle pulse is an infinite animation, which never fires `animationend`.
+    barEl.addEventListener('animationend', () => {
+      barEl.removeClass(CssClass.MinimizedModalBarAttention);
+    });
     return barEl;
   }
 
+  private disablePeekLock(): void {
+    if (!this.peekLockEntry) {
+      return;
+    }
+
+    peekLockEntries.delete(this.peekLockEntry);
+    this.peekLockEntry = null;
+  }
+
+  private enablePeekLock(barEl: HTMLElement): void {
+    this.peekLockEntry = {
+      barEl,
+      flash: (): void => {
+        this.flashBar(barEl);
+      },
+      innerModal: this.modal
+    };
+    peekLockEntries.add(this.peekLockEntry);
+    installModalOpenGuardOnce();
+    installInputSuppressorsOnce(this.modal.containerEl.ownerDocument);
+  }
+
+  private flashBar(barEl: HTMLElement): void {
+    barEl.removeClass(CssClass.MinimizedModalBarAttention);
+    // Force a reflow so re-adding the class restarts the one-shot flash on rapid repeated blocks.
+    barEl.getBoundingClientRect();
+    barEl.addClass(CssClass.MinimizedModalBarAttention);
+  }
+
   private handleClose(): void {
+    this.disablePeekLock();
     this.removeMinimizedBar();
     this.isMinimizedValue = false;
   }
@@ -161,4 +267,108 @@ export class MinimizableModal<TModal extends Modal> {
     this.minimizedBarEl?.remove();
     this.minimizedBarEl = null;
   }
+}
+
+function blockEvent(evt: Event): void {
+  evt.preventDefault();
+  evt.stopImmediatePropagation();
+  signalBlockedAttempt();
+}
+
+function flashMinimizedBars(): void {
+  for (const entry of peekLockEntries) {
+    entry.flash();
+  }
+}
+
+function installInputSuppressorsOnce(doc: Document): void {
+  if (documentsWithInputSuppressors.has(doc)) {
+    return;
+  }
+
+  documentsWithInputSuppressors.add(doc);
+  const win = ensureNonNullable(doc.defaultView);
+  // Capture-phase window listeners run before Obsidian's own document/element handlers (including
+  // CodeMirror's). `stopImmediatePropagation()` then prevents those handlers from ever seeing a
+  // Blocked event. The listeners are permanent but inert whenever nothing is minimized.
+  // `keydown` lets navigation keys through (see isPeekAllowedKey) but blocks command hotkeys;
+  // `beforeinput` blocks all editor mutation; `contextmenu` blocks the right-click menu.
+  win.addEventListener('keydown', suppressKeydownWhilePeekLocked, { capture: true });
+  win.addEventListener('beforeinput', suppressWhilePeekLocked, { capture: true });
+  win.addEventListener('contextmenu', suppressWhilePeekLocked, { capture: true });
+}
+
+function installModalOpenGuardOnce(): void {
+  if (isModalOpenGuardInstalled) {
+    return;
+  }
+
+  isModalOpenGuardInstalled = true;
+  // Never uninstalled: the guard is inert whenever nothing is minimized (`isPeekLocked()` is false).
+  // One permanent patch is cheaper and leak-free versus installing and uninstalling it per minimize.
+  around(Modal.prototype, {
+    open: (next: () => void): (this: Modal) => void => {
+      return function open(this: Modal): void {
+        if (isPeekLocked() && !isMinimizedInnerModal(this)) {
+          signalBlockedAttempt();
+          return;
+        }
+
+        next.call(this);
+      };
+    }
+  });
+}
+
+function isMinimizedInnerModal(modal: Modal): boolean {
+  for (const entry of peekLockEntries) {
+    if (entry.innerModal === modal) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isPeekAllowedKey(evt: KeyboardEvent): boolean {
+  // Navigation moves the cursor/scrolls (allowed), but Shift+navigation extends the selection (not
+  // Needed for inspection), so it is blocked. Bare modifier presses pass through on their own.
+  if (NAVIGATION_KEYS.has(evt.key)) {
+    return !evt.shiftKey;
+  }
+
+  return MODIFIER_KEYS.has(evt.key);
+}
+
+function isPeekLocked(): boolean {
+  // Drop entries whose bar has left the DOM without a restore() or close().
+  // A test teardown that empties the body is the typical cause; this keeps a stale entry from locking.
+  for (const entry of peekLockEntries) {
+    if (!entry.barEl.isConnected) {
+      peekLockEntries.delete(entry);
+    }
+  }
+
+  return peekLockEntries.size > 0;
+}
+
+function signalBlockedAttempt(): void {
+  flashMinimizedBars();
+  beeper.beep();
+}
+
+function suppressKeydownWhilePeekLocked(evt: KeyboardEvent): void {
+  if (!isPeekLocked() || isPeekAllowedKey(evt)) {
+    return;
+  }
+
+  blockEvent(evt);
+}
+
+function suppressWhilePeekLocked(evt: Event): void {
+  if (!isPeekLocked()) {
+    return;
+  }
+
+  blockEvent(evt);
 }

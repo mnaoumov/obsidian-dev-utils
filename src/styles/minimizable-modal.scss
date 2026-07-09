@@ -9,6 +9,20 @@
   }
 }
 
+@keyframes obsidian-dev-utils-minimized-modal-bar-attention {
+  0% {
+    box-shadow: 0 0 0 0 var(--interactive-accent);
+  }
+
+  40% {
+    box-shadow: 0 0 0 4px var(--interactive-accent);
+  }
+
+  100% {
+    box-shadow: var(--shadow-s);
+  }
+}
+
 .obsidian-dev-utils {
   // The minimize button lives inside the modal container, left of Obsidian's close button.
   &.minimizable-modal {
@@ -61,6 +75,14 @@
     // base keeps the bar opaque while preserving the subtle hover highlight.
     &:hover {
       background-image: linear-gradient(var(--background-modifier-hover), var(--background-modifier-hover));
+    }
+
+    // A one-shot, more pronounced flash played when the user attempts a blocked action (a keystroke,
+    // right-click, or opening another modal) while this modal is minimized, so the block is not
+    // silent. Its higher specificity overrides the gentle infinite idle pulse while it plays; the
+    // class is removed on `animationend`, restoring the idle pulse.
+    &.minimized-modal-bar-attention {
+      animation: obsidian-dev-utils-minimized-modal-bar-attention 0.35s ease-out;
     }
 
     .minimized-modal-bar-title {

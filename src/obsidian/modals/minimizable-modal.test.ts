@@ -17,6 +17,14 @@ import { assertNonNullable } from '../../type-guards.ts';
 import { CssClass } from '../css-class.ts';
 import { MinimizableModal } from './minimizable-modal.ts';
 
+class OpenTrackingModal extends Modal {
+  public wasOpened = false;
+
+  public override onOpen(): void {
+    this.wasOpened = true;
+  }
+}
+
 class TrackingModal extends Modal {
   public wasClosed = false;
 
@@ -105,7 +113,7 @@ describe('MinimizableModal', () => {
       expect(getBar()).not.toBeNull();
     });
 
-    it('should pop the modal scope so the app stays usable while minimized', () => {
+    it('should pop the modal scope on minimize so mouse inspection is not fought by the focus trap', () => {
       const modal = new Modal(app);
       const popScopeSpy = vi.spyOn(app.keymap, 'popScope');
       const minimizable = new MinimizableModal(modal);
@@ -223,6 +231,143 @@ describe('MinimizableModal', () => {
       const modal = new Modal(app);
       modal.contentEl.createEl('a', { text: 'Note link' });
       expect(modal.contentEl.querySelector('a')?.textContent).toBe('Note link');
+    });
+  });
+
+  describe('peek-only lock', () => {
+    it('should block opening another modal while minimized', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const other = new OpenTrackingModal(app);
+      other.open();
+      expect(other.wasOpened).toBe(false);
+
+      minimizable.restore();
+    });
+
+    it('should not block the minimized modal itself from opening', () => {
+      const inner = new OpenTrackingModal(app);
+      const minimizable = new MinimizableModal(inner);
+      minimizable.minimize();
+
+      inner.open();
+      expect(inner.wasOpened).toBe(true);
+
+      minimizable.restore();
+    });
+
+    it('should allow opening modals again after restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      minimizable.restore();
+
+      const other = new OpenTrackingModal(app);
+      other.open();
+      expect(other.wasOpened).toBe(true);
+    });
+
+    it('should self-heal a stale lock whose bar left the DOM without restore or close', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      // Simulate a teardown that removes the bar without going through restore()/close().
+      getBar()?.remove();
+
+      const other = new OpenTrackingModal(app);
+      other.open();
+      expect(other.wasOpened).toBe(true);
+    });
+
+    it('should block a command-key keydown while minimized and allow it again after restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const blockedEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'p' });
+      activeDocument.body.dispatchEvent(blockedEvent);
+      expect(blockedEvent.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+
+      const allowedEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'p' });
+      activeDocument.body.dispatchEvent(allowedEvent);
+      expect(allowedEvent.defaultPrevented).toBe(false);
+    });
+
+    it('should let navigation keys through while minimized so the user can still inspect content', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const navigationKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'];
+      for (const key of navigationKeys) {
+        const navEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key });
+        activeDocument.body.dispatchEvent(navEvent);
+        expect(navEvent.defaultPrevented, `${key} should not be blocked`).toBe(false);
+      }
+
+      // Ctrl + a navigation key is still navigation (e.g. Ctrl+Home) and must pass through.
+      const ctrlNavEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ctrlKey: true, key: 'Home' });
+      activeDocument.body.dispatchEvent(ctrlNavEvent);
+      expect(ctrlNavEvent.defaultPrevented).toBe(false);
+
+      // A bare modifier press does nothing on its own, so it must not be blocked (no spurious beep).
+      const shiftEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Shift' });
+      activeDocument.body.dispatchEvent(shiftEvent);
+      expect(shiftEvent.defaultPrevented).toBe(false);
+
+      minimizable.restore();
+    });
+
+    it('should block Shift+navigation (text selection) while minimized', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const shiftArrowEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'ArrowDown', shiftKey: true });
+      activeDocument.body.dispatchEvent(shiftArrowEvent);
+      expect(shiftArrowEvent.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+    });
+
+    it('should block editor text input (beforeinput) while minimized', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const blockedEvent = new InputEvent('beforeinput', { bubbles: true, cancelable: true });
+      activeDocument.body.dispatchEvent(blockedEvent);
+      expect(blockedEvent.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+    });
+
+    it('should block the context menu while minimized and allow it again after restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const blockedEvent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      activeDocument.body.dispatchEvent(blockedEvent);
+      expect(blockedEvent.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+
+      const allowedEvent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      activeDocument.body.dispatchEvent(allowedEvent);
+      expect(allowedEvent.defaultPrevented).toBe(false);
+    });
+
+    it('should flash the bar on a blocked attempt and clear the flash when the animation ends', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      const bar = getBar();
+      assertNonNullable(bar);
+      expect(bar.hasClass(CssClass.MinimizedModalBarAttention)).toBe(false);
+
+      activeDocument.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'a' }));
+      expect(bar.hasClass(CssClass.MinimizedModalBarAttention)).toBe(true);
+
+      bar.dispatchEvent(new Event('animationend'));
+      expect(bar.hasClass(CssClass.MinimizedModalBarAttention)).toBe(false);
+
+      minimizable.restore();
     });
   });
 });
