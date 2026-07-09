@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 84.6.0
+
+- test: drive the Shift+Enter lock test with trusted pressKey input
+- fix: enforce editor lock against Shift+Enter and other key-driven edits
+- feat: prevent almost all actions while modal is minimized
+
 ## 84.5.4
 
 - chore: rollback typescript v7
