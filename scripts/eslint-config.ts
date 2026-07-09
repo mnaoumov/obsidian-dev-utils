@@ -22,7 +22,6 @@ import {
   defineEslintConfigs,
   EslintConfigContext
 } from '../src/script-utils/linters/eslint-config.ts';
-import { typeScriptClassicApiNoRestrictedImportPaths } from '../src/script-utils/linters/eslint-typescript-classic-api-boundary.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 
 function getAgnosticCoreBoundaryConfigs(context: EslintConfigContext): Linter.Config[] {
@@ -229,25 +228,6 @@ function getTsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
   ]);
 }
 
-function getTypeScriptClassicApiBoundaryConfigs(): Linter.Config[] {
-  return defineConfig([
-    {
-      // Scoped to the tooling under `src/script-utils/**` — the only code that uses the classic
-      // TypeScript compiler API and must therefore import it from the `typescript-6` alias rather
-      // Than the bare `typescript` specifier (which a consumer may force to the `tsgo` port `v7`).
-      files: [join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.ScriptUtils, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)],
-      rules: {
-        'no-restricted-imports': [
-          'error',
-          {
-            paths: [...typeScriptClassicApiNoRestrictedImportPaths]
-          }
-        ]
-      }
-    }
-  ]);
-}
-
 export const configs: Linter.Config[] = defineEslintConfigs({
   customConfigs(context) {
     return defineConfig([
@@ -256,7 +236,6 @@ export const configs: Linter.Config[] = defineEslintConfigs({
       ...getJsdocsConfigs(context),
       ...getNoRestrictedSyntaxOverrideConfigs(),
       ...getAgnosticCoreBoundaryConfigs(context),
-      ...getTypeScriptClassicApiBoundaryConfigs(),
       ...getDependConfigs(),
       ...getObsidianLintConfigs()
     ]);

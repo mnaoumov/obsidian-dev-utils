@@ -1,7 +1,7 @@
 import type {
   CompilerOptions,
   LanguageService
-} from 'typescript-6';
+} from 'typescript';
 
 import dedent from 'dedent';
 import {
@@ -11,7 +11,7 @@ import {
   ModuleResolutionKind,
   ScriptTarget,
   sys
-} from 'typescript-6';
+} from 'typescript';
 import {
   afterEach,
   describe,

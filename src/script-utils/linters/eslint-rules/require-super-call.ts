@@ -22,13 +22,13 @@ import type {
   TSESTree
 } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
-import type { Declaration } from 'typescript-6';
+import type { Declaration } from 'typescript';
 
 import {
   canHaveModifiers,
   getModifiers,
   SyntaxKind
-} from 'typescript-6';
+} from 'typescript';
 
 import { assert } from '../../../type-guards.ts';
 

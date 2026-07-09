@@ -29,7 +29,7 @@ import type {
   Type,
   TypeChecker,
   TypeNode
-} from 'typescript-6';
+} from 'typescript';
 
 import {
   isIdentifier,
@@ -38,7 +38,7 @@ import {
   isUnionTypeNode,
   SymbolFlags,
   TypeFlags
-} from 'typescript-6';
+} from 'typescript';
 
 import { assertNonNullable } from '../../../type-guards.ts';
 

@@ -21,7 +21,7 @@ import type {
   TSESTree
 } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
-import type { Type } from 'typescript-6';
+import type { Type } from 'typescript';
 
 /** Message ID reported when a class extends `Component` but its name does not end with `Component`. */
 export const MESSAGE_ID_MISSING_SUFFIX = 'requireComponentSuffix';

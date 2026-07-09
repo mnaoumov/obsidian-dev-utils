@@ -70,7 +70,7 @@ import type {
   TypeAliasDeclaration,
   TypeChecker,
   VariableStatement
-} from 'typescript-6';
+} from 'typescript';
 
 import {
   canHaveModifiers,
@@ -98,7 +98,7 @@ import {
   ScriptSnapshot,
   SyntaxKind,
   sys
-} from 'typescript-6';
+} from 'typescript';
 
 import { assertNonNullable } from '../../type-guards.ts';
 import {
