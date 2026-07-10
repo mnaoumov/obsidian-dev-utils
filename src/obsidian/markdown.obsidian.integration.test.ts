@@ -11,7 +11,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -25,8 +24,7 @@ describe('markdown', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
           return lib.obsidian.markdown.markdownToHtml({ app, markdown: '**bold** and *italic*' });
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toContain('<strong>bold</strong>');
@@ -41,8 +39,7 @@ describe('markdown', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
           return lib.obsidian.markdown.markdownToHtml({ app, markdown: '# Heading 1\n## Heading 2' });
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toContain('Heading 1');
@@ -57,8 +54,7 @@ describe('markdown', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
           return lib.obsidian.markdown.markdownToHtml({ app, markdown: '- item 1\n- item 2\n- item 3' });
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toContain('<li');
@@ -75,8 +71,7 @@ describe('markdown', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
           return lib.obsidian.markdown.markdownToHtml({ app, markdown: 'use `console.log()` here' });
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toContain('<code>');
@@ -91,8 +86,7 @@ describe('markdown', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
           return lib.obsidian.markdown.markdownToHtml({ app, markdown: '' });
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toBe('');
@@ -114,8 +108,7 @@ describe('markdown', () => {
             markdown: 'Hello **world**'
           });
           return el.innerHTML;
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toContain('<strong>world</strong>');

@@ -12,7 +12,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -32,8 +31,7 @@ describe('markdown-code-block-processor', () => {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
         return typeof lib.obsidian['markdown-code-block-processor'].getCodeBlockMarkdownInfo === 'function';
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result).toBe(true);
@@ -47,8 +45,7 @@ describe('markdown-code-block-processor', () => {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
         return typeof lib.obsidian['markdown-code-block-processor'].replaceCodeBlock === 'function';
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result).toBe(true);
@@ -62,8 +59,7 @@ describe('markdown-code-block-processor', () => {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
         return typeof lib.obsidian['markdown-code-block-processor'].insertAfterCodeBlock === 'function';
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result).toBe(true);
@@ -77,8 +73,7 @@ describe('markdown-code-block-processor', () => {
           throw new Error('obsidian-dev-utils module not registered on window');
         }
         return typeof lib.obsidian['markdown-code-block-processor'].removeCodeBlock === 'function';
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result).toBe(true);
@@ -102,8 +97,7 @@ describe('markdown-code-block-processor', () => {
           // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
           await app.vault.delete(file);
         }
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result).toContain('```js');

@@ -4,6 +4,54 @@
 
 `obsidian-dev-utils` is a TypeScript utility library for Obsidian plugin development. It publishes as a dual-format (ESM + CJS) npm package.
 
+## Current Task — resource-lock: click-to-unlock + always release + cancel + required operation name (branch `lock`)
+
+**Origin:** the parked plan in the global CLAUDE.md ("resource-lock: reusable unlock active note + release-on-abort",
+from advanced-note-composer #129) PLUS user refinements (2026-07-10). All refs are to `src/obsidian/resource-lock.ts`.
+
+**Implemented (increments a–d + API-shape refinements):**
+- (a) **Ancestor-aware force-unlock** — `ResourceLockManager.forceUnlock(app, pathOrFile)` resolves the covering
+  owner via `resolveLockOwnerPath`, aborts every entry's controller (cancel the op) AND removes the entries
+  (release), via the private `abortAndReleaseEntries(app, ownerPath)`. Exposed as
+  `ResourceLockComponent.requestUnlockForPath(pathOrFile)`. The legacy exact-path abort-only `requestUnlock` /
+  free `requestResourceUnlockForPath` are kept unchanged. The indicator/file-menu "Unlock" item now calls
+  `abortAndReleaseEntries` (always releases + cancels), satisfying user #2 for both direct and subtree locks.
+- (b) **Opt-in release-on-abort + notify** — `ResourceLockComponentLockForPathParams` carries
+  `shouldReleaseOnAbort?: boolean` (`@default false`) + `onUnlockRequested?()`. Both are stored on the `LockEntry`;
+  `wireReleaseOnAbort(app, path, entry)` adds a one-shot `abort` listener → `removeEntry` (release) + callback.
+  No-op without an `abortController` or when neither opt-in is set (transactional locks release via their own cleanup).
+- (c) **`UnlockActiveNoteCommandHandler`** — `src/obsidian/command-handlers/unlock-active-note-command-handler.ts`,
+  a `GlobalCommandHandler` taking `{ app, resourceLockComponent }`; `canExecute` = active file exists AND
+  `isLockedByAncestorForPath(activeFile)` (which already covers the direct-lock case, so no redundant OR); `execute`
+  = `requestUnlockForPath(activeFile)`. Barrel regenerated (do not hand-edit `command-handlers/index.ts`).
+- (d) **Click-to-unlock** — `registerUnlockMenu` now registers the shared `openUnlockMenu` on BOTH `click` and
+  `contextmenu`, so a LEFT-click on any of the three lock indicators (action icon / tab icon / status bar) opens
+  the same unlock context menu.
+
+**API-shape refinements (user, 2026-07-10):**
+- **`operationName` is REQUIRED on every lock** — carried on `ResourceLockComponentLockForPathParams`,
+  `LockResourceForPathParams`, `ManagerLockParams`, and `LockEntry` (all non-null `string`). Shown next to the
+  plugin name in the unlock confirmation via the new `lockDescriptors()` (one entry per distinct plugin+operation) →
+  `unlockConfirmMessage` renders `code(pluginName)` + `: operationName` per lock. `vault.ts` `process()` passes
+  `operationName: 'Process note'`.
+- **All lock acquirers take a single params object** — `ResourceLockComponent.lockForPath(params)` (pathOrFile
+  merged in), the free `lockResourceForPath(params)`, and the internal `ResourceLockManager.lock(params)` (app +
+  pathOrFile + pluginId + options all flattened into `ManagerLockParams`).
+- **`abortController` stays OPTIONAL** (user decision): force-unlock always RELEASES the lock even without a
+  controller (it removes the entry); it just cannot CANCEL an operation that has no controller.
+
+**Status:** code + unit tests complete (`resource-lock.test.ts` 100%; new `unlock-active-note-command-handler.test.ts`
+100%). Full gate green (compile + full `test:coverage` 3778 passing + lint + format + spellcheck). Real behavior
+confirmed in live Obsidian via `resource-lock.obsidian.integration.test.ts` (force-unlock releases a real editor
+lock + aborts the operation). Landed in commit `feat(resource-lock)!: click/command unlock that always releases and
+cancels`. A follow-up commit dropped the now-redundant per-test `vaultPath: inject('tempVaultPath')` across all
+obsidian integration suites (the harness worker setup already wires `setVaultPathResolver(() => inject('tempVaultPath'))`).
+
+**After this lands (consumer, separate session):** advanced-note-composer drops its local
+`UnlockActiveNoteCommandHandler` + hand-wired `abortController.signal → moveSelectionBuffer.clear()`, consuming the
+library command + `lockForPath({ …, shouldReleaseOnAbort: true, onUnlockRequested: () => moveSelectionBuffer.clear() })`.
+Then remove the parked entry from the global CLAUDE.md.
+
 ## Current Task — External `file://` link normalization (for obsidian-better-markdown-links issue #35) — LIBRARY CORE DONE
 
 **STATUS (2026-07-10): Body `file://` normalization is COMPLETE in obsidian-dev-utils** (12 commits on branch

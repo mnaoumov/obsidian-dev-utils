@@ -14,7 +14,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -46,8 +45,7 @@ describe('rename-delete-handler', () => {
               await app.vault.delete(f);
             }
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result.hasNewFile).toBe(true);
@@ -61,8 +59,7 @@ describe('rename-delete-handler', () => {
           // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
           await app.vault.delete(file);
           return app.vault.getAbstractFileByPath('rdh-delete-test.md') === null;
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toBe(true);
@@ -75,8 +72,7 @@ describe('rename-delete-handler', () => {
           // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
           await app.vault.delete(folder, true);
           return app.vault.getAbstractFileByPath('rdh-test-folder') === null;
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toBe(true);

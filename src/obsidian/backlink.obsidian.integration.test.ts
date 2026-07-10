@@ -13,7 +13,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -55,8 +54,7 @@ describe('backlinks via metadata cache', () => {
             }
           }
         }
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result.backlinkKeys).toContain('backlink-linker-a.md');
@@ -89,8 +87,7 @@ describe('backlinks via metadata cache', () => {
             await app.vault.delete(f);
           }
         }
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result.backlinkKeys).toHaveLength(0);
@@ -123,8 +120,7 @@ describe('backlinks via metadata cache', () => {
             await app.vault.delete(f);
           }
         }
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result).toContain('alpha');

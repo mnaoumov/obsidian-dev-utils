@@ -1088,7 +1088,7 @@ describe('processFile', () => {
 
     await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', resourceLockComponent });
 
-    expect(lockForPath).toHaveBeenCalledWith('note.md');
+    expect(lockForPath).toHaveBeenCalledWith({ operationName: 'Process note', pathOrFile: 'note.md' });
     expect(dispose).toHaveBeenCalledTimes(1);
   });
 
