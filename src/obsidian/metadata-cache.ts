@@ -25,6 +25,7 @@ import type { PathOrFile } from './file-system.ts';
 import type { CombinedFrontmatter } from './frontmatter.ts';
 import type {
   ParseLinkFrontmatterReference,
+  ParseLinkFrontmatterReferenceWithOffsets,
   ParseLinkReference
 } from './parse-link.ts';
 
@@ -54,21 +55,69 @@ import {
 } from './vault.ts';
 
 /**
- * An extended {@link CachedMetadata} that additionally carries external links parsed from the note
- * content. The presence of {@link CachedMetadataEx.externalLinks} (even when empty) indicates the cache
- * was computed with external-link parsing enabled.
+ * A parsing feature that was applied when computing a {@link CachedMetadataEx}.
  */
-export interface CachedMetadataEx extends CachedMetadata {
+export enum CachedMetadataExFeature {
   /**
    * The external links parsed from the note content body.
    */
-  externalLinks: ParseLinkReference[];
+  ExternalLinks = 'ExternalLinks',
 
   /**
-   * The external links parsed from the note frontmatter values. Entries parsed from a multi-link value
-   * additionally carry offsets and can be narrowed via {@link isFrontmatterLinkCacheWithOffsets}.
+   * The external links parsed from single-link note frontmatter values.
    */
-  frontmatterExternalLinks: ParseLinkFrontmatterReference[];
+  FrontmatterExternalLinks = 'FrontmatterExternalLinks',
+
+  /**
+   * The external links parsed from multi-link note frontmatter values.
+   */
+  MultiValueFrontmatterExternalLinks = 'MultiValueFrontmatterExternalLinks',
+
+  /**
+   * The internal links parsed from multi-link note frontmatter values, which Obsidian does not natively cache.
+   */
+  MultiValueFrontmatterLinks = 'MultiValueFrontmatterLinks',
+
+  /**
+   * Obsidian's native metadata parsing (internal links, embeds, frontmatter links).
+   */
+  Native = 'Native'
+}
+
+/**
+ * An extended {@link CachedMetadata} that records which parsing {@link CachedMetadataExFeature}s were
+ * applied (via {@link CachedMetadataEx.features}) and carries the resulting external links. Each links
+ * array is populated only when its corresponding feature is present in {@link CachedMetadataEx.features}.
+ */
+export interface CachedMetadataEx extends CachedMetadata {
+  /**
+   * The external links parsed from the note content body. Populated only when
+   * {@link CachedMetadataExFeature.ExternalLinks} is applied.
+   */
+  externalLinks?: ParseLinkReference[];
+
+  /**
+   * The parsing features that were applied when computing this cache.
+   */
+  readonly features: CachedMetadataExFeature[];
+
+  /**
+   * The external links parsed from single-link (single-value) note frontmatter values. Populated only
+   * when {@link CachedMetadataExFeature.FrontmatterExternalLinks} is applied.
+   */
+  frontmatterExternalLinks?: ParseLinkFrontmatterReference[];
+
+  /**
+   * The external links parsed from multi-link (multi-value) note frontmatter values. Populated only when
+   * {@link CachedMetadataExFeature.MultiValueFrontmatterExternalLinks} is applied.
+   */
+  multiValueFrontmatterExternalLinks?: ParseLinkFrontmatterReferenceWithOffsets[];
+
+  /**
+   * The internal links parsed from multi-link (multi-value) note frontmatter values. Populated only when
+   * {@link CachedMetadataExFeature.MultiValueFrontmatterLinks} is applied.
+   */
+  multiValueFrontmatterLinks?: ParseLinkFrontmatterReferenceWithOffsets[];
 }
 
 /**
@@ -112,6 +161,70 @@ export interface GetBacklinksForFileSafeWrapper {
 }
 
 /**
+ * Params for {@link getLinks}.
+ */
+export interface GetLinksParams {
+  /**
+   * The cached metadata to retrieve the links from.
+   */
+  readonly cache: CachedMetadata;
+
+  /**
+   * Whether to include the embeds (`cache.embeds`).
+   *
+   * @default `true`
+   */
+  readonly shouldIncludeEmbeds?: boolean;
+
+  /**
+   * Whether to include the external links parsed from the note body. Requires the cache to be a
+   * {@link CachedMetadataEx}.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeExternalLinks?: boolean;
+
+  /**
+   * Whether to include the external links parsed from single-link (single-value) note frontmatter
+   * values. Requires the cache to be a {@link CachedMetadataEx}.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeFrontmatterExternalLinks?: boolean;
+
+  /**
+   * Whether to include the frontmatter links (`cache.frontmatterLinks`).
+   *
+   * @default `true`
+   */
+  readonly shouldIncludeFrontmatterLinks?: boolean;
+
+  /**
+   * Whether to include the external links parsed from multi-link (multi-value) note frontmatter values,
+   * i.e. the offset-carrying frontmatter external links (narrowed via
+   * {@link isFrontmatterLinkCacheWithOffsets}). Requires the cache to be a {@link CachedMetadataEx}.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeMultiValueFrontmatterExternalLinks?: boolean;
+
+  /**
+   * Whether to include the internal links parsed from multi-link (multi-value) note frontmatter values.
+   * Requires the cache to be a {@link CachedMetadataEx}.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeMultiValueFrontmatterLinks?: boolean;
+
+  /**
+   * Whether to include the reference links (`cache.links`).
+   *
+   * @default `true`
+   */
+  readonly shouldIncludeReferences?: boolean;
+}
+
+/**
  * Parameters for {@link registerFileCacheForNonExistingFile}.
  */
 export interface RegisterFileCacheForNonExistingFileParams {
@@ -132,6 +245,31 @@ export interface RegisterFileCacheForNonExistingFileParams {
 }
 
 /**
+ * A selector for a feature-gated link category in {@link getLinks}.
+ */
+interface FeatureLinkSelector {
+  /**
+   * A human-readable description of the link category, used in error messages.
+   */
+  readonly description: string;
+
+  /**
+   * The feature that must be present in the cache for this category to be available.
+   */
+  readonly feature: CachedMetadataExFeature;
+
+  /**
+   * Selects the links for this category from the cache.
+   */
+  select(this: void, cache: CachedMetadataEx): Reference[] | undefined;
+
+  /**
+   * Whether to include this category.
+   */
+  readonly shouldInclude: boolean;
+}
+
+/**
  * Ensures that the metadata cache is ready for all files.
  *
  * @param app - The Obsidian app instance.
@@ -141,54 +279,6 @@ export async function ensureMetadataCacheReady(app: App): Promise<void> {
   await new Promise((resolve) => {
     app.metadataCache.onCleanCache(resolve);
   });
-}
-
-/**
- * Retrieves all links from the provided cache.
- *
- * @param cache - The cached metadata.
- * @returns An array of reference caches representing the links.
- */
-export function getAllLinks(cache: CachedMetadata): Reference[] {
-  let links: Reference[] = [];
-
-  if (cache.links) {
-    links.push(...cache.links);
-  }
-
-  if (cache.embeds) {
-    links.push(...cache.embeds);
-  }
-
-  if (cache.frontmatterLinks) {
-    links.push(...cache.frontmatterLinks);
-  }
-
-  sortReferences(links);
-
-  // BUG: https://forum.obsidian.md/t/bug-duplicated-links-in-metadatacache-inside-footnotes/85551
-  links = links.filter((link, index) => {
-    if (index === 0) {
-      return true;
-    }
-
-    const previousLink = ensureNonNullable(links[index - 1]);
-
-    if (isReferenceCache(link) && isReferenceCache(previousLink)) {
-      return link.position.start.offset !== previousLink.position.start.offset;
-    }
-
-    if (isFrontmatterLinkCache(link) && isFrontmatterLinkCache(previousLink)) {
-      const linkStartOffset = isFrontmatterLinkCacheWithOffsets(link) ? link.startOffset : 0;
-      const previousLinkStartOffset = isFrontmatterLinkCacheWithOffsets(previousLink) ? previousLink.startOffset : 0;
-      return link.key !== previousLink.key || isFrontmatterLinkCacheWithOffsets(link) !== isFrontmatterLinkCacheWithOffsets(previousLink)
-        || linkStartOffset !== previousLinkStartOffset;
-    }
-
-    return true;
-  });
-
-  return links;
 }
 
 /**
@@ -331,6 +421,104 @@ export async function getFrontmatterSafe<CustomFrontmatter = unknown>(app: App, 
 }
 
 /**
+ * Retrieves the selected links from the provided cache.
+ *
+ * @param params - The parameters for retrieving the links.
+ * @returns An array of references representing the selected links.
+ */
+export function getLinks(params: GetLinksParams): Reference[] {
+  const {
+    cache,
+    shouldIncludeEmbeds = true,
+    shouldIncludeExternalLinks = false,
+    shouldIncludeFrontmatterExternalLinks = false,
+    shouldIncludeFrontmatterLinks = true,
+    shouldIncludeMultiValueFrontmatterExternalLinks = false,
+    shouldIncludeMultiValueFrontmatterLinks = false,
+    shouldIncludeReferences = true
+  } = params;
+
+  let links: Reference[] = [];
+
+  if (shouldIncludeReferences && cache.links) {
+    links.push(...cache.links);
+  }
+
+  if (shouldIncludeEmbeds && cache.embeds) {
+    links.push(...cache.embeds);
+  }
+
+  if (shouldIncludeFrontmatterLinks && cache.frontmatterLinks) {
+    links.push(...cache.frontmatterLinks);
+  }
+
+  const featureLinkSelectors: FeatureLinkSelector[] = [
+    {
+      description: 'body external links',
+      feature: CachedMetadataExFeature.ExternalLinks,
+      select: (cacheEx) => cacheEx.externalLinks,
+      shouldInclude: shouldIncludeExternalLinks
+    },
+    {
+      description: 'frontmatter external links',
+      feature: CachedMetadataExFeature.FrontmatterExternalLinks,
+      select: (cacheEx) => cacheEx.frontmatterExternalLinks,
+      shouldInclude: shouldIncludeFrontmatterExternalLinks
+    },
+    {
+      description: 'multi-value frontmatter external links',
+      feature: CachedMetadataExFeature.MultiValueFrontmatterExternalLinks,
+      select: (cacheEx) => cacheEx.multiValueFrontmatterExternalLinks,
+      shouldInclude: shouldIncludeMultiValueFrontmatterExternalLinks
+    },
+    {
+      description: 'multi-value frontmatter links',
+      feature: CachedMetadataExFeature.MultiValueFrontmatterLinks,
+      select: (cacheEx) => cacheEx.multiValueFrontmatterLinks,
+      shouldInclude: shouldIncludeMultiValueFrontmatterLinks
+    }
+  ];
+
+  for (const featureLinkSelector of featureLinkSelectors) {
+    if (!featureLinkSelector.shouldInclude) {
+      continue;
+    }
+
+    if (!isCachedMetadataEx(cache) || !cache.features.includes(featureLinkSelector.feature)) {
+      throw new Error(`Cannot include ${featureLinkSelector.description}: the cache was not computed with the ${featureLinkSelector.feature} feature.`);
+    }
+
+    links.push(...ensureNonNullable(featureLinkSelector.select(cache)));
+  }
+
+  sortReferences(links);
+
+  // BUG: https://forum.obsidian.md/t/bug-duplicated-links-in-metadatacache-inside-footnotes/85551
+  links = links.filter((link, index) => {
+    if (index === 0) {
+      return true;
+    }
+
+    const previousLink = ensureNonNullable(links[index - 1]);
+
+    if (isReferenceCache(link) && isReferenceCache(previousLink)) {
+      return link.position.start.offset !== previousLink.position.start.offset;
+    }
+
+    if (isFrontmatterLinkCache(link) && isFrontmatterLinkCache(previousLink)) {
+      const linkStartOffset = isFrontmatterLinkCacheWithOffsets(link) ? link.startOffset : 0;
+      const previousLinkStartOffset = isFrontmatterLinkCacheWithOffsets(previousLink) ? previousLink.startOffset : 0;
+      return link.key !== previousLink.key || isFrontmatterLinkCacheWithOffsets(link) !== isFrontmatterLinkCacheWithOffsets(previousLink)
+        || linkStartOffset !== previousLinkStartOffset;
+    }
+
+    return true;
+  });
+
+  return links;
+}
+
+/**
  * Determines whether a cache is a {@link CachedMetadataEx} (i.e. it was computed with external-link
  * parsing enabled).
  *
@@ -338,7 +526,7 @@ export async function getFrontmatterSafe<CustomFrontmatter = unknown>(app: App, 
  * @returns `true` if the cache is a {@link CachedMetadataEx}, otherwise `false`.
  */
 export function isCachedMetadataEx(cache: CachedMetadata): cache is CachedMetadataEx {
-  return 'externalLinks' in cache;
+  return 'features' in cache;
 }
 
 /**

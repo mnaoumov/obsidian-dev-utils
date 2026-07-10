@@ -62,9 +62,9 @@ import {
   MARKDOWN_FILE_EXTENSION
 } from './file-system.ts';
 import {
-  getAllLinks,
   getBacklinksForFileSafe,
   getCacheSafe,
+  getLinks,
   parseMetadata,
   registerFiles
 } from './metadata-cache.ts';
@@ -1579,7 +1579,7 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
     start: section.position.start.offset
   }));
 
-  for (const link of getAllLinks(cache)) {
+  for (const link of getLinks({ cache })) {
     abortSignal.throwIfAborted();
     const newContent = await linkConverter(link, abortSignal);
     abortSignal.throwIfAborted();
