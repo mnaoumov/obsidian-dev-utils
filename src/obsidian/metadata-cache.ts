@@ -166,6 +166,11 @@ export interface GetBacklinksForFileSafeWrapper {
 }
 
 /**
+ * Options for {@link getCacheSafe}.
+ */
+export type GetCacheSafeOptions = ParseCacheOptions;
+
+/**
  * Params for {@link getLinks}.
  */
 export interface GetLinksParams {
@@ -438,9 +443,10 @@ export async function getBacklinksForFileSafe(params: GetBacklinksForFileSafePar
  *
  * @param app - The Obsidian app instance.
  * @param fileOrPath - The file or path to retrieve the metadata for.
+ * @param options - The parse options controlling which additional links to parse.
  * @returns The cached metadata for the file, or `null` if it doesn't exist.
  */
-export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<CachedMetadataEx | null> {
+export async function getCacheSafe(app: App, fileOrPath: PathOrFile, options: GetCacheSafeOptions = {}): Promise<CachedMetadataEx | null> {
   const file = getFileOrNull({ app, pathOrFile: fileOrPath });
 
   try {
@@ -448,21 +454,31 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<Ca
       return null;
     }
 
+    let cache: CachedMetadata | null;
     if (file.deleted) {
-      return toNativeCachedMetadataEx(app.metadataCache.getFileCache(file));
+      cache = app.metadataCache.getFileCache(file);
+    } else {
+      await saveNote(app, file);
+
+      const fileCacheEntry = app.metadataCache.fileCache[file.path];
+      const isUpToDate = fileCacheEntry?.mtime === file.stat.mtime
+        && fileCacheEntry.size === file.stat.size
+        && app.metadataCache.metadataCache[fileCacheEntry.hash];
+      if (!isUpToDate) {
+        await app.metadataCache.computeFileMetadataAsync(file);
+        await ensureMetadataCacheReady(app);
+      }
+      cache = app.metadataCache.getFileCache(file);
     }
 
-    await saveNote(app, file);
-
-    const fileCacheEntry = app.metadataCache.fileCache[file.path];
-    const isUpToDate = fileCacheEntry?.mtime === file.stat.mtime
-      && fileCacheEntry.size === file.stat.size
-      && app.metadataCache.metadataCache[fileCacheEntry.hash];
-    if (!isUpToDate) {
-      await app.metadataCache.computeFileMetadataAsync(file);
-      await ensureMetadataCacheReady(app);
+    if (cache === null) {
+      return null;
     }
-    return toNativeCachedMetadataEx(app.metadataCache.getFileCache(file));
+
+    // Only the body-external parse needs the file content; frontmatter parsing uses the cached
+    // Frontmatter, so avoid reading the content unless it is actually needed.
+    const content = options.shouldParseExternalLinks ? await app.vault.cachedRead(file) : '';
+    return toParsedCachedMetadataEx({ cache, content, options });
   } catch (error) {
     if (!file || file.deleted) {
       return null;
@@ -733,17 +749,6 @@ function parseExternalBodyLinks(content: string, cache: CachedMetadata): ParseLi
   return parseLinks(content)
     .filter((parseLinkResult) => parseLinkResult.isExternal && parseLinkResult.startOffset >= frontmatterEndOffset)
     .map((parseLinkResult) => toParseLinkReference({ content, parseLinkResult }));
-}
-
-function toNativeCachedMetadataEx(cache: CachedMetadata | null): CachedMetadataEx | null {
-  if (cache === null) {
-    return null;
-  }
-
-  return {
-    ...cache,
-    features: [CachedMetadataExFeature.Native]
-  };
 }
 
 function toParsedCachedMetadataEx(params: ToParsedCachedMetadataExParams): CachedMetadataEx {

@@ -201,6 +201,7 @@ function createMockApp(): App {
       }
     },
     vault: {
+      cachedRead: vi.fn(),
       fileMap,
       getAbstractFileByPath: (path: string): null | TAbstractFile => fileMap[path] ?? null
     }
@@ -855,6 +856,23 @@ describe('getCacheSafe', () => {
 
     expect(app.metadataCache.computeFileMetadataAsync).not.toHaveBeenCalled();
     expect(result).toEqual({ ...mockCache, features: [CachedMetadataExFeature.Native] });
+  });
+
+  it('should parse body external links from the read content when enabled', async () => {
+    const file = { deleted: false, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 100, size: 50 } };
+    const mockCache: CachedMetadata = {};
+
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
+    app.metadataCache.fileCache['note.md'] = { hash: 'abc', mtime: 100, size: 50 };
+    app.metadataCache.metadataCache['abc'] = mockCache;
+    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache);
+    vi.mocked(app.vault.cachedRead).mockResolvedValue('[x](file:///a.txt)');
+
+    const result = await getCacheSafe(app, castTo<PathOrFile>(file), { shouldParseExternalLinks: true });
+
+    expect(result?.features).toContain(CachedMetadataExFeature.ExternalLinks);
+    expect(result?.externalLinks).toHaveLength(1);
+    expect(result?.externalLinks?.[0]?.link).toBe('file:///a.txt');
   });
 
   it('should return null if deleted file throws an error', async () => {
